@@ -338,9 +338,9 @@ export default function PiketShowroomPage() {
                     <col style={{width:'11%'}}/><col style={{width:'8%'}}/><col style={{width:'22%'}}/><col style={{width:'8%'}}/><col style={{width:'4%'}}/>
                   </colgroup>
                   <thead>
-                    <tr style={{background:'linear-gradient(135deg,#1e293b 0%,#334155 100%)'}}>
+                    <tr style={{background:'linear-gradient(135deg,#1d4ed8 0%,#2563eb 60%,#3b82f6 100%)'}}>
                       {['No','Tanggal','PIC','Kegiatan','Jam','Produk','Tamu Instansi','Sales','Keterangan','Edit By','Action'].map((h,i)=>(
-                        <th key={h} className="px-3 py-3 text-left" style={{borderRight:i<10?"1px solid rgba(255,255,255,0.08)":"none"}}><span className="text-[10px] font-black uppercase" style={{color:"rgba(255,255,255,0.55)",letterSpacing:"0.1em"}}>{h}</span></th>
+                        <th key={h} className="px-3 py-3 text-center" style={{borderRight:i<10?'1px solid rgba(255,255,255,0.15)':'none'}}><span className="text-[10px] font-black uppercase tracking-wider" style={{color:'rgba(255,255,255,0.92)'}}>{h}</span></th>
                       ))}
                     </tr>
                   </thead>
@@ -351,7 +351,7 @@ export default function PiketShowroomPage() {
                         <p className="font-semibold">{rows.length===0?'Belum ada jadwal':'Tidak ada hasil filter'}</p>
                         {rows.length===0&&isAdmin&&<p className="text-xs mt-1">Klik "Atur Jadwal" untuk menambahkan jadwal piket</p>}
                       </td></tr>
-                    ):displayRows.map((row,idx)=>{
+                    ):(()=>{let trCounter=0;return displayRows.map((row,idx)=>{
                       const dc=DAY_COLOR[row.day_of_week];
                       const todayKey=toKey(new Date());
                       const todayRow=row.day_date===todayKey;
@@ -362,9 +362,10 @@ export default function PiketShowroomPage() {
                       const rowKg=kegiatanList.filter(k=>k.piket_id===row.id);
                       const kgToShow=rowKg.length>0?rowKg:[null];
                       const countdownBadge=todayRow?null:diffDays===1?{label:'BESOK',color:'#d97706'}:diffDays>1&&diffDays<=9?{label:`${diffDays} hr lagi`,color:'#64748b'}:null;
+                      const rowStripe=trCounter%2===0;trCounter++;
                       return kgToShow.map((kg,kgIdx)=>(
                         <tr key={`${row.id}-${kgIdx}`} className="transition-all duration-150"
-                          style={{borderBottom:kgIdx===kgToShow.length-1?'1px solid #e2e8f0':'1px solid #f1f5f9',background:todayRow?'rgba(37,99,235,0.05)':isVirtual?'rgba(148,163,184,0.03)':idx%2===0?'rgba(255,255,255,0.98)':'rgba(248,250,252,0.7)'}}>
+                          style={{borderBottom:kgIdx===kgToShow.length-1?'1px solid #e2e8f0':'1px solid #f1f5f9',background:todayRow?'rgba(37,99,235,0.05)':isVirtual?'rgba(148,163,184,0.03)':rowStripe?'rgba(255,255,255,0.98)':'rgba(241,245,249,0.8)'}}>
                           {kgIdx===0&&(
                             <>
                               <td className="px-3 py-3 text-gray-400 text-xs align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #eef2f7',verticalAlign:'middle'}}>{idx+1}</td>
@@ -387,7 +388,7 @@ export default function PiketShowroomPage() {
                                       <div key={team} className="flex items-center gap-1.5">
                                         <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white flex-shrink-0" style={{background:tc.dot}}>{name.charAt(0).toUpperCase()}</div>
                                         <div className="min-w-0">
-                                          <p className="text-xs font-semibold text-slate-800 truncate leading-tight">{name}</p>
+                                          <p className="text-[13px] font-semibold text-slate-800 truncate leading-tight">{name}</p>
                                           <span className="text-[8px] font-bold uppercase" style={{color:tc.text}}>{team}</span>
                                         </div>
                                       </div>
@@ -438,8 +439,8 @@ export default function PiketShowroomPage() {
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #eef2f7'}}>
                             {kg?.jam_mulai?(
                               <div className="flex flex-col gap-0.5">
-                                <div className="flex items-center gap-1"><span className="text-[8px] font-bold text-slate-400 w-10 flex-shrink-0">Mulai</span><span className="text-xs font-bold text-slate-700">{formatTime(kg.jam_mulai)}</span></div>
-                                <div className="flex items-center gap-1"><span className="text-[8px] font-bold text-slate-400 w-10 flex-shrink-0">Selesai</span><span className="text-xs font-bold text-slate-700">{formatTime(kg.jam_selesai)}</span></div>
+                                <div className="flex items-center gap-1"><span className="text-[9px] font-bold text-slate-400 w-10 flex-shrink-0">Mulai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_mulai)}</span></div>
+                                <div className="flex items-center gap-1"><span className="text-[9px] font-bold text-slate-400 w-10 flex-shrink-0">Selesai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_selesai)}</span></div>
                               </div>
                             ):<span className="text-gray-300 text-xs">—</span>}
                           </td>
@@ -447,7 +448,7 @@ export default function PiketShowroomPage() {
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #eef2f7'}}>
                             {kg?.produk&&kg.produk.length>0?(
                               <div className="flex flex-col gap-0.5">
-                                {kg.produk.map(p=><span key={p} className="text-[10px] font-semibold" style={{color:dc.accent}}>{p}</span>)}
+                                {kg.produk.map(p=><span key={p} className="text-[12px] font-semibold" style={{color:dc.accent}}>{p}</span>)}
                               </div>
                             ):<span className="text-gray-300 text-xs">—</span>}
                           </td>
@@ -457,11 +458,11 @@ export default function PiketShowroomPage() {
                           </td>
                           {/* Sales */}
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #eef2f7'}}>
-                            {kg?.nama_sales?(<div className="flex flex-col gap-0.5"><span className="text-[10px] font-bold text-slate-800">{kg.nama_sales}</span>{kg.sales_division&&<span className="text-[9px] text-purple-500 font-semibold">{kg.sales_division}</span>}</div>):<span className="text-gray-300 text-xs">—</span>}
+                            {kg?.nama_sales?(<div className="flex flex-col gap-0.5"><span className="text-[12px] font-bold text-slate-800">{kg.nama_sales}</span>{kg.sales_division&&<span className="text-[11px] text-purple-500 font-semibold">{kg.sales_division}</span>}</div>):<span className="text-gray-300 text-xs">—</span>}
                           </td>
                           {/* Keterangan */}
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #eef2f7'}}>
-                            {kg?.keterangan?<span className="text-xs text-slate-600 leading-snug">{kg.keterangan}</span>:<span className="text-gray-300 text-xs">—</span>}
+                            {kg?.keterangan?<span className="text-[13px] text-slate-600 leading-snug">{kg.keterangan}</span>:<span className="text-gray-300 text-xs">—</span>}
                           </td>
                           {/* Edit By — diambil dari piket_tamu_detail (kg terakhir) */}
                           {kgIdx===0&&(
@@ -492,7 +493,7 @@ export default function PiketShowroomPage() {
                           )}
                         </tr>
                       ));
-                    })}
+                    });})()}
                   </tbody>
                 </table>
                 <div className="flex items-center justify-between px-5 py-2.5" style={{borderTop:'1px solid #e5e7eb'}}>
