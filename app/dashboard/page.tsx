@@ -484,10 +484,13 @@ export default function Dashboard() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
-            <div className="flex items-baseline gap-2">
-              <h1 className="text-xl font-bold text-slate-800 tracking-tight">Work Management Platform</h1>
-              <span className="text-slate-300 font-light text-lg select-none">|</span>
-              <span className="text-sm font-semibold tracking-wide" style={{ color: '#c8861d' }}>PTS Portal</span>
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-xl font-bold text-slate-800 tracking-tight">Work Management Platform</h1>
+                <span className="text-slate-400 font-light text-xl select-none leading-none">|</span>
+                <span className="text-sm font-bold tracking-wide" style={{ color: '#c8861d' }}>PTS Portal</span>
+              </div>
+              <p className="text-slate-500 text-xs font-medium mt-0.5">IndoVisual Professional Tools</p>
             </div>
           </div>
 
