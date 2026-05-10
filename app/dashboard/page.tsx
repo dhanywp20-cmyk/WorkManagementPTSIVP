@@ -55,12 +55,6 @@ export default function Dashboard() {
 
   const allMenuItems: MenuItem[] = [
     {
-      title: 'Piket Showroom', icon: '🏪', key: 'picket-showroom',
-      gradient: 'from-teal-700 via-teal-600 to-cyan-500',
-      description: 'Jadwal piket showroom Team PTS IVP, UMP & MLDS',
-      items: [{ name: 'Piket Showroom', url: '/picket-showroom', icon: '📅', internal: true, embed: true }]
-    },
-    {
       title: 'Reminder Schedule', icon: '🗓️', key: 'reminder-schedule',
       gradient: 'from-cyan-700 via-cyan-600 to-teal-500',
       description: 'Jadwal & reminder pekerjaan team PTS',
@@ -83,6 +77,12 @@ export default function Dashboard() {
       gradient: 'from-rose-700 via-rose-600 to-rose-500',
       description: 'Technical support & issue tracking',
       items: [{ name: 'Ticket Management', url: '/ticketing', icon: '🔧', internal: true, embed: true }]
+    },
+    {
+      title: 'Piket Showroom', icon: '🏪', key: 'picket-showroom',
+      gradient: 'from-teal-700 via-teal-600 to-cyan-500',
+      description: 'Jadwal piket showroom Team PTS IVP, UMP & MLDS',
+      items: [{ name: 'Piket Showroom', url: '/picket-showroom', icon: '📅', internal: true, embed: true }]
     },
     {
       title: 'Daily Report', icon: '📈', key: 'daily-report',
@@ -252,8 +252,8 @@ export default function Dashboard() {
   }, [isAdmin]);
 
   const INTERNAL_KEYS = ['reminder-schedule', 'form-require-project', 'form-bast', 'ticket-troubleshooting', 'picket-showroom'];
-  const PROJECT_KEYS = ['reminder-schedule', 'form-require-project', 'form-bast', 'ticket-troubleshooting', 'picket-showroom'];
-  const INTERNAL_DAILY_KEYS = ['daily-report', 'database-pts', 'unit-movement'];
+  const PROJECT_KEYS = ['reminder-schedule', 'form-require-project', 'form-bast', 'ticket-troubleshooting'];
+  const INTERNAL_DAILY_KEYS = ['picket-showroom', 'daily-report', 'database-pts', 'unit-movement'];
 
   const projectMenuItems = visibleMenuItems.filter(m => PROJECT_KEYS.includes(m.key));
   const internalMenuItems = visibleMenuItems.filter(m => INTERNAL_DAILY_KEYS.includes(m.key));
