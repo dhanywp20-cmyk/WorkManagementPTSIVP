@@ -65,6 +65,7 @@ export interface KegiatanEntry {
   jenis_kegiatan:JenisKegiatan; jam_mulai:string; jam_selesai:string; produk:string[];
   tamu_instansi:string|null; nama_sales:string|null; sales_division:string|null;
   kebutuhan:string[]; keterangan:string|null; created_at:string;
+  updated_at?:string|null; edited_by_name?:string|null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
