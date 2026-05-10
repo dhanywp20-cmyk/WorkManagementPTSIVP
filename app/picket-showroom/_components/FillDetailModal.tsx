@@ -51,7 +51,6 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
     else setEntries(prev=>prev.map((e,x)=>{if(x!==i)return e;const wo=e.produk.filter(v=>v!=='All Product');return{...e,produk:wo.includes(p)?wo.filter(v=>v!==p):[...wo,p]};}));
   };
 
-  // Dapatkan label PTS team dari nama user
   const getPTSTeamLabel=(name:string)=>{
     const u=ptUsers.find(x=>x.full_name===name);
     const tt=u?.team_type||'';
@@ -77,7 +76,6 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
       const fd=ins.find(e=>e.jenis_kegiatan==='Demo Product');
       const editedByName=currentUser?.full_name||null;
 
-      // Update piket_schedules — sertakan edited_by_name selalu jika ada
       const updatePayload: Record<string,any> = {
         tamu_instansi:fd?.tamu_instansi||null,
         kebutuhan:fd?.kebutuhan||[],
@@ -117,20 +115,17 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white" style={{background:dc.grad}}>{idx+1}</div>
                   <span className="text-xs font-bold" style={{color:dc.accent}}>Kegiatan {idx+1}</span>
-                  {entry.jenis_kegiatan&&<span className="text-[9px] font-bold px-2 py-0.5 rounded text-white" style={{background:KEGIATAN_COLORS[entry.jenis_kegiatan]||dc.accent}}>{entry.jenis_kegiatan}</span>}
                 </div>
-                {entries.length>1&&<button onClick={()=>setEntries(p=>p.filter((_,i)=>i!==idx))} className="text-red-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>}
+                {entries.length>1&&<button onClick={()=>setEntries(p=>p.filter((_,i)=>i!==idx))} className="text-xs font-bold px-2 py-1 rounded-lg text-red-600 hover:bg-red-50" style={{border:'1px solid rgba(220,38,38,0.3)'}}>🗑️ Hapus</button>}
               </div>
               <div className="p-4 space-y-4">
-                {/* Jenis Kegiatan */}
                 <div>
-                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">📋 Jenis Kegiatan</label>
+                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">🎯 Jenis Kegiatan</label>
                   <select value={entry.jenis_kegiatan} onChange={e=>upd(idx,{jenis_kegiatan:e.target.value as JenisKegiatan})}
                     className="w-full rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
                     {JENIS_KEGIATAN_LIST.map(j=><option key={j} value={j}>{j}</option>)}
                   </select>
                 </div>
-                {/* Jam */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">🕐 Jam Mulai</label>
@@ -138,32 +133,34 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                       className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}}/>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">🕑 Jam Selesai</label>
+                    <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">🕐 Jam Selesai</label>
                     <input type="time" value={entry.jam_selesai} onChange={e=>upd(idx,{jam_selesai:e.target.value})}
                       className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}}/>
                   </div>
                 </div>
-                {/* Produk — checkbox grid */}
                 <div>
-                  <label className="block text-[10px] font-bold mb-2 tracking-widest uppercase text-slate-400">📦 Produk yang Digunakan</label>
-                  <div className="grid grid-cols-4 gap-2">
+                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">📦 Produk</label>
+                  <div className="grid grid-cols-2 gap-1.5">
                     {PRODUK_LIST.map(p=>{
-                      const isAll=entry.produk.includes('All Product');
-                      const isSel=entry.produk.includes(p);
-                      const isDis=(p==='All Product'&&entry.produk.length>0&&!isAll)||(p!=='All Product'&&isAll);
+                      const chk=entry.produk.includes(p);
                       return(
-                        <button key={p} type="button" onClick={()=>!isDis&&toggleP(idx,p)} disabled={isDis}
-                          className="flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-left transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                          style={isSel?{borderColor:dc.accent,background:`${dc.accent}12`,color:dc.accent}:{borderColor:'rgba(0,0,0,0.1)',background:'rgba(255,255,255,0.6)',color:'#64748b'}}>
-                          <div className="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                            style={isSel?{borderColor:dc.accent,background:dc.accent}:{borderColor:'#d1d5db',background:'white'}}>
-                            {isSel&&<svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg>}
+                        <button key={p} type="button" onClick={()=>toggleP(idx,p)}
+                          className="flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-left transition-all"
+                          style={chk?{borderColor:dc.accent,background:`${dc.accent}12`,color:dc.accent}:{borderColor:'rgba(0,0,0,0.1)',background:'rgba(255,255,255,0.5)',color:'#64748b'}}>
+                          <div className="w-3.5 h-3.5 rounded border-2 flex items-center justify-center flex-shrink-0"
+                            style={chk?{borderColor:dc.accent,background:dc.accent}:{borderColor:'#d1d5db',background:'white'}}>
+                            {chk&&<svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg>}
                           </div>
                           <span className="text-xs font-semibold leading-tight">{p}</span>
                         </button>
                       );
                     })}
                   </div>
+                  {entry.produk.length>0&&(
+                    <div className="mt-2 p-2.5 rounded-xl flex flex-wrap gap-1.5" style={{background:'rgba(0,0,0,0.03)',border:'1px solid rgba(0,0,0,0.08)'}}>
+                      {entry.produk.map(p=><span key={p} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{background:dc.grad}}>{p}<button onClick={()=>toggleP(idx,p)} className="ml-0.5 opacity-80">✕</button></span>)}
+                    </div>
+                  )}
                 </div>
                 {/* Demo Product fields */}
                 {entry.jenis_kegiatan==='Demo Product'&&(
@@ -234,7 +231,6 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                               {ptUsers.filter(u=>u.team_type==='Team PTS MLDS').map(u=><option key={u.id} value={u.full_name}>{u.full_name}</option>)}
                             </optgroup>
                           </select>
-                          {/* Badge PTS team setelah pilih */}
                           {entry.team_rnd&&(()=>{
                             const teamLabel=getPTSTeamLabel(entry.team_rnd);
                             const tc=teamLabel?TEAM_LABEL[teamLabel]:null;
