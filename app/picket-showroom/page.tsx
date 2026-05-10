@@ -331,11 +331,11 @@ export default function PiketShowroomPage() {
               <div className="flex justify-center py-16"><div className="flex flex-col items-center gap-3"><div className="w-8 h-8 rounded-full border-2 border-t-red-600 border-red-200 animate-spin"/><p className="text-sm text-slate-500">Memuat jadwal...</p></div></div>
             ):(
               <div className="overflow-x-auto">
-                {/* ── TABLE: kolom Kebutuhan dihapus, Kegiatan sekarang tampilkan kebutuhan di bawahnya ── */}
+                {/* ── TABLE ── */}
                 <table className="w-full text-sm border-collapse" style={{minWidth:'1050px'}}>
                   <colgroup>
-                    <col style={{width:'3%'}}/><col style={{width:'7%'}}/><col style={{width:'10%'}}/><col style={{width:'13%'}}/><col style={{width:'7%'}}/><col style={{width:'7%'}}/>
-                    <col style={{width:'11%'}}/><col style={{width:'8%'}}/><col style={{width:'16%'}}/><col style={{width:'8%'}}/><col style={{width:'56px'}}/>
+                    <col style={{width:'3%'}}/><col style={{width:'9%'}}/><col style={{width:'10%'}}/><col style={{width:'9%'}}/><col style={{width:'7%'}}/><col style={{width:'9%'}}/>
+                    <col style={{width:'11%'}}/><col style={{width:'8%'}}/><col style={{width:'22%'}}/><col style={{width:'8%'}}/><col style={{width:'4%'}}/>
                   </colgroup>
                   <thead>
                     <tr style={{background:'rgba(248,250,252,0.9)',borderBottom:'2px solid #e5e7eb'}}>
