@@ -10,12 +10,14 @@ import {
 interface KFEntry {
   id?:string; jenis_kegiatan:JenisKegiatan; jam_mulai:string; jam_selesai:string; produk:string[];
   tamu_instansi:string; nama_sales:string; sales_division:string; kebutuhan:string[]; keterangan:string;
+  team_rnd:string;
 }
-const emptyKF=():KFEntry=>({jenis_kegiatan:'Demo Product',jam_mulai:'09:00',jam_selesai:'10:00',produk:[],tamu_instansi:'',nama_sales:'',sales_division:'',kebutuhan:[],keterangan:''});
+const emptyKF=():KFEntry=>({jenis_kegiatan:'Demo Product',jam_mulai:'09:00',jam_selesai:'10:00',produk:[],tamu_instansi:'',nama_sales:'',sales_division:'',kebutuhan:[],keterangan:'',team_rnd:''});
 
-export function FillDetailModal({row,onClose,onSaved}:{row:PiketRow;onClose:()=>void;onSaved:()=>void}) {
+export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;onClose:()=>void;onSaved:()=>void;currentUser?:any}) {
   const [entries,setEntries]=useState<KFEntry[]>([emptyKF()]);
   const [loadingE,setLoadingE]=useState(true);
+  const [ptUsers,setPtUsers]=useState<{id:string;full_name:string}[]>([]);
   const [saving,setSaving]=useState(false);
   const [toast,setToast]=useState<{type:'success'|'error';msg:string}|null>(null);
   const dc=DAY_COLOR[row.day_of_week];
@@ -24,15 +26,20 @@ export function FillDetailModal({row,onClose,onSaved}:{row:PiketRow;onClose:()=>
   useEffect(()=>{
     (async()=>{
       setLoadingE(true);
-      const{data}=await supabase.from('piket_tamu_detail').select('*').eq('piket_id',row.id).order('created_at');
-      if(data&&data.length>0){
-        setEntries((data as KegiatanEntry[]).map(d=>({
+      const[detailRes,usersRes]=await Promise.all([
+        supabase.from('piket_tamu_detail').select('*').eq('piket_id',row.id).order('created_at'),
+        supabase.from('users').select('id,full_name').in('team_type',['Team PTS','Team PTS UMP','Team PTS MLDS']).order('full_name'),
+      ]);
+      if(detailRes.data&&detailRes.data.length>0){
+        setEntries((detailRes.data as KegiatanEntry[]).map(d=>({
           id:d.id,jenis_kegiatan:d.jenis_kegiatan||'Demo Product',
           jam_mulai:d.jam_mulai||'09:00',jam_selesai:d.jam_selesai||'10:00',produk:d.produk||[],
           tamu_instansi:d.tamu_instansi||'',nama_sales:d.nama_sales||'',sales_division:d.sales_division||'',
           kebutuhan:d.kebutuhan||[],keterangan:d.keterangan||'',
+          team_rnd:(d as any).team_rnd||'',
         })));
       }
+      if(usersRes.data)setPtUsers(usersRes.data as {id:string;full_name:string}[]);
       setLoadingE(false);
     })();
   },[row.id]);
@@ -56,11 +63,18 @@ export function FillDetailModal({row,onClose,onSaved}:{row:PiketRow;onClose:()=>
         sales_division:e.jenis_kegiatan==='Demo Product'?(e.sales_division||null):null,
         kebutuhan:e.jenis_kegiatan==='Demo Product'?e.kebutuhan:[],
         keterangan:e.jenis_kegiatan!=='Demo Product'?(e.keterangan||null):null,
+        team_rnd:e.jenis_kegiatan==='RnD'?(e.team_rnd||null):null,
         created_at:new Date().toISOString(),
       }));
       if(ins.length>0){const{error}=await supabase.from('piket_tamu_detail').insert(ins);if(error)throw error;}
       const fd=ins.find(e=>e.jenis_kegiatan==='Demo Product');
-      await supabase.from('piket_schedules').update({tamu_instansi:fd?.tamu_instansi||null,kebutuhan:fd?.kebutuhan||[],updated_at:new Date().toISOString()}).eq('id',row.id);
+      const editedByName=currentUser?.full_name||null;
+      await supabase.from('piket_schedules').update({
+        tamu_instansi:fd?.tamu_instansi||null,
+        kebutuhan:fd?.kebutuhan||[],
+        updated_at:new Date().toISOString(),
+        ...(editedByName?{edited_by_name:editedByName}:{}),
+      }).eq('id',row.id);
       notify('success','Data tersimpan!');
       setTimeout(()=>{onSaved();onClose();},700);
     }catch(e:any){notify('error','Gagal: '+e.message);}
@@ -189,11 +203,23 @@ export function FillDetailModal({row,onClose,onSaved}:{row:PiketRow;onClose:()=>
                 )}
                 {/* Non-demo */}
                 {entry.jenis_kegiatan!=='Demo Product'&&(
-                  <div>
-                    <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">📝 Keterangan</label>
-                    <textarea value={entry.keterangan} onChange={e=>upd(idx,{keterangan:e.target.value})} rows={3}
-                      className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none"
-                      style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}} placeholder={`Keterangan ${entry.jenis_kegiatan}...`}/>
+                  <div className="space-y-3">
+                    {entry.jenis_kegiatan==='RnD'&&(
+                      <div>
+                        <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">👥 Team yang RnD</label>
+                        <select value={entry.team_rnd} onChange={e=>upd(idx,{team_rnd:e.target.value})}
+                          className="w-full rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
+                          <option value="">— Pilih Team —</option>
+                          {ptUsers.map(u=><option key={u.id} value={u.full_name}>{u.full_name}</option>)}
+                        </select>
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">📝 Keterangan</label>
+                      <textarea value={entry.keterangan} onChange={e=>upd(idx,{keterangan:e.target.value})} rows={3}
+                        className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none"
+                        style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}} placeholder={`Keterangan ${entry.jenis_kegiatan}...`}/>
+                    </div>
                   </div>
                 )}
               </div>
