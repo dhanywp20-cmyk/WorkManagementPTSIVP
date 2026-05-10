@@ -351,7 +351,7 @@ export default function PiketShowroomPage() {
                         <p className="font-semibold">{rows.length===0?'Belum ada jadwal':'Tidak ada hasil filter'}</p>
                         {rows.length===0&&isAdmin&&<p className="text-xs mt-1">Klik "Atur Jadwal" untuk menambahkan jadwal piket</p>}
                       </td></tr>
-                    ):(()=>{let trCounter=0;return displayRows.map((row,idx)=>{
+                    ):displayRows.map((row,idx)=>{
                       const dc=DAY_COLOR[row.day_of_week];
                       const todayKey=toKey(new Date());
                       const todayRow=row.day_date===todayKey;
@@ -362,13 +362,13 @@ export default function PiketShowroomPage() {
                       const rowKg=kegiatanList.filter(k=>k.piket_id===row.id);
                       const kgToShow=rowKg.length>0?rowKg:[null];
                       const countdownBadge=todayRow?null:diffDays===1?{label:'BESOK',color:'#d97706'}:diffDays>1&&diffDays<=9?{label:`${diffDays} hr lagi`,color:'#64748b'}:null;
-                      return kgToShow.map((kg,kgIdx)=>{const rowStripe=trCounter%2===0;trCounter++;return(
+                      return kgToShow.map((kg,kgIdx)=>(
                         <tr key={`${row.id}-${kgIdx}`} className="transition-all duration-150"
-                          style={{borderBottom:kgIdx===kgToShow.length-1?'1px solid #e2e8f0':'1px solid #f1f5f9',background:todayRow?'rgba(37,99,235,0.05)':isVirtual?'rgba(148,163,184,0.03)':rowStripe?'rgba(255,255,255,0.97)':'rgba(241,245,249,0.85)'}}>
+                          style={{borderBottom:kgIdx===kgToShow.length-1?'2px solid #cbd5e1':'1px solid #e2e8f0',background:todayRow?'rgba(37,99,235,0.06)':isVirtual?'rgba(148,163,184,0.04)':idx%2===0?'rgba(255,255,255,1)':'rgba(226,232,240,0.45)'}}>
                           {kgIdx===0&&(
                             <>
-                              <td className="px-3 py-3 text-gray-400 text-xs align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #eef2f7',verticalAlign:'middle'}}>{idx+1}</td>
-                              <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #eef2f7',verticalAlign:'middle'}}>
+                              <td className="px-3 py-3 text-gray-400 text-xs align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #cbd5e1',verticalAlign:'middle'}}>{idx+1}</td>
+                              <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #cbd5e1',verticalAlign:'middle'}}>
                                 <div className="flex flex-col" style={{borderLeft:`3px solid ${dc.accent}`,paddingLeft:'6px'}}>
                                   <span className="text-base font-black leading-tight" style={{color:dc.accent}}>{new Date(row.day_date+'T00:00:00').getDate()}</span>
                                   <span className="text-[9px] font-bold" style={{color:dc.accent}}>{new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{month:'short',year:'2-digit'})}</span>
@@ -378,7 +378,7 @@ export default function PiketShowroomPage() {
                                 </div>
                               </td>
                               {/* PIC — tambah keterangan tim */}
-                              <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #eef2f7',verticalAlign:'middle'}}>
+                              <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #cbd5e1',verticalAlign:'middle'}}>
                                 <div className="space-y-1.5">
                                   {([['pic_ivp_name','PTS IVP'],['pic_ump_name','PTS UMP'],['pic_mlds_name','PTS MLDS']] as [keyof PiketRow,string][]).map(([f,team])=>{
                                     const name=row[f] as string|null;if(!name)return null;
@@ -399,7 +399,7 @@ export default function PiketShowroomPage() {
                             </>
                           )}
                           {/* Kegiatan + Kebutuhan (di bawah jenis kegiatan) */}
-                          <td className="px-3 py-2.5 align-middle" style={{borderRight:'1px solid #eef2f7'}}>
+                          <td className="px-3 py-2.5 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?(
                               <div className="flex flex-col gap-1">
                                 <span className="text-[10px] font-bold border-b-2 pb-0.5 w-fit"
@@ -435,7 +435,7 @@ export default function PiketShowroomPage() {
                             ):<span className="text-gray-300 text-xs">—</span>}
                           </td>
                           {/* Jam */}
-                          <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #eef2f7'}}>
+                          <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?.jam_mulai?(
                               <div className="flex flex-col gap-0.5">
                                 <div className="flex items-center gap-1"><span className="text-[9px] font-bold text-slate-400 w-10 flex-shrink-0">Mulai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_mulai)}</span></div>
@@ -444,7 +444,7 @@ export default function PiketShowroomPage() {
                             ):<span className="text-gray-300 text-xs">—</span>}
                           </td>
                           {/* Produk */}
-                          <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #eef2f7'}}>
+                          <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?.produk&&kg.produk.length>0?(
                               <div className="flex flex-col gap-0.5">
                                 {kg.produk.map(p=><span key={p} className="text-[12px] font-semibold" style={{color:dc.accent}}>{p}</span>)}
@@ -452,20 +452,20 @@ export default function PiketShowroomPage() {
                             ):<span className="text-gray-300 text-xs">—</span>}
                           </td>
                           {/* Tamu */}
-                          <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #eef2f7'}}>
+                          <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?.tamu_instansi?(<button onClick={()=>setFilterInstansi(filterInstansi===kg.tamu_instansi?null:kg.tamu_instansi!)} className="flex items-center gap-1 hover:opacity-80 text-left"><span>🏢</span><span className="text-xs font-semibold text-slate-700 underline decoration-dotted">{kg.tamu_instansi}</span></button>):<span className="text-gray-300 text-xs">—</span>}
                           </td>
                           {/* Sales */}
-                          <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #eef2f7'}}>
+                          <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?.nama_sales?(<div className="flex flex-col gap-0.5"><span className="text-[12px] font-bold text-slate-800">{kg.nama_sales}</span>{kg.sales_division&&<span className="text-[11px] text-purple-500 font-semibold">{kg.sales_division}</span>}</div>):<span className="text-gray-300 text-xs">—</span>}
                           </td>
                           {/* Keterangan */}
-                          <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #eef2f7'}}>
+                          <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?.keterangan?<span className="text-[13px] text-slate-600 leading-snug">{kg.keterangan}</span>:<span className="text-gray-300 text-xs">—</span>}
                           </td>
                           {/* Edit By — diambil dari piket_tamu_detail (kg terakhir) */}
                           {kgIdx===0&&(
-                            <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #eef2f7',verticalAlign:'middle'}}>
+                            <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #cbd5e1',verticalAlign:'middle'}}>
                               {(()=>{
                                 // Ambil edited_by_name dari kegiatan yang paling terakhir di-update
                                 const lastEdited = (kgToShow as any[])
@@ -491,9 +491,8 @@ export default function PiketShowroomPage() {
                             </td>
                           )}
                         </tr>
-                      );
-                      });
-                    });})()}
+                      ));
+                    })}
                   </tbody>
                 </table>
                 <div className="flex items-center justify-between px-5 py-2.5" style={{borderTop:'1px solid #e5e7eb'}}>
