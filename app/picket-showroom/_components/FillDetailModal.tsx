@@ -61,6 +61,8 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
     setSaving(true);
     try{
       await supabase.from('piket_tamu_detail').delete().eq('piket_id',row.id);
+      const editedByName=currentUser?.full_name||null;
+      const now=new Date().toISOString();
       const ins=entries.filter(e=>e.jenis_kegiatan).map(e=>({
         piket_id:row.id,jenis_kegiatan:e.jenis_kegiatan,
         jam_mulai:e.jam_mulai||null,jam_selesai:e.jam_selesai||null,produk:e.produk,
@@ -70,16 +72,17 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
         kebutuhan:e.jenis_kegiatan==='Demo Product'?e.kebutuhan:[],
         keterangan:e.jenis_kegiatan!=='Demo Product'?(e.keterangan||null):null,
         team_rnd:e.jenis_kegiatan==='RnD'?(e.team_rnd||null):null,
-        created_at:new Date().toISOString(),
+        created_at:now,
+        updated_at:now,
+        edited_by_name:editedByName,
       }));
       if(ins.length>0){const{error}=await supabase.from('piket_tamu_detail').insert(ins);if(error)throw error;}
       const fd=ins.find(e=>e.jenis_kegiatan==='Demo Product');
-      const editedByName=currentUser?.full_name||null;
 
       const updatePayload: Record<string,any> = {
         tamu_instansi:fd?.tamu_instansi||null,
         kebutuhan:fd?.kebutuhan||[],
-        updated_at:new Date().toISOString(),
+        updated_at:now,
       };
       if(editedByName) updatePayload.edited_by_name=editedByName;
 
