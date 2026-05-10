@@ -16,6 +16,8 @@ import { ScheduleModal } from './_components/ScheduleModal';
 import { ViewDetailModal } from './_components/ViewDetailModal';
 import { exportToExcel } from './_components/excel-export';
 
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
 export default function PiketShowroomPage() {
   const [currentUser,setCurrentUser]=useState<any>(null);
   const [weekStart,setWeekStart]=useState<Date>(()=>getMonday(new Date()));
@@ -69,6 +71,7 @@ export default function PiketShowroomPage() {
   const wLabel=fmtW(weekStart);
   const wLabel2=fmtW(addDays(weekStart,7));
 
+  // Generate virtual rows dari rolling untuk minggu yang belum ada di DB
   const effectiveRows = useMemo(()=>{
     const existingKeys = new Set(rows.map(r=>`${r.week_start}__${r.day_of_week}`));
     const virtual: PiketRow[] = [];
@@ -101,6 +104,7 @@ export default function PiketShowroomPage() {
     return [...rows, ...virtual];
   }, [rows, allRows, weekStart, ptUsers]);
 
+  // Auto-save virtual row ke DB lalu buka FillDetailModal
   const handleFillVirtual = useCallback(async(row: PiketRow)=>{
     const{error}=await supabase.from('piket_schedules').upsert({
       week_start: row.week_start,
@@ -122,23 +126,11 @@ export default function PiketShowroomPage() {
   },[fetchData]);
 
   const handleDeleteRow = useCallback(async(row: PiketRow)=>{
-    if(!confirm(`Hapus jadwal ${row.day_of_week}? (Data kegiatan juga akan dihapus)`)) return;
+    if(!confirm(`Hapus jadwal ${row.day_of_week}? Data kegiatan juga akan dihapus.`)) return;
     await supabase.from('piket_tamu_detail').delete().eq('piket_id',row.id);
     await supabase.from('piket_schedules').delete().eq('id',row.id);
     fetchData();
   },[fetchData]);
-
-  const displayRows = effectiveRows.filter(row=>{
-    const matchSearch = !search || row.pic_ivp_name?.toLowerCase().includes(search.toLowerCase()) || row.pic_ump_name?.toLowerCase().includes(search.toLowerCase()) || row.pic_mlds_name?.toLowerCase().includes(search.toLowerCase());
-    const matchDay = !filterDay || row.day_of_week === filterDay;
-    const kgs = kegiatanList.filter(k=>k.piket_id===row.id);
-    const matchTamu = !filterTamu || kgs.some(k=>k.jenis_kegiatan==='Demo Product'&&k.tamu_instansi);
-    const matchKebutuhan = !filterKebutuhan || kgs.some(k=>k.kebutuhan?.includes(filterKebutuhan));
-    const matchInstansi = !filterInstansi || kgs.some(k=>k.tamu_instansi===filterInstansi);
-    const matchDivision = !filterDivision || kgs.some(k=>k.sales_division===filterDivision);
-    const matchKegiatan = !filterKegiatan || kgs.some(k=>k.jenis_kegiatan===filterKegiatan);
-    return matchSearch && matchDay && matchTamu && matchKebutuhan && matchInstansi && matchDivision && matchKegiatan;
-  });
 
   const formatTime = (timeStr:string) => {
     if(!timeStr) return '';
@@ -146,155 +138,358 @@ export default function PiketShowroomPage() {
     return `${h}:${m}`;
   };
 
+  const displayRows = effectiveRows.filter(row=>{
+    const d=new Date(row.day_date+'T00:00:00');
+    if(d.getDay()===0||d.getDay()===6)return false;
+    if(filterDay&&row.day_of_week!==filterDay)return false;
+    const rowKg=kegiatanList.filter(k=>k.piket_id===row.id);
+    if(filterTamu&&!rowKg.some(k=>k.tamu_instansi))return false;
+    if(filterKebutuhan&&!rowKg.some(k=>k.kebutuhan?.includes(filterKebutuhan)))return false;
+    if(filterInstansi&&!rowKg.some(k=>k.tamu_instansi===filterInstansi))return false;
+    if(filterDivision&&!rowKg.some(k=>k.sales_division===filterDivision))return false;
+    if(filterKegiatan&&!rowKg.some(k=>k.jenis_kegiatan===filterKegiatan))return false;
+    if(search){
+      const q=search.toLowerCase();
+      const mp=!!(row.pic_ivp_name?.toLowerCase().includes(q)||row.pic_ump_name?.toLowerCase().includes(q)||row.pic_mlds_name?.toLowerCase().includes(q)||row.day_of_week.toLowerCase().includes(q));
+      const mk=rowKg.some(k=>k.tamu_instansi?.toLowerCase().includes(q)||k.nama_sales?.toLowerCase().includes(q)||k.kebutuhan?.some(x=>x.toLowerCase().includes(q))||k.keterangan?.toLowerCase().includes(q)||k.jenis_kegiatan?.toLowerCase().includes(q));
+      return mp||mk;
+    }
+    return true;
+  });
+
+  const piketDateMapPie:Record<string,string>={};
+  allRows.forEach(r=>{piketDateMapPie[r.id]=r.day_date;});
+  const filteredKgPie=kegiatanList.filter(k=>{
+    const d=piketDateMapPie[k.piket_id];
+    if(!d)return false;
+    if(d.slice(0,4)!==String(summaryYear))return false;
+    if(summaryMonth!==null&&parseInt(d.slice(5,7),10)!==summaryMonth)return false;
+    return true;
+  });
+  const kPieAll=Object.entries(filteredKgPie.reduce((acc,k)=>{(k.kebutuhan||[]).forEach(x=>{acc[x]=(acc[x]||0)+1;});return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
+  const divPieAll=Object.entries(filteredKgPie.reduce((acc,k)=>{if(k.sales_division)acc[k.sales_division]=(acc[k.sales_division]||0)+1;return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
+  const kgTypePie=JENIS_KEGIATAN_LIST.map(j=>({label:j,value:filteredKgPie.filter(k=>k.jenis_kegiatan===j).length,color:KEGIATAN_COLORS[j]})).filter(d=>d.value>0);
+  const instansiPie=Object.entries(filteredKgPie.filter(k=>k.tamu_instansi).reduce((acc,k)=>{const key=k.tamu_instansi!;acc[key]=(acc[key]||0)+1;return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
+  const produkPie=Object.entries(filteredKgPie.reduce((acc,k)=>{(k.produk||[]).forEach(p=>{acc[p]=(acc[p]||0)+1;});return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
+
+
   return(
-    <div className="min-h-screen" style={{background:'linear-gradient(135deg,rgba(15,23,42,0.95),rgba(30,41,59,0.95))'}}>
-      <div className="max-w-7xl mx-auto px-3 py-6 space-y-4">
-        {/* Header */}
-        <div className="rounded-2xl px-6 py-5 flex flex-col gap-3" style={{background:'rgba(255,255,255,0.95)',boxShadow:'0 10px 40px rgba(0,0,0,0.1)'}}>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
-                <h1 className="text-2xl font-black" style={{background:'linear-gradient(135deg,#dc2626,#b91c1c)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>📅 Jadwal Piket Showroom</h1>
-                <p className="text-xs text-gray-500 mt-1">PTS Showroom Management System</p>
+    <div className="min-h-screen flex flex-col relative" style={{backgroundImage:`url('/IVP_Background.png')`,backgroundSize:'cover',backgroundPosition:'center',backgroundAttachment:'fixed'}}>
+      <div className="absolute inset-0 pointer-events-none" style={{background:'rgba(255,255,255,0.08)'}}/>
+      {loading&&rows.length===0&&(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center" style={{backgroundImage:`url('/IVP_Background.png')`,backgroundSize:'cover'}}>
+          <div className="absolute inset-0" style={{background:'rgba(255,255,255,0.15)',backdropFilter:'blur(2px)'}}/>
+          <div className="relative flex flex-col items-center gap-4 px-10 py-8 rounded-3xl" style={{background:'rgba(255,255,255,0.92)',backdropFilter:'blur(20px)',boxShadow:'0 8px 40px rgba(0,0,0,0.18)'}}>
+            <svg className="w-16 h-16 animate-spin" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="26" stroke="#f1f5f9" strokeWidth="6"/><path d="M32 6 A26 26 0 0 1 58 32" stroke="#dc2626" strokeWidth="6" strokeLinecap="round"/></svg>
+            <p className="text-sm font-bold text-slate-700">Loading...</p>
+          </div>
+        </div>
+      )}
+
+      <div className="relative z-10 flex flex-col min-h-screen">
+        {/* ── HEADER ── */}
+        <header className="sticky top-0 z-50" style={{background:'rgba(255,255,255,0.9)',borderBottom:'3px solid #dc2626',backdropFilter:'blur(16px)'}}>
+          <div className="max-w-[1600px] mx-auto px-6 py-3.5 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:'linear-gradient(135deg,#dc2626,#991b1b)',boxShadow:'0 3px 12px rgba(220,38,38,0.4)'}}>
+                <span className="text-lg">🏪</span>
               </div>
-              <div className="flex items-center gap-2">
-                {isAdmin&&<button onClick={()=>setShowSchedule(true)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs text-white" style={{background:'linear-gradient(135deg,#2563eb,#1e40af)',boxShadow:'0 4px 12px rgba(37,99,235,0.3)'}}>📋 Atur Jadwal</button>}
-                <button onClick={()=>setShowCalendar(true)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs" style={{background:'rgba(100,116,139,0.1)',color:'#475569',border:'1px solid rgba(100,116,139,0.25)'}}>📆 Kalender</button>
-                <button onClick={()=>exportToExcel(displayRows,kegiatanList)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs" style={{background:'rgba(34,197,94,0.1)',color:'#15803d',border:'1px solid rgba(34,197,94,0.3)'}}>📊 Export</button>
+              <div>
+                <h1 className="text-base font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">Piket Showroom</h1>
+                <p className="text-[10px] text-slate-500 font-medium">IndoVisual Presentama · Jadwal Piket Tim PTS</p>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <button onClick={()=>exportToExcel(allRows,kegiatanList)}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
+                style={{background:'linear-gradient(135deg,#059669,#047857)',boxShadow:'0 4px 14px rgba(5,150,105,0.3)'}}>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Export Report
+              </button>
+              {isAdmin&&(
+                <button onClick={()=>setShowSchedule(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
+                  style={{background:'linear-gradient(135deg,#dc2626,#b91c1c)',boxShadow:'0 4px 14px rgba(220,38,38,0.4)'}}>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
+                  Atur Jadwal
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        </header>
 
-        <div className="rounded-2xl px-6 py-4 grid grid-cols-1 lg:grid-cols-4 gap-4" style={{background:'rgba(255,255,255,0.97)'}}>
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Cari PIC</label>
-            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Ketik nama..." className="w-full px-3 py-2.5 text-sm rounded-lg outline-none" style={{border:'1px solid rgba(0,0,0,0.12)',background:'rgba(255,255,255,0.8)'}}/>
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Hari</label>
-            <select value={filterDay} onChange={e=>setFilterDay(e.target.value as any)} className="w-full px-3 py-2.5 text-sm rounded-lg outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
-              <option value="">— Semua Hari —</option>
-              {DAYS_OF_WEEK.map(d=><option key={d} value={d}>{d}</option>)}
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Filter</label>
-            <select value={filterKegiatan||''} onChange={e=>setFilterKegiatan(e.target.value||null)} className="w-full px-3 py-2.5 text-sm rounded-lg outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
-              <option value="">— Semua Kegiatan —</option>
-              {JENIS_KEGIATAN_LIST.map(j=><option key={j} value={j}>{j}</option>)}
-            </select>
-          </div>
-          <div className="flex items-end gap-2">
-            <button onClick={()=>{setSearch('');setFilterDay('');setFilterKegiatan(null);}} className="flex-1 px-3 py-2.5 rounded-lg font-bold text-xs text-gray-600" style={{background:'rgba(100,116,139,0.1)',border:'1px solid rgba(100,116,139,0.25)'}}>🔄 Reset</button>
-          </div>
-        </div>
+        <div className="flex-1 max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
+          <TamuSummaryCards allRows={allRows} kegiatanList={kegiatanList} selectedYear={summaryYear} selectedMonth={summaryMonth} onYearChange={setSummaryYear} onMonthChange={setSummaryMonth}/>
 
-        {/* Summary Cards */}
-        <TamuSummaryCards allRows={allRows} kegiatanList={kegiatanList} selectedYear={summaryYear} selectedMonth={summaryMonth} onYearChange={setSummaryYear} onMonthChange={setSummaryMonth}/>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <MiniPieChart data={instansiPie} title="Tamu per Instansi" icon="🏢" activeFilter={filterInstansi} onSliceClick={l=>setFilterInstansi(filterInstansi===l?null:l)}/>
+            <MiniPieChart data={kgTypePie} title="Jenis Kegiatan" icon="📋" activeFilter={filterKegiatan} onSliceClick={l=>setFilterKegiatan(filterKegiatan===l?null:l)}/>
+            <MiniPieChart data={produkPie} title="Penggunaan Produk" icon="📦" activeFilter={null} onSliceClick={()=>{}}/>
+            <MiniPieChart data={kPieAll} title="Kebutuhan Terbanyak" icon="🎯" activeFilter={filterKebutuhan} onSliceClick={l=>setFilterKebutuhan(filterKebutuhan===l?null:l)}/>
+            <MiniPieChart data={divPieAll} title="Division Sales" icon="🏷️" activeFilter={filterDivision} onSliceClick={l=>setFilterDivision(filterDivision===l?null:l)}/>
+          </div>
 
-        {/* Pie Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {(()=>{
-            const kegiatan_map: Record<string,number> = {};
-            const produk_map: Record<string,number> = {};
-            const kebutuhan_map: Record<string,number> = {};
-            displayRows.forEach(r=>{
-              const kgs = kegiatanList.filter(k=>k.piket_id===r.id);
-              kgs.forEach(kg=>{
-                kegiatan_map[kg.jenis_kegiatan] = (kegiatan_map[kg.jenis_kegiatan]||0)+1;
-                (kg.produk||[]).forEach(p=>{produk_map[p]=(produk_map[p]||0)+1;});
-                (kg.kebutuhan||[]).forEach(k=>{kebutuhan_map[k]=(kebutuhan_map[k]||0)+1;});
-              });
-            });
-            const kegiatanData = Object.entries(kegiatan_map).map(([k,v],i)=>({label:k,value:v,color:KEGIATAN_COLORS[k]||PIE_COLORS[i]}));
-            const produkData = Object.entries(produk_map).map(([k,v],i)=>({label:k,value:v,color:PIE_COLORS[i]}));
-            const kebutuhanData = Object.entries(kebutuhan_map).map(([k,v],i)=>({label:k,value:v,color:PIE_COLORS[i]})).slice(0,6);
-            return(
-              <>
-                <MiniPieChart data={kegiatanData} title="Kegiatan" icon="📋" activeFilter={filterKegiatan} onSliceClick={setFilterKegiatan}/>
-                <MiniPieChart data={produkData} title="Produk" icon="📦" activeFilter={filterKegiatan} unitSuffix="×"/>
-                <MiniPieChart data={kebutuhanData} title="Top 6 Kebutuhan" icon="🎯" activeFilter={filterKebutuhan} onSliceClick={setFilterKebutuhan} unitSuffix="×"/>
-              </>
-            );
-          })()}
-        </div>
+          {/* ── TABLE (full width) ── */}
+          <div className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(200,200,200,0.6)'}}>
+            <div className="px-5 py-3.5 border-b border-gray-200 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Schedule Piket</span>
+                  <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{displayRows.length}</span>
+                  {/* Week nav — 2 minggu */}
+                  <div className="flex items-center gap-1">
+                    <button onClick={()=>setWeekStart(d=>addDays(d,-14))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">‹‹</button>
+                    <button onClick={()=>setWeekStart(d=>addDays(d,-7))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-base text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">‹</button>
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{background:'rgba(220,38,38,0.07)',border:'1px solid rgba(220,38,38,0.2)'}}>
+                      <div className="flex flex-col">
+                        <span className="text-[11px] font-bold text-red-700 leading-tight">{wLabel}</span>
+                        <span className="text-[10px] text-red-400 leading-tight">{wLabel2}</span>
+                      </div>
+                      {!isCurrWeek&&<button onClick={()=>setWeekStart(getMonday(new Date()))} className="text-[9px] font-bold px-2 py-1 rounded-lg text-white flex-shrink-0" style={{background:'#dc2626'}}>Ini</button>}
+                    </div>
+                    <button onClick={()=>setWeekStart(d=>addDays(d,7))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-base text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">›</button>
+                    <button onClick={()=>setWeekStart(d=>addDays(d,14))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">››</button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={()=>setShowCalendar(true)}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border"
+                    style={{background:'rgba(37,99,235,0.06)',borderColor:'rgba(37,99,235,0.25)',color:'#2563eb'}}>
+                    📅 Show Calendar
+                  </button>
+                  {(search||filterDay||filterTamu||filterKebutuhan||filterInstansi||filterDivision||filterKegiatan)&&(
+                    <button onClick={()=>{setSearch('');setFilterDay('');setFilterTamu(false);setFilterKebutuhan(null);setFilterInstansi(null);setFilterDivision(null);setFilterKegiatan(null);}}
+                      className="px-3 py-2 rounded-xl text-xs font-semibold" style={{background:'rgba(220,38,38,0.08)',border:'1px solid rgba(220,38,38,0.2)',color:'#dc2626'}}>
+                      ✕ Reset Filter
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 items-center">
+                <div className="relative flex-1 min-w-[160px]">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                  <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari nama, instansi, kegiatan..."
+                    className="w-full pl-9 pr-4 py-2 rounded-xl text-sm outline-none" style={{background:'rgba(248,250,252,0.9)',border:'1px solid rgba(0,0,0,0.1)'}}/>
+                </div>
+                <select value={filterDay} onChange={e=>setFilterDay(e.target.value as any)} className="px-3 py-2 rounded-xl text-xs font-semibold outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.1)'}}>
+                  <option value="">Semua Hari</option>{DAYS_OF_WEEK.map(d=><option key={d} value={d}>{d}</option>)}
+                </select>
+                <select value={filterKegiatan||''} onChange={e=>setFilterKegiatan(e.target.value||null)} className="px-3 py-2 rounded-xl text-xs font-semibold outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.1)'}}>
+                  <option value="">Semua Kegiatan</option>{JENIS_KEGIATAN_LIST.map(j=><option key={j} value={j}>{j}</option>)}
+                </select>
+                <button onClick={()=>setFilterTamu(f=>!f)} className="px-3 py-2 rounded-xl text-xs font-semibold border"
+                  style={filterTamu?{background:'rgba(16,185,129,0.12)',borderColor:'rgba(16,185,129,0.4)',color:'#059669'}:{background:'transparent',borderColor:'rgba(0,0,0,0.1)',color:'#64748b'}}>
+                  🏢 Ada Tamu
+                </button>
+              </div>
+              {(filterInstansi||filterKebutuhan||filterDivision||filterKegiatan)&&(
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {filterInstansi&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(14,165,233,0.1)',border:'1px solid rgba(14,165,233,0.35)'}}><span className="text-[10px] font-bold text-sky-600">🏢 {filterInstansi}</span><button onClick={()=>setFilterInstansi(null)} className="text-sky-400 text-[10px] ml-1">✕</button></div>)}
+                  {filterKebutuhan&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(124,58,237,0.1)',border:'1px solid rgba(124,58,237,0.35)'}}><span className="text-[10px] font-bold text-violet-600">🎯 {filterKebutuhan}</span><button onClick={()=>setFilterKebutuhan(null)} className="text-violet-400 text-[10px] ml-1">✕</button></div>)}
+                  {filterDivision&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.35)'}}><span className="text-[10px] font-bold text-amber-600">🏷️ {filterDivision}</span><button onClick={()=>setFilterDivision(null)} className="text-amber-400 text-[10px] ml-1">✕</button></div>)}
+                  {filterKegiatan&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:`${KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}18`,border:`1px solid ${KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}50`}}><span className="text-[10px] font-bold" style={{color:KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}}>📋 {filterKegiatan}</span><button onClick={()=>setFilterKegiatan(null)} className="text-[10px] ml-1" style={{color:KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}}>✕</button></div>)}
+                </div>
+              )}
+            </div>
 
-        {/* Table */}
-        <div className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.97)',boxShadow:'0 10px 40px rgba(0,0,0,0.08)'}}>
-          {loading?(
-            <div className="flex justify-center py-20"><div className="w-8 h-8 rounded-full border-3 border-t-red-600 border-red-200 animate-spin"/></div>
-          ):(
-            <>
+            {/* ── Today Banner ── */}
+            {(()=>{
+              const now=new Date();
+              const todayDow=now.getDay();
+              const isWeekday=todayDow>=1&&todayDow<=5;
+              const todayName=DAYS_OF_WEEK[todayDow-1];
+              const todayDc=isWeekday&&todayName?DAY_COLOR[todayName]:null;
+              const todayInView=displayRows.find(r=>r.day_date===toKey(now));
+              const todayPIC=todayInView?[todayInView.pic_ivp_name,todayInView.pic_ump_name,todayInView.pic_mlds_name].filter(Boolean).join(' / ')||'Belum ada PIC':null;
+              if(!isWeekday)return null;
+              return(
+                <div className="mx-4 mb-3 mt-1 flex items-center gap-3 px-4 py-2.5 rounded-xl" style={{background:`${todayDc?.accent||'#dc2626'}10`,border:`1px solid ${todayDc?.accent||'#dc2626'}30`}}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-sm flex-shrink-0" style={{background:todayDc?.grad||'linear-gradient(135deg,#dc2626,#991b1b)'}}>
+                    {now.getDate()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-black" style={{color:todayDc?.accent||'#dc2626'}}>📍 Hari ini: {todayName}</span>
+                      <span className="text-[10px] text-slate-500 font-medium">{now.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</span>
+                      {todayInView&&todayPIC&&<span className="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white" style={{background:todayDc?.accent||'#dc2626'}}>PIC: {todayPIC}</span>}
+                      {!todayInView&&<span className="text-[10px] text-slate-400 italic">Jadwal hari ini tidak tampil di view ini</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+            {loading?(
+              <div className="flex justify-center py-16"><div className="flex flex-col items-center gap-3"><div className="w-8 h-8 rounded-full border-2 border-t-red-600 border-red-200 animate-spin"/><p className="text-sm text-slate-500">Memuat jadwal...</p></div></div>
+            ):(
               <div className="overflow-x-auto">
-                <table className="w-full">
+                {/* ── TABLE: kolom Kebutuhan dihapus, Kegiatan sekarang tampilkan kebutuhan di bawahnya ── */}
+                <table className="w-full text-sm border-collapse" style={{minWidth:'1050px'}}>
+                  <colgroup>
+                    <col style={{width:'3%'}}/><col style={{width:'7%'}}/><col style={{width:'10%'}}/><col style={{width:'14%'}}/><col style={{width:'7%'}}/><col style={{width:'7%'}}/>
+                    <col style={{width:'12%'}}/><col style={{width:'9%'}}/><col style={{width:'10%'}}/><col style={{width:'9%'}}/><col style={{width:'12%'}}/>
+                  </colgroup>
                   <thead>
-                    <tr style={{background:'linear-gradient(135deg,#1e293b,#0f172a)'}}>
-                      <th className="px-4 py-3.5 text-left text-xs font-black text-white tracking-wider" style={{borderRight:'1px solid rgba(255,255,255,0.1)'}}>No</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-black text-white tracking-wider" style={{borderRight:'1px solid rgba(255,255,255,0.1)'}}>Hari</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-black text-white tracking-wider" style={{borderRight:'1px solid rgba(255,255,255,0.1)'}}>Tanggal</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-black text-white tracking-wider" style={{borderRight:'1px solid rgba(255,255,255,0.1)'}}>PIC</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-black text-white tracking-wider" style={{borderRight:'1px solid rgba(255,255,255,0.1)'}}>Kegiatan</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-black text-white tracking-wider" style={{borderRight:'1px solid rgba(255,255,255,0.1)'}}>Jam</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-black text-white tracking-wider" style={{borderRight:'1px solid rgba(255,255,255,0.1)'}}>Produk</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-black text-white tracking-wider" style={{borderRight:'1px solid rgba(255,255,255,0.1)'}}>Tamu</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-black text-white tracking-wider" style={{borderRight:'1px solid rgba(255,255,255,0.1)'}}>Sales</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-black text-white tracking-wider" style={{borderRight:'1px solid rgba(255,255,255,0.1)'}}>Keterangan</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-black text-white tracking-wider" style={{borderRight:'1px solid rgba(255,255,255,0.1)'}}>Edit By</th>
-                      <th className="px-4 py-3.5 text-center text-xs font-black text-white tracking-wider">Action</th>
+                    <tr style={{background:'rgba(248,250,252,0.9)',borderBottom:'2px solid #e5e7eb'}}>
+                      {['No','Tanggal','PIC','Kegiatan','Jam','Produk','Tamu Instansi','Sales','Keterangan','Edit By','Action'].map((h,i)=>(
+                        <th key={h} className="px-3 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-widest" style={{borderRight:i<10?'1px solid #e5e7eb':'none'}}>{h}</th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {displayRows.map((row,rowIdx)=>{
-                      const kgToShow=kegiatanList.filter(k=>k.piket_id===row.id);
-                      const isVirtual=row.id.startsWith('virtual-');
+                    {displayRows.length===0?(
+                      <tr><td colSpan={11} className="text-center py-16 text-gray-400">
+                        <div className="text-4xl mb-3">📋</div>
+                        <p className="font-semibold">{rows.length===0?'Belum ada jadwal':'Tidak ada hasil filter'}</p>
+                        {rows.length===0&&isAdmin&&<p className="text-xs mt-1">Klik "Atur Jadwal" untuk menambahkan jadwal piket</p>}
+                      </td></tr>
+                    ):displayRows.map((row,idx)=>{
                       const dc=DAY_COLOR[row.day_of_week];
-                      const dateObj=new Date(row.day_date+'T00:00:00');
-                      const dateLabel=dateObj.toLocaleDateString('id-ID',{day:'2-digit',month:'2-digit'});
-                      return kgToShow.length===0?(
-                        <tr key={row.id} style={{borderBottom:'1px solid #e5e7eb'}}>
-                          <td className="px-4 py-3 text-xs font-semibold text-slate-600">{rowIdx+1}</td>
-                          <td className="px-4 py-3"><div className="flex items-center gap-2"><div className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-[10px] font-black flex-shrink-0" style={{background:dc.grad}}>{row.day_of_week.slice(0,3).toUpperCase()}</div><span className="text-xs font-bold" style={{color:dc.accent}}>{row.day_of_week}</span></div></td>
-                          <td className="px-4 py-3 text-xs font-semibold text-slate-700">{dateLabel}</td>
-                          <td className="px-4 py-3"><div className="flex items-center gap-1">{[row.pic_ivp_name,row.pic_ump_name,row.pic_mlds_name].filter(Boolean).map((n,i)=><span key={i} className="text-[10px] font-bold px-2 py-1 rounded-lg" style={{background:`${dc.accent}15`,color:dc.accent}}>{n}</span>)}{![row.pic_ivp_name,row.pic_ump_name,row.pic_mlds_name].some(Boolean)&&<span className="text-gray-300 text-xs">—</span>}</div></td>
-                          <td colSpan={7} className="px-4 py-3 text-xs text-gray-400">—</td>
-                          <td className="px-4 py-3 text-[10px] font-semibold text-slate-600">{row.edited_by_name?<><span>✏️</span> {row.edited_by_name}</>:<span className="text-gray-300">—</span>}</td>
-                          <td className="px-4 py-3 text-center"><div className="flex items-center justify-center gap-2">{isVirtual?<button onClick={()=>handleFillVirtual(row)} className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-sm transition-all hover:scale-110" style={{background:'#2563eb15',color:'#2563eb'}}>➕</button>:<><button onClick={()=>setViewDetail(row)} className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-sm transition-all hover:scale-110 hover:bg-blue-100">👁️</button><button onClick={()=>setFillDetail(row)} className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-sm transition-all hover:scale-110 hover:bg-orange-100">✏️</button><button onClick={()=>handleDeleteRow(row)} className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-sm transition-all hover:scale-110 hover:bg-red-100">🗑️</button></>}</div></td>
+                      const todayKey=toKey(new Date());
+                      const todayRow=row.day_date===todayKey;
+                      const rowDateMs=new Date(row.day_date+'T00:00:00').getTime();
+                      const todayMs=new Date(todayKey+'T00:00:00').getTime();
+                      const diffDays=Math.round((rowDateMs-todayMs)/(1000*60*60*24));
+                      const isVirtual=row.id.startsWith('virtual-');
+                      const rowKg=kegiatanList.filter(k=>k.piket_id===row.id);
+                      const kgToShow=rowKg.length>0?rowKg:[null];
+                      const countdownBadge=todayRow?null:diffDays===1?{label:'BESOK',color:'#d97706'}:diffDays>1&&diffDays<=9?{label:`${diffDays} hr lagi`,color:'#64748b'}:null;
+                      return kgToShow.map((kg,kgIdx)=>(
+                        <tr key={`${row.id}-${kgIdx}`} className="transition-colors hover:bg-gray-50/60"
+                          style={{borderBottom:kgIdx===kgToShow.length-1?'2px solid #e5e7eb':'1px solid #f3f4f6',background:todayRow?'rgba(37,99,235,0.06)':isVirtual?'rgba(148,163,184,0.04)':undefined}}>
+                          {kgIdx===0&&(
+                            <>
+                              <td className="px-3 py-3 text-gray-400 text-xs align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #e5e7eb',verticalAlign:'middle'}}>{idx+1}</td>
+                              <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #e5e7eb',verticalAlign:'middle'}}>
+                                <div className="flex flex-col" style={{borderLeft:`3px solid ${dc.accent}`,paddingLeft:'6px'}}>
+                                  <span className="text-base font-black leading-tight" style={{color:dc.accent}}>{new Date(row.day_date+'T00:00:00').getDate()}</span>
+                                  <span className="text-[9px] font-bold" style={{color:dc.accent}}>{new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{month:'short',year:'2-digit'})}</span>
+                                  <span className="text-xs font-bold mt-0.5" style={{color:dc.accent}}>{row.day_of_week}</span>
+                                  {todayRow&&<span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md text-white mt-0.5 w-fit" style={{background:dc.accent,boxShadow:`0 2px 6px ${dc.accent}50`}}>📍 HARI INI</span>}
+                                  {countdownBadge&&<span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md mt-0.5 w-fit" style={{background:`${countdownBadge.color}15`,color:countdownBadge.color,border:`1px solid ${countdownBadge.color}40`}}>{countdownBadge.label}</span>}
+                                </div>
+                              </td>
+                              {/* PIC — tambah keterangan tim */}
+                              <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #e5e7eb',verticalAlign:'middle'}}>
+                                <div className="space-y-1.5">
+                                  {([['pic_ivp_name','PTS IVP'],['pic_ump_name','PTS UMP'],['pic_mlds_name','PTS MLDS']] as [keyof PiketRow,string][]).map(([f,team])=>{
+                                    const name=row[f] as string|null;if(!name)return null;
+                                    const tc=TEAM_LABEL[team];
+                                    return(
+                                      <div key={team} className="flex items-center gap-1.5">
+                                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white flex-shrink-0" style={{background:tc.dot}}>{name.charAt(0).toUpperCase()}</div>
+                                        <div className="min-w-0">
+                                          <p className="text-xs font-semibold text-slate-800 truncate leading-tight">{name}</p>
+                                          <span className="text-[8px] font-bold uppercase" style={{color:tc.text}}>{team}</span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                  {![row.pic_ivp_name,row.pic_ump_name,row.pic_mlds_name].some(Boolean)&&<span className="text-gray-300 text-xs">—</span>}
+                                </div>
+                              </td>
+                            </>
+                          )}
+                          {/* Kegiatan + Kebutuhan (di bawah jenis kegiatan) */}
+                          <td className="px-3 py-2.5 align-middle" style={{borderRight:'1px solid #e5e7eb'}}>
+                            {kg?(
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10px] font-bold border-b-2 pb-0.5 w-fit"
+                                  style={{color:KEGIATAN_COLORS[kg.jenis_kegiatan]||dc.accent,borderBottomColor:KEGIATAN_COLORS[kg.jenis_kegiatan]||dc.accent}}>
+                                  {kg.jenis_kegiatan}
+                                </span>
+                                {/* RnD: tampilkan team_rnd dengan PTS info */}
+                                {kg.jenis_kegiatan==='RnD'&&(kg as any).team_rnd&&(
+                                  <div className="flex items-center gap-1 mt-0.5">
+                                    <span className="text-[9px] font-semibold text-violet-500">👥</span>
+                                    <span className="text-[9px] font-semibold text-violet-700">{(kg as any).team_rnd}</span>
+                                    {/* Cari PTS team dari ptUsers */}
+                                    {(()=>{
+                                      const u=ptUsers.find(x=>x.full_name===(kg as any).team_rnd);
+                                      const teamLabel=u?.team_type==='Team PTS'?'PTS IVP':u?.team_type==='Team PTS UMP'?'PTS UMP':u?.team_type==='Team PTS MLDS'?'PTS MLDS':'';
+                                      const tc=teamLabel?TEAM_LABEL[teamLabel]:null;
+                                      return tc?<span className="text-[8px] font-black px-1 py-0.5 rounded text-white" style={{background:tc.dot}}>{teamLabel}</span>:null;
+                                    })()}
+                                  </div>
+                                )}
+                                {/* Kebutuhan hanya untuk Demo Product */}
+                                {kg.jenis_kegiatan==='Demo Product'&&kg.kebutuhan&&kg.kebutuhan.length>0&&(
+                                  <div className="flex flex-col gap-0.5 mt-0.5">
+                                    {kg.kebutuhan.map(k=>(
+                                      <span key={k} className="flex items-center gap-1 text-[9px] font-semibold text-slate-500 leading-tight">
+                                        <span className="w-1 h-1 rounded-full flex-shrink-0" style={{background:dc.accent}}/>
+                                        {k}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ):<span className="text-gray-300 text-xs">—</span>}
+                          </td>
+                          {/* Jam */}
+                          <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #e5e7eb'}}>
+                            {kg?.jam_mulai?(
+                              <div className="flex flex-col gap-0.5">
+                                <div className="flex items-center gap-1"><span className="text-[8px] font-bold text-slate-400 w-10 flex-shrink-0">Mulai</span><span className="text-xs font-bold text-slate-700">{formatTime(kg.jam_mulai)}</span></div>
+                                <div className="flex items-center gap-1"><span className="text-[8px] font-bold text-slate-400 w-10 flex-shrink-0">Selesai</span><span className="text-xs font-bold text-slate-700">{formatTime(kg.jam_selesai)}</span></div>
+                              </div>
+                            ):<span className="text-gray-300 text-xs">—</span>}
+                          </td>
+                          {/* Produk */}
+                          <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #e5e7eb'}}>
+                            {kg?.produk&&kg.produk.length>0?(
+                              <div className="flex flex-col gap-0.5">
+                                {kg.produk.map(p=><span key={p} className="text-[10px] font-semibold" style={{color:dc.accent}}>{p}</span>)}
+                              </div>
+                            ):<span className="text-gray-300 text-xs">—</span>}
+                          </td>
+                          {/* Tamu */}
+                          <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #e5e7eb'}}>
+                            {kg?.tamu_instansi?(<button onClick={()=>setFilterInstansi(filterInstansi===kg.tamu_instansi?null:kg.tamu_instansi!)} className="flex items-center gap-1 hover:opacity-80 text-left"><span>🏢</span><span className="text-xs font-semibold text-slate-700 underline decoration-dotted">{kg.tamu_instansi}</span></button>):<span className="text-gray-300 text-xs">—</span>}
+                          </td>
+                          {/* Sales */}
+                          <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #e5e7eb'}}>
+                            {kg?.nama_sales?(<div className="flex flex-col gap-0.5"><span className="text-[10px] font-bold text-slate-800">{kg.nama_sales}</span>{kg.sales_division&&<span className="text-[9px] text-purple-500 font-semibold">{kg.sales_division}</span>}</div>):<span className="text-gray-300 text-xs">—</span>}
+                          </td>
+                          {/* Keterangan */}
+                          <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #e5e7eb'}}>
+                            {kg?.keterangan?<span className="text-xs text-slate-600 leading-snug">{kg.keterangan}</span>:<span className="text-gray-300 text-xs">—</span>}
+                          </td>
+                          {/* Edit By — diambil dari piket_schedules row */}
+                          {kgIdx===0&&(
+                            <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #e5e7eb',verticalAlign:'middle'}}>
+                              {row.edited_by_name
+                                ?<div className="flex items-center gap-1"><span className="text-[9px]">✏️</span><span className="text-[10px] font-semibold text-slate-600 leading-tight">{row.edited_by_name}</span></div>
+                                :<span className="text-gray-300 text-xs">—</span>}
+                            </td>
+                          )}
+                          {/* Action */}
+                          {kgIdx===0&&(
+                            <td className="px-3 py-3 align-middle text-center" rowSpan={kgToShow.length} style={{verticalAlign:'middle'}}>
+                              <div className="flex items-center justify-center gap-2">
+                                {!isVirtual&&<button onClick={()=>setViewDetail(row)} className="w-8 h-8 rounded-lg flex items-center justify-center text-base hover:bg-blue-100 transition-colors" title="View">👁️</button>}
+                                <button onClick={()=>isVirtual?handleFillVirtual(row):setFillDetail(row)} className="w-8 h-8 rounded-lg flex items-center justify-center text-base hover:bg-orange-100 transition-colors" title="Edit">✏️</button>
+                                {!isVirtual&&<button onClick={()=>handleDeleteRow(row)} className="w-8 h-8 rounded-lg flex items-center justify-center text-base hover:bg-red-100 transition-colors" title="Delete">🗑️</button>}
+                              </div>
+                            </td>
+                          )}
                         </tr>
-                      ):(
-                        kgToShow.map((kg,kgIdx)=>(
-                          <tr key={`${row.id}-${kgIdx}`} style={{borderBottom:'1px solid #e5e7eb'}}>
-                            {kgIdx===0&&<td className="px-4 py-3 text-xs font-semibold text-slate-600" rowSpan={kgToShow.length}>{rowIdx+1}</td>}
-                            {kgIdx===0&&<td className="px-4 py-3" rowSpan={kgToShow.length}><div className="flex items-center gap-2"><div className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-[10px] font-black flex-shrink-0" style={{background:dc.grad}}>{row.day_of_week.slice(0,3).toUpperCase()}</div><span className="text-xs font-bold" style={{color:dc.accent}}>{row.day_of_week}</span></div></td>}
-                            {kgIdx===0&&<td className="px-4 py-3 text-xs font-semibold text-slate-700" rowSpan={kgToShow.length}>{dateLabel}</td>}
-                            {kgIdx===0&&<td className="px-4 py-3" rowSpan={kgToShow.length}><div className="flex items-center gap-1">{[row.pic_ivp_name,row.pic_ump_name,row.pic_mlds_name].filter(Boolean).map((n,i)=><span key={i} className="text-[10px] font-bold px-2 py-1 rounded-lg" style={{background:`${dc.accent}15`,color:dc.accent}}>{n}</span>)}{![row.pic_ivp_name,row.pic_ump_name,row.pic_mlds_name].some(Boolean)&&<span className="text-gray-300 text-xs">—</span>}</div></td>}
-                            <td className="px-4 py-3"><div className="flex flex-col gap-1"><span className="text-[10px] font-bold border-b-2 pb-0.5 w-fit" style={{color:KEGIATAN_COLORS[kg.jenis_kegiatan]||dc.accent,borderBottomColor:KEGIATAN_COLORS[kg.jenis_kegiatan]||dc.accent}}>{kg.jenis_kegiatan}</span>{kg.jenis_kegiatan==='RnD'&&(kg as any).team_rnd&&<div className="flex items-center gap-1 mt-0.5"><span className="text-[9px] font-semibold text-violet-500">👥</span><span className="text-[9px] font-semibold text-violet-700">{(kg as any).team_rnd}</span>{(()=>{const u=ptUsers.find(x=>x.full_name===(kg as any).team_rnd);const teamLabel=u?.team_type==='Team PTS'?'PTS IVP':u?.team_type==='Team PTS UMP'?'PTS UMP':u?.team_type==='Team PTS MLDS'?'PTS MLDS':'';const tc=teamLabel?TEAM_LABEL[teamLabel]:null;return tc?<span className="text-[8px] font-black px-1 py-0.5 rounded text-white" style={{background:tc.dot}}>{teamLabel}</span>:null;})()}</div>}{kg.jenis_kegiatan==='Demo Product'&&kg.kebutuhan&&kg.kebutuhan.length>0&&<div className="flex flex-col gap-0.5 mt-0.5">{kg.kebutuhan.map(k=><span key={k} className="flex items-center gap-1 text-[9px] font-semibold text-slate-500 leading-tight"><span className="w-1 h-1 rounded-full flex-shrink-0" style={{background:dc.accent}}/>{k}</span>)}</div>}</div></td>
-                            <td className="px-4 py-3">{kg?.jam_mulai?<div className="flex flex-col gap-0.5"><div className="flex items-center gap-1"><span className="text-[8px] font-bold text-slate-400 w-10 flex-shrink-0">Mulai</span><span className="text-xs font-bold text-slate-700">{formatTime(kg.jam_mulai)}</span></div><div className="flex items-center gap-1"><span className="text-[8px] font-bold text-slate-400 w-10 flex-shrink-0">Selesai</span><span className="text-xs font-bold text-slate-700">{formatTime(kg.jam_selesai)}</span></div></div>:<span className="text-gray-300 text-xs">—</span>}</td>
-                            <td className="px-4 py-3">{kg?.produk&&kg.produk.length>0?<div className="flex flex-col gap-0.5">{kg.produk.map(p=><span key={p} className="text-[10px] font-semibold" style={{color:dc.accent}}>{p}</span>)}</div>:<span className="text-gray-300 text-xs">—</span>}</td>
-                            <td className="px-4 py-3">{kg?.tamu_instansi?<button onClick={()=>setFilterInstansi(filterInstansi===kg.tamu_instansi?null:kg.tamu_instansi!)} className="flex items-center gap-1 hover:opacity-80 text-left"><span>🏢</span><span className="text-xs font-semibold text-slate-700 underline decoration-dotted">{kg.tamu_instansi}</span></button>:<span className="text-gray-300 text-xs">—</span>}</td>
-                            <td className="px-4 py-3">{kg?.nama_sales?<div className="flex flex-col gap-0.5"><span className="text-[10px] font-bold text-slate-800">{kg.nama_sales}</span>{kg.sales_division&&<span className="text-[9px] text-purple-500 font-semibold">{kg.sales_division}</span>}</div>:<span className="text-gray-300 text-xs">—</span>}</td>
-                            <td className="px-4 py-3">{kg?.keterangan?<span className="text-xs text-slate-600 leading-snug">{kg.keterangan}</span>:<span className="text-gray-300 text-xs">—</span>}</td>
-                            {kgIdx===0&&<td className="px-4 py-3 text-[10px] font-semibold text-slate-600" rowSpan={kgToShow.length}>{row.edited_by_name?<><span>✏️</span> {row.edited_by_name}</>:<span className="text-gray-300">—</span>}</td>}
-                            {kgIdx===0&&<td className="px-4 py-3 text-center" rowSpan={kgToShow.length}><div className="flex items-center justify-center gap-2">{isVirtual?<button onClick={()=>handleFillVirtual(row)} className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-sm transition-all hover:scale-110" style={{background:'#2563eb15',color:'#2563eb'}}>➕</button>:<><button onClick={()=>setViewDetail(row)} className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-sm transition-all hover:scale-110 hover:bg-blue-100">👁️</button><button onClick={()=>setFillDetail(row)} className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-sm transition-all hover:scale-110 hover:bg-orange-100">✏️</button><button onClick={()=>handleDeleteRow(row)} className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-sm transition-all hover:scale-110 hover:bg-red-100">🗑️</button></>}</div></td>}
-                          </tr>
-                        ))
-                      );
+                      ));
                     })}
                   </tbody>
                 </table>
+                <div className="flex items-center justify-between px-5 py-2.5" style={{borderTop:'1px solid #e5e7eb'}}>
+                  <span className="text-[10px] text-gray-400">{displayRows.length} hari kerja ditampilkan</span>
+                  <span className="text-[10px] text-gray-400">{rows.length} total · {kegiatanList.filter(k=>displayRows.some(r=>r.id===k.piket_id)).length} kegiatan</span>
+                </div>
               </div>
-              <div className="flex items-center justify-between px-5 py-2.5" style={{borderTop:'1px solid #e5e7eb',background:'rgba(0,0,0,0.02)'}}>
-                <span className="text-[10px] text-gray-400">{displayRows.length} hari kerja ditampilkan</span>
-                <span className="text-[10px] text-gray-400">{rows.length} total · {kegiatanList.filter(k=>displayRows.some(r=>r.id===k.piket_id)).length} kegiatan</span>
-              </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
       {showSchedule&&isAdmin&&<ScheduleModal weekStart={weekStart} users={ptUsers} currentUser={currentUser} onClose={()=>setShowSchedule(false)} onSaved={fetchData}/>}
       {fillDetail&&<FillDetailModal row={fillDetail} onClose={()=>setFillDetail(null)} onSaved={fetchData} currentUser={currentUser}/>}
-      {viewDetail&&<ViewDetailModal row={viewDetail} kegiatanList={kegiatanList} currentUser={currentUser} onClose={()=>setViewDetail(null)} onEdit={()=>{setViewDetail(null);const dbRow=rows.find(r=>r.id===viewDetail.id);if(dbRow)setFillDetail(dbRow);}}/>}
+      {viewDetail&&<ViewDetailModal row={viewDetail} kegiatanList={kegiatanList} currentUser={currentUser} onClose={()=>setViewDetail(null)} onEdit={()=>{setViewDetail(null);setFillDetail(viewDetail);}}/>}
       {showCalendar&&<MiniCalendarPopup allRows={allRows} onClose={()=>setShowCalendar(false)}/>}
 
       <style jsx>{`
