@@ -513,7 +513,7 @@ export default function TicketingSystem() {
                   .select("*, activity_logs(*)")
                   .in("sales_name", subordinateNames)
                   .not("sales_division", "is", null)
-                  .not("sales_division", "in", `(${supervisedDivisions.map(d => `"${d}"`).join(",")})`)
+                  .not("sales_division", "in", `(${supervisedDivisions.map((d: string) => `"${d}"`).join(",")})`)
                   .order("created_at", { ascending: false });
                 (otherDivTickets ?? []).forEach((t: Ticket) => {
                   if (!allDivTickets.find(x => x.id === t.id)) allDivTickets.push(t);
