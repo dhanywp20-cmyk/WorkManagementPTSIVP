@@ -14,10 +14,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
     [row.pic_mlds_name,'PTS MLDS'],
   ] as [string|null,string][]).filter(([n])=>!!n);
 
-  const handleEditClick = async () => {
-    if(currentUser?.full_name){
-      await supabase.from('piket_schedules').update({edited_by_name: currentUser.full_name, updated_at: new Date().toISOString()}).eq('id', row.id);
-    }
+  const handleEditClick = () => {
     onEdit?.();
   };
 
@@ -179,15 +176,20 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
           <div className="pt-4 border-t border-slate-200">
             <div className="flex items-center justify-between text-xs">
               <div>
-                {row.edited_by_name&&(
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <span className="text-lg">✏️</span>
-                    <div>
-                      <p className="font-bold">Terakhir diubah oleh</p>
-                      <p className="text-slate-500">{row.edited_by_name}</p>
+                {(()=>{
+                  // Ambil edited_by_name dari kegiatan yang paling terakhir di-update
+                  const lastEdited=kgs.filter(k=>k.edited_by_name).sort((a,b)=>new Date(b.updated_at||b.created_at||0).getTime()-new Date(a.updated_at||a.created_at||0).getTime())[0];
+                  return lastEdited?.edited_by_name?(
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <span className="text-lg">✏️</span>
+                      <div>
+                        <p className="font-bold">Terakhir diubah oleh</p>
+                        <p className="text-slate-500">{lastEdited.edited_by_name}</p>
+                        {lastEdited.updated_at&&<p className="text-[10px] text-slate-400">{new Date(lastEdited.updated_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  ):null;
+                })()}
               </div>
               {row.updated_at&&(
                 <div className="text-right text-slate-500">
