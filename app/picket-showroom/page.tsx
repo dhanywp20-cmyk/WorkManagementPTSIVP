@@ -12,8 +12,8 @@ import { MiniPieChart } from './_components/MiniPieChart';
 import { TamuSummaryCards } from './_components/TamuSummaryCards';
 import { MiniCalendarPopup } from './_components/MiniCalendarPopup';
 import { FillDetailModal } from './_components/FillDetailModal';
-import { ViewDetailModal } from './_components/ViewDetailModal';
 import { ScheduleModal } from './_components/ScheduleModal';
+import { ViewDetailModal } from './_components/ViewDetailModal';
 import { exportToExcel } from './_components/excel-export';
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -48,8 +48,7 @@ export default function PiketShowroomPage() {
     setLoading(true);
     const wk2=toKey(addDays(weekStart,7));
     const[wRes,aRes,uRes,kgRes]=await Promise.all([
-      // Fix: always select edited_by_name explicitly
-      supabase.from('piket_schedules').select('*,edited_by_name').in('week_start',[wk,wk2]).order('day_date'),
+      supabase.from('piket_schedules').select('*').in('week_start',[wk,wk2]).order('day_date'),
       supabase.from('piket_schedules').select('id,day_date,week_start,day_of_week,pic_ivp_name,pic_ump_name,pic_mlds_name'),
       supabase.from('users').select('id,full_name,username,team_type,role').in('team_type',['Team PTS','Team PTS UMP','Team PTS MLDS']).order('full_name'),
       supabase.from('piket_tamu_detail').select('*').order('created_at'),
@@ -117,13 +116,12 @@ export default function PiketShowroomPage() {
       pic_ump_name: row.pic_ump_name,
       pic_mlds_id: row.pic_mlds_id,
       pic_mlds_name: row.pic_mlds_name,
-      tamu_instansi: null,
-      kebutuhan: [],
+      tamu_instansi: null, kebutuhan: [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },{onConflict:'week_start,day_of_week',ignoreDuplicates:false});
     if(error){console.error('Failed to save virtual row:',error.message);return;}
-    const{data}=await supabase.from('piket_schedules').select('*,edited_by_name').eq('week_start',row.week_start).eq('day_of_week',row.day_of_week).single();
+    const{data}=await supabase.from('piket_schedules').select('*').eq('week_start',row.week_start).eq('day_of_week',row.day_of_week).single();
     if(data){setFillDetail(data as PiketRow);fetchData();}
   },[fetchData]);
 
@@ -307,15 +305,15 @@ export default function PiketShowroomPage() {
                 </div>
               );
             })()}
-
             {loading?(
               <div className="flex justify-center py-16"><div className="flex flex-col items-center gap-3"><div className="w-8 h-8 rounded-full border-2 border-t-red-600 border-red-200 animate-spin"/><p className="text-sm text-slate-500">Memuat jadwal...</p></div></div>
             ):(
               <div className="overflow-x-auto">
+                {/* ── TABLE: kolom Kebutuhan dihapus, Kegiatan sekarang tampilkan kebutuhan di bawahnya ── */}
                 <table className="w-full text-sm border-collapse" style={{minWidth:'1050px'}}>
                   <colgroup>
-                    <col style={{width:'3%'}}/><col style={{width:'7%'}}/><col style={{width:'10%'}}/><col style={{width:'13%'}}/><col style={{width:'7%'}}/>
-                    <col style={{width:'7%'}}/><col style={{width:'13%'}}/><col style={{width:'9%'}}/><col style={{width:'11%'}}/><col style={{width:'9%'}}/><col style={{width:'11%'}}/>
+                    <col style={{width:'3%'}}/><col style={{width:'7%'}}/><col style={{width:'10%'}}/><col style={{width:'14%'}}/><col style={{width:'7%'}}/><col style={{width:'7%'}}/>
+                    <col style={{width:'12%'}}/><col style={{width:'9%'}}/><col style={{width:'10%'}}/><col style={{width:'9%'}}/><col style={{width:'12%'}}/>
                   </colgroup>
                   <thead>
                     <tr style={{background:'rgba(248,250,252,0.9)',borderBottom:'2px solid #e5e7eb'}}>
@@ -357,41 +355,58 @@ export default function PiketShowroomPage() {
                                   {countdownBadge&&<span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md mt-0.5 w-fit" style={{background:`${countdownBadge.color}15`,color:countdownBadge.color,border:`1px solid ${countdownBadge.color}40`}}>{countdownBadge.label}</span>}
                                 </div>
                               </td>
+                              {/* PIC — tambah keterangan tim */}
                               <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #e5e7eb',verticalAlign:'middle'}}>
-                                <div className="space-y-1">
+                                <div className="space-y-1.5">
                                   {([['pic_ivp_name','PTS IVP'],['pic_ump_name','PTS UMP'],['pic_mlds_name','PTS MLDS']] as [keyof PiketRow,string][]).map(([f,team])=>{
                                     const name=row[f] as string|null;if(!name)return null;
                                     const tc=TEAM_LABEL[team];
-                                    return(<div key={team} className="flex items-center gap-1.5"><div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white flex-shrink-0" style={{background:tc.dot}}>{name.charAt(0).toUpperCase()}</div><div className="min-w-0"><p className="text-xs font-semibold text-slate-800 truncate leading-tight">{name}</p><span className="text-[8px] font-bold uppercase" style={{color:tc.text}}>{team}</span></div></div>);
+                                    return(
+                                      <div key={team} className="flex items-center gap-1.5">
+                                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white flex-shrink-0" style={{background:tc.dot}}>{name.charAt(0).toUpperCase()}</div>
+                                        <div className="min-w-0">
+                                          <p className="text-xs font-semibold text-slate-800 truncate leading-tight">{name}</p>
+                                          <span className="text-[8px] font-bold uppercase" style={{color:tc.text}}>{team}</span>
+                                        </div>
+                                      </div>
+                                    );
                                   })}
                                   {![row.pic_ivp_name,row.pic_ump_name,row.pic_mlds_name].some(Boolean)&&<span className="text-gray-300 text-xs">—</span>}
                                 </div>
                               </td>
                             </>
                           )}
-                          {/* Kegiatan — with kebutuhan shown below */}
-                          <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #e5e7eb'}}>
+                          {/* Kegiatan + Kebutuhan (di bawah jenis kegiatan) */}
+                          <td className="px-3 py-2.5 align-middle" style={{borderRight:'1px solid #e5e7eb'}}>
                             {kg?(
-                              <div className="space-y-1">
-                                <span className="text-[10px] font-bold border-b-2 pb-0.5 block"
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10px] font-bold border-b-2 pb-0.5 w-fit"
                                   style={{color:KEGIATAN_COLORS[kg.jenis_kegiatan]||dc.accent,borderBottomColor:KEGIATAN_COLORS[kg.jenis_kegiatan]||dc.accent}}>
                                   {kg.jenis_kegiatan}
                                 </span>
-                                {/* Kebutuhan di bawah Kegiatan — hanya untuk Demo Product */}
+                                {/* RnD: tampilkan team_rnd dengan PTS info */}
+                                {kg.jenis_kegiatan==='RnD'&&(kg as any).team_rnd&&(
+                                  <div className="flex items-center gap-1 mt-0.5">
+                                    <span className="text-[9px] font-semibold text-violet-500">👥</span>
+                                    <span className="text-[9px] font-semibold text-violet-700">{(kg as any).team_rnd}</span>
+                                    {/* Cari PTS team dari ptUsers */}
+                                    {(()=>{
+                                      const u=ptUsers.find(x=>x.full_name===(kg as any).team_rnd);
+                                      const teamLabel=u?.team_type==='Team PTS'?'PTS IVP':u?.team_type==='Team PTS UMP'?'PTS UMP':u?.team_type==='Team PTS MLDS'?'PTS MLDS':'';
+                                      const tc=teamLabel?TEAM_LABEL[teamLabel]:null;
+                                      return tc?<span className="text-[8px] font-black px-1 py-0.5 rounded text-white" style={{background:tc.dot}}>{teamLabel}</span>:null;
+                                    })()}
+                                  </div>
+                                )}
+                                {/* Kebutuhan hanya untuk Demo Product */}
                                 {kg.jenis_kegiatan==='Demo Product'&&kg.kebutuhan&&kg.kebutuhan.length>0&&(
-                                  <div className="flex flex-col gap-0.5 mt-1">
+                                  <div className="flex flex-col gap-0.5 mt-0.5">
                                     {kg.kebutuhan.map(k=>(
                                       <span key={k} className="flex items-center gap-1 text-[9px] font-semibold text-slate-500 leading-tight">
-                                        <span className="w-1 h-1 rounded-full flex-shrink-0" style={{background:KEGIATAN_COLORS[kg.jenis_kegiatan]||dc.accent}}/>
+                                        <span className="w-1 h-1 rounded-full flex-shrink-0" style={{background:dc.accent}}/>
                                         {k}
                                       </span>
                                     ))}
-                                  </div>
-                                )}
-                                {/* RnD: tampilkan team_rnd + label PTS */}
-                                {kg.jenis_kegiatan==='RnD'&&(kg as any).team_rnd&&(
-                                  <div className="mt-1">
-                                    <span className="text-[9px] font-semibold text-slate-500 leading-tight">{(kg as any).team_rnd}</span>
                                   </div>
                                 )}
                               </div>
@@ -422,11 +437,11 @@ export default function PiketShowroomPage() {
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #e5e7eb'}}>
                             {kg?.nama_sales?(<div className="flex flex-col gap-0.5"><span className="text-[10px] font-bold text-slate-800">{kg.nama_sales}</span>{kg.sales_division&&<span className="text-[9px] text-purple-500 font-semibold">{kg.sales_division}</span>}</div>):<span className="text-gray-300 text-xs">—</span>}
                           </td>
-                          {/* Keterangan (non-Demo only) */}
+                          {/* Keterangan */}
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #e5e7eb'}}>
                             {kg?.keterangan?<span className="text-xs text-slate-600 leading-snug">{kg.keterangan}</span>:<span className="text-gray-300 text-xs">—</span>}
                           </td>
-                          {/* Edit By */}
+                          {/* Edit By — diambil dari piket_schedules row */}
                           {kgIdx===0&&(
                             <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #e5e7eb',verticalAlign:'middle'}}>
                               {row.edited_by_name
@@ -434,25 +449,24 @@ export default function PiketShowroomPage() {
                                 :<span className="text-gray-300 text-xs">—</span>}
                             </td>
                           )}
-                          {/* Action: View + Isi */}
+                          {/* Action */}
                           {kgIdx===0&&(
-                            <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{verticalAlign:'middle'}}>
+                            <td className="px-3 py-3 align-middle text-center" rowSpan={kgToShow.length} style={{verticalAlign:'middle'}}>
                               <div className="flex flex-col gap-1.5 items-center">
-                                {/* View button — always visible for non-virtual rows */}
-                                {!isVirtual&&(
-                                  <button
-                                    onClick={()=>setViewDetail(row)}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 w-full justify-center"
-                                    style={{background:'rgba(37,99,235,0.08)',color:'#2563eb',border:'1px solid rgba(37,99,235,0.25)'}}>
-                                    👁️ View
-                                  </button>
-                                )}
                                 <button
                                   onClick={()=>isVirtual?handleFillVirtual(row):setFillDetail(row)}
                                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-105 w-full justify-center"
                                   style={{background:dc.grad,boxShadow:`0 2px 8px ${dc.accent}30`}}>
                                   ✍️ Isi
                                 </button>
+                                {!isVirtual&&(
+                                  <button
+                                    onClick={()=>setViewDetail(row)}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 w-full justify-center"
+                                    style={{background:'rgba(100,116,139,0.1)',color:'#475569',border:'1px solid rgba(100,116,139,0.25)'}}>
+                                    🔍 View
+                                  </button>
+                                )}
                               </div>
                             </td>
                           )}
@@ -473,7 +487,7 @@ export default function PiketShowroomPage() {
 
       {showSchedule&&isAdmin&&<ScheduleModal weekStart={weekStart} users={ptUsers} currentUser={currentUser} onClose={()=>setShowSchedule(false)} onSaved={fetchData}/>}
       {fillDetail&&<FillDetailModal row={fillDetail} onClose={()=>setFillDetail(null)} onSaved={fetchData} currentUser={currentUser}/>}
-      {viewDetail&&<ViewDetailModal row={viewDetail} onClose={()=>setViewDetail(null)} onEdit={()=>{setFillDetail(viewDetail);setViewDetail(null);}}/>}
+      {viewDetail&&<ViewDetailModal row={viewDetail} kegiatanList={kegiatanList} onClose={()=>setViewDetail(null)}/>}
       {showCalendar&&<MiniCalendarPopup allRows={allRows} onClose={()=>setShowCalendar(false)}/>}
 
       <style jsx>{`
