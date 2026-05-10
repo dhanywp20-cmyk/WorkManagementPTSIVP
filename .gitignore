@@ -1,0 +1,41 @@
+# Dependencies — JANGAN commit, akan di-install via npm install
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js build output
+.next/
+out/
+build/
+dist/
+
+# Production
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment variables — RAHASIA, jangan commit
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel
+
+# Claude Code
+.claude/
