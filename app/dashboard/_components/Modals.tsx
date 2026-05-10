@@ -18,6 +18,8 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [activeTab, setActiveTab] = useState<'list' | 'add'>('list');
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editDivisi, setEditDivisi] = useState('');
+  const [editPtsType, setEditPtsType] = useState('');
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [newUser, setNewUser] = useState({
@@ -30,6 +32,8 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     sales_division: '',
     jabatan: '',
     allowed_menus: ALL_MENU_KEYS,
+    divisi: '',
+    pts_type: '',
   });
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
@@ -62,26 +66,48 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     if (!newUser.username || !newUser.password || !newUser.full_name) {
       notify('error', 'Semua field wajib diisi!'); return;
     }
-    if (newUser.role === 'guest' && !newUser.sales_division) {
-      notify('error', 'Sales Division wajib diisi untuk role Guest!'); return;
+    if (!newUser.divisi) {
+      notify('error', 'Divisi wajib dipilih!'); return;
     }
+    if (newUser.divisi === 'PTS' && !newUser.pts_type) {
+      notify('error', 'Tipe PTS wajib dipilih!'); return;
+    }
+    if (newUser.divisi === 'Sales' && !newUser.sales_division) {
+      notify('error', 'Sales Division wajib diisi!'); return;
+    }
+
+    let role = 'guest';
+    let team_type: string | null = null;
+    if (newUser.divisi === 'PTS') {
+      role = 'team';
+      if (newUser.pts_type === 'PTS IVP') team_type = 'Team PTS';
+      else if (newUser.pts_type === 'PTS UMP') team_type = 'Team PTS UMP';
+      else if (newUser.pts_type === 'PTS MLDS') team_type = 'Team PTS MLDS';
+    } else if (newUser.divisi === 'Sales') {
+      role = 'guest';
+      team_type = 'Guest';
+    } else if (newUser.divisi === 'Marketing') {
+      role = 'guest';
+      team_type = 'Marketing';
+    }
+
     setSaving(true);
     const insertPayload: Record<string, unknown> = {
       username: newUser.username,
       password: newUser.password,
       full_name: newUser.full_name,
-      role: newUser.role,
+      role,
+      team_type,
       allowed_menus: newUser.allowed_menus,
       jabatan: newUser.jabatan || null,
       phone_number: newUser.phone_number || null,
-      sales_division: newUser.sales_division || null,
+      sales_division: newUser.divisi === 'Sales' ? (newUser.sales_division || null) : null,
     };
-    if (newUser.role === 'team') insertPayload.team_type = newUser.team_type || null;
     const { error } = await supabase.from('users').insert([insertPayload]);
     setSaving(false);
     if (error) { notify('error', 'Gagal menambah akun: ' + error.message); return; }
     notify('success', 'Akun berhasil ditambahkan!');
-    setNewUser({ username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: ALL_MENU_KEYS });
+    setNewUser({ username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: ALL_MENU_KEYS, divisi: '', pts_type: '' });
     setActiveTab('list');
     fetchUsers();
   };
@@ -89,25 +115,44 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
   const handleSaveEdit = async () => {
     if (!editingUser) return;
     setSaving(true);
+
+    let role = editingUser.role;
+    let team_type: string | null = editingUser.team_type ?? null;
+
+    if (editDivisi) {
+      if (editDivisi === 'PTS') {
+        role = 'team';
+        if (editPtsType === 'PTS IVP') team_type = 'Team PTS';
+        else if (editPtsType === 'PTS UMP') team_type = 'Team PTS UMP';
+        else if (editPtsType === 'PTS MLDS') team_type = 'Team PTS MLDS';
+        else team_type = null;
+      } else if (editDivisi === 'Sales') {
+        role = 'guest';
+        team_type = 'Guest';
+      } else if (editDivisi === 'Marketing') {
+        role = 'guest';
+        team_type = 'Marketing';
+      }
+    }
+
     const updatePayload: Record<string, unknown> = {
       username: editingUser.username,
       password: editingUser.password,
       full_name: editingUser.full_name,
-      role: editingUser.role,
+      role,
+      team_type,
       allowed_menus: editingUser.allowed_menus ?? ALL_MENU_KEYS,
       jabatan: editingUser.jabatan ?? null,
       phone_number: editingUser.phone_number ?? null,
-      sales_division: editingUser.sales_division ?? null,
+      sales_division: editDivisi === 'Sales' ? (editingUser.sales_division ?? null) : null,
     };
-    if (editingUser.role === 'team') updatePayload.team_type = editingUser.team_type ?? null;
-    else if (editingUser.team_type === 'Pending Approval') {
-      updatePayload.team_type = null;
-    }
     const { error } = await supabase.from('users').update(updatePayload).eq('id', editingUser.id);
     setSaving(false);
     if (error) { notify('error', 'Gagal menyimpan: ' + error.message); return; }
     notify('success', 'Akun berhasil diperbarui!');
     setEditingUser(null);
+    setEditDivisi('');
+    setEditPtsType('');
     fetchUsers();
   };
 
@@ -187,7 +232,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
 
         <div className="flex border-b border-slate-200 px-6 pt-4 flex-shrink-0">
           {(['list', 'add'] as const).map(tab => (
-            <button key={tab} onClick={() => { setActiveTab(tab); setEditingUser(null); }}
+            <button key={tab} onClick={() => { setActiveTab(tab); setEditingUser(null); setEditDivisi(''); setEditPtsType(''); }}
               className={`px-4 py-2 text-sm font-bold border-b-2 transition-all mr-1 ${activeTab === tab ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
               {tab === 'list' ? `👥 Daftar Akun (${users.length})` : '➕ Tambah Akun'}
             </button>
@@ -210,7 +255,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                     <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-bold text-slate-800">✏️ Edit: {editingUser.full_name}</h3>
-                        <button onClick={() => setEditingUser(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+                        <button onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -234,26 +279,38 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                             <option value="guest">Guest</option>
                           </select>
                         </div>
-                        {editingUser.role === 'team' && (
-                          <div>
-                            <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Team Type</label>
-                            <div className="flex gap-2">
-                              {['Team PTS', 'Team PTS UMP','Team PTS MLDS', 'Team Services'].map(t => (
-                                <button key={t} type="button" onClick={() => setEditingUser({ ...editingUser, team_type: t })}
-                                  className={`flex-1 py-2 rounded-lg border-2 text-xs font-bold transition-all ${editingUser.team_type === t ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}>
-                                  {t === 'Team PTS' ? '🏗️' : '🔧'} {t}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        <div>
-                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division</label>
-                          <select value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                        <div className="col-span-2">
+                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi</label>
+                          <select value={editDivisi} onChange={e => { setEditDivisi(e.target.value); setEditPtsType(''); }}
+                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                             <option value="">-- Pilih Divisi --</option>
-                            {SALES_DIVISIONS.map(div => <option key={div} value={div}>{div}</option>)}
+                            <option value="PTS">PTS</option>
+                            <option value="Sales">Sales</option>
+                            <option value="Marketing">Marketing</option>
                           </select>
                         </div>
+                        {editDivisi === 'PTS' && (
+                          <div className="col-span-2">
+                            <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS</label>
+                            <select value={editPtsType} onChange={e => setEditPtsType(e.target.value)}
+                              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                              <option value="">-- Pilih Tipe PTS --</option>
+                              <option value="PTS IVP">PTS IVP → Team PTS</option>
+                              <option value="PTS UMP">PTS UMP → Team PTS UMP</option>
+                              <option value="PTS MLDS">PTS MLDS → Team PTS MLDS</option>
+                            </select>
+                          </div>
+                        )}
+                        {editDivisi === 'Sales' && (
+                          <div className="col-span-2">
+                            <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division</label>
+                            <select value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
+                              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                              <option value="">-- Pilih Divisi Sales --</option>
+                              {SALES_DIVISIONS.map(div => <option key={div} value={div}>{div}</option>)}
+                            </select>
+                          </div>
+                        )}
                         <div>
                           <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Jabatan / Posisi</label>
                           <select value={editingUser.jabatan || ''} onChange={e => setEditingUser({ ...editingUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
@@ -272,7 +329,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                           {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                           💾 Simpan Perubahan
                         </button>
-                        <button onClick={() => setEditingUser(null)} className="px-6 py-2.5 rounded-lg border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 text-sm transition-all">Batal</button>
+                        <button onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); }} className="px-6 py-2.5 rounded-lg border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 text-sm transition-all">Batal</button>
                       </div>
                     </div>
                   ) : (
@@ -303,7 +360,19 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                             </div>
                           </div>
                           <div className="flex gap-2 flex-shrink-0">
-                            <button onClick={() => setEditingUser(user)} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all">Edit</button>
+                            <button onClick={() => {
+                              let d = '', p = '';
+                              if (user.role === 'team') {
+                                d = 'PTS';
+                                if (user.team_type === 'Team PTS') p = 'PTS IVP';
+                                else if (user.team_type === 'Team PTS UMP') p = 'PTS UMP';
+                                else if (user.team_type === 'Team PTS MLDS') p = 'PTS MLDS';
+                              } else if (user.team_type === 'Guest') { d = 'Sales'; }
+                              else if (user.team_type === 'Marketing') { d = 'Marketing'; }
+                              setEditDivisi(d);
+                              setEditPtsType(p);
+                              setEditingUser(user);
+                            }} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all">Edit</button>
                             <button onClick={() => handleDeleteUser(user.id)} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-all">Hapus</button>
                           </div>
                         </div>
@@ -336,15 +405,38 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                   <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Password *</label>
                   <input value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="password" />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Role *</label>
-                  <select value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
-                    <option value="superadmin">Superadmin</option>
-                    <option value="admin">Admin</option>
-                    <option value="team">Team</option>
-                    <option value="guest">Guest</option>
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Divisi *</label>
+                  <select value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', sales_division: '' })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
+                    <option value="">-- Pilih Divisi --</option>
+                    <option value="PTS">PTS</option>
+                    <option value="Sales">Sales</option>
+                    <option value="Marketing">Marketing</option>
                   </select>
                 </div>
+                {newUser.divisi === 'PTS' && (
+                  <div className="col-span-2">
+                    <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Tipe PTS *</label>
+                    <select value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
+                      <option value="">-- Pilih Tipe PTS --</option>
+                      <option value="PTS IVP">PTS IVP → Team PTS</option>
+                      <option value="PTS UMP">PTS UMP → Team PTS UMP</option>
+                      <option value="PTS MLDS">PTS MLDS → Team PTS MLDS</option>
+                    </select>
+                  </div>
+                )}
+                {newUser.divisi === 'Sales' && (
+                  <div className="col-span-2">
+                    <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Sales Division *</label>
+                    <select value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
+                      <option value="">-- Pilih Sales Division --</option>
+                      {SALES_DIVISIONS.map(div => <option key={div} value={div}>{div}</option>)}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Jabatan / Posisi</label>
                   <select value={newUser.jabatan} onChange={e => setNewUser({ ...newUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
@@ -353,30 +445,10 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Sales Division</label>
-                  <select value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
-                    <option value="">-- Pilih Divisi --</option>
-                    {SALES_DIVISIONS.map(div => <option key={div} value={div}>{div}</option>)}
-                  </select>
-                </div>
-                <div className="col-span-2">
                   <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Nomor Telepon / WhatsApp</label>
                   <input value={newUser.phone_number} onChange={e => setNewUser({ ...newUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="Contoh: 08123456789" />
                 </div>
               </div>
-              {newUser.role === 'team' && (
-                <div>
-                  <label className="block text-xs font-bold mb-2 text-slate-600 tracking-widest uppercase">Team Type</label>
-                  <div className="flex gap-2">
-                    {['Team PTS', 'Team PTS UMP','Team PTS MLDS', 'Team Services'].map(t => (
-                      <button key={t} type="button" onClick={() => setNewUser({ ...newUser, team_type: t })}
-                        className={`flex-1 py-2.5 rounded-lg border-2 text-xs font-bold transition-all ${newUser.team_type === t ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}>
-                        {t === 'Team PTS' ? '🏗️' : '🔧'} {t}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               <MenuPermissionSelector selected={newUser.allowed_menus} target="new" />
               <button onClick={handleAddUser} disabled={saving}
