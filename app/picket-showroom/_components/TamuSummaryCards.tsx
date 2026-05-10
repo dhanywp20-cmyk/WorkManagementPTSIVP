@@ -112,10 +112,10 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
           </div>
         </div>
       </div>
-      {/* Highlight stats row */}
-      <div className="flex divide-x divide-slate-100 overflow-x-auto border-b border-slate-100">
+      {/* Single stats row */}
+      <div className="flex divide-x divide-slate-100 overflow-x-auto">
         {highlights.map((s,i)=>(
-          <div key={i} className="flex-1 min-w-[120px] px-4 py-3 flex flex-col gap-0.5 flex-shrink-0">
+          <div key={i} className="flex-1 min-w-[100px] px-3 py-3 flex flex-col gap-0.5 flex-shrink-0">
             <div className="flex items-center gap-1 mb-0.5">
               <span className="text-[11px]">{s.icon}</span>
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">{s.label}</span>
@@ -124,17 +124,17 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
             <span className="text-[8px] text-slate-300 leading-none">{s.hint}</span>
           </div>
         ))}
-      </div>
-      {/* Jam pakai produk row — compact */}
-      <div className="px-3 py-2 flex items-center gap-0 overflow-x-auto">
-        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex-shrink-0 pr-3 border-r border-slate-100 mr-1">⚡ Jam Pakai Produk</span>
-        {PRODUK_KATEGORI.map((p,i)=>(
-          <div key={p} className="flex items-center gap-1.5 px-3 flex-shrink-0" style={{borderRight:i<PRODUK_KATEGORI.length-1?'1px solid #f1f5f9':'none'}}>
-            <span className="text-[11px]">{PRODUK_ICONS[p]}</span>
-            <div className="flex flex-col leading-none">
-              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wide">{p}</span>
-              <span className="text-[11px] font-black" style={{color:PRODUK_COLORS[p]}}>{fmtJam(jamPerProduk[p]||0)}</span>
+        <div className="flex-shrink-0 px-3 py-3 flex items-center">
+          <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">⚡ Jam Pakai</span>
+        </div>
+        {PRODUK_KATEGORI.map(p=>(
+          <div key={p} className="flex-1 min-w-[80px] px-3 py-3 flex flex-col gap-0.5 flex-shrink-0">
+            <div className="flex items-center gap-1 mb-0.5">
+              <span className="text-[11px]">{PRODUK_ICONS[p]}</span>
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none truncate">{p}</span>
             </div>
+            <span className="text-sm font-black leading-tight" style={{color:PRODUK_COLORS[p]}}>{fmtJam(jamPerProduk[p]||0)}</span>
+            <span className="text-[8px] text-slate-300 leading-none">jam pakai</span>
           </div>
         ))}
       </div>
