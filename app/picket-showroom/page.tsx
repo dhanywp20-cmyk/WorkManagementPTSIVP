@@ -334,8 +334,8 @@ export default function PiketShowroomPage() {
                 {/* ── TABLE: kolom Kebutuhan dihapus, Kegiatan sekarang tampilkan kebutuhan di bawahnya ── */}
                 <table className="w-full text-sm border-collapse" style={{minWidth:'1050px'}}>
                   <colgroup>
-                    <col style={{width:'3%'}}/><col style={{width:'7%'}}/><col style={{width:'10%'}}/><col style={{width:'14%'}}/><col style={{width:'7%'}}/><col style={{width:'7%'}}/>
-                    <col style={{width:'12%'}}/><col style={{width:'9%'}}/><col style={{width:'10%'}}/><col style={{width:'9%'}}/><col style={{width:'12%'}}/>
+                    <col style={{width:'3%'}}/><col style={{width:'7%'}}/><col style={{width:'10%'}}/><col style={{width:'13%'}}/><col style={{width:'7%'}}/><col style={{width:'7%'}}/>
+                    <col style={{width:'11%'}}/><col style={{width:'8%'}}/><col style={{width:'16%'}}/><col style={{width:'8%'}}/><col style={{width:'56px'}}/>
                   </colgroup>
                   <thead>
                     <tr style={{background:'rgba(248,250,252,0.9)',borderBottom:'2px solid #e5e7eb'}}>
@@ -482,7 +482,7 @@ export default function PiketShowroomPage() {
                           )}
                           {/* Action */}
                           {kgIdx===0&&(
-                            <td className="px-1 py-3 align-middle text-center" rowSpan={kgToShow.length} style={{verticalAlign:'middle',width:'72px',minWidth:'72px'}}>
+                            <td className="px-1 py-3 align-middle text-center" rowSpan={kgToShow.length} style={{verticalAlign:'middle'}}>
                               <div className="flex items-center justify-center gap-0.5">
                                 {!isVirtual&&<button onClick={()=>setViewDetail(row)} className="w-6 h-6 rounded flex items-center justify-center text-sm hover:bg-blue-100 transition-colors" title="View">👁️</button>}
                                 <button onClick={()=>isVirtual?handleFillVirtual(row):setFillDetail(row)} className="w-6 h-6 rounded flex items-center justify-center text-sm hover:bg-orange-100 transition-colors" title="Edit">✏️</button>
