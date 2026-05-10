@@ -115,23 +115,23 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
       {/* Single stats row */}
       <div className="flex divide-x divide-slate-100 overflow-x-auto">
         {highlights.map((s,i)=>(
-          <div key={i} className="flex-1 min-w-[100px] px-3 py-3 flex flex-col gap-0.5 flex-shrink-0">
+          <div key={i} className="flex-[2] min-w-[130px] px-3 py-3 flex flex-col gap-0.5 flex-shrink-0">
             <div className="flex items-center gap-1 mb-0.5">
               <span className="text-[11px]">{s.icon}</span>
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">{s.label}</span>
             </div>
-            <span className="text-sm font-black leading-tight truncate" style={{color:s.color}}>{s.val}</span>
+            <span className="text-sm font-black leading-tight" style={{color:s.color}}>{s.val}</span>
             <span className="text-[8px] text-slate-300 leading-none">{s.hint}</span>
           </div>
         ))}
-        <div className="flex-shrink-0 px-3 py-3 flex items-center">
+        <div className="flex-shrink-0 px-1 py-3 flex items-center">
         
         </div>
         {PRODUK_KATEGORI.map(p=>(
-          <div key={p} className="flex-1 min-w-[80px] px-3 py-3 flex flex-col gap-0.5 flex-shrink-0">
+          <div key={p} className="flex-1 min-w-[64px] px-2 py-3 flex flex-col gap-0.5 flex-shrink-0">
             <div className="flex items-center gap-1 mb-0.5">
               <span className="text-[11px]">{PRODUK_ICONS[p]}</span>
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none truncate">{p}</span>
+              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none truncate">{p}</span>
             </div>
             <span className="text-sm font-black leading-tight" style={{color:PRODUK_COLORS[p]}}>{fmtJam(jamPerProduk[p]||0)}</span>
             <span className="text-[8px] text-slate-300 leading-none">jam pakai</span>
