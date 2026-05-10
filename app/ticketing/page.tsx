@@ -484,6 +484,46 @@ export default function TicketingSystem() {
               }
             }
 
+            // ── Fallback: ticket tanpa sales_division tapi sales_name = bawahan ──
+            // Menangkap ticket yang dibuat admin/superadmin untuk bawahan
+            // dimana sales_division tidak diisi, sehingga query .in("sales_division") melewatinya
+            try {
+              const allSubordinateUsers = (allGuestUsers ?? []).filter((u: any) =>
+                subordinateIds.has(u.id) || manualSubordinateIds.has(u.id)
+              );
+              const subordinateNames = Array.from(new Set(
+                allSubordinateUsers.flatMap((u: any) => [
+                  u.full_name,
+                  u.username,
+                  u.full_name ? u.full_name.split(' ')[0] : null,
+                ].filter(Boolean))
+              )) as string[];
+              if (subordinateNames.length > 0) {
+                const { data: noDivTickets } = await supabase.from("tickets")
+                  .select("*, activity_logs(*)")
+                  .in("sales_name", subordinateNames)
+                  .is("sales_division", null)
+                  .order("created_at", { ascending: false });
+                (noDivTickets ?? []).forEach((t: Ticket) => {
+                  if (!allDivTickets.find(x => x.id === t.id)) allDivTickets.push(t);
+                });
+                // Juga cek ticket dengan sales_division yang bukan di supervisedDivisions
+                // tapi sales_name adalah bawahan (misal admin input divisi lain)
+                const { data: otherDivTickets } = await supabase.from("tickets")
+                  .select("*, activity_logs(*)")
+                  .in("sales_name", subordinateNames)
+                  .not("sales_division", "is", null)
+                  .not("sales_division", "in", `(${supervisedDivisions.map(d => `"${d}"`).join(",")})`)
+                  .order("created_at", { ascending: false });
+                (otherDivTickets ?? []).forEach((t: Ticket) => {
+                  if (!allDivTickets.find(x => x.id === t.id)) allDivTickets.push(t);
+                });
+              }
+            } catch (fallbackErr) {
+              console.warn("[Supervisor fallback fetch]", fallbackErr);
+            }
+            // ────────────────────────────────────────────────────────────────
+
             allDivTickets.forEach((t: Ticket) => {
               // Ticket milik sendiri selalu masuk
               if (isMyTicket(t)) { addUnique(t); return; }
@@ -597,9 +637,8 @@ export default function TicketingSystem() {
       if (error) throw error;
 
       // ── Kirim WA notifikasi ke semua admin & superadmin jika butuh approval ──
-      // Hanya role guest dan team yang butuh approval → trigger WA
+      // Hanya role guest dan team yang butuh approval → trigger WA ke admin
       if (!isElevated) {
-        // Guest/Team: kirim WA ke admin untuk approval
         setLoadingMessage("Mengirim notifikasi WA ke admin...");
         try {
           const { data: adminUsers } = await supabase
@@ -650,10 +689,13 @@ export default function TicketingSystem() {
             }
           }
         } catch (ccEx: any) { console.warn("[WA CC submit]", ccEx?.message); }
-        // Admin/Superadmin: langsung assign ke handler → kirim WA ke handler
+      }
+
+      // ── Kirim WA ke handler jika ticket langsung di-assign (admin/superadmin create ticket) ──
+      // Dipindah ke LUAR blok !isElevated agar selalu jalan saat ada ticketAssignedTo
+      if (ticketAssignedTo) {
         setLoadingMessage("Mengirim notifikasi WA ke handler...");
         try {
-          // Cari handler dari teamMembers state (sudah load dari users)
           const eTM = teamMembers.find(m => m.name === ticketAssignedTo);
           const { data: handlerInfo } = eTM?.username ? await supabase
             .from("users").select("phone_number, full_name")
