@@ -248,7 +248,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!isAdmin) return;
     supabase.from('users').select('id', { count: 'exact', head: true }).eq('team_type', 'Pending Approval')
-      .then(({ count }) => setPendingCount(count ?? 0));
+      .then((res: { count: number | null }) => setPendingCount(res.count ?? 0));
   }, [isAdmin]);
 
   const INTERNAL_KEYS = ['reminder-schedule', 'form-require-project', 'form-bast', 'ticket-troubleshooting', 'picket-showroom'];
