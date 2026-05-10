@@ -149,9 +149,8 @@ export default function Dashboard() {
     if (divisi === 'PTS' && !pts_type) { alert('Pilih tipe PTS!'); return; }
     if ((divisi === 'Sales' || divisi === 'Marketing') && !sales_division) { alert('Pilih sales division!'); return; }
 
-    // Simpan divisi request di sales_division sementara, admin yg approve nanti
     let requestedDivision: string | null = null;
-    if (divisi === 'PTS') requestedDivision = pts_type; // 'PTS IVP' / 'PTS UMP' / 'PTS MLDS'
+    if (divisi === 'PTS') requestedDivision = pts_type;
     else if (divisi === 'Sales') requestedDivision = sales_division;
     else if (divisi === 'Marketing') requestedDivision = `Marketing:${sales_division}`;
 
@@ -422,7 +421,7 @@ export default function Dashboard() {
                         </div>
                         {registerForm.divisi === 'PTS' && (
                           <div>
-                            <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Tipe PTS *</label>
+                            <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widests uppercase">Tipe PTS *</label>
                             <select value={registerForm.pts_type} onChange={e => setRegisterForm({ ...registerForm, pts_type: e.target.value })}
                               className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
                               <option value="">-- Pilih Tipe PTS --</option>
@@ -451,9 +450,9 @@ export default function Dashboard() {
                           </select>
                         </div>
                         <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">No. Telepon / WhatsApp</label>
-                          <input type="tel" value={registerForm.phone_number} onChange={e => setRegisterForm({ ...registerForm, phone_number: e.target.value })}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="Contoh: 08123456789" />
+                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">No. HP</label>
+                          <input type="text" value={registerForm.phone_number} onChange={e => setRegisterForm({ ...registerForm, phone_number: e.target.value })}
+                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="08xx..." />
                         </div>
                       </div>
                     </div>
@@ -632,99 +631,183 @@ export default function Dashboard() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* SIDEBAR */}
-        <div className={`relative flex flex-col transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'w-[72px]' : 'w-[288px]'}`}
-          style={{ background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', boxShadow: '4px 0 24px rgba(0,0,0,0.12)' }}>
-          <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #c8861d, transparent)' }} />
+        <div
+          className={`relative flex flex-col transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'w-[64px]' : 'w-[272px]'}`}
+          style={{
+            background: 'rgba(255,255,255,0.88)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            boxShadow: '2px 0 20px rgba(0,0,0,0.10)',
+            borderRight: '1px solid rgba(0,0,0,0.07)',
+          }}
+        >
+          {/* Top accent line */}
+          <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #c8861d 40%, #e2a84b 60%, transparent)' }} />
 
-          <div className={`flex items-center border-b px-4 py-5 ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`} style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
+          {/* ── SIDEBAR HEADER ── */}
+          <div
+            className={`flex items-center gap-3 px-4 py-4 flex-shrink-0 ${sidebarCollapsed ? 'justify-center px-0' : 'justify-between'}`}
+            style={{ borderBottom: '1px solid rgba(0,0,0,0.07)' }}
+          >
             {!sidebarCollapsed && (
-              <div className="flex items-center gap-3 overflow-hidden">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #e2a84b, #c8861d)' }}>
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
+              <>
+                <div className="flex items-center gap-2.5 overflow-hidden">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #e2a84b, #c8861d)' }}>
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
+                    </svg>
+                  </div>
+                  <div className="overflow-hidden">
+                    <p className="text-[10px] font-bold tracking-[0.18em] uppercase leading-none" style={{ color: '#c8861d' }}>IndoVisual</p>
+                    <p className="text-sm font-bold leading-tight tracking-tight" style={{ color: '#0f172a' }}>PTS Portal</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSidebarCollapsed(true)}
+                  className="w-7 h-7 rounded-md flex items-center justify-center transition-all flex-shrink-0"
+                  style={{ color: '#94a3b8' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.07)'; (e.currentTarget as HTMLButtonElement).style.color = '#475569'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; }}
+                  title="Collapse sidebar"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
                   </svg>
-                </div>
-                <div>
-                  <p className="text-[11px] font-semibold tracking-[0.2em] uppercase" style={{ color: '#c8861d' }}>IndoVisual</p>
-                  <p className="font-bold text-sm leading-none tracking-wide" style={{ color: '#0f172a' }}>PTS Portal</p>
-                </div>
-              </div>
+                </button>
+              </>
             )}
             {sidebarCollapsed && (
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #e2a84b, #c8861d)' }}>
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <button
+                onClick={() => setSidebarCollapsed(false)}
+                className="w-9 h-9 rounded-lg flex items-center justify-center transition-all"
+                style={{ background: 'linear-gradient(135deg, #e2a84b, #c8861d)' }}
+                title="Expand sidebar"
+              >
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
                 </svg>
-              </div>
-            )}
-            {!sidebarCollapsed && (
-              <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-1.5 rounded-md transition-all hover:bg-black/10 text-slate-400 hover:text-slate-700">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" /></svg>
               </button>
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto px-3 pb-3" style={{ scrollbarWidth: 'none' }}>
-            <button onClick={handleBackToDashboard}
-              className={`w-full group flex items-center gap-3 px-3 py-2.5 mb-4 font-bold transition-all ${sidebarCollapsed ? 'justify-center' : 'justify-center'}`}
-              style={{ color: '#334155' }}
-              //onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.08)'; (e.currentTarget as HTMLButtonElement).style.color = '#0f172a'; }}
-             //</div> onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.04)'; (e.currentTarget as HTMLButtonElement).style.color = '#334155'; }}
-             >
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-              {!sidebarCollapsed && <span className="text-sm tracking-wide">Main Menu</span>}
-            </button>
+          {/* ── SIDEBAR SCROLLABLE CONTENT ── */}
+          <div className="flex-1 overflow-y-auto py-3 px-2.5" style={{ scrollbarWidth: 'none' }}>
 
-            {!sidebarCollapsed && <div className="mb-3" />}
+            {/* ── BACK TO MAIN MENU — Professional nav button ── */}
+            <div className="mb-4">
+              <button
+                onClick={handleBackToDashboard}
+                className={`w-full group flex items-center gap-2.5 rounded-lg transition-all duration-200 font-medium ${sidebarCollapsed ? 'justify-center p-2' : 'px-3 py-2.5'}`}
+                style={{
+                  background: 'rgba(200,134,29,0.09)',
+                  border: '1px solid rgba(200,134,29,0.22)',
+                  color: '#92600a',
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(200,134,29,0.16)';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(200,134,29,0.4)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(200,134,29,0.09)';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(200,134,29,0.22)';
+                }}
+                title="Kembali ke Main Menu"
+              >
+                {/* Arrow back icon */}
+                <span className="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'rgba(200,134,29,0.15)' }}>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                </span>
+                {!sidebarCollapsed && (
+                  <span className="text-sm tracking-wide font-semibold truncate">Main Menu</span>
+                )}
+              </button>
+            </div>
 
+            {/* ── DIVIDER ── */}
+            {!sidebarCollapsed && (
+              <div className="mb-3 px-1">
+                <div className="h-px" style={{ background: 'rgba(0,0,0,0.07)' }} />
+              </div>
+            )}
+
+            {/* ── MENU ITEMS ── */}
             {menuLoading ? (
               <div className="flex items-center justify-center py-10">
-                <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.4)', borderTopColor: '#e2a84b' }} />
+                <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.35)', borderTopColor: '#e2a84b' }} />
               </div>
             ) : sidebarCollapsed ? (
+              /* Collapsed: icon-only */
               <div className="space-y-1">
                 {visibleMenuItems.map((menu) => (
-                  <div key={menu.key} className="group relative">
-                    <div className="flex flex-col gap-1">
-                      {menu.items.map((item, itemIndex) => {
-                        const isActive = (showTicketing && item.internal && internalUrl === item.url) || (iframeUrl === item.url);
-                        return (
-                          <button key={itemIndex} onClick={() => handleMenuClick(item, menu.title)} title={`${menu.title} — ${item.name}`}
-                            className="w-full h-9 rounded-lg flex items-center justify-center text-base transition-all"
-                            style={isActive ? { background: 'rgba(200,134,29,0.18)', border: '1px solid rgba(200,134,29,0.4)', color: '#92600a' } : { background: 'transparent', border: '1px solid transparent', color: '#64748b' }}
-                            onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.07)'; }}
-                            onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
-                            {MENU_ICONS[menu.key] ?? <span>{menu.icon}</span>}
-                          </button>
-                        );
-                      })}
-                    </div>
+                  <div key={menu.key}>
+                    {menu.items.map((item, itemIndex) => {
+                      const isActive = (showTicketing && item.internal && internalUrl === item.url) || (iframeUrl === item.url);
+                      return (
+                        <button
+                          key={itemIndex}
+                          onClick={() => handleMenuClick(item, menu.title)}
+                          title={`${menu.title} — ${item.name}`}
+                          className="w-full h-9 rounded-lg flex items-center justify-center text-base transition-all"
+                          style={
+                            isActive
+                              ? { background: 'rgba(200,134,29,0.15)', border: '1px solid rgba(200,134,29,0.35)', color: '#92600a' }
+                              : { background: 'transparent', border: '1px solid transparent', color: '#64748b' }
+                          }
+                          onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.06)'; }}
+                          onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                        >
+                          {MENU_ICONS[menu.key] ?? <span>{menu.icon}</span>}
+                        </button>
+                      );
+                    })}
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="space-y-4">
+              /* Expanded: full nav */
+              <div className="space-y-5">
+
+                {/* Project section */}
                 {visibleMenuItems.filter(m => PROJECT_KEYS.includes(m.key)).length > 0 && (
                   <div>
-                    <p className="px-1 mb-2 text-xs font-bold tracking-wide uppercase" style={{ color: 'rgba(0,0,0,0.55)' }}>Project</p>
+                    {/* Section label */}
+                    <div className="flex items-center gap-2 px-1 mb-1.5">
+                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.38)' }}>Project</span>
+                      <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
+                    </div>
                     <div className="space-y-0.5">
                       {visibleMenuItems.filter(m => PROJECT_KEYS.includes(m.key)).map(menu => {
                         if (menu.items.length === 1) {
                           const item = menu.items[0];
                           const isActive = (showTicketing && item.internal && internalUrl === item.url) || (iframeUrl === item.url);
                           return (
-                            <button key={menu.key} onClick={() => handleMenuClick(item, menu.title)}
-                              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left font-medium transition-all"
-                              style={isActive ? { background: 'rgba(200,134,29,0.12)', border: '1px solid rgba(200,134,29,0.3)', color: '#92600a' } : { background: 'transparent', border: '1px solid transparent', color: '#1e293b' }}
-                              onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.06)'; }}
-                              onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
-                              <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: isActive ? 'rgba(200,134,29,0.15)' : 'rgba(0,0,0,0.07)', color: isActive ? '#92600a' : '#475569' }}>
-                                {MENU_ICONS[menu.key] ?? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth={2}/></svg>}
+                            <button
+                              key={menu.key}
+                              onClick={() => handleMenuClick(item, menu.title)}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
+                              style={
+                                isActive
+                                  ? { background: 'rgba(200,134,29,0.11)', border: '1px solid rgba(200,134,29,0.28)', color: '#92600a' }
+                                  : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
+                              }
+                              onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.05)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,0,0,0.06)'; } }}
+                              onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; } }}
+                            >
+                              <span
+                                className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors"
+                                style={{
+                                  background: isActive ? 'rgba(200,134,29,0.18)' : 'rgba(0,0,0,0.06)',
+                                  color: isActive ? '#92600a' : '#64748b',
+                                }}
+                              >
+                                {MENU_ICONS[menu.key] ?? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth={2} /></svg>}
                               </span>
-                              <span className="truncate text-sm tracking-wide">{menu.title}</span>
-                              {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#b8760d' }} />}
+                              <span className="flex-1 truncate text-sm font-medium">{menu.title}</span>
+                              {isActive && (
+                                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#c8861d' }} />
+                              )}
                             </button>
                           );
                         }
@@ -734,25 +817,49 @@ export default function Dashboard() {
                   </div>
                 )}
 
+                {/* Internal Daily section */}
                 {visibleMenuItems.filter(m => INTERNAL_DAILY_KEYS.includes(m.key)).length > 0 && (
                   <div>
-                    <p className="px-1 mb-2 text-xs font-bold tracking-wide uppercase" style={{ color: 'rgba(0,0,0,0.55)' }}>Internal Daily</p>
+                    {/* Section label */}
+                    <div className="flex items-center gap-2 px-1 mb-1.5">
+                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.38)' }}>Internal Daily</span>
+                      <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
+                    </div>
                     <div className="space-y-0.5">
                       {visibleMenuItems.filter(m => INTERNAL_DAILY_KEYS.includes(m.key)).flatMap(menu =>
                         menu.items.map((item, itemIndex) => {
                           const isActive = (showTicketing && item.internal && internalUrl === item.url) || (iframeUrl === item.url);
                           return (
-                            <button key={`${menu.key}-${itemIndex}`} onClick={() => handleMenuClick(item, menu.title)}
-                              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left font-medium transition-all"
-                              style={isActive ? { background: 'rgba(200,134,29,0.12)', border: '1px solid rgba(200,134,29,0.3)', color: '#92600a' } : { background: 'transparent', border: '1px solid transparent', color: '#1e293b' }}
-                              onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.06)'; }}
-                              onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
-                              <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: isActive ? 'rgba(200,134,29,0.15)' : 'rgba(0,0,0,0.07)', color: isActive ? '#92600a' : '#475569' }}>
-                                {MENU_ICONS[menu.key] ?? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth={2}/></svg>}
+                            <button
+                              key={`${menu.key}-${itemIndex}`}
+                              onClick={() => handleMenuClick(item, menu.title)}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
+                              style={
+                                isActive
+                                  ? { background: 'rgba(200,134,29,0.11)', border: '1px solid rgba(200,134,29,0.28)', color: '#92600a' }
+                                  : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
+                              }
+                              onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.05)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,0,0,0.06)'; } }}
+                              onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; } }}
+                            >
+                              <span
+                                className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors"
+                                style={{
+                                  background: isActive ? 'rgba(200,134,29,0.18)' : 'rgba(0,0,0,0.06)',
+                                  color: isActive ? '#92600a' : '#64748b',
+                                }}
+                              >
+                                {MENU_ICONS[menu.key] ?? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth={2} /></svg>}
                               </span>
-                              <span className="truncate text-sm tracking-wide">{item.name}</span>
-                              {item.external && !item.embed && <svg className="ml-auto w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>}
-                              {isActive && !item.external && <div className="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#b8760d' }} />}
+                              <span className="flex-1 truncate text-sm font-medium">{item.name}</span>
+                              {item.external && !item.embed && (
+                                <svg className="w-3 h-3 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                              )}
+                              {isActive && !item.external && (
+                                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#c8861d' }} />
+                              )}
                             </button>
                           );
                         })
@@ -760,95 +867,123 @@ export default function Dashboard() {
                     </div>
                   </div>
                 )}
+
               </div>
             )}
           </div>
 
-          {/* SIDEBAR BOTTOM: User Profile + Admin Panel (admin only) + Sign Out */}
+          {/* ── SIDEBAR FOOTER: User + Admin + Sign Out ── */}
           <div className="flex-shrink-0" style={{ borderTop: '1px solid rgba(0,0,0,0.07)' }}>
             {sidebarCollapsed ? (
-              /* ── Collapsed state: icon-only buttons ── */
-              <div className="p-2 flex flex-col items-center gap-1.5">
-                <button onClick={() => setSidebarCollapsed(false)} className="w-9 h-9 rounded-lg flex items-center justify-center transition-all text-slate-400 hover:text-slate-600" style={{ background: 'rgba(0,0,0,0.04)' }} title="Expand sidebar">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M6 5l7 7-7 7" /></svg>
-                </button>
-                <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 cursor-pointer"
+              /* Collapsed footer */
+              <div className="py-2 px-1.5 flex flex-col items-center gap-1.5">
+                {/* Avatar */}
+                <button
+                  onClick={() => setShowUserProfile(true)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 transition-all"
                   style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#78350f' }}
                   title={currentUser?.full_name ?? ''}
-                  onClick={() => setShowUserProfile(true)}>
+                >
                   {currentUser?.full_name?.charAt(0)?.toUpperCase() ?? 'U'}
-                </div>
+                </button>
+
+                {/* Admin */}
                 {isAdmin && (
-                  <button onClick={() => { setAdminPanelTab('settings'); setShowAdminPanel(true); }} className="relative w-9 h-9 rounded-lg flex items-center justify-center transition-all" style={{ color: '#94a3b8' }} title="Admin Panel"
+                  <button
+                    onClick={() => { setAdminPanelTab('settings'); setShowAdminPanel(true); }}
+                    className="relative w-9 h-9 rounded-lg flex items-center justify-center transition-all"
+                    style={{ color: '#94a3b8' }}
+                    title="Admin Panel"
                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#4338ca'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(99,102,241,0.1)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                  >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    {pendingCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{pendingCount}</span>}
+                    {pendingCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{pendingCount}</span>
+                    )}
                   </button>
                 )}
-                <button onClick={handleLogout} className="w-9 h-9 rounded-lg flex items-center justify-center transition-all" style={{ color: '#94a3b8' }} title="Sign Out"
+
+                {/* Sign out */}
+                <button
+                  onClick={handleLogout}
+                  className="w-9 h-9 rounded-lg flex items-center justify-center transition-all"
+                  style={{ color: '#94a3b8' }}
+                  title="Sign Out"
                   onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#b91c1c'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.07)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
                 </button>
               </div>
             ) : (
-              /* ── Expanded state: user profile row + admin panel (if admin) + sign out ── */
+              /* Expanded footer */
               <div className="p-3 space-y-1">
-                {/* User profile row — di atas, dengan arrow lebih visible */}
+
+                {/* User profile row */}
                 <button
                   onClick={() => setShowUserProfile(true)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left group"
-                  style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.05)' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.07)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(200,134,29,0.25)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.03)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,0,0,0.05)'; }}>
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#78350f' }}>
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all text-left"
+                  style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.07)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(200,134,29,0.22)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.03)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,0,0,0.06)'; }}
+                >
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
+                    style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#78350f' }}
+                  >
                     {currentUser?.full_name?.charAt(0)?.toUpperCase() ?? 'U'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate leading-tight" style={{ color: '#1e293b' }}>{currentUser?.full_name ?? '-'}</p>
                     <p className="text-[10px] font-bold tracking-widest uppercase mt-0.5" style={{ color: '#c8861d' }}>{currentUser?.role ?? '-'}</p>
                   </div>
-                  {/* Arrow lebih visible dengan background */}
-                  <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 transition-all"
-                    style={{ background: 'rgba(200,134,29,0.12)', color: '#c8861d' }}>
+                  <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0" style={{ color: '#94a3b8' }}>
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                     </svg>
                   </div>
                 </button>
 
-                {/* Admin Panel — hanya admin/superadmin */}
+                {/* Admin Panel */}
                 {isAdmin && (
-                  <button onClick={() => { setAdminPanelTab('settings'); setShowAdminPanel(true); }}
+                  <button
+                    onClick={() => { setAdminPanelTab('settings'); setShowAdminPanel(true); }}
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
                     style={{ color: '#64748b', border: '1px solid transparent' }}
                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(99,102,241,0.07)'; (e.currentTarget as HTMLButtonElement).style.color = '#4338ca'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(99,102,241,0.18)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#64748b'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; }}>
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#64748b'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; }}
+                  >
                     <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    Admin Panel
+                    <span>Admin Panel</span>
+                    {pendingCount > 0 && (
+                      <span className="ml-auto text-[10px] font-black bg-red-500 text-white rounded-full px-1.5 py-0.5 leading-none">{pendingCount}</span>
+                    )}
                   </button>
                 )}
 
-                {/* Sign out — di bawah */}
-                <button onClick={handleLogout}
+                {/* Sign out */}
+                <button
+                  onClick={handleLogout}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
                   style={{ color: '#94a3b8', border: '1px solid transparent' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.06)'; (e.currentTarget as HTMLButtonElement).style.color = '#b91c1c'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.15)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; }}>
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; }}
+                >
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
                   Sign out
                 </button>
+
               </div>
             )}
           </div>
