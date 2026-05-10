@@ -491,8 +491,9 @@ export default function PiketShowroomPage() {
                             </td>
                           )}
                         </tr>
-                      ));
-                    });});})()}
+                      );
+                      });
+                    });})()}
                   </tbody>
                 </table>
                 <div className="flex items-center justify-between px-5 py-2.5" style={{borderTop:'1px solid #e5e7eb'}}>
