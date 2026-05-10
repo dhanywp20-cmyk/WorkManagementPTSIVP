@@ -338,9 +338,9 @@ export default function PiketShowroomPage() {
                     <col style={{width:'11%'}}/><col style={{width:'8%'}}/><col style={{width:'22%'}}/><col style={{width:'8%'}}/><col style={{width:'4%'}}/>
                   </colgroup>
                   <thead>
-                    <tr style={{background:'linear-gradient(135deg,rgba(30,41,59,0.92) 0%,rgba(51,65,85,0.88) 100%)',backdropFilter:'blur(8px)'}}>
+                    <tr style={{background:'linear-gradient(135deg,#fff1f2 0%,#ffe4e6 100%)',borderBottom:'2px solid rgba(220,38,38,0.18)'}}>
                       {['No','Tanggal','PIC','Kegiatan','Jam','Produk','Tamu Instansi','Sales','Keterangan','Edit By','Action'].map((h,i)=>(
-                        <th key={h} className="px-3 py-3 text-center" style={{borderRight:i<10?'1px solid rgba(255,255,255,0.15)':'none'}}><span className="text-[10px] font-black uppercase tracking-wider" style={{color:'rgba(255,255,255,0.92)'}}>{h}</span></th>
+                        <th key={h} className="px-3 py-3 text-center" style={{borderRight:i<10?'1px solid rgba(220,38,38,0.1)':'none'}}><span className="text-[10px] font-black uppercase tracking-wider" style={{color:'#9f1239',letterSpacing:'0.08em'}}>{h}</span></th>
                       ))}
                     </tr>
                   </thead>
