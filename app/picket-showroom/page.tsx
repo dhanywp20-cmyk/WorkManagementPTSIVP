@@ -170,7 +170,17 @@ export default function PiketShowroomPage() {
   const divPieAll=Object.entries(filteredKgPie.reduce((acc,k)=>{if(k.sales_division)acc[k.sales_division]=(acc[k.sales_division]||0)+1;return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
   const kgTypePie=JENIS_KEGIATAN_LIST.map(j=>({label:j,value:filteredKgPie.filter(k=>k.jenis_kegiatan===j).length,color:KEGIATAN_COLORS[j]})).filter(d=>d.value>0);
   const instansiPie=Object.entries(filteredKgPie.filter(k=>k.tamu_instansi).reduce((acc,k)=>{const key=k.tamu_instansi!;acc[key]=(acc[key]||0)+1;return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
-  const produkPie=Object.entries(filteredKgPie.reduce((acc,k)=>{(k.produk||[]).forEach(p=>{acc[p]=(acc[p]||0)+1;});return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
+  const PRODUK_SPESIFIK=['Videowall','LED','IFP','Audio System','Lighting','Kiosk'];
+  const produkPie=Object.entries(filteredKgPie.reduce((acc,k)=>{
+    const produk=k.produk||[];
+    if(produk.includes('All Product')){
+      // Distribusi ke semua produk spesifik
+      PRODUK_SPESIFIK.forEach(p=>{acc[p]=(acc[p]||0)+1;});
+    } else {
+      produk.forEach(p=>{acc[p]=(acc[p]||0)+1;});
+    }
+    return acc;
+  },{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
 
 
   return(
@@ -477,7 +487,7 @@ export default function PiketShowroomPage() {
                               <div className="flex items-center justify-center gap-2">
                                 {!isVirtual&&<button onClick={()=>setViewDetail(row)} className="w-8 h-8 rounded-lg flex items-center justify-center text-base hover:bg-blue-100 transition-colors" title="View">👁️</button>}
                                 <button onClick={()=>isVirtual?handleFillVirtual(row):setFillDetail(row)} className="w-8 h-8 rounded-lg flex items-center justify-center text-base hover:bg-orange-100 transition-colors" title="Edit">✏️</button>
-                                {!isVirtual&&<button onClick={()=>handleDeleteRow(row)} className="w-8 h-8 rounded-lg flex items-center justify-center text-base hover:bg-red-100 transition-colors" title="Delete">🗑️</button>}
+                                {!isVirtual&&isAdmin&&<button onClick={()=>handleDeleteRow(row)} className="w-8 h-8 rounded-lg flex items-center justify-center text-base hover:bg-red-100 transition-colors" title="Delete">🗑️</button>}
                               </div>
                             </td>
                           )}
