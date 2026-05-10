@@ -68,6 +68,9 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
     {label:'Top Divisi',          val:topDivisi,    hint:`${topDivisiCount}x kegiatan`,   icon:'🏷️', color:'#0891b2', isText:true},
     {label:'Top Produk',          val:topProduk,    hint:'paling sering demo',            icon:'🥇', color:'#059669', isText:true},
     {label:'Kebutuhan Terbanyak', val:topKebutuhan, hint:`${topKebutuhanCount}x diminta`, icon:'🎯', color:'#7c3aed', isText:true},
+    ...PRODUK_KATEGORI.map(p=>({
+      label:p, val:fmtJam(jamPerProduk[p]||0), hint:'jam pakai', icon:PRODUK_ICONS[p], color:PRODUK_COLORS[p], isText:true,
+    })),
   ];
 
   const periodLabel=selectedMonth!==null
@@ -127,30 +130,6 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
             <span className="text-[8px] text-slate-300 leading-none">{s.hint}</span>
           </div>
         ))}
-      </div>
-      {/* Jam pakai per produk */}
-      <div className="border-t border-slate-100 px-3 py-2.5">
-        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">⚡ Akumulasi Jam Pakai Produk</p>
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-          {PRODUK_KATEGORI.map(p=>{
-            const jam=jamPerProduk[p]||0;
-            const color=PRODUK_COLORS[p];
-            const maxJam=Math.max(...PRODUK_KATEGORI.map(x=>jamPerProduk[x]||0),1);
-            const pct=Math.round((jam/maxJam)*100);
-            return(
-              <div key={p} className="flex flex-col gap-1 p-2 rounded-xl" style={{background:`${color}08`,border:`1px solid ${color}20`}}>
-                <div className="flex items-center gap-1">
-                  <span className="text-[11px]">{PRODUK_ICONS[p]}</span>
-                  <span className="text-[9px] font-bold truncate" style={{color}}>{p}</span>
-                </div>
-                <span className="text-base font-black leading-none" style={{color}}>{fmtJam(jam)}</span>
-                <div className="w-full rounded-full overflow-hidden" style={{height:'3px',background:`${color}20`}}>
-                  <div className="h-full rounded-full transition-all" style={{width:`${pct}%`,background:color}}/>
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </div>
     </div>
   );
