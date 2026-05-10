@@ -459,8 +459,10 @@ export default function PiketShowroomPage() {
                             <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #e5e7eb',verticalAlign:'middle'}}>
                               {(()=>{
                                 // Ambil edited_by_name dari kegiatan yang paling terakhir di-update
-                                const lastEdited = kgToShow.filter(k=>k.edited_by_name).sort((a,b)=>new Date(b.updated_at||b.created_at||0).getTime()-new Date(a.updated_at||a.created_at||0).getTime())[0];
-                                return lastEdited?.edited_by_name
+                                const lastEdited = kgToShow
+                                  .filter((k): k is typeof k & {edited_by_name:string} => !!k.edited_by_name)
+                                  .sort((a,b)=>new Date(b.updated_at||b.created_at||0).getTime()-new Date(a.updated_at||a.created_at||0).getTime())[0];
+                                return lastEdited
                                   ?<div className="flex flex-col gap-0.5">
                                     <div className="flex items-center gap-1"><span className="text-[9px]">✏️</span><span className="text-[10px] font-semibold text-slate-600 leading-tight">{lastEdited.edited_by_name}</span></div>
                                     {lastEdited.updated_at&&<span className="text-[8px] text-slate-400 leading-tight">{new Date(lastEdited.updated_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</span>}
