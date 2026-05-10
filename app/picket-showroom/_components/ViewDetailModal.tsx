@@ -1,7 +1,7 @@
 'use client';
 import { PiketRow, KegiatanEntry, DAY_COLOR, TEAM_LABEL, KEGIATAN_COLORS } from './shared';
 
-export function ViewDetailModal({row,kegiatanList,onClose}:{row:PiketRow;kegiatanList:KegiatanEntry[];onClose:()=>void}) {
+export function ViewDetailModal({row,kegiatanList,onClose,onEdit}:{row:PiketRow;kegiatanList:KegiatanEntry[];onClose:()=>void;onEdit?:()=>void}) {
   const dc=DAY_COLOR[row.day_of_week];
   const kgs=kegiatanList.filter(k=>k.piket_id===row.id);
   const dateLabel=new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
