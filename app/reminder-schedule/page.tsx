@@ -291,7 +291,7 @@ export default function ReminderSchedulePage() {
         (formData.pic_name  ? `🙋 PIC: ${formData.pic_name}${formData.pic_phone ? ' - ' + formData.pic_phone : ''}\n\n`    : '') +
         (formData.notes     ? `📝 Catatan: ${formData.notes}\n\n`    : '') +
         `-\n` +
-       `Link Dashboard: https://team-ticketing.vercel.app/dashboard\n` +
+       `Link Dashboard: https://work-management-ptsivp.vercel.app/dashboard\n` +
         `jangan lupa peralatan & Semangat💪🏼`;
 
       const waResult = await sendFonnteWA(assignee.phone_number, msg, { reminderType: 'new_schedule' });
@@ -422,7 +422,7 @@ export default function ReminderSchedulePage() {
                       `📍 ${reminder.address || '-'}\n\n` +
                       `telah selesai dilaksanakan oleh tim kami.\n\n` +
                       `Mohon berikan penilaian / review Anda melalui dashboard:\n` +
-                      `🔗 https://team-ticketing.vercel.app/dashboard\n\n` +
+                      `🔗 https://work-management-ptsivp.vercel.app/dashboard\n\n` +
                       `Terima kasih! 🙏`;
                     await sendFonnteWA(resolvedGuest.phone_number, guestMsg);
                   } else {
@@ -571,7 +571,7 @@ export default function ReminderSchedulePage() {
           (r.notes ? `📝 Catatan: ${r.notes}\n` : '') +
           `telah selesai dilaksanakan oleh tim kami.\n\n` +
           `Mohon berikan penilaian / review Anda melalui dashboard:\n` +
-          `🔗 https://team-ticketing.vercel.app/dashboard\n\n` +
+          `🔗 https://work-management-ptsivp.vercel.app/dashboard\n\n` +
           `Terima kasih! 🙏`;
         const waResult = await sendFonnteWA(resolvedGuest.phone_number, guestMsg);
         if (waResult.ok) notify('success', `Form review & WA berhasil dikirim ke ${resolvedGuest.full_name}!`);
@@ -631,7 +631,7 @@ export default function ReminderSchedulePage() {
           (rescheduleTarget.pic_phone ? `📱 No. PIC: ${rescheduleTarget.pic_phone}\n` : '') +
           (rescheduleTarget.notes ? `📝 Catatan: ${rescheduleTarget.notes}\n` : '') +
           (reason ? `📝 Alasan: ${reason}\n` : '') +
-          `\n🔗 https://team-ticketing.vercel.app/dashboard`;
+          `\n🔗 https://work-management-ptsivp.vercel.app/dashboard`;
         await sendFonnteWA(handlerUser.phone_number, msg);
       }
     } catch (waEx) { console.warn('[reschedule] WA failed:', waEx); }
