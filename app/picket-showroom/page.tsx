@@ -460,7 +460,7 @@ export default function PiketShowroomPage() {
                               {(()=>{
                                 // Ambil edited_by_name dari kegiatan yang paling terakhir di-update
                                 const lastEdited = kgToShow
-                                  .filter((k): k is typeof k & {edited_by_name:string} => !!k.edited_by_name)
+                                  .filter((k): k is NonNullable<typeof k> & {edited_by_name:string} => k!=null && !!k.edited_by_name)
                                   .sort((a,b)=>new Date(b.updated_at||b.created_at||0).getTime()-new Date(a.updated_at||a.created_at||0).getTime())[0];
                                 return lastEdited
                                   ?<div className="flex flex-col gap-0.5">
