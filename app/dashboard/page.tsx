@@ -28,6 +28,8 @@ export default function Dashboard() {
     username: '',
     password: '',
     confirm_password: '',
+    divisi: '',
+    pts_type: '',
     sales_division: '',
     jabatan: '',
     phone_number: '',
@@ -137,12 +139,29 @@ export default function Dashboard() {
   };
 
   const handleRegister = async () => {
-    const { full_name, username, password, confirm_password, sales_division } = registerForm;
+    const { full_name, username, password, confirm_password, divisi, pts_type, sales_division } = registerForm;
     if (!full_name.trim()) { alert('Nama lengkap wajib diisi!'); return; }
     if (!username.trim()) { alert('Email / username wajib diisi!'); return; }
     if (!password || password.length < 6) { alert('Password minimal 6 karakter!'); return; }
     if (password !== confirm_password) { alert('Konfirmasi password tidak cocok!'); return; }
-    if (!sales_division) { alert('Pilih divisi sales!'); return; }
+    if (!divisi) { alert('Pilih divisi!'); return; }
+    if (divisi === 'PTS' && !pts_type) { alert('Pilih tipe PTS!'); return; }
+    if (divisi === 'Sales' && !sales_division) { alert('Pilih sales division!'); return; }
+
+    let role = 'guest';
+    let team_type: string | null = null;
+    let division: string | null = null;
+    if (divisi === 'PTS') {
+      role = 'team';
+      if (pts_type === 'PTS IVP') team_type = 'Team PTS';
+      else if (pts_type === 'PTS UMP') team_type = 'Team PTS UMP';
+      else if (pts_type === 'PTS MLDS') team_type = 'Team PTS MLDS';
+    } else if (divisi === 'Sales') {
+      role = 'guest'; team_type = 'Guest'; division = sales_division;
+    } else if (divisi === 'Marketing') {
+      role = 'guest'; team_type = 'Marketing';
+    }
+
     setRegisterLoading(true);
     try {
       const { data: existing } = await supabase.from('users').select('id').eq('username', username.trim().toLowerCase()).maybeSingle();
@@ -151,16 +170,16 @@ export default function Dashboard() {
         full_name: full_name.trim(),
         username: username.trim().toLowerCase(),
         password: password,
-        role: 'guest',
-        sales_division: sales_division,
+        role,
+        team_type,
+        sales_division: division,
         jabatan: registerForm.jabatan.trim() || null,
         phone_number: registerForm.phone_number.trim() || null,
-        team_type: 'Pending Approval',
         allowed_menus: [],
       }]);
       if (error) throw error;
       setRegisterSuccess(true);
-      setRegisterForm({ full_name: '', username: '', password: '', confirm_password: '', sales_division: '', jabatan: '', phone_number: '' });
+      setRegisterForm({ full_name: '', username: '', password: '', confirm_password: '', divisi: '', pts_type: '', sales_division: '', jabatan: '', phone_number: '' });
     } catch (err: any) {
       alert('Registrasi gagal: ' + err.message);
     }
@@ -387,13 +406,37 @@ export default function Dashboard() {
                         className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="ulangi password" />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Sales Division *</label>
-                      <select value={registerForm.sales_division} onChange={e => setRegisterForm({ ...registerForm, sales_division: e.target.value })}
+                      <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Divisi *</label>
+                      <select value={registerForm.divisi} onChange={e => setRegisterForm({ ...registerForm, divisi: e.target.value, pts_type: '', sales_division: '' })}
                         className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
                         <option value="">-- Pilih Divisi --</option>
-                        {SALES_DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                        <option value="PTS">PTS</option>
+                        <option value="Sales">Sales</option>
+                        <option value="Marketing">Marketing</option>
                       </select>
                     </div>
+                    {registerForm.divisi === 'PTS' && (
+                      <div>
+                        <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Tipe PTS *</label>
+                        <select value={registerForm.pts_type} onChange={e => setRegisterForm({ ...registerForm, pts_type: e.target.value })}
+                          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
+                          <option value="">-- Pilih Tipe PTS --</option>
+                          <option value="PTS IVP">PTS IVP</option>
+                          <option value="PTS UMP">PTS UMP</option>
+                          <option value="PTS MLDS">PTS MLDS</option>
+                        </select>
+                      </div>
+                    )}
+                    {registerForm.divisi === 'Sales' && (
+                      <div>
+                        <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Sales Division *</label>
+                        <select value={registerForm.sales_division} onChange={e => setRegisterForm({ ...registerForm, sales_division: e.target.value })}
+                          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
+                          <option value="">-- Pilih Sales Division --</option>
+                          {SALES_DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                      </div>
+                    )}
                     <div>
                       <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Jabatan / Posisi</label>
                       <select value={registerForm.jabatan} onChange={e => setRegisterForm({ ...registerForm, jabatan: e.target.value })}
