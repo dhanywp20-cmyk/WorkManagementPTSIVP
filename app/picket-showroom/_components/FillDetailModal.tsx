@@ -14,10 +14,12 @@ interface KFEntry {
 }
 const emptyKF=():KFEntry=>({jenis_kegiatan:'Demo Product',jam_mulai:'09:00',jam_selesai:'10:00',produk:[],tamu_instansi:'',nama_sales:'',sales_division:'',kebutuhan:[],keterangan:'',team_rnd:''});
 
+interface PTUser { id:string; full_name:string; team_type?:string; }
+
 export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;onClose:()=>void;onSaved:()=>void;currentUser?:any}) {
   const [entries,setEntries]=useState<KFEntry[]>([emptyKF()]);
   const [loadingE,setLoadingE]=useState(true);
-  const [ptUsers,setPtUsers]=useState<{id:string;full_name:string}[]>([]);
+  const [ptUsers,setPtUsers]=useState<PTUser[]>([]);
   const [saving,setSaving]=useState(false);
   const [toast,setToast]=useState<{type:'success'|'error';msg:string}|null>(null);
   const dc=DAY_COLOR[row.day_of_week];
@@ -28,7 +30,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
       setLoadingE(true);
       const[detailRes,usersRes]=await Promise.all([
         supabase.from('piket_tamu_detail').select('*').eq('piket_id',row.id).order('created_at'),
-        supabase.from('users').select('id,full_name').in('team_type',['Team PTS','Team PTS UMP','Team PTS MLDS']).order('full_name'),
+        supabase.from('users').select('id,full_name,team_type').in('team_type',['Team PTS','Team PTS UMP','Team PTS MLDS']).order('full_name'),
       ]);
       if(detailRes.data&&detailRes.data.length>0){
         setEntries((detailRes.data as KegiatanEntry[]).map(d=>({
@@ -39,7 +41,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
           team_rnd:(d as any).team_rnd||'',
         })));
       }
-      if(usersRes.data)setPtUsers(usersRes.data as {id:string;full_name:string}[]);
+      if(usersRes.data)setPtUsers(usersRes.data as PTUser[]);
       setLoadingE(false);
     })();
   },[row.id]);
@@ -49,6 +51,16 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
   const toggleP=(i:number,p:string)=>{
     if(p==='All Product') setEntries(prev=>prev.map((e,x)=>x===i?{...e,produk:e.produk.includes('All Product')?[]:['All Product']}:e));
     else setEntries(prev=>prev.map((e,x)=>{if(x!==i)return e;const wo=e.produk.filter(v=>v!=='All Product');return{...e,produk:wo.includes(p)?wo.filter(v=>v!==p):[...wo,p]};}));
+  };
+
+  // Helper: get team label for a user
+  const getTeamLabel=(name:string)=>{
+    const u=ptUsers.find(x=>x.full_name===name);
+    if(!u?.team_type)return '';
+    if(u.team_type==='Team PTS') return 'PTS IVP';
+    if(u.team_type==='Team PTS UMP') return 'PTS UMP';
+    if(u.team_type==='Team PTS MLDS') return 'PTS MLDS';
+    return '';
   };
 
   const handleSave=async()=>{
@@ -68,13 +80,16 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
       }));
       if(ins.length>0){const{error}=await supabase.from('piket_tamu_detail').insert(ins);if(error)throw error;}
       const fd=ins.find(e=>e.jenis_kegiatan==='Demo Product');
+      // Fix: always include edited_by_name in the update payload
       const editedByName=currentUser?.full_name||null;
-      await supabase.from('piket_schedules').update({
+      const updatePayload:Record<string,any>={
         tamu_instansi:fd?.tamu_instansi||null,
         kebutuhan:fd?.kebutuhan||[],
         updated_at:new Date().toISOString(),
-        ...(editedByName?{edited_by_name:editedByName}:{}),
-      }).eq('id',row.id);
+        edited_by_name:editedByName,
+      };
+      const{error:updateErr}=await supabase.from('piket_schedules').update(updatePayload).eq('id',row.id);
+      if(updateErr)console.error('edited_by_name update error:',updateErr.message);
       notify('success','Data tersimpan!');
       setTimeout(()=>{onSaved();onClose();},700);
     }catch(e:any){notify('error','Gagal: '+e.message);}
@@ -210,8 +225,34 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                         <select value={entry.team_rnd} onChange={e=>upd(idx,{team_rnd:e.target.value})}
                           className="w-full rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
                           <option value="">— Pilih Team —</option>
-                          {ptUsers.map(u=><option key={u.id} value={u.full_name}>{u.full_name}</option>)}
+                          {(['Team PTS','Team PTS UMP','Team PTS MLDS'] as const).map(tt=>{
+                            const members=ptUsers.filter(u=>u.team_type===tt);
+                            if(members.length===0)return null;
+                            const grpLabel=tt==='Team PTS'?'PTS IVP':tt==='Team PTS UMP'?'PTS UMP':'PTS MLDS';
+                            return(
+                              <optgroup key={tt} label={grpLabel}>
+                                {members.map(u=><option key={u.id} value={u.full_name}>{u.full_name}</option>)}
+                              </optgroup>
+                            );
+                          })}
                         </select>
+                        {/* Show selected user's team label */}
+                        {entry.team_rnd&&(()=>{
+                          const lbl=getTeamLabel(entry.team_rnd);
+                          if(!lbl)return null;
+                          const colors:Record<string,{bg:string;color:string}>={
+                            'PTS IVP':{bg:'rgba(220,38,38,0.1)',color:'#991b1b'},
+                            'PTS UMP':{bg:'rgba(37,99,235,0.1)',color:'#1e40af'},
+                            'PTS MLDS':{bg:'rgba(124,58,237,0.1)',color:'#6d28d9'},
+                          };
+                          const c=colors[lbl]||{bg:'rgba(0,0,0,0.06)',color:'#374151'};
+                          return(
+                            <div className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:c.bg}}>
+                              <span className="w-2 h-2 rounded-full" style={{background:c.color}}/>
+                              <span className="text-[10px] font-bold" style={{color:c.color}}>{entry.team_rnd} · {lbl}</span>
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                     <div>
