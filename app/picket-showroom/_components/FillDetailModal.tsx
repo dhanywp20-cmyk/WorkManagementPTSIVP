@@ -2,9 +2,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
-  PiketRow, KegiatanEntry, JenisKegiatan,
+  PiketRow, KegiatanEntry, JenisKegiatan, UserRow,
   DAY_COLOR, JENIS_KEGIATAN_LIST, KEGIATAN_COLORS,
-  KEBUTUHAN_LIST, PRODUK_LIST, SALES_DIVISIONS,
+  KEBUTUHAN_LIST, PRODUK_LIST, SALES_DIVISIONS, TEAM_LABEL,
 } from './shared';
 
 interface KFEntry {
@@ -14,12 +14,10 @@ interface KFEntry {
 }
 const emptyKF=():KFEntry=>({jenis_kegiatan:'Demo Product',jam_mulai:'09:00',jam_selesai:'10:00',produk:[],tamu_instansi:'',nama_sales:'',sales_division:'',kebutuhan:[],keterangan:'',team_rnd:''});
 
-interface PTUser { id:string; full_name:string; team_type?:string; }
-
 export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;onClose:()=>void;onSaved:()=>void;currentUser?:any}) {
   const [entries,setEntries]=useState<KFEntry[]>([emptyKF()]);
   const [loadingE,setLoadingE]=useState(true);
-  const [ptUsers,setPtUsers]=useState<PTUser[]>([]);
+  const [ptUsers,setPtUsers]=useState<(UserRow&{id:string;full_name:string})[]>([]);
   const [saving,setSaving]=useState(false);
   const [toast,setToast]=useState<{type:'success'|'error';msg:string}|null>(null);
   const dc=DAY_COLOR[row.day_of_week];
@@ -41,7 +39,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
           team_rnd:(d as any).team_rnd||'',
         })));
       }
-      if(usersRes.data)setPtUsers(usersRes.data as PTUser[]);
+      if(usersRes.data)setPtUsers(usersRes.data as any[]);
       setLoadingE(false);
     })();
   },[row.id]);
@@ -53,14 +51,11 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
     else setEntries(prev=>prev.map((e,x)=>{if(x!==i)return e;const wo=e.produk.filter(v=>v!=='All Product');return{...e,produk:wo.includes(p)?wo.filter(v=>v!==p):[...wo,p]};}));
   };
 
-  // Helper: get team label for a user
-  const getTeamLabel=(name:string)=>{
+  // Dapatkan label PTS team dari nama user
+  const getPTSTeamLabel=(name:string)=>{
     const u=ptUsers.find(x=>x.full_name===name);
-    if(!u?.team_type)return '';
-    if(u.team_type==='Team PTS') return 'PTS IVP';
-    if(u.team_type==='Team PTS UMP') return 'PTS UMP';
-    if(u.team_type==='Team PTS MLDS') return 'PTS MLDS';
-    return '';
+    const tt=u?.team_type||'';
+    return tt==='Team PTS'?'PTS IVP':tt==='Team PTS UMP'?'PTS UMP':tt==='Team PTS MLDS'?'PTS MLDS':'';
   };
 
   const handleSave=async()=>{
@@ -80,16 +75,19 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
       }));
       if(ins.length>0){const{error}=await supabase.from('piket_tamu_detail').insert(ins);if(error)throw error;}
       const fd=ins.find(e=>e.jenis_kegiatan==='Demo Product');
-      // Fix: always include edited_by_name in the update payload
       const editedByName=currentUser?.full_name||null;
-      const updatePayload:Record<string,any>={
+
+      // Update piket_schedules — sertakan edited_by_name selalu jika ada
+      const updatePayload: Record<string,any> = {
         tamu_instansi:fd?.tamu_instansi||null,
         kebutuhan:fd?.kebutuhan||[],
         updated_at:new Date().toISOString(),
-        edited_by_name:editedByName,
       };
-      const{error:updateErr}=await supabase.from('piket_schedules').update(updatePayload).eq('id',row.id);
-      if(updateErr)console.error('edited_by_name update error:',updateErr.message);
+      if(editedByName) updatePayload.edited_by_name=editedByName;
+
+      const{error:upErr}=await supabase.from('piket_schedules').update(updatePayload).eq('id',row.id);
+      if(upErr) console.warn('Gagal update piket_schedules:',upErr.message);
+
       notify('success','Data tersimpan!');
       setTimeout(()=>{onSaved();onClose();},700);
     }catch(e:any){notify('error','Gagal: '+e.message);}
@@ -222,37 +220,31 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                     {entry.jenis_kegiatan==='RnD'&&(
                       <div>
                         <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">👥 Team yang RnD</label>
-                        <select value={entry.team_rnd} onChange={e=>upd(idx,{team_rnd:e.target.value})}
-                          className="w-full rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
-                          <option value="">— Pilih Team —</option>
-                          {(['Team PTS','Team PTS UMP','Team PTS MLDS'] as const).map(tt=>{
-                            const members=ptUsers.filter(u=>u.team_type===tt);
-                            if(members.length===0)return null;
-                            const grpLabel=tt==='Team PTS'?'PTS IVP':tt==='Team PTS UMP'?'PTS UMP':'PTS MLDS';
-                            return(
-                              <optgroup key={tt} label={grpLabel}>
-                                {members.map(u=><option key={u.id} value={u.full_name}>{u.full_name}</option>)}
-                              </optgroup>
-                            );
-                          })}
-                        </select>
-                        {/* Show selected user's team label */}
-                        {entry.team_rnd&&(()=>{
-                          const lbl=getTeamLabel(entry.team_rnd);
-                          if(!lbl)return null;
-                          const colors:Record<string,{bg:string;color:string}>={
-                            'PTS IVP':{bg:'rgba(220,38,38,0.1)',color:'#991b1b'},
-                            'PTS UMP':{bg:'rgba(37,99,235,0.1)',color:'#1e40af'},
-                            'PTS MLDS':{bg:'rgba(124,58,237,0.1)',color:'#6d28d9'},
-                          };
-                          const c=colors[lbl]||{bg:'rgba(0,0,0,0.06)',color:'#374151'};
-                          return(
-                            <div className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:c.bg}}>
-                              <span className="w-2 h-2 rounded-full" style={{background:c.color}}/>
-                              <span className="text-[10px] font-bold" style={{color:c.color}}>{entry.team_rnd} · {lbl}</span>
-                            </div>
-                          );
-                        })()}
+                        <div className="flex items-center gap-2">
+                          <select value={entry.team_rnd} onChange={e=>upd(idx,{team_rnd:e.target.value})}
+                            className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
+                            <option value="">— Pilih Team —</option>
+                            <optgroup label="Team PTS IVP">
+                              {ptUsers.filter(u=>u.team_type==='Team PTS').map(u=><option key={u.id} value={u.full_name}>{u.full_name}</option>)}
+                            </optgroup>
+                            <optgroup label="Team PTS UMP">
+                              {ptUsers.filter(u=>u.team_type==='Team PTS UMP').map(u=><option key={u.id} value={u.full_name}>{u.full_name}</option>)}
+                            </optgroup>
+                            <optgroup label="Team PTS MLDS">
+                              {ptUsers.filter(u=>u.team_type==='Team PTS MLDS').map(u=><option key={u.id} value={u.full_name}>{u.full_name}</option>)}
+                            </optgroup>
+                          </select>
+                          {/* Badge PTS team setelah pilih */}
+                          {entry.team_rnd&&(()=>{
+                            const teamLabel=getPTSTeamLabel(entry.team_rnd);
+                            const tc=teamLabel?TEAM_LABEL[teamLabel]:null;
+                            return tc?(
+                              <span className="text-[10px] font-black px-2 py-1.5 rounded-lg text-white flex-shrink-0" style={{background:tc.dot}}>
+                                {teamLabel}
+                              </span>
+                            ):null;
+                          })()}
+                        </div>
                       </div>
                     )}
                     <div>
