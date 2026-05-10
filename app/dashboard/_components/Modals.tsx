@@ -1463,7 +1463,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     Promise.all([
-      supabase.from('users').select('id, full_name, sales_division').eq('role','guest').in('sales_division',['IVP','MLDS','UMP','OSS']).order('full_name'),
+      supabase.from('users').select('id, full_name, sales_division').eq('role','guest').eq('team_type','Marketing').order('full_name'),
       supabase.from('brand_pic_mappings').select('*'),
     ]).then(([usersRes, mapsRes]) => {
       if (usersRes.data) setBrandUsers(usersRes.data as any[]);
@@ -1966,7 +1966,7 @@ export function BrandPicSettingContent() {
 
   useEffect(() => {
     Promise.all([
-      supabase.from('users').select('id, full_name, sales_division').eq('role','guest').in('sales_division',['IVP','MLDS','UMP','OSS']).order('full_name'),
+      supabase.from('users').select('id, full_name, sales_division').eq('role','guest').eq('team_type','Marketing').order('full_name'),
       supabase.from('brand_pic_mappings').select('*'),
     ]).then(([usersRes, mapsRes]) => {
       if (usersRes.data) setBrandUsers(usersRes.data as any[]);

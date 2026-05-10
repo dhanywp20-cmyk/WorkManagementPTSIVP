@@ -6,7 +6,7 @@ import {
   ProjectMessage, ProjectAttachment,
   statusConfig, JABATAN_TIER, JABATAN_CC_RULES,
   fetchWACCTargets, sendWANotif, emptyRoom,
-  SALES_DIVISIONS, DISPLAY_BRANDS, MIDDLEWARE_BRANDS, BRAND_PIC_DIVISIONS,
+  SALES_DIVISIONS, DISPLAY_BRANDS, MIDDLEWARE_BRANDS,
   PIE_COLORS,
 } from './shared';
 

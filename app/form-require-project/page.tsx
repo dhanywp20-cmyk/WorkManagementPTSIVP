@@ -8,7 +8,7 @@ import {
   ProjectMessage, ProjectAttachment,
   statusConfig, JABATAN_TIER, JABATAN_CC_RULES,
   fetchWACCTargets, sendWANotif, emptyRoom,
-  SALES_DIVISIONS, DISPLAY_BRANDS, MIDDLEWARE_BRANDS, BRAND_PIC_DIVISIONS,
+  SALES_DIVISIONS, DISPLAY_BRANDS, MIDDLEWARE_BRANDS,
   PIE_COLORS,
 } from './_components/shared';
 import {
@@ -191,7 +191,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       const selfJabatan = (currentUser as any).jabatan as string | undefined;
       const selfTier = selfJabatan ? (JABATAN_TIER[selfJabatan] ?? 0) : 0;
       const selfDiv = currentUser.sales_division;
-      const isBrandPICUser = BRAND_PIC_DIVISIONS.includes(selfDiv || '');
+      const isBrandPICUser = currentUser.team_type === 'Marketing';
 
       // Supervisor tier > 1: lihat request bawahan di divisi sendiri + divisi yang di-supervisi
       if (selfTier > 1 && selfDiv) {
@@ -228,7 +228,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       let filtered = data as ProjectRequest[];
       // Brand PIC: tambahkan request yang brand pic-nya = user ini (dari rooms JSONB)
       const selfDiv = currentUser.sales_division;
-      if (!isPTS && !isIVPGuest && BRAND_PIC_DIVISIONS.includes(selfDiv || '')) {
+      if (!isPTS && !isIVPGuest && currentUser.team_type === 'Marketing') {
         const { data: allReqs } = await supabase.from('project_requests').select('id, project_name, status, sales_name, created_at, rooms, requester_id').order('created_at', { ascending: false });
         (allReqs ?? []).forEach((r: any) => {
           if (filtered.find(x => x.id === r.id)) return;
