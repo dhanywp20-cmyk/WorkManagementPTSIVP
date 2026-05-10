@@ -147,13 +147,13 @@ export default function Dashboard() {
     if (password !== confirm_password) { alert('Konfirmasi password tidak cocok!'); return; }
     if (!divisi) { alert('Pilih divisi!'); return; }
     if (divisi === 'PTS' && !pts_type) { alert('Pilih tipe PTS!'); return; }
-    if (divisi === 'Sales' && !sales_division) { alert('Pilih sales division!'); return; }
+    if ((divisi === 'Sales' || divisi === 'Marketing') && !sales_division) { alert('Pilih sales division!'); return; }
 
     // Simpan divisi request di sales_division sementara, admin yg approve nanti
     let requestedDivision: string | null = null;
     if (divisi === 'PTS') requestedDivision = pts_type; // 'PTS IVP' / 'PTS UMP' / 'PTS MLDS'
     else if (divisi === 'Sales') requestedDivision = sales_division;
-    else if (divisi === 'Marketing') requestedDivision = 'Marketing';
+    else if (divisi === 'Marketing') requestedDivision = `Marketing:${sales_division}`;
 
     setRegisterLoading(true);
     try {
@@ -432,7 +432,7 @@ export default function Dashboard() {
                             </select>
                           </div>
                         )}
-                        {registerForm.divisi === 'Sales' && (
+                        {(registerForm.divisi === 'Sales' || registerForm.divisi === 'Marketing') && (
                           <div>
                             <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Sales Division *</label>
                             <select value={registerForm.sales_division} onChange={e => setRegisterForm({ ...registerForm, sales_division: e.target.value })}

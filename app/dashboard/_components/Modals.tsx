@@ -2217,7 +2217,7 @@ export function AccountSettingsInline() {
     if (sd === 'PTS IVP') { role = 'team'; team_type = 'Team PTS'; }
     else if (sd === 'PTS UMP') { role = 'team'; team_type = 'Team PTS UMP'; }
     else if (sd === 'PTS MLDS') { role = 'team'; team_type = 'Team PTS MLDS'; }
-    else if (sd === 'Marketing') { role = 'guest'; team_type = 'Marketing'; }
+    else if (sd.startsWith('Marketing:')) { role = 'guest'; team_type = 'Marketing'; sales_division = sd.replace('Marketing:', '') || null; }
     else { role = 'guest'; team_type = 'Guest'; sales_division = sd || null; }
     const { error } = await supabase.from('users').update({ role, team_type, sales_division, allowed_menus: approveMenus }).eq('id', approvingUser.id);
     setSaving(false);
@@ -2253,7 +2253,7 @@ export function AccountSettingsInline() {
     }
 
     setSaving(true);
-    const insertPayload: Record<string, unknown> = { username: newUser.username, password: newUser.password, full_name: newUser.full_name, role, team_type, allowed_menus: newUser.allowed_menus, jabatan: newUser.jabatan || null, phone_number: newUser.phone_number || null, sales_division: newUser.divisi === 'Sales' ? (newUser.sales_division || null) : null };
+    const insertPayload: Record<string, unknown> = { username: newUser.username, password: newUser.password, full_name: newUser.full_name, role, team_type, allowed_menus: newUser.allowed_menus, jabatan: newUser.jabatan || null, phone_number: newUser.phone_number || null, sales_division: (newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') ? (newUser.sales_division || null) : null };
     const { error } = await supabase.from('users').insert([insertPayload]);
     setSaving(false);
     if (error) { notify('error', 'Gagal menambah akun: ' + error.message); return; }
@@ -2277,7 +2277,7 @@ export function AccountSettingsInline() {
       } else if (editDivisi === 'Sales') { role = 'guest'; team_type = 'Guest'; }
       else if (editDivisi === 'Marketing') { role = 'guest'; team_type = 'Marketing'; }
     }
-    const updatePayload: Record<string, unknown> = { username: editingUser.username, password: editingUser.password, full_name: editingUser.full_name, role, team_type, allowed_menus: editingUser.allowed_menus ?? ALL_MENU_KEYS, jabatan: editingUser.jabatan ?? null, phone_number: editingUser.phone_number ?? null, sales_division: editDivisi === 'Sales' ? (editingUser.sales_division ?? null) : null };
+    const updatePayload: Record<string, unknown> = { username: editingUser.username, password: editingUser.password, full_name: editingUser.full_name, role, team_type, allowed_menus: editingUser.allowed_menus ?? ALL_MENU_KEYS, jabatan: editingUser.jabatan ?? null, phone_number: editingUser.phone_number ?? null, sales_division: (editDivisi === 'Sales' || editDivisi === 'Marketing') ? (editingUser.sales_division ?? null) : null };
     const { error } = await supabase.from('users').update(updatePayload).eq('id', editingUser.id);
     setSaving(false);
     if (error) { notify('error', 'Gagal menyimpan: ' + error.message); return; }
@@ -2404,7 +2404,7 @@ export function AccountSettingsInline() {
                       </select>
                     </div>
                   )}
-                  {editDivisi === 'Sales' && (
+                  {(editDivisi === 'Sales' || editDivisi === 'Marketing') && (
                     <div className="col-span-3">
                       <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division</label>
                       <select value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
@@ -2510,7 +2510,7 @@ export function AccountSettingsInline() {
                   </select>
                 </div>
               )}
-              {newUser.divisi === 'Sales' && (
+              {(newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') && (
                 <div className="col-span-3">
                   <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division *</label>
                   <select value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
@@ -2557,7 +2557,7 @@ export function AccountSettingsInline() {
                   <div><span className="text-xs text-slate-500 uppercase font-bold">Divisi / Request</span>
                     <p className="font-semibold text-amber-700">{
                       approvingUser.sales_division?.startsWith('PTS') ? `PTS → ${approvingUser.sales_division}`
-                      : approvingUser.sales_division === 'Marketing' ? 'Marketing'
+                      : approvingUser.sales_division?.startsWith('Marketing:') ? `Marketing → ${approvingUser.sales_division.replace('Marketing:', '')}`
                       : `Sales → ${approvingUser.sales_division}`
                     }</p>
                   </div>
@@ -2610,7 +2610,7 @@ export function AccountSettingsInline() {
                       <p className="text-xs text-slate-500">@{user.username}</p>
                       <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                         <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-200 text-amber-800">
-                          {user.sales_division?.startsWith('PTS') ? `PTS • ${user.sales_division}` : user.sales_division === 'Marketing' ? 'Marketing' : `Sales • ${user.sales_division}`}
+                          {user.sales_division?.startsWith('PTS') ? `PTS • ${user.sales_division}` : user.sales_division?.startsWith('Marketing:') ? `Marketing • ${user.sales_division.replace('Marketing:', '')}` : `Sales • ${user.sales_division}`}
                         </span>
                         {user.jabatan && <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">{user.jabatan}</span>}
                         {user.phone_number && <span className="text-[9px] text-slate-500">📱 {user.phone_number}</span>}
