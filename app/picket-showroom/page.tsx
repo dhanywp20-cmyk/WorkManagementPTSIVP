@@ -7,14 +7,14 @@ import {
   DAYS_OF_WEEK, DAY_COLOR, TEAM_LABEL,
   JENIS_KEGIATAN_LIST, KEGIATAN_COLORS, PIE_COLORS,
   getMonday, addDays, toKey, getDayDate, getRollingNameForDate,
-} from './_components/shared';
-import { MiniPieChart } from './_components/MiniPieChart';
-import { TamuSummaryCards } from './_components/TamuSummaryCards';
-import { MiniCalendarPopup } from './_components/MiniCalendarPopup';
-import { FillDetailModal } from './_components/FillDetailModal';
-import { ScheduleModal } from './_components/ScheduleModal';
-import { ViewDetailModal } from './_components/ViewDetailModal';
-import { exportToExcel } from './_components/excel-export';
+} from '../_components/shared';
+import { MiniPieChart } from '../_components/MiniPieChart';
+import { TamuSummaryCards } from '../_components/TamuSummaryCards';
+import { MiniCalendarPopup } from '../_components/MiniCalendarPopup';
+import { FillDetailModal } from '../_components/FillDetailModal';
+import { ScheduleModal } from '../_components/ScheduleModal';
+import { ViewDetailModal } from '../_components/ViewDetailModal';
+import { exportToExcel } from '../_components/excel-export';
 
 export default function PiketShowroomPage() {
   const [currentUser,setCurrentUser]=useState<any>(null);
