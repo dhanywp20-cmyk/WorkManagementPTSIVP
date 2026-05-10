@@ -126,9 +126,8 @@ export default function PiketShowroomPage() {
   },[fetchData]);
 
   const handleDeleteRow = useCallback(async(row: PiketRow)=>{
-    if(!confirm(`Hapus jadwal ${row.day_of_week}? Data kegiatan juga akan dihapus.`)) return;
+    if(!confirm(`Hapus semua kegiatan ${row.day_of_week}? Jadwal piket tetap ada.`)) return;
     await supabase.from('piket_tamu_detail').delete().eq('piket_id',row.id);
-    await supabase.from('piket_schedules').delete().eq('id',row.id);
     fetchData();
   },[fetchData]);
 
@@ -483,11 +482,11 @@ export default function PiketShowroomPage() {
                           )}
                           {/* Action */}
                           {kgIdx===0&&(
-                            <td className="px-3 py-3 align-middle text-center" rowSpan={kgToShow.length} style={{verticalAlign:'middle'}}>
-                              <div className="flex items-center justify-center gap-2">
-                                {!isVirtual&&<button onClick={()=>setViewDetail(row)} className="w-8 h-8 rounded-lg flex items-center justify-center text-base hover:bg-blue-100 transition-colors" title="View">👁️</button>}
-                                <button onClick={()=>isVirtual?handleFillVirtual(row):setFillDetail(row)} className="w-8 h-8 rounded-lg flex items-center justify-center text-base hover:bg-orange-100 transition-colors" title="Edit">✏️</button>
-                                {!isVirtual&&isAdmin&&<button onClick={()=>handleDeleteRow(row)} className="w-8 h-8 rounded-lg flex items-center justify-center text-base hover:bg-red-100 transition-colors" title="Delete">🗑️</button>}
+                            <td className="px-1 py-3 align-middle text-center" rowSpan={kgToShow.length} style={{verticalAlign:'middle',width:'72px',minWidth:'72px'}}>
+                              <div className="flex items-center justify-center gap-0.5">
+                                {!isVirtual&&<button onClick={()=>setViewDetail(row)} className="w-6 h-6 rounded flex items-center justify-center text-sm hover:bg-blue-100 transition-colors" title="View">👁️</button>}
+                                <button onClick={()=>isVirtual?handleFillVirtual(row):setFillDetail(row)} className="w-6 h-6 rounded flex items-center justify-center text-sm hover:bg-orange-100 transition-colors" title="Edit">✏️</button>
+                                {!isVirtual&&isAdmin&&<button onClick={()=>handleDeleteRow(row)} className="w-6 h-6 rounded flex items-center justify-center text-sm hover:bg-red-100 transition-colors" title="Delete">🗑️</button>}
                               </div>
                             </td>
                           )}
