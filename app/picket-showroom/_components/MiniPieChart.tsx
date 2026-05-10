@@ -1,9 +1,9 @@
 'use client';
 import { useState } from 'react';
 
-export function MiniPieChart({data,title,icon,activeFilter,onSliceClick}:{
+export function MiniPieChart({data,title,icon,activeFilter,onSliceClick,unitSuffix}:{
   data:{label:string;value:number;color:string}[];title:string;icon:string;
-  activeFilter?:string|null;onSliceClick?:(l:string)=>void;
+  activeFilter?:string|null;onSliceClick?:(l:string)=>void;unitSuffix?:string;
 }) {
   const [hov,setHov]=useState<number|null>(null);
   const total=data.reduce((s,d)=>s+d.value,0);
@@ -39,7 +39,7 @@ export function MiniPieChart({data,title,icon,activeFilter,onSliceClick}:{
               style={{cursor:onSliceClick?'pointer':'default',transition:'opacity 0.15s',filter:hov===s.i||activeFilter===s.label?`drop-shadow(0 0 5px ${s.color})`:'none'}}
               onMouseEnter={()=>setHov(s.i)} onMouseLeave={()=>setHov(null)} onClick={()=>onSliceClick?.(s.label)}/>
           ))}
-          <text x="60" y="57" textAnchor="middle" fontSize="16" fontWeight="800" fill="#1e293b">{total}</text>
+          <text x="60" y="57" textAnchor="middle" fontSize={unitSuffix?10:16} fontWeight="800" fill="#1e293b">{unitSuffix?(total%1===0?total:total.toFixed(1))+unitSuffix:total}</text>
           <text x="60" y="70" textAnchor="middle" fontSize="7" fill="#94a3b8" fontWeight="600">TOTAL</text>
         </svg>
         <div className="flex flex-col gap-1 flex-1 min-w-0 max-h-[120px] overflow-y-auto">
@@ -51,7 +51,7 @@ export function MiniPieChart({data,title,icon,activeFilter,onSliceClick}:{
                 onMouseEnter={()=>setHov(s.i)} onMouseLeave={()=>setHov(null)} onClick={()=>onSliceClick?.(s.label)}>
                 <span className="w-2 h-2 rounded-full flex-shrink-0" style={{background:s.color}}/>
                 <span className="text-[10px] font-semibold text-gray-600 truncate flex-1">{s.label}</span>
-                <span className="text-[10px] font-bold" style={{color:s.color}}>{s.value}</span>
+                <span className="text-[10px] font-bold" style={{color:s.color}}>{unitSuffix?(s.value%1===0?s.value:s.value.toFixed(1))+unitSuffix:s.value}</span>
                 {isActive&&<span className="text-[9px] font-bold text-purple-600">✓</span>}
               </div>
             );
