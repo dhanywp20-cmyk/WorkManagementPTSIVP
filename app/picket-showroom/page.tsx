@@ -12,6 +12,7 @@ import { MiniPieChart } from './_components/MiniPieChart';
 import { TamuSummaryCards } from './_components/TamuSummaryCards';
 import { MiniCalendarPopup } from './_components/MiniCalendarPopup';
 import { FillDetailModal } from './_components/FillDetailModal';
+import { ViewDetailModal } from './_components/ViewDetailModal';
 import { ScheduleModal } from './_components/ScheduleModal';
 import { exportToExcel } from './_components/excel-export';
 
@@ -28,6 +29,7 @@ export default function PiketShowroomPage() {
   const [showSchedule,setShowSchedule]=useState(false);
   const [showCalendar,setShowCalendar]=useState(false);
   const [fillDetail,setFillDetail]=useState<PiketRow|null>(null);
+  const [viewDetail,setViewDetail]=useState<PiketRow|null>(null);
   const [search,setSearch]=useState('');
   const [filterDay,setFilterDay]=useState<DayOfWeek|''>('');
   const [filterTamu,setFilterTamu]=useState(false);
@@ -46,7 +48,8 @@ export default function PiketShowroomPage() {
     setLoading(true);
     const wk2=toKey(addDays(weekStart,7));
     const[wRes,aRes,uRes,kgRes]=await Promise.all([
-      supabase.from('piket_schedules').select('*').in('week_start',[wk,wk2]).order('day_date'),
+      // Fix: always select edited_by_name explicitly
+      supabase.from('piket_schedules').select('*,edited_by_name').in('week_start',[wk,wk2]).order('day_date'),
       supabase.from('piket_schedules').select('id,day_date,week_start,day_of_week,pic_ivp_name,pic_ump_name,pic_mlds_name'),
       supabase.from('users').select('id,full_name,username,team_type,role').in('team_type',['Team PTS','Team PTS UMP','Team PTS MLDS']).order('full_name'),
       supabase.from('piket_tamu_detail').select('*').order('created_at'),
@@ -80,7 +83,6 @@ export default function PiketShowroomPage() {
         const date = getDayDate(ws, day);
         const name = getRollingNameForDate(date, allRows);
         if(!name) return;
-        // Cari user berdasarkan nama untuk tentukan team
         const u = ptUsers.find(x=>x.full_name===name);
         const tt = u?.team_type||'';
         const isIVP=tt==='Team PTS', isUMP=tt==='Team PTS UMP', isMlds=tt==='Team PTS MLDS';
@@ -115,18 +117,17 @@ export default function PiketShowroomPage() {
       pic_ump_name: row.pic_ump_name,
       pic_mlds_id: row.pic_mlds_id,
       pic_mlds_name: row.pic_mlds_name,
-      tamu_instansi: null, kebutuhan: [],
+      tamu_instansi: null,
+      kebutuhan: [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },{onConflict:'week_start,day_of_week',ignoreDuplicates:false});
     if(error){console.error('Failed to save virtual row:',error.message);return;}
-    // Fetch the saved row to get real id, then open modal
-    const{data}=await supabase.from('piket_schedules').select('*').eq('week_start',row.week_start).eq('day_of_week',row.day_of_week).single();
+    const{data}=await supabase.from('piket_schedules').select('*,edited_by_name').eq('week_start',row.week_start).eq('day_of_week',row.day_of_week).single();
     if(data){setFillDetail(data as PiketRow);fetchData();}
   },[fetchData]);
 
   const displayRows = effectiveRows.filter(row=>{
-    // Hide weekends from list (Sabtu/Minggu hidden, shown only in mini calendar)
     const d=new Date(row.day_date+'T00:00:00');
     if(d.getDay()===0||d.getDay()===6)return false;
     if(filterDay&&row.day_of_week!==filterDay)return false;
@@ -240,7 +241,6 @@ export default function PiketShowroomPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {/* Show Calendar popup */}
                   <button onClick={()=>setShowCalendar(true)}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border"
                     style={{background:'rgba(37,99,235,0.06)',borderColor:'rgba(37,99,235,0.25)',color:'#2563eb'}}>
@@ -307,25 +307,26 @@ export default function PiketShowroomPage() {
                 </div>
               );
             })()}
+
             {loading?(
               <div className="flex justify-center py-16"><div className="flex flex-col items-center gap-3"><div className="w-8 h-8 rounded-full border-2 border-t-red-600 border-red-200 animate-spin"/><p className="text-sm text-slate-500">Memuat jadwal...</p></div></div>
             ):(
               <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse" style={{minWidth:'1100px'}}>
+                <table className="w-full text-sm border-collapse" style={{minWidth:'1050px'}}>
                   <colgroup>
-                    <col style={{width:'3%'}}/><col style={{width:'7%'}}/><col style={{width:'9%'}}/><col style={{width:'9%'}}/><col style={{width:'7%'}}/><col style={{width:'6%'}}/>
-                    <col style={{width:'12%'}}/><col style={{width:'8%'}}/><col style={{width:'11%'}}/><col style={{width:'10%'}}/><col style={{width:'9%'}}/><col style={{width:'9%'}}/>
+                    <col style={{width:'3%'}}/><col style={{width:'7%'}}/><col style={{width:'10%'}}/><col style={{width:'13%'}}/><col style={{width:'7%'}}/>
+                    <col style={{width:'7%'}}/><col style={{width:'13%'}}/><col style={{width:'9%'}}/><col style={{width:'11%'}}/><col style={{width:'9%'}}/><col style={{width:'11%'}}/>
                   </colgroup>
                   <thead>
                     <tr style={{background:'rgba(248,250,252,0.9)',borderBottom:'2px solid #e5e7eb'}}>
-                      {['No','Tanggal','PIC','Kegiatan','Jam','Produk','Tamu Instansi','Sales','Kebutuhan','Keterangan','Edit By','Action'].map((h,i)=>(
-                        <th key={h} className="px-3 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-widest" style={{borderRight:i<11?'1px solid #e5e7eb':'none'}}>{h}</th>
+                      {['No','Tanggal','PIC','Kegiatan','Jam','Produk','Tamu Instansi','Sales','Keterangan','Edit By','Action'].map((h,i)=>(
+                        <th key={h} className="px-3 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-widest" style={{borderRight:i<10?'1px solid #e5e7eb':'none'}}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {displayRows.length===0?(
-                      <tr><td colSpan={12} className="text-center py-16 text-gray-400">
+                      <tr><td colSpan={11} className="text-center py-16 text-gray-400">
                         <div className="text-4xl mb-3">📋</div>
                         <p className="font-semibold">{rows.length===0?'Belum ada jadwal':'Tidak ada hasil filter'}</p>
                         {rows.length===0&&isAdmin&&<p className="text-xs mt-1">Klik "Atur Jadwal" untuk menambahkan jadwal piket</p>}
@@ -340,7 +341,6 @@ export default function PiketShowroomPage() {
                       const isVirtual=row.id.startsWith('virtual-');
                       const rowKg=kegiatanList.filter(k=>k.piket_id===row.id);
                       const kgToShow=rowKg.length>0?rowKg:[null];
-                      // Countdown badge
                       const countdownBadge=todayRow?null:diffDays===1?{label:'BESOK',color:'#d97706'}:diffDays>1&&diffDays<=9?{label:`${diffDays} hr lagi`,color:'#64748b'}:null;
                       return kgToShow.map((kg,kgIdx)=>(
                         <tr key={`${row.id}-${kgIdx}`} className="transition-colors hover:bg-gray-50/60"
@@ -349,7 +349,7 @@ export default function PiketShowroomPage() {
                             <>
                               <td className="px-3 py-3 text-gray-400 text-xs align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #e5e7eb',verticalAlign:'middle'}}>{idx+1}</td>
                               <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #e5e7eb',verticalAlign:'middle'}}>
-                                <div className="flex flex-col" style={{borderLeft:`3px solid ${todayRow?dc.accent:dc.accent}`,paddingLeft:'6px'}}>
+                                <div className="flex flex-col" style={{borderLeft:`3px solid ${dc.accent}`,paddingLeft:'6px'}}>
                                   <span className="text-base font-black leading-tight" style={{color:dc.accent}}>{new Date(row.day_date+'T00:00:00').getDate()}</span>
                                   <span className="text-[9px] font-bold" style={{color:dc.accent}}>{new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{month:'short',year:'2-digit'})}</span>
                                   <span className="text-xs font-bold mt-0.5" style={{color:dc.accent}}>{row.day_of_week}</span>
@@ -369,16 +369,35 @@ export default function PiketShowroomPage() {
                               </td>
                             </>
                           )}
-                          {/* Kegiatan — underline, no rounded */}
+                          {/* Kegiatan — with kebutuhan shown below */}
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #e5e7eb'}}>
                             {kg?(
-                              <span className="text-[10px] font-bold border-b-2 pb-0.5"
-                                style={{color:KEGIATAN_COLORS[kg.jenis_kegiatan]||dc.accent,borderBottomColor:KEGIATAN_COLORS[kg.jenis_kegiatan]||dc.accent}}>
-                                {kg.jenis_kegiatan}
-                              </span>
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-bold border-b-2 pb-0.5 block"
+                                  style={{color:KEGIATAN_COLORS[kg.jenis_kegiatan]||dc.accent,borderBottomColor:KEGIATAN_COLORS[kg.jenis_kegiatan]||dc.accent}}>
+                                  {kg.jenis_kegiatan}
+                                </span>
+                                {/* Kebutuhan di bawah Kegiatan — hanya untuk Demo Product */}
+                                {kg.jenis_kegiatan==='Demo Product'&&kg.kebutuhan&&kg.kebutuhan.length>0&&(
+                                  <div className="flex flex-col gap-0.5 mt-1">
+                                    {kg.kebutuhan.map(k=>(
+                                      <span key={k} className="flex items-center gap-1 text-[9px] font-semibold text-slate-500 leading-tight">
+                                        <span className="w-1 h-1 rounded-full flex-shrink-0" style={{background:KEGIATAN_COLORS[kg.jenis_kegiatan]||dc.accent}}/>
+                                        {k}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                                {/* RnD: tampilkan team_rnd + label PTS */}
+                                {kg.jenis_kegiatan==='RnD'&&(kg as any).team_rnd&&(
+                                  <div className="mt-1">
+                                    <span className="text-[9px] font-semibold text-slate-500 leading-tight">{(kg as any).team_rnd}</span>
+                                  </div>
+                                )}
+                              </div>
                             ):<span className="text-gray-300 text-xs">—</span>}
                           </td>
-                          {/* Jam — label Mulai/Selesai */}
+                          {/* Jam */}
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #e5e7eb'}}>
                             {kg?.jam_mulai?(
                               <div className="flex flex-col gap-0.5">
@@ -387,7 +406,7 @@ export default function PiketShowroomPage() {
                               </div>
                             ):<span className="text-gray-300 text-xs">—</span>}
                           </td>
-                          {/* Produk — plain text, no rounded */}
+                          {/* Produk */}
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #e5e7eb'}}>
                             {kg?.produk&&kg.produk.length>0?(
                               <div className="flex flex-col gap-0.5">
@@ -403,15 +422,7 @@ export default function PiketShowroomPage() {
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #e5e7eb'}}>
                             {kg?.nama_sales?(<div className="flex flex-col gap-0.5"><span className="text-[10px] font-bold text-slate-800">{kg.nama_sales}</span>{kg.sales_division&&<span className="text-[9px] text-purple-500 font-semibold">{kg.sales_division}</span>}</div>):<span className="text-gray-300 text-xs">—</span>}
                           </td>
-                          {/* Kebutuhan — kolom terpisah */}
-                          <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #e5e7eb'}}>
-                            {kg?.jenis_kegiatan==='Demo Product'&&kg.kebutuhan&&kg.kebutuhan.length>0?(
-                              <div className="flex flex-col gap-0.5">
-                                {kg.kebutuhan.map(k=><span key={k} className="flex items-center gap-1 text-[10px] font-semibold text-slate-600"><span className="w-1 h-1 rounded-full flex-shrink-0" style={{background:dc.accent}}/>{k}</span>)}
-                              </div>
-                            ):<span className="text-gray-300 text-xs">—</span>}
-                          </td>
-                          {/* Keterangan — kolom terpisah */}
+                          {/* Keterangan (non-Demo only) */}
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #e5e7eb'}}>
                             {kg?.keterangan?<span className="text-xs text-slate-600 leading-snug">{kg.keterangan}</span>:<span className="text-gray-300 text-xs">—</span>}
                           </td>
@@ -423,15 +434,26 @@ export default function PiketShowroomPage() {
                                 :<span className="text-gray-300 text-xs">—</span>}
                             </td>
                           )}
-                          {/* Action */}
+                          {/* Action: View + Isi */}
                           {kgIdx===0&&(
-                            <td className="px-3 py-3 align-middle text-center" rowSpan={kgToShow.length} style={{verticalAlign:'middle'}}>
-                              <button
-                                onClick={()=>isVirtual?handleFillVirtual(row):setFillDetail(row)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-105"
-                                style={{background:dc.grad,boxShadow:`0 2px 8px ${dc.accent}30`}}>
-                                ✍️ Isi
-                              </button>
+                            <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{verticalAlign:'middle'}}>
+                              <div className="flex flex-col gap-1.5 items-center">
+                                {/* View button — always visible for non-virtual rows */}
+                                {!isVirtual&&(
+                                  <button
+                                    onClick={()=>setViewDetail(row)}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 w-full justify-center"
+                                    style={{background:'rgba(37,99,235,0.08)',color:'#2563eb',border:'1px solid rgba(37,99,235,0.25)'}}>
+                                    👁️ View
+                                  </button>
+                                )}
+                                <button
+                                  onClick={()=>isVirtual?handleFillVirtual(row):setFillDetail(row)}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-105 w-full justify-center"
+                                  style={{background:dc.grad,boxShadow:`0 2px 8px ${dc.accent}30`}}>
+                                  ✍️ Isi
+                                </button>
+                              </div>
                             </td>
                           )}
                         </tr>
@@ -447,11 +469,12 @@ export default function PiketShowroomPage() {
             )}
           </div>
         </div>
-
-        {showSchedule&&isAdmin&&<ScheduleModal weekStart={weekStart} users={ptUsers} currentUser={currentUser} onClose={()=>setShowSchedule(false)} onSaved={fetchData}/>}
-        {fillDetail&&<FillDetailModal row={fillDetail} onClose={()=>setFillDetail(null)} onSaved={fetchData} currentUser={currentUser}/>}
-        {showCalendar&&<MiniCalendarPopup allRows={allRows} onClose={()=>setShowCalendar(false)}/>}
       </div>
+
+      {showSchedule&&isAdmin&&<ScheduleModal weekStart={weekStart} users={ptUsers} currentUser={currentUser} onClose={()=>setShowSchedule(false)} onSaved={fetchData}/>}
+      {fillDetail&&<FillDetailModal row={fillDetail} onClose={()=>setFillDetail(null)} onSaved={fetchData} currentUser={currentUser}/>}
+      {viewDetail&&<ViewDetailModal row={viewDetail} onClose={()=>setViewDetail(null)} onEdit={()=>{setFillDetail(viewDetail);setViewDetail(null);}}/>}
+      {showCalendar&&<MiniCalendarPopup allRows={allRows} onClose={()=>setShowCalendar(false)}/>}
 
       <style jsx>{`
         @keyframes scale-in{from{opacity:0;transform:scale(0.92)}to{opacity:1;transform:scale(1)}}
