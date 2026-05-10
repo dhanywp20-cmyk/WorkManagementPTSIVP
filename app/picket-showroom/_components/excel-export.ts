@@ -70,9 +70,17 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[]) 
       const kgMapEx:Record<string,number>={'Demo Product':totalDemo,'RnD':totalRnD,'Maintenance':totalMaint,'Shooting Markom':totalShoot};
       const topKgEx=Object.entries(kgMapEx).sort(([,a],[,b])=>b-a)[0]?.[0]||'-';
 
-      // Top produk
+      // Top produk — distribusi All Product ke semua produk spesifik
+      const PRODUK_SPESIFIK_EX=['Videowall','LED','IFP','Audio System','Lighting','Kiosk'];
       const prodMapEx:Record<string,number>={};
-      kegiatanList.forEach(k=>(k.produk||[]).forEach(p=>{prodMapEx[p]=(prodMapEx[p]||0)+1;}));
+      kegiatanList.forEach(k=>{
+        const produk=k.produk||[];
+        if(produk.includes('All Product')){
+          PRODUK_SPESIFIK_EX.forEach(p=>{prodMapEx[p]=(prodMapEx[p]||0)+1;});
+        } else {
+          produk.forEach(p=>{prodMapEx[p]=(prodMapEx[p]||0)+1;});
+        }
+      });
       const prodArrEx=Object.entries(prodMapEx).sort(([,a],[,b])=>b-a);
       const topProdukEx=prodArrEx[0]?.[0]||'-';
 
@@ -198,7 +206,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[]) 
     // SHEET 2 — 📋 Jadwal Piket
     // ════════════════════════════════════════════════════════════════════════
     {
-      const headers=['No.','Tanggal','Hari','PIC','Team PIC','Jenis Kegiatan','Jam Mulai','Jam Selesai','Produk','Tamu Instansi','Nama Sales','Division Sales','Kebutuhan','Keterangan'];
+      const headers=['No.','Tanggal','Hari','PIC','Team PIC','Jenis Kegiatan','Jam Mulai','Jam Selesai','Produk','Tamu Instansi','Nama Sales','Division Sales','Kebutuhan','Keterangan','Diedit Oleh'];
       const COLS=headers.length;
       const data:any[][]=[
         [cell('📋 DATA JADWAL PIKET SHOWROOM',{...titleStyle,font:{name:'Arial',bold:true,sz:14,color:{rgb:'991B1B'}}}),...row0(COLS-1)],
@@ -233,13 +241,14 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[]) 
             cell(kg?.sales_division||'-',rs),
             cell(kg?.kebutuhan?.join(', ')||'-',rs),
             cell(kg?.keterangan||'-',{...rs,alignment:{horizontal:'left',vertical:'center',wrapText:true}}),
+            cell((kg as any)?.edited_by_name||'-',{...rs,font:{name:'Arial',sz:9,color:{rgb:'6B7280'}}}),
           ]);
           rowIdx++;
         });
       });
       const ws=XLSX.utils.aoa_to_sheet(data);
       ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:COLS-1}},{s:{r:1,c:0},e:{r:1,c:COLS-1}}];
-      ws['!cols']=[{wch:5},{wch:24},{wch:10},{wch:22},{wch:14},{wch:18},{wch:10},{wch:10},{wch:26},{wch:26},{wch:20},{wch:14},{wch:32},{wch:36}];
+      ws['!cols']=[{wch:5},{wch:24},{wch:10},{wch:22},{wch:14},{wch:18},{wch:10},{wch:10},{wch:26},{wch:26},{wch:20},{wch:14},{wch:32},{wch:36},{wch:20}];
       ws['!rows']=[{hpt:28},{hpt:18},{hpt:8},{hpt:32}];
       XLSX.utils.book_append_sheet(wb,ws,'📋 Jadwal Piket');
     }
