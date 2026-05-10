@@ -26,7 +26,6 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
   });
 
   const demoList=activeKg.filter(k=>k.jenis_kegiatan==='Demo Product'&&k.tamu_instansi);
-  const activeDays=new Set(activeKg.map(k=>piketDateMap[k.piket_id]).filter(Boolean)).size;
 
   // Top divisi — divisi yang paling banyak bawa tamu
   const divMap:Record<string,number>={};
@@ -47,19 +46,35 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
   const topKebutuhan=topKbtEntry?topKbtEntry[0]:'—';
   const topKebutuhanCount=topKbtEntry?topKbtEntry[1]:0;
 
+  // Jam pakai per produk — 6 kategori tetap, All Product distribusi ke semua
+  const PRODUK_KATEGORI=['Videowall','LED','IFP','Audio System','Lighting','Kiosk'] as const;
+  const PRODUK_ICONS:Record<string,string>={Videowall:'🖥️',LED:'💡',IFP:'📺','Audio System':'🔊',Lighting:'🎬',Kiosk:'🏧'};
+  const PRODUK_COLORS:Record<string,string>={Videowall:'#dc2626',LED:'#d97706',IFP:'#2563eb','Audio System':'#7c3aed',Lighting:'#059669',Kiosk:'#0891b2'};
+  const jamPerProduk:Record<string,number>={Videowall:0,LED:0,IFP:0,'Audio System':0,Lighting:0,Kiosk:0};
+  activeKg.forEach(k=>{
+    if(!k.jam_mulai||!k.jam_selesai||!k.produk?.length)return;
+    const[hm,mm]=k.jam_mulai.split(':').map(Number);
+    const[hs,ms]=k.jam_selesai.split(':').map(Number);
+    const durasi=((hs*60+ms)-(hm*60+mm))/60;
+    if(durasi<=0)return;
+    const targets=k.produk.includes('All Product')
+      ?[...PRODUK_KATEGORI]
+      :k.produk.filter((p):p is typeof PRODUK_KATEGORI[number]=>PRODUK_KATEGORI.includes(p as any));
+    targets.forEach(p=>{jamPerProduk[p]=(jamPerProduk[p]||0)+durasi;});
+  });
+  const fmtJam=(j:number)=>j===0?'0j':j%1===0?`${j}j`:`${j.toFixed(1)}j`;
+
+  const stats=[
+    {label:'Top Divisi',          val:topDivisi,    hint:`${topDivisiCount}x kegiatan`,   icon:'🏷️', color:'#0891b2', isText:true},
+    {label:'Top Produk',          val:topProduk,    hint:'paling sering demo',            icon:'🥇', color:'#059669', isText:true},
+    {label:'Kebutuhan Terbanyak', val:topKebutuhan, hint:`${topKebutuhanCount}x diminta`, icon:'🎯', color:'#7c3aed', isText:true},
+  ];
+
   const periodLabel=selectedMonth!==null
     ?`${MONTH_NAMES[selectedMonth-1]} ${selectedYear}`
     :`Tahun ${selectedYear}`;
   const accentColor=selectedMonth!==null?'#7c3aed':'#059669';
   const accentGrad=selectedMonth!==null?'linear-gradient(135deg,#7c3aed,#4c1d95)':'linear-gradient(135deg,#059669,#047857)';
-
-  const stats=[
-    {label:'Hari Aktif',        val:activeDays,         hint:'ada kegiatan',                  icon:'📅', color:accentColor},
-    {label:'Demo Product',      val:demoList.length,    hint:'sesi demo tamu',                icon:'🏢', color:'#2563eb'},
-    {label:'Top Divisi',        val:topDivisi,          hint:`${topDivisiCount}x kegiatan`,   icon:'🏷️', color:'#0891b2', isText:true},
-    {label:'Top Produk',        val:topProduk,          hint:'paling sering demo',            icon:'🥇', color:'#059669', isText:true},
-    {label:'Kebutuhan Terbanyak', val:topKebutuhan,     hint:`${topKebutuhanCount}x diminta`, icon:'🎯', color:'#7c3aed', isText:true},
-  ];
 
   return(
     <div className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.97)',border:`1px solid ${accentColor}20`,boxShadow:`0 4px 20px ${accentColor}15`}}>
@@ -112,6 +127,30 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
             <span className="text-[8px] text-slate-300 leading-none">{s.hint}</span>
           </div>
         ))}
+      </div>
+      {/* Jam pakai per produk */}
+      <div className="border-t border-slate-100 px-3 py-2.5">
+        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">⚡ Akumulasi Jam Pakai Produk</p>
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+          {PRODUK_KATEGORI.map(p=>{
+            const jam=jamPerProduk[p]||0;
+            const color=PRODUK_COLORS[p];
+            const maxJam=Math.max(...PRODUK_KATEGORI.map(x=>jamPerProduk[x]||0),1);
+            const pct=Math.round((jam/maxJam)*100);
+            return(
+              <div key={p} className="flex flex-col gap-1 p-2 rounded-xl" style={{background:`${color}08`,border:`1px solid ${color}20`}}>
+                <div className="flex items-center gap-1">
+                  <span className="text-[11px]">{PRODUK_ICONS[p]}</span>
+                  <span className="text-[9px] font-bold truncate" style={{color}}>{p}</span>
+                </div>
+                <span className="text-base font-black leading-none" style={{color}}>{fmtJam(jam)}</span>
+                <div className="w-full rounded-full overflow-hidden" style={{height:'3px',background:`${color}20`}}>
+                  <div className="h-full rounded-full transition-all" style={{width:`${pct}%`,background:color}}/>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
