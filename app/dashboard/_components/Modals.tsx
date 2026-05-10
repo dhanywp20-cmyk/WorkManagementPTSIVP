@@ -2171,7 +2171,7 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
 export function AccountSettingsInline() {
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
-  const [activeTab, setActiveTab] = useState<'list' | 'add'>('list');
+  const [activeTab, setActiveTab] = useState<'list' | 'add' | 'pending'>('list');
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editDivisi, setEditDivisi] = useState('');
   const [editPtsType, setEditPtsType] = useState('');
@@ -2181,6 +2181,9 @@ export function AccountSettingsInline() {
     username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: ALL_MENU_KEYS, divisi: '', pts_type: '',
   });
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+  const [pendingUsers, setPendingUsers] = useState<User[]>([]);
+  const [approvingUser, setApprovingUser] = useState<User | null>(null);
+  const [approveMenus, setApproveMenus] = useState<string[]>(ALL_MENU_KEYS);
 
   const menuLabels: Record<string, { label: string; icon: string }> = {
     'form-bast': { label: 'Form Review Demo & BAST', icon: '⭐' },
@@ -2199,8 +2202,35 @@ export function AccountSettingsInline() {
   const fetchUsers = async () => {
     setLoadingUsers(true);
     const { data, error } = await supabase.from('users').select('*').order('full_name');
-    if (!error && data) setUsers(data);
+    if (!error && data) {
+      setPendingUsers(data.filter((u: User) => u.team_type === 'Pending Approval'));
+      setUsers(data.filter((u: User) => u.team_type !== 'Pending Approval'));
+    }
     setLoadingUsers(false);
+  };
+
+  const handleApproveUser = async () => {
+    if (!approvingUser) return;
+    setSaving(true);
+    const sd = approvingUser.sales_division ?? '';
+    let role = 'guest'; let team_type: string | null = null; let sales_division: string | null = null;
+    if (sd === 'PTS IVP') { role = 'team'; team_type = 'Team PTS'; }
+    else if (sd === 'PTS UMP') { role = 'team'; team_type = 'Team PTS UMP'; }
+    else if (sd === 'PTS MLDS') { role = 'team'; team_type = 'Team PTS MLDS'; }
+    else if (sd === 'Marketing') { role = 'guest'; team_type = 'Marketing'; }
+    else { role = 'guest'; team_type = 'Guest'; sales_division = sd || null; }
+    const { error } = await supabase.from('users').update({ role, team_type, sales_division, allowed_menus: approveMenus }).eq('id', approvingUser.id);
+    setSaving(false);
+    if (error) { notify('error', 'Gagal approve: ' + error.message); return; }
+    notify('success', `Akun ${approvingUser.full_name} berhasil disetujui!`);
+    setApprovingUser(null); setApproveMenus(ALL_MENU_KEYS); fetchUsers();
+  };
+
+  const handleRejectUser = async (userId: string, name: string) => {
+    if (!confirm(`Tolak & hapus pendaftaran "${name}"?`)) return;
+    const { error } = await supabase.from('users').delete().eq('id', userId);
+    if (error) { notify('error', 'Gagal menolak.'); return; }
+    notify('success', `Pendaftaran ${name} ditolak.`); fetchUsers();
   };
 
   const handleAddUser = async () => {
@@ -2301,12 +2331,18 @@ export function AccountSettingsInline() {
 
       {/* Tab bar */}
       <div className="flex border-b border-slate-200 px-5 pt-3 flex-shrink-0">
-        {(['list', 'add'] as const).map(tab => (
-          <button key={tab} onClick={() => { setActiveTab(tab); setEditingUser(null); }}
-            className={`px-4 py-2 text-sm font-bold border-b-2 transition-all mr-1 ${activeTab === tab ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-            {tab === 'list' ? `👥 Daftar Akun (${users.length})` : '➕ Tambah Akun'}
-          </button>
-        ))}
+        <button onClick={() => { setActiveTab('list'); setEditingUser(null); setEditDivisi(''); setEditPtsType(''); }}
+          className={`px-4 py-2 text-sm font-bold border-b-2 transition-all mr-1 ${activeTab === 'list' ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+          👥 Daftar Akun ({users.length})
+        </button>
+        <button onClick={() => { setActiveTab('add'); setEditingUser(null); setEditDivisi(''); setEditPtsType(''); }}
+          className={`px-4 py-2 text-sm font-bold border-b-2 transition-all mr-1 ${activeTab === 'add' ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+          ➕ Tambah Akun
+        </button>
+        <button onClick={() => { setActiveTab('pending'); setApprovingUser(null); }}
+          className={`px-4 py-2 text-sm font-bold border-b-2 transition-all mr-1 ${activeTab === 'pending' ? 'border-amber-500 text-amber-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+          🕐 Pending {pendingUsers.length > 0 && <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-black rounded-full">{pendingUsers.length}</span>}
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-5">
@@ -2502,6 +2538,94 @@ export function AccountSettingsInline() {
               {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
               ➕ Tambah Akun
             </button>
+          </div>
+        )}
+
+        {activeTab === 'pending' && (
+          <div className="space-y-3">
+            {loadingUsers ? (
+              <div className="flex items-center justify-center py-10"><div className="w-6 h-6 rounded-full border-2 border-t-amber-500 border-amber-200 animate-spin" /></div>
+            ) : approvingUser ? (
+              <div className="space-y-4 p-4 rounded-xl bg-amber-50 border border-amber-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-slate-800">✅ Review Pendaftaran: {approvingUser.full_name}</h3>
+                  <button onClick={() => { setApprovingUser(null); setApproveMenus(ALL_MENU_KEYS); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-sm bg-white p-3 rounded-lg border border-slate-200">
+                  <div><span className="text-xs text-slate-500 uppercase font-bold">Nama</span><p className="font-semibold text-slate-800">{approvingUser.full_name}</p></div>
+                  <div><span className="text-xs text-slate-500 uppercase font-bold">Username</span><p className="font-semibold text-slate-800">@{approvingUser.username}</p></div>
+                  <div><span className="text-xs text-slate-500 uppercase font-bold">Divisi / Request</span>
+                    <p className="font-semibold text-amber-700">{
+                      approvingUser.sales_division?.startsWith('PTS') ? `PTS → ${approvingUser.sales_division}`
+                      : approvingUser.sales_division === 'Marketing' ? 'Marketing'
+                      : `Sales → ${approvingUser.sales_division}`
+                    }</p>
+                  </div>
+                  <div><span className="text-xs text-slate-500 uppercase font-bold">Jabatan</span><p className="font-semibold text-slate-800">{approvingUser.jabatan || '—'}</p></div>
+                  {approvingUser.phone_number && <div className="col-span-2"><span className="text-xs text-slate-500 uppercase font-bold">No. Telepon</span><p className="font-semibold text-slate-800">{approvingUser.phone_number}</p></div>}
+                </div>
+                <div>
+                  <label className="block text-xs font-bold mb-2 text-slate-700 tracking-widest uppercase">Menu yang Diberikan</label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {ALL_MENU_KEYS.map(key => {
+                      const m = menuLabels[key]; const checked = approveMenus.includes(key);
+                      return (
+                        <button key={key} type="button" onClick={() => setApproveMenus(prev => checked ? prev.filter(k => k !== key) : [...prev, key])}
+                          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all text-left text-xs ${checked ? 'border-amber-400 bg-amber-50 text-amber-800' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
+                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${checked ? 'border-amber-500 bg-amber-500' : 'border-slate-300 bg-white'}`}>
+                            {checked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                          </div>
+                          <span>{m.icon}</span><span className="font-semibold truncate">{m.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-1">
+                  <button onClick={handleApproveUser} disabled={saving}
+                    className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white py-2.5 rounded-lg font-semibold text-sm disabled:opacity-60 flex items-center justify-center gap-2 hover:from-emerald-700 hover:to-emerald-800 transition-all">
+                    {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                    ✅ Setujui Akun
+                  </button>
+                  <button onClick={() => handleRejectUser(approvingUser.id, approvingUser.full_name)}
+                    className="px-5 py-2.5 rounded-lg border border-red-200 text-red-600 font-semibold text-sm hover:bg-red-50 transition-all">
+                    ❌ Tolak
+                  </button>
+                </div>
+              </div>
+            ) : pendingUsers.length === 0 ? (
+              <div className="text-center py-10 text-slate-400 text-sm">
+                <div className="text-3xl mb-2">✅</div>
+                Tidak ada pendaftaran yang menunggu
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {pendingUsers.map(user => (
+                  <div key={user.id} className="flex items-center gap-3 p-3 rounded-xl border border-amber-200 bg-amber-50">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 bg-amber-200 text-amber-800">
+                      {user.full_name?.charAt(0)?.toUpperCase() ?? '?'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-slate-800 text-sm truncate">{user.full_name}</p>
+                      <p className="text-xs text-slate-500">@{user.username}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-200 text-amber-800">
+                          {user.sales_division?.startsWith('PTS') ? `PTS • ${user.sales_division}` : user.sales_division === 'Marketing' ? 'Marketing' : `Sales • ${user.sales_division}`}
+                        </span>
+                        {user.jabatan && <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">{user.jabatan}</span>}
+                        {user.phone_number && <span className="text-[9px] text-slate-500">📱 {user.phone_number}</span>}
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1 flex-shrink-0">
+                      <button onClick={() => { setApprovingUser(user); setApproveMenus(ALL_MENU_KEYS); }}
+                        className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-all">Review</button>
+                      <button onClick={() => handleRejectUser(user.id, user.full_name)}
+                        className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-all">Tolak</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

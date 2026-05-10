@@ -48,6 +48,7 @@ export default function Dashboard() {
 
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [adminPanelTab, setAdminPanelTab] = useState<'settings' | 'userManagement' | 'picBrand'>('settings');
+  const [pendingCount, setPendingCount] = useState(0);
   const [showUserProfile, setShowUserProfile] = useState(false);
 
   const [visibleMenuItems, setVisibleMenuItems] = useState<MenuItem[]>([]);
@@ -148,19 +149,11 @@ export default function Dashboard() {
     if (divisi === 'PTS' && !pts_type) { alert('Pilih tipe PTS!'); return; }
     if (divisi === 'Sales' && !sales_division) { alert('Pilih sales division!'); return; }
 
-    let role = 'guest';
-    let team_type: string | null = null;
-    let division: string | null = null;
-    if (divisi === 'PTS') {
-      role = 'team';
-      if (pts_type === 'PTS IVP') team_type = 'Team PTS';
-      else if (pts_type === 'PTS UMP') team_type = 'Team PTS UMP';
-      else if (pts_type === 'PTS MLDS') team_type = 'Team PTS MLDS';
-    } else if (divisi === 'Sales') {
-      role = 'guest'; team_type = 'Guest'; division = sales_division;
-    } else if (divisi === 'Marketing') {
-      role = 'guest'; team_type = 'Marketing';
-    }
+    // Simpan divisi request di sales_division sementara, admin yg approve nanti
+    let requestedDivision: string | null = null;
+    if (divisi === 'PTS') requestedDivision = pts_type; // 'PTS IVP' / 'PTS UMP' / 'PTS MLDS'
+    else if (divisi === 'Sales') requestedDivision = sales_division;
+    else if (divisi === 'Marketing') requestedDivision = 'Marketing';
 
     setRegisterLoading(true);
     try {
@@ -170,9 +163,9 @@ export default function Dashboard() {
         full_name: full_name.trim(),
         username: username.trim().toLowerCase(),
         password: password,
-        role,
-        team_type,
-        sales_division: division,
+        role: 'guest',
+        team_type: 'Pending Approval',
+        sales_division: requestedDivision,
         jabatan: registerForm.jabatan.trim() || null,
         phone_number: registerForm.phone_number.trim() || null,
         allowed_menus: [],
@@ -251,6 +244,12 @@ export default function Dashboard() {
   }, []);
 
   const isAdmin = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    supabase.from('users').select('id', { count: 'exact', head: true }).eq('team_type', 'Pending Approval')
+      .then(({ count }) => setPendingCount(count ?? 0));
+  }, [isAdmin]);
 
   const INTERNAL_KEYS = ['reminder-schedule', 'form-require-project', 'form-bast', 'ticket-troubleshooting', 'picket-showroom'];
   const PROJECT_KEYS = ['reminder-schedule', 'form-require-project', 'form-bast', 'ticket-troubleshooting', 'picket-showroom'];
@@ -780,12 +779,13 @@ export default function Dashboard() {
                   {currentUser?.full_name?.charAt(0)?.toUpperCase() ?? 'U'}
                 </div>
                 {isAdmin && (
-                  <button onClick={() => { setAdminPanelTab('settings'); setShowAdminPanel(true); }} className="w-9 h-9 rounded-lg flex items-center justify-center transition-all" style={{ color: '#94a3b8' }} title="Admin Panel"
+                  <button onClick={() => { setAdminPanelTab('settings'); setShowAdminPanel(true); }} className="relative w-9 h-9 rounded-lg flex items-center justify-center transition-all" style={{ color: '#94a3b8' }} title="Admin Panel"
                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#4338ca'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(99,102,241,0.1)'; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
+                    {pendingCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{pendingCount}</span>}
                   </button>
                 )}
                 <button onClick={handleLogout} className="w-9 h-9 rounded-lg flex items-center justify-center transition-all" style={{ color: '#94a3b8' }} title="Sign Out"
