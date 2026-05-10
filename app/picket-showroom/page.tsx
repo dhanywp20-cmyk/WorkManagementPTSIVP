@@ -338,7 +338,7 @@ export default function PiketShowroomPage() {
                     <col style={{width:'11%'}}/><col style={{width:'8%'}}/><col style={{width:'22%'}}/><col style={{width:'8%'}}/><col style={{width:'4%'}}/>
                   </colgroup>
                   <thead>
-                    <tr style={{background:'linear-gradient(135deg,#1d4ed8 0%,#2563eb 60%,#3b82f6 100%)'}}>
+                    <tr style={{background:'linear-gradient(135deg,rgba(30,41,59,0.92) 0%,rgba(51,65,85,0.88) 100%)',backdropFilter:'blur(8px)'}}>
                       {['No','Tanggal','PIC','Kegiatan','Jam','Produk','Tamu Instansi','Sales','Keterangan','Edit By','Action'].map((h,i)=>(
                         <th key={h} className="px-3 py-3 text-center" style={{borderRight:i<10?'1px solid rgba(255,255,255,0.15)':'none'}}><span className="text-[10px] font-black uppercase tracking-wider" style={{color:'rgba(255,255,255,0.92)'}}>{h}</span></th>
                       ))}
@@ -362,10 +362,9 @@ export default function PiketShowroomPage() {
                       const rowKg=kegiatanList.filter(k=>k.piket_id===row.id);
                       const kgToShow=rowKg.length>0?rowKg:[null];
                       const countdownBadge=todayRow?null:diffDays===1?{label:'BESOK',color:'#d97706'}:diffDays>1&&diffDays<=9?{label:`${diffDays} hr lagi`,color:'#64748b'}:null;
-                      const rowStripe=trCounter%2===0;trCounter++;
-                      return kgToShow.map((kg,kgIdx)=>(
+                      return kgToShow.map((kg,kgIdx)=>{const rowStripe=trCounter%2===0;trCounter++;return(
                         <tr key={`${row.id}-${kgIdx}`} className="transition-all duration-150"
-                          style={{borderBottom:kgIdx===kgToShow.length-1?'1px solid #e2e8f0':'1px solid #f1f5f9',background:todayRow?'rgba(37,99,235,0.05)':isVirtual?'rgba(148,163,184,0.03)':rowStripe?'rgba(255,255,255,0.98)':'rgba(241,245,249,0.8)'}}>
+                          style={{borderBottom:kgIdx===kgToShow.length-1?'1px solid #e2e8f0':'1px solid #f1f5f9',background:todayRow?'rgba(37,99,235,0.05)':isVirtual?'rgba(148,163,184,0.03)':rowStripe?'rgba(255,255,255,0.97)':'rgba(241,245,249,0.85)'}}>
                           {kgIdx===0&&(
                             <>
                               <td className="px-3 py-3 text-gray-400 text-xs align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #eef2f7',verticalAlign:'middle'}}>{idx+1}</td>
@@ -493,7 +492,7 @@ export default function PiketShowroomPage() {
                           )}
                         </tr>
                       ));
-                    });})()}
+                    });});})()}
                   </tbody>
                 </table>
                 <div className="flex items-center justify-between px-5 py-2.5" style={{borderTop:'1px solid #e5e7eb'}}>
