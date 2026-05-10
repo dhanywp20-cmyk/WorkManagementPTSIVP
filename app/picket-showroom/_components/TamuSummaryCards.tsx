@@ -125,7 +125,7 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
           </div>
         ))}
         <div className="flex-shrink-0 px-3 py-3 flex items-center">
-          <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">⚡ Jam Pakai</span>
+        
         </div>
         {PRODUK_KATEGORI.map(p=>(
           <div key={p} className="flex-1 min-w-[80px] px-3 py-3 flex flex-col gap-0.5 flex-shrink-0">
