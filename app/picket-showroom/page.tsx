@@ -159,18 +159,7 @@ export default function PiketShowroomPage() {
   const kgTypePie=JENIS_KEGIATAN_LIST.map(j=>({label:j,value:filteredKgPie.filter(k=>k.jenis_kegiatan===j).length,color:KEGIATAN_COLORS[j]})).filter(d=>d.value>0);
   const instansiPie=Object.entries(filteredKgPie.filter(k=>k.tamu_instansi).reduce((acc,k)=>{const key=k.tamu_instansi!;acc[key]=(acc[key]||0)+1;return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
   const produkPie=Object.entries(filteredKgPie.reduce((acc,k)=>{(k.produk||[]).forEach(p=>{acc[p]=(acc[p]||0)+1;});return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
-  const jamProdukPie=(()=>{
-    const jamMap:Record<string,number>={};
-    filteredKgPie.forEach(k=>{
-      if(!k.jam_mulai||!k.jam_selesai||!k.produk?.length)return;
-      const[hm,mm]=k.jam_mulai.split(':').map(Number);
-      const[hs,ms]=k.jam_selesai.split(':').map(Number);
-      const durasi=((hs*60+ms)-(hm*60+mm))/60;
-      if(durasi<=0)return;
-      k.produk.forEach(p=>{jamMap[p]=(jamMap[p]||0)+durasi;});
-    });
-    return Object.entries(jamMap).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value:Math.round(value*10)/10,color:PIE_COLORS[i%PIE_COLORS.length]}));
-  })();
+
 
   return(
     <div className="min-h-screen flex flex-col relative" style={{backgroundImage:`url('/IVP_Background.png')`,backgroundSize:'cover',backgroundPosition:'center',backgroundAttachment:'fixed'}}>
@@ -220,11 +209,10 @@ export default function PiketShowroomPage() {
         <div className="flex-1 max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
           <TamuSummaryCards allRows={allRows} kegiatanList={kegiatanList} selectedYear={summaryYear} selectedMonth={summaryMonth} onYearChange={setSummaryYear} onMonthChange={setSummaryMonth}/>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
             <MiniPieChart data={instansiPie} title="Tamu per Instansi" icon="🏢" activeFilter={filterInstansi} onSliceClick={l=>setFilterInstansi(filterInstansi===l?null:l)}/>
             <MiniPieChart data={kgTypePie} title="Jenis Kegiatan" icon="📋" activeFilter={filterKegiatan} onSliceClick={l=>setFilterKegiatan(filterKegiatan===l?null:l)}/>
             <MiniPieChart data={produkPie} title="Penggunaan Produk" icon="📦" activeFilter={null} onSliceClick={()=>{}}/>
-            <MiniPieChart data={jamProdukPie} title="Jam Pakai Produk" icon="⚡" activeFilter={null} onSliceClick={()=>{}} unitSuffix="j"/>
             <MiniPieChart data={kPieAll} title="Kebutuhan Terbanyak" icon="🎯" activeFilter={filterKebutuhan} onSliceClick={l=>setFilterKebutuhan(filterKebutuhan===l?null:l)}/>
             <MiniPieChart data={divPieAll} title="Division Sales" icon="🏷️" activeFilter={filterDivision} onSliceClick={l=>setFilterDivision(filterDivision===l?null:l)}/>
           </div>
