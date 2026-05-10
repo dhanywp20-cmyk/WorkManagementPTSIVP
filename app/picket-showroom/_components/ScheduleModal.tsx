@@ -48,24 +48,34 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
   const handleSave=async()=>{
     setSaving(true);
     try{
+      // edited_by_name diambil dari currentUser — merge langsung ke payload upsert
+      const editedByName=currentUser?.full_name||null;
+
       for(const [wk,ws] of [[wk1,weekStart],[wk2,week2Start]] as [string,Date][]){
         for(const day of DAYS_OF_WEEK){
           const uid=assign[wk]?.[day]||'';
           const u=users.find(x=>x.id===uid);
           const tt=u?.team_type||'';
           const isIVP=tt==='Team PTS',isUMP=tt==='Team PTS UMP',isMlds=tt==='Team PTS MLDS';
-          const{error,data:savedRow}=await supabase.from('piket_schedules').upsert({
-            week_start:wk,day_of_week:day,day_date:toKey(getDayDate(ws,day)),
-            pic_ivp_id:isIVP?uid:null,pic_ivp_name:isIVP?u?.full_name||null:null,
-            pic_ump_id:isUMP?uid:null,pic_ump_name:isUMP?u?.full_name||null:null,
-            pic_mlds_id:isMlds?uid:null,pic_mlds_name:isMlds?u?.full_name||null:null,
-            created_at:new Date().toISOString(),updated_at:new Date().toISOString(),
-          },{onConflict:'week_start,day_of_week',ignoreDuplicates:false}).select('id').single();
+
+          const payload: Record<string,any> = {
+            week_start:wk,
+            day_of_week:day,
+            day_date:toKey(getDayDate(ws,day)),
+            pic_ivp_id:isIVP?uid:null,
+            pic_ivp_name:isIVP?u?.full_name||null:null,
+            pic_ump_id:isUMP?uid:null,
+            pic_ump_name:isUMP?u?.full_name||null:null,
+            pic_mlds_id:isMlds?uid:null,
+            pic_mlds_name:isMlds?u?.full_name||null:null,
+            created_at:new Date().toISOString(),
+            updated_at:new Date().toISOString(),
+          };
+          // Sertakan edited_by_name langsung di payload upsert agar tidak perlu update terpisah
+          if(editedByName) payload.edited_by_name=editedByName;
+
+          const{error}=await supabase.from('piket_schedules').upsert(payload,{onConflict:'week_start,day_of_week',ignoreDuplicates:false});
           if(error){notify('error',`Gagal ${day} ${wk}: ${error.message}`);setSaving(false);return;}
-          // Update edited_by_name secara terpisah — aman jika kolom belum ada di DB
-          if(currentUser?.full_name&&savedRow?.id){
-            await supabase.from('piket_schedules').update({edited_by_name:currentUser.full_name}).eq('id',savedRow.id).then(()=>{});
-          }
         }
       }
       notify('success','Jadwal 2 minggu tersimpan!');
