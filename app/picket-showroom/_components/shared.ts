@@ -71,9 +71,8 @@ export interface KegiatanEntry {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 export function getMonday(d:Date):Date{
-  // Use local date to avoid timezone shift
   const r=new Date(d.getFullYear(),d.getMonth(),d.getDate());
-  const day=r.getDay(); // 0=Sun,1=Mon,...,6=Sat
+  const day=r.getDay();
   const diff=day===0?-6:1-day;
   r.setDate(r.getDate()+diff);
   return r;
@@ -104,76 +103,157 @@ export function getWeekKey(dateStr:string):string{
   return toKey(getMonday(new Date(y,m-1,dd)));
 }
 
-// ─── Rolling schedule ─────────────────────────────────────────────────────────
-// Compute PIC untuk tanggal tertentu berdasarkan pola jadwal DB.
-// Pakai pic_ivp_name/pic_ump_name/pic_mlds_name yang tersedia di allRows.
-// Cycle = semua week_start unik di DB, berulang terus ke depan.
+// ─── Rolling schedule (FIXED) ──────────────────────────────────────────────
+//
+// DESIGN INTENT:
+//   When admin saves a 2-week schedule block, that block becomes the
+//   "canonical template". The same 2-week pattern repeats infinitely
+//   forward (and backward) from that anchor, until the admin saves a
+//   NEW 2-week block — after which the new block becomes the template
+//   and its pattern projects forward from its own anchor.
+//
+// HOW IT WORKS:
+//   1. Find the most recently saved 2-week block in the DB.
+//      "Most recent" = the pair of consecutive weeks whose week_start
+//      dates are the latest in the DB, considering weeks that were
+//      saved together (i.e. the two highest week_start values that are
+//      exactly 7 days apart, or simply the last two distinct week_start
+//      dates when sorted).
+//   2. Use those two weeks as the canonical 14-day pattern.
+//   3. For any target date, compute how many 14-day periods away it is
+//      from the anchor, then map it into the [0..13] offset within the
+//      template to get the right day's assignment.
+//   4. Actual DB rows always override the rolling projection — they are
+//      ground truth.
 
-type DayNamePattern = Record<DayOfWeek, string>;
+type DayPattern = Record<DayOfWeek, string>; // dayName → name or uid
 
-function buildRollingNamePattern(dbRows: PiketRow[]): {weekKeys: string[]; patterns: Record<string, DayNamePattern>} {
-  const patterns: Record<string, DayNamePattern> = {};
-  dbRows.forEach(r => {
-    if (!r.week_start) return;
-    if (!patterns[r.week_start]) patterns[r.week_start] = {} as DayNamePattern;
-    const name = r.pic_ivp_name || r.pic_ump_name || r.pic_mlds_name || '';
-    if (name && r.day_of_week) patterns[r.week_start][r.day_of_week] = name;
-  });
-  // Only keep weeks that have at least 1 entry
-  const weekKeys = Object.keys(patterns).filter(wk => Object.keys(patterns[wk]).length > 0).sort();
-  return { weekKeys, patterns };
+interface RollingTemplate {
+  /** Monday of week-1 of the canonical template (the earlier of the two saved weeks) */
+  anchorMonday: Date;
+  /** patterns[0] = week 1, patterns[1] = week 2 */
+  namePatterns: [DayPattern, DayPattern];
+  uidPatterns:  [DayPattern, DayPattern];
 }
 
-// Untuk tanggal tertentu, return nama PIC dari pola rolling
+/**
+ * Build the canonical rolling template from DB rows.
+ * Returns null if there is insufficient data.
+ */
+function buildRollingTemplate(dbRows: PiketRow[]): RollingTemplate | null {
+  if (!dbRows || dbRows.length === 0) return null;
+
+  // Collect all distinct week_start values that have at least one row
+  const weekSet = new Set<string>();
+  dbRows.forEach(r => { if (r.week_start) weekSet.add(r.week_start); });
+  const sortedWeeks = Array.from(weekSet).sort(); // ascending
+  if (sortedWeeks.length === 0) return null;
+
+  // ── Find the canonical 2-week block ──────────────────────────────────────
+  // Strategy: take the two highest week_start values. If they are exactly
+  // 7 days apart they form a natural pair. If not (e.g. only one week saved,
+  // or the last two saved weeks aren't consecutive), use whatever we have —
+  // week[0] is the earlier reference.
+  //
+  // We prefer to use the LAST saved pair. Walk from the end looking for a
+  // consecutive pair (7 days apart). If none found, use the last two available.
+  let week1Key: string;
+  let week2Key: string | null = null;
+
+  for (let i = sortedWeeks.length - 1; i >= 1; i--) {
+    const a = sortedWeeks[i - 1];
+    const b = sortedWeeks[i];
+    const diff = Math.round(
+      (new Date(b + 'T00:00:00').getTime() - new Date(a + 'T00:00:00').getTime())
+      / (7 * 24 * 60 * 60 * 1000)
+    );
+    if (diff === 1) {
+      week1Key = a;
+      week2Key = b;
+      break;
+    }
+  }
+
+  // Fallback: no consecutive pair found — use the latest single week twice
+  // (1-week repeating pattern)
+  if (!week2Key!) {
+    week1Key = sortedWeeks[sortedWeeks.length - 1];
+    week2Key = null;
+  }
+
+  // Build day→name and day→uid maps for each template week
+  const buildDayMaps = (wk: string) => {
+    const nameMap: Partial<DayPattern> = {};
+    const uidMap: Partial<DayPattern> = {};
+    dbRows.forEach(r => {
+      if (r.week_start !== wk) return;
+      const day = r.day_of_week;
+      if (!day) return;
+      const name = r.pic_ivp_name || r.pic_ump_name || r.pic_mlds_name || '';
+      const uid  = r.pic_ivp_id  || r.pic_ump_id  || r.pic_mlds_id  || '';
+      if (name) nameMap[day] = name;
+      if (uid)  uidMap[day]  = uid;
+    });
+    return { nameMap, uidMap };
+  };
+
+  const m1 = buildDayMaps(week1Key!);
+  const m2 = week2Key ? buildDayMaps(week2Key) : m1; // if only 1 week, repeat it
+
+  const anchorMonday = new Date(week1Key! + 'T00:00:00');
+
+  return {
+    anchorMonday,
+    namePatterns: [m1.nameMap as DayPattern, m2.nameMap as DayPattern],
+    uidPatterns:  [m1.uidMap  as DayPattern, m2.uidMap  as DayPattern],
+  };
+}
+
+/**
+ * Given a target date and the rolling template, return which slot within the
+ * 14-day pattern the date falls into: { weekIndex: 0|1, dayName }.
+ * Returns null if the date is a weekend or before the anchor.
+ */
+function resolveSlot(
+  date: Date,
+  template: RollingTemplate
+): { weekIndex: 0 | 1; dayName: DayOfWeek } | null {
+  const dow = date.getDay();
+  if (dow === 0 || dow === 6) return null; // weekend
+
+  const dayName = DAYS_OF_WEEK[dow - 1] as DayOfWeek;
+  if (!dayName) return null;
+
+  // How many days from the anchor Monday?
+  const anchorMs = template.anchorMonday.getTime();
+  const targetMs = date.getTime();
+  const diffDays = Math.round((targetMs - anchorMs) / (24 * 60 * 60 * 1000));
+
+  // Which 14-day cycle slot? Use positive modulo to handle dates before anchor.
+  const mod14 = ((diffDays % 14) + 14) % 14;
+  const weekIndex = (mod14 < 7 ? 0 : 1) as 0 | 1;
+
+  return { weekIndex, dayName };
+}
+
+/** Return the rolling PIC name for a given date. Empty string if none. */
 export function getRollingNameForDate(date: Date, dbRows: PiketRow[]): string {
-  const dow = date.getDay();
-  if (dow === 0 || dow === 6) return '';
-  const dayName = DAYS_OF_WEEK[dow - 1];
-  if (!dayName) return '';
+  const template = buildRollingTemplate(dbRows);
+  if (!template) return '';
 
-  const { weekKeys, patterns } = buildRollingNamePattern(dbRows);
-  if (weekKeys.length === 0) return '';
+  const slot = resolveSlot(date, template);
+  if (!slot) return '';
 
-  const ws = getMonday(date);
-  const wsKey = toKey(ws);
-
-  // Minggu ini ada di DB → pakai langsung
-  if (patterns[wsKey]?.[dayName]) return patterns[wsKey][dayName];
-
-  // Project rolling: cycle dari minggu-minggu yang tersimpan
-  const firstWs = new Date(weekKeys[0] + 'T00:00:00');
-  const weeksDiff = Math.round((ws.getTime() - firstWs.getTime()) / (7 * 24 * 60 * 60 * 1000));
-  if (weeksDiff < 0) return '';
-  const slotIdx = weeksDiff % weekKeys.length;
-  const patternWeek = weekKeys[slotIdx];
-  return patterns[patternWeek]?.[dayName] || '';
+  return template.namePatterns[slot.weekIndex][slot.dayName] || '';
 }
 
-// Untuk ScheduleModal: return user_id dari pola rolling (butuh pic_ivp_id dll)
+/** Return the rolling PIC user_id for a given date. Empty string if none. */
 export function getRollingUserIdForDate(date: Date, dbRows: PiketRow[]): string {
-  const dow = date.getDay();
-  if (dow === 0 || dow === 6) return '';
-  const dayName = DAYS_OF_WEEK[dow - 1];
-  if (!dayName) return '';
+  const template = buildRollingTemplate(dbRows);
+  if (!template) return '';
 
-  // Build pattern dari uid
-  const uidPatterns: Record<string, Record<DayOfWeek, string>> = {};
-  dbRows.forEach(r => {
-    if (!r.week_start) return;
-    if (!uidPatterns[r.week_start]) uidPatterns[r.week_start] = {} as Record<DayOfWeek, string>;
-    const uid = r.pic_ivp_id || r.pic_ump_id || r.pic_mlds_id || '';
-    if (uid && r.day_of_week) uidPatterns[r.week_start][r.day_of_week] = uid;
-  });
-  const weekKeys = Object.keys(uidPatterns).filter(wk => Object.keys(uidPatterns[wk]).length > 0).sort();
-  if (weekKeys.length === 0) return '';
+  const slot = resolveSlot(date, template);
+  if (!slot) return '';
 
-  const ws = getMonday(date);
-  const wsKey = toKey(ws);
-  if (uidPatterns[wsKey]?.[dayName]) return uidPatterns[wsKey][dayName];
-
-  const firstWs = new Date(weekKeys[0] + 'T00:00:00');
-  const weeksDiff = Math.round((ws.getTime() - firstWs.getTime()) / (7 * 24 * 60 * 60 * 1000));
-  if (weeksDiff < 0) return '';
-  const slotIdx = weeksDiff % weekKeys.length;
-  return uidPatterns[weekKeys[slotIdx]]?.[dayName] || '';
+  return template.uidPatterns[slot.weekIndex][slot.dayName] || '';
 }
