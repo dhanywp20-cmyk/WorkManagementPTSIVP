@@ -363,23 +363,6 @@ export default function UnitMovementPage() {
           </div>
         </div>
 
-        {/* Setup hint */}
-        <div className="rounded-2xl p-4" style={{background:'rgba(255,255,255,0.7)',border:'1px solid rgba(200,200,200,0.4)'}}>
-          <p className="font-bold text-gray-700 text-xs mb-2">📌 Supabase Setup</p>
-          <pre className="text-[10px] bg-gray-100 rounded-lg p-3 overflow-x-auto font-mono leading-relaxed">{`CREATE TABLE IF NOT EXISTS movement_logs (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  tanggal date NOT NULL, nama_pts text, nama_luar text,
-  status_barang text CHECK (status_barang IN ('Masuk','Keluar')),
-  event text, project_name text, type_barang text,
-  serial_number text, catatan text,
-  foto_surat_url text, foto_barang_url text,
-  created_by text, created_at timestamptz DEFAULT now()
-);
-ALTER TABLE movement_logs ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all" ON movement_logs FOR ALL USING (true) WITH CHECK (true);
-
--- Storage: Dashboard → Storage → New bucket → Name: movement-files → Public: ON`}</pre>
-        </div>
       </div>
     </div>
   );
