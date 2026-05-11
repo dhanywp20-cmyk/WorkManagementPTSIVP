@@ -106,84 +106,133 @@ export function getWeekKey(dateStr:string):string{
 // ─── Rolling schedule ─────────────────────────────────────────────────────────
 //
 // DESIGN:
-//   Admin saves a 2-week block → that block is the "canonical template".
-//   The exact same 2-week pattern repeats forever forward (and backward)
-//   from that anchor, until admin saves a NEW 2-week block.
+//   Admin saves a 2-week block (W1 + W2 with different people each week).
+//   That 2-week pattern repeats forever: W1, W2, W1, W2, ...
+//   When admin saves a new block, the new block becomes the new template.
 //
-// ALGORITHM:
-//   1. From all DB rows, collect distinct week_start values (sorted ascending).
-//   2. Find the LATEST consecutive pair (two week_start values exactly 7 days
-//      apart, scanning from the end). That is week1Key + week2Key.
-//   3. anchorMonday = Monday of week1Key.
-//   4. For any target date: diffDays = date - anchorMonday.
-//      mod14 = ((diffDays % 14) + 14) % 14   ← always positive
-//      if mod14 < 7  → use week1 pattern
-//      if mod14 >= 7 → use week2 pattern
-//   5. Return the name/uid for that day from the chosen pattern.
+// TEMPLATE DETECTION ALGORITHM:
+//   The ScheduleModal always saves 2 consecutive weeks at once.
+//   Because admin may save overlapping 2-week windows (e.g. first save
+//   covers weeks A+B, second save covers weeks B+C), the DB can end up
+//   with weeks [A, B, C] where B+C are identical to each other.
 //
-// NOTE: Actual DB rows are NEVER passed through this function in page.tsx —
-// they are read directly from DB and always take priority over rolling.
+//   To find the REAL intended 2-week template, we:
+//   1. Sort all distinct week_start values ascending.
+//   2. Scan from the END to find the latest consecutive pair (7 days apart)
+//      whose two weeks have DIFFERENT PIC assignments (heterogeneous pair).
+//      This is the true W1+W2 template.
+//   3. If no heterogeneous pair exists (all consecutive pairs are identical),
+//      use the latest consecutive pair regardless — the pattern is a 1-week repeat.
+//   4. anchorMonday = Monday of W1 (the earlier week of the found pair).
+//   5. For any target date: diffDays from anchor, mod14 → slot 0-6 = W1, 7-13 = W2.
+//
+// WHY THIS MATTERS:
+//   If admin saved weeks [2026-05-11, 2026-05-18] then later re-saved
+//   [2026-05-18, 2026-05-25] and 2026-05-25 accidentally got 2026-05-18's
+//   people (rolling pre-fill bug), the latest consecutive pair (05-18, 05-25)
+//   would be identical → we fall back to the heterogeneous pair (05-11, 05-18).
 
 type DayNameMap = Partial<Record<DayOfWeek, string>>;
 
 interface RollingTemplate {
-  anchorMonday: Date;   // Monday of week1 of the canonical 2-week block
-  nameW1: DayNameMap;   // week1: day → pic display name
-  nameW2: DayNameMap;   // week2: day → pic display name
-  uidW1:  DayNameMap;   // week1: day → pic user_id
-  uidW2:  DayNameMap;   // week2: day → pic user_id
+  anchorMonday: Date;   // Monday of W1
+  nameW1: DayNameMap;
+  nameW2: DayNameMap;
+  uidW1:  DayNameMap;
+  uidW2:  DayNameMap;
+}
+
+function buildDayMaps(wk: string, dbRows: PiketRow[]): { nameMap: DayNameMap; uidMap: DayNameMap } {
+  const nameMap: DayNameMap = {};
+  const uidMap:  DayNameMap = {};
+  dbRows.forEach(r => {
+    if (r.week_start !== wk || !r.day_of_week) return;
+    const day  = r.day_of_week;
+    const name = r.pic_ivp_name || r.pic_ump_name || r.pic_mlds_name || '';
+    const uid  = r.pic_ivp_id  || r.pic_ump_id  || r.pic_mlds_id  || '';
+    if (name) nameMap[day] = name;
+    if (uid)  uidMap[day]  = uid;
+  });
+  return { nameMap, uidMap };
+}
+
+/** Returns true if two day→name maps have the same content for all weekdays */
+function mapsAreIdentical(a: DayNameMap, b: DayNameMap): boolean {
+  for (const day of DAYS_OF_WEEK) {
+    if ((a[day] || '') !== (b[day] || '')) return false;
+  }
+  return true;
 }
 
 function buildRollingTemplate(dbRows: PiketRow[]): RollingTemplate | null {
   if (!dbRows || dbRows.length === 0) return null;
 
-  // Collect distinct week_start values that have at least one row
+  // Collect distinct week_start values with at least one scheduled row
   const weekSet = new Set<string>();
   dbRows.forEach(r => { if (r.week_start) weekSet.add(r.week_start); });
-  const sortedWeeks = Array.from(weekSet).sort(); // ascending
+  const sortedWeeks = Array.from(weekSet).sort(); // ascending chronological
   if (sortedWeeks.length === 0) return null;
 
-  // Find the LATEST consecutive pair (exactly 7 days apart), scanning from end
-  let week1Key: string = sortedWeeks[sortedWeeks.length - 1]; // fallback: last week
+  // Build name maps for every week once (avoid repeated scanning)
+  const nameMapsCache: Record<string, DayNameMap> = {};
+  const uidMapsCache:  Record<string, DayNameMap> = {};
+  sortedWeeks.forEach(wk => {
+    const { nameMap, uidMap } = buildDayMaps(wk, dbRows);
+    nameMapsCache[wk] = nameMap;
+    uidMapsCache[wk]  = uidMap;
+  });
+
+  let week1Key: string | null = null;
   let week2Key: string | null = null;
 
+  // Pass 1: scan from the end, find the latest consecutive + HETEROGENEOUS pair
   for (let i = sortedWeeks.length - 1; i >= 1; i--) {
     const a = sortedWeeks[i - 1];
     const b = sortedWeeks[i];
     const msA = new Date(a + 'T00:00:00').getTime();
     const msB = new Date(b + 'T00:00:00').getTime();
     const diffWeeks = Math.round((msB - msA) / (7 * 24 * 60 * 60 * 1000));
-    if (diffWeeks === 1) {
+    if (diffWeeks === 1 && !mapsAreIdentical(nameMapsCache[a], nameMapsCache[b])) {
       week1Key = a;
       week2Key = b;
       break;
     }
   }
 
-  // Build day→name and day→uid maps for one week_start key
-  const buildMaps = (wk: string): { nameMap: DayNameMap; uidMap: DayNameMap } => {
-    const nameMap: DayNameMap = {};
-    const uidMap:  DayNameMap = {};
-    dbRows.forEach(r => {
-      if (r.week_start !== wk || !r.day_of_week) return;
-      const day  = r.day_of_week;
-      const name = r.pic_ivp_name || r.pic_ump_name || r.pic_mlds_name || '';
-      const uid  = r.pic_ivp_id  || r.pic_ump_id  || r.pic_mlds_id  || '';
-      if (name) nameMap[day] = name;
-      if (uid)  uidMap[day]  = uid;
-    });
-    return { nameMap, uidMap };
-  };
+  // Pass 2 fallback: no heterogeneous pair found → use latest consecutive pair
+  // (pattern is effectively a 1-week repeat, W1 = W2)
+  if (week1Key === null) {
+    for (let i = sortedWeeks.length - 1; i >= 1; i--) {
+      const a = sortedWeeks[i - 1];
+      const b = sortedWeeks[i];
+      const msA = new Date(a + 'T00:00:00').getTime();
+      const msB = new Date(b + 'T00:00:00').getTime();
+      const diffWeeks = Math.round((msB - msA) / (7 * 24 * 60 * 60 * 1000));
+      if (diffWeeks === 1) {
+        week1Key = a;
+        week2Key = b;
+        break;
+      }
+    }
+  }
 
-  const m1 = buildMaps(week1Key);
-  const m2 = week2Key ? buildMaps(week2Key) : m1; // if only 1 week saved, repeat it
+  // Pass 3 final fallback: only one week in DB at all
+  if (week1Key === null) {
+    week1Key = sortedWeeks[sortedWeeks.length - 1];
+    week2Key = null;
+  }
+
+  const m1Name = nameMapsCache[week1Key];
+  const m1Uid  = uidMapsCache[week1Key];
+  const m2Name = week2Key ? nameMapsCache[week2Key] : m1Name;
+  const m2Uid  = week2Key ? uidMapsCache[week2Key]  : m1Uid;
 
   return {
     anchorMonday: new Date(week1Key + 'T00:00:00'),
-    nameW1: m1.nameMap,
-    nameW2: m2.nameMap,
-    uidW1:  m1.uidMap,
-    uidW2:  m2.uidMap,
+    nameW1: m1Name,
+    nameW2: m2Name,
+    uidW1:  m1Uid,
+    uidW2:  m2Uid,
   };
 }
 
@@ -191,13 +240,12 @@ function resolveSlot(
   date: Date,
   tpl: RollingTemplate
 ): { nameMap: DayNameMap; uidMap: DayNameMap; dayName: DayOfWeek } | null {
-  const dow = date.getDay(); // 0=Sun … 6=Sat
-  if (dow === 0 || dow === 6) return null;
-
+  const dow = date.getDay();
+  if (dow === 0 || dow === 6) return null; // weekend
   const dayName = DAYS_OF_WEEK[dow - 1];
   if (!dayName) return null;
 
-  // Days from anchor Monday (may be negative for dates before anchor)
+  // Days from anchor Monday (may be negative for past dates)
   const anchorMs = tpl.anchorMonday.getTime();
   const targetMs = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
   const diffDays = Math.round((targetMs - anchorMs) / (24 * 60 * 60 * 1000));
@@ -212,7 +260,7 @@ function resolveSlot(
   };
 }
 
-/** Rolling PIC display name for a date. Returns '' if no pattern or weekend. */
+/** Rolling PIC display name for a date. Returns '' if weekend or no pattern. */
 export function getRollingNameForDate(date: Date, dbRows: PiketRow[]): string {
   const tpl = buildRollingTemplate(dbRows);
   if (!tpl) return '';
@@ -221,7 +269,7 @@ export function getRollingNameForDate(date: Date, dbRows: PiketRow[]): string {
   return slot.nameMap[slot.dayName] || '';
 }
 
-/** Rolling PIC user_id for a date. Returns '' if no pattern or weekend. */
+/** Rolling PIC user_id for a date. Returns '' if weekend or no pattern. */
 export function getRollingUserIdForDate(date: Date, dbRows: PiketRow[]): string {
   const tpl = buildRollingTemplate(dbRows);
   if (!tpl) return '';
