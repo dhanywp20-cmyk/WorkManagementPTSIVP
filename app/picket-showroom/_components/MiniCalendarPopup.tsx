@@ -14,8 +14,12 @@ export function MiniCalendarPopup({allRows,onClose}:{allRows:PiketRow[];onClose:
   const gridStart=new Date(y,m,1-startOffset);
   const gridCells:Date[]=Array.from({length:42},(_,i)=>addDays(gridStart,i));
 
+  // Map actual DB rows by date key — these are ground truth
   const rowMap:Record<string,PiketRow[]>={};
-  allRows.forEach(r=>{if(!rowMap[r.day_date])rowMap[r.day_date]=[];rowMap[r.day_date].push(r);});
+  allRows.forEach(r=>{
+    if(!rowMap[r.day_date]) rowMap[r.day_date]=[];
+    rowMap[r.day_date].push(r);
+  });
 
   const WEEK_DAYS=['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
 
@@ -46,36 +50,70 @@ export function MiniCalendarPopup({allRows,onClose}:{allRows:PiketRow[];onClose:
             const isT=ds===today;
             const dow=date.getDay();
             const isWeekend=dow===0||dow===6;
+
+            // Actual saved rows for this date (ground truth)
             const dayRows=rowMap[ds]||[];
             const hasDB=dayRows.length>0;
-            const dbPics=dayRows.flatMap(r=>[r.pic_ivp_name,r.pic_ump_name,r.pic_mlds_name].filter(Boolean) as string[]);
-            const dc=hasDB?DAY_COLOR[dayRows[0].day_of_week]:null;
-            // Rolling: compute dari pola DB untuk tanggal yang belum ada
-            const rollingName=(!hasDB&&!isWeekend&&inMonth)?getRollingNameForDate(date,allRows):'';
-            const rollingDow=DAYS_OF_WEEK[dow-1] as DayOfWeek|undefined;
-            const rollingDc=rollingDow?DAY_COLOR[rollingDow]:null;
+
+            // Names to display from actual DB rows
+            const dbPics=hasDB
+              ? dayRows.flatMap(r=>[r.pic_ivp_name,r.pic_ump_name,r.pic_mlds_name].filter(Boolean) as string[])
+              : [];
+            const dc=hasDB ? DAY_COLOR[dayRows[0].day_of_week] : null;
+
+            // Rolling projection — ONLY shown for weekdays in the current month
+            // that have NO actual DB row. Uses the fixed rolling engine from shared.ts.
+            const showRolling = !hasDB && !isWeekend && inMonth;
+            const rollingName = showRolling ? getRollingNameForDate(date, allRows) : '';
+            const rollingDow = DAYS_OF_WEEK[dow-1] as DayOfWeek|undefined;
+            const rollingDc = rollingDow ? DAY_COLOR[rollingDow] : null;
+
             return(
               <div key={i} className="border-r border-b border-gray-100 p-1.5 min-h-[60px] relative"
                 style={{background:isT?'rgba(220,38,38,0.06)':!inMonth?'rgba(0,0,0,0.015)':'white'}}>
                 <div className="w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold mb-1"
-                  style={{background:isT?'#dc2626':'transparent',color:isT?'white':!inMonth?'#d1d5db':isWeekend?'#d1d5db':'#374151',fontWeight:isT?900:600}}>
+                  style={{
+                    background:isT?'#dc2626':'transparent',
+                    color:isT?'white':!inMonth?'#d1d5db':isWeekend?'#d1d5db':'#374151',
+                    fontWeight:isT?900:600,
+                  }}>
                   {date.getDate()}
                 </div>
-                {hasDB&&inMonth&&dbPics.map((name,pi)=>(
+
+                {/* Actual DB PIC names — always shown, always override */}
+                {hasDB && inMonth && dbPics.map((name,pi)=>(
                   <div key={pi} className="text-[9px] font-semibold leading-tight truncate px-0.5 py-0.5 rounded mb-0.5"
                     style={{color:dc?.accent||'#374151',background:`${dc?.accent||'#dc2626'}18`}}>
                     {name}
                   </div>
                 ))}
-                {rollingName&&(
+
+                {/* Rolling projection — shown only when no DB row exists */}
+                {rollingName && (
                   <div className="text-[9px] font-semibold leading-tight truncate px-0.5 py-0.5 rounded mb-0.5"
-                    style={{color:rollingDc?.accent||'#94a3b8',background:`${rollingDc?.accent||'#94a3b8'}12`}}>
+                    style={{
+                      color:rollingDc?.accent||'#94a3b8',
+                      background:`${rollingDc?.accent||'#94a3b8'}12`,
+                      opacity: 0.75, // slightly faded to distinguish from confirmed rows
+                    }}>
                     {rollingName}
                   </div>
                 )}
               </div>
             );
           })}
+        </div>
+
+        {/* Legend */}
+        <div className="px-4 py-2 border-t border-gray-100 flex items-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded" style={{background:'rgba(220,38,38,0.18)'}}/>
+            <span className="text-[10px] text-gray-500 font-medium">Jadwal tersimpan</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded" style={{background:'rgba(148,163,184,0.18)',opacity:0.75}}/>
+            <span className="text-[10px] text-gray-400 font-medium">Proyeksi rolling (belum dikonfirmasi)</span>
+          </div>
         </div>
       </div>
     </div>
