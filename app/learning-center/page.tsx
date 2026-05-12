@@ -1,35 +1,4 @@
-Saya sudah memahami kedua masalah Anda. Mari saya jelaskan dan langsung berikan solusi:
-
-**Masalah 1 — Tema/Layout:**
-- Saat ini pakai layout sidebar dengan user profile di bawah (redundant karena sudah ada di dashboard).
-- Anda mau diubah jadi **top-bar horizontal dengan red gradient** seperti "Ticket Troubleshooting", tanpa user profile.
-
-**Masalah 2 — Error AI Generate "Unexpected end of JSON input":**
-- Error ini terjadi karena saat OpenAI API gagal (401 invalid key / quota habis / model salah), `data.choices` jadi `undefined`, lalu `JSON.parse('')` throw error.
-- Anda di Vercel **belum set env var** `NEXT_PUBLIC_OPENAI_API_KEY`, atau API key invalid.
-- Saya akan tambahkan **error handling proper** + **`response_format: json_object`** supaya AI selalu return JSON valid.
-
-⚠️ **Penting tentang API key:** Anda share API key di chat — sebaiknya **revoke key tersebut sekarang** di [platform.openai.com/api-keys](https://platform.openai.com/api-keys) dan generate baru, karena sudah ter-exposed publik. Lalu set di **Vercel → Project Settings → Environment Variables → `NEXT_PUBLIC_OPENAI_API_KEY`** dan redeploy.
-
-Sekarang saya generate full updated file:
-Action: file_editor create /tmp/work/page_new.tsx --file-text "'use client';
-
-/**
- * LEARNING CENTER — Full Platform Component (TOP-NAV EDITION)
- * ============================================================
- * Perubahan dari versi sebelumnya:
- *   ✅ Sidebar dihapus → diganti TOP NAVIGATION horizontal (red gradient)
- *      menyerupai header \"Ticket Troubleshooting\".
- *   ✅ User profile di sidebar dihapus (sudah di-handle di Dashboard).
- *   ✅ AI Generate Soal diperbaiki:
- *      - response_format: { type: 'json_object' } supaya OpenAI selalu return JSON valid.
- *      - Error handling proper (cek res.ok + tampilkan pesan dari OpenAI).
- *      - Cegah \"Unexpected end of JSON input\" kalau content kosong.
- *
- * ENV yang dibutuhkan di Vercel (Project Settings → Environment Variables):
- *   NEXT_PUBLIC_OPENAI_API_KEY=sk-proj-...   (REQUIRED untuk Generate AI)
- *   (Supabase vars yang sudah ada tetap dipakai)
- */
+'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
