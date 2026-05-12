@@ -85,6 +85,12 @@ export default function Dashboard() {
       items: [{ name: 'Piket Showroom', url: '/picket-showroom', icon: '📅', internal: true, embed: true }]
     },
     {
+      title: 'Learning Center', icon: '🎓', key: 'learning-center',
+      gradient: 'from-blue-700 via-blue-600 to-indigo-500',
+      description: 'Platform training, quiz online & analytics team',
+      items: [{ name: 'Learning Center', url: '/learning-center', icon: '📚', internal: true, embed: true }]
+    },
+    {
       title: 'Daily Report', icon: '📈', key: 'daily-report',
       gradient: 'from-emerald-700 via-emerald-600 to-emerald-500',
       description: 'Activity tracking & performance metrics',
