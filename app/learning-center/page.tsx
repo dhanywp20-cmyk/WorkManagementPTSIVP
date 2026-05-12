@@ -132,14 +132,24 @@ export default function LearningCenterPage() {
 
   useEffect(() => {
     const loadUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) { setLoading(false); return; }
-      const { data } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-      setCurrentUser(data ?? null);
+      const saved = localStorage.getItem('currentUser');
+      const savedTime = localStorage.getItem('loginTime');
+      if (!saved) { setLoading(false); return; }
+      if (savedTime) {
+        const sixHours = 6 * 60 * 60 * 1000;
+        if (Date.now() - parseInt(savedTime) > sixHours) {
+          localStorage.removeItem('currentUser');
+          localStorage.removeItem('loginTime');
+          setLoading(false); return;
+        }
+      }
+      try {
+        const parsed: User = JSON.parse(saved);
+        const { data } = await supabase.from('users').select('*').eq('id', parsed.id).single();
+        setCurrentUser(data ?? parsed);
+      } catch {
+        setCurrentUser(null);
+      }
       setLoading(false);
     };
     loadUser();
