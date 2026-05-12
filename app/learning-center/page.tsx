@@ -1,26 +1,5 @@
 'use client';
 
-/**
- * LEARNING CENTER — Full Platform Component
- * ==========================================
- * Drop this file into your app as a page or embed it inside Dashboard via iframe/internal route.
- *
- * Usage in Dashboard.tsx:
- *   1. Add menu entry in allMenuItems:
- *      {
- *        title: 'Learning Center', icon: '🎓', key: 'learning-center',
- *        gradient: 'from-blue-700 via-blue-600 to-indigo-500',
- *        description: 'Platform Training & Quiz Online',
- *        items: [{ name: 'Learning Center', url: '/learning-center', icon: '📚', internal: true, embed: true }]
- *      }
- *   2. Add 'learning-center' to ALL_MENU_KEYS in shared.ts
- *   3. Add its label to ALL_MENU_LABELS in shared.ts
- *
- * Environment variables needed in .env.local:
- *   NEXT_PUBLIC_OPENAI_API_KEY=sk-proj-...
- *   (Supabase vars already exist in your project)
- */
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -1025,9 +1004,9 @@ function TeamPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {users.map(u => {
-                const ua = attempts.filter(a => a.user_id === u.id);
-                const avg = ua.length ? ua.reduce((s, a) => s + (a.score ?? 0), 0) / ua.length : null;
-                const passed = ua.filter(a => a.passed).length;
+                const ua = attempts.filter((a: any) => a.user_id === u.id);
+                const avg = ua.length ? ua.reduce((s: number, a: any) => s + (a.score ?? 0), 0) / ua.length : null;
+                const passed = ua.filter((a: any) => a.passed).length;
                 return (
                   <tr key={u.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-5 py-3.5">
@@ -1111,9 +1090,9 @@ function ReportPage() {
             <div className="grid grid-cols-4 gap-4">
               {[
                 { label: 'Peserta', value: data.length },
-                { label: 'Rata-rata', value: (data.reduce((s,a) => s+(a.score??0),0)/data.length).toFixed(1) },
-                { label: 'Lulus', value: data.filter(a => a.passed).length },
-                { label: 'Pass Rate', value: `${Math.round(data.filter(a=>a.passed).length/data.length*100)}%` },
+                { label: 'Rata-rata', value: (data.reduce((s: number, a: any) => s+(a.score??0),0)/data.length).toFixed(1) },
+                { label: 'Lulus', value: data.filter((a: any) => a.passed).length },
+                { label: 'Pass Rate', value: `${Math.round(data.filter((a: any) =>a.passed).length/data.length*100)}%` },
               ].map(c => (
                 <div key={c.label} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm text-center">
                   <div className="text-2xl font-black text-slate-800">{c.value}</div>
@@ -1135,7 +1114,7 @@ function ReportPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {data.map((a, i) => (
+                  {data.map((a: any, i: number) => (
                     <tr key={a.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-5 py-3.5 text-center">
                         <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black mx-auto ${i === 0 ? 'bg-amber-400 text-white' : i === 1 ? 'bg-slate-400 text-white' : i === 2 ? 'bg-orange-400 text-white' : 'text-slate-400'}`}>
@@ -1194,7 +1173,7 @@ function AnalyticsPage() {
         });
         const top = Object.entries(byUser).map(([uid, v]) => ({
           uid, name: v.name,
-          avg: v.scores.reduce((s, n) => s + n, 0) / v.scores.length,
+          avg: v.scores.reduce((s: number, n: number) => s + n, 0) / v.scores.length,
           total: v.scores.length,
           passed: v.passed,
         })).sort((a, b) => b.avg - a.avg).slice(0, 10);
@@ -1203,13 +1182,13 @@ function AnalyticsPage() {
 
       const { data: sessions } = await supabase.from('lc_quiz_sessions').select('id, session_name');
       if (sessions) {
-        const stats = await Promise.all(sessions.map(async s => {
+        const stats = await Promise.all(sessions.map(async (s: any) => {
           const { data: att, count } = await supabase.from('lc_quiz_attempts').select('score, passed', { count: 'exact' }).eq('quiz_session_id', s.id).eq('is_submitted', true);
-          const avg = att?.length ? att.reduce((sum, a) => sum + (a.score ?? 0), 0) / att.length : 0;
-          const passed = att?.filter(a => a.passed).length ?? 0;
+          const avg = att?.length ? att.reduce((sum: number, a: any) => sum + (a.score ?? 0), 0) / att.length : 0;
+          const passed = att?.filter((a: any) => a.passed).length ?? 0;
           return { name: s.session_name, total: count ?? 0, avg, passed };
         }));
-        setSessionStats(stats.filter(s => s.total > 0));
+        setSessionStats(stats.filter((s: any) => s.total > 0));
       }
     };
     load();
@@ -1680,8 +1659,8 @@ function ScorePage({ user }: { user: User }) {
     load();
   }, [user.id]);
 
-  const avg = attempts.length ? attempts.reduce((s, a) => s + (a.score ?? 0), 0) / attempts.length : 0;
-  const passed = attempts.filter(a => a.passed).length;
+  const avg = attempts.length ? attempts.reduce((s: number, a: any) => s + (a.score ?? 0), 0) / attempts.length : 0;
+  const passed = attempts.filter((a: any) => a.passed).length;
 
   return (
     <div>
