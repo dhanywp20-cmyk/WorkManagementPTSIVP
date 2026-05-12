@@ -46,6 +46,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     'unit-movement': { label: 'Unit Movement Log', icon: '🚚', gradient: 'from-amber-600 to-amber-500' },
     'reminder-schedule': { label: 'Reminder Schedule', icon: '🗓️', gradient: 'from-cyan-600 to-cyan-500' },
     'picket-showroom': { label: 'Piket Showroom', icon: '🏪', gradient: 'from-teal-600 to-teal-500' },
+    'learning-center': { label: 'Learning Center', icon: '🎓', gradient: 'from-teal-600 to-teal-500' },
   };
 
   const notify = (type: 'success' | 'error', msg: string) => {
@@ -839,7 +840,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
           )}
 
           {/* ── ROW 5: Menu Akses ── */}
-          {userData.role?.toLowerCase() !== 'superadmin' && userData.role?.toLowerCase() !== 'admin' && userData.allowed_menus && Array.isArray(userData.allowed_menus) && userData.allowed_menus.length > 0 && (
+          {userData.role?.toLowerCase() !== 'superadmin' && userData.role?.toLowerCase() !== 'admin' && userData.allowed_menus && userData.allowed_menus.length > 0 && (
             <div className="rounded-xl border border-slate-200 overflow-hidden">
               <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200">
                 <div className="flex items-center gap-2"><span>🗂️</span><span className="font-bold text-slate-700 text-sm">Menu yang Dapat Diakses</span></div>
