@@ -490,56 +490,47 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
 
   useEffect(() => {
     (async () => {
-      try {
-        const { data } = await supabase.from('users').select('*').eq('id', currentUser.id).single();
-        if (data) { setUserData(data); setPhoneInput(data.phone_number || ''); }
+      const { data } = await supabase.from('users').select('*').eq('id', currentUser.id).single();
+      if (data) { setUserData(data); setPhoneInput(data.phone_number || ''); }
 
-        const userDiv = currentUser.sales_division;
-        const selfTier = currentUser.jabatan ? (JABATAN_CONFIG[currentUser.jabatan as JabatanType]?.tier ?? 0) : 0;
+      const userDiv = currentUser.sales_division;
+      const selfTier = currentUser.jabatan ? (JABATAN_CONFIG[currentUser.jabatan as JabatanType]?.tier ?? 0) : 0;
 
-        if (userDiv) {
-          try {
-            const { data: supMaps } = await supabase.from('division_supervisor_mappings').select('supervisor_id').eq('sales_division', userDiv);
-            if (supMaps && supMaps.length > 0) {
-              const ids = supMaps.map((s: any) => s.supervisor_id).filter((id: any) => id !== currentUser.id);
-              if (ids.length > 0) {
-                const { data: sups } = await supabase.from('users').select('full_name, phone_number, sales_division, jabatan').in('id', ids);
-                const filtered = (sups ?? []).filter((s: any) => {
-                  const tier = s.jabatan ? (JABATAN_CONFIG[s.jabatan as JabatanType]?.tier ?? 0) : 0;
-                  return tier > selfTier;
-                });
-                if (filtered.length) setSupervisors(filtered);
-              }
-            }
-          } catch { /* table may not exist yet */ }
-
-          try {
-            const { data: ivpMaps } = await supabase.from('division_ivp_mappings').select('ivp_id').eq('sales_division', userDiv);
-            if (ivpMaps && ivpMaps.length > 0) {
-              const ivpIds = ivpMaps.map((s: any) => s.ivp_id);
-              const { data: ivps } = await supabase.from('users').select('full_name, phone_number, sales_division, jabatan').in('id', ivpIds);
-              if (ivps) setSupervisors(prev => [...prev, ...ivps.map((iv: any) => ({ ...iv, _isIVP: true }))]);
-            }
-          } catch { /* table may not exist yet */ }
+      if (userDiv) {
+        const { data: supMaps } = await supabase.from('division_supervisor_mappings').select('supervisor_id').eq('sales_division', userDiv);
+        if (supMaps && supMaps.length > 0) {
+          const ids = supMaps.map((s: any) => s.supervisor_id).filter((id: string) => id !== currentUser.id); // exclude self
+          if (ids.length > 0) {
+            const { data: sups } = await supabase.from('users').select('full_name, phone_number, sales_division, jabatan').in('id', ids);
+            // Only show users with HIGHER tier (true atasan)
+            const filtered = (sups ?? []).filter((s: any) => {
+              const tier = s.jabatan ? (JABATAN_CONFIG[s.jabatan as JabatanType]?.tier ?? 0) : 0;
+              return tier > selfTier;
+            });
+            if (filtered.length) setSupervisors(filtered);
+          }
         }
-
-        if (currentUser.jabatan && ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'].includes(currentUser.jabatan)) {
-          try {
-            const { data: divMaps } = await supabase.from('division_supervisor_mappings').select('sales_division').eq('supervisor_id', currentUser.id);
-            if (divMaps && divMaps.length > 0) {
-              const divs = divMaps.map((m: any) => m.sales_division);
-              const { data: subUsers } = await supabase.from('users').select('full_name, username, sales_division, jabatan').in('sales_division', divs).eq('role', 'guest').neq('sales_division', 'IVP').neq('id', currentUser.id);
-              const filtered = (subUsers ?? []).filter((u: any) => {
-                if (u.username === currentUser.username) return false;
-                const tier = u.jabatan ? (JABATAN_CONFIG[u.jabatan as JabatanType]?.tier ?? 0) : 0;
-                return tier < selfTier;
-              });
-              if (filtered.length) setSubordinates(filtered);
-            }
-          } catch { /* table may not exist yet */ }
+        const { data: ivpMaps } = await supabase.from('division_ivp_mappings').select('ivp_id').eq('sales_division', userDiv);
+        if (ivpMaps && ivpMaps.length > 0) {
+          const ivpIds = ivpMaps.map((s: any) => s.ivp_id);
+          const { data: ivps } = await supabase.from('users').select('full_name, phone_number, sales_division, jabatan').in('id', ivpIds);
+          if (ivps) setSupervisors(prev => [...prev, ...ivps.map((iv: any) => ({ ...iv, _isIVP: true }))]);
         }
-      } catch (err) {
-        console.error('UserProfileModal load error:', err);
+      }
+
+      if (currentUser.jabatan && ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'].includes(currentUser.jabatan)) {
+        const { data: divMaps } = await supabase.from('division_supervisor_mappings').select('sales_division').eq('supervisor_id', currentUser.id);
+        if (divMaps && divMaps.length > 0) {
+          const divs = divMaps.map((m: any) => m.sales_division);
+          const { data: subUsers } = await supabase.from('users').select('full_name, username, sales_division, jabatan').in('sales_division', divs).eq('role', 'guest').neq('sales_division', 'IVP').neq('id', currentUser.id);
+          // Only show users with LOWER tier (true bawahan), exclude self
+          const filtered = (subUsers ?? []).filter((u: any) => {
+            if (u.username === currentUser.username) return false; // exclude self
+            const tier = u.jabatan ? (JABATAN_CONFIG[u.jabatan as JabatanType]?.tier ?? 0) : 0;
+            return tier < selfTier;
+          });
+          if (filtered.length) setSubordinates(filtered);
+        }
       }
     })();
   }, []);
@@ -848,7 +839,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
           )}
 
           {/* ── ROW 5: Menu Akses ── */}
-          {userData.role?.toLowerCase() !== 'superadmin' && userData.role?.toLowerCase() !== 'admin' && userData.allowed_menus && userData.allowed_menus.length > 0 && (
+          {userData.role?.toLowerCase() !== 'superadmin' && userData.role?.toLowerCase() !== 'admin' && userData.allowed_menus && Array.isArray(userData.allowed_menus) && userData.allowed_menus.length > 0 && (
             <div className="rounded-xl border border-slate-200 overflow-hidden">
               <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200">
                 <div className="flex items-center gap-2"><span>🗂️</span><span className="font-bold text-slate-700 text-sm">Menu yang Dapat Diakses</span></div>
