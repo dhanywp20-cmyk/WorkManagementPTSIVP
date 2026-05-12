@@ -1,24 +1,34 @@
-'use client';
+Saya sudah memahami kedua masalah Anda. Mari saya jelaskan dan langsung berikan solusi:
+
+**Masalah 1 — Tema/Layout:**
+- Saat ini pakai layout sidebar dengan user profile di bawah (redundant karena sudah ada di dashboard).
+- Anda mau diubah jadi **top-bar horizontal dengan red gradient** seperti "Ticket Troubleshooting", tanpa user profile.
+
+**Masalah 2 — Error AI Generate "Unexpected end of JSON input":**
+- Error ini terjadi karena saat OpenAI API gagal (401 invalid key / quota habis / model salah), `data.choices` jadi `undefined`, lalu `JSON.parse('')` throw error.
+- Anda di Vercel **belum set env var** `NEXT_PUBLIC_OPENAI_API_KEY`, atau API key invalid.
+- Saya akan tambahkan **error handling proper** + **`response_format: json_object`** supaya AI selalu return JSON valid.
+
+⚠️ **Penting tentang API key:** Anda share API key di chat — sebaiknya **revoke key tersebut sekarang** di [platform.openai.com/api-keys](https://platform.openai.com/api-keys) dan generate baru, karena sudah ter-exposed publik. Lalu set di **Vercel → Project Settings → Environment Variables → `NEXT_PUBLIC_OPENAI_API_KEY`** dan redeploy.
+
+Sekarang saya generate full updated file:
+Action: file_editor create /tmp/work/page_new.tsx --file-text "'use client';
 
 /**
- * LEARNING CENTER — Full Platform Component
- * ==========================================
- * Drop this file into your app as a page or embed it inside Dashboard via iframe/internal route.
+ * LEARNING CENTER — Full Platform Component (TOP-NAV EDITION)
+ * ============================================================
+ * Perubahan dari versi sebelumnya:
+ *   ✅ Sidebar dihapus → diganti TOP NAVIGATION horizontal (red gradient)
+ *      menyerupai header \"Ticket Troubleshooting\".
+ *   ✅ User profile di sidebar dihapus (sudah di-handle di Dashboard).
+ *   ✅ AI Generate Soal diperbaiki:
+ *      - response_format: { type: 'json_object' } supaya OpenAI selalu return JSON valid.
+ *      - Error handling proper (cek res.ok + tampilkan pesan dari OpenAI).
+ *      - Cegah \"Unexpected end of JSON input\" kalau content kosong.
  *
- * Usage in Dashboard.tsx:
- *   1. Add menu entry in allMenuItems:
- *      {
- *        title: 'Learning Center', icon: '🎓', key: 'learning-center',
- *        gradient: 'from-blue-700 via-blue-600 to-indigo-500',
- *        description: 'Platform Training & Quiz Online',
- *        items: [{ name: 'Learning Center', url: '/learning-center', icon: '📚', internal: true, embed: true }]
- *      }
- *   2. Add 'learning-center' to ALL_MENU_KEYS in shared.ts
- *   3. Add its label to ALL_MENU_LABELS in shared.ts
- *
- * Environment variables needed in .env.local:
- *   NEXT_PUBLIC_OPENAI_API_KEY=sk-proj-...
- *   (Supabase vars already exist in your project)
+ * ENV yang dibutuhkan di Vercel (Project Settings → Environment Variables):
+ *   NEXT_PUBLIC_OPENAI_API_KEY=sk-proj-...   (REQUIRED untuk Generate AI)
+ *   (Supabase vars yang sudah ada tetap dipakai)
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -94,7 +104,7 @@ interface QuizAttempt {
 }
 
 type AdminView = 'dashboard' | 'materi' | 'questions' | 'sessions' | 'team' | 'report' | 'analytics';
-type TeamView = 'my-quiz' | 'history' | 'score' | 'profile';
+type TeamView = 'my-quiz' | 'history' | 'score';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -109,11 +119,8 @@ const DIFF_COLOR: Record<string, string> = {
 const fmtDate = (d: string) =>
   new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-const fmtTime = (d: string) =>
-  new Date(d).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-
 function ScoreBadge({ score, passing }: { score: number | null; passing: number }) {
-  if (score === null) return <span className="text-slate-400 text-xs">—</span>;
+  if (score === null) return <span className=\"text-slate-400 text-xs\">—</span>;
   const pass = score >= passing;
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border ${pass ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
@@ -122,9 +129,7 @@ function ScoreBadge({ score, passing }: { score: number | null; passing: number 
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
-// ─── Page wrapper (Next.js requires default export with no custom props) ──────
+// ─── Page wrapper ─────────────────────────────────────────────────────────────
 
 export default function LearningCenterPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -157,10 +162,10 @@ export default function LearningCenterPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="text-4xl mb-3 animate-pulse">🎓</div>
-          <p className="text-slate-500 font-medium">Memuat Learning Center...</p>
+      <div className=\"flex h-screen items-center justify-center bg-slate-50\">
+        <div className=\"text-center\">
+          <div className=\"text-4xl mb-3 animate-pulse\">🎓</div>
+          <p className=\"text-slate-500 font-medium\">Memuat Learning Center...</p>
         </div>
       </div>
     );
@@ -168,10 +173,10 @@ export default function LearningCenterPage() {
 
   if (!currentUser) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="text-4xl mb-3">🔒</div>
-          <p className="text-slate-500 font-medium">Silakan login terlebih dahulu.</p>
+      <div className=\"flex h-screen items-center justify-center bg-slate-50\">
+        <div className=\"text-center\">
+          <div className=\"text-4xl mb-3\">🔒</div>
+          <p className=\"text-slate-500 font-medium\">Silakan login terlebih dahulu.</p>
         </div>
       </div>
     );
@@ -180,7 +185,7 @@ export default function LearningCenterPage() {
   return <LearningCenter currentUser={currentUser} />;
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Main Component (TOP-NAV layout) ──────────────────────────────────────────
 
 function LearningCenter({ currentUser }: { currentUser: User }) {
   const isAdmin = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
@@ -188,14 +193,14 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
   const [teamView, setTeamView] = useState<TeamView>('my-quiz');
 
   return (
-    <div className="flex h-full bg-slate-50 font-sans overflow-hidden">
-      {/* Sidebar */}
+    <div className=\"flex flex-col h-full bg-slate-50 font-sans overflow-hidden\">
+      {/* Top Navigation (replaces sidebar) */}
       {isAdmin
-        ? <AdminSidebar view={adminView} onChange={setAdminView} user={currentUser} />
-        : <TeamSidebar view={teamView} onChange={setTeamView} user={currentUser} />}
+        ? <AdminTopNav view={adminView} onChange={setAdminView} />
+        : <TeamTopNav view={teamView} onChange={setTeamView} />}
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className=\"flex-1 overflow-y-auto\">
         {isAdmin ? (
           <>
             {adminView === 'dashboard'  && <AdminDashboard user={currentUser} />}
@@ -211,7 +216,6 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
             {teamView === 'my-quiz'  && <MyQuizPage user={currentUser} />}
             {teamView === 'history'  && <HistoryPage user={currentUser} />}
             {teamView === 'score'    && <ScorePage user={currentUser} />}
-            {teamView === 'profile'  && <ProfilePage user={currentUser} />}
           </>
         )}
       </div>
@@ -219,9 +223,9 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
   );
 }
 
-// ─── Sidebars ─────────────────────────────────────────────────────────────────
+// ─── Top Navigation (Red Gradient — Ticket Troubleshooting style) ─────────────
 
-function AdminSidebar({ view, onChange, user }: { view: AdminView; onChange: (v: AdminView) => void; user: User }) {
+function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminView) => void }) {
   const items: { key: AdminView; icon: string; label: string }[] = [
     { key: 'dashboard', icon: '📊', label: 'Dashboard' },
     { key: 'materi', icon: '📚', label: 'Materi' },
@@ -232,80 +236,67 @@ function AdminSidebar({ view, onChange, user }: { view: AdminView; onChange: (v:
     { key: 'analytics', icon: '📈', label: 'Analytics' },
   ];
   return (
-    <div className="w-56 bg-white border-r border-slate-200 flex flex-col flex-shrink-0 h-full">
-      <div className="px-4 py-5 border-b border-slate-100">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-lg shadow">🎓</div>
+    <div className=\"bg-gradient-to-r from-red-600 via-rose-600 to-red-500 shadow-lg flex-shrink-0\">
+      <div className=\"flex items-center justify-between px-6 py-3 border-b border-white/20\">
+        <div className=\"flex items-center gap-3\">
+          <div className=\"w-10 h-10 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center text-xl shadow-inner ring-1 ring-white/20\">🎓</div>
           <div>
-            <p className="text-sm font-bold text-slate-800 leading-tight">Learning Center</p>
-            <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider">Admin Portal</p>
+            <h1 className=\"text-base font-bold text-white tracking-tight leading-tight\">Learning Center</h1>
+            <p className=\"text-[10px] text-white/80 font-semibold uppercase tracking-widest\">Admin Portal</p>
           </div>
         </div>
       </div>
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+      <nav className=\"px-4 py-2 flex items-center gap-1.5 overflow-x-auto\">
         {items.map(i => (
-          <button key={i.key} onClick={() => onChange(i.key)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left
-              ${view === i.key ? 'bg-blue-50 text-blue-700 border border-blue-200/60' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800 border border-transparent'}`}>
-            <span className="text-base">{i.icon}</span>
+          <button
+            key={i.key}
+            onClick={() => onChange(i.key)}
+            data-testid={`nav-${i.key}`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all
+              ${view === i.key
+                ? 'bg-white text-red-600 shadow-md'
+                : 'text-white/90 hover:bg-white/15 hover:text-white'}`}>
+            <span className=\"text-base\">{i.icon}</span>
             {i.label}
           </button>
         ))}
       </nav>
-      <div className="p-3 border-t border-slate-100">
-        <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-            {user?.full_name?.[0]?.toUpperCase()}
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-slate-700 truncate">{user?.full_name}</p>
-            <p className="text-[10px] text-amber-600 font-bold uppercase tracking-wider">{user?.role}</p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
 
-function TeamSidebar({ view, onChange, user }: { view: TeamView; onChange: (v: TeamView) => void; user: User }) {
+function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView) => void }) {
   const items: { key: TeamView; icon: string; label: string }[] = [
     { key: 'my-quiz', icon: '📝', label: 'My Quiz' },
     { key: 'history', icon: '🕐', label: 'Riwayat' },
     { key: 'score', icon: '🏆', label: 'Nilai Saya' },
-    { key: 'profile', icon: '👤', label: 'Profile' },
   ];
   return (
-    <div className="w-56 bg-white border-r border-slate-200 flex flex-col flex-shrink-0 h-full">
-      <div className="px-4 py-5 border-b border-slate-100">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-lg shadow">🎓</div>
+    <div className=\"bg-gradient-to-r from-red-600 via-rose-600 to-red-500 shadow-lg flex-shrink-0\">
+      <div className=\"flex items-center justify-between px-6 py-3 border-b border-white/20\">
+        <div className=\"flex items-center gap-3\">
+          <div className=\"w-10 h-10 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center text-xl shadow-inner ring-1 ring-white/20\">🎓</div>
           <div>
-            <p className="text-sm font-bold text-slate-800 leading-tight">Learning Center</p>
-            <p className="text-[10px] text-indigo-500 font-semibold uppercase tracking-wider">Team Portal</p>
+            <h1 className=\"text-base font-bold text-white tracking-tight leading-tight\">Learning Center</h1>
+            <p className=\"text-[10px] text-white/80 font-semibold uppercase tracking-widest\">Team Portal</p>
           </div>
         </div>
       </div>
-      <nav className="flex-1 p-3 space-y-0.5">
+      <nav className=\"px-4 py-2 flex items-center gap-1.5 overflow-x-auto\">
         {items.map(i => (
-          <button key={i.key} onClick={() => onChange(i.key)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left
-              ${view === i.key ? 'bg-indigo-50 text-indigo-700 border border-indigo-200/60' : 'text-slate-600 hover:bg-slate-50 border border-transparent'}`}>
-            <span className="text-base">{i.icon}</span>
+          <button
+            key={i.key}
+            onClick={() => onChange(i.key)}
+            data-testid={`nav-${i.key}`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all
+              ${view === i.key
+                ? 'bg-white text-red-600 shadow-md'
+                : 'text-white/90 hover:bg-white/15 hover:text-white'}`}>
+            <span className=\"text-base\">{i.icon}</span>
             {i.label}
           </button>
         ))}
       </nav>
-      <div className="p-3 border-t border-slate-100">
-        <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-            {user?.full_name?.[0]?.toUpperCase()}
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-slate-700 truncate">{user?.full_name}</p>
-            <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">{user?.role}</p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -314,10 +305,10 @@ function TeamSidebar({ view, onChange, user }: { view: TeamView; onChange: (v: T
 
 function PageHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 bg-white sticky top-0 z-10">
+    <div className=\"flex items-center justify-between px-8 py-6 border-b border-slate-100 bg-white sticky top-0 z-10\">
       <div>
-        <h1 className="text-xl font-bold text-slate-800 tracking-tight">{title}</h1>
-        {subtitle && <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>}
+        <h1 className=\"text-xl font-bold text-slate-800 tracking-tight\">{title}</h1>
+        {subtitle && <p className=\"text-sm text-slate-500 mt-0.5\">{subtitle}</p>}
       </div>
       {action && <div>{action}</div>}
     </div>
@@ -360,37 +351,37 @@ function AdminDashboard({ user }: { user: User }) {
 
   return (
     <div>
-      <PageHeader title="Dashboard" subtitle={`Selamat datang, ${user.full_name}`} />
-      <div className="p-8 space-y-8">
-        <div className="grid grid-cols-4 gap-5">
+      <PageHeader title=\"Dashboard\" subtitle={`Selamat datang, ${user.full_name}`} />
+      <div className=\"p-8 space-y-8\">
+        <div className=\"grid grid-cols-4 gap-5\">
           {cards.map(c => (
             <div key={c.label} className={`bg-gradient-to-br ${c.color} rounded-2xl p-5 text-white shadow-lg`}>
-              <div className="text-3xl mb-2">{c.icon}</div>
-              <div className="text-3xl font-black">{c.value}</div>
-              <div className="text-white/80 text-sm font-medium mt-1">{c.label}</div>
+              <div className=\"text-3xl mb-2\">{c.icon}</div>
+              <div className=\"text-3xl font-black\">{c.value}</div>
+              <div className=\"text-white/80 text-sm font-medium mt-1\">{c.label}</div>
             </div>
           ))}
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h3 className="font-bold text-slate-800">Aktivitas Terbaru</h3>
+        <div className=\"bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm\">
+          <div className=\"px-6 py-4 border-b border-slate-100\">
+            <h3 className=\"font-bold text-slate-800\">Aktivitas Terbaru</h3>
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className=\"divide-y divide-slate-100\">
             {recentAttempts.length === 0 && (
-              <div className="text-center text-slate-400 py-10 text-sm">Belum ada aktivitas quiz</div>
+              <div className=\"text-center text-slate-400 py-10 text-sm\">Belum ada aktivitas quiz</div>
             )}
             {recentAttempts.map((a: any) => (
-              <div key={a.id} className="flex items-center gap-4 px-6 py-3.5">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold flex-shrink-0">
+              <div key={a.id} className=\"flex items-center gap-4 px-6 py-3.5\">
+                <div className=\"w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold flex-shrink-0\">
                   {a.users?.full_name?.[0] ?? '?'}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 truncate">{a.users?.full_name ?? '-'}</p>
-                  <p className="text-xs text-slate-500 truncate">{a.lc_quiz_sessions?.session_name ?? '-'}</p>
+                <div className=\"flex-1 min-w-0\">
+                  <p className=\"text-sm font-semibold text-slate-800 truncate\">{a.users?.full_name ?? '-'}</p>
+                  <p className=\"text-xs text-slate-500 truncate\">{a.lc_quiz_sessions?.session_name ?? '-'}</p>
                 </div>
                 <ScoreBadge score={a.score} passing={70} />
-                <span className="text-xs text-slate-400 flex-shrink-0">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
+                <span className=\"text-xs text-slate-400 flex-shrink-0\">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
               </div>
             ))}
           </div>
@@ -418,8 +409,6 @@ function MateriPage({ user }: { user: User }) {
   useEffect(() => { load(); }, [load]);
 
   const extractTextFromFile = async (f: File): Promise<string> => {
-    // For PDF/PPTX we send to OpenAI with vision or just read as text
-    // For simplicity, we read as text (works for .txt); for PDF the user also sets content_text manually or via copy-paste
     return new Promise((res) => {
       const reader = new FileReader();
       reader.onload = e => res((e.target?.result as string) ?? '');
@@ -467,57 +456,57 @@ function MateriPage({ user }: { user: User }) {
 
   return (
     <div>
-      <PageHeader title="📚 Materi Training" subtitle="Kelola materi training & sumber belajar"
+      <PageHeader title=\"📚 Materi Training\" subtitle=\"Kelola materi training & sumber belajar\"
         action={
-          <button onClick={() => setShowForm(true)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
+          <button onClick={() => setShowForm(true)} data-testid=\"btn-add-materi\"
+            className=\"px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2\">
             <span>+</span> Tambah Materi
           </button>
         }
       />
-      <div className="p-8">
+      <div className=\"p-8\">
         {showForm && (
-          <div className="bg-white rounded-2xl border border-blue-100 shadow-lg p-6 mb-8">
-            <h3 className="font-bold text-slate-800 mb-5 flex items-center gap-2">✏️ Form Materi Baru</h3>
-            <div className="space-y-4">
+          <div className=\"bg-white rounded-2xl border border-blue-100 shadow-lg p-6 mb-8\">
+            <h3 className=\"font-bold text-slate-800 mb-5 flex items-center gap-2\">✏️ Form Materi Baru</h3>
+            <div className=\"space-y-4\">
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Materi *</label>
+                <label className=\"block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5\">Nama Materi *</label>
                 <input value={form.materi_name} onChange={e => setForm(p => ({ ...p, materi_name: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                  placeholder="contoh: Pengenalan Produk Microvision" />
+                  className=\"w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100\"
+                  placeholder=\"contoh: Pengenalan Produk Microvision\" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Link Download OneDrive</label>
+                <label className=\"block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5\">Link Download OneDrive</label>
                 <input value={form.file_url} onChange={e => setForm(p => ({ ...p, file_url: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                  placeholder="https://1drv.ms/..." />
+                  className=\"w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100\"
+                  placeholder=\"https://1drv.ms/...\" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Upload File untuk AI (txt/pdf extract)</label>
-                <input ref={fileRef} type="file" accept=".txt,.pdf,.pptx,.docx" onChange={handleFileChange} className="hidden" />
-                <div className="flex gap-3 items-center">
+                <label className=\"block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5\">Upload File untuk AI (txt/pdf extract)</label>
+                <input ref={fileRef} type=\"file\" accept=\".txt,.pdf,.pptx,.docx\" onChange={handleFileChange} className=\"hidden\" />
+                <div className=\"flex gap-3 items-center\">
                   <button onClick={() => fileRef.current?.click()}
-                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl border border-slate-200 transition-all">
+                    className=\"px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl border border-slate-200 transition-all\">
                     📁 Pilih File
                   </button>
-                  {file && <span className="text-sm text-slate-600 font-medium">{file.name}</span>}
-                  {extracting && <span className="text-xs text-blue-600 animate-pulse">Membaca file...</span>}
+                  {file && <span className=\"text-sm text-slate-600 font-medium\">{file.name}</span>}
+                  {extracting && <span className=\"text-xs text-blue-600 animate-pulse\">Membaca file...</span>}
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Konten Teks (untuk AI Generate Soal)</label>
+                <label className=\"block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5\">Konten Teks (untuk AI Generate Soal)</label>
                 <textarea value={form.content_text} onChange={e => setForm(p => ({ ...p, content_text: e.target.value }))}
-                  rows={6} placeholder="Paste isi materi di sini, atau upload file .txt di atas..."
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none" />
-                <p className="text-xs text-slate-400 mt-1">{form.content_text.length} karakter — untuk PDF/PPTX, copy-paste isi slide/halaman di sini</p>
+                  rows={6} placeholder=\"Paste isi materi di sini, atau upload file .txt di atas...\"
+                  className=\"w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none\" />
+                <p className=\"text-xs text-slate-400 mt-1\">{form.content_text.length} karakter — untuk PDF/PPTX, copy-paste isi slide/halaman di sini</p>
               </div>
-              <div className="flex gap-3 pt-2">
+              <div className=\"flex gap-3 pt-2\">
                 <button onClick={handleSave} disabled={uploading}
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60">
+                  className=\"px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60\">
                   {uploading ? 'Menyimpan...' : '💾 Simpan Materi'}
                 </button>
                 <button onClick={() => setShowForm(false)}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all">
+                  className=\"px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all\">
                   Batal
                 </button>
               </div>
@@ -525,35 +514,35 @@ function MateriPage({ user }: { user: User }) {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4">
+        <div className=\"grid grid-cols-1 gap-4\">
           {materials.length === 0 && !showForm && (
-            <div className="text-center py-16 text-slate-400">
-              <div className="text-5xl mb-3">📭</div>
-              <p className="font-semibold">Belum ada materi</p>
-              <p className="text-sm mt-1">Klik + Tambah Materi untuk mulai</p>
+            <div className=\"text-center py-16 text-slate-400\">
+              <div className=\"text-5xl mb-3\">📭</div>
+              <p className=\"font-semibold\">Belum ada materi</p>
+              <p className=\"text-sm mt-1\">Klik + Tambah Materi untuk mulai</p>
             </div>
           )}
           {materials.map(m => (
-            <div key={m.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex items-start gap-4 group hover:shadow-md transition-all">
-              <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-2xl flex-shrink-0">📄</div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-slate-800">{m.materi_name}</h4>
-                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                  {m.file_name && <span className="text-xs text-slate-500 font-medium">📁 {m.file_name}</span>}
-                  {m.content_text && <span className="text-xs bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-semibold">✅ Teks tersedia</span>}
-                  <span className="text-xs text-slate-400">{fmtDate(m.created_at)}</span>
+            <div key={m.id} className=\"bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex items-start gap-4 group hover:shadow-md transition-all\">
+              <div className=\"w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-2xl flex-shrink-0\">📄</div>
+              <div className=\"flex-1 min-w-0\">
+                <h4 className=\"font-bold text-slate-800\">{m.materi_name}</h4>
+                <div className=\"flex items-center gap-3 mt-1.5 flex-wrap\">
+                  {m.file_name && <span className=\"text-xs text-slate-500 font-medium\">📁 {m.file_name}</span>}
+                  {m.content_text && <span className=\"text-xs bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-semibold\">✅ Teks tersedia</span>}
+                  <span className=\"text-xs text-slate-400\">{fmtDate(m.created_at)}</span>
                 </div>
                 {m.file_url && (
-                  <a href={m.file_url} target="_blank" rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 mt-2 text-xs text-blue-600 hover:text-blue-700 font-semibold">
+                  <a href={m.file_url} target=\"_blank\" rel=\"noreferrer\"
+                    className=\"inline-flex items-center gap-1.5 mt-2 text-xs text-blue-600 hover:text-blue-700 font-semibold\">
                     ⬇️ Download Materi
                   </a>
                 )}
               </div>
-              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+              <div className=\"flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0\">
                 <button onClick={() => handleDelete(m.id)}
-                  className="p-2 rounded-lg text-rose-500 hover:bg-rose-50 transition-all" title="Hapus">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  className=\"p-2 rounded-lg text-rose-500 hover:bg-rose-50 transition-all\" title=\"Hapus\">
+                  <svg className=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path strokeLinecap=\"round\" strokeLinejoin=\"round\" strokeWidth={2} d=\"M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16\" /></svg>
                 </button>
               </div>
             </div>
@@ -586,10 +575,26 @@ function QuestionsPage({ user }: { user: User }) {
   }, [selectedMat]);
   useEffect(() => { load(); }, [load]);
 
+  /**
+   * ✅ FIXED: AI Generate Soal
+   * - Validate API key terisi
+   * - Pakai response_format: json_object supaya OpenAI WAJIB return JSON valid
+   * - Cek res.ok dan tampilkan error message dari OpenAI bila gagal
+   * - Aman dari \"Unexpected end of JSON input\" (cek content kosong dulu)
+   */
   const handleGenerate = async () => {
     if (!selectedMat) return alert('Pilih materi terlebih dahulu!');
     const mat = materials.find(m => m.id === selectedMat);
     if (!mat?.content_text) return alert('Materi ini belum memiliki teks konten. Tambahkan teks pada halaman Materi.');
+
+    if (!OPENAI_KEY || !OPENAI_KEY.startsWith('sk-')) {
+      return alert(
+        'OpenAI API Key belum di-set!\n\n' +
+        'Buka Vercel → Project Settings → Environment Variables, lalu tambahkan:\n' +
+        'NEXT_PUBLIC_OPENAI_API_KEY=sk-proj-...\n\n' +
+        'Setelah itu Redeploy project.'
+      );
+    }
 
     setGenerating(true);
     try {
@@ -603,55 +608,95 @@ ${diffInstruction}
 MATERI:
 ${mat.content_text.slice(0, 8000)}
 
-Kembalikan HANYA JSON array dengan format:
-[
-  {
-    "question": "Pertanyaan?",
-    "option_a": "...",
-    "option_b": "...",
-    "option_c": "...",
-    "option_d": "...",
-    "correct_answer": "A",
-    "difficulty": "easy"
-  }
-]
-Tidak ada teks lain, hanya JSON.`;
+Kembalikan HANYA JSON dengan format:
+{
+  \"questions\": [
+    {
+      \"question\": \"Pertanyaan?\",
+      \"option_a\": \"...\",
+      \"option_b\": \"...\",
+      \"option_c\": \"...\",
+      \"option_d\": \"...\",
+      \"correct_answer\": \"A\",
+      \"difficulty\": \"easy\"
+    }
+  ]
+}
+Pastikan correct_answer hanya salah satu dari \"A\",\"B\",\"C\",\"D\" dan difficulty hanya \"easy\",\"medium\", atau \"hard\".`;
 
       const res = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_KEY}` },
         body: JSON.stringify({
           model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: prompt }],
+          messages: [
+            { role: 'system', content: 'Kamu adalah generator soal pilihan ganda yang selalu return JSON valid sesuai format yang diminta.' },
+            { role: 'user', content: prompt },
+          ],
           temperature: 0.7,
           max_tokens: 4000,
+          response_format: { type: 'json_object' },
         }),
       });
-      const data = await res.json();
-      const text: string = data.choices?.[0]?.message?.content ?? '';
-      const jsonStr = text.replace(/```json|```/g, '').trim();
-      const parsed: any[] = JSON.parse(jsonStr);
+
+      // Parse response, tangkap error dari OpenAI
+      let data: any = null;
+      const rawText = await res.text();
+      try { data = rawText ? JSON.parse(rawText) : null; } catch { data = null; }
+
+      if (!res.ok) {
+        const msg = data?.error?.message || rawText || `HTTP ${res.status}`;
+        throw new Error('OpenAI error: ' + msg);
+      }
+
+      const content: string = data?.choices?.[0]?.message?.content ?? '';
+      if (!content.trim()) {
+        throw new Error('OpenAI mengembalikan response kosong. Coba lagi atau periksa API key/credit OpenAI.');
+      }
+
+      // Strip code fence jika ada (jaga-jaga), lalu parse
+      const cleaned = content.replace(/```json|```/g, '').trim();
+      let parsedObj: any;
+      try {
+        parsedObj = JSON.parse(cleaned);
+      } catch (e: any) {
+        throw new Error('Gagal parse JSON dari OpenAI: ' + (e?.message ?? '') + '\n\nRaw: ' + cleaned.slice(0, 200));
+      }
+
+      // Format diharapkan { questions: [...] } — fallback ke array murni
+      const parsed: any[] = Array.isArray(parsedObj) ? parsedObj : (parsedObj?.questions ?? []);
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        throw new Error('Format JSON tidak sesuai. Tidak menemukan array \"questions\".');
+      }
 
       const rows = parsed.map(q => ({
         material_id: selectedMat,
         materi_name: mat.materi_name,
-        question: q.question,
-        option_a: q.option_a,
-        option_b: q.option_b,
-        option_c: q.option_c,
-        option_d: q.option_d,
-        correct_answer: q.correct_answer.toUpperCase(),
-        difficulty: q.difficulty ?? 'medium',
+        question: String(q.question ?? '').trim(),
+        option_a: String(q.option_a ?? '').trim(),
+        option_b: String(q.option_b ?? '').trim(),
+        option_c: String(q.option_c ?? '').trim(),
+        option_d: String(q.option_d ?? '').trim(),
+        correct_answer: String(q.correct_answer ?? 'A').toUpperCase().slice(0, 1),
+        difficulty: ['easy', 'medium', 'hard'].includes(String(q.difficulty ?? '').toLowerCase())
+          ? String(q.difficulty).toLowerCase()
+          : 'medium',
         created_by: user.id,
-      }));
+      })).filter(r => r.question && r.option_a && r.option_b && r.option_c && r.option_d);
+
+      if (rows.length === 0) {
+        throw new Error('Semua soal yang di-generate tidak valid (field kosong).');
+      }
 
       const { error } = await supabase.from('lc_questions').insert(rows);
-      if (error) throw error;
+      if (error) throw new Error('Supabase error: ' + error.message);
+
       alert(`✅ ${rows.length} soal berhasil digenerate dan disimpan!`);
       setShowGenerate(false);
       load();
     } catch (err: any) {
-      alert('Gagal generate: ' + (err.message ?? String(err)));
+      console.error('[Generate AI Error]', err);
+      alert('Gagal generate: ' + (err?.message ?? String(err)));
     }
     setGenerating(false);
   };
@@ -675,61 +720,61 @@ Tidak ada teks lain, hanya JSON.`;
 
   return (
     <div>
-      <PageHeader title="🧩 Bank Soal" subtitle={`${questions.length} soal tersedia`}
+      <PageHeader title=\"🧩 Bank Soal\" subtitle={`${questions.length} soal tersedia`}
         action={
-          <button onClick={() => setShowGenerate(true)}
-            className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
+          <button onClick={() => setShowGenerate(true)} data-testid=\"btn-show-generate\"
+            className=\"px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2\">
             ✨ Generate AI
           </button>
         }
       />
-      <div className="p-8 space-y-6">
+      <div className=\"p-8 space-y-6\">
         {/* Filter */}
-        <div className="flex gap-3 items-center">
+        <div className=\"flex gap-3 items-center\">
           <select value={selectedMat} onChange={e => setSelectedMat(e.target.value)}
-            className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 bg-white">
-            <option value="">Semua Materi</option>
+            className=\"border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 bg-white\">
+            <option value=\"\">Semua Materi</option>
             {materials.map(m => <option key={m.id} value={m.id}>{m.materi_name}</option>)}
           </select>
-          <span className="text-sm text-slate-500">{questions.length} soal</span>
+          <span className=\"text-sm text-slate-500\">{questions.length} soal</span>
         </div>
 
         {/* Generate Panel */}
         {showGenerate && (
-          <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl border border-violet-200 p-6">
-            <h3 className="font-bold text-violet-800 mb-4 flex items-center gap-2">✨ Generate Soal dengan AI</h3>
-            <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className=\"bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl border border-violet-200 p-6\">
+            <h3 className=\"font-bold text-violet-800 mb-4 flex items-center gap-2\">✨ Generate Soal dengan AI</h3>
+            <div className=\"grid grid-cols-2 gap-4 mb-4\">
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
+                <label className=\"block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5\">Materi *</label>
                 <select value={selectedMat} onChange={e => setSelectedMat(e.target.value)}
-                  className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
-                  <option value="">-- Pilih Materi --</option>
+                  className=\"w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white\">
+                  <option value=\"\">-- Pilih Materi --</option>
                   {materials.map(m => <option key={m.id} value={m.id}>{m.materi_name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Jumlah Soal</label>
-                <input type="number" min={1} max={50} value={genCount} onChange={e => setGenCount(+e.target.value)}
-                  className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white" />
+                <label className=\"block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5\">Jumlah Soal</label>
+                <input type=\"number\" min={1} max={50} value={genCount} onChange={e => setGenCount(+e.target.value)}
+                  className=\"w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white\" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
+                <label className=\"block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5\">Tingkat Kesulitan</label>
                 <select value={genDiff} onChange={e => setGenDiff(e.target.value as any)}
-                  className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
-                  <option value="mixed">Mixed (Campuran)</option>
-                  <option value="easy">Easy</option>
-                  <option value="medium">Medium</option>
-                  <option value="hard">Hard</option>
+                  className=\"w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white\">
+                  <option value=\"mixed\">Mixed (Campuran)</option>
+                  <option value=\"easy\">Easy</option>
+                  <option value=\"medium\">Medium</option>
+                  <option value=\"hard\">Hard</option>
                 </select>
               </div>
             </div>
-            <div className="flex gap-3">
-              <button onClick={handleGenerate} disabled={generating}
-                className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60 flex items-center gap-2">
-                {generating ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generating...</> : '✨ Generate Sekarang'}
+            <div className=\"flex gap-3\">
+              <button onClick={handleGenerate} disabled={generating} data-testid=\"btn-generate-ai\"
+                className=\"px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60 flex items-center gap-2\">
+                {generating ? <><span className=\"w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin\" />Generating...</> : '✨ Generate Sekarang'}
               </button>
               <button onClick={() => setShowGenerate(false)}
-                className="px-5 py-2.5 bg-white text-slate-600 text-sm font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all">
+                className=\"px-5 py-2.5 bg-white text-slate-600 text-sm font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all\">
                 Batal
               </button>
             </div>
@@ -738,17 +783,17 @@ Tidak ada teks lain, hanya JSON.`;
 
         {/* Edit Modal */}
         {editQ && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-              <h3 className="font-bold text-slate-800 mb-4">✏️ Edit Soal</h3>
-              <div className="space-y-3">
+          <div className=\"fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4\">
+            <div className=\"bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto\">
+              <h3 className=\"font-bold text-slate-800 mb-4\">✏️ Edit Soal</h3>
+              <div className=\"space-y-3\">
                 <textarea value={editQ.question} onChange={e => setEditQ(p => p && ({ ...p, question: e.target.value }))}
-                  rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 resize-none" placeholder="Pertanyaan" />
+                  rows={3} className=\"w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 resize-none\" placeholder=\"Pertanyaan\" />
                 {(['a','b','c','d'] as const).map(opt => (
-                  <div key={opt} className="flex items-center gap-2">
+                  <div key={opt} className=\"flex items-center gap-2\">
                     <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 ${editQ.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{opt.toUpperCase()}</span>
                     <input value={(editQ as any)[`option_${opt}`]} onChange={e => setEditQ(p => p && ({ ...p, [`option_${opt}`]: e.target.value }))}
-                      className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-400" />
+                      className=\"flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-400\" />
                     <button onClick={() => setEditQ(p => p && ({ ...p, correct_answer: opt.toUpperCase() as any }))}
                       className={`text-xs px-2 py-1 rounded-lg font-semibold transition-all ${editQ.correct_answer === opt.toUpperCase() ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-slate-100 text-slate-500 hover:bg-green-50'}`}>
                       Benar
@@ -756,54 +801,54 @@ Tidak ada teks lain, hanya JSON.`;
                   </div>
                 ))}
                 <select value={editQ.difficulty} onChange={e => setEditQ(p => p && ({ ...p, difficulty: e.target.value as any }))}
-                  className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400">
-                  <option value="easy">Easy</option>
-                  <option value="medium">Medium</option>
-                  <option value="hard">Hard</option>
+                  className=\"border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400\">
+                  <option value=\"easy\">Easy</option>
+                  <option value=\"medium\">Medium</option>
+                  <option value=\"hard\">Hard</option>
                 </select>
               </div>
-              <div className="flex gap-3 mt-5">
-                <button onClick={handleSaveEdit} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow transition-all">Simpan</button>
-                <button onClick={() => setEditQ(null)} className="px-5 py-2.5 bg-slate-100 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-all">Batal</button>
+              <div className=\"flex gap-3 mt-5\">
+                <button onClick={handleSaveEdit} className=\"px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow transition-all\">Simpan</button>
+                <button onClick={() => setEditQ(null)} className=\"px-5 py-2.5 bg-slate-100 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-all\">Batal</button>
               </div>
             </div>
           </div>
         )}
 
         {/* Question List */}
-        <div className="space-y-3">
+        <div className=\"space-y-3\">
           {questions.length === 0 && (
-            <div className="text-center py-16 text-slate-400">
-              <div className="text-5xl mb-3">🧩</div>
-              <p className="font-semibold">Belum ada soal</p>
-              <p className="text-sm mt-1">Generate soal dengan AI atau pilih materi dahulu</p>
+            <div className=\"text-center py-16 text-slate-400\">
+              <div className=\"text-5xl mb-3\">🧩</div>
+              <p className=\"font-semibold\">Belum ada soal</p>
+              <p className=\"text-sm mt-1\">Generate soal dengan AI atau pilih materi dahulu</p>
             </div>
           )}
           {questions.map((q, idx) => (
-            <div key={q.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 group hover:shadow-md transition-all">
-              <div className="flex items-start gap-3">
-                <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-black text-slate-600 flex-shrink-0 mt-0.5">{idx+1}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
-                  <div className="grid grid-cols-2 gap-1.5 mt-3">
+            <div key={q.id} className=\"bg-white rounded-xl border border-slate-200 shadow-sm p-5 group hover:shadow-md transition-all\">
+              <div className=\"flex items-start gap-3\">
+                <span className=\"w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-black text-slate-600 flex-shrink-0 mt-0.5\">{idx+1}</span>
+                <div className=\"flex-1 min-w-0\">
+                  <p className=\"text-sm font-semibold text-slate-800 leading-relaxed\">{q.question}</p>
+                  <div className=\"grid grid-cols-2 gap-1.5 mt-3\">
                     {(['a','b','c','d'] as const).map(opt => (
                       <div key={opt} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs ${q.correct_answer === opt.toUpperCase() ? 'bg-green-50 border border-green-200 text-green-700 font-bold' : 'bg-slate-50 border border-slate-200 text-slate-600'}`}>
                         <span className={`w-4 h-4 rounded flex items-center justify-center text-[10px] font-black flex-shrink-0 ${q.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-300 text-white'}`}>{opt.toUpperCase()}</span>
-                        <span className="truncate">{(q as any)[`option_${opt}`]}</span>
+                        <span className=\"truncate\">{(q as any)[`option_${opt}`]}</span>
                       </div>
                     ))}
                   </div>
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className=\"flex items-center gap-2 mt-2\">
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${DIFF_COLOR[q.difficulty]}`}>{q.difficulty}</span>
-                    <span className="text-xs text-slate-400">{q.materi_name}</span>
+                    <span className=\"text-xs text-slate-400\">{q.materi_name}</span>
                   </div>
                 </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                  <button onClick={() => setEditQ(q)} className="p-2 rounded-lg text-blue-500 hover:bg-blue-50 transition-all">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                <div className=\"flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0\">
+                  <button onClick={() => setEditQ(q)} className=\"p-2 rounded-lg text-blue-500 hover:bg-blue-50 transition-all\">
+                    <svg className=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path strokeLinecap=\"round\" strokeLinejoin=\"round\" strokeWidth={2} d=\"M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z\" /></svg>
                   </button>
-                  <button onClick={() => handleDelete(q.id)} className="p-2 rounded-lg text-rose-500 hover:bg-rose-50 transition-all">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  <button onClick={() => handleDelete(q.id)} className=\"p-2 rounded-lg text-rose-500 hover:bg-rose-50 transition-all\">
+                    <svg className=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path strokeLinecap=\"round\" strokeLinejoin=\"round\" strokeWidth={2} d=\"M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16\" /></svg>
                   </button>
                 </div>
               </div>
@@ -844,7 +889,6 @@ function SessionsPage({ user }: { user: User }) {
     const mat = materials.find(m => m.id === form.material_id);
     const pool = questions.filter(q => q.material_id === form.material_id);
     if (pool.length < form.question_count) return alert(`Hanya ada ${pool.length} soal untuk materi ini. Kurangi jumlah soal atau generate lebih banyak.`);
-    // Randomly pick questions
     const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, form.question_count);
     setSaving(true);
     const { error } = await supabase.from('lc_quiz_sessions').insert([{
@@ -880,30 +924,30 @@ function SessionsPage({ user }: { user: User }) {
 
   return (
     <div>
-      <PageHeader title="🎯 Sesi Quiz" subtitle="Buat & kelola sesi quiz untuk team"
+      <PageHeader title=\"🎯 Sesi Quiz\" subtitle=\"Buat & kelola sesi quiz untuk team\"
         action={
-          <button onClick={() => setShowForm(true)}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
+          <button onClick={() => setShowForm(true)} data-testid=\"btn-add-session\"
+            className=\"px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2\">
             + Buat Sesi Quiz
           </button>
         }
       />
-      <div className="p-8 space-y-6">
+      <div className=\"p-8 space-y-6\">
         {showForm && (
-          <div className="bg-white rounded-2xl border border-emerald-100 shadow-lg p-6">
-            <h3 className="font-bold text-slate-800 mb-5">📋 Form Sesi Quiz Baru</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Sesi *</label>
+          <div className=\"bg-white rounded-2xl border border-emerald-100 shadow-lg p-6\">
+            <h3 className=\"font-bold text-slate-800 mb-5\">📋 Form Sesi Quiz Baru</h3>
+            <div className=\"grid grid-cols-2 gap-4\">
+              <div className=\"col-span-2\">
+                <label className=\"block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5\">Nama Sesi *</label>
                 <input value={form.session_name} onChange={e => setForm(p => ({ ...p, session_name: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400"
-                  placeholder="contoh: Quiz Microvision — Batch 1 — Mei 2025" />
+                  className=\"w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400\"
+                  placeholder=\"contoh: Quiz Microvision — Batch 1 — Mei 2025\" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
+                <label className=\"block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5\">Materi *</label>
                 <select value={form.material_id} onChange={e => setForm(p => ({ ...p, material_id: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
-                  <option value="">-- Pilih Materi --</option>
+                  className=\"w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white\">
+                  <option value=\"\">-- Pilih Materi --</option>
                   {materials.map(m => (
                     <option key={m.id} value={m.id}>
                       {m.materi_name} ({questions.filter(q => q.material_id === m.id).length} soal)
@@ -912,69 +956,69 @@ function SessionsPage({ user }: { user: User }) {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Jumlah Soal</label>
-                <input type="number" min={1} max={100} value={form.question_count}
+                <label className=\"block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5\">Jumlah Soal</label>
+                <input type=\"number\" min={1} max={100} value={form.question_count}
                   onChange={e => setForm(p => ({ ...p, question_count: +e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
+                  className=\"w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400\" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Timer (menit, 0 = tanpa timer)</label>
-                <input type="number" min={0} value={form.timer_minutes}
+                <label className=\"block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5\">Timer (menit, 0 = tanpa timer)</label>
+                <input type=\"number\" min={0} value={form.timer_minutes}
                   onChange={e => setForm(p => ({ ...p, timer_minutes: +e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
+                  className=\"w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400\" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Passing Grade (%)</label>
-                <input type="number" min={0} max={100} value={form.passing_grade}
+                <label className=\"block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5\">Passing Grade (%)</label>
+                <input type=\"number\" min={0} max={100} value={form.passing_grade}
                   onChange={e => setForm(p => ({ ...p, passing_grade: +e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
+                  className=\"w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400\" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Jadwal (opsional)</label>
-                <input type="datetime-local" value={form.scheduled_at}
+                <label className=\"block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5\">Jadwal (opsional)</label>
+                <input type=\"datetime-local\" value={form.scheduled_at}
                   onChange={e => setForm(p => ({ ...p, scheduled_at: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
+                  className=\"w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400\" />
               </div>
-              <div className="flex items-center gap-3 mt-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={form.allow_retake} onChange={e => setForm(p => ({ ...p, allow_retake: e.target.checked }))}
-                    className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-400" />
-                  <span className="text-sm font-medium text-slate-700">Boleh Retake</span>
+              <div className=\"flex items-center gap-3 mt-2\">
+                <label className=\"flex items-center gap-2 cursor-pointer\">
+                  <input type=\"checkbox\" checked={form.allow_retake} onChange={e => setForm(p => ({ ...p, allow_retake: e.target.checked }))}
+                    className=\"w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-400\" />
+                  <span className=\"text-sm font-medium text-slate-700\">Boleh Retake</span>
                 </label>
               </div>
             </div>
-            <div className="flex gap-3 mt-5">
+            <div className=\"flex gap-3 mt-5\">
               <button onClick={handleCreate} disabled={saving}
-                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60">
+                className=\"px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60\">
                 {saving ? 'Membuat...' : '🎯 Buat Sesi Quiz'}
               </button>
               <button onClick={() => setShowForm(false)}
-                className="px-5 py-2.5 bg-slate-100 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-all">
+                className=\"px-5 py-2.5 bg-slate-100 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-all\">
                 Batal
               </button>
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4">
+        <div className=\"grid grid-cols-1 gap-4\">
           {sessions.length === 0 && !showForm && (
-            <div className="text-center py-16 text-slate-400">
-              <div className="text-5xl mb-3">🎯</div>
-              <p className="font-semibold">Belum ada sesi quiz</p>
+            <div className=\"text-center py-16 text-slate-400\">
+              <div className=\"text-5xl mb-3\">🎯</div>
+              <p className=\"font-semibold\">Belum ada sesi quiz</p>
             </div>
           )}
           {sessions.map(s => (
-            <div key={s.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="font-bold text-slate-800">{s.session_name}</h4>
+            <div key={s.id} className=\"bg-white rounded-2xl border border-slate-200 shadow-sm p-5\">
+              <div className=\"flex items-start justify-between gap-4\">
+                <div className=\"flex-1 min-w-0\">
+                  <div className=\"flex items-center gap-2 flex-wrap\">
+                    <h4 className=\"font-bold text-slate-800\">{s.session_name}</h4>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${s.is_active ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
                       {s.is_active ? '🟢 Aktif' : '⭕ Non-aktif'}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-500 mt-1">{s.materi_name}</p>
-                  <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-500">
+                  <p className=\"text-sm text-slate-500 mt-1\">{s.materi_name}</p>
+                  <div className=\"flex flex-wrap gap-3 mt-2 text-xs text-slate-500\">
                     <span>📝 {s.question_count} soal</span>
                     <span>⏱️ {s.timer_minutes ? `${s.timer_minutes} mnt` : 'No timer'}</span>
                     <span>🎯 Passing: {s.passing_grade}%</span>
@@ -982,13 +1026,13 @@ function SessionsPage({ user }: { user: User }) {
                     <span>📅 {fmtDate(s.created_at)}</span>
                   </div>
                 </div>
-                <div className="flex gap-2 flex-shrink-0">
+                <div className=\"flex gap-2 flex-shrink-0\">
                   <button onClick={() => toggleActive(s.id, s.is_active)}
                     className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${s.is_active ? 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'}`}>
                     {s.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                   </button>
-                  <button onClick={() => handleDelete(s.id)} className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition-all border border-transparent hover:border-rose-200">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  <button onClick={() => handleDelete(s.id)} className=\"p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition-all border border-transparent hover:border-rose-200\">
+                    <svg className=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path strokeLinecap=\"round\" strokeLinejoin=\"round\" strokeWidth={2} d=\"M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16\" /></svg>
                   </button>
                 </div>
               </div>
@@ -1020,46 +1064,46 @@ function TeamPage() {
 
   return (
     <div>
-      <PageHeader title="👥 Team" subtitle="Daftar anggota team & partisipasi quiz" />
-      <div className="p-8">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+      <PageHeader title=\"👥 Team\" subtitle=\"Daftar anggota team & partisipasi quiz\" />
+      <div className=\"p-8\">
+        <div className=\"bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden\">
+          <table className=\"w-full text-sm\">
+            <thead className=\"bg-slate-50 border-b border-slate-200\">
               <tr>
-                <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest">Nama</th>
-                <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest">Role</th>
-                <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Quiz Diikuti</th>
-                <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Rata-rata Skor</th>
-                <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Pass Rate</th>
+                <th className=\"px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest\">Nama</th>
+                <th className=\"px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest\">Role</th>
+                <th className=\"px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest\">Quiz Diikuti</th>
+                <th className=\"px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest\">Rata-rata Skor</th>
+                <th className=\"px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest\">Pass Rate</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className=\"divide-y divide-slate-100\">
               {users.map(u => {
                 const ua = attempts.filter((a: any) => a.user_id === u.id);
                 const avg = ua.length ? ua.reduce((s: number, a: any) => s + (a.score ?? 0), 0) / ua.length : null;
                 const passed = ua.filter((a: any) => a.passed).length;
                 return (
-                  <tr key={u.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold flex-shrink-0">
+                  <tr key={u.id} className=\"hover:bg-slate-50 transition-colors\">
+                    <td className=\"px-5 py-3.5\">
+                      <div className=\"flex items-center gap-2.5\">
+                        <div className=\"w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold flex-shrink-0\">
                           {u.full_name?.[0]?.toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-800">{u.full_name}</p>
-                          <p className="text-[10px] text-slate-400">{u.username}</p>
+                          <p className=\"font-semibold text-slate-800\">{u.full_name}</p>
+                          <p className=\"text-[10px] text-slate-400\">{u.username}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5">
-                      <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">{u.role}</span>
+                    <td className=\"px-5 py-3.5\">
+                      <span className=\"text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200\">{u.role}</span>
                     </td>
-                    <td className="px-5 py-3.5 text-center font-bold text-slate-700">{ua.length}</td>
-                    <td className="px-5 py-3.5 text-center">
-                      {avg !== null ? <span className={`font-bold ${avg >= 70 ? 'text-emerald-600' : 'text-rose-600'}`}>{avg.toFixed(1)}</span> : <span className="text-slate-300">—</span>}
+                    <td className=\"px-5 py-3.5 text-center font-bold text-slate-700\">{ua.length}</td>
+                    <td className=\"px-5 py-3.5 text-center\">
+                      {avg !== null ? <span className={`font-bold ${avg >= 70 ? 'text-emerald-600' : 'text-rose-600'}`}>{avg.toFixed(1)}</span> : <span className=\"text-slate-300\">—</span>}
                     </td>
-                    <td className="px-5 py-3.5 text-center">
-                      {ua.length ? <span className="text-xs font-bold text-indigo-600">{Math.round(passed/ua.length*100)}%</span> : <span className="text-slate-300">—</span>}
+                    <td className=\"px-5 py-3.5 text-center\">
+                      {ua.length ? <span className=\"text-xs font-bold text-indigo-600\">{Math.round(passed/ua.length*100)}%</span> : <span className=\"text-slate-300\">—</span>}
                     </td>
                   </tr>
                 );
@@ -1105,63 +1149,63 @@ function ReportPage() {
 
   return (
     <div>
-      <PageHeader title="📋 Laporan" subtitle="Hasil quiz per sesi" />
-      <div className="p-8 space-y-6">
+      <PageHeader title=\"📋 Laporan\" subtitle=\"Hasil quiz per sesi\" />
+      <div className=\"p-8 space-y-6\">
         <div>
-          <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Pilih Sesi Quiz</label>
+          <label className=\"block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5\">Pilih Sesi Quiz</label>
           <select value={selectedSession} onChange={e => setSelectedSession(e.target.value)}
-            className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 bg-white min-w-[320px]">
-            <option value="">-- Pilih Sesi --</option>
+            className=\"border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 bg-white min-w-[320px]\">
+            <option value=\"\">-- Pilih Sesi --</option>
             {sessions.map(s => <option key={s.id} value={s.id}>{s.session_name}</option>)}
           </select>
         </div>
 
         {data.length > 0 && (
           <>
-            <div className="grid grid-cols-4 gap-4">
+            <div className=\"grid grid-cols-4 gap-4\">
               {[
                 { label: 'Peserta', value: data.length },
                 { label: 'Rata-rata', value: (data.reduce((s: number, a: any) => s+(a.score??0),0)/data.length).toFixed(1) },
                 { label: 'Lulus', value: data.filter((a: any) => a.passed).length },
                 { label: 'Pass Rate', value: `${Math.round(data.filter((a: any) =>a.passed).length/data.length*100)}%` },
               ].map(c => (
-                <div key={c.label} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm text-center">
-                  <div className="text-2xl font-black text-slate-800">{c.value}</div>
-                  <div className="text-xs text-slate-500 font-medium mt-1">{c.label}</div>
+                <div key={c.label} className=\"bg-white rounded-xl border border-slate-200 p-4 shadow-sm text-center\">
+                  <div className=\"text-2xl font-black text-slate-800\">{c.value}</div>
+                  <div className=\"text-xs text-slate-500 font-medium mt-1\">{c.label}</div>
                 </div>
               ))}
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 border-b border-slate-200">
+            <div className=\"bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden\">
+              <table className=\"w-full text-sm\">
+                <thead className=\"bg-slate-50 border-b border-slate-200\">
                   <tr>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest w-10">#</th>
-                    <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest">Peserta</th>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Benar</th>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Skor</th>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Status</th>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Waktu</th>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Tanggal</th>
+                    <th className=\"px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest w-10\">#</th>
+                    <th className=\"px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest\">Peserta</th>
+                    <th className=\"px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest\">Benar</th>
+                    <th className=\"px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest\">Skor</th>
+                    <th className=\"px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest\">Status</th>
+                    <th className=\"px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest\">Waktu</th>
+                    <th className=\"px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest\">Tanggal</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className=\"divide-y divide-slate-100\">
                   {data.map((a: any, i: number) => (
-                    <tr key={a.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-3.5 text-center">
+                    <tr key={a.id} className=\"hover:bg-slate-50 transition-colors\">
+                      <td className=\"px-5 py-3.5 text-center\">
                         <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black mx-auto ${i === 0 ? 'bg-amber-400 text-white' : i === 1 ? 'bg-slate-400 text-white' : i === 2 ? 'bg-orange-400 text-white' : 'text-slate-400'}`}>
                           {i < 3 ? ['🥇','🥈','🥉'][i] : i+1}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 font-semibold text-slate-800">{a.users?.full_name}</td>
-                      <td className="px-5 py-3.5 text-center text-slate-600">{a.total_correct}/{a.total_questions}</td>
-                      <td className="px-5 py-3.5 text-center"><ScoreBadge score={a.score} passing={session?.passing_grade ?? 70} /></td>
-                      <td className="px-5 py-3.5 text-center">
+                      <td className=\"px-5 py-3.5 font-semibold text-slate-800\">{a.users?.full_name}</td>
+                      <td className=\"px-5 py-3.5 text-center text-slate-600\">{a.total_correct}/{a.total_questions}</td>
+                      <td className=\"px-5 py-3.5 text-center\"><ScoreBadge score={a.score} passing={session?.passing_grade ?? 70} /></td>
+                      <td className=\"px-5 py-3.5 text-center\">
                         <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${a.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
                           {a.passed ? 'LULUS' : 'TIDAK LULUS'}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-center text-slate-500 text-xs">{a.time_taken_sec ? `${Math.floor(a.time_taken_sec/60)}m ${a.time_taken_sec%60}s` : '—'}</td>
-                      <td className="px-5 py-3.5 text-center text-slate-400 text-xs">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</td>
+                      <td className=\"px-5 py-3.5 text-center text-slate-500 text-xs\">{a.time_taken_sec ? `${Math.floor(a.time_taken_sec/60)}m ${a.time_taken_sec%60}s` : '—'}</td>
+                      <td className=\"px-5 py-3.5 text-center text-slate-400 text-xs\">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1171,9 +1215,9 @@ function ReportPage() {
         )}
 
         {selectedSession && data.length === 0 && (
-          <div className="text-center py-16 text-slate-400">
-            <div className="text-5xl mb-3">📋</div>
-            <p className="font-semibold">Belum ada peserta yang submit</p>
+          <div className=\"text-center py-16 text-slate-400\">
+            <div className=\"text-5xl mb-3\">📋</div>
+            <p className=\"font-semibold\">Belum ada peserta yang submit</p>
           </div>
         )}
       </div>
@@ -1189,7 +1233,6 @@ function AnalyticsPage() {
 
   useEffect(() => {
     const load = async () => {
-      // Top performers
       const { data: a } = await supabase
         .from('lc_quiz_attempts')
         .select('user_id, score, passed, users(full_name)')
@@ -1227,34 +1270,34 @@ function AnalyticsPage() {
 
   return (
     <div>
-      <PageHeader title="📈 Analytics" subtitle="Performa team & statistik quiz" />
-      <div className="p-8 space-y-8">
+      <PageHeader title=\"📈 Analytics\" subtitle=\"Performa team & statistik quiz\" />
+      <div className=\"p-8 space-y-8\">
         <div>
-          <h3 className="font-bold text-slate-800 mb-4">🏆 Top Performers</h3>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 border-b border-slate-200">
+          <h3 className=\"font-bold text-slate-800 mb-4\">🏆 Top Performers</h3>
+          <div className=\"bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden\">
+            <table className=\"w-full text-sm\">
+              <thead className=\"bg-slate-50 border-b border-slate-200\">
                 <tr>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest w-10">#</th>
-                  <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest">Nama</th>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Quiz</th>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Avg Score</th>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Lulus</th>
+                  <th className=\"px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest w-10\">#</th>
+                  <th className=\"px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest\">Nama</th>
+                  <th className=\"px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest\">Quiz</th>
+                  <th className=\"px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest\">Avg Score</th>
+                  <th className=\"px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest\">Lulus</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className=\"divide-y divide-slate-100\">
                 {topUsers.map((u, i) => (
-                  <tr key={u.uid} className="hover:bg-slate-50">
-                    <td className="px-5 py-3 text-center text-sm font-black text-slate-400">{i+1}</td>
-                    <td className="px-5 py-3 font-semibold text-slate-800">{u.name}</td>
-                    <td className="px-5 py-3 text-center text-slate-600">{u.total}</td>
-                    <td className="px-5 py-3 text-center">
+                  <tr key={u.uid} className=\"hover:bg-slate-50\">
+                    <td className=\"px-5 py-3 text-center text-sm font-black text-slate-400\">{i+1}</td>
+                    <td className=\"px-5 py-3 font-semibold text-slate-800\">{u.name}</td>
+                    <td className=\"px-5 py-3 text-center text-slate-600\">{u.total}</td>
+                    <td className=\"px-5 py-3 text-center\">
                       <span className={`font-black text-base ${u.avg >= 80 ? 'text-emerald-600' : u.avg >= 70 ? 'text-amber-600' : 'text-rose-600'}`}>{u.avg.toFixed(1)}</span>
                     </td>
-                    <td className="px-5 py-3 text-center text-indigo-600 font-bold">{u.passed}</td>
+                    <td className=\"px-5 py-3 text-center text-indigo-600 font-bold\">{u.passed}</td>
                   </tr>
                 ))}
-                {topUsers.length === 0 && <tr><td colSpan={5} className="text-center py-10 text-slate-400">Belum ada data</td></tr>}
+                {topUsers.length === 0 && <tr><td colSpan={5} className=\"text-center py-10 text-slate-400\">Belum ada data</td></tr>}
               </tbody>
             </table>
           </div>
@@ -1262,20 +1305,20 @@ function AnalyticsPage() {
 
         {sessionStats.length > 0 && (
           <div>
-            <h3 className="font-bold text-slate-800 mb-4">📊 Statistik Per Sesi</h3>
-            <div className="grid grid-cols-1 gap-3">
+            <h3 className=\"font-bold text-slate-800 mb-4\">📊 Statistik Per Sesi</h3>
+            <div className=\"grid grid-cols-1 gap-3\">
               {sessionStats.map(s => (
-                <div key={s.name} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-slate-800 text-sm truncate">{s.name}</span>
-                    <div className="flex gap-3 text-xs flex-shrink-0">
-                      <span className="text-slate-500">{s.total} peserta</span>
-                      <span className="font-bold text-indigo-600">avg: {s.avg.toFixed(1)}</span>
-                      <span className="font-bold text-emerald-600">{s.passed} lulus</span>
+                <div key={s.name} className=\"bg-white rounded-xl border border-slate-200 shadow-sm p-4\">
+                  <div className=\"flex items-center justify-between mb-2\">
+                    <span className=\"font-semibold text-slate-800 text-sm truncate\">{s.name}</span>
+                    <div className=\"flex gap-3 text-xs flex-shrink-0\">
+                      <span className=\"text-slate-500\">{s.total} peserta</span>
+                      <span className=\"font-bold text-indigo-600\">avg: {s.avg.toFixed(1)}</span>
+                      <span className=\"font-bold text-emerald-600\">{s.passed} lulus</span>
                     </div>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2">
-                    <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all" style={{ width: `${Math.min(s.avg, 100)}%` }} />
+                  <div className=\"w-full bg-slate-100 rounded-full h-2\">
+                    <div className=\"bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all\" style={{ width: `${Math.min(s.avg, 100)}%` }} />
                   </div>
                 </div>
               ))}
@@ -1307,12 +1350,10 @@ function MyQuizPage({ user }: { user: User }) {
   useEffect(() => { load(); }, [load]);
 
   const handleStart = async (session: QuizSession) => {
-    // Check if already has unsubmitted attempt
     if (activeAttempts[session.id]) {
       setPlayingSession(session);
       return;
     }
-    // Check retake policy
     if (!session.allow_retake) {
       const { data: prev } = await supabase.from('lc_quiz_attempts')
         .select('id').eq('user_id', user.id).eq('quiz_session_id', session.id).eq('is_submitted', true);
@@ -1321,7 +1362,6 @@ function MyQuizPage({ user }: { user: User }) {
         return;
       }
     }
-    // Create new attempt
     const { data: att, error } = await supabase.from('lc_quiz_attempts').insert([{
       user_id: user.id,
       quiz_session_id: session.id,
@@ -1340,32 +1380,32 @@ function MyQuizPage({ user }: { user: User }) {
 
   return (
     <div>
-      <PageHeader title="📝 My Quiz" subtitle="Quiz yang tersedia untuk kamu" />
-      <div className="p-8 grid grid-cols-1 gap-4">
+      <PageHeader title=\"📝 My Quiz\" subtitle=\"Quiz yang tersedia untuk kamu\" />
+      <div className=\"p-8 grid grid-cols-1 gap-4\">
         {sessions.length === 0 && (
-          <div className="text-center py-16 text-slate-400">
-            <div className="text-5xl mb-3">🎯</div>
-            <p className="font-semibold">Belum ada quiz aktif</p>
-            <p className="text-sm mt-1">Tunggu admin membuat sesi quiz baru</p>
+          <div className=\"text-center py-16 text-slate-400\">
+            <div className=\"text-5xl mb-3\">🎯</div>
+            <p className=\"font-semibold\">Belum ada quiz aktif</p>
+            <p className=\"text-sm mt-1\">Tunggu admin membuat sesi quiz baru</p>
           </div>
         )}
         {sessions.map(s => {
           const inProgress = activeAttempts[s.id];
           return (
-            <div key={s.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex items-start gap-5 hover:shadow-md transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-2xl flex-shrink-0">🎯</div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-slate-800 text-lg">{s.session_name}</h4>
-                <p className="text-sm text-slate-500 mt-1">{s.materi_name}</p>
-                <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-500">
+            <div key={s.id} className=\"bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex items-start gap-5 hover:shadow-md transition-all\">
+              <div className=\"w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-2xl flex-shrink-0\">🎯</div>
+              <div className=\"flex-1 min-w-0\">
+                <h4 className=\"font-bold text-slate-800 text-lg\">{s.session_name}</h4>
+                <p className=\"text-sm text-slate-500 mt-1\">{s.materi_name}</p>
+                <div className=\"flex flex-wrap gap-3 mt-2 text-xs text-slate-500\">
                   <span>📝 {s.question_count} soal</span>
                   <span>⏱️ {s.timer_minutes ? `${s.timer_minutes} mnt` : 'No timer'}</span>
                   <span>🎯 Passing: {s.passing_grade}%</span>
                   <span>🔁 {s.allow_retake ? 'Boleh retake' : 'Sekali submit'}</span>
                 </div>
                 {inProgress && (
-                  <div className="mt-2">
-                    <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">
+                  <div className=\"mt-2\">
+                    <span className=\"inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold\">
                       ⏳ Sedang Berlangsung
                     </span>
                   </div>
@@ -1401,17 +1441,14 @@ function QuizPlayer({ session, user, attempt, onDone }: {
   const [tabSwitches, setTabSwitches] = useState(0);
   const startTime = useRef(Date.now());
 
-  // Load questions
   useEffect(() => {
     const load = async () => {
       if (!session.question_ids?.length) return;
       const { data } = await supabase.from('lc_questions').select('*').in('id', session.question_ids);
-      // Sort by original order
       const ordered = session.question_ids.map(id => data?.find((q: any) => q.id === id)).filter(Boolean) as Question[];
       setQuestions(ordered);
     };
     load();
-    // Load existing answers
     const loadAnswers = async () => {
       const { data } = await supabase.from('lc_answers').select('*').eq('attempt_id', attempt.id);
       const map: Record<string, string> = {};
@@ -1422,7 +1459,6 @@ function QuizPlayer({ session, user, attempt, onDone }: {
     loadAnswers();
   }, []);
 
-  // Timer
   useEffect(() => {
     if (timeLeft === null || submitted) return;
     if (timeLeft <= 0) { handleSubmit(true); return; }
@@ -1430,7 +1466,6 @@ function QuizPlayer({ session, user, attempt, onDone }: {
     return () => clearInterval(t);
   }, [timeLeft, submitted]);
 
-  // Anti-cheat: tab switch detection
   useEffect(() => {
     const onVisChange = () => {
       if (document.hidden && !submitted) {
@@ -1448,7 +1483,6 @@ function QuizPlayer({ session, user, attempt, onDone }: {
 
   const handleAnswer = async (questionId: string, answer: string) => {
     setAnswers(p => ({ ...p, [questionId]: answer }));
-    // Upsert to DB
     const existing = savedAnswers[questionId];
     if (existing) {
       await supabase.from('lc_answers').update({ answer, answered_at: new Date().toISOString() })
@@ -1470,13 +1504,11 @@ function QuizPlayer({ session, user, attempt, onDone }: {
   const handleSubmit = async (autoSubmit = false) => {
     if (!autoSubmit && !confirm('Submit jawaban? Pastikan semua soal sudah dijawab.')) return;
     const timeTaken = Math.round((Date.now() - startTime.current) / 1000);
-    // Calculate score
     let correct = 0;
     questions.forEach(q => { if ((answers[q.id] ?? savedAnswers[q.id]) === q.correct_answer) correct++; });
     const score = questions.length ? (correct / questions.length) * 100 : 0;
     const passed = score >= session.passing_grade;
 
-    // Update is_correct in lc_answers
     await Promise.all(questions.map(q => {
       const ans = answers[q.id] ?? savedAnswers[q.id];
       if (!ans) return;
@@ -1499,15 +1531,15 @@ function QuizPlayer({ session, user, attempt, onDone }: {
 
   if (submitted && result) {
     return (
-      <div className="flex items-center justify-center h-full p-8">
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-10 max-w-md w-full text-center">
-          <div className="text-6xl mb-4">{result.passed ? '🎉' : '😔'}</div>
-          <h2 className="text-2xl font-black text-slate-800 mb-1">{result.passed ? 'Selamat, Lulus!' : 'Belum Lulus'}</h2>
-          <p className="text-slate-500 text-sm mb-6">{session.session_name}</p>
+      <div className=\"flex items-center justify-center h-full p-8\">
+        <div className=\"bg-white rounded-3xl border border-slate-200 shadow-xl p-10 max-w-md w-full text-center\">
+          <div className=\"text-6xl mb-4\">{result.passed ? '🎉' : '😔'}</div>
+          <h2 className=\"text-2xl font-black text-slate-800 mb-1\">{result.passed ? 'Selamat, Lulus!' : 'Belum Lulus'}</h2>
+          <p className=\"text-slate-500 text-sm mb-6\">{session.session_name}</p>
           <div className={`text-6xl font-black mb-2 ${result.passed ? 'text-emerald-500' : 'text-rose-500'}`}>{result.score.toFixed(0)}</div>
-          <p className="text-slate-500 text-sm mb-6">Benar {result.correct} dari {questions.length} soal · Passing {session.passing_grade}%</p>
+          <p className=\"text-slate-500 text-sm mb-6\">Benar {result.correct} dari {questions.length} soal · Passing {session.passing_grade}%</p>
           <button onClick={onDone}
-            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition-all">
+            className=\"px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition-all\">
             Kembali ke Daftar Quiz
           </button>
         </div>
@@ -1516,48 +1548,45 @@ function QuizPlayer({ session, user, attempt, onDone }: {
   }
 
   if (questions.length === 0) {
-    return <div className="flex items-center justify-center h-full text-slate-400">Memuat soal...</div>;
+    return <div className=\"flex items-center justify-center h-full text-slate-400\">Memuat soal...</div>;
   }
 
   const q = questions[current];
   const answered = Object.keys(answers).filter(k => answers[k]).length;
 
   return (
-    <div className="flex h-full">
-      {/* Question panel */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-8 py-4 bg-white border-b border-slate-200 sticky top-0 z-10">
+    <div className=\"flex h-full\">
+      <div className=\"flex-1 flex flex-col overflow-hidden\">
+        <div className=\"flex items-center justify-between px-8 py-4 bg-white border-b border-slate-200 sticky top-0 z-10\">
           <div>
-            <h2 className="font-bold text-slate-800">{session.session_name}</h2>
-            <p className="text-xs text-slate-500">{answered}/{questions.length} soal dijawab</p>
+            <h2 className=\"font-bold text-slate-800\">{session.session_name}</h2>
+            <p className=\"text-xs text-slate-500\">{answered}/{questions.length} soal dijawab</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className=\"flex items-center gap-4\">
             {timeLeft !== null && (
               <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-black text-sm border ${timeLeft < 60 ? 'bg-rose-100 text-rose-700 border-rose-200 animate-pulse' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
                 ⏱️ {fmtTimer(timeLeft)}
               </div>
             )}
             <button onClick={() => handleSubmit(false)}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow transition-all">
+              className=\"px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow transition-all\">
               ✅ Submit
             </button>
           </div>
         </div>
 
-        {/* Question */}
-        <div className="flex-1 overflow-y-auto p-8">
-          <div className="max-w-2xl mx-auto">
-            <div className="mb-6">
-              <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">Soal {current+1} dari {questions.length}</span>
-              <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
-                <div className="bg-indigo-500 h-1.5 rounded-full transition-all" style={{ width: `${((current+1)/questions.length)*100}%` }} />
+        <div className=\"flex-1 overflow-y-auto p-8\">
+          <div className=\"max-w-2xl mx-auto\">
+            <div className=\"mb-6\">
+              <span className=\"text-xs font-bold text-indigo-600 uppercase tracking-widest\">Soal {current+1} dari {questions.length}</span>
+              <div className=\"w-full bg-slate-100 rounded-full h-1.5 mt-2\">
+                <div className=\"bg-indigo-500 h-1.5 rounded-full transition-all\" style={{ width: `${((current+1)/questions.length)*100}%` }} />
               </div>
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
-              <p className="text-base font-semibold text-slate-800 leading-relaxed">{q.question}</p>
+            <div className=\"bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6\">
+              <p className=\"text-base font-semibold text-slate-800 leading-relaxed\">{q.question}</p>
             </div>
-            <div className="space-y-3">
+            <div className=\"space-y-3\">
               {(['A','B','C','D'] as const).map(opt => {
                 const val = (q as any)[`option_${opt.toLowerCase()}`];
                 const selected = (answers[q.id] ?? savedAnswers[q.id]) === opt;
@@ -1573,13 +1602,13 @@ function QuizPlayer({ session, user, attempt, onDone }: {
                 );
               })}
             </div>
-            <div className="flex justify-between mt-8">
+            <div className=\"flex justify-between mt-8\">
               <button onClick={() => setCurrent(p => Math.max(0, p-1))} disabled={current === 0}
-                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all disabled:opacity-40">
+                className=\"px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all disabled:opacity-40\">
                 ← Sebelumnya
               </button>
               <button onClick={() => setCurrent(p => Math.min(questions.length-1, p+1))} disabled={current === questions.length-1}
-                className="px-5 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-sm font-semibold rounded-xl transition-all disabled:opacity-40">
+                className=\"px-5 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-sm font-semibold rounded-xl transition-all disabled:opacity-40\">
                 Berikutnya →
               </button>
             </div>
@@ -1587,10 +1616,9 @@ function QuizPlayer({ session, user, attempt, onDone }: {
         </div>
       </div>
 
-      {/* Navigator */}
-      <div className="w-52 bg-white border-l border-slate-200 p-4 overflow-y-auto flex-shrink-0">
-        <p className="text-xs font-bold text-slate-600 uppercase tracking-widest mb-3">Navigasi Soal</p>
-        <div className="grid grid-cols-5 gap-1.5">
+      <div className=\"w-52 bg-white border-l border-slate-200 p-4 overflow-y-auto flex-shrink-0\">
+        <p className=\"text-xs font-bold text-slate-600 uppercase tracking-widest mb-3\">Navigasi Soal</p>
+        <div className=\"grid grid-cols-5 gap-1.5\">
           {questions.map((_, i) => {
             const ans = answers[questions[i].id] ?? savedAnswers[questions[i].id];
             return (
@@ -1602,13 +1630,13 @@ function QuizPlayer({ session, user, attempt, onDone }: {
             );
           })}
         </div>
-        <div className="mt-4 space-y-1.5 text-xs">
-          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-emerald-200 border border-emerald-300 flex-shrink-0" />Terjawab</div>
-          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-slate-100 border border-slate-200 flex-shrink-0" />Belum</div>
-          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-indigo-500 flex-shrink-0" />Aktif</div>
+        <div className=\"mt-4 space-y-1.5 text-xs\">
+          <div className=\"flex items-center gap-2\"><span className=\"w-3 h-3 rounded bg-emerald-200 border border-emerald-300 flex-shrink-0\" />Terjawab</div>
+          <div className=\"flex items-center gap-2\"><span className=\"w-3 h-3 rounded bg-slate-100 border border-slate-200 flex-shrink-0\" />Belum</div>
+          <div className=\"flex items-center gap-2\"><span className=\"w-3 h-3 rounded bg-indigo-500 flex-shrink-0\" />Aktif</div>
         </div>
         {tabSwitches > 0 && (
-          <div className="mt-4 p-2 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700 font-semibold">
+          <div className=\"mt-4 p-2 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700 font-semibold\">
             ⚠️ Tab switches: {tabSwitches}
           </div>
         )}
@@ -1637,34 +1665,34 @@ function HistoryPage({ user }: { user: User }) {
 
   return (
     <div>
-      <PageHeader title="🕐 Riwayat Quiz" subtitle="Semua quiz yang pernah kamu ikuti" />
-      <div className="p-8">
-        <div className="space-y-4">
+      <PageHeader title=\"🕐 Riwayat Quiz\" subtitle=\"Semua quiz yang pernah kamu ikuti\" />
+      <div className=\"p-8\">
+        <div className=\"space-y-4\">
           {history.length === 0 && (
-            <div className="text-center py-16 text-slate-400">
-              <div className="text-5xl mb-3">🕐</div>
-              <p className="font-semibold">Belum ada riwayat quiz</p>
+            <div className=\"text-center py-16 text-slate-400\">
+              <div className=\"text-5xl mb-3\">🕐</div>
+              <p className=\"font-semibold\">Belum ada riwayat quiz</p>
             </div>
           )}
           {history.map(a => (
-            <div key={a.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex items-center gap-5">
+            <div key={a.id} className=\"bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex items-center gap-5\">
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white flex-shrink-0 ${a.passed ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-rose-400 to-rose-600'}`}>
                 {a.score?.toFixed(0) ?? '—'}
               </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-slate-800">{a.lc_quiz_sessions?.session_name ?? '-'}</h4>
-                <p className="text-sm text-slate-500">{a.lc_quiz_sessions?.materi_name ?? '-'}</p>
-                <div className="flex gap-3 mt-1.5 text-xs text-slate-400">
+              <div className=\"flex-1 min-w-0\">
+                <h4 className=\"font-bold text-slate-800\">{a.lc_quiz_sessions?.session_name ?? '-'}</h4>
+                <p className=\"text-sm text-slate-500\">{a.lc_quiz_sessions?.materi_name ?? '-'}</p>
+                <div className=\"flex gap-3 mt-1.5 text-xs text-slate-400\">
                   <span>✅ {a.total_correct}/{a.total_questions} benar</span>
                   <span>🎯 Passing: {a.lc_quiz_sessions?.passing_grade ?? 70}%</span>
                   {a.time_taken_sec && <span>⏱️ {Math.floor(a.time_taken_sec/60)}m {a.time_taken_sec%60}s</span>}
                 </div>
               </div>
-              <div className="text-right flex-shrink-0">
+              <div className=\"text-right flex-shrink-0\">
                 <span className={`text-xs font-bold px-2 py-1 rounded-full border ${a.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
                   {a.passed ? '✅ LULUS' : '❌ TIDAK LULUS'}
                 </span>
-                <p className="text-xs text-slate-400 mt-1.5">{a.submitted_at ? fmtDate(a.submitted_at) : ''}</p>
+                <p className=\"text-xs text-slate-400 mt-1.5\">{a.submitted_at ? fmtDate(a.submitted_at) : ''}</p>
               </div>
             </div>
           ))}
@@ -1695,51 +1723,51 @@ function ScorePage({ user }: { user: User }) {
 
   return (
     <div>
-      <PageHeader title="🏆 Nilai Saya" subtitle="Rekap performa quiz kamu" />
-      <div className="p-8 space-y-6">
-        <div className="grid grid-cols-3 gap-5">
+      <PageHeader title=\"🏆 Nilai Saya\" subtitle=\"Rekap performa quiz kamu\" />
+      <div className=\"p-8 space-y-6\">
+        <div className=\"grid grid-cols-3 gap-5\">
           {[
             { label: 'Quiz Diikuti', value: attempts.length, icon: '📝', color: 'from-blue-500 to-blue-600' },
             { label: 'Rata-rata Skor', value: avg.toFixed(1), icon: '📊', color: 'from-indigo-500 to-indigo-600' },
             { label: 'Total Lulus', value: passed, icon: '✅', color: 'from-emerald-500 to-emerald-600' },
           ].map(c => (
             <div key={c.label} className={`bg-gradient-to-br ${c.color} rounded-2xl p-5 text-white shadow-lg`}>
-              <div className="text-3xl mb-2">{c.icon}</div>
-              <div className="text-3xl font-black">{c.value}</div>
-              <div className="text-white/80 text-sm font-medium mt-1">{c.label}</div>
+              <div className=\"text-3xl mb-2\">{c.icon}</div>
+              <div className=\"text-3xl font-black\">{c.value}</div>
+              <div className=\"text-white/80 text-sm font-medium mt-1\">{c.label}</div>
             </div>
           ))}
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h3 className="font-bold text-slate-800">Rekap Nilai Per Quiz</h3>
+        <div className=\"bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden\">
+          <div className=\"px-6 py-4 border-b border-slate-100\">
+            <h3 className=\"font-bold text-slate-800\">Rekap Nilai Per Quiz</h3>
           </div>
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+          <table className=\"w-full text-sm\">
+            <thead className=\"bg-slate-50 border-b border-slate-200\">
               <tr>
-                <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest">Quiz</th>
-                <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Skor</th>
-                <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Benar</th>
-                <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Status</th>
-                <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Tanggal</th>
+                <th className=\"px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest\">Quiz</th>
+                <th className=\"px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest\">Skor</th>
+                <th className=\"px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest\">Benar</th>
+                <th className=\"px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest\">Status</th>
+                <th className=\"px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest\">Tanggal</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className=\"divide-y divide-slate-100\">
               {attempts.length === 0 && (
-                <tr><td colSpan={5} className="text-center py-10 text-slate-400">Belum ada quiz yang diselesaikan</td></tr>
+                <tr><td colSpan={5} className=\"text-center py-10 text-slate-400\">Belum ada quiz yang diselesaikan</td></tr>
               )}
               {attempts.map(a => (
-                <tr key={a.id} className="hover:bg-slate-50">
-                  <td className="px-5 py-3.5 font-semibold text-slate-800">{a.lc_quiz_sessions?.session_name ?? '-'}</td>
-                  <td className="px-5 py-3.5 text-center"><ScoreBadge score={a.score} passing={a.lc_quiz_sessions?.passing_grade ?? 70} /></td>
-                  <td className="px-5 py-3.5 text-center text-slate-600">{a.total_correct}/{a.total_questions}</td>
-                  <td className="px-5 py-3.5 text-center">
+                <tr key={a.id} className=\"hover:bg-slate-50\">
+                  <td className=\"px-5 py-3.5 font-semibold text-slate-800\">{a.lc_quiz_sessions?.session_name ?? '-'}</td>
+                  <td className=\"px-5 py-3.5 text-center\"><ScoreBadge score={a.score} passing={a.lc_quiz_sessions?.passing_grade ?? 70} /></td>
+                  <td className=\"px-5 py-3.5 text-center text-slate-600\">{a.total_correct}/{a.total_questions}</td>
+                  <td className=\"px-5 py-3.5 text-center\">
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${a.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
                       {a.passed ? 'LULUS' : 'TIDAK LULUS'}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 text-center text-slate-400 text-xs">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</td>
+                  <td className=\"px-5 py-3.5 text-center text-slate-400 text-xs\">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -1749,39 +1777,5 @@ function ScorePage({ user }: { user: User }) {
     </div>
   );
 }
-
-// ─── TEAM: Profile ────────────────────────────────────────────────────────────
-
-function ProfilePage({ user }: { user: User }) {
-  return (
-    <div>
-      <PageHeader title="👤 Profile" subtitle="Informasi akun kamu" />
-      <div className="p-8">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 max-w-md">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-2xl font-black">
-              {user.full_name?.[0]?.toUpperCase()}
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-slate-800">{user.full_name}</h3>
-              <p className="text-sm text-slate-500">{user.username}</p>
-            </div>
-          </div>
-          <div className="space-y-3">
-            {[
-              { label: 'Role', value: user.role },
-              { label: 'Jabatan', value: user.jabatan ?? '—' },
-              { label: 'Sales Division', value: user.sales_division ?? '—' },
-              { label: 'Phone', value: user.phone_number ?? '—' },
-            ].map(f => (
-              <div key={f.label} className="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{f.label}</span>
-                <span className="text-sm font-semibold text-slate-800">{f.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+"
+Observation: Create successful: /tmp/work/page_new.tsx
