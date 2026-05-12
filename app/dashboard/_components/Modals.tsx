@@ -490,31 +490,76 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('users').select('*').eq('id', currentUser.id).single();
-      if (data) { setUserData(data); setPhoneInput(data.phone_number || ''); }
+      try {
+        if (!currentUser?.id) return;
 
-      const userDiv = currentUser.sales_division;
-      const selfTier = currentUser.jabatan ? (JABATAN_CONFIG[currentUser.jabatan as JabatanType]?.tier ?? 0) : 0;
+        const { data, error: userError } = await supabase.from('users').select('*').eq('id', currentUser.id).single();
+        if (data) { setUserData(data); setPhoneInput(data.phone_number || ''); }
+        if (userError) console.warn('Error loading user:', userError);
 
-      if (userDiv) {
-        const { data: supMaps } = await supabase.from('division_supervisor_mappings').select('supervisor_id').eq('sales_division', userDiv);
-        if (supMaps && supMaps.length > 0) {
-          const ids = supMaps.map((s: any) => s.supervisor_id).filter((id: string) => id !== currentUser.id); // exclude self
-          if (ids.length > 0) {
-            const { data: sups } = await supabase.from('users').select('full_name, phone_number, sales_division, jabatan').in('id', ids);
-            // Only show users with HIGHER tier (true atasan)
-            const filtered = (sups ?? []).filter((s: any) => {
-              const tier = s.jabatan ? (JABATAN_CONFIG[s.jabatan as JabatanType]?.tier ?? 0) : 0;
-              return tier > selfTier;
-            });
-            if (filtered.length) setSupervisors(filtered);
+        const userDiv = currentUser?.sales_division;
+        const selfTier = currentUser?.jabatan ? (JABATAN_CONFIG[currentUser.jabatan as JabatanType]?.tier ?? 0) : 0;
+
+        if (userDiv) {
+          try {
+            const { data: supMaps, error: supError } = await supabase.from('division_supervisor_mappings').select('supervisor_id').eq('sales_division', userDiv);
+            if (supError) throw supError;
+            
+            if (supMaps && supMaps.length > 0) {
+              const ids = supMaps.map((s: any) => s.supervisor_id).filter((id: string) => id && id !== currentUser.id);
+              if (ids.length > 0) {
+                const { data: sups, error: supsError } = await supabase.from('users').select('full_name, phone_number, sales_division, jabatan').in('id', ids);
+                if (supsError) throw supsError;
+                
+                const filtered = (sups ?? []).filter((s: any) => {
+                  const tier = s?.jabatan ? (JABATAN_CONFIG[s.jabatan as JabatanType]?.tier ?? 0) : 0;
+                  return tier > selfTier;
+                });
+                if (filtered.length) setSupervisors(filtered);
+              }
+            }
+
+            const { data: ivpMaps, error: ivpError } = await supabase.from('division_ivp_mappings').select('ivp_id').eq('sales_division', userDiv);
+            if (ivpError) throw ivpError;
+            
+            if (ivpMaps && ivpMaps.length > 0) {
+              const ivpIds = ivpMaps.map((s: any) => s.ivp_id).filter(Boolean);
+              const { data: ivps, error: ivpsError } = await supabase.from('users').select('full_name, phone_number, sales_division, jabatan').in('id', ivpIds);
+              if (ivpsError) throw ivpsError;
+              
+              if (ivps) setSupervisors(prev => [...prev, ...ivps.map((iv: any) => ({ ...iv, _isIVP: true }))]);
+            }
+          } catch (err) {
+            console.warn('Error loading supervisors:', err);
           }
         }
-        const { data: ivpMaps } = await supabase.from('division_ivp_mappings').select('ivp_id').eq('sales_division', userDiv);
-        if (ivpMaps && ivpMaps.length > 0) {
-          const ivpIds = ivpMaps.map((s: any) => s.ivp_id);
-          const { data: ivps } = await supabase.from('users').select('full_name, phone_number, sales_division, jabatan').in('id', ivpIds);
-          if (ivps) setSupervisors(prev => [...prev, ...ivps.map((iv: any) => ({ ...iv, _isIVP: true }))]);
+
+        if (currentUser?.jabatan && ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'].includes(currentUser.jabatan)) {
+          try {
+            const { data: divMaps, error: divError } = await supabase.from('division_supervisor_mappings').select('sales_division').eq('supervisor_id', currentUser.id);
+            if (divError) throw divError;
+            
+            if (divMaps && divMaps.length > 0) {
+              const divs = divMaps.map((m: any) => m.sales_division).filter(Boolean);
+              const { data: subUsers, error: subError } = await supabase.from('users').select('full_name, username, sales_division, jabatan').in('sales_division', divs).eq('role', 'guest').neq('sales_division', 'IVP').neq('id', currentUser.id);
+              if (subError) throw subError;
+              
+              const filtered = (subUsers ?? []).filter((u: any) => {
+                if (!u || u.username === currentUser.username) return false;
+                const tier = u?.jabatan ? (JABATAN_CONFIG[u.jabatan as JabatanType]?.tier ?? 0) : 0;
+                return tier < selfTier;
+              });
+              if (filtered.length) setSubordinates(filtered);
+            }
+          } catch (err) {
+            console.warn('Error loading subordinates:', err);
+          }
+        }
+      } catch (err) {
+        console.error('Error in UserProfileModal useEffect:', err);
+      }
+    })();
+  }, [currentUser?.id, currentUser?.sales_division, currentUser?.jabatan, currentUser?.username]);
         }
       }
 
@@ -536,28 +581,69 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
   }, []);
 
   const handleSavePhone = async () => {
-    setSaving(true);
-    const { error } = await supabase.from('users').update({ phone_number: phoneInput.trim() }).eq('id', currentUser.id);
-    if (error) { notify('error', 'Gagal menyimpan nomor telepon.'); }
-    else {
-      notify('success', 'Nomor WhatsApp berhasil diperbarui!');
-      setEditPhone(false);
-      const stored = localStorage.getItem('currentUser');
-      if (stored) { const p = JSON.parse(stored); p.phone_number = phoneInput.trim(); localStorage.setItem('currentUser', JSON.stringify(p)); }
-      const { data } = await supabase.from('users').select('*').eq('id', currentUser.id).single();
-      if (data) setUserData(data);
+    try {
+      if (!currentUser?.id) return notify('error', 'User ID tidak ditemukan.');
+      
+      setSaving(true);
+      const { error } = await supabase.from('users').update({ phone_number: phoneInput.trim() }).eq('id', currentUser.id);
+      if (error) { 
+        notify('error', 'Gagal menyimpan nomor telepon: ' + error.message); 
+      } else {
+        notify('success', 'Nomor WhatsApp berhasil diperbarui!');
+        setEditPhone(false);
+        try {
+          const stored = localStorage.getItem('currentUser');
+          if (stored) { 
+            const p = JSON.parse(stored); 
+            p.phone_number = phoneInput.trim(); 
+            localStorage.setItem('currentUser', JSON.stringify(p)); 
+          }
+        } catch (e) {
+          console.warn('Error updating localStorage:', e);
+        }
+        const { data, error: fetchError } = await supabase.from('users').select('*').eq('id', currentUser.id).single();
+        if (data) setUserData(data);
+        if (fetchError) console.warn('Error refreshing user data:', fetchError);
+      }
+    } catch (err: any) {
+      notify('error', err.message || 'Terjadi kesalahan');
+      console.error('Error in handleSavePhone:', err);
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const handleSavePassword = async () => {
-    if (!passwordInput || passwordInput.length < 6) { notify('error', 'Password minimal 6 karakter.'); return; }
-    if (passwordInput !== confirmPassword) { notify('error', 'Konfirmasi password tidak cocok.'); return; }
-    setSaving(true);
-    const { error } = await supabase.from('users').update({ password: passwordInput }).eq('id', currentUser.id);
-    if (error) { notify('error', 'Gagal mengubah password.'); }
-    else { notify('success', 'Password berhasil diubah!'); setEditPassword(false); setPasswordInput(''); setConfirmPassword(''); }
-    setSaving(false);
+    try {
+      if (!passwordInput || passwordInput.length < 6) { 
+        notify('error', 'Password minimal 6 karakter.'); 
+        return; 
+      }
+      if (passwordInput !== confirmPassword) { 
+        notify('error', 'Konfirmasi password tidak cocok.'); 
+        return; 
+      }
+      if (!currentUser?.id) {
+        notify('error', 'User ID tidak ditemukan.');
+        return;
+      }
+
+      setSaving(true);
+      const { error } = await supabase.from('users').update({ password: passwordInput }).eq('id', currentUser.id);
+      if (error) { 
+        notify('error', 'Gagal mengubah password: ' + error.message); 
+      } else { 
+        notify('success', 'Password berhasil diubah!'); 
+        setEditPassword(false); 
+        setPasswordInput(''); 
+        setConfirmPassword(''); 
+      }
+    } catch (err: any) {
+      notify('error', err.message || 'Terjadi kesalahan');
+      console.error('Error in handleSavePassword:', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const roleClass = ROLE_BADGE[userData.role?.toLowerCase()] || 'bg-slate-100 text-slate-700 border-slate-200';
@@ -3003,4 +3089,3 @@ export function BrandPicSettingInline() {
 }
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
-
