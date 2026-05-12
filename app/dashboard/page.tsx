@@ -16,6 +16,7 @@ import {
   BrandPicSettingContent, AdminPanelModal,
   AccountSettingsInline, UserManagementInline, BrandPicSettingInline,
 } from './_components/Modals';
+import LearningCenter from './_components/LearningCenter';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -45,6 +46,7 @@ export default function Dashboard() {
   const [showTicketing, setShowTicketing] = useState(false);
   const [internalUrl, setInternalUrl] = useState<string>('/ticketing');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showLearningCenter, setShowLearningCenter] = useState(false);
 
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [adminPanelTab, setAdminPanelTab] = useState<'settings' | 'userManagement' | 'picBrand'>('settings');
@@ -79,12 +81,6 @@ export default function Dashboard() {
       items: [{ name: 'Ticket Management', url: '/ticketing', icon: '🔧', internal: true, embed: true }]
     },
     {
-      title: 'Learning Center', icon: '🎓', key: 'learning-center',
-      gradient: 'from-blue-700 via-blue-600 to-indigo-500',
-      description: 'Platform training, quiz online & analytics team',
-      items: [{ name: 'Learning Center', url: '/learning-center', icon: '📚', internal: true, embed: true }]
-    },
-    {
       title: 'Piket Showroom', icon: '🏪', key: 'picket-showroom',
       gradient: 'from-teal-700 via-teal-600 to-cyan-500',
       description: 'Jadwal piket showroom Team PTS IVP, UMP & MLDS',
@@ -110,6 +106,13 @@ export default function Dashboard() {
       gradient: 'from-amber-700 via-amber-600 to-amber-500',
       description: 'Equipment check-in & check-out tracking',
       items: [{ name: 'Unit Movement Log', url: '/unit-movement', icon: '🚚', internal: true, embed: true }]
+    },
+    // ── LEARNING CENTER ── (tambahan baru)
+    {
+      title: 'Learning Center', icon: '🎓', key: 'learning-center',
+      gradient: 'from-blue-700 via-blue-600 to-indigo-500',
+      description: 'Platform training, quiz online & analytics team',
+      items: [{ name: 'Learning Center', url: '/learning-center', icon: '📚' }]
     },
   ];
 
@@ -187,13 +190,21 @@ export default function Dashboard() {
   const handleLogout = () => {
     setIsLoggedIn(false); setCurrentUser(null);
     localStorage.removeItem('currentUser');
-    setShowSidebar(false); setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing');
+    setShowSidebar(false); setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setShowLearningCenter(false);
     setShowAdminPanel(false); setShowUserProfile(false);
     router.push('/dashboard');
   };
 
   const handleMenuClick = (item: MenuItem['items'][0], menuTitle: string) => {
     if (item.external && !item.embed) { window.open(item.url, '_blank'); return; }
+    // Learning Center — render inline langsung, tidak pakai iframe
+    if (item.url === '/learning-center') {
+      setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing');
+      setShowLearningCenter(true); setShowSidebar(true);
+      setIframeTitle('Learning Center');
+      return;
+    }
+    setShowLearningCenter(false);
     setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing');
     setTimeout(() => {
       if (item.internal) {
@@ -218,7 +229,7 @@ export default function Dashboard() {
   };
 
   const handleBackToDashboard = () => {
-    setShowSidebar(false); setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setIframeTitle('');
+    setShowSidebar(false); setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setIframeTitle(''); setShowLearningCenter(false);
   };
 
   useEffect(() => {
@@ -1036,7 +1047,11 @@ export default function Dashboard() {
         {/* MAIN CONTENT */}
         <div className="flex-1 flex flex-col overflow-y-auto">
           <div className="flex-1 overflow-hidden bg-white">
-            {showTicketing ? (
+            {showLearningCenter && currentUser ? (
+              <div className="w-full h-full overflow-auto">
+                <LearningCenter currentUser={currentUser} />
+              </div>
+            ) : showTicketing ? (
               <div className="w-full h-full overflow-auto">
                 <iframe src={internalUrl} className="w-full h-full border-0" title={iframeTitle} />
               </div>
