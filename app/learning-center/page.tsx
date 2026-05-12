@@ -1397,7 +1397,7 @@ function QuizPlayer({ session, user, attempt, onDone }: {
       if (!session.question_ids?.length) return;
       const { data } = await supabase.from('lc_questions').select('*').in('id', session.question_ids);
       // Sort by original order
-      const ordered = session.question_ids.map(id => data?.find(q => q.id === id)).filter(Boolean) as Question[];
+      const ordered = session.question_ids.map(id => data?.find((q: any) => q.id === id)).filter(Boolean) as Question[];
       setQuestions(ordered);
     };
     load();
