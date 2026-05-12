@@ -79,16 +79,16 @@ export default function Dashboard() {
       items: [{ name: 'Ticket Management', url: '/ticketing', icon: '🔧', internal: true, embed: true }]
     },
     {
-      title: 'Piket Showroom', icon: '🏪', key: 'picket-showroom',
-      gradient: 'from-teal-700 via-teal-600 to-cyan-500',
-      description: 'Jadwal piket showroom Team PTS IVP, UMP & MLDS',
-      items: [{ name: 'Piket Showroom', url: '/picket-showroom', icon: '📅', internal: true, embed: true }]
-    },
-    {
       title: 'Learning Center', icon: '🎓', key: 'learning-center',
       gradient: 'from-blue-700 via-blue-600 to-indigo-500',
       description: 'Platform training, quiz online & analytics team',
       items: [{ name: 'Learning Center', url: '/learning-center', icon: '📚', internal: true, embed: true }]
+    },
+    {
+      title: 'Piket Showroom', icon: '🏪', key: 'picket-showroom',
+      gradient: 'from-teal-700 via-teal-600 to-cyan-500',
+      description: 'Jadwal piket showroom Team PTS IVP, UMP & MLDS',
+      items: [{ name: 'Piket Showroom', url: '/picket-showroom', icon: '📅', internal: true, embed: true }]
     },
     {
       title: 'Daily Report', icon: '📈', key: 'daily-report',
@@ -259,9 +259,12 @@ export default function Dashboard() {
   const INTERNAL_KEYS = ['reminder-schedule', 'form-require-project', 'form-bast', 'ticket-troubleshooting', 'picket-showroom'];
   const PROJECT_KEYS = ['reminder-schedule', 'form-require-project', 'form-bast', 'ticket-troubleshooting'];
   const INTERNAL_DAILY_KEYS = ['picket-showroom', 'daily-report', 'database-pts', 'unit-movement'];
+  // ── Learning Center sebagai section tersendiri ──
+  const LEARNING_KEYS = ['learning-center'];
 
   const projectMenuItems = visibleMenuItems.filter(m => PROJECT_KEYS.includes(m.key));
   const internalMenuItems = visibleMenuItems.filter(m => INTERNAL_DAILY_KEYS.includes(m.key));
+  const learningMenuItems = visibleMenuItems.filter(m => LEARNING_KEYS.includes(m.key));
 
   const MENU_ICONS: Record<string, JSX.Element> = {
     'picket-showroom': <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
@@ -272,6 +275,7 @@ export default function Dashboard() {
     'daily-report': <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
     'database-pts': <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" /></svg>,
     'unit-movement': <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>,
+    'learning-center': <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /></svg>,
   };
 
   function MenuLoadingOverlay() {
@@ -581,6 +585,7 @@ export default function Dashboard() {
           <div className="max-w-[1600px] mx-auto space-y-8">
             {menuLoading ? <MenuLoadingOverlay /> : (
               <>
+                {/* Project section */}
                 {projectMenuItems.length > 0 && (
                   <div style={{ animation: 'fadeInUp 0.45s ease forwards', opacity: 0 }}>
                     <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-xl"
@@ -598,6 +603,7 @@ export default function Dashboard() {
                   </div>
                 )}
 
+                {/* Internal Daily section */}
                 {internalMenuItems.length > 0 && (
                   <div style={{ animation: 'fadeInUp 0.45s ease 0.1s forwards', opacity: 0 }}>
                     <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-xl"
@@ -611,6 +617,25 @@ export default function Dashboard() {
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {internalMenuItems.map((menu, i) => renderMenuCard(menu, i, '#10b981'))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Learning Center section (BARU) ── */}
+                {learningMenuItems.length > 0 && (
+                  <div style={{ animation: 'fadeInUp 0.45s ease 0.2s forwards', opacity: 0 }}>
+                    <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-xl"
+                      style={{ background: 'rgba(15,23,42,0.72)', backdropFilter: 'blur(8px)', boxShadow: '0 2px 12px rgba(0,0,0,0.25)' }}>
+                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #60a5fa, #4338ca)' }}>
+                        <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 14l9-5-9-5-9 5 9 5z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                        </svg>
+                      </div>
+                      <span className="text-white font-bold text-sm tracking-wide">Learning Center</span>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {learningMenuItems.map((menu, i) => renderMenuCard(menu, i, '#4338ca'))}
                     </div>
                   </div>
                 )}
@@ -661,7 +686,6 @@ export default function Dashboard() {
           >
             {!sidebarCollapsed && (
               <>
-                {/* Main Menu button — full width, clean text nav style */}
                 <button
                   onClick={handleBackToDashboard}
                   className="flex-1 flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all duration-150 text-left group"
@@ -675,7 +699,6 @@ export default function Dashboard() {
                   </svg>
                   <span className="text-sm font-semibold tracking-wide">Main Menu</span>
                 </button>
-                {/* Collapse button */}
                 <button
                   onClick={() => setSidebarCollapsed(true)}
                   className="w-7 h-7 rounded-md flex items-center justify-center transition-all flex-shrink-0"
@@ -709,7 +732,6 @@ export default function Dashboard() {
           {/* ── SIDEBAR SCROLLABLE CONTENT ── */}
           <div className="flex-1 overflow-y-auto py-3 px-2.5" style={{ scrollbarWidth: 'none' }}>
 
-            {/* ── MENU ITEMS ── */}
             {menuLoading ? (
               <div className="flex items-center justify-center py-10">
                 <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.35)', borderTopColor: '#e2a84b' }} />
@@ -749,7 +771,6 @@ export default function Dashboard() {
                 {/* Project section */}
                 {visibleMenuItems.filter(m => PROJECT_KEYS.includes(m.key)).length > 0 && (
                   <div>
-                    {/* Section label */}
                     <div className="flex items-center gap-2 px-1 mb-1.5">
                       <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.38)' }}>Project</span>
                       <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
@@ -797,7 +818,6 @@ export default function Dashboard() {
                 {/* Internal Daily section */}
                 {visibleMenuItems.filter(m => INTERNAL_DAILY_KEYS.includes(m.key)).length > 0 && (
                   <div>
-                    {/* Section label */}
                     <div className="flex items-center gap-2 px-1 mb-1.5">
                       <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.38)' }}>Internal Daily</span>
                       <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
@@ -841,6 +861,53 @@ export default function Dashboard() {
                           );
                         })
                       )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Learning Center section di sidebar (BARU) ── */}
+                {visibleMenuItems.filter(m => LEARNING_KEYS.includes(m.key)).length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 px-1 mb-1.5">
+                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.38)' }}>Learning</span>
+                      <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
+                    </div>
+                    <div className="space-y-0.5">
+                      {visibleMenuItems.filter(m => LEARNING_KEYS.includes(m.key)).map(menu => {
+                        if (menu.items.length === 1) {
+                          const item = menu.items[0];
+                          const isActive = (showTicketing && item.internal && internalUrl === item.url) || (iframeUrl === item.url);
+                          return (
+                            <button
+                              key={menu.key}
+                              onClick={() => handleMenuClick(item, menu.title)}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
+                              style={
+                                isActive
+                                  ? { background: 'rgba(67,56,202,0.10)', border: '1px solid rgba(67,56,202,0.25)', color: '#3730a3' }
+                                  : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
+                              }
+                              onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(67,56,202,0.05)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(67,56,202,0.12)'; } }}
+                              onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; } }}
+                            >
+                              <span
+                                className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors"
+                                style={{
+                                  background: isActive ? 'rgba(67,56,202,0.15)' : 'rgba(0,0,0,0.06)',
+                                  color: isActive ? '#3730a3' : '#64748b',
+                                }}
+                              >
+                                {MENU_ICONS[menu.key] ?? <span>{menu.icon}</span>}
+                              </span>
+                              <span className="flex-1 truncate text-sm font-medium">{menu.title}</span>
+                              {isActive && (
+                                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#4338ca' }} />
+                              )}
+                            </button>
+                          );
+                        }
+                        return null;
+                      })}
                     </div>
                   </div>
                 )}
