@@ -82,19 +82,19 @@ export const ALL_MENU_KEYS = [
   'unit-movement',
   'reminder-schedule',
   'picket-showroom',
-  'learning-center',
+  'learning-center',         // ← tambahan baru
 ];
 
 export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = {
-  'form-bast': { label: 'Form Review Demo & BAST', icon: '⭐' },
-  'form-require-project': { label: 'Form Require Project', icon: '🏗️' },
+  'form-bast':              { label: 'Form Review Demo & BAST', icon: '⭐' },
+  'form-require-project':   { label: 'Form Require Project', icon: '🏗️' },
   'ticket-troubleshooting': { label: 'Ticket Troubleshooting', icon: '🎫' },
-  'daily-report': { label: 'Daily Report', icon: '📈' },
-  'database-pts': { label: 'Database PTS', icon: '💼' },
-  'unit-movement': { label: 'Unit Movement Log', icon: '🚚' },
-  'reminder-schedule': { label: 'Reminder Schedule', icon: '🗓️' },
-  'picket-showroom': { label: 'Piket Showroom', icon: '🏪' },
-  'learning-center': { label: 'Learning Center', icon: '🎓' },
+  'daily-report':           { label: 'Daily Report', icon: '📈' },
+  'database-pts':           { label: 'Database PTS', icon: '💼' },
+  'unit-movement':          { label: 'Unit Movement Log', icon: '🚚' },
+  'reminder-schedule':      { label: 'Reminder Schedule', icon: '🗓️' },
+  'picket-showroom':        { label: 'Piket Showroom', icon: '🏪' },
+  'learning-center':        { label: 'Learning Center', icon: '🎓' },  // ← tambahan baru
 };
 
 export const ROLE_BADGE: Record<string, string> = {
@@ -137,4 +137,3 @@ export interface AdminPanelModalProps {
   initialTab: 'settings' | 'userManagement' | 'picBrand';
   onClose: () => void;
 }
-
