@@ -1,5 +1,26 @@
 'use client';
 
+/**
+ * LEARNING CENTER — Full Platform Component
+ * ==========================================
+ * Drop this file into your app as a page or embed it inside Dashboard via iframe/internal route.
+ *
+ * Usage in Dashboard.tsx:
+ *   1. Add menu entry in allMenuItems:
+ *      {
+ *        title: 'Learning Center', icon: '🎓', key: 'learning-center',
+ *        gradient: 'from-blue-700 via-blue-600 to-indigo-500',
+ *        description: 'Platform Training & Quiz Online',
+ *        items: [{ name: 'Learning Center', url: '/learning-center', icon: '📚', internal: true, embed: true }]
+ *      }
+ *   2. Add 'learning-center' to ALL_MENU_KEYS in shared.ts
+ *   3. Add its label to ALL_MENU_LABELS in shared.ts
+ *
+ * Environment variables needed in .env.local:
+ *   NEXT_PUBLIC_OPENAI_API_KEY=sk-proj-...
+ *   (Supabase vars already exist in your project)
+ */
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -981,7 +1002,7 @@ function TeamPage() {
         supabase.from('users').select('id, full_name, username, role, jabatan, sales_division').order('full_name'),
         supabase.from('lc_quiz_attempts').select('*').eq('is_submitted', true),
       ]);
-      setUsers((u ?? []).filter(u => u.role !== 'guest'));
+      setUsers((u ?? []).filter((u: any) => u.role !== 'guest'));
       setAttempts(a ?? []);
     };
     load();
