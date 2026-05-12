@@ -1,5 +1,26 @@
 'use client';
 
+/**
+ * LEARNING CENTER — Full Platform Component
+ * ==========================================
+ * Drop this file into your app as a page or embed it inside Dashboard via iframe/internal route.
+ *
+ * Usage in Dashboard.tsx:
+ *   1. Add menu entry in allMenuItems:
+ *      {
+ *        title: 'Learning Center', icon: '🎓', key: 'learning-center',
+ *        gradient: 'from-blue-700 via-blue-600 to-indigo-500',
+ *        description: 'Platform Training & Quiz Online',
+ *        items: [{ name: 'Learning Center', url: '/learning-center', icon: '📚', internal: true, embed: true }]
+ *      }
+ *   2. Add 'learning-center' to ALL_MENU_KEYS in shared.ts
+ *   3. Add its label to ALL_MENU_LABELS in shared.ts
+ *
+ * Environment variables needed in .env.local:
+ *   NEXT_PUBLIC_OPENAI_API_KEY=sk-proj-...
+ *   (Supabase vars already exist in your project)
+ */
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from './_components/shared';
@@ -92,7 +113,55 @@ function ScoreBadge({ score, passing }: { score: number | null; passing: number 
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function LearningCenter({ currentUser }: { currentUser: User }) {
+// ─── Page wrapper (Next.js requires default export with no custom props) ──────
+
+export default function LearningCenterPage() {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) { setLoading(false); return; }
+      const { data } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+      setCurrentUser(data ?? null);
+      setLoading(false);
+    };
+    loadUser();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="text-4xl mb-3 animate-pulse">🎓</div>
+          <p className="text-slate-500 font-medium">Memuat Learning Center...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="text-4xl mb-3">🔒</div>
+          <p className="text-slate-500 font-medium">Silakan login terlebih dahulu.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <LearningCenter currentUser={currentUser} />;
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+function LearningCenter({ currentUser }: { currentUser: User }) {
   const isAdmin = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
   const [adminView, setAdminView] = useState<AdminView>('dashboard');
   const [teamView, setTeamView] = useState<TeamView>('my-quiz');
