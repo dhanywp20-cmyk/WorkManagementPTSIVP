@@ -82,6 +82,7 @@ export const ALL_MENU_KEYS = [
   'unit-movement',
   'reminder-schedule',
   'picket-showroom',
+  'learning-center',
 ];
 
 export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = {
@@ -93,6 +94,7 @@ export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = 
   'unit-movement': { label: 'Unit Movement Log', icon: '🚚' },
   'reminder-schedule': { label: 'Reminder Schedule', icon: '🗓️' },
   'picket-showroom': { label: 'Piket Showroom', icon: '🏪' },
+  'learning-center': { label: 'Learning Center', icon: '🎓' },
 };
 
 export const ROLE_BADGE: Record<string, string> = {
