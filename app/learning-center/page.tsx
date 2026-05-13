@@ -380,7 +380,7 @@ function AdminDashboard({ user }: { user: User }) {
         setLoading(true);
         setError(null);
 
-        const results = await Promise.all([
+        const results: Array<{ error?: any; count?: number | null }> = await Promise.all([
           supabase.from('lc_materials').select('id', { count: 'exact' }),
           supabase.from('lc_questions').select('id', { count: 'exact' }),
           supabase.from('lc_quiz_sessions').select('id', { count: 'exact' }),
@@ -388,17 +388,17 @@ function AdminDashboard({ user }: { user: User }) {
         ]);
 
         // Check for errors
-        const hasError = results.some(r => r.error);
+        const hasError = results.some((r: any) => r.error);
         if (hasError) {
-          const errorMsg = results.find(r => r.error)?.error?.message ?? 'Unknown error';
+          const errorMsg = results.find((r: any) => r.error)?.error?.message ?? 'Unknown error';
           throw new Error(errorMsg);
         }
 
         setStats({
-          materials: results[0].count ?? 0,
-          questions: results[1].count ?? 0,
-          sessions: results[2].count ?? 0,
-          users: results[3].count ?? 0,
+          materials: (results[0] as any).count ?? 0,
+          questions: (results[1] as any).count ?? 0,
+          sessions: (results[2] as any).count ?? 0,
+          users: (results[3] as any).count ?? 0,
         });
         setLoading(false);
       } catch (err: any) {
