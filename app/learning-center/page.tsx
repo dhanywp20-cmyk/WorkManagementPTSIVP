@@ -2057,7 +2057,7 @@ function HistoryPage({ user }: { user: User }) {
       .select('*, lc_quiz_sessions(session_name, passing_grade, materi_name, question_ids)')
       .eq('user_id', user.id).eq('is_submitted', true)
       .order('submitted_at', { ascending: false })
-      .then(({ data }) => setHistory(data ?? []));
+      .then(({ data }: { data: any[] | null }) => setHistory(data ?? []));
   }, [user.id]);
 
   if (viewingAttempt) {
@@ -2120,7 +2120,7 @@ function ScorePage({ user }: { user: User }) {
     supabase.from('lc_quiz_attempts')
       .select('*, lc_quiz_sessions(session_name, passing_grade, materi_name, question_ids)')
       .eq('user_id', user.id).eq('is_submitted', true)
-      .then(({ data }) => setAttempts(data ?? []));
+      .then(({ data }: { data: any[] | null }) => setAttempts(data ?? []));
   }, [user.id]);
 
   const avg = attempts.length ? attempts.reduce((s: number, a: any) => s + (a.score ?? 0), 0) / attempts.length : 0;
