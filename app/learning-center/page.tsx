@@ -1,7 +1,49 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+
+// ─── Error Boundary ───────────────────────────────────────────────────────
+
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: string | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error: error.message };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('Error Boundary caught:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100 p-4">
+          <div className="bg-white rounded-2xl p-8 shadow-lg max-w-md text-center border-l-4 border-red-500">
+            <div className="text-5xl mb-4">⚠️</div>
+            <h2 className="text-xl font-bold text-red-600 mb-3">Component Error</h2>
+            <p className="text-slate-600 text-sm mb-6 font-mono bg-red-50 p-3 rounded border border-red-200 break-words">
+              {this.state.error}
+            </p>
+            <button onClick={() => window.location.reload()}
+              className="w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors">
+              🔄 Reload Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -185,7 +227,7 @@ function buildFolderTree(materials: Material[]): FolderNode {
 
 // ─── Page wrapper ─────────────────────────────────────────────────────────────
 
-export default function LearningCenterPage() {
+function LearningCenterPageContent() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [adminView, setAdminView] = useState<AdminView>('dashboard');
   const [teamView, setTeamView] = useState<TeamView>('my-quiz');
@@ -1274,5 +1316,15 @@ function ScorePage({ user }: { user: User }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Export with Error Boundary ───────────────────────────────────────────
+
+export default function LearningCenterPage() {
+  return (
+    <ErrorBoundary>
+      <LearningCenterPageContent />
+    </ErrorBoundary>
   );
 }
