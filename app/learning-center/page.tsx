@@ -189,17 +189,102 @@ export default function LearningCenterPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [adminView, setAdminView] = useState<AdminView>('dashboard');
   const [teamView, setTeamView] = useState<TeamView>('my-quiz');
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
-      supabase.from('users').select('*').eq('id', user.id).single()
-        .then(({ data }: { data: User | null }) => setCurrentUser(data));
-    });
+    const loadUser = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError) {
+          console.error('Auth Error:', authError);
+          setError('Authentication error: ' + authError.message);
+          setIsLoading(false);
+          return;
+        }
+        
+        if (!user) {
+          console.warn('No authenticated user');
+          setError('Tidak ada user yang login. Silakan login terlebih dahulu.');
+          setIsLoading(false);
+          return;
+        }
+
+        const { data, error: dbError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (dbError) {
+          console.error('Database Error:', dbError);
+          setError('Database error: ' + dbError.message);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!data) {
+          console.warn('User data not found in database');
+          setError('Data user tidak ditemukan di database. Silakan hubungi administrator.');
+          setIsLoading(false);
+          return;
+        }
+
+        setCurrentUser(data);
+        setIsLoading(false);
+      } catch (err: any) {
+        console.error('Unexpected Error:', err);
+        setError('Unexpected error: ' + err?.message);
+        setIsLoading(false);
+      }
+    };
+
+    loadUser();
   }, []);
 
-  if (!currentUser) return <div className="w-full h-screen flex items-center justify-center">Loading...</div>;
+  // Error state
+  if (error) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <div className="bg-white rounded-2xl p-8 shadow-lg max-w-md text-center border-l-4 border-red-500">
+          <div className="text-5xl mb-4">❌</div>
+          <h2 className="text-xl font-bold text-red-600 mb-3">Terjadi Kesalahan</h2>
+          <p className="text-slate-600 text-sm mb-6 font-mono bg-red-50 p-3 rounded border border-red-200">{error}</p>
+          <div className="flex gap-3">
+            <button onClick={() => window.location.reload()}
+              className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors">
+              🔄 Reload
+            </button>
+            <button onClick={() => window.location.href = '/'}
+              className="flex-1 px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold rounded-lg transition-colors">
+              🏠 Home
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
+  // Loading state
+  if (isLoading || !currentUser) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="text-center">
+          <div className="inline-block">
+            <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-6"></div>
+          </div>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Memuat Learning Center...</h2>
+          <p className="text-slate-500">Mohon tunggu sebentar</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Success - render based on role
   if (currentUser.role === 'admin') {
     return (
       <AdminLearningCenter user={currentUser} view={adminView} setView={setAdminView} />
@@ -286,33 +371,61 @@ function Navbar({ user }: { user: User }) {
 
 function AdminDashboard({ user }: { user: User }) {
   const [stats, setStats] = useState({ materials: 0, questions: 0, sessions: 0, users: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([
-      supabase.from('lc_materials').select('id', { count: 'exact' }),
-      supabase.from('lc_questions').select('id', { count: 'exact' }),
-      supabase.from('lc_quiz_sessions').select('id', { count: 'exact' }),
-      supabase.from('users').select('id', { count: 'exact' }),
-    ]).then(results => {
-      setStats({
-        materials: results[0].count ?? 0,
-        questions: results[1].count ?? 0,
-        sessions: results[2].count ?? 0,
-        users: results[3].count ?? 0,
-      });
-    });
+    const loadStats = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const results = await Promise.all([
+          supabase.from('lc_materials').select('id', { count: 'exact' }),
+          supabase.from('lc_questions').select('id', { count: 'exact' }),
+          supabase.from('lc_quiz_sessions').select('id', { count: 'exact' }),
+          supabase.from('users').select('id', { count: 'exact' }),
+        ]);
+
+        // Check for errors
+        const hasError = results.some(r => r.error);
+        if (hasError) {
+          const errorMsg = results.find(r => r.error)?.error?.message ?? 'Unknown error';
+          throw new Error(errorMsg);
+        }
+
+        setStats({
+          materials: results[0].count ?? 0,
+          questions: results[1].count ?? 0,
+          sessions: results[2].count ?? 0,
+          users: results[3].count ?? 0,
+        });
+        setLoading(false);
+      } catch (err: any) {
+        console.error('Stats loading error:', err);
+        setError(err?.message ?? 'Failed to load statistics');
+        setLoading(false);
+      }
+    };
+
+    loadStats();
   }, []);
 
   return (
     <div>
       <PageHeader title="📊 Dashboard" subtitle="Ringkasan aktivitas learning center" />
       <div className="p-8">
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            ⚠️ {error}
+          </div>
+        )}
         <div className="grid grid-cols-4 gap-5">
           {[
-            { label: 'Total Materi', value: stats.materials, icon: '📚', color: 'from-blue-500 to-blue-600' },
-            { label: 'Total Soal', value: stats.questions, icon: '❓', color: 'from-amber-500 to-amber-600' },
-            { label: 'Sesi Quiz', value: stats.sessions, icon: '🎯', color: 'from-purple-500 to-purple-600' },
-            { label: 'Pengguna', value: stats.users, icon: '👥', color: 'from-emerald-500 to-emerald-600' },
+            { label: 'Total Materi', value: loading ? '—' : stats.materials, icon: '📚', color: 'from-blue-500 to-blue-600' },
+            { label: 'Total Soal', value: loading ? '—' : stats.questions, icon: '❓', color: 'from-amber-500 to-amber-600' },
+            { label: 'Sesi Quiz', value: loading ? '—' : stats.sessions, icon: '🎯', color: 'from-purple-500 to-purple-600' },
+            { label: 'Pengguna', value: loading ? '—' : stats.users, icon: '👥', color: 'from-emerald-500 to-emerald-600' },
           ].map((item, idx) => (
             <div key={idx} className={`bg-gradient-to-br ${item.color} rounded-2xl p-6 text-white shadow-lg`}>
               <div className="text-4xl mb-3">{item.icon}</div>
@@ -332,11 +445,31 @@ function AdminMateriPage({ user }: { user: User }) {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
   const [showAddModal, setShowAddModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.from('lc_materials').select('*').then(({ data }: { data: Material[] | null }) => {
-      setMaterials(data ?? []);
-    });
+    const loadMaterials = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const { data, error: dbError } = await supabase.from('lc_materials').select('*');
+        
+        if (dbError) {
+          throw new Error(dbError.message);
+        }
+        
+        setMaterials(data ?? []);
+        setLoading(false);
+      } catch (err: any) {
+        console.error('Error loading materials:', err);
+        setError(err?.message ?? 'Failed to load materials');
+        setLoading(false);
+      }
+    };
+
+    loadMaterials();
   }, []);
 
   const root = buildFolderTree(materials);
@@ -406,6 +539,12 @@ function AdminMateriPage({ user }: { user: User }) {
     <div>
       <PageHeader title="📚 Materi Training" subtitle="Kelola materi training team" />
       <div className="p-8">
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            ⚠️ {error}
+          </div>
+        )}
+        
         <div className="mb-6 flex justify-end">
           <button onClick={() => setShowAddModal(true)}
             className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors flex items-center gap-2">
@@ -418,7 +557,12 @@ function AdminMateriPage({ user }: { user: User }) {
             <h3 className="font-bold text-slate-800">📁 Folder Materi</h3>
           </div>
           <div className="p-4 max-h-96 overflow-y-auto">
-            {materials.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="inline-block w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-3"></div>
+                <p className="text-slate-500">Memuat materi...</p>
+              </div>
+            ) : materials.length === 0 ? (
               <div className="text-center py-8 text-slate-400">
                 <p className="text-sm">Belum ada materi</p>
               </div>
@@ -440,10 +584,31 @@ function BankSoalPage({ user, isAdmin }: { user: User; isAdmin: boolean }) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [filter, setFilter] = useState('');
   const [difficulty, setDifficulty] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.from('lc_questions').select('*')
-      .then(({ data }: { data: Question[] | null }) => setQuestions(data ?? []));
+    const loadQuestions = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const { data, error: dbError } = await supabase.from('lc_questions').select('*');
+        
+        if (dbError) {
+          throw new Error(dbError.message);
+        }
+        
+        setQuestions(data ?? []);
+        setLoading(false);
+      } catch (err: any) {
+        console.error('Error loading questions:', err);
+        setError(err?.message ?? 'Failed to load questions');
+        setLoading(false);
+      }
+    };
+
+    loadQuestions();
   }, []);
 
   const filtered = questions.filter(q =>
@@ -459,11 +624,24 @@ function BankSoalPage({ user, isAdmin }: { user: User; isAdmin: boolean }) {
         subtitle={isAdmin ? "Kelola semua soal pembelajaran" : "Lihat dan pelajari soal"} 
       />
       <div className="p-8">
-        <div className="mb-6 flex gap-4">
-          <input type="text" placeholder="Cari soal..." value={filter} onChange={e => setFilter(e.target.value)}
-            className="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          <select value={difficulty} onChange={e => setDifficulty(e.target.value)}
-            className="px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            ⚠️ {error}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="inline-block w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-3"></div>
+            <p className="text-slate-500">Memuat bank soal...</p>
+          </div>
+        ) : (
+          <>
+            <div className="mb-6 flex gap-4">
+              <input type="text" placeholder="Cari soal..." value={filter} onChange={e => setFilter(e.target.value)}
+                className="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <select value={difficulty} onChange={e => setDifficulty(e.target.value)}
+                className="px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option value="">Semua Level</option>
             <option value="easy">Easy</option>
             <option value="medium">Medium</option>
@@ -506,6 +684,8 @@ function BankSoalPage({ user, isAdmin }: { user: User; isAdmin: boolean }) {
             ))
           )}
         </div>
+          </>
+        )}
       </div>
     </div>
   );
