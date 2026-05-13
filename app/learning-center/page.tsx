@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 
-// ─── User Type ────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface User {
   id: string;
@@ -15,15 +15,15 @@ interface User {
   phone_number?: string | null;
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
+// Material sekarang punya folder_path untuk grouping (contoh: "Produk/Microvision")
 interface Material {
   id: string;
   materi_name: string;
   content_text: string | null;
-  file_url: string | null;
+  file_url: string | null;       // OneDrive link
   file_name: string | null;
   file_type: string | null;
+  folder_path: string | null;    // NEW: "Produk" atau "Produk/Microvision"
   created_by: string | null;
   created_at: string;
 }
@@ -72,8 +72,17 @@ interface QuizAttempt {
   is_submitted: boolean;
 }
 
+// Answer record (from lc_answers table)
+interface AnswerRecord {
+  id: string;
+  attempt_id: string;
+  question_id: string;
+  answer: string;
+  is_correct: boolean;
+}
+
 type AdminView = 'dashboard' | 'materi' | 'questions' | 'sessions' | 'team' | 'report' | 'analytics';
-type TeamView = 'my-quiz' | 'history' | 'score';
+type TeamView = 'my-quiz' | 'materi' | 'history' | 'score';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -89,9 +98,6 @@ const DIFF_COLOR: Record<string, string> = {
 const fmtDate = (d: string) =>
   new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-const fmtTime = (d: string) =>
-  new Date(d).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-
 function ScoreBadge({ score, passing }: { score: number | null; passing: number }) {
   if (score === null) return <span className="text-slate-400 text-xs">—</span>;
   const pass = score >= passing;
@@ -100,6 +106,77 @@ function ScoreBadge({ score, passing }: { score: number | null; passing: number 
       {pass ? '✅' : '❌'} {score.toFixed(0)}
     </span>
   );
+}
+
+// ─── Gemini Helper ────────────────────────────────────────────────────────────
+
+async function fileToBase64(f: File): Promise<string> {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = e => res((e.target?.result as string).split(',')[1]);
+    reader.onerror = () => rej(new Error('Read failed'));
+    reader.readAsDataURL(f);
+  });
+}
+
+// PDF hanya dikirim ke Gemini untuk generate soal — TIDAK disimpan ke Supabase
+async function generateWithGemini(prompt: string, pdfFile?: File | null): Promise<string> {
+  const parts: any[] = [];
+  if (pdfFile) {
+    const base64 = await fileToBase64(pdfFile);
+    parts.push({ inline_data: { mime_type: pdfFile.type || 'application/pdf', data: base64 } });
+  }
+  parts.push({ text: prompt });
+
+  const res = await fetch(GEMINI_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts }],
+      generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err?.error?.message ?? 'Gemini API error');
+  }
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+}
+
+// ─── Folder Tree Helpers ──────────────────────────────────────────────────────
+
+interface FolderNode {
+  name: string;
+  path: string;
+  children: Record<string, FolderNode>;
+  materials: Material[];
+}
+
+function buildFolderTree(materials: Material[]): FolderNode {
+  const root: FolderNode = { name: 'root', path: '', children: {}, materials: [] };
+
+  materials.forEach(m => {
+    const rawPath = (m.folder_path ?? '').trim();
+    if (!rawPath) {
+      root.materials.push(m);
+      return;
+    }
+    const parts = rawPath.split('/').map(p => p.trim()).filter(Boolean);
+    let node = root;
+    let currentPath = '';
+    parts.forEach(part => {
+      currentPath = currentPath ? `${currentPath}/${part}` : part;
+      if (!node.children[part]) {
+        node.children[part] = { name: part, path: currentPath, children: {}, materials: [] };
+      }
+      node = node.children[part];
+    });
+    node.materials.push(m);
+  });
+
+  return root;
 }
 
 // ─── Page wrapper ─────────────────────────────────────────────────────────────
@@ -175,30 +252,27 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
         backgroundAttachment: 'fixed',
       }}
     >
-      {/* Overlay tipis */}
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.10)' }} />
-
       <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Top Navbar */}
         {isAdmin
           ? <AdminTopNav view={adminView} onChange={setAdminView} />
           : <TeamTopNav view={teamView} onChange={setTeamView} />}
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto" style={{minHeight:"calc(100vh - 100px)"}}>        
+        <div className="flex-1 overflow-y-auto" style={{minHeight:"calc(100vh - 100px)"}}>
           {isAdmin ? (
             <>
               {adminView === 'dashboard'  && <AdminDashboard user={currentUser} />}
-              {adminView === 'materi'     && <MateriPage user={currentUser} />}
+              {adminView === 'materi'     && <MateriPage user={currentUser} isAdmin={true} />}
               {adminView === 'questions'  && <QuestionsPage user={currentUser} />}
               {adminView === 'sessions'   && <SessionsPage user={currentUser} />}
               {adminView === 'team'       && <TeamPage />}
-              {adminView === 'report'     && <ReportPage />}
+              {adminView === 'report'     && <ReportPage currentUser={currentUser} />}
               {adminView === 'analytics'  && <AnalyticsPage />}
             </>
           ) : (
             <>
               {teamView === 'my-quiz'  && <MyQuizPage user={currentUser} />}
+              {teamView === 'materi'   && <MateriPage user={currentUser} isAdmin={false} />}
               {teamView === 'history'  && <HistoryPage user={currentUser} />}
               {teamView === 'score'    && <ScorePage user={currentUser} />}
             </>
@@ -221,32 +295,21 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
     { key: 'report', icon: '📋', label: 'Laporan' },
     { key: 'analytics', icon: '📈', label: 'Analytics' },
   ];
-
   return (
     <div style={{background:"rgba(255,255,255,0.92)",backdropFilter:"blur(16px)",borderBottom:"3px solid #dc2626"}} className="flex-shrink-0 sticky top-0 z-50">
-      {/* Brand row */}
       <div className="flex items-center gap-3 px-6 pt-4 pb-0">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-base shadow">
-          🎓
-        </div>
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-base shadow">🎓</div>
         <div>
           <span className="text-sm font-bold text-slate-800 leading-tight">Learning Center</span>
           <span className="ml-2 text-[10px] text-blue-600 font-semibold uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-full">Admin Portal</span>
         </div>
       </div>
-      {/* Tab menu */}
       <nav className="flex items-end gap-1 px-4 pt-2">
         {items.map(i => (
-          <button
-            key={i.key}
-            onClick={() => onChange(i.key)}
+          <button key={i.key} onClick={() => onChange(i.key)}
             className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap
-              ${view === i.key
-                ? 'text-blue-700 border-blue-600 bg-blue-50/60 font-semibold'
-                : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'}`}
-          >
-            <span className="text-sm">{i.icon}</span>
-            {i.label}
+              ${view === i.key ? 'text-blue-700 border-blue-600 bg-blue-50/60 font-semibold' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'}`}>
+            <span className="text-sm">{i.icon}</span>{i.label}
           </button>
         ))}
       </nav>
@@ -257,35 +320,25 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
 function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView) => void }) {
   const items: { key: TeamView; icon: string; label: string }[] = [
     { key: 'my-quiz', icon: '📝', label: 'My Quiz' },
+    { key: 'materi', icon: '📚', label: 'Materi' },
     { key: 'history', icon: '🕐', label: 'Riwayat' },
     { key: 'score', icon: '🏆', label: 'Nilai Saya' },
   ];
-
   return (
     <div style={{background:"rgba(255,255,255,0.92)",backdropFilter:"blur(16px)",borderBottom:"3px solid #dc2626"}} className="flex-shrink-0 sticky top-0 z-50">
-      {/* Brand row */}
       <div className="flex items-center gap-3 px-6 pt-4 pb-0">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-base shadow">
-          🎓
-        </div>
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-base shadow">🎓</div>
         <div>
           <span className="text-sm font-bold text-slate-800 leading-tight">Learning Center</span>
           <span className="ml-2 text-[10px] text-indigo-500 font-semibold uppercase tracking-wider bg-indigo-50 px-2 py-0.5 rounded-full">Team Portal</span>
         </div>
       </div>
-      {/* Tab menu */}
       <nav className="flex items-end gap-1 px-4 pt-2">
         {items.map(i => (
-          <button
-            key={i.key}
-            onClick={() => onChange(i.key)}
+          <button key={i.key} onClick={() => onChange(i.key)}
             className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap
-              ${view === i.key
-                ? 'text-indigo-700 border-indigo-600 bg-indigo-50/60 font-semibold'
-                : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'}`}
-          >
-            <span className="text-sm">{i.icon}</span>
-            {i.label}
+              ${view === i.key ? 'text-indigo-700 border-indigo-600 bg-indigo-50/60 font-semibold' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'}`}>
+            <span className="text-sm">{i.icon}</span>{i.label}
           </button>
         ))}
       </nav>
@@ -325,7 +378,7 @@ function AdminDashboard({ user }: { user: User }) {
 
       const { data } = await supabase
         .from('lc_quiz_attempts')
-        .select('*, users(full_name), lc_quiz_sessions(session_name)')
+        .select('*, users(full_name), lc_quiz_sessions(session_name, passing_grade)')
         .eq('is_submitted', true)
         .order('submitted_at', { ascending: false })
         .limit(8);
@@ -344,7 +397,7 @@ function AdminDashboard({ user }: { user: User }) {
   return (
     <div>
       <PageHeader title="Dashboard" subtitle={`Selamat datang, ${user.full_name}`} />
-      <div className="p-8 space-y-8" style={{minHeight:'calc(100vh - 120px)'}}>
+      <div className="p-8 space-y-8">
         <div className="grid grid-cols-4 gap-5">
           {cards.map(c => (
             <div key={c.label} className={`bg-gradient-to-br ${c.color} rounded-2xl p-5 text-white shadow-lg`}>
@@ -372,7 +425,7 @@ function AdminDashboard({ user }: { user: User }) {
                   <p className="text-sm font-semibold text-slate-800 truncate">{a.users?.full_name ?? '-'}</p>
                   <p className="text-xs text-slate-500 truncate">{a.lc_quiz_sessions?.session_name ?? '-'}</p>
                 </div>
-                <ScoreBadge score={a.score} passing={70} />
+                <ScoreBadge score={a.score} passing={a.lc_quiz_sessions?.passing_grade ?? 70} />
                 <span className="text-xs text-slate-400 flex-shrink-0">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
               </div>
             ))}
@@ -383,125 +436,170 @@ function AdminDashboard({ user }: { user: User }) {
   );
 }
 
-// ─── Gemini Helper ────────────────────────────────────────────────────────────
+// ─── Folder Tree Component ─────────────────────────────────────────────────────
 
-async function fileToBase64(f: File): Promise<string> {
-  return new Promise((res, rej) => {
-    const reader = new FileReader();
-    reader.onload = e => res((e.target?.result as string).split(',')[1]);
-    reader.onerror = () => rej(new Error('Read failed'));
-    reader.readAsDataURL(f);
-  });
+function FolderTreeView({
+  node,
+  depth = 0,
+  isAdmin,
+  onDelete,
+  expandedPaths,
+  togglePath,
+}: {
+  node: FolderNode;
+  depth?: number;
+  isAdmin: boolean;
+  onDelete?: (id: string) => void;
+  expandedPaths: Set<string>;
+  togglePath: (path: string) => void;
+}) {
+  const folderKeys = Object.keys(node.children).sort();
+  const hasMaterials = node.materials.length > 0;
+  const hasFolders = folderKeys.length > 0;
+
+  if (!hasMaterials && !hasFolders) return null;
+
+  return (
+    <div className={depth > 0 ? 'ml-5 border-l-2 border-slate-200 pl-4 mt-1' : ''}>
+      {/* Subfolders */}
+      {folderKeys.map(key => {
+        const child = node.children[key];
+        const isOpen = expandedPaths.has(child.path);
+        const totalInside = countMaterials(child);
+        return (
+          <div key={child.path} className="mb-1">
+            <button
+              onClick={() => togglePath(child.path)}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-blue-50 transition-all group text-left"
+            >
+              <span className="text-base">{isOpen ? '📂' : '📁'}</span>
+              <span className="flex-1 font-semibold text-slate-700 text-sm">{child.name}</span>
+              <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{totalInside} materi</span>
+              <span className="text-slate-400 text-xs ml-1">{isOpen ? '▾' : '▸'}</span>
+            </button>
+            {isOpen && (
+              <FolderTreeView
+                node={child}
+                depth={depth + 1}
+                isAdmin={isAdmin}
+                onDelete={onDelete}
+                expandedPaths={expandedPaths}
+                togglePath={togglePath}
+              />
+            )}
+          </div>
+        );
+      })}
+
+      {/* Materials in this folder */}
+      {node.materials.map(m => (
+        <MaterialCard key={m.id} material={m} isAdmin={isAdmin} onDelete={onDelete} />
+      ))}
+    </div>
+  );
 }
 
-async function generateWithGemini(prompt: string, pdfFile?: File | null): Promise<string> {
-  const parts: any[] = [];
-
-  // Jika ada PDF, kirim langsung sebagai inline_data
-  if (pdfFile) {
-    const base64 = await fileToBase64(pdfFile);
-    parts.push({ inline_data: { mime_type: pdfFile.type || 'application/pdf', data: base64 } });
-  }
-
-  parts.push({ text: prompt });
-
-  const res = await fetch(GEMINI_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err?.error?.message ?? 'Gemini API error');
-  }
-
-  const data = await res.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+function countMaterials(node: FolderNode): number {
+  let count = node.materials.length;
+  for (const child of Object.values(node.children)) count += countMaterials(child);
+  return count;
 }
 
-// ─── ADMIN: Materi Page ───────────────────────────────────────────────────────
+function MaterialCard({ material: m, isAdmin, onDelete }: { material: Material; isAdmin: boolean; onDelete?: (id: string) => void }) {
+  return (
+    <div className="rounded-2xl border border-white/60 shadow-sm p-4 flex items-start gap-4 group hover:shadow-md transition-all mb-2"
+      style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
+      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-xl flex-shrink-0">📄</div>
+      <div className="flex-1 min-w-0">
+        <h4 className="font-bold text-slate-800 text-sm">{m.materi_name}</h4>
+        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+          {m.folder_path && (
+            <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">📁 {m.folder_path}</span>
+          )}
+          {m.content_text && (
+            <span className="text-[10px] bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-semibold">✅ Teks AI tersedia</span>
+          )}
+          <span className="text-[10px] text-slate-400">{fmtDate(m.created_at)}</span>
+        </div>
+        {m.file_url && (
+          <a href={m.file_url} target="_blank" rel="noreferrer"
+            className="inline-flex items-center gap-1.5 mt-2 text-xs text-blue-600 hover:text-blue-800 font-semibold bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1 rounded-lg transition-all">
+            ☁️ Buka di OneDrive
+          </a>
+        )}
+      </div>
+      {isAdmin && onDelete && (
+        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+          <button onClick={() => onDelete(m.id)}
+            className="p-2 rounded-lg text-rose-500 hover:bg-rose-50 transition-all" title="Hapus">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
-function MateriPage({ user }: { user: User }) {
+// ─── ADMIN/TEAM: Materi Page ──────────────────────────────────────────────────
+
+function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ materi_name: '', file_url: '', file_name: '', file_type: 'pdf', content_text: '' });
+  const [form, setForm] = useState({
+    materi_name: '',
+    file_url: '',
+    folder_path: '',
+    content_text: '',
+  });
   const [uploading, setUploading] = useState(false);
-  const [extracting, setExtracting] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
-  const [pdfPreview, setPdfPreview] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<'folder' | 'list'>('folder');
 
   const load = useCallback(async () => {
-    const { data } = await supabase.from('lc_materials').select('*').order('created_at', { ascending: false });
+    const { data } = await supabase.from('lc_materials').select('*').order('folder_path', { ascending: true }).order('materi_name', { ascending: true });
     setMaterials(data ?? []);
+    // Auto-expand all folders on first load
+    const paths = new Set<string>();
+    (data ?? []).forEach((m: Material) => {
+      if (m.folder_path) {
+        const parts = m.folder_path.split('/');
+        let p = '';
+        parts.forEach(part => {
+          p = p ? `${p}/${part}` : part;
+          paths.add(p);
+        });
+      }
+    });
+    setExpandedPaths(paths);
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    setFile(f);
-    setPdfPreview(null);
-    setForm(prev => ({ ...prev, file_name: f.name, file_type: f.name.split('.').pop() ?? 'pdf', content_text: '' }));
-
-    const ext = f.name.split('.').pop()?.toLowerCase();
-
-    if (ext === 'txt') {
-      // Baca langsung sebagai teks
-      setExtracting(true);
-      const text = await new Promise<string>((res) => {
-        const reader = new FileReader();
-        reader.onload = e => res((e.target?.result as string) ?? '');
-        reader.readAsText(f);
-      });
-      setForm(prev => ({ ...prev, content_text: text.slice(0, 20000) }));
-      setExtracting(false);
-    } else if (ext === 'pdf') {
-      // PDF langsung disimpan sebagai file — Gemini akan baca saat generate soal
-      setPdfPreview(`✅ PDF siap — akan dibaca langsung oleh Gemini AI saat generate soal`);
-    } else {
-      // Untuk pptx/docx user tetap bisa paste teks manual
-    }
+  const togglePath = (path: string) => {
+    setExpandedPaths(prev => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path); else next.add(path);
+      return next;
+    });
   };
 
   const handleSave = async () => {
     if (!form.materi_name.trim()) return alert('Nama materi wajib diisi!');
     setUploading(true);
-
-    // Jika ada PDF dan belum ada content_text, ekstrak teks via Gemini
-    let contentText = form.content_text;
-    if (file && file.name.endsWith('.pdf') && !contentText.trim()) {
-      try {
-        setExtracting(true);
-        contentText = await generateWithGemini(
-          'Ekstrak semua teks dari dokumen PDF ini secara lengkap. Kembalikan hanya teks konten tanpa komentar apapun.',
-          file
-        );
-        setExtracting(false);
-      } catch {
-        setExtracting(false);
-        // Simpan tanpa content_text jika ekstraksi gagal
-      }
-    }
-
     const { error } = await supabase.from('lc_materials').insert([{
       materi_name: form.materi_name,
-      content_text: contentText || null,
+      content_text: form.content_text || null,
       file_url: form.file_url || null,
-      file_name: form.file_name || null,
-      file_type: form.file_type || null,
+      folder_path: form.folder_path.trim() || null,
+      file_name: null,
+      file_type: null,
       created_by: user.id,
     }]);
     setUploading(false);
     if (error) return alert('Gagal menyimpan: ' + error.message);
     setShowForm(false);
-    setForm({ materi_name: '', file_url: '', file_name: '', file_type: 'pdf', content_text: '' });
-    setFile(null);
-    setPdfPreview(null);
+    setForm({ materi_name: '', file_url: '', folder_path: '', content_text: '' });
     load();
   };
 
@@ -511,65 +609,83 @@ function MateriPage({ user }: { user: User }) {
     load();
   };
 
+  const tree = buildFolderTree(materials);
+  const rootHasFolders = Object.keys(tree.children).length > 0;
+
   return (
     <div>
-      <PageHeader title="📚 Materi Training" subtitle="Kelola materi training & sumber belajar"
+      <PageHeader
+        title="📚 Materi Training"
+        subtitle={isAdmin ? "Kelola & organisir materi training team" : "Materi training tersedia untuk dipelajari"}
         action={
-          <button onClick={() => setShowForm(true)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
-            <span>+</span> Tambah Materi
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-xl border border-slate-200 overflow-hidden bg-white">
+              <button onClick={() => setViewMode('folder')}
+                className={`px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'folder' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
+                📁 Folder
+              </button>
+              <button onClick={() => setViewMode('list')}
+                className={`px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
+                📋 List
+              </button>
+            </div>
+            {isAdmin && (
+              <button onClick={() => setShowForm(true)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
+                <span>+</span> Tambah Materi
+              </button>
+            )}
+          </div>
         }
       />
       <div className="p-8">
-        {showForm && (
+        {/* Add Form (Admin only) */}
+        {isAdmin && showForm && (
           <div className="rounded-2xl border border-blue-100 shadow-lg p-6 mb-8" style={{background:"rgba(255,255,255,0.94)",backdropFilter:"blur(12px)"}}>
             <h3 className="font-bold text-slate-800 mb-5 flex items-center gap-2">✏️ Form Materi Baru</h3>
             <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Materi *</label>
-                <input value={form.materi_name} onChange={e => setForm(p => ({ ...p, materi_name: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                  placeholder="contoh: Pengenalan Produk Microvision" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Link Download OneDrive (opsional)</label>
-                <input value={form.file_url} onChange={e => setForm(p => ({ ...p, file_url: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                  placeholder="https://1drv.ms/..." />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Materi *</label>
+                  <input value={form.materi_name} onChange={e => setForm(p => ({ ...p, materi_name: e.target.value }))}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                    placeholder="contoh: Pengenalan Produk Microvision" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                    Folder Path
+                    <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional, pisahkan dengan /)</span>
+                  </label>
+                  <input value={form.folder_path} onChange={e => setForm(p => ({ ...p, folder_path: e.target.value }))}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                    placeholder="contoh: Produk/Microvision" />
+                  <p className="text-[10px] text-slate-400 mt-1">Kosongkan = di root. Gunakan / untuk subfolder seperti Google Drive</p>
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-                  Upload File Materi
-                  <span className="ml-2 text-[10px] font-normal text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full normal-case tracking-normal">
-                    ✨ PDF langsung dibaca Gemini AI
-                  </span>
+                  Link OneDrive
+                  <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional — hemat storage Supabase)</span>
                 </label>
-                <input ref={fileRef} type="file" accept=".txt,.pdf,.pptx,.docx" onChange={handleFileChange} className="hidden" />
-                <div className="flex gap-3 items-center flex-wrap">
-                  <button onClick={() => fileRef.current?.click()}
-                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl border border-slate-200 transition-all flex items-center gap-2">
-                    📁 Pilih File
-                  </button>
-                  {file && <span className="text-sm text-slate-600 font-medium">📄 {file.name}</span>}
-                  {extracting && <span className="text-xs text-blue-600 animate-pulse font-medium">⏳ Membaca file...</span>}
-                </div>
-                {pdfPreview && (
-                  <p className="mt-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 font-medium">{pdfPreview}</p>
-                )}
-                <p className="text-xs text-slate-400 mt-1.5">Mendukung: PDF, TXT, PPTX, DOCX — PDF akan dibaca langsung oleh Gemini AI</p>
+                <input value={form.file_url} onChange={e => setForm(p => ({ ...p, file_url: e.target.value }))}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  placeholder="https://1drv.ms/b/s!..." />
+                <p className="text-[10px] text-slate-400 mt-1">Paste link share OneDrive — file tidak disimpan di Supabase</p>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Konten Teks (opsional — auto-terisi dari TXT)</label>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                  Konten Teks untuk AI
+                  <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional — digunakan generate soal jika tidak upload PDF saat generate)</span>
+                </label>
                 <textarea value={form.content_text} onChange={e => setForm(p => ({ ...p, content_text: e.target.value }))}
-                  rows={5} placeholder="Otomatis terisi dari file .txt, atau paste manual untuk PPTX/DOCX. Kosongkan jika upload PDF."
+                  rows={4} placeholder="Paste ringkasan atau poin-poin materi untuk keperluan generate soal AI. Kosongkan jika selalu upload PDF saat generate."
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none" />
                 <p className="text-xs text-slate-400 mt-1">{form.content_text.length} karakter</p>
               </div>
               <div className="flex gap-3 pt-2">
-                <button onClick={handleSave} disabled={uploading || extracting}
+                <button onClick={handleSave} disabled={uploading}
                   className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60">
-                  {uploading ? (extracting ? '⏳ Mengekstrak PDF...' : '💾 Menyimpan...') : '💾 Simpan Materi'}
+                  {uploading ? '💾 Menyimpan...' : '💾 Simpan Materi'}
                 </button>
                 <button onClick={() => setShowForm(false)}
                   className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all">
@@ -580,40 +696,56 @@ function MateriPage({ user }: { user: User }) {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4">
-          {materials.length === 0 && !showForm && (
-            <div className="text-center py-16 text-slate-400">
-              <div className="text-5xl mb-3">📭</div>
-              <p className="font-semibold">Belum ada materi</p>
-              <p className="text-sm mt-1">Klik + Tambah Materi untuk mulai</p>
-            </div>
-          )}
-          {materials.map(m => (
-            <div key={m.id} className="rounded-2xl border border-white/60 shadow-sm p-5 flex items-start gap-4 group hover:shadow-md transition-all" style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
-              <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-2xl flex-shrink-0">📄</div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-slate-800">{m.materi_name}</h4>
-                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                  {m.file_name && <span className="text-xs text-slate-500 font-medium">📁 {m.file_name}</span>}
-                  {m.content_text && <span className="text-xs bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-semibold">✅ Teks tersedia</span>}
-                  <span className="text-xs text-slate-400">{fmtDate(m.created_at)}</span>
-                </div>
-                {m.file_url && (
-                  <a href={m.file_url} target="_blank" rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 mt-2 text-xs text-blue-600 hover:text-blue-700 font-semibold">
-                    ⬇️ Download Materi
-                  </a>
+        {/* Info banner untuk Team */}
+        {!isAdmin && (
+          <div className="mb-6 bg-indigo-50 border border-indigo-200 rounded-2xl px-5 py-3 flex items-center gap-3">
+            <span className="text-lg">ℹ️</span>
+            <p className="text-sm text-indigo-700">Klik tombol <strong>Buka di OneDrive</strong> untuk mengakses file materi. File PDF tersimpan di OneDrive, bukan di sini.</p>
+          </div>
+        )}
+
+        {materials.length === 0 && !showForm && (
+          <div className="text-center py-16 text-slate-400">
+            <div className="text-5xl mb-3">📭</div>
+            <p className="font-semibold">Belum ada materi</p>
+            {isAdmin && <p className="text-sm mt-1">Klik + Tambah Materi untuk mulai</p>}
+          </div>
+        )}
+
+        {materials.length > 0 && (
+          <>
+            {viewMode === 'folder' ? (
+              <div>
+                {/* Root materials (no folder) */}
+                {tree.materials.length > 0 && (
+                  <div className="mb-4">
+                    {rootHasFolders && (
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">📄 Tanpa Folder</p>
+                    )}
+                    {tree.materials.map(m => (
+                      <MaterialCard key={m.id} material={m} isAdmin={isAdmin} onDelete={isAdmin ? handleDelete : undefined} />
+                    ))}
+                  </div>
                 )}
+                {/* Folder tree */}
+                <FolderTreeView
+                  node={tree}
+                  isAdmin={isAdmin}
+                  onDelete={isAdmin ? handleDelete : undefined}
+                  expandedPaths={expandedPaths}
+                  togglePath={togglePath}
+                />
               </div>
-              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                <button onClick={() => handleDelete(m.id)}
-                  className="p-2 rounded-lg text-rose-500 hover:bg-rose-50 transition-all" title="Hapus">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                </button>
+            ) : (
+              /* List view */
+              <div className="space-y-3">
+                {materials.map(m => (
+                  <MaterialCard key={m.id} material={m} isAdmin={isAdmin} onDelete={isAdmin ? handleDelete : undefined} />
+                ))}
               </div>
-            </div>
-          ))}
-        </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
@@ -631,11 +763,12 @@ function QuestionsPage({ user }: { user: User }) {
   const [generating, setGenerating] = useState(false);
   const [genStatus, setGenStatus] = useState('');
   const [editQ, setEditQ] = useState<Question | null>(null);
+  // PDF hanya untuk generate — TIDAK disimpan ke Supabase
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const pdfRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
-    const { data: mats } = await supabase.from('lc_materials').select('*').order('created_at', { ascending: false });
+    const { data: mats } = await supabase.from('lc_materials').select('*').order('materi_name');
     setMaterials(mats ?? []);
     let q = supabase.from('lc_questions').select('*').order('created_at', { ascending: false });
     if (selectedMat) q = q.eq('material_id', selectedMat);
@@ -647,9 +780,8 @@ function QuestionsPage({ user }: { user: User }) {
   const handleGenerate = async () => {
     if (!selectedMat) return alert('Pilih materi terlebih dahulu!');
     const mat = materials.find(m => m.id === selectedMat);
-
     if (!pdfFile && !mat?.content_text) {
-      return alert('Upload PDF materi di sini, atau pastikan materi sudah punya konten teks di halaman Materi.');
+      return alert('Upload PDF materi atau pastikan materi sudah punya konten teks.');
     }
 
     setGenerating(true);
@@ -676,8 +808,9 @@ Kembalikan HANYA JSON array, tanpa markdown, tanpa teks lain:
   }
 ]`;
 
-      setGenStatus(pdfFile ? '📄 Mengirim PDF ke Gemini...' : '🧠 Generating soal...');
+      setGenStatus(pdfFile ? '📄 Mengirim PDF ke Gemini... (PDF tidak disimpan ke Supabase)' : '🧠 Generating soal...');
       const text = await generateWithGemini(prompt, pdfFile ?? null);
+      // PDF sudah digunakan Gemini — tidak perlu simpan ke Supabase
 
       setGenStatus('⚙️ Memproses hasil...');
       const jsonStr = text.replace(/```json|```/g, '').trim();
@@ -698,13 +831,16 @@ Kembalikan HANYA JSON array, tanpa markdown, tanpa teks lain:
         created_by: user.id,
       }));
 
-      setGenStatus('💾 Menyimpan ke database...');
+      setGenStatus('💾 Menyimpan soal ke database...');
       const { error } = await supabase.from('lc_questions').insert(rows);
       if (error) throw error;
 
-      alert(`✅ ${rows.length} soal berhasil digenerate dengan Gemini AI!`);
-      setShowGenerate(false);
+      // Hapus PDF dari state setelah generate berhasil
       setPdfFile(null);
+      if (pdfRef.current) pdfRef.current.value = '';
+
+      alert(`✅ ${rows.length} soal berhasil digenerate!\n\n📝 Soal & jawaban sudah tersimpan di Supabase.\n📄 PDF tidak disimpan — storage Supabase tetap hemat.`);
+      setShowGenerate(false);
       setGenStatus('');
       load();
     } catch (err: any) {
@@ -756,14 +892,17 @@ Kembalikan HANYA JSON array, tanpa markdown, tanpa teks lain:
         {showGenerate && (
           <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl border border-violet-200 p-6">
             <h3 className="font-bold text-violet-800 mb-1 flex items-center gap-2">✨ Generate Soal dengan Gemini AI</h3>
-            <p className="text-xs text-violet-500 mb-4">Upload PDF langsung — Gemini membaca isi PDF secara otomatis</p>
+            <p className="text-xs text-violet-500 mb-1">Upload PDF langsung — Gemini membaca isi PDF secara otomatis</p>
+            <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5 mb-4 font-medium">
+              ✅ PDF hanya digunakan untuk generate — <strong>tidak disimpan ke Supabase</strong>. Soal & jawaban yang digenerate akan tersimpan.
+            </p>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
                 <select value={selectedMat} onChange={e => setSelectedMat(e.target.value)}
                   className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
                   <option value="">-- Pilih Materi --</option>
-                  {materials.map(m => <option key={m.id} value={m.id}>{m.materi_name} {m.content_text ? '✅' : ''}</option>)}
+                  {materials.map(m => <option key={m.id} value={m.id}>{m.materi_name}{m.content_text ? ' ✅' : ''}</option>)}
                 </select>
               </div>
               <div>
@@ -784,7 +923,7 @@ Kembalikan HANYA JSON array, tanpa markdown, tanpa teks lain:
               <div>
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
                   Upload PDF Materi
-                  <span className="ml-1 text-[10px] font-normal text-violet-500 normal-case tracking-normal">(prioritas utama)</span>
+                  <span className="ml-1 text-[10px] font-normal text-violet-500 normal-case tracking-normal">(sementara, tidak disimpan)</span>
                 </label>
                 <input ref={pdfRef} type="file" accept=".pdf" onChange={e => setPdfFile(e.target.files?.[0] ?? null)} className="hidden" />
                 <div className="flex items-center gap-2">
@@ -794,8 +933,8 @@ Kembalikan HANYA JSON array, tanpa markdown, tanpa teks lain:
                   </button>
                   {pdfFile
                     ? <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg">✅ {pdfFile.name}</span>
-                    : <span className="text-xs text-slate-400">atau gunakan teks dari materi</span>}
-                  {pdfFile && <button onClick={() => setPdfFile(null)} className="text-xs text-rose-500 hover:text-rose-700">✕</button>}
+                    : <span className="text-xs text-slate-400">atau gunakan teks dari materi ✅</span>}
+                  {pdfFile && <button onClick={() => { setPdfFile(null); if (pdfRef.current) pdfRef.current.value = ''; }} className="text-xs text-rose-500 hover:text-rose-700">✕</button>}
                 </div>
               </div>
             </div>
@@ -812,7 +951,7 @@ Kembalikan HANYA JSON array, tanpa markdown, tanpa teks lain:
                   ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generating...</>
                   : '✨ Generate Sekarang'}
               </button>
-              <button onClick={() => { setShowGenerate(false); setPdfFile(null); setGenStatus(''); }}
+              <button onClick={() => { setShowGenerate(false); setPdfFile(null); setGenStatus(''); if (pdfRef.current) pdfRef.current.value = ''; }}
                 className="px-5 py-2.5 bg-white text-slate-600 text-sm font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all">
                 Batal
               </button>
@@ -915,7 +1054,7 @@ function SessionsPage({ user }: { user: User }) {
   const load = useCallback(async () => {
     const [{ data: s }, { data: m }, { data: q }] = await Promise.all([
       supabase.from('lc_quiz_sessions').select('*').order('created_at', { ascending: false }),
-      supabase.from('lc_materials').select('*'),
+      supabase.from('lc_materials').select('*').order('materi_name'),
       supabase.from('lc_questions').select('id, material_id, difficulty'),
     ]);
     setSessions(s ?? []); setMaterials(m ?? []); setQuestions(q ?? []);
@@ -927,20 +1066,14 @@ function SessionsPage({ user }: { user: User }) {
     if (!form.material_id) return alert('Pilih materi!');
     const mat = materials.find(m => m.id === form.material_id);
     const pool = questions.filter(q => q.material_id === form.material_id);
-    if (pool.length < form.question_count) return alert(`Hanya ada ${pool.length} soal untuk materi ini. Kurangi jumlah soal atau generate lebih banyak.`);
+    if (pool.length < form.question_count) return alert(`Hanya ada ${pool.length} soal. Kurangi jumlah soal atau generate lebih banyak.`);
     const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, form.question_count);
     setSaving(true);
     const { error } = await supabase.from('lc_quiz_sessions').insert([{
-      session_name: form.session_name,
-      material_id: form.material_id,
-      materi_name: mat?.materi_name ?? '',
-      question_ids: shuffled.map(q => q.id),
-      question_count: form.question_count,
-      timer_minutes: form.timer_minutes || null,
-      passing_grade: form.passing_grade,
-      allow_retake: form.allow_retake,
-      is_active: true,
-      created_by: user.id,
+      session_name: form.session_name, material_id: form.material_id, materi_name: mat?.materi_name ?? '',
+      question_ids: shuffled.map(q => q.id), question_count: form.question_count,
+      timer_minutes: form.timer_minutes || null, passing_grade: form.passing_grade,
+      allow_retake: form.allow_retake, is_active: true, created_by: user.id,
       scheduled_at: form.scheduled_at ? new Date(form.scheduled_at).toISOString() : null,
     }]);
     setSaving(false);
@@ -988,9 +1121,7 @@ function SessionsPage({ user }: { user: User }) {
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
                   <option value="">-- Pilih Materi --</option>
                   {materials.map(m => (
-                    <option key={m.id} value={m.id}>
-                      {m.materi_name} ({questions.filter(q => q.material_id === m.id).length} soal)
-                    </option>
+                    <option key={m.id} value={m.id}>{m.materi_name} ({questions.filter(q => q.material_id === m.id).length} soal)</option>
                   ))}
                 </select>
               </div>
@@ -1032,9 +1163,7 @@ function SessionsPage({ user }: { user: User }) {
                 {saving ? 'Membuat...' : '🎯 Buat Sesi Quiz'}
               </button>
               <button onClick={() => setShowForm(false)}
-                className="px-5 py-2.5 bg-slate-100 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-all">
-                Batal
-              </button>
+                className="px-5 py-2.5 bg-slate-100 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-all">Batal</button>
             </div>
           </div>
         )}
@@ -1088,18 +1217,21 @@ function SessionsPage({ user }: { user: User }) {
 function TeamPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [attempts, setAttempts] = useState<QuizAttempt[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      const [{ data: u }, { data: a }] = await Promise.all([
-        supabase.from('users').select('id, full_name, username, role, jabatan, sales_division').order('full_name'),
-        supabase.from('lc_quiz_attempts').select('*').eq('is_submitted', true),
-      ]);
-      setUsers((u ?? []).filter((u: any) => u.role !== 'guest'));
-      setAttempts(a ?? []);
-    };
-    load();
+  const load = useCallback(async () => {
+    const [{ data: u }, { data: a }] = await Promise.all([
+      supabase.from('users').select('id, full_name, username, role, jabatan, sales_division').order('full_name'),
+      supabase.from('lc_quiz_attempts').select('*').eq('is_submitted', true),
+    ]);
+    setUsers((u ?? []).filter((u: any) => u.role !== 'guest'));
+    setAttempts(a ?? []);
   }, []);
+  useEffect(() => { load(); }, [load]);
+
+  if (selectedUser) {
+    return <UserAnswerReview user={selectedUser} onBack={() => setSelectedUser(null)} isAdminView={true} />;
+  }
 
   return (
     <div>
@@ -1114,6 +1246,7 @@ function TeamPage() {
                 <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Quiz Diikuti</th>
                 <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Rata-rata Skor</th>
                 <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Pass Rate</th>
+                <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Detail</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -1144,6 +1277,14 @@ function TeamPage() {
                     <td className="px-5 py-3.5 text-center">
                       {ua.length ? <span className="text-xs font-bold text-indigo-600">{Math.round(passed/ua.length*100)}%</span> : <span className="text-slate-300">—</span>}
                     </td>
+                    <td className="px-5 py-3.5 text-center">
+                      {ua.length > 0 && (
+                        <button onClick={() => setSelectedUser(u)}
+                          className="px-3 py-1 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all">
+                          👁️ Lihat Jawaban
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
@@ -1155,36 +1296,206 @@ function TeamPage() {
   );
 }
 
-// ─── ADMIN: Report ────────────────────────────────────────────────────────────
+// ─── Answer Review Component ──────────────────────────────────────────────────
+// Admin bisa lihat jawaban siapapun, Team hanya bisa lihat punya sendiri
 
-function ReportPage() {
-  const [data, setData] = useState<any[]>([]);
-  const [sessions, setSessions] = useState<QuizSession[]>([]);
-  const [selectedSession, setSelectedSession] = useState('');
+function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: () => void; isAdminView: boolean }) {
+  const [attempts, setAttempts] = useState<any[]>([]);
+  const [selectedAttempt, setSelectedAttempt] = useState<any | null>(null);
+  const [answerDetails, setAnswerDetails] = useState<any[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   useEffect(() => {
     const load = async () => {
-      const { data: s } = await supabase.from('lc_quiz_sessions').select('*').order('created_at', { ascending: false });
-      setSessions(s ?? []);
+      const { data } = await supabase
+        .from('lc_quiz_attempts')
+        .select('*, lc_quiz_sessions(session_name, passing_grade, materi_name, question_ids)')
+        .eq('user_id', user.id)
+        .eq('is_submitted', true)
+        .order('submitted_at', { ascending: false });
+      setAttempts(data ?? []);
     };
     load();
+  }, [user.id]);
+
+  const handleViewDetail = async (attempt: any) => {
+    setSelectedAttempt(attempt);
+    setLoadingDetail(true);
+    const questionIds: string[] = attempt.lc_quiz_sessions?.question_ids ?? [];
+
+    const [{ data: ans }, { data: qs }] = await Promise.all([
+      supabase.from('lc_answers').select('*').eq('attempt_id', attempt.id),
+      questionIds.length > 0
+        ? supabase.from('lc_questions').select('*').in('id', questionIds)
+        : Promise.resolve({ data: [] }),
+    ]);
+
+    const orderedQs = questionIds.map((id: string) => (qs ?? []).find((q: any) => q.id === id)).filter(Boolean) as Question[];
+    setQuestions(orderedQs);
+    setAnswerDetails(ans ?? []);
+    setLoadingDetail(false);
+  };
+
+  const getAnswerFor = (questionId: string) => answerDetails.find(a => a.question_id === questionId);
+
+  if (selectedAttempt) {
+    return (
+      <div>
+        <PageHeader
+          title={`📋 Review Jawaban — ${user.full_name}`}
+          subtitle={selectedAttempt.lc_quiz_sessions?.session_name}
+          action={
+            <button onClick={() => setSelectedAttempt(null)}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all flex items-center gap-2">
+              ← Kembali
+            </button>
+          }
+        />
+        <div className="p-8">
+          {/* Score summary */}
+          <div className="grid grid-cols-4 gap-4 mb-8">
+            {[
+              { label: 'Skor', value: selectedAttempt.score?.toFixed(0) ?? '—', color: (selectedAttempt.score ?? 0) >= (selectedAttempt.lc_quiz_sessions?.passing_grade ?? 70) ? 'from-emerald-500 to-emerald-600' : 'from-rose-500 to-rose-600' },
+              { label: 'Benar', value: `${selectedAttempt.total_correct}/${selectedAttempt.total_questions}`, color: 'from-blue-500 to-blue-600' },
+              { label: 'Status', value: selectedAttempt.passed ? 'LULUS' : 'TIDAK LULUS', color: selectedAttempt.passed ? 'from-emerald-500 to-emerald-600' : 'from-rose-500 to-rose-600' },
+              { label: 'Waktu', value: selectedAttempt.time_taken_sec ? `${Math.floor(selectedAttempt.time_taken_sec/60)}m ${selectedAttempt.time_taken_sec%60}s` : '—', color: 'from-indigo-500 to-indigo-600' },
+            ].map(c => (
+              <div key={c.label} className={`bg-gradient-to-br ${c.color} rounded-2xl p-4 text-white shadow-lg text-center`}>
+                <div className="text-2xl font-black">{c.value}</div>
+                <div className="text-white/80 text-xs font-medium mt-1">{c.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {loadingDetail ? (
+            <div className="text-center py-10 text-slate-400">Memuat detail jawaban...</div>
+          ) : (
+            <div className="space-y-4">
+              {questions.map((q, idx) => {
+                const ans = getAnswerFor(q.id);
+                const userAnswer = ans?.answer ?? null;
+                const isCorrect = userAnswer === q.correct_answer;
+                const notAnswered = !userAnswer;
+                return (
+                  <div key={q.id} className={`rounded-2xl border-2 shadow-sm p-5 ${notAnswered ? 'border-slate-200' : isCorrect ? 'border-emerald-300 bg-emerald-50/30' : 'border-rose-300 bg-rose-50/30'}`}
+                    style={{background: notAnswered ? 'rgba(255,255,255,0.90)' : undefined, backdropFilter:'blur(8px)'}}>
+                    <div className="flex items-start gap-3 mb-3">
+                      <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 text-white ${notAnswered ? 'bg-slate-400' : isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+                        {notAnswered ? '—' : isCorrect ? '✓' : '✗'}
+                      </span>
+                      <div className="flex-1">
+                        <p className="text-xs font-bold text-slate-500 mb-1">Soal {idx+1} · <span className={`${DIFF_COLOR[q.difficulty].split(' ')[1]}`}>{q.difficulty}</span></p>
+                        <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 ml-10">
+                      {(['A','B','C','D'] as const).map(opt => {
+                        const optVal = (q as any)[`option_${opt.toLowerCase()}`];
+                        const isUserChoice = userAnswer === opt;
+                        const isCorrectOpt = q.correct_answer === opt;
+                        let style = 'bg-white border-slate-200 text-slate-600';
+                        if (isCorrectOpt) style = 'bg-emerald-50 border-emerald-400 text-emerald-800 font-bold';
+                        if (isUserChoice && !isCorrectOpt) style = 'bg-rose-50 border-rose-400 text-rose-800 font-bold';
+                        return (
+                          <div key={opt} className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs transition-all ${style}`}>
+                            <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-black flex-shrink-0 ${isCorrectOpt ? 'bg-emerald-500 text-white' : isUserChoice ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-600'}`}>{opt}</span>
+                            <span className="flex-1">{optVal}</span>
+                            {isCorrectOpt && <span className="text-emerald-600 font-bold">✓ Benar</span>}
+                            {isUserChoice && !isCorrectOpt && <span className="text-rose-600 font-bold">← Pilihan</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {notAnswered && <p className="ml-10 mt-2 text-xs text-slate-400 italic">Tidak dijawab</p>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <PageHeader
+        title={isAdminView ? `👁️ Jawaban — ${user.full_name}` : '📋 Lihat Jawaban Saya'}
+        subtitle="Pilih quiz untuk melihat detail jawaban"
+        action={
+          <button onClick={onBack}
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all flex items-center gap-2">
+            ← Kembali
+          </button>
+        }
+      />
+      <div className="p-8 space-y-4">
+        {attempts.length === 0 && (
+          <div className="text-center py-16 text-slate-400">
+            <div className="text-5xl mb-3">📋</div>
+            <p className="font-semibold">Belum ada quiz yang diselesaikan</p>
+          </div>
+        )}
+        {attempts.map(a => (
+          <div key={a.id} className="rounded-2xl border border-white/60 shadow-sm p-5 flex items-center gap-5"
+            style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white flex-shrink-0 ${a.passed ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-rose-400 to-rose-600'}`}>
+              {a.score?.toFixed(0) ?? '—'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="font-bold text-slate-800">{a.lc_quiz_sessions?.session_name ?? '-'}</h4>
+              <p className="text-sm text-slate-500">{a.lc_quiz_sessions?.materi_name ?? '-'}</p>
+              <div className="flex gap-3 mt-1 text-xs text-slate-400">
+                <span>✅ {a.total_correct}/{a.total_questions} benar</span>
+                <span>🎯 Passing: {a.lc_quiz_sessions?.passing_grade ?? 70}%</span>
+                {a.time_taken_sec && <span>⏱️ {Math.floor(a.time_taken_sec/60)}m {a.time_taken_sec%60}s</span>}
+                <span>📅 {a.submitted_at ? fmtDate(a.submitted_at) : ''}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <span className={`text-xs font-bold px-2 py-1 rounded-full border ${a.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
+                {a.passed ? '✅ LULUS' : '❌ TIDAK LULUS'}
+              </span>
+              <button onClick={() => handleViewDetail(a)}
+                className="px-3 py-1.5 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all flex items-center gap-1.5">
+                👁️ Detail Jawaban
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── ADMIN: Report ────────────────────────────────────────────────────────────
+
+function ReportPage({ currentUser }: { currentUser: User }) {
+  const [data, setData] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<QuizSession[]>([]);
+  const [selectedSession, setSelectedSession] = useState('');
+  const [viewingUser, setViewingUser] = useState<{ user: User; attemptId: string } | null>(null);
+
+  useEffect(() => {
+    supabase.from('lc_quiz_sessions').select('*').order('created_at', { ascending: false })
+      .then(({ data: s }) => setSessions(s ?? []));
   }, []);
 
   useEffect(() => {
     if (!selectedSession) { setData([]); return; }
-    const load = async () => {
-      const { data: a } = await supabase
-        .from('lc_quiz_attempts')
-        .select('*, users(full_name, username, jabatan)')
-        .eq('quiz_session_id', selectedSession)
-        .eq('is_submitted', true)
-        .order('score', { ascending: false });
-      setData(a ?? []);
-    };
-    load();
+    supabase.from('lc_quiz_attempts')
+      .select('*, users(id, full_name, username, jabatan, role)')
+      .eq('quiz_session_id', selectedSession).eq('is_submitted', true)
+      .order('score', { ascending: false })
+      .then(({ data: a }) => setData(a ?? []));
   }, [selectedSession]);
 
   const session = sessions.find(s => s.id === selectedSession);
+
+  if (viewingUser) {
+    return <UserAnswerReview user={viewingUser.user} onBack={() => setViewingUser(null)} isAdminView={true} />;
+  }
 
   return (
     <div>
@@ -1206,7 +1517,7 @@ function ReportPage() {
                 { label: 'Peserta', value: data.length },
                 { label: 'Rata-rata', value: (data.reduce((s: number, a: any) => s+(a.score??0),0)/data.length).toFixed(1) },
                 { label: 'Lulus', value: data.filter((a: any) => a.passed).length },
-                { label: 'Pass Rate', value: `${Math.round(data.filter((a: any) =>a.passed).length/data.length*100)}%` },
+                { label: 'Pass Rate', value: `${Math.round(data.filter((a: any) => a.passed).length/data.length*100)}%` },
               ].map(c => (
                 <div key={c.label} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm text-center">
                   <div className="text-2xl font-black text-slate-800">{c.value}</div>
@@ -1214,6 +1525,7 @@ function ReportPage() {
                 </div>
               ))}
             </div>
+
             <div className="rounded-2xl border border-white/60 shadow-sm overflow-hidden" style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
               <table className="w-full text-sm">
                 <thead className="border-b border-slate-200" style={{background:"rgba(248,250,252,0.95)"}}>
@@ -1225,6 +1537,7 @@ function ReportPage() {
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Status</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Waktu</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Tanggal</th>
+                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Detail</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1245,6 +1558,15 @@ function ReportPage() {
                       </td>
                       <td className="px-5 py-3.5 text-center text-slate-500 text-xs">{a.time_taken_sec ? `${Math.floor(a.time_taken_sec/60)}m ${a.time_taken_sec%60}s` : '—'}</td>
                       <td className="px-5 py-3.5 text-center text-slate-400 text-xs">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</td>
+                      <td className="px-5 py-3.5 text-center">
+                        {a.users && (
+                          <button
+                            onClick={() => setViewingUser({ user: a.users as User, attemptId: a.id })}
+                            className="px-2 py-1 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all">
+                            👁️ Jawaban
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1272,11 +1594,7 @@ function AnalyticsPage() {
 
   useEffect(() => {
     const load = async () => {
-      const { data: a } = await supabase
-        .from('lc_quiz_attempts')
-        .select('user_id, score, passed, users(full_name)')
-        .eq('is_submitted', true);
-
+      const { data: a } = await supabase.from('lc_quiz_attempts').select('user_id, score, passed, users(full_name)').eq('is_submitted', true);
       if (a) {
         const byUser: Record<string, { name: string; scores: number[]; passed: number }> = {};
         a.forEach((att: any) => {
@@ -1287,15 +1605,13 @@ function AnalyticsPage() {
         const top = Object.entries(byUser).map(([uid, v]) => ({
           uid, name: v.name,
           avg: v.scores.reduce((s: number, n: number) => s + n, 0) / v.scores.length,
-          total: v.scores.length,
-          passed: v.passed,
+          total: v.scores.length, passed: v.passed,
         })).sort((a, b) => b.avg - a.avg).slice(0, 10);
         setTopUsers(top);
       }
-
-      const { data: sessions } = await supabase.from('lc_quiz_sessions').select('id, session_name');
-      if (sessions) {
-        const stats = await Promise.all(sessions.map(async (s: any) => {
+      const { data: ss } = await supabase.from('lc_quiz_sessions').select('id, session_name');
+      if (ss) {
+        const stats = await Promise.all(ss.map(async (s: any) => {
           const { data: att, count } = await supabase.from('lc_quiz_attempts').select('score, passed', { count: 'exact' }).eq('quiz_session_id', s.id).eq('is_submitted', true);
           const avg = att?.length ? att.reduce((sum: number, a: any) => sum + (a.score ?? 0), 0) / att.length : 0;
           const passed = att?.filter((a: any) => a.passed).length ?? 0;
@@ -1379,9 +1695,7 @@ function MyQuizPage({ user }: { user: User }) {
   const load = useCallback(async () => {
     const { data: s } = await supabase.from('lc_quiz_sessions').select('*').eq('is_active', true).order('created_at', { ascending: false });
     setSessions(s ?? []);
-
-    const { data: a } = await supabase.from('lc_quiz_attempts')
-      .select('*').eq('user_id', user.id).eq('is_submitted', false);
+    const { data: a } = await supabase.from('lc_quiz_attempts').select('*').eq('user_id', user.id).eq('is_submitted', false);
     const map: Record<string, QuizAttempt> = {};
     (a ?? []).forEach((att: any) => { map[att.quiz_session_id] = att; });
     setActiveAttempts(map);
@@ -1389,22 +1703,14 @@ function MyQuizPage({ user }: { user: User }) {
   useEffect(() => { load(); }, [load]);
 
   const handleStart = async (session: QuizSession) => {
-    if (activeAttempts[session.id]) {
-      setPlayingSession(session);
-      return;
-    }
+    if (activeAttempts[session.id]) { setPlayingSession(session); return; }
     if (!session.allow_retake) {
       const { data: prev } = await supabase.from('lc_quiz_attempts')
         .select('id').eq('user_id', user.id).eq('quiz_session_id', session.id).eq('is_submitted', true);
-      if (prev && prev.length > 0) {
-        alert('Quiz ini tidak mengizinkan retake. Kamu sudah pernah submit.');
-        return;
-      }
+      if (prev && prev.length > 0) { alert('Quiz ini tidak mengizinkan retake. Kamu sudah pernah submit.'); return; }
     }
     const { data: att, error } = await supabase.from('lc_quiz_attempts').insert([{
-      user_id: user.id,
-      quiz_session_id: session.id,
-      total_questions: session.question_count,
+      user_id: user.id, quiz_session_id: session.id, total_questions: session.question_count,
     }]).select().single();
     if (error || !att) return alert('Gagal memulai quiz: ' + error?.message);
     await load();
@@ -1431,7 +1737,8 @@ function MyQuizPage({ user }: { user: User }) {
         {sessions.map(s => {
           const inProgress = activeAttempts[s.id];
           return (
-            <div key={s.id} className="rounded-2xl border border-white/60 shadow-sm p-6 flex items-start gap-5 hover:shadow-md transition-all" style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
+            <div key={s.id} className="rounded-2xl border border-white/60 shadow-sm p-6 flex items-start gap-5 hover:shadow-md transition-all"
+              style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-2xl flex-shrink-0">🎯</div>
               <div className="flex-1 min-w-0">
                 <h4 className="font-bold text-slate-800 text-lg">{s.session_name}</h4>
@@ -1465,10 +1772,7 @@ function MyQuizPage({ user }: { user: User }) {
 // ─── Quiz Player ──────────────────────────────────────────────────────────────
 
 function QuizPlayer({ session, user, attempt, onDone }: {
-  session: QuizSession;
-  user: User;
-  attempt: QuizAttempt;
-  onDone: () => void;
+  session: QuizSession; user: User; attempt: QuizAttempt; onDone: () => void;
 }) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -1478,6 +1782,7 @@ function QuizPlayer({ session, user, attempt, onDone }: {
   const [result, setResult] = useState<{ score: number; correct: number; passed: boolean } | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(session.timer_minutes ? session.timer_minutes * 60 : null);
   const [tabSwitches, setTabSwitches] = useState(0);
+  const [showReview, setShowReview] = useState(false);
   const startTime = useRef(Date.now());
 
   useEffect(() => {
@@ -1529,12 +1834,8 @@ function QuizPlayer({ session, user, attempt, onDone }: {
     } else {
       const q = questions.find(q => q.id === questionId);
       await supabase.from('lc_answers').insert([{
-        attempt_id: attempt.id,
-        user_id: user.id,
-        quiz_session_id: session.id,
-        question_id: questionId,
-        answer,
-        is_correct: q?.correct_answer === answer,
+        attempt_id: attempt.id, user_id: user.id, quiz_session_id: session.id,
+        question_id: questionId, answer, is_correct: q?.correct_answer === answer,
       }]);
       setSavedAnswers(p => ({ ...p, [questionId]: answer }));
     }
@@ -1551,15 +1852,13 @@ function QuizPlayer({ session, user, attempt, onDone }: {
     await Promise.all(questions.map(q => {
       const ans = answers[q.id] ?? savedAnswers[q.id];
       if (!ans) return;
-      return supabase.from('lc_answers')
-        .update({ is_correct: ans === q.correct_answer })
+      return supabase.from('lc_answers').update({ is_correct: ans === q.correct_answer })
         .eq('attempt_id', attempt.id).eq('question_id', q.id);
     }));
 
     await supabase.from('lc_quiz_attempts').update({
-      submitted_at: new Date().toISOString(),
-      score, total_correct: correct, total_questions: questions.length,
-      passed, is_submitted: true, time_taken_sec: timeTaken,
+      submitted_at: new Date().toISOString(), score, total_correct: correct,
+      total_questions: questions.length, passed, is_submitted: true, time_taken_sec: timeTaken,
     }).eq('id', attempt.id);
 
     setResult({ score, correct, passed });
@@ -1568,7 +1867,63 @@ function QuizPlayer({ session, user, attempt, onDone }: {
 
   const fmtTimer = (s: number) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
 
+  // Result screen with review option
   if (submitted && result) {
+    if (showReview) {
+      return (
+        <div className="flex h-full flex-col overflow-y-auto">
+          <div className="sticky top-0 z-10 flex items-center justify-between px-8 py-4 bg-white border-b border-slate-200">
+            <div>
+              <h2 className="font-bold text-slate-800">📋 Review Jawaban</h2>
+              <p className="text-xs text-slate-500">{session.session_name} · Skor {result.score.toFixed(0)}</p>
+            </div>
+            <button onClick={() => setShowReview(false)}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all">
+              ← Kembali ke Hasil
+            </button>
+          </div>
+          <div className="p-8 space-y-4">
+            {questions.map((q, idx) => {
+              const userAnswer = answers[q.id] ?? savedAnswers[q.id] ?? null;
+              const isCorrect = userAnswer === q.correct_answer;
+              const notAnswered = !userAnswer;
+              return (
+                <div key={q.id} className={`rounded-2xl border-2 p-5 ${notAnswered ? 'border-slate-200 bg-white' : isCorrect ? 'border-emerald-300 bg-emerald-50/30' : 'border-rose-300 bg-rose-50/30'}`}>
+                  <div className="flex items-start gap-3 mb-3">
+                    <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 text-white ${notAnswered ? 'bg-slate-400' : isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+                      {notAnswered ? '—' : isCorrect ? '✓' : '✗'}
+                    </span>
+                    <div className="flex-1">
+                      <p className="text-xs font-bold text-slate-500 mb-1">Soal {idx+1}</p>
+                      <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 ml-10">
+                    {(['A','B','C','D'] as const).map(opt => {
+                      const optVal = (q as any)[`option_${opt.toLowerCase()}`];
+                      const isUserChoice = userAnswer === opt;
+                      const isCorrectOpt = q.correct_answer === opt;
+                      let style = 'bg-white border-slate-200 text-slate-600';
+                      if (isCorrectOpt) style = 'bg-emerald-50 border-emerald-400 text-emerald-800 font-bold';
+                      if (isUserChoice && !isCorrectOpt) style = 'bg-rose-50 border-rose-400 text-rose-800 font-bold';
+                      return (
+                        <div key={opt} className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs ${style}`}>
+                          <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-black flex-shrink-0 ${isCorrectOpt ? 'bg-emerald-500 text-white' : isUserChoice ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-600'}`}>{opt}</span>
+                          <span className="flex-1">{optVal}</span>
+                          {isCorrectOpt && <span className="text-emerald-600">✓</span>}
+                          {isUserChoice && !isCorrectOpt && <span className="text-rose-600">←</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex items-center justify-center h-full p-8">
         <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-10 max-w-md w-full text-center">
@@ -1576,11 +1931,17 @@ function QuizPlayer({ session, user, attempt, onDone }: {
           <h2 className="text-2xl font-black text-slate-800 mb-1">{result.passed ? 'Selamat, Lulus!' : 'Belum Lulus'}</h2>
           <p className="text-slate-500 text-sm mb-6">{session.session_name}</p>
           <div className={`text-6xl font-black mb-2 ${result.passed ? 'text-emerald-500' : 'text-rose-500'}`}>{result.score.toFixed(0)}</div>
-          <p className="text-slate-500 text-sm mb-6">Benar {result.correct} dari {questions.length} soal · Passing {session.passing_grade}%</p>
-          <button onClick={onDone}
-            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition-all">
-            Kembali ke Daftar Quiz
-          </button>
+          <p className="text-slate-500 text-sm mb-8">Benar {result.correct} dari {questions.length} soal · Passing {session.passing_grade}%</p>
+          <div className="flex gap-3 justify-center">
+            <button onClick={() => setShowReview(true)}
+              className="px-5 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold rounded-xl shadow transition-all">
+              📋 Review Jawaban
+            </button>
+            <button onClick={onDone}
+              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition-all">
+              Selesai
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1595,9 +1956,7 @@ function QuizPlayer({ session, user, attempt, onDone }: {
 
   return (
     <div className="flex h-full">
-      {/* Question panel */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between px-8 py-4 bg-white border-b border-slate-200 sticky top-0 z-10">
           <div>
             <h2 className="font-bold text-slate-800">{session.session_name}</h2>
@@ -1616,7 +1975,6 @@ function QuizPlayer({ session, user, attempt, onDone }: {
           </div>
         </div>
 
-        {/* Question */}
         <div className="flex-1 overflow-y-auto p-8">
           <div className="max-w-2xl mx-auto">
             <div className="mb-6">
@@ -1692,19 +2050,19 @@ function QuizPlayer({ session, user, attempt, onDone }: {
 
 function HistoryPage({ user }: { user: User }) {
   const [history, setHistory] = useState<any[]>([]);
+  const [viewingAttempt, setViewingAttempt] = useState<any | null>(null);
 
   useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
-        .from('lc_quiz_attempts')
-        .select('*, lc_quiz_sessions(session_name, passing_grade, materi_name)')
-        .eq('user_id', user.id)
-        .eq('is_submitted', true)
-        .order('submitted_at', { ascending: false });
-      setHistory(data ?? []);
-    };
-    load();
+    supabase.from('lc_quiz_attempts')
+      .select('*, lc_quiz_sessions(session_name, passing_grade, materi_name, question_ids)')
+      .eq('user_id', user.id).eq('is_submitted', true)
+      .order('submitted_at', { ascending: false })
+      .then(({ data }) => setHistory(data ?? []));
   }, [user.id]);
+
+  if (viewingAttempt) {
+    return <UserAnswerReview user={user} onBack={() => setViewingAttempt(null)} isAdminView={false} />;
+  }
 
   return (
     <div>
@@ -1718,7 +2076,8 @@ function HistoryPage({ user }: { user: User }) {
             </div>
           )}
           {history.map(a => (
-            <div key={a.id} className="rounded-2xl border border-white/60 shadow-sm p-5 flex items-center gap-5" style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
+            <div key={a.id} className="rounded-2xl border border-white/60 shadow-sm p-5 flex items-center gap-5"
+              style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white flex-shrink-0 ${a.passed ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-rose-400 to-rose-600'}`}>
                 {a.score?.toFixed(0) ?? '—'}
               </div>
@@ -1731,11 +2090,17 @@ function HistoryPage({ user }: { user: User }) {
                   {a.time_taken_sec && <span>⏱️ {Math.floor(a.time_taken_sec/60)}m {a.time_taken_sec%60}s</span>}
                 </div>
               </div>
-              <div className="text-right flex-shrink-0">
-                <span className={`text-xs font-bold px-2 py-1 rounded-full border ${a.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
-                  {a.passed ? '✅ LULUS' : '❌ TIDAK LULUS'}
-                </span>
-                <p className="text-xs text-slate-400 mt-1.5">{a.submitted_at ? fmtDate(a.submitted_at) : ''}</p>
+              <div className="text-right flex-shrink-0 flex items-center gap-3">
+                <div>
+                  <span className={`text-xs font-bold px-2 py-1 rounded-full border ${a.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
+                    {a.passed ? '✅ LULUS' : '❌ TIDAK LULUS'}
+                  </span>
+                  <p className="text-xs text-slate-400 mt-1.5">{a.submitted_at ? fmtDate(a.submitted_at) : ''}</p>
+                </div>
+                <button onClick={() => setViewingAttempt(a)}
+                  className="px-3 py-1.5 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all flex items-center gap-1.5">
+                  📋 Lihat Jawaban
+                </button>
               </div>
             </div>
           ))}
@@ -1749,20 +2114,21 @@ function HistoryPage({ user }: { user: User }) {
 
 function ScorePage({ user }: { user: User }) {
   const [attempts, setAttempts] = useState<any[]>([]);
+  const [viewingAttempt, setViewingAttempt] = useState<any | null>(null);
 
   useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
-        .from('lc_quiz_attempts')
-        .select('*, lc_quiz_sessions(session_name, passing_grade)')
-        .eq('user_id', user.id).eq('is_submitted', true);
-      setAttempts(data ?? []);
-    };
-    load();
+    supabase.from('lc_quiz_attempts')
+      .select('*, lc_quiz_sessions(session_name, passing_grade, materi_name, question_ids)')
+      .eq('user_id', user.id).eq('is_submitted', true)
+      .then(({ data }) => setAttempts(data ?? []));
   }, [user.id]);
 
   const avg = attempts.length ? attempts.reduce((s: number, a: any) => s + (a.score ?? 0), 0) / attempts.length : 0;
   const passed = attempts.filter((a: any) => a.passed).length;
+
+  if (viewingAttempt) {
+    return <UserAnswerReview user={user} onBack={() => setViewingAttempt(null)} isAdminView={false} />;
+  }
 
   return (
     <div>
@@ -1794,11 +2160,12 @@ function ScorePage({ user }: { user: User }) {
                 <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Benar</th>
                 <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Status</th>
                 <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Tanggal</th>
+                <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Detail</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {attempts.length === 0 && (
-                <tr><td colSpan={5} className="text-center py-10 text-slate-400">Belum ada quiz yang diselesaikan</td></tr>
+                <tr><td colSpan={6} className="text-center py-10 text-slate-400">Belum ada quiz yang diselesaikan</td></tr>
               )}
               {attempts.map(a => (
                 <tr key={a.id} className="hover:bg-slate-50">
@@ -1811,6 +2178,12 @@ function ScorePage({ user }: { user: User }) {
                     </span>
                   </td>
                   <td className="px-5 py-3.5 text-center text-slate-400 text-xs">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</td>
+                  <td className="px-5 py-3.5 text-center">
+                    <button onClick={() => setViewingAttempt(a)}
+                      className="px-2 py-1 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all">
+                      📋 Review
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
