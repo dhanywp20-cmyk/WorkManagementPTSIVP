@@ -1479,7 +1479,7 @@ function ReportPage({ currentUser }: { currentUser: User }) {
 
   useEffect(() => {
     supabase.from('lc_quiz_sessions').select('*').order('created_at', { ascending: false })
-      .then(({ data: s }) => setSessions(s ?? []));
+      .then(({ data: s }: { data: QuizSession[] | null }) => setSessions(s ?? []));
   }, []);
 
   useEffect(() => {
@@ -1488,7 +1488,7 @@ function ReportPage({ currentUser }: { currentUser: User }) {
       .select('*, users(id, full_name, username, jabatan, role)')
       .eq('quiz_session_id', selectedSession).eq('is_submitted', true)
       .order('score', { ascending: false })
-      .then(({ data: a }) => setData(a ?? []));
+      .then(({ data: a }: { data: any[] | null }) => setData(a ?? []));
   }, [selectedSession]);
 
   const session = sessions.find(s => s.id === selectedSession);
