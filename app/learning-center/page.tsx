@@ -464,32 +464,42 @@ function FolderTreeView({
   if (!hasMaterials && !hasFolders) return null;
 
   return (
-    <div className={depth > 0 ? 'ml-5 border-l-2 border-slate-200 pl-4 mt-1' : ''}>
-      {/* Subfolders */}
+    <div className={depth > 0 ? 'ml-6 border-l-2 border-slate-200 pl-3 mt-0.5' : ''}>
+      {/* Subfolders — Windows Explorer style */}
       {folderKeys.map(key => {
         const child = node.children[key];
         const isOpen = expandedPaths.has(child.path);
         const totalInside = countMaterials(child);
         return (
-          <div key={child.path} className="mb-1">
+          <div key={child.path} className="mb-0.5">
             <button
               onClick={() => togglePath(child.path)}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-blue-50 transition-all group text-left"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 active:bg-blue-100 transition-all text-left border border-transparent hover:border-blue-200"
+              style={{background:'rgba(255,255,255,0.96)'}}
             >
-              <span className="text-base">{isOpen ? '📂' : '📁'}</span>
-              <span className="flex-1 font-semibold text-slate-700 text-sm">{child.name}</span>
-              <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{totalInside} materi</span>
-              <span className="text-slate-400 text-xs ml-1">{isOpen ? '▾' : '▸'}</span>
+              {/* Chevron */}
+              <svg className={`w-3.5 h-3.5 text-slate-400 flex-shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+              </svg>
+              {/* Folder icon - yellow like Windows */}
+              <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill={isOpen ? '#FCD34D' : '#FBBF24'} />
+                <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill="none" stroke="#D97706" strokeWidth="1"/>
+              </svg>
+              <span className="flex-1 font-semibold text-slate-800 text-sm select-none">{child.name}</span>
+              <span className="text-[11px] text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full flex-shrink-0">{totalInside} item</span>
             </button>
             {isOpen && (
-              <FolderTreeView
-                node={child}
-                depth={depth + 1}
-                isAdmin={isAdmin}
-                onDelete={onDelete}
-                expandedPaths={expandedPaths}
-                togglePath={togglePath}
-              />
+              <div className="mt-0.5">
+                <FolderTreeView
+                  node={child}
+                  depth={depth + 1}
+                  isAdmin={isAdmin}
+                  onDelete={onDelete}
+                  expandedPaths={expandedPaths}
+                  togglePath={togglePath}
+                />
+              </div>
             )}
           </div>
         );
@@ -511,37 +521,40 @@ function countMaterials(node: FolderNode): number {
 
 function MaterialCard({ material: m, isAdmin, onDelete }: { material: Material; isAdmin: boolean; onDelete?: (id: string) => void }) {
   return (
-    <div className="rounded-2xl border border-white/60 shadow-sm p-4 flex items-start gap-4 group hover:shadow-md transition-all mb-2"
-      style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
-      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-xl flex-shrink-0">📄</div>
+    <div className="rounded-xl border border-slate-200 shadow-sm p-3.5 flex items-center gap-3 hover:shadow-md hover:border-blue-200 transition-all mb-1.5 group"
+      style={{background:'#ffffff'}}>
+      {/* File icon */}
+      <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
+        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      </div>
       <div className="flex-1 min-w-0">
-        <h4 className="font-bold text-slate-800 text-sm">{m.materi_name}</h4>
-        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-          {m.folder_path && (
-            <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">📁 {m.folder_path}</span>
-          )}
+        <h4 className="font-semibold text-slate-800 text-sm truncate">{m.materi_name}</h4>
+        <div className="flex items-center gap-2 mt-1 flex-wrap">
           {m.content_text && (
-            <span className="text-[10px] bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-semibold">✅ Teks AI tersedia</span>
+            <span className="text-[10px] bg-green-100 text-green-700 border border-green-200 px-1.5 py-0.5 rounded font-semibold">AI ✓</span>
           )}
-          <span className="text-[10px] text-slate-400">{fmtDate(m.created_at)}</span>
+          <span className="text-[11px] text-slate-400">{fmtDate(m.created_at)}</span>
         </div>
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
         {m.file_url && (
           <a href={m.file_url} target="_blank" rel="noreferrer"
-            className="inline-flex items-center gap-1.5 mt-2 text-xs text-blue-600 hover:text-blue-800 font-semibold bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1 rounded-lg transition-all">
-            ☁️ Buka di OneDrive
+            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-semibold bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-lg transition-all">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+            Buka
           </a>
         )}
-      </div>
-      {isAdmin && onDelete && (
-        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+        {isAdmin && onDelete && (
           <button onClick={() => onDelete(m.id)}
-            className="p-2 rounded-lg text-rose-500 hover:bg-rose-50 transition-all" title="Hapus">
+            className="p-1.5 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-all" title="Hapus materi">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -645,7 +658,7 @@ function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) {
       <div className="p-8">
         {/* Add Form (Admin only) */}
         {isAdmin && showForm && (
-          <div className="rounded-2xl border border-blue-100 shadow-lg p-6 mb-8" style={{background:"rgba(255,255,255,0.94)",backdropFilter:"blur(12px)"}}>
+          <div className="rounded-2xl border border-blue-100 shadow-lg p-6 mb-8" style={{background:'#ffffff'}}>
             <h3 className="font-bold text-slate-800 mb-5 flex items-center gap-2">✏️ Form Materi Baru</h3>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -767,9 +780,12 @@ function QuestionsPage({ user }: { user: User }) {
   const [generating, setGenerating] = useState(false);
   const [genStatus, setGenStatus] = useState('');
   const [editQ, setEditQ] = useState<Question | null>(null);
-  // PDF hanya untuk generate — TIDAK disimpan ke Supabase
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const pdfRef = useRef<HTMLInputElement>(null);
+
+  // Folder navigation state
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null); // null = root view
+  const [selectedSubFolder, setSelectedSubFolder] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const { data: mats } = await supabase.from('lc_materials').select('*').order('materi_name');
@@ -780,6 +796,37 @@ function QuestionsPage({ user }: { user: User }) {
     setQuestions(data ?? []);
   }, [selectedMat]);
   useEffect(() => { load(); }, [load]);
+
+  // Build folder structure from materials
+  const folderTree = buildFolderTree(materials);
+  const rootFolders = Object.keys(folderTree.children).sort();
+  const rootMaterials = folderTree.materials; // materials with no folder
+
+  // Get materials in the currently selected folder (for Bank Soal)
+  const getMaterialsInView = (): Material[] => {
+    if (selectedFolder === null) return [];
+    const folderNode = folderTree.children[selectedFolder];
+    if (!folderNode) return [];
+    if (selectedSubFolder) {
+      return folderNode.children[selectedSubFolder]?.materials ?? [];
+    }
+    // Return all materials in this folder (including subfolder materials)
+    const collect = (node: FolderNode): Material[] => {
+      let mats = [...node.materials];
+      for (const child of Object.values(node.children)) mats = mats.concat(collect(child));
+      return mats;
+    };
+    return collect(folderNode);
+  };
+
+  const viewMaterials = selectedFolder === '__root__'
+    ? rootMaterials
+    : getMaterialsInView();
+
+  const viewMaterialIds = viewMaterials.map(m => m.id);
+  const visibleQuestions = selectedFolder !== null
+    ? questions.filter(q => viewMaterialIds.includes(q.material_id))
+    : [];
 
   const handleGenerate = async () => {
     if (!selectedMat) return alert('Pilih materi terlebih dahulu!');
@@ -814,7 +861,6 @@ Kembalikan HANYA JSON array, tanpa markdown, tanpa teks lain:
 
       setGenStatus(pdfFile ? '📄 Mengirim PDF ke Gemini... (PDF tidak disimpan ke Supabase)' : '🧠 Generating soal...');
       const text = await generateWithGemini(prompt, pdfFile ?? null);
-      // PDF sudah digunakan Gemini — tidak perlu simpan ke Supabase
 
       setGenStatus('⚙️ Memproses hasil...');
       const jsonStr = text.replace(/```json|```/g, '').trim();
@@ -839,7 +885,6 @@ Kembalikan HANYA JSON array, tanpa markdown, tanpa teks lain:
       const { error } = await supabase.from('lc_questions').insert(rows);
       if (error) throw error;
 
-      // Hapus PDF dari state setelah generate berhasil
       setPdfFile(null);
       if (pdfRef.current) pdfRef.current.value = '';
 
@@ -871,34 +916,190 @@ Kembalikan HANYA JSON array, tanpa markdown, tanpa teks lain:
     load();
   };
 
+  // ── Breadcrumb back navigation
+  const goBack = () => {
+    if (selectedSubFolder) { setSelectedSubFolder(null); return; }
+    setSelectedFolder(null);
+    setSelectedMat('');
+  };
+
+  // ── ROOT VIEW — show folders like Windows Explorer
+  if (selectedFolder === null) {
+    const totalQuestions = questions.length;
+    return (
+      <div>
+        <PageHeader title="🧩 Bank Soal" subtitle={`${totalQuestions} total soal — pilih folder untuk kelola`}
+          action={
+            <button onClick={() => setShowGenerate(true)}
+              className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
+              ✨ Generate AI
+            </button>
+          }
+        />
+        <div className="p-8 space-y-6">
+          {/* Generate panel (accessible from root too) */}
+          {showGenerate && (
+            <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl border border-violet-200 p-6">
+              <h3 className="font-bold text-violet-800 mb-1 flex items-center gap-2">✨ Generate Soal dengan Gemini AI</h3>
+              <p className="text-xs text-violet-500 mb-1">Upload PDF langsung — Gemini membaca isi PDF secara otomatis</p>
+              <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5 mb-4 font-medium">
+                ✅ PDF hanya digunakan untuk generate — <strong>tidak disimpan ke Supabase</strong>. Soal & jawaban yang digenerate akan tersimpan.
+              </p>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
+                  <select value={selectedMat} onChange={e => setSelectedMat(e.target.value)}
+                    className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
+                    <option value="">-- Pilih Materi --</option>
+                    {materials.map(m => <option key={m.id} value={m.id}>{m.materi_name}{m.content_text ? ' ✅' : ''}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Jumlah Soal</label>
+                  <input type="number" min={1} max={100} value={genCount} onChange={e => setGenCount(+e.target.value)}
+                    className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
+                  <select value={genDiff} onChange={e => setGenDiff(e.target.value as any)}
+                    className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
+                    <option value="mixed">Mixed (Campuran)</option>
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                    Upload PDF Materi
+                    <span className="ml-1 text-[10px] font-normal text-violet-500 normal-case tracking-normal">(sementara, tidak disimpan)</span>
+                  </label>
+                  <input ref={pdfRef} type="file" accept=".pdf" onChange={e => setPdfFile(e.target.files?.[0] ?? null)} className="hidden" />
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => pdfRef.current?.click()}
+                      className="px-3 py-2 bg-white border border-violet-200 hover:bg-violet-50 text-violet-700 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5">
+                      📄 Pilih PDF
+                    </button>
+                    {pdfFile
+                      ? <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg">✅ {pdfFile.name}</span>
+                      : <span className="text-xs text-slate-400">atau gunakan teks dari materi ✅</span>}
+                    {pdfFile && <button onClick={() => { setPdfFile(null); if (pdfRef.current) pdfRef.current.value = ''; }} className="text-xs text-rose-500 hover:text-rose-700">✕</button>}
+                  </div>
+                </div>
+              </div>
+              {genStatus && (
+                <div className="mb-4 flex items-center gap-2 text-sm text-violet-700 bg-violet-100 border border-violet-200 rounded-xl px-4 py-2.5 font-medium">
+                  <span className="w-4 h-4 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin flex-shrink-0" />
+                  {genStatus}
+                </div>
+              )}
+              <div className="flex gap-3">
+                <button onClick={handleGenerate} disabled={generating}
+                  className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60 flex items-center gap-2">
+                  {generating
+                    ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generating...</>
+                    : '✨ Generate Sekarang'}
+                </button>
+                <button onClick={() => { setShowGenerate(false); setPdfFile(null); setGenStatus(''); if (pdfRef.current) pdfRef.current.value = ''; }}
+                  className="px-5 py-2.5 bg-white text-slate-600 text-sm font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all">
+                  Batal
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Folder grid — Windows Explorer style */}
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Pilih Folder Bank Soal</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {/* Root/uncategorized materials */}
+              {rootMaterials.length > 0 && (
+                <button onClick={() => setSelectedFolder('__root__')}
+                  className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-blue-300 hover:shadow-md transition-all text-left">
+                  <svg className="w-12 h-12" viewBox="0 0 48 48" fill="none">
+                    <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="#FCD34D"/>
+                    <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="none" stroke="#D97706" strokeWidth="1.5"/>
+                  </svg>
+                  <div className="text-center">
+                    <p className="text-sm font-bold text-slate-800">Tanpa Folder</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {rootMaterials.length} materi · {questions.filter(q => rootMaterials.map(m => m.id).includes(q.material_id)).length} soal
+                    </p>
+                  </div>
+                </button>
+              )}
+              {/* Top-level folders */}
+              {rootFolders.map(fKey => {
+                const fNode = folderTree.children[fKey];
+                const matIds = (() => { const c = (n: FolderNode): Material[] => [...n.materials, ...Object.values(n.children).flatMap(c)]; return c(fNode).map(m => m.id); })();
+                const qCount = questions.filter(q => matIds.includes(q.material_id)).length;
+                const subCount = Object.keys(fNode.children).length;
+                return (
+                  <button key={fKey} onClick={() => { setSelectedFolder(fKey); setSelectedSubFolder(null); }}
+                    className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-amber-200 bg-amber-50 hover:border-amber-400 hover:shadow-md transition-all">
+                    <svg className="w-12 h-12" viewBox="0 0 48 48" fill="none">
+                      <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="#FBBF24"/>
+                      <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="none" stroke="#D97706" strokeWidth="1.5"/>
+                    </svg>
+                    <div className="text-center">
+                      <p className="text-sm font-bold text-slate-800">{fKey}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {subCount > 0 ? `${subCount} subfolder · ` : ''}{qCount} soal
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {rootFolders.length === 0 && rootMaterials.length === 0 && (
+              <div className="text-center py-16 text-slate-400">
+                <div className="text-5xl mb-3">🧩</div>
+                <p className="font-semibold">Belum ada materi</p>
+                <p className="text-sm mt-1">Tambah materi di tab Materi terlebih dahulu</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── FOLDER VIEW — show subfolders or questions
+  const currentFolderNode = selectedFolder === '__root__' ? null : folderTree.children[selectedFolder];
+  const subFolders = currentFolderNode ? Object.keys(currentFolderNode.children).sort() : [];
+  const showingQuestions = selectedFolder !== null;
+
   return (
     <div>
-      <PageHeader title="🧩 Bank Soal" subtitle={`${questions.length} soal tersedia`}
+      <PageHeader
+        title="🧩 Bank Soal"
+        subtitle={
+          selectedSubFolder
+            ? `${selectedFolder} / ${selectedSubFolder} — ${visibleQuestions.length} soal`
+            : selectedFolder === '__root__'
+            ? `Tanpa Folder — ${visibleQuestions.length} soal`
+            : `${selectedFolder} — ${visibleQuestions.length} soal`
+        }
         action={
-          <button onClick={() => setShowGenerate(true)}
-            className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
-            ✨ Generate AI
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={goBack}
+              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all flex items-center gap-1.5">
+              ← Kembali
+            </button>
+            <button onClick={() => setShowGenerate(true)}
+              className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
+              ✨ Generate AI
+            </button>
+          </div>
         }
       />
       <div className="p-8 space-y-6">
-        {/* Filter */}
-        <div className="flex gap-3 items-center">
-          <select value={selectedMat} onChange={e => setSelectedMat(e.target.value)}
-            className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 bg-white">
-            <option value="">Semua Materi</option>
-            {materials.map(m => <option key={m.id} value={m.id}>{m.materi_name}</option>)}
-          </select>
-          <span className="text-sm text-slate-500">{questions.length} soal</span>
-        </div>
-
         {/* Generate Panel */}
         {showGenerate && (
           <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl border border-violet-200 p-6">
             <h3 className="font-bold text-violet-800 mb-1 flex items-center gap-2">✨ Generate Soal dengan Gemini AI</h3>
-            <p className="text-xs text-violet-500 mb-1">Upload PDF langsung — Gemini membaca isi PDF secara otomatis</p>
             <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5 mb-4 font-medium">
-              ✅ PDF hanya digunakan untuk generate — <strong>tidak disimpan ke Supabase</strong>. Soal & jawaban yang digenerate akan tersimpan.
+              ✅ PDF hanya digunakan untuk generate — <strong>tidak disimpan ke Supabase</strong>.
             </p>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
@@ -906,7 +1107,10 @@ Kembalikan HANYA JSON array, tanpa markdown, tanpa teks lain:
                 <select value={selectedMat} onChange={e => setSelectedMat(e.target.value)}
                   className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
                   <option value="">-- Pilih Materi --</option>
-                  {materials.map(m => <option key={m.id} value={m.id}>{m.materi_name}{m.content_text ? ' ✅' : ''}</option>)}
+                  {viewMaterials.length > 0
+                    ? viewMaterials.map(m => <option key={m.id} value={m.id}>{m.materi_name}{m.content_text ? ' ✅' : ''}</option>)
+                    : materials.map(m => <option key={m.id} value={m.id}>{m.materi_name}{m.content_text ? ' ✅' : ''}</option>)
+                  }
                 </select>
               </div>
               <div>
@@ -918,27 +1122,24 @@ Kembalikan HANYA JSON array, tanpa markdown, tanpa teks lain:
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
                 <select value={genDiff} onChange={e => setGenDiff(e.target.value as any)}
                   className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
-                  <option value="mixed">Mixed (Campuran)</option>
+                  <option value="mixed">Mixed</option>
                   <option value="easy">Easy</option>
                   <option value="medium">Medium</option>
                   <option value="hard">Hard</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-                  Upload PDF Materi
-                  <span className="ml-1 text-[10px] font-normal text-violet-500 normal-case tracking-normal">(sementara, tidak disimpan)</span>
-                </label>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Upload PDF</label>
                 <input ref={pdfRef} type="file" accept=".pdf" onChange={e => setPdfFile(e.target.files?.[0] ?? null)} className="hidden" />
                 <div className="flex items-center gap-2">
                   <button onClick={() => pdfRef.current?.click()}
-                    className="px-3 py-2 bg-white border border-violet-200 hover:bg-violet-50 text-violet-700 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5">
+                    className="px-3 py-2 bg-white border border-violet-200 hover:bg-violet-50 text-violet-700 text-xs font-semibold rounded-xl transition-all">
                     📄 Pilih PDF
                   </button>
                   {pdfFile
-                    ? <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg">✅ {pdfFile.name}</span>
-                    : <span className="text-xs text-slate-400">atau gunakan teks dari materi ✅</span>}
-                  {pdfFile && <button onClick={() => { setPdfFile(null); if (pdfRef.current) pdfRef.current.value = ''; }} className="text-xs text-rose-500 hover:text-rose-700">✕</button>}
+                    ? <span className="text-xs text-emerald-700 font-semibold">✅ {pdfFile.name}</span>
+                    : <span className="text-xs text-slate-400">atau dari teks materi</span>}
+                  {pdfFile && <button onClick={() => { setPdfFile(null); if (pdfRef.current) pdfRef.current.value = ''; }} className="text-xs text-rose-500">✕</button>}
                 </div>
               </div>
             </div>
@@ -951,15 +1152,64 @@ Kembalikan HANYA JSON array, tanpa markdown, tanpa teks lain:
             <div className="flex gap-3">
               <button onClick={handleGenerate} disabled={generating}
                 className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60 flex items-center gap-2">
-                {generating
-                  ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generating...</>
-                  : '✨ Generate Sekarang'}
+                {generating ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generating...</> : '✨ Generate Sekarang'}
               </button>
               <button onClick={() => { setShowGenerate(false); setPdfFile(null); setGenStatus(''); if (pdfRef.current) pdfRef.current.value = ''; }}
-                className="px-5 py-2.5 bg-white text-slate-600 text-sm font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all">
-                Batal
-              </button>
+                className="px-5 py-2.5 bg-white text-slate-600 text-sm font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all">Batal</button>
             </div>
+          </div>
+        )}
+
+        {/* Subfolders (if current folder has them) */}
+        {subFolders.length > 0 && !selectedSubFolder && (
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Subfolder</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+              {subFolders.map(sfKey => {
+                const sfNode = currentFolderNode!.children[sfKey];
+                const sfMatIds = sfNode.materials.map(m => m.id);
+                const sfQCount = questions.filter(q => sfMatIds.includes(q.material_id)).length;
+                return (
+                  <button key={sfKey} onClick={() => setSelectedSubFolder(sfKey)}
+                    className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-amber-200 bg-amber-50 hover:border-amber-400 hover:shadow-md transition-all">
+                    <svg className="w-10 h-10" viewBox="0 0 48 48" fill="none">
+                      <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="#FBBF24"/>
+                      <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="none" stroke="#D97706" strokeWidth="1.5"/>
+                    </svg>
+                    <div className="text-center">
+                      <p className="text-sm font-bold text-slate-800">{sfKey}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{sfNode.materials.length} materi · {sfQCount} soal</p>
+                    </div>
+                  </button>
+                );
+              })}
+              {/* Also show questions from the folder root if any */}
+              {currentFolderNode?.materials && currentFolderNode.materials.length > 0 && (
+                <button onClick={() => setSelectedSubFolder('__direct__')}
+                  className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-blue-300 hover:shadow-md transition-all">
+                  <svg className="w-10 h-10" viewBox="0 0 48 48" fill="none">
+                    <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="#FCD34D"/>
+                    <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="none" stroke="#D97706" strokeWidth="1.5"/>
+                  </svg>
+                  <div className="text-center">
+                    <p className="text-sm font-bold text-slate-800">Langsung</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{currentFolderNode.materials.length} materi</p>
+                  </div>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Filter by material within current folder */}
+        {viewMaterials.length > 0 && (
+          <div className="flex gap-3 items-center">
+            <select value={selectedMat} onChange={e => setSelectedMat(e.target.value)}
+              className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 bg-white">
+              <option value="">Semua Materi di Folder Ini</option>
+              {viewMaterials.map(m => <option key={m.id} value={m.id}>{m.materi_name}</option>)}
+            </select>
+            <span className="text-sm text-slate-500">{visibleQuestions.length} soal</span>
           </div>
         )}
 
@@ -999,14 +1249,14 @@ Kembalikan HANYA JSON array, tanpa markdown, tanpa teks lain:
 
         {/* Question List */}
         <div className="space-y-3">
-          {questions.length === 0 && (
+          {visibleQuestions.length === 0 && (
             <div className="text-center py-16 text-slate-400">
               <div className="text-5xl mb-3">🧩</div>
-              <p className="font-semibold">Belum ada soal</p>
-              <p className="text-sm mt-1">Generate soal dengan AI atau pilih materi dahulu</p>
+              <p className="font-semibold">Belum ada soal di folder ini</p>
+              <p className="text-sm mt-1">Generate soal dengan AI untuk materi di folder ini</p>
             </div>
           )}
-          {questions.map((q, idx) => (
+          {visibleQuestions.map((q, idx) => (
             <div key={q.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 group hover:shadow-md transition-all">
               <div className="flex items-start gap-3">
                 <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-black text-slate-600 flex-shrink-0 mt-0.5">{idx+1}</span>
@@ -2010,12 +2260,12 @@ function QuizPlayer({ session, user, attempt, onDone }: {
 
   const fmtTimer = (s: number) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
 
-  // Result screen with review option
+  // ── Result screen
   if (submitted && result) {
     if (showReview) {
       return (
-        <div className="flex h-full flex-col overflow-y-auto">
-          <div className="sticky top-0 z-10 flex items-center justify-between px-8 py-4 bg-white border-b border-slate-200">
+        <div className="flex h-full flex-col overflow-y-auto" style={{background:'#f8fafc'}}>
+          <div className="sticky top-0 z-10 flex items-center justify-between px-8 py-4 border-b border-slate-200" style={{background:'#ffffff'}}>
             <div>
               <h2 className="font-bold text-slate-800">📋 Review Jawaban</h2>
               <p className="text-xs text-slate-500">{session.session_name} · Skor {result.score.toFixed(0)}</p>
@@ -2025,19 +2275,19 @@ function QuizPlayer({ session, user, attempt, onDone }: {
               ← Kembali ke Hasil
             </button>
           </div>
-          <div className="p-8 space-y-4">
+          <div className="p-8 space-y-4 max-w-3xl mx-auto w-full">
             {questions.map((q, idx) => {
               const userAnswer = answers[q.id] ?? savedAnswers[q.id] ?? null;
               const isCorrect = userAnswer === q.correct_answer;
               const notAnswered = !userAnswer;
               return (
-                <div key={q.id} className={`rounded-2xl border-2 p-5 ${notAnswered ? 'border-slate-200 bg-white' : isCorrect ? 'border-emerald-300 bg-emerald-50/30' : 'border-rose-300 bg-rose-50/30'}`}>
+                <div key={q.id} className={`rounded-2xl border-2 p-5 bg-white ${notAnswered ? 'border-slate-200' : isCorrect ? 'border-emerald-300' : 'border-rose-300'}`}>
                   <div className="flex items-start gap-3 mb-3">
                     <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 text-white ${notAnswered ? 'bg-slate-400' : isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`}>
                       {notAnswered ? '—' : isCorrect ? '✓' : '✗'}
                     </span>
                     <div className="flex-1">
-                      <p className="text-xs font-bold text-slate-500 mb-1">Soal {idx+1}</p>
+                      <p className="text-xs font-bold text-slate-400 mb-1">Soal {idx+1}</p>
                       <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
                     </div>
                   </div>
@@ -2046,11 +2296,11 @@ function QuizPlayer({ session, user, attempt, onDone }: {
                       const optVal = (q as any)[`option_${opt.toLowerCase()}`];
                       const isUserChoice = userAnswer === opt;
                       const isCorrectOpt = q.correct_answer === opt;
-                      let style = 'bg-white border-slate-200 text-slate-600';
-                      if (isCorrectOpt) style = 'bg-emerald-50 border-emerald-400 text-emerald-800 font-bold';
-                      if (isUserChoice && !isCorrectOpt) style = 'bg-rose-50 border-rose-400 text-rose-800 font-bold';
+                      let cls = 'bg-slate-50 border-slate-200 text-slate-600';
+                      if (isCorrectOpt) cls = 'bg-emerald-50 border-emerald-400 text-emerald-800 font-bold';
+                      if (isUserChoice && !isCorrectOpt) cls = 'bg-rose-50 border-rose-400 text-rose-800 font-bold';
                       return (
-                        <div key={opt} className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs ${style}`}>
+                        <div key={opt} className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs ${cls}`}>
                           <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-black flex-shrink-0 ${isCorrectOpt ? 'bg-emerald-500 text-white' : isUserChoice ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-600'}`}>{opt}</span>
                           <span className="flex-1">{optVal}</span>
                           {isCorrectOpt && <span className="text-emerald-600">✓</span>}
@@ -2068,20 +2318,26 @@ function QuizPlayer({ session, user, attempt, onDone }: {
     }
 
     return (
-      <div className="flex items-center justify-center h-full p-8">
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-10 max-w-md w-full text-center">
-          <div className="text-6xl mb-4">{result.passed ? '🎉' : '😔'}</div>
+      <div className="flex items-center justify-center h-full p-8" style={{background:'#f1f5f9'}}>
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl p-10 max-w-md w-full text-center">
+          <div className={`w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center text-3xl ${result.passed ? 'bg-emerald-100' : 'bg-rose-100'}`}>
+            {result.passed ? '🎉' : '😔'}
+          </div>
           <h2 className="text-2xl font-black text-slate-800 mb-1">{result.passed ? 'Selamat, Lulus!' : 'Belum Lulus'}</h2>
-          <p className="text-slate-500 text-sm mb-6">{session.session_name}</p>
-          <div className={`text-6xl font-black mb-2 ${result.passed ? 'text-emerald-500' : 'text-rose-500'}`}>{result.score.toFixed(0)}</div>
-          <p className="text-slate-500 text-sm mb-8">Benar {result.correct} dari {questions.length} soal · Passing {session.passing_grade}%</p>
+          <p className="text-slate-500 text-sm mb-8">{session.session_name}</p>
+          <div className={`text-7xl font-black mb-1 ${result.passed ? 'text-emerald-500' : 'text-rose-500'}`}>{result.score.toFixed(0)}</div>
+          <p className="text-slate-400 text-sm mb-2">dari 100 poin</p>
+          <div className="flex justify-center gap-4 text-xs text-slate-500 mb-8">
+            <span className="bg-slate-100 px-3 py-1.5 rounded-lg font-semibold">✓ {result.correct}/{questions.length} benar</span>
+            <span className="bg-slate-100 px-3 py-1.5 rounded-lg font-semibold">Passing: {session.passing_grade}%</span>
+          </div>
           <div className="flex gap-3 justify-center">
             <button onClick={() => setShowReview(true)}
-              className="px-5 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold rounded-xl shadow transition-all">
+              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold rounded-xl shadow-sm transition-all text-sm">
               📋 Review Jawaban
             </button>
             <button onClick={onDone}
-              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition-all">
+              className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow transition-all text-sm">
               Selesai
             </button>
           </div>
@@ -2091,99 +2347,138 @@ function QuizPlayer({ session, user, attempt, onDone }: {
   }
 
   if (questions.length === 0) {
-    return <div className="flex items-center justify-center h-full text-slate-400">Memuat soal...</div>;
+    return <div className="flex items-center justify-center h-full text-slate-400" style={{background:'#f8fafc'}}>Memuat soal...</div>;
   }
 
   const q = questions[current];
   const answered = Object.keys(answers).filter(k => answers[k]).length;
+  const progress = ((current + 1) / questions.length) * 100;
+  const isUrgent = timeLeft !== null && timeLeft < 60;
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full" style={{background:'#f1f5f9'}}>
+      {/* Main quiz area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-8 py-4 bg-white border-b border-slate-200 sticky top-0 z-10">
-          <div>
-            <h2 className="font-bold text-slate-800">{session.session_name}</h2>
-            <p className="text-xs text-slate-500">{answered}/{questions.length} soal dijawab</p>
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-6 py-3 border-b border-slate-200 flex-shrink-0" style={{background:'#ffffff'}}>
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="min-w-0">
+              <h2 className="font-bold text-slate-900 text-sm truncate">{session.session_name}</h2>
+              <p className="text-xs text-slate-400">{answered}/{questions.length} dijawab</p>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 flex-shrink-0">
             {timeLeft !== null && (
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-black text-sm border ${timeLeft < 60 ? 'bg-rose-100 text-rose-700 border-rose-200 animate-pulse' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
-                ⏱️ {fmtTimer(timeLeft)}
+              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-black text-sm tabular-nums ${isUrgent ? 'bg-rose-600 text-white animate-pulse' : 'bg-slate-100 text-slate-700'}`}>
+                ⏱ {fmtTimer(timeLeft)}
               </div>
             )}
             <button onClick={() => handleSubmit(false)}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow transition-all">
-              ✅ Submit
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-lg shadow transition-all">
+              Submit
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8">
+        {/* Progress bar */}
+        <div className="h-1 bg-slate-200 flex-shrink-0">
+          <div className="h-1 bg-slate-700 transition-all duration-300" style={{ width: `${progress}%` }} />
+        </div>
+
+        {/* Question */}
+        <div className="flex-1 overflow-y-auto px-6 py-8">
           <div className="max-w-2xl mx-auto">
-            <div className="mb-6">
-              <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">Soal {current+1} dari {questions.length}</span>
-              <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
-                <div className="bg-indigo-500 h-1.5 rounded-full transition-all" style={{ width: `${((current+1)/questions.length)*100}%` }} />
-              </div>
+            {/* Question number + difficulty */}
+            <div className="flex items-center justify-between mb-5">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                Soal {current + 1} / {questions.length}
+              </span>
+              <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${DIFF_COLOR[q.difficulty]}`}>
+                {q.difficulty}
+              </span>
             </div>
-            <div className="rounded-2xl border border-white/60 shadow-sm p-6 mb-6" style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
+
+            {/* Question card */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-5">
               <p className="text-base font-semibold text-slate-800 leading-relaxed">{q.question}</p>
             </div>
+
+            {/* Options */}
             <div className="space-y-3">
               {(['A','B','C','D'] as const).map(opt => {
                 const val = (q as any)[`option_${opt.toLowerCase()}`];
                 const selected = (answers[q.id] ?? savedAnswers[q.id]) === opt;
                 return (
                   <button key={opt} onClick={() => handleAnswer(q.id, opt)}
-                    className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all font-medium text-sm
-                      ${selected ? 'bg-indigo-50 border-indigo-400 text-indigo-800 shadow-sm' : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/40'}`}>
-                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black flex-shrink-0 transition-all ${selected ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                    className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all
+                      ${selected
+                        ? 'bg-slate-800 border-slate-800 text-white shadow-md'
+                        : 'bg-white border-slate-200 text-slate-700 hover:border-slate-400 hover:bg-slate-50'}`}>
+                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black flex-shrink-0 transition-all
+                      ${selected ? 'bg-white text-slate-800' : 'bg-slate-100 text-slate-500'}`}>
                       {opt}
                     </span>
-                    {val}
+                    <span className="text-sm font-medium flex-1">{val}</span>
+                    {selected && (
+                      <svg className="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
                   </button>
                 );
               })}
             </div>
+
+            {/* Navigation */}
             <div className="flex justify-between mt-8">
               <button onClick={() => setCurrent(p => Math.max(0, p-1))} disabled={current === 0}
-                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all disabled:opacity-40">
-                ← Sebelumnya
+                className="flex items-center gap-2 px-5 py-2.5 bg-white text-slate-600 text-sm font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                Sebelumnya
               </button>
               <button onClick={() => setCurrent(p => Math.min(questions.length-1, p+1))} disabled={current === questions.length-1}
-                className="px-5 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-sm font-semibold rounded-xl transition-all disabled:opacity-40">
-                Berikutnya →
+                className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 text-white text-sm font-semibold rounded-xl hover:bg-slate-900 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm">
+                Berikutnya
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Navigator */}
-      <div className="w-52 bg-white border-l border-slate-200 p-4 overflow-y-auto flex-shrink-0">
-        <p className="text-xs font-bold text-slate-600 uppercase tracking-widest mb-3">Navigasi Soal</p>
+      {/* Right panel — navigator */}
+      <div className="w-48 bg-white border-l border-slate-200 p-4 overflow-y-auto flex-shrink-0 flex flex-col gap-4">
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Navigasi Soal</p>
         <div className="grid grid-cols-5 gap-1.5">
           {questions.map((_, i) => {
             const ans = answers[questions[i].id] ?? savedAnswers[questions[i].id];
+            const isActive = i === current;
             return (
               <button key={i} onClick={() => setCurrent(i)}
                 className={`w-full aspect-square rounded-lg text-xs font-bold transition-all
-                  ${i === current ? 'bg-indigo-500 text-white shadow' : ans ? 'bg-emerald-100 text-emerald-700 border border-emerald-300' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                  ${isActive
+                    ? 'bg-slate-800 text-white shadow-md'
+                    : ans
+                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
                 {i+1}
               </button>
             );
           })}
         </div>
-        <div className="mt-4 space-y-1.5 text-xs">
-          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-emerald-200 border border-emerald-300 flex-shrink-0" />Terjawab</div>
+        <div className="space-y-1.5 text-[11px] text-slate-500">
+          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-slate-800 flex-shrink-0" />Aktif</div>
+          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-emerald-200 border border-emerald-300 flex-shrink-0" />Dijawab</div>
           <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-slate-100 border border-slate-200 flex-shrink-0" />Belum</div>
-          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-indigo-500 flex-shrink-0" />Aktif</div>
         </div>
         {tabSwitches > 0 && (
-          <div className="mt-4 p-2 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700 font-semibold">
-            ⚠️ Tab switches: {tabSwitches}
+          <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-semibold">
+            ⚠️ Tab switch: {tabSwitches}x
           </div>
         )}
+        <div className="mt-auto pt-2 border-t border-slate-100">
+          <p className="text-[10px] text-slate-400 text-center">{answered} / {questions.length} dijawab</p>
+        </div>
       </div>
     </div>
   );
