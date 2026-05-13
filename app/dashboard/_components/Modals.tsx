@@ -180,6 +180,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
         <div className="grid grid-cols-1 gap-1.5">
           {ALL_MENU_KEYS.map(key => {
             const m = menuLabels[key];
+            if (!m) return null;
             const checked = selected.includes(key);
             return (
               <button key={key} type="button" onClick={() => toggle(key)}
@@ -2195,6 +2196,7 @@ export function AccountSettingsInline() {
     'unit-movement': { label: 'Unit Movement Log', icon: '🚚' },
     'reminder-schedule': { label: 'Reminder Schedule', icon: '🗓️' },
     'picket-showroom': { label: 'Piket Showroom', icon: '🏪' },
+    'learning-center': { label: 'Learning Center', icon: '🎓' },
   };
 
   const notify = (type: 'success' | 'error', msg: string) => { setNotification({ type, msg }); setTimeout(() => setNotification(null), 3000); };
@@ -2304,6 +2306,7 @@ export function AccountSettingsInline() {
         <div className="grid grid-cols-2 gap-1.5">
           {ALL_MENU_KEYS.map(key => {
             const m = menuLabels[key]; const checked = selected.includes(key);
+            if (!m) return null;
             return (
               <button key={key} type="button" onClick={() => toggle(key)}
                 className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all text-left text-xs ${checked ? 'border-rose-400 bg-rose-50 text-rose-700' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}>
