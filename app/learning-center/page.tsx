@@ -345,8 +345,8 @@ function AdminMateriPage({ user }: { user: User }) {
     setExpandedFolders(prev => ({ ...prev, [path]: !prev[path] }));
   };
 
-  const renderFolderTree = (node: FolderNode, depth = 0) => {
-    const items = [];
+  const renderFolderTree = (node: FolderNode, depth = 0): React.ReactNode[] => {
+    const items: React.ReactNode[] = [];
     const folders = Object.values(node.children).sort((a, b) => a.name.localeCompare(b.name));
     const materials_sorted = node.materials.sort((a, b) => (a.materi_name ?? '').localeCompare(b.materi_name ?? ''));
 
@@ -642,8 +642,8 @@ function TeamMateriPage({ user }: { user: User }) {
     setExpandedFolders(prev => ({ ...prev, [path]: !prev[path] }));
   };
 
-  const renderFolderTree = (node: FolderNode) => {
-    const items = [];
+  const renderFolderTree = (node: FolderNode): React.ReactNode[] => {
+    const items: React.ReactNode[] = [];
     const folders = Object.values(node.children).sort((a, b) => a.name.localeCompare(b.name));
     const materials_sorted = node.materials.sort((a, b) => (a.materi_name ?? '').localeCompare(b.materi_name ?? ''));
 
