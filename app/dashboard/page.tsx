@@ -585,6 +585,24 @@ export default function Dashboard() {
           <div className="max-w-[1600px] mx-auto space-y-8">
             {menuLoading ? <MenuLoadingOverlay /> : (
               <>
+				{/* ── Learning Center section (BARU) ── */}
+                {learningMenuItems.length > 0 && (
+                  <div style={{ animation: 'fadeInUp 0.45s ease 0.2s forwards', opacity: 0 }}>
+                    <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-xl"
+                      style={{ background: 'rgba(15,23,42,0.72)', backdropFilter: 'blur(8px)', boxShadow: '0 2px 12px rgba(0,0,0,0.25)' }}>
+                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #60a5fa, #4338ca)' }}>
+                        <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 14l9-5-9-5-9 5 9 5z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                        </svg>
+                      </div>
+                      <span className="text-white font-bold text-sm tracking-wide">Learning Center</span>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {learningMenuItems.map((menu, i) => renderMenuCard(menu, i, '#4338ca'))}
+                    </div>
+                  </div>
+                )}
                 {/* Project section */}
                 {projectMenuItems.length > 0 && (
                   <div style={{ animation: 'fadeInUp 0.45s ease forwards', opacity: 0 }}>
@@ -621,24 +639,6 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                {/* ── Learning Center section (BARU) ── */}
-                {learningMenuItems.length > 0 && (
-                  <div style={{ animation: 'fadeInUp 0.45s ease 0.2s forwards', opacity: 0 }}>
-                    <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-xl"
-                      style={{ background: 'rgba(15,23,42,0.72)', backdropFilter: 'blur(8px)', boxShadow: '0 2px 12px rgba(0,0,0,0.25)' }}>
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #60a5fa, #4338ca)' }}>
-                        <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 14l9-5-9-5-9 5 9 5z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                        </svg>
-                      </div>
-                      <span className="text-white font-bold text-sm tracking-wide">Learning Center</span>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {learningMenuItems.map((menu, i) => renderMenuCard(menu, i, '#4338ca'))}
-                    </div>
-                  </div>
-                )}
               </>
             )}
           </div>
