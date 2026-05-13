@@ -38,6 +38,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
   const menuLabels: Record<string, { label: string; icon: string; gradient: string }> = {
+    'learning-center': { label: 'Learning Center', icon: '🎓', gradient: 'from-teal-600 to-teal-500' },
     'form-bast': { label: 'Form Review Demo & BAST', icon: '⭐', gradient: 'from-slate-600 to-slate-500' },
     'form-require-project': { label: 'Form Require Project', icon: '🏗️', gradient: 'from-violet-600 to-violet-500' },
     'ticket-troubleshooting': { label: 'Ticket Troubleshooting', icon: '🎫', gradient: 'from-rose-600 to-rose-500' },
@@ -46,7 +47,6 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     'unit-movement': { label: 'Unit Movement Log', icon: '🚚', gradient: 'from-amber-600 to-amber-500' },
     'reminder-schedule': { label: 'Reminder Schedule', icon: '🗓️', gradient: 'from-cyan-600 to-cyan-500' },
     'picket-showroom': { label: 'Piket Showroom', icon: '🏪', gradient: 'from-teal-600 to-teal-500' },
-    'learning-center': { label: 'Learning Center', icon: '🎓', gradient: 'from-teal-600 to-teal-500' },
   };
 
   const notify = (type: 'success' | 'error', msg: string) => {
