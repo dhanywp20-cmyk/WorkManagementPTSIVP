@@ -198,19 +198,35 @@ export default function LearningCenterPage() {
         setIsLoading(true);
         setError(null);
         
+        // Get current auth session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session Error:', sessionError);
+          // Redirect to login
+          window.location.href = '/login';
+          return;
+        }
+        
+        if (!session?.user) {
+          console.warn('No active session');
+          // Redirect to login
+          window.location.href = '/login';
+          return;
+        }
+
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         
         if (authError) {
           console.error('Auth Error:', authError);
-          setError('Authentication error: ' + authError.message);
-          setIsLoading(false);
+          // Redirect to login for auth errors
+          window.location.href = '/login';
           return;
         }
         
         if (!user) {
           console.warn('No authenticated user');
-          setError('Tidak ada user yang login. Silakan login terlebih dahulu.');
-          setIsLoading(false);
+          window.location.href = '/login';
           return;
         }
 
@@ -259,9 +275,9 @@ export default function LearningCenterPage() {
               className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors">
               🔄 Reload
             </button>
-            <button onClick={() => window.location.href = '/'}
+            <button onClick={() => window.location.href = '/login'}
               className="flex-1 px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold rounded-lg transition-colors">
-              🏠 Home
+              🔑 Login
             </button>
           </div>
         </div>
