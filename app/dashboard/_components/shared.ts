@@ -86,6 +86,7 @@ export const ALL_MENU_KEYS = [
 ];
 
 export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = {
+  'learning-center':        { label: 'Learning Center', icon: '🎓' },
   'form-bast':              { label: 'Form Review Demo & BAST', icon: '⭐' },
   'form-require-project':   { label: 'Form Require Project', icon: '🏗️' },
   'ticket-troubleshooting': { label: 'Ticket Troubleshooting', icon: '🎫' },
@@ -94,7 +95,6 @@ export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = 
   'unit-movement':          { label: 'Unit Movement Log', icon: '🚚' },
   'reminder-schedule':      { label: 'Reminder Schedule', icon: '🗓️' },
   'picket-showroom':        { label: 'Piket Showroom', icon: '🏪' },
-  'learning-center':        { label: 'Learning Center', icon: '🎓' },  // ← tambahan baru
 };
 
 export const ROLE_BADGE: Record<string, string> = {
