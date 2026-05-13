@@ -1,1066 +1,1330 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import {
-  User, MenuItem, NotificationItem,
-  SALES_DIVISIONS, JABATAN_LIST, JabatanType, JABATAN_CONFIG, JABATAN_CC_RULES,
-  ALL_MENU_KEYS, ALL_MENU_LABELS, ROLE_BADGE,
-  NotifBellProps, AdminPanelModalProps,
-  DISPLAY_BRANDS_DB, MIDDLEWARE_BRANDS_DB, BrandPicMappingDB,
-} from './_components/shared';
-import {
-  AccountSettingsModal, UserProfileModal, UserManagementModal,
-  BrandPicSettingModal, NotifBell, NotificationBar,
-  BrandPicSettingContent, AdminPanelModal,
-  AccountSettingsInline, UserManagementInline, BrandPicSettingInline,
-} from './_components/Modals';
 
-export default function Dashboard() {
-  const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-  const [showRegister, setShowRegister] = useState(false);
-  const [registerForm, setRegisterForm] = useState({
-    full_name: '',
-    username: '',
-    password: '',
-    confirm_password: '',
-    divisi: '',
-    pts_type: '',
-    sales_division: '',
-    jabatan: '',
-    phone_number: '',
-  });
-  const [registerLoading, setRegisterLoading] = useState(false);
-  const [registerSuccess, setRegisterSuccess] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [menuLoading, setMenuLoading] = useState(false);
+// ─── Error Boundary ───────────────────────────────────────────────────────
 
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
-  const [iframeTitle, setIframeTitle] = useState<string>('');
-  const [showTicketing, setShowTicketing] = useState(false);
-  const [internalUrl, setInternalUrl] = useState<string>('/ticketing');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: string | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
 
-  const [showAdminPanel, setShowAdminPanel] = useState(false);
-  const [adminPanelTab, setAdminPanelTab] = useState<'settings' | 'userManagement' | 'picBrand'>('settings');
-  const [pendingCount, setPendingCount] = useState(0);
-  const [showUserProfile, setShowUserProfile] = useState(false);
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error: error.message };
+  }
 
-  const [visibleMenuItems, setVisibleMenuItems] = useState<MenuItem[]>([]);
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('Error Boundary caught:', error, errorInfo);
+  }
 
-  const allMenuItems: MenuItem[] = [
-    {
-      title: 'Reminder Schedule', icon: '🗓️', key: 'reminder-schedule',
-      gradient: 'from-cyan-700 via-cyan-600 to-teal-500',
-      description: 'Jadwal & reminder pekerjaan team PTS',
-      items: [{ name: 'Reminder', url: '/reminder-schedule', icon: '⏰', internal: true, embed: true }]
-    },
-    {
-      title: 'Form Require Project', icon: '🏗️', key: 'form-require-project',
-      gradient: 'from-violet-700 via-violet-600 to-violet-500',
-      description: 'Solution request form untuk project Sales',
-      items: [{ name: 'Submit Require', url: '/form-require-project', icon: '📋', internal: true, embed: true }]
-    },
-    {
-      title: 'Form Review Demo & BAST', icon: '⭐', key: 'form-bast',
-      gradient: 'from-slate-700 via-slate-600 to-slate-500',
-      description: 'Platform review Demo Produk & BAST',
-      items: [{ name: 'Platform Review', url: '/form-review', icon: '⭐', internal: true, embed: true }]
-    },
-    {
-      title: 'Ticket Troubleshooting', icon: '🎫', key: 'ticket-troubleshooting',
-      gradient: 'from-rose-700 via-rose-600 to-rose-500',
-      description: 'Technical support & issue tracking',
-      items: [{ name: 'Ticket Management', url: '/ticketing', icon: '🔧', internal: true, embed: true }]
-    },
-    {
-      title: 'Learning Center', icon: '🎓', key: 'learning-center',
-      gradient: 'from-blue-700 via-blue-600 to-indigo-500',
-      description: 'Platform training, quiz online & analytics team',
-      items: [{ name: 'Learning Center', url: '/learning-center', icon: '📚', internal: true, embed: true }]
-    },
-    {
-      title: 'Piket Showroom', icon: '🏪', key: 'picket-showroom',
-      gradient: 'from-teal-700 via-teal-600 to-cyan-500',
-      description: 'Jadwal piket showroom Team PTS IVP, UMP & MLDS',
-      items: [{ name: 'Piket Showroom', url: '/picket-showroom', icon: '📅', internal: true, embed: true }]
-    },
-    {
-      title: 'Daily Report', icon: '📈', key: 'daily-report',
-      gradient: 'from-emerald-700 via-emerald-600 to-emerald-500',
-      description: 'Activity tracking & performance metrics',
-      items: [
-        { name: 'Submit Daily Report', url: 'https://docs.google.com/forms/d/e/1FAIpQLSf2cCEPlQQcCR1IZ3GRx-ImgdJJ15rMxAoph77aNYmbl15gvw/viewform?embedded=true', icon: '✍️', embed: true },
-        { name: 'View Daily Report', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMeC3gBgeCAe5YNoVE4RfdANVyjx7xmtTA7C-G40KhExzgvAJ4cGTcyFcgbp4WWx7laBdC3VZrBGd0/pubhtml?gid=1408443365&single=true', icon: '📑', embed: true },
-      ]
-    },
-    {
-      title: 'Database PTS', icon: '💼', key: 'database-pts',
-      gradient: 'from-indigo-700 via-indigo-600 to-indigo-500',
-      description: 'Central repository & documentation',
-      items: [{ name: 'Access Database', url: 'https://1drv.ms/f/c/25d404c0b5ee2b43/IgBDK-61wATUIIAlAgQAAAAAARPyRqbKPJAap5G_Ol5NmA8?e=fFU8wh', icon: '🗃️', embed: false, external: true }]
-    },
-    {
-      title: 'Unit Movement Log', icon: '🚚', key: 'unit-movement',
-      gradient: 'from-amber-700 via-amber-600 to-amber-500',
-      description: 'Equipment check-in & check-out tracking',
-      items: [{ name: 'Unit Movement Log', url: '/unit-movement', icon: '🚚', internal: true, embed: true }]
-    },
-  ];
-
-  useEffect(() => {
-    if (!currentUser) return;
-    setMenuLoading(true);
-    const timer = setTimeout(() => {
-      const allowed = currentUser.allowed_menus;
-      const roleLC = currentUser.role?.toLowerCase();
-      if (!allowed || roleLC === 'superadmin' || roleLC === 'admin') {
-        setVisibleMenuItems(allMenuItems);
-      } else {
-        setVisibleMenuItems(allMenuItems.filter(m => allowed.includes(m.key)));
-      }
-      setMenuLoading(false);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [currentUser]);
-
-  const handleLogin = async () => {
-    try {
-      const { data, error } = await supabase.from('users').select('*').eq('username', loginForm.username).eq('password', loginForm.password).single();
-      if (error || !data) { alert('Username atau password salah!'); return; }
-      if (data.team_type === 'Pending Approval') {
-        alert('Akun kamu masih menunggu persetujuan admin.\nKamu akan dihubungi setelah akun diaktifkan.');
-        return;
-      }
-      setCurrentUser(data);
-      setIsLoggedIn(true);
-      const now = Date.now();
-      localStorage.setItem('currentUser', JSON.stringify(data));
-      localStorage.setItem('loginTime', now.toString());
-    } catch { alert('Login gagal!'); }
-  };
-
-  const handleRegister = async () => {
-    const { full_name, username, password, confirm_password, divisi, pts_type, sales_division } = registerForm;
-    if (!full_name.trim()) { alert('Nama lengkap wajib diisi!'); return; }
-    if (!username.trim()) { alert('Email / username wajib diisi!'); return; }
-    if (!password || password.length < 6) { alert('Password minimal 6 karakter!'); return; }
-    if (password !== confirm_password) { alert('Konfirmasi password tidak cocok!'); return; }
-    if (!divisi) { alert('Pilih divisi!'); return; }
-    if (divisi === 'PTS' && !pts_type) { alert('Pilih tipe PTS!'); return; }
-    if ((divisi === 'Sales' || divisi === 'Marketing') && !sales_division) { alert('Pilih sales division!'); return; }
-
-    let requestedDivision: string | null = null;
-    if (divisi === 'PTS') requestedDivision = pts_type;
-    else if (divisi === 'Sales') requestedDivision = sales_division;
-    else if (divisi === 'Marketing') requestedDivision = `Marketing:${sales_division}`;
-
-    setRegisterLoading(true);
-    try {
-      const { data: existing } = await supabase.from('users').select('id').eq('username', username.trim().toLowerCase()).maybeSingle();
-      if (existing) { alert('Username / email sudah terdaftar. Gunakan username lain.'); setRegisterLoading(false); return; }
-      const { error } = await supabase.from('users').insert([{
-        full_name: full_name.trim(),
-        username: username.trim().toLowerCase(),
-        password: password,
-        role: 'guest',
-        team_type: 'Pending Approval',
-        sales_division: requestedDivision,
-        jabatan: registerForm.jabatan.trim() || null,
-        phone_number: registerForm.phone_number.trim() || null,
-        allowed_menus: [],
-      }]);
-      if (error) throw error;
-      setRegisterSuccess(true);
-      setRegisterForm({ full_name: '', username: '', password: '', confirm_password: '', divisi: '', pts_type: '', sales_division: '', jabatan: '', phone_number: '' });
-    } catch (err: any) {
-      alert('Registrasi gagal: ' + err.message);
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100 p-4">
+          <div className="bg-white rounded-2xl p-8 shadow-lg max-w-md text-center border-l-4 border-red-500">
+            <div className="text-5xl mb-4">⚠️</div>
+            <h2 className="text-xl font-bold text-red-600 mb-3">Component Error</h2>
+            <p className="text-slate-600 text-sm mb-6 font-mono bg-red-50 p-3 rounded border border-red-200 break-words">
+              {this.state.error}
+            </p>
+            <button onClick={() => window.location.reload()}
+              className="w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors">
+              🔄 Reload Page
+            </button>
+          </div>
+        </div>
+      );
     }
-    setRegisterLoading(false);
-  };
 
-  const handleLogout = () => {
-    setIsLoggedIn(false); setCurrentUser(null);
-    localStorage.removeItem('currentUser');
-    setShowSidebar(false); setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing');
-    setShowAdminPanel(false); setShowUserProfile(false);
-    router.push('/dashboard');
-  };
+    return this.props.children;
+  }
+}
 
-  const handleMenuClick = (item: MenuItem['items'][0], menuTitle: string) => {
-    if (item.external && !item.embed) { window.open(item.url, '_blank'); return; }
-    setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing');
-    setTimeout(() => {
-      if (item.internal) {
-        setShowSidebar(true); setShowTicketing(true);
-        setInternalUrl(item.url);
-        setIframeTitle(`${menuTitle} - ${item.name}`);
-      } else if (item.embed) {
-        setShowSidebar(true); setIframeUrl(item.url);
-        setIframeTitle(`${menuTitle} - ${item.name}`);
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface User {
+  id: string;
+  full_name: string;
+  username: string;
+  role: string;
+  jabatan?: string | null;
+  sales_division?: string | null;
+  phone_number?: string | null;
+}
+
+// Material sekarang punya folder_path untuk grouping (contoh: "Produk/Microvision")
+interface Material {
+  id: string;
+  materi_name: string;
+  content_text: string | null;
+  file_url: string | null;       // OneDrive link
+  file_name: string | null;
+  file_type: string | null;
+  folder_path: string | null;    // NEW: "Produk" atau "Produk/Microvision"
+  created_by: string | null;
+  created_at: string;
+}
+
+interface Question {
+  id: string;
+  material_id: string;
+  materi_name: string;
+  question: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_answer: 'A' | 'B' | 'C' | 'D';
+  difficulty: 'easy' | 'medium' | 'hard';
+  created_at: string;
+}
+
+interface QuizSession {
+  id: string;
+  session_name: string;
+  material_id: string;
+  materi_name: string;
+  question_ids: string[];
+  question_count: number;
+  timer_minutes: number | null;
+  passing_grade: number;
+  is_active: boolean;
+  allow_retake: boolean;
+  created_at: string;
+  scheduled_at: string | null;
+  closed_at: string | null;
+  // Target delivery
+  target_user_ids: string[] | null;   // null = semua user, array = user tertentu
+  open_at: string | null;             // waktu quiz mulai bisa diakses
+  close_at: string | null;            // waktu quiz ditutup otomatis
+}
+
+interface QuizAttempt {
+  id: string;
+  user_id: string;
+  quiz_session_id: string;
+  started_at: string;
+  submitted_at: string | null;
+  score: number | null;
+  total_correct: number;
+  total_questions: number;
+  passed: boolean | null;
+  time_taken_sec: number | null;
+  is_submitted: boolean;
+}
+
+// Answer record (from lc_answers table)
+interface AnswerRecord {
+  id: string;
+  attempt_id: string;
+  question_id: string;
+  answer: string;
+  is_correct: boolean;
+}
+
+type AdminView = 'dashboard' | 'materi' | 'bank-soal' | 'questions' | 'sessions' | 'team' | 'report' | 'analytics';
+type TeamView = 'my-quiz' | 'materi' | 'bank-soal' | 'history' | 'score';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const GEMINI_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY ?? '';
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+
+const DIFF_COLOR: Record<string, string> = {
+  easy: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  medium: 'bg-amber-100 text-amber-700 border-amber-200',
+  hard: 'bg-rose-100 text-rose-700 border-rose-200',
+};
+
+const fmtDate = (d: string) =>
+  new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
+function ScoreBadge({ score, passing }: { score: number | null; passing: number }) {
+  if (score === null) return <span className="text-slate-400 text-xs">—</span>;
+  const pass = score >= passing;
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border ${pass ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
+      {pass ? '✅' : '❌'} {score.toFixed(0)}
+    </span>
+  );
+}
+
+// ─── Gemini Helper ────────────────────────────────────────────────────────────
+
+async function fileToBase64(f: File): Promise<string> {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = e => res((e.target?.result as string).split(',')[1]);
+    reader.onerror = () => rej(new Error('Read failed'));
+    reader.readAsDataURL(f);
+  });
+}
+
+// PDF hanya dikirim ke Gemini untuk generate soal — TIDAK disimpan ke Supabase
+async function generateWithGemini(prompt: string, pdfFile?: File | null): Promise<string> {
+  const parts: any[] = [];
+  if (pdfFile) {
+    const base64 = await fileToBase64(pdfFile);
+    parts.push({ inline_data: { mime_type: pdfFile.type || 'application/pdf', data: base64 } });
+  }
+  parts.push({ text: prompt });
+
+  const res = await fetch(GEMINI_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts }],
+      generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err?.error?.message ?? 'Gemini API error');
+  }
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+}
+
+// ─── Folder Tree Helpers ──────────────────────────────────────────────────────
+
+interface FolderNode {
+  name: string;
+  path: string;
+  children: Record<string, FolderNode>;
+  materials: Material[];
+}
+
+function buildFolderTree(materials: Material[]): FolderNode {
+  const root: FolderNode = { name: 'root', path: '', children: {}, materials: [] };
+
+  materials.forEach(m => {
+    const rawPath = (m.folder_path ?? '').trim();
+    if (!rawPath) {
+      root.materials.push(m);
+      return;
+    }
+    const parts = rawPath.split('/').map(p => p.trim()).filter(Boolean);
+    let node = root;
+    let currentPath = '';
+    parts.forEach(part => {
+      currentPath = currentPath ? `${currentPath}/${part}` : part;
+      if (!node.children[part]) {
+        node.children[part] = { name: part, path: currentPath, children: {}, materials: [] };
       }
-    }, 150);
-  };
+      node = node.children[part];
+    });
+    node.materials.push(m);
+  });
 
-  const handleNotifNavigate = (navInternalUrl: string, title: string) => {
-    setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setIframeTitle('');
-    setTimeout(() => {
-      setShowTicketing(true);
-      setInternalUrl(navInternalUrl);
-      setIframeTitle(title);
-      setShowSidebar(true);
-    }, 150);
-  };
+  return root;
+}
 
-  const handleBackToDashboard = () => {
-    setShowSidebar(false); setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setIframeTitle('');
-  };
+// ─── Page wrapper ─────────────────────────────────────────────────────────────
+
+function LearningCenterPageContent() {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [adminView, setAdminView] = useState<AdminView>('dashboard');
+  const [teamView, setTeamView] = useState<TeamView>('my-quiz');
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const load = async () => {
-      const saved = localStorage.getItem('currentUser');
-      const savedTime = localStorage.getItem('loginTime');
-      if (!saved) { setLoading(false); return; }
-      if (savedTime) {
-        const sixHours = 6 * 60 * 60 * 1000;
-        if (Date.now() - parseInt(savedTime) > sixHours) {
-          localStorage.removeItem('currentUser'); localStorage.removeItem('loginTime');
-          setLoading(false); return;
-        }
-      }
+    const loadUser = async () => {
       try {
-        const parsed: User = JSON.parse(saved);
-        setCurrentUser(parsed);
-        setIsLoggedIn(true);
-        const { data, error } = await supabase.from('users').select('*').eq('id', parsed.id).single();
-        if (!error && data) {
-          setCurrentUser(data);
-          localStorage.setItem('currentUser', JSON.stringify(data));
+        setIsLoading(true);
+        setError(null);
+        
+        // Get current auth session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session Error:', sessionError);
+          // Redirect to login
+          window.location.href = '/login';
+          return;
         }
-      } catch { /* ignore */ }
-      setLoading(false);
+        
+        if (!session?.user) {
+          console.warn('No active session');
+          // Redirect to login
+          window.location.href = '/login';
+          return;
+        }
+
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError) {
+          console.error('Auth Error:', authError);
+          // Redirect to login for auth errors
+          window.location.href = '/login';
+          return;
+        }
+        
+        if (!user) {
+          console.warn('No authenticated user');
+          window.location.href = '/login';
+          return;
+        }
+
+        const { data, error: dbError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (dbError) {
+          console.error('Database Error:', dbError);
+          setError('Database error: ' + dbError.message);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!data) {
+          console.warn('User data not found in database');
+          setError('Data user tidak ditemukan di database. Silakan hubungi administrator.');
+          setIsLoading(false);
+          return;
+        }
+
+        setCurrentUser(data);
+        setIsLoading(false);
+      } catch (err: any) {
+        console.error('Unexpected Error:', err);
+        setError('Unexpected error: ' + err?.message);
+        setIsLoading(false);
+      }
     };
-    load();
+
+    loadUser();
   }, []);
 
-  const isAdmin = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    supabase.from('users').select('id', { count: 'exact', head: true }).eq('team_type', 'Pending Approval')
-      .then((res: { count: number | null }) => setPendingCount(res.count ?? 0));
-  }, [isAdmin]);
-
-  const INTERNAL_KEYS = ['reminder-schedule', 'form-require-project', 'form-bast', 'ticket-troubleshooting', 'picket-showroom'];
-  const PROJECT_KEYS = ['reminder-schedule', 'form-require-project', 'form-bast', 'ticket-troubleshooting'];
-  const INTERNAL_DAILY_KEYS = ['picket-showroom', 'daily-report', 'database-pts', 'unit-movement'];
-  // ── Learning Center sebagai section tersendiri ──
-  const LEARNING_KEYS = ['learning-center'];
-
-  const projectMenuItems = visibleMenuItems.filter(m => PROJECT_KEYS.includes(m.key));
-  const internalMenuItems = visibleMenuItems.filter(m => INTERNAL_DAILY_KEYS.includes(m.key));
-  const learningMenuItems = visibleMenuItems.filter(m => LEARNING_KEYS.includes(m.key));
-
-  const MENU_ICONS: Record<string, JSX.Element> = {
-    'picket-showroom': <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
-    'reminder-schedule': <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
-    'form-require-project': <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>,
-    'form-bast': <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>,
-    'ticket-troubleshooting': <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" /></svg>,
-    'daily-report': <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
-    'database-pts': <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" /></svg>,
-    'unit-movement': <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>,
-    'learning-center': <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /></svg>,
-  };
-
-  function MenuLoadingOverlay() {
+  // Error state
+  if (error) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.3)', borderTopColor: '#e2a84b' }} />
-          <p className="text-white/70 text-sm font-medium tracking-wide">Memuat menu...</p>
+      <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <div className="bg-white rounded-2xl p-8 shadow-lg max-w-md text-center border-l-4 border-red-500">
+          <div className="text-5xl mb-4">❌</div>
+          <h2 className="text-xl font-bold text-red-600 mb-3">Terjadi Kesalahan</h2>
+          <p className="text-slate-600 text-sm mb-6 font-mono bg-red-50 p-3 rounded border border-red-200">{error}</p>
+          <div className="flex gap-3">
+            <button onClick={() => window.location.reload()}
+              className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors">
+              🔄 Reload
+            </button>
+            <button onClick={() => window.location.href = '/login'}
+              className="flex-1 px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold rounded-lg transition-colors">
+              🔑 Login
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-  const renderMenuCard = (menu: MenuItem, index: number, accentColor: string) => {
-    const isSingleInternal = menu.items.length === 1 && menu.items[0].internal;
+  // Loading state
+  if (isLoading || !currentUser) {
     return (
-      <div key={menu.key}
-        className={`rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white ${isSingleInternal ? 'cursor-pointer group' : ''}`}
-        style={{ animation: `fadeInUp 0.5s ease forwards`, animationDelay: `${index * 80}ms`, opacity: 0 }}
-        onClick={isSingleInternal ? () => handleMenuClick(menu.items[0], menu.title) : undefined}
-      >
-        <div className={`bg-gradient-to-br ${menu.gradient} ${isSingleInternal ? 'p-8' : 'p-6'} relative overflow-hidden`}>
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-white" />
-            <div className="absolute -left-2 -bottom-2 w-16 h-16 rounded-full bg-white" />
+      <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="text-center">
+          <div className="inline-block">
+            <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-6"></div>
           </div>
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="text-4xl">{menu.icon}</div>
-              <h3 className="text-xl font-bold tracking-tight text-white leading-tight">{menu.title}</h3>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Memuat Learning Center...</h2>
+          <p className="text-slate-500">Mohon tunggu sebentar</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Success - render based on role
+  if (currentUser.role === 'admin') {
+    return (
+      <AdminLearningCenter user={currentUser} view={adminView} setView={setAdminView} />
+    );
+  }
+
+  return <TeamLearningCenter user={currentUser} view={teamView} setView={setTeamView} />;
+}
+
+// ─── PAGE HEADER ──────────────────────────────────────────────────────────────
+
+function PageHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white px-8 py-8 border-b border-slate-700">
+      <h1 className="text-3xl font-black">{title}</h1>
+      <p className="text-slate-300 mt-1">{subtitle}</p>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════
+// ─── ADMIN LEARNING CENTER ────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+function AdminLearningCenter({ user, view, setView }: { user: User; view: AdminView; setView: (v: AdminView) => void }) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <Navbar user={user} />
+      
+      <div className="flex">
+        <AdminSidebar view={view} setView={setView} />
+        <div className="flex-1">
+          {view === 'dashboard' && <AdminDashboard user={user} />}
+          {view === 'materi' && <AdminMateriPage user={user} />}
+          {view === 'bank-soal' && <BankSoalPage user={user} isAdmin={true} />}
+          {view === 'questions' && <AdminQuestionsPage user={user} />}
+          {view === 'sessions' && <AdminSessionsPage user={user} />}
+          {view === 'team' && <AdminTeamPage user={user} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminSidebar({ view, setView }: { view: AdminView; setView: (v: AdminView) => void }) {
+  const items: { label: string; icon: string; view: AdminView }[] = [
+    { label: 'Dashboard', icon: '📊', view: 'dashboard' },
+    { label: 'Materi', icon: '📚', view: 'materi' },
+    { label: 'Bank Soal', icon: '🏦', view: 'bank-soal' },
+    { label: 'Sesi Quiz', icon: '🎯', view: 'sessions' },
+    { label: 'Tim', icon: '👥', view: 'team' },
+  ];
+
+  return (
+    <div className="w-64 bg-white border-r border-slate-200 p-4 sticky top-20 h-[calc(100vh-80px)] overflow-y-auto">
+      <div className="space-y-2">
+        {items.map(item => (
+          <button key={item.view} onClick={() => setView(item.view)}
+            className={`w-full text-left px-4 py-3 rounded-xl font-semibold text-sm transition-all ${view === item.view ? 'bg-indigo-100 text-indigo-700' : 'text-slate-700 hover:bg-slate-100'}`}>
+            {item.icon} {item.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Navbar({ user }: { user: User }) {
+  return (
+    <div className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-40">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-lg flex items-center justify-center text-white font-bold">🎓</div>
+        <div>
+          <h1 className="font-black text-lg">Learning Center</h1>
+          <p className="text-xs text-slate-500">{user.role === 'admin' ? 'ADMIN PORTAL' : 'TEAM PORTAL'}</p>
+        </div>
+      </div>
+      <div className="text-sm text-slate-600">{user.full_name}</div>
+    </div>
+  );
+}
+
+// ─── ADMIN: Dashboard ─────────────────────────────────────────────────────────
+
+function AdminDashboard({ user }: { user: User }) {
+  const [stats, setStats] = useState({ materials: 0, questions: 0, sessions: 0, users: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const results: Array<{ error?: any; count?: number | null }> = await Promise.all([
+          supabase.from('lc_materials').select('id', { count: 'exact' }),
+          supabase.from('lc_questions').select('id', { count: 'exact' }),
+          supabase.from('lc_quiz_sessions').select('id', { count: 'exact' }),
+          supabase.from('users').select('id', { count: 'exact' }),
+        ]);
+
+        // Check for errors
+        const hasError = results.some((r: any) => r.error);
+        if (hasError) {
+          const errorMsg = results.find((r: any) => r.error)?.error?.message ?? 'Unknown error';
+          throw new Error(errorMsg);
+        }
+
+        setStats({
+          materials: (results[0] as any).count ?? 0,
+          questions: (results[1] as any).count ?? 0,
+          sessions: (results[2] as any).count ?? 0,
+          users: (results[3] as any).count ?? 0,
+        });
+        setLoading(false);
+      } catch (err: any) {
+        console.error('Stats loading error:', err);
+        setError(err?.message ?? 'Failed to load statistics');
+        setLoading(false);
+      }
+    };
+
+    loadStats();
+  }, []);
+
+  return (
+    <div>
+      <PageHeader title="📊 Dashboard" subtitle="Ringkasan aktivitas learning center" />
+      <div className="p-8">
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            ⚠️ {error}
+          </div>
+        )}
+        <div className="grid grid-cols-4 gap-5">
+          {[
+            { label: 'Total Materi', value: loading ? '—' : stats.materials, icon: '📚', color: 'from-blue-500 to-blue-600' },
+            { label: 'Total Soal', value: loading ? '—' : stats.questions, icon: '❓', color: 'from-amber-500 to-amber-600' },
+            { label: 'Sesi Quiz', value: loading ? '—' : stats.sessions, icon: '🎯', color: 'from-purple-500 to-purple-600' },
+            { label: 'Pengguna', value: loading ? '—' : stats.users, icon: '👥', color: 'from-emerald-500 to-emerald-600' },
+          ].map((item, idx) => (
+            <div key={idx} className={`bg-gradient-to-br ${item.color} rounded-2xl p-6 text-white shadow-lg`}>
+              <div className="text-4xl mb-3">{item.icon}</div>
+              <div className="text-4xl font-black">{item.value}</div>
+              <div className="text-white/80 text-sm font-medium mt-2">{item.label}</div>
             </div>
-            <p className="text-white/90 text-sm font-medium line-clamp-2">{menu.description}</p>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ADMIN: Materi (Windows Folder Style) ──────────────────────────────────
+
+function AdminMateriPage({ user }: { user: User }) {
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadMaterials = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const { data, error: dbError } = await supabase.from('lc_materials').select('*');
+        
+        if (dbError) {
+          throw new Error(dbError.message);
+        }
+        
+        setMaterials(data ?? []);
+        setLoading(false);
+      } catch (err: any) {
+        console.error('Error loading materials:', err);
+        setError(err?.message ?? 'Failed to load materials');
+        setLoading(false);
+      }
+    };
+
+    loadMaterials();
+  }, []);
+
+  const root = buildFolderTree(materials);
+
+  const toggleFolder = (path: string) => {
+    setExpandedFolders(prev => ({ ...prev, [path]: !prev[path] }));
+  };
+
+  const renderFolderTree = (node: FolderNode, depth = 0): React.ReactNode[] => {
+    const items: React.ReactNode[] = [];
+    const folders = Object.values(node.children).sort((a, b) => a.name.localeCompare(b.name));
+    const materials_sorted = node.materials.sort((a, b) => (a.materi_name ?? '').localeCompare(b.materi_name ?? ''));
+
+    // Render folders
+    folders.forEach(folder => {
+      const hasContent = Object.keys(folder.children).length > 0 || folder.materials.length > 0;
+      const isExpanded = expandedFolders[folder.path];
+
+      items.push(
+        <div key={`folder-${folder.path}`}>
+          <button
+            onClick={() => toggleFolder(folder.path)}
+            className="w-full px-4 py-3 rounded-lg hover:bg-slate-100 text-left flex items-center gap-3 group transition-colors"
+          >
+            <span className="text-lg flex-shrink-0">
+              {isExpanded ? '📂' : '📁'}
+            </span>
+            <span className="font-semibold text-slate-800 group-hover:text-indigo-700">{folder.name}</span>
+            {hasContent && (
+              <span className="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded-full ml-auto flex-shrink-0">
+                {Object.keys(folder.children).length + folder.materials.length}
+              </span>
+            )}
+          </button>
+          {isExpanded && hasContent && (
+            <div className="ml-4 border-l-2 border-slate-200 pl-2 space-y-1">
+              {renderFolderTree(folder, depth + 1)}
+            </div>
+          )}
+        </div>
+      );
+    });
+
+    // Render materials in this level
+    materials_sorted.forEach(m => {
+      items.push(
+        <div key={`material-${m.id}`} className="px-4 py-2 rounded-lg hover:bg-slate-100 text-left flex items-center gap-3 group transition-colors">
+          <span className="text-lg flex-shrink-0">📄</span>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-slate-800 group-hover:text-indigo-700 truncate">{m.materi_name}</p>
+            {m.file_name && <p className="text-xs text-slate-500">{m.file_name}</p>}
+          </div>
+          {m.file_url && (
+            <a href={m.file_url} target="_blank" rel="noopener noreferrer"
+              className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-200 transition-colors flex-shrink-0">
+              📥 Buka
+            </a>
+          )}
+        </div>
+      );
+    });
+
+    return items;
+  };
+
+  return (
+    <div>
+      <PageHeader title="📚 Materi Training" subtitle="Kelola materi training team" />
+      <div className="p-8">
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            ⚠️ {error}
+          </div>
+        )}
+        
+        <div className="mb-6 flex justify-end">
+          <button onClick={() => setShowAddModal(true)}
+            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors flex items-center gap-2">
+            ➕ Tambah Materi
+          </button>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-4 border-b border-slate-200 bg-slate-50">
+            <h3 className="font-bold text-slate-800">📁 Folder Materi</h3>
+          </div>
+          <div className="p-4 max-h-96 overflow-y-auto">
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="inline-block w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-3"></div>
+                <p className="text-slate-500">Memuat materi...</p>
+              </div>
+            ) : materials.length === 0 ? (
+              <div className="text-center py-8 text-slate-400">
+                <p className="text-sm">Belum ada materi</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {renderFolderTree(root)}
+              </div>
+            )}
           </div>
         </div>
-        {!isSingleInternal && (
-          <div className="p-5 space-y-3">
-            {menu.items.map((item, itemIndex) => (
-              <button key={itemIndex} onClick={e => { e.stopPropagation(); handleMenuClick(item, menu.title); }}
-                className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 text-slate-800 px-5 py-4 rounded-md font-semibold shadow-sm hover:shadow-md transition-all text-right flex items-center justify-end gap-4 group/item">
-                {item.external && !item.embed ? (
-                  <svg className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                ) : (
-                  <svg className="w-5 h-5 text-slate-400 transition-transform group-hover/item:-translate-x-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                )}
-                <span className="flex-1 text-sm tracking-wide text-right">{item.name}</span>
-                <div className="w-10 h-10 bg-white rounded-md shadow-sm flex items-center justify-center text-xl border border-slate-200 group-hover/item:scale-110 transition-transform flex-shrink-0">{item.icon}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ADMIN: Bank Soal (Separate Tab) ──────────────────────────────────────
+
+function BankSoalPage({ user, isAdmin }: { user: User; isAdmin: boolean }) {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [filter, setFilter] = useState('');
+  const [difficulty, setDifficulty] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadQuestions = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const { data, error: dbError } = await supabase.from('lc_questions').select('*');
+        
+        if (dbError) {
+          throw new Error(dbError.message);
+        }
+        
+        setQuestions(data ?? []);
+        setLoading(false);
+      } catch (err: any) {
+        console.error('Error loading questions:', err);
+        setError(err?.message ?? 'Failed to load questions');
+        setLoading(false);
+      }
+    };
+
+    loadQuestions();
+  }, []);
+
+  const filtered = questions.filter(q =>
+    (q.question.toLowerCase().includes(filter.toLowerCase()) ||
+     q.materi_name.toLowerCase().includes(filter.toLowerCase())) &&
+    (!difficulty || q.difficulty === difficulty)
+  );
+
+  return (
+    <div>
+      <PageHeader 
+        title={isAdmin ? "🏦 Bank Soal" : "🏦 Bank Soal"} 
+        subtitle={isAdmin ? "Kelola semua soal pembelajaran" : "Lihat dan pelajari soal"} 
+      />
+      <div className="p-8">
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            ⚠️ {error}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="inline-block w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-3"></div>
+            <p className="text-slate-500">Memuat bank soal...</p>
+          </div>
+        ) : (
+          <>
+            <div className="mb-6 flex gap-4">
+              <input type="text" placeholder="Cari soal..." value={filter} onChange={e => setFilter(e.target.value)}
+                className="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <select value={difficulty} onChange={e => setDifficulty(e.target.value)}
+                className="px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="">Semua Level</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+
+        <div className="space-y-4">
+          {filtered.length === 0 ? (
+            <div className="text-center py-12 text-slate-400">
+              <p className="text-lg">📭 Tidak ada soal</p>
+            </div>
+          ) : (
+            filtered.map((q, idx) => (
+              <div key={q.id} className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <p className="text-xs text-slate-500">#{idx + 1} • {q.materi_name}</p>
+                    <h4 className="font-semibold text-slate-800 mt-2 text-lg">{q.question}</h4>
+                  </div>
+                  <span className={`text-xs font-bold px-3 py-1.5 rounded-full border ${DIFF_COLOR[q.difficulty]}`}>
+                    {q.difficulty.toUpperCase()}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {['A', 'B', 'C', 'D'].map(opt => {
+                    const key = `option_${opt.toLowerCase()}` as keyof Question;
+                    const text = q[key] as string;
+                    const isCorrect = q.correct_answer === opt;
+                    return (
+                      <div key={opt} className={`p-3 rounded-lg border ${isCorrect ? 'bg-emerald-50 border-emerald-300' : 'bg-slate-50 border-slate-200'}`}>
+                        <p className="text-xs font-bold text-slate-600 mb-1">{opt}</p>
+                        <p className={`text-sm ${isCorrect ? 'text-emerald-700 font-semibold' : 'text-slate-700'}`}>{text}</p>
+                        {isCorrect && <p className="text-xs text-emerald-600 font-bold mt-1">✅ Jawaban Benar</p>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── ADMIN: Questions ──────────────────────────────────────────────────────
+
+function AdminQuestionsPage({ user }: { user: User }) {
+  return <div className="p-8"><PageHeader title="❓ Kelola Soal" subtitle="Manajemen soal pembelajaran" /></div>;
+}
+
+// ─── ADMIN: Sessions ───────────────────────────────────────────────────────
+
+function AdminSessionsPage({ user }: { user: User }) {
+  return <div className="p-8"><PageHeader title="🎯 Sesi Quiz" subtitle="Kelola sesi dan jadwal quiz" /></div>;
+}
+
+// ─── ADMIN: Team ──────────────────────────────────────────────────────────
+
+function AdminTeamPage({ user }: { user: User }) {
+  return <div className="p-8"><PageHeader title="👥 Tim" subtitle="Kelola anggota tim" /></div>;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════
+// ─── TEAM LEARNING CENTER ─────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+function TeamLearningCenter({ user, view, setView }: { user: User; view: TeamView; setView: (v: TeamView) => void }) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <Navbar user={user} />
+      
+      <div className="flex">
+        <TeamSidebar view={view} setView={setView} />
+        <div className="flex-1">
+          {view === 'my-quiz' && <TeamMyQuizPage user={user} />}
+          {view === 'materi' && <TeamMateriPage user={user} />}
+          {view === 'bank-soal' && <BankSoalPage user={user} isAdmin={false} />}
+          {view === 'history' && <HistoryPage user={user} />}
+          {view === 'score' && <ScorePage user={user} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TeamSidebar({ view, setView }: { view: TeamView; setView: (v: TeamView) => void }) {
+  const items: { label: string; icon: string; view: TeamView }[] = [
+    { label: 'Quiz Saya', icon: '🎯', view: 'my-quiz' },
+    { label: 'Materi', icon: '📚', view: 'materi' },
+    { label: 'Bank Soal', icon: '🏦', view: 'bank-soal' },
+    { label: 'Riwayat', icon: '🕐', view: 'history' },
+    { label: 'Nilai Saya', icon: '🏆', view: 'score' },
+  ];
+
+  return (
+    <div className="w-64 bg-white border-r border-slate-200 p-4 sticky top-20 h-[calc(100vh-80px)] overflow-y-auto">
+      <div className="space-y-2">
+        {items.map(item => (
+          <button key={item.view} onClick={() => setView(item.view)}
+            className={`w-full text-left px-4 py-3 rounded-xl font-semibold text-sm transition-all ${view === item.view ? 'bg-indigo-100 text-indigo-700' : 'text-slate-700 hover:bg-slate-100'}`}>
+            {item.icon} {item.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── TEAM: My Quiz ─────────────────────────────────────────────────────────
+
+function TeamMyQuizPage({ user }: { user: User }) {
+  const [sessions, setSessions] = useState<QuizSession[]>([]);
+  const [startingQuiz, setStartingQuiz] = useState<QuizSession | null>(null);
+
+  useEffect(() => {
+    supabase.from('lc_quiz_sessions').select('*').eq('is_active', true)
+      .then(({ data }: { data: QuizSession[] | null }) => setSessions(data ?? []));
+  }, []);
+
+  if (startingQuiz) {
+    return <QuizPage user={user} session={startingQuiz} onBack={() => setStartingQuiz(null)} />;
+  }
+
+  return (
+    <div>
+      <PageHeader title="🎯 Quiz Saya" subtitle="Quiz yang tersedia untuk dikerjakan" />
+      <div className="p-8">
+        <div className="space-y-4">
+          {sessions.length === 0 ? (
+            <div className="text-center py-16 text-slate-400">
+              <div className="text-5xl mb-3">📭</div>
+              <p className="font-semibold">Belum ada quiz tersedia</p>
+            </div>
+          ) : (
+            sessions.map(s => (
+              <div key={s.id} className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-slate-800 text-lg">{s.session_name}</h4>
+                  <p className="text-sm text-slate-600 mt-1">{s.materi_name}</p>
+                  <div className="flex gap-4 mt-3 text-xs text-slate-500">
+                    <span>📝 {s.question_count} soal</span>
+                    {s.timer_minutes && <span>⏱️ {s.timer_minutes} menit</span>}
+                    <span>🎯 Passing: {s.passing_grade}%</span>
+                  </div>
+                </div>
+                <button onClick={() => setStartingQuiz(s)}
+                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors flex-shrink-0">
+                  ▶️ Mulai
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── TEAM: Materi ─────────────────────────────────────────────────────────
+
+function TeamMateriPage({ user }: { user: User }) {
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    supabase.from('lc_materials').select('*')
+      .then(({ data }: { data: Material[] | null }) => setMaterials(data ?? []));
+  }, []);
+
+  const root = buildFolderTree(materials);
+
+  const toggleFolder = (path: string) => {
+    setExpandedFolders(prev => ({ ...prev, [path]: !prev[path] }));
+  };
+
+  const renderFolderTree = (node: FolderNode): React.ReactNode[] => {
+    const items: React.ReactNode[] = [];
+    const folders = Object.values(node.children).sort((a, b) => a.name.localeCompare(b.name));
+    const materials_sorted = node.materials.sort((a, b) => (a.materi_name ?? '').localeCompare(b.materi_name ?? ''));
+
+    folders.forEach(folder => {
+      const hasContent = Object.keys(folder.children).length > 0 || folder.materials.length > 0;
+      const isExpanded = expandedFolders[folder.path];
+
+      items.push(
+        <div key={`folder-${folder.path}`}>
+          <button
+            onClick={() => toggleFolder(folder.path)}
+            className="w-full px-4 py-3 rounded-lg hover:bg-slate-100 text-left flex items-center gap-3 group transition-colors"
+          >
+            <span className="text-lg flex-shrink-0">
+              {isExpanded ? '📂' : '📁'}
+            </span>
+            <span className="font-semibold text-slate-800 group-hover:text-indigo-700">{folder.name}</span>
+            {hasContent && (
+              <span className="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded-full ml-auto flex-shrink-0">
+                {Object.keys(folder.children).length + folder.materials.length}
+              </span>
+            )}
+          </button>
+          {isExpanded && hasContent && (
+            <div className="ml-4 border-l-2 border-slate-200 pl-2 space-y-1">
+              {renderFolderTree(folder)}
+            </div>
+          )}
+        </div>
+      );
+    });
+
+    materials_sorted.forEach(m => {
+      items.push(
+        <div key={`material-${m.id}`} className="px-4 py-2 rounded-lg hover:bg-slate-100 text-left flex items-center gap-3 group transition-colors">
+          <span className="text-lg flex-shrink-0">📄</span>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-slate-800 group-hover:text-indigo-700 truncate">{m.materi_name}</p>
+            {m.file_name && <p className="text-xs text-slate-500">{m.file_name}</p>}
+          </div>
+          {m.file_url && (
+            <a href={m.file_url} target="_blank" rel="noopener noreferrer"
+              className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-200 transition-colors flex-shrink-0">
+              📥 Buka
+            </a>
+          )}
+        </div>
+      );
+    });
+
+    return items;
+  };
+
+  return (
+    <div>
+      <PageHeader title="📚 Materi Training" subtitle="Akses materi pembelajaran" />
+      <div className="p-8">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-4 border-b border-slate-200 bg-slate-50">
+            <h3 className="font-bold text-slate-800">📁 Folder Materi</h3>
+          </div>
+          <div className="p-4 max-h-96 overflow-y-auto">
+            {materials.length === 0 ? (
+              <div className="text-center py-8 text-slate-400">
+                <p className="text-sm">Belum ada materi</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {renderFolderTree(root)}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── QUIZ: Take Quiz (Professional Theme) ──────────────────────────────────
+
+function QuizPage({ user, session, onBack }: { user: User; session: QuizSession; onBack: () => void }) {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [current, setCurrent] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [savedAnswers, setSavedAnswers] = useState<Record<string, string>>({});
+  const [attempt, setAttempt] = useState<QuizAttempt | null>(null);
+  const [timeLeft, setTimeLeft] = useState(session.timer_minutes ? session.timer_minutes * 60 : null);
+  const [submitted, setSubmitted] = useState(false);
+  const [tabSwitches, setTabSwitches] = useState(0);
+
+  useEffect(() => {
+    // Load questions
+    if (session.question_ids?.length) {
+      supabase.from('lc_questions').select('*').in('id', session.question_ids)
+        .then(({ data }: { data: Question[] | null }) => setQuestions(data ?? []));
+    }
+
+    // Create attempt
+    supabase.from('lc_quiz_attempts').insert({
+      user_id: user.id,
+      quiz_session_id: session.id,
+      started_at: new Date().toISOString(),
+      total_questions: session.question_count,
+    }).select().single().then(({ data }: { data: QuizAttempt | null }) => setAttempt(data));
+  }, [session]);
+
+  // Timer
+  useEffect(() => {
+    if (!timeLeft || submitted) return;
+    const timer = setInterval(() => {
+      setTimeLeft(t => {
+        if (t && t <= 1) {
+          handleSubmit();
+          return 0;
+        }
+        return (t ?? 0) - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [submitted]);
+
+  // Tab switch detection
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.hidden) setTabSwitches(t => t + 1);
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
+
+  const handleAnswer = (questionId: string, answer: string) => {
+    setAnswers(prev => ({ ...prev, [questionId]: answer }));
+  };
+
+  const handleSubmit = async () => {
+    if (!attempt || submitted) return;
+    
+    let correct = 0;
+    for (const q of questions) {
+      if ((answers[q.id] ?? savedAnswers[q.id]) === q.correct_answer) correct++;
+    }
+
+    const score = (correct / questions.length) * 100;
+    const passed = score >= session.passing_grade;
+    const time_taken = session.timer_minutes ? (session.timer_minutes * 60 - (timeLeft ?? 0)) : null;
+
+    await supabase.from('lc_quiz_attempts').update({
+      submitted_at: new Date().toISOString(),
+      is_submitted: true,
+      score: Math.round(score),
+      total_correct: correct,
+      passed,
+      time_taken_sec: time_taken,
+    }).eq('id', attempt.id);
+
+    setSubmitted(true);
+  };
+
+  if (!attempt || questions.length === 0) {
+    return <div className="flex items-center justify-center min-h-screen">Loading quiz...</div>;
+  }
+
+  if (submitted) {
+    const correct = questions.filter(q => (answers[q.id] ?? savedAnswers[q.id]) === q.correct_answer).length;
+    const score = Math.round((correct / questions.length) * 100);
+    const passed = score >= session.passing_grade;
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl p-12 text-center max-w-md shadow-2xl">
+          <div className={`text-6xl mb-4 ${passed ? '🎉' : '📌'}`}></div>
+          <h2 className={`text-3xl font-black mb-2 ${passed ? 'text-emerald-600' : 'text-slate-800'}`}>
+            {passed ? 'Selamat!' : 'Hasil Quiz'}
+          </h2>
+          <div className={`text-5xl font-black mb-4 ${passed ? 'text-emerald-500' : 'text-amber-500'}`}>
+            {score}%
+          </div>
+          <p className="text-slate-600 mb-2">✅ Benar: {correct}/{questions.length}</p>
+          {session.passing_grade && <p className="text-slate-600 mb-6">🎯 Passing: {session.passing_grade}%</p>}
+          <button onClick={onBack} className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors">
+            Kembali
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const q = questions[current];
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="flex h-screen bg-slate-900">
+      {/* Main Quiz Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <div className="bg-slate-800 border-b border-slate-700 px-8 py-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-white font-bold text-lg">{session.session_name}</h2>
+            <p className="text-slate-400 text-sm">{session.materi_name}</p>
+          </div>
+          <div className="flex items-center gap-6 text-white">
+            <div className="text-center">
+              <p className="text-xs text-slate-400">Soal</p>
+              <p className="font-bold text-lg">{current + 1}/{questions.length}</p>
+            </div>
+            {timeLeft !== null && (
+              <div className={`text-center px-4 py-2 rounded-lg ${timeLeft < 300 ? 'bg-red-500/20 border border-red-500' : 'bg-slate-700'}`}>
+                <p className="text-xs text-slate-400">Waktu Tersisa</p>
+                <p className={`font-black text-lg ${timeLeft < 300 ? 'text-red-400' : 'text-white'}`}>{formatTime(timeLeft)}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Question */}
+        <div className="flex-1 overflow-y-auto px-8 py-8">
+          <div className="max-w-2xl mx-auto">
+            <div className="mb-8">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Soal {current + 1}</p>
+              <h3 className="text-2xl font-bold text-white leading-relaxed">{q.question}</h3>
+            </div>
+
+            {/* Options */}
+            <div className="space-y-3">
+              {['A', 'B', 'C', 'D'].map(opt => {
+                const key = `option_${opt.toLowerCase()}` as keyof Question;
+                const text = q[key] as string;
+                const selected = (answers[q.id] ?? savedAnswers[q.id]) === opt;
+
+                return (
+                  <button
+                    key={opt}
+                    onClick={() => handleAnswer(q.id, opt)}
+                    className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
+                      selected
+                        ? 'bg-indigo-600 border-indigo-600 text-white'
+                        : 'bg-slate-800 border-slate-700 text-slate-200 hover:border-indigo-500'
+                    }`}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center flex-shrink-0 font-bold ${
+                        selected ? 'bg-indigo-400 border-indigo-300 text-indigo-900' : 'border-slate-600'
+                      }`}>
+                        {opt}
+                      </div>
+                      <p className="mt-0.5">{text}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Navigation */}
+            <div className="flex gap-4 mt-12">
+              <button onClick={() => setCurrent(p => Math.max(0, p - 1))} disabled={current === 0}
+                className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                ← Sebelumnya
               </button>
-            ))}
+              <button onClick={() => setCurrent(p => Math.min(questions.length - 1, p + 1))} disabled={current === questions.length - 1}
+                className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                Berikutnya →
+              </button>
+              <button onClick={handleSubmit}
+                className="ml-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-all">
+                ✅ Selesai & Kirim
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigator Sidebar */}
+      <div className="w-56 bg-slate-800 border-l border-slate-700 p-5 overflow-y-auto flex-shrink-0">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Navigasi Soal</p>
+        <div className="grid grid-cols-5 gap-2">
+          {questions.map((_, i) => {
+            const ans = answers[questions[i].id] ?? savedAnswers[questions[i].id];
+            return (
+              <button key={i} onClick={() => setCurrent(i)}
+                className={`aspect-square rounded-lg text-xs font-bold transition-all ${
+                  i === current
+                    ? 'bg-indigo-600 text-white shadow-lg'
+                    : ans
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                }`}>
+                {i + 1}
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-6 space-y-2 text-xs">
+          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-emerald-600 flex-shrink-0" />Terjawab</div>
+          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-slate-700 flex-shrink-0" />Belum</div>
+          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-indigo-600 flex-shrink-0" />Aktif</div>
+        </div>
+        {tabSwitches > 0 && (
+          <div className="mt-6 p-3 bg-red-500/20 border border-red-500 rounded-lg text-xs text-red-300 font-semibold">
+            ⚠️ Pergantian Tab: {tabSwitches}
           </div>
         )}
       </div>
-    );
-  };
-
-  // ── LOADING ──
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-cover bg-center" style={{ backgroundImage: 'url(/IVP_Background.png)' }}>
-        <div className="flex flex-col items-center gap-4 px-10 py-8 rounded-2xl" style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
-          <div className="w-12 h-12 rounded-full border-4 border-t-rose-600 border-rose-200 animate-spin" />
-          <p className="text-slate-700 font-semibold">Memuat portal...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // ── LOGIN / REGISTER SCREEN ──
-  if (!isLoggedIn) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-cover bg-center bg-fixed p-4" style={{ backgroundImage: 'url(/IVP_Background.png)' }}>
-        <div className={`w-full rounded-3xl shadow-2xl overflow-hidden transition-all ${showRegister ? 'max-w-2xl' : 'max-w-md'}`} style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(20px)' }}>
-          <div className="p-8">
-            <div className="flex flex-col items-center mb-8">
-              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg ${showRegister ? 'bg-gradient-to-br from-indigo-600 to-indigo-700' : 'bg-gradient-to-br from-rose-600 to-rose-700'}`}>
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {showRegister
-                    ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                    : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  }
-                </svg>
-              </div>
-              <h1 className="text-2xl font-bold text-slate-800 mb-1 tracking-tight">Work Management</h1>
-              <p className="text-slate-500 text-sm font-medium">Support System — IndoVisual</p>
-            </div>
-
-            {!showRegister && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold mb-2 text-slate-600 tracking-widest uppercase">Username</label>
-                  <input type="text" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 transition-all bg-white text-slate-800 font-medium text-sm outline-none"
-                    placeholder="Enter your username" onKeyDown={(e) => e.key === 'Enter' && handleLogin()} />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold mb-2 text-slate-600 tracking-widest uppercase">Password</label>
-                  <input type="password" value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 transition-all bg-white text-slate-800 font-medium text-sm outline-none"
-                    placeholder="Enter your password" onKeyDown={(e) => e.key === 'Enter' && handleLogin()} />
-                </div>
-                <button onClick={handleLogin} className="w-full bg-gradient-to-r from-rose-600 to-rose-700 text-white py-3.5 rounded-xl hover:from-rose-700 hover:to-rose-800 font-bold shadow-lg transition-all tracking-wide text-sm mt-2">
-                  🔐 Sign In to Portal
-                </button>
-                <p className="text-center text-xs text-slate-400 pt-1">Belum punya akun? <button onClick={() => setShowRegister(true)} className="text-indigo-600 font-bold hover:underline">Daftar di sini</button></p>
-              </div>
-            )}
-
-            {showRegister && (
-              <div>
-                {registerSuccess ? (
-                  <div className="text-center py-6">
-                    <div className="text-5xl mb-4">✅</div>
-                    <h3 className="font-bold text-slate-800 text-lg mb-2">Pendaftaran Berhasil!</h3>
-                    <p className="text-slate-500 text-sm mb-4">Akun kamu akan diverifikasi oleh admin. Kamu akan dihubungi setelah akun diaktifkan.</p>
-                    <button onClick={() => { setShowRegister(false); setRegisterSuccess(false); }} className="bg-rose-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-rose-700 transition-all">Kembali ke Login</button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                      {/* Kolom Kiri */}
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Nama Lengkap *</label>
-                          <input type="text" value={registerForm.full_name} onChange={e => setRegisterForm({ ...registerForm, full_name: e.target.value })}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="Nama lengkap" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Username / Email *</label>
-                          <input type="text" value={registerForm.username} onChange={e => setRegisterForm({ ...registerForm, username: e.target.value })}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="username atau email" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Password *</label>
-                          <input type="password" value={registerForm.password} onChange={e => setRegisterForm({ ...registerForm, password: e.target.value })}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="min. 6 karakter" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Konfirmasi Password *</label>
-                          <input type="password" value={registerForm.confirm_password} onChange={e => setRegisterForm({ ...registerForm, confirm_password: e.target.value })}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="ulangi password" />
-                        </div>
-                      </div>
-                      {/* Kolom Kanan */}
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Divisi *</label>
-                          <select value={registerForm.divisi} onChange={e => setRegisterForm({ ...registerForm, divisi: e.target.value, pts_type: '', sales_division: '' })}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
-                            <option value="">-- Pilih Divisi --</option>
-                            <option value="PTS">PTS</option>
-                            <option value="Sales">Sales</option>
-                            <option value="Marketing">Marketing</option>
-                          </select>
-                        </div>
-                        {registerForm.divisi === 'PTS' && (
-                          <div>
-                            <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widests uppercase">Tipe PTS *</label>
-                            <select value={registerForm.pts_type} onChange={e => setRegisterForm({ ...registerForm, pts_type: e.target.value })}
-                              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
-                              <option value="">-- Pilih Tipe PTS --</option>
-                              <option value="PTS IVP">PTS IVP</option>
-                              <option value="PTS UMP">PTS UMP</option>
-                              <option value="PTS MLDS">PTS MLDS</option>
-                            </select>
-                          </div>
-                        )}
-                        {(registerForm.divisi === 'Sales' || registerForm.divisi === 'Marketing') && (
-                          <div>
-                            <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Sales Division *</label>
-                            <select value={registerForm.sales_division} onChange={e => setRegisterForm({ ...registerForm, sales_division: e.target.value })}
-                              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
-                              <option value="">-- Pilih Sales Division --</option>
-                              {SALES_DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
-                            </select>
-                          </div>
-                        )}
-                        <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Jabatan / Posisi</label>
-                          <select value={registerForm.jabatan} onChange={e => setRegisterForm({ ...registerForm, jabatan: e.target.value })}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
-                            <option value="">— Pilih Jabatan —</option>
-                            {JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">No. HP</label>
-                          <input type="text" value={registerForm.phone_number} onChange={e => setRegisterForm({ ...registerForm, phone_number: e.target.value })}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="08xx..." />
-                        </div>
-                      </div>
-                    </div>
-                    <button onClick={handleRegister} disabled={registerLoading}
-                      className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3.5 rounded-xl font-bold shadow-lg transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
-                      {registerLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                      📝 Daftar Akun
-                    </button>
-                    <p className="text-center text-xs text-slate-400">Sudah punya akun? <button onClick={() => setShowRegister(false)} className="text-rose-600 font-bold hover:underline">Login</button></p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── SHARED HEADER JSX ──
-  const renderHeader = (withBackBtn = false) => (
-    <div className="bg-white/80 backdrop-blur-md shadow-md border-b border-slate-200/70" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', position: 'relative', zIndex: 9999 }}>
-      <div className="w-full px-4 py-4">
-        <div className="flex items-center justify-between gap-4">
-          {/* LEFT */}
-          <div className="flex items-center gap-4 flex-shrink-0">
-            <div className="w-12 h-12 bg-gradient-to-br from-rose-600 to-rose-700 rounded-xl shadow-md flex items-center justify-center flex-shrink-0">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-xl font-bold text-slate-800 tracking-tight">Work Management Platform</h1>
-                <span className="text-slate-400 font-light text-xl select-none leading-none">|</span>
-                <span className="text-sm font-bold tracking-wide" style={{ color: '#c8861d' }}>PTS Portal</span>
-              </div>
-              <p className="text-slate-500 text-xs font-medium mt-0.5">IndoVisual Professional Tools</p>
-            </div>
-          </div>
-
-          {/* CENTER — hanya di main menu (non-sidebar), notif di tengah */}
-          {!showSidebar && currentUser && (
-            <div className="flex-1 flex justify-center px-4">
-              <NotificationBar currentUser={currentUser} onNavigate={handleNotifNavigate} />
-            </div>
-          )}
-          {showSidebar && <div className="flex-1" />}
-
-          {/* RIGHT */}
-          <div className="flex items-center gap-3 flex-shrink-0">
-            {/* NotificationBar — di kanan hanya saat sidebar view */}
-            {showSidebar && currentUser && (
-              <NotificationBar currentUser={currentUser} onNavigate={handleNotifNavigate} />
-            )}
-
-            {/* User badge — hanya di main menu (non-sidebar) */}
-            {!showSidebar && (
-              <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl border border-slate-200/80 bg-white/70 backdrop-blur-sm">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#78350f' }}>
-                  {currentUser?.full_name?.charAt(0)?.toUpperCase() ?? 'U'}
-                </div>
-                <div className="leading-tight">
-                  <p className="text-xs font-bold text-slate-800">{currentUser?.full_name}</p>
-                  <p className="text-[9px] font-bold tracking-widest uppercase text-amber-600">{currentUser?.role}</p>
-                </div>
-              </div>
-            )}
-
-            {/* User Profile — hanya di main menu */}
-            {!showSidebar && (
-              <button onClick={() => setShowUserProfile(true)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
-                style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', color: '#065f46' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(16,185,129,0.15)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(16,185,129,0.08)'; }}>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                User Profile
-              </button>
-            )}
-
-            {/* Sign Out — hanya di main menu */}
-            {!showSidebar && (
-              <button onClick={handleLogout}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
-                style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.22)', color: '#b91c1c' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.13)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.07)'; }}>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Sign Out
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
     </div>
   );
+}
 
-  // ── MODAL RENDERS (shared) ──
-  const renderModals = () => (
-    <>
-      {showAdminPanel && <AdminPanelModal initialTab={adminPanelTab} onClose={() => setShowAdminPanel(false)} />}
-      {showUserProfile && currentUser && <UserProfileModal currentUser={currentUser} onClose={() => setShowUserProfile(false)} />}
-    </>
-  );
+// ─── TEAM: History ────────────────────────────────────────────────────────
 
-  // ── VIEW: NO SIDEBAR (main dashboard) ──
-  if (!showSidebar) {
-    return (
-      <div className="min-h-screen flex flex-col bg-cover bg-center bg-fixed" style={{ backgroundImage: 'url(/IVP_Background.png)' }}>
-        {renderModals()}
-        {renderHeader()}
+function HistoryPage({ user }: { user: User }) {
+  const [history, setHistory] = useState<any[]>([]);
 
-        <div className="flex-1 overflow-y-auto py-8 px-4 md:px-8">
-          <div className="max-w-[1600px] mx-auto space-y-8">
-            {menuLoading ? <MenuLoadingOverlay /> : (
-              <>
-                {/* Project section */}
-                {projectMenuItems.length > 0 && (
-                  <div style={{ animation: 'fadeInUp 0.45s ease forwards', opacity: 0 }}>
-                    <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-xl"
-                      style={{ background: 'rgba(15,23,42,0.72)', backdropFilter: 'blur(8px)', boxShadow: '0 2px 12px rgba(0,0,0,0.25)' }}>
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #38bdf8, #0284c7)' }}>
-                        <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                      </div>
-                      <span className="text-white font-bold text-sm tracking-wide">Project</span>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {projectMenuItems.map((menu, i) => renderMenuCard(menu, i, '#0ea5e9'))}
-                    </div>
-                  </div>
-                )}
+  useEffect(() => {
+    supabase.from('lc_quiz_attempts')
+      .select('*, lc_quiz_sessions(session_name, passing_grade, materi_name)')
+      .eq('user_id', user.id).eq('is_submitted', true)
+      .order('submitted_at', { ascending: false })
+      .then(({ data }: { data: any[] | null }) => setHistory(data ?? []));
+  }, [user.id]);
 
-                {/* Internal Daily section */}
-                {internalMenuItems.length > 0 && (
-                  <div style={{ animation: 'fadeInUp 0.45s ease 0.1s forwards', opacity: 0 }}>
-                    <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-xl"
-                      style={{ background: 'rgba(15,23,42,0.72)', backdropFilter: 'blur(8px)', boxShadow: '0 2px 12px rgba(0,0,0,0.25)' }}>
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #34d399, #059669)' }}>
-                        <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <span className="text-white font-bold text-sm tracking-wide">Internal Daily</span>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {internalMenuItems.map((menu, i) => renderMenuCard(menu, i, '#10b981'))}
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Learning Center section (BARU) ── */}
-                {learningMenuItems.length > 0 && (
-                  <div style={{ animation: 'fadeInUp 0.45s ease 0.2s forwards', opacity: 0 }}>
-                    <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-xl"
-                      style={{ background: 'rgba(15,23,42,0.72)', backdropFilter: 'blur(8px)', boxShadow: '0 2px 12px rgba(0,0,0,0.25)' }}>
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #60a5fa, #4338ca)' }}>
-                        <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 14l9-5-9-5-9 5 9 5z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                        </svg>
-                      </div>
-                      <span className="text-white font-bold text-sm tracking-wide">Learning Center</span>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {learningMenuItems.map((menu, i) => renderMenuCard(menu, i, '#4338ca'))}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-white/70 backdrop-blur-sm border-t border-slate-200/60">
-          <div className="max-w-[1600px] mx-auto px-6 py-4">
-            <p className="text-slate-500 text-xs font-medium tracking-wide text-center">© 2026 IndoVisual — Work Management Support (PTS IVP)</p>
-          </div>
-        </div>
-
-        <style jsx>{`
-          @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-          @keyframes dropIn { from { opacity: 0; transform: translateY(-8px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        `}</style>
-      </div>
-    );
-  }
-
-  // ── VIEW: SIDEBAR ──
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-cover bg-center bg-fixed" style={{ backgroundImage: 'url(/IVP_Background.png)' }}>
-      {renderModals()}
-      {renderHeader()}
-
-      <div className="flex flex-1 overflow-hidden">
-        {/* SIDEBAR */}
-        <div
-          className={`relative flex flex-col transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'w-[64px]' : 'w-[272px]'}`}
-          style={{
-            background: 'rgba(255,255,255,0.88)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            boxShadow: '2px 0 20px rgba(0,0,0,0.10)',
-            borderRight: '1px solid rgba(0,0,0,0.07)',
-          }}
-        >
-          {/* Top accent line */}
-          <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #c8861d 40%, #e2a84b 60%, transparent)' }} />
-
-          {/* ── SIDEBAR HEADER — Main Menu nav ── */}
-          <div
-            className={`flex items-center flex-shrink-0 ${sidebarCollapsed ? 'justify-center px-3 py-3' : 'px-3 py-3 gap-2'}`}
-            style={{ borderBottom: '1px solid rgba(0,0,0,0.07)' }}
-          >
-            {!sidebarCollapsed && (
-              <>
-                <button
-                  onClick={handleBackToDashboard}
-                  className="flex-1 flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all duration-150 text-left group"
-                  style={{ color: '#334155' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#92600a'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#334155'; }}
-                  title="Kembali ke Main Menu"
-                >
-                  <svg className="w-4 h-4 flex-shrink-0 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                  </svg>
-                  <span className="text-sm font-semibold tracking-wide">Main Menu</span>
-                </button>
-                <button
-                  onClick={() => setSidebarCollapsed(true)}
-                  className="w-7 h-7 rounded-md flex items-center justify-center transition-all flex-shrink-0"
-                  style={{ color: '#cbd5e1' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.06)'; (e.currentTarget as HTMLButtonElement).style.color = '#64748b'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#cbd5e1'; }}
-                  title="Collapse sidebar"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
-                  </svg>
-                </button>
-              </>
-            )}
-            {sidebarCollapsed && (
-              <button
-                onClick={() => setSidebarCollapsed(false)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
-                style={{ color: '#94a3b8' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.06)'; (e.currentTarget as HTMLButtonElement).style.color = '#334155'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; }}
-                title="Main Menu"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-              </button>
-            )}
-          </div>
-
-          {/* ── SIDEBAR SCROLLABLE CONTENT ── */}
-          <div className="flex-1 overflow-y-auto py-3 px-2.5" style={{ scrollbarWidth: 'none' }}>
-
-            {menuLoading ? (
-              <div className="flex items-center justify-center py-10">
-                <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.35)', borderTopColor: '#e2a84b' }} />
-              </div>
-            ) : sidebarCollapsed ? (
-              /* Collapsed: icon-only */
-              <div className="space-y-1">
-                {visibleMenuItems.map((menu) => (
-                  <div key={menu.key}>
-                    {menu.items.map((item, itemIndex) => {
-                      const isActive = (showTicketing && item.internal && internalUrl === item.url) || (iframeUrl === item.url);
-                      return (
-                        <button
-                          key={itemIndex}
-                          onClick={() => handleMenuClick(item, menu.title)}
-                          title={`${menu.title} — ${item.name}`}
-                          className="w-full h-9 rounded-lg flex items-center justify-center text-base transition-all"
-                          style={
-                            isActive
-                              ? { background: 'rgba(200,134,29,0.15)', border: '1px solid rgba(200,134,29,0.35)', color: '#92600a' }
-                              : { background: 'transparent', border: '1px solid transparent', color: '#64748b' }
-                          }
-                          onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.06)'; }}
-                          onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
-                        >
-                          {MENU_ICONS[menu.key] ?? <span>{menu.icon}</span>}
-                        </button>
-                      );
-                    })}
+    <div>
+      <PageHeader title="🕐 Riwayat Quiz" subtitle="Semua quiz yang pernah kamu ikuti" />
+      <div className="p-8">
+        <div className="space-y-4">
+          {history.length === 0 ? (
+            <div className="text-center py-16 text-slate-400">
+              <div className="text-5xl mb-3">📭</div>
+              <p className="font-semibold">Belum ada riwayat quiz</p>
+            </div>
+          ) : (
+            history.map(a => (
+              <div key={a.id} className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between">
+                <div className="flex items-center gap-5 flex-1">
+                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-lg font-black text-white flex-shrink-0 ${a.passed ? 'bg-gradient-to-br from-emerald-500 to-emerald-600' : 'bg-gradient-to-br from-rose-500 to-rose-600'}`}>
+                    {a.score?.toFixed(0) ?? '—'}%
                   </div>
-                ))}
-              </div>
-            ) : (
-              /* Expanded: full nav */
-              <div className="space-y-5">
-
-                {/* Project section */}
-                {visibleMenuItems.filter(m => PROJECT_KEYS.includes(m.key)).length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 px-1 mb-1.5">
-                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.38)' }}>Project</span>
-                      <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
-                    </div>
-                    <div className="space-y-0.5">
-                      {visibleMenuItems.filter(m => PROJECT_KEYS.includes(m.key)).map(menu => {
-                        if (menu.items.length === 1) {
-                          const item = menu.items[0];
-                          const isActive = (showTicketing && item.internal && internalUrl === item.url) || (iframeUrl === item.url);
-                          return (
-                            <button
-                              key={menu.key}
-                              onClick={() => handleMenuClick(item, menu.title)}
-                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
-                              style={
-                                isActive
-                                  ? { background: 'rgba(200,134,29,0.11)', border: '1px solid rgba(200,134,29,0.28)', color: '#92600a' }
-                                  : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
-                              }
-                              onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.05)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,0,0,0.06)'; } }}
-                              onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; } }}
-                            >
-                              <span
-                                className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors"
-                                style={{
-                                  background: isActive ? 'rgba(200,134,29,0.18)' : 'rgba(0,0,0,0.06)',
-                                  color: isActive ? '#92600a' : '#64748b',
-                                }}
-                              >
-                                {MENU_ICONS[menu.key] ?? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth={2} /></svg>}
-                              </span>
-                              <span className="flex-1 truncate text-sm font-medium">{menu.title}</span>
-                              {isActive && (
-                                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#c8861d' }} />
-                              )}
-                            </button>
-                          );
-                        }
-                        return null;
-                      })}
+                  <div className="flex-1">
+                    <h4 className="font-bold text-slate-800">{a.lc_quiz_sessions?.session_name ?? '-'}</h4>
+                    <p className="text-sm text-slate-600 mt-0.5">{a.lc_quiz_sessions?.materi_name ?? '-'}</p>
+                    <div className="flex gap-3 mt-2 text-xs text-slate-500">
+                      <span>✅ {a.total_correct}/{a.total_questions} benar</span>
+                      <span>🎯 Passing: {a.lc_quiz_sessions?.passing_grade ?? 70}%</span>
                     </div>
                   </div>
-                )}
-
-                {/* Internal Daily section */}
-                {visibleMenuItems.filter(m => INTERNAL_DAILY_KEYS.includes(m.key)).length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 px-1 mb-1.5">
-                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.38)' }}>Internal Daily</span>
-                      <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
-                    </div>
-                    <div className="space-y-0.5">
-                      {visibleMenuItems.filter(m => INTERNAL_DAILY_KEYS.includes(m.key)).flatMap(menu =>
-                        menu.items.map((item, itemIndex) => {
-                          const isActive = (showTicketing && item.internal && internalUrl === item.url) || (iframeUrl === item.url);
-                          return (
-                            <button
-                              key={`${menu.key}-${itemIndex}`}
-                              onClick={() => handleMenuClick(item, menu.title)}
-                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
-                              style={
-                                isActive
-                                  ? { background: 'rgba(200,134,29,0.11)', border: '1px solid rgba(200,134,29,0.28)', color: '#92600a' }
-                                  : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
-                              }
-                              onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.05)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,0,0,0.06)'; } }}
-                              onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; } }}
-                            >
-                              <span
-                                className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors"
-                                style={{
-                                  background: isActive ? 'rgba(200,134,29,0.18)' : 'rgba(0,0,0,0.06)',
-                                  color: isActive ? '#92600a' : '#64748b',
-                                }}
-                              >
-                                {MENU_ICONS[menu.key] ?? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth={2} /></svg>}
-                              </span>
-                              <span className="flex-1 truncate text-sm font-medium">{item.name}</span>
-                              {item.external && !item.embed && (
-                                <svg className="w-3 h-3 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                </svg>
-                              )}
-                              {isActive && !item.external && (
-                                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#c8861d' }} />
-                              )}
-                            </button>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Learning Center section di sidebar (BARU) ── */}
-                {visibleMenuItems.filter(m => LEARNING_KEYS.includes(m.key)).length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 px-1 mb-1.5">
-                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.38)' }}>Learning</span>
-                      <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
-                    </div>
-                    <div className="space-y-0.5">
-                      {visibleMenuItems.filter(m => LEARNING_KEYS.includes(m.key)).map(menu => {
-                        if (menu.items.length === 1) {
-                          const item = menu.items[0];
-                          const isActive = (showTicketing && item.internal && internalUrl === item.url) || (iframeUrl === item.url);
-                          return (
-                            <button
-                              key={menu.key}
-                              onClick={() => handleMenuClick(item, menu.title)}
-                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
-                              style={
-                                isActive
-                                  ? { background: 'rgba(67,56,202,0.10)', border: '1px solid rgba(67,56,202,0.25)', color: '#3730a3' }
-                                  : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
-                              }
-                              onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(67,56,202,0.05)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(67,56,202,0.12)'; } }}
-                              onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; } }}
-                            >
-                              <span
-                                className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors"
-                                style={{
-                                  background: isActive ? 'rgba(67,56,202,0.15)' : 'rgba(0,0,0,0.06)',
-                                  color: isActive ? '#3730a3' : '#64748b',
-                                }}
-                              >
-                                {MENU_ICONS[menu.key] ?? <span>{menu.icon}</span>}
-                              </span>
-                              <span className="flex-1 truncate text-sm font-medium">{menu.title}</span>
-                              {isActive && (
-                                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#4338ca' }} />
-                              )}
-                            </button>
-                          );
-                        }
-                        return null;
-                      })}
-                    </div>
-                  </div>
-                )}
-
-              </div>
-            )}
-          </div>
-
-          {/* ── SIDEBAR FOOTER: User + Admin + Sign Out ── */}
-          <div className="flex-shrink-0" style={{ borderTop: '1px solid rgba(0,0,0,0.07)' }}>
-            {sidebarCollapsed ? (
-              /* Collapsed footer */
-              <div className="py-2 px-1.5 flex flex-col items-center gap-1.5">
-                {/* Avatar */}
-                <button
-                  onClick={() => setShowUserProfile(true)}
-                  className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 transition-all"
-                  style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#78350f' }}
-                  title={currentUser?.full_name ?? ''}
-                >
-                  {currentUser?.full_name?.charAt(0)?.toUpperCase() ?? 'U'}
-                </button>
-
-                {/* Admin */}
-                {isAdmin && (
-                  <button
-                    onClick={() => { setAdminPanelTab('settings'); setShowAdminPanel(true); }}
-                    className="relative w-9 h-9 rounded-lg flex items-center justify-center transition-all"
-                    style={{ color: '#94a3b8' }}
-                    title="Admin Panel"
-                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#4338ca'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(99,102,241,0.1)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    {pendingCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{pendingCount}</span>
-                    )}
-                  </button>
-                )}
-
-                {/* Sign out */}
-                <button
-                  onClick={handleLogout}
-                  className="w-9 h-9 rounded-lg flex items-center justify-center transition-all"
-                  style={{ color: '#94a3b8' }}
-                  title="Sign Out"
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#b91c1c'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.07)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                </button>
-              </div>
-            ) : (
-              /* Expanded footer */
-              <div className="p-3 space-y-1">
-
-                {/* User profile row */}
-                <button
-                  onClick={() => setShowUserProfile(true)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all text-left"
-                  style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.07)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(200,134,29,0.22)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.03)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,0,0,0.06)'; }}
-                >
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#78350f' }}
-                  >
-                    {currentUser?.full_name?.charAt(0)?.toUpperCase() ?? 'U'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate leading-tight" style={{ color: '#1e293b' }}>{currentUser?.full_name ?? '-'}</p>
-                    <p className="text-[10px] font-bold tracking-widest uppercase mt-0.5" style={{ color: '#c8861d' }}>{currentUser?.role ?? '-'}</p>
-                  </div>
-                  <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0" style={{ color: '#94a3b8' }}>
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </button>
-
-                {/* Admin Panel */}
-                {isAdmin && (
-                  <button
-                    onClick={() => { setAdminPanelTab('settings'); setShowAdminPanel(true); }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
-                    style={{ color: '#64748b', border: '1px solid transparent' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(99,102,241,0.07)'; (e.currentTarget as HTMLButtonElement).style.color = '#4338ca'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(99,102,241,0.18)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#64748b'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; }}
-                  >
-                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>Admin Panel</span>
-                    {pendingCount > 0 && (
-                      <span className="ml-auto text-[10px] font-black bg-red-500 text-white rounded-full px-1.5 py-0.5 leading-none">{pendingCount}</span>
-                    )}
-                  </button>
-                )}
-
-                {/* Sign out */}
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
-                  style={{ color: '#94a3b8', border: '1px solid transparent' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.06)'; (e.currentTarget as HTMLButtonElement).style.color = '#b91c1c'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.15)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; }}
-                >
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  Sign out
-                </button>
-
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* MAIN CONTENT */}
-        <div className="flex-1 flex flex-col overflow-y-auto">
-          <div className="flex-1 overflow-hidden bg-white">
-            {showTicketing ? (
-              <div className="w-full h-full overflow-auto">
-                <iframe src={internalUrl} className="w-full h-full border-0" title={iframeTitle} />
-              </div>
-            ) : iframeUrl ? (
-              <div className="w-full h-full overflow-auto">
-                <iframe src={iframeUrl} className="w-full h-full border-0" title={iframeTitle} />
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full text-slate-400">
-                <div className="text-center">
-                  <div className="text-6xl mb-4">📂</div>
-                  <p className="font-semibold text-lg">Pilih menu dari sidebar</p>
-                  <p className="text-sm mt-1">Klik salah satu menu di sebelah kiri untuk memulai</p>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <span className={`text-xs font-bold px-3 py-1.5 rounded-full border ${a.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
+                    {a.passed ? '✅ LULUS' : '❌ TIDAK LULUS'}
+                  </span>
+                  <p className="text-xs text-slate-400">{a.submitted_at ? fmtDate(a.submitted_at) : ''}</p>
                 </div>
               </div>
-            )}
-          </div>
+            ))
+          )}
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes dropIn { from { opacity: 0; transform: translateY(-8px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
-      `}</style>
     </div>
+  );
+}
+
+// ─── TEAM: Score ──────────────────────────────────────────────────────────
+
+function ScorePage({ user }: { user: User }) {
+  const [attempts, setAttempts] = useState<any[]>([]);
+
+  useEffect(() => {
+    supabase.from('lc_quiz_attempts')
+      .select('*, lc_quiz_sessions(session_name, passing_grade, materi_name)')
+      .eq('user_id', user.id).eq('is_submitted', true)
+      .then(({ data }: { data: any[] | null }) => setAttempts(data ?? []));
+  }, [user.id]);
+
+  const avg = attempts.length ? attempts.reduce((s: number, a: any) => s + (a.score ?? 0), 0) / attempts.length : 0;
+  const passed = attempts.filter((a: any) => a.passed).length;
+
+  return (
+    <div>
+      <PageHeader title="🏆 Nilai Saya" subtitle="Rekap performa quiz kamu" />
+      <div className="p-8 space-y-6">
+        <div className="grid grid-cols-3 gap-5">
+          {[
+            { label: 'Quiz Diikuti', value: attempts.length, icon: '📝', color: 'from-blue-500 to-blue-600' },
+            { label: 'Rata-rata Skor', value: avg.toFixed(1), icon: '📊', color: 'from-indigo-500 to-indigo-600' },
+            { label: 'Total Lulus', value: passed, icon: '✅', color: 'from-emerald-500 to-emerald-600' },
+          ].map(c => (
+            <div key={c.label} className={`bg-gradient-to-br ${c.color} rounded-2xl p-6 text-white shadow-lg`}>
+              <div className="text-3xl mb-2">{c.icon}</div>
+              <div className="text-3xl font-black">{c.value}</div>
+              <div className="text-white/80 text-sm font-medium mt-1">{c.label}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
+            <h3 className="font-bold text-slate-800">Rekap Nilai Per Quiz</h3>
+          </div>
+          <table className="w-full text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50">
+              <tr>
+                <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest">Quiz</th>
+                <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Skor</th>
+                <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Benar</th>
+                <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Status</th>
+                <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Tanggal</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {attempts.length === 0 ? (
+                <tr><td colSpan={5} className="text-center py-10 text-slate-400">Belum ada quiz yang diselesaikan</td></tr>
+              ) : (
+                attempts.map(a => (
+                  <tr key={a.id} className="hover:bg-slate-50">
+                    <td className="px-5 py-3.5 font-semibold text-slate-800">{a.lc_quiz_sessions?.session_name ?? '-'}</td>
+                    <td className="px-5 py-3.5 text-center"><ScoreBadge score={a.score} passing={a.lc_quiz_sessions?.passing_grade ?? 70} /></td>
+                    <td className="px-5 py-3.5 text-center text-slate-600">{a.total_correct}/{a.total_questions}</td>
+                    <td className="px-5 py-3.5 text-center">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${a.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
+                        {a.passed ? 'LULUS' : 'TIDAK LULUS'}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-center text-slate-400 text-xs">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Export with Error Boundary ───────────────────────────────────────────
+
+export default function LearningCenterPage() {
+  return (
+    <ErrorBoundary>
+      <LearningCenterPageContent />
+    </ErrorBoundary>
   );
 }
