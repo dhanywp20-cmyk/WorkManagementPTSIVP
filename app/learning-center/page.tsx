@@ -1,13 +1,5 @@
 'use client';
 
-/**
- * LEARNING CENTER — Full Platform Component
- * ==========================================
- * Layout diubah: sidebar dihapus, diganti top navbar seperti Ticket Troubleshooting.
- * User profile di sidebar dihapus (sudah dihandle di dashboard/main menu).
- * Menu "Profile" di team view dihapus.
- */
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -85,7 +77,8 @@ type TeamView = 'my-quiz' | 'history' | 'score';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const OPENAI_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY ?? '';
+const GEMINI_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY ?? '';
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
 
 const DIFF_COLOR: Record<string, string> = {
   easy: 'bg-emerald-100 text-emerald-700 border-emerald-200',
@@ -142,8 +135,8 @@ export default function LearningCenterPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
-        <div className="text-center">
+      <div className="flex h-screen items-center justify-center" style={{backgroundImage:"url('/IVP_Background.png')",backgroundSize:'cover',backgroundPosition:'center'}}>
+        <div className="text-center px-10 py-8 rounded-3xl" style={{background:'rgba(255,255,255,0.92)',backdropFilter:'blur(20px)',boxShadow:'0 8px 40px rgba(0,0,0,0.18)'}}>
           <div className="text-4xl mb-3 animate-pulse">🎓</div>
           <p className="text-slate-500 font-medium">Memuat Learning Center...</p>
         </div>
@@ -153,8 +146,8 @@ export default function LearningCenterPage() {
 
   if (!currentUser) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
-        <div className="text-center">
+      <div className="flex h-screen items-center justify-center" style={{backgroundImage:"url('/IVP_Background.png')",backgroundSize:'cover',backgroundPosition:'center'}}>
+        <div className="text-center px-10 py-8 rounded-3xl" style={{background:'rgba(255,255,255,0.92)',backdropFilter:'blur(20px)',boxShadow:'0 8px 40px rgba(0,0,0,0.18)'}}>
           <div className="text-4xl mb-3">🔒</div>
           <p className="text-slate-500 font-medium">Silakan login terlebih dahulu.</p>
         </div>
@@ -173,31 +166,44 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
   const [teamView, setTeamView] = useState<TeamView>('my-quiz');
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 font-sans overflow-hidden">
-      {/* Top Navbar */}
-      {isAdmin
-        ? <AdminTopNav view={adminView} onChange={setAdminView} />
-        : <TeamTopNav view={teamView} onChange={setTeamView} />}
+    <div
+      className="flex flex-col min-h-screen font-sans"
+      style={{
+        backgroundImage: "url('/IVP_Background.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+      }}
+    >
+      {/* Overlay tipis */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.10)' }} />
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        {isAdmin ? (
-          <>
-            {adminView === 'dashboard'  && <AdminDashboard user={currentUser} />}
-            {adminView === 'materi'     && <MateriPage user={currentUser} />}
-            {adminView === 'questions'  && <QuestionsPage user={currentUser} />}
-            {adminView === 'sessions'   && <SessionsPage user={currentUser} />}
-            {adminView === 'team'       && <TeamPage />}
-            {adminView === 'report'     && <ReportPage />}
-            {adminView === 'analytics'  && <AnalyticsPage />}
-          </>
-        ) : (
-          <>
-            {teamView === 'my-quiz'  && <MyQuizPage user={currentUser} />}
-            {teamView === 'history'  && <HistoryPage user={currentUser} />}
-            {teamView === 'score'    && <ScorePage user={currentUser} />}
-          </>
-        )}
+      <div className="relative z-10 flex flex-col min-h-screen">
+        {/* Top Navbar */}
+        {isAdmin
+          ? <AdminTopNav view={adminView} onChange={setAdminView} />
+          : <TeamTopNav view={teamView} onChange={setTeamView} />}
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto" style={{minHeight:"calc(100vh - 100px)"}}>        
+          {isAdmin ? (
+            <>
+              {adminView === 'dashboard'  && <AdminDashboard user={currentUser} />}
+              {adminView === 'materi'     && <MateriPage user={currentUser} />}
+              {adminView === 'questions'  && <QuestionsPage user={currentUser} />}
+              {adminView === 'sessions'   && <SessionsPage user={currentUser} />}
+              {adminView === 'team'       && <TeamPage />}
+              {adminView === 'report'     && <ReportPage />}
+              {adminView === 'analytics'  && <AnalyticsPage />}
+            </>
+          ) : (
+            <>
+              {teamView === 'my-quiz'  && <MyQuizPage user={currentUser} />}
+              {teamView === 'history'  && <HistoryPage user={currentUser} />}
+              {teamView === 'score'    && <ScorePage user={currentUser} />}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -217,7 +223,7 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
   ];
 
   return (
-    <div className="bg-white border-b border-slate-200 flex-shrink-0">
+    <div style={{background:"rgba(255,255,255,0.92)",backdropFilter:"blur(16px)",borderBottom:"3px solid #dc2626"}} className="flex-shrink-0 sticky top-0 z-50">
       {/* Brand row */}
       <div className="flex items-center gap-3 px-6 pt-4 pb-0">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-base shadow">
@@ -256,7 +262,7 @@ function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView
   ];
 
   return (
-    <div className="bg-white border-b border-slate-200 flex-shrink-0">
+    <div style={{background:"rgba(255,255,255,0.92)",backdropFilter:"blur(16px)",borderBottom:"3px solid #dc2626"}} className="flex-shrink-0 sticky top-0 z-50">
       {/* Brand row */}
       <div className="flex items-center gap-3 px-6 pt-4 pb-0">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-base shadow">
@@ -291,7 +297,7 @@ function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView
 
 function PageHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 bg-white sticky top-0 z-10">
+    <div className="flex items-center justify-between px-8 py-5 border-b border-white/30 sticky top-0 z-10" style={{background:'rgba(255,255,255,0.88)',backdropFilter:'blur(12px)'}}>
       <div>
         <h1 className="text-xl font-bold text-slate-800 tracking-tight">{title}</h1>
         {subtitle && <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>}
@@ -338,7 +344,7 @@ function AdminDashboard({ user }: { user: User }) {
   return (
     <div>
       <PageHeader title="Dashboard" subtitle={`Selamat datang, ${user.full_name}`} />
-      <div className="p-8 space-y-8">
+      <div className="p-8 space-y-8" style={{minHeight:'calc(100vh - 120px)'}}>
         <div className="grid grid-cols-4 gap-5">
           {cards.map(c => (
             <div key={c.label} className={`bg-gradient-to-br ${c.color} rounded-2xl p-5 text-white shadow-lg`}>
@@ -349,7 +355,7 @@ function AdminDashboard({ user }: { user: User }) {
           ))}
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="rounded-2xl border border-white/60 overflow-hidden shadow-sm" style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
           <div className="px-6 py-4 border-b border-slate-100">
             <h3 className="font-bold text-slate-800">Aktivitas Terbaru</h3>
           </div>
@@ -377,6 +383,46 @@ function AdminDashboard({ user }: { user: User }) {
   );
 }
 
+// ─── Gemini Helper ────────────────────────────────────────────────────────────
+
+async function fileToBase64(f: File): Promise<string> {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = e => res((e.target?.result as string).split(',')[1]);
+    reader.onerror = () => rej(new Error('Read failed'));
+    reader.readAsDataURL(f);
+  });
+}
+
+async function generateWithGemini(prompt: string, pdfFile?: File | null): Promise<string> {
+  const parts: any[] = [];
+
+  // Jika ada PDF, kirim langsung sebagai inline_data
+  if (pdfFile) {
+    const base64 = await fileToBase64(pdfFile);
+    parts.push({ inline_data: { mime_type: pdfFile.type || 'application/pdf', data: base64 } });
+  }
+
+  parts.push({ text: prompt });
+
+  const res = await fetch(GEMINI_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts }],
+      generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err?.error?.message ?? 'Gemini API error');
+  }
+
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+}
+
 // ─── ADMIN: Materi Page ───────────────────────────────────────────────────────
 
 function MateriPage({ user }: { user: User }) {
@@ -386,6 +432,7 @@ function MateriPage({ user }: { user: User }) {
   const [uploading, setUploading] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [pdfPreview, setPdfPreview] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -394,33 +441,56 @@ function MateriPage({ user }: { user: User }) {
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  const extractTextFromFile = async (f: File): Promise<string> => {
-    return new Promise((res) => {
-      const reader = new FileReader();
-      reader.onload = e => res((e.target?.result as string) ?? '');
-      reader.readAsText(f);
-    });
-  };
-
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
     setFile(f);
-    setForm(prev => ({ ...prev, file_name: f.name, file_type: f.name.split('.').pop() ?? 'pdf' }));
-    if (f.type === 'text/plain') {
+    setPdfPreview(null);
+    setForm(prev => ({ ...prev, file_name: f.name, file_type: f.name.split('.').pop() ?? 'pdf', content_text: '' }));
+
+    const ext = f.name.split('.').pop()?.toLowerCase();
+
+    if (ext === 'txt') {
+      // Baca langsung sebagai teks
       setExtracting(true);
-      const text = await extractTextFromFile(f);
-      setForm(prev => ({ ...prev, content_text: text.slice(0, 15000) }));
+      const text = await new Promise<string>((res) => {
+        const reader = new FileReader();
+        reader.onload = e => res((e.target?.result as string) ?? '');
+        reader.readAsText(f);
+      });
+      setForm(prev => ({ ...prev, content_text: text.slice(0, 20000) }));
       setExtracting(false);
+    } else if (ext === 'pdf') {
+      // PDF langsung disimpan sebagai file — Gemini akan baca saat generate soal
+      setPdfPreview(`✅ PDF siap — akan dibaca langsung oleh Gemini AI saat generate soal`);
+    } else {
+      // Untuk pptx/docx user tetap bisa paste teks manual
     }
   };
 
   const handleSave = async () => {
     if (!form.materi_name.trim()) return alert('Nama materi wajib diisi!');
     setUploading(true);
+
+    // Jika ada PDF dan belum ada content_text, ekstrak teks via Gemini
+    let contentText = form.content_text;
+    if (file && file.name.endsWith('.pdf') && !contentText.trim()) {
+      try {
+        setExtracting(true);
+        contentText = await generateWithGemini(
+          'Ekstrak semua teks dari dokumen PDF ini secara lengkap. Kembalikan hanya teks konten tanpa komentar apapun.',
+          file
+        );
+        setExtracting(false);
+      } catch {
+        setExtracting(false);
+        // Simpan tanpa content_text jika ekstraksi gagal
+      }
+    }
+
     const { error } = await supabase.from('lc_materials').insert([{
       materi_name: form.materi_name,
-      content_text: form.content_text || null,
+      content_text: contentText || null,
       file_url: form.file_url || null,
       file_name: form.file_name || null,
       file_type: form.file_type || null,
@@ -431,6 +501,7 @@ function MateriPage({ user }: { user: User }) {
     setShowForm(false);
     setForm({ materi_name: '', file_url: '', file_name: '', file_type: 'pdf', content_text: '' });
     setFile(null);
+    setPdfPreview(null);
     load();
   };
 
@@ -452,7 +523,7 @@ function MateriPage({ user }: { user: User }) {
       />
       <div className="p-8">
         {showForm && (
-          <div className="bg-white rounded-2xl border border-blue-100 shadow-lg p-6 mb-8">
+          <div className="rounded-2xl border border-blue-100 shadow-lg p-6 mb-8" style={{background:"rgba(255,255,255,0.94)",backdropFilter:"blur(12px)"}}>
             <h3 className="font-bold text-slate-800 mb-5 flex items-center gap-2">✏️ Form Materi Baru</h3>
             <div className="space-y-4">
               <div>
@@ -462,34 +533,43 @@ function MateriPage({ user }: { user: User }) {
                   placeholder="contoh: Pengenalan Produk Microvision" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Link Download OneDrive</label>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Link Download OneDrive (opsional)</label>
                 <input value={form.file_url} onChange={e => setForm(p => ({ ...p, file_url: e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                   placeholder="https://1drv.ms/..." />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Upload File untuk AI (txt/pdf extract)</label>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                  Upload File Materi
+                  <span className="ml-2 text-[10px] font-normal text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full normal-case tracking-normal">
+                    ✨ PDF langsung dibaca Gemini AI
+                  </span>
+                </label>
                 <input ref={fileRef} type="file" accept=".txt,.pdf,.pptx,.docx" onChange={handleFileChange} className="hidden" />
-                <div className="flex gap-3 items-center">
+                <div className="flex gap-3 items-center flex-wrap">
                   <button onClick={() => fileRef.current?.click()}
-                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl border border-slate-200 transition-all">
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl border border-slate-200 transition-all flex items-center gap-2">
                     📁 Pilih File
                   </button>
-                  {file && <span className="text-sm text-slate-600 font-medium">{file.name}</span>}
-                  {extracting && <span className="text-xs text-blue-600 animate-pulse">Membaca file...</span>}
+                  {file && <span className="text-sm text-slate-600 font-medium">📄 {file.name}</span>}
+                  {extracting && <span className="text-xs text-blue-600 animate-pulse font-medium">⏳ Membaca file...</span>}
                 </div>
+                {pdfPreview && (
+                  <p className="mt-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 font-medium">{pdfPreview}</p>
+                )}
+                <p className="text-xs text-slate-400 mt-1.5">Mendukung: PDF, TXT, PPTX, DOCX — PDF akan dibaca langsung oleh Gemini AI</p>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Konten Teks (untuk AI Generate Soal)</label>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Konten Teks (opsional — auto-terisi dari TXT)</label>
                 <textarea value={form.content_text} onChange={e => setForm(p => ({ ...p, content_text: e.target.value }))}
-                  rows={6} placeholder="Paste isi materi di sini, atau upload file .txt di atas..."
+                  rows={5} placeholder="Otomatis terisi dari file .txt, atau paste manual untuk PPTX/DOCX. Kosongkan jika upload PDF."
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none" />
-                <p className="text-xs text-slate-400 mt-1">{form.content_text.length} karakter — untuk PDF/PPTX, copy-paste isi slide/halaman di sini</p>
+                <p className="text-xs text-slate-400 mt-1">{form.content_text.length} karakter</p>
               </div>
               <div className="flex gap-3 pt-2">
-                <button onClick={handleSave} disabled={uploading}
+                <button onClick={handleSave} disabled={uploading || extracting}
                   className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60">
-                  {uploading ? 'Menyimpan...' : '💾 Simpan Materi'}
+                  {uploading ? (extracting ? '⏳ Mengekstrak PDF...' : '💾 Menyimpan...') : '💾 Simpan Materi'}
                 </button>
                 <button onClick={() => setShowForm(false)}
                   className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all">
@@ -509,7 +589,7 @@ function MateriPage({ user }: { user: User }) {
             </div>
           )}
           {materials.map(m => (
-            <div key={m.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex items-start gap-4 group hover:shadow-md transition-all">
+            <div key={m.id} className="rounded-2xl border border-white/60 shadow-sm p-5 flex items-start gap-4 group hover:shadow-md transition-all" style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
               <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-2xl flex-shrink-0">📄</div>
               <div className="flex-1 min-w-0">
                 <h4 className="font-bold text-slate-800">{m.materi_name}</h4>
@@ -549,7 +629,10 @@ function QuestionsPage({ user }: { user: User }) {
   const [genCount, setGenCount] = useState(10);
   const [genDiff, setGenDiff] = useState<'easy' | 'medium' | 'hard' | 'mixed'>('mixed');
   const [generating, setGenerating] = useState(false);
+  const [genStatus, setGenStatus] = useState('');
   const [editQ, setEditQ] = useState<Question | null>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const pdfRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     const { data: mats } = await supabase.from('lc_materials').select('*').order('created_at', { ascending: false });
@@ -564,69 +647,69 @@ function QuestionsPage({ user }: { user: User }) {
   const handleGenerate = async () => {
     if (!selectedMat) return alert('Pilih materi terlebih dahulu!');
     const mat = materials.find(m => m.id === selectedMat);
-    if (!mat?.content_text) return alert('Materi ini belum memiliki teks konten. Tambahkan teks pada halaman Materi.');
+
+    if (!pdfFile && !mat?.content_text) {
+      return alert('Upload PDF materi di sini, atau pastikan materi sudah punya konten teks di halaman Materi.');
+    }
 
     setGenerating(true);
+    setGenStatus('Menghubungi Gemini AI...');
     try {
       const diffInstruction = genDiff === 'mixed'
         ? 'Buat soal dengan campuran tingkat kesulitan: easy, medium, dan hard secara merata.'
         : `Semua soal tingkat kesulitan: ${genDiff}.`;
 
-      const prompt = `Kamu adalah instruktur training profesional. Berdasarkan materi berikut, buat ${genCount} soal pilihan ganda (A, B, C, D) dalam Bahasa Indonesia.
+      const prompt = `Kamu adalah instruktur training profesional. ${pdfFile ? 'Berdasarkan dokumen PDF yang dilampirkan' : 'Berdasarkan materi berikut'}, buat tepat ${genCount} soal pilihan ganda (A, B, C, D) dalam Bahasa Indonesia.
 ${diffInstruction}
+${!pdfFile && mat?.content_text ? `\nMATERI:\n${mat.content_text.slice(0, 30000)}` : ''}
 
-MATERI:
-${mat.content_text.slice(0, 8000)}
-
-Kembalikan HANYA JSON array dengan format:
+Kembalikan HANYA JSON array, tanpa markdown, tanpa teks lain:
 [
   {
-    "question": "Pertanyaan?",
-    "option_a": "...",
-    "option_b": "...",
-    "option_c": "...",
-    "option_d": "...",
+    "question": "Pertanyaan lengkap?",
+    "option_a": "Jawaban A",
+    "option_b": "Jawaban B",
+    "option_c": "Jawaban C",
+    "option_d": "Jawaban D",
     "correct_answer": "A",
     "difficulty": "easy"
   }
-]
-Tidak ada teks lain, hanya JSON.`;
+]`;
 
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_KEY}` },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.7,
-          max_tokens: 4000,
-        }),
-      });
-      const data = await res.json();
-      const text: string = data.choices?.[0]?.message?.content ?? '';
+      setGenStatus(pdfFile ? '📄 Mengirim PDF ke Gemini...' : '🧠 Generating soal...');
+      const text = await generateWithGemini(prompt, pdfFile ?? null);
+
+      setGenStatus('⚙️ Memproses hasil...');
       const jsonStr = text.replace(/```json|```/g, '').trim();
-      const parsed: any[] = JSON.parse(jsonStr);
+      const match = jsonStr.match(/\[[\s\S]*\]/);
+      if (!match) throw new Error('Format JSON tidak ditemukan dalam response Gemini');
+      const parsed: any[] = JSON.parse(match[0]);
 
       const rows = parsed.map(q => ({
         material_id: selectedMat,
-        materi_name: mat.materi_name,
+        materi_name: mat?.materi_name ?? '',
         question: q.question,
         option_a: q.option_a,
         option_b: q.option_b,
         option_c: q.option_c,
         option_d: q.option_d,
-        correct_answer: q.correct_answer.toUpperCase(),
+        correct_answer: (q.correct_answer ?? 'A').toUpperCase(),
         difficulty: q.difficulty ?? 'medium',
         created_by: user.id,
       }));
 
+      setGenStatus('💾 Menyimpan ke database...');
       const { error } = await supabase.from('lc_questions').insert(rows);
       if (error) throw error;
-      alert(`✅ ${rows.length} soal berhasil digenerate dan disimpan!`);
+
+      alert(`✅ ${rows.length} soal berhasil digenerate dengan Gemini AI!`);
       setShowGenerate(false);
+      setPdfFile(null);
+      setGenStatus('');
       load();
     } catch (err: any) {
       alert('Gagal generate: ' + (err.message ?? String(err)));
+      setGenStatus('');
     }
     setGenerating(false);
   };
@@ -672,19 +755,20 @@ Tidak ada teks lain, hanya JSON.`;
         {/* Generate Panel */}
         {showGenerate && (
           <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl border border-violet-200 p-6">
-            <h3 className="font-bold text-violet-800 mb-4 flex items-center gap-2">✨ Generate Soal dengan AI</h3>
+            <h3 className="font-bold text-violet-800 mb-1 flex items-center gap-2">✨ Generate Soal dengan Gemini AI</h3>
+            <p className="text-xs text-violet-500 mb-4">Upload PDF langsung — Gemini membaca isi PDF secara otomatis</p>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
                 <select value={selectedMat} onChange={e => setSelectedMat(e.target.value)}
                   className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
                   <option value="">-- Pilih Materi --</option>
-                  {materials.map(m => <option key={m.id} value={m.id}>{m.materi_name}</option>)}
+                  {materials.map(m => <option key={m.id} value={m.id}>{m.materi_name} {m.content_text ? '✅' : ''}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Jumlah Soal</label>
-                <input type="number" min={1} max={50} value={genCount} onChange={e => setGenCount(+e.target.value)}
+                <input type="number" min={1} max={100} value={genCount} onChange={e => setGenCount(+e.target.value)}
                   className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white" />
               </div>
               <div>
@@ -697,13 +781,38 @@ Tidak ada teks lain, hanya JSON.`;
                   <option value="hard">Hard</option>
                 </select>
               </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                  Upload PDF Materi
+                  <span className="ml-1 text-[10px] font-normal text-violet-500 normal-case tracking-normal">(prioritas utama)</span>
+                </label>
+                <input ref={pdfRef} type="file" accept=".pdf" onChange={e => setPdfFile(e.target.files?.[0] ?? null)} className="hidden" />
+                <div className="flex items-center gap-2">
+                  <button onClick={() => pdfRef.current?.click()}
+                    className="px-3 py-2 bg-white border border-violet-200 hover:bg-violet-50 text-violet-700 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5">
+                    📄 Pilih PDF
+                  </button>
+                  {pdfFile
+                    ? <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg">✅ {pdfFile.name}</span>
+                    : <span className="text-xs text-slate-400">atau gunakan teks dari materi</span>}
+                  {pdfFile && <button onClick={() => setPdfFile(null)} className="text-xs text-rose-500 hover:text-rose-700">✕</button>}
+                </div>
+              </div>
             </div>
+            {genStatus && (
+              <div className="mb-4 flex items-center gap-2 text-sm text-violet-700 bg-violet-100 border border-violet-200 rounded-xl px-4 py-2.5 font-medium">
+                <span className="w-4 h-4 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin flex-shrink-0" />
+                {genStatus}
+              </div>
+            )}
             <div className="flex gap-3">
               <button onClick={handleGenerate} disabled={generating}
                 className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60 flex items-center gap-2">
-                {generating ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generating...</> : '✨ Generate Sekarang'}
+                {generating
+                  ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generating...</>
+                  : '✨ Generate Sekarang'}
               </button>
-              <button onClick={() => setShowGenerate(false)}
+              <button onClick={() => { setShowGenerate(false); setPdfFile(null); setGenStatus(''); }}
                 className="px-5 py-2.5 bg-white text-slate-600 text-sm font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all">
                 Batal
               </button>
@@ -714,7 +823,7 @@ Tidak ada teks lain, hanya JSON.`;
         {/* Edit Modal */}
         {editQ && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{background:"rgba(255,255,255,0.97)",backdropFilter:"blur(16px)"}}>
               <h3 className="font-bold text-slate-800 mb-4">✏️ Edit Soal</h3>
               <div className="space-y-3">
                 <textarea value={editQ.question} onChange={e => setEditQ(p => p && ({ ...p, question: e.target.value }))}
@@ -864,7 +973,7 @@ function SessionsPage({ user }: { user: User }) {
       />
       <div className="p-8 space-y-6">
         {showForm && (
-          <div className="bg-white rounded-2xl border border-emerald-100 shadow-lg p-6">
+          <div className="rounded-2xl border border-emerald-100 shadow-lg p-6" style={{background:"rgba(255,255,255,0.94)",backdropFilter:"blur(12px)"}}>
             <h3 className="font-bold text-slate-800 mb-5">📋 Form Sesi Quiz Baru</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
@@ -938,7 +1047,7 @@ function SessionsPage({ user }: { user: User }) {
             </div>
           )}
           {sessions.map(s => (
-            <div key={s.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <div key={s.id} className="rounded-2xl border border-white/60 shadow-sm p-5" style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -996,9 +1105,9 @@ function TeamPage() {
     <div>
       <PageHeader title="👥 Team" subtitle="Daftar anggota team & partisipasi quiz" />
       <div className="p-8">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="rounded-2xl border border-white/60 shadow-sm overflow-hidden" style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="border-b border-slate-200" style={{background:"rgba(248,250,252,0.95)"}}>
               <tr>
                 <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest">Nama</th>
                 <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest">Role</th>
@@ -1105,9 +1214,9 @@ function ReportPage() {
                 </div>
               ))}
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="rounded-2xl border border-white/60 shadow-sm overflow-hidden" style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
               <table className="w-full text-sm">
-                <thead className="bg-slate-50 border-b border-slate-200">
+                <thead className="border-b border-slate-200" style={{background:"rgba(248,250,252,0.95)"}}>
                   <tr>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest w-10">#</th>
                     <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest">Peserta</th>
@@ -1204,9 +1313,9 @@ function AnalyticsPage() {
       <div className="p-8 space-y-8">
         <div>
           <h3 className="font-bold text-slate-800 mb-4">🏆 Top Performers</h3>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="rounded-2xl border border-white/60 shadow-sm overflow-hidden" style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 border-b border-slate-200">
+              <thead className="border-b border-slate-200" style={{background:"rgba(248,250,252,0.95)"}}>
                 <tr>
                   <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest w-10">#</th>
                   <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest">Nama</th>
@@ -1322,7 +1431,7 @@ function MyQuizPage({ user }: { user: User }) {
         {sessions.map(s => {
           const inProgress = activeAttempts[s.id];
           return (
-            <div key={s.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex items-start gap-5 hover:shadow-md transition-all">
+            <div key={s.id} className="rounded-2xl border border-white/60 shadow-sm p-6 flex items-start gap-5 hover:shadow-md transition-all" style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-2xl flex-shrink-0">🎯</div>
               <div className="flex-1 min-w-0">
                 <h4 className="font-bold text-slate-800 text-lg">{s.session_name}</h4>
@@ -1516,7 +1625,7 @@ function QuizPlayer({ session, user, attempt, onDone }: {
                 <div className="bg-indigo-500 h-1.5 rounded-full transition-all" style={{ width: `${((current+1)/questions.length)*100}%` }} />
               </div>
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+            <div className="rounded-2xl border border-white/60 shadow-sm p-6 mb-6" style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
               <p className="text-base font-semibold text-slate-800 leading-relaxed">{q.question}</p>
             </div>
             <div className="space-y-3">
@@ -1609,7 +1718,7 @@ function HistoryPage({ user }: { user: User }) {
             </div>
           )}
           {history.map(a => (
-            <div key={a.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex items-center gap-5">
+            <div key={a.id} className="rounded-2xl border border-white/60 shadow-sm p-5 flex items-center gap-5" style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white flex-shrink-0 ${a.passed ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-rose-400 to-rose-600'}`}>
                 {a.score?.toFixed(0) ?? '—'}
               </div>
@@ -1673,12 +1782,12 @@ function ScorePage({ user }: { user: User }) {
           ))}
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="rounded-2xl border border-white/60 shadow-sm overflow-hidden" style={{background:"rgba(255,255,255,0.90)",backdropFilter:"blur(8px)"}}>
           <div className="px-6 py-4 border-b border-slate-100">
             <h3 className="font-bold text-slate-800">Rekap Nilai Per Quiz</h3>
           </div>
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="border-b border-slate-200" style={{background:"rgba(248,250,252,0.95)"}}>
               <tr>
                 <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest">Quiz</th>
                 <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Skor</th>
