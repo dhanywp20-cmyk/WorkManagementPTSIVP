@@ -1,5 +1,18 @@
 'use client';
 
+/**
+ * LEARNING CENTER — Full Platform Component
+ * ==========================================
+ * Layout diubah: sidebar dihapus, diganti top navbar seperti Ticket Troubleshooting.
+ * User profile di sidebar dihapus (sudah dihandle di dashboard/main menu).
+ * Menu "Profile" di team view dihapus.
+ * AI Generate: menggunakan Google Gemini API (gemini-1.5-flash), support upload PDF langsung.
+ *
+ * Environment variables needed in .env.local:
+ *   NEXT_PUBLIC_GEMINI_API_KEY=AIza...
+ *   (Supabase vars already exist in your project)
+ */
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -78,7 +91,7 @@ type TeamView = 'my-quiz' | 'history' | 'score';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const GEMINI_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY ?? '';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
 
 const DIFF_COLOR: Record<string, string> = {
   easy: 'bg-emerald-100 text-emerald-700 border-emerald-200',
