@@ -45,18 +45,17 @@ export function ReportPage({ currentUser }: { currentUser: User }) {
         <div>
           <h1 className="text-xl font-bold text-slate-800 tracking-tight">📋 Laporan</h1>
           <p className="text-sm text-slate-500 mt-0.5">Hasil quiz per sesi</p>
-        </div>
-        <SearchInput value={search} onChange={setSearch} placeholder="Cari peserta..." />
-      </div>
-      <div className="p-8 space-y-6">
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-widest mb-3 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">Pilih Sesi Quiz</label>
+		<div>
           <select value={selectedSession} onChange={e => setSelectedSession(e.target.value)}
             className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 bg-white min-w-[320px]">
             <option value="">-- Pilih Sesi --</option>
             {sessions.map(s => <option key={s.id} value={s.id}>{s.session_name}</option>)}
           </select>
         </div>
+        </div>
+        <SearchInput value={search} onChange={setSearch} placeholder="Cari peserta..." />
+      </div>
+      <div className="p-8 space-y-6">
 
         {data.length > 0 && (
           <>
