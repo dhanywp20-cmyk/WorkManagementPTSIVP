@@ -374,10 +374,13 @@ export function MyQuizPage({ user }: { user: User }) {
       </div>
       <div className="p-8 grid grid-cols-1 gap-4">
         {filteredSessions.length === 0 && (
-          <div className="text-center py-16 text-slate-400">
-            <div className="text-5xl mb-3">🎯</div>
-            <p className="font-semibold">{search ? 'Tidak ada quiz yang cocok' : 'Belum ada quiz aktif'}</p>
-            {!search && <p className="text-sm mt-1">Tunggu admin membuat sesi quiz baru</p>}
+          <div className="flex justify-center py-16">
+            <div className="text-center px-10 py-8 rounded-2xl"
+              style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
+              <div className="text-5xl mb-3">🎯</div>
+              <p className="font-semibold text-slate-700">{search ? 'Tidak ada quiz yang cocok' : 'Belum ada quiz aktif'}</p>
+              {!search && <p className="text-sm mt-1 text-slate-500">Tunggu admin membuat sesi quiz baru</p>}
+            </div>
           </div>
         )}
         {filteredSessions.map(s => {
