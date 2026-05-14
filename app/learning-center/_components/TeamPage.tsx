@@ -38,8 +38,8 @@ function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: (
 
   if (selectedAttempt) {
     return (
-      <div>
-        <div className="flex items-center justify-between px-8 py-5 border-b border-white/30 sticky top-0 z-10"
+      <div style={{ background: '#f8fafc', minHeight: '100%' }}>
+        <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
           style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)' }}>
           <div>
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">📋 Review Jawaban — {user.full_name}</h1>
@@ -73,7 +73,7 @@ function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: (
                 const notAnswered = !userAnswer;
                 return (
                   <div key={q.id}
-                    className={`rounded-2xl border-2 shadow-sm p-5 ${notAnswered ? 'border-slate-200 bg-white' : isCorrect ? 'border-emerald-300 bg-emerald-50/30' : 'border-rose-300 bg-rose-50/30'}`}>
+                    className={`rounded-2xl border-2 p-5 ${notAnswered ? 'border-slate-200 bg-white' : isCorrect ? 'border-emerald-300 bg-emerald-50' : 'border-rose-300 bg-rose-50'}`}>
                     <div className="flex items-start gap-3 mb-3">
                       <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 text-white ${notAnswered ? 'bg-slate-400' : isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`}>
                         {notAnswered ? '—' : isCorrect ? '✓' : '✗'}

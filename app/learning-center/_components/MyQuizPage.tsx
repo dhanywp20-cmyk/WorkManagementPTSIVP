@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase, User, Question, QuizSession, QuizAttempt, SearchInput } from './shared';
+import { supabase, User, Question, QuizSession, QuizAttempt, SearchInput, AppDialog, DialogState } from './shared';
 
 function QuizPlayer({ session, user, attempt, onDone }: {
   session: QuizSession; user: User; attempt: QuizAttempt; onDone: () => void;
@@ -14,7 +14,9 @@ function QuizPlayer({ session, user, attempt, onDone }: {
   const [result, setResult] = useState<{ score: number; correct: number; passed: boolean } | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(session.timer_minutes ? session.timer_minutes * 60 : null);
   const [tabSwitches, setTabSwitches] = useState(0);
+  const tabSwitchesRef = useRef(0);
   const [showReview, setShowReview] = useState(false);
+  const [dialog, setDialog] = useState<DialogState>(null);
   const startTime = useRef(Date.now());
 
   useEffect(() => {
@@ -44,12 +46,17 @@ function QuizPlayer({ session, user, attempt, onDone }: {
   useEffect(() => {
     const onVisChange = () => {
       if (document.hidden && !submitted) {
-        setTabSwitches(p => {
-          const next = p + 1;
-          supabase.from('lc_quiz_attempts').update({ tab_switches: next }).eq('id', attempt.id);
-          if (next >= 3) alert('⚠️ Peringatan: Kamu telah berpindah tab sebanyak ' + next + ' kali. Data ini direkam admin.');
-          return next;
-        });
+        tabSwitchesRef.current += 1;
+        const next = tabSwitchesRef.current;
+        setTabSwitches(next);
+        supabase.from('lc_quiz_attempts').update({ tab_switches: next }).eq('id', attempt.id);
+        if (next >= 3) {
+          setDialog({
+            type: 'warning',
+            title: 'Peringatan Tab Switch',
+            message: `Kamu telah berpindah tab sebanyak ${next} kali. Data ini direkam oleh admin.`,
+          });
+        }
       }
     };
     document.addEventListener('visibilitychange', onVisChange);
@@ -73,7 +80,15 @@ function QuizPlayer({ session, user, attempt, onDone }: {
   };
 
   const handleSubmit = async (autoSubmit = false) => {
-    if (!autoSubmit && !confirm('Submit jawaban? Pastikan semua soal sudah dijawab.')) return;
+    if (!autoSubmit) {
+      setDialog({
+        type: 'confirm', title: 'Submit Quiz',
+        message: 'Submit jawaban sekarang? Pastikan semua soal sudah dijawab.',
+        confirmLabel: 'Submit Sekarang',
+        onConfirm: () => handleSubmit(true),
+      });
+      return;
+    }
     const timeTaken = Math.round((Date.now() - startTime.current) / 1000);
     let correct = 0;
     questions.forEach(q => { if ((answers[q.id] ?? savedAnswers[q.id]) === q.correct_answer) correct++; });
@@ -186,6 +201,7 @@ function QuizPlayer({ session, user, attempt, onDone }: {
   const isUrgent = timeLeft !== null && timeLeft < 60;
 
   return (
+    <>
     <div className="flex h-full" style={{ background: '#f1f5f9' }}>
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-6 py-3 border-b border-slate-200 flex-shrink-0" style={{ background: '#ffffff' }}>
@@ -282,6 +298,8 @@ function QuizPlayer({ session, user, attempt, onDone }: {
         </div>
       </div>
     </div>
+    {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
+    </>
   );
 }
 
@@ -290,6 +308,7 @@ export function MyQuizPage({ user }: { user: User }) {
   const [activeAttempts, setActiveAttempts] = useState<Record<string, QuizAttempt>>({});
   const [playingSession, setPlayingSession] = useState<QuizSession | null>(null);
   const [search, setSearch] = useState('');
+  const [dialog, setDialog] = useState<DialogState>(null);
 
   const load = useCallback(async () => {
     const { data: s } = await supabase.from('lc_quiz_sessions').select('*').eq('is_active', true).order('created_at', { ascending: false });
@@ -313,12 +332,18 @@ export function MyQuizPage({ user }: { user: User }) {
     if (!session.allow_retake) {
       const { data: prev } = await supabase.from('lc_quiz_attempts')
         .select('id').eq('user_id', user.id).eq('quiz_session_id', session.id).eq('is_submitted', true);
-      if (prev && prev.length > 0) { alert('Quiz ini tidak mengizinkan retake. Kamu sudah pernah submit.'); return; }
+      if (prev && prev.length > 0) {
+        setDialog({ type: 'info', title: 'Tidak Bisa Retake', message: 'Quiz ini tidak mengizinkan retake. Kamu sudah pernah submit.' });
+        return;
+      }
     }
     const { data: att, error } = await supabase.from('lc_quiz_attempts').insert([{
       user_id: user.id, quiz_session_id: session.id, total_questions: session.question_count,
     }]).select().single();
-    if (error || !att) return alert('Gagal memulai quiz: ' + error?.message);
+    if (error || !att) {
+      setDialog({ type: 'error', message: 'Gagal memulai quiz: ' + error?.message });
+      return;
+    }
     await load();
     setPlayingSession(session);
   };
@@ -383,6 +408,7 @@ export function MyQuizPage({ user }: { user: User }) {
           );
         })}
       </div>
+      {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
     </div>
   );
 }

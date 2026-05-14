@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, User, Material, Question, QuizSession, fmtDate, SearchInput } from './shared';
+import { supabase, User, Material, Question, QuizSession, fmtDate, SearchInput, AppDialog, DialogState } from './shared';
 
 export function SessionsPage({ user }: { user: User }) {
   const [sessions, setSessions] = useState<QuizSession[]>([]);
@@ -17,6 +17,7 @@ export function SessionsPage({ user }: { user: User }) {
   });
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
+  const [dialog, setDialog] = useState<DialogState>(null);
 
   const load = useCallback(async () => {
     const [{ data: s }, { data: m }, { data: q }, { data: u }] = await Promise.all([
@@ -42,14 +43,17 @@ export function SessionsPage({ user }: { user: User }) {
   };
 
   const handleCreate = async () => {
-    if (!form.session_name.trim()) return alert('Nama sesi wajib diisi!');
-    if (!form.material_id) return alert('Pilih materi!');
-    if (!form.target_all && form.target_user_ids.length === 0) return alert('Pilih minimal 1 anggota team!');
-    if (form.open_at && form.close_at && new Date(form.open_at) >= new Date(form.close_at))
-      return alert('Waktu tutup harus setelah waktu buka!');
+    if (!form.session_name.trim()) { setDialog({ type: 'error', message: 'Nama sesi wajib diisi!' }); return; }
+    if (!form.material_id) { setDialog({ type: 'error', message: 'Pilih materi!' }); return; }
+    if (!form.target_all && form.target_user_ids.length === 0) { setDialog({ type: 'error', message: 'Pilih minimal 1 anggota team!' }); return; }
+    if (form.open_at && form.close_at && new Date(form.open_at) >= new Date(form.close_at)) {
+      setDialog({ type: 'error', message: 'Waktu tutup harus setelah waktu buka!' }); return;
+    }
     const mat = materials.find(m => m.id === form.material_id);
     const pool = questions.filter(q => q.material_id === form.material_id);
-    if (pool.length < form.question_count) return alert(`Hanya ada ${pool.length} soal. Kurangi jumlah soal atau generate lebih banyak.`);
+    if (pool.length < form.question_count) {
+      setDialog({ type: 'error', message: `Hanya ada ${pool.length} soal. Kurangi jumlah soal atau generate lebih banyak.` }); return;
+    }
     const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, form.question_count);
     setSaving(true);
     const { error } = await supabase.from('lc_quiz_sessions').insert([{
@@ -63,19 +67,24 @@ export function SessionsPage({ user }: { user: User }) {
       scheduled_at: form.open_at ? new Date(form.open_at).toISOString() : null,
     }]);
     setSaving(false);
-    if (error) return alert('Error: ' + error.message);
+    if (error) { setDialog({ type: 'error', message: 'Error: ' + error.message }); return; }
     setShowForm(false);
     setForm({ session_name: '', material_id: '', question_count: 10, timer_minutes: 30, passing_grade: 70, allow_retake: true, target_all: true, target_user_ids: [], open_at: '', close_at: '' });
     load();
+    setDialog({ type: 'success', message: 'Sesi quiz berhasil dibuat!' });
   };
 
   const toggleActive = async (id: string, current: boolean) => {
     await supabase.from('lc_quiz_sessions').update({ is_active: !current }).eq('id', id); load();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Hapus sesi quiz ini? Semua jawaban akan ikut terhapus.')) return;
-    await supabase.from('lc_quiz_sessions').delete().eq('id', id); load();
+  const handleDelete = (id: string) => {
+    setDialog({
+      type: 'confirm', title: 'Hapus Sesi Quiz',
+      message: 'Sesi quiz dan semua jawaban akan dihapus permanen. Lanjutkan?',
+      confirmLabel: 'Hapus',
+      onConfirm: async () => { await supabase.from('lc_quiz_sessions').delete().eq('id', id); load(); },
+    });
   };
 
   const getSessionStatus = (s: QuizSession) => {
@@ -283,6 +292,7 @@ export function SessionsPage({ user }: { user: User }) {
           })}
         </div>
       </div>
+      {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
     </div>
   );
 }

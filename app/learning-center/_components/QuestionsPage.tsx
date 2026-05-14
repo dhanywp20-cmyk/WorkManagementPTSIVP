@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   supabase, User, Material, Question, FolderNode,
   buildFolderTree, DIFF_COLOR, SearchInput,
-  generateWithGemini, fileToBase64,
+  generateWithGemini, fileToBase64, AppDialog, DialogState,
 } from './shared';
 
 export function QuestionsPage({ user }: { user: User }) {
@@ -22,6 +22,7 @@ export function QuestionsPage({ user }: { user: User }) {
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [selectedSubFolder, setSelectedSubFolder] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [dialog, setDialog] = useState<DialogState>(null);
 
   const load = useCallback(async () => {
     const { data: mats } = await supabase.from('lc_materials').select('*').order('materi_name');
@@ -67,9 +68,9 @@ export function QuestionsPage({ user }: { user: User }) {
     : visibleQuestions;
 
   const handleGenerate = async () => {
-    if (!selectedMat) return alert('Pilih materi terlebih dahulu!');
+    if (!selectedMat) { setDialog({ type: 'error', message: 'Pilih materi terlebih dahulu!' }); return; }
     const mat = materials.find(m => m.id === selectedMat);
-    if (!pdfFile && !mat?.content_text) return alert('Upload PDF materi atau pastikan materi sudah punya konten teks.');
+    if (!pdfFile && !mat?.content_text) { setDialog({ type: 'error', message: 'Upload PDF materi atau pastikan materi sudah punya konten teks.' }); return; }
     setGenerating(true);
     setGenStatus('Menghubungi Gemini AI...');
     try {
@@ -96,17 +97,22 @@ export function QuestionsPage({ user }: { user: User }) {
       if (error) throw error;
       setPdfFile(null);
       if (pdfRef.current) pdfRef.current.value = '';
-      alert(`✅ ${rows.length} soal berhasil digenerate!`);
       setShowGenerate(false); setGenStatus(''); load();
+      setDialog({ type: 'success', title: 'Generate Selesai', message: `${rows.length} soal berhasil digenerate dan disimpan!` });
     } catch (err: any) {
-      alert('Gagal generate: ' + (err.message ?? String(err))); setGenStatus('');
+      setDialog({ type: 'error', title: 'Generate Gagal', message: 'Gagal generate: ' + (err.message ?? String(err)) });
+      setGenStatus('');
     }
     setGenerating(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Hapus soal ini?')) return;
-    await supabase.from('lc_questions').delete().eq('id', id); load();
+  const handleDelete = (id: string) => {
+    setDialog({
+      type: 'confirm', title: 'Hapus Soal',
+      message: 'Soal ini akan dihapus permanen. Lanjutkan?',
+      confirmLabel: 'Hapus',
+      onConfirm: async () => { await supabase.from('lc_questions').delete().eq('id', id); load(); },
+    });
   };
 
   const handleSaveEdit = async () => {
@@ -231,7 +237,7 @@ export function QuestionsPage({ user }: { user: User }) {
                 const subCount = Object.keys(fNode.children).length;
                 return (
                   <button key={fKey} onClick={() => { setSelectedFolder(fKey); setSelectedSubFolder(null); }}
-                    className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-amber-200 bg-amber-50 hover:border-amber-400 hover:shadow-md transition-all">
+                    className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 bg-white hover:border-blue-400 hover:shadow-lg transition-all">
                     <svg className="w-12 h-12" viewBox="0 0 48 48" fill="none">
                       <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="#FBBF24" />
                       <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="none" stroke="#D97706" strokeWidth="1.5" />
@@ -290,7 +296,7 @@ export function QuestionsPage({ user }: { user: User }) {
                 const sfQCount = questions.filter(q => sfNode.materials.map(m => m.id).includes(q.material_id)).length;
                 return (
                   <button key={sfKey} onClick={() => setSelectedSubFolder(sfKey)}
-                    className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-amber-200 bg-amber-50 hover:border-amber-400 hover:shadow-md transition-all">
+                    className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 bg-white hover:border-blue-400 hover:shadow-lg transition-all">
                     <svg className="w-10 h-10" viewBox="0 0 48 48" fill="none">
                       <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="#FBBF24" />
                       <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="none" stroke="#D97706" strokeWidth="1.5" />
@@ -401,6 +407,7 @@ export function QuestionsPage({ user }: { user: User }) {
           ))}
         </div>
       </div>
+      {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
     </div>
   );
 }

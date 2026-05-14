@@ -199,4 +199,54 @@ export function countMaterials(node: FolderNode): number {
   return count;
 }
 
+// ─── App Dialog ───────────────────────────────────────────────────────────────
+
+export type DialogState = {
+  type: 'info' | 'success' | 'error' | 'warning' | 'confirm';
+  title?: string;
+  message: string;
+  confirmLabel?: string;
+  onConfirm?: () => void | Promise<void>;
+} | null;
+
+export function AppDialog({ dialog, onClose }: { dialog: DialogState; onClose: () => void }) {
+  if (!dialog) return null;
+  const cfgMap = {
+    info:    { icon: 'ℹ️',  iconBg: 'bg-blue-50 border-blue-200',    btn: 'bg-blue-600 hover:bg-blue-700' },
+    success: { icon: '✅',  iconBg: 'bg-emerald-50 border-emerald-200', btn: 'bg-emerald-600 hover:bg-emerald-700' },
+    error:   { icon: '❌',  iconBg: 'bg-rose-50 border-rose-200',     btn: 'bg-rose-600 hover:bg-rose-700' },
+    warning: { icon: '⚠️', iconBg: 'bg-amber-50 border-amber-200',   btn: 'bg-amber-600 hover:bg-amber-700' },
+    confirm: { icon: '🗑️', iconBg: 'bg-slate-50 border-slate-200',   btn: 'bg-rose-600 hover:bg-rose-700' },
+  };
+  const cfg = cfgMap[dialog.type];
+  const isConfirm = dialog.type === 'confirm';
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
+      <div className="bg-white rounded-2xl shadow-2xl p-7 w-full max-w-sm border border-slate-200">
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className={`w-14 h-14 ${cfg.iconBg} border rounded-2xl flex items-center justify-center text-2xl mb-4`}>
+            {cfg.icon}
+          </div>
+          {dialog.title && <h3 className="text-base font-bold text-slate-800 mb-2">{dialog.title}</h3>}
+          <p className="text-sm text-slate-600 leading-relaxed">{dialog.message}</p>
+        </div>
+        <div className={`flex gap-3 ${isConfirm ? '' : 'justify-center'}`}>
+          {isConfirm && (
+            <button onClick={onClose}
+              className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all">
+              Batal
+            </button>
+          )}
+          <button
+            onClick={() => { if (dialog.onConfirm) dialog.onConfirm(); onClose(); }}
+            className={`${isConfirm ? 'flex-1' : 'px-8'} py-2.5 text-white text-sm font-bold rounded-xl shadow transition-all ${cfg.btn}`}>
+            {isConfirm ? (dialog.confirmLabel ?? 'Konfirmasi') : 'OK'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export { supabase };

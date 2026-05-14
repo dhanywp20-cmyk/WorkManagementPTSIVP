@@ -4,12 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   supabase, User, Material, FolderNode,
   buildFolderTree, countMaterials, fmtDate, SearchInput,
-  generateWithGemini,
+  AppDialog, DialogState,
 } from './shared';
 
 function MaterialCard({ material: m, isAdmin, onDelete }: { material: Material; isAdmin: boolean; onDelete?: (id: string) => void }) {
   return (
-    <div className="rounded-xl border border-slate-200 shadow-sm p-3.5 flex items-center gap-3 hover:shadow-md hover:border-blue-200 transition-all mb-1.5 group"
+    <div className="rounded-xl border border-slate-200 shadow-sm p-3.5 flex items-center gap-3 hover:shadow-md hover:border-blue-200 transition-all mb-1.5"
       style={{ background: '#ffffff' }}>
       <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
         <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -47,10 +47,11 @@ function MaterialCard({ material: m, isAdmin, onDelete }: { material: Material; 
 }
 
 function FolderTreeView({
-  node, depth = 0, isAdmin, onDelete, expandedPaths, togglePath,
+  node, depth = 0, isAdmin, onDelete, expandedPaths, togglePath, onAddToFolder,
 }: {
   node: FolderNode; depth?: number; isAdmin: boolean; onDelete?: (id: string) => void;
   expandedPaths: Set<string>; togglePath: (path: string) => void;
+  onAddToFolder?: (path: string) => void;
 }) {
   const folderKeys = Object.keys(node.children).sort();
   const hasMaterials = node.materials.length > 0;
@@ -65,26 +66,35 @@ function FolderTreeView({
         const totalInside = countMaterials(child);
         return (
           <div key={child.path} className="mb-0.5">
-            <button
-              onClick={() => togglePath(child.path)}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 active:bg-blue-100 transition-all text-left border border-transparent hover:border-blue-200 max-w-xl w-full"
-              style={{ background: 'rgba(255,255,255,0.96)' }}
-            >
-              <svg className={`w-3.5 h-3.5 text-slate-400 flex-shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-              </svg>
-              <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
-                <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill={isOpen ? '#FCD34D' : '#FBBF24'} />
-                <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill="none" stroke="#D97706" strokeWidth="1" />
-              </svg>
-              <span className="font-semibold text-slate-800 text-sm select-none">{child.name}</span>
-              <span className="text-[11px] text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full flex-shrink-0 ml-auto">{totalInside} item</span>
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => togglePath(child.path)}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 active:bg-blue-100 transition-all text-left border border-transparent hover:border-blue-200 flex-1 min-w-0"
+                style={{ background: 'rgba(255,255,255,0.96)' }}
+              >
+                <svg className={`w-3.5 h-3.5 text-slate-400 flex-shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                </svg>
+                <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                  <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill={isOpen ? '#FCD34D' : '#FBBF24'} />
+                  <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill="none" stroke="#D97706" strokeWidth="1" />
+                </svg>
+                <span className="font-semibold text-slate-800 text-sm select-none truncate">{child.name}</span>
+                <span className="text-[11px] text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full flex-shrink-0 ml-auto">{totalInside} item</span>
+              </button>
+              {isAdmin && onAddToFolder && (
+                <button
+                  onClick={() => onAddToFolder(child.path)}
+                  className="flex-shrink-0 w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-base border border-blue-200 transition-all"
+                  title={`Tambah materi ke "${child.name}"`}
+                >+</button>
+              )}
+            </div>
             {isOpen && (
               <div className="mt-0.5">
                 <FolderTreeView
                   node={child} depth={depth + 1} isAdmin={isAdmin} onDelete={onDelete}
-                  expandedPaths={expandedPaths} togglePath={togglePath}
+                  expandedPaths={expandedPaths} togglePath={togglePath} onAddToFolder={onAddToFolder}
                 />
               </div>
             )}
@@ -106,11 +116,11 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'folder' | 'list'>('folder');
   const [search, setSearch] = useState('');
+  const [dialog, setDialog] = useState<DialogState>(null);
 
   const load = useCallback(async () => {
     const { data } = await supabase.from('lc_materials').select('*').order('folder_path', { ascending: true }).order('materi_name', { ascending: true });
     setMaterials(data ?? []);
-    // No auto-expand — folders start collapsed
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -122,8 +132,16 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
     });
   };
 
+  const openForm = (folderPath = '') => {
+    setForm({ materi_name: '', file_url: '', folder_path: folderPath, content_text: '' });
+    setShowForm(true);
+  };
+
   const handleSave = async () => {
-    if (!form.materi_name.trim()) return alert('Nama materi wajib diisi!');
+    if (!form.materi_name.trim()) {
+      setDialog({ type: 'error', message: 'Nama materi wajib diisi!' });
+      return;
+    }
     setUploading(true);
     const { error } = await supabase.from('lc_materials').insert([{
       materi_name: form.materi_name,
@@ -133,19 +151,28 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
       file_name: null, file_type: null, created_by: user.id,
     }]);
     setUploading(false);
-    if (error) return alert('Gagal menyimpan: ' + error.message);
+    if (error) {
+      setDialog({ type: 'error', message: 'Gagal menyimpan: ' + error.message });
+      return;
+    }
     setShowForm(false);
-    setForm({ materi_name: '', file_url: '', folder_path: '', content_text: '' });
     load();
+    setDialog({ type: 'success', message: 'Materi berhasil ditambahkan!' });
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Hapus materi ini?')) return;
-    await supabase.from('lc_materials').delete().eq('id', id);
-    load();
+  const handleDelete = (id: string) => {
+    setDialog({
+      type: 'confirm',
+      title: 'Hapus Materi',
+      message: 'Materi ini akan dihapus permanen. Lanjutkan?',
+      confirmLabel: 'Hapus',
+      onConfirm: async () => {
+        await supabase.from('lc_materials').delete().eq('id', id);
+        load();
+      },
+    });
   };
 
-  // Filter materials by search
   const filtered = search
     ? materials.filter(m =>
         m.materi_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -155,6 +182,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
 
   const tree = buildFolderTree(filtered);
   const rootHasFolders = Object.keys(tree.children).length > 0;
+  const existingPaths = Array.from(new Set(materials.map(m => m.folder_path).filter(Boolean) as string[])).sort();
 
   return (
     <div>
@@ -179,7 +207,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
             </button>
           </div>
           {isAdmin && (
-            <button onClick={() => setShowForm(true)}
+            <button onClick={() => openForm()}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
               <span>+</span> Tambah Materi
             </button>
@@ -187,57 +215,6 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
         </div>
       </div>
       <div className="p-8">
-        {isAdmin && showForm && (
-          <div className="rounded-2xl border border-blue-100 shadow-lg p-6 mb-8" style={{ background: '#ffffff' }}>
-            <h3 className="font-bold text-slate-800 mb-5 flex items-center gap-2">✏️ Form Materi Baru</h3>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Materi *</label>
-                  <input value={form.materi_name} onChange={e => setForm(p => ({ ...p, materi_name: e.target.value }))}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                    placeholder="contoh: Pengenalan Produk Microvision" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-                    Folder Path <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
-                  </label>
-                  <input value={form.folder_path} onChange={e => setForm(p => ({ ...p, folder_path: e.target.value }))}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                    placeholder="contoh: Produk/Microvision" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-                  Link OneDrive <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
-                </label>
-                <input value={form.file_url} onChange={e => setForm(p => ({ ...p, file_url: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                  placeholder="https://1drv.ms/b/s!..." />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-                  Konten Teks untuk AI <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
-                </label>
-                <textarea value={form.content_text} onChange={e => setForm(p => ({ ...p, content_text: e.target.value }))}
-                  rows={4} placeholder="Paste ringkasan atau poin-poin materi..."
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none" />
-                <p className="text-xs text-slate-400 mt-1">{form.content_text.length} karakter</p>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button onClick={handleSave} disabled={uploading}
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60">
-                  {uploading ? '💾 Menyimpan...' : '💾 Simpan Materi'}
-                </button>
-                <button onClick={() => setShowForm(false)}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all">
-                  Batal
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {!isAdmin && (
           <div className="mb-6 bg-indigo-50 border border-indigo-200 rounded-2xl px-5 py-3 flex items-center gap-3">
             <span className="text-lg">ℹ️</span>
@@ -245,7 +222,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
           </div>
         )}
 
-        {filtered.length === 0 && !showForm && (
+        {filtered.length === 0 && (
           <div className="text-center py-16 text-slate-400">
             <div className="text-5xl mb-3">{search ? '🔍' : '📭'}</div>
             <p className="font-semibold">{search ? 'Tidak ada materi yang cocok' : 'Belum ada materi'}</p>
@@ -271,6 +248,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                   node={tree} isAdmin={isAdmin}
                   onDelete={isAdmin ? handleDelete : undefined}
                   expandedPaths={expandedPaths} togglePath={togglePath}
+                  onAddToFolder={isAdmin ? openForm : undefined}
                 />
               </div>
             ) : (
@@ -283,6 +261,74 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
           </>
         )}
       </div>
+
+      {/* ── Modal: Add Materi ── */}
+      {isAdmin && showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2">✏️ Tambah Materi Baru</h3>
+              <button onClick={() => setShowForm(false)}
+                className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-all text-xl font-light">×</button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Materi *</label>
+                <input value={form.materi_name} onChange={e => setForm(p => ({ ...p, materi_name: e.target.value }))}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  placeholder="contoh: Pengenalan Produk Microvision" autoFocus />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                  Folder Path <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
+                </label>
+                <input
+                  value={form.folder_path}
+                  onChange={e => setForm(p => ({ ...p, folder_path: e.target.value }))}
+                  list="folder-path-suggestions"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  placeholder="contoh: Produk/Microvision" />
+                <datalist id="folder-path-suggestions">
+                  {existingPaths.map(p => <option key={p} value={p} />)}
+                </datalist>
+                {form.folder_path && (
+                  <p className="text-xs text-slate-400 mt-1">Akan disimpan di: <strong className="text-slate-600">{form.folder_path}</strong></p>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                  Link OneDrive <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
+                </label>
+                <input value={form.file_url} onChange={e => setForm(p => ({ ...p, file_url: e.target.value }))}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  placeholder="https://1drv.ms/b/s!..." />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                  Konten Teks untuk AI <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
+                </label>
+                <textarea value={form.content_text} onChange={e => setForm(p => ({ ...p, content_text: e.target.value }))}
+                  rows={3} placeholder="Paste ringkasan atau poin-poin materi..."
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none" />
+                <p className="text-xs text-slate-400 mt-1">{form.content_text.length} karakter</p>
+              </div>
+            </div>
+            <div className="flex gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50">
+              <button onClick={() => setShowForm(false)}
+                className="flex-1 py-2.5 bg-white hover:bg-slate-100 text-slate-700 text-sm font-semibold rounded-xl border border-slate-200 transition-all">
+                Batal
+              </button>
+              <button onClick={handleSave} disabled={uploading}
+                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60">
+                {uploading ? '💾 Menyimpan...' : '💾 Simpan Materi'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
     </div>
   );
 }
