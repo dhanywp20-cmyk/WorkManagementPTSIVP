@@ -263,10 +263,14 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
   // Selected folder node (always root-level child)
   const selectedFolderNode = selectedFolderKey ? (tree.children[selectedFolderKey] ?? null) : null;
 
+  // Derived color for open panel
+  const panelCol = selectedFolderKey ? getFolderColor(selectedFolderKey) : null;
+  const panelOpen = !!(selectedFolderNode && panelCol);
+
   return (
-    <div>
+    <div className="flex flex-col" style={{ height: 'calc(100vh - 60px)', overflow: 'hidden' }}>
       {/* ── Header ── */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 sticky top-0 z-10"
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0"
         style={{ background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
         <div>
           <h1 className="text-lg font-bold text-slate-800 tracking-tight leading-tight">📚 Materi Training</h1>
@@ -297,186 +301,205 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
       </div>
 
       {/* ── Stats bar ── */}
-      <div className="flex items-center gap-5 px-6 py-2 border-b border-slate-100 text-xs" style={{ background: 'rgba(248,250,252,0.8)' }}>
+      <div className="flex items-center gap-5 px-6 py-2 border-b border-slate-100 text-xs flex-shrink-0"
+        style={{ background: 'rgba(248,250,252,0.8)' }}>
         <span className="text-slate-500">📦 <strong className="text-slate-700">{materials.length}</strong> materi</span>
         <span className="text-slate-300">|</span>
         <span className="text-slate-500">📁 <strong className="text-slate-700">{rootFolderKeys.length}</strong> folder</span>
         <span className="text-slate-300">|</span>
         <span className="text-slate-500">✦ <strong className="text-emerald-600">{materials.filter(m => m.content_text).length}</strong> AI Ready</span>
-        {selectedFolderNode && (
+        {panelOpen && panelCol && (
           <>
             <span className="text-slate-300">|</span>
-            <span className="text-slate-400">Panel: <strong className="text-slate-600">{selectedFolderNode.name}</strong></span>
+            <span className="text-slate-400">Folder: <strong style={{ color: panelCol.icon }}>{selectedFolderNode!.name}</strong></span>
           </>
         )}
       </div>
 
-      {/* ── Content ── */}
-      <div className="p-8">
-        {!isAdmin && (
-          <div className="mb-6 bg-indigo-50 border border-indigo-200 rounded-2xl px-5 py-3 flex items-center gap-3">
-            <span className="text-lg">ℹ️</span>
-            <p className="text-sm text-indigo-700">Klik tombol <strong>Buka</strong> untuk mengakses file materi di OneDrive.</p>
-          </div>
-        )}
+      {/* ── Main area: left scrollable + right pane ── */}
+      <div className="flex-1 relative overflow-hidden">
 
-        {filtered.length === 0 && (
-          <div className="flex justify-center py-16">
-            <div className="text-center px-10 py-8 rounded-2xl"
-              style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
-              <div className="text-5xl mb-3">{search ? '🔍' : '📭'}</div>
-              <p className="font-semibold text-slate-700">{search ? 'Tidak ada materi yang cocok' : 'Belum ada materi'}</p>
-              {isAdmin && !search && <p className="text-sm mt-1 text-slate-500">Klik + Tambah Materi untuk mulai</p>}
-            </div>
-          </div>
-        )}
+        {/* LEFT scrollable content */}
+        <div className="h-full overflow-y-auto"
+          style={{
+            paddingRight: panelOpen ? 'calc(42% + 1px)' : '0',
+            transition: 'padding-right 0.28s cubic-bezier(0.4,0,0.2,1)',
+          }}>
+          <div className="p-6">
 
-        {filtered.length > 0 && (
-          <>
-            {/* ── FOLDER VIEW — Split Layout ── */}
-            {viewMode === 'folder' && (
-              <div className="flex gap-5 items-start">
+            {!isAdmin && (
+              <div className="mb-5 bg-indigo-50 border border-indigo-200 rounded-2xl px-5 py-3 flex items-center gap-3">
+                <span className="text-lg">ℹ️</span>
+                <p className="text-sm text-indigo-700">Klik tombol <strong>Buka</strong> untuk mengakses file materi di OneDrive.</p>
+              </div>
+            )}
 
-                {/* LEFT: root files + folder grid */}
-                <div className="flex-1 min-w-0">
-                  {/* Root-level files (no folder) */}
-                  {tree.materials.length > 0 && (
-                    <div className="mb-5">
-                      {rootHasFolders && (
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">📄 Tanpa Folder</p>
-                      )}
-                      {tree.materials.map(m => (
-                        <MaterialCard key={m.id} material={m} isAdmin={isAdmin} onDelete={isAdmin ? handleDelete : undefined} />
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Colorful folder grid */}
-                  {rootHasFolders && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
-                      {rootFolderKeys.map(key => {
-                        const child = tree.children[key];
-                        const isSelected = selectedFolderKey === key;
-                        const totalInside = countMaterials(child);
-                        const col = getFolderColor(key);
-                        return (
-                          <button key={child.path}
-                            onClick={() => {
-                              setSelectedFolderKey(isSelected ? null : key);
-                              setRightExpandedPaths(new Set());
-                            }}
-                            className={`group text-left rounded-2xl border-2 p-4 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5
-                              ${isSelected ? 'shadow-lg -translate-y-0.5' : 'border-slate-200 bg-white'}`}
-                            style={isSelected ? { borderColor: col.icon, background: col.light } : {}}>
-                            {/* Folder icon with gradient bg */}
-                            <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-sm transition-all"
-                              style={{ background: isSelected ? col.gradient : col.light }}>
-                              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                                <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z"
-                                  fill={isSelected ? '#FCD34D' : col.light === '#fef3c7' ? '#FBBF24' : col.icon + '88'}
-                                  stroke={isSelected ? '#D97706' : col.icon} strokeWidth="0.9" />
-                              </svg>
-                            </div>
-                            <p className="text-sm font-bold text-slate-800 leading-snug mb-1.5 line-clamp-2">{child.name}</p>
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-medium text-slate-400">{totalInside} materi</span>
-                              <div className="flex items-center gap-1">
-                                {isAdmin && (
-                                  <button
-                                    onClick={e => { e.stopPropagation(); openForm(child.path); }}
-                                    className="w-5 h-5 rounded-md flex items-center justify-center font-bold text-xs border transition-all opacity-0 group-hover:opacity-100"
-                                    style={{ background: col.light, border: `1px solid ${col.icon}44`, color: col.icon }}
-                                    title={`Tambah ke "${child.name}"`}>+</button>
-                                )}
-                                <svg className={`w-3 h-3 transition-all ${isSelected ? 'rotate-90' : 'text-slate-300'}`}
-                                  style={isSelected ? { color: col.icon } : {}}
-                                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                                </svg>
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+            {filtered.length === 0 && (
+              <div className="flex justify-center py-16">
+                <div className="text-center px-10 py-8 rounded-2xl"
+                  style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
+                  <div className="text-5xl mb-3">{search ? '🔍' : '📭'}</div>
+                  <p className="font-semibold text-slate-700">{search ? 'Tidak ada materi yang cocok' : 'Belum ada materi'}</p>
+                  {isAdmin && !search && <p className="text-sm mt-1 text-slate-500">Klik + Tambah Materi untuk mulai</p>}
                 </div>
+              </div>
+            )}
 
-                {/* RIGHT: detail panel */}
-                <div className="w-80 flex-shrink-0">
-                  {selectedFolderNode && selectedFolderKey ? (() => {
-                    const col = getFolderColor(selectedFolderKey);
-                    return (
-                      <div className="rounded-2xl overflow-hidden shadow-md" style={{ border: `2px solid ${col.icon}33` }}>
-                        {/* Panel header */}
-                        <div className="px-4 py-3 flex items-center gap-2.5 flex-shrink-0" style={{ background: col.light }}>
-                          <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0"
-                            style={{ background: col.gradient }}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                              <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill="#FCD34D" stroke="#D97706" strokeWidth="0.8" />
-                            </svg>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-slate-800 truncate">{selectedFolderNode.name}</p>
-                            <p className="text-[10px]" style={{ color: col.icon }}>{countMaterials(selectedFolderNode)} materi</p>
-                          </div>
-                          {isAdmin && (
-                            <button onClick={() => openForm(selectedFolderNode.path)}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm border transition-all flex-shrink-0"
-                              style={{ background: col.icon + '22', border: `1px solid ${col.icon}44`, color: col.icon }}
-                              title="Tambah materi ke folder ini">+</button>
-                          )}
-                          <button onClick={() => setSelectedFolderKey(null)}
-                            className="w-7 h-7 rounded-lg bg-white/80 hover:bg-white flex items-center justify-center font-bold text-base border border-slate-200 transition-all flex-shrink-0"
-                            style={{ color: '#64748b' }}>✕</button>
-                        </div>
-                        {/* Panel content */}
-                        <div className="p-3 max-h-[calc(100vh-230px)] overflow-y-auto bg-white">
-                          <FolderTreeView
-                            node={selectedFolderNode}
-                            depth={0}
-                            isAdmin={isAdmin}
-                            onDelete={isAdmin ? handleDelete : undefined}
-                            expandedPaths={rightExpandedPaths}
-                            togglePath={toggleRightPath}
-                            onAddToFolder={isAdmin ? openForm : undefined}
-                            gridCols={2}
-                            colorHex={col.icon}
-                          />
-                        </div>
+            {filtered.length > 0 && (
+              <>
+                {/* ── FOLDER VIEW ── */}
+                {viewMode === 'folder' && (
+                  <>
+                    {/* Root-level files */}
+                    {tree.materials.length > 0 && (
+                      <div className="mb-5">
+                        {rootHasFolders && (
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">📄 Tanpa Folder</p>
+                        )}
+                        {tree.materials.map(m => (
+                          <MaterialCard key={m.id} material={m} isAdmin={isAdmin} onDelete={isAdmin ? handleDelete : undefined} />
+                        ))}
                       </div>
-                    );
-                  })() : (
-                    /* Empty state */
-                    <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-10 text-center">
-                      <div className="text-4xl mb-3">📂</div>
-                      <p className="text-sm font-semibold text-slate-500">Klik folder untuk<br/>melihat isi</p>
-                      {rootHasFolders && (
-                        <p className="text-xs text-slate-400 mt-2">{rootFolderKeys.length} folder tersedia</p>
-                      )}
-                    </div>
-                  )}
+                    )}
+
+                    {/* Colorful folder grid */}
+                    {rootHasFolders && (
+                      <>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">📁 Folder</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {rootFolderKeys.map(key => {
+                            const child = tree.children[key];
+                            const isSelected = selectedFolderKey === key;
+                            const totalInside = countMaterials(child);
+                            const col = getFolderColor(key);
+                            return (
+                              <button key={child.path}
+                                onClick={() => {
+                                  setSelectedFolderKey(isSelected ? null : key);
+                                  setRightExpandedPaths(new Set());
+                                }}
+                                className={`group text-left rounded-2xl border-2 p-4 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5
+                                  ${isSelected ? 'shadow-lg -translate-y-0.5' : 'border-slate-200 bg-white'}`}
+                                style={isSelected ? { borderColor: col.icon, background: col.light } : {}}>
+                                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-sm transition-all"
+                                  style={{ background: isSelected ? col.gradient : col.light }}>
+                                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                                    <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z"
+                                      fill={isSelected ? '#FCD34D' : col.light === '#fef3c7' ? '#FBBF24' : col.icon + '88'}
+                                      stroke={isSelected ? '#D97706' : col.icon} strokeWidth="0.9" />
+                                  </svg>
+                                </div>
+                                <p className="text-sm font-bold text-slate-800 leading-snug mb-1.5 line-clamp-2">{child.name}</p>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-medium text-slate-400">{totalInside} materi</span>
+                                  <div className="flex items-center gap-1">
+                                    {isAdmin && (
+                                      <button
+                                        onClick={e => { e.stopPropagation(); openForm(child.path); }}
+                                        className="w-5 h-5 rounded-md flex items-center justify-center font-bold text-xs border transition-all opacity-0 group-hover:opacity-100"
+                                        style={{ background: col.light, border: `1px solid ${col.icon}44`, color: col.icon }}
+                                        title={`Tambah ke "${child.name}"`}>+</button>
+                                    )}
+                                    <svg className={`w-3 h-3 transition-all ${isSelected ? 'rotate-90' : 'text-slate-300'}`}
+                                      style={isSelected ? { color: col.icon } : {}}
+                                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+
+                {/* ── LIST VIEW ── */}
+                {viewMode === 'list' && (
+                  <div className="space-y-1.5">
+                    {filtered.map(m => {
+                      const rootKey = m.folder_path ? m.folder_path.split('/')[0] : null;
+                      const col = rootKey ? getFolderColor(rootKey) : null;
+                      return (
+                        <MaterialCard key={m.id} material={m} isAdmin={isAdmin}
+                          onDelete={isAdmin ? handleDelete : undefined}
+                          colorHex={col?.icon} />
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* ── RIGHT PANE: Windows Explorer style, full height ── */}
+        <div
+          className="absolute top-0 right-0 bottom-0 flex flex-col"
+          style={{
+            width: '42%',
+            background: 'rgba(255,255,255,0.94)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            borderLeft: panelOpen && panelCol
+              ? `2px solid ${panelCol.icon}40`
+              : '1px solid rgba(0,0,0,0.07)',
+            boxShadow: panelOpen ? '-4px 0 24px rgba(0,0,0,0.08)' : 'none',
+            transform: panelOpen ? 'translateX(0)' : 'translateX(100%)',
+            transition: 'transform 0.28s cubic-bezier(0.4,0,0.2,1), border-color 0.2s ease, box-shadow 0.2s ease',
+          }}>
+
+          {panelOpen && panelCol && selectedFolderNode ? (
+            <>
+              {/* Panel header — colored strip */}
+              <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0"
+                style={{
+                  background: `linear-gradient(135deg, ${panelCol.light}, rgba(255,255,255,0.95))`,
+                  borderBottom: `1px solid ${panelCol.icon}22`,
+                }}>
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-md flex-shrink-0"
+                  style={{ background: panelCol.gradient }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z"
+                      fill="#FCD34D" stroke="#D97706" strokeWidth="0.8" />
+                  </svg>
                 </div>
-
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-bold text-slate-800 truncate">{selectedFolderNode.name}</p>
+                  <p className="text-xs font-medium" style={{ color: panelCol.icon }}>
+                    {countMaterials(selectedFolderNode)} materi
+                  </p>
+                </div>
+                {isAdmin && (
+                  <button onClick={() => openForm(selectedFolderNode.path)}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm border-2 transition-all hover:scale-110"
+                    style={{ background: panelCol.icon + '18', borderColor: panelCol.icon + '44', color: panelCol.icon }}
+                    title="Tambah materi ke folder ini">+</button>
+                )}
+                <button onClick={() => setSelectedFolderKey(null)}
+                  className="w-8 h-8 rounded-xl bg-white hover:bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-lg border border-slate-200 transition-all flex-shrink-0">✕</button>
               </div>
-            )}
 
-            {/* ── LIST VIEW ── */}
-            {viewMode === 'list' && (
-              <div className="space-y-1.5">
-                {filtered.map(m => {
-                  const rootKey = m.folder_path ? m.folder_path.split('/')[0] : null;
-                  const col = rootKey ? getFolderColor(rootKey) : null;
-                  return (
-                    <MaterialCard key={m.id} material={m} isAdmin={isAdmin}
-                      onDelete={isAdmin ? handleDelete : undefined}
-                      colorHex={col?.icon} />
-                  );
-                })}
+              {/* Panel content — scrollable */}
+              <div className="flex-1 overflow-y-auto p-4">
+                <FolderTreeView
+                  node={selectedFolderNode}
+                  depth={0}
+                  isAdmin={isAdmin}
+                  onDelete={isAdmin ? handleDelete : undefined}
+                  expandedPaths={rightExpandedPaths}
+                  togglePath={toggleRightPath}
+                  onAddToFolder={isAdmin ? openForm : undefined}
+                  gridCols={2}
+                  colorHex={panelCol.icon}
+                />
               </div>
-            )}
-          </>
-        )}
+            </>
+          ) : null}
+        </div>
+
       </div>
 
       {/* ── Modal: Add Materi ── */}
