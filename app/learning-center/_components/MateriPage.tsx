@@ -7,6 +7,18 @@ import {
   AppDialog, DialogState,
 } from './shared';
 
+// ─── Folder Color Palette ─────────────────────────────────────────────────────
+
+const FOLDER_COLORS = [
+  { gradient: 'linear-gradient(135deg,#3b82f6,#4f46e5)', light: '#dbeafe', icon: '#3b82f6' },
+  { gradient: 'linear-gradient(135deg,#10b981,#0d9488)', light: '#d1fae5', icon: '#10b981' },
+  { gradient: 'linear-gradient(135deg,#8b5cf6,#9333ea)', light: '#ede9fe', icon: '#8b5cf6' },
+  { gradient: 'linear-gradient(135deg,#f59e0b,#f97316)', light: '#fef3c7', icon: '#f59e0b' },
+  { gradient: 'linear-gradient(135deg,#f43f5e,#db2777)', light: '#ffe4e6', icon: '#f43f5e' },
+  { gradient: 'linear-gradient(135deg,#06b6d4,#0284c7)', light: '#cffafe', icon: '#06b6d4' },
+];
+const getFolderColor = (name: string) => FOLDER_COLORS[name.charCodeAt(0) % FOLDER_COLORS.length];
+
 // ─── Grid helper ──────────────────────────────────────────────────────────────
 
 const GRID_COLS: Record<number, string> = {
@@ -19,23 +31,25 @@ const GRID_COLS: Record<number, string> = {
 // ─── MaterialCard ─────────────────────────────────────────────────────────────
 
 function MaterialCard({
-  material: m, isAdmin, onDelete, compact,
+  material: m, isAdmin, onDelete, compact, colorHex,
 }: {
-  material: Material; isAdmin: boolean; onDelete?: (id: string) => void; compact?: boolean;
+  material: Material; isAdmin: boolean; onDelete?: (id: string) => void;
+  compact?: boolean; colorHex?: string;
 }) {
+  const hex = colorHex || '#3b82f6';
   return (
-    <div className="rounded-xl border border-slate-200 shadow-sm p-3 flex items-center gap-3 hover:shadow-md hover:border-blue-200 transition-all mb-1.5"
-      style={{ background: '#ffffff' }}>
-      <div className={`${compact ? 'w-7 h-7' : 'w-9 h-9'} rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0`}>
-        <svg className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-blue-500`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="group flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-white hover:border-blue-200 hover:shadow-md transition-all duration-200 mb-1.5">
+      <div className={`${compact ? 'w-7 h-7' : 'w-9 h-9'} rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm`}
+        style={{ background: `${hex}18`, border: `1.5px solid ${hex}33` }}>
+        <svg className={`${compact ? 'w-3.5 h-3.5' : 'w-4.5 h-4.5'}`} style={{ color: hex }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       </div>
       <div className="flex-1 min-w-0">
-        <h4 className={`font-semibold text-slate-800 ${compact ? 'text-xs' : 'text-sm'} truncate`}>{m.materi_name}</h4>
+        <h4 className={`font-semibold text-slate-800 group-hover:text-blue-700 transition-colors ${compact ? 'text-xs' : 'text-sm'} truncate`}>{m.materi_name}</h4>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           {m.content_text && (
-            <span className="text-[10px] bg-green-100 text-green-700 border border-green-200 px-1.5 py-0.5 rounded font-semibold">AI ✓</span>
+            <span className="inline-flex items-center gap-0.5 text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-bold">✦ AI Ready</span>
           )}
           <span className="text-[10px] text-slate-400">{fmtDate(m.created_at)}</span>
         </div>
@@ -43,7 +57,8 @@ function MaterialCard({
       <div className="flex items-center gap-1.5 flex-shrink-0">
         {m.file_url && (
           <a href={m.file_url} target="_blank" rel="noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-semibold bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2 py-1 rounded-lg transition-all">
+            className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg text-white shadow-sm transition-all hover:scale-105"
+            style={{ background: `linear-gradient(135deg,${hex},${hex}cc)` }}>
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
@@ -52,8 +67,8 @@ function MaterialCard({
         )}
         {isAdmin && onDelete && (
           <button onClick={() => onDelete(m.id)}
-            className="p-1.5 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-all" title="Hapus materi">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            className="p-1.5 rounded-lg text-rose-400 hover:text-white hover:bg-rose-500 border border-transparent hover:border-rose-400 transition-all" title="Hapus">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </button>
@@ -66,12 +81,12 @@ function MaterialCard({
 // ─── FolderTreeView (used inside right panel) ────────────────────────────────
 
 function FolderTreeView({
-  node, depth = 0, isAdmin, onDelete, expandedPaths, togglePath, onAddToFolder, gridCols = 2,
+  node, depth = 0, isAdmin, onDelete, expandedPaths, togglePath, onAddToFolder, gridCols = 2, colorHex,
 }: {
   node: FolderNode; depth?: number; isAdmin: boolean; onDelete?: (id: string) => void;
   expandedPaths: Set<string>; togglePath: (path: string) => void;
   onAddToFolder?: (path: string) => void;
-  gridCols?: number;
+  gridCols?: number; colorHex?: string;
 }) {
   const folderKeys = Object.keys(node.children).sort();
   const hasMaterials = node.materials.length > 0;
@@ -84,7 +99,7 @@ function FolderTreeView({
       {hasMaterials && (
         <div className="space-y-1 mb-3">
           {node.materials.map(m => (
-            <MaterialCard key={m.id} material={m} isAdmin={isAdmin} onDelete={onDelete} compact />
+            <MaterialCard key={m.id} material={m} isAdmin={isAdmin} onDelete={onDelete} compact colorHex={colorHex} />
           ))}
         </div>
       )}
@@ -147,7 +162,7 @@ function FolderTreeView({
               <FolderTreeView
                 node={child} depth={depth + 1} isAdmin={isAdmin} onDelete={onDelete}
                 expandedPaths={expandedPaths} togglePath={togglePath} onAddToFolder={onAddToFolder}
-                gridCols={gridCols}
+                gridCols={gridCols} colorHex={colorHex}
               />
             </div>
           </div>
@@ -251,11 +266,11 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
   return (
     <div>
       {/* ── Header ── */}
-      <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
-        style={{ background: '#ffffff' }}>
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 sticky top-0 z-10"
+        style={{ background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
         <div>
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">📚 Materi Training</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <h1 className="text-lg font-bold text-slate-800 tracking-tight leading-tight">📚 Materi Training</h1>
+          <p className="text-xs text-slate-500 mt-0.5">
             {isAdmin ? 'Kelola & organisir materi training team' : 'Materi training tersedia untuk dipelajari'}
           </p>
         </div>
@@ -273,11 +288,27 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
           </div>
           {isAdmin && (
             <button onClick={() => openForm()}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
-              <span>+</span> Tambah Materi
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white rounded-xl shadow-md hover:scale-[1.03] transition-all"
+              style={{ background: 'linear-gradient(135deg,#3b82f6,#6366f1)', boxShadow: '0 4px 12px rgba(99,102,241,0.35)' }}>
+              <span className="text-base leading-none">+</span> Tambah Materi
             </button>
           )}
         </div>
+      </div>
+
+      {/* ── Stats bar ── */}
+      <div className="flex items-center gap-5 px-6 py-2 border-b border-slate-100 text-xs" style={{ background: 'rgba(248,250,252,0.8)' }}>
+        <span className="text-slate-500">📦 <strong className="text-slate-700">{materials.length}</strong> materi</span>
+        <span className="text-slate-300">|</span>
+        <span className="text-slate-500">📁 <strong className="text-slate-700">{rootFolderKeys.length}</strong> folder</span>
+        <span className="text-slate-300">|</span>
+        <span className="text-slate-500">✦ <strong className="text-emerald-600">{materials.filter(m => m.content_text).length}</strong> AI Ready</span>
+        {selectedFolderNode && (
+          <>
+            <span className="text-slate-300">|</span>
+            <span className="text-slate-400">Panel: <strong className="text-slate-600">{selectedFolderNode.name}</strong></span>
+          </>
+        )}
       </div>
 
       {/* ── Content ── */}
@@ -320,43 +351,51 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                     </div>
                   )}
 
-                  {/* 5-column folder grid */}
+                  {/* Colorful folder grid */}
                   {rootHasFolders && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
                       {rootFolderKeys.map(key => {
                         const child = tree.children[key];
                         const isSelected = selectedFolderKey === key;
                         const totalInside = countMaterials(child);
+                        const col = getFolderColor(key);
                         return (
-                          <div key={child.path}
+                          <button key={child.path}
                             onClick={() => {
                               setSelectedFolderKey(isSelected ? null : key);
                               setRightExpandedPaths(new Set());
                             }}
-                            className={`flex flex-col gap-2 p-3 rounded-xl border cursor-pointer select-none transition-all
-                              ${isSelected
-                                ? 'border-blue-400 bg-blue-50 shadow-md ring-2 ring-blue-100'
-                                : 'border-slate-200 bg-white hover:border-blue-300 hover:shadow-sm hover:bg-blue-50/40'}`}>
-                            <div className="flex items-start justify-between gap-1">
-                              <svg className="w-8 h-8 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                            className={`group text-left rounded-2xl border-2 p-4 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5
+                              ${isSelected ? 'shadow-lg -translate-y-0.5' : 'border-slate-200 bg-white'}`}
+                            style={isSelected ? { borderColor: col.icon, background: col.light } : {}}>
+                            {/* Folder icon with gradient bg */}
+                            <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-sm transition-all"
+                              style={{ background: isSelected ? col.gradient : col.light }}>
+                              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                                 <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z"
-                                  fill={isSelected ? '#FCD34D' : '#FBBF24'} stroke="#D97706" strokeWidth="0.8" />
-                              </svg>
-                              {isAdmin && (
-                                <button
-                                  onClick={e => { e.stopPropagation(); openForm(child.path); }}
-                                  className="w-5 h-5 rounded-md bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center font-bold text-xs border border-blue-200 transition-all flex-shrink-0 mt-0.5"
-                                  title={`Tambah materi ke "${child.name}"`}>+</button>
-                              )}
-                            </div>
-                            <p className="text-xs font-bold text-slate-800 leading-snug line-clamp-2">{child.name}</p>
-                            <div className="flex items-center justify-between mt-auto">
-                              <span className="text-[10px] text-slate-400 font-medium">{totalInside} item</span>
-                              <svg className={`w-3 h-3 transition-transform ${isSelected ? 'text-blue-500 rotate-90' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                                  fill={isSelected ? '#FCD34D' : col.light === '#fef3c7' ? '#FBBF24' : col.icon + '88'}
+                                  stroke={isSelected ? '#D97706' : col.icon} strokeWidth="0.9" />
                               </svg>
                             </div>
-                          </div>
+                            <p className="text-sm font-bold text-slate-800 leading-snug mb-1.5 line-clamp-2">{child.name}</p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-medium text-slate-400">{totalInside} materi</span>
+                              <div className="flex items-center gap-1">
+                                {isAdmin && (
+                                  <button
+                                    onClick={e => { e.stopPropagation(); openForm(child.path); }}
+                                    className="w-5 h-5 rounded-md flex items-center justify-center font-bold text-xs border transition-all opacity-0 group-hover:opacity-100"
+                                    style={{ background: col.light, border: `1px solid ${col.icon}44`, color: col.icon }}
+                                    title={`Tambah ke "${child.name}"`}>+</button>
+                                )}
+                                <svg className={`w-3 h-3 transition-all ${isSelected ? 'rotate-90' : 'text-slate-300'}`}
+                                  style={isSelected ? { color: col.icon } : {}}
+                                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </div>
+                            </div>
+                          </button>
                         );
                       })}
                     </div>
@@ -364,34 +403,50 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                 </div>
 
                 {/* RIGHT: detail panel */}
-                <div className="w-72 flex-shrink-0">
-                  {selectedFolderNode ? (
-                    <div className="bg-white border border-blue-200 rounded-2xl overflow-hidden shadow-sm">
-                      {/* Panel header */}
-                      <div className="px-4 py-3 bg-blue-50 border-b border-blue-100 flex items-center gap-2">
-                        <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none">
-                          <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill="#FCD34D" stroke="#D97706" strokeWidth="0.8" />
-                        </svg>
-                        <span className="text-sm font-bold text-blue-900 flex-1 truncate">{selectedFolderNode.name}</span>
-                        <span className="text-xs text-blue-400 font-medium flex-shrink-0">{countMaterials(selectedFolderNode)} item</span>
-                        <button onClick={() => setSelectedFolderKey(null)}
-                          className="w-6 h-6 rounded-lg bg-blue-100 hover:bg-blue-200 flex items-center justify-center text-blue-500 font-bold text-sm transition-all flex-shrink-0">✕</button>
+                <div className="w-80 flex-shrink-0">
+                  {selectedFolderNode && selectedFolderKey ? (() => {
+                    const col = getFolderColor(selectedFolderKey);
+                    return (
+                      <div className="rounded-2xl overflow-hidden shadow-md" style={{ border: `2px solid ${col.icon}33` }}>
+                        {/* Panel header */}
+                        <div className="px-4 py-3 flex items-center gap-2.5 flex-shrink-0" style={{ background: col.light }}>
+                          <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0"
+                            style={{ background: col.gradient }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                              <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill="#FCD34D" stroke="#D97706" strokeWidth="0.8" />
+                            </svg>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-slate-800 truncate">{selectedFolderNode.name}</p>
+                            <p className="text-[10px]" style={{ color: col.icon }}>{countMaterials(selectedFolderNode)} materi</p>
+                          </div>
+                          {isAdmin && (
+                            <button onClick={() => openForm(selectedFolderNode.path)}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm border transition-all flex-shrink-0"
+                              style={{ background: col.icon + '22', border: `1px solid ${col.icon}44`, color: col.icon }}
+                              title="Tambah materi ke folder ini">+</button>
+                          )}
+                          <button onClick={() => setSelectedFolderKey(null)}
+                            className="w-7 h-7 rounded-lg bg-white/80 hover:bg-white flex items-center justify-center font-bold text-base border border-slate-200 transition-all flex-shrink-0"
+                            style={{ color: '#64748b' }}>✕</button>
+                        </div>
+                        {/* Panel content */}
+                        <div className="p-3 max-h-[calc(100vh-230px)] overflow-y-auto bg-white">
+                          <FolderTreeView
+                            node={selectedFolderNode}
+                            depth={0}
+                            isAdmin={isAdmin}
+                            onDelete={isAdmin ? handleDelete : undefined}
+                            expandedPaths={rightExpandedPaths}
+                            togglePath={toggleRightPath}
+                            onAddToFolder={isAdmin ? openForm : undefined}
+                            gridCols={2}
+                            colorHex={col.icon}
+                          />
+                        </div>
                       </div>
-                      {/* Panel content */}
-                      <div className="p-3 max-h-[calc(100vh-230px)] overflow-y-auto">
-                        <FolderTreeView
-                          node={selectedFolderNode}
-                          depth={0}
-                          isAdmin={isAdmin}
-                          onDelete={isAdmin ? handleDelete : undefined}
-                          expandedPaths={rightExpandedPaths}
-                          togglePath={toggleRightPath}
-                          onAddToFolder={isAdmin ? openForm : undefined}
-                          gridCols={2}
-                        />
-                      </div>
-                    </div>
-                  ) : (
+                    );
+                  })() : (
                     /* Empty state */
                     <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-10 text-center">
                       <div className="text-4xl mb-3">📂</div>
@@ -408,10 +463,16 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
 
             {/* ── LIST VIEW ── */}
             {viewMode === 'list' && (
-              <div className="space-y-3">
-                {filtered.map(m => (
-                  <MaterialCard key={m.id} material={m} isAdmin={isAdmin} onDelete={isAdmin ? handleDelete : undefined} />
-                ))}
+              <div className="space-y-1.5">
+                {filtered.map(m => {
+                  const rootKey = m.folder_path ? m.folder_path.split('/')[0] : null;
+                  const col = rootKey ? getFolderColor(rootKey) : null;
+                  return (
+                    <MaterialCard key={m.id} material={m} isAdmin={isAdmin}
+                      onDelete={isAdmin ? handleDelete : undefined}
+                      colorHex={col?.icon} />
+                  );
+                })}
               </div>
             )}
           </>
