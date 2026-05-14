@@ -7,6 +7,28 @@ import {
   generateWithGemini, fileToBase64, AppDialog, DialogState,
 } from './shared';
 
+// ─── Folder color palette ───────────────────────────────────────────────────
+const FOLDER_COLORS = [
+  { gradient: 'linear-gradient(135deg,#3b82f6,#4f46e5)', light: '#dbeafe', icon: '#3b82f6' },
+  { gradient: 'linear-gradient(135deg,#10b981,#0d9488)', light: '#d1fae5', icon: '#10b981' },
+  { gradient: 'linear-gradient(135deg,#8b5cf6,#9333ea)', light: '#ede9fe', icon: '#8b5cf6' },
+  { gradient: 'linear-gradient(135deg,#f59e0b,#f97316)', light: '#fef3c7', icon: '#f59e0b' },
+  { gradient: 'linear-gradient(135deg,#f43f5e,#db2777)', light: '#ffe4e6', icon: '#f43f5e' },
+  { gradient: 'linear-gradient(135deg,#06b6d4,#0284c7)', light: '#cffafe', icon: '#06b6d4' },
+];
+const getFolderColor = (name: string) => FOLDER_COLORS[name.charCodeAt(0) % FOLDER_COLORS.length];
+
+// ─── Difficulty helpers ─────────────────────────────────────────────────────
+const DIFF_BG: Record<string, string> = { easy: '#ecfdf5', medium: '#fffbeb', hard: '#fff1f2' };
+const DIFF_BORDER: Record<string, string> = { easy: '#d1fae5', medium: '#fef3c7', hard: '#ffe4e6' };
+const DIFF_TEXT: Record<string, string> = { easy: '#065f46', medium: '#92400e', hard: '#be123c' };
+const DIFF_NUM_BG: Record<string, string> = {
+  easy: 'linear-gradient(135deg,#10b981,#059669)',
+  medium: 'linear-gradient(135deg,#f59e0b,#d97706)',
+  hard: 'linear-gradient(135deg,#f43f5e,#e11d48)',
+};
+const DIFF_LABEL: Record<string, string> = { easy: 'Mudah', medium: 'Sedang', hard: 'Sulit' };
+
 export function QuestionsPage({ user }: { user: User }) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
@@ -168,6 +190,7 @@ export function QuestionsPage({ user }: { user: User }) {
     setSelectedFolder(null); setSelectedMat('');
   };
 
+  // ─── Generate Panel ────────────────────────────────────────────────────────
   const GeneratePanel = () => (
     <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl border border-violet-200 p-6">
       <h3 className="font-bold text-violet-800 mb-1 flex items-center gap-2">✨ Generate Soal dengan Gemini AI</h3>
@@ -291,61 +314,127 @@ export function QuestionsPage({ user }: { user: User }) {
     </div>
   );
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SCREEN 1 — Folder Selection
+  // ═══════════════════════════════════════════════════════════════════════════
   if (selectedFolder === null) {
     return (
-      <div>
-        <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
-          style={{ background: '#ffffff' }}>
-          <div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">🧩 Bank Soal</h1>
-            <p className="text-sm text-slate-500 mt-0.5">{questions.length} total soal — pilih folder untuk kelola</p>
+      <div className="flex flex-col h-full">
+        {/* ── Header ── */}
+        <div className="sticky top-0 z-10 bg-white shadow-sm border-b border-slate-200">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+                style={{ background: 'linear-gradient(135deg,#8b5cf6,#6366f1)' }}>
+                🧩
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-slate-800 tracking-tight">Bank Soal</h1>
+                <p className="text-xs text-slate-500">Pilih folder untuk mulai</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowAddManual(true)}
+                className="flex items-center gap-2 px-4 py-2 text-white text-sm font-semibold rounded-xl shadow transition-all hover:opacity-90"
+                style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}
+              >
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Tambah Manual
+              </button>
+              <button
+                onClick={() => setShowGenerate(true)}
+                className="flex items-center gap-2 px-4 py-2 text-white text-sm font-semibold rounded-xl shadow transition-all hover:opacity-90"
+                style={{ background: 'linear-gradient(135deg,#8b5cf6,#6366f1)' }}
+              >
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3l14 9-14 9V3z" />
+                </svg>
+                ✨ Generate AI
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setShowAddManual(true)}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
-              ✏️ Tambah Manual
-            </button>
-            <button onClick={() => setShowGenerate(true)}
-              className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
-              ✨ Generate AI
-            </button>
+          {/* Stats bar */}
+          <div className="flex items-center gap-3 px-6 py-2.5 bg-slate-50 border-t border-slate-100">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 bg-white border border-slate-200 px-3 py-1 rounded-full shadow-sm">
+              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              {questions.length} total soal
+            </span>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full shadow-sm">
+              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+              {rootFolders.length} folder
+            </span>
           </div>
         </div>
-        <div className="p-8 space-y-6">
+
+        {/* ── Content ── */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {showGenerate && <GeneratePanel />}
+
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest mb-3 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">Pilih Folder Bank Soal</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {rootMaterials.length > 0 && (
-                <button onClick={() => setSelectedFolder('__root__')}
-                  className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-blue-300 hover:shadow-md transition-all">
-                  <svg className="w-12 h-12" viewBox="0 0 48 48" fill="none">
-                    <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="#FCD34D" />
-                    <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="none" stroke="#D97706" strokeWidth="1.5" />
-                  </svg>
-                  <div className="text-center">
-                    <p className="text-sm font-bold text-slate-800">Tanpa Folder</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-1.5">
+              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+              Pilih Folder
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {rootMaterials.length > 0 && (() => {
+                const fc = getFolderColor('Tanpa');
+                return (
+                  <button
+                    onClick={() => setSelectedFolder('__root__')}
+                    className="group flex flex-col p-4 rounded-2xl border-2 border-slate-200 bg-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-left"
+                  >
+                    <div
+                      className="w-11 h-11 rounded-2xl flex items-center justify-center mb-3"
+                      style={{ background: fc.light }}
+                    >
+                      <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-bold text-slate-800 truncate">Tanpa Folder</p>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      {rootMaterials.length} materi · {questions.filter(q => rootMaterials.map(m => m.id).includes(q.material_id)).length} soal
+                      {questions.filter(q => rootMaterials.map(m => m.id).includes(q.material_id)).length} soal
                     </p>
-                  </div>
-                </button>
-              )}
+                    <div className="flex justify-end mt-2">
+                      <svg width="14" height="14" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </button>
+                );
+              })()}
               {rootFolders.map(fKey => {
                 const fNode = folderTree.children[fKey];
-                const matIds = (() => { const c = (n: FolderNode): Material[] => [...n.materials, ...Object.values(n.children).flatMap(c)]; return c(fNode).map(m => m.id); })();
+                const collectMats = (n: FolderNode): Material[] => [...n.materials, ...Object.values(n.children).flatMap(child => collectMats(child))];
+                const matIds = collectMats(fNode).map(m => m.id);
                 const qCount = questions.filter(q => matIds.includes(q.material_id)).length;
                 const subCount = Object.keys(fNode.children).length;
+                const fc = getFolderColor(fKey);
                 return (
-                  <button key={fKey} onClick={() => { setSelectedFolder(fKey); setSelectedSubFolder(null); }}
-                    className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 bg-white hover:border-blue-400 hover:shadow-lg transition-all">
-                    <svg className="w-12 h-12" viewBox="0 0 48 48" fill="none">
-                      <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="#FBBF24" />
-                      <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="none" stroke="#D97706" strokeWidth="1.5" />
-                    </svg>
-                    <div className="text-center">
-                      <p className="text-sm font-bold text-slate-800">{fKey}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{subCount > 0 ? `${subCount} subfolder · ` : ''}{qCount} soal</p>
+                  <button
+                    key={fKey}
+                    onClick={() => { setSelectedFolder(fKey); setSelectedSubFolder(null); }}
+                    className="group flex flex-col p-4 rounded-2xl border-2 border-slate-200 bg-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-left"
+                  >
+                    <div
+                      className="w-11 h-11 rounded-2xl flex items-center justify-center mb-3"
+                      style={{ background: fc.light }}
+                    >
+                      <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-bold text-slate-800 truncate">{fKey}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {subCount > 0 ? `${subCount} subfolder · ` : ''}{qCount} soal
+                    </p>
+                    <div className="flex justify-end mt-2">
+                      <svg width="14" height="14" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </div>
                   </button>
                 );
@@ -363,84 +452,202 @@ export function QuestionsPage({ user }: { user: User }) {
             )}
           </div>
         </div>
+
         {showAddManual && <AddManualModal />}
         {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
       </div>
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SCREEN 2 — Folder View with questions
+  // ═══════════════════════════════════════════════════════════════════════════
   const currentFolderNode = selectedFolder === '__root__' ? null : folderTree.children[selectedFolder];
   const subFolders = currentFolderNode ? Object.keys(currentFolderNode.children).sort() : [];
 
+  // Stats for filter chips
+  const easyCount = filteredQuestions.filter(q => q.difficulty === 'easy').length;
+  const mediumCount = filteredQuestions.filter(q => q.difficulty === 'medium').length;
+  const hardCount = filteredQuestions.filter(q => q.difficulty === 'hard').length;
+
   return (
-    <div>
-      <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
-        style={{ background: '#ffffff' }}>
-        <div>
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">🧩 Bank Soal</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            {selectedSubFolder && selectedSubFolder !== '__direct__'
-              ? `${selectedFolder} / ${selectedSubFolder} — ${filteredQuestions.length} soal`
-              : selectedFolder === '__root__' ? `Tanpa Folder — ${filteredQuestions.length} soal`
-              : `${selectedFolder} — ${filteredQuestions.length} soal`}
-          </p>
+    <div className="flex flex-col h-full">
+      {/* ── Header ── */}
+      <div className="sticky top-0 z-10 bg-white shadow-sm border-b border-slate-200">
+        <div className="flex items-center justify-between px-6 py-4 gap-4">
+          <div className="min-w-0">
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-1 text-xs text-slate-400 mb-1 flex-wrap">
+              <span className="font-medium">Bank Soal</span>
+              <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              <span className="font-medium text-slate-600 truncate max-w-[120px]">
+                {selectedFolder === '__root__' ? 'Tanpa Folder' : selectedFolder}
+              </span>
+              {selectedSubFolder && selectedSubFolder !== '__direct__' && (
+                <>
+                  <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  <span className="font-medium text-slate-600 truncate max-w-[120px]">{selectedSubFolder}</span>
+                </>
+              )}
+              {selectedSubFolder === '__direct__' && (
+                <>
+                  <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  <span className="font-medium text-slate-600">Langsung</span>
+                </>
+              )}
+            </div>
+            <h1 className="text-lg font-bold text-slate-800 tracking-tight">🧩 Bank Soal</h1>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <SearchInput value={search} onChange={setSearch} placeholder="Cari soal..." />
+            <button
+              onClick={goBack}
+              className="flex items-center gap-1.5 px-3 py-2 text-slate-700 text-sm font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all"
+            >
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Kembali
+            </button>
+            <button
+              onClick={() => setShowAddManual(true)}
+              className="flex items-center gap-1.5 px-3 py-2 text-white text-sm font-semibold rounded-xl shadow transition-all hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}
+            >
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Tambah Manual
+            </button>
+            <button
+              onClick={() => setShowGenerate(true)}
+              className="flex items-center gap-1.5 px-3 py-2 text-white text-sm font-semibold rounded-xl shadow transition-all hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg,#8b5cf6,#6366f1)' }}
+            >
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3l14 9-14 9V3z" />
+              </svg>
+              Generate AI
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <SearchInput value={search} onChange={setSearch} placeholder="Cari soal..." />
-          <button onClick={goBack} className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all flex items-center gap-1.5">← Kembali</button>
-          <button onClick={() => setShowAddManual(true)} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">✏️ Tambah Manual</button>
-          <button onClick={() => setShowGenerate(true)} className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">✨ Generate AI</button>
+        {/* Stats bar */}
+        <div className="flex items-center gap-2 px-6 py-2.5 bg-slate-50 border-t border-slate-100 flex-wrap">
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 bg-white border border-slate-200 px-3 py-1 rounded-full shadow-sm">
+            Total: {filteredQuestions.length}
+          </span>
+          <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+            style={{ background: DIFF_BG.easy, color: DIFF_TEXT.easy, border: `1px solid ${DIFF_BORDER.easy}` }}>
+            Mudah: {easyCount}
+          </span>
+          <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+            style={{ background: DIFF_BG.medium, color: DIFF_TEXT.medium, border: `1px solid ${DIFF_BORDER.medium}` }}>
+            Sedang: {mediumCount}
+          </span>
+          <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+            style={{ background: DIFF_BG.hard, color: DIFF_TEXT.hard, border: `1px solid ${DIFF_BORDER.hard}` }}>
+            Sulit: {hardCount}
+          </span>
         </div>
       </div>
-      <div className="p-8 space-y-6">
+
+      {/* ── Content ── */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {showGenerate && <GeneratePanel />}
 
+        {/* Subfolder grid */}
         {subFolders.length > 0 && !selectedSubFolder && (
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest mb-3 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">Subfolder</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-3 flex items-center gap-1.5">
+              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+              Subfolder
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-2">
               {subFolders.map(sfKey => {
                 const sfNode = currentFolderNode!.children[sfKey];
                 const sfQCount = questions.filter(q => sfNode.materials.map(m => m.id).includes(q.material_id)).length;
+                const fc = getFolderColor(sfKey);
                 return (
-                  <button key={sfKey} onClick={() => setSelectedSubFolder(sfKey)}
-                    className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-200 bg-white hover:border-blue-400 hover:shadow-lg transition-all">
-                    <svg className="w-10 h-10" viewBox="0 0 48 48" fill="none">
-                      <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="#FBBF24" />
-                      <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="none" stroke="#D97706" strokeWidth="1.5" />
-                    </svg>
-                    <div className="text-center">
-                      <p className="text-sm font-bold text-slate-800">{sfKey}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{sfNode.materials.length} materi · {sfQCount} soal</p>
+                  <button
+                    key={sfKey}
+                    onClick={() => setSelectedSubFolder(sfKey)}
+                    className="group flex flex-col p-3 rounded-2xl border-2 border-slate-200 bg-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-left"
+                  >
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2" style={{ background: fc.light }}>
+                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-bold text-slate-800 truncate">{sfKey}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{sfNode.materials.length} materi · {sfQCount} soal</p>
+                    <div className="flex justify-end mt-1.5">
+                      <svg width="12" height="12" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </div>
                   </button>
                 );
               })}
-              {currentFolderNode?.materials && currentFolderNode.materials.length > 0 && (
-                <button onClick={() => setSelectedSubFolder('__direct__')}
-                  className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-blue-300 hover:shadow-md transition-all">
-                  <svg className="w-10 h-10" viewBox="0 0 48 48" fill="none">
-                    <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="#FCD34D" />
-                    <path d="M4 15C4 13.34 5.34 12 7 12H18L22 16H41C42.66 16 44 17.34 44 19V37C44 38.66 42.66 40 41 40H7C5.34 40 4 38.66 4 37V15z" fill="none" stroke="#D97706" strokeWidth="1.5" />
-                  </svg>
-                  <div className="text-center">
+              {currentFolderNode?.materials && currentFolderNode.materials.length > 0 && (() => {
+                const fc = getFolderColor('Langsung');
+                return (
+                  <button
+                    onClick={() => setSelectedSubFolder('__direct__')}
+                    className="group flex flex-col p-3 rounded-2xl border-2 border-slate-200 bg-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-left"
+                  >
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2" style={{ background: fc.light }}>
+                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      </svg>
+                    </div>
                     <p className="text-sm font-bold text-slate-800">Langsung</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{currentFolderNode.materials.length} materi</p>
-                  </div>
-                </button>
-              )}
+                    <p className="text-xs text-slate-400 mt-0.5">{currentFolderNode.materials.length} materi</p>
+                    <div className="flex justify-end mt-1.5">
+                      <svg width="12" height="12" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </button>
+                );
+              })()}
             </div>
           </div>
         )}
 
+        {/* Material filter chips */}
         {viewMaterials.length > 0 && (
-          <div className="flex gap-3 items-center">
-            <select value={selectedMat} onChange={e => setSelectedMat(e.target.value)}
-              className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 bg-white">
-              <option value="">Semua Materi di Folder Ini</option>
-              {viewMaterials.map(m => <option key={m.id} value={m.id}>{m.materi_name}</option>)}
-            </select>
-            <span className="text-sm text-slate-500">{filteredQuestions.length} soal</span>
+          <div className="flex flex-wrap gap-2 items-center">
+            <button
+              onClick={() => setSelectedMat('')}
+              className="px-4 py-1.5 rounded-full text-xs font-semibold border transition-all"
+              style={
+                selectedMat === ''
+                  ? { background: '#1e293b', color: '#fff', border: '1px solid #1e293b' }
+                  : { background: '#fff', color: '#64748b', border: '1px solid #e2e8f0' }
+              }
+            >
+              Semua
+            </button>
+            {viewMaterials.map(m => (
+              <button
+                key={m.id}
+                onClick={() => selectedMat === m.id ? setSelectedMat('') : setSelectedMat(m.id)}
+                className="px-4 py-1.5 rounded-full text-xs font-semibold border transition-all"
+                style={
+                  selectedMat === m.id
+                    ? { background: '#6366f1', color: '#fff', border: '1px solid #6366f1' }
+                    : { background: '#fff', color: '#64748b', border: '1px solid #e2e8f0' }
+                }
+              >
+                {m.materi_name}
+              </button>
+            ))}
           </div>
         )}
 
@@ -489,56 +696,135 @@ export function QuestionsPage({ user }: { user: User }) {
             </div>
           )}
           {viewMaterials
-            .map(mat => ({ mat, qs: filteredQuestions.filter(q => q.material_id === mat.id) }))
+            .map((mat, matIdx) => ({ mat, matIdx, qs: filteredQuestions.filter(q => q.material_id === mat.id) }))
             .filter(({ qs }) => qs.length > 0)
-            .map(({ mat, qs }) => {
+            .map(({ mat, matIdx, qs }) => {
               const totalForMat = questions.filter(q => q.material_id === mat.id).length;
+              const matColor = FOLDER_COLORS[matIdx % FOLDER_COLORS.length];
               return (
                 <div key={mat.id}>
                   {/* Group header */}
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] font-bold uppercase tracking-widest inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
+                      <span
+                        className="text-xs font-bold px-3 py-1.5 rounded-full text-white"
+                        style={{ background: matColor.gradient }}
+                      >
                         📖 {mat.materi_name}
                       </span>
-                      <span className="text-xs text-slate-500 font-semibold bg-white border border-slate-200 px-2.5 py-0.5 rounded-full shadow-sm">
+                      <span className="text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-2.5 py-0.5 rounded-full shadow-sm">
                         {totalForMat} soal
                       </span>
                     </div>
                     <button
                       onClick={() => handleDeleteMatGroup(mat.id, mat.materi_name)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl hover:bg-rose-100 transition-all">
-                      🗑️ Hapus Semua ({totalForMat})
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl hover:bg-rose-100 transition-all"
+                    >
+                      <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Hapus Semua ({totalForMat})
                     </button>
                   </div>
-                  {/* Questions in this group */}
-                  <div className="space-y-3">
+
+                  {/* Style D Question Cards */}
+                  <div>
                     {qs.map((q, idx) => (
-                      <div key={q.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 group hover:shadow-md transition-all">
-                        <div className="flex items-start gap-3">
-                          <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-black text-slate-600 flex-shrink-0 mt-0.5">{idx+1}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
-                            <div className="grid grid-cols-2 gap-1.5 mt-3">
-                              {(['a','b','c','d'] as const).map(opt => (
-                                <div key={opt} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs ${q.correct_answer === opt.toUpperCase() ? 'bg-green-50 border border-green-200 text-green-700 font-bold' : 'bg-slate-50 border border-slate-200 text-slate-600'}`}>
-                                  <span className={`w-4 h-4 rounded flex items-center justify-center text-[10px] font-black flex-shrink-0 ${q.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-300 text-white'}`}>{opt.toUpperCase()}</span>
-                                  <span className="truncate">{(q as any)[`option_${opt}`]}</span>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="flex items-center gap-2 mt-2">
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${DIFF_COLOR[q.difficulty]}`}>{q.difficulty}</span>
-                              <span className="text-xs text-slate-400">{q.materi_name}</span>
-                            </div>
+                      <div key={q.id} className="flex mb-3 rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all">
+                        {/* LEFT SIDEBAR — difficulty colored strip */}
+                        <div style={{
+                          width: 52,
+                          background: DIFF_BG[q.difficulty] ?? '#f8fafc',
+                          borderRight: `1px solid ${DIFF_BORDER[q.difficulty] ?? '#e2e8f0'}`,
+                          flexShrink: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          paddingTop: 20,
+                        }}>
+                          {/* Number badge */}
+                          <div style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 10,
+                            background: DIFF_NUM_BG[q.difficulty] ?? 'linear-gradient(135deg,#64748b,#475569)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#fff',
+                            fontSize: 13,
+                            fontWeight: 900,
+                          }}>{idx + 1}</div>
+                          {/* Difficulty vertical label rotated */}
+                          <span style={{
+                            marginTop: 8,
+                            fontSize: 9,
+                            fontWeight: 700,
+                            color: DIFF_TEXT[q.difficulty] ?? '#64748b',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.08em',
+                            writingMode: 'vertical-rl',
+                            transform: 'rotate(180deg)',
+                          }}>{DIFF_LABEL[q.difficulty] ?? q.difficulty}</span>
+                        </div>
+
+                        {/* MAIN BODY */}
+                        <div style={{ flex: 1, padding: '16px 20px' }}>
+                          {/* Question text */}
+                          <p style={{ fontSize: 13.5, fontWeight: 600, color: '#0f172a', lineHeight: 1.65, marginBottom: 12 }}>{q.question}</p>
+                          {/* 2x2 Answer grid */}
+                          <div className="grid grid-cols-2 gap-2 mb-3">
+                            {(['a', 'b', 'c', 'd'] as const).map(opt => (
+                              <div
+                                key={opt}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs ${
+                                  q.correct_answer === opt.toUpperCase()
+                                    ? 'border-emerald-300 bg-emerald-50 text-emerald-800 font-semibold'
+                                    : 'border-slate-200 bg-slate-50 text-slate-600'
+                                }`}
+                              >
+                                <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black flex-shrink-0 ${
+                                  q.correct_answer === opt.toUpperCase() ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-white'
+                                }`}>{opt.toUpperCase()}</span>
+                                <span className="truncate">{(q as any)[`option_${opt}`]}</span>
+                              </div>
+                            ))}
                           </div>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                            <button onClick={() => setEditQ(q)} className="p-2 rounded-lg text-blue-500 hover:bg-blue-50 transition-all" title="Edit soal">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                            </button>
-                            <button onClick={() => handleDelete(q.id)} className="p-2 rounded-lg text-rose-500 hover:bg-rose-50 transition-all" title="Hapus soal ini">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                            </button>
+                          {/* Footer: tags + action buttons */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span style={{
+                                fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+                                background: DIFF_BG[q.difficulty] ?? '#f8fafc',
+                                color: DIFF_TEXT[q.difficulty] ?? '#64748b',
+                                border: `1px solid ${DIFF_BORDER[q.difficulty] ?? '#e2e8f0'}`,
+                              }}>{DIFF_LABEL[q.difficulty] ?? q.difficulty}</span>
+                              <span style={{
+                                fontSize: 10, color: '#94a3b8', background: '#f1f5f9',
+                                padding: '2px 8px', borderRadius: 20, border: '1px solid #e2e8f0',
+                              }}>{q.materi_name}</span>
+                            </div>
+                            {/* Action buttons — always visible */}
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setEditQ(q)}
+                                style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600, background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}
+                              >
+                                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDelete(q.id)}
+                                style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600, background: '#fff1f2', color: '#be123c', border: '1px solid #fecdd3' }}
+                              >
+                                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Hapus
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -549,6 +835,7 @@ export function QuestionsPage({ user }: { user: User }) {
             })}
         </div>
       </div>
+
       {showAddManual && <AddManualModal />}
       {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
     </div>
