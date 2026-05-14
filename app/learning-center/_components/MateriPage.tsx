@@ -31,9 +31,10 @@ const GRID_COLS: Record<number, string> = {
 // ─── MaterialCard ─────────────────────────────────────────────────────────────
 
 function MaterialCard({
-  material: m, isAdmin, onDelete, compact, colorHex,
+  material: m, isAdmin, onDelete, onEdit, compact, colorHex,
 }: {
   material: Material; isAdmin: boolean; onDelete?: (id: string) => void;
+  onEdit?: (m: Material) => void;
   compact?: boolean; colorHex?: string;
 }) {
   const hex = colorHex || '#3b82f6';
@@ -50,6 +51,7 @@ function MaterialCard({
         <h4 className={`font-semibold text-slate-800 group-hover:text-blue-700 transition-colors ${compact ? 'text-xs' : 'text-sm'} truncate`}>{m.materi_name}</h4>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <span className="text-[10px] text-slate-400">{fmtDate(m.created_at)}</span>
+          {m.file_url && <span className="text-[10px] text-slate-300">• ada link</span>}
         </div>
       </div>
       <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -63,9 +65,17 @@ function MaterialCard({
             Buka
           </a>
         )}
+        {isAdmin && onEdit && (
+          <button onClick={() => onEdit(m)}
+            className="p-1.5 rounded-lg text-blue-400 hover:text-white hover:bg-blue-500 border border-transparent hover:border-blue-400 transition-all opacity-0 group-hover:opacity-100" title="Edit">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </button>
+        )}
         {isAdmin && onDelete && (
           <button onClick={() => onDelete(m.id)}
-            className="p-1.5 rounded-lg text-rose-400 hover:text-white hover:bg-rose-500 border border-transparent hover:border-rose-400 transition-all" title="Hapus">
+            className="p-1.5 rounded-lg text-rose-400 hover:text-white hover:bg-rose-500 border border-transparent hover:border-rose-400 transition-all opacity-0 group-hover:opacity-100" title="Hapus">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
@@ -79,9 +89,10 @@ function MaterialCard({
 // ─── FolderTreeView (used inside right panel) ────────────────────────────────
 
 function FolderTreeView({
-  node, depth = 0, isAdmin, onDelete, expandedPaths, togglePath, onAddToFolder, gridCols = 2, colorHex,
+  node, depth = 0, isAdmin, onDelete, onEdit, expandedPaths, togglePath, onAddToFolder, gridCols = 2, colorHex,
 }: {
   node: FolderNode; depth?: number; isAdmin: boolean; onDelete?: (id: string) => void;
+  onEdit?: (m: Material) => void;
   expandedPaths: Set<string>; togglePath: (path: string) => void;
   onAddToFolder?: (path: string) => void;
   gridCols?: number; colorHex?: string;
@@ -97,7 +108,7 @@ function FolderTreeView({
       {hasMaterials && (
         <div className="space-y-1 mb-3">
           {node.materials.map(m => (
-            <MaterialCard key={m.id} material={m} isAdmin={isAdmin} onDelete={onDelete} compact colorHex={colorHex} />
+            <MaterialCard key={m.id} material={m} isAdmin={isAdmin} onDelete={onDelete} onEdit={onEdit} compact colorHex={colorHex} />
           ))}
         </div>
       )}
@@ -158,7 +169,7 @@ function FolderTreeView({
             </div>
             <div className="p-2.5">
               <FolderTreeView
-                node={child} depth={depth + 1} isAdmin={isAdmin} onDelete={onDelete}
+                node={child} depth={depth + 1} isAdmin={isAdmin} onDelete={onDelete} onEdit={onEdit}
                 expandedPaths={expandedPaths} togglePath={togglePath} onAddToFolder={onAddToFolder}
                 gridCols={gridCols} colorHex={colorHex}
               />
@@ -180,6 +191,10 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
   const [viewMode, setViewMode] = useState<'folder' | 'list'>('folder');
   const [search, setSearch] = useState('');
   const [dialog, setDialog] = useState<DialogState>(null);
+  const [renameFolder, setRenameFolder] = useState<{ oldName: string; newName: string } | null>(null);
+  const [renameFolderSaving, setRenameFolderSaving] = useState(false);
+  const [editMaterial, setEditMaterial] = useState<Material | null>(null);
+  const [editMaterialSaving, setEditMaterialSaving] = useState(false);
 
   // Split-view state
   const [selectedFolderKey, setSelectedFolderKey] = useState<string | null>(null);
@@ -244,6 +259,38 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
         load();
       },
     });
+  };
+
+  const handleRenameFolder = async () => {
+    if (!renameFolder || !renameFolder.newName.trim()) return;
+    const { oldName, newName } = renameFolder;
+    if (oldName === newName.trim()) { setRenameFolder(null); return; }
+    setRenameFolderSaving(true);
+    const affected = materials.filter(m =>
+      m.folder_path === oldName || m.folder_path?.startsWith(oldName + '/')
+    );
+    await Promise.all(affected.map(m =>
+      supabase.from('lc_materials').update({
+        folder_path: m.folder_path!.replace(oldName, newName.trim()),
+      }).eq('id', m.id)
+    ));
+    setRenameFolderSaving(false);
+    setRenameFolder(null);
+    if (selectedFolderKey === oldName) setSelectedFolderKey(newName.trim());
+    load();
+  };
+
+  const handleEditMaterial = async () => {
+    if (!editMaterial) return;
+    setEditMaterialSaving(true);
+    await supabase.from('lc_materials').update({
+      materi_name: editMaterial.materi_name.trim(),
+      file_url: editMaterial.file_url?.trim() || null,
+      folder_path: editMaterial.folder_path?.trim() || null,
+    }).eq('id', editMaterial.id);
+    setEditMaterialSaving(false);
+    setEditMaterial(null);
+    load();
   };
 
   const filtered = search
@@ -353,7 +400,9 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">📄 Tanpa Folder</p>
                         )}
                         {tree.materials.map(m => (
-                          <MaterialCard key={m.id} material={m} isAdmin={isAdmin} onDelete={isAdmin ? handleDelete : undefined} />
+                          <MaterialCard key={m.id} material={m} isAdmin={isAdmin}
+                            onDelete={isAdmin ? handleDelete : undefined}
+                            onEdit={isAdmin ? setEditMaterial : undefined} />
                         ))}
                       </div>
                     )}
@@ -369,41 +418,54 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                             const totalInside = countMaterials(child);
                             const col = getFolderColor(key);
                             return (
-                              <button key={child.path}
-                                onClick={() => {
-                                  setSelectedFolderKey(isSelected ? null : key);
-                                  setRightExpandedPaths(new Set());
-                                }}
-                                className={`group text-left rounded-2xl border-2 p-4 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5
-                                  ${isSelected ? 'shadow-lg -translate-y-0.5' : 'border-slate-200 bg-white'}`}
-                                style={isSelected ? { borderColor: col.icon, background: col.light } : {}}>
-                                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-sm transition-all"
-                                  style={{ background: isSelected ? col.gradient : col.light }}>
-                                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                                    <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z"
-                                      fill={isSelected ? '#FCD34D' : col.light === '#fef3c7' ? '#FBBF24' : col.icon + '88'}
-                                      stroke={isSelected ? '#D97706' : col.icon} strokeWidth="0.9" />
-                                  </svg>
-                                </div>
-                                <p className="text-sm font-bold text-slate-800 leading-snug mb-1.5 line-clamp-2">{child.name}</p>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[10px] font-medium text-slate-400">{totalInside} materi</span>
-                                  <div className="flex items-center gap-1">
-                                    {isAdmin && (
-                                      <button
-                                        onClick={e => { e.stopPropagation(); openForm(child.path); }}
-                                        className="w-5 h-5 rounded-md flex items-center justify-center font-bold text-xs border transition-all opacity-0 group-hover:opacity-100"
-                                        style={{ background: col.light, border: `1px solid ${col.icon}44`, color: col.icon }}
-                                        title={`Tambah ke "${child.name}"`}>+</button>
-                                    )}
-                                    <svg className={`w-3 h-3 transition-all ${isSelected ? 'rotate-90' : 'text-slate-300'}`}
-                                      style={isSelected ? { color: col.icon } : {}}
-                                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                              <div key={child.path} className="group relative">
+                                <button
+                                  onClick={() => {
+                                    setSelectedFolderKey(isSelected ? null : key);
+                                    setRightExpandedPaths(new Set());
+                                  }}
+                                  className={`w-full text-left rounded-2xl border-2 p-4 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5
+                                    ${isSelected ? 'shadow-lg -translate-y-0.5' : 'border-slate-200 bg-white'}`}
+                                  style={isSelected ? { borderColor: col.icon, background: col.light } : {}}>
+                                  <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-sm transition-all"
+                                    style={{ background: isSelected ? col.gradient : col.light }}>
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                                      <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z"
+                                        fill={isSelected ? '#FCD34D' : col.light === '#fef3c7' ? '#FBBF24' : col.icon + '88'}
+                                        stroke={isSelected ? '#D97706' : col.icon} strokeWidth="0.9" />
                                     </svg>
                                   </div>
-                                </div>
-                              </button>
+                                  <p className="text-sm font-bold text-slate-800 leading-snug mb-1.5 line-clamp-2 pr-6">{child.name}</p>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-medium text-slate-400">{totalInside} materi</span>
+                                    <div className="flex items-center gap-1">
+                                      {isAdmin && (
+                                        <button
+                                          onClick={e => { e.stopPropagation(); openForm(child.path); }}
+                                          className="w-5 h-5 rounded-md flex items-center justify-center font-bold text-xs border transition-all opacity-0 group-hover:opacity-100"
+                                          style={{ background: col.light, border: `1px solid ${col.icon}44`, color: col.icon }}
+                                          title={`Tambah ke "${child.name}"`}>+</button>
+                                      )}
+                                      <svg className={`w-3 h-3 transition-all ${isSelected ? 'rotate-90' : 'text-slate-300'}`}
+                                        style={isSelected ? { color: col.icon } : {}}
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                </button>
+                                {/* Rename folder button */}
+                                {isAdmin && (
+                                  <button
+                                    onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: key, newName: key }); }}
+                                    className="absolute top-3 right-3 w-6 h-6 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-white/80 bg-white/60"
+                                    title="Ubah nama folder">
+                                    <svg width="12" height="12" fill="none" stroke="#64748b" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
                             );
                           })}
                         </div>
@@ -421,6 +483,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                       return (
                         <MaterialCard key={m.id} material={m} isAdmin={isAdmin}
                           onDelete={isAdmin ? handleDelete : undefined}
+                          onEdit={isAdmin ? setEditMaterial : undefined}
                           colorHex={col?.icon} />
                       );
                     })}
@@ -469,10 +532,20 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                   </p>
                 </div>
                 {isAdmin && (
-                  <button onClick={() => openForm(selectedFolderNode.path)}
-                    className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm border-2 transition-all hover:scale-110"
-                    style={{ background: panelCol.icon + '18', borderColor: panelCol.icon + '44', color: panelCol.icon }}
-                    title="Tambah materi ke folder ini">+</button>
+                  <>
+                    <button onClick={() => setRenameFolder({ oldName: selectedFolderNode.name, newName: selectedFolderNode.name })}
+                      className="w-8 h-8 rounded-xl flex items-center justify-center border-2 transition-all hover:scale-110"
+                      style={{ background: panelCol.icon + '18', borderColor: panelCol.icon + '44' }}
+                      title="Ubah nama folder">
+                      <svg width="14" height="14" fill="none" stroke={panelCol.icon} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    <button onClick={() => openForm(selectedFolderNode.path)}
+                      className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm border-2 transition-all hover:scale-110"
+                      style={{ background: panelCol.icon + '18', borderColor: panelCol.icon + '44', color: panelCol.icon }}
+                      title="Tambah materi ke folder ini">+</button>
+                  </>
                 )}
                 <button onClick={() => setSelectedFolderKey(null)}
                   className="w-8 h-8 rounded-xl bg-white hover:bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-lg border border-slate-200 transition-all flex-shrink-0">✕</button>
@@ -485,6 +558,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                   depth={0}
                   isAdmin={isAdmin}
                   onDelete={isAdmin ? handleDelete : undefined}
+                  onEdit={isAdmin ? setEditMaterial : undefined}
                   expandedPaths={rightExpandedPaths}
                   togglePath={toggleRightPath}
                   onAddToFolder={isAdmin ? openForm : undefined}
@@ -558,6 +632,113 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
               <button onClick={handleSave} disabled={uploading}
                 className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60">
                 {uploading ? '💾 Menyimpan...' : '💾 Simpan Materi'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Rename Folder ── */}
+      {isAdmin && renameFolder && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-slate-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2">✏️ Ubah Nama Folder</h3>
+              <button onClick={() => setRenameFolder(null)}
+                className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-all text-xl font-light">×</button>
+            </div>
+            <div className="p-6">
+              <p className="text-xs text-slate-400 mb-4">Semua materi dalam folder ini akan diperbarui secara otomatis.</p>
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Folder Baru</label>
+              <input
+                value={renameFolder.newName}
+                onChange={e => setRenameFolder(p => p && ({ ...p, newName: e.target.value }))}
+                onKeyDown={e => { if (e.key === 'Enter') handleRenameFolder(); if (e.key === 'Escape') setRenameFolder(null); }}
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 mb-1"
+                autoFocus
+                placeholder="Nama folder baru..."
+              />
+              <p className="text-xs text-slate-400 mb-4">Sebelumnya: <strong className="text-slate-600">{renameFolder.oldName}</strong></p>
+              <div className="flex gap-3">
+                <button onClick={handleRenameFolder} disabled={renameFolderSaving}
+                  className="flex-1 py-2.5 text-white text-sm font-bold rounded-xl disabled:opacity-60 transition-all hover:opacity-90"
+                  style={{ background: 'linear-gradient(135deg,#3b82f6,#4f46e5)' }}>
+                  {renameFolderSaving ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Menyimpan...
+                    </span>
+                  ) : '💾 Simpan'}
+                </button>
+                <button onClick={() => setRenameFolder(null)}
+                  className="flex-1 py-2.5 bg-slate-100 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-all">
+                  Batal
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Edit Material ── */}
+      {isAdmin && editMaterial && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2">✏️ Edit Materi</h3>
+              <button onClick={() => setEditMaterial(null)}
+                className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-all text-xl font-light">×</button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Materi *</label>
+                <input
+                  value={editMaterial.materi_name}
+                  onChange={e => setEditMaterial(p => p && ({ ...p, materi_name: e.target.value }))}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  autoFocus
+                  placeholder="Nama materi..." />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                  Folder Path <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
+                </label>
+                <input
+                  value={editMaterial.folder_path ?? ''}
+                  onChange={e => setEditMaterial(p => p && ({ ...p, folder_path: e.target.value }))}
+                  list="edit-folder-path-suggestions"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  placeholder="contoh: Produk/Microvision" />
+                <datalist id="edit-folder-path-suggestions">
+                  {existingPaths.map(p => <option key={p} value={p} />)}
+                </datalist>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                  Link OneDrive <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
+                </label>
+                <input
+                  value={editMaterial.file_url ?? ''}
+                  onChange={e => setEditMaterial(p => p && ({ ...p, file_url: e.target.value }))}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  placeholder="https://1drv.ms/b/s!..." />
+              </div>
+            </div>
+            <div className="flex gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50">
+              <button onClick={() => setEditMaterial(null)}
+                className="flex-1 py-2.5 bg-white hover:bg-slate-100 text-slate-700 text-sm font-semibold rounded-xl border border-slate-200 transition-all">
+                Batal
+              </button>
+              <button onClick={handleEditMaterial} disabled={editMaterialSaving}
+                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60">
+                {editMaterialSaving ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Menyimpan...
+                  </span>
+                ) : '💾 Simpan Perubahan'}
               </button>
             </div>
           </div>

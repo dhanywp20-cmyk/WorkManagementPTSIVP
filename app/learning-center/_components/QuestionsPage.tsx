@@ -50,6 +50,24 @@ export function QuestionsPage({ user }: { user: User }) {
   const [selectedSubFolder, setSelectedSubFolder] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [dialog, setDialog] = useState<DialogState>(null);
+  const [renameFolder, setRenameFolder] = useState<{ oldName: string; newName: string } | null>(null);
+  const [renameSaving, setRenameSaving] = useState(false);
+
+  const handleRenameFolder = async () => {
+    if (!renameFolder || !renameFolder.newName.trim()) return;
+    const { oldName, newName } = renameFolder;
+    if (oldName === newName.trim()) { setRenameFolder(null); return; }
+    setRenameSaving(true);
+    const affected = materials.filter(m => m.folder_path === oldName || m.folder_path?.startsWith(oldName + '/'));
+    await Promise.all(affected.map(m =>
+      supabase.from('lc_materials').update({ folder_path: m.folder_path!.replace(oldName, newName.trim()) }).eq('id', m.id)
+    ));
+    setRenameSaving(false);
+    setRenameFolder(null);
+    if (selectedFolder === oldName) setSelectedFolder(newName.trim());
+    if (selectedSubFolder === oldName) setSelectedSubFolder(newName.trim());
+    load();
+  };
 
   const load = useCallback(async () => {
     const { data: mats } = await supabase.from('lc_materials').select('*').order('materi_name');
@@ -189,6 +207,45 @@ export function QuestionsPage({ user }: { user: User }) {
     if (selectedSubFolder) { setSelectedSubFolder(null); return; }
     setSelectedFolder(null); setSelectedMat('');
   };
+
+  // ─── Rename Folder Modal ────────────────────────────────────────────────────
+  const RenameFolderModal = () => (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999] p-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+        <h3 className="font-bold text-slate-800 mb-1 text-base">✏️ Ubah Nama Folder</h3>
+        <p className="text-xs text-slate-400 mb-4">Semua materi dalam folder ini akan diperbarui secara otomatis.</p>
+        <input
+          value={renameFolder?.newName ?? ''}
+          onChange={e => setRenameFolder(p => p && ({ ...p, newName: e.target.value }))}
+          onKeyDown={e => { if (e.key === 'Enter') handleRenameFolder(); if (e.key === 'Escape') setRenameFolder(null); }}
+          className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 mb-4"
+          autoFocus
+          placeholder="Nama folder baru..."
+        />
+        <div className="flex gap-3">
+          <button
+            onClick={handleRenameFolder}
+            disabled={renameSaving}
+            className="flex-1 py-2.5 text-white text-sm font-bold rounded-xl disabled:opacity-60 transition-all hover:opacity-90"
+            style={{ background: 'linear-gradient(135deg,#3b82f6,#4f46e5)' }}
+          >
+            {renameSaving ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Menyimpan...
+              </span>
+            ) : '💾 Simpan'}
+          </button>
+          <button
+            onClick={() => setRenameFolder(null)}
+            className="flex-1 py-2.5 bg-slate-100 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-all"
+          >
+            Batal
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   // ─── Generate Panel ────────────────────────────────────────────────────────
   const GeneratePanel = () => (
@@ -414,29 +471,29 @@ export function QuestionsPage({ user }: { user: User }) {
                 const subCount = Object.keys(fNode.children).length;
                 const fc = getFolderColor(fKey);
                 return (
-                  <button
-                    key={fKey}
-                    onClick={() => { setSelectedFolder(fKey); setSelectedSubFolder(null); }}
-                    className="group flex flex-col p-4 rounded-2xl border-2 border-slate-200 bg-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-left"
-                  >
-                    <div
-                      className="w-11 h-11 rounded-2xl flex items-center justify-center mb-3"
-                      style={{ background: fc.light }}
+                  <div key={fKey} className="group relative">
+                    <button
+                      onClick={() => { setSelectedFolder(fKey); setSelectedSubFolder(null); }}
+                      className="w-full flex flex-col p-4 rounded-2xl border-2 border-slate-200 bg-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-left"
                     >
-                      <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-3" style={{ background: fc.light }}>
+                        <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
+                      </div>
+                      <p className="text-sm font-bold text-slate-800 truncate pr-6">{fKey}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{subCount > 0 ? `${subCount} subfolder · ` : ''}{qCount} soal</p>
+                    </button>
+                    {/* Rename button */}
+                    <button
+                      onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: fKey, newName: fKey }); }}
+                      className="absolute top-3 right-3 w-6 h-6 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-slate-100"
+                      title="Ubah nama folder">
+                      <svg width="12" height="12" fill="none" stroke="#64748b" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
-                    </div>
-                    <p className="text-sm font-bold text-slate-800 truncate">{fKey}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      {subCount > 0 ? `${subCount} subfolder · ` : ''}{qCount} soal
-                    </p>
-                    <div className="flex justify-end mt-2">
-                      <svg width="14" height="14" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  </button>
+                    </button>
+                  </div>
                 );
               })}
             </div>
@@ -454,6 +511,7 @@ export function QuestionsPage({ user }: { user: User }) {
         </div>
 
         {showAddManual && <AddManualModal />}
+        {renameFolder && <RenameFolderModal />}
         {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
       </div>
     );
@@ -574,24 +632,34 @@ export function QuestionsPage({ user }: { user: User }) {
                 const sfQCount = questions.filter(q => sfNode.materials.map(m => m.id).includes(q.material_id)).length;
                 const fc = getFolderColor(sfKey);
                 return (
-                  <button
-                    key={sfKey}
-                    onClick={() => setSelectedSubFolder(sfKey)}
-                    className="group flex flex-col p-3 rounded-2xl border-2 border-slate-200 bg-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-left"
-                  >
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2" style={{ background: fc.light }}>
-                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                  <div key={sfKey} className="group relative">
+                    <button
+                      onClick={() => setSelectedSubFolder(sfKey)}
+                      className="w-full flex flex-col p-3 rounded-2xl border-2 border-slate-200 bg-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-left"
+                    >
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2" style={{ background: fc.light }}>
+                        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
+                      </div>
+                      <p className="text-sm font-bold text-slate-800 truncate pr-6">{sfKey}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{sfNode.materials.length} materi · {sfQCount} soal</p>
+                      <div className="flex justify-end mt-1.5">
+                        <svg width="12" height="12" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </button>
+                    {/* Rename subfolder button */}
+                    <button
+                      onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: sfKey, newName: sfKey }); }}
+                      className="absolute top-2.5 right-2.5 w-6 h-6 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-slate-100"
+                      title="Ubah nama subfolder">
+                      <svg width="12" height="12" fill="none" stroke="#64748b" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
-                    </div>
-                    <p className="text-sm font-bold text-slate-800 truncate">{sfKey}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{sfNode.materials.length} materi · {sfQCount} soal</p>
-                    <div className="flex justify-end mt-1.5">
-                      <svg width="12" height="12" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  </button>
+                    </button>
+                  </div>
                 );
               })}
               {currentFolderNode?.materials && currentFolderNode.materials.length > 0 && (() => {
@@ -622,32 +690,30 @@ export function QuestionsPage({ user }: { user: User }) {
 
         {/* Material filter chips */}
         {viewMaterials.length > 0 && (
-          <div className="flex flex-wrap gap-2 items-center">
+          <div className="flex flex-wrap gap-2 items-center bg-white border border-slate-200 rounded-2xl px-4 py-2.5 shadow-sm">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Filter:</span>
             <button
               onClick={() => setSelectedMat('')}
-              className="px-4 py-1.5 rounded-full text-xs font-semibold border transition-all"
-              style={
-                selectedMat === ''
-                  ? { background: '#1e293b', color: '#fff', border: '1px solid #1e293b' }
-                  : { background: '#fff', color: '#64748b', border: '1px solid #e2e8f0' }
-              }
-            >
+              className="px-3 py-1 rounded-lg text-xs font-semibold border transition-all"
+              style={selectedMat === ''
+                ? { background: 'linear-gradient(135deg,#6366f1,#4f46e5)', color: '#fff', border: '1px solid #6366f1', boxShadow: '0 2px 6px rgba(99,102,241,0.35)' }
+                : { background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0' }}>
               Semua
             </button>
-            {viewMaterials.map(m => (
-              <button
-                key={m.id}
-                onClick={() => selectedMat === m.id ? setSelectedMat('') : setSelectedMat(m.id)}
-                className="px-4 py-1.5 rounded-full text-xs font-semibold border transition-all"
-                style={
-                  selectedMat === m.id
-                    ? { background: '#6366f1', color: '#fff', border: '1px solid #6366f1' }
-                    : { background: '#fff', color: '#64748b', border: '1px solid #e2e8f0' }
-                }
-              >
-                {m.materi_name}
-              </button>
-            ))}
+            {viewMaterials.map((m, i) => {
+              const col = FOLDER_COLORS[i % FOLDER_COLORS.length];
+              const active = selectedMat === m.id;
+              return (
+                <button key={m.id}
+                  onClick={() => setSelectedMat(active ? '' : m.id)}
+                  className="px-3 py-1 rounded-lg text-xs font-semibold border transition-all"
+                  style={active
+                    ? { background: col.gradient, color: '#fff', border: `1px solid ${col.icon}`, boxShadow: `0 2px 6px ${col.icon}40` }
+                    : { background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0' }}>
+                  {m.materi_name}
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -755,40 +821,23 @@ export function QuestionsPage({ user }: { user: User }) {
                             fontSize: 13,
                             fontWeight: 900,
                           }}>{idx + 1}</div>
-                          {/* Difficulty vertical label rotated */}
-                          <span style={{
-                            marginTop: 8,
-                            fontSize: 9,
-                            fontWeight: 700,
-                            color: DIFF_TEXT[q.difficulty] ?? '#64748b',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.08em',
-                            writingMode: 'vertical-rl',
-                            transform: 'rotate(180deg)',
-                          }}>{DIFF_LABEL[q.difficulty] ?? q.difficulty}</span>
                         </div>
 
                         {/* MAIN BODY */}
                         <div style={{ flex: 1, padding: '16px 20px' }}>
                           {/* Question text */}
                           <p style={{ fontSize: 13.5, fontWeight: 600, color: '#0f172a', lineHeight: 1.65, marginBottom: 12 }}>{q.question}</p>
-                          {/* 2x2 Answer grid */}
-                          <div className="grid grid-cols-2 gap-2 mb-3">
-                            {(['a', 'b', 'c', 'd'] as const).map(opt => (
-                              <div
-                                key={opt}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs ${
-                                  q.correct_answer === opt.toUpperCase()
-                                    ? 'border-emerald-300 bg-emerald-50 text-emerald-800 font-semibold'
-                                    : 'border-slate-200 bg-slate-50 text-slate-600'
-                                }`}
-                              >
-                                <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black flex-shrink-0 ${
-                                  q.correct_answer === opt.toUpperCase() ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-white'
-                                }`}>{opt.toUpperCase()}</span>
-                                <span className="truncate">{(q as any)[`option_${opt}`]}</span>
-                              </div>
-                            ))}
+                          {/* Answer options — 2 per row, compact */}
+                          <div className="grid grid-cols-2 gap-1.5 mb-3">
+                            {(['a', 'b', 'c', 'd'] as const).map(opt => {
+                              const isCorrect = q.correct_answer === opt.toUpperCase();
+                              return (
+                                <div key={opt} className={`flex items-start gap-2 px-2.5 py-1.5 rounded-lg border text-xs ${isCorrect ? 'border-emerald-300 bg-emerald-50 text-emerald-800 font-semibold' : 'border-slate-200 bg-white text-slate-600'}`}>
+                                  <span className={`w-4 h-4 rounded flex items-center justify-center text-[9px] font-black flex-shrink-0 mt-0.5 ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>{opt.toUpperCase()}</span>
+                                  <span className="leading-snug">{(q as any)[`option_${opt}`]}</span>
+                                </div>
+                              );
+                            })}
                           </div>
                           {/* Footer: tags + action buttons */}
                           <div className="flex items-center justify-between">
@@ -837,6 +886,7 @@ export function QuestionsPage({ user }: { user: User }) {
       </div>
 
       {showAddManual && <AddManualModal />}
+      {renameFolder && <RenameFolderModal />}
       {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
     </div>
   );
