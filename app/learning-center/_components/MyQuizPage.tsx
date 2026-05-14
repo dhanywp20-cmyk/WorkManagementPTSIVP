@@ -271,7 +271,7 @@ function QuizPlayer({ session, user, attempt, onDone }: {
           </div>
         </div>
       </div>
-      <div className="w-48 bg-white border-l border-slate-200 p-4 overflow-y-auto flex-shrink-0 flex flex-col gap-4">
+      <div className="hidden sm:flex w-48 bg-white border-l border-slate-200 p-4 overflow-y-auto flex-shrink-0 flex-col gap-4">
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Navigasi Soal</p>
         <div className="grid grid-cols-5 gap-1.5">
           {questions.map((_, i) => {

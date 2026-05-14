@@ -59,7 +59,7 @@ export function ReportPage({ currentUser }: { currentUser: User }) {
 
         {data.length > 0 && (
           <>
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
                 { label: 'Peserta', value: data.length },
                 { label: 'Rata-rata', value: (data.reduce((s: number, a: any) => s+(a.score??0),0)/data.length).toFixed(1) },
@@ -73,9 +73,9 @@ export function ReportPage({ currentUser }: { currentUser: User }) {
               ))}
             </div>
 
-            <div className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
+            <div className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto"
               style={{ background: '#ffffff' }}>
-              <table className="w-full text-sm">
+              <table className="w-full text-sm" style={{ minWidth: '680px' }}>
                 <thead className="border-b border-slate-200" style={{ background: 'rgba(248,250,252,0.98)' }}>
                   <tr>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest w-10">#</th>

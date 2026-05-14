@@ -1231,7 +1231,7 @@ export default function FormReviewPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse" style={{ tableLayout: 'fixed', background: 'transparent' }}>
+                <table className="w-full border-collapse" style={{ tableLayout: 'fixed', background: 'transparent', minWidth: '920px' }}>
                   <colgroup>
                     <col style={{ width: '3%' }} />   {/* No */}
                     <col style={{ width: '18%' }} />  {/* Project */}

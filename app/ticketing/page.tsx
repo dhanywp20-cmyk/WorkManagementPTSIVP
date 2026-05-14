@@ -2197,7 +2197,7 @@ export default function TicketingSystem() {
               <div className="text-center py-12"><div className="text-6xl mb-4">📭</div><p className="text-gray-600 font-medium">{searchProject || filterStatus !== "All" ? "No tickets match the search." : "No tickets yet. Create your first ticket!"}</p></div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full table-fixed border-collapse" style={{ background: "transparent" }}>
+                <table className="w-full table-fixed border-collapse" style={{ background: "transparent", minWidth: '1100px' }}>
                   <colgroup>
                     <col style={{ width: "3%" }} />   {/* No */}
                     <col style={{ width: "20%" }} />  {/* Project / Lokasi*/}

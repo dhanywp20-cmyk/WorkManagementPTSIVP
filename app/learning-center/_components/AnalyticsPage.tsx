@@ -298,7 +298,7 @@ export function AnalyticsPage() {
               ) : (
                 <>
                   {/* Summary cards */}
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
                       { label: 'Total Quiz', value: userAttempts.length, color: 'text-slate-800' },
                       {

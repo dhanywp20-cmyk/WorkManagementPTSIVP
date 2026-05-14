@@ -170,7 +170,7 @@ export function AdminDashboard({ user }: { user: User }) {
       <div className="p-8 space-y-10">
 
         {/* ── Summary Cards ── */}
-        <div className="grid grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
           {cards.map(c => (
             <div key={c.label} className={`bg-gradient-to-br ${c.color} rounded-2xl p-5 text-white shadow-lg`}>
               <div className="text-3xl mb-2">{c.icon}</div>
@@ -253,17 +253,17 @@ export function AdminDashboard({ user }: { user: User }) {
 
         {/* ── Top Performers ── */}
         <section>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
             <h3 className="text-[10px] font-bold uppercase tracking-widest inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
               🏆 Top Performers
             </h3>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
               <p className="text-xs text-slate-400">Klik nama untuk detail per quiz</p>
               <SearchInput value={searchPerformer} onChange={setSearchPerformer} placeholder="Cari nama..." />
             </div>
           </div>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+            <table className="w-full text-sm" style={{ minWidth: '580px' }}>
               <thead className="border-b border-slate-200 bg-slate-50">
                 <tr>
                   <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-10">#</th>
@@ -378,7 +378,7 @@ export function AdminDashboard({ user }: { user: User }) {
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
                       { label: 'Total Quiz', value: userAttempts.length, color: 'text-slate-800' },
                       {

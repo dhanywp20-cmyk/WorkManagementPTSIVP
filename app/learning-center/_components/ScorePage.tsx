@@ -41,7 +41,7 @@ export function ScorePage({ user }: { user: User }) {
         <SearchInput value={search} onChange={setSearch} placeholder="Cari sesi atau materi..." />
       </div>
       <div className="p-8 space-y-6">
-        <div className="grid grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           {[
             { label: 'Quiz Diikuti', value: attempts.length, icon: '📝', color: 'from-blue-500 to-blue-600' },
             { label: 'Rata-rata Skor', value: avg.toFixed(1), icon: '📊', color: 'from-indigo-500 to-indigo-600' },

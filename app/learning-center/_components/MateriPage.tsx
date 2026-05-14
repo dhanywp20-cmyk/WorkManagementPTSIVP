@@ -322,7 +322,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
 
                   {/* 5-column folder grid */}
                   {rootHasFolders && (
-                    <div className="grid grid-cols-5 gap-2.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
                       {rootFolderKeys.map(key => {
                         const child = tree.children[key];
                         const isSelected = selectedFolderKey === key;

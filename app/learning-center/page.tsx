@@ -134,10 +134,10 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
           <span className="ml-2 text-[10px] text-blue-600 font-semibold uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-full">Admin Portal</span>
         </div>
       </div>
-      <nav className="flex items-end gap-1 px-4 pt-2">
+      <nav className="flex items-end gap-1 px-4 pt-2 overflow-x-auto">
         {items.map(i => (
           <button key={i.key} onClick={() => onChange(i.key)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap
+            className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap flex-shrink-0
               ${view === i.key ? 'text-blue-700 border-blue-600 bg-blue-50/60 font-semibold' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'}`}>
             <span className="text-sm">{i.icon}</span>{i.label}
           </button>
@@ -170,10 +170,10 @@ function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView
           <span className="ml-2 text-[10px] text-indigo-500 font-semibold uppercase tracking-wider bg-indigo-50 px-2 py-0.5 rounded-full">Team Portal</span>
         </div>
       </div>
-      <nav className="flex items-end gap-1 px-4 pt-2">
+      <nav className="flex items-end gap-1 px-4 pt-2 overflow-x-auto">
         {items.map(i => (
           <button key={i.key} onClick={() => onChange(i.key)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap
+            className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap flex-shrink-0
               ${view === i.key ? 'text-indigo-700 border-indigo-600 bg-indigo-50/60 font-semibold' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'}`}>
             <span className="text-sm">{i.icon}</span>{i.label}
           </button>
