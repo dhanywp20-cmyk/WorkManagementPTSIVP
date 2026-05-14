@@ -396,9 +396,6 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                     {/* Root-level files */}
                     {tree.materials.length > 0 && (
                       <div className="mb-5">
-                        {rootHasFolders && (
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">📄 Tanpa Folder</p>
-                        )}
                         {tree.materials.map(m => (
                           <MaterialCard key={m.id} material={m} isAdmin={isAdmin}
                             onDelete={isAdmin ? handleDelete : undefined}
@@ -410,7 +407,6 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                     {/* Colorful folder grid */}
                     {rootHasFolders && (
                       <>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">📁 Folder</p>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                           {rootFolderKeys.map(key => {
                             const child = tree.children[key];

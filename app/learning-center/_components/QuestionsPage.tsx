@@ -431,10 +431,6 @@ export function QuestionsPage({ user }: { user: User }) {
           {showGenerate && <GeneratePanel />}
 
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-1.5">
-              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
-              Pilih Folder
-            </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {rootMaterials.length > 0 && (() => {
                 const fc = getFolderColor('Tanpa');
@@ -622,10 +618,6 @@ export function QuestionsPage({ user }: { user: User }) {
         {/* Subfolder grid */}
         {subFolders.length > 0 && !selectedSubFolder && (
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-3 flex items-center gap-1.5">
-              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
-              Subfolder
-            </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-2">
               {subFolders.map(sfKey => {
                 const sfNode = currentFolderNode!.children[sfKey];
