@@ -67,18 +67,22 @@ function MaterialCard({
         )}
         {isAdmin && onEdit && (
           <button onClick={() => onEdit(m)}
-            className="p-1.5 rounded-lg text-blue-400 hover:text-white hover:bg-blue-500 border border-transparent hover:border-blue-400 transition-all opacity-0 group-hover:opacity-100" title="Edit">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:8, fontSize:11, fontWeight:600, background:'#eff6ff', color:'#2563eb', border:'1px solid #bfdbfe' }}
+            title="Edit">
+            <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
+            Edit
           </button>
         )}
         {isAdmin && onDelete && (
           <button onClick={() => onDelete(m.id)}
-            className="p-1.5 rounded-lg text-rose-400 hover:text-white hover:bg-rose-500 border border-transparent hover:border-rose-400 transition-all opacity-0 group-hover:opacity-100" title="Hapus">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:8, fontSize:11, fontWeight:600, background:'#fff1f2', color:'#be123c', border:'1px solid #fecdd3' }}
+            title="Hapus">
+            <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
+            Hapus
           </button>
         )}
       </div>
@@ -280,6 +284,23 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
     load();
   };
 
+  const handleDeleteFolder = (folderName: string) => {
+    const affected = materials.filter(m =>
+      m.folder_path === folderName || m.folder_path?.startsWith(folderName + '/')
+    );
+    setDialog({
+      type: 'confirm',
+      title: 'Hapus Folder',
+      message: `Folder "${folderName}" dan semua ${affected.length} materi di dalamnya akan dihapus permanen. Lanjutkan?`,
+      confirmLabel: 'Hapus Folder',
+      onConfirm: async () => {
+        await Promise.all(affected.map(m => supabase.from('lc_materials').delete().eq('id', m.id)));
+        if (selectedFolderKey === folderName) setSelectedFolderKey(null);
+        load();
+      },
+    });
+  };
+
   const handleEditMaterial = async () => {
     if (!editMaterial) return;
     setEditMaterialSaving(true);
@@ -450,16 +471,26 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                                     </div>
                                   </div>
                                 </button>
-                                {/* Rename folder button */}
+                                {/* Folder action buttons */}
                                 {isAdmin && (
-                                  <button
-                                    onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: key, newName: key }); }}
-                                    className="absolute top-3 right-3 w-6 h-6 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-white/80 bg-white/60"
-                                    title="Ubah nama folder">
-                                    <svg width="12" height="12" fill="none" stroke="#64748b" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                  </button>
+                                  <div className="absolute top-2.5 right-2.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                    <button
+                                      onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: key, newName: key }); }}
+                                      className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-blue-100 bg-white/80 border border-slate-200 hover:border-blue-300"
+                                      title="Ubah nama folder">
+                                      <svg width="11" height="11" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                      </svg>
+                                    </button>
+                                    <button
+                                      onClick={e => { e.stopPropagation(); handleDeleteFolder(key); }}
+                                      className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-rose-100 bg-white/80 border border-slate-200 hover:border-rose-300"
+                                      title="Hapus folder">
+                                      <svg width="11" height="11" fill="none" stroke="#be123c" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    </button>
+                                  </div>
                                 )}
                               </div>
                             );

@@ -53,6 +53,26 @@ export function QuestionsPage({ user }: { user: User }) {
   const [renameFolder, setRenameFolder] = useState<{ oldName: string; newName: string } | null>(null);
   const [renameSaving, setRenameSaving] = useState(false);
 
+  const handleDeleteFolder = (fKey: string) => {
+    const fNode = folderTree.children[fKey];
+    if (!fNode) return;
+    const collectMats = (n: FolderNode): Material[] => [...n.materials, ...Object.values(n.children).flatMap(c => collectMats(c))];
+    const matIds = collectMats(fNode).map(m => m.id);
+    const qCount = questions.filter(q => matIds.includes(q.material_id)).length;
+    setDialog({
+      type: 'confirm',
+      title: 'Hapus Soal Folder',
+      message: `Semua ${qCount} soal dalam folder "${fKey}" akan dihapus permanen. Lanjutkan?`,
+      confirmLabel: 'Hapus Semua',
+      onConfirm: async () => {
+        if (matIds.length > 0) {
+          await supabase.from('lc_questions').delete().in('material_id', matIds);
+        }
+        load();
+      },
+    });
+  };
+
   const handleRenameFolder = async () => {
     if (!renameFolder || !renameFolder.newName.trim()) return;
     const { oldName, newName } = renameFolder;
@@ -427,7 +447,8 @@ export function QuestionsPage({ user }: { user: User }) {
         </div>
 
         {/* ── Content ── */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-5xl mx-auto space-y-6">
           {showGenerate && <GeneratePanel />}
 
           <div>
@@ -480,15 +501,25 @@ export function QuestionsPage({ user }: { user: User }) {
                       <p className="text-sm font-bold text-slate-800 truncate pr-6">{fKey}</p>
                       <p className="text-xs text-slate-400 mt-0.5">{subCount > 0 ? `${subCount} subfolder · ` : ''}{qCount} soal</p>
                     </button>
-                    {/* Rename button */}
-                    <button
-                      onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: fKey, newName: fKey }); }}
-                      className="absolute top-3 right-3 w-6 h-6 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-slate-100"
-                      title="Ubah nama folder">
-                      <svg width="12" height="12" fill="none" stroke="#64748b" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
+                    {/* Folder action buttons */}
+                    <div className="absolute top-2.5 right-2.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                      <button
+                        onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: fKey, newName: fKey }); }}
+                        className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-blue-100 bg-white/80 border border-slate-200 hover:border-blue-300"
+                        title="Ubah nama folder">
+                        <svg width="11" height="11" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={e => { e.stopPropagation(); handleDeleteFolder(fKey); }}
+                        className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-rose-100 bg-white/80 border border-slate-200 hover:border-rose-300"
+                        title="Hapus semua soal folder">
+                        <svg width="11" height="11" fill="none" stroke="#be123c" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -504,6 +535,7 @@ export function QuestionsPage({ user }: { user: User }) {
               </div>
             )}
           </div>
+          </div>{/* end max-w-5xl */}
         </div>
 
         {showAddManual && <AddManualModal />}
@@ -612,7 +644,8 @@ export function QuestionsPage({ user }: { user: User }) {
       </div>
 
       {/* ── Content ── */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-5xl mx-auto space-y-6">
         {showGenerate && <GeneratePanel />}
 
         {/* Subfolder grid */}
@@ -642,15 +675,39 @@ export function QuestionsPage({ user }: { user: User }) {
                         </svg>
                       </div>
                     </button>
-                    {/* Rename subfolder button */}
-                    <button
-                      onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: sfKey, newName: sfKey }); }}
-                      className="absolute top-2.5 right-2.5 w-6 h-6 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-slate-100"
-                      title="Ubah nama subfolder">
-                      <svg width="12" height="12" fill="none" stroke="#64748b" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
+                    {/* Subfolder action buttons */}
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                      <button
+                        onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: sfKey, newName: sfKey }); }}
+                        className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-blue-100 bg-white/80 border border-slate-200 hover:border-blue-300"
+                        title="Ubah nama subfolder">
+                        <svg width="11" height="11" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          // Delete all questions in this subfolder
+                          const sfQIds = sfNode.materials.map(m => m.id);
+                          const sfQCount = questions.filter(q => sfQIds.includes(q.material_id)).length;
+                          setDialog({
+                            type: 'confirm', title: 'Hapus Soal Subfolder',
+                            message: `Semua ${sfQCount} soal dalam subfolder "${sfKey}" akan dihapus permanen. Lanjutkan?`,
+                            confirmLabel: 'Hapus Semua',
+                            onConfirm: async () => {
+                              if (sfQIds.length > 0) await supabase.from('lc_questions').delete().in('material_id', sfQIds);
+                              load();
+                            },
+                          });
+                        }}
+                        className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-rose-100 bg-white/80 border border-slate-200 hover:border-rose-300"
+                        title="Hapus semua soal subfolder">
+                        <svg width="11" height="11" fill="none" stroke="#be123c" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -875,6 +932,7 @@ export function QuestionsPage({ user }: { user: User }) {
               );
             })}
         </div>
+        </div>{/* end max-w-5xl */}
       </div>
 
       {showAddManual && <AddManualModal />}
