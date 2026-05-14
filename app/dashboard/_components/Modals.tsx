@@ -1690,6 +1690,10 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
       }
     } catch { /* fallback */ }
 
+    // Nama-nama yang mungkin dipakai sebagai assign_name di berbagai tabel
+    // (cover perbedaan nama di team_members vs nama asli user)
+    const namesToCheck = [...new Set([assignedName, currentUser.full_name].filter(Boolean))];
+
     // ── 1. Ticket Troubleshooting ──
     try {
       if (isAdmin) {
@@ -1729,10 +1733,12 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         }
       } else if (roleLC === 'team' || roleLC === 'team_pts') {
         if (memberTeamType === 'Team Services') {
-          const { data } = await supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, services_status, created_at').eq('assign_name', assignedName).neq('services_status', 'Solved').not('services_status', 'is', null).order('created_at', { ascending: false }).limit(30);
+          // Fix: pakai .in() agar match meskipun nama beda antara team_members vs tickets
+          const { data } = await supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, services_status, created_at').in('assign_name', namesToCheck).neq('services_status', 'Solved').not('services_status', 'is', null).order('created_at', { ascending: false }).limit(30);
           setTicketNotifs((data ?? []).map((t: any) => ({ id: t.id, type: 'ticket' as const, title: t.project_name, subtitle: `Svc: ${t.services_status} · ${t.issue_case}`, time: t.created_at, url: '/ticketing', internalUrl: '/ticketing', menuTitle: 'Ticket Troubleshooting' })));
         } else {
-          const { data } = await supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at').eq('assign_name', assignedName).neq('status', 'Solved').order('created_at', { ascending: false }).limit(30);
+          // Fix: pakai .in() agar match meskipun ada variasi nama
+          const { data } = await supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at').in('assign_name', namesToCheck).neq('status', 'Solved').order('created_at', { ascending: false }).limit(30);
           setTicketNotifs((data ?? []).map((t: any) => ({ id: t.id, type: 'ticket' as const, title: t.project_name, subtitle: `${t.status} · ${t.issue_case}`, time: t.created_at, url: '/ticketing', internalUrl: '/ticketing', menuTitle: 'Ticket Troubleshooting' })));
         }
       }
@@ -1866,7 +1872,8 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
     try {
       if (isAdmin || (isTeamPTS && !isTeamServices)) {
         // Admin/superadmin & Team PTS: review yang di-assign ke mereka dan belum di-grade
-        const { data } = await supabase.from('form_reviews').select('id, project_name, reminder_category, sales_name, created_at, grade_product_knowledge, grade_product_knowledge_bast, grade_training_customer').eq('assign_name', assignedName).order('created_at', { ascending: false }).limit(30);
+        // Fix: pakai .in() agar match meskipun ada variasi nama
+        const { data } = await supabase.from('form_reviews').select('id, project_name, reminder_category, sales_name, created_at, grade_product_knowledge, grade_product_knowledge_bast, grade_training_customer').in('assign_name', namesToCheck).order('created_at', { ascending: false }).limit(30);
         const pending = (data ?? []).filter((r: any) =>
           !r.grade_product_knowledge && !r.grade_product_knowledge_bast && !r.grade_training_customer
         );
