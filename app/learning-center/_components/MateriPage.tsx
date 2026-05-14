@@ -38,7 +38,8 @@ function MaterialCard({
 }) {
   const hex = colorHex || '#3b82f6';
   return (
-    <div className="group flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-white hover:border-blue-200 hover:shadow-md transition-all duration-200 mb-1.5">
+    <div className="group flex items-center gap-3 p-3 rounded-xl border border-white/60 hover:border-white/90 hover:shadow-md transition-all duration-200 mb-1.5"
+      style={{ background: 'rgba(255,255,255,0.72)' }}>
       <div className={`${compact ? 'w-7 h-7' : 'w-9 h-9'} rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm`}
         style={{ background: `${hex}18`, border: `1.5px solid ${hex}33` }}>
         <svg className={`${compact ? 'w-3.5 h-3.5' : 'w-4.5 h-4.5'}`} style={{ color: hex }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -48,9 +49,6 @@ function MaterialCard({
       <div className="flex-1 min-w-0">
         <h4 className={`font-semibold text-slate-800 group-hover:text-blue-700 transition-colors ${compact ? 'text-xs' : 'text-sm'} truncate`}>{m.materi_name}</h4>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          {m.content_text && (
-            <span className="inline-flex items-center gap-0.5 text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-bold">✦ AI Ready</span>
-          )}
           <span className="text-[10px] text-slate-400">{fmtDate(m.created_at)}</span>
         </div>
       </div>
@@ -306,8 +304,6 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
         <span className="text-slate-500">📦 <strong className="text-slate-700">{materials.length}</strong> materi</span>
         <span className="text-slate-300">|</span>
         <span className="text-slate-500">📁 <strong className="text-slate-700">{rootFolderKeys.length}</strong> folder</span>
-        <span className="text-slate-300">|</span>
-        <span className="text-slate-500">✦ <strong className="text-emerald-600">{materials.filter(m => m.content_text).length}</strong> AI Ready</span>
         {panelOpen && panelCol && (
           <>
             <span className="text-slate-300">|</span>
@@ -440,9 +436,9 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
           className="absolute top-0 right-0 bottom-0 flex flex-col"
           style={{
             width: '42%',
-            background: 'rgba(255,255,255,0.94)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
+            background: 'rgba(255,255,255,0.62)',
+            backdropFilter: 'blur(18px)',
+            WebkitBackdropFilter: 'blur(18px)',
             borderLeft: panelOpen && panelCol
               ? `2px solid ${panelCol.icon}40`
               : '1px solid rgba(0,0,0,0.07)',
@@ -456,7 +452,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
               {/* Panel header — colored strip */}
               <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0"
                 style={{
-                  background: `linear-gradient(135deg, ${panelCol.light}, rgba(255,255,255,0.95))`,
+                  background: `linear-gradient(135deg, ${panelCol.light}cc, rgba(255,255,255,0.55))`,
                   borderBottom: `1px solid ${panelCol.icon}22`,
                 }}>
                 <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-md flex-shrink-0"
@@ -483,7 +479,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
               </div>
 
               {/* Panel content — scrollable */}
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex-1 overflow-y-auto p-4" style={{ background: 'transparent' }}>
                 <FolderTreeView
                   node={selectedFolderNode}
                   depth={0}
