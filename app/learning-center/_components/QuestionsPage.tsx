@@ -12,6 +12,11 @@ export function QuestionsPage({ user }: { user: User }) {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [selectedMat, setSelectedMat] = useState<string>('');
   const [showGenerate, setShowGenerate] = useState(false);
+  const [showAddManual, setShowAddManual] = useState(false);
+  const [newQ, setNewQ] = useState({
+    question: '', option_a: '', option_b: '', option_c: '', option_d: '',
+    correct_answer: 'A', difficulty: 'medium' as 'easy' | 'medium' | 'hard', material_id: '',
+  });
   const [genCount, setGenCount] = useState(10);
   const [genDiff, setGenDiff] = useState<'easy' | 'medium' | 'hard' | 'mixed'>('mixed');
   const [generating, setGenerating] = useState(false);
@@ -34,7 +39,7 @@ export function QuestionsPage({ user }: { user: User }) {
   }, [selectedMat]);
   useEffect(() => { load(); }, [load]);
 
-  // Reset material selection when navigating between folders so generate stays scoped
+  // Reset material selection when navigating between folders
   useEffect(() => {
     setSelectedMat('');
     setShowGenerate(false);
@@ -121,6 +126,16 @@ export function QuestionsPage({ user }: { user: User }) {
     });
   };
 
+  const handleDeleteMatGroup = (matId: string, matName: string) => {
+    const count = questions.filter(q => q.material_id === matId).length;
+    setDialog({
+      type: 'confirm', title: 'Hapus Semua Soal Materi',
+      message: `Semua ${count} soal pada materi "${matName}" akan dihapus permanen. Lanjutkan?`,
+      confirmLabel: 'Hapus Semua',
+      onConfirm: async () => { await supabase.from('lc_questions').delete().eq('material_id', matId); load(); },
+    });
+  };
+
   const handleSaveEdit = async () => {
     if (!editQ) return;
     await supabase.from('lc_questions').update({
@@ -129,6 +144,23 @@ export function QuestionsPage({ user }: { user: User }) {
       correct_answer: editQ.correct_answer, difficulty: editQ.difficulty,
     }).eq('id', editQ.id);
     setEditQ(null); load();
+  };
+
+  const handleAddManual = async () => {
+    if (!newQ.material_id) { setDialog({ type: 'error', message: 'Pilih materi terlebih dahulu!' }); return; }
+    if (!newQ.question.trim()) { setDialog({ type: 'error', message: 'Pertanyaan wajib diisi!' }); return; }
+    if (!newQ.option_a.trim() || !newQ.option_b.trim() || !newQ.option_c.trim() || !newQ.option_d.trim()) {
+      setDialog({ type: 'error', message: 'Semua pilihan jawaban (A, B, C, D) wajib diisi!' }); return;
+    }
+    const mat = materials.find(m => m.id === newQ.material_id);
+    const { error } = await supabase.from('lc_questions').insert([{
+      ...newQ, materi_name: mat?.materi_name ?? '', created_by: user.id,
+    }]);
+    if (error) { setDialog({ type: 'error', message: 'Error: ' + error.message }); return; }
+    setShowAddManual(false);
+    setNewQ({ question: '', option_a: '', option_b: '', option_c: '', option_d: '', correct_answer: 'A', difficulty: 'medium', material_id: '' });
+    load();
+    setDialog({ type: 'success', message: 'Soal berhasil ditambahkan!' });
   };
 
   const goBack = () => {
@@ -211,10 +243,16 @@ export function QuestionsPage({ user }: { user: User }) {
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">🧩 Bank Soal</h1>
             <p className="text-sm text-slate-500 mt-0.5">{questions.length} total soal — pilih folder untuk kelola</p>
           </div>
-          <button onClick={() => setShowGenerate(true)}
-            className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
-            ✨ Generate AI
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowAddManual(true)}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
+              ✏️ Tambah Manual
+            </button>
+            <button onClick={() => setShowGenerate(true)}
+              className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
+              ✨ Generate AI
+            </button>
+          </div>
         </div>
         <div className="p-8 space-y-6">
           {showGenerate && <GeneratePanel />}
@@ -264,12 +302,71 @@ export function QuestionsPage({ user }: { user: User }) {
             )}
           </div>
         </div>
+        {showAddManual && <AddManualModal />}
+        {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
       </div>
     );
   }
 
   const currentFolderNode = selectedFolder === '__root__' ? null : folderTree.children[selectedFolder];
   const subFolders = currentFolderNode ? Object.keys(currentFolderNode.children).sort() : [];
+
+  // ─── Manual Add Modal ───────────────────────────────────────────────────────
+  const AddManualModal = () => (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999] p-4">
+      <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ background: '#ffffff' }}>
+        <h3 className="font-bold text-slate-800 mb-1 text-base">➕ Tambah Soal Manual</h3>
+        <p className="text-xs text-slate-400 mb-4">Isi semua field, klik tombol "✓ Benar" untuk menandai jawaban yang benar.</p>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
+            <select value={newQ.material_id} onChange={e => setNewQ(p => ({ ...p, material_id: e.target.value }))}
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
+              <option value="">-- Pilih Materi --</option>
+              {(viewMaterials.length > 0 ? viewMaterials : materials).map(m =>
+                <option key={m.id} value={m.id}>{m.materi_name}</option>
+              )}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Pertanyaan *</label>
+            <textarea value={newQ.question} onChange={e => setNewQ(p => ({ ...p, question: e.target.value }))}
+              rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 resize-none"
+              placeholder="Tulis pertanyaan di sini..." />
+          </div>
+          {(['a', 'b', 'c', 'd'] as const).map(opt => (
+            <div key={opt} className="flex items-center gap-2">
+              <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 ${newQ.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{opt.toUpperCase()}</span>
+              <input value={(newQ as any)[`option_${opt}`]} onChange={e => setNewQ(p => ({ ...p, [`option_${opt}`]: e.target.value }))}
+                className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400"
+                placeholder={`Pilihan ${opt.toUpperCase()}`} />
+              <button onClick={() => setNewQ(p => ({ ...p, correct_answer: opt.toUpperCase() }))}
+                className={`text-xs px-2.5 py-1.5 rounded-lg font-semibold transition-all flex-shrink-0 ${newQ.correct_answer === opt.toUpperCase() ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-slate-100 text-slate-500 hover:bg-green-50 border border-transparent'}`}>
+                ✓ Benar
+              </button>
+            </div>
+          ))}
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
+            <select value={newQ.difficulty} onChange={e => setNewQ(p => ({ ...p, difficulty: e.target.value as any }))}
+              className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </div>
+        </div>
+        <div className="flex gap-3 mt-5">
+          <button onClick={handleAddManual}
+            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow transition-all">
+            💾 Simpan Soal
+          </button>
+          <button onClick={() => setShowAddManual(false)}
+            className="px-5 py-2.5 bg-slate-100 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-all">Batal</button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div>
@@ -287,6 +384,7 @@ export function QuestionsPage({ user }: { user: User }) {
         <div className="flex items-center gap-2">
           <SearchInput value={search} onChange={setSearch} placeholder="Cari soal..." />
           <button onClick={goBack} className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all flex items-center gap-1.5">← Kembali</button>
+          <button onClick={() => setShowAddManual(true)} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">✏️ Tambah Manual</button>
           <button onClick={() => setShowGenerate(true)} className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">✨ Generate AI</button>
         </div>
       </div>
@@ -342,9 +440,10 @@ export function QuestionsPage({ user }: { user: User }) {
           </div>
         )}
 
+        {/* Edit Soal Modal */}
         {editQ && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-            <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(16px)' }}>
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999] p-4">
+            <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ background: '#ffffff' }}>
               <h3 className="font-bold text-slate-800 mb-4">✏️ Edit Soal</h3>
               <div className="space-y-3">
                 <textarea value={editQ.question} onChange={e => setEditQ(p => p && ({ ...p, question: e.target.value }))}
@@ -373,46 +472,77 @@ export function QuestionsPage({ user }: { user: User }) {
           </div>
         )}
 
-        <div className="space-y-3">
+        {/* ─── Soal dikelompokkan per Materi ─── */}
+        <div className="space-y-8">
           {filteredQuestions.length === 0 && (
             <div className="text-center py-16 text-slate-400">
               <div className="text-5xl mb-3">🧩</div>
               <p className="font-semibold">{search ? 'Tidak ada soal yang cocok' : 'Belum ada soal di folder ini'}</p>
-              {!search && <p className="text-sm mt-1">Generate soal dengan AI untuk materi di folder ini</p>}
+              {!search && <p className="text-sm mt-1">Generate soal dengan AI atau tambah soal manual</p>}
             </div>
           )}
-          {filteredQuestions.map((q, idx) => (
-            <div key={q.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 group hover:shadow-md transition-all">
-              <div className="flex items-start gap-3">
-                <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-black text-slate-600 flex-shrink-0 mt-0.5">{idx+1}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
-                  <div className="grid grid-cols-2 gap-1.5 mt-3">
-                    {(['a','b','c','d'] as const).map(opt => (
-                      <div key={opt} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs ${q.correct_answer === opt.toUpperCase() ? 'bg-green-50 border border-green-200 text-green-700 font-bold' : 'bg-slate-50 border border-slate-200 text-slate-600'}`}>
-                        <span className={`w-4 h-4 rounded flex items-center justify-center text-[10px] font-black flex-shrink-0 ${q.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-300 text-white'}`}>{opt.toUpperCase()}</span>
-                        <span className="truncate">{(q as any)[`option_${opt}`]}</span>
+          {viewMaterials
+            .map(mat => ({ mat, qs: filteredQuestions.filter(q => q.material_id === mat.id) }))
+            .filter(({ qs }) => qs.length > 0)
+            .map(({ mat, qs }) => {
+              const totalForMat = questions.filter(q => q.material_id === mat.id).length;
+              return (
+                <div key={mat.id}>
+                  {/* Group header */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] font-bold uppercase tracking-widest inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
+                        📖 {mat.materi_name}
+                      </span>
+                      <span className="text-xs text-slate-500 font-semibold bg-white border border-slate-200 px-2.5 py-0.5 rounded-full shadow-sm">
+                        {totalForMat} soal
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteMatGroup(mat.id, mat.materi_name)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl hover:bg-rose-100 transition-all">
+                      🗑️ Hapus Semua ({totalForMat})
+                    </button>
+                  </div>
+                  {/* Questions in this group */}
+                  <div className="space-y-3">
+                    {qs.map((q, idx) => (
+                      <div key={q.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 group hover:shadow-md transition-all">
+                        <div className="flex items-start gap-3">
+                          <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-black text-slate-600 flex-shrink-0 mt-0.5">{idx+1}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
+                            <div className="grid grid-cols-2 gap-1.5 mt-3">
+                              {(['a','b','c','d'] as const).map(opt => (
+                                <div key={opt} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs ${q.correct_answer === opt.toUpperCase() ? 'bg-green-50 border border-green-200 text-green-700 font-bold' : 'bg-slate-50 border border-slate-200 text-slate-600'}`}>
+                                  <span className={`w-4 h-4 rounded flex items-center justify-center text-[10px] font-black flex-shrink-0 ${q.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-300 text-white'}`}>{opt.toUpperCase()}</span>
+                                  <span className="truncate">{(q as any)[`option_${opt}`]}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${DIFF_COLOR[q.difficulty]}`}>{q.difficulty}</span>
+                              <span className="text-xs text-slate-400">{q.materi_name}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                            <button onClick={() => setEditQ(q)} className="p-2 rounded-lg text-blue-500 hover:bg-blue-50 transition-all" title="Edit soal">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                            </button>
+                            <button onClick={() => handleDelete(q.id)} className="p-2 rounded-lg text-rose-500 hover:bg-rose-50 transition-all" title="Hapus soal ini">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${DIFF_COLOR[q.difficulty]}`}>{q.difficulty}</span>
-                    <span className="text-xs text-slate-400">{q.materi_name}</span>
-                  </div>
                 </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                  <button onClick={() => setEditQ(q)} className="p-2 rounded-lg text-blue-500 hover:bg-blue-50 transition-all">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                  </button>
-                  <button onClick={() => handleDelete(q.id)} className="p-2 rounded-lg text-rose-500 hover:bg-rose-50 transition-all">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+              );
+            })}
         </div>
       </div>
+      {showAddManual && <AddManualModal />}
       {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
     </div>
   );

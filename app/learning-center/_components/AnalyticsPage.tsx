@@ -52,6 +52,11 @@ export function AnalyticsPage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
+  // Drill-down state
+  const [selectedUser, setSelectedUser] = useState<{ uid: string; name: string } | null>(null);
+  const [userAttempts, setUserAttempts] = useState<any[]>([]);
+  const [loadingUser, setLoadingUser] = useState(false);
+
   useEffect(() => {
     const load = async () => {
       const { data: a } = await supabase
@@ -102,6 +107,20 @@ export function AnalyticsPage() {
     };
     load();
   }, []);
+
+  // Load detail attempts when a user is selected
+  useEffect(() => {
+    if (!selectedUser) return;
+    setLoadingUser(true);
+    setUserAttempts([]);
+    supabase
+      .from('lc_quiz_attempts')
+      .select('id, score, passed, total_correct, total_questions, time_taken_sec, submitted_at, tab_switches, lc_quiz_sessions(session_name, materi_name, passing_grade)')
+      .eq('user_id', selectedUser.uid)
+      .eq('is_submitted', true)
+      .order('submitted_at', { ascending: false })
+      .then(({ data }) => { setUserAttempts(data ?? []); setLoadingUser(false); });
+  }, [selectedUser]);
 
   const filteredUsers = search
     ? topUsers.filter(u => u.name.toLowerCase().includes(search.toLowerCase()))
@@ -195,7 +214,8 @@ export function AnalyticsPage() {
         )}
 
         <section>
-          <h3 className="text-[10px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">Top Performers</h3>
+          <h3 className="text-[10px] font-bold uppercase tracking-widest mb-1 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">Top Performers</h3>
+          <p className="text-xs text-slate-400 mb-4 ml-1">Klik nama untuk melihat detail nilai & aktivitas per quiz</p>
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead className="border-b border-slate-200 bg-slate-50">
@@ -209,9 +229,16 @@ export function AnalyticsPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredUsers.map((u, i) => (
-                  <tr key={u.uid} className="hover:bg-slate-50">
+                  <tr key={u.uid}
+                    className="hover:bg-indigo-50/60 cursor-pointer transition-colors group"
+                    onClick={() => setSelectedUser({ uid: u.uid, name: u.name })}>
                     <td className="px-5 py-3.5 text-center text-sm font-black text-slate-300">{i + 1}</td>
-                    <td className="px-5 py-3.5 font-semibold text-slate-800">{u.name}</td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-800 group-hover:text-indigo-700 transition-colors">{u.name}</span>
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-400 font-semibold">👁 detail</span>
+                      </div>
+                    </td>
                     <td className="px-5 py-3.5 text-center text-slate-500 text-xs font-semibold">{u.total}</td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center justify-center gap-2">
@@ -244,6 +271,123 @@ export function AnalyticsPage() {
           </div>
         </section>
       </div>
+
+      {/* ─── User Detail Modal ─────────────────────────────────────────────── */}
+      {selectedUser && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setSelectedUser(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col"
+            onClick={e => e.stopPropagation()}>
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0">
+              <div>
+                <h2 className="font-bold text-slate-800 text-lg leading-tight">{selectedUser.name}</h2>
+                <p className="text-xs text-slate-400 mt-0.5">Riwayat semua quiz yang diselesaikan</p>
+              </div>
+              <button onClick={() => setSelectedUser(null)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all text-lg font-bold">✕</button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-6 space-y-5">
+              {loadingUser ? (
+                <div className="py-16 text-center">
+                  <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-slate-400 text-sm">Memuat data...</p>
+                </div>
+              ) : (
+                <>
+                  {/* Summary cards */}
+                  <div className="grid grid-cols-4 gap-3">
+                    {[
+                      { label: 'Total Quiz', value: userAttempts.length, color: 'text-slate-800' },
+                      {
+                        label: 'Avg Score',
+                        value: userAttempts.length
+                          ? (userAttempts.reduce((s, a) => s + (a.score ?? 0), 0) / userAttempts.length).toFixed(1)
+                          : '—',
+                        color: (() => {
+                          if (!userAttempts.length) return 'text-slate-400';
+                          const avg = userAttempts.reduce((s, a) => s + (a.score ?? 0), 0) / userAttempts.length;
+                          return avg >= 80 ? 'text-emerald-600' : avg >= 70 ? 'text-amber-600' : 'text-rose-600';
+                        })(),
+                      },
+                      { label: 'Lulus', value: userAttempts.filter(a => a.passed).length, color: 'text-emerald-600' },
+                      {
+                        label: 'Pindah Tab',
+                        value: userAttempts.reduce((s, a) => s + (a.tab_switches ?? 0), 0),
+                        color: userAttempts.reduce((s, a) => s + (a.tab_switches ?? 0), 0) > 0 ? 'text-amber-600' : 'text-slate-400',
+                      },
+                    ].map(c => (
+                      <div key={c.label} className="bg-slate-50 rounded-xl border border-slate-200 p-3 text-center">
+                        <div className={`text-2xl font-black ${c.color}`}>{c.value}</div>
+                        <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{c.label}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Per-attempt list */}
+                  <div className="space-y-3">
+                    {userAttempts.length === 0 && (
+                      <p className="text-center text-slate-400 py-8 text-sm">Belum ada quiz yang diselesaikan</p>
+                    )}
+                    {userAttempts.map(a => {
+                      const score = a.score ?? 0;
+                      const passing = a.lc_quiz_sessions?.passing_grade ?? 70;
+                      const tabSw = a.tab_switches ?? 0;
+                      return (
+                        <div key={a.id} className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4 hover:shadow-sm transition-all">
+                          {/* Score donut */}
+                          <DonutChart
+                            segments={[
+                              { value: score, color: score >= passing ? (score >= 80 ? '#10b981' : '#f59e0b') : '#f43f5e' },
+                              { value: Math.max(100 - score, 0), color: '#f1f5f9' },
+                            ]}
+                            size={56} strokeWidth={8}
+                            label={score.toFixed(0)}
+                          />
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-slate-800 truncate">
+                              {a.lc_quiz_sessions?.session_name ?? '—'}
+                            </p>
+                            <p className="text-xs text-slate-400 truncate">{a.lc_quiz_sessions?.materi_name ?? ''}</p>
+                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${a.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
+                                {a.passed ? 'LULUS' : 'TIDAK LULUS'}
+                              </span>
+                              {a.time_taken_sec != null && (
+                                <span className="text-xs text-slate-400">⏱ {Math.floor(a.time_taken_sec / 60)}m {a.time_taken_sec % 60}s</span>
+                              )}
+                              {tabSw > 0 && (
+                                <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                  ⚠️ {tabSw}× pindah tab
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {/* Right: score detail */}
+                          <div className="text-right flex-shrink-0 space-y-0.5">
+                            <p className="text-xs font-semibold text-slate-600">
+                              {a.total_correct ?? '?'}/{a.total_questions ?? '?'} benar
+                            </p>
+                            <p className="text-[10px] text-slate-400">KKM {passing}</p>
+                            {a.submitted_at && (
+                              <p className="text-[10px] text-slate-300">
+                                {new Date(a.submitted_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
