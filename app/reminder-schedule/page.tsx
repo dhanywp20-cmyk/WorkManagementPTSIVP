@@ -1783,10 +1783,10 @@ export default function ReminderSchedulePage() {
 
               {/* Active filter chips */}
               {/* Main area: list + calendar */}
-              <div className="flex gap-4 items-start">
+              <div className="flex flex-col sm:flex-row gap-4 items-start">
 
                 {/* ── TICKET LIST ── */}
-                <div className="flex-1 min-w-0 rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.6)', backdropFilter: 'blur(12px)' }}>
+                <div className="flex-1 min-w-0 rounded-2xl overflow-hidden order-last sm:order-first" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.6)', backdropFilter: 'blur(12px)' }}>
 
                   {/* ── TICKET LIST header + refresh/export ── */}
                   <div className="flex flex-wrap items-center justify-between px-5 py-3.5 border-b border-gray-100">
@@ -1932,7 +1932,7 @@ export default function ReminderSchedulePage() {
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full border-collapse" style={{ tableLayout: 'fixed', background: 'transparent' }}>
+                      <table className="w-full border-collapse" style={{ tableLayout: 'fixed', background: 'transparent', minWidth: '900px' }}>
                         <colgroup>
                           <col style={{ width: '3%' }} />
                           <col style={{ width: '13%' }} />
@@ -2100,13 +2100,15 @@ export default function ReminderSchedulePage() {
                 </div>
 
                 {/* ── MINI CALENDAR SIDEBAR ── */}
-                <MiniCalendar
-                  reminders={reminders}
-                  calendarMonth={calendarMonth}
-                  setCalendarMonth={setCalendarMonth}
-                  selectedCalDay={calOnlyDay}
-                  setSelectedCalDay={setCalOnlyDay}
-                />
+                <div className="order-first sm:order-last w-full sm:w-auto">
+                  <MiniCalendar
+                    reminders={reminders}
+                    calendarMonth={calendarMonth}
+                    setCalendarMonth={setCalendarMonth}
+                    selectedCalDay={calOnlyDay}
+                    setSelectedCalDay={setCalOnlyDay}
+                  />
+                </div>
               </div>
             </>
           )}

@@ -2198,7 +2198,7 @@ Hubungi Admin untuk info lebih lanjut.
             <div className="flex-1 flex flex-col sm:flex-row overflow-hidden min-h-0">
 
               {/* LEFT: Detail Info + Attachments */}
-              <div className={`${detailMobileTab === 'info' ? 'flex flex-col' : 'hidden'} sm:flex sm:flex-col flex-[3] min-w-0 border-r border-gray-200 overflow-y-auto bg-gray-50`}>
+              <div className={`${detailMobileTab === 'info' ? 'flex flex-col' : 'hidden'} sm:flex sm:flex-col flex-[2.5] min-w-0 border-r border-gray-200 overflow-y-auto bg-gray-50`}>
                 <div className="p-5 space-y-5">
 
                   {/* Assigned PTS — "in_progress" nudge */}
@@ -2432,8 +2432,8 @@ Hubungi Admin untuk info lebih lanjut.
                         )}
                       </div>
 
-                      {/* Wallplate + Tabletop — 2 col */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Wallplate + Tabletop — single col */}
+                      <div className="space-y-3">
                         <div>
                           <YNDisplay value={dr.wallplate_input||'No'} label="Wallplate Input" />
                           {dr.wallplate_input === 'Yes' && <div className="ml-4 pl-4 border-l-2 border-teal-200 mt-1"><p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">{dr.wallplate_jumlah||'—'}</p></div>}
@@ -2651,7 +2651,7 @@ Hubungi Admin untuk info lebih lanjut.
               </div>
 
               {/* RIGHT: Chat */}
-              <div className={`${detailMobileTab === 'chat' ? 'flex flex-col' : 'hidden'} sm:flex sm:flex-col flex-[1.2] overflow-hidden bg-white/95 min-w-0`}>
+              <div className={`${detailMobileTab === 'chat' ? 'flex flex-col' : 'hidden'} sm:flex sm:flex-col flex-[2] overflow-hidden bg-white/95 min-w-0`}>
                 <div className="px-4 py-2.5 border-b border-gray-100 flex-shrink-0 bg-gray-50">
                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">💬 Discussion Chat</p>
                   {/* Room filter tabs for chat */}

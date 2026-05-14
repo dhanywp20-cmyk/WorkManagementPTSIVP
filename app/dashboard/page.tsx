@@ -485,48 +485,50 @@ export default function Dashboard() {
   // ── SHARED HEADER JSX ──
   const renderHeader = (withBackBtn = false) => (
     <div className="bg-white/80 backdrop-blur-md shadow-md border-b border-slate-200/70" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', position: 'relative', zIndex: 9999 }}>
-      <div className="w-full px-4 py-4">
-        <div className="flex items-center justify-between gap-4">
+      <div className="w-full px-3 sm:px-4 py-3 sm:py-4">
+        <div className="flex items-center justify-between gap-2 sm:gap-4">
           {/* LEFT */}
-          <div className="flex items-center gap-4 flex-shrink-0">
-            <div className="w-12 h-12 bg-gradient-to-br from-rose-600 to-rose-700 rounded-xl shadow-md flex items-center justify-center flex-shrink-0">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 min-w-0">
+            <div className="w-9 h-9 sm:w-12 sm:h-12 bg-gradient-to-br from-rose-600 to-rose-700 rounded-xl shadow-md flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-xl font-bold text-slate-800 tracking-tight">Work Management Platform</h1>
-                <span className="text-slate-400 font-light text-xl select-none leading-none">|</span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2.5">
+                <h1 className="hidden sm:block text-xl font-bold text-slate-800 tracking-tight">Work Management Platform</h1>
+                <span className="hidden sm:inline text-slate-400 font-light text-xl select-none leading-none">|</span>
                 <span className="text-sm font-bold tracking-wide" style={{ color: '#c8861d' }}>PTS Portal</span>
               </div>
-              <p className="text-slate-500 text-xs font-medium mt-0.5">IndoVisual Professional Tools</p>
+              <p className="hidden sm:block text-slate-500 text-xs font-medium mt-0.5">IndoVisual Professional Tools</p>
             </div>
           </div>
 
           {/* CENTER — hanya di main menu (non-sidebar), notif di tengah */}
           {!showSidebar && currentUser && (
-            <div className="flex-1 flex justify-center px-4">
+            <div className="flex-1 flex justify-center px-1 sm:px-4 overflow-x-auto">
               <NotificationBar currentUser={currentUser} onNavigate={handleNotifNavigate} />
             </div>
           )}
           {showSidebar && <div className="flex-1" />}
 
           {/* RIGHT */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
             {/* NotificationBar — di kanan hanya saat sidebar view */}
             {showSidebar && currentUser && (
-              <NotificationBar currentUser={currentUser} onNavigate={handleNotifNavigate} />
+              <div className="overflow-x-auto max-w-[50vw] sm:max-w-none">
+                <NotificationBar currentUser={currentUser} onNavigate={handleNotifNavigate} />
+              </div>
             )}
 
             {/* User badge — hanya di main menu (non-sidebar) */}
             {!showSidebar && (
-              <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl border border-slate-200/80 bg-white/70 backdrop-blur-sm">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0"
+              <div className="flex items-center gap-1.5 sm:gap-2.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-slate-200/80 bg-white/70 backdrop-blur-sm">
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0"
                   style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#78350f' }}>
                   {currentUser?.full_name?.charAt(0)?.toUpperCase() ?? 'U'}
                 </div>
-                <div className="leading-tight">
+                <div className="hidden sm:block leading-tight">
                   <p className="text-xs font-bold text-slate-800">{currentUser?.full_name}</p>
                   <p className="text-[9px] font-bold tracking-widest uppercase text-amber-600">{currentUser?.role}</p>
                 </div>
@@ -536,28 +538,28 @@ export default function Dashboard() {
             {/* User Profile — hanya di main menu */}
             {!showSidebar && (
               <button onClick={() => setShowUserProfile(true)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-semibold transition-all"
                 style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', color: '#065f46' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(16,185,129,0.15)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(16,185,129,0.08)'; }}>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                User Profile
+                <span className="hidden sm:inline">User Profile</span>
               </button>
             )}
 
             {/* Sign Out — hanya di main menu */}
             {!showSidebar && (
               <button onClick={handleLogout}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-semibold transition-all"
                 style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.22)', color: '#b91c1c' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.13)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.07)'; }}>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-                Sign Out
+                <span className="hidden sm:inline">Sign Out</span>
               </button>
             )}
           </div>
