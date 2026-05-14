@@ -199,8 +199,8 @@ export function QuestionsPage({ user }: { user: User }) {
   if (selectedFolder === null) {
     return (
       <div>
-        <div className="flex items-center justify-between px-8 py-5 border-b border-white/30 sticky top-0 z-10"
-          style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)' }}>
+        <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
+          style={{ background: '#ffffff' }}>
           <div>
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">🧩 Bank Soal</h1>
             <p className="text-sm text-slate-500 mt-0.5">{questions.length} total soal — pilih folder untuk kelola</p>
@@ -213,7 +213,7 @@ export function QuestionsPage({ user }: { user: User }) {
         <div className="p-8 space-y-6">
           {showGenerate && <GeneratePanel />}
           <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Pilih Folder Bank Soal</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-3 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">Pilih Folder Bank Soal</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {rootMaterials.length > 0 && (
                 <button onClick={() => setSelectedFolder('__root__')}
@@ -266,7 +266,7 @@ export function QuestionsPage({ user }: { user: User }) {
   const subFolders = currentFolderNode ? Object.keys(currentFolderNode.children).sort() : [];
 
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100%' }}>
+    <div>
       <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div>
@@ -289,7 +289,7 @@ export function QuestionsPage({ user }: { user: User }) {
 
         {subFolders.length > 0 && !selectedSubFolder && (
           <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Subfolder</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-3 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">Subfolder</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
               {subFolders.map(sfKey => {
                 const sfNode = currentFolderNode!.children[sfKey];

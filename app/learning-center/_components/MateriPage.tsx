@@ -185,7 +185,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
   const existingPaths = Array.from(new Set(materials.map(m => m.folder_path).filter(Boolean) as string[])).sort();
 
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100%' }}>
+    <div>
       <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div>

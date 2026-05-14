@@ -31,7 +31,7 @@ export function ScorePage({ user }: { user: User }) {
     : attempts;
 
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100%' }}>
+    <div>
       <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div>

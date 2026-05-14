@@ -108,7 +108,7 @@ export function AnalyticsPage() {
     : topUsers;
 
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100%' }}>
+    <div>
       <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div>
@@ -122,7 +122,7 @@ export function AnalyticsPage() {
 
         {sessionStats.length > 0 && (
           <section>
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Statistik Per Sesi</h3>
+            <h3 className="text-[10px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">Statistik Per Sesi</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {sessionStats.map((s: any) => (
                 <div key={s.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
@@ -195,7 +195,7 @@ export function AnalyticsPage() {
         )}
 
         <section>
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Top Performers</h3>
+          <h3 className="text-[10px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">Top Performers</h3>
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead className="border-b border-slate-200 bg-slate-50">
