@@ -1026,7 +1026,7 @@ export default function ReminderSchedulePage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField label="Assign To *">
                     <select value={formData.assigned_to} onChange={e => fd({ assigned_to: e.target.value })}
                       className={inputCls} style={inputStyle}>
@@ -1042,7 +1042,7 @@ export default function ReminderSchedulePage() {
                   </FormField>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <FormField label="Tanggal *">
                     <input type="date" value={formData.due_date} onChange={e => fd({ due_date: e.target.value })}
                       className={inputCls} style={inputStyle} />
@@ -1214,7 +1214,7 @@ export default function ReminderSchedulePage() {
 
                 <SectionHeader icon="🎯" title="PIC Project (Opsional)" />
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField label="Nama PIC">
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2">🙋</span>
@@ -1414,7 +1414,7 @@ export default function ReminderSchedulePage() {
               <div className="p-5 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(95vh - 180px)' }}>
                 <div>
                   <SectionHeaderSmall icon="📋" title="Detail Jadwal" />
-                  <div className="mt-3 grid grid-cols-2 gap-4">
+                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.08)' }}>
                       <p className="text-[10px] font-bold tracking-widest uppercase mb-2" style={{ color: '#64748b' }}>Assign To</p>
                       <div className="flex items-center gap-2">

@@ -2504,7 +2504,7 @@ export default function TicketingSystem() {
 
                   {/* Info grid — print style */}
                   <div className="px-4 py-3 border-b border-gray-100">
-                    <div className="grid grid-cols-2 gap-x-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
                       <div>
                         <InfoLine label="Handler" value={selectedTicket.assign_name} />
                         <InfoLine label="Issue" value={selectedTicket.issue_case} />

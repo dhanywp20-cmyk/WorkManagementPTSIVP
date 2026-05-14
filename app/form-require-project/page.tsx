@@ -75,6 +75,8 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const [activeAttachTab, setActiveAttachTab] = useState<'all' | 'sld' | 'boq' | 'design3d'>('all');
   // Detail modal: active room tab (0 = Ruangan 1/main, 1+ = rooms[idx-1])
   const [detailRoomIdx, setDetailRoomIdx] = useState(0);
+  // Mobile: which panel is active on small screens
+  const [detailMobileTab, setDetailMobileTab] = useState<'info' | 'chat'>('info');
   // Chat: active room filter ('all' = umum, or room_name label)
   const [chatRoomFilter, setChatRoomFilter] = useState<string>('all');
   const [rejectModal, setRejectModal] = useState<{ open: boolean; req: ProjectRequest | null }>({ open: false, req: null });
@@ -863,6 +865,7 @@ Hubungi Admin untuk info lebih lanjut.
     setAttachments([]);
     setShowDetailModal(true);
     setDetailRoomIdx(0);
+    setDetailMobileTab('info');
     setChatRoomFilter('all');
     await fetchMessages(req.id);
     await fetchAttachments(req.id);
@@ -2181,10 +2184,21 @@ Hubungi Admin untuk info lebih lanjut.
             )}
 
             {/* Detail Modal Body — 2 columns: LEFT (info + attachments) | RIGHT (chat) */}
-            <div className="flex-1 flex overflow-hidden min-h-0">
+            {/* Mobile: tab switcher to toggle between Info and Chat panels */}
+            <div className="flex sm:hidden border-b border-gray-200 bg-white flex-shrink-0">
+              <button onClick={() => setDetailMobileTab('info')}
+                className={`flex-1 py-2.5 text-xs font-bold transition-all border-b-2 ${detailMobileTab === 'info' ? 'text-teal-700 border-teal-600' : 'text-gray-400 border-transparent'}`}>
+                📋 Info Project
+              </button>
+              <button onClick={() => setDetailMobileTab('chat')}
+                className={`flex-1 py-2.5 text-xs font-bold transition-all border-b-2 ${detailMobileTab === 'chat' ? 'text-teal-700 border-teal-600' : 'text-gray-400 border-transparent'}`}>
+                💬 Chat
+              </button>
+            </div>
+            <div className="flex-1 flex flex-col sm:flex-row overflow-hidden min-h-0">
 
               {/* LEFT: Detail Info + Attachments */}
-              <div className="flex-[3] min-w-0 border-r border-gray-200 overflow-y-auto bg-gray-50">
+              <div className={`${detailMobileTab === 'info' ? 'flex flex-col' : 'hidden'} sm:flex sm:flex-col flex-[3] min-w-0 border-r border-gray-200 overflow-y-auto bg-gray-50`}>
                 <div className="p-5 space-y-5">
 
                   {/* Assigned PTS — "in_progress" nudge */}
@@ -2308,7 +2322,7 @@ Hubungi Admin untuk info lebih lanjut.
                         </div>
                       )}
                       {/* Row: Nama Ruangan, Sales/Account */}
-                      <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                         {dr.room_name && (
                           <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Nama Ruangan</label>
@@ -2364,7 +2378,7 @@ Hubungi Admin untuk info lebih lanjut.
                     <div className="space-y-4">
                       <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Kebutuhan</label><ChipDisplay items={[...(dr.kebutuhan||[]), dr.kebutuhan_other]} /></div>
                       <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Solution Product</label><ChipDisplay items={[...(dr.solution_product||[]), dr.solution_other]} /></div>
-                      {dr.brand_display && <div className="grid grid-cols-2 gap-3">
+                      {dr.brand_display && <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div><label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">🖥️ Brand Display</label><p className="text-sm font-semibold text-gray-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{dr.brand_display}{dr.brand_display_pic_name && <span className="text-[11px] text-amber-600 ml-2">· PIC: {dr.brand_display_pic_name}</span>}</p></div>
                         {dr.brand_middleware && <div><label className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1">🔌 Brand Middleware</label><p className="text-sm font-semibold text-gray-800 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2">{dr.brand_middleware}{dr.brand_middleware_pic_name && <span className="text-[11px] text-violet-600 ml-2">· PIC: {dr.brand_middleware_pic_name}</span>}</p></div>}
                       </div>}
@@ -2380,7 +2394,7 @@ Hubungi Admin untuk info lebih lanjut.
                     <div className="space-y-4">
                       <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Layout Signage</label><ChipDisplay items={dr.layout_signage||[]} /></div>
                       <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Jaringan / CMS</label><ChipDisplay items={dr.jaringan_cms||[]} /></div>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Input</label><p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">{dr.jumlah_input||'—'}</p></div>
                         <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Output</label><p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">{dr.jumlah_output||'—'}</p></div>
                       </div>
@@ -2419,7 +2433,7 @@ Hubungi Admin untuk info lebih lanjut.
                       </div>
 
                       {/* Wallplate + Tabletop — 2 col */}
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <YNDisplay value={dr.wallplate_input||'No'} label="Wallplate Input" />
                           {dr.wallplate_input === 'Yes' && <div className="ml-4 pl-4 border-l-2 border-teal-200 mt-1"><p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">{dr.wallplate_jumlah||'—'}</p></div>}
@@ -2460,7 +2474,7 @@ Hubungi Admin untuk info lebih lanjut.
                       Ruangan & Informasi Lainnya
                     </h3>
                     <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Ukuran Ruangan (P × L × T)</label><p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">{dr.ukuran_ruangan||'—'}</p></div>
                         <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Suggest Tampilan (W × H)</label><p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">{dr.suggest_tampilan||'—'}</p></div>
                       </div>
@@ -2637,7 +2651,7 @@ Hubungi Admin untuk info lebih lanjut.
               </div>
 
               {/* RIGHT: Chat */}
-              <div className="flex-[1.2] flex flex-col overflow-hidden bg-white/95 min-w-0" style={{ minWidth: 1000 }}>
+              <div className={`${detailMobileTab === 'chat' ? 'flex flex-col' : 'hidden'} sm:flex sm:flex-col flex-[1.2] overflow-hidden bg-white/95 min-w-0`}>
                 <div className="px-4 py-2.5 border-b border-gray-100 flex-shrink-0 bg-gray-50">
                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">💬 Discussion Chat</p>
                   {/* Room filter tabs for chat */}
@@ -2873,7 +2887,7 @@ Hubungi Admin untuk info lebih lanjut.
                   value={editFormData.layout_signage?.[0] || ''} onChange={v => setEditFormData(p => ({ ...p, layout_signage: v ? [v] : [] }))} />
                 <CheckGroup label="Jaringan / CMS" options={['Offline', 'Online LAN', 'Online WiFi', 'Cloud CMS', 'Local CMS']}
                   value={editFormData.jaringan_cms} onChange={v => setEditFormData(p => ({ ...p, jaringan_cms: v }))} />
-                <div className="grid grid-cols-2 gap-3 mt-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Input</label>
                     <input value={editFormData.jumlah_input} onChange={e => setEditFormData(p => ({ ...p, jumlah_input: e.target.value }))}

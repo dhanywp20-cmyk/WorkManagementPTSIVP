@@ -559,7 +559,7 @@ export default function FormReviewPage() {
                 {/* Project Info (Read-only) */}
                 <div className="rounded-xl p-4 space-y-2" style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.15)' }}>
                   <p className="text-[10px] font-bold tracking-widest uppercase text-violet-600">Informasi Project</p>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     <div><span className="text-gray-400">Project:</span> <span className="font-semibold text-gray-700">{editingReview.project_name}</span></div>
                     <div><span className="text-gray-400">Lokasi:</span> <span className="font-semibold text-gray-700">{editingReview.address}</span></div>
                     <div><span className="text-gray-400">Sales:</span> <span className="font-semibold text-gray-700">{editingReview.sales_name}</span></div>
