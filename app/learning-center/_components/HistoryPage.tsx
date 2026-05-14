@@ -1,0 +1,82 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { supabase, User, fmtDate, SearchInput } from './shared';
+import { UserAnswerReview } from './TeamPage';
+
+export function HistoryPage({ user }: { user: User }) {
+  const [history, setHistory] = useState<any[]>([]);
+  const [viewingAttempt, setViewingAttempt] = useState<any | null>(null);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    supabase.from('lc_quiz_attempts')
+      .select('*, lc_quiz_sessions(session_name, passing_grade, materi_name, question_ids)')
+      .eq('user_id', user.id).eq('is_submitted', true)
+      .order('submitted_at', { ascending: false })
+      .then(({ data }: { data: any[] | null }) => setHistory(data ?? []));
+  }, [user.id]);
+
+  if (viewingAttempt) {
+    return <UserAnswerReview user={user} onBack={() => setViewingAttempt(null)} isAdminView={false} />;
+  }
+
+  const filtered = search
+    ? history.filter(a =>
+        (a.lc_quiz_sessions?.session_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+        (a.lc_quiz_sessions?.materi_name ?? '').toLowerCase().includes(search.toLowerCase())
+      )
+    : history;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between px-8 py-5 border-b border-white/30 sticky top-0 z-10"
+        style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)' }}>
+        <div>
+          <h1 className="text-xl font-bold text-slate-800 tracking-tight">🕐 Riwayat Quiz</h1>
+          <p className="text-sm text-slate-500 mt-0.5">Semua quiz yang pernah kamu ikuti</p>
+        </div>
+        <SearchInput value={search} onChange={setSearch} placeholder="Cari sesi atau materi..." />
+      </div>
+      <div className="p-8">
+        <div className="space-y-4">
+          {filtered.length === 0 && (
+            <div className="text-center py-16 text-slate-400">
+              <div className="text-5xl mb-3">🕐</div>
+              <p className="font-semibold">{search ? 'Tidak ada hasil' : 'Belum ada riwayat quiz'}</p>
+            </div>
+          )}
+          {filtered.map(a => (
+            <div key={a.id} className="rounded-2xl border border-white/60 shadow-sm p-5 flex items-center gap-5"
+              style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)' }}>
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white flex-shrink-0 ${a.passed ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-rose-400 to-rose-600'}`}>
+                {a.score?.toFixed(0) ?? '—'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-slate-800">{a.lc_quiz_sessions?.session_name ?? '-'}</h4>
+                <p className="text-sm text-slate-500">{a.lc_quiz_sessions?.materi_name ?? '-'}</p>
+                <div className="flex gap-3 mt-1.5 text-xs text-slate-400">
+                  <span>✅ {a.total_correct}/{a.total_questions} benar</span>
+                  <span>🎯 Passing: {a.lc_quiz_sessions?.passing_grade ?? 70}%</span>
+                  {a.time_taken_sec && <span>⏱️ {Math.floor(a.time_taken_sec/60)}m {a.time_taken_sec%60}s</span>}
+                </div>
+              </div>
+              <div className="text-right flex-shrink-0 flex items-center gap-3">
+                <div>
+                  <span className={`text-xs font-bold px-2 py-1 rounded-full border ${a.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
+                    {a.passed ? '✅ LULUS' : '❌ TIDAK LULUS'}
+                  </span>
+                  <p className="text-xs text-slate-400 mt-1.5">{a.submitted_at ? fmtDate(a.submitted_at) : ''}</p>
+                </div>
+                <button onClick={() => setViewingAttempt(a)}
+                  className="px-3 py-1.5 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all flex items-center gap-1.5">
+                  📋 Lihat Jawaban
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

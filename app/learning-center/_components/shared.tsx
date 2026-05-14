@@ -1,0 +1,202 @@
+'use client';
+
+import { supabase } from '@/lib/supabase';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface User {
+  id: string;
+  full_name: string;
+  username: string;
+  role: string;
+  jabatan?: string | null;
+  sales_division?: string | null;
+  phone_number?: string | null;
+}
+
+export interface Material {
+  id: string;
+  materi_name: string;
+  content_text: string | null;
+  file_url: string | null;
+  file_name: string | null;
+  file_type: string | null;
+  folder_path: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface Question {
+  id: string;
+  material_id: string;
+  materi_name: string;
+  question: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_answer: 'A' | 'B' | 'C' | 'D';
+  difficulty: 'easy' | 'medium' | 'hard';
+  created_at: string;
+}
+
+export interface QuizSession {
+  id: string;
+  session_name: string;
+  material_id: string;
+  materi_name: string;
+  question_ids: string[];
+  question_count: number;
+  timer_minutes: number | null;
+  passing_grade: number;
+  is_active: boolean;
+  allow_retake: boolean;
+  created_at: string;
+  scheduled_at: string | null;
+  closed_at: string | null;
+  target_user_ids: string[] | null;
+  open_at: string | null;
+  close_at: string | null;
+}
+
+export interface QuizAttempt {
+  id: string;
+  user_id: string;
+  quiz_session_id: string;
+  started_at: string;
+  submitted_at: string | null;
+  score: number | null;
+  total_correct: number;
+  total_questions: number;
+  passed: boolean | null;
+  time_taken_sec: number | null;
+  is_submitted: boolean;
+}
+
+export interface AnswerRecord {
+  id: string;
+  attempt_id: string;
+  question_id: string;
+  answer: string;
+  is_correct: boolean;
+}
+
+export type AdminView = 'dashboard' | 'materi' | 'questions' | 'sessions' | 'team' | 'report' | 'analytics';
+export type TeamView = 'my-quiz' | 'materi' | 'history' | 'score';
+
+// ─── Gemini ───────────────────────────────────────────────────────────────────
+
+export const GEMINI_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY ?? '';
+export const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+
+export const DIFF_COLOR: Record<string, string> = {
+  easy: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  medium: 'bg-amber-100 text-amber-700 border-amber-200',
+  hard: 'bg-rose-100 text-rose-700 border-rose-200',
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+export const fmtDate = (d: string) =>
+  new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
+export const fmtDateTime = (d: string) =>
+  new Date(d).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+export function ScoreBadge({ score, passing }: { score: number | null; passing: number }) {
+  if (score === null) return <span className="text-slate-400 text-xs">—</span>;
+  const pass = score >= passing;
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border ${pass ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
+      {pass ? '✅' : '❌'} {score.toFixed(0)}
+    </span>
+  );
+}
+
+export function SearchInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <div className="relative">
+      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder ?? 'Cari...'}
+        className="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white w-64"
+      />
+    </div>
+  );
+}
+
+// ─── Gemini helpers ───────────────────────────────────────────────────────────
+
+export async function fileToBase64(f: File): Promise<string> {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = e => res((e.target?.result as string).split(',')[1]);
+    reader.onerror = () => rej(new Error('Read failed'));
+    reader.readAsDataURL(f);
+  });
+}
+
+export async function generateWithGemini(prompt: string, pdfFile?: File | null): Promise<string> {
+  const parts: any[] = [];
+  if (pdfFile) {
+    const base64 = await fileToBase64(pdfFile);
+    parts.push({ inline_data: { mime_type: pdfFile.type || 'application/pdf', data: base64 } });
+  }
+  parts.push({ text: prompt });
+  const res = await fetch(GEMINI_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts }],
+      generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err?.error?.message ?? 'Gemini API error');
+  }
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+}
+
+// ─── Folder Tree ──────────────────────────────────────────────────────────────
+
+export interface FolderNode {
+  name: string;
+  path: string;
+  children: Record<string, FolderNode>;
+  materials: Material[];
+}
+
+export function buildFolderTree(materials: Material[]): FolderNode {
+  const root: FolderNode = { name: 'root', path: '', children: {}, materials: [] };
+  materials.forEach(m => {
+    const rawPath = (m.folder_path ?? '').trim();
+    if (!rawPath) { root.materials.push(m); return; }
+    const parts = rawPath.split('/').map(p => p.trim()).filter(Boolean);
+    let node = root;
+    let currentPath = '';
+    parts.forEach(part => {
+      currentPath = currentPath ? `${currentPath}/${part}` : part;
+      if (!node.children[part]) {
+        node.children[part] = { name: part, path: currentPath, children: {}, materials: [] };
+      }
+      node = node.children[part];
+    });
+    node.materials.push(m);
+  });
+  return root;
+}
+
+export function countMaterials(node: FolderNode): number {
+  let count = node.materials.length;
+  for (const child of Object.values(node.children)) count += countMaterials(child);
+  return count;
+}
+
+export { supabase };

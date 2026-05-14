@@ -768,6 +768,53 @@ export default function Dashboard() {
               /* Expanded: full nav */
               <div className="space-y-5">
 
+                {/* Learning Center section */}
+                {visibleMenuItems.filter(m => LEARNING_KEYS.includes(m.key)).length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 px-1 mb-1.5">
+                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.38)' }}>Learning</span>
+                      <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
+                    </div>
+                    <div className="space-y-0.5">
+                      {visibleMenuItems.filter(m => LEARNING_KEYS.includes(m.key)).map(menu => {
+                        if (menu.items.length === 1) {
+                          const item = menu.items[0];
+                          const isActive = (showTicketing && item.internal && internalUrl === item.url) || (iframeUrl === item.url);
+                          return (
+                            <button
+                              key={menu.key}
+                              onClick={() => handleMenuClick(item, menu.title)}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
+                              style={
+                                isActive
+                                  ? { background: 'rgba(67,56,202,0.10)', border: '1px solid rgba(67,56,202,0.25)', color: '#3730a3' }
+                                  : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
+                              }
+                              onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(67,56,202,0.05)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(67,56,202,0.12)'; } }}
+                              onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; } }}
+                            >
+                              <span
+                                className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors"
+                                style={{
+                                  background: isActive ? 'rgba(67,56,202,0.15)' : 'rgba(0,0,0,0.06)',
+                                  color: isActive ? '#3730a3' : '#64748b',
+                                }}
+                              >
+                                {MENU_ICONS[menu.key] ?? <span>{menu.icon}</span>}
+                              </span>
+                              <span className="flex-1 truncate text-sm font-medium">{menu.title}</span>
+                              {isActive && (
+                                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#4338ca' }} />
+                              )}
+                            </button>
+                          );
+                        }
+                        return null;
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Project section */}
                 {visibleMenuItems.filter(m => PROJECT_KEYS.includes(m.key)).length > 0 && (
                   <div>
@@ -861,53 +908,6 @@ export default function Dashboard() {
                           );
                         })
                       )}
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Learning Center section di sidebar (BARU) ── */}
-                {visibleMenuItems.filter(m => LEARNING_KEYS.includes(m.key)).length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 px-1 mb-1.5">
-                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.38)' }}>Learning</span>
-                      <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
-                    </div>
-                    <div className="space-y-0.5">
-                      {visibleMenuItems.filter(m => LEARNING_KEYS.includes(m.key)).map(menu => {
-                        if (menu.items.length === 1) {
-                          const item = menu.items[0];
-                          const isActive = (showTicketing && item.internal && internalUrl === item.url) || (iframeUrl === item.url);
-                          return (
-                            <button
-                              key={menu.key}
-                              onClick={() => handleMenuClick(item, menu.title)}
-                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
-                              style={
-                                isActive
-                                  ? { background: 'rgba(67,56,202,0.10)', border: '1px solid rgba(67,56,202,0.25)', color: '#3730a3' }
-                                  : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
-                              }
-                              onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(67,56,202,0.05)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(67,56,202,0.12)'; } }}
-                              onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; } }}
-                            >
-                              <span
-                                className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors"
-                                style={{
-                                  background: isActive ? 'rgba(67,56,202,0.15)' : 'rgba(0,0,0,0.06)',
-                                  color: isActive ? '#3730a3' : '#64748b',
-                                }}
-                              >
-                                {MENU_ICONS[menu.key] ?? <span>{menu.icon}</span>}
-                              </span>
-                              <span className="flex-1 truncate text-sm font-medium">{menu.title}</span>
-                              {isActive && (
-                                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#4338ca' }} />
-                              )}
-                            </button>
-                          );
-                        }
-                        return null;
-                      })}
                     </div>
                   </div>
                 )}
