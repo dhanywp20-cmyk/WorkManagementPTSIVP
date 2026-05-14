@@ -50,7 +50,7 @@ export function ReportPage({ currentUser }: { currentUser: User }) {
       </div>
       <div className="p-8 space-y-6">
         <div>
-          <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Pilih Sesi Quiz</label>
+          <label className="text-[10px] font-bold uppercase tracking-widest mb-3 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">Pilih Sesi Quiz</label>
           <select value={selectedSession} onChange={e => setSelectedSession(e.target.value)}
             className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 bg-white min-w-[320px]">
             <option value="">-- Pilih Sesi --</option>
