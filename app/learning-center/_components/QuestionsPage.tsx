@@ -34,6 +34,12 @@ export function QuestionsPage({ user }: { user: User }) {
   }, [selectedMat]);
   useEffect(() => { load(); }, [load]);
 
+  // Reset material selection when navigating between folders so generate stays scoped
+  useEffect(() => {
+    setSelectedMat('');
+    setShowGenerate(false);
+  }, [selectedFolder, selectedSubFolder]);
+
   const folderTree = buildFolderTree(materials);
   const rootFolders = Object.keys(folderTree.children).sort();
   const rootMaterials = folderTree.materials;
