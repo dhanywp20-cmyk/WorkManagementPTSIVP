@@ -259,7 +259,8 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
       message: 'Materi ini akan dihapus permanen. Lanjutkan?',
       confirmLabel: 'Hapus',
       onConfirm: async () => {
-        await supabase.from('lc_materials').delete().eq('id', id);
+        const { error } = await supabase.from('lc_materials').delete().eq('id', id);
+        if (error) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Error: ' + error.message + ' (code: ' + error.code + ')' }); return; }
         load();
       },
     });
@@ -294,7 +295,9 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
       message: `Folder "${folderName}" dan semua ${affected.length} materi di dalamnya akan dihapus permanen. Lanjutkan?`,
       confirmLabel: 'Hapus Folder',
       onConfirm: async () => {
-        await Promise.all(affected.map(m => supabase.from('lc_materials').delete().eq('id', m.id)));
+        const results = await Promise.all(affected.map(m => supabase.from('lc_materials').delete().eq('id', m.id)));
+        const err = results.find(r => r.error)?.error;
+        if (err) { setDialog({ type: 'error', title: 'Gagal Hapus Folder', message: 'Error: ' + err.message + ' (code: ' + err.code + ')' }); return; }
         if (selectedFolderKey === folderName) setSelectedFolderKey(null);
         load();
       },

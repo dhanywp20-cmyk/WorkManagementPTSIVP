@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -210,6 +211,7 @@ export type DialogState = {
 } | null;
 
 export function AppDialog({ dialog, onClose }: { dialog: DialogState; onClose: () => void }) {
+  const [running, setRunning] = useState(false);
   if (!dialog) return null;
   const cfgMap = {
     info:    { icon: 'ℹ️',  iconBg: 'bg-blue-50 border-blue-200',    btn: 'bg-blue-600 hover:bg-blue-700' },
@@ -233,15 +235,25 @@ export function AppDialog({ dialog, onClose }: { dialog: DialogState; onClose: (
         </div>
         <div className={`flex gap-3 ${isConfirm ? '' : 'justify-center'}`}>
           {isConfirm && (
-            <button onClick={onClose}
-              className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all">
+            <button onClick={onClose} disabled={running}
+              className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all disabled:opacity-50">
               Batal
             </button>
           )}
           <button
-            onClick={() => { if (dialog.onConfirm) dialog.onConfirm(); onClose(); }}
-            className={`${isConfirm ? 'flex-1' : 'px-8'} py-2.5 text-white text-sm font-bold rounded-xl shadow transition-all ${cfg.btn}`}>
-            {isConfirm ? (dialog.confirmLabel ?? 'Konfirmasi') : 'OK'}
+            disabled={running}
+            onClick={async () => {
+              if (dialog.onConfirm) {
+                setRunning(true);
+                try { await dialog.onConfirm(); } catch (e) { console.error('onConfirm error:', e); }
+                setRunning(false);
+              }
+              onClose();
+            }}
+            className={`${isConfirm ? 'flex-1' : 'px-8'} py-2.5 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60 ${cfg.btn}`}>
+            {running
+              ? <span className="flex items-center justify-center gap-2"><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Memproses...</span>
+              : isConfirm ? (dialog.confirmLabel ?? 'Konfirmasi') : 'OK'}
           </button>
         </div>
       </div>

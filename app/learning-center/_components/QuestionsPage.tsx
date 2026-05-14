@@ -66,7 +66,8 @@ export function QuestionsPage({ user }: { user: User }) {
       confirmLabel: 'Hapus Semua',
       onConfirm: async () => {
         if (matIds.length > 0) {
-          await supabase.from('lc_questions').delete().in('material_id', matIds);
+          const { error } = await supabase.from('lc_questions').delete().in('material_id', matIds);
+          if (error) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Error: ' + error.message + ' (code: ' + error.code + ')' }); return; }
         }
         load();
       },
@@ -182,7 +183,11 @@ export function QuestionsPage({ user }: { user: User }) {
       type: 'confirm', title: 'Hapus Soal',
       message: 'Soal ini akan dihapus permanen. Lanjutkan?',
       confirmLabel: 'Hapus',
-      onConfirm: async () => { await supabase.from('lc_questions').delete().eq('id', id); load(); },
+      onConfirm: async () => {
+        const { error } = await supabase.from('lc_questions').delete().eq('id', id);
+        if (error) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Error: ' + error.message + ' (code: ' + error.code + ')' }); return; }
+        load();
+      },
     });
   };
 
@@ -192,7 +197,11 @@ export function QuestionsPage({ user }: { user: User }) {
       type: 'confirm', title: 'Hapus Semua Soal Materi',
       message: `Semua ${count} soal pada materi "${matName}" akan dihapus permanen. Lanjutkan?`,
       confirmLabel: 'Hapus Semua',
-      onConfirm: async () => { await supabase.from('lc_questions').delete().eq('material_id', matId); load(); },
+      onConfirm: async () => {
+        const { error } = await supabase.from('lc_questions').delete().eq('material_id', matId);
+        if (error) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Error: ' + error.message + ' (code: ' + error.code + ')' }); return; }
+        load();
+      },
     });
   };
 
