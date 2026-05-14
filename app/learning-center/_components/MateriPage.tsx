@@ -7,29 +7,46 @@ import {
   AppDialog, DialogState,
 } from './shared';
 
-function MaterialCard({ material: m, isAdmin, onDelete }: { material: Material; isAdmin: boolean; onDelete?: (id: string) => void }) {
+// ─── Grid helper ──────────────────────────────────────────────────────────────
+
+const GRID_COLS: Record<number, string> = {
+  2: 'grid-cols-2',
+  3: 'grid-cols-3',
+  4: 'grid-cols-4',
+  5: 'grid-cols-5',
+};
+
+// ─── MaterialCard ─────────────────────────────────────────────────────────────
+
+function MaterialCard({
+  material: m, isAdmin, onDelete, compact,
+}: {
+  material: Material; isAdmin: boolean; onDelete?: (id: string) => void; compact?: boolean;
+}) {
   return (
-    <div className="rounded-xl border border-slate-200 shadow-sm p-3.5 flex items-center gap-3 hover:shadow-md hover:border-blue-200 transition-all mb-1.5"
+    <div className="rounded-xl border border-slate-200 shadow-sm p-3 flex items-center gap-3 hover:shadow-md hover:border-blue-200 transition-all mb-1.5"
       style={{ background: '#ffffff' }}>
-      <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
-        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className={`${compact ? 'w-7 h-7' : 'w-9 h-9'} rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0`}>
+        <svg className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-blue-500`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       </div>
       <div className="flex-1 min-w-0">
-        <h4 className="font-semibold text-slate-800 text-sm truncate">{m.materi_name}</h4>
-        <div className="flex items-center gap-2 mt-1 flex-wrap">
+        <h4 className={`font-semibold text-slate-800 ${compact ? 'text-xs' : 'text-sm'} truncate`}>{m.materi_name}</h4>
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           {m.content_text && (
             <span className="text-[10px] bg-green-100 text-green-700 border border-green-200 px-1.5 py-0.5 rounded font-semibold">AI ✓</span>
           )}
-          <span className="text-[11px] text-slate-400">{fmtDate(m.created_at)}</span>
+          <span className="text-[10px] text-slate-400">{fmtDate(m.created_at)}</span>
         </div>
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex items-center gap-1.5 flex-shrink-0">
         {m.file_url && (
           <a href={m.file_url} target="_blank" rel="noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-semibold bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-lg transition-all">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-semibold bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2 py-1 rounded-lg transition-all">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
             Buka
           </a>
         )}
@@ -46,12 +63,15 @@ function MaterialCard({ material: m, isAdmin, onDelete }: { material: Material; 
   );
 }
 
+// ─── FolderTreeView (used inside right panel) ────────────────────────────────
+
 function FolderTreeView({
-  node, depth = 0, isAdmin, onDelete, expandedPaths, togglePath, onAddToFolder,
+  node, depth = 0, isAdmin, onDelete, expandedPaths, togglePath, onAddToFolder, gridCols = 2,
 }: {
   node: FolderNode; depth?: number; isAdmin: boolean; onDelete?: (id: string) => void;
   expandedPaths: Set<string>; togglePath: (path: string) => void;
   onAddToFolder?: (path: string) => void;
+  gridCols?: number;
 }) {
   const folderKeys = Object.keys(node.children).sort();
   const hasMaterials = node.materials.length > 0;
@@ -60,18 +80,18 @@ function FolderTreeView({
 
   return (
     <div className={depth > 0 ? 'mt-1' : ''}>
-      {/* Materials at this level */}
+      {/* Files at this level */}
       {hasMaterials && (
         <div className="space-y-1 mb-3">
           {node.materials.map(m => (
-            <MaterialCard key={m.id} material={m} isAdmin={isAdmin} onDelete={onDelete} />
+            <MaterialCard key={m.id} material={m} isAdmin={isAdmin} onDelete={onDelete} compact />
           ))}
         </div>
       )}
 
-      {/* Folders — 5-column grid */}
+      {/* Subfolder grid */}
       {hasFolders && (
-        <div className="grid grid-cols-5 gap-2.5">
+        <div className={`grid ${GRID_COLS[gridCols] ?? 'grid-cols-2'} gap-2`}>
           {folderKeys.map(key => {
             const child = node.children[key];
             const isOpen = expandedPaths.has(child.path);
@@ -79,25 +99,25 @@ function FolderTreeView({
             return (
               <div key={child.path}
                 onClick={() => togglePath(child.path)}
-                className={`flex flex-col gap-2 p-3 rounded-xl border cursor-pointer select-none transition-all
+                className={`flex flex-col gap-1.5 p-2.5 rounded-xl border cursor-pointer select-none transition-all
                   ${isOpen
                     ? 'border-blue-300 bg-blue-50 shadow-sm'
                     : 'border-slate-200 bg-white hover:border-blue-300 hover:shadow-sm hover:bg-blue-50/40'}`}>
                 <div className="flex items-start justify-between gap-1">
-                  <svg className="w-8 h-8 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                  <svg className="w-7 h-7 flex-shrink-0" viewBox="0 0 24 24" fill="none">
                     <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z"
                       fill={isOpen ? '#FCD34D' : '#FBBF24'} stroke="#D97706" strokeWidth="0.8" />
                   </svg>
                   {isAdmin && onAddToFolder && (
                     <button
                       onClick={e => { e.stopPropagation(); onAddToFolder(child.path); }}
-                      className="w-5 h-5 rounded-md bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center font-bold text-xs border border-blue-200 transition-all flex-shrink-0 mt-0.5"
-                      title={`Tambah materi ke "${child.name}"`}>+</button>
+                      className="w-4 h-4 rounded bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center font-bold text-xs border border-blue-200 transition-all flex-shrink-0"
+                      title={`Tambah ke "${child.name}"`}>+</button>
                   )}
                 </div>
-                <p className="text-xs font-bold text-slate-800 leading-snug line-clamp-2">{child.name}</p>
-                <div className="flex items-center justify-between mt-auto">
-                  <span className="text-[10px] text-slate-400 font-medium">{totalInside} item</span>
+                <p className="text-[11px] font-bold text-slate-800 leading-snug line-clamp-2">{child.name}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] text-slate-400 font-medium">{totalInside} item</span>
                   <svg className={`w-3 h-3 text-slate-400 transition-transform ${isOpen ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                   </svg>
@@ -108,25 +128,26 @@ function FolderTreeView({
         </div>
       )}
 
-      {/* Expanded folder panels — shown below the grid */}
+      {/* Expanded subfolder panels */}
       {folderKeys.map(key => {
         const child = node.children[key];
         if (!expandedPaths.has(child.path)) return null;
         const hasContent = Object.keys(child.children).length > 0 || child.materials.length > 0;
         if (!hasContent) return null;
         return (
-          <div key={`exp-${child.path}`} className="mt-3 rounded-xl border border-blue-200 overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-2 border-b border-blue-100 bg-blue-50/80">
-              <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+          <div key={`exp-${child.path}`} className="mt-2 rounded-xl border border-blue-200 overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-1.5 border-b border-blue-100 bg-blue-50/80">
+              <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
                 <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill="#FCD34D" stroke="#D97706" strokeWidth="0.8" />
               </svg>
-              <span className="text-xs font-bold text-blue-800">{child.name}</span>
-              <span className="ml-auto text-[10px] text-blue-400">{countMaterials(child)} item</span>
+              <span className="text-[11px] font-bold text-blue-800 truncate">{child.name}</span>
+              <span className="ml-auto text-[9px] text-blue-400 flex-shrink-0">{countMaterials(child)} item</span>
             </div>
-            <div className="p-4">
+            <div className="p-2.5">
               <FolderTreeView
                 node={child} depth={depth + 1} isAdmin={isAdmin} onDelete={onDelete}
                 expandedPaths={expandedPaths} togglePath={togglePath} onAddToFolder={onAddToFolder}
+                gridCols={gridCols}
               />
             </div>
           </div>
@@ -136,15 +157,20 @@ function FolderTreeView({
   );
 }
 
+// ─── MateriPage ───────────────────────────────────────────────────────────────
+
 export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ materi_name: '', file_url: '', folder_path: '', content_text: '' });
   const [uploading, setUploading] = useState(false);
-  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'folder' | 'list'>('folder');
   const [search, setSearch] = useState('');
   const [dialog, setDialog] = useState<DialogState>(null);
+
+  // Split-view state
+  const [selectedFolderKey, setSelectedFolderKey] = useState<string | null>(null);
+  const [rightExpandedPaths, setRightExpandedPaths] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     const { data } = await supabase.from('lc_materials').select('*').order('folder_path', { ascending: true }).order('materi_name', { ascending: true });
@@ -152,8 +178,14 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  const togglePath = (path: string) => {
-    setExpandedPaths(prev => {
+  // Clear right panel when search changes
+  useEffect(() => {
+    setSelectedFolderKey(null);
+    setRightExpandedPaths(new Set());
+  }, [search]);
+
+  const toggleRightPath = (path: string) => {
+    setRightExpandedPaths(prev => {
       const next = new Set(prev);
       if (next.has(path)) next.delete(path); else next.add(path);
       return next;
@@ -209,11 +241,16 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
     : materials;
 
   const tree = buildFolderTree(filtered);
-  const rootHasFolders = Object.keys(tree.children).length > 0;
+  const rootFolderKeys = Object.keys(tree.children).sort();
+  const rootHasFolders = rootFolderKeys.length > 0;
   const existingPaths = Array.from(new Set(materials.map(m => m.folder_path).filter(Boolean) as string[])).sort();
+
+  // Selected folder node (always root-level child)
+  const selectedFolderNode = selectedFolderKey ? (tree.children[selectedFolderKey] ?? null) : null;
 
   return (
     <div>
+      {/* ── Header ── */}
       <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div>
@@ -242,6 +279,8 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
           )}
         </div>
       </div>
+
+      {/* ── Content ── */}
       <div className="p-8">
         {!isAdmin && (
           <div className="mb-6 bg-indigo-50 border border-indigo-200 rounded-2xl px-5 py-3 flex items-center gap-3">
@@ -260,26 +299,112 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
 
         {filtered.length > 0 && (
           <>
-            {viewMode === 'folder' ? (
-              <div>
-                {tree.materials.length > 0 && (
-                  <div className="mb-4">
-                    {rootHasFolders && (
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">📄 Tanpa Folder</p>
-                    )}
-                    {tree.materials.map(m => (
-                      <MaterialCard key={m.id} material={m} isAdmin={isAdmin} onDelete={isAdmin ? handleDelete : undefined} />
-                    ))}
-                  </div>
-                )}
-                <FolderTreeView
-                  node={tree} isAdmin={isAdmin}
-                  onDelete={isAdmin ? handleDelete : undefined}
-                  expandedPaths={expandedPaths} togglePath={togglePath}
-                  onAddToFolder={isAdmin ? openForm : undefined}
-                />
+            {/* ── FOLDER VIEW — Split Layout ── */}
+            {viewMode === 'folder' && (
+              <div className="flex gap-5 items-start">
+
+                {/* LEFT: root files + folder grid */}
+                <div className="flex-1 min-w-0">
+                  {/* Root-level files (no folder) */}
+                  {tree.materials.length > 0 && (
+                    <div className="mb-5">
+                      {rootHasFolders && (
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">📄 Tanpa Folder</p>
+                      )}
+                      {tree.materials.map(m => (
+                        <MaterialCard key={m.id} material={m} isAdmin={isAdmin} onDelete={isAdmin ? handleDelete : undefined} />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 5-column folder grid */}
+                  {rootHasFolders && (
+                    <div className="grid grid-cols-5 gap-2.5">
+                      {rootFolderKeys.map(key => {
+                        const child = tree.children[key];
+                        const isSelected = selectedFolderKey === key;
+                        const totalInside = countMaterials(child);
+                        return (
+                          <div key={child.path}
+                            onClick={() => {
+                              setSelectedFolderKey(isSelected ? null : key);
+                              setRightExpandedPaths(new Set());
+                            }}
+                            className={`flex flex-col gap-2 p-3 rounded-xl border cursor-pointer select-none transition-all
+                              ${isSelected
+                                ? 'border-blue-400 bg-blue-50 shadow-md ring-2 ring-blue-100'
+                                : 'border-slate-200 bg-white hover:border-blue-300 hover:shadow-sm hover:bg-blue-50/40'}`}>
+                            <div className="flex items-start justify-between gap-1">
+                              <svg className="w-8 h-8 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                                <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z"
+                                  fill={isSelected ? '#FCD34D' : '#FBBF24'} stroke="#D97706" strokeWidth="0.8" />
+                              </svg>
+                              {isAdmin && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); openForm(child.path); }}
+                                  className="w-5 h-5 rounded-md bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center font-bold text-xs border border-blue-200 transition-all flex-shrink-0 mt-0.5"
+                                  title={`Tambah materi ke "${child.name}"`}>+</button>
+                              )}
+                            </div>
+                            <p className="text-xs font-bold text-slate-800 leading-snug line-clamp-2">{child.name}</p>
+                            <div className="flex items-center justify-between mt-auto">
+                              <span className="text-[10px] text-slate-400 font-medium">{totalInside} item</span>
+                              <svg className={`w-3 h-3 transition-transform ${isSelected ? 'text-blue-500 rotate-90' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* RIGHT: detail panel */}
+                <div className="w-72 flex-shrink-0">
+                  {selectedFolderNode ? (
+                    <div className="bg-white border border-blue-200 rounded-2xl overflow-hidden shadow-sm">
+                      {/* Panel header */}
+                      <div className="px-4 py-3 bg-blue-50 border-b border-blue-100 flex items-center gap-2">
+                        <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                          <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill="#FCD34D" stroke="#D97706" strokeWidth="0.8" />
+                        </svg>
+                        <span className="text-sm font-bold text-blue-900 flex-1 truncate">{selectedFolderNode.name}</span>
+                        <span className="text-xs text-blue-400 font-medium flex-shrink-0">{countMaterials(selectedFolderNode)} item</span>
+                        <button onClick={() => setSelectedFolderKey(null)}
+                          className="w-6 h-6 rounded-lg bg-blue-100 hover:bg-blue-200 flex items-center justify-center text-blue-500 font-bold text-sm transition-all flex-shrink-0">✕</button>
+                      </div>
+                      {/* Panel content */}
+                      <div className="p-3 max-h-[calc(100vh-230px)] overflow-y-auto">
+                        <FolderTreeView
+                          node={selectedFolderNode}
+                          depth={0}
+                          isAdmin={isAdmin}
+                          onDelete={isAdmin ? handleDelete : undefined}
+                          expandedPaths={rightExpandedPaths}
+                          togglePath={toggleRightPath}
+                          onAddToFolder={isAdmin ? openForm : undefined}
+                          gridCols={2}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    /* Empty state */
+                    <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-10 text-center">
+                      <div className="text-4xl mb-3">📂</div>
+                      <p className="text-sm font-semibold text-slate-500">Klik folder untuk<br/>melihat isi</p>
+                      {rootHasFolders && (
+                        <p className="text-xs text-slate-400 mt-2">{rootFolderKeys.length} folder tersedia</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
               </div>
-            ) : (
+            )}
+
+            {/* ── LIST VIEW ── */}
+            {viewMode === 'list' && (
               <div className="space-y-3">
                 {filtered.map(m => (
                   <MaterialCard key={m.id} material={m} isAdmin={isAdmin} onDelete={isAdmin ? handleDelete : undefined} />
