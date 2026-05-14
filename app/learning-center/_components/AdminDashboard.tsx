@@ -55,9 +55,9 @@ export function AdminDashboard({ user }: { user: User }) {
   );
 
   return (
-    <div>
-      <div className="flex items-center justify-between px-8 py-5 border-b border-white/30 sticky top-0 z-10"
-        style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)' }}>
+    <div style={{ background: '#f8fafc', minHeight: '100%' }}>
+      <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
+        style={{ background: '#ffffff' }}>
         <div>
           <h1 className="text-xl font-bold text-slate-800 tracking-tight">Dashboard</h1>
           <p className="text-sm text-slate-500 mt-0.5">Selamat datang, {user.full_name}</p>
@@ -75,8 +75,8 @@ export function AdminDashboard({ user }: { user: User }) {
           ))}
         </div>
 
-        <div className="rounded-2xl border border-white/60 overflow-hidden shadow-sm"
-          style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)' }}>
+        <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm"
+          style={{ background: '#ffffff' }}>
           <div className="px-6 py-4 border-b border-slate-100">
             <h3 className="font-bold text-slate-800">Aktivitas Terbaru</h3>
           </div>

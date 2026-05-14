@@ -40,7 +40,7 @@ function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: (
     return (
       <div style={{ background: '#f8fafc', minHeight: '100%' }}>
         <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
-          style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)' }}>
+          style={{ background: '#ffffff' }}>
           <div>
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">📋 Review Jawaban — {user.full_name}</h1>
             <p className="text-sm text-slate-500 mt-0.5">{selectedAttempt.lc_quiz_sessions?.session_name}</p>
@@ -113,9 +113,9 @@ function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: (
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between px-8 py-5 border-b border-white/30 sticky top-0 z-10"
-        style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)' }}>
+    <div style={{ background: '#f8fafc', minHeight: '100%' }}>
+      <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
+        style={{ background: '#ffffff' }}>
         <div>
           <h1 className="text-xl font-bold text-slate-800 tracking-tight">{isAdminView ? `👁️ Jawaban — ${user.full_name}` : '📋 Lihat Jawaban Saya'}</h1>
           <p className="text-sm text-slate-500 mt-0.5">Pilih quiz untuk melihat detail jawaban</p>
@@ -130,8 +130,8 @@ function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: (
           </div>
         )}
         {attempts.map(a => (
-          <div key={a.id} className="rounded-2xl border border-white/60 shadow-sm p-5 flex items-center gap-5"
-            style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)' }}>
+          <div key={a.id} className="rounded-2xl border border-slate-200 shadow-sm p-5 flex items-center gap-5"
+            style={{ background: '#ffffff' }}>
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white flex-shrink-0 ${a.passed ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-rose-400 to-rose-600'}`}>
               {a.score?.toFixed(0) ?? '—'}
             </div>
@@ -192,9 +192,9 @@ export function TeamPage() {
     : users;
 
   return (
-    <div>
-      <div className="flex items-center justify-between px-8 py-5 border-b border-white/30 sticky top-0 z-10"
-        style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)' }}>
+    <div style={{ background: '#f8fafc', minHeight: '100%' }}>
+      <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
+        style={{ background: '#ffffff' }}>
         <div>
           <h1 className="text-xl font-bold text-slate-800 tracking-tight">👥 Team</h1>
           <p className="text-sm text-slate-500 mt-0.5">Daftar anggota team & partisipasi quiz</p>
@@ -202,8 +202,8 @@ export function TeamPage() {
         <SearchInput value={search} onChange={setSearch} placeholder="Cari anggota..." />
       </div>
       <div className="p-8">
-        <div className="rounded-2xl border border-white/60 shadow-sm overflow-hidden"
-          style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)' }}>
+        <div className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
+          style={{ background: '#ffffff' }}>
           <table className="w-full text-sm">
             <thead className="border-b border-slate-200" style={{ background: 'rgba(248,250,252,0.98)' }}>
               <tr>

@@ -87,7 +87,6 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
         backgroundAttachment: 'fixed',
       }}
     >
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.50)' }} />
       <div className="relative z-10 flex flex-col min-h-screen">
         {isAdmin
           ? <AdminTopNav view={adminView} onChange={setAdminView} />

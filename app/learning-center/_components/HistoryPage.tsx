@@ -29,9 +29,9 @@ export function HistoryPage({ user }: { user: User }) {
     : history;
 
   return (
-    <div>
-      <div className="flex items-center justify-between px-8 py-5 border-b border-white/30 sticky top-0 z-10"
-        style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)' }}>
+    <div style={{ background: '#f8fafc', minHeight: '100%' }}>
+      <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
+        style={{ background: '#ffffff' }}>
         <div>
           <h1 className="text-xl font-bold text-slate-800 tracking-tight">🕐 Riwayat Quiz</h1>
           <p className="text-sm text-slate-500 mt-0.5">Semua quiz yang pernah kamu ikuti</p>
@@ -47,8 +47,8 @@ export function HistoryPage({ user }: { user: User }) {
             </div>
           )}
           {filtered.map(a => (
-            <div key={a.id} className="rounded-2xl border border-white/60 shadow-sm p-5 flex items-center gap-5"
-              style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)' }}>
+            <div key={a.id} className="rounded-2xl border border-slate-200 shadow-sm p-5 flex items-center gap-5"
+              style={{ background: '#ffffff' }}>
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white flex-shrink-0 ${a.passed ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-rose-400 to-rose-600'}`}>
                 {a.score?.toFixed(0) ?? '—'}
               </div>

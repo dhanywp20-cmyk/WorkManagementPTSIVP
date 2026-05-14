@@ -106,9 +106,9 @@ export function SessionsPage({ user }: { user: User }) {
     : sessions;
 
   return (
-    <div>
-      <div className="flex items-center justify-between px-8 py-5 border-b border-white/30 sticky top-0 z-10"
-        style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)' }}>
+    <div style={{ background: '#f8fafc', minHeight: '100%' }}>
+      <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
+        style={{ background: '#ffffff' }}>
         <div>
           <h1 className="text-xl font-bold text-slate-800 tracking-tight">🎯 Sesi Quiz</h1>
           <p className="text-sm text-slate-500 mt-0.5">Buat & kelola sesi quiz untuk team</p>
@@ -123,7 +123,7 @@ export function SessionsPage({ user }: { user: User }) {
       </div>
       <div className="p-8 space-y-6">
         {showForm && (
-          <div className="rounded-2xl border border-emerald-100 shadow-lg p-6" style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)' }}>
+          <div className="rounded-2xl border border-emerald-100 shadow-lg p-6" style={{ background: '#ffffff' }}>
             <h3 className="font-bold text-slate-800 mb-5">📋 Form Sesi Quiz Baru</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
@@ -242,7 +242,7 @@ export function SessionsPage({ user }: { user: User }) {
               : null;
             return (
               <div key={s.id} className="rounded-2xl border border-white/60 shadow-sm p-5"
-                style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)' }}>
+                style={{ background: '#ffffff' }}>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">

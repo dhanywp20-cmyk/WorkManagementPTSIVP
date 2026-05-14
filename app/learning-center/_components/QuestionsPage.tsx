@@ -266,9 +266,9 @@ export function QuestionsPage({ user }: { user: User }) {
   const subFolders = currentFolderNode ? Object.keys(currentFolderNode.children).sort() : [];
 
   return (
-    <div>
-      <div className="flex items-center justify-between px-8 py-5 border-b border-white/30 sticky top-0 z-10"
-        style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)' }}>
+    <div style={{ background: '#f8fafc', minHeight: '100%' }}>
+      <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
+        style={{ background: '#ffffff' }}>
         <div>
           <h1 className="text-xl font-bold text-slate-800 tracking-tight">🧩 Bank Soal</h1>
           <p className="text-sm text-slate-500 mt-0.5">
