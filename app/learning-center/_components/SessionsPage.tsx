@@ -83,7 +83,30 @@ export function SessionsPage({ user }: { user: User }) {
       type: 'confirm', title: 'Hapus Sesi Quiz',
       message: 'Sesi quiz dan semua jawaban akan dihapus permanen. Lanjutkan?',
       confirmLabel: 'Hapus',
-      onConfirm: async () => { await supabase.from('lc_quiz_sessions').delete().eq('id', id); load(); },
+      onConfirm: async () => {
+        // 1. Ambil semua attempt yang terkait sesi ini
+        const { data: attempts } = await supabase
+          .from('lc_quiz_attempts')
+          .select('id')
+          .eq('quiz_session_id', id);
+
+        // 2. Hapus answer records untuk setiap attempt (jika tabel lc_answer_records ada FK ke attempts)
+        if (attempts && attempts.length > 0) {
+          const attemptIds = attempts.map((a: any) => a.id);
+          await supabase.from('lc_answer_records').delete().in('attempt_id', attemptIds);
+        }
+
+        // 3. Hapus semua attempts terkait sesi ini
+        await supabase.from('lc_quiz_attempts').delete().eq('quiz_session_id', id);
+
+        // 4. Baru hapus sesi-nya
+        const { error } = await supabase.from('lc_quiz_sessions').delete().eq('id', id);
+        if (error) {
+          setDialog({ type: 'error', title: 'Gagal Menghapus', message: 'Error: ' + error.message });
+          return;
+        }
+        load();
+      },
     });
   };
 
