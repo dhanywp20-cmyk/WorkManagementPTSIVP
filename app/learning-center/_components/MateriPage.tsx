@@ -59,51 +59,79 @@ function FolderTreeView({
   if (!hasMaterials && !hasFolders) return null;
 
   return (
-    <div className={depth > 0 ? 'ml-6 border-l-2 border-slate-200 pl-3 mt-0.5' : ''}>
+    <div className={depth > 0 ? 'mt-1' : ''}>
+      {/* Materials at this level */}
+      {hasMaterials && (
+        <div className="space-y-1 mb-3">
+          {node.materials.map(m => (
+            <MaterialCard key={m.id} material={m} isAdmin={isAdmin} onDelete={onDelete} />
+          ))}
+        </div>
+      )}
+
+      {/* Folders — 5-column grid */}
+      {hasFolders && (
+        <div className="grid grid-cols-5 gap-2.5">
+          {folderKeys.map(key => {
+            const child = node.children[key];
+            const isOpen = expandedPaths.has(child.path);
+            const totalInside = countMaterials(child);
+            return (
+              <div key={child.path}
+                onClick={() => togglePath(child.path)}
+                className={`flex flex-col gap-2 p-3 rounded-xl border cursor-pointer select-none transition-all
+                  ${isOpen
+                    ? 'border-blue-300 bg-blue-50 shadow-sm'
+                    : 'border-slate-200 bg-white hover:border-blue-300 hover:shadow-sm hover:bg-blue-50/40'}`}>
+                <div className="flex items-start justify-between gap-1">
+                  <svg className="w-8 h-8 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                    <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z"
+                      fill={isOpen ? '#FCD34D' : '#FBBF24'} stroke="#D97706" strokeWidth="0.8" />
+                  </svg>
+                  {isAdmin && onAddToFolder && (
+                    <button
+                      onClick={e => { e.stopPropagation(); onAddToFolder(child.path); }}
+                      className="w-5 h-5 rounded-md bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center font-bold text-xs border border-blue-200 transition-all flex-shrink-0 mt-0.5"
+                      title={`Tambah materi ke "${child.name}"`}>+</button>
+                  )}
+                </div>
+                <p className="text-xs font-bold text-slate-800 leading-snug line-clamp-2">{child.name}</p>
+                <div className="flex items-center justify-between mt-auto">
+                  <span className="text-[10px] text-slate-400 font-medium">{totalInside} item</span>
+                  <svg className={`w-3 h-3 text-slate-400 transition-transform ${isOpen ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Expanded folder panels — shown below the grid */}
       {folderKeys.map(key => {
         const child = node.children[key];
-        const isOpen = expandedPaths.has(child.path);
-        const totalInside = countMaterials(child);
+        if (!expandedPaths.has(child.path)) return null;
+        const hasContent = Object.keys(child.children).length > 0 || child.materials.length > 0;
+        if (!hasContent) return null;
         return (
-          <div key={child.path} className="mb-0.5">
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => togglePath(child.path)}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 active:bg-blue-100 transition-all text-left border border-transparent hover:border-blue-200 flex-1 min-w-0"
-                style={{ background: 'rgba(255,255,255,0.96)' }}
-              >
-                <svg className={`w-3.5 h-3.5 text-slate-400 flex-shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                </svg>
-                <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
-                  <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill={isOpen ? '#FCD34D' : '#FBBF24'} />
-                  <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill="none" stroke="#D97706" strokeWidth="1" />
-                </svg>
-                <span className="font-semibold text-slate-800 text-sm select-none truncate">{child.name}</span>
-                <span className="text-[11px] text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full flex-shrink-0 ml-auto">{totalInside} item</span>
-              </button>
-              {isAdmin && onAddToFolder && (
-                <button
-                  onClick={() => onAddToFolder(child.path)}
-                  className="flex-shrink-0 w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-base border border-blue-200 transition-all"
-                  title={`Tambah materi ke "${child.name}"`}
-                >+</button>
-              )}
+          <div key={`exp-${child.path}`} className="mt-3 rounded-xl border border-blue-200 overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-2 border-b border-blue-100 bg-blue-50/80">
+              <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill="#FCD34D" stroke="#D97706" strokeWidth="0.8" />
+              </svg>
+              <span className="text-xs font-bold text-blue-800">{child.name}</span>
+              <span className="ml-auto text-[10px] text-blue-400">{countMaterials(child)} item</span>
             </div>
-            {isOpen && (
-              <div className="mt-0.5">
-                <FolderTreeView
-                  node={child} depth={depth + 1} isAdmin={isAdmin} onDelete={onDelete}
-                  expandedPaths={expandedPaths} togglePath={togglePath} onAddToFolder={onAddToFolder}
-                />
-              </div>
-            )}
+            <div className="p-4">
+              <FolderTreeView
+                node={child} depth={depth + 1} isAdmin={isAdmin} onDelete={onDelete}
+                expandedPaths={expandedPaths} togglePath={togglePath} onAddToFolder={onAddToFolder}
+              />
+            </div>
           </div>
         );
       })}
-      {node.materials.map(m => (
-        <MaterialCard key={m.id} material={m} isAdmin={isAdmin} onDelete={onDelete} />
-      ))}
     </div>
   );
 }
