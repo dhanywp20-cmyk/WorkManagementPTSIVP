@@ -81,7 +81,7 @@ export interface AnswerRecord {
   is_correct: boolean;
 }
 
-export type AdminView = 'dashboard' | 'materi' | 'questions' | 'sessions' | 'team' | 'report' | 'analytics';
+export type AdminView = 'dashboard' | 'materi' | 'questions' | 'sessions' | 'team' | 'report';
 export type TeamView = 'my-quiz' | 'materi' | 'history' | 'score';
 
 // ─── Gemini ───────────────────────────────────────────────────────────────────

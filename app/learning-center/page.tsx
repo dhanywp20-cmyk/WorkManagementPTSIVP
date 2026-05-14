@@ -9,7 +9,6 @@ import { QuestionsPage } from './_components/QuestionsPage';
 import { SessionsPage } from './_components/SessionsPage';
 import { TeamPage } from './_components/TeamPage';
 import { ReportPage } from './_components/ReportPage';
-import { AnalyticsPage } from './_components/AnalyticsPage';
 import { MyQuizPage } from './_components/MyQuizPage';
 import { HistoryPage } from './_components/HistoryPage';
 import { ScorePage } from './_components/ScorePage';
@@ -101,7 +100,6 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
               {adminView === 'sessions'   && <SessionsPage user={currentUser} />}
               {adminView === 'team'       && <TeamPage />}
               {adminView === 'report'     && <ReportPage currentUser={currentUser} />}
-              {adminView === 'analytics'  && <AnalyticsPage />}
             </>
           ) : (
             <>
@@ -125,7 +123,6 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
     { key: 'sessions', icon: '🎯', label: 'Sesi Quiz' },
     { key: 'team', icon: '👥', label: 'Team' },
     { key: 'report', icon: '📋', label: 'Laporan' },
-    { key: 'analytics', icon: '📈', label: 'Analytics' },
   ];
   return (
     <div style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(16px)', borderBottom: '3px solid #dc2626' }}

@@ -103,6 +103,7 @@ function QuizPlayer({ session, user, attempt, onDone }: {
     await supabase.from('lc_quiz_attempts').update({
       submitted_at: new Date().toISOString(), score, total_correct: correct,
       total_questions: questions.length, passed, is_submitted: true, time_taken_sec: timeTaken,
+      tab_switches: tabSwitchesRef.current,
     }).eq('id', attempt.id);
     setResult({ score, correct, passed }); setSubmitted(true);
   };
