@@ -295,13 +295,15 @@ export default function TicketingSystem() {
     if (!currentUser) return [];
     const member = teamMembers.find((m) => (m.username || "").toLowerCase() === (currentUser.username || "").toLowerCase());
     const assignedName = member ? member.name : currentUser.full_name;
+    const namesToCheck = [...new Set([assignedName, currentUser.full_name].filter(Boolean))]
+      .map(n => n.toLowerCase().trim());
     return tickets.filter((t) => {
-      if (t.assign_name !== assignedName) return false;
+      if (!namesToCheck.includes((t.assign_name ?? "").toLowerCase().trim())) return false;
       const overdue = isTicketOverdue(t) && t.status !== "Solved";
-      const isPending = t.status === "Pending" || t.status === "In Progress";
-      const isServicesAndPending = t.services_status && (t.services_status === "Pending" || t.services_status === "In Progress");
-      if (member?.team_type === "Team Services") return isServicesAndPending || overdue;
-      else return isPending || overdue;
+      const isActive = t.status !== "Solved";
+      const isServicesActive = t.services_status && t.services_status !== "Solved";
+      if (member?.team_type === "Team Services") return isServicesActive || overdue;
+      else return isActive || overdue;
     });
   };
 
