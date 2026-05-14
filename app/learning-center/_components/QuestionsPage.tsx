@@ -234,6 +234,63 @@ export function QuestionsPage({ user }: { user: User }) {
     </div>
   );
 
+  // ─── Manual Add Modal ───────────────────────────────────────────────────────
+  const AddManualModal = () => (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999] p-4">
+      <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ background: '#ffffff' }}>
+        <h3 className="font-bold text-slate-800 mb-1 text-base">➕ Tambah Soal Manual</h3>
+        <p className="text-xs text-slate-400 mb-4">Isi semua field, klik tombol "✓ Benar" untuk menandai jawaban yang benar.</p>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
+            <select value={newQ.material_id} onChange={e => setNewQ(p => ({ ...p, material_id: e.target.value }))}
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
+              <option value="">-- Pilih Materi --</option>
+              {(viewMaterials.length > 0 ? viewMaterials : materials).map(m =>
+                <option key={m.id} value={m.id}>{m.materi_name}</option>
+              )}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Pertanyaan *</label>
+            <textarea value={newQ.question} onChange={e => setNewQ(p => ({ ...p, question: e.target.value }))}
+              rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 resize-none"
+              placeholder="Tulis pertanyaan di sini..." />
+          </div>
+          {(['a', 'b', 'c', 'd'] as const).map(opt => (
+            <div key={opt} className="flex items-center gap-2">
+              <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 ${newQ.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{opt.toUpperCase()}</span>
+              <input value={(newQ as any)[`option_${opt}`]} onChange={e => setNewQ(p => ({ ...p, [`option_${opt}`]: e.target.value }))}
+                className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400"
+                placeholder={`Pilihan ${opt.toUpperCase()}`} />
+              <button onClick={() => setNewQ(p => ({ ...p, correct_answer: opt.toUpperCase() }))}
+                className={`text-xs px-2.5 py-1.5 rounded-lg font-semibold transition-all flex-shrink-0 ${newQ.correct_answer === opt.toUpperCase() ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-slate-100 text-slate-500 hover:bg-green-50 border border-transparent'}`}>
+                ✓ Benar
+              </button>
+            </div>
+          ))}
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
+            <select value={newQ.difficulty} onChange={e => setNewQ(p => ({ ...p, difficulty: e.target.value as any }))}
+              className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </div>
+        </div>
+        <div className="flex gap-3 mt-5">
+          <button onClick={handleAddManual}
+            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow transition-all">
+            💾 Simpan Soal
+          </button>
+          <button onClick={() => setShowAddManual(false)}
+            className="px-5 py-2.5 bg-slate-100 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-all">Batal</button>
+        </div>
+      </div>
+    </div>
+  );
+
   if (selectedFolder === null) {
     return (
       <div>
@@ -310,63 +367,6 @@ export function QuestionsPage({ user }: { user: User }) {
 
   const currentFolderNode = selectedFolder === '__root__' ? null : folderTree.children[selectedFolder];
   const subFolders = currentFolderNode ? Object.keys(currentFolderNode.children).sort() : [];
-
-  // ─── Manual Add Modal ───────────────────────────────────────────────────────
-  const AddManualModal = () => (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999] p-4">
-      <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ background: '#ffffff' }}>
-        <h3 className="font-bold text-slate-800 mb-1 text-base">➕ Tambah Soal Manual</h3>
-        <p className="text-xs text-slate-400 mb-4">Isi semua field, klik tombol "✓ Benar" untuk menandai jawaban yang benar.</p>
-        <div className="space-y-3">
-          <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
-            <select value={newQ.material_id} onChange={e => setNewQ(p => ({ ...p, material_id: e.target.value }))}
-              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
-              <option value="">-- Pilih Materi --</option>
-              {(viewMaterials.length > 0 ? viewMaterials : materials).map(m =>
-                <option key={m.id} value={m.id}>{m.materi_name}</option>
-              )}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Pertanyaan *</label>
-            <textarea value={newQ.question} onChange={e => setNewQ(p => ({ ...p, question: e.target.value }))}
-              rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 resize-none"
-              placeholder="Tulis pertanyaan di sini..." />
-          </div>
-          {(['a', 'b', 'c', 'd'] as const).map(opt => (
-            <div key={opt} className="flex items-center gap-2">
-              <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 ${newQ.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{opt.toUpperCase()}</span>
-              <input value={(newQ as any)[`option_${opt}`]} onChange={e => setNewQ(p => ({ ...p, [`option_${opt}`]: e.target.value }))}
-                className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400"
-                placeholder={`Pilihan ${opt.toUpperCase()}`} />
-              <button onClick={() => setNewQ(p => ({ ...p, correct_answer: opt.toUpperCase() }))}
-                className={`text-xs px-2.5 py-1.5 rounded-lg font-semibold transition-all flex-shrink-0 ${newQ.correct_answer === opt.toUpperCase() ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-slate-100 text-slate-500 hover:bg-green-50 border border-transparent'}`}>
-                ✓ Benar
-              </button>
-            </div>
-          ))}
-          <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
-            <select value={newQ.difficulty} onChange={e => setNewQ(p => ({ ...p, difficulty: e.target.value as any }))}
-              className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
-              <option value="easy">Easy</option>
-              <option value="medium">Medium</option>
-              <option value="hard">Hard</option>
-            </select>
-          </div>
-        </div>
-        <div className="flex gap-3 mt-5">
-          <button onClick={handleAddManual}
-            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow transition-all">
-            💾 Simpan Soal
-          </button>
-          <button onClick={() => setShowAddManual(false)}
-            className="px-5 py-2.5 bg-slate-100 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-all">Batal</button>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div>
