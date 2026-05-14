@@ -119,7 +119,7 @@ export function AnalyticsPage() {
       .eq('user_id', selectedUser.uid)
       .eq('is_submitted', true)
       .order('submitted_at', { ascending: false })
-      .then(({ data }) => { setUserAttempts(data ?? []); setLoadingUser(false); });
+      .then(({ data }: { data: any[] | null }) => { setUserAttempts(data ?? []); setLoadingUser(false); });
   }, [selectedUser]);
 
   const filteredUsers = search
