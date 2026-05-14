@@ -12,7 +12,9 @@ export function SessionsPage({ user }: { user: User }) {
   const [form, setForm] = useState({
     session_name: '', material_id: '', question_count: 10,
     timer_minutes: 30, passing_grade: 70, allow_retake: true,
-    target_all: true, target_user_ids: [] as string[],
+    target_mode: 'all' as 'all' | 'role' | 'user',
+    target_roles: [] as string[],
+    target_user_ids: [] as string[],
     open_at: '', close_at: '',
   });
   const [saving, setSaving] = useState(false);
@@ -29,9 +31,16 @@ export function SessionsPage({ user }: { user: User }) {
     setSessions((s as QuizSession[]) ?? []);
     setMaterials(m ?? []);
     setQuestions(q ?? []);
-    setTeamUsers(((u ?? []) as User[]).filter((usr: User) => !['guest'].includes(usr.role?.toLowerCase())));
+    setTeamUsers((u ?? []) as User[]);
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  const uniqueRoles = [...new Set(teamUsers.map(u => (u.role ?? '').toLowerCase()).filter(Boolean))].sort();
+
+  const roleLabel: Record<string, string> = {
+    admin: '🔑 Admin', superadmin: '👑 Super Admin',
+    team: '👥 Team', marketing: '📣 Marketing', guest: '👤 Guest',
+  };
 
   const toggleTargetUser = (uid: string) => {
     setForm(p => ({
@@ -42,10 +51,20 @@ export function SessionsPage({ user }: { user: User }) {
     }));
   };
 
+  const toggleTargetRole = (role: string) => {
+    setForm(p => ({
+      ...p,
+      target_roles: p.target_roles.includes(role)
+        ? p.target_roles.filter(r => r !== role)
+        : [...p.target_roles, role],
+    }));
+  };
+
   const handleCreate = async () => {
     if (!form.session_name.trim()) { setDialog({ type: 'error', message: 'Nama sesi wajib diisi!' }); return; }
     if (!form.material_id) { setDialog({ type: 'error', message: 'Pilih materi!' }); return; }
-    if (!form.target_all && form.target_user_ids.length === 0) { setDialog({ type: 'error', message: 'Pilih minimal 1 anggota team!' }); return; }
+    if (form.target_mode === 'role' && form.target_roles.length === 0) { setDialog({ type: 'error', message: 'Pilih minimal 1 role!' }); return; }
+    if (form.target_mode === 'user' && form.target_user_ids.length === 0) { setDialog({ type: 'error', message: 'Pilih minimal 1 anggota!' }); return; }
     if (form.open_at && form.close_at && new Date(form.open_at) >= new Date(form.close_at)) {
       setDialog({ type: 'error', message: 'Waktu tutup harus setelah waktu buka!' }); return;
     }
@@ -55,13 +74,21 @@ export function SessionsPage({ user }: { user: User }) {
       setDialog({ type: 'error', message: `Hanya ada ${pool.length} soal. Kurangi jumlah soal atau generate lebih banyak.` }); return;
     }
     const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, form.question_count);
+    let resolvedTargetIds: string[] | null = null;
+    if (form.target_mode === 'role') {
+      resolvedTargetIds = teamUsers
+        .filter(u => form.target_roles.includes((u.role ?? '').toLowerCase()))
+        .map(u => u.id);
+    } else if (form.target_mode === 'user') {
+      resolvedTargetIds = form.target_user_ids;
+    }
     setSaving(true);
     const { error } = await supabase.from('lc_quiz_sessions').insert([{
       session_name: form.session_name, material_id: form.material_id, materi_name: mat?.materi_name ?? '',
       question_ids: shuffled.map(q => q.id), question_count: form.question_count,
       timer_minutes: form.timer_minutes || null, passing_grade: form.passing_grade,
       allow_retake: form.allow_retake, is_active: true, created_by: user.id,
-      target_user_ids: form.target_all ? null : form.target_user_ids,
+      target_user_ids: resolvedTargetIds,
       open_at: form.open_at ? new Date(form.open_at).toISOString() : null,
       close_at: form.close_at ? new Date(form.close_at).toISOString() : null,
       scheduled_at: form.open_at ? new Date(form.open_at).toISOString() : null,
@@ -69,7 +96,7 @@ export function SessionsPage({ user }: { user: User }) {
     setSaving(false);
     if (error) { setDialog({ type: 'error', message: 'Error: ' + error.message }); return; }
     setShowForm(false);
-    setForm({ session_name: '', material_id: '', question_count: 10, timer_minutes: 30, passing_grade: 70, allow_retake: true, target_all: true, target_user_ids: [], open_at: '', close_at: '' });
+    setForm({ session_name: '', material_id: '', question_count: 10, timer_minutes: 30, passing_grade: 70, allow_retake: true, target_mode: 'all', target_roles: [], target_user_ids: [], open_at: '', close_at: '' });
     load();
     setDialog({ type: 'success', message: 'Sesi quiz berhasil dibuat!' });
   };
@@ -204,39 +231,84 @@ export function SessionsPage({ user }: { user: User }) {
               </div>
               <div className="col-span-2">
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-2">👥 Target Penerima Quiz</label>
-                <div className="flex gap-3 mb-3">
-                  <button type="button" onClick={() => setForm(p => ({ ...p, target_all: true, target_user_ids: [] }))}
-                    className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_all ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
-                    🌐 Semua Team
+                <div className="flex gap-2 mb-3 flex-wrap">
+                  <button type="button"
+                    onClick={() => setForm(p => ({ ...p, target_mode: 'all', target_roles: [], target_user_ids: [] }))}
+                    className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'all' ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
+                    🌐 Semua
                   </button>
-                  <button type="button" onClick={() => setForm(p => ({ ...p, target_all: false }))}
-                    className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${!form.target_all ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
-                    👤 Pilih Anggota
+                  <button type="button"
+                    onClick={() => setForm(p => ({ ...p, target_mode: 'role', target_user_ids: [] }))}
+                    className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'role' ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
+                    🏷️ Per Role
+                  </button>
+                  <button type="button"
+                    onClick={() => setForm(p => ({ ...p, target_mode: 'user', target_roles: [] }))}
+                    className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'user' ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
+                    👤 Per Anggota
                   </button>
                 </div>
-                {!form.target_all && (
-                  <div className="border border-slate-200 rounded-xl p-3 max-h-52 overflow-y-auto space-y-1">
-                    {teamUsers.length === 0 && <p className="text-xs text-slate-400 text-center py-4">Tidak ada user ditemukan</p>}
-                    {teamUsers.map(u => {
-                      const checked = form.target_user_ids.includes(u.id);
-                      return (
-                        <label key={u.id} className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all ${checked ? 'bg-indigo-50 border border-indigo-200' : 'hover:bg-slate-50 border border-transparent'}`}>
-                          <input type="checkbox" checked={checked} onChange={() => toggleTargetUser(u.id)}
-                            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400 flex-shrink-0" />
-                          <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-xs font-bold flex-shrink-0">
-                            {u.full_name?.[0]?.toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-slate-800 truncate">{u.full_name}</p>
-                            <p className="text-[10px] text-slate-400">{u.role}{u.jabatan ? ` · ${u.jabatan}` : ''}</p>
-                          </div>
-                        </label>
-                      );
-                    })}
+
+                {form.target_mode === 'all' && (
+                  <p className="text-xs text-slate-500 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5 font-medium">
+                    🌐 Quiz akan dikirim ke <strong>semua user</strong> (team, marketing, guest, dll.)
+                  </p>
+                )}
+
+                {form.target_mode === 'role' && (
+                  <div>
+                    <p className="text-xs text-slate-400 mb-2">Pilih role yang akan menerima quiz ini:</p>
+                    <div className="border border-slate-200 rounded-xl p-3 space-y-1">
+                      {uniqueRoles.length === 0 && <p className="text-xs text-slate-400 text-center py-3">Tidak ada role ditemukan</p>}
+                      {uniqueRoles.map(role => {
+                        const checked = form.target_roles.includes(role);
+                        const count = teamUsers.filter(u => (u.role ?? '').toLowerCase() === role).length;
+                        return (
+                          <label key={role} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all ${checked ? 'bg-indigo-50 border border-indigo-200' : 'hover:bg-slate-50 border border-transparent'}`}>
+                            <input type="checkbox" checked={checked} onChange={() => toggleTargetRole(role)}
+                              className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400 flex-shrink-0" />
+                            <span className="text-sm font-semibold text-slate-800 flex-1">
+                              {roleLabel[role] ?? `📌 ${role.charAt(0).toUpperCase() + role.slice(1)}`}
+                            </span>
+                            <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full font-semibold">{count} user</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {form.target_roles.length > 0 && (
+                      <p className="text-xs text-indigo-600 font-semibold mt-1.5">
+                        ✓ {form.target_roles.length} role dipilih · {teamUsers.filter(u => form.target_roles.includes((u.role ?? '').toLowerCase())).length} user
+                      </p>
+                    )}
                   </div>
                 )}
-                {!form.target_all && form.target_user_ids.length > 0 && (
-                  <p className="text-xs text-indigo-600 font-semibold mt-1.5">✓ {form.target_user_ids.length} anggota dipilih</p>
+
+                {form.target_mode === 'user' && (
+                  <div>
+                    <p className="text-xs text-slate-400 mb-2">Pilih anggota secara individual:</p>
+                    <div className="border border-slate-200 rounded-xl p-3 max-h-52 overflow-y-auto space-y-1">
+                      {teamUsers.length === 0 && <p className="text-xs text-slate-400 text-center py-4">Tidak ada user ditemukan</p>}
+                      {teamUsers.map(u => {
+                        const checked = form.target_user_ids.includes(u.id);
+                        return (
+                          <label key={u.id} className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all ${checked ? 'bg-indigo-50 border border-indigo-200' : 'hover:bg-slate-50 border border-transparent'}`}>
+                            <input type="checkbox" checked={checked} onChange={() => toggleTargetUser(u.id)}
+                              className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400 flex-shrink-0" />
+                            <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-xs font-bold flex-shrink-0">
+                              {u.full_name?.[0]?.toUpperCase()}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-slate-800 truncate">{u.full_name}</p>
+                              <p className="text-[10px] text-slate-400">{u.role}{u.jabatan ? ` · ${u.jabatan}` : ''}</p>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {form.target_user_ids.length > 0 && (
+                      <p className="text-xs text-indigo-600 font-semibold mt-1.5">✓ {form.target_user_ids.length} anggota dipilih</p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
