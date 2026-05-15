@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase, User, QuizSession, fmtDate, ScoreBadge, SearchInput } from './shared';
+import { supabase, User, QuizSession, fmtDate, ScoreBadge, SearchInput, BtnView } from './shared';
 import { UserAnswerReview } from './TeamPage';
 
 export function ReportPage({ currentUser }: { currentUser: User }) {
@@ -93,7 +93,7 @@ export function ReportPage({ currentUser }: { currentUser: User }) {
                     <tr><td colSpan={8} className="text-center py-10 text-slate-400">Tidak ada peserta yang cocok</td></tr>
                   )}
                   {filtered.map((a: any, i: number) => (
-                    <tr key={a.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={a.id} className="stagger-item hover:bg-slate-50 transition-colors">
                       <td className="px-5 py-3.5 text-center">
                         <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black mx-auto ${i === 0 ? 'bg-amber-400 text-white' : i === 1 ? 'bg-slate-400 text-white' : i === 2 ? 'bg-orange-400 text-white' : 'text-slate-400'}`}>
                           {i < 3 ? ['🥇','🥈','🥉'][i] : i+1}
@@ -111,10 +111,7 @@ export function ReportPage({ currentUser }: { currentUser: User }) {
                       <td className="px-5 py-3.5 text-center text-slate-400 text-xs">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</td>
                       <td className="px-5 py-3.5 text-center">
                         {a.users && (
-                          <button onClick={() => setViewingUser({ user: a.users as User, attemptId: a.id })}
-                            className="px-2 py-1 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all">
-                            👁️ Jawaban
-                          </button>
+                          <BtnView onClick={() => setViewingUser({ user: a.users as User, attemptId: a.id })}>Jawaban</BtnView>
                         )}
                       </td>
                     </tr>

@@ -332,7 +332,7 @@ export function AdminDashboard({ user }: { user: User }) {
                 <tbody className="divide-y divide-slate-100">
                   {filteredPerformers.map((u, i) => (
                     <tr key={u.uid}
-                      className="hover:bg-indigo-50/60 cursor-pointer transition-colors group"
+                      className="stagger-item hover:bg-indigo-50/60 cursor-pointer transition-colors group"
                       onClick={() => setSelectedUser({ uid: u.uid, name: u.name })}>
                       <td className="px-4 py-3 text-center text-sm font-black text-slate-300">{i + 1}</td>
                       <td className="px-4 py-3">
@@ -573,12 +573,12 @@ export function AdminDashboard({ user }: { user: User }) {
                   {search ? 'Tidak ada hasil yang cocok' : 'Belum ada aktivitas quiz'}
                 </div>
               )}
-              {filteredRecent.slice(0, 10).map((a: any) => {
+              {filteredRecent.slice(0, 10).map((a: any, _ri: number) => {
                 const tq = a.total_questions ?? 0;
                 const ts = a.time_taken_sec ?? Infinity;
                 const isFast = tq >= 5 && ts < tq * 5;
                 return (
-                  <div key={a.id} className="flex items-center gap-4 px-6 py-3.5">
+                  <div key={a.id} className="stagger-item flex items-center gap-4 px-6 py-3.5">
                     <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold flex-shrink-0">
                       {a.users?.full_name?.[0] ?? '?'}
                     </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
-import { MiniPieChart } from '@/components/shared';
+import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup } from '@/components/shared';
 import { User, MovementLog, EVENTS, COLORS, splitTypeLines, fmtDate } from './_components/shared';
 import { ViewModal } from './_components/ViewModal';
 import { AddEditModal } from './_components/AddEditModal';
@@ -260,7 +260,7 @@ export default function UnitMovementPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto animate-zoom-in">
             <table className="w-full text-sm" style={{minWidth:1100}}>
               <thead>
                 <tr style={{background:'#f8fafc',borderBottom:'1px solid #e2e8f0'}}>
@@ -294,7 +294,7 @@ export default function UnitMovementPage() {
                   const isMasuk   = log.status_barang==='Masuk';
                   const typeLines = splitTypeLines(log.type_barang);
                   return (
-                    <tr key={log.id} className="transition-colors hover:bg-amber-50/40" style={{borderBottom:'1px solid #f1f5f9'}}>
+                    <tr key={log.id} className="stagger-item transition-colors hover:bg-amber-50/40" style={{borderBottom:'1px solid #f1f5f9'}}>
                       <td className="px-3 py-3 text-xs font-bold text-gray-400">{idx+1}</td>
                       <td className="px-3 py-3 text-xs text-gray-600 whitespace-nowrap">{fmtDate(log.tanggal)}</td>
                       <td className="px-3 py-3">
@@ -334,21 +334,15 @@ export default function UnitMovementPage() {
                           <p className="text-[10px] text-gray-400 font-mono mt-1">SN: {log.serial_number}</p>
                         )}
                       </td>
-                      {/* Action — emoji icons matching Reminder Schedule & Ticketing */}
+                      {/* Action */}
                       <td className="px-3 py-3">
-                        <div className="flex items-center gap-1">
-                          <button onClick={()=>setViewLog(log)} title="Lihat Detail" className="text-blue-500 hover:text-blue-700 transition-colors">
-                            <span className="text-sm">👁</span>
-                          </button>
+                        <ActionGroup>
+                          <ViewIconBtn onClick={()=>setViewLog(log)} label="Lihat" />
                           {isAdmin&&<>
-                            <button onClick={()=>setEditLog(log)} title="Edit" className="text-amber-500 hover:text-amber-700 transition-colors">
-                              <span className="text-sm">✏️</span>
-                            </button>
-                            <button onClick={()=>setDeleteConfirm(log)} title="Hapus" className="text-red-400 hover:text-red-600 transition-colors">
-                              <span className="text-sm">🗑️</span>
-                            </button>
+                            <EditIconBtn onClick={()=>setEditLog(log)} />
+                            <DeleteIconBtn onClick={()=>setDeleteConfirm(log)} />
                           </>}
-                        </div>
+                        </ActionGroup>
                       </td>
                     </tr>
                   );

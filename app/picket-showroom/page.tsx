@@ -15,6 +15,7 @@ import { FillDetailModal } from './_components/FillDetailModal';
 import { ScheduleModal } from './_components/ScheduleModal';
 import { ViewDetailModal } from './_components/ViewDetailModal';
 import { exportToExcel } from './_components/excel-export';
+import { ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup } from '@/components/shared';
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
@@ -330,7 +331,7 @@ export default function PiketShowroomPage() {
             {loading?(
               <div className="flex justify-center py-16"><div className="flex flex-col items-center gap-3"><div className="w-8 h-8 rounded-full border-2 border-t-red-600 border-red-200 animate-spin"/><p className="text-sm text-slate-500">Memuat jadwal...</p></div></div>
             ):(
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto animate-zoom-in">
                 {/* ── TABLE ── */}
                 <table className="w-full text-sm border-collapse" style={{minWidth:'1050px'}}>
                   <colgroup>
@@ -363,7 +364,7 @@ export default function PiketShowroomPage() {
                       const kgToShow=rowKg.length>0?rowKg:[null];
                       const countdownBadge=todayRow?null:diffDays===1?{label:'BESOK',color:'#d97706'}:diffDays>1&&diffDays<=9?{label:`${diffDays} hr lagi`,color:'#64748b'}:null;
                       return kgToShow.map((kg,kgIdx)=>(
-                        <tr key={`${row.id}-${kgIdx}`} className="transition-all duration-150"
+                        <tr key={`${row.id}-${kgIdx}`} className="stagger-item transition-all duration-150"
                           style={{borderBottom:kgIdx===kgToShow.length-1?'2px solid #cbd5e1':'1px solid #e2e8f0',background:todayRow?'rgba(37,99,235,0.06)':isVirtual?'rgba(148,163,184,0.04)':idx%2===0?'rgba(255,255,255,1)':'rgba(226,232,240,0.45)'}}>
                           {kgIdx===0&&(
                             <>
@@ -483,11 +484,11 @@ export default function PiketShowroomPage() {
                           {/* Action */}
                           {kgIdx===0&&(
                             <td className="px-1 py-3 align-middle text-center" rowSpan={kgToShow.length} style={{verticalAlign:'middle'}}>
-                              <div className="flex items-center justify-center gap-0.5">
-                                {!isVirtual&&<button onClick={()=>setViewDetail(row)} className="w-6 h-6 rounded flex items-center justify-center text-sm hover:bg-blue-100 transition-colors" title="View">👁️</button>}
-                                <button onClick={()=>isVirtual?handleFillVirtual(row):setFillDetail(row)} className="w-6 h-6 rounded flex items-center justify-center text-sm hover:bg-orange-100 transition-colors" title="Edit">✏️</button>
-                                {!isVirtual&&isAdmin&&<button onClick={()=>handleDeleteRow(row)} className="w-6 h-6 rounded flex items-center justify-center text-sm hover:bg-red-100 transition-colors" title="Delete">🗑️</button>}
-                              </div>
+                              <ActionGroup>
+                                {!isVirtual&&<ViewIconBtn onClick={()=>setViewDetail(row)} />}
+                                <EditIconBtn onClick={()=>isVirtual?handleFillVirtual(row):setFillDetail(row)} />
+                                {!isVirtual&&isAdmin&&<DeleteIconBtn onClick={()=>handleDeleteRow(row)} />}
+                              </ActionGroup>
                             </td>
                           )}
                         </tr>

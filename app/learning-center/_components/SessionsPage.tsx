@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, User, Material, Question, QuizSession, fmtDate, SearchInput, AppDialog, DialogState } from './shared';
+import { supabase, User, Material, Question, QuizSession, fmtDate, SearchInput, AppDialog, DialogState, BtnDelete } from './shared';
 
 export function SessionsPage({ user }: { user: User }) {
   const [sessions, setSessions] = useState<QuizSession[]>([]);
@@ -340,7 +340,7 @@ export function SessionsPage({ user }: { user: User }) {
               ? teamUsers.filter(u => s.target_user_ids!.includes(u.id)).map(u => u.full_name)
               : null;
             return (
-              <div key={s.id} className="rounded-2xl border border-white/60 shadow-sm p-5"
+              <div key={s.id} className="stagger-item rounded-2xl border border-white/60 shadow-sm p-5"
                 style={{ background: '#ffffff' }}>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
@@ -378,12 +378,10 @@ export function SessionsPage({ user }: { user: User }) {
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
                     <button onClick={() => toggleActive(s.id, s.is_active)}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${s.is_active ? 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'}`}>
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${s.is_active ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'}`}>
                       {s.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                     </button>
-                    <button onClick={() => handleDelete(s.id)} className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition-all border border-transparent hover:border-rose-200">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    </button>
+                    <BtnDelete onClick={() => handleDelete(s.id)} />
                   </div>
                 </div>
               </div>

@@ -198,7 +198,7 @@ export function ScorePage({ user }: { user: User }) {
                       // Mask name: show only initials for other participants
                       const maskedName = r.name.split(' ').map((w: string) => w[0] + '***').join(' ');
                       return (
-                        <tr key={r.uid} className={isMe ? 'bg-indigo-50 border-l-[3px] border-indigo-400' : 'hover:bg-slate-50'}>
+                        <tr key={r.uid} className={`stagger-item ${isMe ? 'bg-indigo-50 border-l-[3px] border-indigo-400' : 'hover:bg-slate-50'}`}>
                           <td className={`px-4 py-3 text-center font-black text-sm ${isMe ? 'text-indigo-600' : 'text-slate-300'}`}>
                             {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
                           </td>

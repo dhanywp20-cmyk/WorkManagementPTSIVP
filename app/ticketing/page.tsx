@@ -15,6 +15,7 @@ import {
   StatusDonutCard, SalesDivisionDonutCard, HandlerDonutCard,
   ProductDonutCard, InfoLine,
 } from "./_components/DonutCards";
+import { ViewIconBtn, DeleteIconBtn } from "@/components/shared";
 
 export default function TicketingSystem() {
   const router = useRouter();
@@ -2196,7 +2197,7 @@ export default function TicketingSystem() {
             ) : filteredTickets.length === 0 ? (
               <div className="text-center py-12"><div className="text-6xl mb-4">📭</div><p className="text-gray-600 font-medium">{searchProject || filterStatus !== "All" ? "No tickets match the search." : "No tickets yet. Create your first ticket!"}</p></div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto animate-zoom-in">
                 <table className="w-full table-fixed border-collapse" style={{ background: "transparent", minWidth: '1100px' }}>
                   <colgroup>
                     <col style={{ width: "3%" }} />   {/* No */}
@@ -2240,7 +2241,7 @@ export default function TicketingSystem() {
                       const isSolvedOverdue = overdue && ticket.status === "Solved";
                       const isActiveOverdue = overdue && ticket.status !== "Solved";
                       return (
-                        <tr key={ticket.id} className={`border-b border-gray-100 hover:bg-gray-50/70 transition-colors ${isActiveOverdue ? "bg-red-50 border-l-4 border-l-red-400" : isSolvedOverdue ? "bg-purple-50/60 border-l-4 border-l-purple-300" : "bg-white/40"}`}>
+                        <tr key={ticket.id} className={`stagger-item border-b border-gray-100 hover:bg-gray-50/70 transition-colors ${isActiveOverdue ? "bg-red-50 border-l-4 border-l-red-400" : isSolvedOverdue ? "bg-purple-50/60 border-l-4 border-l-purple-300" : "bg-white/40"}`}>
                           <td className="px-2 py-3 border-r border-gray-100 align-middle text-center" onClick={e => e.stopPropagation()}>
                             {selectMode && canAccessAccountSettings
                               ? <input type="checkbox" checked={selectedIds.has(ticket.id)}
@@ -2316,7 +2317,7 @@ export default function TicketingSystem() {
                             <div className="flex flex-wrap items-center justify-center gap-1.5">
                               {/* Activity log badge + View */}
                               <div className="relative inline-flex">
-                                <button onClick={() => { setSelectedTicket(ticket); setShowTicketDetailPopup(true); }} className="text-red-600 hover:text-red-800 transition-colors" title="View"><span className="text-sm">👁</span></button>
+                                <ViewIconBtn onClick={() => { setSelectedTicket(ticket); setShowTicketDetailPopup(true); }} label="Detail" />
                                 {ticket.activity_logs && ticket.activity_logs.length > 0 && (
                                   <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[9px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center leading-none">{ticket.activity_logs.length}</span>
                                 )}
@@ -2335,7 +2336,7 @@ export default function TicketingSystem() {
                               )}
                               {/* Hapus — admin only */}
                               {canAccessAccountSettings && (
-                                <button onClick={() => { setDeleteTargetTicket(ticket); setDeleteConfirmText(""); setShowDeleteModal(true); }} className="text-red-500 hover:text-red-700 transition-colors" title="Hapus Ticket"><span className="text-sm">🗑️</span></button>
+                                <DeleteIconBtn onClick={() => { setDeleteTargetTicket(ticket); setDeleteConfirmText(""); setShowDeleteModal(true); }} label="Hapus" />
                               )}
                               {/* Overdue Setting — admin only */}
                               {canAccessAccountSettings && (

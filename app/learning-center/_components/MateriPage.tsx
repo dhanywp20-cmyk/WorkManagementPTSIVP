@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   supabase, User, Material, FolderNode,
   buildFolderTree, countMaterials, fmtDate, SearchInput,
-  AppDialog, DialogState,
+  AppDialog, DialogState, BtnEdit, BtnDelete, BtnOpen,
 } from './shared';
 
 // ─── Folder Color Palette ─────────────────────────────────────────────────────
@@ -56,34 +56,13 @@ function MaterialCard({
       </div>
       <div className="flex items-center gap-1.5 flex-shrink-0">
         {m.file_url && (
-          <a href={m.file_url} target="_blank" rel="noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg text-white shadow-sm transition-all hover:scale-105"
-            style={{ background: `linear-gradient(135deg,${hex},${hex}cc)` }}>
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-            Buka
-          </a>
+          <BtnOpen onClick={() => window.open(m.file_url!, '_blank')}>Buka</BtnOpen>
         )}
         {isAdmin && onEdit && (
-          <button onClick={() => onEdit(m)}
-            style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:8, fontSize:11, fontWeight:600, background:'#eff6ff', color:'#2563eb', border:'1px solid #bfdbfe' }}
-            title="Edit">
-            <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            Edit
-          </button>
+          <BtnEdit onClick={() => onEdit(m)} />
         )}
         {isAdmin && onDelete && (
-          <button onClick={() => onDelete(m.id)}
-            style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:8, fontSize:11, fontWeight:600, background:'#fff1f2', color:'#be123c', border:'1px solid #fecdd3' }}
-            title="Hapus">
-            <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-            Hapus
-          </button>
+          <BtnDelete onClick={() => onDelete(m.id)} />
         )}
       </div>
     </div>

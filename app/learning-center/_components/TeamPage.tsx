@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, User, Question, QuizAttempt, DIFF_COLOR, fmtDate, ScoreBadge, SearchInput } from './shared';
+import { supabase, User, Question, QuizAttempt, DIFF_COLOR, fmtDate, ScoreBadge, SearchInput, BtnView } from './shared';
 
 function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: () => void; isAdminView: boolean }) {
   const [attempts, setAttempts] = useState<any[]>([]);
@@ -153,10 +153,7 @@ function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: (
               <span className={`text-xs font-bold px-2 py-1 rounded-full border ${a.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
                 {a.passed ? '✅ LULUS' : '❌ TIDAK LULUS'}
               </span>
-              <button onClick={() => handleViewDetail(a)}
-                className="px-3 py-1.5 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all flex items-center gap-1.5">
-                👁️ Detail Jawaban
-              </button>
+              <BtnView onClick={() => handleViewDetail(a)}>Detail Jawaban</BtnView>
             </div>
           </div>
         ))}
@@ -228,7 +225,7 @@ export function TeamPage() {
                 const avg = ua.length ? ua.reduce((s: number, a: any) => s + (a.score ?? 0), 0) / ua.length : null;
                 const passed = ua.filter((a: any) => a.passed).length;
                 return (
-                  <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={u.id} className="stagger-item hover:bg-slate-50 transition-colors">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2.5">
                         <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold flex-shrink-0">
@@ -252,10 +249,7 @@ export function TeamPage() {
                     </td>
                     <td className="px-5 py-3.5 text-center">
                       {ua.length > 0 && (
-                        <button onClick={() => setSelectedUser(u)}
-                          className="px-3 py-1 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all">
-                          👁️ Lihat Jawaban
-                        </button>
+                        <BtnView onClick={() => setSelectedUser(u)}>Lihat Jawaban</BtnView>
                       )}
                     </td>
                   </tr>

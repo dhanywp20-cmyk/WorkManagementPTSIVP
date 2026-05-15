@@ -386,7 +386,7 @@ export function MyQuizPage({ user }: { user: User }) {
         {filteredSessions.map(s => {
           const inProgress = activeAttempts[s.id];
           return (
-            <div key={s.id} className="rounded-2xl border border-white/60 shadow-sm p-6 flex items-start gap-5 hover:shadow-md transition-all"
+            <div key={s.id} className="stagger-item rounded-2xl border border-white/60 shadow-sm p-6 flex items-start gap-5 hover:shadow-md transition-all"
               style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)' }}>
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-2xl flex-shrink-0">🎯</div>
               <div className="flex-1 min-w-0">

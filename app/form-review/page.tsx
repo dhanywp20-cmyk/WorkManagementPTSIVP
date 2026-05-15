@@ -10,6 +10,7 @@ import {
 } from './_components/shared';
 import {
   FormField, SectionHeader, StarRating, LoadingScreen, MiniPieChart,
+  ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup,
 } from '@/components/shared';
 
 // ─── Main Component ────────────────────────────────────────────────────────────
@@ -1230,7 +1231,7 @@ export default function FormReviewPage() {
                 <p className="text-sm text-gray-400 mt-1">Form review muncul otomatis dari Reminder Schedule yang Solved</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto animate-zoom-in">
                 <table className="w-full border-collapse" style={{ tableLayout: 'fixed', background: 'transparent', minWidth: '920px' }}>
                   <colgroup>
                     <col style={{ width: '3%' }} />   {/* No */}
@@ -1270,7 +1271,7 @@ export default function FormReviewPage() {
                       return (
                         <tr key={r.id}
                           onClick={() => setDetailReview(r)}
-                          className="border-b border-gray-200 hover:bg-violet-50/20 transition-colors cursor-pointer border-l-4 border-l-transparent"
+                          className="stagger-item border-b border-gray-200 hover:bg-violet-50/20 transition-colors cursor-pointer border-l-4 border-l-transparent"
                           >
                           {/* No / Checkbox combined */}
                           <td className="px-3 py-3 border-r border-gray-200 align-middle text-center" onClick={e => e.stopPropagation()}>
@@ -1334,15 +1335,15 @@ export default function FormReviewPage() {
                           </td>
                           {/* Actions */}
                           <td className="px-3 py-1 align-middle text-center" onClick={e => e.stopPropagation()}>
-                            <div className="flex items-center justify-center gap-1">
-                              <button onClick={() => setDetailReview(r)} title="Detail" className="text-blue-500 hover:text-blue-700 transition-colors text-sm">👁</button>
+                            <ActionGroup>
+                              <ViewIconBtn onClick={() => setDetailReview(r)} label="Detail" />
                               {(isAdmin || isGuest) && (
-                                <button onClick={() => openEdit(r)} title="Edit / Isi Review" className="text-violet-500 hover:text-violet-700 transition-colors text-sm">✏️</button>
+                                <EditIconBtn onClick={() => openEdit(r)} label="Edit" />
                               )}
                               {isAdmin && (
-                                <button onClick={() => openDeleteModal(r)} title="Hapus" className="text-red-400 hover:text-red-600 transition-colors text-sm">🗑️</button>
+                                <DeleteIconBtn onClick={() => openDeleteModal(r)} label="Hapus" />
                               )}
-                            </div>
+                            </ActionGroup>
                           </td>
                         </tr>
                       );

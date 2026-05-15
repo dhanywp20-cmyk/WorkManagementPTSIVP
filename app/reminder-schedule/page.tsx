@@ -15,6 +15,7 @@ import { PriorityBadge, StatusBadge, CategoryBadge } from './_components/Badges'
 import {
   FormField, SectionHeader, SectionHeaderSmall, InfoRow,
   LoadingScreen, MiniPieChart,
+  ViewIconBtn, RescheduleIconBtn, DeleteIconBtn, ActionGroup,
 } from '@/components/shared';
 import { MiniCalendar } from './_components/MiniCalendar';
 import { RescheduleModal } from './_components/RescheduleModal';
@@ -1931,7 +1932,7 @@ export default function ReminderSchedulePage() {
                       <p className="text-xs text-gray-400 mt-1">Coba ubah filter atau tambahkan reminder baru</p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto animate-zoom-in">
                       <table className="w-full border-collapse" style={{ tableLayout: 'fixed', background: 'transparent' }}>
                         <colgroup>
                           <col style={{ width: '3%' }} />
@@ -1970,7 +1971,7 @@ export default function ReminderSchedulePage() {
                             const today = isDueToday(r.due_date);
                             return (
                               <tr key={r.id}
-                                className={`border-b border-gray-200 hover:bg-red-50/30 transition-colors cursor-pointer ${today ? 'bg-red-50/15 border-l-4 border-l-red-400' : 'border-l-4 border-l-transparent'}`}
+                                className={`stagger-item border-b border-gray-200 hover:bg-red-50/30 transition-colors cursor-pointer ${today ? 'bg-red-50/15 border-l-4 border-l-red-400' : 'border-l-4 border-l-transparent'}`}
                                 >
                                 {/* No */}
                                 <td className="px-3 py-3 border-r border-gray-200 align-middle text-center" onClick={e => e.stopPropagation()}>
@@ -2064,27 +2065,15 @@ export default function ReminderSchedulePage() {
                                 </td>
                                 {/* ACT */}
                                 <td className="px-3 py-1 align-middle text-center" onClick={e => e.stopPropagation()}>
-                                  <div className="flex flex-nowrap items-center justify-center gap-1">
-                                    {/* Detail */}
-                                    <button onClick={() => setDetailReminder(r)} title="Detail"
-                                      className="text-blue-500 hover:text-blue-700 transition-colors">
-                                      <span className="text-sm">👁</span>
-                                    </button>
-                                    {/* Re-Schedule — semua team PTS & admin bisa lihat */}
+                                  <ActionGroup>
+                                    <ViewIconBtn onClick={() => setDetailReminder(r)} label="Detail" />
                                     {(isAdmin || currentUser?.role === 'team') && r.status !== 'done' && (
-                                      <button onClick={() => setRescheduleTarget(r)} title="Re-Schedule"
-                                        className="text-amber-500 hover:text-amber-700 transition-colors">
-                                        <span className="text-sm">📅</span>
-                                      </button>
+                                      <RescheduleIconBtn onClick={() => setRescheduleTarget(r)} label="Jadwal" />
                                     )}
-                                    {/* Hapus — admin only */}
                                     {isAdmin && (
-                                      <button onClick={() => openDeleteModal(r)} title="Hapus"
-                                        className="text-red-400 hover:text-red-600 transition-colors">
-                                        <span className="text-sm">🗑️</span>
-                                      </button>
+                                      <DeleteIconBtn onClick={() => openDeleteModal(r)} label="Hapus" />
                                     )}
-                                  </div>
+                                  </ActionGroup>
                                 </td>
                               </tr>
                             );

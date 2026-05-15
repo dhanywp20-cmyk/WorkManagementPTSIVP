@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase, User, fmtDate, SearchInput } from './shared';
+import { supabase, User, fmtDate, SearchInput, BtnView } from './shared';
 import { UserAnswerReview } from './TeamPage';
 
 export function HistoryPage({ user }: { user: User }) {
@@ -51,7 +51,7 @@ export function HistoryPage({ user }: { user: User }) {
             </div>
           )}
           {filtered.map(a => (
-            <div key={a.id} className="rounded-2xl border border-slate-200 shadow-sm p-5 flex items-center gap-5"
+            <div key={a.id} className="stagger-item rounded-2xl border border-slate-200 shadow-sm p-5 flex items-center gap-5"
               style={{ background: '#ffffff' }}>
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white flex-shrink-0 ${a.passed ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-rose-400 to-rose-600'}`}>
                 {a.score?.toFixed(0) ?? '—'}
@@ -72,10 +72,7 @@ export function HistoryPage({ user }: { user: User }) {
                   </span>
                   <p className="text-xs text-slate-400 mt-1.5">{a.submitted_at ? fmtDate(a.submitted_at) : ''}</p>
                 </div>
-                <button onClick={() => setViewingAttempt(a)}
-                  className="px-3 py-1.5 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all flex items-center gap-1.5">
-                  📋 Lihat Jawaban
-                </button>
+                <BtnView onClick={() => setViewingAttempt(a)}>Lihat Jawaban</BtnView>
               </div>
             </div>
           ))}
