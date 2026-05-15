@@ -274,39 +274,124 @@ export function AdminDashboard({ user }: { user: User }) {
           ))}
         </div>
 
-        {/* ── Analytics Overview (mini pies) ── */}
-        {overviewStats.submitted > 0 && (() => {
-          const partPct   = overviewStats.totalUsers > 0 ? Math.round(overviewStats.participants / overviewStats.totalUsers * 100) : 0;
-          const passPct   = overviewStats.submitted > 0 ? Math.round(overviewStats.passCount / overviewStats.submitted * 100) : 0;
-          const compTotal = overviewStats.submitted + overviewStats.abandoned;
-          const compPct   = compTotal > 0 ? Math.round(overviewStats.submitted / compTotal * 100) : 0;
-          const miniCards = [
-            { title: 'Partisipasi Tim',  sub: `${overviewStats.participants} dari ${overviewStats.totalUsers} anggota`, label: `${partPct}%`,
-              segments: [{ value: overviewStats.participants, color: '#6366f1' }, { value: Math.max(overviewStats.totalUsers - overviewStats.participants, 0), color: '#e0e7ff' }] },
-            { title: 'Pass Rate Global', sub: `${overviewStats.passCount} lulus · ${overviewStats.failCount} gagal`, label: `${passPct}%`,
-              segments: [{ value: overviewStats.passCount, color: '#10b981' }, { value: overviewStats.failCount, color: '#f43f5e' }] },
-            { title: 'Distribusi Nilai', sub: `≥80: ${overviewStats.scoreGood} · 60–79: ${overviewStats.scoreMid} · <60: ${overviewStats.scoreLow}`, label: `${overviewStats.submitted}`,
-              segments: [{ value: overviewStats.scoreGood, color: '#3b82f6' }, { value: overviewStats.scoreMid, color: '#f59e0b' }, { value: overviewStats.scoreLow, color: '#ef4444' }] },
-            { title: 'Completion Rate',  sub: `${overviewStats.abandoned} tidak selesai`, label: `${compPct}%`,
-              segments: [{ value: overviewStats.submitted, color: '#10b981' }, { value: overviewStats.abandoned, color: '#cbd5e1' }] },
-          ];
-          return (
-            <section>
-              <SectionHeader>🥧 Analytics Overview</SectionHeader>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {miniCards.map(c => (
-                  <div key={c.title} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col items-center gap-3">
-                    <DonutChart segments={c.segments} size={72} strokeWidth={10} label={c.label} />
-                    <div className="text-center">
-                      <p className="text-xs font-bold text-slate-700">{c.title}</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">{c.sub}</p>
+        {/* ── Analytics Overview + Top Performers (side by side) ── */}
+        <div className="flex flex-col xl:flex-row gap-6 items-start">
+
+          {/* Left: Analytics Overview mini pies */}
+          {overviewStats.submitted > 0 && (() => {
+            const partPct   = overviewStats.totalUsers > 0 ? Math.round(overviewStats.participants / overviewStats.totalUsers * 100) : 0;
+            const passPct   = overviewStats.submitted > 0 ? Math.round(overviewStats.passCount / overviewStats.submitted * 100) : 0;
+            const compTotal = overviewStats.submitted + overviewStats.abandoned;
+            const compPct   = compTotal > 0 ? Math.round(overviewStats.submitted / compTotal * 100) : 0;
+            const miniCards = [
+              { title: 'Partisipasi Tim',  sub: `${overviewStats.participants} dari ${overviewStats.totalUsers}`, label: `${partPct}%`,
+                segments: [{ value: overviewStats.participants, color: '#6366f1' }, { value: Math.max(overviewStats.totalUsers - overviewStats.participants, 0), color: '#e0e7ff' }] },
+              { title: 'Pass Rate',        sub: `${overviewStats.passCount} lulus · ${overviewStats.failCount} gagal`, label: `${passPct}%`,
+                segments: [{ value: overviewStats.passCount, color: '#10b981' }, { value: overviewStats.failCount, color: '#f43f5e' }] },
+              { title: 'Distribusi',       sub: `≥80: ${overviewStats.scoreGood} · 60–79: ${overviewStats.scoreMid} · <60: ${overviewStats.scoreLow}`, label: `${overviewStats.submitted}`,
+                segments: [{ value: overviewStats.scoreGood, color: '#3b82f6' }, { value: overviewStats.scoreMid, color: '#f59e0b' }, { value: overviewStats.scoreLow, color: '#ef4444' }] },
+              { title: 'Completion',       sub: `${overviewStats.abandoned} tidak selesai`, label: `${compPct}%`,
+                segments: [{ value: overviewStats.submitted, color: '#10b981' }, { value: overviewStats.abandoned, color: '#cbd5e1' }] },
+            ];
+            return (
+              <div className="xl:w-56 flex-shrink-0">
+                <SectionHeader>🥧 Analytics Overview</SectionHeader>
+                <div className="grid grid-cols-2 gap-2">
+                  {miniCards.map(c => (
+                    <div key={c.title} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 flex flex-col items-center gap-2">
+                      <DonutChart segments={c.segments} size={54} strokeWidth={8} label={c.label} />
+                      <div className="text-center">
+                        <p className="text-[10px] font-bold text-slate-700 leading-tight">{c.title}</p>
+                        <p className="text-[9px] text-slate-400 mt-0.5 leading-relaxed">{c.sub}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </section>
-          );
-        })()}
+            );
+          })()}
+
+          {/* Right: Top Performers */}
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+              <SectionHeader>🏆 Top Performers</SectionHeader>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                <p className="text-xs text-slate-400">Klik nama untuk detail per quiz</p>
+                <SearchInput value={searchPerformer} onChange={setSearchPerformer} placeholder="Cari nama..." />
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+              <table className="w-full text-sm" style={{ minWidth: '520px' }}>
+                <thead className="border-b border-slate-200 bg-slate-50">
+                  <tr>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-8">#</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Nama</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Quiz</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Score</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Lulus</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Flags</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredPerformers.map((u, i) => (
+                    <tr key={u.uid}
+                      className="hover:bg-indigo-50/60 cursor-pointer transition-colors group"
+                      onClick={() => setSelectedUser({ uid: u.uid, name: u.name })}>
+                      <td className="px-4 py-3 text-center text-sm font-black text-slate-300">{i + 1}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold text-slate-800 group-hover:text-indigo-700 transition-colors text-sm">{u.name}</span>
+                          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-400 font-semibold">👁</span>
+                          {u.consistency !== null && u.consistency > 40 && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">⚡ Inkonsisten</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-center text-slate-500 text-xs font-semibold">{u.total}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center">
+                          <DonutChart
+                            segments={[
+                              { value: u.avg, color: u.avg >= 80 ? '#10b981' : u.avg >= 70 ? '#f59e0b' : '#f43f5e' },
+                              { value: 100 - u.avg, color: '#f1f5f9' },
+                            ]}
+                            size={34} strokeWidth={5} label={u.avg.toFixed(0)}
+                          />
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${u.passed > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'}`}>
+                          {u.passed}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-1 flex-wrap">
+                          {u.tabSw > 0 && (
+                            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">⚠️ {u.tabSw}×</span>
+                          )}
+                          {u.fastCount > 0 && (
+                            <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full">🚨 {u.fastCount}×</span>
+                          )}
+                          {u.tabSw === 0 && u.fastCount === 0 && <span className="text-xs text-slate-300">—</span>}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredPerformers.length === 0 && (
+                    <tr><td colSpan={6} className="text-center py-10 text-slate-400 text-sm">
+                      {loadingAnalytics ? 'Memuat data...' : searchPerformer ? 'Tidak ada hasil' : 'Belum ada data'}
+                    </td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex flex-wrap gap-3 mt-2 px-1">
+              <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="font-bold text-amber-700">⚠️</span> Pindah tab</span>
+              <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="font-bold text-rose-700">🚨</span> Submit &lt;5det/soal</span>
+              <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="font-bold text-amber-700">⚡</span> Nilai inkonsisten &gt;40pt</span>
+            </div>
+          </div>
+        </div>
 
         {/* ── Session Statistics ── */}
         {sessionStats.length > 0 && (
@@ -408,87 +493,6 @@ export function AdminDashboard({ user }: { user: User }) {
             </div>
           </section>
         )}
-
-        {/* ── Top Performers ── */}
-        <section>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-            <SectionHeader>🏆 Top Performers</SectionHeader>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-              <p className="text-xs text-slate-400">Klik nama untuk detail per quiz</p>
-              <SearchInput value={searchPerformer} onChange={setSearchPerformer} placeholder="Cari nama..." />
-            </div>
-          </div>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
-            <table className="w-full text-sm" style={{ minWidth: '620px' }}>
-              <thead className="border-b border-slate-200 bg-slate-50">
-                <tr>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-10">#</th>
-                  <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Nama</th>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Quiz</th>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Score</th>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Lulus</th>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Flags</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredPerformers.map((u, i) => (
-                  <tr key={u.uid}
-                    className="hover:bg-indigo-50/60 cursor-pointer transition-colors group"
-                    onClick={() => setSelectedUser({ uid: u.uid, name: u.name })}>
-                    <td className="px-5 py-3.5 text-center text-sm font-black text-slate-300">{i + 1}</td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-semibold text-slate-800 group-hover:text-indigo-700 transition-colors">{u.name}</span>
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-400 font-semibold">👁 detail</span>
-                        {u.consistency !== null && u.consistency > 40 && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">⚡ Inkonsisten</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 text-center text-slate-500 text-xs font-semibold">{u.total}</td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center justify-center">
-                        <DonutChart
-                          segments={[
-                            { value: u.avg, color: u.avg >= 80 ? '#10b981' : u.avg >= 70 ? '#f59e0b' : '#f43f5e' },
-                            { value: 100 - u.avg, color: '#f1f5f9' },
-                          ]}
-                          size={36} strokeWidth={6} label={u.avg.toFixed(0)}
-                        />
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 text-center">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${u.passed > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'}`}>
-                        {u.passed}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5 text-center">
-                      <div className="flex items-center justify-center gap-1 flex-wrap">
-                        {u.tabSw > 0 && (
-                          <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">⚠️ {u.tabSw}×</span>
-                        )}
-                        {u.fastCount > 0 && (
-                          <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full">🚨 {u.fastCount}×</span>
-                        )}
-                        {u.tabSw === 0 && u.fastCount === 0 && <span className="text-xs text-slate-300">—</span>}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {filteredPerformers.length === 0 && (
-                  <tr><td colSpan={6} className="text-center py-12 text-slate-400 text-sm">
-                    {loadingAnalytics ? 'Memuat data...' : searchPerformer ? 'Tidak ada hasil' : 'Belum ada data'}
-                  </td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          <div className="flex flex-wrap gap-4 mt-2 px-1">
-            <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="font-bold text-amber-700">⚠️</span> Pindah tab saat quiz</span>
-            <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="font-bold text-rose-700">🚨</span> Submit &lt;5 detik/soal</span>
-            <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="font-bold text-amber-700">⚡</span> Nilai tidak konsisten (&gt;40 poin selisih)</span>
-          </div>
-        </section>
 
         {/* ── Per Divisi / Jabatan Ranking ── */}
         {divisionStats.length > 0 && (
