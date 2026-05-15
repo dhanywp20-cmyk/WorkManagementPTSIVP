@@ -305,7 +305,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
           if (qErr) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Gagal hapus soal terkait: ' + qErr.message }); return; }
         }
         const results = await Promise.all(affected.map(m => supabase.from('lc_materials').delete().eq('id', m.id)));
-        const err = results.find(r => r.error)?.error;
+        const err = results.find((r: { error: unknown }) => r.error)?.error as { message: string } | undefined;
         if (err) { setDialog({ type: 'error', title: 'Gagal Hapus Folder', message: 'Gagal hapus materi: ' + err.message }); return; }
         if (selectedFolderKey === folderName) setSelectedFolderKey(null);
         load();
