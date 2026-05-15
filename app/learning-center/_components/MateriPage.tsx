@@ -256,11 +256,14 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
     setDialog({
       type: 'confirm',
       title: 'Hapus Materi',
-      message: 'Materi ini akan dihapus permanen. Lanjutkan?',
+      message: 'Materi dan semua soal yang terkait akan dihapus permanen. Lanjutkan?',
       confirmLabel: 'Hapus',
       onConfirm: async () => {
+        // Delete linked questions first (FK constraint)
+        const { error: qErr } = await supabase.from('lc_questions').delete().eq('material_id', id);
+        if (qErr) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Gagal hapus soal terkait: ' + qErr.message }); return; }
         const { error } = await supabase.from('lc_materials').delete().eq('id', id);
-        if (error) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Error: ' + error.message + ' (code: ' + error.code + ')' }); return; }
+        if (error) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Gagal hapus materi: ' + error.message }); return; }
         load();
       },
     });
@@ -295,9 +298,15 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
       message: `Folder "${folderName}" dan semua ${affected.length} materi di dalamnya akan dihapus permanen. Lanjutkan?`,
       confirmLabel: 'Hapus Folder',
       onConfirm: async () => {
+        const ids = affected.map(m => m.id);
+        // Delete linked questions first (FK constraint)
+        if (ids.length > 0) {
+          const { error: qErr } = await supabase.from('lc_questions').delete().in('material_id', ids);
+          if (qErr) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Gagal hapus soal terkait: ' + qErr.message }); return; }
+        }
         const results = await Promise.all(affected.map(m => supabase.from('lc_materials').delete().eq('id', m.id)));
         const err = results.find(r => r.error)?.error;
-        if (err) { setDialog({ type: 'error', title: 'Gagal Hapus Folder', message: 'Error: ' + err.message + ' (code: ' + err.code + ')' }); return; }
+        if (err) { setDialog({ type: 'error', title: 'Gagal Hapus Folder', message: 'Gagal hapus materi: ' + err.message }); return; }
         if (selectedFolderKey === folderName) setSelectedFolderKey(null);
         load();
       },

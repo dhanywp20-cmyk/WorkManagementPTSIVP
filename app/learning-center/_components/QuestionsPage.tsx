@@ -66,8 +66,11 @@ export function QuestionsPage({ user }: { user: User }) {
       confirmLabel: 'Hapus Semua',
       onConfirm: async () => {
         if (matIds.length > 0) {
+          // Get all question IDs in this folder, delete answers first
+          const qIds = questions.filter(q => matIds.includes(q.material_id)).map(q => q.id);
+          if (qIds.length > 0) await supabase.from('lc_answers').delete().in('question_id', qIds);
           const { error } = await supabase.from('lc_questions').delete().in('material_id', matIds);
-          if (error) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Error: ' + error.message + ' (code: ' + error.code + ')' }); return; }
+          if (error) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Error: ' + error.message }); return; }
         }
         load();
       },
@@ -184,8 +187,10 @@ export function QuestionsPage({ user }: { user: User }) {
       message: 'Soal ini akan dihapus permanen. Lanjutkan?',
       confirmLabel: 'Hapus',
       onConfirm: async () => {
+        // Delete linked answers first (FK constraint)
+        await supabase.from('lc_answers').delete().eq('question_id', id);
         const { error } = await supabase.from('lc_questions').delete().eq('id', id);
-        if (error) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Error: ' + error.message + ' (code: ' + error.code + ')' }); return; }
+        if (error) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Error: ' + error.message }); return; }
         load();
       },
     });
@@ -198,8 +203,11 @@ export function QuestionsPage({ user }: { user: User }) {
       message: `Semua ${count} soal pada materi "${matName}" akan dihapus permanen. Lanjutkan?`,
       confirmLabel: 'Hapus Semua',
       onConfirm: async () => {
+        // Get question IDs first, delete answers, then questions
+        const qIds = questions.filter(q => q.material_id === matId).map(q => q.id);
+        if (qIds.length > 0) await supabase.from('lc_answers').delete().in('question_id', qIds);
         const { error } = await supabase.from('lc_questions').delete().eq('material_id', matId);
-        if (error) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Error: ' + error.message + ' (code: ' + error.code + ')' }); return; }
+        if (error) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Error: ' + error.message }); return; }
         load();
       },
     });
