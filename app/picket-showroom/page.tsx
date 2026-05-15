@@ -337,8 +337,8 @@ export default function PiketShowroomPage() {
                 {/* ── TABLE ── */}
                 <table className="w-full text-sm border-collapse" style={{minWidth:'1050px'}}>
                   <colgroup>
-                    <col style={{width:'3%'}}/><col style={{width:'6%'}}/><col style={{width:'7%'}}/><col style={{width:'15%'}}/><col style={{width:'6%'}}/><col style={{width:'9%'}}/>
-                    <col style={{width:'9%'}}/><col style={{width:'7%'}}/><col style={{width:'23%'}}/><col style={{width:'5%'}}/><col style={{width:'9%'}}/>
+                    <col style={{width:'3%'}}/><col style={{width:'8%'}}/><col style={{width:'7%'}}/><col style={{width:'15%'}}/><col style={{width:'6%'}}/><col style={{width:'9%'}}/>
+                    <col style={{width:'9%'}}/><col style={{width:'7%'}}/><col style={{width:'21%'}}/><col style={{width:'5%'}}/><col style={{width:'9%'}}/>
                   </colgroup>
                   <thead>
                     <tr style={{background:'linear-gradient(135deg,#fff1f2 0%,#ffe4e6 100%)',borderBottom:'2px solid rgba(220,38,38,0.18)'}}>
@@ -367,7 +367,7 @@ export default function PiketShowroomPage() {
                       const countdownBadge=todayRow?null:diffDays===1?{label:'BESOK',color:'#d97706'}:diffDays>1&&diffDays<=9?{label:`${diffDays} hr lagi`,color:'#64748b'}:null;
                       return kgToShow.map((kg,kgIdx)=>(
                         <tr key={`${row.id}-${kgIdx}`} className="stagger-item transition-all duration-150"
-                          style={{borderBottom:kgIdx===kgToShow.length-1?'2px solid #cbd5e1':'1px solid #e2e8f0',background:todayRow?'rgba(37,99,235,0.06)':isVirtual?'rgba(148,163,184,0.04)':idx%2===0?'rgba(255,255,255,1)':'rgba(219,234,254,0.38)'}}>
+                          style={{borderBottom:kgIdx===kgToShow.length-1?(todayRow?'2px solid #16a34a60':'2px solid #cbd5e1'):'1px solid #e2e8f0',background:todayRow?'rgba(22,163,74,0.10)':isVirtual?'rgba(148,163,184,0.04)':idx%2===0?'rgba(255,255,255,1)':'rgba(219,234,254,0.38)'}}>
                           {kgIdx===0&&(
                             <>
                               <td className="px-3 py-3 text-gray-400 text-xs align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #cbd5e1',verticalAlign:'middle'}}>{idx+1}</td>
