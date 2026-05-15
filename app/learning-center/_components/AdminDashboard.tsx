@@ -294,9 +294,9 @@ export function AdminDashboard({ user }: { user: User }) {
                 segments: [{ value: overviewStats.submitted, color: '#10b981' }, { value: overviewStats.abandoned, color: '#cbd5e1' }] },
             ];
             return (
-              <div className="flex-1 min-w-0">
+              <div className="xl:w-[300px] flex-shrink-0">
                 <SectionHeader>🥧 Analytics Overview</SectionHeader>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   {miniCards.map(c => (
                     <div key={c.title} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col items-center gap-3">
                       <DonutChart segments={c.segments} size={72} strokeWidth={10} label={c.label} />
@@ -312,7 +312,7 @@ export function AdminDashboard({ user }: { user: User }) {
           })()}
 
           {/* Right: Top Performers */}
-          <div className="xl:w-[400px] flex-shrink-0">
+          <div className="flex-1 min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
               <SectionHeader>🏆 Top Performers</SectionHeader>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
@@ -321,7 +321,7 @@ export function AdminDashboard({ user }: { user: User }) {
               </div>
             </div>
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
-              <table className="w-full text-sm" style={{ minWidth: '360px' }}>
+              <table className="w-full text-sm" style={{ minWidth: '480px' }}>
                 <thead className="border-b border-slate-200 bg-slate-50">
                   <tr>
                     <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-8">#</th>
