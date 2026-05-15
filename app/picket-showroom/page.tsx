@@ -337,8 +337,8 @@ export default function PiketShowroomPage() {
                 {/* ── TABLE ── */}
                 <table className="w-full text-sm border-collapse" style={{minWidth:'1050px'}}>
                   <colgroup>
-                    <col style={{width:'3%'}}/><col style={{width:'9%'}}/><col style={{width:'10%'}}/><col style={{width:'9%'}}/><col style={{width:'7%'}}/><col style={{width:'9%'}}/>
-                    <col style={{width:'11%'}}/><col style={{width:'8%'}}/><col style={{width:'16%'}}/><col style={{width:'5%'}}/><col style={{width:'13%'}}/>
+                    <col style={{width:'3%'}}/><col style={{width:'6%'}}/><col style={{width:'7%'}}/><col style={{width:'15%'}}/><col style={{width:'6%'}}/><col style={{width:'9%'}}/>
+                    <col style={{width:'9%'}}/><col style={{width:'7%'}}/><col style={{width:'23%'}}/><col style={{width:'5%'}}/><col style={{width:'9%'}}/>
                   </colgroup>
                   <thead>
                     <tr style={{background:'linear-gradient(135deg,#fff1f2 0%,#ffe4e6 100%)',borderBottom:'2px solid rgba(220,38,38,0.18)'}}>

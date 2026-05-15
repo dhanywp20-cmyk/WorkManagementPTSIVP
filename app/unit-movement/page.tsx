@@ -272,7 +272,7 @@ export default function UnitMovementPage() {
                   <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap w-24">Status</th>
                   <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap w-28">Event</th>
                   <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400" style={{minWidth:300}}>Type &amp; SN</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 w-28">Action</th>
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 w-36">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -335,7 +335,7 @@ export default function UnitMovementPage() {
                         )}
                       </td>
                       {/* Action */}
-                      <td className="px-3 py-3">
+                      <td className="px-1 py-3">
                         <ActionGroup>
                           <ViewIconBtn onClick={()=>setViewLog(log)} label="Lihat" />
                           {isAdmin&&<>
