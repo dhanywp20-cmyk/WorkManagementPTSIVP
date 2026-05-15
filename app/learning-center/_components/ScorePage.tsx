@@ -183,7 +183,7 @@ export function ScorePage({ user }: { user: User }) {
             <div>
               <SectionHeader>🏆 Posisi Kamu di Leaderboard</SectionHeader>
               <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
-                <table className="w-full text-sm" style={{ minWidth: '300px' }}>
+                <table className="w-full text-sm table-zebra" style={{ minWidth: '300px' }}>
                   <thead className="border-b border-slate-200 bg-slate-50">
                     <tr>
                       <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-10">#</th>
@@ -273,7 +273,7 @@ export function ScorePage({ user }: { user: User }) {
         <section>
           <SectionHeader>📋 Rekap Nilai Per Quiz</SectionHeader>
           <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
-            <table className="w-full text-sm" style={{ minWidth: '520px' }}>
+            <table className="w-full text-sm table-zebra" style={{ minWidth: '520px' }}>
               <thead className="border-b border-slate-200 bg-slate-50">
                 <tr>
                   <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest">Quiz</th>

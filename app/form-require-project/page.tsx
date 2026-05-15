@@ -1688,7 +1688,7 @@ Hubungi Admin untuk info lebih lanjut.
             </div>
           ) : (
             <div className="overflow-x-auto animate-zoom-in">
-              <table className="w-full border-collapse table-fixed" style={{ background: 'transparent', minWidth: '900px' }}>
+              <table className="w-full border-collapse table-fixed table-zebra" style={{ background: 'transparent', minWidth: '900px' }}>
                 <colgroup>
                   <col style={{ width: '56px' }} />
                   <col style={{ width: '200px' }} />

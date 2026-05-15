@@ -318,7 +318,7 @@ export function AdminDashboard({ user }: { user: User }) {
               <SearchInput value={searchPerformer} onChange={setSearchPerformer} placeholder="Cari nama..." />
             </div>
             <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
-              <table className="w-full text-sm" style={{ minWidth: '480px' }}>
+              <table className="w-full text-sm table-zebra" style={{ minWidth: '480px' }}>
                 <thead className="border-b border-slate-200 bg-slate-50">
                   <tr>
                     <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-8">#</th>
@@ -506,7 +506,7 @@ export function AdminDashboard({ user }: { user: User }) {
           <section>
             <SectionHeader>🏢 Ranking Per Divisi / Jabatan</SectionHeader>
             <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
-              <table className="w-full text-sm" style={{ minWidth: '480px' }}>
+              <table className="w-full text-sm table-zebra" style={{ minWidth: '480px' }}>
                 <thead className="border-b border-slate-200 bg-slate-50">
                   <tr>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-10">#</th>

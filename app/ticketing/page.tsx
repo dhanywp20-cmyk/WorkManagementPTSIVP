@@ -2201,7 +2201,7 @@ export default function TicketingSystem() {
               <div className="text-center py-12"><div className="text-6xl mb-4">📭</div><p className="text-gray-600 font-medium">{searchProject || filterStatus !== "All" ? "No tickets match the search." : "No tickets yet. Create your first ticket!"}</p></div>
             ) : (
               <div className="overflow-x-auto animate-zoom-in">
-                <table className="w-full table-fixed border-collapse" style={{ background: "transparent", minWidth: '1100px' }}>
+                <table className="w-full table-fixed border-collapse table-zebra" style={{ background: "transparent", minWidth: '1100px' }}>
                   <colgroup>
                     <col style={{ width: "3%" }} />   {/* No */}
                     <col style={{ width: "17%" }} />  {/* Project / Lokasi*/}
@@ -2244,7 +2244,7 @@ export default function TicketingSystem() {
                       const isSolvedOverdue = overdue && ticket.status === "Solved";
                       const isActiveOverdue = overdue && ticket.status !== "Solved";
                       return (
-                        <tr key={ticket.id} className={`stagger-item border-b border-gray-100 hover:bg-gray-50/70 transition-colors ${isActiveOverdue ? "bg-red-50 border-l-4 border-l-red-400" : isSolvedOverdue ? "bg-purple-50/60 border-l-4 border-l-purple-300" : "bg-white/40"}`}>
+                        <tr key={ticket.id} className={`stagger-item border-b border-gray-100 hover:bg-gray-50/70 transition-colors ${isActiveOverdue ? "bg-red-50 border-l-4 border-l-red-400" : isSolvedOverdue ? "bg-purple-50/60 border-l-4 border-l-purple-300" : ""}`}>
                           <td className="px-2 py-3 border-r border-gray-100 align-middle text-center" onClick={e => e.stopPropagation()}>
                             {selectMode && canAccessAccountSettings
                               ? <input type="checkbox" checked={selectedIds.has(ticket.id)}

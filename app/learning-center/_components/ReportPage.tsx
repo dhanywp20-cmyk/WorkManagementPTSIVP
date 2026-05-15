@@ -75,7 +75,7 @@ export function ReportPage({ currentUser }: { currentUser: User }) {
 
             <div className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto"
               style={{ background: '#ffffff' }}>
-              <table className="w-full text-sm" style={{ minWidth: '680px' }}>
+              <table className="w-full text-sm table-zebra" style={{ minWidth: '680px' }}>
                 <thead className="border-b border-slate-200" style={{ background: 'rgba(248,250,252,0.98)' }}>
                   <tr>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest w-10">#</th>

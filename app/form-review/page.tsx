@@ -1232,7 +1232,7 @@ export default function FormReviewPage() {
               </div>
             ) : (
               <div className="overflow-x-auto animate-zoom-in">
-                <table className="w-full border-collapse" style={{ tableLayout: 'fixed', background: 'transparent', minWidth: '920px' }}>
+                <table className="w-full border-collapse table-zebra" style={{ tableLayout: 'fixed', background: 'transparent', minWidth: '920px' }}>
                   <colgroup>
                     <col style={{ width: '3%' }} />   {/* No */}
                     <col style={{ width: '14%' }} />  {/* Project */}

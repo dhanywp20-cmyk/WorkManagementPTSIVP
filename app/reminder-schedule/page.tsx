@@ -1933,7 +1933,7 @@ export default function ReminderSchedulePage() {
                     </div>
                   ) : (
                     <div className="overflow-x-auto animate-zoom-in">
-                      <table className="w-full border-collapse" style={{ tableLayout: 'fixed', background: 'transparent' }}>
+                      <table className="w-full border-collapse table-zebra" style={{ tableLayout: 'fixed', background: 'transparent' }}>
                         <colgroup>
                           <col style={{ width: '3%' }} />
                           <col style={{ width: '13%' }} />

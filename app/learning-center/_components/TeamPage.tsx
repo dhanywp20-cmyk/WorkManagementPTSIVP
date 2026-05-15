@@ -205,7 +205,7 @@ export function TeamPage() {
       <div className="p-8">
         <div className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
           style={{ background: '#ffffff' }}>
-          <table className="w-full text-sm">
+          <table className="w-full text-sm table-zebra">
             <thead className="border-b border-slate-200" style={{ background: 'rgba(248,250,252,0.98)' }}>
               <tr>
                 <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest">Nama</th>

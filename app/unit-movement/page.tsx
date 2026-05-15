@@ -261,7 +261,7 @@ export default function UnitMovementPage() {
           </div>
 
           <div className="overflow-x-auto animate-zoom-in">
-            <table className="w-full text-sm" style={{minWidth:1100}}>
+            <table className="w-full text-sm table-zebra" style={{minWidth:1100}}>
               <thead>
                 <tr style={{background:'#f8fafc',borderBottom:'1px solid #e2e8f0'}}>
                   <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 w-10">No</th>
