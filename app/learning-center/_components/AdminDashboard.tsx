@@ -284,25 +284,25 @@ export function AdminDashboard({ user }: { user: User }) {
             const compTotal = overviewStats.submitted + overviewStats.abandoned;
             const compPct   = compTotal > 0 ? Math.round(overviewStats.submitted / compTotal * 100) : 0;
             const miniCards = [
-              { title: 'Partisipasi Tim',  sub: `${overviewStats.participants} dari ${overviewStats.totalUsers}`, label: `${partPct}%`,
+              { title: 'Partisipasi Tim',  sub: `${overviewStats.participants} dari ${overviewStats.totalUsers} anggota`, label: `${partPct}%`,
                 segments: [{ value: overviewStats.participants, color: '#6366f1' }, { value: Math.max(overviewStats.totalUsers - overviewStats.participants, 0), color: '#e0e7ff' }] },
-              { title: 'Pass Rate',        sub: `${overviewStats.passCount} lulus · ${overviewStats.failCount} gagal`, label: `${passPct}%`,
+              { title: 'Pass Rate Global', sub: `${overviewStats.passCount} lulus · ${overviewStats.failCount} gagal`, label: `${passPct}%`,
                 segments: [{ value: overviewStats.passCount, color: '#10b981' }, { value: overviewStats.failCount, color: '#f43f5e' }] },
-              { title: 'Distribusi',       sub: `≥80: ${overviewStats.scoreGood} · 60–79: ${overviewStats.scoreMid} · <60: ${overviewStats.scoreLow}`, label: `${overviewStats.submitted}`,
+              { title: 'Distribusi Nilai', sub: `≥80: ${overviewStats.scoreGood} · 60–79: ${overviewStats.scoreMid} · <60: ${overviewStats.scoreLow}`, label: `${overviewStats.submitted}`,
                 segments: [{ value: overviewStats.scoreGood, color: '#3b82f6' }, { value: overviewStats.scoreMid, color: '#f59e0b' }, { value: overviewStats.scoreLow, color: '#ef4444' }] },
-              { title: 'Completion',       sub: `${overviewStats.abandoned} tidak selesai`, label: `${compPct}%`,
+              { title: 'Completion Rate',  sub: `${overviewStats.abandoned} tidak selesai`, label: `${compPct}%`,
                 segments: [{ value: overviewStats.submitted, color: '#10b981' }, { value: overviewStats.abandoned, color: '#cbd5e1' }] },
             ];
             return (
-              <div className="xl:w-56 flex-shrink-0">
+              <div className="flex-1 min-w-0">
                 <SectionHeader>🥧 Analytics Overview</SectionHeader>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {miniCards.map(c => (
-                    <div key={c.title} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 flex flex-col items-center gap-2">
-                      <DonutChart segments={c.segments} size={54} strokeWidth={8} label={c.label} />
+                    <div key={c.title} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col items-center gap-3">
+                      <DonutChart segments={c.segments} size={72} strokeWidth={10} label={c.label} />
                       <div className="text-center">
-                        <p className="text-[10px] font-bold text-slate-700 leading-tight">{c.title}</p>
-                        <p className="text-[9px] text-slate-400 mt-0.5 leading-relaxed">{c.sub}</p>
+                        <p className="text-xs font-bold text-slate-700">{c.title}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">{c.sub}</p>
                       </div>
                     </div>
                   ))}
@@ -312,7 +312,7 @@ export function AdminDashboard({ user }: { user: User }) {
           })()}
 
           {/* Right: Top Performers */}
-          <div className="flex-1 min-w-0">
+          <div className="xl:w-[400px] flex-shrink-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
               <SectionHeader>🏆 Top Performers</SectionHeader>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
@@ -321,7 +321,7 @@ export function AdminDashboard({ user }: { user: User }) {
               </div>
             </div>
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
-              <table className="w-full text-sm" style={{ minWidth: '520px' }}>
+              <table className="w-full text-sm" style={{ minWidth: '360px' }}>
                 <thead className="border-b border-slate-200 bg-slate-50">
                   <tr>
                     <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-8">#</th>
