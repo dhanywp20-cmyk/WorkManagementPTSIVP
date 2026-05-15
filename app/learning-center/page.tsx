@@ -75,6 +75,37 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
   const isAdmin = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
   const [adminView, setAdminView] = useState<AdminView>('dashboard');
   const [teamView, setTeamView] = useState<TeamView>('my-quiz');
+  const [loading, setLoading] = useState(false);
+  const [contentKey, setContentKey] = useState(0);
+
+  const changeAdminView = (v: AdminView) => {
+    if (v === adminView) return;
+    setLoading(true);
+    setTimeout(() => {
+      setAdminView(v);
+      setLoading(false);
+      setContentKey(k => k + 1);
+    }, 160);
+  };
+
+  const changeTeamView = (v: TeamView) => {
+    if (v === teamView) return;
+    setLoading(true);
+    setTimeout(() => {
+      setTeamView(v);
+      setLoading(false);
+      setContentKey(k => k + 1);
+    }, 160);
+  };
+
+  const LoadingView = () => (
+    <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 110px)' }}>
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 rounded-full border-[3px] border-slate-200 border-t-blue-500 animate-spin" />
+        <span className="text-xs text-slate-400 font-medium tracking-wide">Memuat...</span>
+      </div>
+    </div>
+  );
 
   return (
     <div
@@ -88,26 +119,30 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
     >
       <div className="relative z-10 flex flex-col min-h-screen">
         {isAdmin
-          ? <AdminTopNav view={adminView} onChange={setAdminView} />
-          : <TeamTopNav view={teamView} onChange={setTeamView} />}
+          ? <AdminTopNav view={adminView} onChange={changeAdminView} />
+          : <TeamTopNav view={teamView} onChange={changeTeamView} />}
 
         <div className="flex-1 overflow-y-auto" style={{ minHeight: 'calc(100vh - 100px)' }}>
-          {isAdmin ? (
-            <>
-              {adminView === 'dashboard'  && <AdminDashboard user={currentUser} />}
-              {adminView === 'materi'     && <MateriPage user={currentUser} isAdmin={true} />}
-              {adminView === 'questions'  && <QuestionsPage user={currentUser} />}
-              {adminView === 'sessions'   && <SessionsPage user={currentUser} />}
-              {adminView === 'team'       && <TeamPage />}
-              {adminView === 'report'     && <ReportPage currentUser={currentUser} />}
-            </>
-          ) : (
-            <>
-              {teamView === 'my-quiz'  && <MyQuizPage user={currentUser} />}
-              {teamView === 'materi'   && <MateriPage user={currentUser} isAdmin={false} />}
-              {teamView === 'history'  && <HistoryPage user={currentUser} />}
-              {teamView === 'score'    && <ScorePage user={currentUser} />}
-            </>
+          {loading ? <LoadingView /> : (
+            <div key={contentKey} className="lc-page-enter">
+              {isAdmin ? (
+                <>
+                  {adminView === 'dashboard'  && <AdminDashboard user={currentUser} />}
+                  {adminView === 'materi'     && <MateriPage user={currentUser} isAdmin={true} />}
+                  {adminView === 'questions'  && <QuestionsPage user={currentUser} />}
+                  {adminView === 'sessions'   && <SessionsPage user={currentUser} />}
+                  {adminView === 'team'       && <TeamPage />}
+                  {adminView === 'report'     && <ReportPage currentUser={currentUser} />}
+                </>
+              ) : (
+                <>
+                  {teamView === 'my-quiz'  && <MyQuizPage user={currentUser} />}
+                  {teamView === 'materi'   && <MateriPage user={currentUser} isAdmin={false} />}
+                  {teamView === 'history'  && <HistoryPage user={currentUser} />}
+                  {teamView === 'score'    && <ScorePage user={currentUser} />}
+                </>
+              )}
+            </div>
           )}
         </div>
       </div>

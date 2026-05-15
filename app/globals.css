@@ -9,3 +9,12 @@ html {
 *, *::before, *::after {
   box-sizing: border-box;
 }
+
+/* ── Learning Center page transition ────────────────────────────────────── */
+@keyframes lcPageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.lc-page-enter {
+  animation: lcPageIn 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}

@@ -38,6 +38,7 @@ export interface Question {
   option_d: string;
   correct_answer: 'A' | 'B' | 'C' | 'D';
   difficulty: 'easy' | 'medium' | 'hard';
+  batch_name?: string | null;
   created_at: string;
 }
 

@@ -41,6 +41,7 @@ export function QuestionsPage({ user }: { user: User }) {
   });
   const [genCount, setGenCount] = useState(10);
   const [genDiff, setGenDiff] = useState<'easy' | 'medium' | 'hard' | 'mixed'>('mixed');
+  const [batchName, setBatchName] = useState('');
   const [generating, setGenerating] = useState(false);
   const [genStatus, setGenStatus] = useState('');
   const [editQ, setEditQ] = useState<Question | null>(null);
@@ -162,6 +163,7 @@ export function QuestionsPage({ user }: { user: User }) {
       const parsed: any[] = JSON.parse(match[0]);
       const rows = parsed.map(q => ({
         material_id: selectedMat, materi_name: mat?.materi_name ?? '',
+        batch_name: batchName.trim() || null,
         question: q.question, option_a: q.option_a, option_b: q.option_b,
         option_c: q.option_c, option_d: q.option_d,
         correct_answer: (q.correct_answer ?? 'A').toUpperCase(),
@@ -170,10 +172,17 @@ export function QuestionsPage({ user }: { user: User }) {
       setGenStatus('💾 Menyimpan soal ke database...');
       const { error } = await supabase.from('lc_questions').insert(rows);
       if (error) throw error;
+      // Track Gemini usage in localStorage
+      const today = new Date().toISOString().slice(0, 10);
+      const storageKey = `gemini_usage_${today}`;
+      const current = parseInt(localStorage.getItem(storageKey) ?? '0');
+      localStorage.setItem(storageKey, String(current + 1));
+      localStorage.setItem('gemini_last_used', new Date().toISOString());
       setPdfFile(null);
       if (pdfRef.current) pdfRef.current.value = '';
+      setBatchName('');
       setShowGenerate(false); setGenStatus(''); load();
-      setDialog({ type: 'success', title: 'Generate Selesai', message: `${rows.length} soal berhasil digenerate dan disimpan!` });
+      setDialog({ type: 'success', title: 'Generate Selesai', message: `${rows.length} soal berhasil digenerate dan disimpan!${batchName.trim() ? ` (Batch: ${batchName.trim()})` : ''}` });
     } catch (err: any) {
       setDialog({ type: 'error', title: 'Generate Gagal', message: 'Gagal generate: ' + (err.message ?? String(err)) });
       setGenStatus('');
@@ -284,14 +293,56 @@ export function QuestionsPage({ user }: { user: User }) {
     </div>
   );
 
+  // ─── Gemini usage helper ────────────────────────────────────────────────────
+  const getGeminiUsage = () => {
+    if (typeof window === 'undefined') return { count: 0, lastUsed: null };
+    const today = new Date().toISOString().slice(0, 10);
+    const count = parseInt(localStorage.getItem(`gemini_usage_${today}`) ?? '0');
+    const lastUsed = localStorage.getItem('gemini_last_used');
+    return { count, lastUsed };
+  };
+  const geminiUsage = getGeminiUsage();
+  const geminiRemaining = Math.max(0, 50 - geminiUsage.count); // conservative daily estimate
+  const geminiLastUsedStr = geminiUsage.lastUsed
+    ? new Date(geminiUsage.lastUsed).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+    : null;
+
   // ─── Generate Panel ────────────────────────────────────────────────────────
   const GeneratePanel = () => (
     <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl border border-violet-200 p-6">
-      <h3 className="font-bold text-violet-800 mb-1 flex items-center gap-2">✨ Generate Soal dengan Gemini AI</h3>
+      <div className="flex items-start justify-between mb-3">
+        <h3 className="font-bold text-violet-800 flex items-center gap-2">✨ Generate Soal dengan Gemini AI</h3>
+        {/* Gemini usage badge */}
+        <div className="flex items-center gap-2 text-[11px] font-semibold flex-shrink-0">
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${geminiRemaining <= 5 ? 'bg-rose-50 border-rose-200 text-rose-700' : geminiRemaining <= 15 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
+            <span>{geminiRemaining <= 5 ? '⚠️' : geminiRemaining <= 15 ? '🟡' : '🟢'}</span>
+            <span>Hari ini: <strong>{geminiUsage.count}</strong> kali</span>
+            <span className="text-slate-300">|</span>
+            <span>Sisa ~<strong>{geminiRemaining}</strong></span>
+          </div>
+          {geminiLastUsedStr && (
+            <span className="text-slate-400 text-[10px]">Terakhir: {geminiLastUsedStr}</span>
+          )}
+        </div>
+      </div>
+      {/* Limit info */}
+      <div className="flex items-start gap-2 text-xs bg-violet-100/60 border border-violet-200 rounded-xl px-3 py-2 mb-4">
+        <span>ℹ️</span>
+        <span className="text-violet-700">Gemini 2.5 Flash free tier: <strong>10 req/menit</strong>, ~<strong>50 req/hari</strong>. Jika error limit, tunggu 1 menit atau coba besok.</span>
+      </div>
       <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5 mb-4 font-medium">
         ✅ PDF hanya digunakan untuk generate — <strong>tidak disimpan ke Supabase</strong>.
       </p>
       <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="col-span-2">
+          <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+            Nama Batch / Topik
+            <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional — untuk mengelompokkan soal)</span>
+          </label>
+          <input value={batchName} onChange={e => setBatchName(e.target.value)}
+            className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white"
+            placeholder="contoh: Instalasi Dasar, Troubleshooting Level 1, Quiz Minggu ke-3..." />
+        </div>
         <div>
           <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
           <select value={selectedMat} onChange={e => setSelectedMat(e.target.value)}
@@ -304,7 +355,7 @@ export function QuestionsPage({ user }: { user: User }) {
         </div>
         <div>
           <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Jumlah Soal</label>
-          <input type="number" min={1} max={100} value={genCount} onChange={e => setGenCount(+e.target.value)}
+          <input type="number" min={1} max={50} value={genCount} onChange={e => setGenCount(+e.target.value)}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white" />
         </div>
         <div>
@@ -312,9 +363,9 @@ export function QuestionsPage({ user }: { user: User }) {
           <select value={genDiff} onChange={e => setGenDiff(e.target.value as any)}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
             <option value="mixed">Mixed (Campuran)</option>
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
+            <option value="easy">Easy — Mudah</option>
+            <option value="medium">Medium — Sedang</option>
+            <option value="hard">Hard — Sulit</option>
           </select>
         </div>
         <div>
@@ -345,7 +396,7 @@ export function QuestionsPage({ user }: { user: User }) {
           className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60 flex items-center gap-2">
           {generating ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generating...</> : '✨ Generate Sekarang'}
         </button>
-        <button onClick={() => { setShowGenerate(false); setPdfFile(null); setGenStatus(''); if (pdfRef.current) pdfRef.current.value = ''; }}
+        <button onClick={() => { setShowGenerate(false); setPdfFile(null); setGenStatus(''); setBatchName(''); if (pdfRef.current) pdfRef.current.value = ''; }}
           className="px-5 py-2.5 bg-white text-slate-600 text-sm font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all">Batal</button>
       </div>
     </div>
@@ -923,6 +974,12 @@ export function QuestionsPage({ user }: { user: User }) {
                                 fontSize: 10, color: '#94a3b8', background: '#f1f5f9',
                                 padding: '2px 8px', borderRadius: 20, border: '1px solid #e2e8f0',
                               }}>{q.materi_name}</span>
+                              {q.batch_name && (
+                                <span style={{
+                                  fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
+                                  background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe',
+                                }}>📌 {q.batch_name}</span>
+                              )}
                             </div>
                             {/* Action buttons — always visible */}
                             <div className="flex gap-2">
