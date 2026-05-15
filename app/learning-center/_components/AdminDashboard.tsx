@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase, User, fmtDate, ScoreBadge, SearchInput } from './shared';
 
 // ─── Donut Chart ──────────────────────────────────────────────────────────────
@@ -40,65 +40,186 @@ function DonutChart({ segments, size = 68, strokeWidth = 10, label = '' }: {
   );
 }
 
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="text-[10px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
+      {children}
+    </h3>
+  );
+}
+
+// ─── Main Dashboard ───────────────────────────────────────────────────────────
 export function AdminDashboard({ user }: { user: User }) {
-  // ── Summary stats ──────────────────────────────────────────────────────────
   const [stats, setStats] = useState({ materials: 0, activeTeam: 0, sessions: 0, attempts: 0 });
   const [recentAttempts, setRecentAttempts] = useState<any[]>([]);
   const [search, setSearch] = useState('');
 
-  // ── Analytics: session stats + top performers ──────────────────────────────
+  const [overviewStats, setOverviewStats] = useState({
+    totalUsers: 0, participants: 0,
+    passCount: 0, failCount: 0,
+    scoreGood: 0, scoreMid: 0, scoreLow: 0,
+    submitted: 0, abandoned: 0,
+  });
+
   const [sessionStats, setSessionStats] = useState<any[]>([]);
   const [topUsers, setTopUsers] = useState<any[]>([]);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
   const [searchPerformer, setSearchPerformer] = useState('');
 
-  // ── Drill-down user detail ─────────────────────────────────────────────────
+  // new analytics state
+  const [divisionStats, setDivisionStats] = useState<any[]>([]);
+  const [neverAttempted, setNeverAttempted] = useState<any[]>([]);
+  const [batchPerf, setBatchPerf] = useState<any[]>([]);
+  const [weeklyTrend, setWeeklyTrend] = useState<{ label: string; count: number }[]>([]);
+
   const [selectedUser, setSelectedUser] = useState<{ uid: string; name: string } | null>(null);
   const [userAttempts, setUserAttempts] = useState<any[]>([]);
   const [loadingUser, setLoadingUser] = useState(false);
 
   useEffect(() => {
     const load = async () => {
-      // Summary cards
-      const [mat, ses, att] = await Promise.all([
+      // ── Round 1: counts ────────────────────────────────────────────────────
+      const [mat, ses, att, totalUsersRes, abandonedRes] = await Promise.all([
         supabase.from('lc_materials').select('id', { count: 'exact', head: true }),
         supabase.from('lc_quiz_sessions').select('id', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('lc_quiz_attempts').select('id', { count: 'exact', head: true }),
+        supabase.from('users').select('id', { count: 'exact', head: true }),
+        supabase.from('lc_quiz_attempts').select('id', { count: 'exact', head: true }).eq('is_submitted', false),
       ]);
       const { data: teamData } = await supabase.from('lc_quiz_attempts').select('user_id').eq('is_submitted', true);
       const uniqueTeam = new Set((teamData ?? []).map((a: any) => a.user_id)).size;
       setStats({ materials: mat.count ?? 0, activeTeam: uniqueTeam, sessions: ses.count ?? 0, attempts: att.count ?? 0 });
 
-      // Recent activity
-      const { data: recent } = await supabase
-        .from('lc_quiz_attempts')
-        .select('*, users(full_name), lc_quiz_sessions(session_name, passing_grade)')
-        .eq('is_submitted', true)
-        .order('submitted_at', { ascending: false })
-        .limit(50);
-      setRecentAttempts(recent ?? []);
+      // ── Round 2: analytics data in parallel ────────────────────────────────
+      const fiveWeeksAgo = new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString();
+      const [recentRes, allAttRes, allUsersRes, qListRes, aListRes, trendRes] = await Promise.all([
+        supabase.from('lc_quiz_attempts')
+          .select('*, users(full_name), lc_quiz_sessions(session_name, passing_grade)')
+          .eq('is_submitted', true).order('submitted_at', { ascending: false }).limit(50),
+        supabase.from('lc_quiz_attempts')
+          .select('user_id, score, passed, tab_switches, time_taken_sec, total_questions, users(full_name, jabatan, sales_division)')
+          .eq('is_submitted', true),
+        supabase.from('users').select('id, full_name, jabatan, sales_division')
+          .neq('role', 'admin').neq('role', 'superadmin'),
+        supabase.from('lc_questions').select('id, batch_name'),
+        supabase.from('lc_answers').select('question_id, is_correct'),
+        supabase.from('lc_quiz_attempts')
+          .select('submitted_at').eq('is_submitted', true).gte('submitted_at', fiveWeeksAgo),
+      ]);
+      setRecentAttempts(recentRes.data ?? []);
 
-      // Analytics — per user
-      const { data: allAtt } = await supabase
-        .from('lc_quiz_attempts')
-        .select('user_id, score, passed, tab_switches, users(full_name)')
-        .eq('is_submitted', true);
-      if (allAtt) {
-        const byUser: Record<string, { name: string; scores: number[]; passed: number; tabSw: number }> = {};
-        allAtt.forEach((a: any) => {
-          if (!byUser[a.user_id]) byUser[a.user_id] = { name: a.users?.full_name ?? '-', scores: [], passed: 0, tabSw: 0 };
-          byUser[a.user_id].scores.push(a.score ?? 0);
-          if (a.passed) byUser[a.user_id].passed++;
-          byUser[a.user_id].tabSw += a.tab_switches ?? 0;
-        });
-        setTopUsers(Object.entries(byUser).map(([uid, v]) => ({
-          uid, name: v.name,
-          avg: v.scores.reduce((s: number, n: number) => s + n, 0) / v.scores.length,
-          total: v.scores.length, passed: v.passed, tabSw: v.tabSw,
-        })).sort((a, b) => b.avg - a.avg).slice(0, 20));
+      const allAtt = allAttRes.data ?? [];
+
+      // ── Overview mini pies ─────────────────────────────────────────────────
+      const participants = new Set(allAtt.map((a: any) => a.user_id)).size;
+      const passCount    = allAtt.filter((a: any) => a.passed).length;
+      const scoreGood    = allAtt.filter((a: any) => (a.score ?? 0) >= 80).length;
+      const scoreMid     = allAtt.filter((a: any) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length;
+      const scoreLow     = allAtt.filter((a: any) => (a.score ?? 0) < 60).length;
+      setOverviewStats({
+        totalUsers: totalUsersRes.count ?? 0,
+        participants,
+        passCount,
+        failCount: allAtt.length - passCount,
+        scoreGood, scoreMid, scoreLow,
+        submitted: allAtt.length,
+        abandoned: abandonedRes.count ?? 0,
+      });
+
+      // ── Top performers + consistency + fast-submit ─────────────────────────
+      const byUser: Record<string, {
+        name: string; scores: number[]; passed: number; tabSw: number;
+        minScore: number; maxScore: number; fastCount: number;
+      }> = {};
+      allAtt.forEach((a: any) => {
+        if (!byUser[a.user_id]) byUser[a.user_id] = {
+          name: a.users?.full_name ?? '-', scores: [], passed: 0, tabSw: 0,
+          minScore: Infinity, maxScore: -Infinity, fastCount: 0,
+        };
+        const sc = a.score ?? 0;
+        byUser[a.user_id].scores.push(sc);
+        if (a.passed) byUser[a.user_id].passed++;
+        byUser[a.user_id].tabSw += a.tab_switches ?? 0;
+        if (sc < byUser[a.user_id].minScore) byUser[a.user_id].minScore = sc;
+        if (sc > byUser[a.user_id].maxScore) byUser[a.user_id].maxScore = sc;
+        const tq = a.total_questions ?? 0;
+        const ts = a.time_taken_sec ?? Infinity;
+        if (tq >= 5 && ts < tq * 5) byUser[a.user_id].fastCount++;
+      });
+      setTopUsers(Object.entries(byUser).map(([uid, v]) => ({
+        uid, name: v.name,
+        avg: v.scores.reduce((s: number, n: number) => s + n, 0) / v.scores.length,
+        total: v.scores.length, passed: v.passed, tabSw: v.tabSw,
+        consistency: v.scores.length >= 2 ? v.maxScore - v.minScore : null,
+        fastCount: v.fastCount,
+      })).sort((a, b) => b.avg - a.avg).slice(0, 20));
+
+      // ── Per division/jabatan ───────────────────────────────────────────────
+      const byDiv: Record<string, { scores: number[]; passed: number }> = {};
+      allAtt.forEach((a: any) => {
+        const dk = (a.users?.sales_division?.trim() || a.users?.jabatan?.trim() || 'Lainnya') as string;
+        if (!byDiv[dk]) byDiv[dk] = { scores: [], passed: 0 };
+        byDiv[dk].scores.push(a.score ?? 0);
+        if (a.passed) byDiv[dk].passed++;
+      });
+      setDivisionStats(Object.entries(byDiv).map(([name, v]) => ({
+        name,
+        total: v.scores.length,
+        avg: v.scores.reduce((s: number, n: number) => s + n, 0) / v.scores.length,
+        passRate: Math.round((v.passed / v.scores.length) * 100),
+        passed: v.passed,
+      })).sort((a, b) => b.avg - a.avg));
+
+      // ── Never attempted ────────────────────────────────────────────────────
+      if (allUsersRes.data) {
+        const pIds = new Set(allAtt.map((a: any) => a.user_id));
+        setNeverAttempted(allUsersRes.data.filter((u: any) => !pIds.has(u.id)));
       }
 
-      // Analytics — per session
+      // ── Batch/topic performance ────────────────────────────────────────────
+      if (qListRes.data && aListRes.data) {
+        const qBatch: Record<string, string> = {};
+        qListRes.data.forEach((q: any) => { if (q.batch_name) qBatch[q.id] = q.batch_name; });
+        const byBatch: Record<string, { correct: number; total: number }> = {};
+        aListRes.data.forEach((ans: any) => {
+          const bn = qBatch[ans.question_id];
+          if (!bn) return;
+          if (!byBatch[bn]) byBatch[bn] = { correct: 0, total: 0 };
+          byBatch[bn].total++;
+          if (ans.is_correct) byBatch[bn].correct++;
+        });
+        setBatchPerf(Object.entries(byBatch).map(([name, v]) => ({
+          name,
+          pct: v.total > 0 ? Math.round((v.correct / v.total) * 100) : 0,
+          total: v.total, correct: v.correct,
+        })).sort((a, b) => a.pct - b.pct));
+      }
+
+      // ── Weekly trend ───────────────────────────────────────────────────────
+      if (trendRes.data) {
+        const now = new Date();
+        const dow = now.getDay();
+        const daysSinceMonday = dow === 0 ? 6 : dow - 1;
+        const thisMonday = new Date(now);
+        thisMonday.setDate(now.getDate() - daysSinceMonday);
+        thisMonday.setHours(0, 0, 0, 0);
+        const weeks = Array.from({ length: 5 }, (_, i) => {
+          const wStart = new Date(thisMonday);
+          wStart.setDate(thisMonday.getDate() - (4 - i) * 7);
+          const wEnd = new Date(wStart);
+          wEnd.setDate(wStart.getDate() + 7);
+          const label = wStart.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+          const count = trendRes.data!.filter((a: any) => {
+            if (!a.submitted_at) return false;
+            const d = new Date(a.submitted_at);
+            return d >= wStart && d < wEnd;
+          }).length;
+          return { label, count };
+        });
+        setWeeklyTrend(weeks);
+      }
+
+      // ── Per session ────────────────────────────────────────────────────────
       const { data: ss } = await supabase.from('lc_quiz_sessions').select('id, session_name');
       if (ss) {
         const sStats = await Promise.all(ss.map(async (s: any) => {
@@ -128,7 +249,6 @@ export function AdminDashboard({ user }: { user: User }) {
     load();
   }, []);
 
-  // Load user detail when selected
   useEffect(() => {
     if (!selectedUser) return;
     setLoadingUser(true); setUserAttempts([]);
@@ -156,6 +276,8 @@ export function AdminDashboard({ user }: { user: User }) {
     { label: 'Total Attempt', value: stats.attempts, icon: '📝', color: 'from-amber-500 to-amber-600' },
   ];
 
+  const trendMax = Math.max(...weeklyTrend.map(w => w.count), 1);
+
   return (
     <div>
       <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
@@ -180,12 +302,71 @@ export function AdminDashboard({ user }: { user: User }) {
           ))}
         </div>
 
+        {/* ── Analytics Overview (mini pies) ── */}
+        {overviewStats.submitted > 0 && (() => {
+          const partPct   = overviewStats.totalUsers > 0 ? Math.round(overviewStats.participants / overviewStats.totalUsers * 100) : 0;
+          const passPct   = overviewStats.submitted > 0 ? Math.round(overviewStats.passCount / overviewStats.submitted * 100) : 0;
+          const compTotal = overviewStats.submitted + overviewStats.abandoned;
+          const compPct   = compTotal > 0 ? Math.round(overviewStats.submitted / compTotal * 100) : 0;
+          const miniCards = [
+            { title: 'Partisipasi Tim',  sub: `${overviewStats.participants} dari ${overviewStats.totalUsers} anggota`, label: `${partPct}%`,
+              segments: [{ value: overviewStats.participants, color: '#6366f1' }, { value: Math.max(overviewStats.totalUsers - overviewStats.participants, 0), color: '#e0e7ff' }] },
+            { title: 'Pass Rate Global', sub: `${overviewStats.passCount} lulus · ${overviewStats.failCount} gagal`, label: `${passPct}%`,
+              segments: [{ value: overviewStats.passCount, color: '#10b981' }, { value: overviewStats.failCount, color: '#f43f5e' }] },
+            { title: 'Distribusi Nilai', sub: `≥80: ${overviewStats.scoreGood} · 60–79: ${overviewStats.scoreMid} · <60: ${overviewStats.scoreLow}`, label: `${overviewStats.submitted}`,
+              segments: [{ value: overviewStats.scoreGood, color: '#3b82f6' }, { value: overviewStats.scoreMid, color: '#f59e0b' }, { value: overviewStats.scoreLow, color: '#ef4444' }] },
+            { title: 'Completion Rate',  sub: `${overviewStats.abandoned} tidak selesai`, label: `${compPct}%`,
+              segments: [{ value: overviewStats.submitted, color: '#10b981' }, { value: overviewStats.abandoned, color: '#cbd5e1' }] },
+          ];
+          return (
+            <section>
+              <SectionHeader>🥧 Analytics Overview</SectionHeader>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {miniCards.map(c => (
+                  <div key={c.title} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col items-center gap-3">
+                    <DonutChart segments={c.segments} size={72} strokeWidth={10} label={c.label} />
+                    <div className="text-center">
+                      <p className="text-xs font-bold text-slate-700">{c.title}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">{c.sub}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        })()}
+
+        {/* ── Weekly Activity Trend ── */}
+        {weeklyTrend.some(w => w.count > 0) && (
+          <section>
+            <SectionHeader>📅 Aktivitas Mingguan (5 Minggu Terakhir)</SectionHeader>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+              <div className="flex items-end justify-around gap-3 h-36">
+                {weeklyTrend.map((w, i) => (
+                  <div key={i} className="flex flex-col items-center gap-1 flex-1">
+                    <span className="text-xs font-bold text-slate-600" style={{ minHeight: 16 }}>{w.count > 0 ? w.count : ''}</span>
+                    <div className="w-full rounded-t-lg transition-all duration-500"
+                      style={{
+                        height: `${Math.round((w.count / trendMax) * 96)}px`,
+                        minHeight: w.count > 0 ? '6px' : '2px',
+                        background: w.count === 0 ? '#f1f5f9'
+                          : i === weeklyTrend.length - 1
+                            ? 'linear-gradient(to top, #6366f1, #818cf8)'
+                            : 'linear-gradient(to top, #3b82f6, #93c5fd)',
+                      }} />
+                    <span className="text-[10px] text-slate-400 font-medium text-center leading-tight">{w.label}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-slate-400 text-center mt-3">Bar ungu = minggu berjalan</p>
+            </div>
+          </section>
+        )}
+
         {/* ── Session Statistics ── */}
         {sessionStats.length > 0 && (
           <section>
-            <h3 className="text-[10px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
-              📈 Statistik Per Sesi Quiz
-            </h3>
+            <SectionHeader>📈 Statistik Per Sesi Quiz</SectionHeader>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {sessionStats.map((s: any) => (
                 <div key={s.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
@@ -251,19 +432,49 @@ export function AdminDashboard({ user }: { user: User }) {
           </section>
         )}
 
+        {/* ── Topic / Batch Performance ── */}
+        {batchPerf.length > 0 && (
+          <section>
+            <SectionHeader>🎯 Knowledge Gap per Topik</SectionHeader>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+              {batchPerf.map(b => (
+                <div key={b.name}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-semibold text-slate-700 truncate max-w-[55%]">{b.name}</span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-[10px] text-slate-400">{b.correct}/{b.total} benar</span>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+                        b.pct >= 80 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : b.pct >= 60 ? 'bg-amber-50 text-amber-700 border-amber-200'
+                        : 'bg-rose-50 text-rose-700 border-rose-200'
+                      }`}>{b.pct}%</span>
+                    </div>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2.5">
+                    <div className="h-2.5 rounded-full"
+                      style={{
+                        width: `${b.pct}%`,
+                        background: b.pct >= 80 ? '#10b981' : b.pct >= 60 ? '#f59e0b' : '#f43f5e',
+                      }} />
+                  </div>
+                </div>
+              ))}
+              <p className="text-[10px] text-slate-400 pt-1">Diurutkan dari topik dengan jawaban benar paling rendah (knowledge gap tertinggi)</p>
+            </div>
+          </section>
+        )}
+
         {/* ── Top Performers ── */}
         <section>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-            <h3 className="text-[10px] font-bold uppercase tracking-widest inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
-              🏆 Top Performers
-            </h3>
+            <SectionHeader>🏆 Top Performers</SectionHeader>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
               <p className="text-xs text-slate-400">Klik nama untuk detail per quiz</p>
               <SearchInput value={searchPerformer} onChange={setSearchPerformer} placeholder="Cari nama..." />
             </div>
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
-            <table className="w-full text-sm" style={{ minWidth: '580px' }}>
+            <table className="w-full text-sm" style={{ minWidth: '620px' }}>
               <thead className="border-b border-slate-200 bg-slate-50">
                 <tr>
                   <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-10">#</th>
@@ -271,7 +482,7 @@ export function AdminDashboard({ user }: { user: User }) {
                   <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Quiz</th>
                   <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Score</th>
                   <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Lulus</th>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Pindah Tab</th>
+                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Flags</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -281,9 +492,12 @@ export function AdminDashboard({ user }: { user: User }) {
                     onClick={() => setSelectedUser({ uid: u.uid, name: u.name })}>
                     <td className="px-5 py-3.5 text-center text-sm font-black text-slate-300">{i + 1}</td>
                     <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-semibold text-slate-800 group-hover:text-indigo-700 transition-colors">{u.name}</span>
                         <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-400 font-semibold">👁 detail</span>
+                        {u.consistency !== null && u.consistency > 40 && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">⚡ Inkonsisten</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-5 py-3.5 text-center text-slate-500 text-xs font-semibold">{u.total}</td>
@@ -304,9 +518,15 @@ export function AdminDashboard({ user }: { user: User }) {
                       </span>
                     </td>
                     <td className="px-5 py-3.5 text-center">
-                      {u.tabSw > 0
-                        ? <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">⚠️ {u.tabSw}×</span>
-                        : <span className="text-xs text-slate-300">—</span>}
+                      <div className="flex items-center justify-center gap-1 flex-wrap">
+                        {u.tabSw > 0 && (
+                          <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">⚠️ {u.tabSw}×</span>
+                        )}
+                        {u.fastCount > 0 && (
+                          <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full">🚨 {u.fastCount}×</span>
+                        )}
+                        {u.tabSw === 0 && u.fastCount === 0 && <span className="text-xs text-slate-300">—</span>}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -318,13 +538,95 @@ export function AdminDashboard({ user }: { user: User }) {
               </tbody>
             </table>
           </div>
+          <div className="flex flex-wrap gap-4 mt-2 px-1">
+            <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="font-bold text-amber-700">⚠️</span> Pindah tab saat quiz</span>
+            <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="font-bold text-rose-700">🚨</span> Submit &lt;5 detik/soal</span>
+            <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="font-bold text-amber-700">⚡</span> Nilai tidak konsisten (&gt;40 poin selisih)</span>
+          </div>
         </section>
+
+        {/* ── Per Divisi / Jabatan Ranking ── */}
+        {divisionStats.length > 0 && (
+          <section>
+            <SectionHeader>🏢 Ranking Per Divisi / Jabatan</SectionHeader>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+              <table className="w-full text-sm" style={{ minWidth: '420px' }}>
+                <thead className="border-b border-slate-200 bg-slate-50">
+                  <tr>
+                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-10">#</th>
+                    <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Divisi / Jabatan</th>
+                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Attempt</th>
+                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Avg Score</th>
+                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Pass Rate</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {divisionStats.map((d, i) => (
+                    <tr key={d.name} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-5 py-3 text-center text-sm font-black text-slate-300">{i + 1}</td>
+                      <td className="px-5 py-3">
+                        <span className="font-semibold text-slate-700 text-sm">{d.name}</span>
+                      </td>
+                      <td className="px-5 py-3 text-center text-xs text-slate-500 font-semibold">{d.total}</td>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-16 bg-slate-100 rounded-full h-1.5">
+                            <div className="h-1.5 rounded-full"
+                              style={{ width: `${d.avg}%`, background: d.avg >= 80 ? '#10b981' : d.avg >= 60 ? '#f59e0b' : '#f43f5e' }} />
+                          </div>
+                          <span className={`text-xs font-bold w-8 text-right ${d.avg >= 80 ? 'text-emerald-600' : d.avg >= 60 ? 'text-amber-600' : 'text-rose-600'}`}>
+                            {d.avg.toFixed(0)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3 text-center">
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+                          d.passRate >= 80 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : d.passRate >= 50 ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-rose-50 text-rose-700 border-rose-200'
+                        }`}>{d.passRate}%</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
+        {/* ── Belum Pernah Quiz ── */}
+        {neverAttempted.length > 0 && (
+          <section>
+            <div className="flex items-center gap-3 mb-4">
+              <SectionHeader>😴 Belum Pernah Quiz</SectionHeader>
+              <span className="text-xs font-bold bg-rose-100 text-rose-600 border border-rose-200 px-2 py-0.5 rounded-full" style={{ marginTop: '-16px' }}>
+                {neverAttempted.length} orang
+              </span>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+              <div className="flex flex-wrap gap-2">
+                {neverAttempted.map((u: any) => (
+                  <div key={u.id} className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                    <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500 flex-shrink-0">
+                      {u.full_name?.[0] ?? '?'}
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-700 leading-none">{u.full_name}</p>
+                      {(u.sales_division || u.jabatan) && (
+                        <p className="text-[10px] text-slate-400 mt-0.5">{u.sales_division || u.jabatan}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-slate-400 mt-3">Anggota tim yang belum pernah submit satu quiz pun — perlu follow-up.</p>
+            </div>
+          </section>
+        )}
 
         {/* ── Recent Activity ── */}
         <section>
-          <h3 className="text-[10px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
-            🕐 Aktivitas Terbaru
-          </h3>
+          <SectionHeader>🕐 Aktivitas Terbaru</SectionHeader>
           <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm" style={{ background: '#ffffff' }}>
             <div className="divide-y divide-slate-100">
               {filteredRecent.length === 0 && (
@@ -332,27 +634,38 @@ export function AdminDashboard({ user }: { user: User }) {
                   {search ? 'Tidak ada hasil yang cocok' : 'Belum ada aktivitas quiz'}
                 </div>
               )}
-              {filteredRecent.slice(0, 10).map((a: any) => (
-                <div key={a.id} className="flex items-center gap-4 px-6 py-3.5">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold flex-shrink-0">
-                    {a.users?.full_name?.[0] ?? '?'}
+              {filteredRecent.slice(0, 10).map((a: any) => {
+                const tq = a.total_questions ?? 0;
+                const ts = a.time_taken_sec ?? Infinity;
+                const isFast = tq >= 5 && ts < tq * 5;
+                return (
+                  <div key={a.id} className="flex items-center gap-4 px-6 py-3.5">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold flex-shrink-0">
+                      {a.users?.full_name?.[0] ?? '?'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{a.users?.full_name ?? '-'}</p>
+                      <p className="text-xs text-slate-500 truncate">{a.lc_quiz_sessions?.session_name ?? '-'}</p>
+                    </div>
+                    <ScoreBadge score={a.score} passing={a.lc_quiz_sessions?.passing_grade ?? 70} />
+                    {isFast && (
+                      <span className="text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full flex-shrink-0">
+                        🚨 {Math.round(ts)}s
+                      </span>
+                    )}
+                    {(a.tab_switches ?? 0) > 0 && (
+                      <span className="text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex-shrink-0">
+                        ⚠️ {a.tab_switches}× tab
+                      </span>
+                    )}
+                    <span className="text-xs text-slate-400 flex-shrink-0">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-800 truncate">{a.users?.full_name ?? '-'}</p>
-                    <p className="text-xs text-slate-500 truncate">{a.lc_quiz_sessions?.session_name ?? '-'}</p>
-                  </div>
-                  <ScoreBadge score={a.score} passing={a.lc_quiz_sessions?.passing_grade ?? 70} />
-                  {(a.tab_switches ?? 0) > 0 && (
-                    <span className="text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex-shrink-0">
-                      ⚠️ {a.tab_switches}× tab
-                    </span>
-                  )}
-                  <span className="text-xs text-slate-400 flex-shrink-0">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>
+
       </div>
 
       {/* ── User Detail Modal ── */}
@@ -407,9 +720,12 @@ export function AdminDashboard({ user }: { user: User }) {
                   <div className="space-y-3">
                     {userAttempts.length === 0 && <p className="text-center text-slate-400 py-8 text-sm">Belum ada quiz yang diselesaikan</p>}
                     {userAttempts.map(a => {
-                      const score = a.score ?? 0;
+                      const score  = a.score ?? 0;
                       const passing = a.lc_quiz_sessions?.passing_grade ?? 70;
-                      const tabSw = a.tab_switches ?? 0;
+                      const tabSw  = a.tab_switches ?? 0;
+                      const tq     = a.total_questions ?? 0;
+                      const ts     = a.time_taken_sec ?? Infinity;
+                      const isFast = tq >= 5 && ts < tq * 5;
                       return (
                         <div key={a.id} className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4">
                           <DonutChart
@@ -427,7 +743,8 @@ export function AdminDashboard({ user }: { user: User }) {
                                 {a.passed ? 'LULUS' : 'TIDAK LULUS'}
                               </span>
                               {a.time_taken_sec != null && <span className="text-xs text-slate-400">⏱ {Math.floor(a.time_taken_sec / 60)}m {a.time_taken_sec % 60}s</span>}
-                              {tabSw > 0 && <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">⚠️ {tabSw}× pindah tab</span>}
+                              {tabSw > 0 && <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">⚠️ {tabSw}× tab</span>}
+                              {isFast && <span className="text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">🚨 Submit terlalu cepat</span>}
                             </div>
                           </div>
                           <div className="text-right flex-shrink-0 space-y-0.5">
