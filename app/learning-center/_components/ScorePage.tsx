@@ -195,6 +195,8 @@ export function ScorePage({ user }: { user: User }) {
                   <tbody className="divide-y divide-slate-100">
                     {rankings.map((r, i) => {
                       const isMe = r.uid === user.id;
+                      // Mask name: show only initials for other participants
+                      const maskedName = r.name.split(' ').map((w: string) => w[0] + '***').join(' ');
                       return (
                         <tr key={r.uid} className={isMe ? 'bg-indigo-50 border-l-[3px] border-indigo-400' : 'hover:bg-slate-50'}>
                           <td className={`px-4 py-3 text-center font-black text-sm ${isMe ? 'text-indigo-600' : 'text-slate-300'}`}>
@@ -202,7 +204,13 @@ export function ScorePage({ user }: { user: User }) {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
-                              <span className={`font-semibold text-sm ${isMe ? 'text-indigo-700' : 'text-slate-700'}`}>{r.name}</span>
+                              {isMe ? (
+                                <span className="font-semibold text-sm text-indigo-700">{r.name}</span>
+                              ) : (
+                                <span className="font-semibold text-sm text-slate-400 select-none" style={{ filter: 'blur(4px)', userSelect: 'none' }}>
+                                  {maskedName}
+                                </span>
+                              )}
                               {isMe && (
                                 <span className="text-[9px] font-bold px-1.5 py-0.5 bg-indigo-100 text-indigo-600 rounded-full border border-indigo-200">KAMU</span>
                               )}

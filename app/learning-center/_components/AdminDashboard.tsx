@@ -381,11 +381,21 @@ export function AdminDashboard({ user }: { user: User }) {
                   )}
                 </tbody>
               </table>
-            </div>
-            <div className="flex flex-wrap gap-3 mt-2 px-1">
-              <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="font-bold text-amber-700">⚠️</span> Pindah tab</span>
-              <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="font-bold text-rose-700">🚨</span> Submit &lt;5det/soal</span>
-              <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="font-bold text-amber-700">⚡</span> Nilai inkonsisten &gt;40pt</span>
+              {/* Legend — inside card as footer */}
+              <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 py-2.5 border-t border-slate-100 bg-slate-50/60">
+                <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                  <span className="inline-flex items-center gap-0.5 font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">⚠️ N×</span>
+                  Pindah tab
+                </span>
+                <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                  <span className="inline-flex items-center gap-0.5 font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full">🚨 N×</span>
+                  Submit &lt;5det/soal
+                </span>
+                <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                  <span className="inline-flex items-center gap-0.5 font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">⚡ Inkonsisten</span>
+                  Nilai selisih &gt;40pt
+                </span>
+              </div>
             </div>
           </div>
         </div>
