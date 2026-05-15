@@ -66,11 +66,8 @@ export function AdminDashboard({ user }: { user: User }) {
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
   const [searchPerformer, setSearchPerformer] = useState('');
 
-  // new analytics state
   const [divisionStats, setDivisionStats] = useState<any[]>([]);
-  const [neverAttempted, setNeverAttempted] = useState<any[]>([]);
   const [batchPerf, setBatchPerf] = useState<any[]>([]);
-  const [weeklyTrend, setWeeklyTrend] = useState<{ label: string; count: number }[]>([]);
 
   const [selectedUser, setSelectedUser] = useState<{ uid: string; name: string } | null>(null);
   const [userAttempts, setUserAttempts] = useState<any[]>([]);
@@ -91,20 +88,15 @@ export function AdminDashboard({ user }: { user: User }) {
       setStats({ materials: mat.count ?? 0, activeTeam: uniqueTeam, sessions: ses.count ?? 0, attempts: att.count ?? 0 });
 
       // ── Round 2: analytics data in parallel ────────────────────────────────
-      const fiveWeeksAgo = new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString();
-      const [recentRes, allAttRes, allUsersRes, qListRes, aListRes, trendRes] = await Promise.all([
+      const [recentRes, allAttRes, qListRes, aListRes] = await Promise.all([
         supabase.from('lc_quiz_attempts')
           .select('*, users(full_name), lc_quiz_sessions(session_name, passing_grade)')
           .eq('is_submitted', true).order('submitted_at', { ascending: false }).limit(50),
         supabase.from('lc_quiz_attempts')
           .select('user_id, score, passed, tab_switches, time_taken_sec, total_questions, users(full_name, jabatan, sales_division)')
           .eq('is_submitted', true),
-        supabase.from('users').select('id, full_name, jabatan, sales_division')
-          .neq('role', 'admin').neq('role', 'superadmin'),
         supabase.from('lc_questions').select('id, batch_name'),
         supabase.from('lc_answers').select('question_id, is_correct'),
-        supabase.from('lc_quiz_attempts')
-          .select('submitted_at').eq('is_submitted', true).gte('submitted_at', fiveWeeksAgo),
       ]);
       setRecentAttempts(recentRes.data ?? []);
 
@@ -155,26 +147,32 @@ export function AdminDashboard({ user }: { user: User }) {
       })).sort((a, b) => b.avg - a.avg).slice(0, 20));
 
       // ── Per division/jabatan ───────────────────────────────────────────────
-      const byDiv: Record<string, { scores: number[]; passed: number }> = {};
+      // Group key = sales_division if present, else jabatan, else 'Lainnya'
+      // Also track the source field so we can label it in the table
+      const byDiv: Record<string, {
+        scores: number[]; passed: number;
+        source: 'division' | 'jabatan' | 'other';
+        jabatanSet: Set<string>;
+      }> = {};
       allAtt.forEach((a: any) => {
-        const dk = (a.users?.sales_division?.trim() || a.users?.jabatan?.trim() || 'Lainnya') as string;
-        if (!byDiv[dk]) byDiv[dk] = { scores: [], passed: 0 };
+        const sd = a.users?.sales_division?.trim();
+        const jb = a.users?.jabatan?.trim();
+        const dk = sd || jb || 'Lainnya';
+        const src: 'division' | 'jabatan' | 'other' = sd ? 'division' : jb ? 'jabatan' : 'other';
+        if (!byDiv[dk]) byDiv[dk] = { scores: [], passed: 0, source: src, jabatanSet: new Set() };
         byDiv[dk].scores.push(a.score ?? 0);
         if (a.passed) byDiv[dk].passed++;
+        if (jb) byDiv[dk].jabatanSet.add(jb);
       });
       setDivisionStats(Object.entries(byDiv).map(([name, v]) => ({
         name,
+        source: v.source,
+        jabatan: Array.from(v.jabatanSet).join(', '),
         total: v.scores.length,
         avg: v.scores.reduce((s: number, n: number) => s + n, 0) / v.scores.length,
         passRate: Math.round((v.passed / v.scores.length) * 100),
         passed: v.passed,
       })).sort((a, b) => b.avg - a.avg));
-
-      // ── Never attempted ────────────────────────────────────────────────────
-      if (allUsersRes.data) {
-        const pIds = new Set(allAtt.map((a: any) => a.user_id));
-        setNeverAttempted(allUsersRes.data.filter((u: any) => !pIds.has(u.id)));
-      }
 
       // ── Batch/topic performance ────────────────────────────────────────────
       if (qListRes.data && aListRes.data) {
@@ -193,30 +191,6 @@ export function AdminDashboard({ user }: { user: User }) {
           pct: v.total > 0 ? Math.round((v.correct / v.total) * 100) : 0,
           total: v.total, correct: v.correct,
         })).sort((a, b) => a.pct - b.pct));
-      }
-
-      // ── Weekly trend ───────────────────────────────────────────────────────
-      if (trendRes.data) {
-        const now = new Date();
-        const dow = now.getDay();
-        const daysSinceMonday = dow === 0 ? 6 : dow - 1;
-        const thisMonday = new Date(now);
-        thisMonday.setDate(now.getDate() - daysSinceMonday);
-        thisMonday.setHours(0, 0, 0, 0);
-        const weeks = Array.from({ length: 5 }, (_, i) => {
-          const wStart = new Date(thisMonday);
-          wStart.setDate(thisMonday.getDate() - (4 - i) * 7);
-          const wEnd = new Date(wStart);
-          wEnd.setDate(wStart.getDate() + 7);
-          const label = wStart.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
-          const count = trendRes.data!.filter((a: any) => {
-            if (!a.submitted_at) return false;
-            const d = new Date(a.submitted_at);
-            return d >= wStart && d < wEnd;
-          }).length;
-          return { label, count };
-        });
-        setWeeklyTrend(weeks);
       }
 
       // ── Per session ────────────────────────────────────────────────────────
@@ -276,8 +250,6 @@ export function AdminDashboard({ user }: { user: User }) {
     { label: 'Total Attempt', value: stats.attempts, icon: '📝', color: 'from-amber-500 to-amber-600' },
   ];
 
-  const trendMax = Math.max(...weeklyTrend.map(w => w.count), 1);
-
   return (
     <div>
       <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
@@ -335,33 +307,6 @@ export function AdminDashboard({ user }: { user: User }) {
             </section>
           );
         })()}
-
-        {/* ── Weekly Activity Trend ── */}
-        {weeklyTrend.some(w => w.count > 0) && (
-          <section>
-            <SectionHeader>📅 Aktivitas Mingguan (5 Minggu Terakhir)</SectionHeader>
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-              <div className="flex items-end justify-around gap-3 h-36">
-                {weeklyTrend.map((w, i) => (
-                  <div key={i} className="flex flex-col items-center gap-1 flex-1">
-                    <span className="text-xs font-bold text-slate-600" style={{ minHeight: 16 }}>{w.count > 0 ? w.count : ''}</span>
-                    <div className="w-full rounded-t-lg transition-all duration-500"
-                      style={{
-                        height: `${Math.round((w.count / trendMax) * 96)}px`,
-                        minHeight: w.count > 0 ? '6px' : '2px',
-                        background: w.count === 0 ? '#f1f5f9'
-                          : i === weeklyTrend.length - 1
-                            ? 'linear-gradient(to top, #6366f1, #818cf8)'
-                            : 'linear-gradient(to top, #3b82f6, #93c5fd)',
-                      }} />
-                    <span className="text-[10px] text-slate-400 font-medium text-center leading-tight">{w.label}</span>
-                  </div>
-                ))}
-              </div>
-              <p className="text-[10px] text-slate-400 text-center mt-3">Bar ungu = minggu berjalan</p>
-            </div>
-          </section>
-        )}
 
         {/* ── Session Statistics ── */}
         {sessionStats.length > 0 && (
@@ -550,11 +495,11 @@ export function AdminDashboard({ user }: { user: User }) {
           <section>
             <SectionHeader>🏢 Ranking Per Divisi / Jabatan</SectionHeader>
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
-              <table className="w-full text-sm" style={{ minWidth: '420px' }}>
+              <table className="w-full text-sm" style={{ minWidth: '480px' }}>
                 <thead className="border-b border-slate-200 bg-slate-50">
                   <tr>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-10">#</th>
-                    <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Divisi / Jabatan</th>
+                    <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Sales Division / Jabatan</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Attempt</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Avg Score</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Pass Rate</th>
@@ -563,12 +508,25 @@ export function AdminDashboard({ user }: { user: User }) {
                 <tbody className="divide-y divide-slate-100">
                   {divisionStats.map((d, i) => (
                     <tr key={d.name} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-3 text-center text-sm font-black text-slate-300">{i + 1}</td>
-                      <td className="px-5 py-3">
-                        <span className="font-semibold text-slate-700 text-sm">{d.name}</span>
+                      <td className="px-5 py-3.5 text-center text-sm font-black text-slate-300">{i + 1}</td>
+                      <td className="px-5 py-3.5">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-800 text-sm">{d.name}</span>
+                            {d.source === 'division' && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 uppercase tracking-wide">Sales Div</span>
+                            )}
+                            {d.source === 'jabatan' && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide">Jabatan</span>
+                            )}
+                          </div>
+                          {d.source === 'division' && d.jabatan && (
+                            <p className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[220px]">{d.jabatan}</p>
+                          )}
+                        </div>
                       </td>
-                      <td className="px-5 py-3 text-center text-xs text-slate-500 font-semibold">{d.total}</td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-3.5 text-center text-xs text-slate-500 font-semibold">{d.total}</td>
+                      <td className="px-5 py-3.5">
                         <div className="flex items-center justify-center gap-2">
                           <div className="w-16 bg-slate-100 rounded-full h-1.5">
                             <div className="h-1.5 rounded-full"
@@ -579,7 +537,7 @@ export function AdminDashboard({ user }: { user: User }) {
                           </span>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-center">
+                      <td className="px-5 py-3.5 text-center">
                         <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
                           d.passRate >= 80 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                           : d.passRate >= 50 ? 'bg-amber-50 text-amber-700 border-amber-200'
@@ -590,36 +548,6 @@ export function AdminDashboard({ user }: { user: User }) {
                   ))}
                 </tbody>
               </table>
-            </div>
-          </section>
-        )}
-
-        {/* ── Belum Pernah Quiz ── */}
-        {neverAttempted.length > 0 && (
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <SectionHeader>😴 Belum Pernah Quiz</SectionHeader>
-              <span className="text-xs font-bold bg-rose-100 text-rose-600 border border-rose-200 px-2 py-0.5 rounded-full" style={{ marginTop: '-16px' }}>
-                {neverAttempted.length} orang
-              </span>
-            </div>
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-              <div className="flex flex-wrap gap-2">
-                {neverAttempted.map((u: any) => (
-                  <div key={u.id} className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                    <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500 flex-shrink-0">
-                      {u.full_name?.[0] ?? '?'}
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-slate-700 leading-none">{u.full_name}</p>
-                      {(u.sales_division || u.jabatan) && (
-                        <p className="text-[10px] text-slate-400 mt-0.5">{u.sales_division || u.jabatan}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="text-[10px] text-slate-400 mt-3">Anggota tim yang belum pernah submit satu quiz pun — perlu follow-up.</p>
             </div>
           </section>
         )}
@@ -720,12 +648,12 @@ export function AdminDashboard({ user }: { user: User }) {
                   <div className="space-y-3">
                     {userAttempts.length === 0 && <p className="text-center text-slate-400 py-8 text-sm">Belum ada quiz yang diselesaikan</p>}
                     {userAttempts.map(a => {
-                      const score  = a.score ?? 0;
+                      const score   = a.score ?? 0;
                       const passing = a.lc_quiz_sessions?.passing_grade ?? 70;
-                      const tabSw  = a.tab_switches ?? 0;
-                      const tq     = a.total_questions ?? 0;
-                      const ts     = a.time_taken_sec ?? Infinity;
-                      const isFast = tq >= 5 && ts < tq * 5;
+                      const tabSw   = a.tab_switches ?? 0;
+                      const tq      = a.total_questions ?? 0;
+                      const ts      = a.time_taken_sec ?? Infinity;
+                      const isFast  = tq >= 5 && ts < tq * 5;
                       return (
                         <div key={a.id} className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4">
                           <DonutChart
