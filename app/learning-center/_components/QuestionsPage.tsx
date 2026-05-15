@@ -713,7 +713,12 @@ export function QuestionsPage({ user }: { user: User }) {
                             message: `Semua ${sfQCount} soal dalam subfolder "${sfKey}" akan dihapus permanen. Lanjutkan?`,
                             confirmLabel: 'Hapus Semua',
                             onConfirm: async () => {
-                              if (sfQIds.length > 0) await supabase.from('lc_questions').delete().in('material_id', sfQIds);
+                              if (sfQIds.length > 0) {
+                                const sfQuestionIds = questions.filter(q => sfQIds.includes(q.material_id)).map(q => q.id);
+                                if (sfQuestionIds.length > 0) await supabase.from('lc_answers').delete().in('question_id', sfQuestionIds);
+                                const { error } = await supabase.from('lc_questions').delete().in('material_id', sfQIds);
+                                if (error) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Error: ' + error.message }); return; }
+                              }
                               load();
                             },
                           });
