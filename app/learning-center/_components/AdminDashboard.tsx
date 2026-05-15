@@ -244,10 +244,10 @@ export function AdminDashboard({ user }: { user: User }) {
     : topUsers;
 
   const cards = [
-    { label: 'Total Materi', value: stats.materials, icon: '📚', color: 'from-blue-500 to-blue-600' },
-    { label: 'Active Team', value: stats.activeTeam, icon: '👥', color: 'from-violet-500 to-violet-600' },
-    { label: 'Sesi Aktif', value: stats.sessions, icon: '🎯', color: 'from-emerald-500 to-emerald-600' },
-    { label: 'Total Attempt', value: stats.attempts, icon: '📝', color: 'from-amber-500 to-amber-600' },
+    { label: 'Total Materi', value: stats.materials, icon: '📚', color: 'from-blue-500/90 to-blue-600/90' },
+    { label: 'Active Team', value: stats.activeTeam, icon: '👥', color: 'from-violet-500/90 to-violet-600/90' },
+    { label: 'Sesi Aktif', value: stats.sessions, icon: '🎯', color: 'from-emerald-500/90 to-emerald-600/90' },
+    { label: 'Total Attempt', value: stats.attempts, icon: '📝', color: 'from-amber-500/90 to-amber-600/90' },
   ];
 
   return (
@@ -298,7 +298,7 @@ export function AdminDashboard({ user }: { user: User }) {
                 <SectionHeader>🥧 Analytics Overview</SectionHeader>
                 <div className="grid grid-cols-2 gap-3">
                   {miniCards.map(c => (
-                    <div key={c.title} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col items-center gap-3">
+                    <div key={c.title} className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col items-center gap-3">
                       <DonutChart segments={c.segments} size={72} strokeWidth={10} label={c.label} />
                       <div className="text-center">
                         <p className="text-xs font-bold text-slate-700">{c.title}</p>
@@ -315,12 +315,9 @@ export function AdminDashboard({ user }: { user: User }) {
           <div className="min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
               <SectionHeader>🏆 Top Performers</SectionHeader>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                <p className="text-xs text-slate-400">Klik nama untuk detail per quiz</p>
-                <SearchInput value={searchPerformer} onChange={setSearchPerformer} placeholder="Cari nama..." />
-              </div>
+              <SearchInput value={searchPerformer} onChange={setSearchPerformer} placeholder="Cari nama..." />
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+            <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
               <table className="w-full text-sm" style={{ minWidth: '480px' }}>
                 <thead className="border-b border-slate-200 bg-slate-50">
                   <tr>
@@ -399,7 +396,7 @@ export function AdminDashboard({ user }: { user: User }) {
             <SectionHeader>📈 Statistik Per Sesi Quiz</SectionHeader>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {sessionStats.map((s: any) => (
-                <div key={s.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                <div key={s.id} className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
                   <p className="text-sm font-bold text-slate-800 mb-4 leading-snug line-clamp-2">{s.name}</p>
                   <div className="flex items-start gap-4">
                     <div className="flex flex-col items-center gap-1">
@@ -466,7 +463,7 @@ export function AdminDashboard({ user }: { user: User }) {
         {batchPerf.length > 0 && (
           <section>
             <SectionHeader>🎯 Knowledge Gap per Topik</SectionHeader>
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+            <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
               {batchPerf.map(b => (
                 <div key={b.name}>
                   <div className="flex items-center justify-between mb-1.5">
@@ -498,7 +495,7 @@ export function AdminDashboard({ user }: { user: User }) {
         {divisionStats.length > 0 && (
           <section>
             <SectionHeader>🏢 Ranking Per Divisi / Jabatan</SectionHeader>
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+            <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
               <table className="w-full text-sm" style={{ minWidth: '480px' }}>
                 <thead className="border-b border-slate-200 bg-slate-50">
                   <tr>
@@ -559,7 +556,7 @@ export function AdminDashboard({ user }: { user: User }) {
         {/* ── Recent Activity ── */}
         <section>
           <SectionHeader>🕐 Aktivitas Terbaru</SectionHeader>
-          <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm" style={{ background: '#ffffff' }}>
+          <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm" style={{ background: 'rgba(255,255,255,0.90)' }}>
             <div className="divide-y divide-slate-100">
               {filteredRecent.length === 0 && (
                 <div className="text-center text-slate-400 py-10 text-sm">
