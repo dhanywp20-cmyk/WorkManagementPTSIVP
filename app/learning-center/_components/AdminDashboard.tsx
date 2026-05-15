@@ -275,7 +275,7 @@ export function AdminDashboard({ user }: { user: User }) {
         </div>
 
         {/* ── Analytics Overview + Top Performers (side by side) ── */}
-        <div className="flex flex-col xl:flex-row gap-6 items-start">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
           {/* Left: Analytics Overview mini pies */}
           {overviewStats.submitted > 0 && (() => {
@@ -294,7 +294,7 @@ export function AdminDashboard({ user }: { user: User }) {
                 segments: [{ value: overviewStats.submitted, color: '#10b981' }, { value: overviewStats.abandoned, color: '#cbd5e1' }] },
             ];
             return (
-              <div className="xl:w-[300px] flex-shrink-0">
+              <div>
                 <SectionHeader>🥧 Analytics Overview</SectionHeader>
                 <div className="grid grid-cols-2 gap-3">
                   {miniCards.map(c => (
@@ -312,7 +312,7 @@ export function AdminDashboard({ user }: { user: User }) {
           })()}
 
           {/* Right: Top Performers */}
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
               <SectionHeader>🏆 Top Performers</SectionHeader>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
