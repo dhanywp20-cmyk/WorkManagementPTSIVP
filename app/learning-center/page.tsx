@@ -111,7 +111,7 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
     <div
       className="flex flex-col min-h-screen font-sans"
       style={{
-        backgroundImage: "url('/IVP_Background.png')",
+        backgroundImage: "linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.25)), url('/IVP_Background.png')",
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed',
