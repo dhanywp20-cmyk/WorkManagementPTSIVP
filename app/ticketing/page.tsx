@@ -2204,15 +2204,15 @@ export default function TicketingSystem() {
                 <table className="w-full table-fixed border-collapse" style={{ background: "transparent", minWidth: '1100px' }}>
                   <colgroup>
                     <col style={{ width: "3%" }} />   {/* No */}
-                    <col style={{ width: "20%" }} />  {/* Project / Lokasi*/}
-                    <col style={{ width: "14%" }} />  {/* Product */}
+                    <col style={{ width: "19%" }} />  {/* Project / Lokasi*/}
+                    <col style={{ width: "13%" }} />  {/* Product */}
                     <col style={{ width: "9%" }} />   {/* SN Unit */}
                     <col style={{ width: "16%" }} />  {/* Issue */}
                     <col style={{ width: "9%" }} />   {/* Assigned */}
                     <col style={{ width: "9%" }} />   {/* Status */}
                     <col style={{ width: "8%" }} />   {/* Sales */}
-                    <col style={{ width: "7%" }} />   {/* Created By */}
-                    <col style={{ width: "12%" }} />  {/* Action (combined) */}
+                    <col style={{ width: "5%" }} />   {/* Created By — lebih sempit */}
+                    <col style={{ width: "14%" }} />  {/* Action — lebih lebar */}
                   </colgroup>
                   <thead>
                     <tr className="border-b-2 border-gray-100" style={{ background: "rgba(248,248,248,0.97)" }}>

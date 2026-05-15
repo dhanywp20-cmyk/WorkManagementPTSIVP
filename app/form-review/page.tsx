@@ -1235,15 +1235,15 @@ export default function FormReviewPage() {
                 <table className="w-full border-collapse" style={{ tableLayout: 'fixed', background: 'transparent', minWidth: '920px' }}>
                   <colgroup>
                     <col style={{ width: '3%' }} />   {/* No */}
-                    <col style={{ width: '18%' }} />  {/* Project */}
+                    <col style={{ width: '14%' }} />  {/* Project */}
                     <col style={{ width: '10%' }} />  {/* Kategori */}
                     <col style={{ width: '9%' }} />   {/* Sales */}
-                    <col style={{ width: '12%' }} />   {/* Handler */}
-                    <col style={{ width: '12%' }} />  {/* Product */}
+                    <col style={{ width: '11%' }} />   {/* Handler */}
+                    <col style={{ width: '11%' }} />  {/* Product */}
                     <col style={{ width: '10%' }} />  {/* Grade 1 */}
                     {switchTab === 'BAST' && <col style={{ width: '10%' }} />}  {/* Grade 2 */}
                     <col style={{ width: '9%' }} />   {/* Status */}
-                    <col style={{ width: '5%' }} />   {/* ACT */}
+                    <col style={{ width: '9%' }} />   {/* ACT */}
                   </colgroup>
                   <thead>
                     <tr className="border-b-2 border-gray-300" style={{ background: 'rgba(255,255,255,0.97)' }}>
