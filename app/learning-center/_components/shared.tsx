@@ -299,37 +299,47 @@ export function IcoOpen({ size = 12 }: { size?: number }) {
 }
 
 // ─── Action Button Components ─────────────────────────────────────────────────
+// Icon-only (w-7 h-7) when no children; text+icon when children provided (e.g. "Lihat Jawaban")
 
-const btnBase = 'inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg border transition-all duration-150 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed';
+const iconOnlyBase = 'inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed';
+const textBase = 'inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg border transition-all duration-150 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed';
 
-export function BtnView({ onClick, children = 'Lihat', disabled }: { onClick?: () => void; children?: React.ReactNode; disabled?: boolean }) {
+export function BtnView({ onClick, children, disabled }: { onClick?: () => void; children?: React.ReactNode; disabled?: boolean }) {
+  const hasText = !!children;
   return (
-    <button onClick={onClick} disabled={disabled} className={`${btnBase} text-blue-600 bg-white border-slate-200 hover:bg-blue-50 hover:border-blue-200`}>
-      <IcoView />{children}
+    <button onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Lihat'}
+      className={`${hasText ? textBase : iconOnlyBase} text-blue-600 bg-white border-slate-200 hover:bg-blue-50 hover:border-blue-200`}>
+      <IcoView size={hasText ? 12 : 13} />{hasText && children}
     </button>
   );
 }
 
-export function BtnEdit({ onClick, children = 'Edit', disabled }: { onClick?: () => void; children?: React.ReactNode; disabled?: boolean }) {
+export function BtnEdit({ onClick, children, disabled }: { onClick?: () => void; children?: React.ReactNode; disabled?: boolean }) {
+  const hasText = !!children;
   return (
-    <button onClick={onClick} disabled={disabled} className={`${btnBase} text-emerald-600 bg-white border-slate-200 hover:bg-emerald-50 hover:border-emerald-200`}>
-      <IcoEdit />{children}
+    <button onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Edit'}
+      className={`${hasText ? textBase : iconOnlyBase} text-emerald-600 bg-white border-slate-200 hover:bg-emerald-50 hover:border-emerald-200`}>
+      <IcoEdit size={hasText ? 12 : 13} />{hasText && children}
     </button>
   );
 }
 
-export function BtnDelete({ onClick, children = 'Hapus', disabled }: { onClick?: () => void; children?: React.ReactNode; disabled?: boolean }) {
+export function BtnDelete({ onClick, children, disabled }: { onClick?: () => void; children?: React.ReactNode; disabled?: boolean }) {
+  const hasText = !!children;
   return (
-    <button onClick={onClick} disabled={disabled} className={`${btnBase} text-rose-600 bg-white border-slate-200 hover:bg-rose-50 hover:border-rose-200`}>
-      <IcoDelete />{children}
+    <button onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Hapus'}
+      className={`${hasText ? textBase : iconOnlyBase} text-rose-600 bg-white border-slate-200 hover:bg-rose-50 hover:border-rose-200`}>
+      <IcoDelete size={hasText ? 12 : 13} />{hasText && children}
     </button>
   );
 }
 
-export function BtnOpen({ onClick, children = 'Buka', disabled }: { onClick?: () => void; children?: React.ReactNode; disabled?: boolean }) {
+export function BtnOpen({ onClick, children, disabled }: { onClick?: () => void; children?: React.ReactNode; disabled?: boolean }) {
+  const hasText = !!children;
   return (
-    <button onClick={onClick} disabled={disabled} className={`${btnBase} text-violet-600 bg-white border-slate-200 hover:bg-violet-50 hover:border-violet-200`}>
-      <IcoOpen />{children}
+    <button onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Buka'}
+      className={`${hasText ? textBase : iconOnlyBase} text-violet-600 bg-white border-slate-200 hover:bg-violet-50 hover:border-violet-200`}>
+      <IcoOpen size={hasText ? 12 : 13} />{hasText && children}
     </button>
   );
 }

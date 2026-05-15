@@ -15,7 +15,10 @@ import {
   StatusDonutCard, SalesDivisionDonutCard, HandlerDonutCard,
   ProductDonutCard, InfoLine,
 } from "./_components/DonutCards";
-import { ViewIconBtn, DeleteIconBtn } from "@/components/shared";
+import {
+  ViewIconBtn, DeleteIconBtn,
+  FlowchartIconBtn, PrintIconBtn, ApproveIconBtn, ReopenIconBtn, OverdueIconBtn,
+} from "@/components/shared";
 
 export default function TicketingSystem() {
   const router = useRouter();
@@ -2314,33 +2317,33 @@ export default function TicketingSystem() {
                           <td className="px-2 py-3 border-r border-gray-100 align-middle"><div className="text-xs text-gray-600 break-words leading-tight">{ticket.sales_name || "—"}</div>{ticket.sales_division && <div className="text-xs text-purple-500 font-semibold mt-0.5">{ticket.sales_division}</div>}</td>
                           <td className="px-3 py-3 border-r border-gray-100 align-middle py-4"><div className="text-sm text-gray-600 break-words leading-tight">{creatorLabel}</div></td>
                           <td className="px-1 py-2 align-middle">
-                            <div className="flex flex-wrap items-center justify-center gap-1.5">
+                            <div className="flex flex-wrap items-center justify-center gap-1">
                               {/* Activity log badge + View */}
                               <div className="relative inline-flex">
-                                <ViewIconBtn onClick={() => { setSelectedTicket(ticket); setShowTicketDetailPopup(true); }} label="Detail" />
+                                <ViewIconBtn onClick={() => { setSelectedTicket(ticket); setShowTicketDetailPopup(true); }} title="Detail" />
                                 {ticket.activity_logs && ticket.activity_logs.length > 0 && (
                                   <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[9px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center leading-none">{ticket.activity_logs.length}</span>
                                 )}
                               </div>
                               {/* Flowchart */}
-                              <button onClick={() => { setSummaryTicket(ticket); setShowActivitySummary(true); }} className="text-blue-600 hover:text-blue-800 transition-colors" title="Flowchart"><span className="text-sm">📊</span></button>
+                              <FlowchartIconBtn onClick={() => { setSummaryTicket(ticket); setShowActivitySummary(true); }} />
                               {/* Print PDF */}
-                              <button onClick={() => exportToPDF(ticket)} className="text-green-600 hover:text-green-800 transition-colors" title="Print PDF"><span className="text-sm">🖨️</span></button>
+                              <PrintIconBtn onClick={() => exportToPDF(ticket)} />
                               {/* Waiting Approval — admin only */}
                               {canAccessAccountSettings && ticket.status === "Waiting Approval" && (
-                                <button onClick={() => { setApprovalTicket(ticket); setApprovalAssignee(""); setShowApprovalModal(true); }} className="text-orange-600 hover:text-orange-800 transition-colors animate-pulse" title="Approve"><span className="text-sm">✅</span></button>
+                                <ApproveIconBtn onClick={() => { setApprovalTicket(ticket); setApprovalAssignee(""); setShowApprovalModal(true); }} pulse />
                               )}
                               {/* Re-open */}
                               {ticket.status === "Solved" && canUpdateTicket && (
-                                <button onClick={() => { setReopenTargetTicket(ticket); setReopenAssignee(ticket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} className="text-amber-600 hover:text-amber-800 transition-colors" title="Re-open"><span className="text-sm">🔓</span></button>
+                                <ReopenIconBtn onClick={() => { setReopenTargetTicket(ticket); setReopenAssignee(ticket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} />
                               )}
                               {/* Hapus — admin only */}
                               {canAccessAccountSettings && (
-                                <DeleteIconBtn onClick={() => { setDeleteTargetTicket(ticket); setDeleteConfirmText(""); setShowDeleteModal(true); }} label="Hapus" />
+                                <DeleteIconBtn onClick={() => { setDeleteTargetTicket(ticket); setDeleteConfirmText(""); setShowDeleteModal(true); }} />
                               )}
                               {/* Overdue Setting — admin only */}
                               {canAccessAccountSettings && (
-                                <button onClick={() => { setOverdueTargetTicket(ticket); const existing = getOverdueSetting(ticket.id); setOverdueForm({ due_hours: existing?.due_hours ? String(existing.due_hours) : "48" }); setShowOverdueSetting(true); }} className={`transition-colors ${overdueSetting ? "text-red-600 hover:text-red-800" : "text-gray-400 hover:text-gray-600"}`} title="Overdue Setting"><span className="text-sm">⏰</span></button>
+                                <OverdueIconBtn onClick={() => { setOverdueTargetTicket(ticket); const existing = getOverdueSetting(ticket.id); setOverdueForm({ due_hours: existing?.due_hours ? String(existing.due_hours) : "48" }); setShowOverdueSetting(true); }} active={!!overdueSetting} />
                               )}
                             </div>
                           </td>

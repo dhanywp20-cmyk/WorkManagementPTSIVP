@@ -6,6 +6,7 @@ export { MiniPieChart } from './MiniPieChart';
 export {
   ViewIconBtn, EditIconBtn, DeleteIconBtn, RescheduleIconBtn,
   DuplicateIconBtn, CompleteIconBtn, ActionGroup,
+  FlowchartIconBtn, PrintIconBtn, ApproveIconBtn, ReopenIconBtn, OverdueIconBtn,
 } from './ActionIcons';
 export { Toast, InlineToast, type Notif } from './Toast';
 export { LoadingScreen, InlineSpinner } from './LoadingScreen';
