@@ -1377,7 +1377,7 @@ Hubungi Admin untuk info lebih lanjut.
       )}
 
       {/* STICKY HEADER */}
-      <header className="sticky top-0 z-50" style={{ background: 'rgba(255,255,255,0.95)', borderBottom: '3px solid #0d9488', backdropFilter: 'blur(16px)' }}>
+      <header className="sticky top-0 z-50 animate-slide-down anim-d0" style={{ background: 'rgba(255,255,255,0.95)', borderBottom: '3px solid #0d9488', backdropFilter: 'blur(16px)' }}>
         <div className="max-w-[1600px] mx-auto px-6 py-3.5 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -1447,7 +1447,7 @@ Hubungi Admin untuk info lebih lanjut.
       <div className="flex-1 max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
 
         {/* Stat Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 animate-slide-up anim-d80">
           {[
             { label: 'Total', value: stats.total, sub: 'Semua request', gradient: 'linear-gradient(135deg,#4f46e5,#6d28d9)', shadow: 'rgba(79,70,229,0.35)', onClick: () => setFilterStatus('all'), active: filterStatus === 'all' },
             { label: 'Pending', value: stats.pending, sub: 'Menunggu approval', gradient: 'linear-gradient(135deg,#d97706,#b45309)', shadow: 'rgba(217,119,6,0.35)', onClick: () => setFilterStatus(filterStatus === 'pending' ? 'all' : 'pending'), active: filterStatus === 'pending' },
@@ -1470,7 +1470,7 @@ Hubungi Admin untuk info lebih lanjut.
         </div>
 
         {/* Charts - guest sees handler + product, PTS sees all 3 */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-zoom-in anim-d160">
           {isPTS ? (
             <>
               <MiniPieChart data={statusPieData} title="Status Distribution" icon="🥧"
@@ -1500,7 +1500,7 @@ Hubungi Admin untuk info lebih lanjut.
         
 
         {/* TICKET LIST — matching reference style */}
-        <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.6)', backdropFilter: 'blur(12px)' }}>
+        <div className="rounded-2xl overflow-hidden animate-slide-up anim-d320" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.6)', backdropFilter: 'blur(12px)' }}>
 
           {/* Header with title + actions — same as reference */}
           <div className="flex flex-wrap items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid rgba(0,0,0,0.07)' }}>

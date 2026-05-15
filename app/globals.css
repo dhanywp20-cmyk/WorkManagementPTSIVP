@@ -50,3 +50,14 @@ html {
 .stagger-item:nth-child(7)  { animation-delay:318ms; }
 .stagger-item:nth-child(8)  { animation-delay:348ms; }
 .stagger-item:nth-child(n+9){ animation-delay:373ms; }
+
+/* ── Page section entrance delay helpers ─────────────────────────────────── */
+/* Use alongside animate-slide-up / animate-zoom-in / animate-slide-down     */
+.anim-d0   { animation-delay:   0ms !important; }
+.anim-d80  { animation-delay:  80ms !important; }
+.anim-d160 { animation-delay: 160ms !important; }
+.anim-d240 { animation-delay: 240ms !important; }
+.anim-d320 { animation-delay: 320ms !important; }
+.anim-d400 { animation-delay: 400ms !important; }
+.anim-d480 { animation-delay: 480ms !important; }
+.anim-d560 { animation-delay: 560ms !important; }

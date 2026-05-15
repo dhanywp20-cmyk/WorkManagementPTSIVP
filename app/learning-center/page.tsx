@@ -161,7 +161,7 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
   ];
   return (
     <div style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(16px)', borderBottom: '3px solid #dc2626' }}
-      className="flex-shrink-0 sticky top-0 z-50">
+      className="flex-shrink-0 sticky top-0 z-50 animate-slide-down anim-d0">
       <div className="flex items-center gap-3 px-6 pt-4 pb-0">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-base shadow">🎓</div>
         <div>
@@ -197,7 +197,7 @@ function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView
   ];
   return (
     <div style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(16px)', borderBottom: '3px solid #dc2626' }}
-      className="flex-shrink-0 sticky top-0 z-50">
+      className="flex-shrink-0 sticky top-0 z-50 animate-slide-down anim-d0">
       <div className="flex items-center gap-3 px-6 pt-4 pb-0">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-base shadow">🎓</div>
         <div>

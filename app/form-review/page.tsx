@@ -980,7 +980,7 @@ export default function FormReviewPage() {
         )}
 
         {/* ── HEADER ── */}
-        <div className="sticky top-0 z-50"
+        <div className="sticky top-0 z-50 animate-slide-down anim-d0"
           style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
           {/* Loading Bar */}
           {loadingBar > 0 && (
@@ -1031,7 +1031,7 @@ export default function FormReviewPage() {
         <div className="flex-1 p-5 space-y-5">
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-slide-up anim-d80">
             {[
               {
                 label: 'Total Review', value: reviews.length, sub: 'Semua form review',
@@ -1082,7 +1082,7 @@ export default function FormReviewPage() {
           </div>
 
           {/* Mini Pie Charts */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-zoom-in anim-d160">
             <MiniPieChart data={categoryPieData} title="Kategori Kegiatan" icon="📋"
               activeFilter={filterReviewCat !== 'all' ? filterReviewCat : null}
               onSliceClick={label => setFilterReviewCat(prev => (prev === label ? 'all' : label as any))} />
@@ -1098,7 +1098,7 @@ export default function FormReviewPage() {
           </div>
 
           {/* Table */}
-          <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.6)', backdropFilter: 'blur(12px)' }}>
+          <div className="rounded-2xl overflow-hidden animate-slide-up anim-d320" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.6)', backdropFilter: 'blur(12px)' }}>
             {/* Table Header */}
             <div className="flex flex-wrap items-center justify-between px-5 py-3.5 border-b border-gray-100">
               <div className="flex items-center gap-3">

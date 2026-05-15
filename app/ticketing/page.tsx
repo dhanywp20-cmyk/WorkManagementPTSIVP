@@ -1843,7 +1843,7 @@ export default function TicketingSystem() {
         )}
 
         {/* ── HEADER ── (Redesigned like ReminderSchedule) */}
-        <header className="sticky top-0 z-50" style={{ background: "rgba(255,255,255,0.9)", borderBottom: "3px solid #dc2626", backdropFilter: "blur(16px)" }}>
+        <header className="sticky top-0 z-50 animate-slide-down anim-d0" style={{ background: "rgba(255,255,255,0.9)", borderBottom: "3px solid #dc2626", backdropFilter: "blur(16px)" }}>
           <div className="max-w-[1600px] mx-auto px-6 py-3.5 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)", boxShadow: "0 3px 12px rgba(220,38,38,0.4)" }}>
@@ -1925,7 +1925,7 @@ export default function TicketingSystem() {
           {/* ── GUEST SUMMARY SECTION (same style as admin) ── */}
           {currentUser?.role === "guest" && (
             <div className="mb-4 space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 animate-slide-up anim-d80">
                 {[
                   { label: "Total Tickets", value: stats.total, sub: "Seluruh tiket saya", gradient: "linear-gradient(135deg,#4f46e5,#6d28d9)", shadow: "rgba(79,70,229,0.35)" },
                   { label: "Waiting Approval", value: tickets.filter((t) => t.status === "Waiting Approval").length, sub: "Menunggu persetujuan", gradient: "linear-gradient(135deg,#ea580c,#c2410c)", shadow: "rgba(234,88,12,0.35)" },
@@ -1942,7 +1942,7 @@ export default function TicketingSystem() {
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 animate-zoom-in anim-d160">
                 <StatusDonutCard
                   data={[
                     { name: "Waiting Approval", value: tickets.filter((t) => t.status === "Waiting Approval").length, color: "#FB923C" },
@@ -1982,7 +1982,7 @@ export default function TicketingSystem() {
           {(currentUser?.role === "admin" || currentUser?.role === "superadmin" || (currentUser?.role === "team" && currentUserTeamType === "Team PTS" || currentUserTeamType === "Guest")) && (
             <div className="mb-4 space-y-4">
               {/* ── Stat Cards (Redesigned like ReminderSchedule) ── */}
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-3 animate-slide-up anim-d80">
                 {[
                   { label: "Total Tickets", value: stats.total, sub: "Seluruh tiket", gradient: "linear-gradient(135deg,#4f46e5,#6d28d9)", shadow: "rgba(79,70,229,0.35)", onClick: () => { setFilterStatus("All"); setHandlerFilter(null); }, active: filterStatus === "All" && !handlerFilter },
                   { label: "Pending", value: stats.pending, sub: "Menunggu tindakan", gradient: "linear-gradient(135deg,#d97706,#b45309)", shadow: "rgba(217,119,6,0.35)", onClick: () => { setFilterStatus(filterStatus === "Pending" ? "All" : "Pending"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Pending" },
@@ -2004,7 +2004,7 @@ export default function TicketingSystem() {
               </div>
 
               {/* ── Donut Charts ── */}
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 animate-zoom-in anim-d160">
                 <StatusDonutCard data={stats.statusData} total={stats.statusData.reduce((s, d) => s + d.value, 0)} onSliceClick={(name: string) => { const mapped = name === "Solved (Overdue)" ? "Solved Overdue" : name; setFilterStatus((prev) => prev === mapped ? "All" : mapped); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }} title="Status Distribution" icon="🥧" />
                 <HandlerDonutCard data={stats.handlerData.filter((h: any) => h.team === `Team ${selectedHandlerTeam}`).map((h: any, i: number) => ({ name: h.name, value: h.tickets, color: ["#7c3aed", "#0ea5e9", "#10b981", "#e11d48", "#f59e0b", "#6366f1", "#14b8a6", "#f97316", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"][i % 12] }))} total={stats.handlerData.filter((h: any) => h.team === `Team ${selectedHandlerTeam}`).reduce((s, h) => s + h.tickets, 0)} teamToggle={selectedHandlerTeam} onToggle={(t: "PTS" | "Services") => setSelectedHandlerTeam(t)} onSliceClick={(name: string) => { setHandlerFilter((prev: string | null) => prev === name ? null : name); setFilterStatus("All"); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }} activeHandler={handlerFilter} title="Team Handlers" icon="👥" />
                 <SalesDivisionDonutCard data={salesDivisionStats.data} total={salesDivisionStats.total} onSliceClick={(division: string) => { setSalesDivisionFilter((prev: string | null) => prev === division ? null : division); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }} activeDivision={salesDivisionFilter} />
@@ -2014,7 +2014,7 @@ export default function TicketingSystem() {
           )}
 
           {/* ── TICKET LIST (with integrated search/filter bar like image) ── */}
-          <div ref={ticketListRef} className="rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.97)", border: "1px solid rgba(200,200,200,0.6)", backdropFilter: "blur(12px)" }}>
+          <div ref={ticketListRef} className="rounded-2xl overflow-hidden animate-slide-up anim-d320" style={{ background: "rgba(255,255,255,0.97)", border: "1px solid rgba(200,200,200,0.6)", backdropFilter: "blur(12px)" }}>
             {/* Header with title and actions */}
             <div className="flex flex-wrap items-center justify-between px-6 py-4 border-b" style={{ borderBottom: "1px solid rgba(0,0,0,0.07)" }}>
               <div className="flex items-center gap-3">
@@ -2204,15 +2204,15 @@ export default function TicketingSystem() {
                 <table className="w-full table-fixed border-collapse" style={{ background: "transparent", minWidth: '1100px' }}>
                   <colgroup>
                     <col style={{ width: "3%" }} />   {/* No */}
-                    <col style={{ width: "19%" }} />  {/* Project / Lokasi*/}
-                    <col style={{ width: "13%" }} />  {/* Product */}
+                    <col style={{ width: "17%" }} />  {/* Project / Lokasi*/}
+                    <col style={{ width: "11%" }} />  {/* Product */}
                     <col style={{ width: "9%" }} />   {/* SN Unit */}
-                    <col style={{ width: "16%" }} />  {/* Issue */}
+                    <col style={{ width: "14%" }} />  {/* Issue */}
                     <col style={{ width: "9%" }} />   {/* Assigned */}
                     <col style={{ width: "9%" }} />   {/* Status */}
                     <col style={{ width: "8%" }} />   {/* Sales */}
-                    <col style={{ width: "5%" }} />   {/* Created By — lebih sempit */}
-                    <col style={{ width: "14%" }} />  {/* Action — lebih lebar */}
+                    <col style={{ width: "8%" }} />   {/* Created By */}
+                    <col style={{ width: "12%" }} />  {/* Action */}
                   </colgroup>
                   <thead>
                     <tr className="border-b-2 border-gray-100" style={{ background: "rgba(248,248,248,0.97)" }}>

@@ -1664,7 +1664,7 @@ export default function ReminderSchedulePage() {
         )}
 
         {/* ── HEADER ── */}
-        <header className="sticky top-0 z-50" style={{ background: 'rgba(255,255,255,0.9)', borderBottom: '3px solid #dc2626', backdropFilter: 'blur(16px)' }}>
+        <header className="sticky top-0 z-50 animate-slide-down anim-d0" style={{ background: 'rgba(255,255,255,0.9)', borderBottom: '3px solid #dc2626', backdropFilter: 'blur(16px)' }}>
           <div className="max-w-[1600px] mx-auto px-6 py-3.5 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -1708,7 +1708,7 @@ export default function ReminderSchedulePage() {
           {view === 'list' && (
             <>
               {/* ── Stat cards (clickable filter) ── */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-slide-up anim-d80">
                 {[
                   {
                     label: 'Total Jadwal', value: totalCount, sub: 'Semua reminder',
@@ -1759,7 +1759,7 @@ export default function ReminderSchedulePage() {
               </div>
 
               {/* ── Pie Charts — klick untuk filter ── */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-zoom-in anim-d160">
                 <MiniPieChart
                   data={projectPieData} title="Kegiatan / Kategori" icon="🖥️"
                   activeFilter={filterCategory !== 'all' ? filterCategory : null}
@@ -1784,7 +1784,7 @@ export default function ReminderSchedulePage() {
 
               {/* Active filter chips */}
               {/* Main area: list + calendar */}
-              <div className="flex gap-4 items-start">
+              <div className="flex gap-4 items-start animate-slide-up anim-d320">
 
                 {/* ── TICKET LIST ── */}
                 <div className="flex-1 min-w-0 rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.6)', backdropFilter: 'blur(12px)' }}>

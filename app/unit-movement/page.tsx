@@ -170,7 +170,7 @@ export default function UnitMovementPage() {
       )}
 
       {/* Header — tanpa logout & nama user (handled oleh dashboard) */}
-      <div className="bg-white/85 backdrop-blur-md shadow-md sticky top-0 z-30" style={{borderBottom:'2px solid rgba(245,158,11,0.3)'}}>
+      <div className="bg-white/85 backdrop-blur-md shadow-md sticky top-0 z-30 animate-slide-down anim-d0" style={{borderBottom:'2px solid rgba(245,158,11,0.3)'}}>
         <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <span className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-md" style={{background:'linear-gradient(135deg,#f59e0b,#d97706)'}}>🚚</span>
@@ -193,7 +193,7 @@ export default function UnitMovementPage() {
       <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
 
         {/* Stat Cards — 3 saja, tanpa Anggota PTS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-slide-up anim-d80">
           {[
             {label:'Total Log',     value:filteredLogs.length, icon:'📋', g:'linear-gradient(135deg,#6366f1,#4f46e5)', sh:'rgba(99,102,241,0.35)'},
             {label:'Barang Masuk',  value:filteredLogs.filter(l=>l.status_barang==='Masuk').length,  icon:'📥', g:'linear-gradient(135deg,#10b981,#059669)', sh:'rgba(16,185,129,0.35)'},
@@ -208,7 +208,7 @@ export default function UnitMovementPage() {
         </div>
 
         {/* Pie Charts */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-zoom-in anim-d160">
           <MiniPieChart data={statusPieData} title="Status Barang" icon="📦"
             activeFilter={filterStatus!=='All'?filterStatus:null}
             onSliceClick={l=>setFilterStatus(p=>p===l?'All':l as any)}/>
@@ -221,7 +221,7 @@ export default function UnitMovementPage() {
         </div>
 
         {/* Table */}
-        <div className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(200,200,200,0.6)',backdropFilter:'blur(12px)'}}>
+        <div className="rounded-2xl overflow-hidden animate-slide-up anim-d320" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(200,200,200,0.6)',backdropFilter:'blur(12px)'}}>
           <div className="flex flex-wrap items-center justify-between px-6 py-4 gap-3" style={{borderBottom:'1px solid rgba(0,0,0,0.07)'}}>
             <div className="flex items-center gap-3">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Movement Log</span>
