@@ -261,7 +261,7 @@ export function QuestionsPage({ user }: { user: User }) {
   };
 
   // ─── Rename Folder Modal ────────────────────────────────────────────────────
-  const RenameFolderModal = () => (
+  const renameFolderModalJSX = renameFolder ? (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999] p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
         <h3 className="font-bold text-slate-800 mb-1 text-base">✏️ Ubah Nama Folder</h3>
@@ -297,7 +297,7 @@ export function QuestionsPage({ user }: { user: User }) {
         </div>
       </div>
     </div>
-  );
+  ) : null;
 
   // ─── Gemini usage helper ────────────────────────────────────────────────────
   const getGeminiUsage = () => {
@@ -313,8 +313,8 @@ export function QuestionsPage({ user }: { user: User }) {
     ? new Date(geminiUsage.lastUsed).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
     : null;
 
-  // ─── Generate Panel ────────────────────────────────────────────────────────
-  const GeneratePanel = () => (
+  // ─── Generate Panel (plain JSX var — NOT a sub-component, avoids remount on every keystroke) ──
+  const generatePanelJSX = (
     <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl border border-violet-200 p-6">
       <div className="flex items-start justify-between mb-3">
         <h3 className="font-bold text-violet-800 flex items-center gap-2">✨ Generate Soal dengan Gemini AI</h3>
@@ -336,14 +336,11 @@ export function QuestionsPage({ user }: { user: User }) {
         <span>ℹ️</span>
         <span className="text-violet-700">Gemini 2.5 Flash free tier: <strong>10 req/menit</strong>, ~<strong>50 req/hari</strong>. Jika error limit, tunggu 1 menit atau coba besok.</span>
       </div>
-      <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5 mb-4 font-medium">
-        ✅ PDF hanya digunakan untuk generate — <strong>tidak disimpan ke Supabase</strong>.
-      </p>
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="col-span-2">
           <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
             Nama Grup / Batch
-            <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional — untuk mengelompokkan soal di bawah judul ini)</span>
+            <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional</span>
           </label>
           <input value={batchName} onChange={e => setBatchName(e.target.value)}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white"
@@ -352,7 +349,7 @@ export function QuestionsPage({ user }: { user: User }) {
         <div className="col-span-2">
           <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
             Topik Khusus
-            <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional — fokus generate pada subtopik tertentu dari materi)</span>
+            <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional</span>
           </label>
           <textarea value={genExtraPrompt} onChange={e => setGenExtraPrompt(e.target.value)} rows={2}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white resize-none"
@@ -417,8 +414,8 @@ export function QuestionsPage({ user }: { user: User }) {
     </div>
   );
 
-  // ─── Manual Add Modal ───────────────────────────────────────────────────────
-  const AddManualModal = () => (
+  // ─── Manual Add Modal (plain JSX var — NOT a sub-component, avoids remount on every keystroke) ──
+  const addManualModalJSX = showAddManual ? (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999] p-4">
       <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ background: '#ffffff' }}>
         <h3 className="font-bold text-slate-800 mb-1 text-base">➕ Tambah Soal Manual</h3>
@@ -455,7 +452,7 @@ export function QuestionsPage({ user }: { user: User }) {
           <div>
             <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
               Nama Grup / Batch
-              <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
+              <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional</span>
             </label>
             <input value={newQ.batch_name} onChange={e => setNewQ(p => ({ ...p, batch_name: e.target.value }))}
               className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400"
@@ -481,7 +478,7 @@ export function QuestionsPage({ user }: { user: User }) {
         </div>
       </div>
     </div>
-  );
+  ) : null;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SCREEN 1 — Folder Selection
@@ -541,7 +538,7 @@ export function QuestionsPage({ user }: { user: User }) {
         {/* ── Content ── */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="max-w-5xl mx-auto space-y-6">
-          {showGenerate && <GeneratePanel />}
+          {showGenerate && generatePanelJSX}
 
           <div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -630,8 +627,8 @@ export function QuestionsPage({ user }: { user: User }) {
           </div>{/* end max-w-5xl */}
         </div>
 
-        {showAddManual && <AddManualModal />}
-        {renameFolder && <RenameFolderModal />}
+        {addManualModalJSX}
+        {renameFolderModalJSX}
         {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
       </div>
     );
@@ -738,7 +735,7 @@ export function QuestionsPage({ user }: { user: User }) {
       {/* ── Content ── */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-5xl mx-auto space-y-6">
-        {showGenerate && <GeneratePanel />}
+        {showGenerate && generatePanelJSX}
 
         {/* Subfolder grid */}
         {subFolders.length > 0 && !selectedSubFolder && (
@@ -1063,8 +1060,8 @@ export function QuestionsPage({ user }: { user: User }) {
         </div>{/* end max-w-5xl */}
       </div>
 
-      {showAddManual && <AddManualModal />}
-      {renameFolder && <RenameFolderModal />}
+      {addManualModalJSX}
+      {renameFolderModalJSX}
       {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
     </div>
   );
