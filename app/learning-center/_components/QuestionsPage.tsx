@@ -38,11 +38,13 @@ export function QuestionsPage({ user }: { user: User }) {
   const [showAddManual, setShowAddManual] = useState(false);
   const [newQ, setNewQ] = useState({
     question: '', option_a: '', option_b: '', option_c: '', option_d: '',
-    correct_answer: 'A', difficulty: 'medium' as 'easy' | 'medium' | 'hard', material_id: '',
+    correct_answer: 'A', difficulty: 'medium' as 'easy' | 'medium' | 'hard',
+    material_id: '', batch_name: '',
   });
   const [genCount, setGenCount] = useState(10);
   const [genDiff, setGenDiff] = useState<'easy' | 'medium' | 'hard' | 'mixed'>('mixed');
   const [batchName, setBatchName] = useState('');
+  const [genExtraPrompt, setGenExtraPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
   const [genStatus, setGenStatus] = useState('');
   const [editQ, setEditQ] = useState<Question | null>(null);
@@ -154,7 +156,10 @@ export function QuestionsPage({ user }: { user: User }) {
       const diffInstruction = genDiff === 'mixed'
         ? 'Buat soal dengan campuran tingkat kesulitan: easy, medium, dan hard secara merata.'
         : `Semua soal tingkat kesulitan: ${genDiff}.`;
-      const prompt = `Kamu adalah instruktur training profesional. ${pdfFile ? 'Berdasarkan dokumen PDF yang dilampirkan' : 'Berdasarkan materi berikut'}, buat tepat ${genCount} soal pilihan ganda (A, B, C, D) dalam Bahasa Indonesia.\n${diffInstruction}\n${!pdfFile && mat?.content_text ? `\nMATERI:\n${mat.content_text.slice(0, 30000)}` : ''}\n\nKembalikan HANYA JSON array, tanpa markdown, tanpa teks lain:\n[\n  {\n    "question": "Pertanyaan lengkap?",\n    "option_a": "Jawaban A",\n    "option_b": "Jawaban B",\n    "option_c": "Jawaban C",\n    "option_d": "Jawaban D",\n    "correct_answer": "A",\n    "difficulty": "easy"\n  }\n]`;
+      const extraInstruction = genExtraPrompt.trim()
+        ? `\n\nFOKUS TOPIK KHUSUS: ${genExtraPrompt.trim()}\nPastikan seluruh soal yang dibuat berfokus pada topik tersebut dari materi ini.`
+        : '';
+      const prompt = `Kamu adalah instruktur training profesional. ${pdfFile ? 'Berdasarkan dokumen PDF yang dilampirkan' : 'Berdasarkan materi berikut'}, buat tepat ${genCount} soal pilihan ganda (A, B, C, D) dalam Bahasa Indonesia.\n${diffInstruction}${extraInstruction}\n${!pdfFile && mat?.content_text ? `\nMATERI:\n${mat.content_text.slice(0, 30000)}` : ''}\n\nKembalikan HANYA JSON array, tanpa markdown, tanpa teks lain:\n[\n  {\n    "question": "Pertanyaan lengkap?",\n    "option_a": "Jawaban A",\n    "option_b": "Jawaban B",\n    "option_c": "Jawaban C",\n    "option_d": "Jawaban D",\n    "correct_answer": "A",\n    "difficulty": "easy"\n  }\n]`;
       setGenStatus(pdfFile ? '📄 Mengirim PDF ke Gemini...' : '🧠 Generating soal...');
       const text = await generateWithGemini(prompt, pdfFile ?? null);
       setGenStatus('⚙️ Memproses hasil...');
@@ -181,7 +186,7 @@ export function QuestionsPage({ user }: { user: User }) {
       localStorage.setItem('gemini_last_used', new Date().toISOString());
       setPdfFile(null);
       if (pdfRef.current) pdfRef.current.value = '';
-      setBatchName('');
+      setBatchName(''); setGenExtraPrompt('');
       setShowGenerate(false); setGenStatus(''); load();
       setDialog({ type: 'success', title: 'Generate Selesai', message: `${rows.length} soal berhasil digenerate dan disimpan!${batchName.trim() ? ` (Batch: ${batchName.trim()})` : ''}` });
     } catch (err: any) {
@@ -245,7 +250,7 @@ export function QuestionsPage({ user }: { user: User }) {
     }]);
     if (error) { setDialog({ type: 'error', message: 'Error: ' + error.message }); return; }
     setShowAddManual(false);
-    setNewQ({ question: '', option_a: '', option_b: '', option_c: '', option_d: '', correct_answer: 'A', difficulty: 'medium', material_id: '' });
+    setNewQ({ question: '', option_a: '', option_b: '', option_c: '', option_d: '', correct_answer: 'A', difficulty: 'medium', material_id: '', batch_name: '' });
     load();
     setDialog({ type: 'success', message: 'Soal berhasil ditambahkan!' });
   };
@@ -337,12 +342,21 @@ export function QuestionsPage({ user }: { user: User }) {
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="col-span-2">
           <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-            Nama Batch / Topik
-            <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional — untuk mengelompokkan soal)</span>
+            Nama Grup / Batch
+            <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional — untuk mengelompokkan soal di bawah judul ini)</span>
           </label>
           <input value={batchName} onChange={e => setBatchName(e.target.value)}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white"
             placeholder="contoh: Instalasi Dasar, Troubleshooting Level 1, Quiz Minggu ke-3..." />
+        </div>
+        <div className="col-span-2">
+          <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+            Topik Khusus
+            <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional — fokus generate pada subtopik tertentu dari materi)</span>
+          </label>
+          <textarea value={genExtraPrompt} onChange={e => setGenExtraPrompt(e.target.value)} rows={2}
+            className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white resize-none"
+            placeholder="contoh: Fokus pada cara pemasangan LED indoor P2.5, atau khusus troubleshooting sinyal HDMI..." />
         </div>
         <div>
           <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
@@ -397,7 +411,7 @@ export function QuestionsPage({ user }: { user: User }) {
           className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60 flex items-center gap-2">
           {generating ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generating...</> : '✨ Generate Sekarang'}
         </button>
-        <button onClick={() => { setShowGenerate(false); setPdfFile(null); setGenStatus(''); setBatchName(''); if (pdfRef.current) pdfRef.current.value = ''; }}
+        <button onClick={() => { setShowGenerate(false); setPdfFile(null); setGenStatus(''); setBatchName(''); setGenExtraPrompt(''); if (pdfRef.current) pdfRef.current.value = ''; }}
           className="px-5 py-2.5 bg-white text-slate-600 text-sm font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all">Batal</button>
       </div>
     </div>
@@ -438,6 +452,15 @@ export function QuestionsPage({ user }: { user: User }) {
               </button>
             </div>
           ))}
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+              Nama Grup / Batch
+              <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
+            </label>
+            <input value={newQ.batch_name} onChange={e => setNewQ(p => ({ ...p, batch_name: e.target.value }))}
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400"
+              placeholder="contoh: Instalasi Dasar, Quiz Minggu 1, Troubleshooting..." />
+          </div>
           <div>
             <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
             <select value={newQ.difficulty} onChange={e => setNewQ(p => ({ ...p, difficulty: e.target.value as any }))}
@@ -890,19 +913,44 @@ export function QuestionsPage({ user }: { user: User }) {
             .map(({ mat, matIdx, qs }) => {
               const totalForMat = questions.filter(q => q.material_id === mat.id).length;
               const matColor = FOLDER_COLORS[matIdx % FOLDER_COLORS.length];
+
+              // Group questions by batch_name within this material
+              const batchKeys = Array.from(new Set(qs.map(q => q.batch_name ?? '')))
+                .sort((a, b) => {
+                  if (a === '') return 1; // ungrouped goes last
+                  if (b === '') return -1;
+                  return a.localeCompare(b);
+                });
+
+              const handleDeleteBatch = (batchKey: string) => {
+                const batchQs = qs.filter(q => (q.batch_name ?? '') === batchKey);
+                const label = batchKey || 'Tanpa Grup';
+                setDialog({
+                  type: 'confirm', title: 'Hapus Grup Soal',
+                  message: `Semua ${batchQs.length} soal dalam grup "${label}" akan dihapus permanen. Lanjutkan?`,
+                  confirmLabel: 'Hapus',
+                  onConfirm: async () => {
+                    const ids = batchQs.map(q => q.id);
+                    if (ids.length > 0) {
+                      await supabase.from('lc_answers').delete().in('question_id', ids);
+                      const { error } = await supabase.from('lc_questions').delete().in('id', ids);
+                      if (error) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Error: ' + error.message }); return; }
+                    }
+                    load();
+                  },
+                });
+              };
+
               return (
                 <div key={mat.id}>
-                  {/* Group header */}
+                  {/* Material header */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span
-                        className="text-xs font-bold px-3 py-1.5 rounded-full text-white"
-                        style={{ background: matColor.gradient }}
-                      >
+                      <span className="text-xs font-bold px-3 py-1.5 rounded-full text-white" style={{ background: matColor.gradient }}>
                         📖 {mat.materi_name}
                       </span>
                       <span className="text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-2.5 py-0.5 rounded-full shadow-sm">
-                        {totalForMat} soal
+                        {totalForMat} soal · {batchKeys.filter(b => b !== '').length} grup
                       </span>
                     </div>
                     <button
@@ -916,81 +964,97 @@ export function QuestionsPage({ user }: { user: User }) {
                     </button>
                   </div>
 
-                  {/* Style D Question Cards */}
-                  <div>
-                    {qs.map((q, idx) => (
-                      <div key={q.id} className="flex mb-3 rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all">
-                        {/* LEFT SIDEBAR — difficulty colored strip */}
-                        <div style={{
-                          width: 52,
-                          background: DIFF_BG[q.difficulty] ?? '#f8fafc',
-                          borderRight: `1px solid ${DIFF_BORDER[q.difficulty] ?? '#e2e8f0'}`,
-                          flexShrink: 0,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          paddingTop: 20,
-                        }}>
-                          {/* Number badge */}
-                          <div style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 10,
-                            background: DIFF_NUM_BG[q.difficulty] ?? 'linear-gradient(135deg,#64748b,#475569)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#fff',
-                            fontSize: 13,
-                            fontWeight: 900,
-                          }}>{idx + 1}</div>
-                        </div>
+                  {/* Batch sub-groups */}
+                  <div className="space-y-6 pl-3 border-l-2" style={{ borderColor: matColor.icon + '40' }}>
+                    {batchKeys.map((batchKey, batchIdx) => {
+                      const batchQs = qs.filter(q => (q.batch_name ?? '') === batchKey);
+                      const BATCH_COLORS = [
+                        { bg: '#f5f3ff', border: '#ddd6fe', text: '#6d28d9', dot: '#8b5cf6' },
+                        { bg: '#ecfdf5', border: '#a7f3d0', text: '#065f46', dot: '#10b981' },
+                        { bg: '#eff6ff', border: '#bfdbfe', text: '#1d4ed8', dot: '#3b82f6' },
+                        { bg: '#fff7ed', border: '#fed7aa', text: '#c2410c', dot: '#f97316' },
+                        { bg: '#fdf2f8', border: '#f9a8d4', text: '#9d174d', dot: '#ec4899' },
+                        { bg: '#f0fdf4', border: '#bbf7d0', text: '#166534', dot: '#22c55e' },
+                      ];
+                      const bc = BATCH_COLORS[batchIdx % BATCH_COLORS.length];
+                      return (
+                        <div key={batchKey || '__none__'}>
+                          {/* Batch header */}
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: bc.dot }} />
+                              {batchKey
+                                ? <span className="text-xs font-bold px-3 py-1 rounded-lg border" style={{ background: bc.bg, color: bc.text, borderColor: bc.border }}>
+                                    📌 {batchKey}
+                                  </span>
+                                : <span className="text-xs font-semibold text-slate-400 italic">Tanpa Grup</span>
+                              }
+                              <span className="text-[11px] text-slate-400 font-medium">{batchQs.length} soal</span>
+                            </div>
+                            <button
+                              onClick={() => handleDeleteBatch(batchKey)}
+                              className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-rose-500 bg-rose-50 border border-rose-200 rounded-lg hover:bg-rose-100 transition-all"
+                            >
+                              <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              Hapus Grup
+                            </button>
+                          </div>
 
-                        {/* MAIN BODY */}
-                        <div style={{ flex: 1, padding: '16px 20px' }}>
-                          {/* Question text */}
-                          <p style={{ fontSize: 13.5, fontWeight: 600, color: '#0f172a', lineHeight: 1.65, marginBottom: 12 }}>{q.question}</p>
-                          {/* Answer options — 2 per row, compact */}
-                          <div className="grid grid-cols-2 gap-1.5 mb-3">
-                            {(['a', 'b', 'c', 'd'] as const).map(opt => {
-                              const isCorrect = q.correct_answer === opt.toUpperCase();
-                              return (
-                                <div key={opt} className={`flex items-start gap-2 px-2.5 py-1.5 rounded-lg border text-xs ${isCorrect ? 'border-emerald-300 bg-emerald-50 text-emerald-800 font-semibold' : 'border-slate-200 bg-white text-slate-600'}`}>
-                                  <span className={`w-4 h-4 rounded flex items-center justify-center text-[9px] font-black flex-shrink-0 mt-0.5 ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>{opt.toUpperCase()}</span>
-                                  <span className="leading-snug">{(q as any)[`option_${opt}`]}</span>
+                          {/* Question cards in this batch */}
+                          <div>
+                            {batchQs.map((q, idx) => (
+                              <div key={q.id} className="flex mb-2.5 rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all">
+                                {/* LEFT SIDEBAR — difficulty colored strip */}
+                                <div style={{
+                                  width: 52, background: DIFF_BG[q.difficulty] ?? '#f8fafc',
+                                  borderRight: `1px solid ${DIFF_BORDER[q.difficulty] ?? '#e2e8f0'}`,
+                                  flexShrink: 0, display: 'flex', flexDirection: 'column',
+                                  alignItems: 'center', paddingTop: 20,
+                                }}>
+                                  <div style={{
+                                    width: 32, height: 32, borderRadius: 10,
+                                    background: DIFF_NUM_BG[q.difficulty] ?? 'linear-gradient(135deg,#64748b,#475569)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    color: '#fff', fontSize: 13, fontWeight: 900,
+                                  }}>{idx + 1}</div>
                                 </div>
-                              );
-                            })}
-                          </div>
-                          {/* Footer: tags + action buttons */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span style={{
-                                fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
-                                background: DIFF_BG[q.difficulty] ?? '#f8fafc',
-                                color: DIFF_TEXT[q.difficulty] ?? '#64748b',
-                                border: `1px solid ${DIFF_BORDER[q.difficulty] ?? '#e2e8f0'}`,
-                              }}>{DIFF_LABEL[q.difficulty] ?? q.difficulty}</span>
-                              <span style={{
-                                fontSize: 10, color: '#94a3b8', background: '#f1f5f9',
-                                padding: '2px 8px', borderRadius: 20, border: '1px solid #e2e8f0',
-                              }}>{q.materi_name}</span>
-                              {q.batch_name && (
-                                <span style={{
-                                  fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
-                                  background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe',
-                                }}>📌 {q.batch_name}</span>
-                              )}
-                            </div>
-                            {/* Action buttons */}
-                            <div className="flex gap-2">
-                              <BtnEdit onClick={() => setEditQ(q)} />
-                              <BtnDelete onClick={() => handleDelete(q.id)} />
-                            </div>
+                                {/* MAIN BODY */}
+                                <div style={{ flex: 1, padding: '16px 20px' }}>
+                                  <p style={{ fontSize: 13.5, fontWeight: 600, color: '#0f172a', lineHeight: 1.65, marginBottom: 12 }}>{q.question}</p>
+                                  <div className="grid grid-cols-2 gap-1.5 mb-3">
+                                    {(['a', 'b', 'c', 'd'] as const).map(opt => {
+                                      const isCorrect = q.correct_answer === opt.toUpperCase();
+                                      return (
+                                        <div key={opt} className={`flex items-start gap-2 px-2.5 py-1.5 rounded-lg border text-xs ${isCorrect ? 'border-emerald-300 bg-emerald-50 text-emerald-800 font-semibold' : 'border-slate-200 bg-white text-slate-600'}`}>
+                                          <span className={`w-4 h-4 rounded flex items-center justify-center text-[9px] font-black flex-shrink-0 mt-0.5 ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>{opt.toUpperCase()}</span>
+                                          <span className="leading-snug">{(q as any)[`option_${opt}`]}</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span style={{
+                                        fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+                                        background: DIFF_BG[q.difficulty] ?? '#f8fafc',
+                                        color: DIFF_TEXT[q.difficulty] ?? '#64748b',
+                                        border: `1px solid ${DIFF_BORDER[q.difficulty] ?? '#e2e8f0'}`,
+                                      }}>{DIFF_LABEL[q.difficulty] ?? q.difficulty}</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <BtnEdit onClick={() => setEditQ(q)} />
+                                      <BtnDelete onClick={() => handleDelete(q.id)} />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               );
