@@ -12,9 +12,10 @@ export function SessionsPage({ user }: { user: User }) {
   const [form, setForm] = useState({
     session_name: '', material_id: '', batch_filter: '',
     question_count: 10, timer_minutes: 30, passing_grade: 70,
-    allow_retake: true, target_mode: 'all' as 'all' | 'role' | 'user',
+    allow_retake: true, target_mode: 'all' as 'all' | 'role' | 'user' | 'division',
     target_roles: [] as string[],
     target_user_ids: [] as string[],
+    target_divisions: [] as string[],
     open_at: '', close_at: '',
   });
   const [saving, setSaving] = useState(false);
@@ -26,7 +27,7 @@ export function SessionsPage({ user }: { user: User }) {
       supabase.from('lc_quiz_sessions').select('*').order('created_at', { ascending: false }),
       supabase.from('lc_materials').select('*').order('materi_name'),
       supabase.from('lc_questions').select('id, material_id, difficulty, batch_name'),
-      supabase.from('users').select('id, full_name, username, role, jabatan').order('full_name'),
+      supabase.from('users').select('id, full_name, username, role, jabatan, sales_division').order('full_name'),
     ]);
     setSessions((s as QuizSession[]) ?? []);
     setMaterials(m ?? []);
@@ -60,11 +61,23 @@ export function SessionsPage({ user }: { user: User }) {
     }));
   };
 
+  const toggleTargetDivision = (div: string) => {
+    setForm(p => ({
+      ...p,
+      target_divisions: p.target_divisions.includes(div)
+        ? p.target_divisions.filter(d => d !== div)
+        : [...p.target_divisions, div],
+    }));
+  };
+
+  const uniqueDivisions = [...new Set(teamUsers.map(u => (u as any).sales_division).filter(Boolean))].sort();
+
   const handleCreate = async () => {
     if (!form.session_name.trim()) { setDialog({ type: 'error', message: 'Nama sesi wajib diisi!' }); return; }
     if (!form.material_id) { setDialog({ type: 'error', message: 'Pilih materi!' }); return; }
     if (form.target_mode === 'role' && form.target_roles.length === 0) { setDialog({ type: 'error', message: 'Pilih minimal 1 role!' }); return; }
     if (form.target_mode === 'user' && form.target_user_ids.length === 0) { setDialog({ type: 'error', message: 'Pilih minimal 1 anggota!' }); return; }
+    if (form.target_mode === 'division' && form.target_divisions.length === 0) { setDialog({ type: 'error', message: 'Pilih minimal 1 sales division!' }); return; }
     if (form.open_at && form.close_at && new Date(form.open_at) >= new Date(form.close_at)) {
       setDialog({ type: 'error', message: 'Waktu tutup harus setelah waktu buka!' }); return;
     }
@@ -85,6 +98,10 @@ export function SessionsPage({ user }: { user: User }) {
         .map(u => u.id);
     } else if (form.target_mode === 'user') {
       resolvedTargetIds = form.target_user_ids;
+    } else if (form.target_mode === 'division') {
+      resolvedTargetIds = teamUsers
+        .filter(u => form.target_divisions.includes((u as any).sales_division ?? ''))
+        .map(u => u.id);
     }
     setSaving(true);
     const { error } = await supabase.from('lc_quiz_sessions').insert([{
@@ -101,7 +118,7 @@ export function SessionsPage({ user }: { user: User }) {
     setSaving(false);
     if (error) { setDialog({ type: 'error', message: 'Error: ' + error.message }); return; }
     setShowForm(false);
-    setForm({ session_name: '', material_id: '', batch_filter: '', question_count: 10, timer_minutes: 30, passing_grade: 70, allow_retake: true, target_mode: 'all', target_roles: [], target_user_ids: [], open_at: '', close_at: '' });
+    setForm({ session_name: '', material_id: '', batch_filter: '', question_count: 10, timer_minutes: 30, passing_grade: 70, allow_retake: true, target_mode: 'all', target_roles: [], target_user_ids: [], target_divisions: [], open_at: '', close_at: '' });
     load();
     setDialog({ type: 'success', message: 'Sesi quiz berhasil dibuat!' });
   };
@@ -278,17 +295,22 @@ export function SessionsPage({ user }: { user: User }) {
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-2">👥 Target Penerima Quiz</label>
                 <div className="flex gap-2 mb-3 flex-wrap">
                   <button type="button"
-                    onClick={() => setForm(p => ({ ...p, target_mode: 'all', target_roles: [], target_user_ids: [] }))}
+                    onClick={() => setForm(p => ({ ...p, target_mode: 'all', target_roles: [], target_user_ids: [], target_divisions: [] }))}
                     className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'all' ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
                     🌐 Semua
                   </button>
                   <button type="button"
-                    onClick={() => setForm(p => ({ ...p, target_mode: 'role', target_user_ids: [] }))}
+                    onClick={() => setForm(p => ({ ...p, target_mode: 'role', target_user_ids: [], target_divisions: [] }))}
                     className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'role' ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
                     🏷️ Per Role
                   </button>
                   <button type="button"
-                    onClick={() => setForm(p => ({ ...p, target_mode: 'user', target_roles: [] }))}
+                    onClick={() => setForm(p => ({ ...p, target_mode: 'division', target_roles: [], target_user_ids: [] }))}
+                    className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'division' ? 'bg-orange-500 text-white border-orange-500 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-orange-300'}`}>
+                    🏢 Per Sales Division
+                  </button>
+                  <button type="button"
+                    onClick={() => setForm(p => ({ ...p, target_mode: 'user', target_roles: [], target_divisions: [] }))}
                     className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'user' ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
                     👤 Per Anggota
                   </button>
@@ -323,6 +345,39 @@ export function SessionsPage({ user }: { user: User }) {
                     {form.target_roles.length > 0 && (
                       <p className="text-xs text-indigo-600 font-semibold mt-1.5">
                         ✓ {form.target_roles.length} role dipilih · {teamUsers.filter(u => form.target_roles.includes((u.role ?? '').toLowerCase())).length} user
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {form.target_mode === 'division' && (
+                  <div>
+                    <p className="text-xs text-slate-400 mb-2">Pilih Sales Division yang akan menerima quiz ini:</p>
+                    <div className="border border-slate-200 rounded-xl p-3 space-y-1">
+                      {uniqueDivisions.length === 0 && (
+                        <p className="text-xs text-slate-400 text-center py-3">Tidak ada sales division ditemukan. Pastikan field <code>sales_division</code> diisi di data user.</p>
+                      )}
+                      {uniqueDivisions.map(div => {
+                        const checked = form.target_divisions.includes(div);
+                        const count = teamUsers.filter(u => (u as any).sales_division === div).length;
+                        return (
+                          <label key={div} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all ${checked ? 'bg-orange-50 border border-orange-200' : 'hover:bg-slate-50 border border-transparent'}`}>
+                            <input type="checkbox" checked={checked} onChange={() => toggleTargetDivision(div)}
+                              className="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-400 flex-shrink-0" />
+                            <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 text-xs font-bold flex-shrink-0">
+                              🏢
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-slate-800">{div}</p>
+                            </div>
+                            <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full font-semibold">{count} user</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {form.target_divisions.length > 0 && (
+                      <p className="text-xs text-orange-600 font-semibold mt-1.5">
+                        ✓ {form.target_divisions.length} divisi dipilih · {teamUsers.filter(u => form.target_divisions.includes((u as any).sales_division ?? '')).length} user
                       </p>
                     )}
                   </div>
@@ -421,15 +476,37 @@ export function SessionsPage({ user }: { user: User }) {
                     <div className="mt-2">
                       {targetNames === null ? (
                         <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-semibold">🌐 Semua Team</span>
-                      ) : (
-                        <div className="flex flex-wrap gap-1 items-center">
-                          <span className="text-xs text-slate-400 font-semibold mr-1">👤</span>
-                          {targetNames.slice(0, 4).map((n, i) => (
-                            <span key={i} className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full font-semibold">{n}</span>
-                          ))}
-                          {targetNames.length > 4 && <span className="text-xs text-slate-500 font-semibold">+{targetNames.length - 4} lainnya</span>}
-                        </div>
-                      )}
+                      ) : targetNames.length === 0 ? (
+                        <span className="text-xs text-slate-400 italic">—</span>
+                      ) : (() => {
+                        // Try to detect if this was a division-targeted session
+                        const divMatches = [...new Set(
+                          teamUsers.filter(u => s.target_user_ids?.includes(u.id) && (u as any).sales_division)
+                            .map(u => (u as any).sales_division as string)
+                        )];
+                        const allFromDivisions = divMatches.length > 0 &&
+                          teamUsers.filter(u => divMatches.includes((u as any).sales_division ?? '')).length === targetNames.length;
+                        if (allFromDivisions) {
+                          return (
+                            <div className="flex flex-wrap gap-1 items-center">
+                              <span className="text-xs text-orange-500 font-semibold mr-1">🏢</span>
+                              {divMatches.map((d, i) => (
+                                <span key={i} className="text-xs bg-orange-50 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full font-semibold">{d}</span>
+                              ))}
+                              <span className="text-xs text-slate-400 font-semibold">· {targetNames.length} user</span>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="flex flex-wrap gap-1 items-center">
+                            <span className="text-xs text-slate-400 font-semibold mr-1">👤</span>
+                            {targetNames.slice(0, 4).map((n, i) => (
+                              <span key={i} className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full font-semibold">{n}</span>
+                            ))}
+                            {targetNames.length > 4 && <span className="text-xs text-slate-500 font-semibold">+{targetNames.length - 4} lainnya</span>}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">

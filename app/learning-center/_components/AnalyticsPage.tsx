@@ -49,6 +49,7 @@ function DonutChart({ segments, size = 72, strokeWidth = 11, label = '' }: {
 export function AnalyticsPage() {
   const [topUsers, setTopUsers] = useState<any[]>([]);
   const [sessionStats, setSessionStats] = useState<any[]>([]);
+  const [divisionStats, setDivisionStats] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -61,21 +62,42 @@ export function AnalyticsPage() {
     const load = async () => {
       const { data: a } = await supabase
         .from('lc_quiz_attempts')
-        .select('user_id, score, passed, started_at, submitted_at, users(full_name)')
+        .select('user_id, score, passed, started_at, submitted_at, users(full_name, sales_division)')
         .eq('is_submitted', true);
 
       if (a) {
-        const byUser: Record<string, { name: string; scores: number[]; passed: number }> = {};
+        // ── Per user ──
+        const byUser: Record<string, { name: string; division: string | null; scores: number[]; passed: number }> = {};
         a.forEach((att: any) => {
-          if (!byUser[att.user_id]) byUser[att.user_id] = { name: att.users?.full_name ?? '-', scores: [], passed: 0 };
+          if (!byUser[att.user_id]) byUser[att.user_id] = { name: att.users?.full_name ?? '-', division: att.users?.sales_division ?? null, scores: [], passed: 0 };
           byUser[att.user_id].scores.push(att.score ?? 0);
           if (att.passed) byUser[att.user_id].passed++;
         });
         setTopUsers(Object.entries(byUser).map(([uid, v]) => ({
-          uid, name: v.name,
+          uid, name: v.name, division: v.division,
           avg: v.scores.reduce((s: number, n: number) => s + n, 0) / v.scores.length,
           total: v.scores.length, passed: v.passed,
         })).sort((a, b) => b.avg - a.avg).slice(0, 20));
+
+        // ── Per Sales Division ──
+        const byDiv: Record<string, { scores: number[]; passed: number; userIds: Set<string> }> = {};
+        a.forEach((att: any) => {
+          const div: string = att.users?.sales_division ?? '(Tidak ada divisi)';
+          if (!byDiv[div]) byDiv[div] = { scores: [], passed: 0, userIds: new Set() };
+          byDiv[div].scores.push(att.score ?? 0);
+          if (att.passed) byDiv[div].passed++;
+          byDiv[div].userIds.add(att.user_id);
+        });
+        setDivisionStats(Object.entries(byDiv).map(([div, v]) => ({
+          div,
+          avg: v.scores.reduce((s, n) => s + n, 0) / v.scores.length,
+          total: v.scores.length,
+          passed: v.passed,
+          users: v.userIds.size,
+          scoreGood: v.scores.filter(s => s >= 80).length,
+          scoreMid:  v.scores.filter(s => s >= 60 && s < 80).length,
+          scoreLow:  v.scores.filter(s => s < 60).length,
+        })).sort((a, b) => b.avg - a.avg));
       }
 
       const { data: ss } = await supabase.from('lc_quiz_sessions').select('id, session_name');
@@ -213,6 +235,84 @@ export function AnalyticsPage() {
           </section>
         )}
 
+        {divisionStats.length > 0 && (
+          <section>
+            <h3 className="text-[10px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">🏢 Per Sales Division</h3>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <table className="w-full text-sm table-zebra">
+                <thead className="border-b border-slate-200 bg-slate-50">
+                  <tr>
+                    <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Division</th>
+                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">User</th>
+                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Quiz</th>
+                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Avg Score</th>
+                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Lulus</th>
+                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Pass Rate</th>
+                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Distribusi Nilai</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {divisionStats.map((d: any, i: number) => {
+                    const passRate = d.total > 0 ? Math.round(d.passed / d.total * 100) : 0;
+                    return (
+                      <tr key={d.div} className="hover:bg-orange-50/40 transition-colors">
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-sm flex-shrink-0">🏢</div>
+                            <div>
+                              <p className="font-bold text-slate-800 text-sm">{d.div}</p>
+                              <p className="text-[10px] text-slate-400">{i === 0 ? '🥇 Top Division' : i === 1 ? '🥈' : i === 2 ? '🥉' : ''}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5 text-center text-sm font-semibold text-slate-600">{d.users}</td>
+                        <td className="px-5 py-3.5 text-center text-sm font-semibold text-slate-600">{d.total}</td>
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center justify-center gap-2">
+                            <DonutChart
+                              segments={[
+                                { value: d.avg, color: d.avg >= 80 ? '#10b981' : d.avg >= 70 ? '#f59e0b' : '#f43f5e' },
+                                { value: 100 - d.avg, color: '#f1f5f9' },
+                              ]}
+                              size={40} strokeWidth={7}
+                              label={d.avg.toFixed(0)}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5 text-center">
+                          <span className="text-sm font-bold text-emerald-600">{d.passed}</span>
+                          <span className="text-xs text-slate-400"> / {d.total}</span>
+                        </td>
+                        <td className="px-5 py-3.5 text-center">
+                          <span className={`text-xs font-black px-2.5 py-1 rounded-full border ${passRate >= 80 ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : passRate >= 60 ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
+                            {passRate}%
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-1.5 justify-center">
+                            <div className="flex items-center gap-1 text-[10px]">
+                              <span className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
+                              <span className="text-slate-500">≥80: <strong>{d.scoreGood}</strong></span>
+                            </div>
+                            <div className="flex items-center gap-1 text-[10px]">
+                              <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />
+                              <span className="text-slate-500">60–79: <strong>{d.scoreMid}</strong></span>
+                            </div>
+                            <div className="flex items-center gap-1 text-[10px]">
+                              <span className="w-2 h-2 rounded-full bg-rose-400 flex-shrink-0" />
+                              <span className="text-slate-500">&lt;60: <strong>{d.scoreLow}</strong></span>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
         <section>
           <h3 className="text-[10px] font-bold uppercase tracking-widest mb-1 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">Top Performers</h3>
           <p className="text-xs text-slate-400 mb-4 ml-1">Klik nama untuk melihat detail nilai & aktivitas per quiz</p>
@@ -222,6 +322,7 @@ export function AnalyticsPage() {
                 <tr>
                   <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-10">#</th>
                   <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Nama</th>
+                  <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Division</th>
                   <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Quiz</th>
                   <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Score</th>
                   <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Lulus</th>
@@ -238,6 +339,11 @@ export function AnalyticsPage() {
                         <span className="font-semibold text-slate-800 group-hover:text-indigo-700 transition-colors">{u.name}</span>
                         <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-400 font-semibold">👁 detail</span>
                       </div>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      {u.division
+                        ? <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200">{u.division}</span>
+                        : <span className="text-xs text-slate-300">—</span>}
                     </td>
                     <td className="px-5 py-3.5 text-center text-slate-500 text-xs font-semibold">{u.total}</td>
                     <td className="px-5 py-3.5">
@@ -261,7 +367,7 @@ export function AnalyticsPage() {
                 ))}
                 {filteredUsers.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center py-12 text-slate-400 text-sm">
+                    <td colSpan={6} className="text-center py-12 text-slate-400 text-sm">
                       {loading ? 'Memuat data...' : search ? 'Tidak ada hasil' : 'Belum ada data'}
                     </td>
                   </tr>
