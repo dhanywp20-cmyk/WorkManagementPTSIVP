@@ -10,9 +10,9 @@ export function SessionsPage({ user }: { user: User }) {
   const [teamUsers, setTeamUsers] = useState<User[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
-    session_name: '', material_id: '', question_count: 10,
-    timer_minutes: 30, passing_grade: 70, allow_retake: true,
-    target_mode: 'all' as 'all' | 'role' | 'user',
+    session_name: '', material_id: '', batch_filter: '',
+    question_count: 10, timer_minutes: 30, passing_grade: 70,
+    allow_retake: true, target_mode: 'all' as 'all' | 'role' | 'user',
     target_roles: [] as string[],
     target_user_ids: [] as string[],
     open_at: '', close_at: '',
@@ -25,7 +25,7 @@ export function SessionsPage({ user }: { user: User }) {
     const [{ data: s }, { data: m }, { data: q }, { data: u }] = await Promise.all([
       supabase.from('lc_quiz_sessions').select('*').order('created_at', { ascending: false }),
       supabase.from('lc_materials').select('*').order('materi_name'),
-      supabase.from('lc_questions').select('id, material_id, difficulty'),
+      supabase.from('lc_questions').select('id, material_id, difficulty, batch_name'),
       supabase.from('users').select('id, full_name, username, role, jabatan').order('full_name'),
     ]);
     setSessions((s as QuizSession[]) ?? []);
@@ -69,9 +69,13 @@ export function SessionsPage({ user }: { user: User }) {
       setDialog({ type: 'error', message: 'Waktu tutup harus setelah waktu buka!' }); return;
     }
     const mat = materials.find(m => m.id === form.material_id);
-    const pool = questions.filter(q => q.material_id === form.material_id);
+    const pool = questions.filter(q =>
+      q.material_id === form.material_id &&
+      (!form.batch_filter || (q as any).batch_name === form.batch_filter)
+    );
     if (pool.length < form.question_count) {
-      setDialog({ type: 'error', message: `Hanya ada ${pool.length} soal. Kurangi jumlah soal atau generate lebih banyak.` }); return;
+      const batchInfo = form.batch_filter ? ` di grup "${form.batch_filter}"` : '';
+      setDialog({ type: 'error', message: `Hanya ada ${pool.length} soal${batchInfo}. Kurangi jumlah soal atau generate lebih banyak.` }); return;
     }
     const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, form.question_count);
     let resolvedTargetIds: string[] | null = null;
@@ -84,7 +88,8 @@ export function SessionsPage({ user }: { user: User }) {
     }
     setSaving(true);
     const { error } = await supabase.from('lc_quiz_sessions').insert([{
-      session_name: form.session_name, material_id: form.material_id, materi_name: mat?.materi_name ?? '',
+      session_name: form.session_name, material_id: form.material_id,
+      materi_name: form.batch_filter ? `${mat?.materi_name ?? ''} — ${form.batch_filter}` : (mat?.materi_name ?? ''),
       question_ids: shuffled.map(q => q.id), question_count: form.question_count,
       timer_minutes: form.timer_minutes || null, passing_grade: form.passing_grade,
       allow_retake: form.allow_retake, is_active: true, created_by: user.id,
@@ -96,7 +101,7 @@ export function SessionsPage({ user }: { user: User }) {
     setSaving(false);
     if (error) { setDialog({ type: 'error', message: 'Error: ' + error.message }); return; }
     setShowForm(false);
-    setForm({ session_name: '', material_id: '', question_count: 10, timer_minutes: 30, passing_grade: 70, allow_retake: true, target_mode: 'all', target_roles: [], target_user_ids: [], open_at: '', close_at: '' });
+    setForm({ session_name: '', material_id: '', batch_filter: '', question_count: 10, timer_minutes: 30, passing_grade: 70, allow_retake: true, target_mode: 'all', target_roles: [], target_user_ids: [], open_at: '', close_at: '' });
     load();
     setDialog({ type: 'success', message: 'Sesi quiz berhasil dibuat!' });
   };
@@ -184,14 +189,61 @@ export function SessionsPage({ user }: { user: User }) {
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
-                <select value={form.material_id} onChange={e => setForm(p => ({ ...p, material_id: e.target.value }))}
+                <select value={form.material_id}
+                  onChange={e => setForm(p => ({ ...p, material_id: e.target.value, batch_filter: '' }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
                   <option value="">-- Pilih Materi --</option>
-                  {materials.map(m => (
-                    <option key={m.id} value={m.id}>{m.materi_name} ({questions.filter(q => q.material_id === m.id).length} soal)</option>
-                  ))}
+                  {materials.map(m => {
+                    const total = questions.filter(q => q.material_id === m.id).length;
+                    const batches = [...new Set(questions.filter(q => q.material_id === m.id && (q as any).batch_name).map(q => (q as any).batch_name))];
+                    return (
+                      <option key={m.id} value={m.id}>
+                        {m.materi_name} ({total} soal{batches.length > 0 ? `, ${batches.length} grup` : ''})
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
+              {/* ── Batch / Grup selector — muncul setelah material dipilih dan punya batch ── */}
+              {(() => {
+                if (!form.material_id) return null;
+                const batches = [...new Set(
+                  questions.filter(q => q.material_id === form.material_id && (q as any).batch_name)
+                    .map(q => (q as any).batch_name as string)
+                )].sort();
+                if (batches.length === 0) return null;
+                return (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                      Grup / Batch Soal
+                      <span className="ml-1.5 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional — kosong = semua grup dicampur</span>
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button"
+                        onClick={() => setForm(p => ({ ...p, batch_filter: '' }))}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${form.batch_filter === '' ? 'bg-slate-700 text-white border-slate-700 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'}`}>
+                        Semua Grup ({questions.filter(q => q.material_id === form.material_id).length} soal)
+                      </button>
+                      {batches.map(b => {
+                        const count = questions.filter(q => q.material_id === form.material_id && (q as any).batch_name === b).length;
+                        const active = form.batch_filter === b;
+                        return (
+                          <button key={b} type="button"
+                            onClick={() => setForm(p => ({ ...p, batch_filter: b }))}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${active ? 'bg-emerald-600 text-white border-emerald-600 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-400'}`}>
+                            📌 {b} ({count} soal)
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {form.batch_filter && (
+                      <p className="text-[11px] text-emerald-700 font-semibold mt-1.5">
+                        ✓ Hanya soal dari grup <strong>"{form.batch_filter}"</strong> yang akan dipakai
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
               <div>
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Jumlah Soal</label>
                 <input type="number" min={1} max={100} value={form.question_count}
@@ -348,7 +400,18 @@ export function SessionsPage({ user }: { user: User }) {
                       <h4 className="font-bold text-slate-800">{s.session_name}</h4>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${status.cls}`}>{status.label}</span>
                     </div>
-                    <p className="text-sm text-slate-500 mt-1">{s.materi_name}</p>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      {s.materi_name.includes(' — ') ? (
+                        <>
+                          <span className="text-sm text-slate-500">{s.materi_name.split(' — ')[0]}</span>
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-violet-100 text-violet-700 border border-violet-200">
+                            📌 {s.materi_name.split(' — ').slice(1).join(' — ')}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-sm text-slate-500">{s.materi_name}</span>
+                      )}
+                    </div>
                     <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-500">
                       <span>📝 {s.question_count} soal</span>
                       <span>⏱️ {s.timer_minutes ? `${s.timer_minutes} mnt` : 'No timer'}</span>
