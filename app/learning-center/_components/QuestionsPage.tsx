@@ -159,14 +159,45 @@ export function QuestionsPage({ user }: { user: User }) {
       const extraInstruction = genExtraPrompt.trim()
         ? `\n\nFOKUS TOPIK KHUSUS: ${genExtraPrompt.trim()}\nPastikan seluruh soal yang dibuat berfokus pada topik tersebut dari materi ini.`
         : '';
-      const prompt = `Kamu adalah instruktur training profesional. ${pdfFile ? 'Berdasarkan dokumen PDF yang dilampirkan' : 'Berdasarkan materi berikut'}, buat tepat ${genCount} soal pilihan ganda (A, B, C, D) dalam Bahasa Indonesia.\n${diffInstruction}${extraInstruction}\n${!pdfFile && mat?.content_text ? `\nMATERI:\n${mat.content_text.slice(0, 30000)}` : ''}\n\nKembalikan HANYA JSON array, tanpa markdown, tanpa teks lain:\n[\n  {\n    "question": "Pertanyaan lengkap?",\n    "option_a": "Jawaban A",\n    "option_b": "Jawaban B",\n    "option_c": "Jawaban C",\n    "option_d": "Jawaban D",\n    "correct_answer": "A",\n    "difficulty": "easy"\n  }\n]`;
+      const prompt = `Kamu adalah instruktur training profesional. ${pdfFile ? 'Berdasarkan dokumen PDF yang dilampirkan' : 'Berdasarkan materi berikut'}, buat tepat ${genCount} soal pilihan ganda (A, B, C, D) dalam Bahasa Indonesia.\n${diffInstruction}${extraInstruction}\n${!pdfFile && mat?.content_text ? `\nMATERI:\n${mat.content_text.slice(0, 30000)}` : ''}\n\nOUTPUT RULE: Balas HANYA dengan JSON array murni. Tidak boleh ada teks, penjelasan, atau markdown di luar array. Mulai langsung dengan [ dan akhiri dengan ].\n[\n  {\n    "question": "Pertanyaan lengkap?",\n    "option_a": "Jawaban A",\n    "option_b": "Jawaban B",\n    "option_c": "Jawaban C",\n    "option_d": "Jawaban D",\n    "correct_answer": "A",\n    "difficulty": "easy"\n  }\n]`;
       setGenStatus(pdfFile ? '📄 Mengirim PDF ke Gemini...' : '🧠 Generating soal...');
       const text = await generateWithGemini(prompt, pdfFile ?? null);
       setGenStatus('⚙️ Memproses hasil...');
-      const jsonStr = text.replace(/```json|```/g, '').trim();
-      const match = jsonStr.match(/\[[\s\S]*\]/);
-      if (!match) throw new Error('Format JSON tidak ditemukan dalam response Gemini');
-      const parsed: any[] = JSON.parse(match[0]);
+
+      // ── Robust JSON extraction ──────────────────────────────────────────────
+      // 1. Strip all markdown code fences (```json, ```javascript, ```, etc.)
+      let cleanText = text
+        .replace(/```[\w]*\n?/gi, '')  // opening fence with optional lang tag
+        .replace(/```/g, '')            // any remaining closing fences
+        .trim();
+
+      // 2. Try regex match for JSON array first
+      let jsonMatch = cleanText.match(/\[[\s\S]*\]/);
+
+      // 3. Fallback: manually find outermost [ ... ] brackets
+      if (!jsonMatch) {
+        const firstBracket = cleanText.indexOf('[');
+        const lastBracket = cleanText.lastIndexOf(']');
+        if (firstBracket !== -1 && lastBracket > firstBracket) {
+          jsonMatch = [cleanText.slice(firstBracket, lastBracket + 1)];
+        }
+      }
+
+      // 4. Last fallback: try parsing the entire cleaned text directly
+      if (!jsonMatch) {
+        try {
+          const direct = JSON.parse(cleanText);
+          if (Array.isArray(direct)) jsonMatch = [cleanText];
+        } catch { /* ignore */ }
+      }
+
+      if (!jsonMatch) {
+        // Show first 300 chars of raw response for debugging
+        const preview = text.slice(0, 300).replace(/\n/g, ' ');
+        throw new Error(`Format JSON tidak ditemukan. Response Gemini: "${preview}..."`);
+      }
+
+      const parsed: any[] = JSON.parse(jsonMatch[0]);
       const rows = parsed.map(q => ({
         material_id: selectedMat, materi_name: mat?.materi_name ?? '',
         batch_name: batchName.trim() || null,
