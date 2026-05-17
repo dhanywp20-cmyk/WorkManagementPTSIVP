@@ -235,13 +235,75 @@ export function AnalyticsPage() {
           </section>
         )}
 
+        {/* ── Top Performers — Team ─────────────────────────────────────── */}
+        <section>
+          <h3 className="text-[10px] font-bold uppercase tracking-widest mb-1 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">🏆 Top Performers — Team</h3>
+          <p className="text-xs text-slate-400 mb-4 ml-1">Klik nama untuk melihat detail nilai & aktivitas per quiz</p>
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <table className="w-full text-sm table-zebra">
+              <thead className="border-b border-slate-200 bg-slate-50">
+                <tr>
+                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-10">#</th>
+                  <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Nama</th>
+                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Quiz</th>
+                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Score</th>
+                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Lulus</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredUsers.map((u, i) => (
+                  <tr key={u.uid}
+                    className="hover:bg-indigo-50/60 cursor-pointer transition-colors group"
+                    onClick={() => setSelectedUser({ uid: u.uid, name: u.name })}>
+                    <td className="px-5 py-3.5 text-center text-sm font-black text-slate-300">{i + 1}</td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-800 group-hover:text-indigo-700 transition-colors">{u.name}</span>
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-400 font-semibold">👁 detail</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5 text-center text-slate-500 text-xs font-semibold">{u.total}</td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center justify-center gap-2">
+                        <DonutChart
+                          segments={[
+                            { value: u.avg, color: u.avg >= 80 ? '#10b981' : u.avg >= 70 ? '#f59e0b' : '#f43f5e' },
+                            { value: 100 - u.avg, color: '#f1f5f9' },
+                          ]}
+                          size={36} strokeWidth={6}
+                          label={u.avg.toFixed(0)}
+                        />
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5 text-center">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${u.passed > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'}`}>
+                        {u.passed}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {filteredUsers.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="text-center py-12 text-slate-400 text-sm">
+                      {loading ? 'Memuat data...' : search ? 'Tidak ada hasil' : 'Belum ada data'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* ── Top Performers — Sales Division ───────────────────────────── */}
         {divisionStats.length > 0 && (
           <section>
-            <h3 className="text-[10px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">🏢 Per Sales Division</h3>
+            <h3 className="text-[10px] font-bold uppercase tracking-widest mb-1 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">🏢 Top Performers — Sales Division</h3>
+            <p className="text-xs text-slate-400 mb-4 ml-1">Ranking performa per divisi penjualan, diurutkan berdasarkan rata-rata nilai</p>
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               <table className="w-full text-sm table-zebra">
                 <thead className="border-b border-slate-200 bg-slate-50">
                   <tr>
+                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-10">#</th>
                     <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Division</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">User</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Quiz</th>
@@ -254,14 +316,16 @@ export function AnalyticsPage() {
                 <tbody className="divide-y divide-slate-100">
                   {divisionStats.map((d: any, i: number) => {
                     const passRate = d.total > 0 ? Math.round(d.passed / d.total * 100) : 0;
+                    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
                     return (
                       <tr key={d.div} className="hover:bg-orange-50/40 transition-colors">
+                        <td className="px-5 py-3.5 text-center text-sm font-black text-slate-300">{i + 1}</td>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-sm flex-shrink-0">🏢</div>
                             <div>
                               <p className="font-bold text-slate-800 text-sm">{d.div}</p>
-                              <p className="text-[10px] text-slate-400">{i === 0 ? '🥇 Top Division' : i === 1 ? '🥈' : i === 2 ? '🥉' : ''}</p>
+                              {medal && <p className="text-[10px] text-slate-400">{medal} Top {i + 1}</p>}
                             </div>
                           </div>
                         </td>
@@ -312,70 +376,6 @@ export function AnalyticsPage() {
             </div>
           </section>
         )}
-
-        <section>
-          <h3 className="text-[10px] font-bold uppercase tracking-widest mb-1 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">Top Performers</h3>
-          <p className="text-xs text-slate-400 mb-4 ml-1">Klik nama untuk melihat detail nilai & aktivitas per quiz</p>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <table className="w-full text-sm table-zebra">
-              <thead className="border-b border-slate-200 bg-slate-50">
-                <tr>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-10">#</th>
-                  <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Nama</th>
-                  <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Division</th>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Quiz</th>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Score</th>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Lulus</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredUsers.map((u, i) => (
-                  <tr key={u.uid}
-                    className="hover:bg-indigo-50/60 cursor-pointer transition-colors group"
-                    onClick={() => setSelectedUser({ uid: u.uid, name: u.name })}>
-                    <td className="px-5 py-3.5 text-center text-sm font-black text-slate-300">{i + 1}</td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-800 group-hover:text-indigo-700 transition-colors">{u.name}</span>
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-400 font-semibold">👁 detail</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      {u.division
-                        ? <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200">{u.division}</span>
-                        : <span className="text-xs text-slate-300">—</span>}
-                    </td>
-                    <td className="px-5 py-3.5 text-center text-slate-500 text-xs font-semibold">{u.total}</td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center justify-center gap-2">
-                        <DonutChart
-                          segments={[
-                            { value: u.avg, color: u.avg >= 80 ? '#10b981' : u.avg >= 70 ? '#f59e0b' : '#f43f5e' },
-                            { value: 100 - u.avg, color: '#f1f5f9' },
-                          ]}
-                          size={36} strokeWidth={6}
-                          label={u.avg.toFixed(0)}
-                        />
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 text-center">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${u.passed > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'}`}>
-                        {u.passed}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {filteredUsers.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="text-center py-12 text-slate-400 text-sm">
-                      {loading ? 'Memuat data...' : search ? 'Tidak ada hasil' : 'Belum ada data'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
       </div>
 
       {/* ─── User Detail Modal ─────────────────────────────────────────────── */}
