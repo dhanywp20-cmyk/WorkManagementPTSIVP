@@ -204,7 +204,7 @@ export function SessionsPage({ user }: { user: User }) {
                   })}
                 </select>
               </div>
-              {/* ── Batch / Grup selector — muncul setelah material dipilih dan punya batch ── */}
+              {/* ── Batch / Grup selector — dropdown, muncul setelah material dipilih dan punya batch ── */}
               {(() => {
                 if (!form.material_id) return null;
                 const batches = [...new Set(
@@ -216,26 +216,19 @@ export function SessionsPage({ user }: { user: User }) {
                   <div>
                     <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
                       Grup / Batch Soal
-                      <span className="ml-1.5 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional — kosong = semua grup dicampur</span>
+                      <span className="ml-1.5 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional</span>
                     </label>
-                    <div className="flex flex-wrap gap-2">
-                      <button type="button"
-                        onClick={() => setForm(p => ({ ...p, batch_filter: '' }))}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${form.batch_filter === '' ? 'bg-slate-700 text-white border-slate-700 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'}`}>
-                        Semua Grup ({questions.filter(q => q.material_id === form.material_id).length} soal)
-                      </button>
+                    <select
+                      value={form.batch_filter}
+                      onChange={e => setForm(p => ({ ...p, batch_filter: e.target.value }))}
+                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white"
+                    >
+                      <option value="">-- Semua Grup ({questions.filter(q => q.material_id === form.material_id).length} soal dicampur) --</option>
                       {batches.map(b => {
                         const count = questions.filter(q => q.material_id === form.material_id && (q as any).batch_name === b).length;
-                        const active = form.batch_filter === b;
-                        return (
-                          <button key={b} type="button"
-                            onClick={() => setForm(p => ({ ...p, batch_filter: b }))}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${active ? 'bg-emerald-600 text-white border-emerald-600 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-400'}`}>
-                            📌 {b} ({count} soal)
-                          </button>
-                        );
+                        return <option key={b} value={b}>📌 {b} ({count} soal)</option>;
                       })}
-                    </div>
+                    </select>
                     {form.batch_filter && (
                       <p className="text-[11px] text-emerald-700 font-semibold mt-1.5">
                         ✓ Hanya soal dari grup <strong>"{form.batch_filter}"</strong> yang akan dipakai
