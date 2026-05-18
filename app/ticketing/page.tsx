@@ -457,9 +457,18 @@ export default function TicketingSystem() {
               }
             });
 
-            // Semua user id dengan tier < selfTier (bawahan yang boleh dilihat)
+            // Semua user id dengan tier < selfTier DAN berada di divisi yang di-supervisi
+            // (atau di-mapping manual). Tidak boleh lintas divisi sembarangan.
             const subordinateIds = new Set(
-              (allGuestUsers ?? []).filter((u: any) => idToTier[u.id] < selfTier).map((u: any) => u.id as string)
+              (allGuestUsers ?? []).filter((u: any) => {
+                if (idToTier[u.id] >= selfTier) return false; // tier harus lebih rendah
+                // Boleh masuk jika:
+                // 1. Divisinya ada di supervisedDivisions (termasuk divisi sendiri jika tier > 1), ATAU
+                // 2. Di-mapping manual via user_supervisor_mappings
+                const inSupervisedDiv = supervisedDivisions.length > 0 && u.sales_division && supervisedDivisions.includes(u.sales_division);
+                const inManualMap = manualSubordinateIds.has(u.id);
+                return inSupervisedDiv || inManualMap;
+              }).map((u: any) => u.id as string)
             );
             const subordinateUsernames = new Set(
               (allGuestUsers ?? []).filter((u: any) => subordinateIds.has(u.id)).map((u: any) => u.username as string)
@@ -490,9 +499,10 @@ export default function TicketingSystem() {
               }
             }
 
-            // ── Fallback: ticket tanpa sales_division tapi sales_name = bawahan ──
-            // Menangkap ticket yang dibuat admin/superadmin untuk bawahan
-            // dimana sales_division tidak diisi, sehingga query .in("sales_division") melewatinya
+            // ── Fallback: ticket tanpa sales_division tapi sales_name = bawahan (divisi valid) ──
+            // Menangkap ticket yang dibuat admin/superadmin untuk bawahan di divisi yang disupervisi,
+            // dimana sales_division tidak diisi, sehingga query .in("sales_division") melewatinya.
+            // subordinateNames sudah terfilter hanya bawahan yang divisinya valid (subordinateIds).
             try {
               const allSubordinateUsers = (allGuestUsers ?? []).filter((u: any) =>
                 subordinateIds.has(u.id) || manualSubordinateIds.has(u.id)
@@ -513,17 +523,9 @@ export default function TicketingSystem() {
                 (noDivTickets ?? []).forEach((t: Ticket) => {
                   if (!allDivTickets.find(x => x.id === t.id)) allDivTickets.push(t);
                 });
-                // Juga cek ticket dengan sales_division yang bukan di supervisedDivisions
-                // tapi sales_name adalah bawahan (misal admin input divisi lain)
-                const { data: otherDivTickets } = await supabase.from("tickets")
-                  .select("*, activity_logs(*)")
-                  .in("sales_name", subordinateNames)
-                  .not("sales_division", "is", null)
-                  .not("sales_division", "in", `(${supervisedDivisions.map((d: string) => `"${d}"`).join(",")})`)
-                  .order("created_at", { ascending: false });
-                (otherDivTickets ?? []).forEach((t: Ticket) => {
-                  if (!allDivTickets.find(x => x.id === t.id)) allDivTickets.push(t);
-                });
+                // TIDAK mengambil ticket dari divisi lain berdasarkan nama bawahan saja.
+                // Akses lintas divisi HARUS melalui explicit mapping di
+                // division_supervisor_mappings atau user_supervisor_mappings.
               }
             } catch (fallbackErr) {
               console.warn("[Supervisor fallback fetch]", fallbackErr);
@@ -534,16 +536,19 @@ export default function TicketingSystem() {
               // Ticket milik sendiri selalu masuk
               if (isMyTicket(t)) { addUnique(t); return; }
 
-              // Cek via created_by username → apakah bawahan
+              // Cek via created_by username → apakah bawahan yang valid (divisi + tier)
               if (t.created_by && subordinateUsernames.has(t.created_by)) { addUnique(t); return; }
 
               // Cek via manual subordinate
               const ownerId = t.sales_name ? nameToId[t.sales_name] : null;
               if (ownerId && manualSubordinateIds.has(ownerId)) { addUnique(t); return; }
 
-              // Cek via sales_name tier
-              const salesNameTier = t.sales_name ? (nameTierMap[t.sales_name] ?? null) : null;
-              if (salesNameTier !== null && salesNameTier < selfTier) { addUnique(t); return; }
+              // Cek via sales_name: userId harus ada di subordinateIds
+              // (sudah tervalidasi divisi + tier — tidak lolos hanya karena tier saja)
+              if (t.sales_name) {
+                const salesUserId = nameToId[t.sales_name];
+                if (salesUserId && subordinateIds.has(salesUserId)) { addUnique(t); return; }
+              }
             });
 
             
