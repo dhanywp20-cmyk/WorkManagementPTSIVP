@@ -413,6 +413,8 @@ export default function TicketingSystem() {
             const { data: divTickets } = await supabase.from("tickets").select("*, activity_logs(*)").in("sales_division", handledDivisions).order("created_at", { ascending: false });
             (divTickets ?? []).forEach(addIVP);
           }
+          // Sort akhir berdasarkan created_at descending
+          ivpTickets.sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
           setTickets(ivpTickets);
           if (selectedTicket && !ivpTickets.find((t: Ticket) => t.id === selectedTicket.id)) setSelectedTicket(null);
         } else {
@@ -565,6 +567,8 @@ export default function TicketingSystem() {
             }
           }
 
+          // Sort akhir berdasarkan created_at descending — gabungan ticket sendiri + bawahan
+          finalTickets.sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
           setTickets(finalTickets);
           if (selectedTicket && !finalTickets.find((t: Ticket) => t.id === selectedTicket.id)) setSelectedTicket(null);
         }
