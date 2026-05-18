@@ -66,6 +66,8 @@ export default function TicketingSystem() {
   const [showTicketDetailPopup, setShowTicketDetailPopup] = useState(false);
   const [loading, setLoading] = useState(true);
   const [ticketsLoading, setTicketsLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [silentUpdating, setSilentUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showLoadingPopup, setShowLoadingPopup] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
@@ -335,9 +337,9 @@ export default function TicketingSystem() {
     if (target) target.location.href = "/dashboard";
   };
 
-  const fetchData = async (userOverride?: User | null) => {
+  const fetchData = async (userOverride?: User | null, silent = false) => {
     try {
-      setTicketsLoading(true);
+      if (!silent) setTicketsLoading(true);
       const [membersData, usersData] = await Promise.all([
         // team_members tidak ada — ambil dari users dengan role team
         supabase.from("users").select("id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus").in("role", ["team", "team_pts"]).order("full_name"),
@@ -595,12 +597,18 @@ export default function TicketingSystem() {
       }
       if (membersData.data) setTeamMembers(membersData.data);
       if (usersData.data) setUsers(usersData.data);
-      setLoading(false);
-      setTicketsLoading(false);
+      if (!silent) { setLoading(false); setTicketsLoading(false); }
+      else {
+        setLoading(false);
+        setLastUpdated(new Date());
+        // Flash subtle indicator
+        setSilentUpdating(true);
+        setTimeout(() => setSilentUpdating(false), 1200);
+      }
     } catch (err: any) {
       console.error("Error:", err);
       setLoading(false);
-      setTicketsLoading(false);
+      if (!silent) setTicketsLoading(false);
     }
   };
 
@@ -1681,23 +1689,23 @@ export default function TicketingSystem() {
     // PTS DB realtime
     const ptsCh = supabase.channel("pts-tickets-rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, () => {
-        fetchData(currentUser);
+        fetchData(currentUser, true); // silent: tidak trigger loading spinner
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "activity_logs" }, () => {
-        fetchData(currentUser);
+        fetchData(currentUser, true);
       })
       .subscribe();
     // Services DB realtime (untuk update services_status dari platform Services)
     const svcCh = supabaseServices.channel("svc-tickets-rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, () => {
-        fetchData(currentUser);
+        fetchData(currentUser, true);
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "activity_logs" }, () => {
-        fetchData(currentUser);
+        fetchData(currentUser, true);
       })
       .subscribe();
-    // Polling fallback setiap 30 detik
-    const pollInterval = setInterval(() => fetchData(currentUser), 30000);
+    // Polling fallback setiap 30 detik — juga silent
+    const pollInterval = setInterval(() => fetchData(currentUser, true), 30000);
     return () => {
       supabase.removeChannel(ptsCh);
       supabaseServices.removeChannel(svcCh);
@@ -2029,6 +2037,16 @@ export default function TicketingSystem() {
               <div className="flex items-center gap-3">
                 <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Ticket List</span>
                 <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{ticketsLoading ? "..." : filteredTickets.length}</span>
+                {/* Live indicator — muncul saat ada silent update dari server */}
+                <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 transition-opacity duration-500" style={{ opacity: silentUpdating ? 1 : 0 }}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
+                  Updated
+                </span>
+                {lastUpdated && !silentUpdating && (
+                  <span className="text-[10px] text-gray-400 hidden sm:inline">
+                    {lastUpdated.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2 mt-2 sm:mt-0">
                 {canAccessAccountSettings && (
@@ -2209,7 +2227,7 @@ export default function TicketingSystem() {
             ) : filteredTickets.length === 0 ? (
               <div className="text-center py-12"><div className="text-6xl mb-4">📭</div><p className="text-gray-600 font-medium">{searchProject || filterStatus !== "All" ? "No tickets match the search." : "No tickets yet. Create your first ticket!"}</p></div>
             ) : (
-              <div className="overflow-x-auto animate-zoom-in">
+              <div className="overflow-x-auto">
                 <table className="w-full table-fixed border-collapse table-zebra" style={{ background: "transparent", minWidth: '1100px' }}>
                   <colgroup>
                     <col style={{ width: "3%" }} />   {/* No */}
