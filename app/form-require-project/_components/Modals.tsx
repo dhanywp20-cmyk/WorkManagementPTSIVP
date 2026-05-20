@@ -66,7 +66,7 @@ export function AssignPTSModal({
       const ptsMember = teamMembers.find(m => m.full_name === selectedPTS);
       if (ptsMember?.phone_number) {
         const lines = [
-          '🏗️ *Form Require Project — Assigned ke Kamu*',
+          '🏗️ *request design Project — Assigned ke Kamu*',
           '━━━━━━━━━━━━━━━━━━',
           `📋 Project  : ${req.project_name}`,
           `🛋️ Ruangan  : ${req.room_name || '-'}`,
@@ -85,7 +85,7 @@ export function AssignPTSModal({
         const ivpUser = ivpUsers.find(u => u.full_name === selectedIVP);
         if (ivpUser?.phone_number) {
           const lines = [
-            '🔗 *Form Require — Kamu Di-assign sebagai IVP Sales*',
+            '🔗 *request design — Kamu Di-assign sebagai IVP Sales*',
             '━━━━━━━━━━━━━━━━━━',
             `📋 Project      : ${req.project_name}`,
             `🏢 Sales Ext.   : ${req.sales_name} (${req.sales_division})`,
@@ -1130,4 +1130,4 @@ export function NewFormModal({
   );
 }
 
-// ─── Form Require Project Module ──────────────────────────────────────────────
+// ─── request design Project Module ──────────────────────────────────────────────
