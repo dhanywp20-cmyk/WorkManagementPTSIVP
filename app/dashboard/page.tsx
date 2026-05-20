@@ -70,7 +70,7 @@ export default function Dashboard() {
       title: 'request design Project', icon: '🏗️', key: 'request-design-project',
       gradient: 'from-violet-700 via-violet-600 to-violet-500',
       description: 'Solution request form untuk project Sales',
-      items: [{ name: 'Submit Require', url: '/request-design-project', icon: '📋', internal: true, embed: true }]
+      items: [{ name: 'Submit Require', url: '/form-require-project', icon: '📋', internal: true, embed: true }]
     },
     {
       title: 'Form Review Demo & BAST', icon: '⭐', key: 'form-bast',
