@@ -1522,7 +1522,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
         <div className="bg-gradient-to-r from-amber-600 to-amber-500 px-6 py-5 flex items-center justify-between flex-shrink-0 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-lg">⚙️</div>
-            <div><h2 className="text-base font-bold text-white">Setting PIC Brand</h2><p className="text-white/70 text-xs">Mapping brand ke PIC penanggung jawab (Form Require Project)</p></div>
+            <div><h2 className="text-base font-bold text-white">Setting PIC Brand</h2><p className="text-white/70 text-xs">Mapping brand ke PIC penanggung jawab (Request Design Project)</p></div>
           </div>
           <button onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all">✕</button>
         </div>
@@ -1751,7 +1751,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
     // Helper: build notif item dari row
     const toRequireNotif = (r: any) => {
       const _sLbl: Record<string, string> = { pending: '⏳ Pending', approved: '✅ Approved', in_progress: '🔄 In Progress' };
-      return { id: r.id, type: 'require' as const, title: r.project_name, subtitle: `${_sLbl[r.status] ?? ('🏗️ ' + r.status)} · ${r.sales_name}`, time: r.created_at, url: '/form-require-project', internalUrl: '/form-require-project', menuTitle: 'Form Require Project' };
+      return { id: r.id, type: 'require' as const, title: r.project_name, subtitle: `${_sLbl[r.status] ?? ('🏗️ ' + r.status)} · ${r.sales_name}`, time: r.created_at, url: '/request-design-project', internalUrl: '/request-design-project', menuTitle: 'Request Design Project' };
     };
 
     try {
@@ -2196,7 +2196,7 @@ export function AccountSettingsInline() {
 
   const menuLabels: Record<string, { label: string; icon: string }> = {
     'form-bast': { label: 'Form Review Demo & BAST', icon: '⭐' },
-    'form-require-project': { label: 'Form Require Project', icon: '🏗️' },
+    'request-design-project': { label: 'Request Design Project', icon: '🏗️' },
     'ticket-troubleshooting': { label: 'Ticket Troubleshooting', icon: '🎫' },
     'daily-report': { label: 'Daily Report', icon: '📈' },
     'database-pts': { label: 'Database PTS', icon: '💼' },
