@@ -40,7 +40,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
   const menuLabels: Record<string, { label: string; icon: string; gradient: string }> = {
     'learning-center': { label: 'Learning Center', icon: '🎓', gradient: 'from-teal-600 to-teal-500' },
     'form-bast': { label: 'Form Review Demo & BAST', icon: '⭐', gradient: 'from-slate-600 to-slate-500' },
-    'form-require-project': { label: 'Form Require Project', icon: '🏗️', gradient: 'from-violet-600 to-violet-500' },
+    'request-design-project': { label: 'Request Design Project', icon: '🏗️', gradient: 'from-violet-600 to-violet-500' },
     'ticket-troubleshooting': { label: 'Ticket Troubleshooting', icon: '🎫', gradient: 'from-rose-600 to-rose-500' },
     'daily-report': { label: 'Daily Report', icon: '📈', gradient: 'from-emerald-600 to-emerald-500' },
     'database-pts': { label: 'Database PTS', icon: '💼', gradient: 'from-indigo-600 to-indigo-500' },
