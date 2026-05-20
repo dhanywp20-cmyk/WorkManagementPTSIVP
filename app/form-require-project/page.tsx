@@ -556,7 +556,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         const adminPhonesWA = (adminUsersWA || []).map((u: any) => u.phone_number).filter(Boolean);
         if (adminUsersWA && adminUsersWA.length > 0) {
           const approvalWaMsg = [
-            '🏗️ *Form Require Project \u2014 Request Baru*',
+            '🏗️ *Request Design Project \u2014 Request Baru*',
             '\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501',
             `📋 *Project  :* ${form.project_name.trim()}`,
             `🛋️ *Ruangan  :* ${form.room_name.trim() || '-'}`,
@@ -578,7 +578,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
               const ccTargets = await fetchWACCTargets(currentUser.id, ccDiv);
               if (ccTargets.length > 0) {
                 const ccMsg = [
-                  `🏗️ *[CC] Form Require Baru — Divisi ${ccDiv}*`,
+                  `🏗️ *[CC] Request Design Baru — Divisi ${ccDiv}*`,
                   '━━━━━━━━━━━━━━━━━━',
                   `📋 *Project  :* ${form.project_name.trim()}`,
                   `👤 *Sales    :* ${currentUser.full_name} (${ccDiv})`,
@@ -589,7 +589,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
                 await Promise.allSettled(ccTargets.map(t => sendWANotif({ type: 'reminder_wa', target: t.phone, message: ccMsg })));
               }
             }
-          } catch (ccEx: any) { console.warn('[WA CC form-require]', ccEx?.message); }
+          } catch (ccEx: any) { console.warn('[WA CC request-design]', ccEx?.message); }
 
           // ── Upload foto per ruangan tambahan ──
           try {
@@ -645,7 +645,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
                 if (!pic.phone_number) continue;
                 const picRooms = allRooms.filter(r => r.brand_display_pic_id===pic.id || r.brand_middleware_pic_id===pic.id);
                 const brandMsg = [
-                  '🏷️ *[Brand PIC] Form Require Project Baru*',
+                  '🏷️ *[Brand PIC] Request Design Project Baru*',
                   '━━━━━━━━━━━━━━━━━━',
                   `📋 *Project :* ${form.project_name.trim()}`,
                   `👤 *Sales   :* ${currentUser.full_name} (${currentUser.sales_division||'—'})`,
@@ -657,7 +657,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
                     return lines.join('\n');
                   }),
                   '━━━━━━━━━━━━━━━━━━',
-                  '🔗 https://team-ticketing.vercel.app/form-require-project',
+                  '🔗 https://team-ticketing.vercel.app/request-design-project',
                 ].join('\n');
                 await sendWANotif({ type: 'reminder_wa', target: pic.phone_number, message: brandMsg });
               }
@@ -716,7 +716,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         await sendWANotif({
           type: 'reminder_wa',
           target: requesterUser.phone_number,
-          message: `❌ *FORM REQUIRE — Request Ditolak*
+          message: `❌ *Request Design — Request Ditolak*
 
 Halo *${req.requester_name}*, request kamu ditolak:
 
@@ -898,7 +898,7 @@ Hubungi Admin untuk info lebih lanjut.
 
     const printContent = `<!DOCTYPE html>
 <html lang="id"><head><meta charset="UTF-8">
-<title>Form Require Project — ${selectedRequest.project_name}</title>
+<title>Request Design Project — ${selectedRequest.project_name}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; background: #fff; font-size: 13px; }
@@ -937,7 +937,7 @@ Hubungi Admin untuk info lebih lanjut.
   <!-- HEADER -->
   <div class="header">
     <div class="header-left">
-      <h1>🏗️ Form Require Project — IVP</h1>
+      <h1>🏗️ Request Design Project — IVP</h1>
       <p>Request ID: ${selectedRequest.id?.substring(0,8).toUpperCase()}</p>
       <div class="status-pill">Status: ${statusLabel}</div>
     </div>
@@ -1040,7 +1040,7 @@ Hubungi Admin untuk info lebih lanjut.
 
   <!-- FOOTER -->
   <div class="footer">
-    <div>🏗️ IndoVisual Professional Tools — Form Require Project</div>
+    <div>🏗️ IndoVisual Professional Tools — Request Design Project</div>
     <div>Dicetak: ${printDate} | Status: ${selectedRequest.status.replace('_',' ').toUpperCase()}</div>
   </div>
 
@@ -1171,7 +1171,7 @@ Hubungi Admin untuk info lebih lanjut.
       const sc2 = statusConfig[selectedRequest.status] || statusConfig.pending;
       const formHtml = `<!DOCTYPE html>
 <html lang="id"><head><meta charset="UTF-8">
-<title>Form Require Project — ${selectedRequest.project_name}</title>
+<title>Request Design Project — ${selectedRequest.project_name}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', sans-serif; color: #1e293b; background: #fff; padding: 32px; font-size: 13px; }
@@ -1251,7 +1251,7 @@ Hubungi Admin untuk info lebih lanjut.
     ${selectedRequest.keterangan_lain ? `<div class="field" style="grid-column:span 2"><label>Keterangan Lain</label><p style="white-space:pre-wrap">${selectedRequest.keterangan_lain}</p></div>` : ''}
   </div>
 </div>
-<p style="font-size:10px;color:#94a3b8;text-align:center;margin-top:16px">Form Require Project — IndoVisual Pratama · ${new Date().toLocaleDateString('id-ID')}</p>
+<p style="font-size:10px;color:#94a3b8;text-align:center;margin-top:16px">Request Design Project — IndoVisual Pratama · ${new Date().toLocaleDateString('id-ID')}</p>
 </body></html>`;
       zipFiles.push({ name: `${folderName}/01_Form_Detail_${projectSlug}.html`, data: enc.encode(formHtml) });
 
@@ -1385,7 +1385,7 @@ Hubungi Admin untuk info lebih lanjut.
               <span className="text-lg">🏗️</span>
             </div>
             <div>
-              <h1 className="text-base font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-teal-800">Form Require Project</h1>
+              <h1 className="text-base font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-teal-800">Request Design Project</h1>
               <p className="text-[11px] text-gray-500 font-medium">IVP Product — AV Solution Request</p>
             </div>
           </div>
