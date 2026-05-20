@@ -75,20 +75,20 @@ export const JABATAN_CC_RULES: Record<JabatanType, JabatanType[]> = {
 
 export const ALL_MENU_KEYS = [
   'form-bast',
-  'form-require-project',
+  'request-design-project',
   'ticket-troubleshooting',
   'daily-report',
   'database-pts',
   'unit-movement',
   'reminder-schedule',
   'picket-showroom',
-  'learning-center',         // ← tambahan baru
+  'learning-center',
 ];
 
 export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = {
   'learning-center':        { label: 'Learning Center', icon: '🎓' },
   'form-bast':              { label: 'Form Review Demo & BAST', icon: '⭐' },
-  'form-require-project':   { label: 'Form Require Project', icon: '🏗️' },
+  'request-design-project':   { label: 'Request Design Project', icon: '🏗️' },
   'ticket-troubleshooting': { label: 'Ticket Troubleshooting', icon: '🎫' },
   'daily-report':           { label: 'Daily Report', icon: '📈' },
   'database-pts':           { label: 'Database PTS', icon: '💼' },
