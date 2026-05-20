@@ -67,9 +67,9 @@ export default function Dashboard() {
       items: [{ name: 'Reminder', url: '/reminder-schedule', icon: '⏰', internal: true, embed: true }]
     },
     {
-      title: 'request design Project', icon: '🏗️', key: 'request-design-project',
+      title: 'Request Design Project', icon: '🏗️', key: 'request-design-project',
       gradient: 'from-violet-700 via-violet-600 to-violet-500',
-      description: 'Solution request form untuk project Sales',
+      description: 'Solution request Design form untuk project Sales',
       items: [{ name: 'Submit Require', url: '/form-require-project', icon: '📋', internal: true, embed: true }]
     },
     {
