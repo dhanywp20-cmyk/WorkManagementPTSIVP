@@ -212,35 +212,46 @@ export default function ReminderSchedulePage() {
     prev.size === filteredReminders.length ? new Set() : new Set(filteredReminders.map(r => r.id))
   );
 
+  // Helper: fetch reminders dengan filter guest — ambil yg sales_name = full_name ATAU created_by = username
+  const fetchRemindersForUser = async (activeUser: TeamUser | null): Promise<Reminder[]> => {
+    if (!activeUser || activeUser.role !== 'guest') {
+      // Admin & team: ambil semua
+      const { data, error } = await supabase.from('reminders').select('*').order('created_at', { ascending: false });
+      return (!error && data) ? (data as Reminder[]) : [];
+    }
+    // Guest: ambil schedule yg atas nama dia (dibuat admin) + yg dia request sendiri (created_by)
+    const [bySales, byCreator] = await Promise.all([
+      supabase.from('reminders').select('*').eq('sales_name', activeUser.full_name).order('created_at', { ascending: false }),
+      supabase.from('reminders').select('*').eq('created_by', activeUser.username).order('created_at', { ascending: false }),
+    ]);
+    const combined = [...(bySales.data ?? []), ...(byCreator.data ?? [])];
+    // Deduplicate by id, sort by created_at desc
+    const seen = new Set<string>();
+    return (combined as Reminder[])
+      .filter(r => { if (seen.has(r.id)) return false; seen.add(r.id); return true; })
+      .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+  };
+
   const fetchRemindersQuiet = async (user?: TeamUser | null) => {
-    // Tentukan user: dari param → state → localStorage
     let activeUser: TeamUser | null = user ?? currentUser;
     if (!activeUser) {
       const saved = localStorage.getItem('currentUser');
       if (saved) { try { activeUser = JSON.parse(saved) as TeamUser; } catch { /* ignore */ } }
     }
-    let query = supabase.from('reminders').select('*')
-      .order('created_at', { ascending: false });
-    // Team PTS bisa lihat SEMUA schedule (tidak difilter per user)
-    // Filter hanya untuk popup notif, bukan untuk list utama
-    const { data, error } = await query;
-    if (!error && data) setReminders(data as Reminder[]);
+    const data = await fetchRemindersForUser(activeUser);
+    setReminders(data);
   };
 
   // 🔥 PERUBAHAN UTAMA: Urutkan berdasarkan created_at terbaru di paling atas
   const fetchReminders = async () => {
     setListLoading(true);
-    // Fallback ke localStorage kalau currentUser state belum ready
     let activeUser: TeamUser | null = currentUser;
     if (!activeUser) {
       const saved = localStorage.getItem('currentUser');
       if (saved) { try { activeUser = JSON.parse(saved) as TeamUser; } catch { /* ignore */ } }
     }
-    let query = supabase.from('reminders').select('*')
-      .order('created_at', { ascending: false });
-    // Team PTS bisa lihat SEMUA schedule
-    const { data, error } = await query;
-    if (!error && data) setReminders(data as Reminder[]);
+    const data = await fetchRemindersForUser(activeUser);
+    setReminders(data);
     setTimeout(() => setListLoading(false), 400);
   };
 
@@ -2199,14 +2210,16 @@ export default function ReminderSchedulePage() {
                   )}
                 </div>
 
-                {/* ── MINI CALENDAR SIDEBAR ── */}
-                <MiniCalendar
-                  reminders={reminders}
-                  calendarMonth={calendarMonth}
-                  setCalendarMonth={setCalendarMonth}
-                  selectedCalDay={calOnlyDay}
-                  setSelectedCalDay={setCalOnlyDay}
-                />
+                {/* ── MINI CALENDAR SIDEBAR — hanya tampil untuk admin & team, disembunyikan untuk guest/sales ── */}
+                {!isGuest && (
+                  <MiniCalendar
+                    reminders={reminders}
+                    calendarMonth={calendarMonth}
+                    setCalendarMonth={setCalendarMonth}
+                    selectedCalDay={calOnlyDay}
+                    setSelectedCalDay={setCalOnlyDay}
+                  />
+                )}
               </div>
             </>
           )}
