@@ -801,7 +801,7 @@ export default function ReminderSchedulePage() {
       due_date: data.due_date,
       due_time: data.due_time,
       sales_name: currentUser.full_name,
-      sales_division: data.sales_division || currentUser.sales_division || '',
+      sales_division: currentUser.sales_division || '',
       pic_name: data.pic_name,
       pic_phone: data.pic_phone,
       product: data.product,
