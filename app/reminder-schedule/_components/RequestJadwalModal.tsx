@@ -13,6 +13,7 @@ export interface JadwalRequest {
   pic_phone: string;
   product: string;
   notes: string;
+  sales_division?: string; // dikirim dari modal agar tidak bergantung hanya pada localStorage
 }
 
 interface RequestJadwalModalProps {
@@ -51,6 +52,7 @@ export function RequestJadwalModal({
     pic_phone: '',
     product: '',
     notes: '',
+    sales_division: salesDivision,
   });
 
   const f = (patch: Partial<JadwalRequest>) => setForm(prev => ({ ...prev, ...patch }));
