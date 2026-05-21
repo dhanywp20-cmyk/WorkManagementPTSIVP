@@ -1863,7 +1863,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
     // ── 3. Reminder Schedule ──
     try {
       if (isAdmin) {
-        // Admin: tampilkan request jadwal dari sales yang BELUM di-assign (menunggu approval)
+        // Admin: request jadwal dari sales yang belum di-assign (assigned_to kosong)
         const { data } = await supabase
           .from('reminders')
           .select('id, project_name, category, due_date, status, assigned_to, notes, sales_name, sales_division, created_at')
