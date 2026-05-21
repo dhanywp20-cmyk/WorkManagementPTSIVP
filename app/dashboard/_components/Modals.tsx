@@ -1862,9 +1862,46 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
 
     // ── 3. Reminder Schedule ──
     try {
-      if (isAdmin || isPTS) {
-        const { data } = await supabase.from('reminders').select('id, project_name, category, due_date, status, assigned_to, created_at').neq('status', 'done').neq('status', 'cancelled').eq('assigned_to', currentUser.username).order('due_date', { ascending: true }).limit(20);
-        setReminderNotifs((data ?? []).map((r: any) => ({ id: r.id, type: 'reminder' as const, title: r.project_name, subtitle: `🗓️ ${r.category} · ${r.due_date}`, time: r.created_at, url: '/reminder-schedule', internalUrl: '/reminder-schedule', menuTitle: 'Reminder Schedule' })));
+      if (isAdmin) {
+        // Admin: tampilkan request jadwal dari sales yang BELUM di-assign (menunggu approval)
+        const { data } = await supabase
+          .from('reminders')
+          .select('id, project_name, category, due_date, status, assigned_to, notes, sales_name, sales_division, created_at')
+          .eq('status', 'pending')
+          .eq('assigned_to', '')
+          .ilike('notes', '%[REQUEST SALES]%')
+          .order('created_at', { ascending: false })
+          .limit(20);
+        setReminderNotifs((data ?? []).map((r: any) => ({
+          id: r.id,
+          type: 'reminder' as const,
+          title: r.project_name,
+          subtitle: `📩 Req. Sales · ${r.sales_name}${r.sales_division ? ' · ' + r.sales_division : ''} · ${r.due_date}`,
+          time: r.created_at,
+          url: '/reminder-schedule',
+          internalUrl: '/reminder-schedule',
+          menuTitle: 'Reminder Schedule',
+        })));
+      } else if (isPTS) {
+        // Team PTS: jadwal aktif yang di-assign ke diri sendiri
+        const { data } = await supabase
+          .from('reminders')
+          .select('id, project_name, category, due_date, status, assigned_to, created_at')
+          .neq('status', 'done')
+          .neq('status', 'cancelled')
+          .eq('assigned_to', currentUser.username)
+          .order('due_date', { ascending: true })
+          .limit(20);
+        setReminderNotifs((data ?? []).map((r: any) => ({
+          id: r.id,
+          type: 'reminder' as const,
+          title: r.project_name,
+          subtitle: `🗓️ ${r.category} · ${r.due_date}`,
+          time: r.created_at,
+          url: '/reminder-schedule',
+          internalUrl: '/reminder-schedule',
+          menuTitle: 'Reminder Schedule',
+        })));
       } else { setReminderNotifs([]); }
     } catch (e) { console.error('[notif] reminder fetch error:', e); }
 
