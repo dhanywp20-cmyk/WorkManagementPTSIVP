@@ -252,8 +252,18 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!isAdmin) return;
-    supabase.from('users').select('id', { count: 'exact', head: true }).eq('team_type', 'Pending Approval')
-      .then((res: { count: number | null }) => setPendingCount(res.count ?? 0));
+    // Hitung (1) user pending approval + (2) request jadwal sales yg belum di-assign
+    Promise.all([
+      supabase.from('users').select('id', { count: 'exact', head: true }).eq('team_type', 'Pending Approval'),
+      supabase.from('reminders').select('id', { count: 'exact', head: true })
+        .eq('assigned_to', '')
+        .eq('status', 'pending')
+        .ilike('notes', '%[REQUEST SALES]%'),
+    ]).then(([userRes, reminderRes]) => {
+      const userPending = (userRes as any).count ?? 0;
+      const requestPending = (reminderRes as any).count ?? 0;
+      setPendingCount(userPending + requestPending);
+    });
   }, [isAdmin]);
 
   const INTERNAL_KEYS = ['reminder-schedule', 'request-design-project', 'form-bast', 'ticket-troubleshooting', 'picket-showroom'];
