@@ -252,18 +252,38 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!isAdmin) return;
-    // Hitung (1) user pending approval + (2) request jadwal sales yg belum di-assign
-    Promise.all([
-      supabase.from('users').select('id', { count: 'exact', head: true }).eq('team_type', 'Pending Approval'),
-      supabase.from('reminders').select('id', { count: 'exact', head: true })
-        .eq('assigned_to', '')
-        .eq('status', 'pending')
-        .ilike('notes', '%[REQUEST SALES]%'),
-    ]).then(([userRes, reminderRes]) => {
-      const userPending = (userRes as any).count ?? 0;
-      const requestPending = (reminderRes as any).count ?? 0;
-      setPendingCount(userPending + requestPending);
-    });
+
+    const refreshPendingCount = () => {
+      // Hitung (1) user pending approval + (2) request jadwal sales yang belum di-assign
+      Promise.all([
+        supabase.from('users')
+          .select('id', { count: 'exact', head: true })
+          .eq('team_type', 'Pending Approval'),
+        supabase.from('reminders')
+          .select('id', { count: 'exact', head: true })
+          .eq('assigned_to', '')
+          .eq('status', 'pending')
+          .ilike('notes', '%[REQUEST SALES]%'),
+      ]).then(([userRes, reminderRes]) => {
+        const userPending = (userRes as any).count ?? 0;
+        const requestPending = (reminderRes as any).count ?? 0;
+        setPendingCount(userPending + requestPending);
+      });
+    };
+
+    refreshPendingCount();
+
+    // Realtime: update badge saat ada request jadwal baru atau user baru daftar
+    const ch = supabase.channel('admin-pending-count-rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reminders' }, () => {
+        setTimeout(refreshPendingCount, 400);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
+        setTimeout(refreshPendingCount, 400);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(ch); };
   }, [isAdmin]);
 
   const INTERNAL_KEYS = ['reminder-schedule', 'request-design-project', 'form-bast', 'ticket-troubleshooting', 'picket-showroom'];
