@@ -798,6 +798,26 @@ export default function ReminderSchedulePage() {
   const handleRequestJadwal = async (data: JadwalRequest) => {
     if (!currentUser) return;
 
+    // Selalu fetch sales_division terbaru dari DB untuk menghindari data stale di localStorage
+    // Ambil dari data modal dulu (paling fresh), lalu currentUser, lalu fetch DB
+    let salesDivision = (data as any).sales_division || currentUser.sales_division || '';
+    if (!salesDivision) {
+      try {
+        const { data: freshUser } = await supabase
+          .from('users')
+          .select('sales_division')
+          .eq('id', currentUser.id)
+          .single();
+        if (freshUser?.sales_division) {
+          salesDivision = freshUser.sales_division;
+          // Update currentUser di state & localStorage agar sinkron
+          const updatedUser = { ...currentUser, sales_division: salesDivision };
+          setCurrentUser(updatedUser);
+          localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        }
+      } catch { /* gunakan nilai kosong jika gagal */ }
+    }
+
     // Insert ke tabel reminders dengan status pending & assigned_to kosong
     // Admin nantinya assign ke team dari list yang ada
     const payload = {
@@ -808,7 +828,7 @@ export default function ReminderSchedulePage() {
       due_date: data.due_date,
       due_time: data.due_time,
       sales_name: currentUser.full_name,
-      sales_division: currentUser.sales_division || '',
+      sales_division: salesDivision,
       pic_name: data.pic_name,
       pic_phone: data.pic_phone,
       product: data.product,
