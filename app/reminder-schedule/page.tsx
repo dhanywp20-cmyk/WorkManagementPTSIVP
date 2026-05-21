@@ -15,10 +15,10 @@ import { PriorityBadge, StatusBadge, CategoryBadge } from './_components/Badges'
 import {
   FormField, SectionHeader, SectionHeaderSmall, InfoRow,
   LoadingScreen, MiniPieChart,
-  ViewIconBtn, RescheduleIconBtn, DeleteIconBtn, ActionGroup,
 } from '@/components/shared';
 import { MiniCalendar } from './_components/MiniCalendar';
 import { RescheduleModal } from './_components/RescheduleModal';
+import { RequestJadwalModal, type JadwalRequest } from './_components/RequestJadwalModal';
 
 
 export default function ReminderSchedulePage() {
@@ -86,6 +86,9 @@ export default function ReminderSchedulePage() {
 
   // ─── Resend Form Review ────────────────────────────────────────────────────
   const [resendingFormReview, setResendingFormReview] = useState(false);
+
+  // ─── Guest Request Jadwal State ───────────────────────────────────────────
+  const [showRequestModal, setShowRequestModal] = useState(false);
 
   const notify = (type: 'success' | 'error', msg: string) => {
     setToast({ type, msg });
@@ -771,6 +774,77 @@ export default function ReminderSchedulePage() {
 
   const isAdmin = currentUser?.role === 'admin';
   const canAddReminder = currentUser?.role === 'admin' || currentUser?.role === 'team';
+  const isGuest = currentUser?.role === 'guest';
+
+  // ─── Handler: Guest Request Jadwal ────────────────────────────────────────
+  const handleRequestJadwal = async (data: JadwalRequest) => {
+    if (!currentUser) return;
+
+    // Insert ke tabel reminders dengan status pending & assigned_to kosong
+    // Admin nantinya assign ke team dari list yang ada
+    const payload = {
+      project_name: data.project_name,
+      description: data.description,
+      address: data.address,
+      category: data.category,
+      due_date: data.due_date,
+      due_time: data.due_time,
+      sales_name: currentUser.full_name,
+      sales_division: data.sales_division || currentUser.sales_division || '',
+      pic_name: data.pic_name,
+      pic_phone: data.pic_phone,
+      product: data.product,
+      notes: data.notes
+        ? `[REQUEST SALES] ${data.notes}`
+        : '[REQUEST SALES] Menunggu assignment dari Admin',
+      priority: 'medium' as const,
+      status: 'pending' as const,
+      repeat: 'none' as const,
+      // assigned_to & assign_name dikosongkan — Admin yang assign
+      assigned_to: '',
+      assign_name: '',
+      created_by: currentUser.username,
+    };
+
+    const { error } = await supabase.from('reminders').insert([payload]);
+    if (error) {
+      notify('error', 'Gagal mengirim request: ' + error.message);
+      return;
+    }
+
+    notify('success', 'Request jadwal berhasil dikirim! Menunggu approval Admin.');
+    setShowRequestModal(false);
+    fetchRemindersQuiet();
+
+    // Kirim WA notifikasi ke semua admin
+    try {
+      const { data: admins } = await supabase
+        .from('users')
+        .select('phone_number, full_name')
+        .eq('role', 'admin');
+      if (admins && admins.length > 0) {
+        const msg =
+          `📩 *REQUEST JADWAL BARU — PTS IVP*\n\n` +
+          `Sales *${currentUser.full_name}* mengajukan request jadwal:\n\n` +
+          `📋 *Project: ${data.project_name}*\n` +
+          `🏷️ Kategori: ${data.category}\n` +
+          `📦 Product: ${data.product || '-'}\n` +
+          `📍 Lokasi: ${data.address}\n` +
+          `🕐 Usulan: *${formatDate(data.due_date)}${data.due_time ? ' · ' + data.due_time : ''}*\n` +
+          (data.description ? `📝 Deskripsi: ${data.description}\n` : '') +
+          (data.pic_name ? `🙋 PIC: ${data.pic_name}${data.pic_phone ? ' - ' + data.pic_phone : ''}\n` : '') +
+          `\nSilakan review & assign ke Team PTS:\n` +
+          `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+        for (const admin of admins) {
+          if (admin.phone_number) {
+            await sendFonnteWA(admin.phone_number, msg);
+          }
+        }
+      }
+    } catch (waEx) {
+      console.warn('[Request Jadwal] WA ke admin gagal:', waEx);
+    }
+  };
 
   const myActiveReminders = reminders.filter(r =>
     currentUser && r.assigned_to === currentUser.username && r.status !== 'done' && r.status !== 'cancelled'
@@ -886,6 +960,17 @@ export default function ReminderSchedulePage() {
             reminder={rescheduleTarget}
             onClose={() => setRescheduleTarget(null)}
             onSave={handleReschedule}
+          />
+        )}
+
+        {/* ── REQUEST JADWAL MODAL (Guest/Sales) ── */}
+        {showRequestModal && currentUser && (
+          <RequestJadwalModal
+            salesName={currentUser.full_name}
+            salesUsername={currentUser.username}
+            salesDivision={currentUser.sales_division ?? ''}
+            onClose={() => setShowRequestModal(false)}
+            onSubmit={handleRequestJadwal}
           />
         )}
 
@@ -1027,7 +1112,7 @@ export default function ReminderSchedulePage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <FormField label="Assign To *">
                     <select value={formData.assigned_to} onChange={e => fd({ assigned_to: e.target.value })}
                       className={inputCls} style={inputStyle}>
@@ -1043,7 +1128,7 @@ export default function ReminderSchedulePage() {
                   </FormField>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <FormField label="Tanggal *">
                     <input type="date" value={formData.due_date} onChange={e => fd({ due_date: e.target.value })}
                       className={inputCls} style={inputStyle} />
@@ -1215,7 +1300,7 @@ export default function ReminderSchedulePage() {
 
                 <SectionHeader icon="🎯" title="PIC Project (Opsional)" />
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <FormField label="Nama PIC">
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2">🙋</span>
@@ -1415,7 +1500,7 @@ export default function ReminderSchedulePage() {
               <div className="p-5 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(95vh - 180px)' }}>
                 <div>
                   <SectionHeaderSmall icon="📋" title="Detail Jadwal" />
-                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="mt-3 grid grid-cols-2 gap-4">
                     <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.08)' }}>
                       <p className="text-[10px] font-bold tracking-widest uppercase mb-2" style={{ color: '#64748b' }}>Assign To</p>
                       <div className="flex items-center gap-2">
@@ -1664,7 +1749,7 @@ export default function ReminderSchedulePage() {
         )}
 
         {/* ── HEADER ── */}
-        <header className="sticky top-0 z-50 animate-slide-down anim-d0" style={{ background: 'rgba(255,255,255,0.9)', borderBottom: '3px solid #dc2626', backdropFilter: 'blur(16px)' }}>
+        <header className="sticky top-0 z-50" style={{ background: 'rgba(255,255,255,0.9)', borderBottom: '3px solid #dc2626', backdropFilter: 'blur(16px)' }}>
           <div className="max-w-[1600px] mx-auto px-6 py-3.5 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -1698,6 +1783,20 @@ export default function ReminderSchedulePage() {
                 </button>
               )}
 
+              {/* ── Tombol Request Jadwal — hanya untuk role Guest/Sales ── */}
+              {isGuest && view === 'list' && (
+                <button
+                  onClick={() => setShowRequestModal(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90"
+                  style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', boxShadow: '0 4px 14px rgba(37,99,235,0.4)' }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                  </svg>
+                  📩 Request Jadwal
+                </button>
+              )}
+
             </div>
           </div>
         </header>
@@ -1708,7 +1807,7 @@ export default function ReminderSchedulePage() {
           {view === 'list' && (
             <>
               {/* ── Stat cards (clickable filter) ── */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-slide-up anim-d80">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
                   {
                     label: 'Total Jadwal', value: totalCount, sub: 'Semua reminder',
@@ -1759,7 +1858,7 @@ export default function ReminderSchedulePage() {
               </div>
 
               {/* ── Pie Charts — klick untuk filter ── */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-zoom-in anim-d160">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <MiniPieChart
                   data={projectPieData} title="Kegiatan / Kategori" icon="🖥️"
                   activeFilter={filterCategory !== 'all' ? filterCategory : null}
@@ -1784,7 +1883,7 @@ export default function ReminderSchedulePage() {
 
               {/* Active filter chips */}
               {/* Main area: list + calendar */}
-              <div className="flex gap-4 items-start animate-slide-up anim-d320">
+              <div className="flex gap-4 items-start">
 
                 {/* ── TICKET LIST ── */}
                 <div className="flex-1 min-w-0 rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.6)', backdropFilter: 'blur(12px)' }}>
@@ -1932,8 +2031,8 @@ export default function ReminderSchedulePage() {
                       <p className="text-xs text-gray-400 mt-1">Coba ubah filter atau tambahkan reminder baru</p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto animate-zoom-in">
-                      <table className="w-full border-collapse table-zebra" style={{ tableLayout: 'fixed', background: 'transparent' }}>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse" style={{ tableLayout: 'fixed', background: 'transparent' }}>
                         <colgroup>
                           <col style={{ width: '3%' }} />
                           <col style={{ width: '13%' }} />
@@ -1943,8 +2042,8 @@ export default function ReminderSchedulePage() {
                           <col style={{ width: '9%' }} />
                           <col style={{ width: '7%' }} />
                           <col style={{ width: '9%' }} />
-                          <col style={{ width: '5%' }} />  {/* Tanggal lebih sempit */}
-                          <col style={{ width: '11%' }} /> {/* Action lebih lebar */}
+                          <col style={{ width: '6%' }} />
+                          <col style={{ width: '8%' }} />
                         </colgroup>
                         <thead>
                           <tr className="border-b-2 border-gray-100" style={{ background: "rgba(255,255,255,0.97)" }}>
@@ -1971,7 +2070,7 @@ export default function ReminderSchedulePage() {
                             const today = isDueToday(r.due_date);
                             return (
                               <tr key={r.id}
-                                className={`stagger-item border-b border-gray-200 hover:bg-red-50/30 transition-colors cursor-pointer ${today ? 'bg-red-50/15 border-l-4 border-l-red-400' : 'border-l-4 border-l-transparent'}`}
+                                className={`border-b border-gray-200 hover:bg-red-50/30 transition-colors cursor-pointer ${today ? 'bg-red-50/15 border-l-4 border-l-red-400' : 'border-l-4 border-l-transparent'}`}
                                 >
                                 {/* No */}
                                 <td className="px-3 py-3 border-r border-gray-200 align-middle text-center" onClick={e => e.stopPropagation()}>
@@ -2065,15 +2164,27 @@ export default function ReminderSchedulePage() {
                                 </td>
                                 {/* ACT */}
                                 <td className="px-3 py-1 align-middle text-center" onClick={e => e.stopPropagation()}>
-                                  <ActionGroup>
-                                    <ViewIconBtn onClick={() => setDetailReminder(r)} label="Detail" />
+                                  <div className="flex flex-nowrap items-center justify-center gap-1">
+                                    {/* Detail */}
+                                    <button onClick={() => setDetailReminder(r)} title="Detail"
+                                      className="text-blue-500 hover:text-blue-700 transition-colors">
+                                      <span className="text-sm">👁</span>
+                                    </button>
+                                    {/* Re-Schedule — semua team PTS & admin bisa lihat */}
                                     {(isAdmin || currentUser?.role === 'team') && r.status !== 'done' && (
-                                      <RescheduleIconBtn onClick={() => setRescheduleTarget(r)} label="Jadwal" />
+                                      <button onClick={() => setRescheduleTarget(r)} title="Re-Schedule"
+                                        className="text-amber-500 hover:text-amber-700 transition-colors">
+                                        <span className="text-sm">📅</span>
+                                      </button>
                                     )}
+                                    {/* Hapus — admin only */}
                                     {isAdmin && (
-                                      <DeleteIconBtn onClick={() => openDeleteModal(r)} label="Hapus" />
+                                      <button onClick={() => openDeleteModal(r)} title="Hapus"
+                                        className="text-red-400 hover:text-red-600 transition-colors">
+                                        <span className="text-sm">🗑️</span>
+                                      </button>
                                     )}
-                                  </ActionGroup>
+                                  </div>
                                 </td>
                               </tr>
                             );
