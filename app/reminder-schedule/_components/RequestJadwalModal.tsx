@@ -1,6 +1,6 @@
 'use client';
-import { useState, useRef } from 'react';
-import { CATEGORIES, CATEGORY_CONFIG, SALES_DIVISIONS } from './shared';
+import { useState } from 'react';
+import { CATEGORY_CONFIG } from './shared';
 
 export interface JadwalRequest {
   project_name: string;
@@ -9,7 +9,6 @@ export interface JadwalRequest {
   category: string;
   due_date: string;
   due_time: string;
-  sales_division: string;
   pic_name: string;
   pic_phone: string;
   product: string;
@@ -27,7 +26,7 @@ interface RequestJadwalModalProps {
 const inputCls =
   'w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-blue-500/40';
 const inputStyle = {
-  background: 'rgba(255,255,255,0.95)',
+  background: '#ffffff',
   border: '1px solid rgba(0,0,0,0.12)',
 };
 
@@ -48,7 +47,6 @@ export function RequestJadwalModal({
     category: 'Demo Product',
     due_date: new Date().toISOString().split('T')[0],
     due_time: '09:00',
-    sales_division: salesDivision,
     pic_name: '',
     pic_phone: '',
     product: '',
@@ -75,7 +73,7 @@ export function RequestJadwalModal({
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="bg-white/97 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 overflow-hidden"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-4 overflow-hidden"
         style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(59,130,246,0.35)' }}
       >
         {/* Header */}
@@ -249,21 +247,6 @@ export function RequestJadwalModal({
             </div>
           </div>
 
-          {/* Divisi Sales */}
-          <div>
-            <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
-              Divisi Sales
-            </label>
-            <select
-              value={form.sales_division}
-              onChange={e => f({ sales_division: e.target.value })}
-              className={inputCls} style={inputStyle}
-            >
-              <option value="">-- Pilih Divisi --</option>
-              {SALES_DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </div>
-
           {/* PIC */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -328,7 +311,7 @@ export function RequestJadwalModal({
             <button
               onClick={onClose}
               className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
-              style={{ background: 'rgba(255,255,255,0.95)', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}
+              style={{ background: '#ffffff', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}
             >
               Batal
             </button>
