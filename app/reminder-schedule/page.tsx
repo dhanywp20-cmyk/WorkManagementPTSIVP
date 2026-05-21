@@ -90,6 +90,13 @@ export default function ReminderSchedulePage() {
   // ─── Guest Request Jadwal State ───────────────────────────────────────────
   const [showRequestModal, setShowRequestModal] = useState(false);
 
+  // ─── Approve & Assign State (admin only) ─────────────────────────────────
+  const [approveTarget, setApproveTarget] = useState<Reminder | null>(null);
+  const [approveAssignTo, setApproveAssignTo] = useState('');
+  const [approveDate, setApproveDate] = useState('');
+  const [approveTime, setApproveTime] = useState('');
+  const [approveSaving, setApproveSaving] = useState(false);
+
   const notify = (type: 'success' | 'error', msg: string) => {
     setToast({ type, msg });
     setTimeout(() => setToast(null), 3500);
@@ -857,6 +864,106 @@ export default function ReminderSchedulePage() {
     }
   };
 
+  // ─── Handler: Admin Approve & Assign request dari Sales ─────────────────
+  const handleApproveAssign = async () => {
+    if (!approveTarget || !approveAssignTo) return;
+    const assignee = teamUsers.find(u => u.username === approveAssignTo);
+    if (!assignee) return;
+    setApproveSaving(true);
+
+    // Update reminder: assign ke team, clear REQUEST SALES note prefix
+    const cleanNotes = (approveTarget.notes ?? '').replace('[REQUEST SALES] ', '').replace('[REQUEST SALES]', '').trim();
+    const { error } = await supabase.from('reminders').update({
+      assigned_to: assignee.username,
+      assign_name: assignee.full_name,
+      due_date: approveDate || approveTarget.due_date,
+      due_time: approveTime || approveTarget.due_time,
+      notes: cleanNotes || undefined,
+    }).eq('id', approveTarget.id);
+
+    if (error) {
+      notify('error', 'Gagal approve: ' + error.message);
+      setApproveSaving(false);
+      return;
+    }
+
+    notify('success', `Request disetujui & di-assign ke ${assignee.full_name}!`);
+
+    // WA ke team yang di-assign
+    if (assignee.phone_number) {
+      const msg =
+        `🗓️ *JADWAL BARU — PTS IVP*
+
+` +
+        `Halo *${assignee.full_name}*, kamu mendapat jadwal baru dari request Sales:
+
+` +
+        `*Nama Project: ${approveTarget.project_name}*
+` +
+        `🏷️ Kategori: ${approveTarget.category}
+` +
+        `📦 Product: ${approveTarget.product || '-'}
+` +
+        `📍 Lokasi: ${approveTarget.address || '-'}
+` +
+        `👤 Sales: ${approveTarget.sales_name}${approveTarget.sales_division ? ' - ' + approveTarget.sales_division : ''}
+` +
+        `🕐 Jadwal: *${formatDate(approveDate || approveTarget.due_date)}${(approveTime || approveTarget.due_time) ? ' · ' + (approveTime || approveTarget.due_time) : ''}*
+` +
+        (approveTarget.pic_name ? `🙋 PIC: ${approveTarget.pic_name}${approveTarget.pic_phone ? ' - ' + approveTarget.pic_phone : ''}
+` : '') +
+        `
+jangan lupa peralatan & Semangat💪🏼
+` +
+        `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+      await sendFonnteWA(assignee.phone_number, msg);
+    }
+
+    // WA ke sales yang request — konfirmasi approved
+    try {
+      const { data: salesUser } = await supabase
+        .from('users').select('phone_number, full_name')
+        .eq('full_name', approveTarget.sales_name).eq('role', 'guest').maybeSingle();
+      if (salesUser?.phone_number) {
+        const salesMsg =
+          `✅ *REQUEST JADWAL DISETUJUI — PTS IVP*
+
+` +
+          `Halo *${salesUser.full_name}*!
+
+` +
+          `Request jadwal kamu untuk project:
+` +
+          `📋 *${approveTarget.project_name}*
+` +
+          `🏷️ Kategori: ${approveTarget.category}
+` +
+          `📍 ${approveTarget.address || '-'}
+
+` +
+          `telah *disetujui* dan akan dikerjakan oleh:
+` +
+          `👷 *${assignee.full_name}*
+` +
+          `🕐 Jadwal: *${formatDate(approveDate || approveTarget.due_date)}${(approveTime || approveTarget.due_time) ? ' · ' + (approveTime || approveTarget.due_time) : ''}*
+
+` +
+          `Terima kasih! 🙏
+` +
+          `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+        await sendFonnteWA(salesUser.phone_number, salesMsg);
+      }
+    } catch { /* ignore WA error */ }
+
+    setApproveTarget(null);
+    setApproveAssignTo('');
+    setApproveDate('');
+    setApproveTime('');
+    setApproveSaving(false);
+    setDetailReminder(null);
+    fetchRemindersQuiet();
+  };
+
   const myActiveReminders = reminders.filter(r =>
     currentUser && r.assigned_to === currentUser.username && r.status !== 'done' && r.status !== 'cancelled'
   );
@@ -983,6 +1090,107 @@ export default function ReminderSchedulePage() {
             onClose={() => setShowRequestModal(false)}
             onSubmit={handleRequestJadwal}
           />
+        )}
+
+        {/* ── APPROVE & ASSIGN MODAL (Admin only) ── */}
+        {approveTarget && isAdmin && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[10001] p-4"
+            onClick={e => { if (e.target === e.currentTarget) { setApproveTarget(null); setApproveAssignTo(''); } }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+              style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(34,197,94,0.4)' }}>
+              {/* Header */}
+              <div className="px-6 py-5 flex items-center justify-between"
+                style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)' }}>
+                <div>
+                  <h3 className="text-lg font-bold text-white">✅ Approve & Assign Request</h3>
+                  <p className="text-green-200/80 text-xs mt-0.5 truncate max-w-[300px]">{approveTarget.project_name}</p>
+                </div>
+                <button onClick={() => { setApproveTarget(null); setApproveAssignTo(''); }}
+                  className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                {/* Info request */}
+                <div className="rounded-xl p-3 space-y-1"
+                  style={{ background: 'rgba(59,130,246,0.07)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Request dari Sales</p>
+                  <p className="text-sm font-bold text-slate-800">{approveTarget.sales_name}{approveTarget.sales_division ? ` · ${approveTarget.sales_division}` : ''}</p>
+                  <p className="text-xs text-slate-500">📍 {approveTarget.address || '-'} · 🏷️ {approveTarget.category}</p>
+                  <p className="text-xs text-slate-500">📅 Usulan: {formatDate(approveTarget.due_date)} {approveTarget.due_time}</p>
+                </div>
+
+                {/* Assign to Team */}
+                <div>
+                  <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                    Assign ke Team PTS *
+                  </label>
+                  <select
+                    value={approveAssignTo}
+                    onChange={e => setApproveAssignTo(e.target.value)}
+                    className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-green-500/40"
+                    style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
+                    <option value="">-- Pilih Anggota Team PTS --</option>
+                    {teamUsers.map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
+                  </select>
+                </div>
+
+                {/* Konfirmasi / ubah tanggal */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                      Tanggal (opsional ubah)
+                    </label>
+                    <input type="date"
+                      value={approveDate || approveTarget.due_date}
+                      onChange={e => setApproveDate(e.target.value)}
+                      className="w-full rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-green-500/40 text-slate-800"
+                      style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                      Waktu (opsional ubah)
+                    </label>
+                    <input type="time"
+                      value={approveTime || approveTarget.due_time}
+                      onChange={e => setApproveTime(e.target.value)}
+                      className="w-full rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-green-500/40 text-slate-800"
+                      style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
+                  </div>
+                </div>
+
+                {/* Info WA */}
+                <div className="rounded-xl p-3 flex items-start gap-2"
+                  style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)' }}>
+                  <span className="text-base flex-shrink-0">💬</span>
+                  <p className="text-[11px] text-green-700 leading-relaxed">
+                    WA notifikasi akan otomatis dikirim ke <strong>Team PTS</strong> yang di-assign dan ke <strong>Sales</strong> yang request bahwa jadwalnya sudah disetujui.
+                  </p>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-3 pt-1">
+                  <button onClick={() => { setApproveTarget(null); setApproveAssignTo(''); setApproveDate(''); setApproveTime(''); }}
+                    className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
+                    style={{ background: '#f8fafc', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleApproveAssign}
+                    disabled={approveSaving || !approveAssignTo}
+                    className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', boxShadow: '0 4px 14px rgba(22,163,74,0.35)' }}>
+                    {approveSaving
+                      ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>
+                      : <>✅ Approve &amp; Assign</>
+                    }
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* ── DELETE MODAL ── */}
@@ -1708,6 +1916,15 @@ export default function ReminderSchedulePage() {
                 {/* Action buttons di detail popup */}
                 {(isAdmin || currentUser?.role === 'team') && (
                   <div className="flex gap-3 pt-2 flex-wrap">
+                    {/* Approve & Assign — admin only, request sales belum di-assign */}
+                    {isAdmin && !detailReminder.assigned_to && detailReminder.notes?.includes('[REQUEST SALES]') && (
+                      <button
+                        onClick={() => { setApproveTarget(detailReminder); setApproveAssignTo(''); setApproveDate(detailReminder.due_date); setApproveTime(detailReminder.due_time); }}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-[1.02]"
+                        style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: 'white', boxShadow: '0 4px 12px rgba(22,163,74,0.3)' }}>
+                        ✅ Approve &amp; Assign ke Team
+                      </button>
+                    )}
                     {/* Re-Schedule — admin + team PTS bisa */}
                     {detailReminder.status !== 'done' && (
                       <button onClick={() => { setRescheduleTarget(detailReminder); }}
@@ -2155,6 +2372,12 @@ export default function ReminderSchedulePage() {
                                 {/* Status */}
                                 <td className="px-3 py-3 border-r border-gray-200 align-middle">
                                   <StatusBadge status={r.status} />
+                                  {!r.assigned_to && r.notes?.includes('[REQUEST SALES]') && (
+                                    <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white"
+                                      style={{ background: '#2563eb' }}>
+                                      📩 Req. Sales
+                                    </span>
+                                  )}
                                   {r.wa_sent_h1 && <p className="text-[9px] font-bold text-green-600 mt-0.5">✅ WA H-1</p>}
                                 </td>
                                 {/* Tanggal */}
@@ -2186,6 +2409,13 @@ export default function ReminderSchedulePage() {
                                       <button onClick={() => setRescheduleTarget(r)} title="Re-Schedule"
                                         className="text-amber-500 hover:text-amber-700 transition-colors">
                                         <span className="text-sm">📅</span>
+                                      </button>
+                                    )}
+                                    {/* Approve & Assign — admin only, hanya utk request sales yg belum di-assign */}
+                                    {isAdmin && !r.assigned_to && r.notes?.includes('[REQUEST SALES]') && (
+                                      <button onClick={() => { setApproveTarget(r); setApproveAssignTo(''); setApproveDate(r.due_date); setApproveTime(r.due_time); }} title="Approve & Assign"
+                                        className="text-green-600 hover:text-green-800 transition-colors">
+                                        <span className="text-sm">✅</span>
                                       </button>
                                     )}
                                     {/* Hapus — admin only */}
