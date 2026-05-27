@@ -564,7 +564,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
             `🏢 *Sales    :* ${form.sales_name.trim() || '-'}`,
             '\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501',
             'Silakan buka dashboard untuk *Approve / Reject*.',
-            '🔗 https://team-ticketing.vercel.app/dashboard',
+            '🔗 https://work-management-ptsivp.vercel.app/dashboard',
           ].join('\n');
           await Promise.allSettled(
             (adminUsersWA as any[]).map((a: any) =>
