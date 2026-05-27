@@ -75,7 +75,7 @@ export function AssignPTSModal({
           isExternal && selectedIVP ? `🔗 IVP CC   : ${selectedIVP}` : '',
           '━━━━━━━━━━━━━━━━━━',
           'Segera proses dan update status ya! 💪',
-          '🔗 https://team-ticketing.vercel.app/dashboard',
+          '🔗 https://work-management-ptsivp.vercel.app/dashboard',
         ].filter(Boolean).join('\n');
         await sendWANotif({ type: 'reminder_wa', target: ptsMember.phone_number, message: lines });
       }
@@ -88,11 +88,12 @@ export function AssignPTSModal({
             '🔗 *request design — Kamu Di-assign sebagai IVP Sales*',
             '━━━━━━━━━━━━━━━━━━',
             `📋 Project      : ${req.project_name}`,
+			`🛋️ Ruangan		 : ${req.room_name || '-'}`,
             `🏢 Sales Ext.   : ${req.sales_name} (${req.sales_division})`,
             `👷 Tim PTS      : ${selectedPTS}`,
             '━━━━━━━━━━━━━━━━━━',
             'Akses portal untuk melihat detail dan ikut chat.',
-            '🔗 https://team-ticketing.vercel.app/dashboard',
+            '🔗 https://work-management-ptsivp.vercel.app/dashboard',
           ].join('\n');
           await sendWANotif({ type: 'reminder_wa', target: ivpUser.phone_number, message: lines });
         }
