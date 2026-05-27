@@ -327,7 +327,7 @@ export default function Dashboard() {
         style={{ animation: `fadeInUp 0.5s ease forwards`, animationDelay: `${index * 80}ms`, opacity: 0 }}
         onClick={isSingleInternal ? () => handleMenuClick(menu.items[0], menu.title) : undefined}
       >
-        <div className={`bg-gradient-to-br ${menu.gradient} ${isSingleInternal ? 'p-8' : 'p-6'} relative overflow-hidden`}>
+        <div className={`bg-gradient-to-br ${menu.gradient} ${isSingleInternal ? 'p-6 md:p-8' : 'p-5 md:p-6'} relative overflow-hidden`}>
           <div className="absolute inset-0 opacity-10">
             <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-white" />
             <div className="absolute -left-2 -bottom-2 w-16 h-16 rounded-full bg-white" />
@@ -363,7 +363,7 @@ export default function Dashboard() {
   // ── LOADING ──
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-cover bg-center" style={{ backgroundImage: 'url(/IVP_Background.png)' }}>
+      <div className="flex items-center justify-center bg-cover bg-center bg-fixed" style={{ backgroundImage: 'url(/IVP_Background.png)', minHeight: '100dvh' }}>
         <div className="flex flex-col items-center gap-4 px-10 py-8 rounded-2xl" style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
           <div className="w-12 h-12 rounded-full border-4 border-t-rose-600 border-rose-200 animate-spin" />
           <p className="text-slate-700 font-semibold">Memuat portal...</p>
@@ -375,9 +375,9 @@ export default function Dashboard() {
   // ── LOGIN / REGISTER SCREEN ──
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-cover bg-center bg-fixed p-4" style={{ backgroundImage: 'url(/IVP_Background.png)' }}>
+      <div className="flex items-center justify-center bg-cover bg-center bg-fixed p-4" style={{ backgroundImage: 'url(/IVP_Background.png)', minHeight: '100dvh' }}>
         <div className={`w-full rounded-3xl shadow-2xl overflow-hidden transition-all ${showRegister ? 'max-w-2xl' : 'max-w-md'}`} style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(20px)' }}>
-          <div className="p-8">
+          <div className="p-6 md:p-8">
             <div className="flex flex-col items-center mb-8">
               <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg ${showRegister ? 'bg-gradient-to-br from-indigo-600 to-indigo-700' : 'bg-gradient-to-br from-rose-600 to-rose-700'}`}>
                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -423,7 +423,7 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
                       {/* Kolom Kiri */}
                       <div className="space-y-3">
                         <div>
@@ -515,43 +515,46 @@ export default function Dashboard() {
   // ── SHARED HEADER JSX ──
   const renderHeader = (withBackBtn = false) => (
     <div className="bg-white/80 backdrop-blur-md shadow-md border-b border-slate-200/70" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', position: 'relative', zIndex: 9999 }}>
-      <div className="w-full px-4 py-4">
-        <div className="flex items-center justify-between gap-4">
+      <div className="w-full px-3 md:px-4 py-3 md:py-4">
+        <div className="flex items-center justify-between gap-2 md:gap-4">
           {/* LEFT */}
-          <div className="flex items-center gap-4 flex-shrink-0">
-            <div className="w-12 h-12 bg-gradient-to-br from-rose-600 to-rose-700 rounded-xl shadow-md flex items-center justify-center flex-shrink-0">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+            <div className="w-9 h-9 md:w-12 md:h-12 bg-gradient-to-br from-rose-600 to-rose-700 rounded-xl shadow-md flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
             <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-xl font-bold text-slate-800 tracking-tight">Work Management Platform</h1>
-                <span className="text-slate-400 font-light text-xl select-none leading-none">|</span>
-                <span className="text-sm font-bold tracking-wide" style={{ color: '#c8861d' }}>PTS Portal</span>
+              <div className="flex items-center gap-1.5 md:gap-2.5">
+                <h1 className="text-sm md:text-xl font-bold text-slate-800 tracking-tight leading-tight">
+                  <span className="hidden sm:inline">Work Management Platform</span>
+                  <span className="sm:hidden">WM Platform</span>
+                </h1>
+                <span className="text-slate-400 font-light text-sm md:text-xl select-none leading-none hidden sm:inline">|</span>
+                <span className="text-xs md:text-sm font-bold tracking-wide" style={{ color: '#c8861d' }}>PTS Portal</span>
               </div>
-              <p className="text-slate-500 text-xs font-medium mt-0.5">IndoVisual Professional Tools</p>
+              <p className="text-slate-500 text-[10px] md:text-xs font-medium mt-0.5 hidden sm:block">IndoVisual Professional Tools</p>
             </div>
           </div>
 
           {/* CENTER — hanya di main menu (non-sidebar), notif di tengah */}
           {!showSidebar && currentUser && (
-            <div className="flex-1 flex justify-center px-4">
+            <div className="flex-1 flex justify-center px-2 md:px-4">
               <NotificationBar currentUser={currentUser} onNavigate={handleNotifNavigate} />
             </div>
           )}
           {showSidebar && <div className="flex-1" />}
 
           {/* RIGHT */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
             {/* NotificationBar — di kanan hanya saat sidebar view */}
             {showSidebar && currentUser && (
               <NotificationBar currentUser={currentUser} onNavigate={handleNotifNavigate} />
             )}
 
-            {/* User badge — hanya di main menu (non-sidebar) */}
+            {/* User badge — hanya di main menu (non-sidebar), hidden di mobile kecil */}
             {!showSidebar && (
-              <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl border border-slate-200/80 bg-white/70 backdrop-blur-sm">
+              <div className="hidden md:flex items-center gap-2.5 px-4 py-2 rounded-xl border border-slate-200/80 bg-white/70 backdrop-blur-sm">
                 <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0"
                   style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#78350f' }}>
                   {currentUser?.full_name?.charAt(0)?.toUpperCase() ?? 'U'}
@@ -563,10 +566,18 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* User Profile — hanya di main menu */}
+            {/* Mobile: avatar only */}
+            {!showSidebar && (
+              <div className="md:hidden w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#78350f' }}>
+                {currentUser?.full_name?.charAt(0)?.toUpperCase() ?? 'U'}
+              </div>
+            )}
+
+            {/* User Profile — hidden di mobile */}
             {!showSidebar && (
               <button onClick={() => setShowUserProfile(true)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
                 style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', color: '#065f46' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(16,185,129,0.15)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(16,185,129,0.08)'; }}>
@@ -577,17 +588,17 @@ export default function Dashboard() {
               </button>
             )}
 
-            {/* Sign Out — hanya di main menu */}
+            {/* Sign Out */}
             {!showSidebar && (
               <button onClick={handleLogout}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                className="flex items-center gap-1.5 px-2 md:px-3 py-2 rounded-xl text-xs font-semibold transition-all"
                 style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.22)', color: '#b91c1c' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.13)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.07)'; }}>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-                Sign Out
+                <span className="hidden sm:inline">Sign Out</span>
               </button>
             )}
           </div>
@@ -607,11 +618,11 @@ export default function Dashboard() {
   // ── VIEW: NO SIDEBAR (main dashboard) ──
   if (!showSidebar) {
     return (
-      <div className="min-h-screen flex flex-col bg-cover bg-center bg-fixed" style={{ backgroundImage: 'url(/IVP_Background.png)' }}>
+      <div className="flex flex-col bg-cover bg-center bg-fixed" style={{ backgroundImage: 'url(/IVP_Background.png)', minHeight: '100dvh' }}>
         {renderModals()}
         {renderHeader()}
 
-        <div className="flex-1 overflow-y-auto py-8 px-4 md:px-8">
+        <div className="flex-1 overflow-y-auto py-6 px-4 md:px-8">
           <div className="max-w-[1600px] mx-auto space-y-8">
             {menuLoading ? <MenuLoadingOverlay /> : (
               <>
@@ -628,7 +639,7 @@ export default function Dashboard() {
                       </div>
                       <span className="text-white font-bold text-sm tracking-wide">Learning Center</span>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                       {learningMenuItems.map((menu, i) => renderMenuCard(menu, i, '#4338ca'))}
                     </div>
                   </div>
@@ -645,7 +656,7 @@ export default function Dashboard() {
                       </div>
                       <span className="text-white font-bold text-sm tracking-wide">Project</span>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                       {projectMenuItems.map((menu, i) => renderMenuCard(menu, i, '#0ea5e9'))}
                     </div>
                   </div>
@@ -663,7 +674,7 @@ export default function Dashboard() {
                       </div>
                       <span className="text-white font-bold text-sm tracking-wide">Internal Daily</span>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                       {internalMenuItems.map((menu, i) => renderMenuCard(menu, i, '#10b981'))}
                     </div>
                   </div>
@@ -674,8 +685,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white/70 backdrop-blur-sm border-t border-slate-200/60">
-          <div className="max-w-[1600px] mx-auto px-6 py-4">
+        <div className="bg-white/70 backdrop-blur-sm border-t border-slate-200/60 flex-shrink-0">
+          <div className="max-w-[1600px] mx-auto px-4 md:px-6 py-3 md:py-4">
             <p className="text-slate-500 text-xs font-medium tracking-wide text-center">© 2026 IndoVisual — Work Management Support (PTS IVP)</p>
           </div>
         </div>
@@ -690,14 +701,14 @@ export default function Dashboard() {
 
   // ── VIEW: SIDEBAR ──
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-cover bg-center bg-fixed" style={{ backgroundImage: 'url(/IVP_Background.png)' }}>
+    <div className="flex flex-col bg-cover bg-center bg-fixed" style={{ backgroundImage: 'url(/IVP_Background.png)', height: '100dvh', overflow: 'hidden' }}>
       {renderModals()}
       {renderHeader()}
 
       <div className="flex flex-1 overflow-hidden">
         {/* SIDEBAR */}
         <div
-          className={`relative flex flex-col transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'w-[64px]' : 'w-[272px]'}`}
+          className={`relative flex flex-col transition-all duration-300 ease-in-out flex-shrink-0 ${sidebarCollapsed ? 'w-[48px] md:w-[64px]' : 'w-[220px] md:w-[272px]'}`}
           style={{
             background: 'rgba(255,255,255,0.88)',
             backdropFilter: 'blur(20px)',
