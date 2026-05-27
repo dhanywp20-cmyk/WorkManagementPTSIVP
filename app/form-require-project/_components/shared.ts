@@ -241,15 +241,15 @@ export async function fetchWACCTargets(
 }
 
 export const SALES_DIVISIONS = [
-  'IVP', 'MLDS', 'HAVS', 'Enterprise', 'DEC', 'ICS', 'POJ', 'VOJ', 'LOCOS',
+  'IVP', 'MVI', 'MLDS', 'HAVS', 'Enterprise', 'DEC', 'ICS', 'POJ', 'VOJ', 'LOCOS',
   'VISIONMEDIA', 'UMP', 'BISOL', 'KIMS', 'IDC', 'IOCMEDAN', 'IOCPekanbaru',
-  'IOCBandung', 'IOCJATENG', 'MVISEMARANG', 'POSSurabaya', 'IOCSurabaya',
-  'IOCBali', 'SGP', 'SGP 1', 'SGP 2', 'OSS'
+  'IOCBandung', 'IOCJATENG', 'IOCSEMARANG', 'POSSurabaya', 'IOCSurabaya',
+  'IOCBali', 'SGP', 'SGP 1', 'SGP 2', 'OSS',
 ] as const;
 
 export const DISPLAY_BRANDS = ['Microvision', 'Philips', 'Panasonic', 'Newline', 'Promethean', 'Maxhub', 'Ledman', 'Taniled', 'Vivitek'] as const;
 export const MIDDLEWARE_BRANDS = ['Tricolor', 'Wyrestorm', 'Extron', 'Crestron', 'AVCiT', 'Brightsign', 'Cue'] as const;
-export const BRAND_PIC_DIVISIONS = ['IVP', 'MLDS', 'UMP', 'OSS'];
+export const BRAND_PIC_DIVISIONS = ['IVP', 'MVI', 'MLDS', 'UMP', 'OSS'];
 
 export const emptyRoom = (): RoomDetail => ({
   id: Math.random().toString(36).slice(2, 10),
