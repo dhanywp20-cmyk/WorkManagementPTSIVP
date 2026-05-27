@@ -2721,8 +2721,10 @@ export function UserManagementInline() {
   const ATASAN_JABATAN: JabatanType[] = ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'];
   const supervisorCandidates = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.jabatan && ATASAN_JABATAN.includes(u.jabatan as JabatanType));
   const ivpUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.sales_division === 'IVP');
-  const nonIvpDivisions = SALES_DIVISIONS.filter(d => d !== 'IVP');
-  const ccEligibleUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.jabatan && u.sales_division && u.sales_division !== 'IVP').sort((a, b) => (JABATAN_CONFIG[a.jabatan as JabatanType]?.tier ?? 0) - (JABATAN_CONFIG[b.jabatan as JabatanType]?.tier ?? 0));
+  const mviUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.sales_division === 'MVI');
+  const salesHandleUsers = [...ivpUsers, ...mviUsers];
+  const nonIvpDivisions = SALES_DIVISIONS.filter(d => d !== 'IVP' && d !== 'MVI');
+  const ccEligibleUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.jabatan && u.sales_division && u.sales_division !== 'IVP' && u.sales_division !== 'MVI').sort((a, b) => (JABATAN_CONFIG[a.jabatan as JabatanType]?.tier ?? 0) - (JABATAN_CONFIG[b.jabatan as JabatanType]?.tier ?? 0));
 
   useEffect(() => {
     if (!selectedCCUserId) { setCcChecked(new Set()); return; }
@@ -2799,6 +2801,17 @@ export function UserManagementInline() {
   const ivpByDiv: Record<string, typeof divIvpMaps> = {};
   divIvpMaps.forEach(m => { if (!ivpByDiv[m.sales_division]) ivpByDiv[m.sales_division] = []; ivpByDiv[m.sales_division].push(m); });
 
+  // Group IVP/MVI mappings by person (ivp_id) — each person shows all divisions they handle
+  const ivpByUser: Record<string, { user: User | undefined; group: 'IVP' | 'MVI'; maps: typeof divIvpMaps }> = {};
+  divIvpMaps.forEach(m => {
+    if (!ivpByUser[m.ivp_id]) {
+      const u = getUserById(m.ivp_id);
+      const group: 'IVP' | 'MVI' = u?.sales_division === 'MVI' ? 'MVI' : 'IVP';
+      ivpByUser[m.ivp_id] = { user: u, group, maps: [] };
+    }
+    ivpByUser[m.ivp_id].maps.push(m);
+  });
+
   const selectedUserObj = selectedCCUserId ? getUserById(selectedCCUserId) : null;
   const selectedJabatan = selectedUserObj?.jabatan as JabatanType | undefined;
   const autoSuggested = selectedCCUserId ? getAutoSuggestedCC(selectedCCUserId) : [];
@@ -2812,7 +2825,7 @@ export function UserManagementInline() {
 
   // Search filter for atasan/ivp tabs
   const filteredAtasanByDiv = Object.entries(atasanByDiv).filter(([div]) => !searchQuery || div.toLowerCase().includes(searchQuery.toLowerCase()));
-  const filteredIvpByDiv = Object.entries(ivpByDiv).filter(([div]) => !searchQuery || div.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredIvpByUser = Object.entries(ivpByUser).filter(([, { user }]) => !searchQuery || user?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -2828,7 +2841,7 @@ export function UserManagementInline() {
           👨‍💼 Mapping Atasan ({Object.keys(atasanByDiv).length} divisi)
         </button>
         <button onClick={() => setActiveTab('ivp')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'ivp' ? 'border-violet-500 text-violet-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          🔗 IVP Account ({Object.keys(ivpByDiv).length} divisi)
+          🔗 IVP Account ({Object.keys(ivpByUser).length} orang)
         </button>
         <button onClick={() => setActiveTab('user_cc')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'user_cc' ? 'border-teal-500 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           🏷️ CC per User ({userSupMaps.length})
@@ -2845,7 +2858,8 @@ export function UserManagementInline() {
               <div className="px-5 pt-4 flex-shrink-0">
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
-                  <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari divisi..."
+                  <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                    placeholder={activeTab === 'ivp' ? 'Cari nama sales (IVP / MVI)...' : 'Cari divisi...'}
                     className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all" />
                 </div>
               </div>
@@ -2910,7 +2924,7 @@ export function UserManagementInline() {
               <div className="p-5 space-y-5">
                 {/* Add form */}
                 <div className="p-4 rounded-xl border border-violet-200 bg-violet-50">
-                  <p className="text-xs font-bold text-violet-700 mb-3">➕ Tambah IVP Account ke Divisi</p>
+                  <p className="text-xs font-bold text-violet-700 mb-3">➕ Tambah Sales Handle (IVP / MVI) ke Divisi</p>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Divisi Sales</label>
@@ -2919,9 +2933,19 @@ export function UserManagementInline() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">IVP Account</label>
+                      <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Sales Account (IVP / MVI)</label>
                       <select value={ivpUserId} onChange={e => setIvpUserId(e.target.value)} className="w-full border border-violet-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-200 bg-white">
-                        <option value="">-- Pilih IVP --</option>{ivpUsers.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+                        <option value="">-- Pilih Account --</option>
+                        {ivpUsers.length > 0 && (
+                          <optgroup label="── IVP ──">
+                            {ivpUsers.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+                          </optgroup>
+                        )}
+                        {mviUsers.length > 0 && (
+                          <optgroup label="── MVI ──">
+                            {mviUsers.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+                          </optgroup>
+                        )}
                       </select>
                     </div>
                     <div className="flex items-end">
@@ -2931,29 +2955,34 @@ export function UserManagementInline() {
                     </div>
                   </div>
                 </div>
-                {/* List */}
+                {/* List — grouped by person */}
                 <div className="grid grid-cols-2 gap-3">
-                  {filteredIvpByDiv.map(([div, maps]) => (
-                    <div key={div} className="rounded-xl border border-violet-200 overflow-hidden">
-                      <div className="px-3 py-2 bg-violet-50 border-b border-violet-100 flex items-center justify-between">
-                        <span className="font-bold text-violet-800 text-xs">📁 {div}</span>
-                        <span className="text-[10px] font-bold bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded-full">{maps.length}</span>
+                  {filteredIvpByUser.map(([userId, { user, group, maps }]) => (
+                    <div key={userId} className="rounded-xl border border-violet-200 overflow-hidden">
+                      {/* Card header — person name */}
+                      <div className="px-3 py-2 bg-violet-50 border-b border-violet-100 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="font-bold text-violet-900 text-xs truncate">{user?.full_name ?? '—'}</span>
+                          <span className={`flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${group === 'MVI' ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-violet-100 text-violet-700 border-violet-200'}`}>{group}</span>
+                        </div>
+                        <span className="text-[10px] font-bold bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded-full flex-shrink-0">{maps.length}</span>
                       </div>
-                      <div className="divide-y divide-violet-50">
-                        {maps.map(m => {
-                          const u = getUserById(m.ivp_id);
-                          return (
-                            <div key={m.id} className="px-3 py-2 flex items-center gap-2 bg-white hover:bg-violet-50/40 transition-colors">
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-violet-900 text-xs truncate">{u?.full_name ?? '—'}</p>
-                                {u?.phone_number ? <p className="text-[10px] text-emerald-600">📱 {u.phone_number}</p> : <p className="text-[10px] text-rose-400">⚠️ No WA</p>}
-                              </div>
-                              <button onClick={() => handleDeleteIvp(m.id)} className="text-red-400 hover:text-red-600 flex-shrink-0 p-1 rounded hover:bg-red-50 transition-all" title="Hapus">
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                              </button>
-                            </div>
-                          );
-                        })}
+                      {/* Phone number row */}
+                      <div className="px-3 py-1 bg-violet-50/60 border-b border-violet-100">
+                        {user?.phone_number
+                          ? <p className="text-[10px] text-emerald-600">📱 {user.phone_number}</p>
+                          : <p className="text-[10px] text-rose-400">⚠️ No WA</p>}
+                      </div>
+                      {/* Division chips */}
+                      <div className="px-3 py-2 flex flex-wrap gap-1.5 bg-white">
+                        {maps.map(m => (
+                          <div key={m.id} className="flex items-center gap-1 bg-violet-50 border border-violet-200 rounded-lg px-2 py-0.5 group">
+                            <span className="text-[10px] font-semibold text-violet-800">{m.sales_division}</span>
+                            <button onClick={() => handleDeleteIvp(m.id)} className="text-violet-300 hover:text-red-500 transition-colors ml-0.5" title={`Hapus ${m.sales_division}`}>
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ))}
