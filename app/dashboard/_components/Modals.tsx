@@ -1751,7 +1751,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
     // Helper: build notif item dari row
     const toRequireNotif = (r: any) => {
       const _sLbl: Record<string, string> = { pending: '⏳ Pending', approved: '✅ Approved', in_progress: '🔄 In Progress' };
-      return { id: r.id, type: 'require' as const, title: r.project_name, subtitle: `${_sLbl[r.status] ?? ('🏗️ ' + r.status)} · ${r.sales_name}`, time: r.created_at, url: '/request-design-project', internalUrl: '/request-design-project', menuTitle: 'Request Design Project' };
+      return { id: r.id, type: 'require' as const, title: r.project_name, subtitle: `${_sLbl[r.status] ?? ('🏗️ ' + r.status)} · ${r.sales_name}`, time: r.created_at, url: '/form-require-project', internalUrl: '/form-require-project', menuTitle: 'Request Design Project' };
     };
 
     try {
