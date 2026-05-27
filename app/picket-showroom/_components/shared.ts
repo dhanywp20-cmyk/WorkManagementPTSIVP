@@ -32,10 +32,10 @@ export const JENIS_KEGIATAN_LIST = ['Demo Product','RnD','Maintenance','Shooting
 export type JenisKegiatan = typeof JENIS_KEGIATAN_LIST[number];
 
 export const SALES_DIVISIONS = [
-  'IVP','MLDS','HAVS','Enterprise','DEC','ICS','POJ','VOJ','LOCOS',
-  'VISIONMEDIA','UMP','BISOL','KIMS','IDC','IOCMEDAN','IOCPekanbaru',
-  'IOCBandung','IOCJATENG','MVISEMARANG','POSSurabaya','IOCSurabaya',
-  'IOCBali','SGP','SGP1','SGP2','OSS',
+  'IVP', 'MVI', 'MLDS', 'HAVS', 'Enterprise', 'DEC', 'ICS', 'POJ', 'VOJ', 'LOCOS',
+  'VISIONMEDIA', 'UMP', 'BISOL', 'KIMS', 'IDC', 'IOCMEDAN', 'IOCPekanbaru',
+  'IOCBandung', 'IOCJATENG', 'IOCSEMARANG', 'POSSurabaya', 'IOCSurabaya',
+  'IOCBali', 'SGP', 'SGP 1', 'SGP 2', 'OSS',
 ];
 
 export const PIE_COLORS = ['#7c3aed','#0ea5e9','#10b981','#e11d48','#f59e0b','#6366f1','#14b8a6','#f97316','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
