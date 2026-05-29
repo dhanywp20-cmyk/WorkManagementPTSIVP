@@ -30,14 +30,14 @@ export function StatusBadge({ status, onHeader }: { status: Status; onHeader?: b
   };
   if (onHeader) {
     return (
-      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold"
+      <span className="inline-flex items-center gap-1 px-3 py-1 text-[11px] font-bold"
         style={{ color: '#fff', background: solidBg[status], border: '2px solid rgba(255,255,255,0.6)', boxShadow: '0 1px 4px rgba(0,0,0,0.25)' }}>
         {c.icon} {c.label}
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold"
+    <span className="inline-flex items-center gap-1 px-3 py-1 text-[11px] font-semibold"
       style={{ color: c.color, background: c.bg, border: `1px solid ${c.border}` }}>
       {c.label}
     </span>
