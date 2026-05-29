@@ -31,6 +31,7 @@ export interface Reminder {
   completion_photo_url?: string;
   product?: string;
   updated_at?: string;
+  warranty_years?: 1 | 2 | 3 | null;
 }
 
 export interface TeamUser {
