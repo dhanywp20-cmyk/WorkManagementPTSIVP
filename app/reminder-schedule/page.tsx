@@ -108,7 +108,7 @@ export default function ReminderSchedulePage() {
     due_time: '09:00', priority: 'medium', status: 'pending',
     repeat: 'none', category: 'Demo Product',
     sales_name: '', sales_division: '', address: '', pic_name: '', pic_phone: '',
-    notes: '', product: '',
+    notes: '', product: '', warranty_years: null,
   };
   const [formData, setFormData] = useState(emptyForm);
   const fd = (patch: Partial<typeof emptyForm>) => setFormData(prev => ({ ...prev, ...patch }));
@@ -1367,6 +1367,50 @@ jangan lupa peralatan & Semangat💪🏼
                   </FormField>
                 </div>
 
+                {/* ── Warranty Years — hanya untuk Konfigurasi & Konfigurasi & Training ── */}
+                {(formData.category === 'Konfigurasi' || formData.category === 'Konfigurasi & Training') && (
+                  <div className="rounded-xl p-4" style={{ background: 'rgba(14,165,233,0.07)', border: '1.5px solid rgba(14,165,233,0.3)' }}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-lg">🛡️</span>
+                      <p className="text-sm font-bold text-sky-700">Masa Garansi (Warranty)</p>
+                    </div>
+                    <p className="text-xs text-sky-600 mb-3">Tanggal BAST (field Tanggal di atas) akan digunakan sebagai titik mulai garansi. Pilih durasi warranty project ini.</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {([null, 1, 2, 3] as const).map(val => {
+                        const isSelected = formData.warranty_years === val;
+                        const labels: Record<string, string> = { null: 'Tidak Ada', '1': '1 Tahun', '2': '2 Tahun', '3': '3 Tahun' };
+                        const label = labels[String(val)];
+                        return (
+                          <button key={String(val)} type="button"
+                            onClick={() => fd({ warranty_years: val })}
+                            className="py-2.5 px-2 rounded-xl text-xs font-bold border-2 transition-all text-center"
+                            style={isSelected
+                              ? { borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.18)', color: '#0369a1' }
+                              : { borderColor: 'rgba(14,165,233,0.25)', background: 'rgba(255,255,255,0.7)', color: '#64748b' }}>
+                            {val === null ? '—' : `${val}Y`}
+                            <div className="text-[10px] font-normal mt-0.5 opacity-80">{label}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {formData.warranty_years && formData.due_date && (
+                      <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.2)' }}>
+                        <span className="text-sm">📅</span>
+                        <p className="text-xs text-sky-700 font-semibold">
+                          Garansi berlaku s/d:{' '}
+                          <strong>
+                            {(() => {
+                              const d = new Date(formData.due_date + 'T00:00:00');
+                              d.setFullYear(d.getFullYear() + formData.warranty_years);
+                              return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                            })()}
+                          </strong>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-3 gap-4">
                   <FormField label="Tanggal *">
                     <input type="date" value={formData.due_date} onChange={e => fd({ due_date: e.target.value })}
@@ -1808,6 +1852,68 @@ jangan lupa peralatan & Semangat💪🏼
                     <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line">{detailReminder.notes}</p>
                   </div>
                 )}
+
+                {/* ── Warranty Status — hanya untuk Konfigurasi & Konfigurasi & Training ── */}
+                {(detailReminder.category === 'Konfigurasi' || detailReminder.category === 'Konfigurasi & Training') && (() => {
+                  const wy = (detailReminder as any).warranty_years as 1 | 2 | 3 | null | undefined;
+                  const bastDate = detailReminder.due_date;
+                  if (!wy || !bastDate) return (
+                    <div className="rounded-xl p-4 flex items-center gap-3" style={{ background: 'rgba(100,116,139,0.07)', border: '1px solid rgba(100,116,139,0.2)' }}>
+                      <span className="text-xl">🛡️</span>
+                      <div>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Masa Garansi</p>
+                        <p className="text-sm text-slate-400 italic">Tidak dikonfigurasi</p>
+                      </div>
+                    </div>
+                  );
+                  const bast = new Date(bastDate + 'T00:00:00');
+                  const expiry = new Date(bastDate + 'T00:00:00');
+                  expiry.setFullYear(expiry.getFullYear() + wy);
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const isInWarranty = today <= expiry;
+                  const diffMs = expiry.getTime() - today.getTime();
+                  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                  const expiryStr = expiry.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                  const bastStr = bast.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                  return (
+                    <div className="rounded-xl p-4" style={isInWarranty
+                      ? { background: 'rgba(14,165,233,0.08)', border: '1.5px solid rgba(14,165,233,0.35)' }
+                      : { background: 'rgba(239,68,68,0.07)', border: '1.5px solid rgba(239,68,68,0.35)' }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg">{isInWarranty ? '🛡️' : '⚠️'}</span>
+                        <p className="text-xs font-bold uppercase tracking-wide" style={{ color: isInWarranty ? '#0369a1' : '#dc2626' }}>
+                          Status Garansi
+                        </p>
+                        <span className="ml-auto px-2.5 py-1 rounded-full text-[11px] font-bold" style={isInWarranty
+                          ? { background: 'rgba(14,165,233,0.18)', color: '#0369a1' }
+                          : { background: 'rgba(239,68,68,0.15)', color: '#dc2626' }}>
+                          {isInWarranty ? '✅ In Warranty' : '❌ Out of Warranty'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 mt-2 text-xs">
+                        <div>
+                          <p className="text-slate-400 mb-0.5">BAST / Mulai</p>
+                          <p className="font-semibold text-slate-700">{bastStr}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 mb-0.5">Garansi Berakhir</p>
+                          <p className="font-semibold" style={{ color: isInWarranty ? '#0369a1' : '#dc2626' }}>{expiryStr}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 mb-0.5">Durasi</p>
+                          <p className="font-semibold text-slate-700">{wy} Tahun</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 mb-0.5">{isInWarranty ? 'Sisa Hari' : 'Sudah Lewat'}</p>
+                          <p className="font-bold" style={{ color: isInWarranty ? '#0369a1' : '#dc2626' }}>
+                            {isInWarranty ? `${diffDays} hari` : `${Math.abs(diffDays)} hari`}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <div>
                   <p className="text-[10px] font-bold tracking-widest uppercase mb-3" style={{ color: '#64748b' }}>Update Status</p>
@@ -2309,6 +2415,7 @@ jangan lupa peralatan & Semangat💪🏼
                             <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Handler</th>
                             <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">PIC</th>
                             <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Status</th>
+                            <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Garansi</th>
                             <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Tanggal</th>
                             <th className="px-2 py-2.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wide">Action</th>
                           </tr>
@@ -2399,6 +2506,26 @@ jangan lupa peralatan & Semangat💪🏼
                                     </span>
                                   )}
                                   {r.wa_sent_h1 && <p className="text-[9px] font-bold text-green-600 mt-0.5">✅ WA H-1</p>}
+                                </td>
+                                {/* Garansi */}
+                                <td className="px-3 py-3 border-r border-gray-200 align-middle">
+                                  {(r.category === 'Konfigurasi' || r.category === 'Konfigurasi & Training') && (r as any).warranty_years ? (() => {
+                                    const wy = (r as any).warranty_years as number;
+                                    const expiry = new Date(r.due_date + 'T00:00:00');
+                                    expiry.setFullYear(expiry.getFullYear() + wy);
+                                    const now = new Date(); now.setHours(0,0,0,0);
+                                    const isIn = now <= expiry;
+                                    const diffDays = Math.ceil((expiry.getTime() - now.getTime()) / 86400000);
+                                    return (
+                                      <div>
+                                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+                                          style={isIn ? { background: 'rgba(14,165,233,0.15)', color: '#0369a1' } : { background: 'rgba(239,68,68,0.12)', color: '#dc2626' }}>
+                                          {isIn ? '🛡️' : '⚠️'} {isIn ? 'In' : 'Out'}
+                                        </span>
+                                        <div className="text-[9px] text-gray-400 mt-0.5">{wy}Y · {isIn ? `sisa ${diffDays}h` : `lewat ${Math.abs(diffDays)}h`}</div>
+                                      </div>
+                                    );
+                                  })() : <span className="text-gray-300 text-xs">—</span>}
                                 </td>
                                 {/* Tanggal */}
                                 <td className="px-2 py-1 border-r border-gray-200 align-middle">
