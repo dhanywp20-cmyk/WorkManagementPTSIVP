@@ -2397,7 +2397,7 @@ jangan lupa peralatan & Semangat💪🏼
                           <col style={{ width: '7%' }} />
                           <col style={{ width: '9%' }} />
                           <col style={{ width: '6%' }} />
-                          <col style={{ width: '5%' }} />
+                          <col style={{ width: '8%' }} />
                         </colgroup>
                         <thead>
                           <tr className="border-b-2 border-gray-100" style={{ background: "rgba(255,255,255,0.97)" }}>
@@ -2417,7 +2417,7 @@ jangan lupa peralatan & Semangat💪🏼
                             <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Status</th>
                             <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Garansi</th>
                             <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Tanggal</th>
-                            <th className="px-2 py-2.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wide">Action</th>
+                            <th className="px-1 py-2 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wide">Action</th>
                           </tr>
                         </thead>
                         <tbody>
