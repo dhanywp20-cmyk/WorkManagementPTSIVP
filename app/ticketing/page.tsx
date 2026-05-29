@@ -50,6 +50,8 @@ export default function TicketingSystem() {
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [approvalTicket, setApprovalTicket] = useState<Ticket | null>(null);
   const [approvalAssignee, setApprovalAssignee] = useState("");
+  // State untuk referensi project dari reminder-schedule (Konfigurasi / Konfigurasi & Training)
+  const [projectReminders, setProjectReminders] = useState<Record<string, { due_date: string; assign_name: string; assigned_to: string; category: string }[]>>({});
   const [showServicesApprovalModal, setShowServicesApprovalModal] = useState(false);
   const [servicesApprovalTicket, setServicesApprovalTicket] = useState<Ticket | null>(null);
   const [reminderSchedule, setReminderSchedule] = useState({
@@ -760,6 +762,27 @@ export default function TicketingSystem() {
       setUploading(false);
       alert("Error: " + err.message);
     }
+  };
+
+  // Fetch reminders referensi project (Konfigurasi / Konfigurasi & Training) untuk semua pending approval tickets
+  const fetchProjectReminders = async (ticketList: Ticket[]) => {
+    if (!ticketList.length) return;
+    try {
+      const { data } = await supabase
+        .from("reminders")
+        .select("project_name, due_date, assign_name, assigned_to, category")
+        .in("category", ["Konfigurasi", "Konfigurasi & Training"])
+        .eq("status", "done");
+      if (!data) return;
+      // Group by project_name (lowercase match)
+      const map: Record<string, { due_date: string; assign_name: string; assigned_to: string; category: string }[]> = {};
+      data.forEach((r: any) => {
+        const key = (r.project_name || "").trim().toLowerCase();
+        if (!map[key]) map[key] = [];
+        map[key].push({ due_date: r.due_date, assign_name: r.assign_name || "-", assigned_to: r.assigned_to || "-", category: r.category });
+      });
+      setProjectReminders(map);
+    } catch (e) { console.warn("[fetchProjectReminders]", e); }
   };
 
   const approveTicket = async () => {
@@ -1887,7 +1910,7 @@ export default function TicketingSystem() {
 
               {/* Approval button - Redesigned */}
               {canAccessAccountSettings && pendingApprovalTickets.length > 0 && (
-                <button onClick={() => setShowApprovalModal(true)} className="relative flex items-center gap-1.5 text-white text-sm font-bold px-3.5 py-2 rounded-xl transition-all hover:scale-105 hover:opacity-90" style={{ background: "linear-gradient(135deg,#ea580c,#c2410c)", boxShadow: "0 2px 8px rgba(234,88,12,0.35)" }}>
+                <button onClick={() => { fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} className="relative flex items-center gap-1.5 text-white text-sm font-bold px-3.5 py-2 rounded-xl transition-all hover:scale-105 hover:opacity-90" style={{ background: "linear-gradient(135deg,#ea580c,#c2410c)", boxShadow: "0 2px 8px rgba(234,88,12,0.35)" }}>
                   ⏳ Approval
                   <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">{pendingApprovalTickets.length}</span>
                 </button>
@@ -2358,7 +2381,7 @@ export default function TicketingSystem() {
                               <PrintIconBtn onClick={() => exportToPDF(ticket)} />
                               {/* Waiting Approval — admin only */}
                               {canAccessAccountSettings && ticket.status === "Waiting Approval" && (
-                                <ApproveIconBtn onClick={() => { setApprovalTicket(ticket); setApprovalAssignee(""); setShowApprovalModal(true); }} pulse />
+                                <ApproveIconBtn onClick={() => { setApprovalTicket(ticket); setApprovalAssignee(""); fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} pulse />
                               )}
                               {/* Re-open */}
                               {ticket.status === "Solved" && canUpdateTicket && (
@@ -2790,7 +2813,76 @@ export default function TicketingSystem() {
                 {pendingApprovalTickets.length === 0 ? (<div className="text-center py-12"><div className="text-5xl mb-3">✅</div><p className="text-gray-500 font-medium">Tidak ada ticket yang menunggu approval</p></div>) : pendingApprovalTickets.map((ticket) => (
                   <div key={ticket.id} className="rounded-xl p-4" style={{ background: "rgba(245,158,11,0.1)", border: "2px solid rgba(245,158,11,0.3)" }}>
                     <div className="flex justify-between items-start mb-3"><div><p className="font-bold text-lg text-gray-800">🏢 {ticket.project_name}</p><p className="text-sm text-gray-600 mt-0.5">⚠️ {ticket.issue_case}</p>{ticket.description && <p className="text-xs text-gray-500 mt-1">{ticket.description}</p>}<div className="flex gap-2 mt-2 flex-wrap text-xs text-gray-500">{ticket.customer_phone && <span>👤 {ticket.customer_phone}</span>}{ticket.sales_name && <span>💼 {ticket.sales_name}</span>}{ticket.sn_unit && <span>🔢 {ticket.sn_unit}</span>}</div><p className="text-xs text-orange-700 font-semibold mt-2">Dibuat oleh: {ticket.created_by || "-"} • {ticket.date}</p></div><span className="px-3 py-1 rounded-full text-xs font-bold border-2 bg-orange-100 text-orange-800 border-orange-400 whitespace-nowrap ml-2">⏳ Waiting Approval</span></div>
-                    <div className="mt-3 border-t pt-3" style={{ borderColor: "rgba(245,158,11,0.3)" }}><label className="block text-sm font-bold text-gray-700 mb-2">👨‍💼 Assign ke Team PTS:</label><div className="flex gap-2"><select className="flex-1 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-orange-500" style={{ border: "2px solid rgba(245,158,11,0.3)", background: "white" }} value={approvalTicket?.id === ticket.id ? approvalAssignee : ""} onChange={(e) => { setApprovalTicket(ticket); setApprovalAssignee(e.target.value); }}><option value="">Pilih anggota Team PTS</option>{teamPTSMembers.map((m) => (<option key={m.id} value={m.name}>{m.name}</option>))}</select><button onClick={async () => { if (!approvalAssignee || approvalTicket?.id !== ticket.id) { alert("Pilih anggota Team PTS terlebih dahulu!"); return; } await approveTicket(); }} disabled={uploading || !(approvalTicket?.id === ticket.id && approvalAssignee)} className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-bold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm">✅ Approve</button><button onClick={() => rejectTicket(ticket)} disabled={uploading} className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg font-bold hover:from-red-600 hover:to-red-700 transition-all disabled:opacity-40 text-sm">❌ Reject</button></div></div>
+
+                    {/* ── Referensi Project dari Reminder Schedule ── */}
+                    {(() => {
+                      const key = (ticket.project_name || "").trim().toLowerCase();
+                      const refs = projectReminders[key];
+                      if (!refs || refs.length === 0) return null;
+                      return (
+                        <div className="mb-3 rounded-xl p-3" style={{ background: "rgba(16,185,129,0.08)", border: "1.5px solid rgba(16,185,129,0.35)" }}>
+                          <p className="text-xs font-bold text-emerald-700 mb-2">📋 Referensi Project di Reminder Schedule</p>
+                          {refs.map((ref, idx) => {
+                            const bastDate = ref.due_date ? new Date(ref.due_date + "T00:00:00").toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "-";
+                            return (
+                              <div key={idx} className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs mb-1">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-semibold" style={{ background: "rgba(16,185,129,0.15)", color: "#065f46" }}>
+                                  {ref.category === "Konfigurasi & Training" ? "📌" : "⚙️"} {ref.category}
+                                </span>
+                                <span className="text-gray-600">🗓️ BAST: <strong className="text-emerald-800">{bastDate}</strong></span>
+                                {ref.assign_name && ref.assign_name !== "-" && (
+                                  <span className="text-gray-600">👷 Handler: <strong className="text-emerald-800">{ref.assign_name}</strong></span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+
+                    <div className="mt-3 border-t pt-3" style={{ borderColor: "rgba(245,158,11,0.3)" }}>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">👨‍💼 Assign ke Team PTS:</label>
+                      {/* Suggested handler dari referensi project */}
+                      {(() => {
+                        const key = (ticket.project_name || "").trim().toLowerCase();
+                        const refs = projectReminders[key];
+                        if (!refs || refs.length === 0) return null;
+                        const suggested = refs.filter(r => r.assign_name && r.assign_name !== "-");
+                        if (suggested.length === 0) return null;
+                        // Deduplicate by assign_name
+                        const unique = Array.from(new Map(suggested.map(r => [r.assign_name, r])).values());
+                        return (
+                          <div className="mb-2">
+                            <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wide mb-1.5">💡 Saran Handler (handle project ini sebelumnya)</p>
+                            <div className="flex flex-wrap gap-2">
+                              {unique.map((ref, idx) => {
+                                const isSelected = approvalTicket?.id === ticket.id && approvalAssignee === ref.assign_name;
+                                return (
+                                  <button key={idx}
+                                    onClick={() => { setApprovalTicket(ticket); setApprovalAssignee(ref.assign_name); }}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${isSelected ? "bg-emerald-600 text-white border-emerald-600 scale-105" : "bg-emerald-50 text-emerald-800 border-emerald-400 hover:bg-emerald-100"}`}>
+                                    ⭐ {ref.assign_name}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-1 mb-2">Atau pilih anggota lain:</p>
+                          </div>
+                        );
+                      })()}
+                      <div className="flex gap-2">
+                        <select
+                          className="flex-1 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-orange-500"
+                          style={{ border: "2px solid rgba(245,158,11,0.3)", background: "white" }}
+                          value={approvalTicket?.id === ticket.id ? approvalAssignee : ""}
+                          onChange={(e) => { setApprovalTicket(ticket); setApprovalAssignee(e.target.value); }}>
+                          <option value="">Pilih anggota Team PTS</option>
+                          {teamPTSMembers.map((m) => (<option key={m.id} value={m.name}>{m.name}</option>))}
+                        </select>
+                        <button onClick={async () => { if (!approvalAssignee || approvalTicket?.id !== ticket.id) { alert("Pilih anggota Team PTS terlebih dahulu!"); return; } await approveTicket(); }} disabled={uploading || !(approvalTicket?.id === ticket.id && approvalAssignee)} className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-bold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm">✅ Approve</button>
+                        <button onClick={() => rejectTicket(ticket)} disabled={uploading} className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg font-bold hover:from-red-600 hover:to-red-700 transition-all disabled:opacity-40 text-sm">❌ Reject</button>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
