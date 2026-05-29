@@ -2395,8 +2395,8 @@ jangan lupa peralatan & Semangat💪🏼
                           <col style={{ width: '8%' }} />
                           <col style={{ width: '6%' }} />
                           <col style={{ width: '7%' }} />
-                          <col style={{ width: '7%' }} />
-                          <col style={{ width: '6%' }} />
+                          <col style={{ width: '8%' }} />
+                          <col style={{ width: '5%' }} />
                           <col style={{ width: '6%' }} />
 						  <col style={{ width: '6%' }} />
                         </colgroup>
@@ -2501,7 +2501,7 @@ jangan lupa peralatan & Semangat💪🏼
                                 <td className="px-3 py-3 border-r border-gray-200 align-middle">
                                   <StatusBadge status={r.status} />
                                   {!r.assigned_to && r.notes?.includes('[REQUEST SALES]') && (
-                                    <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 text-[9px] font-bold text-white"
+                                    <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 text-[5px] font-bold text-white"
                                       style={{ background: '#2563eb' }}>
                                       📩 Req. Sales
                                     </span>
