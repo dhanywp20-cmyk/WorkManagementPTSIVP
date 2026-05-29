@@ -2277,14 +2277,13 @@ export default function TicketingSystem() {
                   <colgroup>
                     <col style={{ width: "3%" }} />   {/* No */}
                     <col style={{ width: "15%" }} />  {/* Project / Lokasi*/}
-                    <col style={{ width: "6%" }} />   {/* Warranty */}
-                    <col style={{ width: "12%" }} />  {/* Product */}
-                    <col style={{ width: "8%" }} />   {/* SN Unit */}
+                    <col style={{ width: "9%" }} />   {/* Warranty */}
+                    <col style={{ width: "16%" }} />  {/* Product */}
+                    <col style={{ width: "12%" }} />   {/* SN Unit */}
                     <col style={{ width: "13%" }} />  {/* Issue */}
                     <col style={{ width: "9%" }} />   {/* Assigned */}
                     <col style={{ width: "7%" }} />   {/* Status */}
                     <col style={{ width: "7%" }} />   {/* Sales */}
-                    <col style={{ width: "7%" }} />   {/* Created By */}
                     <col style={{ width: "10%" }} />  {/* Action */}
                   </colgroup>
                   <thead>
@@ -2298,14 +2297,13 @@ export default function TicketingSystem() {
                           : 'No'}
                       </th>
                       <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">Project / Lokasi</th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">🛡️ Warranty</th>
+                      <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">Warranty</th>
                       <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">Product</th>
                       <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">SN Unit</th>
                       <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">Issue</th>
                       <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">Assigned</th>
                       <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">Status</th>
                       <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">Sales</th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">Created By</th>
                       <th className="px-2 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide">Action</th>
                     </tr>
                   </thead>
@@ -2413,7 +2411,6 @@ export default function TicketingSystem() {
                             </div>
                            </td>
                           <td className="px-2 py-3 border-r border-gray-100 align-middle"><div className="text-xs text-gray-600 break-words leading-tight">{ticket.sales_name || "—"}</div>{ticket.sales_division && <div className="text-xs text-purple-500 font-semibold mt-0.5">{ticket.sales_division}</div>}</td>
-                          <td className="px-3 py-3 border-r border-gray-100 align-middle py-4"><div className="text-sm text-gray-600 break-words leading-tight">{creatorLabel}</div></td>
                           <td className="px-1 py-2 align-middle">
                             <div className="flex flex-wrap items-center justify-center gap-1">
                               {/* Activity log badge + View */}
