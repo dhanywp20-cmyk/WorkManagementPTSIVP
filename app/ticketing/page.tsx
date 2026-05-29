@@ -607,6 +607,8 @@ export default function TicketingSystem() {
         setSilentUpdating(true);
         setTimeout(() => setSilentUpdating(false), 1200);
       }
+      // Fetch warranty/project reference data (fire-and-forget, non-blocking)
+      fetchProjectReminders();
     } catch (err: any) {
       console.error("Error:", err);
       setLoading(false);
@@ -765,8 +767,7 @@ export default function TicketingSystem() {
   };
 
   // Fetch reminders referensi project (Konfigurasi / Konfigurasi & Training) untuk semua pending approval tickets
-  const fetchProjectReminders = async (ticketList: Ticket[]) => {
-    if (!ticketList.length) return;
+  const fetchProjectReminders = async (_ticketList?: Ticket[]) => {
     try {
       const { data } = await supabase
         .from("reminders")
@@ -774,7 +775,6 @@ export default function TicketingSystem() {
         .in("category", ["Konfigurasi", "Konfigurasi & Training"])
         .eq("status", "done");
       if (!data) return;
-      // Group by project_name (lowercase match)
       const map: Record<string, { due_date: string; assign_name: string; assigned_to: string; category: string; warranty_years?: number | null }[]> = {};
       data.forEach((r: any) => {
         const key = (r.project_name || "").trim().toLowerCase();
@@ -783,6 +783,28 @@ export default function TicketingSystem() {
       });
       setProjectReminders(map);
     } catch (e) { console.warn("[fetchProjectReminders]", e); }
+  };
+
+  // Helper: ambil warranty info terbaik (paling recent) untuk sebuah project
+  const getWarrantyInfo = (projectName: string) => {
+    const key = (projectName || "").trim().toLowerCase();
+    const refs = projectReminders[key];
+    if (!refs || refs.length === 0) return null;
+    // Prioritaskan yang punya warranty_years, lalu ambil yang due_date paling baru
+    const withWarranty = refs.filter(r => r.warranty_years);
+    const best = withWarranty.length > 0
+      ? withWarranty.reduce((a, b) => (a.due_date > b.due_date ? a : b))
+      : refs.reduce((a, b) => (a.due_date > b.due_date ? a : b));
+    if (!best.warranty_years || !best.due_date) return null;
+    const wy = best.warranty_years as number;
+    const expiry = new Date(best.due_date + "T00:00:00");
+    expiry.setFullYear(expiry.getFullYear() + wy);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const isIn = today <= expiry;
+    const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / 86400000);
+    const bastStr = new Date(best.due_date + "T00:00:00").toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+    const expiryStr = expiry.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+    return { isIn, diffDays, wy, bastStr, expiryStr, assignName: best.assign_name, category: best.category };
   };
 
   const approveTicket = async () => {
@@ -2254,15 +2276,16 @@ export default function TicketingSystem() {
                 <table className="w-full table-fixed border-collapse table-zebra" style={{ background: "transparent", minWidth: '1100px' }}>
                   <colgroup>
                     <col style={{ width: "3%" }} />   {/* No */}
-                    <col style={{ width: "17%" }} />  {/* Project / Lokasi*/}
-                    <col style={{ width: "11%" }} />  {/* Product */}
-                    <col style={{ width: "9%" }} />   {/* SN Unit */}
-                    <col style={{ width: "14%" }} />  {/* Issue */}
+                    <col style={{ width: "15%" }} />  {/* Project / Lokasi*/}
+                    <col style={{ width: "9%" }} />   {/* Warranty */}
+                    <col style={{ width: "10%" }} />  {/* Product */}
+                    <col style={{ width: "8%" }} />   {/* SN Unit */}
+                    <col style={{ width: "13%" }} />  {/* Issue */}
                     <col style={{ width: "9%" }} />   {/* Assigned */}
                     <col style={{ width: "9%" }} />   {/* Status */}
-                    <col style={{ width: "8%" }} />   {/* Sales */}
-                    <col style={{ width: "8%" }} />   {/* Created By */}
-                    <col style={{ width: "12%" }} />  {/* Action */}
+                    <col style={{ width: "7%" }} />   {/* Sales */}
+                    <col style={{ width: "7%" }} />   {/* Created By */}
+                    <col style={{ width: "10%" }} />  {/* Action */}
                   </colgroup>
                   <thead>
                     <tr className="border-b-2 border-gray-100" style={{ background: "rgba(248,248,248,0.97)" }}>
@@ -2275,6 +2298,7 @@ export default function TicketingSystem() {
                           : 'No'}
                       </th>
                       <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">Project / Lokasi</th>
+                      <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">🛡️ Warranty</th>
                       <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">Product</th>
                       <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">SN Unit</th>
                       <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">Issue</th>
@@ -2317,8 +2341,31 @@ export default function TicketingSystem() {
                             <div className="text-[10px] text-gray-400 mt-1">{ticket.created_at ? formatDateTime(ticket.created_at) : "-"}</div>
                             {isActiveOverdue && <div className="text-xs text-red-600 font-bold mt-0.5">⏰ OVERDUE</div>}
                           </td>
+                          {/* Warranty cell */}
                           <td className="px-3 py-3 border-r border-gray-100 align-middle">
-                          {ticket.product && (
+                            {(() => {
+                              const w = getWarrantyInfo(ticket.project_name);
+                              if (!w) return <span className="text-gray-300 text-xs">—</span>;
+                              return (
+                                <div>
+                                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                    style={w.isIn
+                                      ? { background: "rgba(14,165,233,0.14)", color: "#0369a1" }
+                                      : { background: "rgba(239,68,68,0.12)", color: "#dc2626" }}>
+                                    {w.isIn ? "🛡️" : "⚠️"} {w.isIn ? "In" : "Out"}
+                                  </span>
+                                  <div className="text-[9px] text-gray-400 mt-0.5 leading-tight">
+                                    {w.wy}Y · s/d {w.expiryStr}
+                                  </div>
+                                  <div className="text-[9px] font-semibold mt-0.5"
+                                    style={{ color: w.isIn ? "#0369a1" : "#dc2626" }}>
+                                    {w.isIn ? `sisa ${w.diffDays}h` : `lewat ${Math.abs(w.diffDays)}h`}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </td>
+                          <td className="px-3 py-3 border-r border-gray-100 align-middle">
                               <button onClick={() => { setProductFilter(prev => prev === ticket.product ? null : (ticket.product ?? null)); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }}
                                 className="mt-1 text-[12px] font-semibold px-1.5 py-0.5 rounded break-words leading-tight transition-all inline-block"
                                 style={{ background: productFilter === ticket.product ? '#6366f1' : '#eef2ff', color: productFilter === ticket.product ? 'white' : '#4338ca' }}>
@@ -2574,6 +2621,41 @@ export default function TicketingSystem() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Warranty Info */}
+                  {(() => {
+                    const w = getWarrantyInfo(selectedTicket.project_name);
+                    if (!w) return null;
+                    return (
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2">🛡️ Status Garansi Project</p>
+                        <div className="rounded-xl p-3 flex flex-wrap items-center gap-3"
+                          style={w.isIn
+                            ? { background: "rgba(14,165,233,0.08)", border: "1.5px solid rgba(14,165,233,0.3)" }
+                            : { background: "rgba(239,68,68,0.07)", border: "1.5px solid rgba(239,68,68,0.3)" }}>
+                          <span className="text-2xl">{w.isIn ? "🛡️" : "⚠️"}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold"
+                                style={w.isIn
+                                  ? { background: "rgba(14,165,233,0.18)", color: "#0369a1" }
+                                  : { background: "rgba(239,68,68,0.15)", color: "#dc2626" }}>
+                                {w.isIn ? "✅ In Warranty" : "❌ Out of Warranty"}
+                              </span>
+                              <span className="text-xs font-bold" style={{ color: w.isIn ? "#0369a1" : "#dc2626" }}>
+                                {w.isIn ? `Sisa ${w.diffDays} hari` : `Sudah lewat ${Math.abs(w.diffDays)} hari`}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 mt-2 text-[10px] text-gray-500">
+                              <div><span className="block text-gray-400">BAST</span><strong className="text-gray-700">{w.bastStr}</strong></div>
+                              <div><span className="block text-gray-400">Berakhir</span><strong style={{ color: w.isIn ? "#0369a1" : "#dc2626" }}>{w.expiryStr}</strong></div>
+                              <div><span className="block text-gray-400">Durasi</span><strong className="text-gray-700">{w.wy} Tahun</strong></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Foto awal */}
                   {selectedTicket.photo_url && (
@@ -3188,6 +3270,21 @@ export default function TicketingSystem() {
                   <span className="flex items-center gap-1"><span className="text-gray-500">📅 Dibuat:</span><span className="font-bold">{summaryTicket.created_at ? formatDateTime(summaryTicket.created_at) : "-"}</span></span><span className="text-gray-300">|</span>
                   <span className={`px-2 py-0.5 rounded-full font-bold border ${statusColors[summaryTicket.status]}`}>{summaryTicket.status}</span>
                   {summaryTicket.services_status && (<><span className="text-gray-300">|</span><span className={`px-2 py-0.5 rounded-full font-bold border ${statusColors[summaryTicket.services_status]}`}>Svc: {summaryTicket.services_status}</span></>)}
+                  {/* Warranty badge */}
+                  {(() => {
+                    const w = getWarrantyInfo(summaryTicket.project_name);
+                    if (!w) return null;
+                    return (<>
+                      <span className="text-gray-300">|</span>
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[10px]"
+                        style={w.isIn
+                          ? { background: "rgba(14,165,233,0.15)", color: "#0369a1", border: "1px solid rgba(14,165,233,0.3)" }
+                          : { background: "rgba(239,68,68,0.12)", color: "#dc2626", border: "1px solid rgba(239,68,68,0.3)" }}>
+                        {w.isIn ? "🛡️" : "⚠️"} {w.isIn ? "In Warranty" : "Out of Warranty"}
+                        <span className="opacity-70 ml-0.5">· {w.wy}Y · {w.isIn ? `sisa ${w.diffDays}h` : `lewat ${Math.abs(w.diffDays)}h`}</span>
+                      </span>
+                    </>);
+                  })()}
                 </div>
                 {!summaryTicket.activity_logs || summaryTicket.activity_logs.length === 0 ? (<div className="text-center py-10 text-gray-400"><div className="text-5xl mb-3">📭</div><p className="font-semibold">Belum ada activity yang tercatat</p></div>) : (
                   <div className="relative">
