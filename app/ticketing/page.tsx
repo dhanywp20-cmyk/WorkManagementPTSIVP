@@ -51,7 +51,7 @@ export default function TicketingSystem() {
   const [approvalTicket, setApprovalTicket] = useState<Ticket | null>(null);
   const [approvalAssignee, setApprovalAssignee] = useState("");
   // State untuk referensi project dari reminder-schedule (Konfigurasi / Konfigurasi & Training)
-  const [projectReminders, setProjectReminders] = useState<Record<string, { due_date: string; assign_name: string; assigned_to: string; category: string }[]>>({});
+  const [projectReminders, setProjectReminders] = useState<Record<string, { due_date: string; assign_name: string; assigned_to: string; category: string; warranty_years?: number | null }[]>>({});
   const [showServicesApprovalModal, setShowServicesApprovalModal] = useState(false);
   const [servicesApprovalTicket, setServicesApprovalTicket] = useState<Ticket | null>(null);
   const [reminderSchedule, setReminderSchedule] = useState({
@@ -770,16 +770,16 @@ export default function TicketingSystem() {
     try {
       const { data } = await supabase
         .from("reminders")
-        .select("project_name, due_date, assign_name, assigned_to, category")
+        .select("project_name, due_date, assign_name, assigned_to, category, warranty_years")
         .in("category", ["Konfigurasi", "Konfigurasi & Training"])
         .eq("status", "done");
       if (!data) return;
       // Group by project_name (lowercase match)
-      const map: Record<string, { due_date: string; assign_name: string; assigned_to: string; category: string }[]> = {};
+      const map: Record<string, { due_date: string; assign_name: string; assigned_to: string; category: string; warranty_years?: number | null }[]> = {};
       data.forEach((r: any) => {
         const key = (r.project_name || "").trim().toLowerCase();
         if (!map[key]) map[key] = [];
-        map[key].push({ due_date: r.due_date, assign_name: r.assign_name || "-", assigned_to: r.assigned_to || "-", category: r.category });
+        map[key].push({ due_date: r.due_date, assign_name: r.assign_name || "-", assigned_to: r.assigned_to || "-", category: r.category, warranty_years: r.warranty_years ?? null });
       });
       setProjectReminders(map);
     } catch (e) { console.warn("[fetchProjectReminders]", e); }
@@ -2824,8 +2824,26 @@ export default function TicketingSystem() {
                           <p className="text-xs font-bold text-emerald-700 mb-2">📋 Referensi Project di Reminder Schedule</p>
                           {refs.map((ref, idx) => {
                             const bastDate = ref.due_date ? new Date(ref.due_date + "T00:00:00").toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "-";
+                            // Hitung warranty status
+                            const wy = (ref as any).warranty_years as 1 | 2 | 3 | null | undefined;
+                            let warrantyBadge: React.ReactNode = null;
+                            if (wy && ref.due_date) {
+                              const expiry = new Date(ref.due_date + "T00:00:00");
+                              expiry.setFullYear(expiry.getFullYear() + wy);
+                              const today = new Date(); today.setHours(0, 0, 0, 0);
+                              const isIn = today <= expiry;
+                              const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / 86400000);
+                              const expiryStr = expiry.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+                              warrantyBadge = (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold"
+                                  style={isIn ? { background: "rgba(14,165,233,0.18)", color: "#0369a1" } : { background: "rgba(239,68,68,0.15)", color: "#dc2626" }}>
+                                  {isIn ? "🛡️ In Warranty" : "⚠️ Out of Warranty"}
+                                  <span className="opacity-70">· s/d {expiryStr} ({isIn ? `sisa ${diffDays}h` : `lewat ${Math.abs(diffDays)}h`})</span>
+                                </span>
+                              );
+                            }
                             return (
-                              <div key={idx} className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs mb-1">
+                              <div key={idx} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs mb-1.5">
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-semibold" style={{ background: "rgba(16,185,129,0.15)", color: "#065f46" }}>
                                   {ref.category === "Konfigurasi & Training" ? "📌" : "⚙️"} {ref.category}
                                 </span>
@@ -2833,6 +2851,7 @@ export default function TicketingSystem() {
                                 {ref.assign_name && ref.assign_name !== "-" && (
                                   <span className="text-gray-600">👷 Handler: <strong className="text-emerald-800">{ref.assign_name}</strong></span>
                                 )}
+                                {warrantyBadge && <div className="w-full mt-0.5">{warrantyBadge}</div>}
                               </div>
                             );
                           })}
