@@ -2397,7 +2397,7 @@ jangan lupa peralatan & Semangat💪🏼
                           <col style={{ width: '7%' }} />
                           <col style={{ width: '9%' }} />
                           <col style={{ width: '6%' }} />
-                          <col style={{ width: '8%' }} />
+                          <col style={{ width: '5%' }} />
                         </colgroup>
                         <thead>
                           <tr className="border-b-2 border-gray-100" style={{ background: "rgba(255,255,255,0.97)" }}>
