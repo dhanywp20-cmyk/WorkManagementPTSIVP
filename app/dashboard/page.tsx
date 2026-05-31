@@ -16,6 +16,9 @@ import {
   BrandPicSettingContent, AdminPanelModal,
   AccountSettingsInline, UserManagementInline, BrandPicSettingInline,
 } from './_components/Modals';
+import DashboardKPI from './_components/DashboardKPI';
+import GlobalSearch from './_components/GlobalSearch';
+import OnboardingTour, { JelajahiButton } from './_components/OnboardingTour';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -38,6 +41,7 @@ export default function Dashboard() {
   const [registerSuccess, setRegisterSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const [menuLoading, setMenuLoading] = useState(false);
+  const [showTour, setShowTour] = useState(false);
 
   const [showSidebar, setShowSidebar] = useState(false);
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
@@ -249,6 +253,14 @@ export default function Dashboard() {
   }, []);
 
   const isAdmin = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
+
+  // KPI: admin + PTS supervisor + sales supervisor
+  const isPTSSupervisor = currentUser?.role === 'team'
+    && ['Team PTS', 'Team PTS UMP', 'Team PTS MLDS'].includes(currentUser?.team_type ?? '')
+    && currentUser?.jabatan === 'Supervisor';
+  const isSalesSupervisor = ['guest', 'sales'].includes(currentUser?.role?.toLowerCase() ?? '')
+    && ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'].includes(currentUser?.jabatan ?? '');
+  const canAccessKPI = isAdmin || isPTSSupervisor || isSalesSupervisor;
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -539,8 +551,13 @@ export default function Dashboard() {
 
           {/* CENTER — hanya di main menu (non-sidebar), notif di tengah */}
           {!showSidebar && currentUser && (
-            <div className="flex-1 flex justify-center px-2 md:px-4">
+            <div className="flex-1 flex items-center justify-center gap-3 px-2 md:px-4">
               <NotificationBar currentUser={currentUser} onNavigate={handleNotifNavigate} />
+              {/* Global Search */}
+              <GlobalSearch currentUser={currentUser} onNavigate={(url) => {
+                setIframeUrl(null); setShowTicketing(false); setInternalUrl(url); setIframeTitle('');
+                setTimeout(() => { setShowSidebar(true); setShowTicketing(true); }, 150);
+              }} />
             </div>
           )}
           {showSidebar && <div className="flex-1" />}
@@ -549,7 +566,13 @@ export default function Dashboard() {
           <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
             {/* NotificationBar — di kanan hanya saat sidebar view */}
             {showSidebar && currentUser && (
-              <NotificationBar currentUser={currentUser} onNavigate={handleNotifNavigate} />
+              <>
+                <GlobalSearch currentUser={currentUser} onNavigate={(url) => {
+                  setIframeUrl(null); setShowTicketing(false); setInternalUrl(url); setIframeTitle('');
+                  setTimeout(() => { setShowTicketing(true); }, 150);
+                }} />
+                <NotificationBar currentUser={currentUser} onNavigate={handleNotifNavigate} />
+              </>
             )}
 
             {/* User badge — hanya di main menu (non-sidebar), hidden di mobile kecil */}
@@ -620,12 +643,31 @@ export default function Dashboard() {
     return (
       <div className="flex flex-col bg-cover bg-center bg-fixed" style={{ backgroundImage: 'url(/IVP_Background.png)', minHeight: '100dvh' }}>
         {renderModals()}
+        {/* ── Onboarding Tour ── */}
+        {currentUser && (
+          <>
+            <OnboardingTour
+              currentUser={currentUser}
+              forceShow={showTour}
+              onDone={() => setShowTour(false)}
+            />
+            {!showTour && (
+              <JelajahiButton onClick={() => setShowTour(true)} />
+            )}
+          </>
+        )}
         {renderHeader()}
 
         <div className="flex-1 overflow-y-auto py-6 px-4 md:px-8">
           <div className="max-w-[1600px] mx-auto space-y-8">
             {menuLoading ? <MenuLoadingOverlay /> : (
               <>
+                {/* ── Command Center KPI — hanya admin & superadmin ── */}
+                {canAccessKPI && currentUser && (
+                  <div style={{ animation: "fadeInUp 0.35s ease forwards", opacity: 0 }}>
+                    <DashboardKPI currentUser={currentUser} />
+                  </div>
+                )}
 				{/* ── Learning Center section (BARU) ── */}
                 {learningMenuItems.length > 0 && (
                   <div style={{ animation: 'fadeInUp 0.45s ease 0.2s forwards', opacity: 0 }}>
