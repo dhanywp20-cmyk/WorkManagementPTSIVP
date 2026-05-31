@@ -281,7 +281,7 @@ export default function ReminderSchedulePage() {
     }
 
     const assignee = teamUsers.find(u => u.username === formData.assigned_to);
-    const payload = { ...formData, assign_name: assignee?.full_name ?? formData.assigned_to, created_by: currentUser?.username ?? 'system' };
+    const payload = { ...formData, assign_name: assignee?.full_name ?? formData.assigned_to, created_by: currentUser?.username ?? 'system', ...(editingReminder ? { updated_at: new Date().toISOString() } : {}) };
 
     setSaving(true);
     const { error } = editingReminder
@@ -351,7 +351,7 @@ export default function ReminderSchedulePage() {
   };
 
   const handleStatusChange = async (id: string, status: Status, photoUrl?: string) => {
-    const updatePayload: Record<string, unknown> = { status };
+    const updatePayload: Record<string, unknown> = { status, updated_at: new Date().toISOString() };
     if (photoUrl) updatePayload['completion_photo_url'] = photoUrl;
     const { error } = await supabase.from('reminders').update(updatePayload).eq('id', id);
     if (error) { notify('error', 'Gagal update status.'); return; }
@@ -626,6 +626,7 @@ export default function ReminderSchedulePage() {
     const { error } = await supabase.from('reminders').update({
       due_date: newDate,
       due_time: newTime,
+      updated_at: new Date().toISOString(),
       notes: (rescheduleTarget.notes ?? '') + noteAdd,
     }).eq('id', rescheduleTarget.id);
     if (error) {
