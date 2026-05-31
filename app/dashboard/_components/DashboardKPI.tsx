@@ -108,18 +108,18 @@ function StatCard({ icon, label, value, sub, color, sparkline, donut, loading }:
 }) {
   return (
     <div className="rounded-2xl p-4 flex flex-col gap-1 relative overflow-hidden"
-      style={{ background:'rgba(255,255,255,0.92)', border:'1.5px solid rgba(0,0,0,0.07)', boxShadow:'0 2px 12px rgba(0,0,0,0.06)' }}>
-      <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.04]"
+      style={{ background:'rgba(255,255,255,0.10)', backdropFilter:'blur(14px)', WebkitBackdropFilter:'blur(14px)', border:'1px solid rgba(255,255,255,0.20)', boxShadow:'0 4px 20px rgba(0,0,0,0.15)' }}>
+      <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.08]"
         style={{ background:color, transform:'translate(30%,-30%)' }}/>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
             <span className="text-sm">{icon}</span>
-            <span className="text-[11px] font-semibold text-slate-500 tracking-wide uppercase truncate">{label}</span>
+            <span className="text-[11px] font-semibold text-white/60 tracking-wide uppercase truncate">{label}</span>
           </div>
-          {loading ? <div className="h-7 w-16 bg-slate-100 rounded animate-pulse"/> :
+          {loading ? <div className="h-7 w-16 rounded animate-pulse" style={{ background:'rgba(255,255,255,0.15)' }}/> :
             <div className="text-2xl font-black tracking-tight" style={{ color }}>{value}</div>}
-          {sub && <div className="text-[11px] text-slate-500 mt-0.5 truncate">{sub}</div>}
+          {sub && <div className="text-[11px] text-white/50 mt-0.5 truncate">{sub}</div>}
         </div>
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
           {donut && <MiniDonut segments={donut.segments}/>}
@@ -152,12 +152,12 @@ function HBarChart({ data, color, maxItems=6 }: { data:{label:string;value:numbe
     <div className="space-y-1.5">
       {top.map((d,i) => (
         <div key={i} className="flex items-center gap-2">
-          <span className="text-[11px] text-slate-600 w-24 truncate flex-shrink-0 text-right">{d.label}</span>
-          <div className="flex-1 h-5 bg-slate-100 rounded-full overflow-hidden">
+          <span className="text-[11px] text-white/70 w-24 truncate flex-shrink-0 text-right">{d.label}</span>
+          <div className="flex-1 h-5 rounded-full overflow-hidden" style={{ background:'rgba(255,255,255,0.1)' }}>
             <div className="h-full rounded-full transition-all duration-700"
-              style={{ width:`${(d.value/max)*100}%`, background:color, opacity:0.85-i*0.1 }}/>
+              style={{ width:`${(d.value/max)*100}%`, background:color, opacity:0.85-i*0.08 }}/>
           </div>
-          <span className="text-[11px] font-bold text-slate-700 w-6 text-right">{d.value}</span>
+          <span className="text-[11px] font-bold text-white/80 w-6 text-right">{d.value}</span>
         </div>
       ))}
     </div>
@@ -168,21 +168,21 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
   const s = SEVERITY_STYLE[entry.severity];
   const fmt = new Date(entry.ts).toLocaleString('id-ID', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
   return (
-    <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-white/60"
-      style={{ background:s.bg, border:`1px solid ${s.border}` }}>
+    <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl transition-all"
+      style={{ background: s.bg, border:`1px solid ${s.border}` }}>
       <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-sm"
         style={{ background:`${s.dot}22` }}>{entry.icon}</div>
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between gap-2">
-          <span className="text-xs font-bold text-slate-800 truncate">{entry.action}</span>
-          <span className="text-[10px] text-slate-400 flex-shrink-0">{fmt}</span>
+          <span className="text-xs font-bold text-white truncate">{entry.action}</span>
+          <span className="text-[10px] text-white/50 flex-shrink-0">{fmt}</span>
         </div>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background:`${s.dot}18`, color:s.text }}>{entry.module}</span>
-          <span className="text-[10px] text-slate-600">by <b>{entry.actor}</b></span>
-          {entry.target && <span className="text-[10px] text-slate-500 truncate max-w-[180px]">→ {entry.target}</span>}
+          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background:`${s.dot}25`, color:s.text }}>{entry.module}</span>
+          <span className="text-[10px] text-white/60">by <b className="text-white/80">{entry.actor}</b></span>
+          {entry.target && <span className="text-[10px] text-white/50 truncate max-w-[180px]">→ {entry.target}</span>}
         </div>
-        {entry.detail && <p className="text-[10px] text-slate-500 mt-0.5 truncate">{entry.detail}</p>}
+        {entry.detail && <p className="text-[10px] text-white/40 mt-0.5 truncate">{entry.detail}</p>}
       </div>
     </div>
   );
@@ -520,7 +520,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
   ] as const;
 
   // ── Title by scope ────────────────────────────────────────────────────────
-  const scopeTitle = scope.kind==='admin' ? 'Command Center' :
+  const scopeTitle = scope.kind==='admin' ? 'Dashboard' :
     scope.kind==='pts_sup' ? `Summary ${scope.ptsTeamType}` :
     'Summary Divisi Anda';
 
@@ -573,14 +573,14 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 {team:'MLDS',person:kpi?.piket.todayMlds,color:'#3b82f6', highlight:isPTSMLDS||scope.kind==='admin'},
               ].map(p=>(
                 <div key={p.team} className="rounded-2xl p-4 flex items-center gap-3 transition-all"
-                  style={{ background:'rgba(255,255,255,0.92)', border:`1.5px solid ${p.highlight?p.color+'55':'rgba(0,0,0,0.07)'}`, boxShadow:p.highlight?`0 0 18px ${p.color}22`:'0 2px 12px rgba(0,0,0,0.06)' }}>
+                  style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:`1.5px solid ${p.highlight?p.color+'70':'rgba(255,255,255,0.2)'}`, boxShadow:p.highlight?`0 0 20px ${p.color}30`:'0 4px 20px rgba(0,0,0,0.12)' }}>
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 text-white"
                     style={{ background:p.color }}>{p.team}</div>
                   <div className="min-w-0">
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">PIC {p.team}</div>
+                    <div className="text-[10px] font-bold text-white/50 uppercase tracking-wider">PIC {p.team}</div>
                     {loading?<div className="h-4 w-20 bg-slate-100 rounded animate-pulse mt-1"/>:
-                      p.person?<div className="text-sm font-bold text-slate-800 truncate">{p.person}</div>:
-                      <div className="text-sm font-semibold text-slate-400 italic">Belum diisi</div>}
+                      p.person?<div className="text-sm font-bold text-white truncate">{p.person}</div>:
+                      <div className="text-sm font-semibold text-white/40 italic">Belum diisi</div>}
                   </div>
                   {!loading&&p.person&&<div className="ml-auto w-2 h-2 rounded-full flex-shrink-0" style={{ background:'#10b981',boxShadow:'0 0 6px #10b981' }}/>}
                 </div>
@@ -588,8 +588,8 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
             </div>
             {!loading&&kpi&&(
               <div className="mt-2 flex items-center gap-4 px-1">
-                <span className="text-[11px] text-white/70">Piket minggu ini: <b className="text-white">{kpi.piket.weekFilled}/{kpi.piket.weekTotal}</b> hari terisi</span>
-                {kpi.piket.kegiatanToday>0&&<span className="text-[11px] text-white/70">Tamu hari ini: <b className="text-white">{kpi.piket.kegiatanToday}</b></span>}
+                <span className="text-[11px] text-white/60">Piket minggu ini: <b className="text-white">{kpi.piket.weekFilled}/{kpi.piket.weekTotal}</b> hari terisi</span>
+                {kpi.piket.kegiatanToday>0&&<span className="text-[11px] text-white/60">Tamu hari ini: <b className="text-white">{kpi.piket.kegiatanToday}</b></span>}
               </div>
             )}
           </div>
@@ -633,13 +633,13 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               <div>
                 <SectionHeader icon="👥" title="Pengguna Platform"/>
                 <div className="rounded-2xl p-4"
-                  style={{ background:'rgba(255,255,255,0.92)', border:'1.5px solid rgba(0,0,0,0.07)', boxShadow:'0 2px 12px rgba(0,0,0,0.06)' }}>
-                  {loading?<div className="h-16 bg-slate-100 rounded animate-pulse"/>:(
+                  style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.22)', boxShadow:'0 4px 20px rgba(0,0,0,0.12)' }}>
+                  {loading?<div className="h-16 rounded animate-pulse" style={{ background:'rgba(255,255,255,0.12)' }}/> :(
                     <div className="flex items-center gap-4 flex-wrap">
-                      <div className="text-3xl font-black text-slate-800">{kpi?.users.total??0}</div>
+                      <div className="text-3xl font-black text-white">{kpi?.users.total??0}</div>
                       <div className="flex flex-wrap gap-2">
                         {(kpi?.users.byRole??[]).map(r=>(
-                          <span key={r.role} className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{r.role}: {r.count}</span>
+                          <span key={r.role} className="text-[11px] font-semibold px-2 py-0.5 rounded-full text-white/80" style={{ background:"rgba(255,255,255,0.12)" }}>{r.role}: {r.count}</span>
                         ))}
                       </div>
                     </div>
@@ -667,31 +667,31 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       {tab==='analytics'&&(
         <div className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-2xl p-5" style={{ background:'rgba(255,255,255,0.92)', border:'1.5px solid rgba(0,0,0,0.07)', boxShadow:'0 2px 12px rgba(0,0,0,0.06)' }}>
-              <div className="flex items-center gap-2 mb-4"><span className="text-sm">👷</span><span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Ticket Open per Handler</span></div>
-              {loading?<div className="h-32 bg-slate-100 rounded animate-pulse"/>:
+            <div className="rounded-2xl p-5" style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.22)', boxShadow:'0 4px 20px rgba(0,0,0,0.12)' }}>
+              <div className="flex items-center gap-2 mb-4"><span className="text-sm">👷</span><span className="text-xs font-bold text-white/70 uppercase tracking-wider">Ticket Open per Handler</span></div>
+              {loading?<div className="h-32 rounded animate-pulse" style={{ background:"rgba(255,255,255,0.12)" }}/>:
                 kpi?.tickets.byHandler.length?
                   <HBarChart data={kpi.tickets.byHandler.map(h=>({label:h.name.split(' ')[0],value:h.count}))} color="#ef4444"/>:
                   <p className="text-slate-400 text-sm text-center py-4">Tidak ada data</p>}
             </div>
-            <div className="rounded-2xl p-5" style={{ background:'rgba(255,255,255,0.92)', border:'1.5px solid rgba(0,0,0,0.07)', boxShadow:'0 2px 12px rgba(0,0,0,0.06)' }}>
-              <div className="flex items-center gap-2 mb-4"><span className="text-sm">🏢</span><span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Ticket per Divisi</span></div>
-              {loading?<div className="h-32 bg-slate-100 rounded animate-pulse"/>:
+            <div className="rounded-2xl p-5" style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.22)', boxShadow:'0 4px 20px rgba(0,0,0,0.12)' }}>
+              <div className="flex items-center gap-2 mb-4"><span className="text-sm">🏢</span><span className="text-xs font-bold text-white/70 uppercase tracking-wider">Ticket per Divisi</span></div>
+              {loading?<div className="h-32 rounded animate-pulse" style={{ background:"rgba(255,255,255,0.12)" }}/>:
                 kpi?.tickets.byDivision.length?
                   <HBarChart data={kpi.tickets.byDivision.map(d=>({label:d.div,value:d.count}))} color="#6366f1"/>:
                   <p className="text-slate-400 text-sm text-center py-4">Tidak ada data</p>}
             </div>
           </div>
-          <div className="rounded-2xl p-5" style={{ background:'rgba(255,255,255,0.92)', border:'1.5px solid rgba(0,0,0,0.07)', boxShadow:'0 2px 12px rgba(0,0,0,0.06)' }}>
-            <div className="flex items-center gap-2 mb-4"><span className="text-sm">📊</span><span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Distribusi Status Ticket</span></div>
-            {loading?<div className="h-16 bg-slate-100 rounded animate-pulse"/>:(
+          <div className="rounded-2xl p-5" style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.22)', boxShadow:'0 4px 20px rgba(0,0,0,0.12)' }}>
+            <div className="flex items-center gap-2 mb-4"><span className="text-sm">📊</span><span className="text-xs font-bold text-white/70 uppercase tracking-wider">Distribusi Status Ticket</span></div>
+            {loading?<div className="h-16 rounded animate-pulse" style={{ background:"rgba(255,255,255,0.12)" }}/>:(
               <div className="flex items-center gap-6 flex-wrap">
                 <MiniDonut size={72} segments={(kpi?.tickets.byStatus??[]).map(s=>({value:s.count,color:s.color}))}/>
                 <div className="flex flex-wrap gap-3">
                   {(kpi?.tickets.byStatus??[]).map(s=>(
                     <div key={s.status} className="flex items-center gap-1.5">
                       <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background:s.color }}/>
-                      <span className="text-xs text-slate-600">{s.status} <b className="text-slate-800">({s.count})</b></span>
+                      <span className="text-xs text-white/70">{s.status} <b className="text-slate-800">({s.count})</b></span>
                     </div>
                   ))}
                 </div>
@@ -699,26 +699,26 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-2xl p-5" style={{ background:'rgba(255,255,255,0.92)', border:'1.5px solid rgba(0,0,0,0.07)', boxShadow:'0 2px 12px rgba(0,0,0,0.06)' }}>
-              <div className="flex items-center gap-2 mb-4"><span className="text-sm">🏷️</span><span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Reminder per Kategori</span></div>
-              {loading?<div className="h-32 bg-slate-100 rounded animate-pulse"/>:(
+            <div className="rounded-2xl p-5" style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.22)', boxShadow:'0 4px 20px rgba(0,0,0,0.12)' }}>
+              <div className="flex items-center gap-2 mb-4"><span className="text-sm">🏷️</span><span className="text-xs font-bold text-white/70 uppercase tracking-wider">Reminder per Kategori</span></div>
+              {loading?<div className="h-32 rounded animate-pulse" style={{ background:"rgba(255,255,255,0.12)" }}/>:(
                 <div className="flex items-center gap-5">
                   <MiniDonut size={64} segments={(kpi?.reminders.byCategory??[]).map(c=>({value:c.count,color:c.color}))}/>
                   <div className="space-y-1.5 flex-1">
                     {(kpi?.reminders.byCategory??[]).map(c=>(
                       <div key={c.cat} className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background:c.color }}/>
-                        <span className="text-[11px] text-slate-600 flex-1 truncate">{c.cat}</span>
-                        <span className="text-[11px] font-bold text-slate-700">{c.count}</span>
+                        <span className="text-[11px] text-white/70 flex-1 truncate">{c.cat}</span>
+                        <span className="text-[11px] font-bold text-white/90">{c.count}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
             </div>
-            <div className="rounded-2xl p-5" style={{ background:'rgba(255,255,255,0.92)', border:'1.5px solid rgba(0,0,0,0.07)', boxShadow:'0 2px 12px rgba(0,0,0,0.06)' }}>
-              <div className="flex items-center gap-2 mb-4"><span className="text-sm">⚡</span><span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Performa Resolusi</span></div>
-              {loading?<div className="h-32 bg-slate-100 rounded animate-pulse"/>:(
+            <div className="rounded-2xl p-5" style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.22)', boxShadow:'0 4px 20px rgba(0,0,0,0.12)' }}>
+              <div className="flex items-center gap-2 mb-4"><span className="text-sm">⚡</span><span className="text-xs font-bold text-white/70 uppercase tracking-wider">Performa Resolusi</span></div>
+              {loading?<div className="h-32 rounded animate-pulse" style={{ background:"rgba(255,255,255,0.12)" }}/>:(
                 <div className="space-y-4">
                   {[
                     {label:'Avg. Resolusi Ticket',value:`${kpi?.tickets.avgResolutionDays??0} hari`,color:'#ef4444',icon:'⏱️'},
@@ -729,7 +729,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     <div key={m.label} className="flex items-center gap-3">
                       <span className="text-base">{m.icon}</span>
                       <div className="flex-1">
-                        <div className="text-[11px] text-slate-500">{m.label}</div>
+                        <div className="text-[11px] text-white/55">{m.label}</div>
                         <div className="text-sm font-black" style={{ color:m.color }}>{m.value}</div>
                       </div>
                     </div>
@@ -748,18 +748,18 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
             <input value={auditSearch} onChange={e=>setAuditSearch(e.target.value)}
               placeholder="Cari actor, target, aksi..."
               className="rounded-xl px-3 py-2 text-xs font-medium flex-1 min-w-[160px] outline-none"
-              style={{ background:'rgba(255,255,255,0.92)', border:'1.5px solid rgba(0,0,0,0.1)' }}/>
+              style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.25)', color:'white' }}/>
             {(['all','ticket','reminder','piket','user'] as const).map(f=>(
               <button key={f} onClick={()=>setAuditFilter(f)}
                 className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
-                style={auditFilter===f?{background:'rgba(15,23,42,0.75)',color:'white'}:{background:'rgba(255,255,255,0.85)',color:'#475569',border:'1px solid rgba(0,0,0,0.1)'}}>
+                style={auditFilter===f?{background:'rgba(15,23,42,0.75)',color:'white'}:{background:'rgba(255,255,255,0.12)',color:'rgba(255,255,255,0.65)',border:'1px solid rgba(255,255,255,0.15)'}}>
                 {f==='all'?'Semua':f.charAt(0).toUpperCase()+f.slice(1)}
               </button>
             ))}
-            <span className="text-[11px] text-white/60 ml-auto">{filteredAudit.length} entri</span>
+            <span className="text-[11px] text-white/50 ml-auto">{filteredAudit.length} entri</span>
           </div>
           <div className="space-y-1.5 max-h-[520px] overflow-y-auto pr-1"
-            style={{ scrollbarWidth:'thin', scrollbarColor:'rgba(255,255,255,0.2) transparent' }}>
+            style={{ scrollbarWidth:'thin', scrollbarColor:'rgba(255,255,255,0.25) transparent', maxHeight:'520px' }}>
             {auditLoading?Array.from({length:8}).map((_,i)=><div key={i} className="h-14 rounded-xl bg-white/30 animate-pulse"/>):
               filteredAudit.length===0?<div className="text-center py-12 text-white/50 text-sm">Tidak ada data audit</div>:
               filteredAudit.map((entry:AuditEntry,idx:number)=>(
