@@ -524,124 +524,286 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     scope.kind==='pts_sup' ? `Summary ${scope.ptsTeamType}` :
     'Summary Divisi Anda';
 
+  // ─── Design tokens ──────────────────────────────────────────────────────────
+  const CARD  = { background:'rgba(10,14,26,0.62)', backdropFilter:'blur(18px)', WebkitBackdropFilter:'blur(18px)', border:'1px solid rgba(255,255,255,0.08)', boxShadow:'0 8px 32px rgba(0,0,0,0.35)' } as const;
+  const CARD_ACCENT = (c:string) => ({ ...CARD, borderLeft:`2px solid ${c}`, boxShadow:`0 8px 32px rgba(0,0,0,0.35), inset 1px 0 0 ${c}22` });
+  const LABEL = 'text-[10px] font-bold tracking-[0.12em] uppercase text-white/40';
+  const DIVIDER = { background:'linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent)', height:1 };
+
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="w-full">
-      {/* ── Header strip ── */}
-      <div className="rounded-2xl mb-5 px-5 py-4 flex items-center justify-between gap-4"
-        style={{ background:'rgba(15,23,42,0.72)', backdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.1)' }}>
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-            style={{ background:'linear-gradient(135deg,#ef4444,#b91c1c)' }}>📡</div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-white font-black text-base tracking-tight">{scopeTitle}</h1>
-              <ScopeBadge scope={scope}/>
+    <div className="w-full" style={{ animation:'fadeInUp 0.35s ease forwards' }}>
+
+      {/* ══ Dark overlay wrapper ══ */}
+      <div className="relative rounded-3xl overflow-hidden"
+        style={{ background:'rgba(6,9,20,0.55)', backdropFilter:'blur(2px)', WebkitBackdropFilter:'blur(2px)', border:'1px solid rgba(255,255,255,0.06)', boxShadow:'0 0 80px rgba(0,0,0,0.5)' }}>
+
+        {/* Subtle red accent glow top-left — brand color */}
+        <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full pointer-events-none"
+          style={{ background:'radial-gradient(circle,rgba(190,18,60,0.18) 0%,transparent 70%)' }}/>
+        <div className="absolute -bottom-10 right-10 w-48 h-48 rounded-full pointer-events-none"
+          style={{ background:'radial-gradient(circle,rgba(29,78,216,0.10) 0%,transparent 70%)' }}/>
+
+        {/* ── Top bar ── */}
+        <div className="flex items-center justify-between gap-4 px-6 py-4"
+          style={{ borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ background:'linear-gradient(135deg,#be123c,#9f1239)', boxShadow:'0 0 12px rgba(190,18,60,0.4)' }}>
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
             </div>
-            <p className="text-white/50 text-[11px]">Refresh {lastRefresh.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</p>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-white font-bold text-sm tracking-wide">{scopeTitle}</span>
+                <ScopeBadge scope={scope}/>
+              </div>
+              <span className="text-white/30 text-[10px] tracking-widest">LAST SYNC {lastRefresh.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</span>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <button onClick={()=>{ setLoading(true); setAuditLoading(true); fetchKPI(); fetchAudit(); setLastRefresh(new Date()); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white/80 hover:text-white hover:bg-white/10 transition-all">
-            ↻ Refresh
-          </button>
-          <div className="flex rounded-xl overflow-hidden" style={{ border:'1px solid rgba(255,255,255,0.12)' }}>
-            {TAB_CONFIG.map(t=>(
-              <button key={t.key} onClick={()=>setTab(t.key)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-all"
-                style={tab===t.key?{background:'rgba(255,255,255,0.18)',color:'white'}:{color:'rgba(255,255,255,0.5)'}}>
-                <span>{t.icon}</span><span className="hidden sm:inline">{t.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ══════════════════ TAB: KPI LIVE ══════════════════ */}
-      {tab==='kpi' && (
-        <div className="space-y-6">
-
-          {/* Piket Hari Ini — semua bisa lihat, highlight sesuai team */}
-          <div>
-            <SectionHeader icon="🏪" title="Piket Showroom Hari Ini"
-              sub={`${dayOfWeek()}, ${new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}`}/>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {[
-                {team:'IVP', person:kpi?.piket.todayIVP, color:'#ef4444', highlight:isPTSIVP||scope.kind==='admin'},
-                {team:'UMP', person:kpi?.piket.todayUMP, color:'#f59e0b', highlight:isPTSUMP||scope.kind==='admin'},
-                {team:'MLDS',person:kpi?.piket.todayMlds,color:'#3b82f6', highlight:isPTSMLDS||scope.kind==='admin'},
-              ].map(p=>(
-                <div key={p.team} className="rounded-2xl p-4 flex items-center gap-3 transition-all"
-                  style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:`1.5px solid ${p.highlight?p.color+'70':'rgba(255,255,255,0.2)'}`, boxShadow:p.highlight?`0 0 20px ${p.color}30`:'0 4px 20px rgba(0,0,0,0.12)' }}>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 text-white"
-                    style={{ background:p.color }}>{p.team}</div>
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-bold text-white/50 uppercase tracking-wider">PIC {p.team}</div>
-                    {loading?<div className="h-4 w-20 bg-slate-100 rounded animate-pulse mt-1"/>:
-                      p.person?<div className="text-sm font-bold text-white truncate">{p.person}</div>:
-                      <div className="text-sm font-semibold text-white/40 italic">Belum diisi</div>}
-                  </div>
-                  {!loading&&p.person&&<div className="ml-auto w-2 h-2 rounded-full flex-shrink-0" style={{ background:'#10b981',boxShadow:'0 0 6px #10b981' }}/>}
-                </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button onClick={()=>{ setLoading(true); setAuditLoading(true); fetchKPI(); fetchAudit(); setLastRefresh(new Date()); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
+              style={{ color:'rgba(255,255,255,0.45)', border:'1px solid rgba(255,255,255,0.08)' }}
+              onMouseEnter={e=>{ (e.currentTarget as HTMLButtonElement).style.color='white'; (e.currentTarget as HTMLButtonElement).style.background='rgba(255,255,255,0.06)'; }}
+              onMouseLeave={e=>{ (e.currentTarget as HTMLButtonElement).style.color='rgba(255,255,255,0.45)'; (e.currentTarget as HTMLButtonElement).style.background='transparent'; }}>
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              Sync
+            </button>
+            {/* Tab pills */}
+            <div className="flex rounded-lg overflow-hidden" style={{ border:'1px solid rgba(255,255,255,0.08)', background:'rgba(0,0,0,0.3)' }}>
+              {TAB_CONFIG.map(t=>(
+                <button key={t.key} onClick={()=>setTab(t.key)}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 text-[11px] font-bold tracking-wide transition-all"
+                  style={tab===t.key
+                    ? {background:'rgba(190,18,60,0.35)', color:'white', borderRight:'1px solid rgba(255,255,255,0.06)'}
+                    : {color:'rgba(255,255,255,0.35)', borderRight:'1px solid rgba(255,255,255,0.05)'}}>
+                  {t.label.toUpperCase()}
+                </button>
               ))}
             </div>
-            {!loading&&kpi&&(
-              <div className="mt-2 flex items-center gap-4 px-1">
-                <span className="text-[11px] text-white/60">Piket minggu ini: <b className="text-white">{kpi.piket.weekFilled}/{kpi.piket.weekTotal}</b> hari terisi</span>
-                {kpi.piket.kegiatanToday>0&&<span className="text-[11px] text-white/60">Tamu hari ini: <b className="text-white">{kpi.piket.kegiatanToday}</b></span>}
-              </div>
-            )}
           </div>
+        </div>
 
-          {/* Tickets */}
-          <div>
-            <SectionHeader icon="🎫" title="Ticket Troubleshooting"
-              sub={scope.kind==='pts_sup'?`Handler: ${scope.ptsTeamType}`:scope.kind==='sales_sup'?'Divisi Anda':'Status real-time'}/>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <StatCard icon="📋" label="Total Ticket" value={loading?'—':kpi?.tickets.total??0} sub="Sepanjang waktu" color="#64748b" loading={loading}
-                donut={{ segments:(kpi?.tickets.byStatus??[]).map(s=>({value:s.count,color:s.color})) }}/>
-              <StatCard icon="🔥" label="Open / Aktif" value={loading?'—':kpi?.tickets.open??0} sub="Belum Solved/Cancelled" color="#ef4444" loading={loading}/>
-              <StatCard icon="⏳" label="Waiting Approval" value={loading?'—':kpi?.tickets.waitingApproval??0} sub="Perlu tindakan admin" color="#f59e0b" loading={loading}/>
-              <StatCard icon="✅" label="Solved Hari Ini" value={loading?'—':kpi?.tickets.resolvedToday??0} sub={`Avg ${kpi?.tickets.avgResolutionDays??0} hari/ticket`} color="#10b981" loading={loading}/>
-            </div>
-          </div>
+        {/* ── Content area ── */}
+        <div className="p-5 space-y-5">
 
-          {/* Reminders */}
-          <div>
-            <SectionHeader icon="🗓️" title="Reminder Schedule" sub={scope.kind==='pts_sup'?`Handler: ${scope.ptsTeamType}`:scope.kind==='sales_sup'?'Divisi Anda':'Jadwal & tugas tim'}/>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <StatCard icon="📁" label="Total Reminder" value={loading?'—':kpi?.reminders.total??0} sub="Semua status" color="#6366f1" loading={loading}
-                donut={{ segments:(kpi?.reminders.byCategory??[]).slice(0,5).map(c=>({value:c.count,color:c.color})) }}/>
-              <StatCard icon="⏰" label="Pending" value={loading?'—':kpi?.reminders.pending??0} sub="Belum selesai" color="#f59e0b" loading={loading}/>
-              <StatCard icon="🚨" label="Overdue" value={loading?'—':kpi?.reminders.overdueCount??0} sub="Jatuh tempo terlewat" color="#ef4444" loading={loading}/>
-              <StatCard icon="📅" label="7 Hari ke Depan" value={loading?'—':kpi?.reminders.dueSoon??0} sub="Perlu perhatian" color="#0891b2" loading={loading}/>
-            </div>
-          </div>
+          {/* ══════════ TAB KPI ══════════ */}
+          {tab==='kpi' && (
+            <div className="space-y-5">
 
-          {/* Unit + Users (admin only) */}
-          {scope.kind==='admin'&&(
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Piket Hari Ini */}
               <div>
-                <SectionHeader icon="🚚" title="Unit Movement Bulan Ini"/>
-                <div className="grid grid-cols-3 gap-3">
-                  <StatCard icon="📦" label="Total Log" value={loading?'—':kpi?.units.totalLogs??0} color="#6b7280" loading={loading}/>
-                  <StatCard icon="⬆️" label="Keluar" value={loading?'—':kpi?.units.keluarThisMonth??0} color="#f59e0b" loading={loading}/>
-                  <StatCard icon="⬇️" label="Masuk" value={loading?'—':kpi?.units.masukThisMonth??0} color="#10b981" loading={loading}/>
+                <div className="flex items-center gap-3 mb-3">
+                  <div style={DIVIDER} className="flex-1"/>
+                  <span className={LABEL}>Piket Showroom — {dayOfWeek()}, {new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}</span>
+                  <div style={DIVIDER} className="flex-1"/>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    {team:'IVP', person:kpi?.piket.todayIVP, color:'#ef4444', highlight:isPTSIVP||scope.kind==='admin'},
+                    {team:'UMP', person:kpi?.piket.todayUMP, color:'#f59e0b', highlight:isPTSUMP||scope.kind==='admin'},
+                    {team:'MLDS',person:kpi?.piket.todayMlds,color:'#3b82f6', highlight:isPTSMLDS||scope.kind==='admin'},
+                  ].map(p=>(
+                    <div key={p.team} className="rounded-xl px-4 py-3 flex items-center gap-3 transition-all"
+                      style={{ ...CARD, ...(p.highlight ? { borderLeft:`2px solid ${p.color}`, boxShadow:`0 0 20px ${p.color}18, 0 8px 32px rgba(0,0,0,0.35)` } : {}) }}>
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center font-black text-xs flex-shrink-0 text-white"
+                        style={{ background:`linear-gradient(135deg,${p.color},${p.color}aa)`, boxShadow:`0 0 10px ${p.color}40` }}>
+                        {p.team}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className={LABEL + ' mb-0.5'}>PIC {p.team}</div>
+                        {loading
+                          ? <div className="h-4 w-20 rounded animate-pulse" style={{ background:'rgba(255,255,255,0.08)' }}/>
+                          : p.person
+                            ? <div className="text-sm font-bold text-white truncate">{p.person}</div>
+                            : <div className="text-xs text-white/25 italic">Belum diisi</div>}
+                      </div>
+                      {!loading&&p.person&&(
+                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background:'#10b981', boxShadow:'0 0 6px #10b981' }}/>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {!loading&&kpi&&(
+                  <div className="mt-2 flex items-center gap-4 px-1">
+                    <span className="text-[10px] text-white/35 tracking-wide">
+                      MINGGU INI <span className="text-white/70 font-bold">{kpi.piket.weekFilled}/{kpi.piket.weekTotal}</span> hari terisi
+                    </span>
+                    {kpi.piket.kegiatanToday>0&&(
+                      <span className="text-[10px] text-white/35 tracking-wide">
+                        TAMU HARI INI <span className="text-white/70 font-bold">{kpi.piket.kegiatanToday}</span>
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Tickets */}
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div style={DIVIDER} className="flex-1"/>
+                  <span className={LABEL}>Ticket Troubleshooting — {scope.kind==='pts_sup'?scope.ptsTeamType:scope.kind==='sales_sup'?'Divisi Anda':'Semua'}</span>
+                  <div style={DIVIDER} className="flex-1"/>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <StatCard icon="" label="Total Ticket" value={loading?'—':kpi?.tickets.total??0} sub="Sepanjang waktu" color="#64748b" loading={loading}
+                    donut={{ segments:(kpi?.tickets.byStatus??[]).map(s=>({value:s.count,color:s.color})) }}/>
+                  <StatCard icon="" label="Open / Aktif" value={loading?'—':kpi?.tickets.open??0} sub="Belum selesai" color="#ef4444" loading={loading}/>
+                  <StatCard icon="" label="Waiting Approval" value={loading?'—':kpi?.tickets.waitingApproval??0} sub="Perlu tindakan" color="#f59e0b" loading={loading}/>
+                  <StatCard icon="" label="Solved Hari Ini" value={loading?'—':kpi?.tickets.resolvedToday??0} sub={`Avg ${kpi?.tickets.avgResolutionDays??0}h/ticket`} color="#10b981" loading={loading}/>
                 </div>
               </div>
+
+              {/* Reminders */}
               <div>
-                <SectionHeader icon="👥" title="Pengguna Platform"/>
-                <div className="rounded-2xl p-4"
-                  style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.22)', boxShadow:'0 4px 20px rgba(0,0,0,0.12)' }}>
-                  {loading?<div className="h-16 rounded animate-pulse" style={{ background:'rgba(255,255,255,0.12)' }}/> :(
-                    <div className="flex items-center gap-4 flex-wrap">
-                      <div className="text-3xl font-black text-white">{kpi?.users.total??0}</div>
-                      <div className="flex flex-wrap gap-2">
-                        {(kpi?.users.byRole??[]).map(r=>(
-                          <span key={r.role} className="text-[11px] font-semibold px-2 py-0.5 rounded-full text-white/80" style={{ background:"rgba(255,255,255,0.12)" }}>{r.role}: {r.count}</span>
+                <div className="flex items-center gap-3 mb-3">
+                  <div style={DIVIDER} className="flex-1"/>
+                  <span className={LABEL}>Reminder Schedule</span>
+                  <div style={DIVIDER} className="flex-1"/>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <StatCard icon="" label="Total Reminder" value={loading?'—':kpi?.reminders.total??0} sub="Semua status" color="#6366f1" loading={loading}
+                    donut={{ segments:(kpi?.reminders.byCategory??[]).slice(0,5).map(c=>({value:c.count,color:c.color})) }}/>
+                  <StatCard icon="" label="Pending" value={loading?'—':kpi?.reminders.pending??0} sub="Belum selesai" color="#f59e0b" loading={loading}/>
+                  <StatCard icon="" label="Overdue" value={loading?'—':kpi?.reminders.overdueCount??0} sub="Terlewat" color="#ef4444" loading={loading}/>
+                  <StatCard icon="" label="7 Hari ke Depan" value={loading?'—':kpi?.reminders.dueSoon??0} sub="Perlu perhatian" color="#0891b2" loading={loading}/>
+                </div>
+              </div>
+
+              {/* Unit + Users — admin */}
+              {scope.kind==='admin'&&(
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div style={DIVIDER} className="flex-1"/>
+                      <span className={LABEL}>Unit Movement — Bulan Ini</span>
+                      <div style={DIVIDER} className="flex-1"/>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <StatCard icon="" label="Total Log" value={loading?'—':kpi?.units.totalLogs??0} color="#64748b" loading={loading}/>
+                      <StatCard icon="" label="Keluar" value={loading?'—':kpi?.units.keluarThisMonth??0} color="#f59e0b" loading={loading}/>
+                      <StatCard icon="" label="Masuk" value={loading?'—':kpi?.units.masukThisMonth??0} color="#10b981" loading={loading}/>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div style={DIVIDER} className="flex-1"/>
+                      <span className={LABEL}>Pengguna Platform</span>
+                      <div style={DIVIDER} className="flex-1"/>
+                    </div>
+                    <div className="rounded-xl px-5 py-4" style={CARD}>
+                      {loading
+                        ? <div className="h-10 rounded animate-pulse" style={{ background:'rgba(255,255,255,0.08)' }}/>
+                        : <div className="flex items-center gap-4 flex-wrap">
+                            <span className="text-4xl font-black text-white" style={{ fontVariantNumeric:'tabular-nums' }}>{kpi?.users.total??0}</span>
+                            <div className="flex flex-wrap gap-2">
+                              {(kpi?.users.byRole??[]).map(r=>(
+                                <span key={r.role} className="text-[10px] font-bold px-2 py-0.5 rounded tracking-wider"
+                                  style={{ background:'rgba(255,255,255,0.07)', color:'rgba(255,255,255,0.55)', border:'1px solid rgba(255,255,255,0.09)' }}>
+                                  {r.role.toUpperCase()}&nbsp;<span style={{ color:'rgba(255,255,255,0.85)' }}>{r.count}</span>
+                                </span>
+                              ))}
+                            </div>
+                          </div>}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Unit — PTS sup */}
+              {scope.kind==='pts_sup'&&(
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div style={DIVIDER} className="flex-1"/>
+                    <span className={LABEL}>Unit Movement — {scope.ptsTeamType}</span>
+                    <div style={DIVIDER} className="flex-1"/>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <StatCard icon="" label="Total Log" value={loading?'—':kpi?.units.totalLogs??0} color="#64748b" loading={loading}/>
+                    <StatCard icon="" label="Keluar" value={loading?'—':kpi?.units.keluarThisMonth??0} color="#f59e0b" loading={loading}/>
+                    <StatCard icon="" label="Masuk" value={loading?'—':kpi?.units.masukThisMonth??0} color="#10b981" loading={loading}/>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ══════════ TAB ANALYTICS ══════════ */}
+          {tab==='analytics'&&(
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Handler */}
+                <div className="rounded-xl p-5" style={CARD}>
+                  <div className={LABEL + ' mb-4'}>Ticket Open per Handler</div>
+                  {loading?<div className="h-32 rounded animate-pulse" style={{ background:'rgba(255,255,255,0.06)' }}/>:
+                    kpi?.tickets.byHandler.length
+                      ? <HBarChart data={kpi.tickets.byHandler.map(h=>({label:h.name.split(' ')[0],value:h.count}))} color="#ef4444"/>
+                      : <p className="text-white/25 text-xs text-center py-6">Tidak ada data</p>}
+                </div>
+                {/* Divisi */}
+                <div className="rounded-xl p-5" style={CARD}>
+                  <div className={LABEL + ' mb-4'}>Ticket per Divisi</div>
+                  {loading?<div className="h-32 rounded animate-pulse" style={{ background:'rgba(255,255,255,0.06)' }}/>:
+                    kpi?.tickets.byDivision.length
+                      ? <HBarChart data={kpi.tickets.byDivision.map(d=>({label:d.div,value:d.count}))} color="#6366f1"/>
+                      : <p className="text-white/25 text-xs text-center py-6">Tidak ada data</p>}
+                </div>
+              </div>
+              {/* Status donut */}
+              <div className="rounded-xl p-5" style={CARD}>
+                <div className={LABEL + ' mb-4'}>Distribusi Status Ticket</div>
+                {loading?<div className="h-16 rounded animate-pulse" style={{ background:'rgba(255,255,255,0.06)' }}/>:(
+                  <div className="flex items-center gap-6 flex-wrap">
+                    <MiniDonut size={72} segments={(kpi?.tickets.byStatus??[]).map(s=>({value:s.count,color:s.color}))}/>
+                    <div className="flex flex-wrap gap-x-4 gap-y-2">
+                      {(kpi?.tickets.byStatus??[]).map(s=>(
+                        <div key={s.status} className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background:s.color, boxShadow:`0 0 4px ${s.color}` }}/>
+                          <span className="text-[11px] text-white/55">{s.status}</span>
+                          <span className="text-[11px] font-bold text-white/80">{s.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Reminder kategori */}
+                <div className="rounded-xl p-5" style={CARD}>
+                  <div className={LABEL + ' mb-4'}>Reminder per Kategori</div>
+                  {loading?<div className="h-32 rounded animate-pulse" style={{ background:'rgba(255,255,255,0.06)' }}/>:(
+                    <div className="flex items-center gap-5">
+                      <MiniDonut size={64} segments={(kpi?.reminders.byCategory??[]).map(c=>({value:c.count,color:c.color}))}/>
+                      <div className="space-y-2 flex-1">
+                        {(kpi?.reminders.byCategory??[]).map(c=>(
+                          <div key={c.cat} className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background:c.color, boxShadow:`0 0 4px ${c.color}` }}/>
+                            <span className="text-[11px] text-white/50 flex-1 truncate">{c.cat}</span>
+                            <span className="text-[11px] font-bold text-white/80">{c.count}</span>
+                          </div>
                         ))}
                       </div>
+                    </div>
+                  )}
+                </div>
+                {/* Performa */}
+                <div className="rounded-xl p-5" style={CARD}>
+                  <div className={LABEL + ' mb-4'}>Performa Resolusi</div>
+                  {loading?<div className="h-32 rounded animate-pulse" style={{ background:'rgba(255,255,255,0.06)' }}/>:(
+                    <div className="space-y-4">
+                      {[
+                        {label:'Avg. Resolusi Ticket',value:`${kpi?.tickets.avgResolutionDays??0} hari`,color:'#ef4444'},
+                        {label:'Solved Hari Ini',value:`${kpi?.tickets.resolvedToday??0} ticket`,color:'#10b981'},
+                        {label:'Reminder Overdue',value:`${kpi?.reminders.overdueCount??0} jadwal`,color:'#f59e0b'},
+                        {label:'Piket Terisi Minggu Ini',value:`${kpi?.piket.weekFilled??0}/${kpi?.piket.weekTotal??6} hari`,color:'#6366f1'},
+                      ].map(m=>(
+                        <div key={m.label} className="flex items-center justify-between gap-3">
+                          <span className="text-[11px] text-white/40 tracking-wide">{m.label.toUpperCase()}</span>
+                          <span className="text-sm font-black" style={{ color:m.color, fontVariantNumeric:'tabular-nums' }}>{m.value}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -649,125 +811,49 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
             </div>
           )}
 
-          {/* Unit Movement untuk PTS sup */}
-          {scope.kind==='pts_sup'&&(
-            <div>
-              <SectionHeader icon="🚚" title={`Unit Movement — ${scope.ptsTeamType}`} sub="Bulan ini"/>
-              <div className="grid grid-cols-3 gap-3">
-                <StatCard icon="📦" label="Total Log" value={loading?'—':kpi?.units.totalLogs??0} color="#6b7280" loading={loading}/>
-                <StatCard icon="⬆️" label="Keluar" value={loading?'—':kpi?.units.keluarThisMonth??0} color="#f59e0b" loading={loading}/>
-                <StatCard icon="⬇️" label="Masuk" value={loading?'—':kpi?.units.masukThisMonth??0} color="#10b981" loading={loading}/>
+          {/* ══════════ TAB AUDIT TRAIL ══════════ */}
+          {tab==='audit'&&(
+            <div className="space-y-3">
+              {/* Search + filter */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative flex-1 min-w-[180px]">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                  </svg>
+                  <input value={auditSearch} onChange={e=>setAuditSearch(e.target.value)}
+                    placeholder="Cari actor, aksi, target..."
+                    className="w-full rounded-lg pl-8 pr-3 py-2 text-xs outline-none"
+                    style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.09)', color:'rgba(255,255,255,0.8)' }}/>
+                </div>
+                {(['all','ticket','reminder','piket','user'] as const).map(f=>(
+                  <button key={f} onClick={()=>setAuditFilter(f)}
+                    className="px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-wide transition-all"
+                    style={auditFilter===f
+                      ? { background:'rgba(190,18,60,0.35)', color:'white', border:'1px solid rgba(190,18,60,0.4)' }
+                      : { background:'rgba(255,255,255,0.05)', color:'rgba(255,255,255,0.35)', border:'1px solid rgba(255,255,255,0.07)' }}>
+                    {f==='all'?'SEMUA':f.toUpperCase()}
+                  </button>
+                ))}
+                <span className="text-[10px] text-white/25 ml-auto tracking-widest">{filteredAudit.length} ENTRI</span>
+              </div>
+              {/* List */}
+              <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1"
+                style={{ scrollbarWidth:'thin', scrollbarColor:'rgba(255,255,255,0.1) transparent' }}>
+                {auditLoading
+                  ? Array.from({length:6}).map((_,i)=>(
+                      <div key={i} className="h-12 rounded-lg animate-pulse" style={{ background:'rgba(255,255,255,0.04)' }}/>
+                    ))
+                  : filteredAudit.length===0
+                    ? <div className="text-center py-12 text-white/20 text-xs tracking-widest">TIDAK ADA DATA</div>
+                    : filteredAudit.map((entry:AuditEntry,idx:number)=>(
+                        <div key={entry.id??idx}><AuditRow entry={entry}/></div>
+                      ))}
               </div>
             </div>
           )}
-        </div>
-      )}
 
-      {/* ══════════════════ TAB: ANALYTICS ══════════════════ */}
-      {tab==='analytics'&&(
-        <div className="space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-2xl p-5" style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.22)', boxShadow:'0 4px 20px rgba(0,0,0,0.12)' }}>
-              <div className="flex items-center gap-2 mb-4"><span className="text-sm">👷</span><span className="text-xs font-bold text-white/70 uppercase tracking-wider">Ticket Open per Handler</span></div>
-              {loading?<div className="h-32 rounded animate-pulse" style={{ background:"rgba(255,255,255,0.12)" }}/>:
-                kpi?.tickets.byHandler.length?
-                  <HBarChart data={kpi.tickets.byHandler.map(h=>({label:h.name.split(' ')[0],value:h.count}))} color="#ef4444"/>:
-                  <p className="text-slate-400 text-sm text-center py-4">Tidak ada data</p>}
-            </div>
-            <div className="rounded-2xl p-5" style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.22)', boxShadow:'0 4px 20px rgba(0,0,0,0.12)' }}>
-              <div className="flex items-center gap-2 mb-4"><span className="text-sm">🏢</span><span className="text-xs font-bold text-white/70 uppercase tracking-wider">Ticket per Divisi</span></div>
-              {loading?<div className="h-32 rounded animate-pulse" style={{ background:"rgba(255,255,255,0.12)" }}/>:
-                kpi?.tickets.byDivision.length?
-                  <HBarChart data={kpi.tickets.byDivision.map(d=>({label:d.div,value:d.count}))} color="#6366f1"/>:
-                  <p className="text-slate-400 text-sm text-center py-4">Tidak ada data</p>}
-            </div>
-          </div>
-          <div className="rounded-2xl p-5" style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.22)', boxShadow:'0 4px 20px rgba(0,0,0,0.12)' }}>
-            <div className="flex items-center gap-2 mb-4"><span className="text-sm">📊</span><span className="text-xs font-bold text-white/70 uppercase tracking-wider">Distribusi Status Ticket</span></div>
-            {loading?<div className="h-16 rounded animate-pulse" style={{ background:"rgba(255,255,255,0.12)" }}/>:(
-              <div className="flex items-center gap-6 flex-wrap">
-                <MiniDonut size={72} segments={(kpi?.tickets.byStatus??[]).map(s=>({value:s.count,color:s.color}))}/>
-                <div className="flex flex-wrap gap-3">
-                  {(kpi?.tickets.byStatus??[]).map(s=>(
-                    <div key={s.status} className="flex items-center gap-1.5">
-                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background:s.color }}/>
-                      <span className="text-xs text-white/70">{s.status} <b className="text-slate-800">({s.count})</b></span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-2xl p-5" style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.22)', boxShadow:'0 4px 20px rgba(0,0,0,0.12)' }}>
-              <div className="flex items-center gap-2 mb-4"><span className="text-sm">🏷️</span><span className="text-xs font-bold text-white/70 uppercase tracking-wider">Reminder per Kategori</span></div>
-              {loading?<div className="h-32 rounded animate-pulse" style={{ background:"rgba(255,255,255,0.12)" }}/>:(
-                <div className="flex items-center gap-5">
-                  <MiniDonut size={64} segments={(kpi?.reminders.byCategory??[]).map(c=>({value:c.count,color:c.color}))}/>
-                  <div className="space-y-1.5 flex-1">
-                    {(kpi?.reminders.byCategory??[]).map(c=>(
-                      <div key={c.cat} className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background:c.color }}/>
-                        <span className="text-[11px] text-white/70 flex-1 truncate">{c.cat}</span>
-                        <span className="text-[11px] font-bold text-white/90">{c.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="rounded-2xl p-5" style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.22)', boxShadow:'0 4px 20px rgba(0,0,0,0.12)' }}>
-              <div className="flex items-center gap-2 mb-4"><span className="text-sm">⚡</span><span className="text-xs font-bold text-white/70 uppercase tracking-wider">Performa Resolusi</span></div>
-              {loading?<div className="h-32 rounded animate-pulse" style={{ background:"rgba(255,255,255,0.12)" }}/>:(
-                <div className="space-y-4">
-                  {[
-                    {label:'Avg. Resolusi Ticket',value:`${kpi?.tickets.avgResolutionDays??0} hari`,color:'#ef4444',icon:'⏱️'},
-                    {label:'Ticket Solved Hari Ini',value:`${kpi?.tickets.resolvedToday??0} ticket`,color:'#10b981',icon:'✅'},
-                    {label:'Reminder Overdue',value:`${kpi?.reminders.overdueCount??0} jadwal`,color:'#f59e0b',icon:'🚨'},
-                    {label:'Piket Terisi Minggu Ini',value:`${kpi?.piket.weekFilled??0}/${kpi?.piket.weekTotal??6} hari`,color:'#6366f1',icon:'📅'},
-                  ].map(m=>(
-                    <div key={m.label} className="flex items-center gap-3">
-                      <span className="text-base">{m.icon}</span>
-                      <div className="flex-1">
-                        <div className="text-[11px] text-white/55">{m.label}</div>
-                        <div className="text-sm font-black" style={{ color:m.color }}>{m.value}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ══════════════════ TAB: AUDIT TRAIL ══════════════════ */}
-      {tab==='audit'&&(
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <input value={auditSearch} onChange={e=>setAuditSearch(e.target.value)}
-              placeholder="Cari actor, target, aksi..."
-              className="rounded-xl px-3 py-2 text-xs font-medium flex-1 min-w-[160px] outline-none"
-              style={{ background:'rgba(255,255,255,0.12)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.25)', color:'white' }}/>
-            {(['all','ticket','reminder','piket','user'] as const).map(f=>(
-              <button key={f} onClick={()=>setAuditFilter(f)}
-                className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
-                style={auditFilter===f?{background:'rgba(15,23,42,0.75)',color:'white'}:{background:'rgba(255,255,255,0.12)',color:'rgba(255,255,255,0.65)',border:'1px solid rgba(255,255,255,0.15)'}}>
-                {f==='all'?'Semua':f.charAt(0).toUpperCase()+f.slice(1)}
-              </button>
-            ))}
-            <span className="text-[11px] text-white/50 ml-auto">{filteredAudit.length} entri</span>
-          </div>
-          <div className="space-y-1.5 max-h-[520px] overflow-y-auto pr-1"
-            style={{ scrollbarWidth:'thin', scrollbarColor:'rgba(255,255,255,0.25) transparent', maxHeight:'520px' }}>
-            {auditLoading?Array.from({length:8}).map((_,i)=><div key={i} className="h-14 rounded-xl bg-white/30 animate-pulse"/>):
-              filteredAudit.length===0?<div className="text-center py-12 text-white/50 text-sm">Tidak ada data audit</div>:
-              filteredAudit.map((entry:AuditEntry,idx:number)=>(
-                <div key={entry.id??idx}><AuditRow entry={entry}/></div>
-              ))}
-          </div>
-        </div>
-      )}
+        </div>{/* end content */}
+      </div>{/* end dark overlay wrapper */}
     </div>
   );
 }
