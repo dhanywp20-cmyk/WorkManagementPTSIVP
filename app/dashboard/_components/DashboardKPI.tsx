@@ -860,10 +860,9 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               {/* ── Piket Showroom Today ── */}
               <div>
                 <SectionPill icon="🏪">Piket Showroom — {dayOfWeek()}, {new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}</SectionPill>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   {[
                     {team:'IVP',  person:kpi?.piket.todayIVP,  color:'#ef4444', gradient:'from-red-500/90 to-rose-600/90',    highlight:isPTSIVP||scope.kind==='admin'},
-                    {team:'UMP',  person:kpi?.piket.todayUMP,  color:'#f59e0b', gradient:'from-amber-500/90 to-orange-500/90', highlight:isPTSUMP||scope.kind==='admin'},
                     {team:'MLDS', person:kpi?.piket.todayMlds, color:'#3b82f6', gradient:'from-blue-500/90 to-indigo-500/90',  highlight:isPTSMLDS||scope.kind==='admin'},
                   ].map(p=>(
                     <div key={p.team}
@@ -1156,13 +1155,10 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   <button
                     onClick={() => {
                       const calcKPI = (m: KPITeamMember) => {
-                        // Ticketing 20%: tidak ada overdue (ticketsOverdue=0 = 100%)
-                        const tickScore = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled,1)) : 1;
-                        // BAST & Demo 30%: dari formReviewLowRating — tidak ada bintang 1/2
-                        const bastScore = m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating * 0.25);
-                        // Tech Knowledge 40%: dari LC — tidak ada nilai <75
-                        const lcScore = m.lcAttempts === 0 ? 1 : Math.max(0, 1 - (m.lcFailedBelow75 / Math.max(m.lcAttempts,1)));
-                        // R&D Technote 10%: manual min 6/tahun
+                        const tickScore = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled,1)) : 0;
+                        const hasFormReview = m.ticketsHandled > 0;
+                        const bastScore = !hasFormReview ? 0 : m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating * 0.25);
+                        const lcScore = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - (m.lcFailedBelow75 / Math.max(m.lcAttempts,1)));
                         const periodMultiplier = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
                         const rndTarget = 6 * periodMultiplier;
                         const rndScore = m.manual.technicalNote >= rndTarget ? 1 : m.manual.technicalNote / rndTarget;
@@ -1216,18 +1212,32 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 const ivpMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS');
                 const mldsMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS MLDS');
                 const calcKPI = (member: KPITeamMember) => {
-                  const tickScore = member.ticketsHandled > 0 ? Math.max(0, 1 - member.ticketsOverdue / Math.max(member.ticketsHandled,1)) : 1;
-                  const bastScore = member.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - member.formReviewLowRating * 0.25);
-                  const lcScore = member.lcAttempts === 0 ? 1 : Math.max(0, 1 - (member.lcFailedBelow75 / Math.max(member.lcAttempts,1)));
+                  // Ticketing 20%: jika tidak ada ticket sama sekali → 0 (belum ada data), bukan 100%
+                  const tickScore = member.ticketsHandled > 0
+                    ? Math.max(0, 1 - member.ticketsOverdue / Math.max(member.ticketsHandled, 1))
+                    : 0;
+                  // BAST & Demo 30%: dari formReviewLowRating — jika belum ada review sama sekali → 0
+                  // Punya review dan tidak ada bintang rendah = 100%, ada bintang rendah = kurang
+                  const hasFormReview = (member.ticketsHandled > 0); // proxy: aktif bekerja
+                  const bastScore = !hasFormReview ? 0
+                    : member.formReviewLowRating === 0 ? 1
+                    : Math.max(0, 1 - member.formReviewLowRating * 0.25);
+                  // Tech Knowledge 40%: dari LC — jika belum ada attempt sama sekali → 0
+                  const lcScore = member.lcAttempts === 0
+                    ? 0
+                    : Math.max(0, 1 - (member.lcFailedBelow75 / Math.max(member.lcAttempts, 1)));
+                  // R&D Technote 10%: input manual min 6/tahun (atau 3 untuk 6 bulan)
                   const periodMultiplier = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
                   const rndTarget = 6 * periodMultiplier;
                   const rndScore = member.manual.technicalNote >= rndTarget ? 1 : member.manual.technicalNote / rndTarget;
-                  return Math.round([0.20, 0.30, 0.40, 0.10].reduce((s,w,i)=>s+w*[tickScore,bastScore,lcScore,rndScore][i],0)*100);
+                  return Math.round([0.20, 0.30, 0.40, 0.10].reduce((s, w, i) => s + w * [tickScore, bastScore, lcScore, rndScore][i], 0) * 100);
                 };
                 const MemberCard = ({ member }: { member: KPITeamMember }) => {
                   const finalKPI = calcKPI(member);
-                  const kpiColor = finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
-                  const kpiLabel = finalKPI>=85?'Excellent':finalKPI>=70?'Good':finalKPI>=50?'Fair':'Needs Work';
+                  // Belum ada data sama sekali di platform
+                  const noData = member.ticketsHandled === 0 && member.lcAttempts === 0 && member.manual.technicalNote === 0;
+                  const kpiColor = noData ? '#94a3b8' : finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
+                  const kpiLabel = noData ? 'Belum Ada Data' : finalKPI>=85?'Excellent':finalKPI>=70?'Good':finalKPI>=50?'Fair':'Needs Work';
                   const hasLowRating = member.formReviewLowRating > 0;
                   const hasLCFail = member.lcFailedBelow75 > 0;
                   const hasSlowResponse = member.ticketAvgResponseHours > 24;
@@ -1244,7 +1254,11 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       <div className="flex-1 min-w-0">
                         <div className="font-bold text-slate-800 text-sm truncate">{member.name}</div>
                         <div className="text-[10px] text-slate-400">{member.jabatan} · {member.team_type.replace('Team PTS ','').replace('Team PTS','IVP')}</div>
-                        {alertCount > 0 && (
+                        {noData ? (
+                          <div className="flex gap-1 mt-1">
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-50 text-slate-400 border border-slate-200">⏳ Belum ada list di platform</span>
+                          </div>
+                        ) : alertCount > 0 && (
                           <div className="flex gap-1 mt-1 flex-wrap">
                             {hasLowRating && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">⭐ {member.formReviewLowRating}× rating rendah</span>}
                             {hasLCFail && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">📚 {member.lcFailedBelow75}× quiz &lt;75</span>}
@@ -1253,7 +1267,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                         )}
                       </div>
                       <div className="flex flex-col items-end flex-shrink-0">
-                        <div className="text-2xl font-black" style={{ color: kpiColor }}>{finalKPI}%</div>
+                        <div className="text-2xl font-black" style={{ color: kpiColor }}>{noData ? '—' : `${finalKPI}%`}</div>
                         <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: kpiColor }}>{kpiLabel}</div>
                       </div>
                       <svg className="w-4 h-4 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1272,7 +1286,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                           <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Team PTS IVP</span>
                           <span className="text-[10px] text-slate-400 ml-1">{ivpMembers.length} anggota</span>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-2">
                           {ivpMembers.map(m => <MemberCard key={m.id} member={m}/>)}
                         </div>
                       </div>
@@ -1285,7 +1299,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                           <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Team PTS MLDS</span>
                           <span className="text-[10px] text-slate-400 ml-1">{mldsMembers.length} anggota</span>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-2">
                           {mldsMembers.map(m => <MemberCard key={m.id} member={m}/>)}
                         </div>
                       </div>
@@ -1300,15 +1314,17 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               {selectedKPIMember && (() => {
                 const member = kpiTeam.members.find(m => m.id === selectedKPIMember);
                 if (!member) return null;
-                // New 4-component scoring
-                const tickScore = member.ticketsHandled > 0 ? Math.max(0, 1 - member.ticketsOverdue / Math.max(member.ticketsHandled,1)) : 1;
-                const bastScore = member.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - member.formReviewLowRating * 0.25);
-                const lcScore = member.lcAttempts === 0 ? 1 : Math.max(0, 1 - (member.lcFailedBelow75 / Math.max(member.lcAttempts,1)));
+                // New 4-component scoring — belum ada data = 0, bukan 100%
+                const tickScore = member.ticketsHandled > 0 ? Math.max(0, 1 - member.ticketsOverdue / Math.max(member.ticketsHandled,1)) : 0;
+                const hasFormReview = member.ticketsHandled > 0;
+                const bastScore = !hasFormReview ? 0 : member.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - member.formReviewLowRating * 0.25);
+                const lcScore = member.lcAttempts === 0 ? 0 : Math.max(0, 1 - (member.lcFailedBelow75 / Math.max(member.lcAttempts,1)));
                 const periodMultiplier = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
                 const rndTarget = 6 * periodMultiplier;
                 const rndScore = member.manual.technicalNote >= rndTarget ? 1 : member.manual.technicalNote / rndTarget;
                 const finalKPI = Math.round([0.20, 0.30, 0.40, 0.10].reduce((s,w,i)=>s+w*[tickScore,bastScore,lcScore,rndScore][i],0)*100);
-                const kpiColor = finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
+                const noData = member.ticketsHandled === 0 && member.lcAttempts === 0 && member.manual.technicalNote === 0;
+                const kpiColor = noData ? '#94a3b8' : finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
                 const isEditing = kpiTeam.editingMember === member.id;
                 return (
                   <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
@@ -1327,7 +1343,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                           <div className="text-[11px] text-slate-400">{member.jabatan} · {member.team_type}</div>
                         </div>
                         <div className="flex flex-col items-end mr-2 flex-shrink-0">
-                          <div className="text-3xl font-black" style={{ color: kpiColor }}>{finalKPI}%</div>
+                          <div className="text-3xl font-black" style={{ color: kpiColor }}>{noData ? '—' : `${finalKPI}%`}</div>
                           <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">KPI Score</div>
                         </div>
                         {(scope.kind==='admin' || scope.kind==='pts_sup') && (
