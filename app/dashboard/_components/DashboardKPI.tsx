@@ -887,4 +887,5 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         </div>{/* end content */}
       </div>{/* end light elegant wrapper */}
     </div>
+  );
 }
