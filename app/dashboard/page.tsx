@@ -1156,9 +1156,13 @@ export default function Dashboard() {
           <div className="flex-1 overflow-hidden bg-white">
             {showDashboardPanel && canAccessKPI && currentUser ? (
               /* ── Dashboard KPI Panel dalam sidebar ── */
-              <div className="w-full h-full overflow-y-auto bg-cover bg-center bg-fixed p-5"
-                style={{ backgroundImage: 'url(/IVP_Background.png)' }}>
-                <DashboardKPI currentUser={currentUser} />
+              <div className="w-full h-full overflow-y-auto relative"
+                style={{ backgroundImage: 'url(/IVP_Background.png)', backgroundSize:'cover', backgroundPosition:'center', backgroundAttachment:'fixed' }}>
+                {/* Dark overlay */}
+                <div className="absolute inset-0 pointer-events-none" style={{ background:'rgba(4,6,15,0.72)' }}/>
+                <div className="relative z-10 p-5">
+                  <DashboardKPI currentUser={currentUser} />
+                </div>
               </div>
             ) : showTicketing ? (
               <div className="w-full h-full overflow-auto">
