@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User, JABATAN_CONFIG, type JabatanType } from './shared';
-import * as XLSX from 'xlsx';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,7 +17,6 @@ interface KPIData {
     total: number; pending: number; done: number; dueSoon: number;
     byCategory: { cat: string; count: number; color: string }[];
     overdueCount: number;
-    completionRate: number;
   };
   piket: {
     todayIVP: string | null; todayUMP: string | null; todayMlds: string | null;
@@ -27,37 +25,44 @@ interface KPIData {
   units: { totalLogs: number; keluarThisMonth: number; masukThisMonth: number };
   users: { total: number; byRole: { role: string; count: number }[] };
   learning: { totalSessions: number; completedSessions: number; totalParticipants: number; avgScore: number };
-  // Per-team KPI (hanya untuk admin/pts_sup)
-  teamKPI?: {
-    ivp: TeamKPI;
-    mlds: TeamKPI;
+}
+
+interface KPITeamMember {
+  id: string;
+  name: string;
+  team_type: string;
+  jabatan: string;
+  // Auto dari platform
+  ticketsHandled: number;
+  ticketsSolved: number;
+  ticketsOverdue: number;
+  avgResolutionDays: number;
+  remindersAssigned: number;
+  remindersDone: number;
+  remindersOverdue: number;
+  lcAttempts: number;
+  lcAvgScore: number;
+  lcPassed: number;
+  piketFilled: number;
+  // Manual input (KPI yg tidak bisa diambil otomatis)
+  manual: {
+    komplainCount: number;        // Technical knowledge - jumlah komplain (max 12)
+    responTime: number;           // Kecepatan respon komplain (1=OK, 0=Tidak OK)
+    technicalNote: number;        // RnD - jumlah technical note diterbitkan (min 6/thn)
+    bastDemo: number;             // BAST & Demo - jumlah form selesai dalam 7 hari
+    bastDemoTotal: number;        // Total BAST & Demo yang ada
+    reportBulanan: number;        // Pelaporan bulanan tepat waktu (0-12)
+    learningMastery: number;      // Penguasaan teknikal (0-12 kategori)
   };
 }
 
-interface TeamKPI {
-  teamName: string;
-  ticketTotal: number;
-  ticketSolved: number;
-  ticketOpen: number;
-  ticketAvgResolution: number;
-  reminderTotal: number;
-  reminderDone: number;
-  reminderPending: number;
-  reminderOverdue: number;
-  reminderCompletionRate: number;
-  memberCount: number;
-  members: string[];
-  // KPI Score sesuai template Excel
-  kpiScores: KPIScore[];
-  totalKPI: number;
-}
-
-interface KPIScore {
-  sasaran: string;
-  indikator: string;
-  bobot: number;
-  pencapaian: number; // 0-1
-  nilai: number;      // bobot * pencapaian
+interface KPITeamState {
+  members: KPITeamMember[];
+  loading: boolean;
+  editingMember: string | null;  // member id yang sedang diedit
+  editValues: Partial<KPITeamMember['manual']>;
+  filterYear: number;
+  filterTeam: string;
 }
 
 interface AuditEntry {
@@ -68,8 +73,10 @@ interface AuditEntry {
 
 interface Scope {
   kind: 'admin' | 'pts_sup' | 'sales_sup' | 'none';
+  // pts_sup
   ptsTeamType?: string;
   ptsMemberNames?: string[];
+  // sales_sup
   salesDivisions?: string[];
   salesSubNames?: string[];
   salesSubIds?: string[];
@@ -95,106 +102,29 @@ const SEVERITY_STYLE = {
   critical: { bg: 'rgba(239,68,68,0.06)',   border: 'rgba(239,68,68,0.18)',   dot: '#ef4444', text: '#991b1b' },
 };
 
-// KPI bobot sesuai template Excel
-const KPI_TEMPLATE: Array<{ sasaran: string; indikator: string; bobot: number; kategori: 'ticket'|'reminder'|'learning'|'piket' }> = [
-  { sasaran: 'Customer Perspective',       indikator: 'Jumlah komplain / ticket troubleshooting',        bobot: 0.15, kategori: 'ticket'   },
-  { sasaran: 'Customer Perspective',       indikator: 'Kecepatan respon terhadap ticket (max 1x24 jam)',  bobot: 0.10, kategori: 'ticket'   },
-  { sasaran: 'Internal Process',           indikator: 'Technical knowledge (Learning Center)',            bobot: 0.35, kategori: 'learning' },
-  { sasaran: 'Internal Process',           indikator: 'Implementasi Reminder & Jadwal Kegiatan',          bobot: 0.20, kategori: 'reminder' },
-  { sasaran: 'Internal Process',           indikator: 'Pelaporan & piket showroom',                       bobot: 0.05, kategori: 'piket'    },
-  { sasaran: 'Learning & Growth',          indikator: 'Research & Development (Reminder selesai tepat)',  bobot: 0.15, kategori: 'reminder' },
-];
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const todayStr   = () => new Date().toISOString().split('T')[0];
 const dayOfWeek  = () => ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][new Date().getDay()];
 const monthStart = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0]; };
-const yearStart  = (year: number) => `${year}-01-01`;
-const yearEnd    = (year: number) => `${year}-12-31`;
-
 function getMonday() {
   const d = new Date(); const day = d.getDay();
   d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
   return d.toISOString().split('T')[0];
 }
 
-// Hitung KPI score untuk satu team
-function calcTeamKPI(
-  tickets: any[],
-  reminders: any[],
-  lcSessions: any[],
-  piketWeekFilled: number,
-  piketWeekTotal: number,
-  actLogs: any[],
-  today: string
-): KPIScore[] {
-  const ticketTotal  = tickets.length;
-  const ticketSolved = tickets.filter((t:any)=>t.status==='Solved').length;
-  const ticketOpen   = tickets.filter((t:any)=>!['Solved','Cancelled'].includes(t.status)).length;
-
-  // KPI 1: komplain - semakin sedikit semakin baik, target max 12/tahun
-  // Jika <=12 komplain = 100%, lebih dari itu dikurangi
-  const komplainPencapaian = Math.min(1, ticketOpen <= 12 ? 1 : Math.max(0, (12 - ticketOpen) / 12));
-
-  // KPI 2: respon cepat - % ticket yang solved dari total
-  const responPencapaian = ticketTotal > 0 ? Math.min(1, ticketSolved / ticketTotal) : 1;
-
-  // KPI 3: learning center
-  const lcScore = lcSessions.filter((s:any)=>s.final_score!=null).map((s:any)=>s.final_score as number);
-  const lcAvg   = lcScore.length ? lcScore.reduce((a:number,b:number)=>a+b,0)/lcScore.length : 0;
-  const learningPencapaian = Math.min(1, lcAvg / 100);
-
-  // KPI 4: implementasi reminder (completion rate)
-  const remDone    = reminders.filter((r:any)=>r.status==='done').length;
-  const remTotal   = reminders.length;
-  const remPencapaian = remTotal > 0 ? Math.min(1, remDone / remTotal) : 1;
-
-  // KPI 5: piket showroom
-  const piketPencapaian = piketWeekTotal > 0 ? Math.min(1, piketWeekFilled / piketWeekTotal) : 1;
-
-  // KPI 6: RnD / reminder tepat waktu (selesai sebelum due_date)
-  const remOnTime = reminders.filter((r:any)=>r.status==='done'&&r.due_date>=r.created_at?.split('T')[0]).length;
-  const rdPencapaian = remTotal > 0 ? Math.min(1, remOnTime / Math.max(remTotal, 1)) : 1;
-
-  const pencapaians = [komplainPencapaian, responPencapaian, learningPencapaian, remPencapaian, piketPencapaian, rdPencapaian];
-
-  return KPI_TEMPLATE.map((t, i) => ({
-    sasaran: t.sasaran,
-    indikator: t.indikator,
-    bobot: t.bobot,
-    pencapaian: pencapaians[i] ?? 0,
-    nilai: Math.round((t.bobot * (pencapaians[i] ?? 0)) * 100) / 100,
-  }));
-}
-
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function DonutChart({ segments, size = 56, strokeWidth = 7, label }: {
-  segments: { value: number; color: string }[]; size?: number; strokeWidth?: number; label?: string;
-}) {
+function MiniDonut({ segments, size = 56 }: { segments: { value: number; color: string }[]; size?: number }) {
   const total = segments.reduce((s, x) => s + x.value, 0);
-  const r = size/2 - strokeWidth/2 - 1;
-  const circ = 2 * Math.PI * r;
-  if (!total) return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#e2e8f0" strokeWidth={strokeWidth}/>
-      {label && <text x={size/2} y={size/2+4} textAnchor="middle" fontSize={size*0.18} fontWeight="bold" fill="#94a3b8">{label}</text>}
-    </svg>
-  );
-  let off = 0;
+  if (!total) return <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}><circle cx={size/2} cy={size/2} r={size/2-4} fill="none" stroke="#e2e8f0" strokeWidth={7}/></svg>;
+  const r = size/2-5, circ = 2*Math.PI*r; let off = 0;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform:'rotate(-90deg)' }}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#e8ecf0" strokeWidth={strokeWidth}/>
-      {segments.map((seg, i) => {
-        const pct = seg.value / total, dash = pct * circ, gap = circ - dash;
-        const el = <circle key={i} cx={size/2} cy={size/2} r={r} fill="none" stroke={seg.color}
-          strokeWidth={strokeWidth} strokeDasharray={`${dash} ${gap}`}
-          strokeDashoffset={-off * circ} strokeLinecap="butt"/>;
-        off += pct; return el;
-      })}
-      {label && <text x={size/2} y={size/2+4} textAnchor="middle" fontSize={size*0.18} fontWeight="bold" fill="#374151"
-        style={{ transform:`rotate(90deg)`, transformOrigin:`${size/2}px ${size/2}px` }}>{label}</text>}
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#e8ecf0" strokeWidth={7}/>
+      {segments.map((seg,i) => { const pct=seg.value/total, dash=pct*circ, gap=circ-dash;
+        const el=<circle key={i} cx={size/2} cy={size/2} r={r} fill="none" stroke={seg.color} strokeWidth={7} strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-off*circ} strokeLinecap="butt"/>;
+        off+=pct; return el; })}
     </svg>
   );
 }
@@ -217,7 +147,7 @@ function StatCard({ icon, label, value, sub, color, sparkline, donut, loading }:
 }) {
   return (
     <div className="rounded-2xl p-4 flex flex-col gap-1 relative overflow-hidden"
-      style={{ background:'#ffffff', border:'1px solid rgba(0,0,0,0.07)', boxShadow:'0 2px 12px rgba(0,0,0,0.06)' }}>
+      style={{ background:'#ffffff', backdropFilter:'blur(14px)', WebkitBackdropFilter:'blur(14px)', border:'1px solid rgba(0,0,0,0.07)', boxShadow:'0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)' }}>
       <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.06]"
         style={{ background:color, transform:'translate(30%,-30%)' }}/>
       <div className="flex items-start justify-between gap-2">
@@ -231,7 +161,7 @@ function StatCard({ icon, label, value, sub, color, sparkline, donut, loading }:
           {sub && <div className="text-[11px] mt-0.5 truncate" style={{ color:'rgba(0,0,0,0.35)' }}>{sub}</div>}
         </div>
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
-          {donut && <DonutChart segments={donut.segments}/>}
+          {donut && <MiniDonut segments={donut.segments}/>}
           {sparkline && sparkline.length > 1 && <Sparkline values={sparkline} color={color}/>}
         </div>
       </div>
@@ -251,15 +181,6 @@ function SectionHeader({ icon, title, sub, right }: { icon:string; title:string;
         </div>
       </div>
       {right}
-    </div>
-  );
-}
-
-function SectionPill({ icon, children }: { icon: string; children: ReactNode }) {
-  return (
-    <div className="flex items-center gap-2 mb-3">
-      <span className="text-base">{icon}</span>
-      <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">{children}</h3>
     </div>
   );
 }
@@ -306,6 +227,7 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
   );
 }
 
+// ── Scope badge ──
 function ScopeBadge({ scope }: { scope: Scope }) {
   const cfg = {
     admin:     { label: 'Semua Data',         color: '#be123c', icon: '👑' },
@@ -314,136 +236,11 @@ function ScopeBadge({ scope }: { scope: Scope }) {
     none:      { label: '-',                  color: '#6b7280', icon: '—'  },
   }[scope.kind];
   return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold"
-      style={{ background:`${cfg.color}12`, color: cfg.color, border:`1px solid ${cfg.color}25` }}>
+    <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full"
+      style={{ background:`${cfg.color}18`, color:cfg.color, border:`1px solid ${cfg.color}30` }}>
       {cfg.icon} {cfg.label}
     </span>
   );
-}
-
-// ── KPI Team Card ──
-function TeamKPICard({ teamKPI, loading }: { teamKPI: TeamKPI; loading: boolean }) {
-  const totalScore = teamKPI.kpiScores.reduce((s, k) => s + k.nilai, 0);
-  const pct = Math.round(totalScore * 100);
-  const color = pct >= 90 ? '#10b981' : pct >= 75 ? '#f59e0b' : '#ef4444';
-  return (
-    <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{teamKPI.teamName}</div>
-          <div className="text-xl font-black text-slate-800">{loading ? '—' : `${pct}%`}</div>
-          <div className="text-[10px] text-slate-400">Total KPI Score</div>
-        </div>
-        <DonutChart size={64} strokeWidth={9}
-          segments={[{ value: pct, color }, { value: Math.max(100-pct,0), color:'#e2e8f0' }]}
-          label={`${pct}%`}/>
-      </div>
-      {!loading && (
-        <div className="space-y-1.5">
-          {teamKPI.kpiScores.map((k, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <span className="text-[10px] truncate flex-1 text-slate-500">{k.indikator.split('(')[0].trim()}</span>
-              <div className="w-20 h-2 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
-                <div className="h-full rounded-full" style={{ width:`${Math.round(k.pencapaian*100)}%`, background: k.pencapaian>=0.9?'#10b981':k.pencapaian>=0.75?'#f59e0b':'#ef4444' }}/>
-              </div>
-              <span className="text-[10px] font-bold w-10 text-right text-slate-600">{Math.round(k.pencapaian*100)}%</span>
-              <span className="text-[10px] w-8 text-right font-bold" style={{ color }}>{k.nilai.toFixed(2)}</span>
-            </div>
-          ))}
-          <div className="border-t border-slate-100 pt-1.5 mt-1.5 flex justify-between items-center">
-            <span className="text-[10px] font-bold text-slate-500">TOTAL NILAI KPI</span>
-            <span className="text-sm font-black" style={{ color }}>{totalScore.toFixed(2)}</span>
-          </div>
-        </div>
-      )}
-      <div className="mt-3 flex flex-wrap gap-1">
-        {teamKPI.members.slice(0,5).map(m => (
-          <span key={m} className="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">{m.split(' ')[0]}</span>
-        ))}
-        {teamKPI.members.length > 5 && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-400">+{teamKPI.members.length-5}</span>}
-      </div>
-    </div>
-  );
-}
-
-// ─── Excel Export ─────────────────────────────────────────────────────────────
-
-function exportKPIExcel(teamKPIs: { ivp: TeamKPI; mlds: TeamKPI }, year: number) {
-  const wb = XLSX.utils.book_new();
-  const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-
-  const buildSheet = (team: TeamKPI) => {
-    const rows: any[][] = [];
-    // Header
-    rows.push(['', '', 'INDOVISUAL GROUP', '', '', '', '', '', '', '', '', '', '', '', 'No']);
-    rows.push(['', '', '', '', '', '', '', '', '', '', '', '', '', '', 'Dokumen:']);
-    rows.push(['', '', 'FORMULIR MONITORING KEY PERFORMANCE INDICATOR', '', '', '', '', '', '', '', '', '', '', '', 'Developed by:']);
-    rows.push([]);
-    rows.push(['Nama', '', ': (Team ' + team.teamName + ')', '', '', '', '', '', 'Divisi', '', ': IVP']);
-    rows.push(['Periode Penilaian', '', `: ${year}`, '', '', '', '', '', 'Department', '', ': Indovisual']);
-    rows.push([]);
-    // Sub-header bulan
-    const h = ['Sasaran', '', '', 'Indikator Kinerja', 'Sumber Data', '', 'TARGET', ...months, 'Rata2/Total', 'BOBOT', 'Nilai Akhir'];
-    rows.push(h);
-    rows.push([]);
-
-    team.kpiScores.forEach((k) => {
-      const monthVals = months.map(() => Math.round(k.pencapaian * 100) + '%');
-      const avg = Math.round(k.pencapaian * 100) + '%';
-      rows.push(['', '', k.sasaran, k.indikator, 'Platform', '', '', ...monthVals, avg, k.bobot, k.nilai.toFixed(2)]);
-      rows.push([]);
-    });
-
-    rows.push([]);
-    rows.push(['', '', '', '', '', '', '', '', '', '', '', '', '', 'TOTAL KPI', '', team.kpiScores.reduce((s,k)=>s+k.nilai,0).toFixed(2)]);
-    rows.push([]);
-    // Summary
-    rows.push(['=== RINGKASAN DATA PLATFORM ===']);
-    rows.push(['Ticket Total', team.ticketTotal]);
-    rows.push(['Ticket Solved', team.ticketSolved]);
-    rows.push(['Ticket Open', team.ticketOpen]);
-    rows.push(['Avg Resolusi (hari)', team.ticketAvgResolution]);
-    rows.push(['Reminder Total', team.reminderTotal]);
-    rows.push(['Reminder Done', team.reminderDone]);
-    rows.push(['Reminder Overdue', team.reminderOverdue]);
-    rows.push(['Completion Rate Reminder', Math.round(team.reminderCompletionRate * 100) + '%']);
-    rows.push(['Jumlah Member', team.memberCount]);
-    rows.push(['Anggota Tim', team.members.join(', ')]);
-
-    return XLSX.utils.aoa_to_sheet(rows);
-  };
-
-  // Sheet per team
-  ['ivp', 'mlds'].forEach(key => {
-    const team = teamKPIs[key as 'ivp'|'mlds'];
-    const ws = buildSheet(team);
-    ws['!cols'] = Array(20).fill({ wch: 18 });
-    XLSX.utils.book_append_sheet(wb, ws, `KPI Team ${team.teamName} ${year}`);
-  });
-
-  // Sheet ringkasan gabungan
-  const summary: any[][] = [
-    [`RINGKASAN KPI TEAM PTS IVP & MLDS — TAHUN ${year}`],
-    [],
-    ['Team', 'Total Ticket', 'Solved', 'Open', 'Avg Resolusi', 'Reminder Total', 'Reminder Done', 'Overdue', 'Completion Rate', 'Total KPI Score', 'Status'],
-  ];
-  ['ivp','mlds'].forEach(key => {
-    const t = teamKPIs[key as 'ivp'|'mlds'];
-    const score = t.kpiScores.reduce((s,k)=>s+k.nilai,0);
-    const pct = Math.round(score*100);
-    summary.push([
-      t.teamName, t.ticketTotal, t.ticketSolved, t.ticketOpen,
-      t.ticketAvgResolution + ' hari', t.reminderTotal, t.reminderDone, t.reminderOverdue,
-      Math.round(t.reminderCompletionRate*100)+'%',
-      score.toFixed(2),
-      pct >= 90 ? 'BAIK' : pct >= 75 ? 'CUKUP' : 'PERLU PERHATIAN',
-    ]);
-  });
-  const wsSummary = XLSX.utils.aoa_to_sheet(summary);
-  wsSummary['!cols'] = Array(12).fill({ wch: 20 });
-  XLSX.utils.book_append_sheet(wb, wsSummary, `Summary ${year}`);
-
-  XLSX.writeFile(wb, `KPI_PTS_IVP_MLDS_${year}.xlsx`);
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -455,15 +252,19 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
   const [audit, setAudit]           = useState<AuditEntry[]>([]);
   const [loading, setLoading]       = useState(true);
   const [auditLoading, setAuditLoading] = useState(true);
-  const [tab, setTab]               = useState<'kpi'|'analytics'|'audit'>('kpi');
+  const [tab, setTab]               = useState<'kpi'|'kpi_team'|'analytics'|'audit'>('kpi');
   const [auditFilter, setAuditFilter] = useState<'all'|'ticket'|'reminder'|'piket'|'user'>('all');
   const [auditSearch, setAuditSearch] = useState('');
   const [lastRefresh, setLastRefresh] = useState(new Date());
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [kpiTeam, setKpiTeam] = useState<KPITeamState>({
+    members: [],
+    loading: false,
+    editingMember: null,
+    editValues: {},
+    filterYear: new Date().getFullYear(),
+    filterTeam: 'all',
+  });
   const intervalRef = useRef<ReturnType<typeof setInterval>|null>(null);
-
-  const currentYear = new Date().getFullYear();
-  const availableYears = Array.from({ length: 4 }, (_, i) => currentYear - i);
 
   // ── 1. Resolve scope ──────────────────────────────────────────────────────
 
@@ -478,6 +279,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         setScope({ kind: 'admin' }); setScopeReady(true); return;
       }
 
+      // PTS supervisor
       if (role === 'team' && PTS_TYPES.includes(currentUser.team_type ?? '') && jabatan === 'Supervisor') {
         const { data } = await supabase.from('users').select('full_name')
           .eq('role','team').eq('team_type', currentUser.team_type ?? '');
@@ -489,17 +291,24 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         setScopeReady(true); return;
       }
 
+      // Sales supervisor (guest/sales dengan jabatan Supervisor+)
       if (['guest','sales'].includes(role) && jabTier >= 2) {
         const selfDiv = currentUser.sales_division ?? '';
+
+        // Divisi yang di-supervisi via mapping
         const { data: divMaps } = await supabase.from('division_supervisor_mappings')
           .select('sales_division').eq('supervisor_id', currentUser.id);
         const divisions: string[] = [...new Set([
           selfDiv,
           ...(divMaps ?? []).map((m:any) => m.sales_division as string),
         ].filter(Boolean))];
+
+        // Direct user mappings (CC)
         const { data: userMaps } = await supabase.from('user_supervisor_mappings')
           .select('user_id').eq('supervisor_id', currentUser.id);
         const directIds = (userMaps ?? []).map((m:any) => m.user_id as string);
+
+        // Semua user di divisi dengan tier lebih rendah
         const { data: divUsers } = await supabase.from('users')
           .select('id, full_name, jabatan, sales_division')
           .in('sales_division', divisions.length ? divisions : ['__none__'])
@@ -508,16 +317,20 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           const t = JABATAN_CONFIG[u.jabatan as JabatanType]?.tier ?? 0;
           return t <= jabTier && u.id !== currentUser.id;
         });
+
+        // Nama + ID dari direct mapping
         const directNamesRes = directIds.length
           ? await supabase.from('users').select('id, full_name').in('id', directIds)
           : { data: [] };
         const directUsers = directNamesRes.data ?? [];
+
         const salesSubIds   = [...new Set([...subFromDiv.map((u:any)=>u.id as string), ...directIds])];
         const salesSubNames = [...new Set([
           currentUser.full_name,
           ...subFromDiv.map((u:any) => u.full_name as string),
           ...directUsers.map((u:any) => u.full_name as string),
         ])];
+
         setScope({ kind:'sales_sup', salesDivisions:divisions, salesSubNames, salesSubIds });
         setScopeReady(true); return;
       }
@@ -526,7 +339,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     })();
   }, [currentUser]);
 
-  // ── 2. Fetch KPI (scope-aware, year-filtered) ─────────────────────────────
+  // ── 2. Fetch KPI (scope-aware) ────────────────────────────────────────────
 
   const fetchKPI = useCallback(async () => {
     if (!scopeReady || scope.kind === 'none') { setLoading(false); return; }
@@ -535,15 +348,14 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const today     = todayStr();
       const inOneWeek = new Date(); inOneWeek.setDate(inOneWeek.getDate()+7);
       const oneWeekStr = inOneWeek.toISOString().split('T')[0];
-      const yStart = yearStart(selectedYear);
-      const yEnd   = yearEnd(selectedYear);
 
+      // ── Helpers to build scoped queries ──
       const scopeTickets = (q: any) => {
-        // filter tahun
-        q = q.gte('created_at', yStart).lte('created_at', yEnd + 'T23:59:59');
-        if (scope.kind === 'pts_sup' && scope.ptsMemberNames?.length)
+        if (scope.kind === 'pts_sup' && scope.ptsMemberNames?.length) {
           return q.in('assign_name', scope.ptsMemberNames);
+        }
         if (scope.kind === 'sales_sup') {
+          // filter by division OR sub user names (sales_name)
           const divFilter = (scope.salesDivisions ?? []).map(d=>`sales_division.eq.${d}`).join(',');
           const nameFilter = (scope.salesSubNames ?? []).map(n=>`sales_name.eq.${n}`).join(',');
           const combined = [divFilter, nameFilter].filter(Boolean).join(',');
@@ -552,9 +364,9 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         return q;
       };
       const scopeReminders = (q: any) => {
-        q = q.gte('created_at', yStart).lte('created_at', yEnd + 'T23:59:59');
-        if (scope.kind === 'pts_sup' && scope.ptsMemberNames?.length)
+        if (scope.kind === 'pts_sup' && scope.ptsMemberNames?.length) {
           return q.in('assign_name', scope.ptsMemberNames);
+        }
         if (scope.kind === 'sales_sup') {
           const divFilter = (scope.salesDivisions ?? []).map(d=>`sales_division.eq.${d}`).join(',');
           const nameFilter = (scope.salesSubNames ?? []).map(n=>`sales_name.eq.${n}`).join(',');
@@ -564,11 +376,12 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         return q;
       };
 
+      // ── Parallel fetches ──
       const [ticketsRes, actLogsRes, remindersRes, piketTodayRes, piketWeekRes, kegiatanRes, movRes, usersRes, lcSessionsRes] =
         await Promise.all([
           scopeTickets(supabase.from('tickets').select('id,status,assign_name,sales_division,date,created_at')),
           supabase.from('activity_logs').select('id,ticket_id,new_status,created_at,handler_name').order('created_at',{ascending:false}).limit(500),
-          scopeReminders(supabase.from('reminders').select('id,status,category,due_date,created_at')),
+          scopeReminders(supabase.from('reminders').select('id,status,category,due_date')),
           supabase.from('piket_schedules').select('day_of_week,pic_ivp_name,pic_ump_name,pic_mlds_name,day_date').eq('day_of_week', dayOfWeek()),
           supabase.from('piket_schedules').select('id,day_date,pic_ivp_name,pic_ump_name,pic_mlds_name').gte('day_date', getMonday()),
           supabase.from('piket_tamu_detail').select('id,created_at').gte('created_at', today),
@@ -577,7 +390,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
             ? supabase.from('users').select('id,role,team_type')
             : Promise.resolve({ data: [] }),
           scope.kind === 'admin'
-            ? supabase.from('lc_quiz_sessions').select('id,status,created_by,final_score')
+            ? supabase.from('lc_quiz_attempts').select('id,user_id,score,passed,is_submitted').eq('is_submitted', true)
             : Promise.resolve({ data: [] }),
         ]);
 
@@ -588,19 +401,26 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const piketToday = ((piketTodayRes.data ?? [])[0]) ?? null;
       const piketWeek  = (piketWeekRes.data  ?? []) as any[];
       const kegiatan   = (kegiatanRes.data   ?? []) as any[];
-      const users      = (usersRes.data      ?? []) as any[];;
-      const lcSessions = (lcSessionsRes.data ?? []) as any[];
+      const users      = (usersRes.data      ?? []) as any[];
+      const lcAttempts = (lcSessionsRes.data ?? []) as any[];
 
+      // PTS scope: filter piket & movements to own team
       if (scope.kind === 'pts_sup') {
+        const tt = scope.ptsTeamType ?? '';
         movements = movements.filter((m:any) => scope.ptsMemberNames?.includes(m.nama_pts));
+        // piket: show all, but today card highlights their team column
       }
-      if (scope.kind === 'sales_sup') movements = [];
+      if (scope.kind === 'sales_sup') {
+        // movements not relevant for sales scope
+        movements = [];
+      }
 
-      // ── KPI calculations ──
+      // ── KPI calculations (identical to before, just on scoped data) ──
       const open           = tickets.filter((t:any)=>!['Solved','Cancelled'].includes(t.status)).length;
       const solved         = tickets.filter((t:any)=>t.status==='Solved').length;
       const waitingApproval= tickets.filter((t:any)=>t.status==='Waiting Approval').length;
 
+      // Resolved today: cross-reference actLogs that belong to scoped tickets
       const scopedTicketIds = new Set(tickets.map((t:any)=>t.id as string));
       const resolvedToday = actLogs.filter((a:any)=>
         a.new_status==='Solved' && a.created_at?.startsWith(today) && scopedTicketIds.has(a.ticket_id)
@@ -631,91 +451,38 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const byCategory = Object.entries(catMap).map(([cat,count])=>({ cat,count,color:CATEGORY_COLORS[cat]??'#94a3b8' })).sort((a,b)=>b.count-a.count);
       const dueSoon     = reminders.filter((r:any)=>r.status==='pending'&&r.due_date>=today&&r.due_date<=oneWeekStr).length;
       const overdueCount= reminders.filter((r:any)=>r.status==='pending'&&r.due_date<today).length;
-      const remDone     = reminders.filter((r:any)=>r.status==='done').length;
-      const completionRate = reminders.length > 0 ? remDone / reminders.length : 1;
 
       const weekFilled = piketWeek.filter((p:any)=>p.pic_ivp_name||p.pic_ump_name||p.pic_mlds_name).length;
 
       const roleMap: Record<string,number> = {};
       users.forEach((u:any)=>{ roleMap[u.role]=(roleMap[u.role]||0)+1; });
 
-      const lcCompleted = lcSessions.filter((s:any) => s.status === 'completed').length;
-      const lcParticipants = new Set(lcSessions.map((s:any) => s.created_by as string).filter(Boolean)).size;
-      const lcScores = lcSessions.filter((s:any) => s.final_score != null).map((s:any) => s.final_score as number);
+      // Learning: dari lc_quiz_attempts (submitted)
+      const lcSubmitted = lcAttempts.length;
+      const lcPassed = lcAttempts.filter((a:any) => a.passed === true).length;
+      const lcParticipants = new Set(lcAttempts.map((a:any) => a.user_id as string).filter(Boolean)).size;
+      const lcScores = lcAttempts.filter((a:any) => a.score != null).map((a:any) => a.score as number);
       const lcAvgScore = lcScores.length ? Math.round(lcScores.reduce((a:number,b:number)=>a+b,0)/lcScores.length) : 0;
-
-      // ── Per-team KPI (admin only) ──
-      let teamKPI: KPIData['teamKPI'] | undefined;
-      if (scope.kind === 'admin') {
-        const [ivpUsersRes, mldsUsersRes] = await Promise.all([
-          supabase.from('users').select('full_name').eq('role','team').eq('team_type','Team PTS'),
-          supabase.from('users').select('full_name').eq('role','team').eq('team_type','Team PTS MLDS'),
-        ]);
-        const ivpMembers  = (ivpUsersRes.data ?? []).map((u:any)=>u.full_name as string);
-        const mldsMembers = (mldsUsersRes.data ?? []).map((u:any)=>u.full_name as string);
-
-        const ivpTickets  = tickets.filter((t:any) => ivpMembers.includes(t.assign_name));
-        const mldsTickets = tickets.filter((t:any) => mldsMembers.includes(t.assign_name));
-        const ivpReminders  = reminders.filter((r:any) => ivpMembers.includes(r.assign_name));
-        const mldsReminders = reminders.filter((r:any) => mldsMembers.includes(r.assign_name));
-        const ivpLC  = lcSessions.filter((s:any) => ivpMembers.includes(s.created_by));
-        const mldsLC = lcSessions.filter((s:any) => mldsMembers.includes(s.created_by));
-
-        const buildTeamKPI = (name: string, tix: any[], rem: any[], lc: any[], members: string[]): TeamKPI => {
-          const tSolved = tix.filter((t:any)=>t.status==='Solved');
-          const avgRes  = tSolved.length ? Math.round(tSolved.reduce((acc:number,t:any)=>{
-            const d=(new Date(t.date||today).getTime()-new Date(t.created_at).getTime())/86400000;
-            return acc+Math.max(0,d);
-          },0)/tSolved.length) : 0;
-          const rDone    = rem.filter((r:any)=>r.status==='done').length;
-          const rOverdue = rem.filter((r:any)=>r.status==='pending'&&r.due_date<today).length;
-          const kpiScores = calcTeamKPI(tix, rem, lc, weekFilled, 6, actLogs, today);
-          return {
-            teamName: name,
-            ticketTotal: tix.length,
-            ticketSolved: tSolved.length,
-            ticketOpen: tix.filter((t:any)=>!['Solved','Cancelled'].includes(t.status)).length,
-            ticketAvgResolution: avgRes,
-            reminderTotal: rem.length,
-            reminderDone: rDone,
-            reminderPending: rem.filter((r:any)=>r.status==='pending').length,
-            reminderOverdue: rOverdue,
-            reminderCompletionRate: rem.length > 0 ? rDone/rem.length : 1,
-            memberCount: members.length,
-            members,
-            kpiScores,
-            totalKPI: kpiScores.reduce((s,k)=>s+k.nilai,0),
-          };
-        };
-
-        teamKPI = {
-          ivp:  buildTeamKPI('PTS IVP',  ivpTickets,  ivpReminders,  ivpLC,  ivpMembers),
-          mlds: buildTeamKPI('PTS MLDS', mldsTickets, mldsReminders, mldsLC, mldsMembers),
-        };
-      }
 
       setKpi({
         tickets:{ total:tickets.length,open,solved,waitingApproval,byHandler,byStatus,byDivision,resolvedToday,avgResolutionDays },
-        reminders:{ total:reminders.length,pending:reminders.filter((r:any)=>r.status==='pending').length,done:remDone,dueSoon,byCategory,overdueCount,completionRate },
+        reminders:{ total:reminders.length,pending:reminders.filter((r:any)=>r.status==='pending').length,done:reminders.filter((r:any)=>r.status==='done').length,dueSoon,byCategory,overdueCount },
         piket:{ todayIVP:piketToday?.pic_ivp_name??null,todayUMP:piketToday?.pic_ump_name??null,todayMlds:piketToday?.pic_mlds_name??null,weekFilled,weekTotal:6,kegiatanToday:kegiatan.length },
         units:{ totalLogs:movements.length,keluarThisMonth:movements.filter((m:any)=>m.status_barang==='Keluar').length,masukThisMonth:movements.filter((m:any)=>m.status_barang==='Masuk').length },
         users:{ total:users.length,byRole:Object.entries(roleMap).map(([role,count])=>({role,count})) },
-        learning:{ totalSessions:lcSessions.length, completedSessions:lcCompleted, totalParticipants:lcParticipants, avgScore:lcAvgScore },
-        teamKPI,
+        learning:{ totalSessions:lcSubmitted, completedSessions:lcPassed, totalParticipants:lcParticipants, avgScore:lcAvgScore },
       });
     } catch(e){ console.error('KPI fetch error:',e); }
     finally { setLoading(false); }
-  }, [scope, scopeReady, selectedYear]);
+  }, [scope, scopeReady]);
 
   // ── 3. Fetch Audit (scope-aware) ──────────────────────────────────────────
-  // BUG FIX: sebelumnya reminder diambil order by created_at, padahal yg diupdate
-  // tidak otomatis update updated_at dari DB. Sekarang order by updated_at dan
-  // juga ambil limit lebih besar agar update terbaru (29 Mei) muncul.
 
   const fetchAudit = useCallback(async () => {
     if (!scopeReady || scope.kind === 'none') { setAuditLoading(false); return; }
     setAuditLoading(true);
     try {
+      // Build ticket filter
       const ticketQ = (() => {
         let q = supabase.from('tickets').select('id,project_name,status,assign_name,created_by,created_at,date').order('created_at',{ascending:false}).limit(40);
         if (scope.kind==='pts_sup'&&scope.ptsMemberNames?.length) q=q.in('assign_name',scope.ptsMemberNames);
@@ -730,14 +497,8 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         if (scope.kind==='pts_sup'&&scope.ptsMemberNames?.length) q=q.in('handler_name',scope.ptsMemberNames);
         return q;
       })();
-
-      // FIX: order by updated_at DESC (bukan created_at) supaya entry yang di-update
-      // terbaru (mis. 29 Mei) muncul di atas, dan limit 100 supaya tidak terpotong.
       const reminderQ = (() => {
-        let q = supabase.from('reminders')
-          .select('id,project_name,category,status,assign_name,created_by,created_at,updated_at')
-          .order('updated_at',{ascending:false})
-          .limit(100);
+        let q = supabase.from('reminders').select('id,project_name,category,status,assign_name,created_by,created_at,updated_at').order('updated_at',{ascending:false}).limit(50);
         if (scope.kind==='pts_sup'&&scope.ptsMemberNames?.length) q=q.in('assign_name',scope.ptsMemberNames);
         if (scope.kind==='sales_sup') {
           const f=[...(scope.salesDivisions??[]).map(d=>`sales_division.eq.${d}`), ...(scope.salesSubNames??[]).map(n=>`sales_name.eq.${n}`)].join(',');
@@ -761,33 +522,14 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         const isCrit=['Solved','Overdue'].includes(a.new_status), isWarn=['Waiting Approval','Warranty','Out Of Warranty'].includes(a.new_status);
         entries.push({ id:`act-${a.id}`,module:'Ticketing',icon:isCrit?'✅':'🔄', actor:a.handler_name??'System', action:`Status → ${a.new_status}`, target:a.action_taken??'', detail:a.notes??'', ts:a.created_at, severity:isCrit?'critical':isWarn?'warn':'info' });
       });
-
-      // FIX: gunakan updated_at sebagai timestamp audit (bukan created_at) agar
-      // perubahan status/data yang di-update pada 29 Mei muncul dengan tanggal benar.
       (remindersRes.data??[]).forEach((r:any)=>{
-        // Tampilkan baik reminder baru maupun yang di-update
+        const isUpdated = r.updated_at && r.updated_at !== r.created_at;
         const ts = r.updated_at ?? r.created_at;
-        const isUpdate = r.updated_at && r.updated_at !== r.created_at;
-        const actionLabel = r.status==='done'
-          ? 'Reminder selesai (Done)'
-          : r.status==='cancelled'
-          ? 'Reminder dibatalkan'
-          : isUpdate
-          ? 'Reminder diperbarui'
-          : 'Reminder dibuat';
-        entries.push({
-          id:`rem-${r.id}`,
-          module:'Reminder',
-          icon: r.status==='done' ? '✅' : r.status==='cancelled' ? '❌' : isUpdate ? '✏️' : '🗓️',
-          actor: r.created_by??'Unknown',
-          action: actionLabel,
-          target: r.project_name??'-',
-          detail: `${r.category}${r.assign_name?` · ${r.assign_name}`:''}`,
-          ts,
-          severity: r.status==='done' ? 'info' : isUpdate ? 'warn' : 'info',
-        });
+        const action = r.status==='done' ? 'Reminder diselesaikan' : isUpdated ? 'Reminder diupdate' : 'Reminder dibuat';
+        const icon = r.status==='done' ? '✅' : isUpdated ? '🔄' : '🗓️';
+        const sev: 'info'|'warn' = r.status==='done' ? 'info' : 'warn';
+        entries.push({ id:`rem-${r.id}`,module:'Reminder',icon, actor:r.created_by??'Unknown', action, target:r.project_name??'-', detail:`${r.category??''}${r.assign_name?` · ${r.assign_name}`:''}`, ts, severity:sev });
       });
-
       (usersRes.data??[]).forEach((u:any)=>{
         entries.push({ id:`usr-${u.id}`,module:'User',icon:'👤', actor:'Admin', action:'User ditambahkan', target:u.full_name, detail:`Role: ${u.role}`, ts:u.created_at, severity:'info' });
       });
@@ -801,20 +543,139 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     finally { setAuditLoading(false); }
   }, [scope, scopeReady]);
 
+  // ── 4. Fetch KPI Team data ───────────────────────────────────────────────
+
+  const fetchKPITeam = useCallback(async () => {
+    if (!scopeReady || scope.kind === 'none') return;
+    setKpiTeam(prev => ({ ...prev, loading: true }));
+    try {
+      const year = kpiTeam.filterYear;
+      const yearStart = `${year}-01-01`;
+      const yearEnd = `${year}-12-31`;
+
+      // Get team members
+      let membersQ = supabase.from('users').select('id,full_name,jabatan,team_type,role');
+      if (scope.kind === 'pts_sup') {
+        membersQ = membersQ.eq('role', 'team').eq('team_type', scope.ptsTeamType ?? '');
+      } else if (scope.kind === 'admin') {
+        membersQ = membersQ.in('team_type', ['Team PTS', 'Team PTS UMP', 'Team PTS MLDS']).eq('role', 'team');
+      } else {
+        setKpiTeam(prev => ({ ...prev, loading: false }));
+        return;
+      }
+      const { data: membersData } = await membersQ;
+      if (!membersData?.length) {
+        setKpiTeam(prev => ({ ...prev, members: [], loading: false }));
+        return;
+      }
+
+      const memberNames = membersData.map((m: any) => m.full_name as string);
+      const memberIds = membersData.map((m: any) => m.id as string);
+
+      // Parallel fetch platform data per member
+      const [ticketsRes, remindersRes, lcAttemptsRes, piketRes, manualRes] = await Promise.all([
+        supabase.from('tickets')
+          .select('id,assign_name,status,date,created_at')
+          .in('assign_name', memberNames)
+          .gte('created_at', yearStart)
+          .lte('created_at', yearEnd + 'T23:59:59'),
+        supabase.from('reminders')
+          .select('id,assign_name,status,due_date,updated_at')
+          .in('assign_name', memberNames)
+          .gte('created_at', yearStart)
+          .lte('created_at', yearEnd + 'T23:59:59'),
+        supabase.from('lc_quiz_attempts')
+          .select('id,user_id,score,passed,is_submitted')
+          .in('user_id', memberIds)
+          .eq('is_submitted', true)
+          .gte('started_at', yearStart)
+          .lte('started_at', yearEnd + 'T23:59:59'),
+        supabase.from('piket_schedules')
+          .select('pic_ivp_name,pic_ump_name,pic_mlds_name,day_date')
+          .gte('day_date', yearStart)
+          .lte('day_date', yearEnd),
+        // Manual KPI values stored in kpi_manual_values table (jika ada)
+        supabase.from('kpi_manual_values')
+          .select('*')
+          .in('user_id', memberIds)
+          .eq('year', year),
+      ]);
+
+      const tickets = (ticketsRes.data ?? []) as any[];
+      const reminders = (remindersRes.data ?? []) as any[];
+      const lcAttempts = (lcAttemptsRes.data ?? []) as any[];
+      const piketSchedules = (piketRes.data ?? []) as any[];
+      const manualValues = (manualRes.data ?? []) as any[];
+      const todayStr2 = new Date().toISOString().split('T')[0];
+
+      // Build member KPI
+      const members: KPITeamMember[] = membersData.map((m: any) => {
+        const name = m.full_name as string;
+        const uid = m.id as string;
+
+        // Tickets
+        const myTickets = tickets.filter((t: any) => t.assign_name === name);
+        const tSolved = myTickets.filter((t: any) => t.status === 'Solved');
+        const tOverdue = myTickets.filter((t: any) => t.status !== 'Solved' && t.status !== 'Cancelled' && t.date && t.date < todayStr2);
+        const tDays = tSolved.reduce((acc: number, t: any) => {
+          const d = (new Date(t.date).getTime() - new Date(t.created_at).getTime()) / 86400000;
+          return acc + Math.max(0, d);
+        }, 0);
+        const avgRes = tSolved.length ? Math.round(tDays / tSolved.length) : 0;
+
+        // Reminders
+        const myRem = reminders.filter((r: any) => r.assign_name === name);
+        const remDone = myRem.filter((r: any) => r.status === 'done').length;
+        const remOver = myRem.filter((r: any) => r.status === 'pending' && r.due_date && r.due_date < todayStr2).length;
+
+        // LC
+        const myLC = lcAttempts.filter((a: any) => a.user_id === uid);
+        const lcScores = myLC.filter((a: any) => a.score != null).map((a: any) => a.score as number);
+        const lcAvg = lcScores.length ? Math.round(lcScores.reduce((a: number, b: number) => a + b, 0) / lcScores.length) : 0;
+
+        // Piket: count days where this member is assigned
+        const tt = m.team_type as string;
+        const picCol = tt === 'Team PTS' ? 'pic_ivp_name' : tt === 'Team PTS UMP' ? 'pic_ump_name' : 'pic_mlds_name';
+        const piketFilled = piketSchedules.filter((p: any) => p[picCol] === name).length;
+
+        // Manual KPI values (from DB or defaults)
+        const saved = manualValues.find((v: any) => v.user_id === uid);
+        const manual = {
+          komplainCount: saved?.komplain_count ?? 0,
+          responTime: saved?.respon_time ?? 12,
+          technicalNote: saved?.technical_note ?? 0,
+          bastDemo: saved?.bast_demo ?? 0,
+          bastDemoTotal: saved?.bast_demo_total ?? 0,
+          reportBulanan: saved?.report_bulanan ?? 0,
+          learningMastery: saved?.learning_mastery ?? 0,
+        };
+
+        return {
+          id: uid, name, team_type: m.team_type ?? '', jabatan: m.jabatan ?? '',
+          ticketsHandled: myTickets.length, ticketsSolved: tSolved.length, ticketsOverdue: tOverdue.length, avgResolutionDays: avgRes,
+          remindersAssigned: myRem.length, remindersDone: remDone, remindersOverdue: remOver,
+          lcAttempts: myLC.length, lcAvgScore: lcAvg, lcPassed: myLC.filter((a: any) => a.passed === true).length,
+          piketFilled,
+          manual,
+        };
+      });
+
+      setKpiTeam(prev => ({ ...prev, members, loading: false }));
+    } catch (e) { console.error('KPI Team fetch error:', e); setKpiTeam(prev => ({ ...prev, loading: false })); }
+  }, [scope, scopeReady, kpiTeam.filterYear]);
+
   // ── Effects ───────────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!scopeReady) return;
     fetchKPI(); fetchAudit();
     intervalRef.current = setInterval(() => { fetchKPI(); fetchAudit(); setLastRefresh(new Date()); }, 3*60*1000);
-    return () => { if(intervalRef.current) clearInterval(intervalRef.current); };
   }, [scopeReady, fetchKPI, fetchAudit]);
 
-  // Refetch KPI ketika tahun berubah
   useEffect(() => {
-    if (!scopeReady) return;
-    fetchKPI();
-  }, [selectedYear, scopeReady, fetchKPI]);
+    if (tab === 'kpi_team' && scopeReady) fetchKPITeam();
+    return () => { if(intervalRef.current) clearInterval(intervalRef.current); };
+  }, [tab, scopeReady, fetchKPITeam]);
 
   // ── Filtered Audit ────────────────────────────────────────────────────────
 
@@ -825,88 +686,125 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       ||(auditFilter==='piket'&&a.module==='Piket')
       ||(auditFilter==='user'&&a.module==='User');
     const q=auditSearch.toLowerCase();
-    const matchSearch = !q||a.actor.toLowerCase().includes(q)||a.action.toLowerCase().includes(q)||a.target.toLowerCase().includes(q)||a.module.toLowerCase().includes(q);
-    return matchFilter && matchSearch;
+    return matchFilter && (!q||[a.actor,a.target,a.action,a.detail].some(x=>x.toLowerCase().includes(q)));
   });
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Early return if no access ─────────────────────────────────────────────
+  if (!scopeReady) return (
+    <div className="flex items-center justify-center py-16">
+      <div className="w-8 h-8 border-3 border-white/30 border-t-white rounded-full animate-spin"/>
+    </div>
+  );
+  if (scope.kind === 'none') return null;
 
+  // ── Piket card highlight per team ─────────────────────────────────────────
   const isPTSIVP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS';
   const isPTSUMP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS UMP';
   const isPTSMLDS = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS MLDS';
 
-  const TABS = [
+  const TAB_CONFIG = [
     {key:'kpi',icon:'📊',label:'KPI Live'},
+    {key:'kpi_team',icon:'👥',label:'KPI Team'},
     {key:'analytics',icon:'📈',label:'Analytics'},
     {key:'audit',icon:'🔍',label:'Audit Trail'},
   ] as const;
 
-  const title = scope.kind==='admin'
-    ? 'Dashboard Monitoring — Semua Team'
+  const scopeTitle = scope.kind==='admin' ? 'Dashboard'
     : scope.kind==='pts_sup' ? `Summary ${scope.ptsTeamType}`
-    : scope.kind==='sales_sup' ? `Summary Divisi Anda`
-    : 'Dashboard KPI';
+    : 'Summary Divisi Anda';
 
+  // ─── LC-style design helpers ────────────────────────────────────────────────
+  function SectionPill({ icon, children }: { icon: string; children: React.ReactNode }) {
+    return (
+      <h3 className="text-[10px] font-bold uppercase tracking-widest mb-4 inline-flex items-center gap-1.5 bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm border border-slate-200">
+        <span>{icon}</span>{children}
+      </h3>
+    );
+  }
+
+  // ── Full DonutChart (same as LC) ──
+  function DonutChart({ segments, size = 68, strokeWidth = 10, label = '' }: {
+    segments: { value: number; color: string }[]; size?: number; strokeWidth?: number; label?: string;
+  }) {
+    const r = (size - strokeWidth) / 2;
+    const circ = 2 * Math.PI * r;
+    const total = segments.reduce((s, seg) => s + seg.value, 0);
+    if (total === 0) return (
+      <div style={{ width: size, height: size }} className="flex items-center justify-center flex-shrink-0">
+        <span className="text-[10px] text-slate-300 font-bold">—</span>
+      </div>
+    );
+    let cumBefore = 0;
+    return (
+      <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} />
+          {segments.map((seg, i) => {
+            const dash = (seg.value / total) * circ;
+            const offset = -(cumBefore / total) * circ;
+            cumBefore += seg.value;
+            return (
+              <circle key={i} cx={size/2} cy={size/2} r={r} fill="none" stroke={seg.color}
+                strokeWidth={strokeWidth} strokeDasharray={`${dash} ${circ - dash}`} strokeDashoffset={offset} />
+            );
+          })}
+        </svg>
+        {label && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-[11px] font-black text-slate-700">{label}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen" style={{ background:'linear-gradient(135deg,#fdf2f8 0%,#fce7f3 40%,#ede9fe 100%)' }}>
-      <div className="max-w-5xl mx-auto px-4 py-6 space-y-4">
+    <div className="w-full" style={{ animation:'fadeInUp 0.35s ease forwards' }}>
 
-        {/* Header */}
-        <div className="bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-white/60 p-5">
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div>
-              <h1 className="text-xl font-black text-slate-800 leading-tight">{title}</h1>
-              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                <ScopeBadge scope={scope}/>
-                <span className="text-[11px] text-slate-400">
-                  Refresh: {lastRefresh.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}
-                </span>
-              </div>
+      {/* ══ LC-style wrapper: white/90 backdrop on background image ══ */}
+      <div className="rounded-3xl overflow-hidden"
+        style={{ background:'rgba(255,255,255,0.93)', backdropFilter:'blur(18px)', WebkitBackdropFilter:'blur(18px)', border:'1px solid rgba(255,255,255,0.6)', boxShadow:'0 4px 32px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06)' }}>
+
+        {/* ── Top bar (LC style: white/97 + red bottom border) ── */}
+        <div className="flex items-center justify-between gap-4 px-6 py-4"
+          style={{ background:'rgba(255,255,255,0.97)', backdropFilter:'blur(16px)', borderBottom:'3px solid #dc2626' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* ── Filter Tahun ── */}
-              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
-                <span className="text-sm">📅</span>
-                <select
-                  value={selectedYear}
-                  onChange={e => setSelectedYear(Number(e.target.value))}
-                  className="text-xs font-bold text-slate-700 bg-transparent outline-none cursor-pointer"
-                >
-                  {availableYears.map(y => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-slate-800 leading-tight">{scopeTitle}</span>
+                <ScopeBadge scope={scope}/>
               </div>
-
-              {/* ── Download KPI Excel (admin only) ── */}
-              {scope.kind==='admin' && kpi?.teamKPI && (
-                <button
-                  onClick={() => exportKPIExcel(kpi.teamKPI!, selectedYear)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-all"
-                >
-                  <span>⬇️</span> Download KPI Excel {selectedYear}
-                </button>
-              )}
-
-              <button onClick={()=>{ setLoading(true); setAuditLoading(true); fetchKPI(); fetchAudit(); setLastRefresh(new Date()); }}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-all">
-                <span>🔄</span> Refresh
-              </button>
+              <span className="text-[10px] text-slate-400 font-medium">SYNC {lastRefresh.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</span>
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-1 mt-4 bg-slate-100/70 rounded-xl p-1">
-            {TABS.map(t => (
-              <button key={t.key} onClick={()=>setTab(t.key)}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${tab===t.key?'bg-white shadow text-slate-800':'text-slate-500 hover:text-slate-700'}`}>
-                <span>{t.icon}</span>{t.label}
-              </button>
-            ))}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button onClick={()=>{ setLoading(true); setAuditLoading(true); fetchKPI(); fetchAudit(); setLastRefresh(new Date()); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-50 border border-slate-200 transition-all">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              Sync
+            </button>
+            {/* Tab pills */}
+            <nav className="flex items-center gap-1">
+              {TAB_CONFIG.map(t=>(
+                <button key={t.key} onClick={()=>setTab(t.key)}
+                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-lg border-b-2 transition-all
+                    ${tab===t.key ? 'text-blue-700 border-blue-600 bg-blue-50/60 font-semibold' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'}`}>
+                  <span className="text-sm">{t.icon}</span>{t.label}
+                </button>
+              ))}
+            </nav>
           </div>
         </div>
 
-        <div className="space-y-6">
+        {/* ── Content area ── */}
+        <div className="p-6 space-y-8">
 
           {/* ══════════ TAB KPI ══════════ */}
           {tab==='kpi' && (
@@ -954,56 +852,12 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 )}
               </div>
 
-              {/* ── KPI Per Team (admin only) ── */}
-              {scope.kind==='admin' && (
-                <div>
-                  <SectionPill icon="🏆">KPI Per Team — {selectedYear}</SectionPill>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {kpi?.teamKPI ? (
-                      <>
-                        <TeamKPICard teamKPI={kpi.teamKPI.ivp}  loading={loading}/>
-                        <TeamKPICard teamKPI={kpi.teamKPI.mlds} loading={loading}/>
-                      </>
-                    ) : (
-                      <>
-                        <div className="h-48 rounded-2xl animate-pulse bg-slate-100"/>
-                        <div className="h-48 rounded-2xl animate-pulse bg-slate-100"/>
-                      </>
-                    )}
-                  </div>
-                  {/* Comparison bar */}
-                  {!loading && kpi?.teamKPI && (
-                    <div className="mt-4 bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Perbandingan Skor KPI</div>
-                      {['PTS IVP','PTS MLDS'].map((name, i) => {
-                        const t = i===0 ? kpi.teamKPI!.ivp : kpi.teamKPI!.mlds;
-                        const score = t.kpiScores.reduce((s,k)=>s+k.nilai,0);
-                        const pct = Math.round(score*100);
-                        const color = pct>=90?'#10b981':pct>=75?'#f59e0b':'#ef4444';
-                        return (
-                          <div key={name} className="flex items-center gap-3 mb-2">
-                            <span className="text-[11px] font-bold text-slate-600 w-20 flex-shrink-0">{name}</span>
-                            <div className="flex-1 h-5 rounded-full overflow-hidden bg-slate-100">
-                              <div className="h-full rounded-full transition-all duration-700 flex items-center justify-end pr-2"
-                                style={{ width:`${pct}%`, background:color }}>
-                                <span className="text-[10px] font-black text-white">{pct}%</span>
-                              </div>
-                            </div>
-                            <span className="text-[11px] font-black w-14 text-right" style={{ color }}>{score.toFixed(2)}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-
               {/* ── Ticket Troubleshooting ── */}
               <div>
-                <SectionPill icon="🎫">Ticket Troubleshooting — {scope.kind==='pts_sup'?scope.ptsTeamType:scope.kind==='sales_sup'?'Divisi Anda':'Semua'} ({selectedYear})</SectionPill>
+                <SectionPill icon="🎫">Ticket Troubleshooting — {scope.kind==='pts_sup'?scope.ptsTeamType:scope.kind==='sales_sup'?'Divisi Anda':'Semua'}</SectionPill>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-4">
                   {[
-                    {icon:'🎫', label:'Total Ticket',      value:kpi?.tickets.total??0,            sub:'Periode ini',         color:'#64748b', grad:'from-slate-500/90 to-slate-600/90'},
+                    {icon:'🎫', label:'Total Ticket',      value:kpi?.tickets.total??0,            sub:'Sepanjang waktu',     color:'#64748b', grad:'from-slate-500/90 to-slate-600/90'},
                     {icon:'🔥', label:'Open / Aktif',      value:kpi?.tickets.open??0,             sub:'Belum selesai',       color:'#ef4444', grad:'from-red-500/90 to-rose-600/90'},
                     {icon:'⏳', label:'Waiting Approval',  value:kpi?.tickets.waitingApproval??0,  sub:'Perlu tindakan',      color:'#f59e0b', grad:'from-amber-400/90 to-orange-500/90'},
                     {icon:'✅', label:'Solved Total',       value:kpi?.tickets.solved??0,           sub:`Avg ${kpi?.tickets.avgResolutionDays??0} hari`,color:'#10b981',grad:'from-emerald-500/90 to-green-600/90'},
@@ -1018,6 +872,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     </div>
                   ))}
                 </div>
+                {/* Mini analytics row below ticket cards */}
                 {!loading&&kpi&&kpi.tickets.byStatus.length>0&&(
                   <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4">
                     <div className="flex items-center gap-5 flex-wrap">
@@ -1047,10 +902,10 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
               {/* ── Reminder Schedule ── */}
               <div>
-                <SectionPill icon="📅">Reminder Schedule ({selectedYear})</SectionPill>
+                <SectionPill icon="📅">Reminder Schedule</SectionPill>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-4">
                   {[
-                    {icon:'📅', label:'Total Reminder',   value:kpi?.reminders.total??0,         sub:'Periode ini',      color:'#6366f1', grad:'from-indigo-500/90 to-violet-600/90'},
+                    {icon:'📅', label:'Total Reminder',   value:kpi?.reminders.total??0,         sub:'Semua status',     color:'#6366f1', grad:'from-indigo-500/90 to-violet-600/90'},
                     {icon:'🟡', label:'Pending',           value:kpi?.reminders.pending??0,       sub:'Belum selesai',    color:'#f59e0b', grad:'from-amber-400/90 to-yellow-500/90'},
                     {icon:'🔴', label:'Overdue',           value:kpi?.reminders.overdueCount??0,  sub:'Terlewat deadline', color:'#ef4444', grad:'from-red-500/90 to-rose-600/90'},
                     {icon:'🔔', label:'Due 7 Hari',        value:kpi?.reminders.dueSoon??0,       sub:'Perlu perhatian',  color:'#0891b2', grad:'from-sky-500/90 to-cyan-600/90'},
@@ -1065,33 +920,24 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     </div>
                   ))}
                 </div>
-                {!loading&&kpi&&(
+                {/* Category breakdown */}
+                {!loading&&kpi&&kpi.reminders.byCategory.length>0&&(
                   <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4">
                     <div className="flex items-start gap-5">
                       <div className="flex flex-col items-center gap-1 flex-shrink-0">
                         <DonutChart
-                          segments={[
-                            {value:kpi.reminders.done, color:'#10b981'},
-                            {value:kpi.reminders.overdueCount, color:'#ef4444'},
-                            {value:Math.max(kpi.reminders.pending-kpi.reminders.overdueCount,0), color:'#f59e0b'},
-                          ]}
-                          size={64} strokeWidth={9} label={`${Math.round(kpi.reminders.completionRate*100)}%`}/>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Completion</span>
+                          segments={kpi.reminders.byCategory.map(c=>({value:c.count,color:c.color}))}
+                          size={64} strokeWidth={9} label={`${kpi.reminders.total}`}/>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Kategori</span>
                       </div>
-                      <div className="flex-1">
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 mb-2">
-                          {kpi.reminders.byCategory.map(c=>(
-                            <div key={c.cat} className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background:c.color }}/>
-                              <span className="text-[10px] text-slate-500 flex-1 truncate">{c.cat}</span>
-                              <span className="text-[10px] font-bold text-slate-700">{c.count}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="text-[10px] text-slate-400">
-                          Completion rate: <span className="font-bold text-emerald-600">{Math.round(kpi.reminders.completionRate*100)}%</span>
-                          {kpi.reminders.overdueCount > 0 && <span className="ml-2 text-red-500 font-bold">⚠️ {kpi.reminders.overdueCount} overdue</span>}
-                        </div>
+                      <div className="flex-1 grid grid-cols-2 gap-x-6 gap-y-1.5">
+                        {kpi.reminders.byCategory.map(c=>(
+                          <div key={c.cat} className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background:c.color }}/>
+                            <span className="text-[10px] text-slate-500 flex-1 truncate">{c.cat}</span>
+                            <span className="text-[10px] font-bold text-slate-700">{c.count}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -1117,6 +963,17 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                         </div>
                       ))}
                     </div>
+                    {!loading&&kpi&&(
+                      <div className="mt-3 bg-white/90 rounded-xl border border-slate-200 shadow-sm p-3 flex items-center gap-3">
+                        <DonutChart size={40} strokeWidth={6}
+                          segments={[{value:kpi.units.keluarThisMonth,color:'#f59e0b'},{value:kpi.units.masukThisMonth,color:'#10b981'}]}
+                          label=""/>
+                        <div className="flex gap-4 text-[11px]">
+                          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block"/>Keluar <b className="text-slate-700">{kpi.units.keluarThisMonth}</b></span>
+                          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"/>Masuk <b className="text-slate-700">{kpi.units.masukThisMonth}</b></span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <SectionPill icon="👥">Pengguna Platform</SectionPill>
@@ -1137,7 +994,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                               <div className="flex flex-wrap gap-1.5">
                                 {(kpi?.users.byRole??[]).map((r,i)=>(
                                   <span key={r.role} className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                                    style={{ background:['#6366f115','#10b98115','#f59e0b15','#ef444415','#0891b215'][i%5], color:['#6366f1','#10b981','#d97706','#ef4444','#0891b2'][i%5] }}>
+                                    style={{ background:['#6366f115','#10b98115','#f59e0b15','#ef444415','#0891b215'][i%5], color:['#6366f1','#10b981','#d97706','#ef4444','#0891b2'][i%5], border:`1px solid ${['#6366f130','#10b98130','#f59e0b30','#ef444430','#0891b230'][i%5]}` }}>
                                     {r.role.toUpperCase()} {r.count}
                                   </span>
                                 ))}
@@ -1175,12 +1032,12 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               {scope.kind==='admin'&&(
                 <div>
                   <SectionPill icon="🎓">Learning Center</SectionPill>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
                     {[
-                      {icon:'🎯',label:'Total Sesi Quiz',  value:kpi?.learning.totalSessions??0,    sub:'Semua sesi',         grad:'from-indigo-500/90 to-violet-600/90'},
-                      {icon:'✅',label:'Sesi Selesai',      value:kpi?.learning.completedSessions??0, sub:'Status completed',   grad:'from-emerald-500/90 to-green-600/90'},
+                      {icon:'🎯',label:'Total Attempts',   value:kpi?.learning.totalSessions??0,    sub:'Quiz submitted',     grad:'from-indigo-500/90 to-violet-600/90'},
+                      {icon:'✅',label:'Lulus (Passed)',    value:kpi?.learning.completedSessions??0, sub:'Score ≥ passing grade', grad:'from-emerald-500/90 to-green-600/90'},
                       {icon:'👥',label:'Peserta Unik',      value:kpi?.learning.totalParticipants??0, sub:'User berbeda',       grad:'from-sky-500/90 to-cyan-600/90'},
-                      {icon:'⭐',label:'Rata-rata Skor',    value:`${kpi?.learning.avgScore??0}`,     sub:'Dari sesi berhasil', grad:'from-amber-400/90 to-orange-500/90'},
+                      {icon:'⭐',label:'Rata-rata Skor',    value:`${kpi?.learning.avgScore??0}`,     sub:'Dari semua attempt', grad:'from-amber-400/90 to-orange-500/90'},
                     ].map(c=>(
                       <div key={c.label} className={`bg-gradient-to-br ${c.grad} rounded-2xl p-5 text-white shadow-lg`}>
                         <div className="text-3xl mb-2">{c.icon}</div>
@@ -1191,9 +1048,358 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       </div>
                     ))}
                   </div>
+                  {!loading&&kpi&&(
+                    <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="flex flex-col items-center gap-2 p-3">
+                          <DonutChart
+                            segments={[{value:kpi.learning.completedSessions,color:'#10b981'},{value:Math.max(kpi.learning.totalSessions-kpi.learning.completedSessions,0),color:'#e2e8f0'}]}
+                            size={68} strokeWidth={10} label={`${kpi.learning.totalSessions>0?Math.round((kpi.learning.completedSessions/kpi.learning.totalSessions)*100):0}%`}/>
+                          <div className="text-center">
+                            <p className="text-xs font-bold text-slate-700">Pass Rate</p>
+                            <p className="text-[10px] text-slate-400">{kpi.learning.completedSessions} lulus · {kpi.learning.totalSessions-kpi.learning.completedSessions} tidak lulus</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center gap-2 p-3">
+                          <DonutChart
+                            segments={[{value:kpi.learning.avgScore,color:kpi.learning.avgScore>=80?'#10b981':kpi.learning.avgScore>=60?'#f59e0b':'#ef4444'},{value:Math.max(100-kpi.learning.avgScore,0),color:'#f1f5f9'}]}
+                            size={68} strokeWidth={10} label={`${kpi.learning.avgScore}`}/>
+                          <div className="text-center">
+                            <p className="text-xs font-bold text-slate-700">Avg Score</p>
+                            <p className="text-[10px] text-slate-400">{kpi.learning.totalParticipants} peserta unik</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
+            </div>
+          )}
+
+
+          {/* ══════════ TAB KPI TEAM ══════════ */}
+          {tab==='kpi_team' && (canAccessKPI) && (
+            <div className="space-y-5">
+              {/* Header + filter */}
+              <div className="flex flex-wrap items-center gap-3">
+                <SectionPill icon="👥">KPI Team {scope.kind==='pts_sup'?scope.ptsTeamType:'PTS IVP & UMP & MLDS'}</SectionPill>
+                <div className="ml-auto flex items-center gap-2 flex-wrap">
+                  {/* Filter Tahun */}
+                  <select
+                    value={kpiTeam.filterYear}
+                    onChange={e => setKpiTeam(prev=>({...prev, filterYear:Number(e.target.value)}))}
+                    className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 outline-none focus:border-blue-300"
+                  >
+                    {[2024,2025,2026,2027].map(y=>(<option key={y} value={y}>{y}</option>))}
+                  </select>
+                  {/* Filter Team (admin only) */}
+                  {scope.kind==='admin' && (
+                    <select
+                      value={kpiTeam.filterTeam}
+                      onChange={e => setKpiTeam(prev=>({...prev, filterTeam:e.target.value}))}
+                      className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 outline-none focus:border-blue-300"
+                    >
+                      <option value="all">Semua Team</option>
+                      <option value="Team PTS">Team PTS IVP</option>
+                      <option value="Team PTS UMP">Team PTS UMP</option>
+                      <option value="Team PTS MLDS">Team PTS MLDS</option>
+                    </select>
+                  )}
+                  <button
+                    onClick={()=>fetchKPITeam()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 transition-all"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    Refresh
+                  </button>
+                  {/* Download Excel */}
+                  <button
+                    onClick={() => {
+                      const members = kpiTeam.filterTeam === 'all' ? kpiTeam.members : kpiTeam.members.filter(m=>m.team_type===kpiTeam.filterTeam);
+                      if (!members.length) return;
+                      // Simple CSV export
+                      const kpiScore = (m: KPITeamMember) => {
+                        const komplainScore = m.manual.komplainCount <= 12 ? 1 : Math.max(0, 1 - (m.manual.komplainCount-12)*0.1);
+                        const responScore = m.manual.responTime >= 12 ? 1 : m.manual.responTime / 12;
+                        const lcScore = m.manual.learningMastery >= 12 ? 1 : m.manual.learningMastery / 12;
+                        const bastScore = m.manual.bastDemoTotal > 0 ? Math.min(1, m.manual.bastDemo / m.manual.bastDemoTotal) : 1;
+                        const rndScore = m.manual.technicalNote >= 6 ? 1 : m.manual.technicalNote / 6;
+                        const reportScore = m.manual.reportBulanan >= 12 ? 1 : m.manual.reportBulanan / 12;
+                        const weights = [0.15, 0.10, 0.35, 0.20, 0.15, 0.05];
+                        const scores = [komplainScore, responScore, lcScore, bastScore, rndScore, reportScore];
+                        return Math.round(weights.reduce((s,w,i) => s + w * scores[i], 0) * 100);
+                      };
+                      const headers = ['Nama','Team','Jabatan','KPI Score (%)','Ticket Handled','Ticket Solved','Ticket Overdue','Avg Resolusi (hari)','Reminder Assigned','Reminder Done','Reminder Overdue','LC Attempts','LC Avg Score','LC Passed','Piket Filled','Komplain Count (manual)','Respon Time OK (manual)','LC Mastery Kategori (manual)','BAST Demo OK (manual)','BAST Demo Total (manual)','Technical Note (manual)','Report Bulanan (manual)'];
+                      const rows = members.map(m => [
+                        m.name, m.team_type, m.jabatan, kpiScore(m),
+                        m.ticketsHandled, m.ticketsSolved, m.ticketsOverdue, m.avgResolutionDays,
+                        m.remindersAssigned, m.remindersDone, m.remindersOverdue,
+                        m.lcAttempts, m.lcAvgScore, m.lcPassed, m.piketFilled,
+                        m.manual.komplainCount, m.manual.responTime, m.manual.learningMastery,
+                        m.manual.bastDemo, m.manual.bastDemoTotal, m.manual.technicalNote, m.manual.reportBulanan
+                      ]);
+                      const csv = [headers, ...rows].map(r => r.map((v:any)=> `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+                      const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a'); a.href=url; a.download=`KPI_Team_${kpiTeam.filterYear}.csv`; a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-emerald-600 hover:text-white hover:bg-emerald-600 bg-white border border-emerald-200 transition-all"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Download CSV {kpiTeam.filterYear}
+                  </button>
+                </div>
+              </div>
+
+              {/* Legend */}
+              <div className="bg-blue-50/80 border border-blue-200 rounded-xl px-4 py-3 text-[11px] text-blue-700 leading-relaxed">
+                <b>📌 Keterangan:</b> Data platform (✅ otomatis) diambil langsung dari Ticketing, Reminder, Learning Center & Piket.
+                Data bertanda <span className="font-bold text-amber-600">✏️ Manual</span> (Technical Note, BAST/Demo, Komplain, Respon Time, Learning Mastery, Report) diinput oleh Admin / SPV karena belum tersedia di platform.
+              </div>
+
+              {/* Loading */}
+              {kpiTeam.loading && (
+                <div className="flex items-center justify-center py-12">
+                  <div className="w-7 h-7 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin"/>
+                </div>
+              )}
+
+              {/* No data */}
+              {!kpiTeam.loading && kpiTeam.members.length === 0 && (
+                <div className="text-center py-12 text-slate-400 text-sm">Tidak ada anggota team ditemukan untuk scope ini.</div>
+              )}
+
+              {/* Member cards */}
+              {!kpiTeam.loading && kpiTeam.members
+                .filter(m => kpiTeam.filterTeam === 'all' || m.team_type === kpiTeam.filterTeam)
+                .map(member => {
+                  // KPI Score calculation
+                  const komplainScore = member.manual.komplainCount <= 12 ? 1 : Math.max(0, 1-(member.manual.komplainCount-12)*0.1);
+                  const responScore = member.manual.responTime >= 12 ? 1 : member.manual.responTime / 12;
+                  const lcScore = member.manual.learningMastery >= 12 ? 1 : member.manual.learningMastery / 12;
+                  const bastScore = member.manual.bastDemoTotal > 0 ? Math.min(1, member.manual.bastDemo / member.manual.bastDemoTotal) : 1;
+                  const rndScore = member.manual.technicalNote >= 6 ? 1 : member.manual.technicalNote / 6;
+                  const reportScore = member.manual.reportBulanan >= 12 ? 1 : member.manual.reportBulanan / 12;
+                  const finalKPI = Math.round([0.15,0.10,0.35,0.20,0.15,0.05].reduce((s,w,i)=>s+w*[komplainScore,responScore,lcScore,bastScore,rndScore,reportScore][i],0)*100);
+                  const kpiColor = finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
+                  const isEditing = kpiTeam.editingMember === member.id;
+
+                  return (
+                    <div key={member.id} className="bg-white/95 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                      {/* Member header */}
+                      <div className="flex items-center gap-4 px-5 py-4 border-b border-slate-100"
+                        style={{ background: 'linear-gradient(135deg, rgba(248,250,252,0.9), rgba(241,245,249,0.9))' }}>
+                        <div className="w-11 h-11 rounded-full flex items-center justify-center font-black text-base text-white flex-shrink-0"
+                          style={{ background: `linear-gradient(135deg, ${kpiColor}, ${kpiColor}99)` }}>
+                          {member.name.charAt(0)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-slate-800 text-sm truncate">{member.name}</div>
+                          <div className="text-[10px] text-slate-400">{member.jabatan} · {member.team_type}</div>
+                        </div>
+                        {/* KPI Score badge */}
+                        <div className="flex flex-col items-center flex-shrink-0">
+                          <div className="text-2xl font-black" style={{ color: kpiColor }}>{finalKPI}%</div>
+                          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">KPI Score</div>
+                        </div>
+                        {/* Edit toggle (admin/pts_sup only) */}
+                        {(scope.kind==='admin' || scope.kind==='pts_sup') && (
+                          <button
+                            onClick={()=>{
+                              if (isEditing) {
+                                // Save to DB
+                                const uid = member.id;
+                                const vals = kpiTeam.editValues;
+                                supabase.from('kpi_manual_values').upsert({
+                                  user_id: uid, year: kpiTeam.filterYear,
+                                  komplain_count: vals.komplainCount ?? member.manual.komplainCount,
+                                  respon_time: vals.responTime ?? member.manual.responTime,
+                                  technical_note: vals.technicalNote ?? member.manual.technicalNote,
+                                  bast_demo: vals.bastDemo ?? member.manual.bastDemo,
+                                  bast_demo_total: vals.bastDemoTotal ?? member.manual.bastDemoTotal,
+                                  report_bulanan: vals.reportBulanan ?? member.manual.reportBulanan,
+                                  learning_mastery: vals.learningMastery ?? member.manual.learningMastery,
+                                  updated_by: currentUser.full_name,
+                                  updated_at: new Date().toISOString(),
+                                }, { onConflict: 'user_id,year' }).then(() => fetchKPITeam());
+                                setKpiTeam(prev=>({...prev, editingMember:null, editValues:{}}));
+                              } else {
+                                setKpiTeam(prev=>({...prev, editingMember:member.id, editValues:{...member.manual}}));
+                              }
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
+                            style={isEditing
+                              ? {background:'#10b98120',color:'#059669',borderColor:'#10b98140'}
+                              : {background:'#f1f5f9',color:'#64748b',borderColor:'#e2e8f0'}}
+                          >
+                            {isEditing ? '💾 Simpan' : '✏️ Edit Manual'}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* KPI metrics grid */}
+                      <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+
+                        {/* KPI 1: Komplain (manual) */}
+                        <div className="rounded-xl border p-3" style={{borderColor:'#f59e0b40', background:'#fffbeb'}}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Komplain Produk</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-amber-100 text-amber-700">✏️ Manual</span>
+                          </div>
+                          <div className="text-xs text-slate-500 mb-2">Target: maks 12 komplain/tahun · Bobot 15%</div>
+                          {isEditing ? (
+                            <input type="number" min={0} value={kpiTeam.editValues.komplainCount ?? member.manual.komplainCount}
+                              onChange={e=>setKpiTeam(prev=>({...prev,editValues:{...prev.editValues,komplainCount:Number(e.target.value)}}))}
+                              className="w-full border border-amber-300 rounded-lg px-2 py-1 text-sm text-center font-bold outline-none focus:border-amber-400"/>
+                          ) : (
+                            <div className="flex items-center justify-between">
+                              <span className="text-xl font-black text-slate-800">{member.manual.komplainCount}</span>
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                                style={{background:komplainScore>=1?'#d1fae5':komplainScore>=0.7?'#fef9c3':'#fee2e2',color:komplainScore>=1?'#065f46':komplainScore>=0.7?'#854d0e':'#991b1b'}}>
+                                {Math.round(komplainScore*100)}%
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* KPI 2: Respon Time (manual) */}
+                        <div className="rounded-xl border p-3" style={{borderColor:'#0891b240', background:'#f0f9ff'}}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-bold text-sky-600 uppercase tracking-wider">Respon Komplain</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-sky-100 text-sky-700">✏️ Manual</span>
+                          </div>
+                          <div className="text-xs text-slate-500 mb-2">Target: maks 1×24 jam · Bobot 10% (jumlah bulan OK)</div>
+                          {isEditing ? (
+                            <input type="number" min={0} max={12} value={kpiTeam.editValues.responTime ?? member.manual.responTime}
+                              onChange={e=>setKpiTeam(prev=>({...prev,editValues:{...prev.editValues,responTime:Number(e.target.value)}}))}
+                              className="w-full border border-sky-300 rounded-lg px-2 py-1 text-sm text-center font-bold outline-none focus:border-sky-400"/>
+                          ) : (
+                            <div className="flex items-center justify-between">
+                              <span className="text-xl font-black text-slate-800">{member.manual.responTime}/12</span>
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                                style={{background:responScore>=1?'#d1fae5':responScore>=0.7?'#fef9c3':'#fee2e2',color:responScore>=1?'#065f46':responScore>=0.7?'#854d0e':'#991b1b'}}>
+                                {Math.round(responScore*100)}%
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* KPI 3: LC Mastery (manual) + LC data platform */}
+                        <div className="rounded-xl border p-3" style={{borderColor:'#6366f140', background:'#f5f3ff'}}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-bold text-violet-600 uppercase tracking-wider">Tech. Knowledge</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-violet-100 text-violet-700">✏️ Manual</span>
+                          </div>
+                          <div className="text-xs text-slate-500 mb-1">Target: 12 kategori dikuasai · Bobot 35%</div>
+                          <div className="text-[10px] text-slate-400 mb-2">📊 Platform: {member.lcAttempts} attempt · avg {member.lcAvgScore} poin · {member.lcPassed} lulus</div>
+                          {isEditing ? (
+                            <input type="number" min={0} max={12} value={kpiTeam.editValues.learningMastery ?? member.manual.learningMastery}
+                              onChange={e=>setKpiTeam(prev=>({...prev,editValues:{...prev.editValues,learningMastery:Number(e.target.value)}}))}
+                              className="w-full border border-violet-300 rounded-lg px-2 py-1 text-sm text-center font-bold outline-none focus:border-violet-400"/>
+                          ) : (
+                            <div className="flex items-center justify-between">
+                              <span className="text-xl font-black text-slate-800">{member.manual.learningMastery}/12</span>
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                                style={{background:lcScore>=1?'#d1fae5':lcScore>=0.7?'#fef9c3':'#fee2e2',color:lcScore>=1?'#065f46':lcScore>=0.7?'#854d0e':'#991b1b'}}>
+                                {Math.round(lcScore*100)}%
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* KPI 4: BAST Demo (manual) */}
+                        <div className="rounded-xl border p-3" style={{borderColor:'#059669 40', background:'#f0fdf4'}}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">BAST & Demo</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-700">✏️ Manual</span>
+                          </div>
+                          <div className="text-xs text-slate-500 mb-2">Target: selesai ≤7 hari · Bobot 20%</div>
+                          {isEditing ? (
+                            <div className="flex gap-1 items-center">
+                              <input type="number" min={0} placeholder="OK" value={kpiTeam.editValues.bastDemo ?? member.manual.bastDemo}
+                                onChange={e=>setKpiTeam(prev=>({...prev,editValues:{...prev.editValues,bastDemo:Number(e.target.value)}}))}
+                                className="w-full border border-emerald-300 rounded-lg px-2 py-1 text-sm text-center font-bold outline-none"/>
+                              <span className="text-slate-400 text-xs">/</span>
+                              <input type="number" min={0} placeholder="Total" value={kpiTeam.editValues.bastDemoTotal ?? member.manual.bastDemoTotal}
+                                onChange={e=>setKpiTeam(prev=>({...prev,editValues:{...prev.editValues,bastDemoTotal:Number(e.target.value)}}))}
+                                className="w-full border border-emerald-300 rounded-lg px-2 py-1 text-sm text-center font-bold outline-none"/>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between">
+                              <span className="text-xl font-black text-slate-800">{member.manual.bastDemo}/{member.manual.bastDemoTotal||'?'}</span>
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                                style={{background:bastScore>=1?'#d1fae5':bastScore>=0.7?'#fef9c3':'#fee2e2',color:bastScore>=1?'#065f46':bastScore>=0.7?'#854d0e':'#991b1b'}}>
+                                {Math.round(bastScore*100)}%
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* KPI 5: Technical Note RnD (manual) */}
+                        <div className="rounded-xl border p-3" style={{borderColor:'#ec489940', background:'#fdf4ff'}}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-bold text-pink-600 uppercase tracking-wider">RnD Technical Note</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-pink-100 text-pink-700">✏️ Manual</span>
+                          </div>
+                          <div className="text-xs text-slate-500 mb-2">Target: min 6 technical note/tahun · Bobot 15%</div>
+                          {isEditing ? (
+                            <input type="number" min={0} value={kpiTeam.editValues.technicalNote ?? member.manual.technicalNote}
+                              onChange={e=>setKpiTeam(prev=>({...prev,editValues:{...prev.editValues,technicalNote:Number(e.target.value)}}))}
+                              className="w-full border border-pink-300 rounded-lg px-2 py-1 text-sm text-center font-bold outline-none focus:border-pink-400"/>
+                          ) : (
+                            <div className="flex items-center justify-between">
+                              <span className="text-xl font-black text-slate-800">{member.manual.technicalNote}/6</span>
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                                style={{background:rndScore>=1?'#d1fae5':rndScore>=0.7?'#fef9c3':'#fee2e2',color:rndScore>=1?'#065f46':rndScore>=0.7?'#854d0e':'#991b1b'}}>
+                                {Math.round(rndScore*100)}%
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* KPI 6: Report Bulanan (manual) */}
+                        <div className="rounded-xl border p-3" style={{borderColor:'#64748b40', background:'#f8fafc'}}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Report Bulanan</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-slate-100 text-slate-600">✏️ Manual</span>
+                          </div>
+                          <div className="text-xs text-slate-500 mb-2">Target: tgl 1 setiap bulan · Bobot 5%</div>
+                          {isEditing ? (
+                            <input type="number" min={0} max={12} value={kpiTeam.editValues.reportBulanan ?? member.manual.reportBulanan}
+                              onChange={e=>setKpiTeam(prev=>({...prev,editValues:{...prev.editValues,reportBulanan:Number(e.target.value)}}))}
+                              className="w-full border border-slate-300 rounded-lg px-2 py-1 text-sm text-center font-bold outline-none focus:border-slate-400"/>
+                          ) : (
+                            <div className="flex items-center justify-between">
+                              <span className="text-xl font-black text-slate-800">{member.manual.reportBulanan}/12</span>
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                                style={{background:reportScore>=1?'#d1fae5':reportScore>=0.7?'#fef9c3':'#fee2e2',color:reportScore>=1?'#065f46':reportScore>=0.7?'#854d0e':'#991b1b'}}>
+                                {Math.round(reportScore*100)}%
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                      </div>
+
+                      {/* Platform data row */}
+                      <div className="px-5 pb-4">
+                        <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">✅ Data Platform (Otomatis)</div>
+                          <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-[11px] text-slate-600">
+                            <span>🎫 Ticket: <b className="text-slate-800">{member.ticketsSolved}</b>/<b>{member.ticketsHandled}</b> solved{member.ticketsOverdue>0?<span className="text-red-500"> · {member.ticketsOverdue} overdue</span>:null}</span>
+                            <span>📅 Reminder: <b className="text-slate-800">{member.remindersDone}</b>/<b>{member.remindersAssigned}</b> done{member.remindersOverdue>0?<span className="text-red-500"> · {member.remindersOverdue} overdue</span>:null}</span>
+                            <span>🎓 LC: <b className="text-slate-800">{member.lcAttempts}</b> attempt · avg <b>{member.lcAvgScore}</b> poin</span>
+                            <span>🏪 Piket: <b className="text-slate-800">{member.piketFilled}</b> hari bertugas</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              }
             </div>
           )}
 
@@ -1201,6 +1407,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           {tab==='analytics'&&(
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Handler */}
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">🎫 Ticket Open per Handler</h3>
                   {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
@@ -1208,6 +1415,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       ? <HBarChart data={kpi.tickets.byHandler.map(h=>({label:h.name.split(' ')[0],value:h.count}))} color="#ef4444"/>
                       : <p className="text-xs text-center py-6 text-slate-400">Tidak ada data</p>}
                 </div>
+                {/* Divisi */}
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">🏢 Ticket per Divisi</h3>
                   {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
@@ -1216,6 +1424,8 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       : <p className="text-xs text-center py-6 text-slate-400">Tidak ada data</p>}
                 </div>
               </div>
+
+              {/* Status donut + kategori reminder */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">📊 Distribusi Status Ticket</h3>
@@ -1256,6 +1466,8 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   )}
                 </div>
               </div>
+
+              {/* Performa Resolusi */}
               <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">⚡ Ringkasan Performa</h3>
                 {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:(
@@ -1264,8 +1476,8 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       {label:'Avg. Resolusi Ticket',value:`${kpi?.tickets.avgResolutionDays??0} hari`,color:'#ef4444',icon:'⏱️'},
                       {label:'Solved Hari Ini',value:`${kpi?.tickets.resolvedToday??0} ticket`,color:'#10b981',icon:'✅'},
                       {label:'Reminder Overdue',value:`${kpi?.reminders.overdueCount??0} jadwal`,color:'#f59e0b',icon:'🔴'},
-                      {label:'Completion Rate Reminder',value:`${Math.round((kpi?.reminders.completionRate??0)*100)}%`,color:'#6366f1',icon:'📊'},
-                      {label:'Piket Terisi Minggu Ini',value:`${kpi?.piket.weekFilled??0}/${kpi?.piket.weekTotal??6} hari`,color:'#0891b2',icon:'🏪'},
+                      {label:'Piket Terisi Minggu Ini',value:`${kpi?.piket.weekFilled??0}/${kpi?.piket.weekTotal??6} hari`,color:'#6366f1',icon:'🏪'},
+                      {label:'Tamu Showroom Hari Ini',value:`${kpi?.piket.kegiatanToday??0} orang`,color:'#0891b2',icon:'👤'},
                       ...(scope.kind==='admin'?[{label:'LC Avg. Skor',value:`${kpi?.learning.avgScore??0} poin`,color:'#8b5cf6',icon:'🎓'}]:[]),
                     ].map(m=>(
                       <div key={m.label} className="flex items-center gap-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
@@ -1285,6 +1497,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           {/* ══════════ TAB AUDIT TRAIL ══════════ */}
           {tab==='audit'&&(
             <div className="space-y-3">
+              {/* Search + filter */}
               <div className="flex flex-wrap items-center gap-2">
                 <div className="relative flex-1 min-w-[180px]">
                   <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1292,7 +1505,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   </svg>
                   <input value={auditSearch} onChange={e=>setAuditSearch(e.target.value)}
                     placeholder="Cari actor, aksi, target..."
-                    className="w-full rounded-lg pl-8 pr-3 py-2 text-xs outline-none bg-slate-50 border border-slate-200 text-slate-700 focus:border-blue-300"/>
+                    className="w-full rounded-lg pl-8 pr-3 py-2 text-xs outline-none bg-slate-50 border border-slate-200 text-slate-700 focus:border-blue-300 focus:ring-1 focus:ring-blue-100 transition-all"/>
                 </div>
                 {(['all','ticket','reminder','piket','user'] as const).map(f=>(
                   <button key={f} onClick={()=>setAuditFilter(f)}
@@ -1302,14 +1515,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 ))}
                 <span className="text-[10px] ml-auto tracking-widest text-slate-400">{filteredAudit.length} ENTRI</span>
               </div>
-
-              {/* Info box reminder audit fix */}
-              {auditFilter==='reminder' && filteredAudit.length === 0 && !auditLoading && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-800">
-                  <b>💡 Tips:</b> Jika reminder tidak muncul, pastikan kolom <code>updated_at</code> di tabel <code>reminders</code> di Supabase sudah diisi (trigger <code>moddatetime</code> harus aktif). Lihat panduan perbaikan di bawah.
-                </div>
-              )}
-
+              {/* List */}
               <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1"
                 style={{ scrollbarWidth:'thin', scrollbarColor:'rgba(0,0,0,0.1) transparent' }}>
                 {auditLoading
@@ -1325,8 +1531,8 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
             </div>
           )}
 
-        </div>
-      </div>
+        </div>{/* end content */}
+      </div>{/* end wrapper */}
     </div>
   );
 }
