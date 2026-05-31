@@ -65,6 +65,7 @@ interface KPITeamState {
   editingMember: string | null;  // member id yang sedang diedit
   editValues: Partial<KPITeamMember['manual']>;
   filterYear: number;
+  filterPeriod: '6m' | '1y';   // NEW: 6 bulan atau 1 tahun
   filterTeam: string;
 }
 
@@ -265,6 +266,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     editingMember: null,
     editValues: {},
     filterYear: new Date().getFullYear(),
+    filterPeriod: '1y',
     filterTeam: 'all',
   });
   const [selectedKPIMember, setSelectedKPIMember] = useState<string | null>(null);
@@ -554,8 +556,12 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     setKpiTeam(prev => ({ ...prev, loading: true }));
     try {
       const year = kpiTeam.filterYear;
-      const yearStart = `${year}-01-01`;
+      const period = kpiTeam.filterPeriod;
       const yearEnd = `${year}-12-31`;
+      // 6 bulan = Juli-Des, 1 tahun = Jan-Des
+      const yearStart = period === '6m'
+        ? `${year}-07-01`
+        : `${year}-01-01`;
 
       // Get team members
       let membersQ = supabase.from('users').select('id,full_name,jabatan,team_type,role');
@@ -703,7 +709,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
       setKpiTeam(prev => ({ ...prev, members, loading: false }));
     } catch (e) { console.error('KPI Team fetch error:', e); setKpiTeam(prev => ({ ...prev, loading: false })); }
-  }, [scope, scopeReady, kpiTeam.filterYear]);
+  }, [scope, scopeReady, kpiTeam.filterYear, kpiTeam.filterPeriod]);
 
   // ── Effects ───────────────────────────────────────────────────────────────
 
@@ -845,46 +851,46 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         </div>
 
         {/* ── Content area ── */}
-        <div className="p-6 space-y-8">
+        <div className="p-4 space-y-5">
 
           {/* ══════════ TAB KPI ══════════ */}
           {tab==='kpi' && (
-            <div className="space-y-8">
+            <div className="space-y-5">
 
               {/* ── Piket Showroom Today ── */}
               <div>
                 <SectionPill icon="🏪">Piket Showroom — {dayOfWeek()}, {new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}</SectionPill>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-3 gap-3">
                   {[
                     {team:'IVP',  person:kpi?.piket.todayIVP,  color:'#ef4444', gradient:'from-red-500/90 to-rose-600/90',    highlight:isPTSIVP||scope.kind==='admin'},
                     {team:'UMP',  person:kpi?.piket.todayUMP,  color:'#f59e0b', gradient:'from-amber-500/90 to-orange-500/90', highlight:isPTSUMP||scope.kind==='admin'},
                     {team:'MLDS', person:kpi?.piket.todayMlds, color:'#3b82f6', gradient:'from-blue-500/90 to-indigo-500/90',  highlight:isPTSMLDS||scope.kind==='admin'},
                   ].map(p=>(
                     <div key={p.team}
-                      className={`bg-white/90 rounded-2xl border ${p.highlight?'border-slate-300 shadow-md':'border-slate-200 shadow-sm'} p-4 flex items-center gap-3 transition-all`}>
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${p.gradient} flex items-center justify-center font-black text-sm text-white flex-shrink-0 shadow`}>
+                      className={`bg-white/90 rounded-xl border ${p.highlight?'border-slate-300 shadow-md':'border-slate-200 shadow-sm'} p-3 flex items-center gap-2.5 transition-all`}>
+                      <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${p.gradient} flex items-center justify-center font-black text-xs text-white flex-shrink-0 shadow`}>
                         {p.team}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">PIC {p.team} Hari Ini</div>
+                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">PIC {p.team} Hari Ini</div>
                         {loading
-                          ? <div className="h-4 w-24 rounded animate-pulse bg-slate-100"/>
+                          ? <div className="h-3.5 w-20 rounded animate-pulse bg-slate-100"/>
                           : p.person
-                            ? <div className="text-sm font-bold text-slate-800 truncate">{p.person}</div>
+                            ? <div className="text-xs font-bold text-slate-800 truncate">{p.person}</div>
                             : <div className="text-xs italic text-slate-300">Belum diisi</div>}
                         {!loading&&p.person&&(
-                          <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full mt-1 inline-block">● Bertugas</span>
+                          <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1 py-0.5 rounded-full mt-0.5 inline-block">● Bertugas</span>
                         )}
                       </div>
                     </div>
                   ))}
                 </div>
                 {!loading&&kpi&&(
-                  <div className="mt-3 flex items-center gap-6 px-1 flex-wrap">
+                  <div className="mt-2 flex items-center gap-4 px-1 flex-wrap">
                     <span className="text-[11px] text-slate-500">Minggu ini: <span className="font-bold text-slate-700">{kpi.piket.weekFilled}/{kpi.piket.weekTotal} hari</span> terisi</span>
                     <span className="text-[11px] text-slate-500">Tamu hari ini: <span className="font-bold text-slate-700">{kpi.piket.kegiatanToday}</span></span>
                     <div className="flex items-center gap-2">
-                      <DonutChart size={24} strokeWidth={5}
+                      <DonutChart size={20} strokeWidth={4}
                         segments={[{value:kpi.piket.weekFilled,color:'#10b981'},{value:Math.max(kpi.piket.weekTotal-kpi.piket.weekFilled,0),color:'#e2e8f0'}]}
                         label=""/>
                       <span className="text-[10px] text-slate-400">{Math.round((kpi.piket.weekFilled/Math.max(kpi.piket.weekTotal,1))*100)}% terpenuhi</span>
@@ -896,36 +902,36 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               {/* ── Ticket Troubleshooting ── */}
               <div>
                 <SectionPill icon="🎫">Ticket Troubleshooting — {scope.kind==='pts_sup'?scope.ptsTeamType:scope.kind==='sales_sup'?'Divisi Anda':'Semua'}</SectionPill>
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
+                <div className="grid grid-cols-5 gap-2 mb-2">
                   {[
-                    {icon:'🎫', label:'Total',      value:kpi?.tickets.total??0,            sub:'Sepanjang waktu',     color:'#64748b', grad:'from-slate-500/90 to-slate-600/90'},
-                    {icon:'🔥', label:'Open',       value:kpi?.tickets.open??0,             sub:'Belum selesai',       color:'#ef4444', grad:'from-red-500/90 to-rose-600/90'},
-                    {icon:'⏳', label:'W. Approval', value:kpi?.tickets.waitingApproval??0, sub:'Perlu tindakan',      color:'#f59e0b', grad:'from-amber-400/90 to-orange-500/90'},
-                    {icon:'✅', label:'Solved',      value:kpi?.tickets.solved??0,           sub:`Avg ${kpi?.tickets.avgResolutionDays??0}h`,color:'#10b981',grad:'from-emerald-500/90 to-green-600/90'},
-                    {icon:'⚡', label:'Hari Ini',   value:kpi?.tickets.resolvedToday??0,    sub:'Selesai hari ini',    color:'#0891b2', grad:'from-cyan-500/90 to-sky-600/90'},
+                    {icon:'🎫', label:'Total',      value:kpi?.tickets.total??0,            color:'#64748b', grad:'from-slate-500/90 to-slate-600/90'},
+                    {icon:'🔥', label:'Open',       value:kpi?.tickets.open??0,             color:'#ef4444', grad:'from-red-500/90 to-rose-600/90'},
+                    {icon:'⏳', label:'W. Approval', value:kpi?.tickets.waitingApproval??0, color:'#f59e0b', grad:'from-amber-400/90 to-orange-500/90'},
+                    {icon:'✅', label:'Solved',      value:kpi?.tickets.solved??0,           color:'#10b981', grad:'from-emerald-500/90 to-green-600/90'},
+                    {icon:'⚡', label:'Hari Ini',   value:kpi?.tickets.resolvedToday??0,    color:'#0891b2', grad:'from-cyan-500/90 to-sky-600/90'},
                   ].map(c=>(
-                    <div key={c.label} className={`bg-gradient-to-br ${c.grad} rounded-xl p-3 text-white shadow`}>
-                      <div className="text-lg mb-0.5">{c.icon}</div>
-                      {loading ? <div className="h-5 w-8 rounded animate-pulse bg-white/30 mb-0.5"/> :
-                        <div className="text-lg font-black leading-none">{c.value}</div>}
-                      <div className="text-white/80 text-[10px] font-medium leading-tight mt-0.5">{c.label}</div>
+                    <div key={c.label} className={`bg-gradient-to-br ${c.grad} rounded-xl p-2.5 text-white shadow`}>
+                      <div className="text-base mb-0.5">{c.icon}</div>
+                      {loading ? <div className="h-4 w-7 rounded animate-pulse bg-white/30 mb-0.5"/> :
+                        <div className="text-base font-black leading-none">{c.value}</div>}
+                      <div className="text-white/80 text-[9px] font-medium leading-tight mt-0.5">{c.label}</div>
                     </div>
                   ))}
                 </div>
-                {/* Mini analytics row below ticket cards */}
+                {/* Status distribution inline */}
                 {!loading&&kpi&&kpi.tickets.byStatus.length>0&&(
-                  <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4">
-                    <div className="flex items-center gap-5 flex-wrap">
-                      <div className="flex items-center gap-3">
+                  <div className="bg-white/90 rounded-xl border border-slate-200 shadow-sm p-3">
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <div className="flex items-center gap-2.5">
                         <DonutChart
                           segments={kpi.tickets.byStatus.map(s=>({value:s.count,color:s.color}))}
-                          size={52} strokeWidth={8} label={`${kpi.tickets.total}`}/>
-                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider leading-tight">Distribusi<br/>Status</div>
+                          size={44} strokeWidth={7} label={`${kpi.tickets.total}`}/>
+                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-tight">Distribusi<br/>Status</div>
                       </div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1.5 flex-1">
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 flex-1">
                         {kpi.tickets.byStatus.map(s=>(
-                          <div key={s.status} className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background:s.color }}/>
+                          <div key={s.status} className="flex items-center gap-1">
+                            <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background:s.color }}/>
                             <span className="text-[10px] text-slate-500">{s.status}</span>
                             <span className="text-[10px] font-bold text-slate-700">{s.count}</span>
                           </div>
@@ -933,7 +939,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       </div>
                       <div className="text-right flex-shrink-0">
                         <div className="text-[10px] text-slate-400">Avg Resolusi</div>
-                        <div className="text-lg font-black text-rose-600">{kpi.tickets.avgResolutionDays}<span className="text-xs font-normal text-slate-400 ml-0.5">hari</span></div>
+                        <div className="text-base font-black text-rose-600">{kpi.tickets.avgResolutionDays}<span className="text-xs font-normal text-slate-400 ml-0.5">hari</span></div>
                       </div>
                     </div>
                   </div>
@@ -943,7 +949,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               {/* ── Reminder Schedule ── */}
               <div>
                 <SectionPill icon="📅">Reminder Schedule</SectionPill>
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
+                <div className="grid grid-cols-5 gap-2 mb-2">
                   {[
                     {icon:'📅', label:'Total',     value:kpi?.reminders.total??0,         grad:'from-indigo-500/90 to-violet-600/90'},
                     {icon:'🟡', label:'Pending',   value:kpi?.reminders.pending??0,       grad:'from-amber-400/90 to-yellow-500/90'},
@@ -951,28 +957,25 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     {icon:'🔔', label:'Due 7hr',   value:kpi?.reminders.dueSoon??0,       grad:'from-sky-500/90 to-cyan-600/90'},
                     {icon:'🟢', label:'Done',      value:kpi?.reminders.done??0,          grad:'from-emerald-500/90 to-green-600/90'},
                   ].map(c=>(
-                    <div key={c.label} className={`bg-gradient-to-br ${c.grad} rounded-xl p-3 text-white shadow`}>
-                      <div className="text-lg mb-0.5">{c.icon}</div>
-                      {loading ? <div className="h-5 w-8 rounded animate-pulse bg-white/30 mb-0.5"/> :
-                        <div className="text-lg font-black leading-none">{c.value}</div>}
-                      <div className="text-white/80 text-[10px] font-medium leading-tight mt-0.5">{c.label}</div>
+                    <div key={c.label} className={`bg-gradient-to-br ${c.grad} rounded-xl p-2.5 text-white shadow`}>
+                      <div className="text-base mb-0.5">{c.icon}</div>
+                      {loading ? <div className="h-4 w-7 rounded animate-pulse bg-white/30 mb-0.5"/> :
+                        <div className="text-base font-black leading-none">{c.value}</div>}
+                      <div className="text-white/80 text-[9px] font-medium leading-tight mt-0.5">{c.label}</div>
                     </div>
                   ))}
                 </div>
-                {/* Category breakdown */}
+                {/* Category inline */}
                 {!loading&&kpi&&kpi.reminders.byCategory.length>0&&(
-                  <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4">
-                    <div className="flex items-start gap-5">
-                      <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                        <DonutChart
-                          segments={kpi.reminders.byCategory.map(c=>({value:c.count,color:c.color}))}
-                          size={64} strokeWidth={9} label={`${kpi.reminders.total}`}/>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Kategori</span>
-                      </div>
-                      <div className="flex-1 grid grid-cols-2 gap-x-6 gap-y-1.5">
+                  <div className="bg-white/90 rounded-xl border border-slate-200 shadow-sm p-3">
+                    <div className="flex items-center gap-4">
+                      <DonutChart
+                        segments={kpi.reminders.byCategory.map(c=>({value:c.count,color:c.color}))}
+                        size={48} strokeWidth={7} label={`${kpi.reminders.total}`}/>
+                      <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-1">
                         {kpi.reminders.byCategory.map(c=>(
-                          <div key={c.cat} className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background:c.color }}/>
+                          <div key={c.cat} className="flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background:c.color }}/>
                             <span className="text-[10px] text-slate-500 flex-1 truncate">{c.cat}</span>
                             <span className="text-[10px] font-bold text-slate-700">{c.count}</span>
                           </div>
@@ -1119,11 +1122,21 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
           {/* ══════════ TAB KPI TEAM ══════════ */}
           {tab==='kpi_team' && (scope.kind==='admin' || scope.kind==='pts_sup') && (
-            <div className="space-y-5">
+            <div className="space-y-4">
               {/* Header + filter */}
               <div className="flex flex-wrap items-center gap-3">
-                <SectionPill icon="👥">KPI Team {scope.kind==='pts_sup'?scope.ptsTeamType:'PTS IVP & UMP & MLDS'}</SectionPill>
+                <SectionPill icon="👥">KPI Team {scope.kind==='pts_sup'?scope.ptsTeamType:'PTS IVP & MLDS'}</SectionPill>
                 <div className="ml-auto flex items-center gap-2 flex-wrap">
+                  {/* Filter Periode */}
+                  <div className="flex items-center rounded-lg border border-slate-200 overflow-hidden bg-white">
+                    {(['6m','1y'] as const).map(p=>(
+                      <button key={p}
+                        onClick={()=>setKpiTeam(prev=>({...prev,filterPeriod:p}))}
+                        className={`px-3 py-1.5 text-[11px] font-bold transition-all ${kpiTeam.filterPeriod===p?'bg-blue-600 text-white':'text-slate-500 hover:bg-slate-50'}`}>
+                        {p==='6m'?'6 Bulan':'1 Tahun'}
+                      </button>
+                    ))}
+                  </div>
                   {/* Filter Tahun */}
                   <select
                     value={kpiTeam.filterYear}
@@ -1132,19 +1145,6 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   >
                     {[2024,2025,2026,2027].map(y=>(<option key={y} value={y}>{y}</option>))}
                   </select>
-                  {/* Filter Team (admin only) */}
-                  {scope.kind==='admin' && (
-                    <select
-                      value={kpiTeam.filterTeam}
-                      onChange={e => setKpiTeam(prev=>({...prev, filterTeam:e.target.value}))}
-                      className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 outline-none focus:border-blue-300"
-                    >
-                      <option value="all">Semua Team</option>
-                      <option value="Team PTS">Team PTS IVP</option>
-                      <option value="Team PTS UMP">Team PTS UMP</option>
-                      <option value="Team PTS MLDS">Team PTS MLDS</option>
-                    </select>
-                  )}
                   <button
                     onClick={()=>fetchKPITeam()}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 transition-all"
@@ -1152,50 +1152,51 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                     Refresh
                   </button>
-                  {/* Download Excel */}
+                  {/* Download CSV */}
                   <button
                     onClick={() => {
-                      const members = kpiTeam.filterTeam === 'all' ? kpiTeam.members : kpiTeam.members.filter(m=>m.team_type===kpiTeam.filterTeam);
-                      if (!members.length) return;
-                      // Simple CSV export
-                      const kpiScore = (m: KPITeamMember) => {
-                        const komplainScore = m.manual.komplainCount <= 12 ? 1 : Math.max(0, 1 - (m.manual.komplainCount-12)*0.1);
-                        const responScore = m.manual.responTime >= 12 ? 1 : m.manual.responTime / 12;
-                        const lcScore = m.manual.learningMastery >= 12 ? 1 : m.manual.learningMastery / 12;
-                        const bastScore = m.manual.bastDemoTotal > 0 ? Math.min(1, m.manual.bastDemo / m.manual.bastDemoTotal) : 1;
-                        const rndScore = m.manual.technicalNote >= 6 ? 1 : m.manual.technicalNote / 6;
-                        const reportScore = m.manual.reportBulanan >= 12 ? 1 : m.manual.reportBulanan / 12;
-                        const weights = [0.15, 0.10, 0.35, 0.20, 0.15, 0.05];
-                        const scores = [komplainScore, responScore, lcScore, bastScore, rndScore, reportScore];
-                        return Math.round(weights.reduce((s,w,i) => s + w * scores[i], 0) * 100);
+                      const calcKPI = (m: KPITeamMember) => {
+                        // Ticketing 20%: tidak ada overdue (ticketsOverdue=0 = 100%)
+                        const tickScore = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled,1)) : 1;
+                        // BAST & Demo 30%: dari formReviewLowRating — tidak ada bintang 1/2
+                        const bastScore = m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating * 0.25);
+                        // Tech Knowledge 40%: dari LC — tidak ada nilai <75
+                        const lcScore = m.lcAttempts === 0 ? 1 : Math.max(0, 1 - (m.lcFailedBelow75 / Math.max(m.lcAttempts,1)));
+                        // R&D Technote 10%: manual min 6/tahun
+                        const periodMultiplier = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
+                        const rndTarget = 6 * periodMultiplier;
+                        const rndScore = m.manual.technicalNote >= rndTarget ? 1 : m.manual.technicalNote / rndTarget;
+                        return Math.round([0.20, 0.30, 0.40, 0.10].reduce((s,w,i)=>s+w*[tickScore,bastScore,lcScore,rndScore][i],0)*100);
                       };
-                      const headers = ['Nama','Team','Jabatan','KPI Score (%)','Ticket Handled','Ticket Solved','Ticket Overdue','Avg Resolusi (hari)','Reminder Assigned','Reminder Done','Reminder Overdue','LC Attempts','LC Avg Score','LC Passed','Piket Filled','Komplain Count (manual)','Respon Time OK (manual)','LC Mastery Kategori (manual)','BAST Demo OK (manual)','BAST Demo Total (manual)','Technical Note (manual)','Report Bulanan (manual)'];
-                      const rows = members.map(m => [
-                        m.name, m.team_type, m.jabatan, kpiScore(m),
-                        m.ticketsHandled, m.ticketsSolved, m.ticketsOverdue, m.avgResolutionDays,
-                        m.remindersAssigned, m.remindersDone, m.remindersOverdue,
-                        m.lcAttempts, m.lcAvgScore, m.lcPassed, m.piketFilled,
-                        m.manual.komplainCount, m.manual.responTime, m.manual.learningMastery,
-                        m.manual.bastDemo, m.manual.bastDemoTotal, m.manual.technicalNote, m.manual.reportBulanan
+                      const allMembers = kpiTeam.members;
+                      if (!allMembers.length) return;
+                      const headers = ['Nama','Team','KPI Score (%)','Ticketing Overdue','Form Review Low Rating','LC Failed <75','LC Attempts','RnD Technote (manual)'];
+                      const rows = allMembers.map(m => [
+                        m.name, m.team_type, calcKPI(m),
+                        m.ticketsOverdue, m.formReviewLowRating, m.lcFailedBelow75, m.lcAttempts, m.manual.technicalNote
                       ]);
                       const csv = [headers, ...rows].map(r => r.map((v:any)=> `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
                       const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
                       const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a'); a.href=url; a.download=`KPI_Team_${kpiTeam.filterYear}.csv`; a.click();
+                      const a = document.createElement('a'); a.href=url; a.download=`KPI_Team_${kpiTeam.filterYear}_${kpiTeam.filterPeriod}.csv`; a.click();
                       URL.revokeObjectURL(url);
                     }}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-emerald-600 hover:text-white hover:bg-emerald-600 bg-white border border-emerald-200 transition-all"
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                    Download CSV {kpiTeam.filterYear}
+                    CSV {kpiTeam.filterYear} ({kpiTeam.filterPeriod==='6m'?'6bln':'1thn'})
                   </button>
                 </div>
               </div>
 
               {/* Legend */}
               <div className="bg-blue-50/80 border border-blue-200 rounded-xl px-4 py-3 text-[11px] text-blue-700 leading-relaxed">
-                <b>📌 Keterangan:</b> Data ✅ otomatis dari Ticketing (response time, ticket), Form Review (rating bintang 1-2), Learning Center (score &lt;75).
-                Data <span className="font-bold text-amber-600">✏️ Manual</span> diinput Admin/SPV. Klik kartu anggota untuk lihat detail lengkap.
+                <b>📌 Keterangan:</b> Data ✅ otomatis dari platform.
+                <span className="ml-2 font-semibold">🎫 Ticketing 20%</span> (overdue),
+                <span className="ml-1 font-semibold">⭐ BAST &amp; Demo 30%</span> (Form Review bintang 1-2),
+                <span className="ml-1 font-semibold">🎓 Tech Knowledge 40%</span> (LC nilai &lt;75),
+                <span className="ml-1 font-semibold">📝 R&amp;D Technote 10%</span> (input manual min 6/thn).
+                Klik kartu untuk detail &amp; edit.
               </div>
 
               {/* Loading */}
@@ -1210,43 +1211,39 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 <div className="text-center py-12 text-slate-400 text-sm">Tidak ada anggota team ditemukan untuk scope ini.</div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-              {/* Score cards grid */}
-              {!kpiTeam.loading && kpiTeam.members
-                .filter(m => kpiTeam.filterTeam === 'all' || m.team_type === kpiTeam.filterTeam)
-                .map(member => {
-                  const komplainScore = member.manual.komplainCount <= 12 ? 1 : Math.max(0, 1-(member.manual.komplainCount-12)*0.1);
-                  const responScore = member.manual.responTime >= 12 ? 1 : member.manual.responTime / 12;
-                  const lcScore = member.manual.learningMastery >= 12 ? 1 : member.manual.learningMastery / 12;
-                  const bastScore = member.manual.bastDemoTotal > 0 ? Math.min(1, member.manual.bastDemo / member.manual.bastDemoTotal) : 1;
-                  const rndScore = member.manual.technicalNote >= 6 ? 1 : member.manual.technicalNote / 6;
-                  const reportScore = member.manual.reportBulanan >= 12 ? 1 : member.manual.reportBulanan / 12;
-                  const finalKPI = Math.round([0.15,0.10,0.35,0.20,0.15,0.05].reduce((s,w,i)=>s+w*[komplainScore,responScore,lcScore,bastScore,rndScore,reportScore][i],0)*100);
+              {/* ── Team PTS IVP ── */}
+              {!kpiTeam.loading && (() => {
+                const ivpMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS');
+                const mldsMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS MLDS');
+                const calcKPI = (member: KPITeamMember) => {
+                  const tickScore = member.ticketsHandled > 0 ? Math.max(0, 1 - member.ticketsOverdue / Math.max(member.ticketsHandled,1)) : 1;
+                  const bastScore = member.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - member.formReviewLowRating * 0.25);
+                  const lcScore = member.lcAttempts === 0 ? 1 : Math.max(0, 1 - (member.lcFailedBelow75 / Math.max(member.lcAttempts,1)));
+                  const periodMultiplier = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
+                  const rndTarget = 6 * periodMultiplier;
+                  const rndScore = member.manual.technicalNote >= rndTarget ? 1 : member.manual.technicalNote / rndTarget;
+                  return Math.round([0.20, 0.30, 0.40, 0.10].reduce((s,w,i)=>s+w*[tickScore,bastScore,lcScore,rndScore][i],0)*100);
+                };
+                const MemberCard = ({ member }: { member: KPITeamMember }) => {
+                  const finalKPI = calcKPI(member);
                   const kpiColor = finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
                   const kpiLabel = finalKPI>=85?'Excellent':finalKPI>=70?'Good':finalKPI>=50?'Fair':'Needs Work';
-
-                  // Alert flags dari platform
                   const hasLowRating = member.formReviewLowRating > 0;
                   const hasLCFail = member.lcFailedBelow75 > 0;
                   const hasSlowResponse = member.ticketAvgResponseHours > 24;
                   const alertCount = [hasLowRating, hasLCFail, hasSlowResponse].filter(Boolean).length;
-
                   return (
                     <div key={member.id}
                       className="bg-white/95 rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center gap-4 cursor-pointer hover:shadow-md hover:border-blue-200 transition-all"
                       onClick={() => setSelectedKPIMember(member.id)}
                     >
-                      {/* Avatar */}
                       <div className="w-12 h-12 rounded-full flex items-center justify-center font-black text-base text-white flex-shrink-0 shadow"
                         style={{ background: `linear-gradient(135deg, ${kpiColor}, ${kpiColor}99)` }}>
                         {member.name.charAt(0)}
                       </div>
-                      {/* Name + team */}
                       <div className="flex-1 min-w-0">
                         <div className="font-bold text-slate-800 text-sm truncate">{member.name}</div>
                         <div className="text-[10px] text-slate-400">{member.jabatan} · {member.team_type.replace('Team PTS ','').replace('Team PTS','IVP')}</div>
-                        {/* Alert badges */}
                         {alertCount > 0 && (
                           <div className="flex gap-1 mt-1 flex-wrap">
                             {hasLowRating && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">⭐ {member.formReviewLowRating}× rating rendah</span>}
@@ -1255,33 +1252,62 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                           </div>
                         )}
                       </div>
-                      {/* KPI Score */}
                       <div className="flex flex-col items-end flex-shrink-0">
                         <div className="text-2xl font-black" style={{ color: kpiColor }}>{finalKPI}%</div>
                         <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: kpiColor }}>{kpiLabel}</div>
                       </div>
-                      {/* Arrow */}
                       <svg className="w-4 h-4 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
                       </svg>
                     </div>
                   );
-                })
-              }
+                };
+                return (
+                  <div className="space-y-5">
+                    {/* Team PTS IVP */}
+                    {ivpMembers.length > 0 && (scope.kind==='admin' || scope.ptsTeamType==='Team PTS') && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-6 h-6 rounded-lg bg-red-500 flex items-center justify-center text-white text-[10px] font-black">IVP</div>
+                          <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Team PTS IVP</span>
+                          <span className="text-[10px] text-slate-400 ml-1">{ivpMembers.length} anggota</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {ivpMembers.map(m => <MemberCard key={m.id} member={m}/>)}
+                        </div>
+                      </div>
+                    )}
+                    {/* Team PTS MLDS */}
+                    {mldsMembers.length > 0 && (scope.kind==='admin' || scope.ptsTeamType==='Team PTS MLDS') && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-6 h-6 rounded-lg bg-blue-500 flex items-center justify-center text-white text-[10px] font-black">MLD</div>
+                          <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Team PTS MLDS</span>
+                          <span className="text-[10px] text-slate-400 ml-1">{mldsMembers.length} anggota</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {mldsMembers.map(m => <MemberCard key={m.id} member={m}/>)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
-              </div>{/* end grid score cards */}
+
 
               {/* ── Detail Popup Modal ── */}
               {selectedKPIMember && (() => {
                 const member = kpiTeam.members.find(m => m.id === selectedKPIMember);
                 if (!member) return null;
-                const komplainScore = member.manual.komplainCount <= 12 ? 1 : Math.max(0, 1-(member.manual.komplainCount-12)*0.1);
-                const responScore = member.manual.responTime >= 12 ? 1 : member.manual.responTime / 12;
-                const lcScore = member.manual.learningMastery >= 12 ? 1 : member.manual.learningMastery / 12;
-                const bastScore = member.manual.bastDemoTotal > 0 ? Math.min(1, member.manual.bastDemo / member.manual.bastDemoTotal) : 1;
-                const rndScore = member.manual.technicalNote >= 6 ? 1 : member.manual.technicalNote / 6;
-                const reportScore = member.manual.reportBulanan >= 12 ? 1 : member.manual.reportBulanan / 12;
-                const finalKPI = Math.round([0.15,0.10,0.35,0.20,0.15,0.05].reduce((s,w,i)=>s+w*[komplainScore,responScore,lcScore,bastScore,rndScore,reportScore][i],0)*100);
+                // New 4-component scoring
+                const tickScore = member.ticketsHandled > 0 ? Math.max(0, 1 - member.ticketsOverdue / Math.max(member.ticketsHandled,1)) : 1;
+                const bastScore = member.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - member.formReviewLowRating * 0.25);
+                const lcScore = member.lcAttempts === 0 ? 1 : Math.max(0, 1 - (member.lcFailedBelow75 / Math.max(member.lcAttempts,1)));
+                const periodMultiplier = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
+                const rndTarget = 6 * periodMultiplier;
+                const rndScore = member.manual.technicalNote >= rndTarget ? 1 : member.manual.technicalNote / rndTarget;
+                const finalKPI = Math.round([0.20, 0.30, 0.40, 0.10].reduce((s,w,i)=>s+w*[tickScore,bastScore,lcScore,rndScore][i],0)*100);
                 const kpiColor = finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
                 const isEditing = kpiTeam.editingMember === member.id;
                 return (
@@ -1342,196 +1368,123 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
                       <div className="p-5 space-y-4">
 
+                        {/* ── KPI Score Breakdown ── */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          {[
+                            {label:'Ticketing', pct:Math.round(tickScore*100), weight:'20%', color:'#ef4444', icon:'🎫', bg:'#fef2f2', border:'#ef444440'},
+                            {label:'BAST & Demo', pct:Math.round(bastScore*100), weight:'30%', color:'#f59e0b', icon:'⭐', bg:'#fffbeb', border:'#f59e0b40'},
+                            {label:'Tech Knowledge', pct:Math.round(lcScore*100), weight:'40%', color:'#6366f1', icon:'🎓', bg:'#f5f3ff', border:'#6366f140'},
+                            {label:'R&D Technote', pct:Math.round(rndScore*100), weight:'10%', color:'#ec4899', icon:'📝', bg:'#fdf4ff', border:'#ec489940'},
+                          ].map(k=>(
+                            <div key={k.label} className="rounded-xl border p-2.5 text-center" style={{background:k.bg, borderColor:k.border}}>
+                              <div className="text-sm mb-0.5">{k.icon}</div>
+                              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wide leading-tight mb-1">{k.label}</div>
+                              <div className="text-xl font-black" style={{color:k.color}}>{k.pct}%</div>
+                              <div className="text-[9px] text-slate-400">bobot {k.weight}</div>
+                            </div>
+                          ))}
+                        </div>
+
                         {/* ── Platform auto section ── */}
                         <div>
                           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">✅ Data Platform (Otomatis)</div>
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 
-                            {/* Ticketing KPI */}
+                            {/* Ticketing — 20% */}
                             <div className="rounded-xl border p-3" style={{borderColor:'#ef444440', background:'#fef2f2'}}>
-                              <div className="text-[10px] font-bold text-red-600 uppercase tracking-wider mb-2">🎫 Ticketing</div>
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="text-[10px] font-bold text-red-600 uppercase tracking-wider">🎫 Ticketing</div>
+                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{background:tickScore>=1?'#d1fae5':'#fee2e2',color:tickScore>=1?'#065f46':'#991b1b'}}>{Math.round(tickScore*100)}% · 20%</span>
+                              </div>
                               <div className="space-y-1.5 text-[11px] text-slate-600">
                                 <div className="flex justify-between"><span>Handled</span><b className="text-slate-800">{member.ticketsHandled}</b></div>
                                 <div className="flex justify-between"><span>Solved</span><b className="text-emerald-600">{member.ticketsSolved}</b></div>
-                                {member.ticketsOverdue > 0 && <div className="flex justify-between"><span>Overdue</span><b className="text-red-600">{member.ticketsOverdue}</b></div>}
+                                <div className="flex justify-between"><span>Overdue</span>
+                                  <b className={member.ticketsOverdue > 0 ? 'text-red-600' : 'text-emerald-600'}>{member.ticketsOverdue}</b>
+                                </div>
                                 <div className="flex justify-between"><span>Avg Response</span>
                                   <b className={member.ticketAvgResponseHours > 24 ? 'text-red-600' : 'text-emerald-600'}>
                                     {member.ticketAvgResponseHours > 0 ? `${member.ticketAvgResponseHours}j` : '—'}
                                   </b>
                                 </div>
-                                {member.ticketAvgResponseHours > 24 && (
-                                  <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ Response &gt;24 jam</div>
-                                )}
+                                {member.ticketsOverdue === 0
+                                  ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Tidak ada overdue</div>
+                                  : <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ {member.ticketsOverdue} ticket overdue</div>}
                               </div>
                             </div>
 
-                            {/* Form Review KPI */}
+                            {/* BAST & Demo — 30% (Form Review) */}
                             <div className="rounded-xl border p-3" style={{borderColor:'#f59e0b40', background:'#fffbeb'}}>
-                              <div className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-2">⭐ Form Review</div>
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">⭐ BAST &amp; Demo</div>
+                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{background:bastScore>=1?'#d1fae5':'#fee2e2',color:bastScore>=1?'#065f46':'#991b1b'}}>{Math.round(bastScore*100)}% · 30%</span>
+                              </div>
                               <div className="space-y-1.5 text-[11px] text-slate-600">
+                                <div className="text-[10px] text-slate-400 mb-1">Sumber: Form Review</div>
                                 <div className="flex justify-between"><span>Rating Rendah (★1-2)</span>
                                   <b className={member.formReviewLowRating > 0 ? 'text-red-600' : 'text-emerald-600'}>
-                                    {member.formReviewLowRating}×
+                                    {member.formReviewLowRating}x
                                   </b>
                                 </div>
-                                {member.formReviewLowRating > 0 && (
-                                  <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ Ada komplain bintang rendah</div>
-                                )}
-                                {member.formReviewLowRating === 0 && (
-                                  <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Tidak ada komplain</div>
-                                )}
+                                {member.formReviewLowRating === 0
+                                  ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Tidak ada komplain</div>
+                                  : <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ {member.formReviewLowRating}x rating bintang rendah</div>}
                               </div>
                             </div>
 
-                            {/* Learning Center KPI */}
+                            {/* Tech Knowledge — 40% (LC) */}
                             <div className="rounded-xl border p-3" style={{borderColor:'#6366f140', background:'#f5f3ff'}}>
-                              <div className="text-[10px] font-bold text-violet-600 uppercase tracking-wider mb-2">🎓 Learning Center</div>
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="text-[10px] font-bold text-violet-600 uppercase tracking-wider">🎓 Tech Knowledge</div>
+                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{background:lcScore>=1?'#d1fae5':'#fee2e2',color:lcScore>=1?'#065f46':'#991b1b'}}>{Math.round(lcScore*100)}% · 40%</span>
+                              </div>
                               <div className="space-y-1.5 text-[11px] text-slate-600">
+                                <div className="text-[10px] text-slate-400 mb-1">Sumber: Learning Center</div>
                                 <div className="flex justify-between"><span>Total Attempt</span><b className="text-slate-800">{member.lcAttempts}</b></div>
                                 <div className="flex justify-between"><span>Avg Score</span><b className={member.lcAvgScore < 75 ? 'text-red-600' : 'text-emerald-600'}>{member.lcAvgScore || '—'}</b></div>
                                 <div className="flex justify-between"><span>Lulus</span><b className="text-emerald-600">{member.lcPassed}</b></div>
                                 <div className="flex justify-between"><span>Score &lt;75</span>
-                                  <b className={member.lcFailedBelow75 > 0 ? 'text-red-600' : 'text-emerald-600'}>{member.lcFailedBelow75}×</b>
+                                  <b className={member.lcFailedBelow75 > 0 ? 'text-red-600' : 'text-emerald-600'}>{member.lcFailedBelow75}x</b>
                                 </div>
-                                {member.lcFailedBelow75 > 0 && (
-                                  <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ {member.lcFailedBelow75}× nilai quiz di bawah 75</div>
-                                )}
+                                {member.lcFailedBelow75 > 0
+                                  ? <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ {member.lcFailedBelow75}x nilai di bawah 75</div>
+                                  : member.lcAttempts > 0
+                                    ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Semua nilai ≥75</div>
+                                    : null}
                               </div>
                             </div>
 
                           </div>
-                          {/* Reminder & Piket summary */}
+                          {/* Reminder & Piket info */}
                           <div className="mt-2 bg-slate-50 rounded-xl border border-slate-100 p-3 text-[11px] text-slate-600 flex flex-wrap gap-x-5 gap-y-1">
                             <span>📅 Reminder: <b className="text-slate-800">{member.remindersDone}</b>/{member.remindersAssigned} done{member.remindersOverdue>0?<span className="text-red-500"> · {member.remindersOverdue} overdue</span>:null}</span>
                             <span>🏪 Piket: <b className="text-slate-800">{member.piketFilled}</b> hari bertugas</span>
                           </div>
                         </div>
 
-                        {/* ── Manual KPI section ── */}
+                        {/* ── Manual KPI — hanya R&D Technote ── */}
                         <div>
                           <div className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-2">✏️ KPI Manual (Input SPV/Admin)</div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-
-                            {/* KPI 1: Komplain */}
-                            <div className="rounded-xl border p-3" style={{borderColor:'#f59e0b40', background:'#fffbeb'}}>
-                              <div className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Komplain Produk</div>
-                              <div className="text-[10px] text-slate-500 mb-2">Target: maks 12/tahun · 15%</div>
-                              {isEditing ? (
-                                <input type="number" min={0} value={kpiTeam.editValues.komplainCount ?? member.manual.komplainCount}
-                                  onChange={e=>setKpiTeam(prev=>({...prev,editValues:{...prev.editValues,komplainCount:Number(e.target.value)}}))}
-                                  className="w-full border border-amber-300 rounded-lg px-2 py-1 text-sm text-center font-bold outline-none"/>
-                              ) : (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xl font-black text-slate-800">{member.manual.komplainCount}</span>
-                                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
-                                    style={{background:komplainScore>=1?'#d1fae5':'#fee2e2',color:komplainScore>=1?'#065f46':'#991b1b'}}>
-                                    {Math.round(komplainScore*100)}%
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* KPI 2: Respon Time */}
-                            <div className="rounded-xl border p-3" style={{borderColor:'#0891b240', background:'#f0f9ff'}}>
-                              <div className="text-[10px] font-bold text-sky-600 uppercase tracking-wider mb-1">Respon Komplain</div>
-                              <div className="text-[10px] text-slate-500 mb-2">Target: maks 1×24 jam · 10%</div>
-                              {isEditing ? (
-                                <input type="number" min={0} max={12} value={kpiTeam.editValues.responTime ?? member.manual.responTime}
-                                  onChange={e=>setKpiTeam(prev=>({...prev,editValues:{...prev.editValues,responTime:Number(e.target.value)}}))}
-                                  className="w-full border border-sky-300 rounded-lg px-2 py-1 text-sm text-center font-bold outline-none"/>
-                              ) : (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xl font-black text-slate-800">{member.manual.responTime}/12</span>
-                                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
-                                    style={{background:responScore>=1?'#d1fae5':'#fee2e2',color:responScore>=1?'#065f46':'#991b1b'}}>
-                                    {Math.round(responScore*100)}%
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* KPI 3: LC Mastery */}
-                            <div className="rounded-xl border p-3" style={{borderColor:'#6366f140', background:'#f5f3ff'}}>
-                              <div className="text-[10px] font-bold text-violet-600 uppercase tracking-wider mb-1">Tech. Knowledge</div>
-                              <div className="text-[10px] text-slate-500 mb-2">Target: 12 kategori · 35%</div>
-                              {isEditing ? (
-                                <input type="number" min={0} max={12} value={kpiTeam.editValues.learningMastery ?? member.manual.learningMastery}
-                                  onChange={e=>setKpiTeam(prev=>({...prev,editValues:{...prev.editValues,learningMastery:Number(e.target.value)}}))}
-                                  className="w-full border border-violet-300 rounded-lg px-2 py-1 text-sm text-center font-bold outline-none"/>
-                              ) : (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xl font-black text-slate-800">{member.manual.learningMastery}/12</span>
-                                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
-                                    style={{background:lcScore>=1?'#d1fae5':'#fee2e2',color:lcScore>=1?'#065f46':'#991b1b'}}>
-                                    {Math.round(lcScore*100)}%
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* KPI 4: BAST Demo */}
-                            <div className="rounded-xl border p-3" style={{borderColor:'#05966940', background:'#f0fdf4'}}>
-                              <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1">BAST & Demo</div>
-                              <div className="text-[10px] text-slate-500 mb-2">Target: selesai ≤7 hari · 20%</div>
-                              {isEditing ? (
-                                <div className="flex gap-1 items-center">
-                                  <input type="number" min={0} placeholder="OK" value={kpiTeam.editValues.bastDemo ?? member.manual.bastDemo}
-                                    onChange={e=>setKpiTeam(prev=>({...prev,editValues:{...prev.editValues,bastDemo:Number(e.target.value)}}))}
-                                    className="w-full border border-emerald-300 rounded-lg px-2 py-1 text-sm text-center font-bold outline-none"/>
-                                  <span className="text-slate-400 text-xs">/</span>
-                                  <input type="number" min={0} placeholder="Total" value={kpiTeam.editValues.bastDemoTotal ?? member.manual.bastDemoTotal}
-                                    onChange={e=>setKpiTeam(prev=>({...prev,editValues:{...prev.editValues,bastDemoTotal:Number(e.target.value)}}))}
-                                    className="w-full border border-emerald-300 rounded-lg px-2 py-1 text-sm text-center font-bold outline-none"/>
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xl font-black text-slate-800">{member.manual.bastDemo}/{member.manual.bastDemoTotal||'?'}</span>
-                                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
-                                    style={{background:bastScore>=1?'#d1fae5':'#fee2e2',color:bastScore>=1?'#065f46':'#991b1b'}}>
-                                    {Math.round(bastScore*100)}%
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* KPI 5: RnD */}
+                          <div className="max-w-xs">
                             <div className="rounded-xl border p-3" style={{borderColor:'#ec489940', background:'#fdf4ff'}}>
-                              <div className="text-[10px] font-bold text-pink-600 uppercase tracking-wider mb-1">RnD Tech Note</div>
-                              <div className="text-[10px] text-slate-500 mb-2">Target: min 6/tahun · 15%</div>
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="text-[10px] font-bold text-pink-600 uppercase tracking-wider">📝 R&amp;D Tech Note</div>
+                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{background:rndScore>=1?'#d1fae5':'#fee2e2',color:rndScore>=1?'#065f46':'#991b1b'}}>{Math.round(rndScore*100)}% · 10%</span>
+                              </div>
+                              <div className="text-[10px] text-slate-500 mb-2">Target: min {Math.round(rndTarget)}/{kpiTeam.filterPeriod==='6m'?'6 bulan':'tahun'} · Input manual oleh SPV</div>
                               {isEditing ? (
                                 <input type="number" min={0} value={kpiTeam.editValues.technicalNote ?? member.manual.technicalNote}
                                   onChange={e=>setKpiTeam(prev=>({...prev,editValues:{...prev.editValues,technicalNote:Number(e.target.value)}}))}
                                   className="w-full border border-pink-300 rounded-lg px-2 py-1 text-sm text-center font-bold outline-none"/>
                               ) : (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xl font-black text-slate-800">{member.manual.technicalNote}/6</span>
-                                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
-                                    style={{background:rndScore>=1?'#d1fae5':'#fee2e2',color:rndScore>=1?'#065f46':'#991b1b'}}>
-                                    {Math.round(rndScore*100)}%
-                                  </span>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-xl font-black text-slate-800">{member.manual.technicalNote}/{Math.round(rndTarget)}</span>
+                                  <div className="h-1.5 flex-1 rounded-full bg-pink-100 overflow-hidden">
+                                    <div className="h-full rounded-full bg-pink-400 transition-all" style={{width:`${Math.min(100,rndScore*100)}%`}}/>
+                                  </div>
                                 </div>
                               )}
                             </div>
-
-                            {/* KPI 6: Report */}
-                            <div className="rounded-xl border p-3" style={{borderColor:'#64748b40', background:'#f8fafc'}}>
-                              <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">Report Bulanan</div>
-                              <div className="text-[10px] text-slate-500 mb-2">Target: tgl 1 tiap bulan · 5%</div>
-                              {isEditing ? (
-                                <input type="number" min={0} max={12} value={kpiTeam.editValues.reportBulanan ?? member.manual.reportBulanan}
-                                  onChange={e=>setKpiTeam(prev=>({...prev,editValues:{...prev.editValues,reportBulanan:Number(e.target.value)}}))}
-                                  className="w-full border border-slate-300 rounded-lg px-2 py-1 text-sm text-center font-bold outline-none"/>
-                              ) : (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xl font-black text-slate-800">{member.manual.reportBulanan}/12</span>
-                                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
-                                    style={{background:reportScore>=1?'#d1fae5':'#fee2e2',color:reportScore>=1?'#065f46':'#991b1b'}}>
-                                    {Math.round(reportScore*100)}%
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-
                           </div>
                         </div>
                       </div>
