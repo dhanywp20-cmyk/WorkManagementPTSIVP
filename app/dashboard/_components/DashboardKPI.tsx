@@ -1080,7 +1080,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
 
           {/* ══════════ TAB KPI TEAM ══════════ */}
-          {tab==='kpi_team' && (canAccessKPI) && (
+          {tab==='kpi_team' && (scope.kind==='admin' || scope.kind==='pts_sup') && (
             <div className="space-y-5">
               {/* Header + filter */}
               <div className="flex flex-wrap items-center gap-3">
