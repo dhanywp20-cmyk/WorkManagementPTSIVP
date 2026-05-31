@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
+import React, { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User, JABATAN_CONFIG, type JabatanType } from './shared';
 
@@ -530,315 +530,462 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     {key:'audit',icon:'🔍',label:'Audit Trail'},
   ] as const;
 
-  // ── Title by scope ────────────────────────────────────────────────────────
-  const scopeTitle = scope.kind==='admin' ? 'Dashboard' :
-    scope.kind==='pts_sup' ? `Summary ${scope.ptsTeamType}` :
-    'Summary Divisi Anda';
+  const scopeTitle = scope.kind==='admin' ? 'Dashboard'
+    : scope.kind==='pts_sup' ? `Summary ${scope.ptsTeamType}`
+    : 'Summary Divisi Anda';
 
-  // ─── Design tokens ──────────────────────────────────────────────────────────
-  const CARD  = { background:'#ffffff', border:'1px solid rgba(0,0,0,0.07)', boxShadow:'0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)' } as const;
-  const CARD_ACCENT = (c:string) => ({ ...CARD, borderLeft:`2px solid ${c}`, boxShadow:`0 2px 12px rgba(0,0,0,0.06), inset 2px 0 0 ${c}22` });
-  const LABEL = 'text-[10px] font-bold tracking-[0.12em] uppercase' as const;
-  const LABEL_STYLE = { color:'rgba(0,0,0,0.38)' };
-  const DIVIDER = { background:'linear-gradient(90deg,transparent,rgba(0,0,0,0.08),transparent)', height:1 };
+  // ─── LC-style design helpers ────────────────────────────────────────────────
+  function SectionPill({ icon, children }: { icon: string; children: React.ReactNode }) {
+    return (
+      <h3 className="text-[10px] font-bold uppercase tracking-widest mb-4 inline-flex items-center gap-1.5 bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm border border-slate-200">
+        <span>{icon}</span>{children}
+      </h3>
+    );
+  }
+
+  // ── Full DonutChart (same as LC) ──
+  function DonutChart({ segments, size = 68, strokeWidth = 10, label = '' }: {
+    segments: { value: number; color: string }[]; size?: number; strokeWidth?: number; label?: string;
+  }) {
+    const r = (size - strokeWidth) / 2;
+    const circ = 2 * Math.PI * r;
+    const total = segments.reduce((s, seg) => s + seg.value, 0);
+    if (total === 0) return (
+      <div style={{ width: size, height: size }} className="flex items-center justify-center flex-shrink-0">
+        <span className="text-[10px] text-slate-300 font-bold">—</span>
+      </div>
+    );
+    let cumBefore = 0;
+    return (
+      <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} />
+          {segments.map((seg, i) => {
+            const dash = (seg.value / total) * circ;
+            const offset = -(cumBefore / total) * circ;
+            cumBefore += seg.value;
+            return (
+              <circle key={i} cx={size/2} cy={size/2} r={r} fill="none" stroke={seg.color}
+                strokeWidth={strokeWidth} strokeDasharray={`${dash} ${circ - dash}`} strokeDashoffset={offset} />
+            );
+          })}
+        </svg>
+        {label && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-[11px] font-black text-slate-700">{label}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="w-full" style={{ animation:'fadeInUp 0.35s ease forwards' }}>
 
-      {/* ══ Light elegant wrapper ══ */}
-      <div className="relative rounded-3xl overflow-hidden"
-        style={{ background:'rgba(248,249,252,0.98)', border:'1px solid rgba(0,0,0,0.07)', boxShadow:'0 4px 32px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)' }}>
+      {/* ══ LC-style wrapper: white/90 backdrop on background image ══ */}
+      <div className="rounded-3xl overflow-hidden"
+        style={{ background:'rgba(255,255,255,0.93)', backdropFilter:'blur(18px)', WebkitBackdropFilter:'blur(18px)', border:'1px solid rgba(255,255,255,0.6)', boxShadow:'0 4px 32px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06)' }}>
 
-        {/* Subtle red accent glow top-left — brand color */}
-        <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full pointer-events-none"
-          style={{ background:'radial-gradient(circle,rgba(190,18,60,0.07) 0%,transparent 70%)' }}/>
-        <div className="absolute -bottom-10 right-10 w-48 h-48 rounded-full pointer-events-none"
-          style={{ background:'radial-gradient(circle,rgba(29,78,216,0.04) 0%,transparent 70%)' }}/>
-        {/* Subtle dot texture */}
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage:'radial-gradient(circle, rgba(0,0,0,0.035) 1px, transparent 1px)', backgroundSize:'20px 20px', opacity:0.6 }}/>
-
-        {/* ── Top bar ── */}
+        {/* ── Top bar (LC style: white/97 + red bottom border) ── */}
         <div className="flex items-center justify-between gap-4 px-6 py-4"
-          style={{ borderBottom:'1px solid rgba(0,0,0,0.07)', background:'rgba(255,255,255,0.7)', backdropFilter:'blur(8px)' }}>
+          style={{ background:'rgba(255,255,255,0.97)', backdropFilter:'blur(16px)', borderBottom:'3px solid #dc2626' }}>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ background:'linear-gradient(135deg,#be123c,#9f1239)', boxShadow:'0 2px 8px rgba(190,18,60,0.3)' }}>
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow">
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
               </svg>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-sm tracking-wide" style={{ color:'rgba(0,0,0,0.8)' }}>{scopeTitle}</span>
+                <span className="text-sm font-bold text-slate-800 leading-tight">{scopeTitle}</span>
                 <ScopeBadge scope={scope}/>
               </div>
-              <span className="text-[10px] tracking-widest" style={{ color:'rgba(0,0,0,0.3)' }}>LAST SYNC {lastRefresh.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</span>
+              <span className="text-[10px] text-slate-400 font-medium">SYNC {lastRefresh.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</span>
             </div>
           </div>
+
           <div className="flex items-center gap-2 flex-shrink-0">
             <button onClick={()=>{ setLoading(true); setAuditLoading(true); fetchKPI(); fetchAudit(); setLastRefresh(new Date()); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
-              style={{ color:'rgba(0,0,0,0.4)', border:'1px solid rgba(0,0,0,0.1)', background:'transparent' }}
-              onMouseEnter={e=>{ (e.currentTarget as HTMLButtonElement).style.color='rgba(0,0,0,0.75)'; (e.currentTarget as HTMLButtonElement).style.background='rgba(0,0,0,0.05)'; }}
-              onMouseLeave={e=>{ (e.currentTarget as HTMLButtonElement).style.color='rgba(0,0,0,0.4)'; (e.currentTarget as HTMLButtonElement).style.background='transparent'; }}>
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-50 border border-slate-200 transition-all">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
               Sync
             </button>
             {/* Tab pills */}
-            <div className="flex rounded-lg overflow-hidden" style={{ border:'1px solid rgba(0,0,0,0.1)', background:'rgba(0,0,0,0.04)' }}>
+            <nav className="flex items-center gap-1">
               {TAB_CONFIG.map(t=>(
                 <button key={t.key} onClick={()=>setTab(t.key)}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 text-[11px] font-bold tracking-wide transition-all"
-                  style={tab===t.key
-                    ? {background:'rgba(190,18,60,0.12)', color:'#be123c', borderRight:'1px solid rgba(0,0,0,0.06)'}
-                    : {color:'rgba(0,0,0,0.35)', borderRight:'1px solid rgba(0,0,0,0.05)'}}>
-                  {t.label.toUpperCase()}
+                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-lg border-b-2 transition-all
+                    ${tab===t.key ? 'text-blue-700 border-blue-600 bg-blue-50/60 font-semibold' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'}`}>
+                  <span className="text-sm">{t.icon}</span>{t.label}
                 </button>
               ))}
-            </div>
+            </nav>
           </div>
         </div>
 
         {/* ── Content area ── */}
-        <div className="p-5 space-y-5">
+        <div className="p-6 space-y-8">
 
           {/* ══════════ TAB KPI ══════════ */}
           {tab==='kpi' && (
-            <div className="space-y-5">
+            <div className="space-y-8">
 
-              {/* Piket Hari Ini */}
+              {/* ── Piket Showroom Today ── */}
               <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <div style={DIVIDER} className="flex-1"/>
-                  <span className={LABEL} style={LABEL_STYLE}>Piket Showroom — {dayOfWeek()}, {new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}</span>
-                  <div style={DIVIDER} className="flex-1"/>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <SectionPill icon="🏪">Piket Showroom — {dayOfWeek()}, {new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}</SectionPill>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {[
-                    {team:'IVP', person:kpi?.piket.todayIVP, color:'#ef4444', highlight:isPTSIVP||scope.kind==='admin'},
-                    {team:'UMP', person:kpi?.piket.todayUMP, color:'#f59e0b', highlight:isPTSUMP||scope.kind==='admin'},
-                    {team:'MLDS',person:kpi?.piket.todayMlds,color:'#3b82f6', highlight:isPTSMLDS||scope.kind==='admin'},
+                    {team:'IVP',  person:kpi?.piket.todayIVP,  color:'#ef4444', gradient:'from-red-500/90 to-rose-600/90',    highlight:isPTSIVP||scope.kind==='admin'},
+                    {team:'UMP',  person:kpi?.piket.todayUMP,  color:'#f59e0b', gradient:'from-amber-500/90 to-orange-500/90', highlight:isPTSUMP||scope.kind==='admin'},
+                    {team:'MLDS', person:kpi?.piket.todayMlds, color:'#3b82f6', gradient:'from-blue-500/90 to-indigo-500/90',  highlight:isPTSMLDS||scope.kind==='admin'},
                   ].map(p=>(
-                    <div key={p.team} className="rounded-xl px-4 py-3 flex items-center gap-3 transition-all"
-                      style={{ ...CARD, ...(p.highlight ? { borderLeft:`2px solid ${p.color}`, boxShadow:`0 2px 16px ${p.color}14` } : {}) }}>
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center font-black text-xs flex-shrink-0 text-white"
-                        style={{ background:`linear-gradient(135deg,${p.color},${p.color}aa)`, boxShadow:`0 2px 8px ${p.color}40` }}>
+                    <div key={p.team}
+                      className={`bg-white/90 rounded-2xl border ${p.highlight?'border-slate-300 shadow-md':'border-slate-200 shadow-sm'} p-4 flex items-center gap-3 transition-all`}>
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${p.gradient} flex items-center justify-center font-black text-sm text-white flex-shrink-0 shadow`}>
                         {p.team}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className={LABEL + ' mb-0.5'} style={LABEL_STYLE}>PIC {p.team}</div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">PIC {p.team} Hari Ini</div>
                         {loading
-                          ? <div className="h-4 w-20 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.08)' }}/>
+                          ? <div className="h-4 w-24 rounded animate-pulse bg-slate-100"/>
                           : p.person
-                            ? <div className="text-sm font-bold truncate" style={{ color:'rgba(0,0,0,0.75)' }}>{p.person}</div>
-                            : <div className="text-xs italic" style={{ color:'rgba(0,0,0,0.25)' }}>Belum diisi</div>}
+                            ? <div className="text-sm font-bold text-slate-800 truncate">{p.person}</div>
+                            : <div className="text-xs italic text-slate-300">Belum diisi</div>}
+                        {!loading&&p.person&&(
+                          <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full mt-1 inline-block">● Bertugas</span>
+                        )}
                       </div>
-                      {!loading&&p.person&&(
-                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background:'#10b981', boxShadow:'0 0 6px #10b981aa' }}/>
-                      )}
                     </div>
                   ))}
                 </div>
                 {!loading&&kpi&&(
-                  <div className="mt-2 flex items-center gap-4 px-1">
-                    <span className="text-[10px] tracking-wide" style={{ color:'rgba(0,0,0,0.35)' }}>
-                      MINGGU INI <span className="font-bold" style={{ color:'rgba(0,0,0,0.65)' }}>{kpi.piket.weekFilled}/{kpi.piket.weekTotal}</span> hari terisi
-                    </span>
-                    <span className="text-[10px] tracking-wide" style={{ color:'rgba(0,0,0,0.35)' }}>
-                      TAMU HARI INI <span className="font-bold" style={{ color:'rgba(0,0,0,0.65)' }}>{kpi.piket.kegiatanToday}</span>
-                    </span>
+                  <div className="mt-3 flex items-center gap-6 px-1 flex-wrap">
+                    <span className="text-[11px] text-slate-500">Minggu ini: <span className="font-bold text-slate-700">{kpi.piket.weekFilled}/{kpi.piket.weekTotal} hari</span> terisi</span>
+                    <span className="text-[11px] text-slate-500">Tamu hari ini: <span className="font-bold text-slate-700">{kpi.piket.kegiatanToday}</span></span>
+                    <div className="flex items-center gap-2">
+                      <DonutChart size={24} strokeWidth={5}
+                        segments={[{value:kpi.piket.weekFilled,color:'#10b981'},{value:Math.max(kpi.piket.weekTotal-kpi.piket.weekFilled,0),color:'#e2e8f0'}]}
+                        label=""/>
+                      <span className="text-[10px] text-slate-400">{Math.round((kpi.piket.weekFilled/Math.max(kpi.piket.weekTotal,1))*100)}% terpenuhi</span>
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Tickets */}
+              {/* ── Ticket Troubleshooting ── */}
               <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <div style={DIVIDER} className="flex-1"/>
-                  <span className={LABEL} style={LABEL_STYLE}>Ticket Troubleshooting — {scope.kind==='pts_sup'?scope.ptsTeamType:scope.kind==='sales_sup'?'Divisi Anda':'Semua'}</span>
-                  <div style={DIVIDER} className="flex-1"/>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  <StatCard icon="🎫" label="Total Ticket" value={loading?'—':kpi?.tickets.total??0} sub="Sepanjang waktu" color="#64748b" loading={loading}
-                    donut={{ segments:(kpi?.tickets.byStatus??[]).map(s=>({value:s.count,color:s.color})) }}/>
-                  <StatCard icon="🔥" label="Open / Aktif" value={loading?'—':kpi?.tickets.open??0} sub="Belum selesai" color="#ef4444" loading={loading}/>
-                  <StatCard icon="⏳" label="Waiting Approval" value={loading?'—':kpi?.tickets.waitingApproval??0} sub="Perlu tindakan" color="#f59e0b" loading={loading}/>
-                  <StatCard icon="✅" label="Solved Total" value={loading?'—':kpi?.tickets.solved??0} sub={`Avg ${kpi?.tickets.avgResolutionDays??0} hari/ticket`} color="#10b981" loading={loading}/>
-                  <StatCard icon="⚡" label="Solved Hari Ini" value={loading?'—':kpi?.tickets.resolvedToday??0} sub="Diselesaikan hari ini" color="#0891b2" loading={loading}/>
-                </div>
-              </div>
-
-              {/* Reminders */}
-              <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <div style={DIVIDER} className="flex-1"/>
-                  <span className={LABEL} style={LABEL_STYLE}>Reminder Schedule</span>
-                  <div style={DIVIDER} className="flex-1"/>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  <StatCard icon="📅" label="Total Reminder" value={loading?'—':kpi?.reminders.total??0} sub="Semua status" color="#6366f1" loading={loading}
-                    donut={{ segments:(kpi?.reminders.byCategory??[]).slice(0,5).map(c=>({value:c.count,color:c.color})) }}/>
-                  <StatCard icon="🟡" label="Pending" value={loading?'—':kpi?.reminders.pending??0} sub="Belum selesai" color="#f59e0b" loading={loading}/>
-                  <StatCard icon="🔴" label="Overdue" value={loading?'—':kpi?.reminders.overdueCount??0} sub="Terlewat" color="#ef4444" loading={loading}/>
-                  <StatCard icon="🔔" label="7 Hari ke Depan" value={loading?'—':kpi?.reminders.dueSoon??0} sub="Perlu perhatian" color="#0891b2" loading={loading}/>
-                  <StatCard icon="🟢" label="Selesai (Done)" value={loading?'—':kpi?.reminders.done??0} sub="Sudah dikerjakan" color="#10b981" loading={loading}/>
-                </div>
-              </div>
-
-              {/* Unit + Users — admin */}
-              {scope.kind==='admin'&&(
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div style={DIVIDER} className="flex-1"/>
-                      <span className={LABEL} style={LABEL_STYLE}>Unit Movement — Bulan Ini</span>
-                      <div style={DIVIDER} className="flex-1"/>
+                <SectionPill icon="🎫">Ticket Troubleshooting — {scope.kind==='pts_sup'?scope.ptsTeamType:scope.kind==='sales_sup'?'Divisi Anda':'Semua'}</SectionPill>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-4">
+                  {[
+                    {icon:'🎫', label:'Total Ticket',      value:kpi?.tickets.total??0,            sub:'Sepanjang waktu',     color:'#64748b', grad:'from-slate-500/90 to-slate-600/90'},
+                    {icon:'🔥', label:'Open / Aktif',      value:kpi?.tickets.open??0,             sub:'Belum selesai',       color:'#ef4444', grad:'from-red-500/90 to-rose-600/90'},
+                    {icon:'⏳', label:'Waiting Approval',  value:kpi?.tickets.waitingApproval??0,  sub:'Perlu tindakan',      color:'#f59e0b', grad:'from-amber-400/90 to-orange-500/90'},
+                    {icon:'✅', label:'Solved Total',       value:kpi?.tickets.solved??0,           sub:`Avg ${kpi?.tickets.avgResolutionDays??0} hari`,color:'#10b981',grad:'from-emerald-500/90 to-green-600/90'},
+                    {icon:'⚡', label:'Solved Hari Ini',   value:kpi?.tickets.resolvedToday??0,    sub:'Diselesaikan hari ini',color:'#0891b2', grad:'from-cyan-500/90 to-sky-600/90'},
+                  ].map(c=>(
+                    <div key={c.label} className={`bg-gradient-to-br ${c.grad} rounded-2xl p-4 text-white shadow-lg`}>
+                      <div className="text-2xl mb-1">{c.icon}</div>
+                      {loading ? <div className="h-7 w-10 rounded animate-pulse bg-white/30 mb-1"/> :
+                        <div className="text-2xl font-black">{c.value}</div>}
+                      <div className="text-white/80 text-xs font-medium leading-tight mt-0.5">{c.label}</div>
+                      <div className="text-white/60 text-[10px] mt-0.5">{c.sub}</div>
                     </div>
-                    <div className="grid grid-cols-3 gap-3">
-                      <StatCard icon="📦" label="Total Log" value={loading?'—':kpi?.units.totalLogs??0} color="#64748b" loading={loading}/>
-                      <StatCard icon="📤" label="Keluar" value={loading?'—':kpi?.units.keluarThisMonth??0} color="#f59e0b" loading={loading}/>
-                      <StatCard icon="📥" label="Masuk" value={loading?'—':kpi?.units.masukThisMonth??0} color="#10b981" loading={loading}/>
+                  ))}
+                </div>
+                {/* Mini analytics row below ticket cards */}
+                {!loading&&kpi&&kpi.tickets.byStatus.length>0&&(
+                  <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4">
+                    <div className="flex items-center gap-5 flex-wrap">
+                      <div className="flex items-center gap-3">
+                        <DonutChart
+                          segments={kpi.tickets.byStatus.map(s=>({value:s.count,color:s.color}))}
+                          size={52} strokeWidth={8} label={`${kpi.tickets.total}`}/>
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider leading-tight">Distribusi<br/>Status</div>
+                      </div>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1.5 flex-1">
+                        {kpi.tickets.byStatus.map(s=>(
+                          <div key={s.status} className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background:s.color }}/>
+                            <span className="text-[10px] text-slate-500">{s.status}</span>
+                            <span className="text-[10px] font-bold text-slate-700">{s.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-[10px] text-slate-400">Avg Resolusi</div>
+                        <div className="text-lg font-black text-rose-600">{kpi.tickets.avgResolutionDays}<span className="text-xs font-normal text-slate-400 ml-0.5">hari</span></div>
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div style={DIVIDER} className="flex-1"/>
-                      <span className={LABEL} style={LABEL_STYLE}>Pengguna Platform</span>
-                      <div style={DIVIDER} className="flex-1"/>
+                )}
+              </div>
+
+              {/* ── Reminder Schedule ── */}
+              <div>
+                <SectionPill icon="📅">Reminder Schedule</SectionPill>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-4">
+                  {[
+                    {icon:'📅', label:'Total Reminder',   value:kpi?.reminders.total??0,         sub:'Semua status',     color:'#6366f1', grad:'from-indigo-500/90 to-violet-600/90'},
+                    {icon:'🟡', label:'Pending',           value:kpi?.reminders.pending??0,       sub:'Belum selesai',    color:'#f59e0b', grad:'from-amber-400/90 to-yellow-500/90'},
+                    {icon:'🔴', label:'Overdue',           value:kpi?.reminders.overdueCount??0,  sub:'Terlewat deadline', color:'#ef4444', grad:'from-red-500/90 to-rose-600/90'},
+                    {icon:'🔔', label:'Due 7 Hari',        value:kpi?.reminders.dueSoon??0,       sub:'Perlu perhatian',  color:'#0891b2', grad:'from-sky-500/90 to-cyan-600/90'},
+                    {icon:'🟢', label:'Selesai (Done)',    value:kpi?.reminders.done??0,          sub:'Sudah dikerjakan', color:'#10b981', grad:'from-emerald-500/90 to-green-600/90'},
+                  ].map(c=>(
+                    <div key={c.label} className={`bg-gradient-to-br ${c.grad} rounded-2xl p-4 text-white shadow-lg`}>
+                      <div className="text-2xl mb-1">{c.icon}</div>
+                      {loading ? <div className="h-7 w-10 rounded animate-pulse bg-white/30 mb-1"/> :
+                        <div className="text-2xl font-black">{c.value}</div>}
+                      <div className="text-white/80 text-xs font-medium leading-tight mt-0.5">{c.label}</div>
+                      <div className="text-white/60 text-[10px] mt-0.5">{c.sub}</div>
                     </div>
-                    <div className="rounded-xl px-5 py-4" style={CARD}>
+                  ))}
+                </div>
+                {/* Category breakdown */}
+                {!loading&&kpi&&kpi.reminders.byCategory.length>0&&(
+                  <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4">
+                    <div className="flex items-start gap-5">
+                      <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                        <DonutChart
+                          segments={kpi.reminders.byCategory.map(c=>({value:c.count,color:c.color}))}
+                          size={64} strokeWidth={9} label={`${kpi.reminders.total}`}/>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Kategori</span>
+                      </div>
+                      <div className="flex-1 grid grid-cols-2 gap-x-6 gap-y-1.5">
+                        {kpi.reminders.byCategory.map(c=>(
+                          <div key={c.cat} className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background:c.color }}/>
+                            <span className="text-[10px] text-slate-500 flex-1 truncate">{c.cat}</span>
+                            <span className="text-[10px] font-bold text-slate-700">{c.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ── Unit Movement + Users (admin) ── */}
+              {scope.kind==='admin'&&(
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <SectionPill icon="🚚">Unit Movement — Bulan Ini</SectionPill>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        {icon:'📦',label:'Total Log',value:kpi?.units.totalLogs??0,  grad:'from-slate-500/90 to-slate-600/90'},
+                        {icon:'📤',label:'Keluar',   value:kpi?.units.keluarThisMonth??0, grad:'from-amber-400/90 to-orange-500/90'},
+                        {icon:'📥',label:'Masuk',    value:kpi?.units.masukThisMonth??0,  grad:'from-emerald-500/90 to-green-600/90'},
+                      ].map(c=>(
+                        <div key={c.label} className={`bg-gradient-to-br ${c.grad} rounded-2xl p-4 text-white shadow-lg`}>
+                          <div className="text-xl mb-1">{c.icon}</div>
+                          {loading?<div className="h-7 w-10 rounded animate-pulse bg-white/30 mb-1"/>:
+                            <div className="text-2xl font-black">{c.value}</div>}
+                          <div className="text-white/80 text-xs font-medium mt-0.5">{c.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {!loading&&kpi&&(
+                      <div className="mt-3 bg-white/90 rounded-xl border border-slate-200 shadow-sm p-3 flex items-center gap-3">
+                        <DonutChart size={40} strokeWidth={6}
+                          segments={[{value:kpi.units.keluarThisMonth,color:'#f59e0b'},{value:kpi.units.masukThisMonth,color:'#10b981'}]}
+                          label=""/>
+                        <div className="flex gap-4 text-[11px]">
+                          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block"/>Keluar <b className="text-slate-700">{kpi.units.keluarThisMonth}</b></span>
+                          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"/>Masuk <b className="text-slate-700">{kpi.units.masukThisMonth}</b></span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <SectionPill icon="👥">Pengguna Platform</SectionPill>
+                    <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
                       {loading
-                        ? <div className="h-10 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.06)' }}/>
-                        : <div className="flex items-center gap-4 flex-wrap">
-                            <span className="text-4xl font-black" style={{ fontVariantNumeric:'tabular-nums', color:'rgba(0,0,0,0.75)' }}>{kpi?.users.total??0}</span>
-                            <div className="flex flex-wrap gap-2">
-                              {(kpi?.users.byRole??[]).map(r=>(
-                                <span key={r.role} className="text-[10px] font-bold px-2 py-0.5 rounded tracking-wider"
-                                  style={{ background:'rgba(0,0,0,0.05)', color:'rgba(0,0,0,0.45)', border:'1px solid rgba(0,0,0,0.08)' }}>
-                                  {r.role.toUpperCase()}&nbsp;<span style={{ color:'rgba(0,0,0,0.7)' }}>{r.count}</span>
-                                </span>
-                              ))}
+                        ? <div className="h-16 rounded animate-pulse bg-slate-100"/>
+                        : (
+                          <div className="flex items-center gap-5">
+                            <DonutChart
+                              segments={(kpi?.users.byRole??[]).map((r,i)=>({
+                                value:r.count,
+                                color:['#6366f1','#10b981','#f59e0b','#ef4444','#0891b2'][i%5]
+                              }))}
+                              size={64} strokeWidth={9} label={`${kpi?.users.total??0}`}/>
+                            <div>
+                              <div className="text-3xl font-black text-slate-800 leading-none">{kpi?.users.total??0}</div>
+                              <div className="text-xs text-slate-400 mb-2">total pengguna</div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {(kpi?.users.byRole??[]).map((r,i)=>(
+                                  <span key={r.role} className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                    style={{ background:['#6366f115','#10b98115','#f59e0b15','#ef444415','#0891b215'][i%5], color:['#6366f1','#10b981','#d97706','#ef4444','#0891b2'][i%5], border:`1px solid ${['#6366f130','#10b98130','#f59e0b30','#ef444430','#0891b230'][i%5]}` }}>
+                                    {r.role.toUpperCase()} {r.count}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
-                          </div>}
+                          </div>
+                        )}
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Unit — PTS sup */}
+              {/* ── Unit Movement (PTS supervisor) ── */}
               {scope.kind==='pts_sup'&&(
                 <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div style={DIVIDER} className="flex-1"/>
-                    <span className={LABEL} style={LABEL_STYLE}>Unit Movement — {scope.ptsTeamType}</span>
-                    <div style={DIVIDER} className="flex-1"/>
-                  </div>
+                  <SectionPill icon="🚚">Unit Movement — {scope.ptsTeamType}</SectionPill>
                   <div className="grid grid-cols-3 gap-3">
-                    <StatCard icon="📦" label="Total Log" value={loading?'—':kpi?.units.totalLogs??0} color="#64748b" loading={loading}/>
-                    <StatCard icon="📤" label="Keluar" value={loading?'—':kpi?.units.keluarThisMonth??0} color="#f59e0b" loading={loading}/>
-                    <StatCard icon="📥" label="Masuk" value={loading?'—':kpi?.units.masukThisMonth??0} color="#10b981" loading={loading}/>
+                    {[
+                      {icon:'📦',label:'Total Log',value:kpi?.units.totalLogs??0,  grad:'from-slate-500/90 to-slate-600/90'},
+                      {icon:'📤',label:'Keluar',   value:kpi?.units.keluarThisMonth??0, grad:'from-amber-400/90 to-orange-500/90'},
+                      {icon:'📥',label:'Masuk',    value:kpi?.units.masukThisMonth??0,  grad:'from-emerald-500/90 to-green-600/90'},
+                    ].map(c=>(
+                      <div key={c.label} className={`bg-gradient-to-br ${c.grad} rounded-2xl p-4 text-white shadow-lg`}>
+                        <div className="text-xl mb-1">{c.icon}</div>
+                        {loading?<div className="h-7 w-10 rounded animate-pulse bg-white/30 mb-1"/>:
+                          <div className="text-2xl font-black">{c.value}</div>}
+                        <div className="text-white/80 text-xs font-medium mt-0.5">{c.label}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
 
-              {/* Learning Center — admin only */}
+              {/* ── Learning Center (admin) ── */}
               {scope.kind==='admin'&&(
                 <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div style={DIVIDER} className="flex-1"/>
-                    <span className={LABEL} style={LABEL_STYLE}>Learning Center</span>
-                    <div style={DIVIDER} className="flex-1"/>
+                  <SectionPill icon="🎓">Learning Center</SectionPill>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                    {[
+                      {icon:'🎯',label:'Total Sesi Quiz',  value:kpi?.learning.totalSessions??0,    sub:'Semua sesi',         grad:'from-indigo-500/90 to-violet-600/90'},
+                      {icon:'✅',label:'Sesi Selesai',      value:kpi?.learning.completedSessions??0, sub:'Status completed',   grad:'from-emerald-500/90 to-green-600/90'},
+                      {icon:'👥',label:'Peserta Unik',      value:kpi?.learning.totalParticipants??0, sub:'User berbeda',       grad:'from-sky-500/90 to-cyan-600/90'},
+                      {icon:'⭐',label:'Rata-rata Skor',    value:`${kpi?.learning.avgScore??0}`,     sub:'Dari sesi berhasil', grad:'from-amber-400/90 to-orange-500/90'},
+                    ].map(c=>(
+                      <div key={c.label} className={`bg-gradient-to-br ${c.grad} rounded-2xl p-5 text-white shadow-lg`}>
+                        <div className="text-3xl mb-2">{c.icon}</div>
+                        {loading?<div className="h-7 w-12 rounded animate-pulse bg-white/30 mb-1"/>:
+                          <div className="text-3xl font-black">{c.value}</div>}
+                        <div className="text-white/80 text-sm font-medium mt-1">{c.label}</div>
+                        <div className="text-white/60 text-[10px] mt-0.5">{c.sub}</div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <StatCard icon="🎓" label="Total Sesi Quiz" value={loading?'—':kpi?.learning.totalSessions??0} sub="Semua sesi" color="#6366f1" loading={loading}/>
-                    <StatCard icon="✅" label="Sesi Selesai" value={loading?'—':kpi?.learning.completedSessions??0} sub="Status completed" color="#10b981" loading={loading}/>
-                    <StatCard icon="👥" label="Peserta Unik" value={loading?'—':kpi?.learning.totalParticipants??0} sub="User berbeda" color="#0891b2" loading={loading}/>
-                    <StatCard icon="⭐" label="Rata-rata Skor" value={loading?'—':`${kpi?.learning.avgScore??0}`} sub="Dari sesi berhasil" color="#f59e0b" loading={loading}/>
-                  </div>
+                  {!loading&&kpi&&(
+                    <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="flex flex-col items-center gap-2 p-3">
+                          <DonutChart
+                            segments={[{value:kpi.learning.completedSessions,color:'#10b981'},{value:Math.max(kpi.learning.totalSessions-kpi.learning.completedSessions,0),color:'#e2e8f0'}]}
+                            size={68} strokeWidth={10} label={`${kpi.learning.totalSessions>0?Math.round((kpi.learning.completedSessions/kpi.learning.totalSessions)*100):0}%`}/>
+                          <div className="text-center">
+                            <p className="text-xs font-bold text-slate-700">Completion Rate</p>
+                            <p className="text-[10px] text-slate-400">{kpi.learning.completedSessions} selesai · {kpi.learning.totalSessions-kpi.learning.completedSessions} aktif</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center gap-2 p-3">
+                          <DonutChart
+                            segments={[{value:kpi.learning.avgScore,color:kpi.learning.avgScore>=80?'#10b981':kpi.learning.avgScore>=60?'#f59e0b':'#ef4444'},{value:Math.max(100-kpi.learning.avgScore,0),color:'#f1f5f9'}]}
+                            size={68} strokeWidth={10} label={`${kpi.learning.avgScore}`}/>
+                          <div className="text-center">
+                            <p className="text-xs font-bold text-slate-700">Avg Score</p>
+                            <p className="text-[10px] text-slate-400">{kpi.learning.totalParticipants} peserta unik</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
+
             </div>
           )}
 
           {/* ══════════ TAB ANALYTICS ══════════ */}
           {tab==='analytics'&&(
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Handler */}
-                <div className="rounded-xl p-5" style={CARD}>
-                  <div className={LABEL + ' mb-4'} style={LABEL_STYLE}>Ticket Open per Handler</div>
-                  {loading?<div className="h-32 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.05)' }}/>:
+                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">🎫 Ticket Open per Handler</h3>
+                  {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
                     kpi?.tickets.byHandler.length
                       ? <HBarChart data={kpi.tickets.byHandler.map(h=>({label:h.name.split(' ')[0],value:h.count}))} color="#ef4444"/>
-                      : <p className="text-xs text-center py-6">Tidak ada data</p>}
+                      : <p className="text-xs text-center py-6 text-slate-400">Tidak ada data</p>}
                 </div>
                 {/* Divisi */}
-                <div className="rounded-xl p-5" style={CARD}>
-                  <div className={LABEL + ' mb-4'} style={LABEL_STYLE}>Ticket per Divisi</div>
-                  {loading?<div className="h-32 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.05)' }}/>:
+                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">🏢 Ticket per Divisi</h3>
+                  {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
                     kpi?.tickets.byDivision.length
                       ? <HBarChart data={kpi.tickets.byDivision.map(d=>({label:d.div,value:d.count}))} color="#6366f1"/>
-                      : <p className="text-xs text-center py-6">Tidak ada data</p>}
+                      : <p className="text-xs text-center py-6 text-slate-400">Tidak ada data</p>}
                 </div>
               </div>
-              {/* Status donut */}
-              <div className="rounded-xl p-5" style={CARD}>
-                <div className={LABEL + ' mb-4'} style={LABEL_STYLE}>Distribusi Status Ticket</div>
-                {loading?<div className="h-16 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.05)' }}/>:(
-                  <div className="flex items-center gap-6 flex-wrap">
-                    <MiniDonut size={72} segments={(kpi?.tickets.byStatus??[]).map(s=>({value:s.count,color:s.color}))}/>
-                    <div className="flex flex-wrap gap-x-4 gap-y-2">
-                      {(kpi?.tickets.byStatus??[]).map(s=>(
-                        <div key={s.status} className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background:s.color, boxShadow:`0 0 4px ${s.color}` }}/>
-                          <span className="text-[11px]" style={{ color:'rgba(0,0,0,0.5)' }}>{s.status}</span>
-                          <span className="text-[11px] font-bold" style={{ color:'rgba(0,0,0,0.72)' }}>{s.count}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Reminder kategori */}
-                <div className="rounded-xl p-5" style={CARD}>
-                  <div className={LABEL + ' mb-4'} style={LABEL_STYLE}>Reminder per Kategori</div>
-                  {loading?<div className="h-32 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.05)' }}/>:(
-                    <div className="flex items-center gap-5">
-                      <MiniDonut size={64} segments={(kpi?.reminders.byCategory??[]).map(c=>({value:c.count,color:c.color}))}/>
-                      <div className="space-y-2 flex-1">
-                        {(kpi?.reminders.byCategory??[]).map(c=>(
-                          <div key={c.cat} className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background:c.color, boxShadow:`0 0 4px ${c.color}` }}/>
-                            <span className="text-[11px] flex-1 truncate" style={{ color:'rgba(0,0,0,0.48)' }}>{c.cat}</span>
-                            <span className="text-[11px] font-bold" style={{ color:'rgba(0,0,0,0.72)' }}>{c.count}</span>
+
+              {/* Status donut + kategori reminder */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">📊 Distribusi Status Ticket</h3>
+                  {loading?<div className="h-20 rounded animate-pulse bg-slate-100"/>:(
+                    <div className="flex items-center gap-5 flex-wrap">
+                      <DonutChart size={72} strokeWidth={10}
+                        segments={(kpi?.tickets.byStatus??[]).map(s=>({value:s.count,color:s.color}))}
+                        label={`${kpi?.tickets.total??0}`}/>
+                      <div className="flex flex-wrap gap-x-4 gap-y-2 flex-1">
+                        {(kpi?.tickets.byStatus??[]).map(s=>(
+                          <div key={s.status} className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background:s.color }}/>
+                            <span className="text-[11px] text-slate-500">{s.status}</span>
+                            <span className="text-[11px] font-bold text-slate-700">{s.count}</span>
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
                 </div>
-                {/* Performa */}
-                <div className="rounded-xl p-5" style={CARD}>
-                  <div className={LABEL + ' mb-4'} style={LABEL_STYLE}>Performa Resolusi</div>
-                  {loading?<div className="h-32 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.05)' }}/>:(
-                    <div className="space-y-4">
-                      {[
-                        {label:'Avg. Resolusi Ticket',value:`${kpi?.tickets.avgResolutionDays??0} hari`,color:'#ef4444'},
-                        {label:'Solved Hari Ini',value:`${kpi?.tickets.resolvedToday??0} ticket`,color:'#10b981'},
-                        {label:'Reminder Overdue',value:`${kpi?.reminders.overdueCount??0} jadwal`,color:'#f59e0b'},
-                        {label:'Piket Terisi Minggu Ini',value:`${kpi?.piket.weekFilled??0}/${kpi?.piket.weekTotal??6} hari`,color:'#6366f1'},
-                        ...(scope.kind==='admin'?[{label:'LC Avg. Skor',value:`${kpi?.learning.avgScore??0} poin`,color:'#8b5cf6'}]:[]),
-                      ].map(m=>(
-                        <div key={m.label} className="flex items-center justify-between gap-3">
-                          <span className="text-[11px] tracking-wide" style={{ color:'rgba(0,0,0,0.38)' }}>{m.label.toUpperCase()}</span>
-                          <span className="text-sm font-black" style={{ color:m.color, fontVariantNumeric:'tabular-nums' }}>{m.value}</span>
-                        </div>
-                      ))}
+                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">🗂️ Reminder per Kategori</h3>
+                  {loading?<div className="h-20 rounded animate-pulse bg-slate-100"/>:(
+                    <div className="flex items-center gap-5">
+                      <DonutChart size={64} strokeWidth={9}
+                        segments={(kpi?.reminders.byCategory??[]).map(c=>({value:c.count,color:c.color}))}
+                        label={`${kpi?.reminders.total??0}`}/>
+                      <div className="space-y-1.5 flex-1">
+                        {(kpi?.reminders.byCategory??[]).map(c=>(
+                          <div key={c.cat} className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background:c.color }}/>
+                            <span className="text-[10px] flex-1 truncate text-slate-500">{c.cat}</span>
+                            <span className="text-[10px] font-bold text-slate-700">{c.count}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Performa Resolusi */}
+              <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">⚡ Ringkasan Performa</h3>
+                {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:(
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {[
+                      {label:'Avg. Resolusi Ticket',value:`${kpi?.tickets.avgResolutionDays??0} hari`,color:'#ef4444',icon:'⏱️'},
+                      {label:'Solved Hari Ini',value:`${kpi?.tickets.resolvedToday??0} ticket`,color:'#10b981',icon:'✅'},
+                      {label:'Reminder Overdue',value:`${kpi?.reminders.overdueCount??0} jadwal`,color:'#f59e0b',icon:'🔴'},
+                      {label:'Piket Terisi Minggu Ini',value:`${kpi?.piket.weekFilled??0}/${kpi?.piket.weekTotal??6} hari`,color:'#6366f1',icon:'🏪'},
+                      {label:'Tamu Showroom Hari Ini',value:`${kpi?.piket.kegiatanToday??0} orang`,color:'#0891b2',icon:'👤'},
+                      ...(scope.kind==='admin'?[{label:'LC Avg. Skor',value:`${kpi?.learning.avgScore??0} poin`,color:'#8b5cf6',icon:'🎓'}]:[]),
+                    ].map(m=>(
+                      <div key={m.label} className="flex items-center gap-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
+                        <span className="text-xl">{m.icon}</span>
+                        <div>
+                          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{m.label}</div>
+                          <div className="text-sm font-black" style={{ color:m.color }}>{m.value}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -849,34 +996,30 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               {/* Search + filter */}
               <div className="flex flex-wrap items-center gap-2">
                 <div className="relative flex-1 min-w-[180px]">
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3" style={{ color:'rgba(0,0,0,0.3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                   </svg>
                   <input value={auditSearch} onChange={e=>setAuditSearch(e.target.value)}
                     placeholder="Cari actor, aksi, target..."
-                    className="w-full rounded-lg pl-8 pr-3 py-2 text-xs outline-none"
-                    style={{ background:'rgba(0,0,0,0.04)', border:'1px solid rgba(0,0,0,0.09)', color:'rgba(0,0,0,0.75)' }}/>
+                    className="w-full rounded-lg pl-8 pr-3 py-2 text-xs outline-none bg-slate-50 border border-slate-200 text-slate-700 focus:border-blue-300 focus:ring-1 focus:ring-blue-100 transition-all"/>
                 </div>
                 {(['all','ticket','reminder','piket','user'] as const).map(f=>(
                   <button key={f} onClick={()=>setAuditFilter(f)}
-                    className="px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-wide transition-all"
-                    style={auditFilter===f
-                      ? { background:'rgba(190,18,60,0.12)', color:'#be123c', border:'1px solid rgba(190,18,60,0.25)' }
-                      : { background:'rgba(0,0,0,0.04)', color:'rgba(0,0,0,0.38)', border:'1px solid rgba(0,0,0,0.08)' }}>
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-wide transition-all border ${auditFilter===f ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white/90 text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
                     {f==='all'?'SEMUA':f.toUpperCase()}
                   </button>
                 ))}
-                <span className="text-[10px] ml-auto tracking-widest" style={{ color:'rgba(0,0,0,0.28)' }}>{filteredAudit.length} ENTRI</span>
+                <span className="text-[10px] ml-auto tracking-widest text-slate-400">{filteredAudit.length} ENTRI</span>
               </div>
               {/* List */}
               <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1"
                 style={{ scrollbarWidth:'thin', scrollbarColor:'rgba(0,0,0,0.1) transparent' }}>
                 {auditLoading
                   ? Array.from({length:6}).map((_,i)=>(
-                      <div key={i} className="h-12 rounded-lg animate-pulse" style={{ background:'rgba(0,0,0,0.04)' }}/>
+                      <div key={i} className="h-12 rounded-lg animate-pulse bg-slate-100"/>
                     ))
                   : filteredAudit.length===0
-                    ? <div className="text-center py-12 text-xs tracking-widest" style={{ color:'rgba(0,0,0,0.22)' }}>TIDAK ADA DATA</div>
+                    ? <div className="text-center py-12 text-xs tracking-widest text-slate-300">TIDAK ADA DATA</div>
                     : filteredAudit.map((entry:AuditEntry,idx:number)=>(
                         <div key={entry.id??idx}><AuditRow entry={entry}/></div>
                       ))}
@@ -885,7 +1028,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           )}
 
         </div>{/* end content */}
-      </div>{/* end light elegant wrapper */}
+      </div>{/* end wrapper */}
     </div>
   );
 }
