@@ -24,6 +24,7 @@ interface KPIData {
   };
   units: { totalLogs: number; keluarThisMonth: number; masukThisMonth: number };
   users: { total: number; byRole: { role: string; count: number }[] };
+  learning: { totalSessions: number; completedSessions: number; totalParticipants: number; avgScore: number };
 }
 
 interface AuditEntry {
@@ -58,9 +59,9 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 const SEVERITY_STYLE = {
-  info:     { bg: 'rgba(59,130,246,0.08)',  border: 'rgba(59,130,246,0.2)',  dot: '#3b82f6', text: '#1e40af' },
-  warn:     { bg: 'rgba(245,158,11,0.08)',  border: 'rgba(245,158,11,0.25)', dot: '#f59e0b', text: '#92400e' },
-  critical: { bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.2)',   dot: '#ef4444', text: '#991b1b' },
+  info:     { bg: 'rgba(59,130,246,0.06)',  border: 'rgba(59,130,246,0.18)',  dot: '#3b82f6', text: '#1e40af' },
+  warn:     { bg: 'rgba(245,158,11,0.07)',  border: 'rgba(245,158,11,0.22)',  dot: '#d97706', text: '#92400e' },
+  critical: { bg: 'rgba(239,68,68,0.06)',   border: 'rgba(239,68,68,0.18)',   dot: '#ef4444', text: '#991b1b' },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -82,7 +83,7 @@ function MiniDonut({ segments, size = 56 }: { segments: { value: number; color: 
   const r = size/2-5, circ = 2*Math.PI*r; let off = 0;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform:'rotate(-90deg)' }}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#f1f5f9" strokeWidth={7}/>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#e8ecf0" strokeWidth={7}/>
       {segments.map((seg,i) => { const pct=seg.value/total, dash=pct*circ, gap=circ-dash;
         const el=<circle key={i} cx={size/2} cy={size/2} r={r} fill="none" stroke={seg.color} strokeWidth={7} strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-off*circ} strokeLinecap="butt"/>;
         off+=pct; return el; })}
@@ -108,18 +109,18 @@ function StatCard({ icon, label, value, sub, color, sparkline, donut, loading }:
 }) {
   return (
     <div className="rounded-2xl p-4 flex flex-col gap-1 relative overflow-hidden"
-      style={{ background:'rgba(255,255,255,0.10)', backdropFilter:'blur(14px)', WebkitBackdropFilter:'blur(14px)', border:'1px solid rgba(255,255,255,0.20)', boxShadow:'0 4px 20px rgba(0,0,0,0.15)' }}>
-      <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.08]"
+      style={{ background:'#ffffff', backdropFilter:'blur(14px)', WebkitBackdropFilter:'blur(14px)', border:'1px solid rgba(0,0,0,0.07)', boxShadow:'0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)' }}>
+      <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.06]"
         style={{ background:color, transform:'translate(30%,-30%)' }}/>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
             <span className="text-sm">{icon}</span>
-            <span className="text-[11px] font-semibold text-white/60 tracking-wide uppercase truncate">{label}</span>
+            <span className="text-[11px] font-semibold tracking-wide uppercase truncate" style={{ color:'rgba(0,0,0,0.4)' }}>{label}</span>
           </div>
-          {loading ? <div className="h-7 w-16 rounded animate-pulse" style={{ background:'rgba(255,255,255,0.15)' }}/> :
+          {loading ? <div className="h-7 w-16 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.08)' }}/> :
             <div className="text-2xl font-black tracking-tight" style={{ color }}>{value}</div>}
-          {sub && <div className="text-[11px] text-white/50 mt-0.5 truncate">{sub}</div>}
+          {sub && <div className="text-[11px] mt-0.5 truncate" style={{ color:'rgba(0,0,0,0.35)' }}>{sub}</div>}
         </div>
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
           {donut && <MiniDonut segments={donut.segments}/>}
@@ -135,10 +136,10 @@ function SectionHeader({ icon, title, sub, right }: { icon:string; title:string;
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-xl flex items-center justify-center text-base flex-shrink-0"
-          style={{ background:'rgba(15,23,42,0.72)', backdropFilter:'blur(8px)' }}>{icon}</div>
+          style={{ background:'rgba(190,18,60,0.1)', border:'1px solid rgba(190,18,60,0.15)' }}>{icon}</div>
         <div>
-          <h2 className="text-sm font-bold text-white tracking-wide">{title}</h2>
-          {sub && <p className="text-[11px] text-white/60">{sub}</p>}
+          <h2 className="text-sm font-bold tracking-wide" style={{ color:'rgba(0,0,0,0.75)' }}>{title}</h2>
+          {sub && <p className="text-[11px]" style={{ color:'rgba(0,0,0,0.4)' }}>{sub}</p>}
         </div>
       </div>
       {right}
@@ -152,12 +153,12 @@ function HBarChart({ data, color, maxItems=6 }: { data:{label:string;value:numbe
     <div className="space-y-1.5">
       {top.map((d,i) => (
         <div key={i} className="flex items-center gap-2">
-          <span className="text-[11px] text-white/70 w-24 truncate flex-shrink-0 text-right">{d.label}</span>
-          <div className="flex-1 h-5 rounded-full overflow-hidden" style={{ background:'rgba(255,255,255,0.1)' }}>
+          <span className="text-[11px] w-24 truncate flex-shrink-0 text-right" style={{ color:'rgba(0,0,0,0.5)' }}>{d.label}</span>
+          <div className="flex-1 h-5 rounded-full overflow-hidden" style={{ background:'rgba(0,0,0,0.06)' }}>
             <div className="h-full rounded-full transition-all duration-700"
-              style={{ width:`${(d.value/max)*100}%`, background:color, opacity:0.85-i*0.08 }}/>
+              style={{ width:`${(d.value/max)*100}%`, background:color, opacity:0.85-i*0.07 }}/>
           </div>
-          <span className="text-[11px] font-bold text-white/80 w-6 text-right">{d.value}</span>
+          <span className="text-[11px] font-bold w-6 text-right" style={{ color:'rgba(0,0,0,0.6)' }}>{d.value}</span>
         </div>
       ))}
     </div>
@@ -171,18 +172,18 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
     <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl transition-all"
       style={{ background: s.bg, border:`1px solid ${s.border}` }}>
       <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-sm"
-        style={{ background:`${s.dot}22` }}>{entry.icon}</div>
+        style={{ background:`${s.dot}18` }}>{entry.icon}</div>
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between gap-2">
-          <span className="text-xs font-bold text-white truncate">{entry.action}</span>
-          <span className="text-[10px] text-white/50 flex-shrink-0">{fmt}</span>
+          <span className="text-xs font-bold truncate" style={{ color:'rgba(0,0,0,0.75)' }}>{entry.action}</span>
+          <span className="text-[10px] flex-shrink-0" style={{ color:'rgba(0,0,0,0.35)' }}>{fmt}</span>
         </div>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background:`${s.dot}25`, color:s.text }}>{entry.module}</span>
-          <span className="text-[10px] text-white/60">by <b className="text-white/80">{entry.actor}</b></span>
-          {entry.target && <span className="text-[10px] text-white/50 truncate max-w-[180px]">→ {entry.target}</span>}
+          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background:`${s.dot}18`, color:s.text }}>{entry.module}</span>
+          <span className="text-[10px]" style={{ color:'rgba(0,0,0,0.4)' }}>by <b style={{ color:'rgba(0,0,0,0.6)' }}>{entry.actor}</b></span>
+          {entry.target && <span className="text-[10px] truncate max-w-[180px]" style={{ color:'rgba(0,0,0,0.35)' }}>→ {entry.target}</span>}
         </div>
-        {entry.detail && <p className="text-[10px] text-white/40 mt-0.5 truncate">{entry.detail}</p>}
+        {entry.detail && <p className="text-[10px] mt-0.5 truncate" style={{ color:'rgba(0,0,0,0.3)' }}>{entry.detail}</p>}
       </div>
     </div>
   );
@@ -330,7 +331,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       };
 
       // ── Parallel fetches ──
-      const [ticketsRes, actLogsRes, remindersRes, piketTodayRes, piketWeekRes, kegiatanRes, movRes, usersRes] =
+      const [ticketsRes, actLogsRes, remindersRes, piketTodayRes, piketWeekRes, kegiatanRes, movRes, usersRes, lcSessionsRes] =
         await Promise.all([
           scopeTickets(supabase.from('tickets').select('id,status,assign_name,sales_division,date,created_at')),
           supabase.from('activity_logs').select('id,ticket_id,new_status,created_at,handler_name').order('created_at',{ascending:false}).limit(500),
@@ -342,6 +343,9 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           scope.kind === 'admin'
             ? supabase.from('users').select('id,role,team_type')
             : Promise.resolve({ data: [] }),
+          scope.kind === 'admin'
+            ? supabase.from('lc_quiz_sessions').select('id,status,created_by,final_score')
+            : Promise.resolve({ data: [] }),
         ]);
 
       let tickets   = (ticketsRes.data   ?? []) as any[];
@@ -352,6 +356,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const piketWeek  = (piketWeekRes.data  ?? []) as any[];
       const kegiatan   = (kegiatanRes.data   ?? []) as any[];
       const users      = (usersRes.data      ?? []) as any[];
+      const lcSessions = (lcSessionsRes.data ?? []) as any[];
 
       // PTS scope: filter piket & movements to own team
       if (scope.kind === 'pts_sup') {
@@ -406,12 +411,18 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const roleMap: Record<string,number> = {};
       users.forEach((u:any)=>{ roleMap[u.role]=(roleMap[u.role]||0)+1; });
 
+      const lcCompleted = lcSessions.filter((s:any) => s.status === 'completed').length;
+      const lcParticipants = new Set(lcSessions.map((s:any) => s.created_by as string).filter(Boolean)).size;
+      const lcScores = lcSessions.filter((s:any) => s.final_score != null).map((s:any) => s.final_score as number);
+      const lcAvgScore = lcScores.length ? Math.round(lcScores.reduce((a:number,b:number)=>a+b,0)/lcScores.length) : 0;
+
       setKpi({
         tickets:{ total:tickets.length,open,solved,waitingApproval,byHandler,byStatus,byDivision,resolvedToday,avgResolutionDays },
         reminders:{ total:reminders.length,pending:reminders.filter((r:any)=>r.status==='pending').length,done:reminders.filter((r:any)=>r.status==='done').length,dueSoon,byCategory,overdueCount },
         piket:{ todayIVP:piketToday?.pic_ivp_name??null,todayUMP:piketToday?.pic_ump_name??null,todayMlds:piketToday?.pic_mlds_name??null,weekFilled,weekTotal:6,kegiatanToday:kegiatan.length },
         units:{ totalLogs:movements.length,keluarThisMonth:movements.filter((m:any)=>m.status_barang==='Keluar').length,masukThisMonth:movements.filter((m:any)=>m.status_barang==='Masuk').length },
         users:{ total:users.length,byRole:Object.entries(roleMap).map(([role,count])=>({role,count})) },
+        learning:{ totalSessions:lcSessions.length, completedSessions:lcCompleted, totalParticipants:lcParticipants, avgScore:lcAvgScore },
       });
     } catch(e){ console.error('KPI fetch error:',e); }
     finally { setLoading(false); }
@@ -525,60 +536,63 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     'Summary Divisi Anda';
 
   // ─── Design tokens ──────────────────────────────────────────────────────────
-  const CARD  = { background:'rgba(10,14,26,0.62)', backdropFilter:'blur(18px)', WebkitBackdropFilter:'blur(18px)', border:'1px solid rgba(255,255,255,0.08)', boxShadow:'0 8px 32px rgba(0,0,0,0.35)' } as const;
-  const CARD_ACCENT = (c:string) => ({ ...CARD, borderLeft:`2px solid ${c}`, boxShadow:`0 8px 32px rgba(0,0,0,0.35), inset 1px 0 0 ${c}22` });
-  const LABEL = 'text-[10px] font-bold tracking-[0.12em] uppercase text-white/40';
-  const DIVIDER = { background:'linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent)', height:1 };
+  const CARD  = { background:'#ffffff', border:'1px solid rgba(0,0,0,0.07)', boxShadow:'0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)' } as const;
+  const CARD_ACCENT = (c:string) => ({ ...CARD, borderLeft:`2px solid ${c}`, boxShadow:`0 2px 12px rgba(0,0,0,0.06), inset 2px 0 0 ${c}22` });
+  const LABEL = 'text-[10px] font-bold tracking-[0.12em] uppercase' as const;
+  const LABEL_STYLE = { color:'rgba(0,0,0,0.38)' };
+  const DIVIDER = { background:'linear-gradient(90deg,transparent,rgba(0,0,0,0.08),transparent)', height:1 };
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="w-full" style={{ animation:'fadeInUp 0.35s ease forwards' }}>
 
-      {/* ══ Dark overlay wrapper ══ */}
+      {/* ══ Light elegant wrapper ══ */}
       <div className="relative rounded-3xl overflow-hidden"
-        style={{ background:'rgba(6,9,20,0.55)', backdropFilter:'blur(2px)', WebkitBackdropFilter:'blur(2px)', border:'1px solid rgba(255,255,255,0.06)', boxShadow:'0 0 80px rgba(0,0,0,0.5)' }}>
+        style={{ background:'rgba(248,249,252,0.98)', border:'1px solid rgba(0,0,0,0.07)', boxShadow:'0 4px 32px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)' }}>
 
         {/* Subtle red accent glow top-left — brand color */}
         <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full pointer-events-none"
-          style={{ background:'radial-gradient(circle,rgba(190,18,60,0.18) 0%,transparent 70%)' }}/>
+          style={{ background:'radial-gradient(circle,rgba(190,18,60,0.07) 0%,transparent 70%)' }}/>
         <div className="absolute -bottom-10 right-10 w-48 h-48 rounded-full pointer-events-none"
-          style={{ background:'radial-gradient(circle,rgba(29,78,216,0.10) 0%,transparent 70%)' }}/>
+          style={{ background:'radial-gradient(circle,rgba(29,78,216,0.04) 0%,transparent 70%)' }}/>
+        {/* Subtle dot texture */}
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage:'radial-gradient(circle, rgba(0,0,0,0.035) 1px, transparent 1px)', backgroundSize:'20px 20px', opacity:0.6 }}/>
 
         {/* ── Top bar ── */}
         <div className="flex items-center justify-between gap-4 px-6 py-4"
-          style={{ borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+          style={{ borderBottom:'1px solid rgba(0,0,0,0.07)', background:'rgba(255,255,255,0.7)', backdropFilter:'blur(8px)' }}>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ background:'linear-gradient(135deg,#be123c,#9f1239)', boxShadow:'0 0 12px rgba(190,18,60,0.4)' }}>
+              style={{ background:'linear-gradient(135deg,#be123c,#9f1239)', boxShadow:'0 2px 8px rgba(190,18,60,0.3)' }}>
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
               </svg>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-white font-bold text-sm tracking-wide">{scopeTitle}</span>
+                <span className="font-bold text-sm tracking-wide" style={{ color:'rgba(0,0,0,0.8)' }}>{scopeTitle}</span>
                 <ScopeBadge scope={scope}/>
               </div>
-              <span className="text-white/30 text-[10px] tracking-widest">LAST SYNC {lastRefresh.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</span>
+              <span className="text-[10px] tracking-widest" style={{ color:'rgba(0,0,0,0.3)' }}>LAST SYNC {lastRefresh.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</span>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <button onClick={()=>{ setLoading(true); setAuditLoading(true); fetchKPI(); fetchAudit(); setLastRefresh(new Date()); }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
-              style={{ color:'rgba(255,255,255,0.45)', border:'1px solid rgba(255,255,255,0.08)' }}
-              onMouseEnter={e=>{ (e.currentTarget as HTMLButtonElement).style.color='white'; (e.currentTarget as HTMLButtonElement).style.background='rgba(255,255,255,0.06)'; }}
-              onMouseLeave={e=>{ (e.currentTarget as HTMLButtonElement).style.color='rgba(255,255,255,0.45)'; (e.currentTarget as HTMLButtonElement).style.background='transparent'; }}>
+              style={{ color:'rgba(0,0,0,0.4)', border:'1px solid rgba(0,0,0,0.1)', background:'transparent' }}
+              onMouseEnter={e=>{ (e.currentTarget as HTMLButtonElement).style.color='rgba(0,0,0,0.75)'; (e.currentTarget as HTMLButtonElement).style.background='rgba(0,0,0,0.05)'; }}
+              onMouseLeave={e=>{ (e.currentTarget as HTMLButtonElement).style.color='rgba(0,0,0,0.4)'; (e.currentTarget as HTMLButtonElement).style.background='transparent'; }}>
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
               Sync
             </button>
             {/* Tab pills */}
-            <div className="flex rounded-lg overflow-hidden" style={{ border:'1px solid rgba(255,255,255,0.08)', background:'rgba(0,0,0,0.3)' }}>
+            <div className="flex rounded-lg overflow-hidden" style={{ border:'1px solid rgba(0,0,0,0.1)', background:'rgba(0,0,0,0.04)' }}>
               {TAB_CONFIG.map(t=>(
                 <button key={t.key} onClick={()=>setTab(t.key)}
                   className="flex items-center gap-1.5 px-3.5 py-1.5 text-[11px] font-bold tracking-wide transition-all"
                   style={tab===t.key
-                    ? {background:'rgba(190,18,60,0.35)', color:'white', borderRight:'1px solid rgba(255,255,255,0.06)'}
-                    : {color:'rgba(255,255,255,0.35)', borderRight:'1px solid rgba(255,255,255,0.05)'}}>
+                    ? {background:'rgba(190,18,60,0.12)', color:'#be123c', borderRight:'1px solid rgba(0,0,0,0.06)'}
+                    : {color:'rgba(0,0,0,0.35)', borderRight:'1px solid rgba(0,0,0,0.05)'}}>
                   {t.label.toUpperCase()}
                 </button>
               ))}
@@ -597,7 +611,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               <div>
                 <div className="flex items-center gap-3 mb-3">
                   <div style={DIVIDER} className="flex-1"/>
-                  <span className={LABEL}>Piket Showroom — {dayOfWeek()}, {new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}</span>
+                  <span className={LABEL} style={LABEL_STYLE}>Piket Showroom — {dayOfWeek()}, {new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}</span>
                   <div style={DIVIDER} className="flex-1"/>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -607,35 +621,33 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     {team:'MLDS',person:kpi?.piket.todayMlds,color:'#3b82f6', highlight:isPTSMLDS||scope.kind==='admin'},
                   ].map(p=>(
                     <div key={p.team} className="rounded-xl px-4 py-3 flex items-center gap-3 transition-all"
-                      style={{ ...CARD, ...(p.highlight ? { borderLeft:`2px solid ${p.color}`, boxShadow:`0 0 20px ${p.color}18, 0 8px 32px rgba(0,0,0,0.35)` } : {}) }}>
+                      style={{ ...CARD, ...(p.highlight ? { borderLeft:`2px solid ${p.color}`, boxShadow:`0 2px 16px ${p.color}14` } : {}) }}>
                       <div className="w-9 h-9 rounded-lg flex items-center justify-center font-black text-xs flex-shrink-0 text-white"
-                        style={{ background:`linear-gradient(135deg,${p.color},${p.color}aa)`, boxShadow:`0 0 10px ${p.color}40` }}>
+                        style={{ background:`linear-gradient(135deg,${p.color},${p.color}aa)`, boxShadow:`0 2px 8px ${p.color}40` }}>
                         {p.team}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className={LABEL + ' mb-0.5'}>PIC {p.team}</div>
+                        <div className={LABEL + ' mb-0.5'} style={LABEL_STYLE}>PIC {p.team}</div>
                         {loading
-                          ? <div className="h-4 w-20 rounded animate-pulse" style={{ background:'rgba(255,255,255,0.08)' }}/>
+                          ? <div className="h-4 w-20 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.08)' }}/>
                           : p.person
-                            ? <div className="text-sm font-bold text-white truncate">{p.person}</div>
-                            : <div className="text-xs text-white/25 italic">Belum diisi</div>}
+                            ? <div className="text-sm font-bold truncate" style={{ color:'rgba(0,0,0,0.75)' }}>{p.person}</div>
+                            : <div className="text-xs italic" style={{ color:'rgba(0,0,0,0.25)' }}>Belum diisi</div>}
                       </div>
                       {!loading&&p.person&&(
-                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background:'#10b981', boxShadow:'0 0 6px #10b981' }}/>
+                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background:'#10b981', boxShadow:'0 0 6px #10b981aa' }}/>
                       )}
                     </div>
                   ))}
                 </div>
                 {!loading&&kpi&&(
                   <div className="mt-2 flex items-center gap-4 px-1">
-                    <span className="text-[10px] text-white/35 tracking-wide">
-                      MINGGU INI <span className="text-white/70 font-bold">{kpi.piket.weekFilled}/{kpi.piket.weekTotal}</span> hari terisi
+                    <span className="text-[10px] tracking-wide" style={{ color:'rgba(0,0,0,0.35)' }}>
+                      MINGGU INI <span className="font-bold" style={{ color:'rgba(0,0,0,0.65)' }}>{kpi.piket.weekFilled}/{kpi.piket.weekTotal}</span> hari terisi
                     </span>
-                    {kpi.piket.kegiatanToday>0&&(
-                      <span className="text-[10px] text-white/35 tracking-wide">
-                        TAMU HARI INI <span className="text-white/70 font-bold">{kpi.piket.kegiatanToday}</span>
-                      </span>
-                    )}
+                    <span className="text-[10px] tracking-wide" style={{ color:'rgba(0,0,0,0.35)' }}>
+                      TAMU HARI INI <span className="font-bold" style={{ color:'rgba(0,0,0,0.65)' }}>{kpi.piket.kegiatanToday}</span>
+                    </span>
                   </div>
                 )}
               </div>
@@ -644,15 +656,16 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               <div>
                 <div className="flex items-center gap-3 mb-3">
                   <div style={DIVIDER} className="flex-1"/>
-                  <span className={LABEL}>Ticket Troubleshooting — {scope.kind==='pts_sup'?scope.ptsTeamType:scope.kind==='sales_sup'?'Divisi Anda':'Semua'}</span>
+                  <span className={LABEL} style={LABEL_STYLE}>Ticket Troubleshooting — {scope.kind==='pts_sup'?scope.ptsTeamType:scope.kind==='sales_sup'?'Divisi Anda':'Semua'}</span>
                   <div style={DIVIDER} className="flex-1"/>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <StatCard icon="" label="Total Ticket" value={loading?'—':kpi?.tickets.total??0} sub="Sepanjang waktu" color="#64748b" loading={loading}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <StatCard icon="🎫" label="Total Ticket" value={loading?'—':kpi?.tickets.total??0} sub="Sepanjang waktu" color="#64748b" loading={loading}
                     donut={{ segments:(kpi?.tickets.byStatus??[]).map(s=>({value:s.count,color:s.color})) }}/>
-                  <StatCard icon="" label="Open / Aktif" value={loading?'—':kpi?.tickets.open??0} sub="Belum selesai" color="#ef4444" loading={loading}/>
-                  <StatCard icon="" label="Waiting Approval" value={loading?'—':kpi?.tickets.waitingApproval??0} sub="Perlu tindakan" color="#f59e0b" loading={loading}/>
-                  <StatCard icon="" label="Solved Hari Ini" value={loading?'—':kpi?.tickets.resolvedToday??0} sub={`Avg ${kpi?.tickets.avgResolutionDays??0}h/ticket`} color="#10b981" loading={loading}/>
+                  <StatCard icon="🔥" label="Open / Aktif" value={loading?'—':kpi?.tickets.open??0} sub="Belum selesai" color="#ef4444" loading={loading}/>
+                  <StatCard icon="⏳" label="Waiting Approval" value={loading?'—':kpi?.tickets.waitingApproval??0} sub="Perlu tindakan" color="#f59e0b" loading={loading}/>
+                  <StatCard icon="✅" label="Solved Total" value={loading?'—':kpi?.tickets.solved??0} sub={`Avg ${kpi?.tickets.avgResolutionDays??0} hari/ticket`} color="#10b981" loading={loading}/>
+                  <StatCard icon="⚡" label="Solved Hari Ini" value={loading?'—':kpi?.tickets.resolvedToday??0} sub="Diselesaikan hari ini" color="#0891b2" loading={loading}/>
                 </div>
               </div>
 
@@ -660,15 +673,16 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               <div>
                 <div className="flex items-center gap-3 mb-3">
                   <div style={DIVIDER} className="flex-1"/>
-                  <span className={LABEL}>Reminder Schedule</span>
+                  <span className={LABEL} style={LABEL_STYLE}>Reminder Schedule</span>
                   <div style={DIVIDER} className="flex-1"/>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <StatCard icon="" label="Total Reminder" value={loading?'—':kpi?.reminders.total??0} sub="Semua status" color="#6366f1" loading={loading}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <StatCard icon="📅" label="Total Reminder" value={loading?'—':kpi?.reminders.total??0} sub="Semua status" color="#6366f1" loading={loading}
                     donut={{ segments:(kpi?.reminders.byCategory??[]).slice(0,5).map(c=>({value:c.count,color:c.color})) }}/>
-                  <StatCard icon="" label="Pending" value={loading?'—':kpi?.reminders.pending??0} sub="Belum selesai" color="#f59e0b" loading={loading}/>
-                  <StatCard icon="" label="Overdue" value={loading?'—':kpi?.reminders.overdueCount??0} sub="Terlewat" color="#ef4444" loading={loading}/>
-                  <StatCard icon="" label="7 Hari ke Depan" value={loading?'—':kpi?.reminders.dueSoon??0} sub="Perlu perhatian" color="#0891b2" loading={loading}/>
+                  <StatCard icon="🟡" label="Pending" value={loading?'—':kpi?.reminders.pending??0} sub="Belum selesai" color="#f59e0b" loading={loading}/>
+                  <StatCard icon="🔴" label="Overdue" value={loading?'—':kpi?.reminders.overdueCount??0} sub="Terlewat" color="#ef4444" loading={loading}/>
+                  <StatCard icon="🔔" label="7 Hari ke Depan" value={loading?'—':kpi?.reminders.dueSoon??0} sub="Perlu perhatian" color="#0891b2" loading={loading}/>
+                  <StatCard icon="🟢" label="Selesai (Done)" value={loading?'—':kpi?.reminders.done??0} sub="Sudah dikerjakan" color="#10b981" loading={loading}/>
                 </div>
               </div>
 
@@ -678,31 +692,31 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   <div>
                     <div className="flex items-center gap-3 mb-3">
                       <div style={DIVIDER} className="flex-1"/>
-                      <span className={LABEL}>Unit Movement — Bulan Ini</span>
+                      <span className={LABEL} style={LABEL_STYLE}>Unit Movement — Bulan Ini</span>
                       <div style={DIVIDER} className="flex-1"/>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
-                      <StatCard icon="" label="Total Log" value={loading?'—':kpi?.units.totalLogs??0} color="#64748b" loading={loading}/>
-                      <StatCard icon="" label="Keluar" value={loading?'—':kpi?.units.keluarThisMonth??0} color="#f59e0b" loading={loading}/>
-                      <StatCard icon="" label="Masuk" value={loading?'—':kpi?.units.masukThisMonth??0} color="#10b981" loading={loading}/>
+                      <StatCard icon="📦" label="Total Log" value={loading?'—':kpi?.units.totalLogs??0} color="#64748b" loading={loading}/>
+                      <StatCard icon="📤" label="Keluar" value={loading?'—':kpi?.units.keluarThisMonth??0} color="#f59e0b" loading={loading}/>
+                      <StatCard icon="📥" label="Masuk" value={loading?'—':kpi?.units.masukThisMonth??0} color="#10b981" loading={loading}/>
                     </div>
                   </div>
                   <div>
                     <div className="flex items-center gap-3 mb-3">
                       <div style={DIVIDER} className="flex-1"/>
-                      <span className={LABEL}>Pengguna Platform</span>
+                      <span className={LABEL} style={LABEL_STYLE}>Pengguna Platform</span>
                       <div style={DIVIDER} className="flex-1"/>
                     </div>
                     <div className="rounded-xl px-5 py-4" style={CARD}>
                       {loading
-                        ? <div className="h-10 rounded animate-pulse" style={{ background:'rgba(255,255,255,0.08)' }}/>
+                        ? <div className="h-10 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.06)' }}/>
                         : <div className="flex items-center gap-4 flex-wrap">
-                            <span className="text-4xl font-black text-white" style={{ fontVariantNumeric:'tabular-nums' }}>{kpi?.users.total??0}</span>
+                            <span className="text-4xl font-black" style={{ fontVariantNumeric:'tabular-nums', color:'rgba(0,0,0,0.75)' }}>{kpi?.users.total??0}</span>
                             <div className="flex flex-wrap gap-2">
                               {(kpi?.users.byRole??[]).map(r=>(
                                 <span key={r.role} className="text-[10px] font-bold px-2 py-0.5 rounded tracking-wider"
-                                  style={{ background:'rgba(255,255,255,0.07)', color:'rgba(255,255,255,0.55)', border:'1px solid rgba(255,255,255,0.09)' }}>
-                                  {r.role.toUpperCase()}&nbsp;<span style={{ color:'rgba(255,255,255,0.85)' }}>{r.count}</span>
+                                  style={{ background:'rgba(0,0,0,0.05)', color:'rgba(0,0,0,0.45)', border:'1px solid rgba(0,0,0,0.08)' }}>
+                                  {r.role.toUpperCase()}&nbsp;<span style={{ color:'rgba(0,0,0,0.7)' }}>{r.count}</span>
                                 </span>
                               ))}
                             </div>
@@ -717,13 +731,30 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 <div>
                   <div className="flex items-center gap-3 mb-3">
                     <div style={DIVIDER} className="flex-1"/>
-                    <span className={LABEL}>Unit Movement — {scope.ptsTeamType}</span>
+                    <span className={LABEL} style={LABEL_STYLE}>Unit Movement — {scope.ptsTeamType}</span>
                     <div style={DIVIDER} className="flex-1"/>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
-                    <StatCard icon="" label="Total Log" value={loading?'—':kpi?.units.totalLogs??0} color="#64748b" loading={loading}/>
-                    <StatCard icon="" label="Keluar" value={loading?'—':kpi?.units.keluarThisMonth??0} color="#f59e0b" loading={loading}/>
-                    <StatCard icon="" label="Masuk" value={loading?'—':kpi?.units.masukThisMonth??0} color="#10b981" loading={loading}/>
+                    <StatCard icon="📦" label="Total Log" value={loading?'—':kpi?.units.totalLogs??0} color="#64748b" loading={loading}/>
+                    <StatCard icon="📤" label="Keluar" value={loading?'—':kpi?.units.keluarThisMonth??0} color="#f59e0b" loading={loading}/>
+                    <StatCard icon="📥" label="Masuk" value={loading?'—':kpi?.units.masukThisMonth??0} color="#10b981" loading={loading}/>
+                  </div>
+                </div>
+              )}
+
+              {/* Learning Center — admin only */}
+              {scope.kind==='admin'&&(
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div style={DIVIDER} className="flex-1"/>
+                    <span className={LABEL} style={LABEL_STYLE}>Learning Center</span>
+                    <div style={DIVIDER} className="flex-1"/>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <StatCard icon="🎓" label="Total Sesi Quiz" value={loading?'—':kpi?.learning.totalSessions??0} sub="Semua sesi" color="#6366f1" loading={loading}/>
+                    <StatCard icon="✅" label="Sesi Selesai" value={loading?'—':kpi?.learning.completedSessions??0} sub="Status completed" color="#10b981" loading={loading}/>
+                    <StatCard icon="👥" label="Peserta Unik" value={loading?'—':kpi?.learning.totalParticipants??0} sub="User berbeda" color="#0891b2" loading={loading}/>
+                    <StatCard icon="⭐" label="Rata-rata Skor" value={loading?'—':`${kpi?.learning.avgScore??0}`} sub="Dari sesi berhasil" color="#f59e0b" loading={loading}/>
                   </div>
                 </div>
               )}
@@ -736,33 +767,33 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Handler */}
                 <div className="rounded-xl p-5" style={CARD}>
-                  <div className={LABEL + ' mb-4'}>Ticket Open per Handler</div>
-                  {loading?<div className="h-32 rounded animate-pulse" style={{ background:'rgba(255,255,255,0.06)' }}/>:
+                  <div className={LABEL + ' mb-4'} style={LABEL_STYLE}>Ticket Open per Handler</div>
+                  {loading?<div className="h-32 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.05)' }}/>:
                     kpi?.tickets.byHandler.length
                       ? <HBarChart data={kpi.tickets.byHandler.map(h=>({label:h.name.split(' ')[0],value:h.count}))} color="#ef4444"/>
-                      : <p className="text-white/25 text-xs text-center py-6">Tidak ada data</p>}
+                      : <p className="text-xs text-center py-6">Tidak ada data</p>}
                 </div>
                 {/* Divisi */}
                 <div className="rounded-xl p-5" style={CARD}>
-                  <div className={LABEL + ' mb-4'}>Ticket per Divisi</div>
-                  {loading?<div className="h-32 rounded animate-pulse" style={{ background:'rgba(255,255,255,0.06)' }}/>:
+                  <div className={LABEL + ' mb-4'} style={LABEL_STYLE}>Ticket per Divisi</div>
+                  {loading?<div className="h-32 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.05)' }}/>:
                     kpi?.tickets.byDivision.length
                       ? <HBarChart data={kpi.tickets.byDivision.map(d=>({label:d.div,value:d.count}))} color="#6366f1"/>
-                      : <p className="text-white/25 text-xs text-center py-6">Tidak ada data</p>}
+                      : <p className="text-xs text-center py-6">Tidak ada data</p>}
                 </div>
               </div>
               {/* Status donut */}
               <div className="rounded-xl p-5" style={CARD}>
-                <div className={LABEL + ' mb-4'}>Distribusi Status Ticket</div>
-                {loading?<div className="h-16 rounded animate-pulse" style={{ background:'rgba(255,255,255,0.06)' }}/>:(
+                <div className={LABEL + ' mb-4'} style={LABEL_STYLE}>Distribusi Status Ticket</div>
+                {loading?<div className="h-16 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.05)' }}/>:(
                   <div className="flex items-center gap-6 flex-wrap">
                     <MiniDonut size={72} segments={(kpi?.tickets.byStatus??[]).map(s=>({value:s.count,color:s.color}))}/>
                     <div className="flex flex-wrap gap-x-4 gap-y-2">
                       {(kpi?.tickets.byStatus??[]).map(s=>(
                         <div key={s.status} className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background:s.color, boxShadow:`0 0 4px ${s.color}` }}/>
-                          <span className="text-[11px] text-white/55">{s.status}</span>
-                          <span className="text-[11px] font-bold text-white/80">{s.count}</span>
+                          <span className="text-[11px]" style={{ color:'rgba(0,0,0,0.5)' }}>{s.status}</span>
+                          <span className="text-[11px] font-bold" style={{ color:'rgba(0,0,0,0.72)' }}>{s.count}</span>
                         </div>
                       ))}
                     </div>
@@ -772,16 +803,16 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Reminder kategori */}
                 <div className="rounded-xl p-5" style={CARD}>
-                  <div className={LABEL + ' mb-4'}>Reminder per Kategori</div>
-                  {loading?<div className="h-32 rounded animate-pulse" style={{ background:'rgba(255,255,255,0.06)' }}/>:(
+                  <div className={LABEL + ' mb-4'} style={LABEL_STYLE}>Reminder per Kategori</div>
+                  {loading?<div className="h-32 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.05)' }}/>:(
                     <div className="flex items-center gap-5">
                       <MiniDonut size={64} segments={(kpi?.reminders.byCategory??[]).map(c=>({value:c.count,color:c.color}))}/>
                       <div className="space-y-2 flex-1">
                         {(kpi?.reminders.byCategory??[]).map(c=>(
                           <div key={c.cat} className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background:c.color, boxShadow:`0 0 4px ${c.color}` }}/>
-                            <span className="text-[11px] text-white/50 flex-1 truncate">{c.cat}</span>
-                            <span className="text-[11px] font-bold text-white/80">{c.count}</span>
+                            <span className="text-[11px] flex-1 truncate" style={{ color:'rgba(0,0,0,0.48)' }}>{c.cat}</span>
+                            <span className="text-[11px] font-bold" style={{ color:'rgba(0,0,0,0.72)' }}>{c.count}</span>
                           </div>
                         ))}
                       </div>
@@ -790,17 +821,18 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 </div>
                 {/* Performa */}
                 <div className="rounded-xl p-5" style={CARD}>
-                  <div className={LABEL + ' mb-4'}>Performa Resolusi</div>
-                  {loading?<div className="h-32 rounded animate-pulse" style={{ background:'rgba(255,255,255,0.06)' }}/>:(
+                  <div className={LABEL + ' mb-4'} style={LABEL_STYLE}>Performa Resolusi</div>
+                  {loading?<div className="h-32 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.05)' }}/>:(
                     <div className="space-y-4">
                       {[
                         {label:'Avg. Resolusi Ticket',value:`${kpi?.tickets.avgResolutionDays??0} hari`,color:'#ef4444'},
                         {label:'Solved Hari Ini',value:`${kpi?.tickets.resolvedToday??0} ticket`,color:'#10b981'},
                         {label:'Reminder Overdue',value:`${kpi?.reminders.overdueCount??0} jadwal`,color:'#f59e0b'},
                         {label:'Piket Terisi Minggu Ini',value:`${kpi?.piket.weekFilled??0}/${kpi?.piket.weekTotal??6} hari`,color:'#6366f1'},
+                        ...(scope.kind==='admin'?[{label:'LC Avg. Skor',value:`${kpi?.learning.avgScore??0} poin`,color:'#8b5cf6'}]:[]),
                       ].map(m=>(
                         <div key={m.label} className="flex items-center justify-between gap-3">
-                          <span className="text-[11px] text-white/40 tracking-wide">{m.label.toUpperCase()}</span>
+                          <span className="text-[11px] tracking-wide" style={{ color:'rgba(0,0,0,0.38)' }}>{m.label.toUpperCase()}</span>
                           <span className="text-sm font-black" style={{ color:m.color, fontVariantNumeric:'tabular-nums' }}>{m.value}</span>
                         </div>
                       ))}
@@ -817,34 +849,34 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               {/* Search + filter */}
               <div className="flex flex-wrap items-center gap-2">
                 <div className="relative flex-1 min-w-[180px]">
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3" style={{ color:'rgba(0,0,0,0.3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                   </svg>
                   <input value={auditSearch} onChange={e=>setAuditSearch(e.target.value)}
                     placeholder="Cari actor, aksi, target..."
                     className="w-full rounded-lg pl-8 pr-3 py-2 text-xs outline-none"
-                    style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.09)', color:'rgba(255,255,255,0.8)' }}/>
+                    style={{ background:'rgba(0,0,0,0.04)', border:'1px solid rgba(0,0,0,0.09)', color:'rgba(0,0,0,0.75)' }}/>
                 </div>
                 {(['all','ticket','reminder','piket','user'] as const).map(f=>(
                   <button key={f} onClick={()=>setAuditFilter(f)}
                     className="px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-wide transition-all"
                     style={auditFilter===f
-                      ? { background:'rgba(190,18,60,0.35)', color:'white', border:'1px solid rgba(190,18,60,0.4)' }
-                      : { background:'rgba(255,255,255,0.05)', color:'rgba(255,255,255,0.35)', border:'1px solid rgba(255,255,255,0.07)' }}>
+                      ? { background:'rgba(190,18,60,0.12)', color:'#be123c', border:'1px solid rgba(190,18,60,0.25)' }
+                      : { background:'rgba(0,0,0,0.04)', color:'rgba(0,0,0,0.38)', border:'1px solid rgba(0,0,0,0.08)' }}>
                     {f==='all'?'SEMUA':f.toUpperCase()}
                   </button>
                 ))}
-                <span className="text-[10px] text-white/25 ml-auto tracking-widest">{filteredAudit.length} ENTRI</span>
+                <span className="text-[10px] ml-auto tracking-widest" style={{ color:'rgba(0,0,0,0.28)' }}>{filteredAudit.length} ENTRI</span>
               </div>
               {/* List */}
               <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1"
-                style={{ scrollbarWidth:'thin', scrollbarColor:'rgba(255,255,255,0.1) transparent' }}>
+                style={{ scrollbarWidth:'thin', scrollbarColor:'rgba(0,0,0,0.1) transparent' }}>
                 {auditLoading
                   ? Array.from({length:6}).map((_,i)=>(
-                      <div key={i} className="h-12 rounded-lg animate-pulse" style={{ background:'rgba(255,255,255,0.04)' }}/>
+                      <div key={i} className="h-12 rounded-lg animate-pulse" style={{ background:'rgba(0,0,0,0.04)' }}/>
                     ))
                   : filteredAudit.length===0
-                    ? <div className="text-center py-12 text-white/20 text-xs tracking-widest">TIDAK ADA DATA</div>
+                    ? <div className="text-center py-12 text-xs tracking-widest" style={{ color:'rgba(0,0,0,0.22)' }}>TIDAK ADA DATA</div>
                     : filteredAudit.map((entry:AuditEntry,idx:number)=>(
                         <div key={entry.id??idx}><AuditRow entry={entry}/></div>
                       ))}
@@ -853,7 +885,6 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           )}
 
         </div>{/* end content */}
-      </div>{/* end dark overlay wrapper */}
+      </div>{/* end light elegant wrapper */}
     </div>
-  );
 }
