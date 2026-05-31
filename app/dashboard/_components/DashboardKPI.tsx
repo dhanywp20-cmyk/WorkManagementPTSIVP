@@ -860,26 +860,24 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               {/* ── Piket Showroom Today ── */}
               <div>
                 <SectionPill icon="🏪">Piket Showroom — {dayOfWeek()}, {new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}</SectionPill>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-2">
                   {[
                     {team:'IVP',  person:kpi?.piket.todayIVP,  color:'#ef4444', gradient:'from-red-500/90 to-rose-600/90',    highlight:isPTSIVP||scope.kind==='admin'},
+                    {team:'UMP',  person:kpi?.piket.todayUMP,  color:'#f59e0b', gradient:'from-amber-400/90 to-orange-500/90', highlight:isPTSUMP||scope.kind==='admin'},
                     {team:'MLDS', person:kpi?.piket.todayMlds, color:'#3b82f6', gradient:'from-blue-500/90 to-indigo-500/90',  highlight:isPTSMLDS||scope.kind==='admin'},
                   ].map(p=>(
                     <div key={p.team}
-                      className={`bg-white/90 rounded-xl border ${p.highlight?'border-slate-300 shadow-md':'border-slate-200 shadow-sm'} p-3 flex items-center gap-2.5 transition-all`}>
-                      <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${p.gradient} flex items-center justify-center font-black text-xs text-white flex-shrink-0 shadow`}>
+                      className={`bg-white/90 rounded-xl border ${p.highlight?'border-slate-300 shadow-md':'border-slate-200 shadow-sm'} p-2.5 flex items-center gap-2 transition-all`}>
+                      <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${p.gradient} flex items-center justify-center font-black text-[10px] text-white flex-shrink-0 shadow`}>
                         {p.team}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">PIC {p.team} Hari Ini</div>
+                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">PIC {p.team}</div>
                         {loading
-                          ? <div className="h-3.5 w-20 rounded animate-pulse bg-slate-100"/>
+                          ? <div className="h-3 w-16 rounded animate-pulse bg-slate-100"/>
                           : p.person
-                            ? <div className="text-xs font-bold text-slate-800 truncate">{p.person}</div>
-                            : <div className="text-xs italic text-slate-300">Belum diisi</div>}
-                        {!loading&&p.person&&(
-                          <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1 py-0.5 rounded-full mt-0.5 inline-block">● Bertugas</span>
-                        )}
+                            ? <div className="text-[11px] font-bold text-slate-800 truncate">{p.person}</div>
+                            : <div className="text-[10px] italic text-slate-300">Belum diisi</div>}
                       </div>
                     </div>
                   ))}
@@ -1151,9 +1149,12 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                     Refresh
                   </button>
-                  {/* Download CSV */}
+                  {/* Download Excel per orang */}
                   <button
-                    onClick={() => {
+                    onClick={async () => {
+                      const allMembers = kpiTeam.members;
+                      if (!allMembers.length) return;
+
                       const calcKPI = (m: KPITeamMember) => {
                         const tickScore = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled,1)) : 0;
                         const hasFormReview = m.ticketsHandled > 0;
@@ -1162,20 +1163,64 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                         const periodMultiplier = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
                         const rndTarget = 6 * periodMultiplier;
                         const rndScore = m.manual.technicalNote >= rndTarget ? 1 : m.manual.technicalNote / rndTarget;
-                        return Math.round([0.20, 0.30, 0.40, 0.10].reduce((s,w,i)=>s+w*[tickScore,bastScore,lcScore,rndScore][i],0)*100);
+                        const final = Math.round([0.20, 0.30, 0.40, 0.10].reduce((s,w,i)=>s+w*[tickScore,bastScore,lcScore,rndScore][i],0)*100);
+                        return { tickScore, bastScore, lcScore, rndScore, final };
                       };
-                      const allMembers = kpiTeam.members;
-                      if (!allMembers.length) return;
-                      const headers = ['Nama','Team','KPI Score (%)','Ticketing Overdue','Form Review Low Rating','LC Failed <75','LC Attempts','RnD Technote (manual)'];
-                      const rows = allMembers.map(m => [
-                        m.name, m.team_type, calcKPI(m),
-                        m.ticketsOverdue, m.formReviewLowRating, m.lcFailedBelow75, m.lcAttempts, m.manual.technicalNote
-                      ]);
-                      const csv = [headers, ...rows].map(r => r.map((v:any)=> `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-                      const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a'); a.href=url; a.download=`KPI_Team_${kpiTeam.filterYear}_${kpiTeam.filterPeriod}.csv`; a.click();
-                      URL.revokeObjectURL(url);
+
+                      // Generate 1 CSV per orang → download satu per satu dgn delay
+                      for (let i = 0; i < allMembers.length; i++) {
+                        const m = allMembers[i];
+                        const s = calcKPI(m);
+                        const periodMultiplier = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
+                        const rndTarget = 6 * periodMultiplier;
+                        const noData = m.ticketsHandled === 0 && m.lcAttempts === 0 && m.manual.technicalNote === 0;
+                        const kpiLabel = noData ? 'Belum Ada Data' : s.final>=85?'Excellent':s.final>=70?'Good':s.final>=50?'Fair':'Needs Work';
+
+                        const rows: string[][] = [
+                          ['KPI REPORT — ' + m.name],
+                          ['Periode:', `${kpiTeam.filterYear} (${kpiTeam.filterPeriod === '6m' ? '6 Bulan' : '1 Tahun'})`],
+                          ['Tim:', m.team_type],
+                          ['Jabatan:', m.jabatan],
+                          ['KPI Score:', `${noData ? '—' : s.final + '%'}`],
+                          ['Status:', kpiLabel],
+                          [],
+                          ['KOMPONEN KPI', 'Nilai (%)', 'Bobot', 'Kontribusi (%)'],
+                          ['🎫 Ticketing', `${Math.round(s.tickScore*100)}%`, '20%', `${Math.round(s.tickScore*0.20*100)}%`],
+                          ['⭐ BAST & Demo', `${Math.round(s.bastScore*100)}%`, '30%', `${Math.round(s.bastScore*0.30*100)}%`],
+                          ['🎓 Tech Knowledge (LC)', `${Math.round(s.lcScore*100)}%`, '40%', `${Math.round(s.lcScore*0.40*100)}%`],
+                          ['📝 R&D Technote', `${Math.round(s.rndScore*100)}%`, '10%', `${Math.round(s.rndScore*0.10*100)}%`],
+                          [],
+                          ['DETAIL PLATFORM (OTOMATIS)', ''],
+                          ['Ticket Handled', m.ticketsHandled],
+                          ['Ticket Solved', m.ticketsSolved],
+                          ['Ticket Overdue', m.ticketsOverdue],
+                          ['Avg Response (jam)', m.ticketAvgResponseHours || '—'],
+                          ['Form Review Rating Rendah (★1-2)', m.formReviewLowRating],
+                          ['LC Total Attempt', m.lcAttempts],
+                          ['LC Avg Score', m.lcAvgScore || '—'],
+                          ['LC Lulus', m.lcPassed],
+                          ['LC Score <75 (fail)', m.lcFailedBelow75],
+                          ['Reminder Done', `${m.remindersDone}/${m.remindersAssigned}`],
+                          ['Reminder Overdue', m.remindersOverdue],
+                          ['Piket Filled (hari)', m.piketFilled],
+                          [],
+                          ['DETAIL MANUAL (INPUT SPV)', ''],
+                          ['R&D Technote diterbitkan', m.manual.technicalNote],
+                          ['Target Technote', `${rndTarget} (${kpiTeam.filterPeriod === '6m' ? '6 bulan' : 'tahun'})`],
+                        ];
+
+                        const csv = rows.map(r => r.map((v:any) => `"${String(v ?? '').replace(/"/g,'""')}"`).join(',')).join('\n');
+                        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        const nameSafe = m.name.replace(/[^a-zA-Z0-9]/g,'_');
+                        a.download = `KPI_${nameSafe}_${kpiTeam.filterYear}_${kpiTeam.filterPeriod}.csv`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        // delay antar download biar browser tidak block
+                        await new Promise(res => setTimeout(res, 400));
+                      }
                     }}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-emerald-600 hover:text-white hover:bg-emerald-600 bg-white border border-emerald-200 transition-all"
                   >
@@ -1281,12 +1326,12 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     {/* Team PTS IVP */}
                     {ivpMembers.length > 0 && (scope.kind==='admin' || scope.ptsTeamType==='Team PTS') && (
                       <div>
-                        <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center gap-2 mb-2">
                           <div className="w-6 h-6 rounded-lg bg-red-500 flex items-center justify-center text-white text-[10px] font-black">IVP</div>
                           <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Team PTS IVP</span>
                           <span className="text-[10px] text-slate-400 ml-1">{ivpMembers.length} anggota</span>
                         </div>
-                        <div className="flex flex-col gap-2">
+                        <div className="grid grid-cols-2 gap-2">
                           {ivpMembers.map(m => <MemberCard key={m.id} member={m}/>)}
                         </div>
                       </div>
@@ -1294,12 +1339,12 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     {/* Team PTS MLDS */}
                     {mldsMembers.length > 0 && (scope.kind==='admin' || scope.ptsTeamType==='Team PTS MLDS') && (
                       <div>
-                        <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center gap-2 mb-2">
                           <div className="w-6 h-6 rounded-lg bg-blue-500 flex items-center justify-center text-white text-[10px] font-black">MLD</div>
                           <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Team PTS MLDS</span>
                           <span className="text-[10px] text-slate-400 ml-1">{mldsMembers.length} anggota</span>
                         </div>
-                        <div className="flex flex-col gap-2">
+                        <div className="grid grid-cols-2 gap-2">
                           {mldsMembers.map(m => <MemberCard key={m.id} member={m}/>)}
                         </div>
                       </div>
