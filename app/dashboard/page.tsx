@@ -42,6 +42,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [menuLoading, setMenuLoading] = useState(false);
   const [showTour, setShowTour] = useState(false);
+  const [showDashboardPanel, setShowDashboardPanel] = useState(false);
 
   const [showSidebar, setShowSidebar] = useState(false);
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
@@ -198,7 +199,7 @@ export default function Dashboard() {
 
   const handleMenuClick = (item: MenuItem['items'][0], menuTitle: string) => {
     if (item.external && !item.embed) { window.open(item.url, '_blank'); return; }
-    setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing');
+    setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setShowDashboardPanel(false);
     setTimeout(() => {
       if (item.internal) {
         setShowSidebar(true); setShowTicketing(true);
@@ -662,7 +663,7 @@ export default function Dashboard() {
           <div className="max-w-[1600px] mx-auto space-y-8">
             {menuLoading ? <MenuLoadingOverlay /> : (
               <>
-                {/* ── Command Center KPI — hanya admin & superadmin ── */}
+                {/* ── Dashboard KPI — admin, PTS sup, sales sup ── */}
                 {canAccessKPI && currentUser && (
                   <div style={{ animation: "fadeInUp 0.35s ease forwards", opacity: 0 }}>
                     <DashboardKPI currentUser={currentUser} />
@@ -822,14 +823,25 @@ export default function Dashboard() {
             ) : sidebarCollapsed ? (
               /* Collapsed: icon-only */
               <div className="space-y-1">
+                {/* Dashboard icon - collapsed */}
+                {canAccessKPI && (
+                  <button
+                    onClick={() => { setShowDashboardPanel(true); setShowTicketing(false); setIframeUrl(null); }}
+                    title="Dashboard"
+                    className="w-full h-9 rounded-lg flex items-center justify-center text-base transition-all"
+                    style={showDashboardPanel
+                      ? { background: 'rgba(200,134,29,0.15)', border: '1px solid rgba(200,134,29,0.35)', color: '#92600a' }
+                      : { background: 'transparent', border: '1px solid transparent', color: '#64748b' }}
+                  >📊</button>
+                )}
                 {visibleMenuItems.map((menu) => (
                   <div key={menu.key}>
                     {menu.items.map((item, itemIndex) => {
-                      const isActive = (showTicketing && item.internal && internalUrl === item.url) || (iframeUrl === item.url);
+                      const isActive = !showDashboardPanel && ((showTicketing && item.internal && internalUrl === item.url) || (iframeUrl === item.url));
                       return (
                         <button
                           key={itemIndex}
-                          onClick={() => handleMenuClick(item, menu.title)}
+                          onClick={() => { setShowDashboardPanel(false); handleMenuClick(item, menu.title); }}
                           title={`${menu.title} — ${item.name}`}
                           className="w-full h-9 rounded-lg flex items-center justify-center text-base transition-all"
                           style={
@@ -850,6 +862,29 @@ export default function Dashboard() {
             ) : (
               /* Expanded: full nav */
               <div className="space-y-5">
+
+                {/* ── Dashboard item (untuk admin/supervisor) ── */}
+                {canAccessKPI && (
+                  <div>
+                    <div className="flex items-center gap-2 px-1 mb-1.5">
+                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.38)' }}>Overview</span>
+                      <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
+                    </div>
+                    <button
+                      onClick={() => { setShowDashboardPanel(true); setShowTicketing(false); setIframeUrl(null); }}
+                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
+                      style={showDashboardPanel
+                        ? { background: 'rgba(200,134,29,0.12)', border: '1px solid rgba(200,134,29,0.30)', color: '#92600a' }
+                        : { background: 'transparent', border: '1px solid transparent', color: '#475569' }}
+                      onMouseEnter={e => { if (!showDashboardPanel) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.04)'; } }}
+                      onMouseLeave={e => { if (!showDashboardPanel) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; } }}
+                    >
+                      <span className="w-5 h-5 text-sm flex items-center justify-center flex-shrink-0">📊</span>
+                      <span className="text-sm font-semibold truncate">Dashboard</span>
+                      {showDashboardPanel && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />}
+                    </button>
+                  </div>
+                )}
 
                 {/* Learning Center section */}
                 {visibleMenuItems.filter(m => LEARNING_KEYS.includes(m.key)).length > 0 && (
@@ -1119,7 +1154,13 @@ export default function Dashboard() {
         {/* MAIN CONTENT */}
         <div className="flex-1 flex flex-col overflow-y-auto">
           <div className="flex-1 overflow-hidden bg-white">
-            {showTicketing ? (
+            {showDashboardPanel && canAccessKPI && currentUser ? (
+              /* ── Dashboard KPI Panel dalam sidebar ── */
+              <div className="w-full h-full overflow-y-auto bg-cover bg-center bg-fixed p-5"
+                style={{ backgroundImage: 'url(/IVP_Background.png)' }}>
+                <DashboardKPI currentUser={currentUser} />
+              </div>
+            ) : showTicketing ? (
               <div className="w-full h-full overflow-auto">
                 <iframe src={internalUrl} className="w-full h-full border-0" title={iframeTitle} />
               </div>
