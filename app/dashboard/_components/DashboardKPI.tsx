@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
-import { User, JABATAN_CONFIG, type JabatanType } from './shared';
+import { User } from './shared';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -79,14 +79,10 @@ interface AuditEntry {
 }
 
 interface Scope {
-  kind: 'admin' | 'pts_sup' | 'sales_sup' | 'none';
+  kind: 'admin' | 'pts_sup' | 'none';
   // pts_sup
   ptsTeamType?: string;
   ptsMemberNames?: string[];
-  // sales_sup
-  salesDivisions?: string[];
-  salesSubNames?: string[];
-  salesSubIds?: string[];
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -239,7 +235,6 @@ function ScopeBadge({ scope }: { scope: Scope }) {
   const cfg = {
     admin:     { label: 'Semua Data',         color: '#be123c', icon: '👑' },
     pts_sup:   { label: scope.ptsTeamType ?? 'PTS Supervisor', color: '#0891b2', icon: '🏪' },
-    sales_sup: { label: 'Divisi Anda',        color: '#7c3aed', icon: '💼' },
     none:      { label: '-',                  color: '#6b7280', icon: '—'  },
   }[scope.kind];
   return (
@@ -281,7 +276,6 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     (async () => {
       const role   = currentUser.role?.toLowerCase() ?? '';
       const jabatan = currentUser.jabatan ?? '';
-      const jabTier = (JABATAN_CONFIG[jabatan as JabatanType]?.tier ?? 0);
       const PTS_TYPES = ['Team PTS','Team PTS UMP','Team PTS MLDS'];
 
       if (['admin','superadmin'].includes(role)) {
@@ -297,50 +291,6 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           ptsTeamType: currentUser.team_type ?? '',
           ptsMemberNames: (data ?? []).map((u:any) => u.full_name as string),
         });
-        setScopeReady(true); return;
-      }
-
-      // Sales supervisor (guest/sales dengan jabatan Supervisor+)
-      if (['guest','sales'].includes(role) && jabTier >= 2) {
-        const selfDiv = currentUser.sales_division ?? '';
-
-        // Divisi yang di-supervisi via mapping
-        const { data: divMaps } = await supabase.from('division_supervisor_mappings')
-          .select('sales_division').eq('supervisor_id', currentUser.id);
-        const divisions: string[] = [...new Set([
-          selfDiv,
-          ...(divMaps ?? []).map((m:any) => m.sales_division as string),
-        ].filter(Boolean))];
-
-        // Direct user mappings (CC)
-        const { data: userMaps } = await supabase.from('user_supervisor_mappings')
-          .select('user_id').eq('supervisor_id', currentUser.id);
-        const directIds = (userMaps ?? []).map((m:any) => m.user_id as string);
-
-        // Semua user di divisi dengan tier lebih rendah
-        const { data: divUsers } = await supabase.from('users')
-          .select('id, full_name, jabatan, sales_division')
-          .in('sales_division', divisions.length ? divisions : ['__none__'])
-          .in('role',['guest','sales']);
-        const subFromDiv = (divUsers ?? []).filter((u:any) => {
-          const t = JABATAN_CONFIG[u.jabatan as JabatanType]?.tier ?? 0;
-          return t <= jabTier && u.id !== currentUser.id;
-        });
-
-        // Nama + ID dari direct mapping
-        const directNamesRes = directIds.length
-          ? await supabase.from('users').select('id, full_name').in('id', directIds)
-          : { data: [] };
-        const directUsers = directNamesRes.data ?? [];
-
-        const salesSubIds   = [...new Set([...subFromDiv.map((u:any)=>u.id as string), ...directIds])];
-        const salesSubNames = [...new Set([
-          currentUser.full_name,
-          ...subFromDiv.map((u:any) => u.full_name as string),
-          ...directUsers.map((u:any) => u.full_name as string),
-        ])];
-
-        setScope({ kind:'sales_sup', salesDivisions:divisions, salesSubNames, salesSubIds });
         setScopeReady(true); return;
       }
 
@@ -363,24 +313,11 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         if (scope.kind === 'pts_sup' && scope.ptsMemberNames?.length) {
           return q.in('assign_name', scope.ptsMemberNames);
         }
-        if (scope.kind === 'sales_sup') {
-          // filter by division OR sub user names (sales_name)
-          const divFilter = (scope.salesDivisions ?? []).map(d=>`sales_division.eq.${d}`).join(',');
-          const nameFilter = (scope.salesSubNames ?? []).map(n=>`sales_name.eq.${n}`).join(',');
-          const combined = [divFilter, nameFilter].filter(Boolean).join(',');
-          return combined ? q.or(combined) : q;
-        }
         return q;
       };
       const scopeReminders = (q: any) => {
         if (scope.kind === 'pts_sup' && scope.ptsMemberNames?.length) {
           return q.in('assign_name', scope.ptsMemberNames);
-        }
-        if (scope.kind === 'sales_sup') {
-          const divFilter = (scope.salesDivisions ?? []).map(d=>`sales_division.eq.${d}`).join(',');
-          const nameFilter = (scope.salesSubNames ?? []).map(n=>`sales_name.eq.${n}`).join(',');
-          const combined = [divFilter, nameFilter].filter(Boolean).join(',');
-          return combined ? q.or(combined) : q;
         }
         return q;
       };
@@ -418,10 +355,6 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         const tt = scope.ptsTeamType ?? '';
         movements = movements.filter((m:any) => scope.ptsMemberNames?.includes(m.nama_pts));
         // piket: show all, but today card highlights their team column
-      }
-      if (scope.kind === 'sales_sup') {
-        // movements not relevant for sales scope
-        movements = [];
       }
 
       // ── KPI calculations (identical to before, just on scoped data) ──
@@ -495,10 +428,6 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const ticketQ = (() => {
         let q = supabase.from('tickets').select('id,project_name,status,assign_name,created_by,created_at,date').order('created_at',{ascending:false}).limit(40);
         if (scope.kind==='pts_sup'&&scope.ptsMemberNames?.length) q=q.in('assign_name',scope.ptsMemberNames);
-        if (scope.kind==='sales_sup') {
-          const f=[...(scope.salesDivisions??[]).map(d=>`sales_division.eq.${d}`), ...(scope.salesSubNames??[]).map(n=>`sales_name.eq.${n}`), ...(scope.salesSubNames??[]).map(n=>`created_by.eq.${n}`)].join(',');
-          if(f) q=q.or(f);
-        }
         return q;
       })();
       const actQ = (() => {
@@ -509,10 +438,6 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const reminderQ = (() => {
         let q = supabase.from('reminders').select('id,project_name,category,status,assign_name,created_by,created_at,updated_at').order('updated_at',{ascending:false}).limit(50);
         if (scope.kind==='pts_sup'&&scope.ptsMemberNames?.length) q=q.in('assign_name',scope.ptsMemberNames);
-        if (scope.kind==='sales_sup') {
-          const f=[...(scope.salesDivisions??[]).map(d=>`sales_division.eq.${d}`), ...(scope.salesSubNames??[]).map(n=>`sales_name.eq.${n}`)].join(',');
-          if(f) q=q.or(f);
-        }
         return q;
       })();
 
@@ -771,7 +696,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
   const scopeTitle = scope.kind==='admin' ? 'Dashboard'
     : scope.kind==='pts_sup' ? `Summary ${scope.ptsTeamType}`
-    : 'Summary Divisi Anda';
+    : 'KPI Dashboard';
 
   // ─── LC-style design helpers ────────────────────────────────────────────────
   function SectionPill({ icon, children }: { icon: string; children: React.ReactNode }) {
@@ -941,7 +866,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-3">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">🎫 Ticket</span>
-                    <span className="text-[9px] text-slate-400">{scope.kind==='pts_sup'?scope.ptsTeamType:scope.kind==='sales_sup'?'Divisi':'Semua'}</span>
+                    <span className="text-[9px] text-slate-400">{scope.kind==='pts_sup'?scope.ptsTeamType:'Semua'}</span>
                   </div>
                   {/* Mini stat row */}
                   <div className="grid grid-cols-4 gap-1 mb-2">
