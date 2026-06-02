@@ -40,7 +40,6 @@ const inputCls = 'transition-all focus:ring-2 focus:ring-red-300';
 function newManualKey() { return `m_${Date.now()}_${Math.random().toString(36).slice(2)}`; }
 function newTeamKey()   { return `t_${Date.now()}_${Math.random().toString(36).slice(2)}`; }
 
-// FIX: submitted_by default dari currentUser — bukan kosong
 function emptyManual(currentUsername = ''): ManualActivity {
   return {
     _key: newManualKey(),
@@ -109,7 +108,7 @@ function CategoryPicker({ value, onChange }: { value: string; onChange: (v: stri
   );
 }
 
-// ─── Sales searchable dropdown (mirror dari reminder-schedule) ────────────────
+// ─── Sales searchable dropdown ────────────────────────────────────────────────
 function SalesDropdown({
   value, division, guestUsers, onChange,
 }: {
@@ -233,7 +232,6 @@ export default function DailyReportPage() {
   };
 
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
-  const isTeamPTS = currentUser?.team_type === 'Team PTS';
 
   // ── Init ────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -261,7 +259,6 @@ export default function DailyReportPage() {
     return () => clearInterval(iv);
   }, []);
 
-  // Fetch list saat user siap
   useEffect(() => {
     if (currentUser) fetchReportList();
   }, [currentUser]);
@@ -299,8 +296,6 @@ export default function DailyReportPage() {
 
   useEffect(() => { fetchReportList(); }, [fetchReportList]);
 
-  // ── FIX: Auto-populate activities — resolve username dulu dari teamUsers ──────
-  // Dipanggil eksplisit (bukan useEffect) supaya timing terjamin
   const loadActivities = useCallback(async (username: string, date: string) => {
     if (!username || !date) {
       setReminderActs([]);
@@ -317,7 +312,6 @@ export default function DailyReportPage() {
     setActivitiesLoading(false);
   }, []);
 
-  // Reload ketika tanggal atau user berubah saat form terbuka
   useEffect(() => {
     if (view !== 'form') return;
     const username = isAdmin
@@ -347,14 +341,12 @@ export default function DailyReportPage() {
     fetchReportList();
   };
 
-  // ── FIX: Buka form baru — set manual acts dengan submitted_by auto ───────────
   const openNewForm = async () => {
     const date = todayISO();
     const uid = isAdmin ? '' : currentUser?.id ?? '';
     setFormDate(date);
     setFormUserId(uid);
     setReminderNotes('');
-    // FIX: manual activity sudah isi submitted_by dari currentUser
     setManualActs([emptyManual(currentUser?.username ?? '')]);
     setEditingId(null);
     setReminderActs([]);
@@ -366,7 +358,6 @@ export default function DailyReportPage() {
       setTeamEntries([]);
     }
 
-    // FIX: Langsung load activities untuk non-admin (tidak tunggu useEffect)
     if (!isAdmin && currentUser?.username) {
       setActivitiesLoading(true);
       const [rem, tick] = await Promise.all([
@@ -381,13 +372,10 @@ export default function DailyReportPage() {
     setView('form');
   };
 
-  // ── Buka form edit ───────────────────────────────────────────────────────────
   const openEditForm = async (report: DailyReport) => {
     setFormDate(report.report_date);
     setFormUserId(report.user_id);
     setReminderNotes(report.reminder_notes ?? '');
-    // FIX: saat edit, reload dari Supabase untuk reminder & ticket (data fresh)
-    // manual activities diambil dari saved report
     setReminderActs(report.reminder_activities ?? []);
     setTicketActs(report.ticket_activities ?? []);
     setManualActs(
@@ -397,7 +385,6 @@ export default function DailyReportPage() {
     );
     setEditingId(report.id);
 
-    // FIX: Reload ticket & reminder fresh untuk data yang up-to-date
     const username = isAdmin
       ? teamUsers.find(u => u.id === report.user_id)?.username ?? ''
       : currentUser?.username ?? '';
@@ -435,7 +422,6 @@ export default function DailyReportPage() {
       .filter(m => m.project_name.trim() || m.description.trim())
       .map(({ _key, ...rest }) => ({
         ...rest,
-        // FIX: pastikan submitted_by selalu terisi
         submitted_by: rest.submitted_by || currentUser?.username || 'system',
       }));
 
@@ -537,26 +523,32 @@ export default function DailyReportPage() {
     allCats.forEach(c => { catCount[c] = (catCount[c] ?? 0) + 1; });
 
     return (
-      <div className="min-h-screen p-4 md:p-6" style={{ background: 'linear-gradient(135deg,#1e1e2e,#2d1f3f,#1a1a2e)' }}>
-        <div className="max-w-2xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center gap-3 mb-6">
+      <div className="min-h-screen" style={{ background: 'linear-gradient(135deg,#1e1e2e,#2d1f3f,#1a1a2e)' }}>
+        {/* ── Header ── */}
+        <header className="sticky top-0 z-30 backdrop-blur-lg border-b border-white/10"
+          style={{ background: 'rgba(30,30,46,0.85)' }}>
+          <div className="max-w-3xl mx-auto px-5 py-4 flex items-center gap-3">
             <button onClick={() => { setView('list'); setDetailReport(null); }}
               className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
             </button>
-            <div>
-              <h2 className="text-lg font-bold text-white">Detail Daily Report</h2>
-              <p className="text-white/60 text-xs">{detailReport.user_name} · {formatDate(detailReport.report_date)}</p>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-base font-bold text-white">Detail Daily Report</h2>
+              <p className="text-white/50 text-xs truncate">{detailReport.user_name} · {formatDate(detailReport.report_date)}</p>
             </div>
             <button onClick={() => openEditForm(detailReport)}
-              className="ml-auto px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all">
+              className="px-4 py-2 rounded-xl font-semibold text-sm text-white transition-all hover:scale-[1.02]"
+              style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 2px 8px rgba(220,38,38,0.3)' }}>
               ✏️ Edit
             </button>
           </div>
+        </header>
 
+        <div className="max-w-3xl mx-auto px-5 py-5 space-y-4">
           {/* Ringkasan kategori */}
-          <div className="bg-white/10 rounded-2xl p-4 mb-4 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 px-1">
             {Object.entries(catCount).map(([cat, cnt]) => {
               const c = CATEGORY_CONFIG[cat] ?? { icon: '📌', color: '#94a3b8', bg: 'rgba(148,163,184,0.15)', border: 'rgba(148,163,184,0.4)', accent: '#64748b' };
               return (
@@ -568,77 +560,86 @@ export default function DailyReportPage() {
             })}
           </div>
 
-          {/* Reminder Activities */}
-          {detailReport.reminder_activities.length > 0 && (
-            <div className="bg-white rounded-2xl overflow-hidden mb-4">
+          {/* Auto activities summary — hanya info, tidak ada section terpisah */}
+          {(detailReport.reminder_activities.length > 0 || detailReport.ticket_activities.length > 0) && (
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.4)' }}>
               <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
-                <span className="text-base">🔔</span>
-                <span className="text-sm font-bold text-slate-700">Dari Reminder Schedule ({detailReport.reminder_activities.length})</span>
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Aktivitas dari Platform</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9' }}>
+                  AUTO
+                </span>
               </div>
-              {detailReport.reminder_activities.map((r, i) => {
-                const c = CATEGORY_CONFIG[r.category] ?? CATEGORY_CONFIG['Internal'];
-                const sb = STATUS_BADGE[r.status] ?? STATUS_BADGE['pending'];
-                return (
-                  <div key={i} className="px-5 py-4 border-b border-gray-50 last:border-0">
-                    <div className="flex items-start gap-3">
-                      <span className="text-xl mt-0.5">{c.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-bold text-slate-800">{r.project_name}</p>
-                          <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                            style={{ background: sb.bg, color: sb.color, border: `1px solid ${sb.border}` }}>
-                            {sb.label}
-                          </span>
+
+              {/* Reminder Activities */}
+              {detailReport.reminder_activities.length > 0 && (
+                <div className="px-5 py-3 border-b border-gray-50">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">🔔 Reminder Schedule ({detailReport.reminder_activities.length})</p>
+                  <div className="space-y-2">
+                    {detailReport.reminder_activities.map((r, i) => {
+                      const c = CATEGORY_CONFIG[r.category] ?? CATEGORY_CONFIG['Internal'];
+                      const sb = STATUS_BADGE[r.status] ?? STATUS_BADGE['pending'];
+                      return (
+                        <div key={i} className="flex items-start gap-3 px-4 py-3 rounded-xl"
+                          style={{ background: c.bg, border: `1px solid ${c.border}` }}>
+                          <span className="text-lg mt-0.5">{c.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-sm font-bold" style={{ color: c.accent }}>{r.project_name}</p>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                                style={{ background: sb.bg, color: sb.color, border: `1px solid ${sb.border}` }}>
+                                {sb.label}
+                              </span>
+                            </div>
+                            <p className="text-xs mt-0.5" style={{ color: c.color }}>{r.category} · {r.due_time || '-'}</p>
+                            {r.address && <p className="text-xs mt-0.5 text-slate-500">📍 {r.address}</p>}
+                            {r.sales_name && <p className="text-xs text-slate-500">👤 {r.sales_name}{r.sales_division ? ` · ${r.sales_division}` : ''}</p>}
+                          </div>
                         </div>
-                        <p className="text-xs text-slate-500 mt-0.5">{r.category} · {r.due_time || '-'}</p>
-                        {r.address && <p className="text-xs text-slate-400 mt-0.5">📍 {r.address}</p>}
-                        {r.sales_name && <p className="text-xs text-slate-400">👤 Sales: {r.sales_name}{r.sales_division ? ` · ${r.sales_division}` : ''}</p>}
-                        {r.product && <p className="text-xs text-slate-400">📦 {r.product}</p>}
-                        {r.pic_name && <p className="text-xs text-slate-400">🙋 PIC: {r.pic_name}{r.pic_phone ? ` - ${r.pic_phone}` : ''}</p>}
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-              {detailReport.reminder_notes && (
-                <div className="px-5 py-3 bg-yellow-50 border-t border-yellow-100">
-                  <p className="text-xs text-yellow-700">📝 {detailReport.reminder_notes}</p>
+                  {detailReport.reminder_notes && (
+                    <div className="mt-2 px-3 py-2 rounded-xl" style={{ background: '#fef9c3', border: '1px solid #fde047' }}>
+                      <p className="text-xs text-yellow-700">📝 {detailReport.reminder_notes}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Ticket Activities */}
+              {detailReport.ticket_activities.length > 0 && (
+                <div className="px-5 py-3">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">🎫 Ticket ({detailReport.ticket_activities.length})</p>
+                  <div className="space-y-2">
+                    {detailReport.ticket_activities.map((t, i) => (
+                      <div key={i} className="flex items-start gap-3 px-4 py-3 rounded-xl"
+                        style={{ background: 'rgba(251,113,133,0.08)', border: '1px solid rgba(251,113,133,0.25)' }}>
+                        <span className="text-lg mt-0.5">🔧</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-slate-800">{t.project_name}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{t.issue_case} · {t.log_time}</p>
+                          {t.address && <p className="text-xs text-slate-400 mt-0.5">📍 {t.address}</p>}
+                          <p className="text-xs text-slate-600 mt-1 font-medium">{t.action_taken}</p>
+                          <p className="text-xs font-semibold mt-0.5" style={{ color: '#10b981' }}>→ {t.new_status}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* Ticket Activities */}
-          {detailReport.ticket_activities.length > 0 && (
-            <div className="bg-white rounded-2xl overflow-hidden mb-4">
-              <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
-                <span className="text-base">🎫</span>
-                <span className="text-sm font-bold text-slate-700">Dari Ticketing ({detailReport.ticket_activities.length})</span>
-              </div>
-              {detailReport.ticket_activities.map((t, i) => (
-                <div key={i} className="px-5 py-4 border-b border-gray-50 last:border-0">
-                  <div className="flex items-start gap-3">
-                    <span className="text-xl mt-0.5">🔧</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-slate-800">{t.project_name}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{t.issue_case} · {t.log_time}</p>
-                      {t.address && <p className="text-xs text-slate-400 mt-0.5">📍 {t.address}</p>}
-                      {t.sales_name && <p className="text-xs text-slate-400">👤 Sales: {t.sales_name}{t.sales_division ? ` · ${t.sales_division}` : ''}</p>}
-                      <p className="text-xs text-slate-600 mt-1 font-medium">{t.action_taken}</p>
-                      <p className="text-xs mt-0.5" style={{ color: '#10b981' }}>→ {t.new_status}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* Manual Activities */}
           {detailReport.manual_activities.length > 0 && (
-            <div className="bg-white rounded-2xl overflow-hidden mb-4">
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.4)' }}>
               <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
-                <span className="text-base">✍️</span>
-                <span className="text-sm font-bold text-slate-700">Aktivitas Manual ({detailReport.manual_activities.length})</span>
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Aktivitas Manual</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: 'rgba(245,158,11,0.1)', color: '#b45309' }}>
+                  {detailReport.manual_activities.length}
+                </span>
               </div>
               {detailReport.manual_activities.map((m, i) => {
                 const c = CATEGORY_CONFIG[m.category] ?? CATEGORY_CONFIG['Internal'];
@@ -653,7 +654,6 @@ export default function DailyReportPage() {
                         {m.sales_name && <p className="text-xs text-slate-400">👤 Sales: {m.sales_name}{m.sales_division ? ` · ${m.sales_division}` : ''}</p>}
                         {m.pic_name && <p className="text-xs text-slate-400">🙋 PIC: {m.pic_name}{m.pic_phone ? ` - ${m.pic_phone}` : ''}</p>}
                         {m.description && <p className="text-xs text-slate-600 mt-1">{m.description}</p>}
-                        {/* FIX: tampilkan siapa yang submit */}
                         {m.submitted_by && (
                           <p className="text-xs text-slate-400 mt-0.5">✍️ Diisi oleh: <span className="font-semibold">@{m.submitted_by}</span></p>
                         )}
@@ -672,27 +672,57 @@ export default function DailyReportPage() {
   // ── Render: Form ─────────────────────────────────────────────────────────────
   if (view === 'form') {
     const targetUser = isAdmin ? teamUsers.find(u => u.id === formUserId) : currentUser;
+    const autoCount = reminderActs.length + ticketActs.length;
 
     return (
-      <div className="min-h-screen p-4 md:p-6" style={{ background: 'linear-gradient(135deg,#1e1e2e,#2d1f3f,#1a1a2e)' }}>
-        <div className="max-w-2xl mx-auto">
+      <div className="min-h-screen" style={{ background: 'linear-gradient(135deg,#1e1e2e,#2d1f3f,#1a1a2e)' }}>
 
-          {/* Header */}
-          <div className="flex items-center gap-3 mb-6">
+        {/* ── Sticky Header (sama seperti reminder-schedule) ── */}
+        <header className="sticky top-0 z-30 backdrop-blur-lg border-b border-white/10"
+          style={{ background: 'rgba(30,30,46,0.85)' }}>
+          <div className="max-w-3xl mx-auto px-5 py-4 flex items-center gap-3">
             <button onClick={() => { setView('list'); setEditingId(null); }}
               className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
             </button>
-            <div>
-              <h2 className="text-lg font-bold text-white">{editingId ? '✏️ Edit Report' : '📋 Daily Report Baru'}</h2>
-              <p className="text-white/60 text-xs">Isi aktivitas harian — auto dari Reminder &amp; Ticket</p>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-base font-bold text-white">{editingId ? '✏️ Edit Report' : '📋 Daily Report Baru'}</h2>
+              <p className="text-white/50 text-xs">
+                {activitiesLoading
+                  ? 'Memuat aktivitas dari platform...'
+                  : autoCount > 0
+                    ? `${autoCount} aktivitas auto ter-generate (Reminder & Ticket)`
+                    : 'Isi aktivitas harian'}
+              </p>
             </div>
+            {/* Auto count badge */}
+            {activitiesLoading ? (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
+                style={{ background: 'rgba(14,165,233,0.15)', color: '#7dd3fc' }}>
+                <div className="w-3 h-3 border-2 border-sky-400/40 border-t-sky-400 rounded-full animate-spin" />
+                Loading...
+              </div>
+            ) : autoCount > 0 ? (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
+                style={{ background: 'rgba(16,185,129,0.15)', color: '#6ee7b7' }}>
+                ✓ {autoCount} Auto
+              </div>
+            ) : null}
           </div>
+        </header>
 
-          {/* ── SECTION 1: Identitas ─────────────────────────────────────── */}
-          <div className="bg-white rounded-2xl p-6 mb-4">
-            <SectionHeader icon="👤" title="Identitas & Tanggal" />
-            <div className="mt-4 space-y-4">
+        <div className="max-w-3xl mx-auto px-5 py-5 space-y-4 pb-10">
+
+          {/* ── SECTION 1: Identitas & Tanggal ───────────────────────────── */}
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.4)' }}>
+            {/* Card header — gaya reminder-schedule */}
+            <div className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
+              <span className="text-base">👤</span>
+              <span className="text-sm font-bold text-slate-700">Identitas &amp; Tanggal</span>
+            </div>
+            <div className="px-5 py-4 space-y-4">
               <div className={`grid gap-4 ${isAdmin ? 'grid-cols-2' : 'grid-cols-1'}`}>
                 <FormField label="Tanggal Report *">
                   <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)}
@@ -711,7 +741,6 @@ export default function DailyReportPage() {
                 )}
               </div>
 
-              {/* Info user */}
               {targetUser && (
                 <div className="flex items-center gap-3 px-4 py-3 rounded-xl"
                   style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.18)' }}>
@@ -728,125 +757,98 @@ export default function DailyReportPage() {
             </div>
           </div>
 
-          {/* ── SECTION 2: Reminder Activities (auto) ───────────────────── */}
-          <div className="bg-white rounded-2xl p-6 mb-4">
-            <div className="flex items-center justify-between">
-              <SectionHeader icon="🔔" title="Aktivitas dari Reminder Schedule" />
-              <span className="text-[10px] font-bold tracking-widest uppercase px-2 py-1 rounded-full"
-                style={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9' }}>Auto</span>
-            </div>
+          {/* ── SECTION 2: Auto Activities Summary ───────────────────────── */}
+          {/* Hanya ditampilkan sebagai info ringkas, tidak ada section terpisah */}
+          {(reminderActs.length > 0 || ticketActs.length > 0 || activitiesLoading) && (
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.4)' }}>
+              <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">⚡</span>
+                  <span className="text-sm font-bold text-slate-700">Aktivitas Ter-generate Otomatis</span>
+                </div>
+                <span className="text-[10px] font-bold tracking-widest uppercase px-2 py-1 rounded-full"
+                  style={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9' }}>Auto</span>
+              </div>
 
-            {activitiesLoading ? (
-              <div className="flex items-center gap-2 mt-4 text-slate-400 text-sm">
-                <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
-                Memuat jadwal...
-              </div>
-            ) : reminderActs.length === 0 ? (
-              <div className="mt-4 px-4 py-3 rounded-xl bg-slate-50 text-slate-400 text-sm text-center">
-                {formUserId || !isAdmin ? 'Tidak ada reminder pada tanggal ini.' : 'Pilih anggota team untuk memuat jadwal.'}
-              </div>
-            ) : (
-              <div className="mt-4 space-y-3">
-                {reminderActs.map((r, i) => {
-                  const c = CATEGORY_CONFIG[r.category] ?? CATEGORY_CONFIG['Internal'];
-                  const sb = STATUS_BADGE[r.status] ?? STATUS_BADGE['pending'];
-                  return (
-                    <div key={i} className="flex items-start gap-3 px-4 py-3 rounded-xl"
-                      style={{ background: c.bg, border: `1px solid ${c.border}` }}>
-                      <span className="text-xl mt-0.5">{c.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-bold" style={{ color: c.accent }}>{r.project_name}</p>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
-                            style={{ background: sb.bg, color: sb.color, border: `1px solid ${sb.border}` }}>
-                            {sb.label}
-                          </span>
-                        </div>
-                        <p className="text-xs mt-0.5" style={{ color: c.color }}>{r.category} · {r.due_time || '-'}</p>
-                        {r.address && <p className="text-xs mt-0.5 text-slate-500">📍 {r.address}</p>}
-                        {r.sales_name && <p className="text-xs text-slate-500">👤 {r.sales_name}{r.sales_division ? ` · ${r.sales_division}` : ''}</p>}
-                        {r.product && <p className="text-xs text-slate-500">📦 {r.product}</p>}
-                        {r.pic_name && <p className="text-xs text-slate-500">🙋 {r.pic_name}{r.pic_phone ? ` - ${r.pic_phone}` : ''}</p>}
+              {activitiesLoading ? (
+                <div className="px-5 py-4 flex items-center gap-3 text-slate-400 text-sm">
+                  <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin flex-shrink-0" />
+                  <span>Memuat aktivitas dari Reminder Schedule &amp; Ticketing...</span>
+                </div>
+              ) : (
+                <div className="px-5 py-4">
+                  <div className="flex flex-wrap gap-3">
+                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl flex-1 min-w-[140px]"
+                      style={{ background: reminderActs.length > 0 ? 'rgba(16,185,129,0.08)' : 'rgba(0,0,0,0.03)', border: reminderActs.length > 0 ? '1px solid rgba(16,185,129,0.25)' : '1px solid rgba(0,0,0,0.08)' }}>
+                      <span className="text-lg">🔔</span>
+                      <div>
+                        <p className="text-sm font-bold" style={{ color: reminderActs.length > 0 ? '#059669' : '#94a3b8' }}>
+                          {reminderActs.length} Reminder
+                        </p>
+                        <p className="text-[10px]" style={{ color: '#94a3b8' }}>dari Reminder Schedule</p>
                       </div>
+                      {reminderActs.length > 0 && <span className="ml-auto text-emerald-500 text-sm font-bold">✓</span>}
                     </div>
-                  );
-                })}
-              </div>
-            )}
-
-            <div className="mt-4">
-              <FormField label="Catatan Tambahan Reminder (Opsional)">
-                <textarea value={reminderNotes} onChange={e => setReminderNotes(e.target.value)}
-                  rows={2} className={`${inputCls} resize-none`} style={inputStyle}
-                  placeholder="Kendala, hasil, atau info tambahan dari jadwal hari ini..." />
-              </FormField>
-            </div>
-          </div>
-
-          {/* ── SECTION 3: Ticket Activities (auto) ─────────────────────── */}
-          <div className="bg-white rounded-2xl p-6 mb-4">
-            <div className="flex items-center justify-between">
-              <SectionHeader icon="🎫" title="Ticket yang Dikerjakan" />
-              <span className="text-[10px] font-bold tracking-widest uppercase px-2 py-1 rounded-full"
-                style={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9' }}>Auto</span>
-            </div>
-
-            {activitiesLoading ? (
-              <div className="flex items-center gap-2 mt-4 text-slate-400 text-sm">
-                <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
-                Memuat ticket...
-              </div>
-            ) : ticketActs.length === 0 ? (
-              <div className="mt-4 px-4 py-3 rounded-xl bg-slate-50 text-slate-400 text-sm text-center">
-                {formUserId || !isAdmin ? 'Tidak ada activity log ticket pada tanggal ini.' : 'Pilih anggota team untuk memuat ticket.'}
-              </div>
-            ) : (
-              <div className="mt-4 space-y-3">
-                {ticketActs.map((t, i) => (
-                  <div key={i} className="flex items-start gap-3 px-4 py-3 rounded-xl"
-                    style={{ background: 'rgba(251,113,133,0.08)', border: '1px solid rgba(251,113,133,0.25)' }}>
-                    <span className="text-xl mt-0.5">🔧</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-slate-800">{t.project_name}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{t.issue_case} · {t.log_time}</p>
-                      {t.address && <p className="text-xs text-slate-400 mt-0.5">📍 {t.address}</p>}
-                      {t.sales_name && <p className="text-xs text-slate-400">👤 {t.sales_name}{t.sales_division ? ` · ${t.sales_division}` : ''}</p>}
-                      <p className="text-xs text-slate-600 mt-1 font-medium">{t.action_taken}</p>
-                      <p className="text-xs font-semibold mt-0.5" style={{ color: '#10b981' }}>→ {t.new_status}</p>
+                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl flex-1 min-w-[140px]"
+                      style={{ background: ticketActs.length > 0 ? 'rgba(251,113,133,0.08)' : 'rgba(0,0,0,0.03)', border: ticketActs.length > 0 ? '1px solid rgba(251,113,133,0.25)' : '1px solid rgba(0,0,0,0.08)' }}>
+                      <span className="text-lg">🎫</span>
+                      <div>
+                        <p className="text-sm font-bold" style={{ color: ticketActs.length > 0 ? '#e11d48' : '#94a3b8' }}>
+                          {ticketActs.length} Ticket
+                        </p>
+                        <p className="text-[10px]" style={{ color: '#94a3b8' }}>dari Ticketing</p>
+                      </div>
+                      {ticketActs.length > 0 && <span className="ml-auto text-rose-500 text-sm font-bold">✓</span>}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  {(reminderActs.length === 0 && ticketActs.length === 0) && (
+                    <p className="text-xs text-slate-400 mt-2 text-center">Tidak ada aktivitas auto pada tanggal ini.</p>
+                  )}
+                  {/* Catatan reminder */}
+                  {reminderActs.length > 0 && (
+                    <div className="mt-3">
+                      <FormField label="Catatan Tambahan (Opsional)">
+                        <textarea value={reminderNotes} onChange={e => setReminderNotes(e.target.value)}
+                          rows={2} className={`${inputCls} resize-none`} style={inputStyle}
+                          placeholder="Kendala, hasil, atau info tambahan dari jadwal hari ini..." />
+                      </FormField>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* ── SECTION 4: Manual Activities ────────────────────────────── */}
-          <div className="bg-white rounded-2xl p-6 mb-4">
-            <div className="flex items-center justify-between mb-4">
-              <SectionHeader icon="✍️" title="Aktivitas Tambahan (Manual)" />
+          {/* ── SECTION 3: Aktivitas Manual ───────────────────────────────── */}
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.4)' }}>
+            <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-base">✍️</span>
+                <span className="text-sm font-bold text-slate-700">Aktivitas Manual</span>
+              </div>
               <span className="text-[10px] font-bold tracking-widest uppercase px-2 py-1 rounded-full"
                 style={{ background: 'rgba(245,158,11,0.1)', color: '#b45309' }}>Manual</span>
             </div>
 
-            {/* FIX: Info submitter — siapa yang mengisi form ini */}
-            <div className="mb-4 px-4 py-3 rounded-xl flex items-center gap-2"
-              style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.18)' }}>
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
-                style={{ background: avatarColor(currentUser?.full_name ?? '') }}>
-                {initials(currentUser?.full_name ?? 'U')}
+            <div className="px-5 py-4 space-y-4">
+              {/* Info submitter */}
+              <div className="flex items-center gap-2 px-4 py-3 rounded-xl"
+                style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.18)' }}>
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+                  style={{ background: avatarColor(currentUser?.full_name ?? '') }}>
+                  {initials(currentUser?.full_name ?? 'U')}
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-sky-800">Diisi oleh: {currentUser?.full_name}</p>
+                  <p className="text-[10px] text-sky-600">@{currentUser?.username} · Aktivitas manual tercatat atas nama kamu</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs font-semibold text-sky-800">Diisi oleh: {currentUser?.full_name}</p>
-                <p className="text-[10px] text-sky-600">@{currentUser?.username} · Aktivitas manual otomatis tercatat atas nama kamu</p>
-              </div>
-            </div>
 
-            <div className="space-y-4">
               {manualActs.map((m, idx) => (
                 <div key={m._key} className="rounded-xl p-4 space-y-3"
                   style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
                   <div className="flex items-center justify-between mb-1">
-                    <SectionHeaderSmall icon="📌" title={`Aktivitas Manual #${idx + 1}`} />
+                    <SectionHeaderSmall icon="📌" title={`Aktivitas #${idx + 1}`} />
                     {manualActs.length > 1 && (
                       <button onClick={() => removeManual(m._key)}
                         className="text-xs text-red-400 hover:text-red-600 transition-colors px-2 py-1 rounded-lg hover:bg-red-50">
@@ -855,13 +857,11 @@ export default function DailyReportPage() {
                     )}
                   </div>
 
-                  {/* Kategori */}
                   <div>
                     <label className="block text-xs font-bold mb-2 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Kategori *</label>
                     <CategoryPicker value={m.category} onChange={v => updateManual(m._key, { category: v })} />
                   </div>
 
-                  {/* Nama project & lokasi */}
                   <div className="grid grid-cols-2 gap-3">
                     <FormField label="Nama Project / Keterangan *">
                       <input value={m.project_name} onChange={e => updateManual(m._key, { project_name: e.target.value })}
@@ -876,7 +876,6 @@ export default function DailyReportPage() {
                     </FormField>
                   </div>
 
-                  {/* Sales */}
                   <FormField label="Sales">
                     <SalesDropdown
                       value={m.sales_name} division={m.sales_division} guestUsers={guestUsers}
@@ -884,7 +883,6 @@ export default function DailyReportPage() {
                     />
                   </FormField>
 
-                  {/* PIC */}
                   <div className="grid grid-cols-2 gap-3">
                     <FormField label="Nama PIC (Opsional)">
                       <div className="relative">
@@ -902,7 +900,6 @@ export default function DailyReportPage() {
                     </FormField>
                   </div>
 
-                  {/* Deskripsi */}
                   <FormField label="Deskripsi Kegiatan">
                     <textarea value={m.description} onChange={e => updateManual(m._key, { description: e.target.value })}
                       rows={2} className={`${inputCls} resize-none`} style={inputStyle}
@@ -910,34 +907,37 @@ export default function DailyReportPage() {
                   </FormField>
                 </div>
               ))}
-            </div>
 
-            <button onClick={addManual}
-              className="mt-3 w-full py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.01]"
-              style={{ background: 'rgba(220,38,38,0.06)', color: '#dc2626', border: '1.5px dashed rgba(220,38,38,0.35)' }}>
-              + Tambah Aktivitas Manual
-            </button>
+              <button onClick={addManual}
+                className="w-full py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.01]"
+                style={{ background: 'rgba(220,38,38,0.06)', color: '#dc2626', border: '1.5px dashed rgba(220,38,38,0.35)' }}>
+                + Tambah Aktivitas Manual
+              </button>
+            </div>
           </div>
 
-          {/* ── SECTION 5: Team Entries (admin only) ────────────────────── */}
+          {/* ── SECTION 4: Team Entries (admin only) ──────────────────────── */}
           {isAdmin && (
-            <div className="bg-white rounded-2xl p-6 mb-4">
-              <div className="flex items-center justify-between mb-4">
-                <SectionHeader icon="👥" title="Insert Report Tim (Supervisor)" />
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.4)' }}>
+              <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">👥</span>
+                  <span className="text-sm font-bold text-slate-700">Insert Report Tim (Supervisor)</span>
+                </div>
                 <span className="text-[10px] font-bold tracking-widest uppercase px-2 py-1 rounded-full"
                   style={{ background: 'rgba(245,158,11,0.1)', color: '#b45309' }}>Manual · No Foto</span>
               </div>
 
-              <div className="mb-3 px-4 py-3 rounded-xl flex items-start gap-2"
-                style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}>
-                <span className="text-base">💡</span>
-                <p className="text-xs text-sky-700">
-                  Data dari Google Sheet existing akan diimport ke SQL. Form ini untuk input manual harian per anggota.{' '}
-                  <strong>Kosongkan baris yang tidak ada kegiatannya.</strong>
-                </p>
-              </div>
+              <div className="px-5 py-4 space-y-4">
+                <div className="flex items-start gap-2 px-4 py-3 rounded-xl"
+                  style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}>
+                  <span className="text-base">💡</span>
+                  <p className="text-xs text-sky-700">
+                    Form ini untuk input manual harian per anggota.{' '}
+                    <strong>Kosongkan baris yang tidak ada kegiatannya.</strong>
+                  </p>
+                </div>
 
-              <div className="space-y-4">
                 {teamEntries.map(e => (
                   <div key={e._key} className="rounded-xl p-4 space-y-3"
                     style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
@@ -989,11 +989,11 @@ export default function DailyReportPage() {
             </div>
           )}
 
-          {/* ── Save button ──────────────────────────────────────────────── */}
-          <div className="flex gap-3 pb-8">
+          {/* ── Save button ──────────────────────────────────────────────────── */}
+          <div className="flex gap-3 pb-4">
             <button onClick={() => { setView('list'); setEditingId(null); }}
               className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
-              style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}>
+              style={{ background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.15)' }}>
               Batal
             </button>
             <button onClick={handleSave} disabled={saving}
@@ -1024,122 +1024,183 @@ export default function DailyReportPage() {
     r.reminder_activities.length + r.ticket_activities.length + r.manual_activities.length;
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ background: 'linear-gradient(135deg,#1e1e2e,#2d1f3f,#1a1a2e)' }}>
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg,#1e1e2e,#2d1f3f,#1a1a2e)' }}>
 
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+      {/* ── Sticky Header ── */}
+      <header className="sticky top-0 z-30 backdrop-blur-lg border-b border-white/10"
+        style={{ background: 'rgba(30,30,46,0.85)' }}>
+        <div className="max-w-3xl mx-auto px-5 py-4 flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-white flex items-center gap-2">📋 Daily Report</h1>
-            <p className="text-white/50 text-xs mt-1">PTS IVP &amp; MLDS · {currentUser?.full_name}</p>
+            <h1 className="text-base font-bold text-white flex items-center gap-2">📋 Daily Report</h1>
+            <p className="text-white/50 text-xs mt-0.5">PTS IVP &amp; MLDS · {currentUser?.full_name}</p>
           </div>
           <button onClick={openNewForm}
-            className="px-4 py-2 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02]"
-            style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
-            + Buat Report
+            className="px-4 py-2 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] flex items-center gap-2"
+            style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 2px 8px rgba(220,38,38,0.3)' }}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Buat Report
           </button>
         </div>
+      </header>
 
-        {/* Filter */}
-        <div className="flex gap-2 mb-4 flex-wrap">
-          <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
-            className="rounded-xl px-3 py-2 text-xs flex-1 min-w-[140px]"
-            style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', color: 'white', outline: 'none' }} />
-          {isAdmin && (
-            <select value={filterUser} onChange={e => setFilterUser(e.target.value)}
-              className="rounded-xl px-3 py-2 text-xs flex-1 min-w-[160px]"
-              style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', color: 'white', outline: 'none' }}>
-              <option value="">Semua anggota</option>
-              {teamUsers.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
-            </select>
-          )}
-          {(filterDate || filterUser) && (
-            <button onClick={() => { setFilterDate(''); setFilterUser(''); }}
-              className="px-3 py-2 rounded-xl text-xs text-white/60 hover:text-white transition-colors"
-              style={{ background: 'rgba(255,255,255,0.08)' }}>
-              Reset
-            </button>
-          )}
+      <div className="max-w-3xl mx-auto px-5 py-5 space-y-4">
+
+        {/* ── Stat cards ── */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            {
+              label: 'Total Report', value: reports.length,
+              gradient: 'linear-gradient(135deg,#4f46e5,#6d28d9)', icon: '📋', shadow: 'rgba(79,70,229,0.35)',
+            },
+            {
+              label: 'Bulan Ini', value: reports.filter(r => r.report_date?.startsWith(new Date().toISOString().slice(0, 7))).length,
+              gradient: 'linear-gradient(135deg,#0891b2,#0e7490)', icon: '📅', shadow: 'rgba(8,145,178,0.35)',
+            },
+            {
+              label: 'Total Aktivitas', value: reports.reduce((s, r) => s + totalActivities(r), 0),
+              gradient: 'linear-gradient(135deg,#059669,#047857)', icon: '⚡', shadow: 'rgba(5,150,105,0.35)',
+            },
+          ].map(card => (
+            <div key={card.label}
+              className="rounded-2xl p-4 relative overflow-hidden flex flex-col gap-2"
+              style={{ background: card.gradient, boxShadow: `0 4px 16px ${card.shadow}` }}>
+              <div className="absolute right-3 top-2 text-4xl opacity-[0.15] select-none">{card.icon}</div>
+              <span className="text-3xl font-black text-white leading-none">{card.value}</span>
+              <p className="text-xs font-bold text-white/80">{card.label}</p>
+            </div>
+          ))}
         </div>
 
-        {/* List */}
-        {listLoading ? (
-          <div className="flex items-center justify-center py-16 text-white/40">
-            <div className="w-6 h-6 border-2 border-white/20 border-t-white/60 rounded-full animate-spin mr-3" />
-            Memuat report...
+        {/* ── Filter ── */}
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.4)' }}>
+          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Filter &amp; Cari</span>
+            {(filterDate || filterUser) && (
+              <button onClick={() => { setFilterDate(''); setFilterUser(''); }}
+                className="text-xs text-red-500 hover:text-red-700 font-semibold transition-colors">
+                Reset Filter
+              </button>
+            )}
           </div>
-        ) : reports.length === 0 ? (
-          <div className="text-center py-16 text-white/40">
-            <div className="text-5xl mb-4">📋</div>
-            <p className="font-semibold">Belum ada Daily Report</p>
-            <p className="text-sm mt-1">Klik "Buat Report" untuk mulai</p>
+          <div className="px-5 py-3">
+            <div className={`grid gap-2 ${isAdmin ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              <div>
+                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tanggal</label>
+                <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
+                  className="w-full rounded-xl px-3 py-2 text-xs outline-none transition-all"
+                  style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.1)', color: '#1e293b' }} />
+              </div>
+              {isAdmin && (
+                <div>
+                  <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Anggota</label>
+                  <select value={filterUser} onChange={e => setFilterUser(e.target.value)}
+                    className="w-full rounded-xl px-3 py-2 text-xs outline-none transition-all"
+                    style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.1)', color: '#1e293b' }}>
+                    <option value="">Semua anggota</option>
+                    {teamUsers.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+                  </select>
+                </div>
+              )}
+            </div>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {reports.map(r => {
-              const allCats = [
-                ...r.reminder_activities.map(a => a.category),
-                ...r.ticket_activities.map(a => a.issue_case),
-                ...r.manual_activities.map(a => a.category),
-              ];
-              const uniqueCats = [...new Set(allCats)];
-              const total = totalActivities(r);
+        </div>
 
-              return (
-                <div key={r.id}
-                  className="bg-white/10 backdrop-blur rounded-2xl p-4 cursor-pointer hover:bg-white/15 transition-all border border-white/10"
-                  onClick={() => { setDetailReport(r); setView('detail'); }}>
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                      style={{ background: avatarColor(r.user_name) }}>
-                      {initials(r.user_name)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-bold text-white">{r.user_name}</p>
-                        <span className="text-[10px] text-white/50">{r.sales_division}</span>
+        {/* ── List ── */}
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.4)' }}>
+          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Daily Report List</span>
+              <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{reports.length}</span>
+            </div>
+            <button onClick={fetchReportList} disabled={listLoading}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:bg-gray-100 border border-gray-200 text-gray-600 bg-white disabled:opacity-60">
+              <svg className={`w-3.5 h-3.5 ${listLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh
+            </button>
+          </div>
+
+          {listLoading ? (
+            <div className="flex items-center justify-center py-16 text-slate-400 gap-3">
+              <div className="w-5 h-5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+              <span className="text-sm">Memuat report...</span>
+            </div>
+          ) : reports.length === 0 ? (
+            <div className="text-center py-16 text-slate-400">
+              <div className="text-5xl mb-4">📋</div>
+              <p className="font-semibold">Belum ada Daily Report</p>
+              <p className="text-sm mt-1">Klik &quot;Buat Report&quot; untuk mulai</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {reports.map(r => {
+                const allCats = [
+                  ...r.reminder_activities.map(a => a.category),
+                  ...r.ticket_activities.map(a => a.issue_case),
+                  ...r.manual_activities.map(a => a.category),
+                ];
+                const uniqueCats = [...new Set(allCats)];
+                const total = totalActivities(r);
+
+                return (
+                  <div key={r.id}
+                    className="px-5 py-4 cursor-pointer hover:bg-gray-50/80 transition-all"
+                    onClick={() => { setDetailReport(r); setView('detail'); }}>
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                        style={{ background: avatarColor(r.user_name) }}>
+                        {initials(r.user_name)}
                       </div>
-                      <p className="text-xs text-white/60 mt-0.5">{formatDate(r.report_date)}</p>
-                      <div className="flex items-center gap-3 mt-2 flex-wrap">
-                        {r.reminder_activities.length > 0 && (
-                          <span className="text-[10px] text-sky-300">🔔 {r.reminder_activities.length} reminder</span>
-                        )}
-                        {r.ticket_activities.length > 0 && (
-                          <span className="text-[10px] text-pink-300">🎫 {r.ticket_activities.length} ticket</span>
-                        )}
-                        {r.manual_activities.length > 0 && (
-                          <span className="text-[10px] text-amber-300">✍️ {r.manual_activities.length} manual</span>
-                        )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-bold text-slate-800">{r.user_name}</p>
+                          {r.sales_division && <span className="text-[10px] text-slate-400">{r.sales_division}</span>}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">{formatDate(r.report_date)}</p>
+                        <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                          {r.reminder_activities.length > 0 && (
+                            <span className="text-[10px] text-emerald-600 font-semibold">🔔 {r.reminder_activities.length} reminder</span>
+                          )}
+                          {r.ticket_activities.length > 0 && (
+                            <span className="text-[10px] text-rose-500 font-semibold">🎫 {r.ticket_activities.length} ticket</span>
+                          )}
+                          {r.manual_activities.length > 0 && (
+                            <span className="text-[10px] text-amber-600 font-semibold">✍️ {r.manual_activities.length} manual</span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {uniqueCats.slice(0, 3).map(cat => {
+                            const c = CATEGORY_CONFIG[cat] ?? CATEGORY_CONFIG['Internal'];
+                            return (
+                              <span key={cat} className="text-[9px] font-bold px-2 py-0.5 rounded-full"
+                                style={{ background: c.bg, color: c.accent, border: `1px solid ${c.border}` }}>
+                                {c.icon} {cat}
+                              </span>
+                            );
+                          })}
+                          {uniqueCats.length > 3 && (
+                            <span className="text-[9px] text-slate-400">+{uniqueCats.length - 3} lainnya</span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {uniqueCats.slice(0, 3).map(cat => {
-                          const c = CATEGORY_CONFIG[cat] ?? CATEGORY_CONFIG['Internal'];
-                          return (
-                            <span key={cat} className="text-[9px] font-bold px-2 py-0.5 rounded-full"
-                              style={{ background: c.bg, color: c.accent, border: `1px solid ${c.border}` }}>
-                              {c.icon} {cat}
-                            </span>
-                          );
-                        })}
-                        {uniqueCats.length > 3 && (
-                          <span className="text-[9px] text-white/40">+{uniqueCats.length - 3} lainnya</span>
-                        )}
+                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                        <span className="text-xs font-bold text-slate-600">{total} aktivitas</span>
+                        <button
+                          onClick={ev => { ev.stopPropagation(); openEditForm(r); }}
+                          className="text-[10px] px-2.5 py-1 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 hover:text-gray-800 transition-all">
+                          Edit
+                        </button>
                       </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                      <span className="text-xs font-bold text-white/80">{total} aktivitas</span>
-                      <button
-                        onClick={ev => { ev.stopPropagation(); openEditForm(r); }}
-                        className="text-[10px] px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all">
-                        Edit
-                      </button>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Toast */}
