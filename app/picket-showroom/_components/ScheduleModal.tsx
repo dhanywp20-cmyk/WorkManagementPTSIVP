@@ -48,30 +48,53 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
   const handleSave=async()=>{
     setSaving(true);
     try{
-      // edited_by_name diambil dari currentUser — merge langsung ke payload upsert
       const editedByName=currentUser?.full_name||null;
+
+      // Fetch existing rows sekali untuk cek mana yang sudah ada di DB
+      const{data:existingRows}=await supabase
+        .from('piket_schedules')
+        .select('id,week_start,day_of_week,created_at')
+        .in('week_start',[wk1,wk2]);
+      const existingMap=new Map<string,{id:string;created_at:string}>();
+      (existingRows||[]).forEach(r=>existingMap.set(`${r.week_start}__${r.day_of_week}`,{id:r.id,created_at:r.created_at}));
 
       for(const [wk,ws] of [[wk1,weekStart],[wk2,week2Start]] as [string,Date][]){
         for(const day of DAYS_OF_WEEK){
           const uid=assign[wk]?.[day]||'';
+
+          // FIX #1: Skip hari "— Belum —" — jangan timpa data existing dengan null
+          if(!uid) continue;
+
           const u=users.find(x=>x.id===uid);
-          const tt=u?.team_type||'';
-          const isIVP=tt==='Team PTS',isUMP=tt==='Team PTS UMP',isMlds=tt==='Team PTS MLDS';
+
+          // FIX #2: Skip jika user tidak ditemukan — jangan simpan row rusak
+          if(!u){
+            console.warn(`[ScheduleModal] User not found for id: "${uid}", skipping ${day} ${wk}`);
+            continue;
+          }
+
+          const tt=u.team_type||'';
+          const isIVP=tt==='Team PTS';
+          const isUMP=tt==='Team PTS UMP';
+          const isMlds=tt==='Team PTS MLDS';
+
+          const existing=existingMap.get(`${wk}__${day}`);
 
           const payload: Record<string,any> = {
             week_start:wk,
             day_of_week:day,
             day_date:toKey(getDayDate(ws,day)),
             pic_ivp_id:isIVP?uid:null,
-            pic_ivp_name:isIVP?u?.full_name||null:null,
+            pic_ivp_name:isIVP?u.full_name||null:null,
             pic_ump_id:isUMP?uid:null,
-            pic_ump_name:isUMP?u?.full_name||null:null,
+            pic_ump_name:isUMP?u.full_name||null:null,
             pic_mlds_id:isMlds?uid:null,
-            pic_mlds_name:isMlds?u?.full_name||null:null,
-            created_at:new Date().toISOString(),
+            pic_mlds_name:isMlds?u.full_name||null:null,
+            // FIX #3: Pertahankan created_at asli jika row sudah exist, baru set jika insert baru
+            created_at:existing?.created_at||new Date().toISOString(),
             updated_at:new Date().toISOString(),
           };
-          // Sertakan edited_by_name langsung di payload upsert agar tidak perlu update terpisah
+
           if(editedByName) payload.edited_by_name=editedByName;
 
           const{error}=await supabase.from('piket_schedules').upsert(payload,{onConflict:'week_start,day_of_week',ignoreDuplicates:false});
@@ -114,7 +137,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
                   </div>
                 ))}
               </div>
-              {DAYS_OF_WEEK.map((day,dayIdx)=>{
+              {DAYS_OF_WEEK.map((day)=>{
                 const dc=DAY_COLOR[day];
                 return(
                   <div key={day} className="grid grid-cols-[100px_1fr_1fr] gap-2 items-center">
