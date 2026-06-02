@@ -2395,7 +2395,6 @@ jangan lupa peralatan & Semangat💪🏼
                           <col style={{ width: '10%' }} />
                           <col style={{ width: '8%' }} />
                           <col style={{ width: '6%' }} />
-                          <col style={{ width: '7%' }} />
                           <col style={{ width: '5%' }} />
                           <col style={{ width: '6%' }} />
                           <col style={{ width: '5%' }} />
@@ -2440,9 +2439,6 @@ jangan lupa peralatan & Semangat💪🏼
                                   <div className="font-bold text-gray-800 text-xs leading-tight break-words">{(r.project_name || '').trim() || (r.title || '').trim() || '—'}</div>
                                   {r.address && <div className="text-[10px] text-gray-400 truncate mt-0.5">📍 {r.address.split(',')[0]}</div>}
                                   <div className="text-[10px] text-gray-400 mt-0.5">{formatDatetime(r.created_at).split(',')[0]}</div>
-								  <div className="text-[10px] font-semibold text-gray-700 truncate">{r.pic_name}</div>
-                                      {r.pic_phone && <div className="text-[10px] text-gray-400 truncate">📱{r.pic_phone}</div>}
-								 </div>
                                 </td>
                                 {/* Product */}
                                 <td className="px-3 py-3 border-r border-gray-200 align-middle">
