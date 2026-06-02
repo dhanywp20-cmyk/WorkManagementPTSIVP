@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
 import { User } from './shared';
 
@@ -329,7 +330,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           supabase.from('activity_logs').select('id,ticket_id,new_status,created_at,handler_name').order('created_at',{ascending:false}).limit(500),
           scopeReminders(supabase.from('reminders').select('id,status,category,due_date')),
           supabase.from('piket_schedules').select('day_of_week,pic_ivp_name,pic_ump_name,pic_mlds_name,day_date').eq('day_of_week', dayOfWeek()),
-          supabase.from('piket_schedules').select('id,day_date,pic_ivp_name,pic_ump_name,pic_mlds_name').gte('day_date', getMonday()),
+          supabase.from('piket_schedules').select('id,day_date,pic_ivp_name,pic_ump_name,pic_mlds_name').gte('day_date', getMonday()).lte('day_date', todayStr()),
           supabase.from('piket_tamu_detail').select('id,created_at').gte('created_at', today),
           supabase.from('movement_logs').select('id,status_barang,tanggal,nama_pts').gte('tanggal', monthStart()),
           scope.kind === 'admin'
@@ -1567,16 +1568,13 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     {mldsMembers.length>0 && (scope.kind==='admin'||scope.ptsTeamType==='Team PTS MLDS') && (
                       <TeamRow members={mldsMembers} label="Team PTS MLDS" color="#3b82f6" abbr="MLD"/>
                     )}
-                    {umpMembers.length>0 && (scope.kind==='admin'||scope.ptsTeamType==='Team PTS UMP') && (
-                      <TeamRow members={umpMembers} label="Team PTS UMP" color="#f59e0b" abbr="UMP"/>
-                    )}
                   </div>
                 );
               })()}
 
 
 
-              {/* ── Detail Popup Modal ── */}
+              {/* ── Detail Popup Modal — rendered via Portal ── */}
               {selectedKPIMember && (() => {
                 const member = kpiTeam.members.find(m => m.id === selectedKPIMember);
                 if (!member) return null;
@@ -1592,9 +1590,9 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 const noData = member.ticketsHandled === 0 && member.lcAttempts === 0 && member.manual.technicalNote === 0;
                 const kpiColor = noData ? '#94a3b8' : finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
                 const isEditing = kpiTeam.editingMember === member.id;
-                return (
-                  <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-                    style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
+                const modalContent = (
+                  <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+                    style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)' }}
                     onClick={e => { if (e.target === e.currentTarget) { setSelectedKPIMember(null); setKpiTeam(prev=>({...prev,editingMember:null,editValues:{}})); } }}>
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
                       style={{ scrollbarWidth:'thin' }}>
@@ -1773,6 +1771,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     </div>
                   </div>
                 );
+                return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
               })()}
             </div>
           )}
