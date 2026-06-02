@@ -1432,118 +1432,81 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   const rndScore = member.manual.technicalNote >= rndTarget ? 1 : member.manual.technicalNote / rndTarget;
                   return Math.round([0.20, 0.30, 0.40, 0.10].reduce((s, w, i) => s + w * [tickScore, bastScore, lcScore, rndScore][i], 0) * 100);
                 };
-                // ── Compact row per member ──────────────────────────────
-                const MemberRow = ({ member }: { member: KPITeamMember }) => {
+                // ── Compact horizontal member chip ───────────────────────
+                const MemberChip = ({ member }: { member: KPITeamMember }) => {
                   const finalKPI = calcKPI(member);
                   const noData   = member.ticketsHandled===0 && member.lcAttempts===0 && member.manual.technicalNote===0;
                   const kpiColor = noData?'#94a3b8':finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
                   const kpiLabel = noData?'—':finalKPI>=85?'Excellent':finalKPI>=70?'Good':finalKPI>=50?'Fair':'Needs Work';
                   const alerts: string[] = [];
-                  if (member.lcFailedBelow75>0)      alerts.push(`📚 ${member.lcFailedBelow75}×<75`);
-                  if (member.formReviewLowRating>0)  alerts.push(`⭐ ${member.formReviewLowRating}×★`);
-                  if (member.ticketAvgResponseHours>24) alerts.push(`⏱ ${member.ticketAvgResponseHours}j`);
+                  if (member.lcFailedBelow75>0)         alerts.push(`📚${member.lcFailedBelow75}×`);
+                  if (member.formReviewLowRating>0)     alerts.push(`⭐${member.formReviewLowRating}×`);
+                  if (member.ticketAvgResponseHours>24) alerts.push(`⏱${member.ticketAvgResponseHours}j`);
                   return (
-                    <tr className="group hover:bg-blue-50/60 cursor-pointer transition-colors border-b border-slate-100 last:border-0"
-                      onClick={() => setSelectedKPIMember(member.id)}>
-                      {/* Avatar + Nama */}
-                      <td className="py-1.5 px-2 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] text-white flex-shrink-0"
-                            style={{background:`linear-gradient(135deg,${kpiColor},${kpiColor}88)`}}>
-                            {member.name.charAt(0)}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-[11px] font-bold text-slate-800 leading-tight truncate max-w-[110px]">{member.name}</div>
-                            <div className="text-[9px] text-slate-400 leading-tight">{member.jabatan}</div>
-                          </div>
-                        </div>
-                      </td>
-                      {/* Alert chips */}
-                      <td className="py-1.5 px-1">
-                        <div className="flex gap-1 flex-wrap">
-                          {noData
-                            ? <span className="text-[8px] italic text-slate-300">no data</span>
-                            : alerts.map((a,i)=>(
-                                <span key={i} className="text-[8px] font-bold px-1 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 whitespace-nowrap">{a}</span>
-                              ))}
-                        </div>
-                      </td>
-                      {/* Ticket */}
-                      <td className="py-1.5 px-1 text-center">
-                        <span className="text-[10px] font-bold text-slate-600">{member.ticketsHandled}</span>
-                        {member.ticketsOverdue>0&&<span className="text-[8px] text-red-500 ml-0.5">({member.ticketsOverdue}↑)</span>}
-                      </td>
-                      {/* LC */}
-                      <td className="py-1.5 px-1 text-center">
-                        <span className="text-[10px] font-bold text-slate-600">{member.lcPassed}/{member.lcAttempts}</span>
-                      </td>
-                      {/* RnD */}
-                      <td className="py-1.5 px-1 text-center">
-                        <span className="text-[10px] font-bold text-slate-600">{member.manual.technicalNote}</span>
-                      </td>
+                    <div onClick={() => setSelectedKPIMember(member.id)}
+                      className="flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl border cursor-pointer hover:shadow-md transition-all group"
+                      style={{
+                        background: noData ? '#f8fafc' : `${kpiColor}08`,
+                        borderColor: noData ? '#e2e8f0' : `${kpiColor}40`,
+                        minWidth: 80, maxWidth: 96,
+                      }}>
+                      {/* Avatar */}
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm text-white shadow-sm flex-shrink-0"
+                        style={{background:`linear-gradient(135deg,${kpiColor},${kpiColor}88)`}}>
+                        {member.name.charAt(0)}
+                      </div>
+                      {/* Name */}
+                      <div className="text-[10px] font-bold text-slate-700 text-center leading-tight w-full truncate"
+                        title={member.name}>{member.name.split(' ')[0]}</div>
                       {/* KPI Score */}
-                      <td className="py-1.5 px-2 text-right whitespace-nowrap">
-                        <span className="text-sm font-black" style={{color:kpiColor}}>{noData?'—':`${finalKPI}%`}</span>
-                        <div className="text-[8px] font-bold uppercase tracking-wider" style={{color:kpiColor}}>{kpiLabel}</div>
-                      </td>
-                      {/* Arrow */}
-                      <td className="py-1.5 pr-2">
-                        <svg className="w-3 h-3 text-slate-300 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
-                        </svg>
-                      </td>
-                    </tr>
+                      <div className="text-sm font-black leading-none" style={{color:kpiColor}}>
+                        {noData ? '—' : `${finalKPI}%`}
+                      </div>
+                      <div className="text-[8px] font-bold uppercase tracking-wide" style={{color:kpiColor}}>{kpiLabel}</div>
+                      {/* Alert dots */}
+                      {alerts.length>0 && (
+                        <div className="flex gap-0.5 flex-wrap justify-center">
+                          {alerts.map((a,i)=>(
+                            <span key={i} className="text-[7px] font-bold px-1 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 leading-none">{a}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   );
                 };
 
-                // ── Team table wrapper ───────────────────────────────────
-                const TeamTable = ({ members, label, color, abbr }: { members: KPITeamMember[]; label: string; color: string; abbr: string }) => (
-                  <div className="bg-white/95 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                    {/* Team header */}
-                    <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100" style={{background:`${color}08`}}>
-                      <div className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[9px] font-black" style={{background:color}}>{abbr}</div>
-                      <span className="text-[10px] font-black text-slate-600 uppercase tracking-wider">{label}</span>
-                      <span className="text-[9px] text-slate-400">{members.length} anggota</span>
-                      {/* avg KPI */}
-                      <div className="ml-auto">
-                        {(() => {
-                          const scored = members.filter(m => !(m.ticketsHandled===0&&m.lcAttempts===0&&m.manual.technicalNote===0));
-                          if (!scored.length) return null;
-                          const avg = Math.round(scored.reduce((s,m)=>s+calcKPI(m),0)/scored.length);
-                          const c   = avg>=85?'#10b981':avg>=70?'#3b82f6':avg>=50?'#f59e0b':'#ef4444';
-                          return <span className="text-[10px] font-black" style={{color:c}}>avg {avg}%</span>;
-                        })()}
+                // ── Team row: 1 line horizontal scroll ──────────────────
+                const TeamRow = ({ members, label, color, abbr }: { members: KPITeamMember[]; label: string; color: string; abbr: string }) => {
+                  const scored = members.filter(m=>!(m.ticketsHandled===0&&m.lcAttempts===0&&m.manual.technicalNote===0));
+                  const avg    = scored.length ? Math.round(scored.reduce((s,m)=>s+calcKPI(m),0)/scored.length) : null;
+                  const avgC   = avg==null?'#94a3b8':avg>=85?'#10b981':avg>=70?'#3b82f6':avg>=50?'#f59e0b':'#ef4444';
+                  return (
+                    <div className="bg-white/95 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                      {/* Header */}
+                      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-slate-100" style={{background:`${color}08`}}>
+                        <div className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[9px] font-black flex-shrink-0" style={{background:color}}>{abbr}</div>
+                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-wider">{label}</span>
+                        <span className="text-[9px] text-slate-400">{members.length} anggota</span>
+                        {avg!==null && (
+                          <span className="ml-auto text-[10px] font-black" style={{color:avgC}}>avg {avg}%</span>
+                        )}
+                      </div>
+                      {/* Horizontal scroll member chips */}
+                      <div className="flex gap-2 px-3 py-2 overflow-x-auto"
+                        style={{scrollbarWidth:'none'}}>
+                        {members.map(m => <MemberChip key={m.id} member={m}/>)}
                       </div>
                     </div>
-                    {/* Column headers */}
-                    <div className="grid grid-cols-[1fr] px-2">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b border-slate-100">
-                            <th className="text-left py-1 px-2 text-[8px] font-black text-slate-400 uppercase tracking-wider w-[140px]">Nama</th>
-                            <th className="text-left py-1 px-1 text-[8px] font-black text-slate-400 uppercase tracking-wider">Alerts</th>
-                            <th className="text-center py-1 px-1 text-[8px] font-black text-slate-400 uppercase tracking-wider w-14">Ticket</th>
-                            <th className="text-center py-1 px-1 text-[8px] font-black text-slate-400 uppercase tracking-wider w-14">LC</th>
-                            <th className="text-center py-1 px-1 text-[8px] font-black text-slate-400 uppercase tracking-wider w-10">RnD</th>
-                            <th className="text-right py-1 px-2 text-[8px] font-black text-slate-400 uppercase tracking-wider w-16">KPI</th>
-                            <th className="w-5"/>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {members.map(m => <MemberRow key={m.id} member={m}/>)}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
+                  );
+                };
 
                 return (
                   <div className="space-y-3">
                     {ivpMembers.length>0 && (scope.kind==='admin'||scope.ptsTeamType==='Team PTS') && (
-                      <TeamTable members={ivpMembers} label="Team PTS IVP" color="#ef4444" abbr="IVP"/>
+                      <TeamRow members={ivpMembers} label="Team PTS IVP" color="#ef4444" abbr="IVP"/>
                     )}
                     {mldsMembers.length>0 && (scope.kind==='admin'||scope.ptsTeamType==='Team PTS MLDS') && (
-                      <TeamTable members={mldsMembers} label="Team PTS MLDS" color="#3b82f6" abbr="MLD"/>
+                      <TeamRow members={mldsMembers} label="Team PTS MLDS" color="#3b82f6" abbr="MLD"/>
                     )}
                   </div>
                 );
