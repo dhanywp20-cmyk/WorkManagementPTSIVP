@@ -67,12 +67,15 @@ export default function PiketShowroomPage() {
     return()=>{supabase.removeChannel(ch);};
   },[fetchData]);
 
-  const isCurrWeek=wk===toKey(getMonday(new Date()));
+  // FIX: isCurrWeek true jika salah satu dari 2 minggu yang ditampilkan adalah minggu ini
+  const currMondayKey=toKey(getMonday(new Date()));
+  const isCurrWeek=wk===currMondayKey||toKey(addDays(weekStart,7))===currMondayKey;
   const fmtW=(ws:Date)=>`${ws.toLocaleDateString('id-ID',{day:'2-digit',month:'short'})} – ${addDays(ws,4).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}`;
   const wLabel=fmtW(weekStart);
   const wLabel2=fmtW(addDays(weekStart,7));
 
-  // Generate virtual rows dari rolling untuk minggu yang belum ada di DB
+  // Generate virtual rows untuk minggu yang belum ada di DB
+  // FIX: selalu tampilkan semua 10 hari kerja meski rolling name belum ada (PIC kosong)
   const effectiveRows = useMemo(()=>{
     const existingKeys = new Set(rows.map(r=>`${r.week_start}__${r.day_of_week}`));
     const virtual: PiketRow[] = [];
@@ -81,9 +84,9 @@ export default function PiketShowroomPage() {
       DAYS_OF_WEEK.forEach((day)=>{
         if(existingKeys.has(`${wkKey}__${day}`)) return;
         const date = getDayDate(ws, day);
+        // Coba dapat rolling name — tapi tetap buat row meski kosong
         const name = getRollingNameForDate(date, allRows);
-        if(!name) return;
-        const u = ptUsers.find(x=>x.full_name===name);
+        const u = name?ptUsers.find(x=>x.full_name===name):undefined;
         const tt = u?.team_type||'';
         const isIVP=tt==='Team PTS', isUMP=tt==='Team PTS UMP', isMlds=tt==='Team PTS MLDS';
         virtual.push({
@@ -92,11 +95,11 @@ export default function PiketShowroomPage() {
           day_of_week: day,
           day_date: toKey(date),
           pic_ivp_id: isIVP?(u?.id||null):null,
-          pic_ivp_name: isIVP?name:null,
+          pic_ivp_name: isIVP?(name||null):null,
           pic_ump_id: isUMP?(u?.id||null):null,
-          pic_ump_name: isUMP?name:null,
+          pic_ump_name: isUMP?(name||null):null,
           pic_mlds_id: isMlds?(u?.id||null):null,
-          pic_mlds_name: isMlds?name:null,
+          pic_mlds_name: isMlds?(name||null):null,
           tamu_instansi: null, kebutuhan: [],
           created_at: '', updated_at: '',
         });
