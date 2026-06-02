@@ -2487,15 +2487,6 @@ jangan lupa peralatan & Semangat💪🏼
                                     <span className="text-[10px] font-bold text-gray-800 truncate">{r.assign_name}</span>
                                   </div>
                                 </td>
-                                {/* PIC */}
-                                <td className="px-3 py-3 border-r border-gray-200 align-middle">
-                                  {r.pic_name ? (
-                                    <>
-                                      <div className="text-[10px] font-semibold text-gray-700 truncate">{r.pic_name}</div>
-                                      {r.pic_phone && <div className="text-[10px] text-gray-400 truncate">📱{r.pic_phone}</div>}
-                                    </>
-                                  ) : <span className="text-gray-300 text-xs">—</span>}
-                                </td>
                                 {/* Status */}
                                 <td className="px-3 py-3 border-r border-gray-200 align-middle">
                                   <StatusBadge status={r.status} />
