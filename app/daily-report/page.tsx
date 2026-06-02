@@ -40,12 +40,34 @@ const inputCls = 'transition-all focus:ring-2 focus:ring-red-300';
 function newManualKey() { return `m_${Date.now()}_${Math.random().toString(36).slice(2)}`; }
 function newTeamKey()   { return `t_${Date.now()}_${Math.random().toString(36).slice(2)}`; }
 
-function emptyManual(): ManualActivity {
-  return { _key: newManualKey(), category: 'Internal', project_name: '', address: '', description: '', sales_name: '', sales_division: '', pic_name: '', pic_phone: '' };
+// FIX: submitted_by default dari currentUser — bukan kosong
+function emptyManual(currentUsername = ''): ManualActivity {
+  return {
+    _key: newManualKey(),
+    category: 'Internal',
+    project_name: '',
+    address: '',
+    description: '',
+    sales_name: '',
+    sales_division: '',
+    pic_name: '',
+    pic_phone: '',
+    submitted_by: currentUsername,
+  };
 }
 
 function emptyTeamEntry(member: TeamUser): TeamEntry {
-  return { _key: newTeamKey(), member_user_id: member.id, member_name: member.full_name, category: 'Internal', project_name: '', address: '', sales_name: '', sales_division: member.sales_division ?? '', supervisor_notes: '' };
+  return {
+    _key: newTeamKey(),
+    member_user_id: member.id,
+    member_name: member.full_name,
+    category: 'Internal',
+    project_name: '',
+    address: '',
+    sales_name: '',
+    sales_division: member.sales_division ?? '',
+    supervisor_notes: '',
+  };
 }
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
@@ -197,7 +219,7 @@ export default function DailyReportPage() {
   // Activities
   const [reminderActs, setReminderActs] = useState<ReminderActivity[]>([]);
   const [ticketActs, setTicketActs]     = useState<TicketActivity[]>([]);
-  const [manualActs, setManualActs]     = useState<ManualActivity[]>([emptyManual()]);
+  const [manualActs, setManualActs]     = useState<ManualActivity[]>([]);
   const [teamEntries, setTeamEntries]   = useState<TeamEntry[]>([]);
 
   // Loading states
@@ -224,7 +246,6 @@ export default function DailyReportPage() {
       fetchGuestUsersData(),
     ]).then(() => setAppReady(true));
 
-    // Session timeout (sama dengan reminder-schedule)
     const checkSession = () => {
       const savedTime = localStorage.getItem('loginTime');
       if (!savedTime) return;
@@ -278,24 +299,32 @@ export default function DailyReportPage() {
 
   useEffect(() => { fetchReportList(); }, [fetchReportList]);
 
-  // ── Auto-populate saat tanggal / user form berubah ───────────────────────────
+  // ── FIX: Auto-populate activities — resolve username dulu dari teamUsers ──────
+  // Dipanggil eksplisit (bukan useEffect) supaya timing terjamin
+  const loadActivities = useCallback(async (username: string, date: string) => {
+    if (!username || !date) {
+      setReminderActs([]);
+      setTicketActs([]);
+      return;
+    }
+    setActivitiesLoading(true);
+    const [rem, tick] = await Promise.all([
+      fetchReminderActivities(username, date),
+      fetchTicketActivities(username, date),
+    ]);
+    setReminderActs(rem);
+    setTicketActs(tick);
+    setActivitiesLoading(false);
+  }, []);
+
+  // Reload ketika tanggal atau user berubah saat form terbuka
   useEffect(() => {
-    if (view !== 'form' || !formDate) return;
+    if (view !== 'form') return;
     const username = isAdmin
       ? teamUsers.find(u => u.id === formUserId)?.username ?? ''
       : currentUser?.username ?? '';
-    if (!username) { setReminderActs([]); setTicketActs([]); return; }
-
-    setActivitiesLoading(true);
-    Promise.all([
-      fetchReminderActivities(username, formDate),
-      fetchTicketActivities(username, formDate),
-    ]).then(([rem, tick]) => {
-      setReminderActs(rem);
-      setTicketActs(tick);
-      setActivitiesLoading(false);
-    });
-  }, [formDate, formUserId, view]);
+    loadActivities(username, formDate);
+  }, [formDate, formUserId, view, teamUsers]);
 
   // ── Login ────────────────────────────────────────────────────────────────────
   const handleLogin = async () => {
@@ -318,20 +347,35 @@ export default function DailyReportPage() {
     fetchReportList();
   };
 
-  // ── Buka form baru ───────────────────────────────────────────────────────────
+  // ── FIX: Buka form baru — set manual acts dengan submitted_by auto ───────────
   const openNewForm = async () => {
     const date = todayISO();
+    const uid = isAdmin ? '' : currentUser?.id ?? '';
     setFormDate(date);
-    setFormUserId(isAdmin ? '' : currentUser?.id ?? '');
+    setFormUserId(uid);
     setReminderNotes('');
-    setManualActs([emptyManual()]);
+    // FIX: manual activity sudah isi submitted_by dari currentUser
+    setManualActs([emptyManual(currentUser?.username ?? '')]);
     setEditingId(null);
+    setReminderActs([]);
+    setTicketActs([]);
 
-    // Inisialisasi TeamEntries untuk semua Team PTS (admin saja)
     if (isAdmin) {
       setTeamEntries(teamUsers.map(u => emptyTeamEntry(u)));
     } else {
       setTeamEntries([]);
+    }
+
+    // FIX: Langsung load activities untuk non-admin (tidak tunggu useEffect)
+    if (!isAdmin && currentUser?.username) {
+      setActivitiesLoading(true);
+      const [rem, tick] = await Promise.all([
+        fetchReminderActivities(currentUser.username, date),
+        fetchTicketActivities(currentUser.username, date),
+      ]);
+      setReminderActs(rem);
+      setTicketActs(tick);
+      setActivitiesLoading(false);
     }
 
     setView('form');
@@ -342,14 +386,23 @@ export default function DailyReportPage() {
     setFormDate(report.report_date);
     setFormUserId(report.user_id);
     setReminderNotes(report.reminder_notes ?? '');
+    // FIX: saat edit, reload dari Supabase untuk reminder & ticket (data fresh)
+    // manual activities diambil dari saved report
     setReminderActs(report.reminder_activities ?? []);
     setTicketActs(report.ticket_activities ?? []);
     setManualActs(
       (report.manual_activities ?? []).length
-        ? report.manual_activities.map(m => ({ ...m, _key: newManualKey() }))
-        : [emptyManual()]
+        ? report.manual_activities.map(m => ({ ...m, _key: newManualKey(), submitted_by: m.submitted_by ?? report.created_by }))
+        : [emptyManual(currentUser?.username ?? '')]
     );
     setEditingId(report.id);
+
+    // FIX: Reload ticket & reminder fresh untuk data yang up-to-date
+    const username = isAdmin
+      ? teamUsers.find(u => u.id === report.user_id)?.username ?? ''
+      : currentUser?.username ?? '';
+    loadActivities(username, report.report_date);
+
     setView('form');
   };
 
@@ -361,7 +414,6 @@ export default function DailyReportPage() {
     if (!formDate)       { notify('error', 'Tanggal wajib dipilih!');         return; }
     if (!targetUserId)   { notify('error', 'Pilih anggota team!');            return; }
 
-    // Validasi manual activities yang terisi setengah
     for (const m of manualActs) {
       if (!m.project_name.trim() && (m.address.trim() || m.description.trim())) {
         notify('error', 'Nama project/keterangan pada aktivitas manual wajib diisi!');
@@ -369,7 +421,6 @@ export default function DailyReportPage() {
       }
     }
 
-    // Cek duplicate report (skip jika edit)
     if (!editingId) {
       const existing = await fetchExistingReport(targetUserId, formDate);
       if (existing) {
@@ -380,8 +431,13 @@ export default function DailyReportPage() {
 
     setSaving(true);
 
-    // Bersihkan manual_activities yang kosong
-    const cleanManual = manualActs.filter(m => m.project_name.trim() || m.description.trim());
+    const cleanManual = manualActs
+      .filter(m => m.project_name.trim() || m.description.trim())
+      .map(({ _key, ...rest }) => ({
+        ...rest,
+        // FIX: pastikan submitted_by selalu terisi
+        submitted_by: rest.submitted_by || currentUser?.username || 'system',
+      }));
 
     const payload = {
       ...(editingId ? { id: editingId } : {}),
@@ -391,7 +447,7 @@ export default function DailyReportPage() {
       sales_division: targetUser?.sales_division ?? '',
       reminder_activities: reminderActs,
       ticket_activities: ticketActs,
-      manual_activities: cleanManual.map(({ _key, ...rest }) => rest),
+      manual_activities: cleanManual,
       reminder_notes: reminderNotes,
       created_by: currentUser?.username ?? 'system',
     };
@@ -399,7 +455,6 @@ export default function DailyReportPage() {
     const result = await saveReport(payload as any);
     if (!result.ok) { notify('error', 'Gagal menyimpan: ' + result.error); setSaving(false); return; }
 
-    // Simpan team entries (admin only)
     if (isAdmin && teamEntries.length) {
       const cleanTeam = teamEntries
         .filter(e => e.project_name.trim())
@@ -431,7 +486,7 @@ export default function DailyReportPage() {
   const removeManual = (key: string) =>
     setManualActs(prev => prev.filter(m => m._key !== key));
   const addManual = () =>
-    setManualActs(prev => [...prev, emptyManual()]);
+    setManualActs(prev => [...prev, emptyManual(currentUser?.username ?? '')]);
 
   // ── Team entry helpers ───────────────────────────────────────────────────────
   const updateTeamEntry = (key: string, patch: Partial<TeamEntry>) =>
@@ -563,7 +618,7 @@ export default function DailyReportPage() {
               {detailReport.ticket_activities.map((t, i) => (
                 <div key={i} className="px-5 py-4 border-b border-gray-50 last:border-0">
                   <div className="flex items-start gap-3">
-                    <span className="text-xl mt-0.5">{CATEGORY_CONFIG['Troubleshooting']?.icon ?? '🔧'}</span>
+                    <span className="text-xl mt-0.5">🔧</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-slate-800">{t.project_name}</p>
                       <p className="text-xs text-slate-500 mt-0.5">{t.issue_case} · {t.log_time}</p>
@@ -598,6 +653,10 @@ export default function DailyReportPage() {
                         {m.sales_name && <p className="text-xs text-slate-400">👤 Sales: {m.sales_name}{m.sales_division ? ` · ${m.sales_division}` : ''}</p>}
                         {m.pic_name && <p className="text-xs text-slate-400">🙋 PIC: {m.pic_name}{m.pic_phone ? ` - ${m.pic_phone}` : ''}</p>}
                         {m.description && <p className="text-xs text-slate-600 mt-1">{m.description}</p>}
+                        {/* FIX: tampilkan siapa yang submit */}
+                        {m.submitted_by && (
+                          <p className="text-xs text-slate-400 mt-0.5">✍️ Diisi oleh: <span className="font-semibold">@{m.submitted_by}</span></p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -715,7 +774,6 @@ export default function DailyReportPage() {
               </div>
             )}
 
-            {/* Catatan tambahan untuk reminder */}
             <div className="mt-4">
               <FormField label="Catatan Tambahan Reminder (Opsional)">
                 <textarea value={reminderNotes} onChange={e => setReminderNotes(e.target.value)}
@@ -744,23 +802,20 @@ export default function DailyReportPage() {
               </div>
             ) : (
               <div className="mt-4 space-y-3">
-                {ticketActs.map((t, i) => {
-                  const c = CATEGORY_CONFIG['Troubleshooting'];
-                  return (
-                    <div key={i} className="flex items-start gap-3 px-4 py-3 rounded-xl"
-                      style={{ background: 'rgba(251,113,133,0.08)', border: '1px solid rgba(251,113,133,0.25)' }}>
-                      <span className="text-xl mt-0.5">🔧</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-slate-800">{t.project_name}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{t.issue_case} · {t.log_time}</p>
-                        {t.address && <p className="text-xs text-slate-400 mt-0.5">📍 {t.address}</p>}
-                        {t.sales_name && <p className="text-xs text-slate-400">👤 {t.sales_name}{t.sales_division ? ` · ${t.sales_division}` : ''}</p>}
-                        <p className="text-xs text-slate-600 mt-1 font-medium">{t.action_taken}</p>
-                        <p className="text-xs font-semibold mt-0.5" style={{ color: '#10b981' }}>→ {t.new_status}</p>
-                      </div>
+                {ticketActs.map((t, i) => (
+                  <div key={i} className="flex items-start gap-3 px-4 py-3 rounded-xl"
+                    style={{ background: 'rgba(251,113,133,0.08)', border: '1px solid rgba(251,113,133,0.25)' }}>
+                    <span className="text-xl mt-0.5">🔧</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-slate-800">{t.project_name}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{t.issue_case} · {t.log_time}</p>
+                      {t.address && <p className="text-xs text-slate-400 mt-0.5">📍 {t.address}</p>}
+                      {t.sales_name && <p className="text-xs text-slate-400">👤 {t.sales_name}{t.sales_division ? ` · ${t.sales_division}` : ''}</p>}
+                      <p className="text-xs text-slate-600 mt-1 font-medium">{t.action_taken}</p>
+                      <p className="text-xs font-semibold mt-0.5" style={{ color: '#10b981' }}>→ {t.new_status}</p>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -771,6 +826,19 @@ export default function DailyReportPage() {
               <SectionHeader icon="✍️" title="Aktivitas Tambahan (Manual)" />
               <span className="text-[10px] font-bold tracking-widest uppercase px-2 py-1 rounded-full"
                 style={{ background: 'rgba(245,158,11,0.1)', color: '#b45309' }}>Manual</span>
+            </div>
+
+            {/* FIX: Info submitter — siapa yang mengisi form ini */}
+            <div className="mb-4 px-4 py-3 rounded-xl flex items-center gap-2"
+              style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.18)' }}>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+                style={{ background: avatarColor(currentUser?.full_name ?? '') }}>
+                {initials(currentUser?.full_name ?? 'U')}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-sky-800">Diisi oleh: {currentUser?.full_name}</p>
+                <p className="text-[10px] text-sky-600">@{currentUser?.username} · Aktivitas manual otomatis tercatat atas nama kamu</p>
+              </div>
             </div>
 
             <div className="space-y-4">
