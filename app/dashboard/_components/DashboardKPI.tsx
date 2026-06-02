@@ -395,6 +395,14 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const overdueCount= reminders.filter((r:any)=>r.status==='pending'&&r.due_date<today).length;
 
       const weekFilled = piketWeek.filter((p:any)=>p.pic_ivp_name||p.pic_ump_name||p.pic_mlds_name).length;
+      // weekTotal = jumlah hari kerja (Senin-Jumat) dari awal minggu ini s.d. hari ini
+      const todayD = new Date(); todayD.setHours(0,0,0,0);
+      const monD = new Date(todayD); const dow = monD.getDay();
+      monD.setDate(monD.getDate() + (dow === 0 ? -6 : 1 - dow));
+      let weekWorkDays = 0;
+      for (let d = new Date(monD); d <= todayD; d.setDate(d.getDate()+1)) {
+        const wd = d.getDay(); if (wd >= 1 && wd <= 5) weekWorkDays++;
+      }
 
       const roleMap: Record<string,number> = {};
       users.forEach((u:any)=>{ roleMap[u.role]=(roleMap[u.role]||0)+1; });
@@ -409,7 +417,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       setKpi({
         tickets:{ total:tickets.length,open,solved,waitingApproval,byHandler,byStatus,byDivision,resolvedToday,avgResolutionDays },
         reminders:{ total:reminders.length,pending:reminders.filter((r:any)=>r.status==='pending').length,done:reminders.filter((r:any)=>r.status==='done').length,dueSoon,byCategory,overdueCount },
-        piket:{ todayIVP:piketToday?.pic_ivp_name??null,todayUMP:piketToday?.pic_ump_name??null,todayMlds:piketToday?.pic_mlds_name??null,weekFilled,weekTotal:6,kegiatanToday:kegiatan.length },
+        piket:{ todayIVP:piketToday?.pic_ivp_name??null,todayUMP:piketToday?.pic_ump_name??null,todayMlds:piketToday?.pic_mlds_name??null,weekFilled,weekTotal:weekWorkDays,kegiatanToday:kegiatan.length },
         units:{ totalLogs:movements.length,keluarThisMonth:movements.filter((m:any)=>m.status_barang==='Keluar').length,masukThisMonth:movements.filter((m:any)=>m.status_barang==='Masuk').length },
         users:{ total:users.length,byRole:Object.entries(roleMap).map(([role,count])=>({role,count})) },
         learning:{ totalSessions:lcSubmitted, completedSessions:lcPassed, totalParticipants:lcParticipants, avgScore:lcAvgScore },
@@ -833,6 +841,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   <div className="flex flex-col gap-1.5 mb-2">
                     {[
                       {team:'IVP',  person:kpi?.piket.todayIVP,  c:'#ef4444', bg:'#fef2f2'},
+                      {team:'UMP',  person:kpi?.piket.todayUMP,  c:'#f59e0b', bg:'#fffbeb'},
                       {team:'MLDS', person:kpi?.piket.todayMlds, c:'#3b82f6', bg:'#eff6ff'},
                     ].map(p=>(
                       <div key={p.team} className="flex items-center gap-1.5">
@@ -1447,6 +1456,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               {!kpiTeam.loading && (() => {
                 const ivpMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS');
                 const mldsMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS MLDS');
+                const umpMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS UMP');
                 const calcKPI = (member: KPITeamMember) => {
                   // Ticketing 20%: jika tidak ada ticket sama sekali → 0 (belum ada data), bukan 100%
                   const tickScore = member.ticketsHandled > 0
@@ -1475,11 +1485,12 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   const kpiColor = noData?'#94a3b8':finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
                   const kpiLabel = noData?'—':finalKPI>=85?'Excellent':finalKPI>=70?'Good':finalKPI>=50?'Fair':'Needs Work';
                   const alerts: string[] = [];
+                  if (member.ticketsHandled===0)          alerts.push('🎫0');
                   if (member.lcFailedBelow75>0)         alerts.push(`📚${member.lcFailedBelow75}×`);
                   if (member.formReviewLowRating>0)     alerts.push(`⭐${member.formReviewLowRating}×`);
                   if (member.ticketAvgResponseHours>24) alerts.push(`⏱${member.ticketAvgResponseHours}j`);
-                  // Sparkline for tickets
-                  const spark = member.monthlyTickets ?? [];
+                  // Sparkline: prefer tickets, fallback to LC attempts
+                  const spark = member.monthlyTickets?.some(v=>v>0) ? member.monthlyTickets : (member.monthlyLC ?? []);
                   const sparkMax = Math.max(...spark, 1);
                   const sparkW = 72, sparkH = 18;
                   const sparkPts = spark.map((v,i)=>`${(i/11)*sparkW},${sparkH-(v/sparkMax)*sparkH}`).join(' ');
@@ -1549,12 +1560,15 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 };
 
                 return (
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                     {ivpMembers.length>0 && (scope.kind==='admin'||scope.ptsTeamType==='Team PTS') && (
                       <TeamRow members={ivpMembers} label="Team PTS IVP" color="#ef4444" abbr="IVP"/>
                     )}
                     {mldsMembers.length>0 && (scope.kind==='admin'||scope.ptsTeamType==='Team PTS MLDS') && (
                       <TeamRow members={mldsMembers} label="Team PTS MLDS" color="#3b82f6" abbr="MLD"/>
+                    )}
+                    {umpMembers.length>0 && (scope.kind==='admin'||scope.ptsTeamType==='Team PTS UMP') && (
+                      <TeamRow members={umpMembers} label="Team PTS UMP" color="#f59e0b" abbr="UMP"/>
                     )}
                   </div>
                 );
@@ -1579,7 +1593,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 const kpiColor = noData ? '#94a3b8' : finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
                 const isEditing = kpiTeam.editingMember === member.id;
                 return (
-                  <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+                  <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
                     style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
                     onClick={e => { if (e.target === e.currentTarget) { setSelectedKPIMember(null); setKpiTeam(prev=>({...prev,editingMember:null,editValues:{}})); } }}>
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
