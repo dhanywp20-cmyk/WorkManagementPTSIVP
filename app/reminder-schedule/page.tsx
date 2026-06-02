@@ -2415,7 +2415,6 @@ jangan lupa peralatan & Semangat💪🏼
                             <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Kegiatan</th>
                             <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Sales</th>
                             <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Handler</th>
-                            <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">PIC</th>
                             <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Status</th>
                             <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Garansi</th>
                             <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Tanggal</th>
@@ -2441,6 +2440,9 @@ jangan lupa peralatan & Semangat💪🏼
                                   <div className="font-bold text-gray-800 text-xs leading-tight break-words">{(r.project_name || '').trim() || (r.title || '').trim() || '—'}</div>
                                   {r.address && <div className="text-[10px] text-gray-400 truncate mt-0.5">📍 {r.address.split(',')[0]}</div>}
                                   <div className="text-[10px] text-gray-400 mt-0.5">{formatDatetime(r.created_at).split(',')[0]}</div>
+								  <div className="text-[10px] font-semibold text-gray-700 truncate">{r.pic_name}</div>
+                                      {r.pic_phone && <div className="text-[10px] text-gray-400 truncate">📱{r.pic_phone}</div>}
+								 </div>
                                 </td>
                                 {/* Product */}
                                 <td className="px-3 py-3 border-r border-gray-200 align-middle">
