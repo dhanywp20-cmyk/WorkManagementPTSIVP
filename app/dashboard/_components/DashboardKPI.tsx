@@ -1432,77 +1432,118 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   const rndScore = member.manual.technicalNote >= rndTarget ? 1 : member.manual.technicalNote / rndTarget;
                   return Math.round([0.20, 0.30, 0.40, 0.10].reduce((s, w, i) => s + w * [tickScore, bastScore, lcScore, rndScore][i], 0) * 100);
                 };
-                const MemberCard = ({ member }: { member: KPITeamMember }) => {
+                // ── Compact row per member ──────────────────────────────
+                const MemberRow = ({ member }: { member: KPITeamMember }) => {
                   const finalKPI = calcKPI(member);
-                  // Belum ada data sama sekali di platform
-                  const noData = member.ticketsHandled === 0 && member.lcAttempts === 0 && member.manual.technicalNote === 0;
-                  const kpiColor = noData ? '#94a3b8' : finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
-                  const kpiLabel = noData ? 'Belum Ada Data' : finalKPI>=85?'Excellent':finalKPI>=70?'Good':finalKPI>=50?'Fair':'Needs Work';
-                  const hasLowRating = member.formReviewLowRating > 0;
-                  const hasLCFail = member.lcFailedBelow75 > 0;
-                  const hasSlowResponse = member.ticketAvgResponseHours > 24;
-                  const alertCount = [hasLowRating, hasLCFail, hasSlowResponse].filter(Boolean).length;
+                  const noData   = member.ticketsHandled===0 && member.lcAttempts===0 && member.manual.technicalNote===0;
+                  const kpiColor = noData?'#94a3b8':finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
+                  const kpiLabel = noData?'—':finalKPI>=85?'Excellent':finalKPI>=70?'Good':finalKPI>=50?'Fair':'Needs Work';
+                  const alerts: string[] = [];
+                  if (member.lcFailedBelow75>0)      alerts.push(`📚 ${member.lcFailedBelow75}×<75`);
+                  if (member.formReviewLowRating>0)  alerts.push(`⭐ ${member.formReviewLowRating}×★`);
+                  if (member.ticketAvgResponseHours>24) alerts.push(`⏱ ${member.ticketAvgResponseHours}j`);
                   return (
-                    <div key={member.id}
-                      className="bg-white/95 rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center gap-4 cursor-pointer hover:shadow-md hover:border-blue-200 transition-all"
-                      onClick={() => setSelectedKPIMember(member.id)}
-                    >
-                      <div className="w-12 h-12 rounded-full flex items-center justify-center font-black text-base text-white flex-shrink-0 shadow"
-                        style={{ background: `linear-gradient(135deg, ${kpiColor}, ${kpiColor}99)` }}>
-                        {member.name.charAt(0)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-slate-800 text-sm truncate">{member.name}</div>
-                        <div className="text-[10px] text-slate-400">{member.jabatan} · {member.team_type.replace('Team PTS ','').replace('Team PTS','IVP')}</div>
-                        {noData ? (
-                          <div className="flex gap-1 mt-1">
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-50 text-slate-400 border border-slate-200">⏳ Belum ada list di platform</span>
+                    <tr className="group hover:bg-blue-50/60 cursor-pointer transition-colors border-b border-slate-100 last:border-0"
+                      onClick={() => setSelectedKPIMember(member.id)}>
+                      {/* Avatar + Nama */}
+                      <td className="py-1.5 px-2 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] text-white flex-shrink-0"
+                            style={{background:`linear-gradient(135deg,${kpiColor},${kpiColor}88)`}}>
+                            {member.name.charAt(0)}
                           </div>
-                        ) : alertCount > 0 && (
-                          <div className="flex gap-1 mt-1 flex-wrap">
-                            {hasLowRating && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">⭐ {member.formReviewLowRating}× rating rendah</span>}
-                            {hasLCFail && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">📚 {member.lcFailedBelow75}× quiz &lt;75</span>}
-                            {hasSlowResponse && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200">⏱ avg {member.ticketAvgResponseHours}j</span>}
+                          <div className="min-w-0">
+                            <div className="text-[11px] font-bold text-slate-800 leading-tight truncate max-w-[110px]">{member.name}</div>
+                            <div className="text-[9px] text-slate-400 leading-tight">{member.jabatan}</div>
                           </div>
-                        )}
-                      </div>
-                      <div className="flex flex-col items-end flex-shrink-0">
-                        <div className="text-2xl font-black" style={{ color: kpiColor }}>{noData ? '—' : `${finalKPI}%`}</div>
-                        <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: kpiColor }}>{kpiLabel}</div>
-                      </div>
-                      <svg className="w-4 h-4 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
-                      </svg>
-                    </div>
+                        </div>
+                      </td>
+                      {/* Alert chips */}
+                      <td className="py-1.5 px-1">
+                        <div className="flex gap-1 flex-wrap">
+                          {noData
+                            ? <span className="text-[8px] italic text-slate-300">no data</span>
+                            : alerts.map((a,i)=>(
+                                <span key={i} className="text-[8px] font-bold px-1 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 whitespace-nowrap">{a}</span>
+                              ))}
+                        </div>
+                      </td>
+                      {/* Ticket */}
+                      <td className="py-1.5 px-1 text-center">
+                        <span className="text-[10px] font-bold text-slate-600">{member.ticketsHandled}</span>
+                        {member.ticketsOverdue>0&&<span className="text-[8px] text-red-500 ml-0.5">({member.ticketsOverdue}↑)</span>}
+                      </td>
+                      {/* LC */}
+                      <td className="py-1.5 px-1 text-center">
+                        <span className="text-[10px] font-bold text-slate-600">{member.lcPassed}/{member.lcAttempts}</span>
+                      </td>
+                      {/* RnD */}
+                      <td className="py-1.5 px-1 text-center">
+                        <span className="text-[10px] font-bold text-slate-600">{member.manual.technicalNote}</span>
+                      </td>
+                      {/* KPI Score */}
+                      <td className="py-1.5 px-2 text-right whitespace-nowrap">
+                        <span className="text-sm font-black" style={{color:kpiColor}}>{noData?'—':`${finalKPI}%`}</span>
+                        <div className="text-[8px] font-bold uppercase tracking-wider" style={{color:kpiColor}}>{kpiLabel}</div>
+                      </td>
+                      {/* Arrow */}
+                      <td className="py-1.5 pr-2">
+                        <svg className="w-3 h-3 text-slate-300 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
+                        </svg>
+                      </td>
+                    </tr>
                   );
                 };
+
+                // ── Team table wrapper ───────────────────────────────────
+                const TeamTable = ({ members, label, color, abbr }: { members: KPITeamMember[]; label: string; color: string; abbr: string }) => (
+                  <div className="bg-white/95 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    {/* Team header */}
+                    <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100" style={{background:`${color}08`}}>
+                      <div className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[9px] font-black" style={{background:color}}>{abbr}</div>
+                      <span className="text-[10px] font-black text-slate-600 uppercase tracking-wider">{label}</span>
+                      <span className="text-[9px] text-slate-400">{members.length} anggota</span>
+                      {/* avg KPI */}
+                      <div className="ml-auto">
+                        {(() => {
+                          const scored = members.filter(m => !(m.ticketsHandled===0&&m.lcAttempts===0&&m.manual.technicalNote===0));
+                          if (!scored.length) return null;
+                          const avg = Math.round(scored.reduce((s,m)=>s+calcKPI(m),0)/scored.length);
+                          const c   = avg>=85?'#10b981':avg>=70?'#3b82f6':avg>=50?'#f59e0b':'#ef4444';
+                          return <span className="text-[10px] font-black" style={{color:c}}>avg {avg}%</span>;
+                        })()}
+                      </div>
+                    </div>
+                    {/* Column headers */}
+                    <div className="grid grid-cols-[1fr] px-2">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-slate-100">
+                            <th className="text-left py-1 px-2 text-[8px] font-black text-slate-400 uppercase tracking-wider w-[140px]">Nama</th>
+                            <th className="text-left py-1 px-1 text-[8px] font-black text-slate-400 uppercase tracking-wider">Alerts</th>
+                            <th className="text-center py-1 px-1 text-[8px] font-black text-slate-400 uppercase tracking-wider w-14">Ticket</th>
+                            <th className="text-center py-1 px-1 text-[8px] font-black text-slate-400 uppercase tracking-wider w-14">LC</th>
+                            <th className="text-center py-1 px-1 text-[8px] font-black text-slate-400 uppercase tracking-wider w-10">RnD</th>
+                            <th className="text-right py-1 px-2 text-[8px] font-black text-slate-400 uppercase tracking-wider w-16">KPI</th>
+                            <th className="w-5"/>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {members.map(m => <MemberRow key={m.id} member={m}/>)}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+
                 return (
-                  <div className="space-y-5">
-                    {/* Team PTS IVP */}
-                    {ivpMembers.length > 0 && (scope.kind==='admin' || scope.ptsTeamType==='Team PTS') && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-6 h-6 rounded-lg bg-red-500 flex items-center justify-center text-white text-[10px] font-black">IVP</div>
-                          <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Team PTS IVP</span>
-                          <span className="text-[10px] text-slate-400 ml-1">{ivpMembers.length} anggota</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          {ivpMembers.map(m => <MemberCard key={m.id} member={m}/>)}
-                        </div>
-                      </div>
+                  <div className="space-y-3">
+                    {ivpMembers.length>0 && (scope.kind==='admin'||scope.ptsTeamType==='Team PTS') && (
+                      <TeamTable members={ivpMembers} label="Team PTS IVP" color="#ef4444" abbr="IVP"/>
                     )}
-                    {/* Team PTS MLDS */}
-                    {mldsMembers.length > 0 && (scope.kind==='admin' || scope.ptsTeamType==='Team PTS MLDS') && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-6 h-6 rounded-lg bg-blue-500 flex items-center justify-center text-white text-[10px] font-black">MLD</div>
-                          <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Team PTS MLDS</span>
-                          <span className="text-[10px] text-slate-400 ml-1">{mldsMembers.length} anggota</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          {mldsMembers.map(m => <MemberCard key={m.id} member={m}/>)}
-                        </div>
-                      </div>
+                    {mldsMembers.length>0 && (scope.kind==='admin'||scope.ptsTeamType==='Team PTS MLDS') && (
+                      <TeamTable members={mldsMembers} label="Team PTS MLDS" color="#3b82f6" abbr="MLD"/>
                     )}
                   </div>
                 );
