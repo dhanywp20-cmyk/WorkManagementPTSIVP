@@ -56,7 +56,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
         .select('id,week_start,day_of_week,created_at')
         .in('week_start',[wk1,wk2]);
       const existingMap=new Map<string,{id:string;created_at:string}>();
-      (existingRows||[]).forEach(r=>existingMap.set(`${r.week_start}__${r.day_of_week}`,{id:r.id,created_at:r.created_at}));
+      (existingRows||[]).forEach((r:any)=>existingMap.set(`${r.week_start}__${r.day_of_week}`,{id:r.id,created_at:r.created_at}));
 
       for(const [wk,ws] of [[wk1,weekStart],[wk2,week2Start]] as [string,Date][]){
         for(const day of DAYS_OF_WEEK){
