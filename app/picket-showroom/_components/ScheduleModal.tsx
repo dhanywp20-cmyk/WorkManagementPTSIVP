@@ -26,7 +26,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
       if(data&&data.length>0){
         (data as PiketRow[]).forEach(s=>{if(na[s.week_start])na[s.week_start][s.day_of_week]=s.pic_ivp_id||s.pic_ump_id||s.pic_mlds_id||'';});
       }
-      // Fill empty days by projecting rolling pattern from existing DB data
+      // Pre-fill hari kosong dari rolling — pola berulang selamanya sampai admin ubah
       const{data:allData}=await supabase.from('piket_schedules').select('week_start,day_of_week,pic_ivp_id,pic_ump_id,pic_mlds_id');
       if(allData&&allData.length>0){
         const allRows=allData as PiketRow[];
