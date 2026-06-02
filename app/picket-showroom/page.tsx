@@ -75,8 +75,11 @@ export default function PiketShowroomPage() {
   const wLabel2=fmtW(addDays(weekStart,7));
 
   // Generate virtual rows untuk minggu yang belum ada di DB
-  // FIX: selalu tampilkan semua 10 hari kerja meski rolling name belum ada (PIC kosong)
+  // FIX 1: Selalu tampilkan semua 10 hari kerja meski rolling name belum ada (PIC kosong)
+  // FIX 2: Hari yang sudah LEWAT (< hari ini) dan tidak ada di DB → tampil kosong tanpa rolling
+  //         supaya perubahan rolling tidak meretroaktif mengubah data historis yang belum disave
   const effectiveRows = useMemo(()=>{
+    const todayKey = toKey(new Date());
     const existingKeys = new Set(rows.map(r=>`${r.week_start}__${r.day_of_week}`));
     const virtual: PiketRow[] = [];
     [weekStart, addDays(weekStart,7)].forEach(ws=>{
@@ -84,16 +87,19 @@ export default function PiketShowroomPage() {
       DAYS_OF_WEEK.forEach((day)=>{
         if(existingKeys.has(`${wkKey}__${day}`)) return;
         const date = getDayDate(ws, day);
-        // Coba dapat rolling name — tapi tetap buat row meski kosong
-        const name = getRollingNameForDate(date, allRows);
-        const u = name?ptUsers.find(x=>x.full_name===name):undefined;
+        const dateKey = toKey(date);
+        // Hari lampau yang belum di-DB: tampilkan kosong (jangan pakai rolling)
+        // supaya history tidak berubah retroaktif saat rolling di-update
+        const isPast = dateKey < todayKey;
+        const name = isPast ? null : getRollingNameForDate(date, allRows);
+        const u = name ? ptUsers.find(x=>x.full_name===name) : undefined;
         const tt = u?.team_type||'';
         const isIVP=tt==='Team PTS', isUMP=tt==='Team PTS UMP', isMlds=tt==='Team PTS MLDS';
         virtual.push({
           id: `virtual-${wkKey}-${day}`,
           week_start: wkKey,
           day_of_week: day,
-          day_date: toKey(date),
+          day_date: dateKey,
           pic_ivp_id: isIVP?(u?.id||null):null,
           pic_ivp_name: isIVP?(name||null):null,
           pic_ump_id: isUMP?(u?.id||null):null,
@@ -253,8 +259,8 @@ export default function PiketShowroomPage() {
                   <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{displayRows.length}</span>
                   {/* Week nav — 2 minggu */}
                   <div className="flex items-center gap-1">
-                    <button onClick={()=>setWeekStart(d=>addDays(d,-14))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">‹‹</button>
-                    <button onClick={()=>setWeekStart(d=>addDays(d,-7))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-base text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">‹</button>
+                    <button onClick={()=>setWeekStart(d=>addDays(d,-28))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">‹‹</button>
+                    <button onClick={()=>setWeekStart(d=>addDays(d,-14))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-base text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">‹</button>
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{background:'rgba(220,38,38,0.07)',border:'1px solid rgba(220,38,38,0.2)'}}>
                       <div className="flex flex-col">
                         <span className="text-[11px] font-bold text-red-700 leading-tight">{wLabel}</span>
@@ -262,8 +268,8 @@ export default function PiketShowroomPage() {
                       </div>
                       {!isCurrWeek&&<button onClick={()=>setWeekStart(getMonday(new Date()))} className="text-[9px] font-bold px-2 py-1 rounded-lg text-white flex-shrink-0" style={{background:'#dc2626'}}>Ini</button>}
                     </div>
-                    <button onClick={()=>setWeekStart(d=>addDays(d,7))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-base text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">›</button>
-                    <button onClick={()=>setWeekStart(d=>addDays(d,14))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">››</button>
+                    <button onClick={()=>setWeekStart(d=>addDays(d,14))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-base text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">›</button>
+                    <button onClick={()=>setWeekStart(d=>addDays(d,28))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">››</button>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
