@@ -99,6 +99,7 @@ export default function Dashboard() {
       title: 'Daily Report', icon: '📈', key: 'daily-report',
       gradient: 'from-emerald-700 via-emerald-600 to-emerald-500',
       description: 'Activity tracking & performance metrics',
+	  items: [{ name: 'Piket Showroom', url: '/daily-report', icon: '📅', internal: true, embed: true }]
       items: [
         { name: 'Submit Daily Report', url: 'https://docs.google.com/forms/d/e/1FAIpQLSf2cCEPlQQcCR1IZ3GRx-ImgdJJ15rMxAoph77aNYmbl15gvw/viewform?embedded=true', icon: '✍️', embed: true },
         { name: 'View Daily Report', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMeC3gBgeCAe5YNoVE4RfdANVyjx7xmtTA7C-G40KhExzgvAJ4cGTcyFcgbp4WWx7laBdC3VZrBGd0/pubhtml?gid=1408443365&single=true', icon: '📑', embed: true },
