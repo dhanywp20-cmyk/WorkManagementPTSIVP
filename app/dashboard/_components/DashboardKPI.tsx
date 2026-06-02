@@ -45,8 +45,11 @@ interface KPITeamMember {
   lcPassed: number;
   lcFailedBelow75: number;   // LC: jumlah attempt score < 75
   piketFilled: number;
-  ticketAvgResponseHours: number;  // Ticketing: avg jam dari created → pertama kali ada activity log
-  formReviewLowRating: number;     // Form Review: jumlah rating bintang 1 atau 2
+  ticketAvgResponseHours: number;
+  formReviewLowRating: number;
+  // Monthly sparkline data (12 bulan)
+  monthlyTickets: number[];
+  monthlyLC: number[];
   // Manual input (KPI yg tidak bisa diambil otomatis)
   manual: {
     komplainCount: number;        // Technical knowledge - jumlah komplain (max 12)
@@ -256,7 +259,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
   const [audit, setAudit]           = useState<AuditEntry[]>([]);
   const [loading, setLoading]       = useState(true);
   const [auditLoading, setAuditLoading] = useState(true);
-  const [tab, setTab]               = useState<'kpi'|'kpi_team'|'analytics'|'audit'>('kpi');
+  const [tab, setTab]               = useState<'kpi'|'kpi_team'|'analytics'|'cross'|'audit'>('kpi');
   const [auditFilter, setAuditFilter] = useState<'all'|'ticket'|'reminder'|'piket'|'user'>('all');
   const [auditSearch, setAuditSearch] = useState('');
   const [lastRefresh, setLastRefresh] = useState(new Date());
@@ -697,12 +700,21 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           learningMastery: saved?.learning_mastery ?? 0,
         };
 
+        // Monthly sparkline: tickets handled per month (12 months of filterYear)
+        const monthlyTickets = Array.from({length:12},(_,mi)=>
+          myTickets.filter((t:any)=>{ const d=new Date(t.created_at); return d.getMonth()===mi; }).length
+        );
+        const monthlyLC = Array.from({length:12},(_,mi)=>
+          myLC.filter((a:any)=>{ const d=new Date(a.started_at||''); return !isNaN(d.getTime())&&d.getMonth()===mi; }).length
+        );
+
         return {
           id: uid, name, team_type: m.team_type ?? '', jabatan: m.jabatan ?? '',
           ticketsHandled: myTickets.length, ticketsSolved: tSolved.length, ticketsOverdue: tOverdue.length, avgResolutionDays: avgRes,
           remindersAssigned: myRem.length, remindersDone: remDone, remindersOverdue: remOver,
           lcAttempts: myLC.length, lcAvgScore: lcAvg, lcPassed: myLC.filter((a: any) => a.passed === true).length,
           lcFailedBelow75, piketFilled, ticketAvgResponseHours, formReviewLowRating,
+          monthlyTickets, monthlyLC,
           manual,
         };
       });
@@ -753,6 +765,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     {key:'kpi',icon:'📊',label:'KPI Live'},
     {key:'kpi_team',icon:'👥',label:'KPI Team'},
     {key:'analytics',icon:'📈',label:'Analytics'},
+    {key:'cross',icon:'🔀',label:'Cross-Module'},
     {key:'audit',icon:'🔍',label:'Audit Trail'},
   ] as const;
 
@@ -1382,6 +1395,104 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                     Excel {kpiTeam.filterYear} ({kpiTeam.filterPeriod==='6m'?'6bln':'1thn'})
                   </button>
+
+                  {/* ── Export Summary Gabungan ── */}
+                  <button
+                    onClick={async () => {
+                      const allMembers = kpiTeam.members;
+                      if (!allMembers.length) return;
+                      const XLSX_MOD: any = await new Promise((resolve, reject) => {
+                        if ((window as any).XLSX) { resolve((window as any).XLSX); return; }
+                        const s = document.createElement('script');
+                        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+                        s.onload = () => resolve((window as any).XLSX);
+                        s.onerror = reject;
+                        document.head.appendChild(s);
+                      });
+                      const year = kpiTeam.filterYear;
+                      const pm = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
+                      const rndTarget = 6 * pm;
+                      const wb = XLSX_MOD.utils.book_new();
+
+                      // ── Sheet 1: Rekap Tim ──
+                      const summaryAoa: (string|number|null)[][] = [
+                        ['REKAP KPI TIM PTS — INDOVISUAL GROUP', null, null, null, null, null, null, null, null],
+                        [`Tahun: ${year}  |  Periode: ${kpiTeam.filterPeriod==='6m'?'6 Bulan (Jul-Des)':'1 Tahun (Jan-Des)'}`, null, null, null, null, null, null, null, null],
+                        [],
+                        ['No','Nama','Tim','Jabatan','Ticket','Ticket Overdue','LC Attempts','LC Avg Score','Low Rating BAST','Technote','Skor KPI (%)','Predikat'],
+                      ];
+                      allMembers.forEach((m, idx) => {
+                        const tickS = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled,1)) : 0;
+                        const bastS = m.ticketsHandled === 0 ? 0 : m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating * 0.25);
+                        const lcS   = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - m.lcFailedBelow75 / Math.max(m.lcAttempts,1));
+                        const rndS  = m.manual.technicalNote >= rndTarget ? 1 : m.manual.technicalNote / rndTarget;
+                        const final = Math.round([0.20,0.30,0.40,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
+                        const noData = m.ticketsHandled===0&&m.lcAttempts===0&&m.manual.technicalNote===0;
+                        const label = noData?'Belum Ada Data':final>=85?'Excellent':final>=70?'Good':final>=50?'Fair':'Needs Work';
+                        summaryAoa.push([
+                          idx+1, m.name, m.team_type.replace('Team PTS ','').replace('Team PTS','IVP'),
+                          m.jabatan, m.ticketsHandled, m.ticketsOverdue,
+                          m.lcAttempts, m.lcAvgScore, m.formReviewLowRating,
+                          m.manual.technicalNote, noData ? 0 : final, label,
+                        ]);
+                      });
+                      summaryAoa.push([]);
+                      summaryAoa.push(['','','','','','','','','','','TOTAL ANGGOTA',allMembers.length]);
+                      const avgFinal = allMembers.length
+                        ? Math.round(allMembers.reduce((sum, m) => {
+                            const tickS = m.ticketsHandled>0?Math.max(0,1-m.ticketsOverdue/Math.max(m.ticketsHandled,1)):0;
+                            const bastS = m.ticketsHandled===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating*0.25);
+                            const lcS   = m.lcAttempts===0?0:Math.max(0,1-(m.lcFailedBelow75/Math.max(m.lcAttempts,1)));
+                            const rndS  = m.manual.technicalNote>=rndTarget?1:m.manual.technicalNote/rndTarget;
+                            return sum + Math.round([0.20,0.30,0.40,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
+                          }, 0) / allMembers.length)
+                        : 0;
+                      summaryAoa.push(['','','','','','','','','','','RATA-RATA KPI', `${avgFinal}%`]);
+                      const wsSummary = XLSX_MOD.utils.aoa_to_sheet(summaryAoa);
+                      wsSummary['!cols'] = [{wch:5},{wch:28},{wch:14},{wch:20},{wch:9},{wch:14},{wch:12},{wch:13},{wch:15},{wch:10},{wch:12},{wch:14}];
+                      XLSX_MOD.utils.book_append_sheet(wb, wsSummary, 'Rekap Tim');
+
+                      // ── Sheet 2: Detail per tim (IVP vs MLDS) ──
+                      const teams: Record<string, typeof allMembers[0][]> = {};
+                      allMembers.forEach(m => {
+                        const k = m.team_type;
+                        if (!teams[k]) teams[k] = [];
+                        teams[k].push(m);
+                      });
+                      Object.entries(teams).forEach(([teamName, tMembers]) => {
+                        const sheetName = ('Detail ' + teamName.replace('Team PTS ','').replace('Team PTS','IVP')).substring(0,31);
+                        const aoa: (string|number|null)[][] = [
+                          [`Detail KPI — ${teamName} — ${year}`, null, null, null, null, null],
+                          [],
+                          ['Nama','Jabatan','Ticket Handled','Solved','Overdue','Avg Res (hr)','Reminder Done','LC Attempts','LC Avg','Piket','Technote','Skor KPI'],
+                        ];
+                        tMembers.forEach(m => {
+                          const tickS = m.ticketsHandled>0?Math.max(0,1-m.ticketsOverdue/Math.max(m.ticketsHandled,1)):0;
+                          const bastS = m.ticketsHandled===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating*0.25);
+                          const lcS   = m.lcAttempts===0?0:Math.max(0,1-(m.lcFailedBelow75/Math.max(m.lcAttempts,1)));
+                          const rndS  = m.manual.technicalNote>=rndTarget?1:m.manual.technicalNote/rndTarget;
+                          const final = Math.round([0.20,0.30,0.40,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
+                          aoa.push([m.name, m.jabatan, m.ticketsHandled, m.ticketsSolved, m.ticketsOverdue, m.avgResolutionDays, m.remindersDone, m.lcAttempts, m.lcAvgScore, m.piketFilled, m.manual.technicalNote, final]);
+                        });
+                        const ws = XLSX_MOD.utils.aoa_to_sheet(aoa);
+                        ws['!cols'] = [{wch:28},{wch:20},{wch:14},{wch:9},{wch:9},{wch:12},{wch:14},{wch:12},{wch:9},{wch:9},{wch:10},{wch:10}];
+                        XLSX_MOD.utils.book_append_sheet(wb, ws, sheetName);
+                      });
+
+                      const wbOut = XLSX_MOD.write(wb, { bookType:'xlsx', type:'array' });
+                      const blob = new Blob([wbOut], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `KPI_Summary_Tim_${year}_${kpiTeam.filterPeriod}.xlsx`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-blue-600 hover:text-white hover:bg-blue-600 bg-white border border-blue-200 transition-all"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Rekap Tim {kpiTeam.filterYear}
+                  </button>
                 </div>
               </div>
 
@@ -1433,7 +1544,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   return Math.round([0.20, 0.30, 0.40, 0.10].reduce((s, w, i) => s + w * [tickScore, bastScore, lcScore, rndScore][i], 0) * 100);
                 };
                 // ── Compact horizontal member chip ───────────────────────
-                const MemberChip = ({ member }: { member: KPITeamMember }) => {
+                  const MemberChip = ({ member }: { member: KPITeamMember }) => {
                   const finalKPI = calcKPI(member);
                   const noData   = member.ticketsHandled===0 && member.lcAttempts===0 && member.manual.technicalNote===0;
                   const kpiColor = noData?'#94a3b8':finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
@@ -1442,13 +1553,18 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   if (member.lcFailedBelow75>0)         alerts.push(`📚${member.lcFailedBelow75}×`);
                   if (member.formReviewLowRating>0)     alerts.push(`⭐${member.formReviewLowRating}×`);
                   if (member.ticketAvgResponseHours>24) alerts.push(`⏱${member.ticketAvgResponseHours}j`);
+                  // Sparkline for tickets
+                  const spark = member.monthlyTickets ?? [];
+                  const sparkMax = Math.max(...spark, 1);
+                  const sparkW = 72, sparkH = 18;
+                  const sparkPts = spark.map((v,i)=>`${(i/11)*sparkW},${sparkH-(v/sparkMax)*sparkH}`).join(' ');
                   return (
                     <div onClick={() => setSelectedKPIMember(member.id)}
                       className="flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl border cursor-pointer hover:shadow-md transition-all group"
                       style={{
                         background: noData ? '#f8fafc' : `${kpiColor}08`,
                         borderColor: noData ? '#e2e8f0' : `${kpiColor}40`,
-                        minWidth: 80, maxWidth: 96,
+                        minWidth: 88, maxWidth: 104,
                       }}>
                       {/* Avatar */}
                       <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm text-white shadow-sm flex-shrink-0"
@@ -1463,6 +1579,13 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                         {noData ? '—' : `${finalKPI}%`}
                       </div>
                       <div className="text-[8px] font-bold uppercase tracking-wide" style={{color:kpiColor}}>{kpiLabel}</div>
+                      {/* Sparkline tickets trend */}
+                      {spark.some(v=>v>0) && (
+                        <svg width={sparkW} height={sparkH} viewBox={`0 0 ${sparkW} ${sparkH}`} style={{overflow:'visible'}}>
+                          <polyline points={sparkPts} fill="none" stroke={kpiColor} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" opacity={0.7}/>
+                          <circle cx={(11/11)*sparkW} cy={sparkH-(spark[11]/sparkMax)*sparkH} r={2.5} fill={kpiColor}/>
+                        </svg>
+                      )}
                       {/* Alert dots */}
                       {alerts.length>0 && (
                         <div className="flex gap-0.5 flex-wrap justify-center">
@@ -1803,6 +1926,171 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* ══════════ TAB CROSS-MODULE ANALYTICS ══════════ */}
+          {tab==='cross'&&(
+            <div className="space-y-5">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">🔀 Cross-Module Overview — Ticket · Reminder · Learning Center</div>
+
+              {/* Monthly bar chart: 3 modules side by side */}
+              {(() => {
+                const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+                const year = new Date().getFullYear();
+                // Build monthly data from kpi data available in state
+                // We'll use kpiTeam member data to aggregate
+                const allMembers = kpiTeam.members;
+                const ticketsByMonth = Array.from({length:12},(_,mi)=>
+                  allMembers.reduce((s,m)=>s+(m.monthlyTickets?.[mi]??0),0)
+                );
+                const lcByMonth = Array.from({length:12},(_,mi)=>
+                  allMembers.reduce((s,m)=>s+(m.monthlyLC?.[mi]??0),0)
+                );
+                // For reminders we use kpi.reminders.byCategory total as flat (no monthly breakdown yet)
+                const maxVal = Math.max(...ticketsByMonth, ...lcByMonth, 1);
+                return (
+                  <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+                    <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                      <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">📅 Aktivitas Bulanan {year}</h3>
+                      <div className="flex items-center gap-4 text-[11px]">
+                        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm inline-block" style={{background:'#ef4444'}}/>Ticket</span>
+                        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm inline-block" style={{background:'#6366f1'}}/>LC Attempt</span>
+                      </div>
+                    </div>
+                    {allMembers.length === 0 ? (
+                      <div className="flex flex-col items-center gap-2 py-10">
+                        <span className="text-3xl opacity-20">📊</span>
+                        <p className="text-xs text-slate-400">Buka tab KPI Team dulu untuk memuat data anggota</p>
+                        <button onClick={()=>{ setTab('kpi_team'); setTimeout(()=>fetchKPITeam(),100); }}
+                          className="mt-2 px-4 py-2 rounded-lg text-xs font-bold text-white"
+                          style={{background:'linear-gradient(135deg,#6366f1,#4f46e5)'}}>
+                          Muat Data KPI Team
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-end gap-1.5" style={{height:160}}>
+                        {MONTHS.map((m,mi)=>{
+                          const t=ticketsByMonth[mi], l=lcByMonth[mi];
+                          const hT=Math.round((t/maxVal)*140), hL=Math.round((l/maxVal)*140);
+                          return (
+                            <div key={mi} className="flex-1 flex flex-col items-center gap-1 group">
+                              <div className="flex items-end gap-0.5 w-full justify-center" style={{height:148}}>
+                                <div className="w-[42%] rounded-t transition-all duration-700" title={`Ticket: ${t}`}
+                                  style={{height:hT||2, background:'#ef4444', opacity:t?0.85:0.12}}/>
+                                <div className="w-[42%] rounded-t transition-all duration-700" title={`LC: ${l}`}
+                                  style={{height:hL||2, background:'#6366f1', opacity:l?0.85:0.12}}/>
+                              </div>
+                              <span className="text-[9px] text-slate-400">{m}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Module summary comparison */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Tickets */}
+                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs" style={{background:'#fee2e2'}}>🎫</div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Ticketing</span>
+                  </div>
+                  {[
+                    {label:'Total',val:kpi?.tickets.total??0,color:'#64748b'},
+                    {label:'Open',val:kpi?.tickets.open??0,color:'#ef4444'},
+                    {label:'Solved',val:kpi?.tickets.solved??0,color:'#10b981'},
+                    {label:'Overdue',val:(kpi?.tickets.byStatus??[]).find(s=>s.status==='Overdue')?.count??0,color:'#f59e0b'},
+                  ].map(r=>(
+                    <div key={r.label} className="flex items-center justify-between">
+                      <span className="text-xs text-slate-500">{r.label}</span>
+                      <span className="text-sm font-black" style={{color:r.color}}>{loading?'—':r.val}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Reminders */}
+                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs" style={{background:'#ede9fe'}}>📅</div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Reminder</span>
+                  </div>
+                  {[
+                    {label:'Total',val:kpi?.reminders.total??0,color:'#64748b'},
+                    {label:'Pending',val:kpi?.reminders.pending??0,color:'#f59e0b'},
+                    {label:'Done',val:kpi?.reminders.done??0,color:'#10b981'},
+                    {label:'Overdue',val:kpi?.reminders.overdueCount??0,color:'#ef4444'},
+                  ].map(r=>(
+                    <div key={r.label} className="flex items-center justify-between">
+                      <span className="text-xs text-slate-500">{r.label}</span>
+                      <span className="text-sm font-black" style={{color:r.color}}>{loading?'—':r.val}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Learning Center */}
+                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs" style={{background:'#ede9fe'}}>🎓</div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Learning Center</span>
+                  </div>
+                  {[
+                    {label:'Total Sesi',val:kpi?.learning.totalSessions??0,color:'#64748b'},
+                    {label:'Selesai',val:kpi?.learning.completedSessions??0,color:'#10b981'},
+                    {label:'Peserta Unik',val:kpi?.learning.totalParticipants??0,color:'#6366f1'},
+                    {label:'Avg Skor',val:`${kpi?.learning.avgScore??0} pts`,color:'#f59e0b'},
+                  ].map(r=>(
+                    <div key={r.label} className="flex items-center justify-between">
+                      <span className="text-xs text-slate-500">{r.label}</span>
+                      <span className="text-sm font-black" style={{color:r.color}}>{loading?'—':r.val}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Team KPI summary table */}
+              {kpiTeam.members.length > 0 && (
+                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="px-5 py-3 border-b border-slate-100">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">👥 Ringkasan KPI Tim — {kpiTeam.filterYear}</span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs" style={{minWidth:560}}>
+                      <thead>
+                        <tr style={{background:'#f8fafc',borderBottom:'1px solid #e2e8f0'}}>
+                          {['Nama','Tim','Ticket','LC','BAST','Skor KPI'].map(h=>(
+                            <th key={h} className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest text-slate-400">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {kpiTeam.members.map(m=>{
+                          const periodMultiplier = kpiTeam.filterPeriod==='6m'?0.5:1;
+                          const rndTarget = 6*periodMultiplier;
+                          const tickS = m.ticketsHandled>0?Math.max(0,1-m.ticketsOverdue/Math.max(m.ticketsHandled,1)):0;
+                          const bastS = m.ticketsHandled===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating*0.25);
+                          const lcS   = m.lcAttempts===0?0:Math.max(0,1-(m.lcFailedBelow75/Math.max(m.lcAttempts,1)));
+                          const rndS  = m.manual.technicalNote>=rndTarget?1:m.manual.technicalNote/rndTarget;
+                          const final = Math.round([0.20,0.30,0.40,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
+                          const noData = m.ticketsHandled===0&&m.lcAttempts===0&&m.manual.technicalNote===0;
+                          const c = noData?'#94a3b8':final>=85?'#10b981':final>=70?'#3b82f6':final>=50?'#f59e0b':'#ef4444';
+                          return (
+                            <tr key={m.id} style={{borderBottom:'1px solid #f1f5f9'}} className="hover:bg-slate-50/50">
+                              <td className="px-3 py-2 font-semibold text-slate-700">{m.name.split(' ').slice(0,2).join(' ')}</td>
+                              <td className="px-3 py-2 text-slate-400 text-[10px]">{m.team_type.replace('Team PTS ','')}</td>
+                              <td className="px-3 py-2"><span className="font-bold text-red-500">{m.ticketsHandled}</span><span className="text-slate-400 ml-1">({m.ticketsOverdue} overdue)</span></td>
+                              <td className="px-3 py-2"><span className="font-bold text-indigo-500">{m.lcAttempts}</span><span className="text-slate-400 ml-1">avg {m.lcAvgScore}</span></td>
+                              <td className="px-3 py-2"><span className="font-bold text-amber-500">{m.formReviewLowRating}</span><span className="text-slate-400 ml-1">low-rating</span></td>
+                              <td className="px-3 py-2"><span className="text-sm font-black" style={{color:c}}>{noData?'—':`${final}%`}</span></td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
