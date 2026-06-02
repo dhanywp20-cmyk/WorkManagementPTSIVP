@@ -99,7 +99,7 @@ export default function Dashboard() {
       title: 'Daily Report', icon: '📈', key: 'daily-report',
       gradient: 'from-emerald-700 via-emerald-600 to-emerald-500',
       description: 'Activity tracking & performance metrics',
-	  items: [{ name: 'Piket Showroom', url: '/daily-report', icon: '📅', internal: true, embed: true }]
+	  items: [{ name: 'Daily Report', url: '/daily-report', icon: '📅', internal: true, embed: true }]
     },
     {
       title: 'Database PTS', icon: '💼', key: 'database-pts',
