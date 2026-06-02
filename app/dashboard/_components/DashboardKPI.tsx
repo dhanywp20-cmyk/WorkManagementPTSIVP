@@ -805,6 +805,31 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     );
   }
 
+  // ── MiniBar: horizontal progress bar ──
+  function MiniBar({ value, max, color='#3b82f6', h=4 }: { value:number; max:number; color?:string; h?:number }) {
+    const pct = max>0 ? Math.min(100,(value/max)*100) : 0;
+    return (
+      <div className="w-full rounded-full overflow-hidden flex-1" style={{height:h,background:'#f1f5f9'}}>
+        <div className="h-full rounded-full transition-all duration-500" style={{width:`${pct}%`,background:color}}/>
+      </div>
+    );
+  }
+
+  // ── MiniSpark: tiny SVG bar spark ──
+  function MiniSpark({ values, color='#3b82f6', height=20, width=56 }: { values:number[]; color?:string; height?:number; width?:number }) {
+    const bw = Math.floor(width/values.length)-1;
+    const max = Math.max(...values,1);
+    return (
+      <svg width={width} height={height} className="flex-shrink-0">
+        {values.map((v,i)=>{
+          const bh = Math.max(2,(v/max)*height);
+          return <rect key={i} x={i*(bw+1)} y={height-bh} width={bw} height={bh} rx={1}
+            fill={color} opacity={0.5+(i/values.length)*0.5}/>;
+        })}
+      </svg>
+    );
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="w-full" style={{ animation:'fadeInUp 0.35s ease forwards' }}>
@@ -853,260 +878,275 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         {/* ── Content area ── */}
         <div className="p-4 space-y-5">
 
-          {/* ══════════ TAB KPI ══════════ */}
+          {/* ══════════ TAB KPI LIVE ══════════ */}
           {tab==='kpi' && (
-            <div className="space-y-5">
+            <div className="space-y-3">
 
-              {/* ── Piket Showroom Today ── */}
-              <div>
-                <SectionPill icon="🏪">Piket Showroom — {dayOfWeek()}, {new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}</SectionPill>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    {team:'IVP',  person:kpi?.piket.todayIVP,  color:'#ef4444', gradient:'from-red-500/90 to-rose-600/90',    highlight:isPTSIVP||scope.kind==='admin'},
-                    {team:'UMP',  person:kpi?.piket.todayUMP,  color:'#f59e0b', gradient:'from-amber-400/90 to-orange-500/90', highlight:isPTSUMP||scope.kind==='admin'},
-                    {team:'MLDS', person:kpi?.piket.todayMlds, color:'#3b82f6', gradient:'from-blue-500/90 to-indigo-500/90',  highlight:isPTSMLDS||scope.kind==='admin'},
-                  ].map(p=>(
-                    <div key={p.team}
-                      className={`bg-white/90 rounded-xl border ${p.highlight?'border-slate-300 shadow-md':'border-slate-200 shadow-sm'} p-2.5 flex items-center gap-2 transition-all`}>
-                      <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${p.gradient} flex items-center justify-center font-black text-[10px] text-white flex-shrink-0 shadow`}>
-                        {p.team}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">PIC {p.team}</div>
-                        {loading
-                          ? <div className="h-3 w-16 rounded animate-pulse bg-slate-100"/>
-                          : p.person
-                            ? <div className="text-[11px] font-bold text-slate-800 truncate">{p.person}</div>
-                            : <div className="text-[10px] italic text-slate-300">Belum diisi</div>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {!loading&&kpi&&(
-                  <div className="mt-2 flex items-center gap-4 px-1 flex-wrap">
-                    <span className="text-[11px] text-slate-500">Minggu ini: <span className="font-bold text-slate-700">{kpi.piket.weekFilled}/{kpi.piket.weekTotal} hari</span> terisi</span>
-                    <span className="text-[11px] text-slate-500">Tamu hari ini: <span className="font-bold text-slate-700">{kpi.piket.kegiatanToday}</span></span>
-                    <div className="flex items-center gap-2">
-                      <DonutChart size={20} strokeWidth={4}
-                        segments={[{value:kpi.piket.weekFilled,color:'#10b981'},{value:Math.max(kpi.piket.weekTotal-kpi.piket.weekFilled,0),color:'#e2e8f0'}]}
-                        label=""/>
-                      <span className="text-[10px] text-slate-400">{Math.round((kpi.piket.weekFilled/Math.max(kpi.piket.weekTotal,1))*100)}% terpenuhi</span>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* ── ROW 1: Piket + Ticket dalam 1 baris ── */}
+              <div className="grid grid-cols-2 gap-3">
 
-              {/* ── Ticket Troubleshooting ── */}
-              <div>
-                <SectionPill icon="🎫">Ticket Troubleshooting — {scope.kind==='pts_sup'?scope.ptsTeamType:scope.kind==='sales_sup'?'Divisi Anda':'Semua'}</SectionPill>
-                <div className="grid grid-cols-5 gap-2 mb-2">
-                  {[
-                    {icon:'🎫', label:'Total',      value:kpi?.tickets.total??0,            color:'#64748b', grad:'from-slate-500/90 to-slate-600/90'},
-                    {icon:'🔥', label:'Open',       value:kpi?.tickets.open??0,             color:'#ef4444', grad:'from-red-500/90 to-rose-600/90'},
-                    {icon:'⏳', label:'W. Approval', value:kpi?.tickets.waitingApproval??0, color:'#f59e0b', grad:'from-amber-400/90 to-orange-500/90'},
-                    {icon:'✅', label:'Solved',      value:kpi?.tickets.solved??0,           color:'#10b981', grad:'from-emerald-500/90 to-green-600/90'},
-                    {icon:'⚡', label:'Hari Ini',   value:kpi?.tickets.resolvedToday??0,    color:'#0891b2', grad:'from-cyan-500/90 to-sky-600/90'},
-                  ].map(c=>(
-                    <div key={c.label} className={`bg-gradient-to-br ${c.grad} rounded-xl p-2.5 text-white shadow`}>
-                      <div className="text-base mb-0.5">{c.icon}</div>
-                      {loading ? <div className="h-4 w-7 rounded animate-pulse bg-white/30 mb-0.5"/> :
-                        <div className="text-base font-black leading-none">{c.value}</div>}
-                      <div className="text-white/80 text-[9px] font-medium leading-tight mt-0.5">{c.label}</div>
-                    </div>
-                  ))}
-                </div>
-                {/* Status distribution inline */}
-                {!loading&&kpi&&kpi.tickets.byStatus.length>0&&(
-                  <div className="bg-white/90 rounded-xl border border-slate-200 shadow-sm p-3">
-                    <div className="flex items-center gap-4 flex-wrap">
-                      <div className="flex items-center gap-2.5">
-                        <DonutChart
-                          segments={kpi.tickets.byStatus.map(s=>({value:s.count,color:s.color}))}
-                          size={44} strokeWidth={7} label={`${kpi.tickets.total}`}/>
-                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-tight">Distribusi<br/>Status</div>
-                      </div>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 flex-1">
-                        {kpi.tickets.byStatus.map(s=>(
-                          <div key={s.status} className="flex items-center gap-1">
-                            <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background:s.color }}/>
-                            <span className="text-[10px] text-slate-500">{s.status}</span>
-                            <span className="text-[10px] font-bold text-slate-700">{s.count}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <div className="text-[10px] text-slate-400">Avg Resolusi</div>
-                        <div className="text-base font-black text-rose-600">{kpi.tickets.avgResolutionDays}<span className="text-xs font-normal text-slate-400 ml-0.5">hari</span></div>
-                      </div>
-                    </div>
+                {/* PIKET SHOWROOM */}
+                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">🏪 Piket Showroom</span>
+                    <span className="text-[9px] text-slate-400">{new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'short'})}</span>
                   </div>
-                )}
-              </div>
-
-              {/* ── Reminder Schedule ── */}
-              <div>
-                <SectionPill icon="📅">Reminder Schedule</SectionPill>
-                <div className="grid grid-cols-5 gap-2 mb-2">
-                  {[
-                    {icon:'📅', label:'Total',     value:kpi?.reminders.total??0,         grad:'from-indigo-500/90 to-violet-600/90'},
-                    {icon:'🟡', label:'Pending',   value:kpi?.reminders.pending??0,       grad:'from-amber-400/90 to-yellow-500/90'},
-                    {icon:'🔴', label:'Overdue',   value:kpi?.reminders.overdueCount??0,  grad:'from-red-500/90 to-rose-600/90'},
-                    {icon:'🔔', label:'Due 7hr',   value:kpi?.reminders.dueSoon??0,       grad:'from-sky-500/90 to-cyan-600/90'},
-                    {icon:'🟢', label:'Done',      value:kpi?.reminders.done??0,          grad:'from-emerald-500/90 to-green-600/90'},
-                  ].map(c=>(
-                    <div key={c.label} className={`bg-gradient-to-br ${c.grad} rounded-xl p-2.5 text-white shadow`}>
-                      <div className="text-base mb-0.5">{c.icon}</div>
-                      {loading ? <div className="h-4 w-7 rounded animate-pulse bg-white/30 mb-0.5"/> :
-                        <div className="text-base font-black leading-none">{c.value}</div>}
-                      <div className="text-white/80 text-[9px] font-medium leading-tight mt-0.5">{c.label}</div>
-                    </div>
-                  ))}
-                </div>
-                {/* Category inline */}
-                {!loading&&kpi&&kpi.reminders.byCategory.length>0&&(
-                  <div className="bg-white/90 rounded-xl border border-slate-200 shadow-sm p-3">
-                    <div className="flex items-center gap-4">
-                      <DonutChart
-                        segments={kpi.reminders.byCategory.map(c=>({value:c.count,color:c.color}))}
-                        size={48} strokeWidth={7} label={`${kpi.reminders.total}`}/>
-                      <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-1">
-                        {kpi.reminders.byCategory.map(c=>(
-                          <div key={c.cat} className="flex items-center gap-1.5">
-                            <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background:c.color }}/>
-                            <span className="text-[10px] text-slate-500 flex-1 truncate">{c.cat}</span>
-                            <span className="text-[10px] font-bold text-slate-700">{c.count}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* ── Unit Movement + Users (admin) ── */}
-              {scope.kind==='admin'&&(
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <SectionPill icon="🚚">Unit Movement — Bulan Ini</SectionPill>
-                    <div className="grid grid-cols-3 gap-3">
-                      {[
-                        {icon:'📦',label:'Total Log',value:kpi?.units.totalLogs??0,  grad:'from-slate-500/90 to-slate-600/90'},
-                        {icon:'📤',label:'Keluar',   value:kpi?.units.keluarThisMonth??0, grad:'from-amber-400/90 to-orange-500/90'},
-                        {icon:'📥',label:'Masuk',    value:kpi?.units.masukThisMonth??0,  grad:'from-emerald-500/90 to-green-600/90'},
-                      ].map(c=>(
-                        <div key={c.label} className={`bg-gradient-to-br ${c.grad} rounded-2xl p-4 text-white shadow-lg`}>
-                          <div className="text-xl mb-1">{c.icon}</div>
-                          {loading?<div className="h-7 w-10 rounded animate-pulse bg-white/30 mb-1"/>:
-                            <div className="text-2xl font-black">{c.value}</div>}
-                          <div className="text-white/80 text-xs font-medium mt-0.5">{c.label}</div>
-                        </div>
-                      ))}
-                    </div>
-                    {!loading&&kpi&&(
-                      <div className="mt-3 bg-white/90 rounded-xl border border-slate-200 shadow-sm p-3 flex items-center gap-3">
-                        <DonutChart size={40} strokeWidth={6}
-                          segments={[{value:kpi.units.keluarThisMonth,color:'#f59e0b'},{value:kpi.units.masukThisMonth,color:'#10b981'}]}
-                          label=""/>
-                        <div className="flex gap-4 text-[11px]">
-                          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block"/>Keluar <b className="text-slate-700">{kpi.units.keluarThisMonth}</b></span>
-                          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"/>Masuk <b className="text-slate-700">{kpi.units.masukThisMonth}</b></span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <SectionPill icon="👥">Pengguna Platform</SectionPill>
-                    <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
-                      {loading
-                        ? <div className="h-16 rounded animate-pulse bg-slate-100"/>
-                        : (
-                          <div className="flex items-center gap-5">
-                            <DonutChart
-                              segments={(kpi?.users.byRole??[]).map((r,i)=>({
-                                value:r.count,
-                                color:['#6366f1','#10b981','#f59e0b','#ef4444','#0891b2'][i%5]
-                              }))}
-                              size={64} strokeWidth={9} label={`${kpi?.users.total??0}`}/>
-                            <div>
-                              <div className="text-3xl font-black text-slate-800 leading-none">{kpi?.users.total??0}</div>
-                              <div className="text-xs text-slate-400 mb-2">total pengguna</div>
-                              <div className="flex flex-wrap gap-1.5">
-                                {(kpi?.users.byRole??[]).map((r,i)=>(
-                                  <span key={r.role} className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                                    style={{ background:['#6366f115','#10b98115','#f59e0b15','#ef444415','#0891b215'][i%5], color:['#6366f1','#10b981','#d97706','#ef4444','#0891b2'][i%5], border:`1px solid ${['#6366f130','#10b98130','#f59e0b30','#ef444430','#0891b230'][i%5]}` }}>
-                                    {r.role.toUpperCase()} {r.count}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ── Unit Movement (PTS supervisor) ── */}
-              {scope.kind==='pts_sup'&&(
-                <div>
-                  <SectionPill icon="🚚">Unit Movement — {scope.ptsTeamType}</SectionPill>
-                  <div className="grid grid-cols-3 gap-3">
+                  {/* PIC row */}
+                  <div className="flex flex-col gap-1.5 mb-2">
                     {[
-                      {icon:'📦',label:'Total Log',value:kpi?.units.totalLogs??0,  grad:'from-slate-500/90 to-slate-600/90'},
-                      {icon:'📤',label:'Keluar',   value:kpi?.units.keluarThisMonth??0, grad:'from-amber-400/90 to-orange-500/90'},
-                      {icon:'📥',label:'Masuk',    value:kpi?.units.masukThisMonth??0,  grad:'from-emerald-500/90 to-green-600/90'},
-                    ].map(c=>(
-                      <div key={c.label} className={`bg-gradient-to-br ${c.grad} rounded-2xl p-4 text-white shadow-lg`}>
-                        <div className="text-xl mb-1">{c.icon}</div>
-                        {loading?<div className="h-7 w-10 rounded animate-pulse bg-white/30 mb-1"/>:
-                          <div className="text-2xl font-black">{c.value}</div>}
-                        <div className="text-white/80 text-xs font-medium mt-0.5">{c.label}</div>
+                      {team:'IVP',  person:kpi?.piket.todayIVP,  c:'#ef4444', bg:'#fef2f2'},
+                      {team:'MLDS', person:kpi?.piket.todayMlds, c:'#3b82f6', bg:'#eff6ff'},
+                    ].map(p=>(
+                      <div key={p.team} className="flex items-center gap-1.5">
+                        <span className="text-[8px] font-black px-1.5 py-0.5 rounded-md flex-shrink-0"
+                          style={{background:p.bg,color:p.c}}>{p.team}</span>
+                        {loading
+                          ? <div className="h-2.5 w-20 rounded animate-pulse bg-slate-100 flex-1"/>
+                          : <span className="text-[11px] font-semibold text-slate-700 truncate flex-1">
+                              {p.person ?? <span className="italic text-slate-300 text-[10px]">Belum diisi</span>}
+                            </span>}
                       </div>
                     ))}
                   </div>
+                  {/* Week progress bar */}
+                  {!loading&&kpi&&(
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-[9px] text-slate-400">Minggu ini</span>
+                        <span className="text-[9px] font-bold text-slate-600">{kpi.piket.weekFilled}/{kpi.piket.weekTotal} hari · {kpi.piket.kegiatanToday} tamu</span>
+                      </div>
+                      <MiniBar value={kpi.piket.weekFilled} max={kpi.piket.weekTotal} color="#10b981" h={5}/>
+                      <div className="flex justify-between mt-0.5">
+                        <span className="text-[8px] text-slate-300">0%</span>
+                        <span className="text-[8px] font-bold text-emerald-600">{Math.round((kpi.piket.weekFilled/Math.max(kpi.piket.weekTotal,1))*100)}% terpenuhi</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
 
-              {/* ── Learning Center (admin) ── */}
-              {scope.kind==='admin'&&(
-                <div>
-                  <SectionPill icon="🎓">Learning Center</SectionPill>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                {/* TICKET TROUBLESHOOTING */}
+                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">🎫 Ticket</span>
+                    <span className="text-[9px] text-slate-400">{scope.kind==='pts_sup'?scope.ptsTeamType:scope.kind==='sales_sup'?'Divisi':'Semua'}</span>
+                  </div>
+                  {/* Mini stat row */}
+                  <div className="grid grid-cols-4 gap-1 mb-2">
                     {[
-                      {icon:'🎯',label:'Attempts',   value:kpi?.learning.totalSessions??0,    grad:'from-indigo-500/90 to-violet-600/90'},
-                      {icon:'✅',label:'Lulus',       value:kpi?.learning.completedSessions??0, grad:'from-emerald-500/90 to-green-600/90'},
-                      {icon:'👥',label:'Peserta',     value:kpi?.learning.totalParticipants??0, grad:'from-sky-500/90 to-cyan-600/90'},
-                      {icon:'⭐',label:'Avg Skor',    value:`${kpi?.learning.avgScore??0}`,     grad:'from-amber-400/90 to-orange-500/90'},
-                    ].map(c=>(
-                      <div key={c.label} className={`bg-gradient-to-br ${c.grad} rounded-xl p-3 text-white shadow`}>
-                        <div className="text-lg mb-0.5">{c.icon}</div>
-                        {loading?<div className="h-5 w-10 rounded animate-pulse bg-white/30 mb-0.5"/>:
-                          <div className="text-lg font-black leading-none">{c.value}</div>}
-                        <div className="text-white/80 text-[10px] font-medium mt-0.5">{c.label}</div>
+                      {label:'Total', value:kpi?.tickets.total??0,         c:'#64748b'},
+                      {label:'Open',  value:kpi?.tickets.open??0,          c:'#ef4444'},
+                      {label:'Solved',value:kpi?.tickets.solved??0,        c:'#10b981'},
+                      {label:'Hari ini',value:kpi?.tickets.resolvedToday??0,c:'#0891b2'},
+                    ].map(s=>(
+                      <div key={s.label} className="flex flex-col items-center p-1.5 rounded-xl" style={{background:s.c+'10'}}>
+                        {loading ? <div className="h-4 w-6 rounded animate-pulse bg-slate-100 mb-0.5"/> :
+                          <span className="text-sm font-black leading-none" style={{color:s.c}}>{s.value}</span>}
+                        <span className="text-[8px] text-slate-400 mt-0.5 text-center leading-tight">{s.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Donut + status list */}
+                  {!loading&&kpi&&kpi.tickets.byStatus.length>0&&(
+                    <div className="flex items-center gap-2">
+                      <DonutChart segments={kpi.tickets.byStatus.map(s=>({value:s.count,color:s.color}))}
+                        size={38} strokeWidth={6} label={`${kpi.tickets.total}`}/>
+                      <div className="flex-1 space-y-0.5">
+                        {kpi.tickets.byStatus.map(s=>(
+                          <div key={s.status} className="flex items-center gap-1">
+                            <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{background:s.color}}/>
+                            <span className="text-[9px] text-slate-500 flex-1 truncate">{s.status}</span>
+                            <MiniBar value={s.count} max={kpi.tickets.total} color={s.color} h={3}/>
+                            <span className="text-[9px] font-bold text-slate-700 w-4 text-right">{s.count}</span>
+                          </div>
+                        ))}
+                        <div className="flex justify-end mt-1">
+                          <span className="text-[8px] text-slate-400">Avg resolusi </span>
+                          <span className="text-[8px] font-black text-rose-500 ml-1">{kpi.tickets.avgResolutionDays} hari</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ── ROW 2: Reminder + Unit Movement ── */}
+              <div className="grid grid-cols-2 gap-3">
+
+                {/* REMINDER SCHEDULE */}
+                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">📅 Reminder Schedule</span>
+                  </div>
+                  {/* Stat row */}
+                  <div className="grid grid-cols-4 gap-1 mb-2">
+                    {[
+                      {label:'Total',   value:kpi?.reminders.total??0,       c:'#6366f1'},
+                      {label:'Pending', value:kpi?.reminders.pending??0,     c:'#f59e0b'},
+                      {label:'Overdue', value:kpi?.reminders.overdueCount??0,c:'#ef4444'},
+                      {label:'Done',    value:kpi?.reminders.done??0,        c:'#10b981'},
+                    ].map(s=>(
+                      <div key={s.label} className="flex flex-col items-center p-1.5 rounded-xl" style={{background:s.c+'10'}}>
+                        {loading ? <div className="h-4 w-6 rounded animate-pulse bg-slate-100 mb-0.5"/> :
+                          <span className="text-sm font-black leading-none" style={{color:s.c}}>{s.value}</span>}
+                        <span className="text-[8px] text-slate-400 mt-0.5 text-center leading-tight">{s.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Donut + category bar list */}
+                  {!loading&&kpi&&kpi.reminders.byCategory.length>0&&(
+                    <div className="flex items-center gap-2">
+                      <DonutChart segments={kpi.reminders.byCategory.map(c=>({value:c.count,color:c.color}))}
+                        size={38} strokeWidth={6} label={`${kpi.reminders.total}`}/>
+                      <div className="flex-1 space-y-0.5">
+                        {kpi.reminders.byCategory.map(c=>(
+                          <div key={c.cat} className="flex items-center gap-1">
+                            <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{background:c.color}}/>
+                            <span className="text-[9px] text-slate-500 w-16 truncate">{c.cat}</span>
+                            <MiniBar value={c.count} max={kpi.reminders.total} color={c.color} h={3}/>
+                            <span className="text-[9px] font-bold text-slate-700 w-4 text-right">{c.count}</span>
+                          </div>
+                        ))}
+                        {/* Done rate */}
+                        <div className="flex justify-end mt-1">
+                          <span className="text-[8px] text-slate-400">Done rate </span>
+                          <span className="text-[8px] font-black text-emerald-600 ml-1">
+                            {kpi.reminders.total>0?Math.round((kpi.reminders.done/kpi.reminders.total)*100):0}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* UNIT MOVEMENT + PENGGUNA (admin) / hanya unit (pts_sup) */}
+                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">🚚 Unit Movement</span>
+                    <span className="text-[9px] text-slate-400">Bulan ini</span>
+                  </div>
+                  {/* Unit stats */}
+                  <div className="grid grid-cols-3 gap-1 mb-2">
+                    {[
+                      {label:'Log',   value:kpi?.units.totalLogs??0,        c:'#64748b'},
+                      {label:'Keluar',value:kpi?.units.keluarThisMonth??0,  c:'#f59e0b'},
+                      {label:'Masuk', value:kpi?.units.masukThisMonth??0,   c:'#10b981'},
+                    ].map(s=>(
+                      <div key={s.label} className="flex flex-col items-center p-1.5 rounded-xl" style={{background:s.c+'12'}}>
+                        {loading ? <div className="h-4 w-6 rounded animate-pulse bg-slate-100 mb-0.5"/> :
+                          <span className="text-sm font-black leading-none" style={{color:s.c}}>{s.value}</span>}
+                        <span className="text-[8px] text-slate-400 mt-0.5">{s.label}</span>
                       </div>
                     ))}
                   </div>
                   {!loading&&kpi&&(
-                    <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="flex flex-col items-center gap-2 p-3">
-                          <DonutChart
-                            segments={[{value:kpi.learning.completedSessions,color:'#10b981'},{value:Math.max(kpi.learning.totalSessions-kpi.learning.completedSessions,0),color:'#e2e8f0'}]}
-                            size={68} strokeWidth={10} label={`${kpi.learning.totalSessions>0?Math.round((kpi.learning.completedSessions/kpi.learning.totalSessions)*100):0}%`}/>
-                          <div className="text-center">
-                            <p className="text-xs font-bold text-slate-700">Pass Rate</p>
-                            <p className="text-[10px] text-slate-400">{kpi.learning.completedSessions} lulus · {kpi.learning.totalSessions-kpi.learning.completedSessions} tidak lulus</p>
+                    <div className="flex items-center gap-2 mb-2">
+                      <DonutChart size={34} strokeWidth={5}
+                        segments={[
+                          {value:kpi.units.keluarThisMonth,color:'#f59e0b'},
+                          {value:kpi.units.masukThisMonth, color:'#10b981'},
+                          {value:Math.max(kpi.units.totalLogs-kpi.units.keluarThisMonth-kpi.units.masukThisMonth,0),color:'#e2e8f0'},
+                        ]} label=""/>
+                      <div className="flex-1 space-y-0.5">
+                        <div className="flex items-center gap-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-amber-400"/>
+                          <span className="text-[9px] text-slate-500 flex-1">Keluar</span>
+                          <MiniBar value={kpi.units.keluarThisMonth} max={Math.max(kpi.units.totalLogs,1)} color="#f59e0b" h={3}/>
+                          <span className="text-[9px] font-bold text-slate-700 w-5 text-right">{kpi.units.keluarThisMonth}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"/>
+                          <span className="text-[9px] text-slate-500 flex-1">Masuk</span>
+                          <MiniBar value={kpi.units.masukThisMonth} max={Math.max(kpi.units.totalLogs,1)} color="#10b981" h={3}/>
+                          <span className="text-[9px] font-bold text-slate-700 w-5 text-right">{kpi.units.masukThisMonth}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {/* Pengguna platform — hanya admin, inline di bawah unit */}
+                  {scope.kind==='admin'&&!loading&&kpi&&(
+                    <div className="border-t border-slate-100 pt-2 mt-1">
+                      <div className="flex items-center gap-2">
+                        <DonutChart
+                          segments={(kpi.users.byRole).map((r,i)=>({value:r.count,color:['#6366f1','#10b981','#f59e0b','#ef4444','#0891b2'][i%5]}))}
+                          size={34} strokeWidth={5} label={`${kpi.users.total}`}/>
+                        <div className="flex-1">
+                          <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">👥 Pengguna</div>
+                          <div className="space-y-0.5">
+                            {kpi.users.byRole.map((r,i)=>(
+                              <div key={r.role} className="flex items-center gap-1">
+                                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                  style={{background:['#6366f1','#10b981','#f59e0b','#ef4444','#0891b2'][i%5]}}/>
+                                <span className="text-[9px] text-slate-500 flex-1 uppercase">{r.role}</span>
+                                <MiniBar value={r.count} max={kpi.users.total} color={['#6366f1','#10b981','#f59e0b','#ef4444','#0891b2'][i%5]} h={3}/>
+                                <span className="text-[9px] font-bold text-slate-700 w-5 text-right">{r.count}</span>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                        <div className="flex flex-col items-center gap-2 p-3">
-                          <DonutChart
-                            segments={[{value:kpi.learning.avgScore,color:kpi.learning.avgScore>=80?'#10b981':kpi.learning.avgScore>=60?'#f59e0b':'#ef4444'},{value:Math.max(100-kpi.learning.avgScore,0),color:'#f1f5f9'}]}
-                            size={68} strokeWidth={10} label={`${kpi.learning.avgScore}`}/>
-                          <div className="text-center">
-                            <p className="text-xs font-bold text-slate-700">Avg Score</p>
-                            <p className="text-[10px] text-slate-400">{kpi.learning.totalParticipants} peserta unik</p>
-                          </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ── ROW 3: Learning Center (admin) — compact 1 card full width ── */}
+              {scope.kind==='admin'&&(
+                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">🎓 Learning Center</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* Stat mini col */}
+                    <div className="grid grid-cols-2 gap-1 col-span-1">
+                      {[
+                        {label:'Attempts', value:kpi?.learning.totalSessions??0,    c:'#6366f1'},
+                        {label:'Lulus',    value:kpi?.learning.completedSessions??0, c:'#10b981'},
+                        {label:'Peserta',  value:kpi?.learning.totalParticipants??0, c:'#0891b2'},
+                        {label:'Avg Skor', value:kpi?.learning.avgScore??0,          c:'#f59e0b'},
+                      ].map(s=>(
+                        <div key={s.label} className="flex flex-col items-center p-1.5 rounded-xl" style={{background:s.c+'10'}}>
+                          {loading?<div className="h-4 w-8 rounded animate-pulse bg-slate-100 mb-0.5"/>:
+                            <span className="text-sm font-black leading-none" style={{color:s.c}}>{s.value}</span>}
+                          <span className="text-[8px] text-slate-400 mt-0.5 text-center leading-tight">{s.label}</span>
                         </div>
+                      ))}
+                    </div>
+                    {/* Pass rate donut */}
+                    {!loading&&kpi&&(
+                      <>
+                        <div className="flex flex-col items-center justify-center gap-1">
+                          <DonutChart
+                            segments={[
+                              {value:kpi.learning.completedSessions,color:'#10b981'},
+                              {value:Math.max(kpi.learning.totalSessions-kpi.learning.completedSessions,0),color:'#fee2e2'},
+                            ]}
+                            size={52} strokeWidth={8}
+                            label={`${kpi.learning.totalSessions>0?Math.round((kpi.learning.completedSessions/kpi.learning.totalSessions)*100):0}%`}/>
+                          <span className="text-[8px] font-bold text-slate-500">Pass Rate</span>
+                          <span className="text-[8px] text-slate-400">{kpi.learning.completedSessions}✓ · {kpi.learning.totalSessions-kpi.learning.completedSessions}✗</span>
+                        </div>
+                        {/* Avg score donut */}
+                        <div className="flex flex-col items-center justify-center gap-1">
+                          <DonutChart
+                            segments={[
+                              {value:kpi.learning.avgScore,color:kpi.learning.avgScore>=80?'#10b981':kpi.learning.avgScore>=60?'#f59e0b':'#ef4444'},
+                              {value:Math.max(100-kpi.learning.avgScore,0),color:'#f1f5f9'},
+                            ]}
+                            size={52} strokeWidth={8} label={`${kpi.learning.avgScore}`}/>
+                          <span className="text-[8px] font-bold text-slate-500">Avg Score</span>
+                          <span className="text-[8px] text-slate-400">{kpi.learning.totalParticipants} peserta</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {/* Spark bar: simple pass vs fail visual */}
+                  {!loading&&kpi&&kpi.learning.totalSessions>0&&(
+                    <div className="mt-2 pt-2 border-t border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[8px] text-slate-400 w-10 flex-shrink-0">Lulus</span>
+                        <MiniBar value={kpi.learning.completedSessions} max={kpi.learning.totalSessions} color="#10b981" h={5}/>
+                        <span className="text-[8px] text-slate-400 w-10 flex-shrink-0">Tidak</span>
+                        <MiniBar value={kpi.learning.totalSessions-kpi.learning.completedSessions} max={kpi.learning.totalSessions} color="#ef4444" h={5}/>
                       </div>
                     </div>
                   )}
@@ -1149,83 +1189,198 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                     Refresh
                   </button>
-                  {/* Download Excel per orang */}
+                  {/* Download Excel per orang — format corporate seperti Formulir KPI */}
                   <button
                     onClick={async () => {
                       const allMembers = kpiTeam.members;
                       if (!allMembers.length) return;
 
-                      const calcKPI = (m: KPITeamMember) => {
-                        const tickScore = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled,1)) : 0;
-                        const hasFormReview = m.ticketsHandled > 0;
-                        const bastScore = !hasFormReview ? 0 : m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating * 0.25);
-                        const lcScore = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - (m.lcFailedBelow75 / Math.max(m.lcAttempts,1)));
-                        const periodMultiplier = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
-                        const rndTarget = 6 * periodMultiplier;
-                        const rndScore = m.manual.technicalNote >= rndTarget ? 1 : m.manual.technicalNote / rndTarget;
-                        const final = Math.round([0.20, 0.30, 0.40, 0.10].reduce((s,w,i)=>s+w*[tickScore,bastScore,lcScore,rndScore][i],0)*100);
-                        return { tickScore, bastScore, lcScore, rndScore, final };
+                      // ── load SheetJS from CDN ──
+                      const XLSX_MOD: any = await new Promise((resolve, reject) => {
+                        if ((window as any).XLSX) { resolve((window as any).XLSX); return; }
+                        const s = document.createElement('script');
+                        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+                        s.onload = () => resolve((window as any).XLSX);
+                        s.onerror = reject;
+                        document.head.appendChild(s);
+                      });
+
+                      const pm = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
+                      const rndTarget = Math.round(6 * pm);
+                      const MONTHS = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','Sept','Okt','Nov','Des'];
+
+                      const calcScores = (m: KPITeamMember) => {
+                        const tickS = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled,1)) : 0;
+                        const bastS = m.ticketsHandled === 0 ? 0 : m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating * 0.25);
+                        const lcS   = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - m.lcFailedBelow75 / Math.max(m.lcAttempts,1));
+                        const rndS  = rndTarget > 0 ? Math.min(1, m.manual.technicalNote / rndTarget) : 0;
+                        const final = Math.round((0.20*tickS + 0.30*bastS + 0.40*lcS + 0.10*rndS) * 100);
+                        const noData = m.ticketsHandled === 0 && m.lcAttempts === 0 && m.manual.technicalNote === 0;
+                        const label = noData ? 'Belum Ada Data' : final>=85?'Excellent':final>=70?'Good':final>=50?'Fair':'Needs Work';
+                        return { tickS, bastS, lcS, rndS, final, noData, label };
                       };
 
-                      // Generate 1 CSV per orang → download satu per satu dgn delay
-                      for (let i = 0; i < allMembers.length; i++) {
-                        const m = allMembers[i];
-                        const s = calcKPI(m);
-                        const periodMultiplier = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
-                        const rndTarget = 6 * periodMultiplier;
-                        const noData = m.ticketsHandled === 0 && m.lcAttempts === 0 && m.manual.technicalNote === 0;
-                        const kpiLabel = noData ? 'Belum Ada Data' : s.final>=85?'Excellent':s.final>=70?'Good':s.final>=50?'Fair':'Needs Work';
+                      for (let mi = 0; mi < allMembers.length; mi++) {
+                        const m = allMembers[mi];
+                        const s = calcScores(m);
+                        const team = m.team_type.replace('Team PTS ','').replace('Team PTS','IVP');
+                        const year = kpiTeam.filterYear;
 
-                        const rows: string[][] = [
-                          ['KPI REPORT — ' + m.name],
-                          ['Periode:', `${kpiTeam.filterYear} (${kpiTeam.filterPeriod === '6m' ? '6 Bulan' : '1 Tahun'})`],
-                          ['Tim:', m.team_type],
-                          ['Jabatan:', m.jabatan],
-                          ['KPI Score:', `${noData ? '—' : s.final + '%'}`],
-                          ['Status:', kpiLabel],
-                          [],
-                          ['KOMPONEN KPI', 'Nilai (%)', 'Bobot', 'Kontribusi (%)'],
-                          ['🎫 Ticketing', `${Math.round(s.tickScore*100)}%`, '20%', `${Math.round(s.tickScore*0.20*100)}%`],
-                          ['⭐ BAST & Demo', `${Math.round(s.bastScore*100)}%`, '30%', `${Math.round(s.bastScore*0.30*100)}%`],
-                          ['🎓 Tech Knowledge (LC)', `${Math.round(s.lcScore*100)}%`, '40%', `${Math.round(s.lcScore*0.40*100)}%`],
-                          ['📝 R&D Technote', `${Math.round(s.rndScore*100)}%`, '10%', `${Math.round(s.rndScore*0.10*100)}%`],
-                          [],
-                          ['DETAIL PLATFORM (OTOMATIS)', ''],
-                          ['Ticket Handled', m.ticketsHandled],
-                          ['Ticket Solved', m.ticketsSolved],
-                          ['Ticket Overdue', m.ticketsOverdue],
-                          ['Avg Response (jam)', m.ticketAvgResponseHours || '—'],
-                          ['Form Review Rating Rendah (★1-2)', m.formReviewLowRating],
-                          ['LC Total Attempt', m.lcAttempts],
-                          ['LC Avg Score', m.lcAvgScore || '—'],
-                          ['LC Lulus', m.lcPassed],
-                          ['LC Score <75 (fail)', m.lcFailedBelow75],
-                          ['Reminder Done', `${m.remindersDone}/${m.remindersAssigned}`],
-                          ['Reminder Overdue', m.remindersOverdue],
-                          ['Piket Filled (hari)', m.piketFilled],
-                          [],
-                          ['DETAIL MANUAL (INPUT SPV)', ''],
-                          ['R&D Technote diterbitkan', m.manual.technicalNote],
-                          ['Target Technote', `${rndTarget} (${kpiTeam.filterPeriod === '6m' ? '6 bulan' : 'tahun'})`],
+                        const wb = XLSX_MOD.utils.book_new();
+                        const wsName = ('KPI ' + m.name).substring(0, 31);
+                        const aoa: (string|number|null)[][] = [];
+
+                        // Row 1 — Company
+                        aoa.push(['INDOVISUAL GROUP', null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'No','']);
+                        // Row 2 — Form title
+                        aoa.push(['FORMULIR MONITORING KEY PERFORMANCE INDICATOR', null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'Dokumen :','']);
+                        // Row 3-5 — Identity
+                        aoa.push([`Nama              : ${m.name}`,null,null,null,null,null,null,null,null,null,null,null,null,'Divisi',':', team,null,null,null,'Developed by :','']);
+                        aoa.push([`No. Karyawan   : —`,null,null,null,null,null,null,null,null,null,null,null,null,'Department',':', 'Indovisual',null,null,null,'Initial by :','']);
+                        aoa.push([`Periode Penilaian : ${year}`,null,null,null,null,null,null,null,null,null,null,null,null,'Level / Posisi',':', m.jabatan,null,null,null,'','']);
+                        // Row 6 — Col headers
+                        aoa.push(['Sasaran','Indikator Kinerja','Sumber Data','Periode Isla\nRata2/Total','TARGET\nRata2/Total','', 'January — December',null,null,null,null,null,null,null,null,null,null,null,null,'BOBOT','Nilai\nAkhir']);
+                        // Row 7 — Month names
+                        aoa.push([null,null,null,null,null,...([''].concat(MONTHS)), null,'Rata2/Total',null,null]);
+
+                        // Helper — push 3 sub-rows for a KPI component
+                        const pushRows = (
+                          sasaran: string, indikator: string, sumber: string,
+                          target: string, bobot: string, nilaiNum: number,
+                          aktualMonths: number[], aktualTot: number|string,
+                          pctVal: number
+                        ) => {
+                          const pct = pctVal / 100;
+                          const aktualRow: (string|number|null)[] = [sasaran, indikator, sumber, 'Rata2/Total', target, 'Target',
+                            0,0,0,0,0,0,0,0,0,0,0,0, 0, bobot, nilaiNum];
+                          const targetRow: (string|number|null)[] = [null,null,null,null,null,'Aktual',
+                            ...aktualMonths, aktualTot, null, null];
+                          const pctRow: (string|number|null)[] = [null,null,null,null,null,'% Pencapaian',
+                            pct,pct,pct,pct,pct,pct,pct,pct,pct,pct,pct,pct, pct, null, null];
+                          aoa.push(aktualRow);
+                          aoa.push(targetRow);
+                          aoa.push(pctRow);
+                        };
+
+                        // ── Section: Customer Perspective ──
+                        aoa.push(['Customer Perspective',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]);
+                        pushRows(
+                          'Technical knowledge\n(Troubleshooting Platform)',
+                          'Jumlah komplain terhadap produk & service',
+                          'Formulir complain/ Email/ WA',
+                          'max 12 komplain sampai dengan Des',
+                          '15%', Math.round(s.tickS * 0.15 * 100),
+                          [0,0,0,0,0,0,0,0,0,0,0,0], m.ticketsOverdue,
+                          Math.round(s.tickS * 100)
+                        );
+                        pushRows(
+                          '',
+                          'Kecepatan respon terhadap komplain perbulan',
+                          'Formulir complain/ Email/ WA',
+                          'max respon time 1x24 jam setelah form/email/ WA masuk',
+                          '10%', 10,
+                          [1,1,1,1,1,1,1,1,1,1,1,1], 1,
+                          100
+                        );
+
+                        // ── Section: Internal process ──
+                        aoa.push(['Internal process Perspective',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]);
+                        pushRows(
+                          'Technical knowledge\n(Learning Center Platform)',
+                          'Menguasai seluruh teknikal produk & software Produk yang di jual/ akan dijual oleh Perusahaan',
+                          'Form penilaian dari Atasan',
+                          '100% pengetahuan dikuasai dalam 12 kategori sampai dengan Des 2025',
+                          '35%', Math.round(s.lcS * 0.35 * 100),
+                          [1,1,1,1,1,1,1,1,1,1,1,1], m.lcPassed,
+                          Math.round(s.lcS * 100)
+                        );
+                        pushRows(
+                          'Implementasi Project\n(Form Review BAST dan Demo Product)',
+                          'Memastikan item-item/ system yang terpasang sesuai dengan Load Schedule yang ada.',
+                          'Load Schedule dan form Demo / BAST yang sudah di TTD Sales',
+                          'Maksimal 7 hari Setelah Project Selesai',
+                          '20%', Math.round(s.bastS * 0.20 * 100),
+                          [1,1,1,1,1,1,1,1,1,1,1,1], s.bastS >= 1 ? 1 : 0,
+                          Math.round(s.bastS * 100)
+                        );
+                        const rndActMonths = Array.from({length:12},(_,i)=>i<m.manual.technicalNote?1:0);
+                        pushRows(
+                          'Penelitian & Development\n(Menyerahkan Technote)',
+                          'Melakukan R&D dan menerbitkan technical note terhadap produk inovasinya.',
+                          'Technical Note yang diterbitkan setiap bulannya',
+                          'Minimal 1 technical note setiap bulannya',
+                          '15%', Math.round(s.rndS * 0.15 * 100),
+                          rndActMonths, m.manual.technicalNote,
+                          Math.round(s.rndS * 100)
+                        );
+                        pushRows(
+                          'Pelaporan Report harian',
+                          'Penyerahan Laporan Bulanan Tepat waktu',
+                          'Laporan Bulanan yg sudah di check Atasan',
+                          'Maksimal Tgl 1 report stiap bln nya',
+                          '5%', 5,
+                          [1,1,1,1,1,1,1,1,1,1,1,1], 1,
+                          100
+                        );
+
+                        // Total row
+                        aoa.push([null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'100.0%', `${s.final}%`]);
+                        aoa.push([null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,`Status: ${s.label}`,null]);
+
+                        // Note
+                        aoa.push(['Catatan Insiden Penting : (catatan dapat dibuat dikertas terpisah sebagai lampiran, dilengkapi keterangan tanggal)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]);
+                        for (let i=0;i<3;i++) aoa.push([null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]);
+                        aoa.push([null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]);
+
+                        // Signatures
+                        aoa.push(['Dibuat oleh,',null,null,null,null,null,null,'Diperiksa oleh atasan langsung',null,null,null,null,null,null,'Disetujui oleh atasan berikutnya',null,null,null,null,null,null]);
+                        for (let i=0;i<4;i++) aoa.push([null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]);
+                        aoa.push([m.name,null,null,null,null,null,null,'Dhany Wahyu Perdana',null,null,null,null,null,null,'Jony',null,null,null,null,null,null]);
+                        aoa.push(['Tanggal',null,null,null,null,null,null,'Tanggal',null,null,null,null,null,null,'Tanggal',null,null,null,null,null,null]);
+
+                        const ws2 = XLSX_MOD.utils.aoa_to_sheet(aoa);
+
+                        // ── Column widths ──
+                        ws2['!cols'] = [
+                          {wch:28},{wch:32},{wch:22},{wch:11},{wch:18},{wch:11},
+                          {wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},
+                          {wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},
+                          {wch:10},{wch:9},{wch:10},
                         ];
 
-                        const csv = rows.map(r => r.map((v:any) => `"${String(v ?? '').replace(/"/g,'""')}"`).join(',')).join('\n');
-                        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+                        // ── Merges ──
+                        const M = (r1:number,c1:number,r2:number,c2:number) => ({s:{r:r1,c:c1},e:{r:r2,c:c2}});
+                        ws2['!merges'] = [
+                          M(0,0,0,18), // Row1 company
+                          M(1,0,1,18), // Row2 form title
+                          M(2,0,2,6),  M(3,0,3,6),  M(4,0,4,6),   // Identity left
+                          M(2,15,2,18),M(3,15,3,18),M(4,15,4,18), // Identity right val
+                          M(5,0,6,0),  M(5,1,6,1),  M(5,2,6,2),   // Header row spans
+                          M(5,3,6,3),  M(5,4,6,4),  M(5,5,6,5),
+                          M(5,6,5,17), // Jan-Dec header
+                          M(5,18,6,18),M(5,19,6,19),M(5,20,6,20),
+                        ];
+
+                        // Format % cells in data rows (rows 8 onwards, cols 6-18 & 18 for pct rows)
+                        // SheetJS basic: just set sheet with data
+                        XLSX_MOD.utils.book_append_sheet(wb, ws2, wsName);
+
+                        const wbOut = XLSX_MOD.write(wb, { bookType:'xlsx', type:'array' });
+                        const blob = new Blob([wbOut], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
                         const nameSafe = m.name.replace(/[^a-zA-Z0-9]/g,'_');
-                        a.download = `KPI_${nameSafe}_${kpiTeam.filterYear}_${kpiTeam.filterPeriod}.csv`;
+                        a.download = `KPI_${nameSafe}_${year}_${kpiTeam.filterPeriod}.xlsx`;
                         a.click();
                         URL.revokeObjectURL(url);
-                        // delay antar download biar browser tidak block
-                        await new Promise(res => setTimeout(res, 400));
+                        await new Promise(res => setTimeout(res, 500));
                       }
                     }}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-emerald-600 hover:text-white hover:bg-emerald-600 bg-white border border-emerald-200 transition-all"
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                    CSV {kpiTeam.filterYear} ({kpiTeam.filterPeriod==='6m'?'6bln':'1thn'})
+                    Excel {kpiTeam.filterYear} ({kpiTeam.filterPeriod==='6m'?'6bln':'1thn'})
                   </button>
                 </div>
               </div>
