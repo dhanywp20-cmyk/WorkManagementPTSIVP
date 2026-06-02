@@ -38,6 +38,7 @@ export interface TicketActivity {
 }
 
 // ─── Aktivitas tambahan manual ────────────────────────────────────────────────
+// FIX: submitted_by auto-filled dari currentUser — tidak listing semua orang
 export interface ManualActivity {
   _key: string;              // client-only unique key
   category: string;
@@ -48,6 +49,7 @@ export interface ManualActivity {
   sales_division: string;
   pic_name: string;
   pic_phone: string;
+  submitted_by?: string;     // NEW: username yang submit (auto dari currentUser)
 }
 
 // ─── Record Tim (insert supervisor, tidak ada foto) ───────────────────────────
@@ -109,11 +111,13 @@ export function formatLogTime(isoStr: string): string {
   return `${String(wib.getUTCHours()).padStart(2, '0')}:${String(wib.getUTCMinutes()).padStart(2, '0')}`;
 }
 
-// ─── Fetch Reminder activities untuk user & tanggal ───────────────────────────
+// ─── FIX: Fetch Reminder activities — gunakan username langsung ────────────────
 export async function fetchReminderActivities(
   username: string,
   date: string
 ): Promise<ReminderActivity[]> {
+  if (!username || !date) return [];
+
   const { data, error } = await supabase
     .from('reminders')
     .select('id,title,category,project_name,address,due_time,status,sales_name,sales_division,product,pic_name,pic_phone,description')
@@ -139,13 +143,14 @@ export async function fetchReminderActivities(
   }));
 }
 
-// ─── Fetch Ticket activities dari activity_logs ───────────────────────────────
+// ─── FIX: Fetch Ticket activities — gunakan username langsung ─────────────────
 export async function fetchTicketActivities(
   username: string,
   date: string
 ): Promise<TicketActivity[]> {
-  // activity_logs pakai created_at timestamp → cast ke date WIB (UTC+7)
-  // Filter: handler_username = username & tanggal WIB = date
+  if (!username || !date) return [];
+
+  // activity_logs pakai created_at timestamp → filter WIB (UTC+7)
   const startUTC = new Date(date + 'T00:00:00+07:00').toISOString();
   const endUTC   = new Date(date + 'T23:59:59+07:00').toISOString();
 
@@ -284,5 +289,4 @@ CREATE INDEX IF NOT EXISTS idx_team_entries_member  ON daily_report_team_entries
 -- ── RLS ───────────────────────────────────────────────────────────────────────
 ALTER TABLE daily_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_report_team_entries ENABLE ROW LEVEL SECURITY;
--- Sesuaikan policy dengan auth Supabase kamu (anon key pattern dari codebase)
 `;
