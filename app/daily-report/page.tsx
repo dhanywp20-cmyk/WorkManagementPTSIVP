@@ -182,6 +182,7 @@ export default function DailyReportPage() {
   const [filterDate, setFilterDate]   = useState('');
   const [filterUser, setFilterUser]   = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterSource, setFilterSource] = useState('');
   const [searchProject, setSearchProject] = useState('');
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [filterHandler, setFilterHandler]   = useState<string | null>(null);
@@ -303,14 +304,35 @@ export default function DailyReportPage() {
   const allRows = useMemo<FlatRow[]>(() => {
     const rows: FlatRow[] = [];
 
+    // ── Build ticket key set untuk deduplication ──────────────────────────────
+    // Key format: `${project_name_lower}|${handler_username_lower}|${date}`
+    // Reminder Troubleshooting yang sudah ada tiketnya di platform ticketing tidak
+    // ditampilkan duplikat — ticket lebih prioritas karena lebih lengkap (action_taken, status aktual)
+    const ticketKeySet = new Set<string>(
+      liveTickets.map(t => {
+        const hu = ((t as any).handler_username ?? '').toLowerCase();
+        const rd = ((t as any).report_date ?? '').split('T')[0];
+        return `${(t.project_name ?? '').trim().toLowerCase()}|${hu}|${rd}`;
+      })
+    );
+
     // Reminder — langsung dari platform, tanpa perlu submit
     liveReminders.forEach(r => {
       const hr = (r as any).handler_username ?? '';
       const tu = teamUsers.find(u => u.username === hr);
+      const rd = ((r as any).report_date ?? '').split('T')[0];
+
+      // Jika reminder kategori Troubleshooting DAN sudah ada ticket yang matching
+      // (project_name + handler + tanggal sama) → skip untuk hindari duplicate
+      if ((r.category ?? '').toLowerCase() === 'troubleshooting') {
+        const key = `${(r.project_name ?? '').trim().toLowerCase()}|${hr.toLowerCase()}|${rd}`;
+        if (ticketKeySet.has(key)) return;
+      }
+
       rows.push({
         id: 'rem_' + r.reminder_id,
         source: 'reminder',
-        report_date: (r as any).report_date ?? '',
+        report_date: rd,
         project_name: r.project_name || r.title || '-',
         address: r.address || '',
         product: r.product || '',
@@ -391,6 +413,7 @@ export default function DailyReportPage() {
         if (!row.project_name.toLowerCase().includes(q) && !row.address.toLowerCase().includes(q) && !row.sales_name.toLowerCase().includes(q) && !row.handler_name.toLowerCase().includes(q)) return false;
       }
       if (filterStatus && row.status.toLowerCase() !== filterStatus.toLowerCase()) return false;
+      if (filterSource && row.source !== filterSource) return false;
       if (filterCategory && row.category !== filterCategory) return false;
       if (filterHandler && (row.handler_name || row.handler_username) !== filterHandler) return false;
       if (filterDivision && row.sales_division !== filterDivision) return false;
@@ -402,10 +425,13 @@ export default function DailyReportPage() {
   const stats = useMemo(() => {
     const total = allRows.length;
     const pending = allRows.filter(r => ['pending', 'in progress', 'proses'].includes(r.status.toLowerCase())).length;
-    const selesai = allRows.filter(r => ['done', 'completed', 'selesai'].includes(r.status.toLowerCase())).length;
+    const selesai = allRows.filter(r => ['done', 'completed', 'selesai', 'solved'].includes(r.status.toLowerCase())).length;
     const today = todayISO();
     const hariIni = allRows.filter(r => r.report_date === today).length;
-    return { total, pending, selesai, hariIni };
+    const fromTicket   = allRows.filter(r => r.source === 'ticket').length;
+    const fromReminder = allRows.filter(r => r.source === 'reminder').length;
+    const fromManual   = allRows.filter(r => r.source === 'manual').length;
+    return { total, pending, selesai, hariIni, fromTicket, fromReminder, fromManual };
   }, [allRows]);
 
   // Donut data
@@ -825,6 +851,29 @@ export default function DailyReportPage() {
           ))}
         </div>
 
+        {/* ── Source breakdown strip ── */}
+        <div className="rounded-2xl px-5 py-3.5 flex items-center gap-6 flex-wrap" style={{ background: 'rgba(255,255,255,0.92)', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+          <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Sumber Data</span>
+          {([
+            { label: 'Ticketing', value: stats.fromTicket,   icon: '🎫', bg: 'rgba(251,113,133,0.12)', color: '#be185d',  source: 'ticket' },
+            { label: 'Schedule',  value: stats.fromReminder, icon: '🔔', bg: 'rgba(16,185,129,0.1)',   color: '#059669',  source: 'reminder' },
+            { label: 'Manual',    value: stats.fromManual,   icon: '✍️', bg: 'rgba(245,158,11,0.1)',   color: '#b45309',  source: 'manual' },
+          ] as const).map(s => (
+            <button key={s.source}
+              onClick={() => setFilterSource(filterSource === s.source ? '' : s.source)}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all hover:scale-[1.03]"
+              style={{ background: filterSource === s.source ? s.bg : 'rgba(0,0,0,0.03)', color: filterSource === s.source ? s.color : '#64748b', border: filterSource === s.source ? `1.5px solid ${s.color}40` : '1.5px solid transparent' }}>
+              <span>{s.icon}</span>
+              <span>{s.label}</span>
+              <span className="ml-1 font-black text-sm" style={{ color: s.color }}>{s.value}</span>
+              {filterSource === s.source && <span className="text-[9px] ml-0.5">✕</span>}
+            </button>
+          ))}
+          {filterSource && (
+            <span className="text-[10px] text-slate-400 italic ml-auto">Klik badge untuk reset filter</span>
+          )}
+        </div>
+
         {/* ── Charts row ── */}
         <div className="grid grid-cols-3 gap-4">
           <MiniPieChart
@@ -905,12 +954,20 @@ export default function DailyReportPage() {
                 <option value="manual">Manual</option>
               </select>
             </div>
+            <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)', minWidth: '140px' }}>
+              <select value={filterSource} onChange={e => setFilterSource(e.target.value)} className="bg-transparent outline-none text-xs text-slate-700 w-full">
+                <option value="">Semua Platform</option>
+                <option value="ticket">🎫 Ticketing</option>
+                <option value="reminder">🔔 Schedule</option>
+                <option value="manual">✍️ Manual</option>
+              </select>
+            </div>
             <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)' }}>
               <svg className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
               <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="bg-transparent outline-none text-xs text-slate-700" />
             </div>
-            {(filterDate || filterUser || filterStatus || searchProject) && (
-              <button onClick={() => { setFilterDate(''); setFilterUser(''); setFilterStatus(''); setSearchProject(''); }} className="px-3 py-2 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-50 transition-all">Reset</button>
+            {(filterDate || filterUser || filterStatus || filterSource || searchProject) && (
+              <button onClick={() => { setFilterDate(''); setFilterUser(''); setFilterStatus(''); setFilterSource(''); setSearchProject(''); }} className="px-3 py-2 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-50 transition-all">Reset</button>
             )}
           </div>
 
@@ -966,6 +1023,18 @@ export default function DailyReportPage() {
                             {row.kegiatan_icon} {row.source === 'ticket' ? 'Troubleshooting' : row.category}
                           </span>
                           {row.source === 'ticket' && <p className="text-[10px] text-slate-400 mt-0.5">{row.kegiatan_label}</p>}
+                          <p className="mt-1">
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                              style={
+                                row.source === 'ticket'
+                                  ? { background: 'rgba(251,113,133,0.12)', color: '#be185d' }
+                                  : row.source === 'reminder'
+                                  ? { background: 'rgba(16,185,129,0.1)', color: '#059669' }
+                                  : { background: 'rgba(245,158,11,0.1)', color: '#b45309' }
+                              }>
+                              {row.source === 'ticket' ? '🎫 Ticketing' : row.source === 'reminder' ? '🔔 Schedule' : '✍️ Manual'}
+                            </span>
+                          </p>
                         </td>
                         <td style={TD}>
                           {row.sales_name
