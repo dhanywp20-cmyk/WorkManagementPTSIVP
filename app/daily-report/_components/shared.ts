@@ -134,7 +134,7 @@ export async function fetchAllReminders(opts: {
 }): Promise<ReminderActivity[]> {
   let q = supabase
     .from('reminders')
-    .select('id,title,category,project_name,address,due_date,due_time,status,sales_name,sales_division,product,pic_name,pic_phone,description,assigned_to')
+   .select('id,category,project_name,address,due_date,due_time,status,sales_name,sales_division,product,pic_name,pic_phone,description,assigned_to')
     .order('due_date', { ascending: false })
     .order('due_time', { ascending: true });
 
@@ -147,7 +147,7 @@ export async function fetchAllReminders(opts: {
   if (error) { console.error('[DR] fetchAllReminders:', error.message); return []; }
   return (data ?? []).map((r: any) => ({
     reminder_id: r.id,
-    title: r.title ?? r.project_name,
+    title: r.project_name,
     category: r.category ?? 'Internal',
     project_name: r.project_name ?? '',
     address: r.address ?? '',
@@ -215,14 +215,14 @@ export async function fetchReminderActivities(username: string, date: string): P
   if (!username || !date) return [];
   const { data, error } = await supabase
     .from('reminders')
-    .select('id,title,category,project_name,address,due_time,status,sales_name,sales_division,product,pic_name,pic_phone,description,assigned_to')
+    .select('id,category,project_name,address,due_time,status,sales_name,sales_division,product,pic_name,pic_phone,description,assigned_to')
     .eq('assigned_to', username)
     .eq('due_date', date)
     .order('due_time', { ascending: true });
   if (error) { console.error('[DR] fetchReminderActivities:', error.message); return []; }
   return (data ?? []).map((r: any) => ({
     reminder_id: r.id,
-    title: r.title ?? r.project_name,
+    title: r.project_name,
     category: r.category ?? 'Internal',
     project_name: r.project_name ?? '',
     address: r.address ?? '',
