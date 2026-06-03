@@ -65,6 +65,12 @@ export default function Dashboard() {
       description: 'Platform training, quiz online & analytics team',
       items: [{ name: 'Learning Center', url: '/learning-center', icon: '📚', internal: true, embed: true }]
     },
+	{
+      title: 'Tech Note R&D', icon: '📝', key: 'tech-note',
+      gradient: 'from-pink-700 via-pink-600 to-rose-500',
+      description: 'Platform dokumentasi teknikal & R&D — KPI 10%',
+      items: [{ name: 'Tech Note', url: '/tech-note', icon: '📝', internal: true, embed: true }]
+    },
     {
       title: 'Reminder Schedule', icon: '🗓️', key: 'reminder-schedule',
       gradient: 'from-cyan-700 via-cyan-600 to-teal-500',
@@ -112,12 +118,6 @@ export default function Dashboard() {
       gradient: 'from-amber-700 via-amber-600 to-amber-500',
       description: 'Equipment check-in & check-out tracking',
       items: [{ name: 'Unit Movement Log', url: '/unit-movement', icon: '🚚', internal: true, embed: true }]
-    },
-    {
-      title: 'Tech Note R&D', icon: '📝', key: 'tech-note',
-      gradient: 'from-pink-700 via-pink-600 to-rose-500',
-      description: 'Platform dokumentasi teknikal & R&D — KPI 10%',
-      items: [{ name: 'Tech Note', url: '/tech-note', icon: '📝', internal: true, embed: true }]
     },
   ];
 
@@ -304,9 +304,9 @@ export default function Dashboard() {
 
   const INTERNAL_KEYS = ['reminder-schedule', 'request-design-project', 'form-bast', 'ticket-troubleshooting', 'picket-showroom'];
   const PROJECT_KEYS = ['reminder-schedule', 'request-design-project', 'form-bast', 'ticket-troubleshooting'];
-  const INTERNAL_DAILY_KEYS = ['picket-showroom', 'daily-report', 'database-pts', 'unit-movement', 'tech-note'];
+  const INTERNAL_DAILY_KEYS = ['picket-showroom', 'daily-report', 'database-pts', 'unit-movement'];
   // ── Learning Center sebagai section tersendiri ──
-  const LEARNING_KEYS = ['learning-center'];
+  const LEARNING_KEYS = ['learning-center','tech-note'];
 
   const projectMenuItems = visibleMenuItems.filter(m => PROJECT_KEYS.includes(m.key));
   const internalMenuItems = visibleMenuItems.filter(m => INTERNAL_DAILY_KEYS.includes(m.key));
