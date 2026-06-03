@@ -83,18 +83,20 @@ export const ALL_MENU_KEYS = [
   'reminder-schedule',
   'picket-showroom',
   'learning-center',
+  'tech-note',
 ];
 
 export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = {
   'learning-center':        { label: 'Learning Center', icon: '🎓' },
   'form-bast':              { label: 'Form Review Demo & BAST', icon: '⭐' },
-  'request-design-project':   { label: 'Request Design Project', icon: '🏗️' },
+  'request-design-project': { label: 'Request Design Project', icon: '🏗️' },
   'ticket-troubleshooting': { label: 'Ticket Troubleshooting', icon: '🎫' },
   'daily-report':           { label: 'Daily Report', icon: '📈' },
   'database-pts':           { label: 'Database PTS', icon: '💼' },
   'unit-movement':          { label: 'Unit Movement Log', icon: '🚚' },
   'reminder-schedule':      { label: 'Reminder Schedule', icon: '🗓️' },
   'picket-showroom':        { label: 'Piket Showroom', icon: '🏪' },
+  'tech-note':              { label: 'Tech Note R&D', icon: '📝' },
 };
 
 export const ROLE_BADGE: Record<string, string> = {
