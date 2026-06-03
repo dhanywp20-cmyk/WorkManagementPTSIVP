@@ -987,19 +987,19 @@ export default function DailyReportPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '960px', tableLayout: 'fixed' }}>
-                    <colgroup>
-                      <col style={{ width: '40px' }} />   {/* NO */}
-                      <col style={{ width: '22%' }} />    {/* PROJECT */}
-                      <col style={{ width: '11%' }} />    {/* PRODUCT */}
-                      <col style={{ width: '18%' }} />    {/* KEGIATAN */}
-                      <col style={{ width: '10%' }} />    {/* SALES */}
-                      <col style={{ width: '10%' }} />    {/* HANDLER */}
-                      <col style={{ width: '8%' }} />     {/* STATUS */}
-                      <col style={{ width: '9%' }} />     {/* TANGGAL */}
-                      <col style={{ width: '6%' }} />     {/* ACTION */}
-                    </colgroup>
-                    <thead>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '960px', tableLayout: 'fixed' as const }}>
+                  <colgroup>
+                    <col style={{ width: '40px' }} />
+                    <col style={{ width: '22%' }} />
+                    <col style={{ width: '11%' }} />
+                    <col style={{ width: '18%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '8%' }} />
+                    <col style={{ width: '9%' }} />
+                    <col style={{ width: '6%' }} />
+                  </colgroup>
+                  <thead>
                 <tbody>
                   {filteredRows.map((row, i) => {
                     const c = CATEGORY_CONFIG[row.category] ?? CATEGORY_CONFIG['Internal'];
