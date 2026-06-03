@@ -51,11 +51,12 @@ interface KPITeamMember {
   // Monthly sparkline data (12 bulan)
   monthlyTickets: number[];
   monthlyLC: number[];
+  // Auto dari Tech Note platform
+  techNotesApproved: number;     // RnD - jumlah tech note approved (target 2/thn, otomatis)
   // Manual input (KPI yg tidak bisa diambil otomatis)
   manual: {
     komplainCount: number;        // Technical knowledge - jumlah komplain (max 12)
     responTime: number;           // Kecepatan respon komplain (1=OK, 0=Tidak OK)
-    technicalNote: number;        // RnD - jumlah technical note diterbitkan (min 6/thn)
     bastDemo: number;             // BAST & Demo - jumlah form selesai dalam 7 hari
     bastDemoTotal: number;        // Total BAST & Demo yang ada
     reportBulanan: number;        // Pelaporan bulanan tepat waktu (0-12)
@@ -520,7 +521,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const memberIds = membersData.map((m: any) => m.id as string);
 
       // Parallel fetch platform data per member
-      const [ticketsRes, actLogsRes, remindersRes, lcAttemptsRes, piketRes, formReviewRes, manualRes] = await Promise.all([
+      const [ticketsRes, actLogsRes, remindersRes, lcAttemptsRes, piketRes, formReviewRes, manualRes, techNotesRes] = await Promise.all([
         supabase.from('tickets')
           .select('id,assign_name,status,date,created_at')
           .in('assign_name', memberNames)
@@ -559,6 +560,13 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           .select('*')
           .in('user_id', memberIds)
           .eq('year', year),
+        // Tech Notes approved (otomatis dari platform tech-note)
+        supabase.from('tech_notes')
+          .select('id,author_id,status,reviewed_at')
+          .in('author_id', memberIds)
+          .eq('status', 'approved')
+          .gte('reviewed_at', yearStart)
+          .lte('reviewed_at', yearEnd + 'T23:59:59'),
       ]);
 
       const tickets = (ticketsRes.data ?? []) as any[];
@@ -568,6 +576,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const piketSchedules = (piketRes.data ?? []) as any[];
       const formReviews = (formReviewRes.data ?? []) as any[];
       const manualValues = (manualRes.data ?? []) as any[];
+      const techNotesAll = (techNotesRes.data ?? []) as any[];
       const todayStr2 = new Date().toISOString().split('T')[0];
 
       // Build member KPI
@@ -627,12 +636,14 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         const manual = {
           komplainCount: saved?.komplain_count ?? 0,
           responTime: saved?.respon_time ?? 12,
-          technicalNote: saved?.technical_note ?? 0,
           bastDemo: saved?.bast_demo ?? 0,
           bastDemoTotal: saved?.bast_demo_total ?? 0,
           reportBulanan: saved?.report_bulanan ?? 0,
           learningMastery: saved?.learning_mastery ?? 0,
         };
+
+        // Tech Notes approved (otomatis dari platform, target 2/tahun)
+        const techNotesApproved = techNotesAll.filter((tn: any) => tn.author_id === uid).length;
 
         // Monthly sparkline: tickets handled per month (12 months of filterYear)
         const monthlyTickets = Array.from({length:12},(_,mi)=>
@@ -648,6 +659,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           remindersAssigned: myRem.length, remindersDone: remDone, remindersOverdue: remOver,
           lcAttempts: myLC.length, lcAvgScore: lcAvg, lcPassed: myLC.filter((a: any) => a.passed === true).length,
           lcFailedBelow75, piketFilled, ticketAvgResponseHours, formReviewLowRating,
+          techNotesApproved,
           monthlyTickets, monthlyLC,
           manual,
         };
@@ -1154,16 +1166,16 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       });
 
                       const pm = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
-                      const rndTarget = Math.round(6 * pm);
+                      const rndTarget = 2;
                       const MONTHS = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','Sept','Okt','Nov','Des'];
 
                       const calcScores = (m: KPITeamMember) => {
                         const tickS = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled,1)) : 0;
                         const bastS = m.ticketsHandled === 0 ? 0 : m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating * 0.25);
                         const lcS   = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - m.lcFailedBelow75 / Math.max(m.lcAttempts,1));
-                        const rndS  = rndTarget > 0 ? Math.min(1, m.manual.technicalNote / rndTarget) : 0;
+                        const rndS  = rndTarget > 0 ? Math.min(1, m.techNotesApproved / rndTarget) : 0;
                         const final = Math.round((0.20*tickS + 0.30*bastS + 0.40*lcS + 0.10*rndS) * 100);
-                        const noData = m.ticketsHandled === 0 && m.lcAttempts === 0 && m.manual.technicalNote === 0;
+                        const noData = m.ticketsHandled === 0 && m.lcAttempts === 0 && m.techNotesApproved === 0;
                         const label = noData ? 'Belum Ada Data' : final>=85?'Excellent':final>=70?'Good':final>=50?'Fair':'Needs Work';
                         return { tickS, bastS, lcS, rndS, final, noData, label };
                       };
@@ -1251,14 +1263,14 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                           [1,1,1,1,1,1,1,1,1,1,1,1], s.bastS >= 1 ? 1 : 0,
                           Math.round(s.bastS * 100)
                         );
-                        const rndActMonths = Array.from({length:12},(_,i)=>i<m.manual.technicalNote?1:0);
+                        const rndActMonths = Array.from({length:12},(_,i)=>i<m.techNotesApproved?1:0);
                         pushRows(
                           'Penelitian & Development\n(Menyerahkan Technote)',
                           'Melakukan R&D dan menerbitkan technical note terhadap produk inovasinya.',
                           'Technical Note yang diterbitkan setiap bulannya',
                           'Minimal 1 technical note setiap bulannya',
                           '15%', Math.round(s.rndS * 0.15 * 100),
-                          rndActMonths, m.manual.technicalNote,
+                          rndActMonths, m.techNotesApproved,
                           Math.round(s.rndS * 100)
                         );
                         pushRows(
@@ -1346,7 +1358,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       });
                       const year = kpiTeam.filterYear;
                       const pm = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
-                      const rndTarget = 6 * pm;
+                      const rndTarget = 2;
                       const wb = XLSX_MOD.utils.book_new();
 
                       // ── Sheet 1: Rekap Tim ──
@@ -1360,15 +1372,15 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                         const tickS = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled,1)) : 0;
                         const bastS = m.ticketsHandled === 0 ? 0 : m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating * 0.25);
                         const lcS   = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - m.lcFailedBelow75 / Math.max(m.lcAttempts,1));
-                        const rndS  = m.manual.technicalNote >= rndTarget ? 1 : m.manual.technicalNote / rndTarget;
+                        const rndS  = m.techNotesApproved >= rndTarget ? 1 : m.techNotesApproved / rndTarget;
                         const final = Math.round([0.20,0.30,0.40,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
-                        const noData = m.ticketsHandled===0&&m.lcAttempts===0&&m.manual.technicalNote===0;
+                        const noData = m.ticketsHandled===0&&m.lcAttempts===0&&m.techNotesApproved===0;
                         const label = noData?'Belum Ada Data':final>=85?'Excellent':final>=70?'Good':final>=50?'Fair':'Needs Work';
                         summaryAoa.push([
                           idx+1, m.name, m.team_type.replace('Team PTS ','').replace('Team PTS','IVP'),
                           m.jabatan, m.ticketsHandled, m.ticketsOverdue,
                           m.lcAttempts, m.lcAvgScore, m.formReviewLowRating,
-                          m.manual.technicalNote, noData ? 0 : final, label,
+                          m.techNotesApproved, noData ? 0 : final, label,
                         ]);
                       });
                       summaryAoa.push([]);
@@ -1378,7 +1390,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                             const tickS = m.ticketsHandled>0?Math.max(0,1-m.ticketsOverdue/Math.max(m.ticketsHandled,1)):0;
                             const bastS = m.ticketsHandled===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating*0.25);
                             const lcS   = m.lcAttempts===0?0:Math.max(0,1-(m.lcFailedBelow75/Math.max(m.lcAttempts,1)));
-                            const rndS  = m.manual.technicalNote>=rndTarget?1:m.manual.technicalNote/rndTarget;
+                            const rndS  = m.techNotesApproved>=rndTarget?1:m.techNotesApproved/rndTarget;
                             return sum + Math.round([0.20,0.30,0.40,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
                           }, 0) / allMembers.length)
                         : 0;
@@ -1405,9 +1417,9 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                           const tickS = m.ticketsHandled>0?Math.max(0,1-m.ticketsOverdue/Math.max(m.ticketsHandled,1)):0;
                           const bastS = m.ticketsHandled===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating*0.25);
                           const lcS   = m.lcAttempts===0?0:Math.max(0,1-(m.lcFailedBelow75/Math.max(m.lcAttempts,1)));
-                          const rndS  = m.manual.technicalNote>=rndTarget?1:m.manual.technicalNote/rndTarget;
+                          const rndS  = m.techNotesApproved>=rndTarget?1:m.techNotesApproved/rndTarget;
                           const final = Math.round([0.20,0.30,0.40,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
-                          aoa.push([m.name, m.jabatan, m.ticketsHandled, m.ticketsSolved, m.ticketsOverdue, m.avgResolutionDays, m.remindersDone, m.lcAttempts, m.lcAvgScore, m.piketFilled, m.manual.technicalNote, final]);
+                          aoa.push([m.name, m.jabatan, m.ticketsHandled, m.ticketsSolved, m.ticketsOverdue, m.avgResolutionDays, m.remindersDone, m.lcAttempts, m.lcAvgScore, m.piketFilled, m.techNotesApproved, final]);
                         });
                         const ws = XLSX_MOD.utils.aoa_to_sheet(aoa);
                         ws['!cols'] = [{wch:28},{wch:20},{wch:14},{wch:9},{wch:9},{wch:12},{wch:14},{wch:12},{wch:9},{wch:9},{wch:10},{wch:10}];
@@ -1475,14 +1487,14 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     : Math.max(0, 1 - (member.lcFailedBelow75 / Math.max(member.lcAttempts, 1)));
                   // R&D Technote 10%: input manual min 6/tahun (atau 3 untuk 6 bulan)
                   const periodMultiplier = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
-                  const rndTarget = 6 * periodMultiplier;
-                  const rndScore = member.manual.technicalNote >= rndTarget ? 1 : member.manual.technicalNote / rndTarget;
+                  const rndTarget = 2;
+                  const rndScore = member.techNotesApproved >= rndTarget ? 1 : member.techNotesApproved / rndTarget;
                   return Math.round([0.20, 0.30, 0.40, 0.10].reduce((s, w, i) => s + w * [tickScore, bastScore, lcScore, rndScore][i], 0) * 100);
                 };
                 // ── Compact horizontal member chip ───────────────────────
                   const MemberChip = ({ member }: { member: KPITeamMember }) => {
                   const finalKPI = calcKPI(member);
-                  const noData   = member.ticketsHandled===0 && member.lcAttempts===0 && member.manual.technicalNote===0;
+                  const noData   = member.ticketsHandled===0 && member.lcAttempts===0 && member.techNotesApproved===0;
                   const kpiColor = noData?'#94a3b8':finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
                   const kpiLabel = noData?'—':finalKPI>=85?'Excellent':finalKPI>=70?'Good':finalKPI>=50?'Fair':'Needs Work';
                   const alerts: string[] = [];
@@ -1537,7 +1549,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
                 // ── Team row: 1 line horizontal scroll ──────────────────
                 const TeamRow = ({ members, label, color, abbr }: { members: KPITeamMember[]; label: string; color: string; abbr: string }) => {
-                  const scored = members.filter(m=>!(m.ticketsHandled===0&&m.lcAttempts===0&&m.manual.technicalNote===0));
+                  const scored = members.filter(m=>!(m.ticketsHandled===0&&m.lcAttempts===0&&m.techNotesApproved===0));
                   const avg    = scored.length ? Math.round(scored.reduce((s,m)=>s+calcKPI(m),0)/scored.length) : null;
                   const avgC   = avg==null?'#94a3b8':avg>=85?'#10b981':avg>=70?'#3b82f6':avg>=50?'#f59e0b':'#ef4444';
                   return (
@@ -1584,10 +1596,10 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 const bastScore = !hasFormReview ? 0 : member.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - member.formReviewLowRating * 0.25);
                 const lcScore = member.lcAttempts === 0 ? 0 : Math.max(0, 1 - (member.lcFailedBelow75 / Math.max(member.lcAttempts,1)));
                 const periodMultiplier = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
-                const rndTarget = 6 * periodMultiplier;
-                const rndScore = member.manual.technicalNote >= rndTarget ? 1 : member.manual.technicalNote / rndTarget;
+                const rndTarget = 2;
+                const rndScore = member.techNotesApproved >= rndTarget ? 1 : member.techNotesApproved / rndTarget;
                 const finalKPI = Math.round([0.20, 0.30, 0.40, 0.10].reduce((s,w,i)=>s+w*[tickScore,bastScore,lcScore,rndScore][i],0)*100);
-                const noData = member.ticketsHandled === 0 && member.lcAttempts === 0 && member.manual.technicalNote === 0;
+                const noData = member.ticketsHandled === 0 && member.lcAttempts === 0 && member.techNotesApproved === 0;
                 const kpiColor = noData ? '#94a3b8' : finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
                 const isEditing = kpiTeam.editingMember === member.id;
                 const modalContent = (
@@ -1620,7 +1632,6 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                                   user_id: uid, year: kpiTeam.filterYear,
                                   komplain_count: vals.komplainCount ?? member.manual.komplainCount,
                                   respon_time: vals.responTime ?? member.manual.responTime,
-                                  technical_note: vals.technicalNote ?? member.manual.technicalNote,
                                   bast_demo: vals.bastDemo ?? member.manual.bastDemo,
                                   bast_demo_total: vals.bastDemoTotal ?? member.manual.bastDemoTotal,
                                   report_bulanan: vals.reportBulanan ?? member.manual.reportBulanan,
@@ -1742,29 +1753,42 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                           </div>
                         </div>
 
-                        {/* ── Manual KPI — hanya R&D Technote ── */}
+                        {/* ── R&D Tech Note — Otomatis dari platform Tech Note ── */}
                         <div>
-                          <div className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-2">✏️ KPI Manual (Input SPV/Admin)</div>
-                          <div className="max-w-xs">
-                            <div className="rounded-xl border p-3" style={{borderColor:'#ec489940', background:'#fdf4ff'}}>
-                              <div className="flex items-center justify-between mb-1">
-                                <div className="text-[10px] font-bold text-pink-600 uppercase tracking-wider">📝 R&amp;D Tech Note</div>
-                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{background:rndScore>=1?'#d1fae5':'#fee2e2',color:rndScore>=1?'#065f46':'#991b1b'}}>{Math.round(rndScore*100)}% · 10%</span>
-                              </div>
-                              <div className="text-[10px] text-slate-500 mb-2">Target: min {Math.round(rndTarget)}/{kpiTeam.filterPeriod==='6m'?'6 bulan':'tahun'} · Input manual oleh SPV</div>
-                              {isEditing ? (
-                                <input type="number" min={0} value={kpiTeam.editValues.technicalNote ?? member.manual.technicalNote}
-                                  onChange={e=>setKpiTeam(prev=>({...prev,editValues:{...prev.editValues,technicalNote:Number(e.target.value)}}))}
-                                  className="w-full border border-pink-300 rounded-lg px-2 py-1 text-sm text-center font-bold outline-none"/>
-                              ) : (
-                                <div className="flex items-center gap-3">
-                                  <span className="text-xl font-black text-slate-800">{member.manual.technicalNote}/{Math.round(rndTarget)}</span>
-                                  <div className="h-1.5 flex-1 rounded-full bg-pink-100 overflow-hidden">
-                                    <div className="h-full rounded-full bg-pink-400 transition-all" style={{width:`${Math.min(100,rndScore*100)}%`}}/>
-                                  </div>
-                                </div>
-                              )}
+                          <div className="text-[10px] font-bold text-pink-600 uppercase tracking-wider mb-2">📝 R&amp;D Tech Note (Otomatis dari Platform)</div>
+                          <div className="rounded-xl border p-3" style={{borderColor:'#ec489940', background:'#fdf4ff'}}>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="text-[10px] font-bold text-pink-600 uppercase tracking-wider">📝 R&amp;D Tech Note</div>
+                              <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{background:rndScore>=1?'#d1fae5':'#fee2e2',color:rndScore>=1?'#065f46':'#991b1b'}}>{Math.round(rndScore*100)}% · 10%</span>
                             </div>
+                            <div className="text-[10px] text-slate-500 mb-3">
+                              Target: <b className="text-slate-700">{rndTarget} Tech Note approved</b> per tahun · Data otomatis dari platform Tech Note
+                            </div>
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="text-2xl font-black" style={{color: rndScore>=1?'#059669':'#dc2626'}}>{member.techNotesApproved}</span>
+                              <span className="text-sm text-slate-400 font-medium">/ {rndTarget}</span>
+                              <div className="h-2 flex-1 rounded-full bg-pink-100 overflow-hidden">
+                                <div className="h-full rounded-full transition-all duration-500" style={{width:`${Math.min(100,rndScore*100)}%`, background: rndScore>=1?'#10b981':'#f472b6'}}/>
+                              </div>
+                            </div>
+                            {member.techNotesApproved === 0 ? (
+                              <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1.5 flex items-center gap-1.5">
+                                ⚠️ Belum ada Tech Note yang diapprove tahun ini
+                              </div>
+                            ) : member.techNotesApproved >= rndTarget ? (
+                              <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1.5 flex items-center gap-1.5">
+                                ✅ KKM Tech Note terpenuhi ({member.techNotesApproved} approved)
+                              </div>
+                            ) : (
+                              <div className="text-[10px] text-amber-600 font-semibold bg-amber-50 rounded-lg px-2 py-1.5 flex items-center gap-1.5">
+                                ⏳ Kurang {rndTarget - member.techNotesApproved} Tech Note lagi untuk mencapai KKM
+                              </div>
+                            )}
+                            <a href="/tech-note" target="_blank" rel="noopener noreferrer"
+                              className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold text-pink-600 hover:text-pink-800 transition-colors">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                              Buka Platform Tech Note →
+                            </a>
                           </div>
                         </div>
                       </div>
@@ -2005,13 +2029,13 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       <tbody>
                         {kpiTeam.members.map(m=>{
                           const periodMultiplier = kpiTeam.filterPeriod==='6m'?0.5:1;
-                          const rndTarget = 6*periodMultiplier;
+                          const rndTarget = 2;
                           const tickS = m.ticketsHandled>0?Math.max(0,1-m.ticketsOverdue/Math.max(m.ticketsHandled,1)):0;
                           const bastS = m.ticketsHandled===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating*0.25);
                           const lcS   = m.lcAttempts===0?0:Math.max(0,1-(m.lcFailedBelow75/Math.max(m.lcAttempts,1)));
-                          const rndS  = m.manual.technicalNote>=rndTarget?1:m.manual.technicalNote/rndTarget;
+                          const rndS  = m.techNotesApproved>=rndTarget?1:m.techNotesApproved/rndTarget;
                           const final = Math.round([0.20,0.30,0.40,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
-                          const noData = m.ticketsHandled===0&&m.lcAttempts===0&&m.manual.technicalNote===0;
+                          const noData = m.ticketsHandled===0&&m.lcAttempts===0&&m.techNotesApproved===0;
                           const c = noData?'#94a3b8':final>=85?'#10b981':final>=70?'#3b82f6':final>=50?'#f59e0b':'#ef4444';
                           return (
                             <tr key={m.id} style={{borderBottom:'1px solid #f1f5f9'}} className="hover:bg-slate-50/50">
