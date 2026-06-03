@@ -209,7 +209,8 @@ function HistoryTimeline({ history }: { history: TechNoteHistory[] }) {
       <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-3">📋 Riwayat Approval</div>
       <div className="space-y-2">
         {history.map((h, i) => {
-          const cfg = ACTION_CONFIG[h.action] ?? { label: h.action, color: '#6b7280', icon: '📌' };
+          const actionKey = h.action as keyof typeof ACTION_CONFIG;
+          const cfg = ACTION_CONFIG[actionKey] ?? { label: h.action, color: '#6b7280', icon: '📌' };
           return (
             <div key={h.id ?? i} className="flex gap-3">
               <div className="flex flex-col items-center">
@@ -297,12 +298,9 @@ export default function TechNotePage() {
 
   // ── Auth ──
   useEffect(() => {
-    supabase.from('users').select('*').then(({ data }) => {
-      if (data?.length) setCurrentUser(data[0] as User);
-    });
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('pts_current_user') : null;
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('currentUser') : null;
     if (stored) {
-      try { setCurrentUser(JSON.parse(stored)); } catch {}
+      try { setCurrentUser(JSON.parse(stored) as User); } catch {}
     }
   }, []);
 
@@ -376,11 +374,12 @@ export default function TechNotePage() {
       status: 'pending',
       submitted_at: now,
       team_type: currentUser.team_type ?? '',
-    }).select().single();
+    }).select('id').single();
 
-    if (inserted) {
+    if (inserted && (inserted as { id: string }).id) {
+      const insertedId = (inserted as { id: string }).id;
       await supabase.from('tech_note_history').insert({
-        tech_note_id: inserted.id,
+        tech_note_id: insertedId,
         action: 'submitted',
         performed_by: currentUser.id,
         performed_by_name: currentUser.full_name,
