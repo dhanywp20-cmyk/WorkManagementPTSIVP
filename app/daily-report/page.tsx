@@ -844,8 +844,6 @@ export default function DailyReportPage() {
   };
 
   // ── MAIN LIST VIEW ────────────────────────────────────────────────────────────
-  // Build FlatRow type reference for TS
-  type FlatRow = ReturnType<typeof useMemo<any>>;
   const PIE_COLORS = ['#dc2626','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#0ea5e9','#14b8a6'];
 
   return (
