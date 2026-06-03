@@ -39,7 +39,6 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
 
   const menuLabels: Record<string, { label: string; icon: string; gradient: string }> = {
     'learning-center': { label: 'Learning Center', icon: '🎓', gradient: 'from-teal-600 to-teal-500' },
-    'tech-note': { label: 'Tech Note Product', icon: '📝', gradient: 'from-teal-600 to-teal-500' },
     'form-bast': { label: 'Form Review Demo & BAST', icon: '⭐', gradient: 'from-slate-600 to-slate-500' },
     'request-design-project': { label: 'Request Design Project', icon: '🏗️', gradient: 'from-violet-600 to-violet-500' },
     'ticket-troubleshooting': { label: 'Ticket Troubleshooting', icon: '🎫', gradient: 'from-rose-600 to-rose-500' },
@@ -48,6 +47,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     'unit-movement': { label: 'Unit Movement Log', icon: '🚚', gradient: 'from-amber-600 to-amber-500' },
     'reminder-schedule': { label: 'Reminder Schedule', icon: '🗓️', gradient: 'from-cyan-600 to-cyan-500' },
     'picket-showroom': { label: 'Piket Showroom', icon: '🏪', gradient: 'from-teal-600 to-teal-500' },
+    'tech-note': { label: 'Tech Note R&D', icon: '📝', gradient: 'from-pink-600 to-rose-500' },
   };
 
   const notify = (type: 'success' | 'error', msg: string) => {
@@ -1864,45 +1864,20 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
     // ── 3. Reminder Schedule ──
     try {
       if (isAdmin) {
-        // Admin: (a) request jadwal sales belum di-assign + (b) semua reminder aktif belum done/cancelled
-        const [reqSalesRes, activeRes] = await Promise.all([
-          supabase
-            .from('reminders')
-            .select('id, project_name, category, due_date, status, assigned_to, notes, sales_name, sales_division, created_at')
-            .eq('status', 'pending')
-            .eq('assigned_to', '')
-            .ilike('notes', '%[REQUEST SALES]%')
-            .order('created_at', { ascending: false })
-            .limit(20),
-          supabase
-            .from('reminders')
-            .select('id, project_name, category, due_date, status, assigned_to, assign_name, notes, sales_name, sales_division, created_at')
-            .neq('status', 'done')
-            .neq('status', 'cancelled')
-            .order('due_date', { ascending: true })
-            .limit(50),
-        ]);
-
-        // Merge & deduplicate by id — request sales ditampilkan dengan ikon 📩, sisanya 🗓️
-        const seen = new Set<string>();
-        const merged: any[] = [];
-
-        // Request sales (priority pertama)
-        for (const r of (reqSalesRes.data ?? [])) {
-          if (!seen.has(r.id)) { seen.add(r.id); merged.push({ ...r, _isRequest: true }); }
-        }
-        // Semua active reminders
-        for (const r of (activeRes.data ?? [])) {
-          if (!seen.has(r.id)) { seen.add(r.id); merged.push({ ...r, _isRequest: false }); }
-        }
-
-        setReminderNotifs(merged.map((r: any) => ({
+        // Admin: request jadwal dari sales yang belum di-assign (assigned_to kosong)
+        const { data } = await supabase
+          .from('reminders')
+          .select('id, project_name, category, due_date, status, assigned_to, notes, sales_name, sales_division, created_at')
+          .eq('status', 'pending')
+          .eq('assigned_to', '')
+          .ilike('notes', '%[REQUEST SALES]%')
+          .order('created_at', { ascending: false })
+          .limit(20);
+        setReminderNotifs((data ?? []).map((r: any) => ({
           id: r.id,
           type: 'reminder' as const,
           title: r.project_name,
-          subtitle: r._isRequest
-            ? `📩 Req. Sales · ${r.sales_name}${r.sales_division ? ' · ' + r.sales_division : ''} · ${r.due_date}`
-            : `🗓️ ${r.category}${r.assign_name ? ' · ' + r.assign_name : ''} · ${r.due_date}`,
+          subtitle: `📩 Req. Sales · ${r.sales_name}${r.sales_division ? ' · ' + r.sales_division : ''} · ${r.due_date}`,
           time: r.created_at,
           url: '/reminder-schedule',
           internalUrl: '/reminder-schedule',
@@ -2267,6 +2242,7 @@ export function AccountSettingsInline() {
     'reminder-schedule': { label: 'Reminder Schedule', icon: '🗓️' },
     'picket-showroom': { label: 'Piket Showroom', icon: '🏪' },
     'learning-center': { label: 'Learning Center', icon: '🎓' },
+    'tech-note': { label: 'Tech Note R&D', icon: '📝' },
   };
 
   const notify = (type: 'success' | 'error', msg: string) => { setNotification({ type, msg }); setTimeout(() => setNotification(null), 3000); };
