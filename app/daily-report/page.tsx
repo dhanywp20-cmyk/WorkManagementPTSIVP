@@ -23,7 +23,7 @@ import {
 import {
   FormField, SectionHeaderSmall, LoadingScreen,
 } from '@/components/shared';
-import { MiniPieChart } from '@/components/MiniPieChart';
+import { MiniPieChart } from '@/components/shared';
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const inp: React.CSSProperties = {
