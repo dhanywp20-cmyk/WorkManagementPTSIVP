@@ -14,8 +14,9 @@ import {
 import { PriorityBadge, StatusBadge, CategoryBadge } from './_components/Badges';
 import {
   FormField, SectionHeader, SectionHeaderSmall, InfoRow,
-  LoadingScreen, MiniPieChart,
+  LoadingScreen,
 } from '@/components/shared';
+import { MiniPieChart } from '@/components/MiniPieChart';
 import { MiniCalendar } from './_components/MiniCalendar';
 import { RescheduleModal } from './_components/RescheduleModal';
 import { RequestJadwalModal, type JadwalRequest } from './_components/RequestJadwalModal';
