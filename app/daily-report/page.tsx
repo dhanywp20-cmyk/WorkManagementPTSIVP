@@ -23,6 +23,7 @@ import {
 import {
   FormField, SectionHeaderSmall, LoadingScreen,
 } from '@/components/shared';
+import { MiniPieChart } from '@/components/MiniPieChart';
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const inp: React.CSSProperties = {
@@ -74,42 +75,6 @@ function emptyManual(u = ''): ManualActivity {
 }
 function emptyTeamEntry(m: TeamUser): TeamEntry {
   return { _key: newTeamKey(), member_user_id: m.id, member_name: m.full_name, category: 'Internal', project_name: '', address: '', sales_name: '', sales_division: m.sales_division ?? '', supervisor_notes: '' };
-}
-
-// ─── Donut chart mini ─────────────────────────────────────────────────────────
-function DonutChart({ data, total, cx = 50, cy = 50, r = 38, sw = 10 }: {
-  data: { value: number; color: string }[]; total: number; cx?: number; cy?: number; r?: number; sw?: number;
-}) {
-  let angle = -90;
-  const gap = 2;
-  const filtered = data.filter(d => d.value > 0);
-  const slices = filtered.map(d => {
-    const pct = d.value / Math.max(total, 1);
-    const sweep = Math.max(pct * 360 - (filtered.length > 1 ? gap : 0), 0.5);
-    const start = angle;
-    angle += pct * 360;
-    return { ...d, start, end: start + sweep };
-  });
-  const arc = (s: number, e: number, ri: number) => {
-    const sa = (s * Math.PI) / 180, ea = (e * Math.PI) / 180;
-    const x1 = cx + ri * Math.cos(sa), y1 = cy + ri * Math.sin(sa);
-    const x2 = cx + ri * Math.cos(ea), y2 = cy + ri * Math.sin(ea);
-    const lg = e - s > 180 ? 1 : 0;
-    return `M ${x1} ${y1} A ${ri} ${ri} 0 ${lg} 1 ${x2} ${y2}`;
-  };
-  if (total === 0) return (
-    <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }}>
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#e2e8f0" strokeWidth={sw} />
-    </svg>
-  );
-  return (
-    <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }}>
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#f1f5f9" strokeWidth={sw} />
-      {slices.map((s, i) => (
-        <path key={i} d={arc(s.start, s.end, r)} fill="none" stroke={s.color} strokeWidth={sw} strokeLinecap="round" />
-      ))}
-    </svg>
-  );
 }
 
 // ─── PageWrapper ──────────────────────────────────────────────────────────────
@@ -218,6 +183,9 @@ export default function DailyReportPage() {
   const [filterUser, setFilterUser]   = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [searchProject, setSearchProject] = useState('');
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
+  const [filterHandler, setFilterHandler]   = useState<string | null>(null);
+  const [filterDivision, setFilterDivision] = useState<string | null>(null);
 
   // ── Form state ────────────────────────────────────────────────────────────────
   const [formOpen, setFormOpen]       = useState(false);
@@ -278,9 +246,10 @@ export default function DailyReportPage() {
 
       const opts = {
         date: filterDate || undefined,
+        // Jika admin tapi belum ada teamUsers, kirim undefined agar fetch semua
         usernames: filterUser
           ? [teamUsers.find(u => u.id === filterUser)?.username ?? ''].filter(Boolean)
-          : usernames,
+          : usernames.length > 0 ? usernames : undefined,
       };
 
       const [rem, tick] = await Promise.all([
@@ -303,11 +272,12 @@ export default function DailyReportPage() {
   }, [currentUser, filterDate, filterUser, isAdmin]);
 
   useEffect(() => {
-    if (currentUser && teamUsers.length >= 0) {
-      loadLiveData();
-      loadReports();
-    }
-  }, [currentUser, teamUsers, filterDate, filterUser]);
+    if (!currentUser) return;
+    // Untuk admin: tunggu teamUsers selesai load dulu (hindari fetch dengan usernames=[])
+    if (isAdmin && teamUsers.length === 0) return;
+    loadLiveData();
+    loadReports();
+  }, [currentUser, isAdmin, teamUsers, filterDate, filterUser]);
 
   // ── Build flat rows: gabung live data + manual dari submitted reports ──────────
   interface FlatRow {
@@ -421,9 +391,12 @@ export default function DailyReportPage() {
         if (!row.project_name.toLowerCase().includes(q) && !row.address.toLowerCase().includes(q) && !row.sales_name.toLowerCase().includes(q) && !row.handler_name.toLowerCase().includes(q)) return false;
       }
       if (filterStatus && row.status.toLowerCase() !== filterStatus.toLowerCase()) return false;
+      if (filterCategory && row.category !== filterCategory) return false;
+      if (filterHandler && (row.handler_name || row.handler_username) !== filterHandler) return false;
+      if (filterDivision && row.sales_division !== filterDivision) return false;
       return true;
     });
-  }, [allRows, searchProject, filterStatus]);
+  }, [allRows, searchProject, filterStatus, filterCategory, filterHandler, filterDivision]);
 
   // ── Stats ─────────────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
@@ -436,22 +409,24 @@ export default function DailyReportPage() {
   }, [allRows]);
 
   // Donut data
-  const catCounts = useMemo(() => {
+  const PIE_C = ['#7c3aed','#0ea5e9','#10b981','#e11d48','#f59e0b','#6366f1','#14b8a6','#f97316','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
+
+  const catPieData = useMemo(() => {
     const m = new Map<string, number>();
     allRows.forEach(r => m.set(r.category, (m.get(r.category) ?? 0) + 1));
-    return Array.from(m.entries()).map(([cat, cnt]) => ({ cat, cnt, color: CATEGORY_CONFIG[cat]?.accent ?? '#94a3b8' }));
+    return Array.from(m.entries()).map(([label, value]) => ({ label, value, color: CATEGORY_CONFIG[label]?.accent ?? '#94a3b8' }));
   }, [allRows]);
 
-  const handlerCounts = useMemo(() => {
+  const handlerPieData = useMemo(() => {
     const m = new Map<string, number>();
-    allRows.forEach(r => m.set(r.handler_name || r.handler_username, (m.get(r.handler_name || r.handler_username) ?? 0) + 1));
-    return Array.from(m.entries()).map(([name, cnt]) => ({ name, cnt })).sort((a, b) => b.cnt - a.cnt).slice(0, 5);
+    allRows.forEach(r => { const k = r.handler_name || r.handler_username; if (k) m.set(k, (m.get(k) ?? 0) + 1); });
+    return Array.from(m.entries()).sort((a,b)=>b[1]-a[1]).map(([label, value], i) => ({ label, value, color: PIE_C[i % PIE_C.length] }));
   }, [allRows]);
 
-  const salesCounts = useMemo(() => {
+  const divisionPieData = useMemo(() => {
     const m = new Map<string, number>();
     allRows.forEach(r => { if (r.sales_division) m.set(r.sales_division, (m.get(r.sales_division) ?? 0) + 1); });
-    return Array.from(m.entries()).map(([div, cnt]) => ({ div, cnt })).sort((a, b) => b.cnt - a.cnt).slice(0, 5);
+    return Array.from(m.entries()).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([label, value], i) => ({ label, value, color: PIE_C[(i+3) % PIE_C.length] }));
   }, [allRows]);
 
   // ── Form helpers ──────────────────────────────────────────────────────────────
@@ -601,61 +576,15 @@ export default function DailyReportPage() {
               </div>
             )}
 
-            {/* Auto: Reminder */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">🔔 Reminder Auto ({formReminders.length})</span>
-                <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9' }}>Auto-insert</span>
+            {/* Auto: Reminder + Ticket — info ringkas saja */}
+            {(formReminders.length > 0 || formTickets.length > 0 || formLoading) && (
+              <div className="px-4 py-3 rounded-xl flex items-center gap-3" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.18)' }}>
+                {formLoading
+                  ? <><div className="w-4 h-4 border-2 border-sky-300 border-t-sky-600 rounded-full animate-spin flex-shrink-0" /><span className="text-xs text-sky-600 font-semibold">Memuat aktivitas otomatis...</span></>
+                  : <><span className="text-base">🔔</span><span className="text-xs text-sky-700 font-semibold">{formReminders.length} reminder &amp; {formTickets.length} ticket ter-insert otomatis dari platform</span><span className="ml-auto text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(14,165,233,0.12)', color: '#0ea5e9' }}>Auto-insert</span></>
+                }
               </div>
-              {formLoading ? <div className="flex items-center gap-2 text-xs text-slate-400 py-3"><div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />Memuat...</div>
-                : formReminders.length === 0 ? <p className="text-xs text-slate-400 py-2 italic">Tidak ada reminder pada tanggal ini</p>
-                : <div className="space-y-2">{formReminders.map((r, i) => {
-                  const c = CATEGORY_CONFIG[r.category] ?? CATEGORY_CONFIG['Internal'];
-                  return (
-                    <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                      <span className="text-base flex-shrink-0">{c.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-slate-800 truncate">{r.project_name || r.title}</p>
-                        {r.address && <p className="text-[11px] text-slate-400">📍 {r.address}</p>}
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {r.due_time && <span className="text-[11px] font-bold text-red-500">{r.due_time}</span>}
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: sb(r.status).bg, color: sb(r.status).color }}>{sb(r.status).label}</span>
-                      </div>
-                    </div>
-                  );
-                })}</div>}
-              {formReminders.length > 0 && (
-                <div className="mt-2">
-                  <FormField label="Catatan Reminder (Opsional)">
-                    <textarea value={reminderNotes} onChange={e => setReminderNotes(e.target.value)} rows={2} className={`${inpCls} resize-none`} style={inp} placeholder="Kendala, hasil, info tambahan..." />
-                  </FormField>
-                </div>
-              )}
-            </div>
-
-            {/* Auto: Ticket */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">🎫 Ticket Auto ({formTickets.length})</span>
-                <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9' }}>Auto-insert</span>
-              </div>
-              {formLoading ? <div className="flex items-center gap-2 text-xs text-slate-400 py-3"><div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />Memuat...</div>
-                : formTickets.length === 0 ? <p className="text-xs text-slate-400 py-2 italic">Tidak ada ticket pada tanggal ini</p>
-                : <div className="space-y-2">{formTickets.map((t, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(251,113,133,0.05)', border: '1px solid rgba(251,113,133,0.2)' }}>
-                    <span className="text-base flex-shrink-0">🔧</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-slate-800 truncate">{t.project_name}</p>
-                      <p className="text-[11px] text-rose-500 font-semibold">{t.issue_case}</p>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {t.log_time && <span className="text-[11px] font-bold text-red-500">{t.log_time}</span>}
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: sb(t.new_status).bg, color: sb(t.new_status).color }}>{sb(t.new_status).label}</span>
-                    </div>
-                  </div>
-                ))}</div>}
-            </div>
+            )}
 
             {/* Manual activities */}
             <div>
@@ -848,8 +777,6 @@ export default function DailyReportPage() {
   };
 
   // ── MAIN LIST VIEW ────────────────────────────────────────────────────────────
-  const PIE_COLORS = ['#dc2626','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#0ea5e9','#14b8a6'];
-
   return (
     <PW>
       {/* ── Header identik reminder-schedule ── */}
@@ -900,86 +827,21 @@ export default function DailyReportPage() {
 
         {/* ── Charts row ── */}
         <div className="grid grid-cols-3 gap-4">
-          {/* Kegiatan/Kategori */}
-          <div style={card}>
-            <div style={cardHdr}>
-              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">🖥️ Kegiatan / Kategori</span>
-            </div>
-            <div className="px-5 py-4 flex items-center gap-4">
-              <div className="relative flex-shrink-0" style={{ width: 80, height: 80 }}>
-                <DonutChart data={catCounts.map(c => ({ value: c.cnt, color: c.color }))} total={stats.total} cx={40} cy={40} r={30} sw={9} />
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-base font-black text-slate-800">{stats.total}</span>
-                  <span className="text-[9px] text-slate-400 font-bold">TOTAL</span>
-                </div>
-              </div>
-              <div className="flex-1 space-y-1 overflow-y-auto" style={{ maxHeight: 100 }}>
-                {catCounts.map(({ cat, cnt, color }) => (
-                  <div key={cat} className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
-                      <span className="text-[11px] text-slate-600 truncate">{cat}</span>
-                    </div>
-                    <span className="text-[11px] font-bold text-slate-800 flex-shrink-0">{cnt}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Team PTS Handler */}
-          <div style={card}>
-            <div style={cardHdr}>
-              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">👥 Team PTS</span>
-            </div>
-            <div className="px-5 py-4 flex items-center gap-4">
-              <div className="relative flex-shrink-0" style={{ width: 80, height: 80 }}>
-                <DonutChart data={handlerCounts.map((h, i) => ({ value: h.cnt, color: PIE_COLORS[i % PIE_COLORS.length] }))} total={stats.total} cx={40} cy={40} r={30} sw={9} />
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-base font-black text-slate-800">{stats.total}</span>
-                  <span className="text-[9px] text-slate-400 font-bold">TOTAL</span>
-                </div>
-              </div>
-              <div className="flex-1 space-y-1 overflow-y-auto" style={{ maxHeight: 100 }}>
-                {handlerCounts.map(({ name, cnt }, i) => (
-                  <div key={name} className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                      <span className="text-[11px] text-slate-600 truncate">{name || '-'}</span>
-                    </div>
-                    <span className="text-[11px] font-bold text-slate-800 flex-shrink-0">{cnt}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Divisi Sales */}
-          <div style={card}>
-            <div style={cardHdr}>
-              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">👔 Divisi Sales</span>
-            </div>
-            <div className="px-5 py-4 flex items-center gap-4">
-              <div className="relative flex-shrink-0" style={{ width: 80, height: 80 }}>
-                <DonutChart data={salesCounts.map((s, i) => ({ value: s.cnt, color: PIE_COLORS[(i + 3) % PIE_COLORS.length] }))} total={salesCounts.reduce((a, s) => a + s.cnt, 0)} cx={40} cy={40} r={30} sw={9} />
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-base font-black text-slate-800">{salesCounts.reduce((a, s) => a + s.cnt, 0)}</span>
-                  <span className="text-[9px] text-slate-400 font-bold">TOTAL</span>
-                </div>
-              </div>
-              <div className="flex-1 space-y-1 overflow-y-auto" style={{ maxHeight: 100 }}>
-                {salesCounts.map(({ div, cnt }, i) => (
-                  <div key={div} className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[(i + 3) % PIE_COLORS.length] }} />
-                      <span className="text-[11px] text-slate-600 truncate">{div}</span>
-                    </div>
-                    <span className="text-[11px] font-bold text-slate-800 flex-shrink-0">{cnt}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <MiniPieChart
+            data={catPieData} title="Kegiatan / Kategori" icon="🖥️"
+            activeFilter={filterCategory}
+            onSliceClick={label => setFilterCategory(filterCategory === label ? null : label)}
+          />
+          <MiniPieChart
+            data={handlerPieData} title="Team PTS" icon="👥"
+            activeFilter={filterHandler}
+            onSliceClick={label => setFilterHandler(filterHandler === label ? null : label)}
+          />
+          <MiniPieChart
+            data={divisionPieData} title="Divisi Sales" icon="👔"
+            activeFilter={filterDivision}
+            onSliceClick={label => setFilterDivision(filterDivision === label ? null : label)}
+          />
         </div>
 
         {/* ── Schedule/Activity List ── */}
@@ -991,6 +853,33 @@ export default function DailyReportPage() {
               {liveLoading && <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />}
             </div>
           </div>
+
+          {/* Active filter chips from pie charts */}
+          {(filterCategory || filterHandler || filterDivision) && (
+            <div className="px-5 pt-3 flex flex-wrap gap-2">
+              {filterCategory && (
+                <button onClick={() => setFilterCategory(null)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80"
+                  style={{ background: '#7c3aed' }}>
+                  🏷️ {filterCategory} ✕
+                </button>
+              )}
+              {filterHandler && (
+                <button onClick={() => setFilterHandler(null)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80"
+                  style={{ background: '#0ea5e9' }}>
+                  👥 {filterHandler} ✕
+                </button>
+              )}
+              {filterDivision && (
+                <button onClick={() => setFilterDivision(null)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80"
+                  style={{ background: '#10b981' }}>
+                  👔 {filterDivision} ✕
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Search + filter bar identik reminder-schedule */}
           <div className="px-5 py-3 flex flex-wrap gap-2 border-b border-gray-100">
