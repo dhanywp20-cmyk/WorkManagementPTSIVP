@@ -77,15 +77,18 @@ function emptyTeamEntry(m: TeamUser): TeamEntry {
 }
 
 // ─── Donut chart mini ─────────────────────────────────────────────────────────
-function DonutChart({ data, total, cx = 50, cy = 50, r = 38 }: {
-  data: { value: number; color: string }[]; total: number; cx?: number; cy?: number; r?: number;
+function DonutChart({ data, total, cx = 50, cy = 50, r = 38, sw = 10 }: {
+  data: { value: number; color: string }[]; total: number; cx?: number; cy?: number; r?: number; sw?: number;
 }) {
   let angle = -90;
-  const slices = data.filter(d => d.value > 0).map(d => {
+  const gap = 2;
+  const filtered = data.filter(d => d.value > 0);
+  const slices = filtered.map(d => {
     const pct = d.value / Math.max(total, 1);
+    const sweep = Math.max(pct * 360 - (filtered.length > 1 ? gap : 0), 0.5);
     const start = angle;
     angle += pct * 360;
-    return { ...d, start, end: angle };
+    return { ...d, start, end: start + sweep };
   });
   const arc = (s: number, e: number, ri: number) => {
     const sa = (s * Math.PI) / 180, ea = (e * Math.PI) / 180;
@@ -96,13 +99,14 @@ function DonutChart({ data, total, cx = 50, cy = 50, r = 38 }: {
   };
   if (total === 0) return (
     <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }}>
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#e2e8f0" strokeWidth="12" />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#e2e8f0" strokeWidth={sw} />
     </svg>
   );
   return (
     <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }}>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#f1f5f9" strokeWidth={sw} />
       {slices.map((s, i) => (
-        <path key={i} d={arc(s.start, s.end, r)} fill="none" stroke={s.color} strokeWidth="12" strokeLinecap="butt" />
+        <path key={i} d={arc(s.start, s.end, r)} fill="none" stroke={s.color} strokeWidth={sw} strokeLinecap="round" />
       ))}
     </svg>
   );
@@ -849,21 +853,25 @@ export default function DailyReportPage() {
   return (
     <PW>
       {/* ── Header identik reminder-schedule ── */}
-      <div className="sticky top-0 z-30 backdrop-blur-md border-b border-white/10" style={{ background: 'rgba(15,15,35,0.9)' }}>
-        <div className="max-w-7xl mx-auto px-5 py-3.5 flex items-center justify-between gap-3">
+      <div className="sticky top-0 z-30" style={{ background: 'rgba(255,255,255,0.97)', borderBottom: '1px solid rgba(220,38,38,0.12)', backdropFilter: 'blur(12px)', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+        <div className="max-w-7xl mx-auto px-5 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-lg" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>📋</div>
-            <div><h1 className="text-sm font-black text-white tracking-wide">Daily Report</h1><p className="text-white/40 text-[10px]">PTS IVP &amp; MLDS</p></div>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-xl shadow-lg" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 4px 12px rgba(220,38,38,0.35)' }}>📋</div>
+            <div>
+              <h1 className="text-base font-black tracking-wide" style={{ color: '#dc2626' }}>Daily Report</h1>
+              <p className="text-[10px] font-semibold text-slate-400">PTS IVP &amp; MLDS</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => { loadLiveData(); loadReports(); }} disabled={liveLoading}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-white border border-white/20 hover:bg-white/10 transition-all">
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all"
+              style={{ background: 'white', border: '1.5px solid rgba(0,0,0,0.1)', color: '#475569' }}>
               <svg className={`w-3.5 h-3.5 ${liveLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
               Refresh
             </button>
             <button onClick={openNewForm}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-sm text-white hover:scale-[1.02] transition-all"
-              style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 2px 12px rgba(220,38,38,0.4)' }}>
+              style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 4px 14px rgba(220,38,38,0.4)' }}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
               + Tambah Report
             </button>
@@ -899,7 +907,7 @@ export default function DailyReportPage() {
             </div>
             <div className="px-5 py-4 flex items-center gap-4">
               <div className="relative flex-shrink-0" style={{ width: 80, height: 80 }}>
-                <DonutChart data={catCounts.map(c => ({ value: c.cnt, color: c.color }))} total={stats.total} cx={40} cy={40} r={30} />
+                <DonutChart data={catCounts.map(c => ({ value: c.cnt, color: c.color }))} total={stats.total} cx={40} cy={40} r={30} sw={9} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-base font-black text-slate-800">{stats.total}</span>
                   <span className="text-[9px] text-slate-400 font-bold">TOTAL</span>
@@ -926,7 +934,7 @@ export default function DailyReportPage() {
             </div>
             <div className="px-5 py-4 flex items-center gap-4">
               <div className="relative flex-shrink-0" style={{ width: 80, height: 80 }}>
-                <DonutChart data={handlerCounts.map((h, i) => ({ value: h.cnt, color: PIE_COLORS[i % PIE_COLORS.length] }))} total={stats.total} cx={40} cy={40} r={30} />
+                <DonutChart data={handlerCounts.map((h, i) => ({ value: h.cnt, color: PIE_COLORS[i % PIE_COLORS.length] }))} total={stats.total} cx={40} cy={40} r={30} sw={9} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-base font-black text-slate-800">{stats.total}</span>
                   <span className="text-[9px] text-slate-400 font-bold">TOTAL</span>
@@ -953,7 +961,7 @@ export default function DailyReportPage() {
             </div>
             <div className="px-5 py-4 flex items-center gap-4">
               <div className="relative flex-shrink-0" style={{ width: 80, height: 80 }}>
-                <DonutChart data={salesCounts.map((s, i) => ({ value: s.cnt, color: PIE_COLORS[(i + 3) % PIE_COLORS.length] }))} total={salesCounts.reduce((a, s) => a + s.cnt, 0)} cx={40} cy={40} r={30} />
+                <DonutChart data={salesCounts.map((s, i) => ({ value: s.cnt, color: PIE_COLORS[(i + 3) % PIE_COLORS.length] }))} total={salesCounts.reduce((a, s) => a + s.cnt, 0)} cx={40} cy={40} r={30} sw={9} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-base font-black text-slate-800">{salesCounts.reduce((a, s) => a + s.cnt, 0)}</span>
                   <span className="text-[9px] text-slate-400 font-bold">TOTAL</span>
