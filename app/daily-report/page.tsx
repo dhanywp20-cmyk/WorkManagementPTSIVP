@@ -1,117 +1,137 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 
 import {
-  CATEGORIES, CATEGORY_CONFIG, SALES_DIVISIONS,
+  CATEGORIES, CATEGORY_CONFIG,
   formatDate,
   type TeamUser, type GuestUser,
 } from '@/app/reminder-schedule/_components/shared';
 
 import {
   todayISO, formatLogTime,
+  fetchAllReminders, fetchAllTickets,
   fetchReminderActivities, fetchTicketActivities,
   fetchExistingReport, fetchReports,
   saveReport, saveTeamEntries,
   type ReminderActivity, type TicketActivity,
   type ManualActivity, type TeamEntry,
-  type DailyReport, type DailyReportTeamEntry,
+  type DailyReport,
 } from './_components/shared';
 
 import {
-  FormField, SectionHeaderSmall,
-  LoadingScreen,
+  FormField, SectionHeaderSmall, LoadingScreen,
 } from '@/components/shared';
 
-// ─── Style helpers (identik reminder-schedule) ─────────────────────────────────
-const inputStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.95)',
-  border: '1.5px solid rgba(0,0,0,0.12)',
-  borderRadius: '12px',
-  color: '#1e293b',
-  fontSize: '14px',
-  padding: '10px 14px',
-  width: '100%',
-  outline: 'none',
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const inp: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.95)', border: '1.5px solid rgba(0,0,0,0.12)',
+  borderRadius: '12px', color: '#1e293b', fontSize: '14px',
+  padding: '10px 14px', width: '100%', outline: 'none',
 };
-const inputCls = 'transition-all focus:ring-2 focus:ring-red-300';
+const inpCls = 'transition-all focus:ring-2 focus:ring-red-300';
 
-const cardStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.95)',
-  borderRadius: '16px',
-  boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-  border: '1px solid rgba(255,255,255,0.8)',
+const card: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.97)', borderRadius: '16px',
+  boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: '1px solid rgba(255,255,255,0.8)',
   overflow: 'hidden',
 };
-
-const cardHeaderStyle: React.CSSProperties = {
-  padding: '14px 20px',
-  borderBottom: '1px solid rgba(0,0,0,0.06)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
+const cardHdr: React.CSSProperties = {
+  padding: '14px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)',
+  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+};
+const TH: React.CSSProperties = {
+  padding: '10px 14px', textAlign: 'left' as const, fontSize: '11px',
+  fontWeight: 700, color: '#64748b', textTransform: 'uppercase' as const,
+  letterSpacing: '0.06em', whiteSpace: 'nowrap' as const,
+  background: 'rgba(248,250,252,0.97)', borderBottom: '2px solid rgba(0,0,0,0.07)',
+};
+const TD: React.CSSProperties = {
+  padding: '11px 14px', fontSize: '13px', color: '#1e293b',
+  verticalAlign: 'middle' as const, borderBottom: '1px solid rgba(0,0,0,0.04)',
 };
 
-// ─── Table styles identik reminder-schedule ────────────────────────────────────
-const thStyle: React.CSSProperties = {
-  padding: '10px 14px',
-  textAlign: 'left' as const,
-  fontSize: '11px',
-  fontWeight: 700,
-  color: '#64748b',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.06em',
-  whiteSpace: 'nowrap' as const,
-  background: 'rgba(248,250,252,0.95)',
-  borderBottom: '2px solid rgba(0,0,0,0.07)',
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const SB: Record<string, { label: string; bg: string; color: string; border: string }> = {
+  done:          { label: 'Selesai',  bg: '#d1fae5', color: '#065f46', border: '#10b981' },
+  completed:     { label: 'Selesai',  bg: '#d1fae5', color: '#065f46', border: '#10b981' },
+  pending:       { label: 'Pending',  bg: '#fef3c7', color: '#92400e', border: '#f59e0b' },
+  cancelled:     { label: 'Batal',    bg: '#fee2e2', color: '#991b1b', border: '#ef4444' },
+  'in progress': { label: 'Proses',   bg: '#dbeafe', color: '#1e40af', border: '#3b82f6' },
+  manual:        { label: 'Manual',   bg: '#fef3c7', color: '#b45309', border: '#f59e0b' },
 };
+const sb = (s: string) => SB[s?.toLowerCase()] ?? { label: s || '-', bg: '#f3f4f6', color: '#374151', border: '#6b7280' };
 
-const tdStyle: React.CSSProperties = {
-  padding: '12px 14px',
-  fontSize: '13px',
-  color: '#1e293b',
-  verticalAlign: 'middle' as const,
-  borderBottom: '1px solid rgba(0,0,0,0.04)',
-};
+const AVC = ['#7c3aed','#0ea5e9','#10b981','#f59e0b','#e11d48','#6366f1','#0d9488','#db2777'];
+const avc = (n: string) => AVC[(n?.charCodeAt(0) ?? 0) % AVC.length];
+const ini = (n: string) => (n || 'U').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
 
 function newManualKey() { return `m_${Date.now()}_${Math.random().toString(36).slice(2)}`; }
 function newTeamKey()   { return `t_${Date.now()}_${Math.random().toString(36).slice(2)}`; }
-
-function emptyManual(currentUsername = ''): ManualActivity {
-  return { _key: newManualKey(), category: 'Internal', project_name: '', address: '', description: '', sales_name: '', sales_division: '', pic_name: '', pic_phone: '', submitted_by: currentUsername };
+function emptyManual(u = ''): ManualActivity {
+  return { _key: newManualKey(), category: 'Internal', project_name: '', address: '', description: '', sales_name: '', sales_division: '', pic_name: '', pic_phone: '', submitted_by: u };
 }
-function emptyTeamEntry(member: TeamUser): TeamEntry {
-  return { _key: newTeamKey(), member_user_id: member.id, member_name: member.full_name, category: 'Internal', project_name: '', address: '', sales_name: '', sales_division: member.sales_division ?? '', supervisor_notes: '' };
-}
-
-const STATUS_BADGE: Record<string, { label: string; bg: string; color: string; border: string }> = {
-  done:          { label: 'Selesai',   bg: '#d1fae5', color: '#065f46', border: '#10b981' },
-  completed:     { label: 'Selesai',   bg: '#d1fae5', color: '#065f46', border: '#10b981' },
-  pending:       { label: 'Pending',   bg: '#fef3c7', color: '#92400e', border: '#f59e0b' },
-  cancelled:     { label: 'Batal',     bg: '#f3f4f6', color: '#374151', border: '#6b7280' },
-  'in progress': { label: 'Proses',    bg: '#dbeafe', color: '#1e40af', border: '#3b82f6' },
-};
-function statusBadge(s: string) {
-  return STATUS_BADGE[s?.toLowerCase()] ?? { label: s || '-', bg: '#f3f4f6', color: '#374151', border: '#6b7280' };
+function emptyTeamEntry(m: TeamUser): TeamEntry {
+  return { _key: newTeamKey(), member_user_id: m.id, member_name: m.full_name, category: 'Internal', project_name: '', address: '', sales_name: '', sales_division: m.sales_division ?? '', supervisor_notes: '' };
 }
 
-const AV_COLORS = ['#7c3aed','#0ea5e9','#10b981','#f59e0b','#e11d48','#6366f1'];
-function avatarColor(name: string) { return AV_COLORS[(name?.charCodeAt(0) ?? 0) % AV_COLORS.length]; }
-function initials(name: string) { return (name || 'U').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase(); }
+// ─── Donut chart mini ─────────────────────────────────────────────────────────
+function DonutChart({ data, total, cx = 50, cy = 50, r = 38 }: {
+  data: { value: number; color: string }[]; total: number; cx?: number; cy?: number; r?: number;
+}) {
+  let angle = -90;
+  const slices = data.filter(d => d.value > 0).map(d => {
+    const pct = d.value / Math.max(total, 1);
+    const start = angle;
+    angle += pct * 360;
+    return { ...d, start, end: angle };
+  });
+  const arc = (s: number, e: number, ri: number) => {
+    const sa = (s * Math.PI) / 180, ea = (e * Math.PI) / 180;
+    const x1 = cx + ri * Math.cos(sa), y1 = cy + ri * Math.sin(sa);
+    const x2 = cx + ri * Math.cos(ea), y2 = cy + ri * Math.sin(ea);
+    const lg = e - s > 180 ? 1 : 0;
+    return `M ${x1} ${y1} A ${ri} ${ri} 0 ${lg} 1 ${x2} ${y2}`;
+  };
+  if (total === 0) return (
+    <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }}>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#e2e8f0" strokeWidth="12" />
+    </svg>
+  );
+  return (
+    <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }}>
+      {slices.map((s, i) => (
+        <path key={i} d={arc(s.start, s.end, r)} fill="none" stroke={s.color} strokeWidth="12" strokeLinecap="butt" />
+      ))}
+    </svg>
+  );
+}
 
-// ─── Category picker ───────────────────────────────────────────────────────────
-function CategoryPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+// ─── PageWrapper ──────────────────────────────────────────────────────────────
+function PW({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen flex flex-col relative" style={{
+      backgroundImage: `url('/IVP_Background.png')`,
+      backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
+    }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(10,10,30,0.52)' }} />
+      <div className="relative z-10 flex flex-col min-h-screen">{children}</div>
+    </div>
+  );
+}
+
+// ─── Category picker ──────────────────────────────────────────────────────────
+function CatPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div className="grid grid-cols-2 gap-2">
       {CATEGORIES.map(cat => {
-        const c = CATEGORY_CONFIG[cat];
-        const sel = value === cat;
+        const c = CATEGORY_CONFIG[cat]; const sel = value === cat;
         return (
           <button key={cat} type="button" onClick={() => onChange(cat)}
-            className="flex items-center gap-2 px-3 py-3 rounded-xl border-2 text-left transition-all"
+            className="flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-left transition-all"
             style={sel ? { borderColor: c.accent, background: c.bg, color: c.color } : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }}>
-            <span className="text-xl">{c.icon}</span>
+            <span className="text-lg">{c.icon}</span>
             <span className="text-xs font-bold leading-tight flex-1">{cat}</span>
             {sel && <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
           </button>
@@ -121,272 +141,57 @@ function CategoryPicker({ value, onChange }: { value: string; onChange: (v: stri
   );
 }
 
-// ─── Sales dropdown ────────────────────────────────────────────────────────────
-function SalesDropdown({ value, division, guestUsers, onChange }: { value: string; division: string; guestUsers: GuestUser[]; onChange: (name: string, div: string) => void }) {
+// ─── Sales Dropdown ───────────────────────────────────────────────────────────
+function SalesDrop({ value, division, guests, onChange }: { value: string; division: string; guests: GuestUser[]; onChange: (n: string, d: string) => void }) {
   const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const filtered = guestUsers.filter(u => !search.trim() || u.full_name.toLowerCase().includes(search.toLowerCase()) || u.username.toLowerCase().includes(search.toLowerCase()) || (u.sales_division ?? '').toLowerCase().includes(search.toLowerCase()));
+  const [q, setQ] = useState('');
+  const fil = guests.filter(u => !q.trim() || u.full_name.toLowerCase().includes(q.toLowerCase()) || (u.sales_division ?? '').toLowerCase().includes(q.toLowerCase()));
   return (
     <div className="relative">
-      <div className="w-full rounded-xl px-4 py-3 text-sm flex items-center justify-between cursor-pointer transition-all"
-        style={{ ...inputStyle, borderColor: open ? 'rgba(220,38,38,0.5)' : 'rgba(0,0,0,0.12)' }}
-        onClick={() => { setOpen(o => !o); if (!open) setSearch(''); }}>
+      <div className="w-full rounded-xl px-4 py-3 text-sm flex items-center justify-between cursor-pointer"
+        style={{ ...inp, borderColor: open ? 'rgba(220,38,38,0.5)' : 'rgba(0,0,0,0.12)' }}
+        onClick={() => { setOpen(o => !o); if (!open) setQ(''); }}>
         {value ? <span className="font-semibold text-slate-800">{value}{division && <span className="font-normal text-red-400"> · {division}</span>}</span> : <span className="text-slate-400">-- Pilih Sales --</span>}
-        <svg className={`w-4 h-4 flex-shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+        <svg className={`w-4 h-4 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
       </div>
       {open && (
         <>
           <div className="absolute z-50 mt-1 w-full rounded-xl shadow-xl overflow-hidden" style={{ background: 'white', border: '1.5px solid rgba(220,38,38,0.25)', maxHeight: '240px' }}>
             <div className="p-2 border-b" style={{ borderColor: 'rgba(220,38,38,0.1)' }}>
-              <input autoFocus type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari nama sales..." onClick={e => e.stopPropagation()}
-                className="w-full pl-3 pr-3 py-2 rounded-lg text-sm outline-none" style={{ background: 'rgba(220,38,38,0.04)', border: '1px solid rgba(220,38,38,0.15)', color: '#1e293b' }} />
+              <input autoFocus type="text" value={q} onChange={e => setQ(e.target.value)} placeholder="Cari sales..." onClick={e => e.stopPropagation()}
+                className="w-full px-3 py-2 rounded-lg text-sm outline-none" style={{ background: 'rgba(220,38,38,0.04)', border: '1px solid rgba(220,38,38,0.15)', color: '#1e293b' }} />
             </div>
             <div className="overflow-y-auto" style={{ maxHeight: '180px' }}>
-              <div className="px-4 py-2.5 text-sm cursor-pointer hover:bg-red-50 text-slate-400 italic" onClick={() => { onChange('', ''); setOpen(false); setSearch(''); }}>-- Pilih Sales --</div>
-              {filtered.map(u => (
-                <div key={u.id} className="px-4 py-2.5 cursor-pointer transition-colors flex items-center justify-between gap-2"
+              <div className="px-4 py-2.5 text-sm cursor-pointer hover:bg-red-50 text-slate-400 italic" onClick={() => { onChange('', ''); setOpen(false); }}>-- Kosongkan --</div>
+              {fil.map(u => (
+                <div key={u.id} className="px-4 py-2.5 cursor-pointer flex items-center justify-between"
                   style={{ background: value === u.full_name ? 'rgba(220,38,38,0.07)' : undefined, borderLeft: value === u.full_name ? '3px solid #dc2626' : '3px solid transparent' }}
-                  onClick={() => { onChange(u.full_name, u.sales_division ?? ''); setOpen(false); setSearch(''); }}>
-                  <div><p className="text-sm font-semibold text-slate-800">{u.full_name}</p><p className="text-xs text-red-400">@{u.username}{u.sales_division ? ` · ${u.sales_division}` : ''}</p></div>
-                  {value === u.full_name && <span className="text-red-500">✓</span>}
+                  onClick={() => { onChange(u.full_name, u.sales_division ?? ''); setOpen(false); setQ(''); }}>
+                  <div><p className="text-sm font-semibold text-slate-800">{u.full_name}</p><p className="text-xs text-red-400">{u.sales_division}</p></div>
+                  {value === u.full_name && <span className="text-red-500 text-xs">✓</span>}
                 </div>
               ))}
-              {search.trim() && filtered.length === 0 && <div className="px-4 py-4 text-center text-xs text-gray-400">Tidak ada sales ditemukan</div>}
             </div>
           </div>
-          <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); setSearch(''); }} />
+          <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); setQ(''); }} />
         </>
       )}
     </div>
   );
 }
 
-// ─── PageWrapper identik reminder-schedule ────────────────────────────────────
-function PageWrapper({ children }: { children: React.ReactNode }) {
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function Toast({ t }: { t: { type: 'success' | 'error'; msg: string } | null }) {
+  if (!t) return null;
   return (
-    <div className="min-h-screen flex flex-col relative" style={{
-      backgroundImage: `url('/IVP_Background.png')`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundAttachment: 'fixed',
-    }}>
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(10,10,30,0.55)' }} />
-      <div className="relative z-10 flex flex-col min-h-screen">
-        {children}
-      </div>
+    <div className="fixed top-5 right-5 z-[300] px-5 py-3.5 rounded-xl shadow-2xl text-sm font-bold flex items-center gap-2 text-white"
+      style={{ background: t.type === 'success' ? '#059669' : '#dc2626' }}>
+      {t.type === 'success' ? '✅' : '❌'} {t.msg}
     </div>
   );
 }
 
-// ─── Helper: flatten semua aktivitas 1 report jadi flat rows untuk tabel ───────
-interface FlatRow {
-  source: 'reminder' | 'ticket' | 'manual';
-  project_name: string;
-  address: string;
-  product: string;
-  kegiatan_label: string;
-  kegiatan_icon: string;
-  sales_name: string;
-  sales_division: string;
-  handler_name: string;   // user_name dari report
-  status: string;
-  tanggal: string;        // due_time / log_time / '-'
-  category: string;
-}
-
-function flattenReport(r: DailyReport): FlatRow[] {
-  const rows: FlatRow[] = [];
-
-  // Reminder activities
-  r.reminder_activities.forEach(a => {
-    rows.push({
-      source: 'reminder',
-      project_name: a.project_name || a.title || '-',
-      address: a.address || '',
-      product: a.product || '',
-      kegiatan_label: a.title || 'Reminder',
-      kegiatan_icon: '🔔',
-      sales_name: a.sales_name || '',
-      sales_division: a.sales_division || '',
-      handler_name: r.user_name,
-      status: a.status || 'pending',
-      tanggal: a.due_time || '-',
-      category: a.category || 'Internal',
-    });
-  });
-
-  // Ticket activities
-  r.ticket_activities.forEach(a => {
-    rows.push({
-      source: 'ticket',
-      project_name: a.project_name || '-',
-      address: a.address || '',
-      product: '',
-      kegiatan_label: a.issue_case || 'Troubleshooting',
-      kegiatan_icon: '🔧',
-      sales_name: a.sales_name || '',
-      sales_division: a.sales_division || '',
-      handler_name: r.user_name,
-      status: a.new_status || '-',
-      tanggal: a.log_time || '-',
-      category: 'Troubleshooting',
-    });
-  });
-
-  // Manual activities
-  r.manual_activities.forEach(a => {
-    rows.push({
-      source: 'manual',
-      project_name: a.project_name || '-',
-      address: a.address || '',
-      product: '',
-      kegiatan_label: a.description || a.category || 'Kegiatan Manual',
-      kegiatan_icon: '✍️',
-      sales_name: a.sales_name || '',
-      sales_division: a.sales_division || '',
-      handler_name: r.user_name,
-      status: 'manual',
-      tanggal: '-',
-      category: a.category || 'Internal',
-    });
-  });
-
-  return rows;
-}
-
-// ─── Tabel Reminder di form/detail ────────────────────────────────────────────
-function ReminderTable({ activities }: { activities: ReminderActivity[] }) {
-  if (activities.length === 0) return (
-    <div className="text-center py-8 text-slate-400">
-      <div className="text-3xl mb-2">🔔</div>
-      <p className="text-sm">Tidak ada jadwal reminder pada tanggal ini</p>
-    </div>
-  );
-  return (
-    <div className="overflow-x-auto">
-      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '780px' }}>
-        <thead>
-          <tr>
-            <th style={{ ...thStyle, width: '36px' }}>NO</th>
-            <th style={thStyle}>PROJECT</th>
-            <th style={thStyle}>PRODUCT</th>
-            <th style={thStyle}>KEGIATAN</th>
-            <th style={thStyle}>SALES</th>
-            <th style={thStyle}>STATUS</th>
-            <th style={thStyle}>WAKTU</th>
-          </tr>
-        </thead>
-        <tbody>
-          {activities.map((r, i) => {
-            const c = CATEGORY_CONFIG[r.category] ?? CATEGORY_CONFIG['Internal'];
-            const sb = statusBadge(r.status);
-            return (
-              <tr key={r.reminder_id ?? i} style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.6)' : 'rgba(248,250,252,0.5)' }}>
-                <td style={{ ...tdStyle, color: '#94a3b8', fontSize: '12px', textAlign: 'center' }}>{i + 1}</td>
-                <td style={tdStyle}>
-                  <p className="font-semibold text-slate-800 text-sm leading-tight">{r.project_name || r.title || '-'}</p>
-                  {r.address && <p className="text-[11px] text-slate-400 mt-0.5">📍 {r.address}</p>}
-                </td>
-                <td style={tdStyle}>
-                  {r.product
-                    ? <span className="text-xs font-semibold text-violet-700 bg-violet-50 border border-violet-200 px-2 py-1 rounded-lg">{r.product}</span>
-                    : <span className="text-slate-300 text-xs">—</span>}
-                </td>
-                <td style={tdStyle}>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold"
-                    style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}>
-                    {c.icon} {r.category}
-                  </span>
-                  {r.description && <p className="text-[11px] text-slate-400 mt-1 italic">{r.description}</p>}
-                </td>
-                <td style={tdStyle}>
-                  {r.sales_name
-                    ? <div><p className="text-xs font-semibold text-slate-700">{r.sales_name}</p>{r.sales_division && <p className="text-[10px] text-slate-400">{r.sales_division}</p>}</div>
-                    : <span className="text-slate-300">—</span>}
-                </td>
-                <td style={tdStyle}>
-                  <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-bold"
-                    style={{ background: sb.bg, color: sb.color, border: `1px solid ${sb.border}` }}>
-                    {sb.label}
-                  </span>
-                </td>
-                <td style={{ ...tdStyle, fontWeight: 600, color: '#dc2626', whiteSpace: 'nowrap' as const }}>
-                  {r.due_time || '—'}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-// ─── Tabel Ticket di form/detail ──────────────────────────────────────────────
-function TicketTable({ activities }: { activities: TicketActivity[] }) {
-  if (activities.length === 0) return (
-    <div className="text-center py-8 text-slate-400">
-      <div className="text-3xl mb-2">🎫</div>
-      <p className="text-sm">Tidak ada ticket pada tanggal ini</p>
-    </div>
-  );
-  return (
-    <div className="overflow-x-auto">
-      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '780px' }}>
-        <thead>
-          <tr>
-            <th style={{ ...thStyle, width: '36px' }}>NO</th>
-            <th style={thStyle}>PROJECT</th>
-            <th style={thStyle}>PRODUCT / MASALAH</th>
-            <th style={thStyle}>KEGIATAN</th>
-            <th style={thStyle}>SALES</th>
-            <th style={thStyle}>STATUS</th>
-            <th style={thStyle}>JAM</th>
-          </tr>
-        </thead>
-        <tbody>
-          {activities.map((t, i) => {
-            const sb = statusBadge(t.new_status);
-            return (
-              <tr key={t.ticket_id ?? i} style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.6)' : 'rgba(248,250,252,0.5)' }}>
-                <td style={{ ...tdStyle, color: '#94a3b8', fontSize: '12px', textAlign: 'center' }}>{i + 1}</td>
-                <td style={tdStyle}>
-                  <p className="font-semibold text-slate-800 text-sm leading-tight">{t.project_name}</p>
-                  {t.address && <p className="text-[11px] text-slate-400 mt-0.5">📍 {t.address}</p>}
-                </td>
-                <td style={tdStyle}>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold"
-                    style={{ background: 'rgba(251,113,133,0.1)', color: '#be185d', border: '1px solid rgba(251,113,133,0.3)' }}>
-                    🔧 {t.issue_case}
-                  </span>
-                </td>
-                <td style={tdStyle}>
-                  <p className="text-xs text-slate-600 leading-relaxed">{t.action_taken || '—'}</p>
-                </td>
-                <td style={tdStyle}>
-                  {t.sales_name
-                    ? <div><p className="text-xs font-semibold text-slate-700">{t.sales_name}</p>{t.sales_division && <p className="text-[10px] text-slate-400">{t.sales_division}</p>}</div>
-                    : <span className="text-slate-300">—</span>}
-                </td>
-                <td style={tdStyle}>
-                  <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-bold"
-                    style={{ background: sb.bg, color: sb.color, border: `1px solid ${sb.border}` }}>
-                    {sb.label}
-                  </span>
-                </td>
-                <td style={{ ...tdStyle, fontWeight: 600, color: '#dc2626', whiteSpace: 'nowrap' as const }}>
-                  {t.log_time || '—'}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-// ─── MAIN COMPONENT ────────────────────────────────────────────────────────────
+// ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function DailyReportPage() {
   const [appReady, setAppReady]       = useState(false);
   const [isLoggedIn, setIsLoggedIn]   = useState(false);
@@ -396,187 +201,303 @@ export default function DailyReportPage() {
   const [teamUsers, setTeamUsers]     = useState<TeamUser[]>([]);
   const [guestUsers, setGuestUsers]   = useState<GuestUser[]>([]);
 
-  type View = 'list' | 'form' | 'detail';
-  const [view, setView]                 = useState<View>('list');
-  const [detailReport, setDetailReport] = useState<DailyReport | null>(null);
+  // ── Live data (dari reminder + ticket platform, tanpa perlu submit dulu) ──────
+  const [liveReminders, setLiveReminders] = useState<(ReminderActivity & { handler_username?: string; report_date?: string })[]>([]);
+  const [liveTickets, setLiveTickets]     = useState<(TicketActivity & { handler_username?: string; report_date?: string })[]>([]);
+  const [liveLoading, setLiveLoading]     = useState(false);
 
+  // ── Submitted reports ─────────────────────────────────────────────────────────
   const [reports, setReports]         = useState<DailyReport[]>([]);
-  const [listLoading, setListLoading] = useState(false);
+
+  // ── Filter ────────────────────────────────────────────────────────────────────
   const [filterDate, setFilterDate]   = useState('');
   const [filterUser, setFilterUser]   = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
   const [searchProject, setSearchProject] = useState('');
 
+  // ── Form state ────────────────────────────────────────────────────────────────
+  const [formOpen, setFormOpen]       = useState(false);
   const [editingId, setEditingId]     = useState<string | null>(null);
   const [formDate, setFormDate]       = useState(todayISO());
   const [formUserId, setFormUserId]   = useState('');
   const [reminderNotes, setReminderNotes] = useState('');
+  const [formReminders, setFormReminders] = useState<ReminderActivity[]>([]);
+  const [formTickets, setFormTickets]     = useState<TicketActivity[]>([]);
+  const [manualActs, setManualActs]       = useState<ManualActivity[]>([]);
+  const [teamEntries, setTeamEntries]     = useState<TeamEntry[]>([]);
+  const [formLoading, setFormLoading]     = useState(false);
+  const [saving, setSaving]               = useState(false);
 
-  const [reminderActs, setReminderActs] = useState<ReminderActivity[]>([]);
-  const [ticketActs, setTicketActs]     = useState<TicketActivity[]>([]);
-  const [manualActs, setManualActs]     = useState<ManualActivity[]>([]);
-  const [teamEntries, setTeamEntries]   = useState<TeamEntry[]>([]);
+  // ── Modal detail ──────────────────────────────────────────────────────────────
+  const [modalRow, setModalRow]       = useState<any | null>(null);
 
-  const [activitiesLoading, setActivitiesLoading] = useState(false);
-  const [saving, setSaving]           = useState(false);
   const [toast, setToast]             = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+  const notify = (type: 'success' | 'error', msg: string) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3500); };
 
-  const notify = (type: 'success' | 'error', msg: string) => {
-    setToast({ type, msg });
-    setTimeout(() => setToast(null), 3500);
-  };
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
 
-  const Toast = () => toast ? (
-    <div className="fixed top-5 right-5 z-[200] px-5 py-3.5 rounded-xl shadow-2xl text-sm font-bold flex items-center gap-2 text-white"
-      style={{ background: toast.type === 'success' ? '#059669' : '#dc2626' }}>
-      {toast.type === 'success' ? '✅' : '❌'} {toast.msg}
-    </div>
-  ) : null;
-
-  // ── Init ─────────────────────────────────────────────────────────────────────
+  // ── Init ──────────────────────────────────────────────────────────────────────
   useEffect(() => {
     const saved = localStorage.getItem('currentUser');
-    const user = saved ? (JSON.parse(saved) as TeamUser) : null;
+    const user  = saved ? (JSON.parse(saved) as TeamUser) : null;
     if (user) { setCurrentUser(user); setIsLoggedIn(true); }
-    Promise.all([fetchTeamUsersData(), fetchGuestUsersData()]).then(() => setAppReady(true));
-    const checkSession = () => {
-      const savedTime = localStorage.getItem('loginTime');
-      if (!savedTime) return;
-      if (Date.now() - parseInt(savedTime) > 6 * 60 * 60 * 1000) {
-        localStorage.removeItem('currentUser');
-        localStorage.removeItem('loginTime');
-        const t = window.top !== window ? window.top : window;
-        if (t) t.location.href = '/dashboard';
+    Promise.all([loadTeamUsers(), loadGuestUsers()]).then(() => setAppReady(true));
+    // session check
+    const iv = setInterval(() => {
+      const t = localStorage.getItem('loginTime');
+      if (t && Date.now() - parseInt(t) > 6 * 3600 * 1000) {
+        localStorage.removeItem('currentUser'); localStorage.removeItem('loginTime');
+        const w = window.top !== window ? window.top : window;
+        if (w) w.location.href = '/dashboard';
       }
-    };
-    checkSession();
-    const iv = setInterval(checkSession, 60000);
+    }, 60000);
     return () => clearInterval(iv);
   }, []);
 
-  useEffect(() => { if (currentUser) fetchReportList(); }, [currentUser]);
-
-  const fetchTeamUsersData = async () => {
-    const { data } = await supabase
-      .from('users')
-      .select('id,username,full_name,role,team_type,phone_number,sales_division,allowed_menus')
-      .order('full_name');
+  const loadTeamUsers = async () => {
+    const { data } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,allowed_menus').order('full_name');
     if (data) setTeamUsers(data.filter((u: TeamUser) => u.team_type === 'Team PTS'));
   };
-
-  const fetchGuestUsersData = async () => {
-    const { data } = await supabase
-      .from('users')
-      .select('id,username,full_name,role,phone_number,sales_division')
-      .eq('role', 'guest')
-      .order('full_name');
+  const loadGuestUsers = async () => {
+    const { data } = await supabase.from('users').select('id,username,full_name,role,phone_number,sales_division').eq('role', 'guest').order('full_name');
     if (data) setGuestUsers(data as GuestUser[]);
   };
 
-  const fetchReportList = useCallback(async () => {
+  // ── Load live data dari kedua platform ───────────────────────────────────────
+  const loadLiveData = useCallback(async () => {
     if (!currentUser) return;
-    setListLoading(true);
+    setLiveLoading(true);
     try {
-      const data = await fetchReports({
+      const usernames = isAdmin
+        ? teamUsers.map(u => u.username).filter(Boolean)
+        : [currentUser.username];
+
+      const opts = {
         date: filterDate || undefined,
-        userId: filterUser || undefined,
-        isAdmin,
-        currentUserId: currentUser.id,
-      });
+        usernames: filterUser
+          ? [teamUsers.find(u => u.id === filterUser)?.username ?? ''].filter(Boolean)
+          : usernames,
+      };
+
+      const [rem, tick] = await Promise.all([
+        fetchAllReminders(opts),
+        fetchAllTickets(opts),
+      ]);
+      setLiveReminders(rem as any);
+      setLiveTickets(tick as any);
+    } catch (e) { console.error('loadLiveData error:', e); }
+    setLiveLoading(false);
+  }, [currentUser, isAdmin, teamUsers, filterDate, filterUser]);
+
+  // ── Load submitted reports ────────────────────────────────────────────────────
+  const loadReports = useCallback(async () => {
+    if (!currentUser) return;
+    try {
+      const data = await fetchReports({ date: filterDate || undefined, userId: filterUser || undefined, isAdmin, currentUserId: currentUser.id });
       setReports(data);
-    } catch (e) { console.error('fetchReports error:', e); }
-    setTimeout(() => setListLoading(false), 300);
+    } catch (e) { console.error('loadReports error:', e); }
   }, [currentUser, filterDate, filterUser, isAdmin]);
 
-  useEffect(() => { fetchReportList(); }, [fetchReportList]);
-
-  // ── Auto-load activities ─────────────────────────────────────────────────────
-  const loadActivities = useCallback(async (username: string, date: string) => {
-    if (!username || !date) { setReminderActs([]); setTicketActs([]); return; }
-    setActivitiesLoading(true);
-    try {
-      const [rem, tick] = await Promise.all([
-        fetchReminderActivities(username, date),
-        fetchTicketActivities(username, date),
-      ]);
-      setReminderActs(rem);
-      setTicketActs(tick);
-    } catch (e) { console.error('loadActivities error:', e); }
-    setActivitiesLoading(false);
-  }, []);
-
   useEffect(() => {
-    if (view !== 'form') return;
-    const username = isAdmin
-      ? (teamUsers.find(u => u.id === formUserId)?.username ?? '')
-      : (currentUser?.username ?? '');
-    loadActivities(username, formDate);
-  }, [formDate, formUserId, view, teamUsers]);
-
-  // ── Login ────────────────────────────────────────────────────────────────────
-  const handleLogin = async () => {
-    setLoginErr('');
-    const { data, error } = await supabase
-      .from('users').select('*')
-      .eq('username', loginForm.username.trim())
-      .eq('password', loginForm.password)
-      .maybeSingle();
-    if (error || !data) { setLoginErr('Username atau password salah.'); return; }
-    const allowedMenus: string[] = data.allowed_menus ?? [];
-    if (data.role !== 'admin' && data.role !== 'superadmin' && !allowedMenus.includes('daily-report')) {
-      setLoginErr('Akun tidak memiliki akses Daily Report.');
-      return;
+    if (currentUser && teamUsers.length >= 0) {
+      loadLiveData();
+      loadReports();
     }
-    localStorage.setItem('currentUser', JSON.stringify(data));
-    localStorage.setItem('loginTime', String(Date.now()));
-    setCurrentUser(data); setIsLoggedIn(true);
-  };
+  }, [currentUser, teamUsers, filterDate, filterUser]);
 
+  // ── Build flat rows: gabung live data + manual dari submitted reports ──────────
+  interface FlatRow {
+    id: string;
+    source: 'reminder' | 'ticket' | 'manual';
+    report_date: string;
+    project_name: string;
+    address: string;
+    product: string;
+    category: string;
+    kegiatan_icon: string;
+    kegiatan_label: string;
+    sales_name: string;
+    sales_division: string;
+    handler_name: string;
+    handler_username: string;
+    status: string;
+    jam: string;
+    report_id?: string;
+    raw?: any;
+  }
+
+  const allRows = useMemo<FlatRow[]>(() => {
+    const rows: FlatRow[] = [];
+
+    // Reminder — langsung dari platform, tanpa perlu submit
+    liveReminders.forEach(r => {
+      const hr = (r as any).handler_username ?? '';
+      const tu = teamUsers.find(u => u.username === hr);
+      rows.push({
+        id: 'rem_' + r.reminder_id,
+        source: 'reminder',
+        report_date: (r as any).report_date ?? '',
+        project_name: r.project_name || r.title || '-',
+        address: r.address || '',
+        product: r.product || '',
+        category: r.category || 'Internal',
+        kegiatan_icon: '🔔',
+        kegiatan_label: r.category || 'Reminder',
+        sales_name: r.sales_name || '',
+        sales_division: r.sales_division || '',
+        handler_name: tu?.full_name ?? hr,
+        handler_username: hr,
+        status: r.status || 'pending',
+        jam: r.due_time || '-',
+        raw: r,
+      });
+    });
+
+    // Ticket — langsung dari platform
+    liveTickets.forEach(t => {
+      const hu = (t as any).handler_username ?? '';
+      const tu = teamUsers.find(u => u.username === hu);
+      const rd = (t as any).report_date ?? '';
+      rows.push({
+        id: 'tck_' + t.ticket_id,
+        source: 'ticket',
+        report_date: rd,
+        project_name: t.project_name || '-',
+        address: t.address || '',
+        product: '',
+        category: 'Troubleshooting',
+        kegiatan_icon: '🔧',
+        kegiatan_label: t.issue_case || 'Troubleshooting',
+        sales_name: t.sales_name || '',
+        sales_division: t.sales_division || '',
+        handler_name: tu?.full_name ?? hu,
+        handler_username: hu,
+        status: t.new_status || '-',
+        jam: t.log_time || '-',
+        raw: t,
+      });
+    });
+
+    // Manual — dari submitted daily_reports saja
+    reports.forEach(r => {
+      r.manual_activities.forEach((m, idx) => {
+        const tu = teamUsers.find(u => u.id === r.user_id);
+        rows.push({
+          id: `man_${r.id}_${idx}`,
+          source: 'manual',
+          report_date: r.report_date,
+          project_name: m.project_name || '-',
+          address: m.address || '',
+          product: '',
+          category: m.category || 'Internal',
+          kegiatan_icon: '✍️',
+          kegiatan_label: m.description || m.category || 'Manual',
+          sales_name: m.sales_name || '',
+          sales_division: m.sales_division || '',
+          handler_name: r.user_name,
+          handler_username: tu?.username ?? '',
+          status: 'manual',
+          jam: '-',
+          report_id: r.id,
+          raw: m,
+        });
+      });
+    });
+
+    // Sort: terbaru dulu
+    rows.sort((a, b) => b.report_date.localeCompare(a.report_date) || a.jam.localeCompare(b.jam));
+    return rows;
+  }, [liveReminders, liveTickets, reports, teamUsers]);
+
+  // Filter rows
+  const filteredRows = useMemo(() => {
+    return allRows.filter(row => {
+      if (searchProject) {
+        const q = searchProject.toLowerCase();
+        if (!row.project_name.toLowerCase().includes(q) && !row.address.toLowerCase().includes(q) && !row.sales_name.toLowerCase().includes(q) && !row.handler_name.toLowerCase().includes(q)) return false;
+      }
+      if (filterStatus && row.status.toLowerCase() !== filterStatus.toLowerCase()) return false;
+      return true;
+    });
+  }, [allRows, searchProject, filterStatus]);
+
+  // ── Stats ─────────────────────────────────────────────────────────────────────
+  const stats = useMemo(() => {
+    const total = allRows.length;
+    const pending = allRows.filter(r => ['pending', 'in progress', 'proses'].includes(r.status.toLowerCase())).length;
+    const selesai = allRows.filter(r => ['done', 'completed', 'selesai'].includes(r.status.toLowerCase())).length;
+    const today = todayISO();
+    const hariIni = allRows.filter(r => r.report_date === today).length;
+    return { total, pending, selesai, hariIni };
+  }, [allRows]);
+
+  // Donut data
+  const catCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    allRows.forEach(r => m.set(r.category, (m.get(r.category) ?? 0) + 1));
+    return Array.from(m.entries()).map(([cat, cnt]) => ({ cat, cnt, color: CATEGORY_CONFIG[cat]?.accent ?? '#94a3b8' }));
+  }, [allRows]);
+
+  const handlerCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    allRows.forEach(r => m.set(r.handler_name || r.handler_username, (m.get(r.handler_name || r.handler_username) ?? 0) + 1));
+    return Array.from(m.entries()).map(([name, cnt]) => ({ name, cnt })).sort((a, b) => b.cnt - a.cnt).slice(0, 5);
+  }, [allRows]);
+
+  const salesCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    allRows.forEach(r => { if (r.sales_division) m.set(r.sales_division, (m.get(r.sales_division) ?? 0) + 1); });
+    return Array.from(m.entries()).map(([div, cnt]) => ({ div, cnt })).sort((a, b) => b.cnt - a.cnt).slice(0, 5);
+  }, [allRows]);
+
+  // ── Form helpers ──────────────────────────────────────────────────────────────
   const openNewForm = async () => {
     const date = todayISO();
-    setFormDate(date);
-    setFormUserId(isAdmin ? '' : currentUser?.id ?? '');
-    setReminderNotes('');
-    setManualActs([emptyManual(currentUser?.username ?? '')]);
-    setEditingId(null);
-    setReminderActs([]); setTicketActs([]);
+    setFormDate(date); setFormUserId(isAdmin ? '' : currentUser?.id ?? '');
+    setReminderNotes(''); setManualActs([emptyManual(currentUser?.username ?? '')]);
+    setEditingId(null); setFormReminders([]); setFormTickets([]);
     if (isAdmin) setTeamEntries(teamUsers.map(u => emptyTeamEntry(u)));
     else setTeamEntries([]);
     if (!isAdmin && currentUser?.username) {
-      setActivitiesLoading(true);
+      setFormLoading(true);
       const [rem, tick] = await Promise.all([
         fetchReminderActivities(currentUser.username, date),
         fetchTicketActivities(currentUser.username, date),
       ]);
-      setReminderActs(rem); setTicketActs(tick);
-      setActivitiesLoading(false);
+      setFormReminders(rem); setFormTickets(tick); setFormLoading(false);
     }
-    setView('form');
+    setFormOpen(true);
   };
 
   const openEditForm = async (report: DailyReport) => {
-    setFormDate(report.report_date);
-    setFormUserId(report.user_id);
+    setFormDate(report.report_date); setFormUserId(report.user_id);
     setReminderNotes(report.reminder_notes ?? '');
-    setManualActs(
-      (report.manual_activities ?? []).length
-        ? report.manual_activities.map(m => ({ ...m, _key: newManualKey() }))
-        : [emptyManual(currentUser?.username ?? '')]
-    );
+    setManualActs((report.manual_activities ?? []).length
+      ? report.manual_activities.map(m => ({ ...m, _key: newManualKey() }))
+      : [emptyManual(currentUser?.username ?? '')]);
     setEditingId(report.id);
-    // fetch fresh dari DB — selalu up-to-date
-    const username = isAdmin
-      ? (teamUsers.find(u => u.id === report.user_id)?.username ?? '')
-      : (currentUser?.username ?? '');
-    setActivitiesLoading(true);
+    const username = isAdmin ? (teamUsers.find(u => u.id === report.user_id)?.username ?? '') : (currentUser?.username ?? '');
+    setFormLoading(true);
     const [rem, tick] = await Promise.all([
       fetchReminderActivities(username, report.report_date),
       fetchTicketActivities(username, report.report_date),
     ]);
-    setReminderActs(rem); setTicketActs(tick);
-    setActivitiesLoading(false);
-    setView('form');
+    setFormReminders(rem); setFormTickets(tick); setFormLoading(false);
+    setFormOpen(true);
   };
+
+  // Auto-reload form activities when date/user changes
+  useEffect(() => {
+    if (!formOpen) return;
+    const username = isAdmin ? (teamUsers.find(u => u.id === formUserId)?.username ?? '') : (currentUser?.username ?? '');
+    if (!username || !formDate) return;
+    let cancelled = false;
+    setFormLoading(true);
+    Promise.all([fetchReminderActivities(username, formDate), fetchTicketActivities(username, formDate)]).then(([rem, tick]) => {
+      if (!cancelled) { setFormReminders(rem); setFormTickets(tick); setFormLoading(false); }
+    });
+    return () => { cancelled = true; };
+  }, [formDate, formUserId, formOpen]);
 
   const handleSave = async () => {
     const targetUserId = isAdmin ? formUserId : currentUser?.id ?? '';
@@ -585,632 +506,610 @@ export default function DailyReportPage() {
     if (!targetUserId) { notify('error', 'Pilih anggota team!'); return; }
     if (!editingId) {
       const existing = await fetchExistingReport(targetUserId, formDate);
-      if (existing) {
-        notify('error', `Report ${targetUser?.full_name} tanggal ${formatDate(formDate)} sudah ada!`);
-        return;
-      }
+      if (existing) { notify('error', `Report ${targetUser?.full_name} tgl ${formatDate(formDate)} sudah ada!`); return; }
     }
     setSaving(true);
-    const cleanManual = manualActs
-      .filter(m => m.project_name.trim() || m.description.trim())
+    const cleanManual = manualActs.filter(m => m.project_name.trim() || m.description.trim())
       .map(({ _key, ...rest }) => ({ ...rest, submitted_by: rest.submitted_by || currentUser?.username || 'system' }));
     const result = await saveReport({
       ...(editingId ? { id: editingId } : {}),
-      report_date: formDate,
-      user_id: targetUserId,
-      user_name: targetUser?.full_name ?? '',
+      report_date: formDate, user_id: targetUserId, user_name: targetUser?.full_name ?? '',
       sales_division: targetUser?.sales_division ?? '',
-      reminder_activities: reminderActs,
-      ticket_activities: ticketActs,
-      manual_activities: cleanManual,
-      reminder_notes: reminderNotes,
+      reminder_activities: formReminders, ticket_activities: formTickets,
+      manual_activities: cleanManual, reminder_notes: reminderNotes,
       created_by: currentUser?.username ?? 'system',
     } as any);
     if (!result.ok) { notify('error', 'Gagal menyimpan: ' + result.error); setSaving(false); return; }
     if (isAdmin && teamEntries.length) {
-      const clean = teamEntries
-        .filter(e => e.project_name.trim())
-        .map(({ _key, ...rest }) => ({ ...rest, report_date: formDate, source: 'manual' as const }));
+      const clean = teamEntries.filter(e => e.project_name.trim()).map(({ _key, ...rest }) => ({ ...rest, report_date: formDate, source: 'manual' as const }));
       if (clean.length) await saveTeamEntries(clean as any, formDate, currentUser?.username ?? '');
     }
-    notify('success', editingId ? 'Report diperbarui!' : 'Daily Report berhasil disimpan!');
-    setSaving(false); setView('list'); setEditingId(null); fetchReportList();
+    notify('success', editingId ? 'Report diperbarui!' : 'Report berhasil disimpan!');
+    setSaving(false); setFormOpen(false); setEditingId(null);
+    loadReports(); loadLiveData();
   };
 
-  const updateManual = (key: string, patch: Partial<ManualActivity>) =>
-    setManualActs(prev => prev.map(m => m._key === key ? { ...m, ...patch } : m));
-  const removeManual = (key: string) =>
-    setManualActs(prev => prev.filter(m => m._key !== key));
-  const addManual = () =>
-    setManualActs(prev => [...prev, emptyManual(currentUser?.username ?? '')]);
-  const updateTeamEntry = (key: string, patch: Partial<TeamEntry>) =>
-    setTeamEntries(prev => prev.map(e => e._key === key ? { ...e, ...patch } : e));
+  const updM = (key: string, p: Partial<ManualActivity>) => setManualActs(prev => prev.map(m => m._key === key ? { ...m, ...p } : m));
+  const updT = (key: string, p: Partial<TeamEntry>) => setTeamEntries(prev => prev.map(e => e._key === key ? { ...e, ...p } : e));
 
   if (!appReady) return <LoadingScreen />;
 
-  // ── LOGIN ────────────────────────────────────────────────────────────────────
+  // ── LOGIN ─────────────────────────────────────────────────────────────────────
   if (!isLoggedIn) {
     return (
-      <PageWrapper>
+      <PW>
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 w-full max-w-sm border border-white/20 shadow-2xl">
-            <div className="text-center mb-6">
-              <span className="text-4xl">📋</span>
-              <h1 className="text-xl font-bold text-white mt-2">Daily Report</h1>
-              <p className="text-white/60 text-sm mt-1">PTS IVP &amp; MLDS</p>
-            </div>
+            <div className="text-center mb-6"><span className="text-4xl">📋</span><h1 className="text-xl font-bold text-white mt-2">Daily Report</h1><p className="text-white/60 text-sm">PTS IVP &amp; MLDS</p></div>
             <div className="space-y-3">
-              <input value={loginForm.username}
-                onChange={e => setLoginForm(p => ({ ...p, username: e.target.value }))}
-                placeholder="Username"
-                className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }} />
-              <input type="password" value={loginForm.password}
-                onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))}
-                onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                placeholder="Password"
-                className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }} />
+              <input value={loginForm.username} onChange={e => setLoginForm(p => ({ ...p, username: e.target.value }))} placeholder="Username" className="w-full px-4 py-3 rounded-xl text-sm outline-none" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }} />
+              <input type="password" value={loginForm.password} onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))} onKeyDown={async e => { if (e.key === 'Enter') { setLoginErr(''); const { data } = await supabase.from('users').select('*').eq('username', loginForm.username.trim()).eq('password', loginForm.password).maybeSingle(); if (!data) { setLoginErr('Username atau password salah.'); return; } localStorage.setItem('currentUser', JSON.stringify(data)); localStorage.setItem('loginTime', String(Date.now())); setCurrentUser(data); setIsLoggedIn(true); } }} placeholder="Password" className="w-full px-4 py-3 rounded-xl text-sm outline-none" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }} />
               {loginErr && <p className="text-red-300 text-xs">{loginErr}</p>}
-              <button onClick={handleLogin}
-                className="w-full py-3 rounded-xl font-bold text-sm text-white hover:scale-[1.02] transition-all"
-                style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>Masuk</button>
+              <button onClick={async () => { setLoginErr(''); const { data } = await supabase.from('users').select('*').eq('username', loginForm.username.trim()).eq('password', loginForm.password).maybeSingle(); if (!data) { setLoginErr('Username atau password salah.'); return; } localStorage.setItem('currentUser', JSON.stringify(data)); localStorage.setItem('loginTime', String(Date.now())); setCurrentUser(data); setIsLoggedIn(true); }} className="w-full py-3 rounded-xl font-bold text-sm text-white" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>Masuk</button>
             </div>
           </div>
         </div>
-        <Toast />
-      </PageWrapper>
+        <Toast t={toast} />
+      </PW>
     );
   }
 
-  // ── DETAIL ───────────────────────────────────────────────────────────────────
-  if (view === 'detail' && detailReport) {
-    const flatRows = flattenReport(detailReport);
-    return (
-      <PageWrapper>
-        <div className="sticky top-0 z-30 backdrop-blur-md border-b border-white/10" style={{ background: 'rgba(15,15,35,0.85)' }}>
-          <div className="max-w-6xl mx-auto px-5 py-4 flex items-center gap-3">
-            <button onClick={() => { setView('list'); setDetailReport(null); }}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-            </button>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-base font-bold text-white">Detail Daily Report</h2>
-              <p className="text-white/50 text-xs truncate">{detailReport.user_name} · {formatDate(detailReport.report_date)}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {detailReport.reminder_activities.length > 0 && <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(16,185,129,0.2)', color: '#6ee7b7' }}>🔔 {detailReport.reminder_activities.length}</span>}
-              {detailReport.ticket_activities.length > 0 && <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(251,113,133,0.2)', color: '#fda4af' }}>🎫 {detailReport.ticket_activities.length}</span>}
-              {detailReport.manual_activities.length > 0 && <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(245,158,11,0.2)', color: '#fde68a' }}>✍️ {detailReport.manual_activities.length}</span>}
-              <button onClick={() => openEditForm(detailReport)}
-                className="px-4 py-2 rounded-xl font-semibold text-sm text-white hover:scale-[1.02] transition-all"
-                style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 2px 8px rgba(220,38,38,0.3)' }}>✏️ Edit</button>
-            </div>
-          </div>
-        </div>
-        <div className="max-w-6xl mx-auto px-5 py-5 space-y-4 pb-10 w-full">
-
-          {/* ── Tabel utama persis reminder-schedule ── */}
-          <div style={cardStyle}>
-            <div style={cardHeaderStyle}>
-              <span className="text-sm font-bold text-slate-700">📋 Semua Aktivitas — {detailReport.user_name}</span>
-              <span className="text-xs font-bold text-slate-400">{formatDate(detailReport.report_date)}</span>
-            </div>
-            <div className="overflow-x-auto">
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
-                <thead>
-                  <tr>
-                    <th style={{ ...thStyle, width: '40px' }}>NO</th>
-                    <th style={thStyle}>PROJECT</th>
-                    <th style={thStyle}>PRODUCT</th>
-                    <th style={thStyle}>KEGIATAN</th>
-                    <th style={thStyle}>SALES</th>
-                    <th style={thStyle}>HANDLER</th>
-                    <th style={thStyle}>STATUS</th>
-                    <th style={thStyle}>TANGGAL / JAM</th>
-                    <th style={thStyle}>SUMBER</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {flatRows.length === 0 ? (
-                    <tr><td colSpan={9} style={{ ...tdStyle, textAlign: 'center', color: '#94a3b8', padding: '32px' }}>Tidak ada aktivitas</td></tr>
-                  ) : flatRows.map((row, i) => {
-                    const c = CATEGORY_CONFIG[row.category] ?? CATEGORY_CONFIG['Internal'];
-                    const sb = row.source === 'manual'
-                      ? { label: 'Manual', bg: 'rgba(245,158,11,0.1)', color: '#b45309', border: 'rgba(245,158,11,0.3)' }
-                      : statusBadge(row.status);
-                    const sourceBadge = row.source === 'reminder'
-                      ? { label: 'Reminder', bg: 'rgba(16,185,129,0.1)', color: '#059669', border: 'rgba(16,185,129,0.3)' }
-                      : row.source === 'ticket'
-                        ? { label: 'Ticket', bg: 'rgba(251,113,133,0.1)', color: '#be185d', border: 'rgba(251,113,133,0.3)' }
-                        : { label: 'Manual', bg: 'rgba(245,158,11,0.1)', color: '#b45309', border: 'rgba(245,158,11,0.3)' };
-                    return (
-                      <tr key={i} style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.6)' : 'rgba(248,250,252,0.5)' }}>
-                        <td style={{ ...tdStyle, color: '#94a3b8', fontSize: '12px', textAlign: 'center' }}>{i + 1}</td>
-                        <td style={tdStyle}>
-                          <p className="font-semibold text-slate-800 text-sm leading-tight">{row.project_name}</p>
-                          {row.address && <p className="text-[11px] text-slate-400 mt-0.5">📍 {row.address}</p>}
-                        </td>
-                        <td style={tdStyle}>
-                          {row.product
-                            ? <span className="text-xs font-semibold text-violet-700 bg-violet-50 border border-violet-200 px-2 py-1 rounded-lg">{row.product}</span>
-                            : <span className="text-slate-300 text-xs">—</span>}
-                        </td>
-                        <td style={tdStyle}>
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold"
-                            style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}>
-                            {row.kegiatan_icon} {row.source === 'ticket' ? row.kegiatan_label : row.category}
-                          </span>
-                          {row.source === 'ticket' && <p className="text-[11px] text-slate-500 mt-1">{row.kegiatan_label}</p>}
-                        </td>
-                        <td style={tdStyle}>
-                          {row.sales_name
-                            ? <div><p className="text-xs font-semibold text-slate-700">{row.sales_name}</p>{row.sales_division && <p className="text-[10px] text-slate-400">{row.sales_division}</p>}</div>
-                            : <span className="text-slate-300">—</span>}
-                        </td>
-                        <td style={tdStyle}>
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
-                              style={{ background: avatarColor(row.handler_name) }}>
-                              {initials(row.handler_name)}
-                            </div>
-                            <span className="text-xs font-semibold text-slate-700">{row.handler_name}</span>
-                          </div>
-                        </td>
-                        <td style={tdStyle}>
-                          <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-bold"
-                            style={{ background: sb.bg, color: sb.color, border: `1px solid ${sb.border}` }}>
-                            {sb.label}
-                          </span>
-                        </td>
-                        <td style={{ ...tdStyle, fontWeight: 600, color: '#dc2626', whiteSpace: 'nowrap' as const }}>
-                          {row.tanggal !== '-' ? row.tanggal : <span className="text-slate-300 font-normal">—</span>}
-                        </td>
-                        <td style={tdStyle}>
-                          <span className="inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-bold"
-                            style={{ background: sourceBadge.bg, color: sourceBadge.color, border: `1px solid ${sourceBadge.border}` }}>
-                            {sourceBadge.label}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            {detailReport.reminder_notes && (
-              <div className="mx-5 mb-4 mt-3 px-3 py-2 rounded-xl" style={{ background: '#fef9c3', border: '1px solid #fde047' }}>
-                <p className="text-xs text-yellow-700">📝 Catatan Reminder: {detailReport.reminder_notes}</p>
-              </div>
-            )}
-          </div>
-        </div>
-        <Toast />
-      </PageWrapper>
-    );
-  }
-
-  // ── FORM ─────────────────────────────────────────────────────────────────────
-  if (view === 'form') {
+  // ── FORM MODAL ────────────────────────────────────────────────────────────────
+  const FormModal = () => {
+    if (!formOpen) return null;
     const targetUser = isAdmin ? teamUsers.find(u => u.id === formUserId) : currentUser;
-    const autoCount = reminderActs.length + ticketActs.length;
+    const autoCount = formReminders.length + formTickets.length;
     return (
-      <PageWrapper>
-        <div className="sticky top-0 z-30 backdrop-blur-md border-b border-white/10" style={{ background: 'rgba(15,15,35,0.85)' }}>
-          <div className="max-w-5xl mx-auto px-5 py-4 flex items-center gap-3">
-            <button onClick={() => { setView('list'); setEditingId(null); }}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-            </button>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-base font-bold text-white">{editingId ? '✏️ Edit Report' : '📋 Daily Report Baru'}</h2>
-              <p className="text-white/50 text-xs">
-                {activitiesLoading
-                  ? 'Memuat aktivitas dari Reminder & Ticket...'
-                  : autoCount > 0
-                    ? `${reminderActs.length} reminder + ${ticketActs.length} ticket ter-insert otomatis`
-                    : 'Data reminder & ticket akan auto ter-insert'}
+      <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', paddingTop: '20px', paddingBottom: '40px' }}>
+        <div className="w-full max-w-2xl mx-4" style={{ ...card, overflow: 'visible' }}>
+          {/* Modal header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div>
+              <h2 className="text-base font-bold text-slate-800">{editingId ? '✏️ Edit Report' : '📋 Buat Daily Report'}</h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {formLoading ? 'Memuat aktivitas...' : autoCount > 0 ? `${formReminders.length} reminder + ${formTickets.length} ticket ter-insert otomatis` : 'Isi form di bawah'}
               </p>
             </div>
-            {activitiesLoading
-              ? <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold" style={{ background: 'rgba(14,165,233,0.15)', color: '#7dd3fc' }}>
-                  <div className="w-3 h-3 border-2 border-sky-400/40 border-t-sky-400 rounded-full animate-spin" />Auto-loading...
-                </div>
-              : autoCount > 0
-                ? <div className="px-3 py-1.5 rounded-full text-xs font-bold" style={{ background: 'rgba(16,185,129,0.2)', color: '#6ee7b7' }}>✓ {autoCount} Auto</div>
-                : null}
+            <button onClick={() => { setFormOpen(false); setEditingId(null); }} className="p-2 rounded-xl hover:bg-gray-100 transition-all text-slate-400">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
           </div>
-        </div>
+          <div className="px-6 py-5 space-y-5 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 80px)' }}>
 
-        <div className="max-w-5xl mx-auto px-5 py-5 space-y-4 pb-10 w-full">
-
-          {/* Identitas */}
-          <div style={cardStyle}>
-            <div style={cardHeaderStyle}><span className="text-sm font-bold text-slate-700">👤 Identitas &amp; Tanggal</span></div>
-            <div className="px-5 py-4 space-y-4">
-              <div className={`grid gap-4 ${isAdmin ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                <FormField label="Tanggal Report *">
-                  <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} className={inputCls} style={inputStyle} />
+            {/* Identitas */}
+            <div className="grid gap-3" style={{ gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr' }}>
+              <FormField label="Tanggal *">
+                <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} className={inpCls} style={inp} />
+              </FormField>
+              {isAdmin && (
+                <FormField label="Anggota Team *">
+                  <select value={formUserId} onChange={e => setFormUserId(e.target.value)} className={inpCls} style={inp}>
+                    <option value="">-- Pilih anggota --</option>
+                    {teamUsers.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+                  </select>
                 </FormField>
-                {isAdmin && (
-                  <FormField label="Anggota Team *">
-                    <select value={formUserId} onChange={e => setFormUserId(e.target.value)} className={inputCls} style={inputStyle}>
-                      <option value="">-- Pilih anggota --</option>
-                      {teamUsers.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
-                    </select>
-                  </FormField>
-                )}
+              )}
+            </div>
+            {targetUser && (
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'rgba(220,38,38,0.05)', border: '1px solid rgba(220,38,38,0.15)' }}>
+                <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: avc(targetUser.full_name) }}>{ini(targetUser.full_name)}</div>
+                <div><p className="text-sm font-bold text-slate-800">{targetUser.full_name}</p><p className="text-xs text-slate-400">{targetUser.team_type} · {targetUser.sales_division || '-'}</p></div>
               </div>
-              {targetUser && (
-                <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.18)' }}>
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ background: avatarColor(targetUser.full_name) }}>{initials(targetUser.full_name)}</div>
-                  <div><p className="text-sm font-bold text-slate-800">{targetUser.full_name}</p><p className="text-xs text-slate-500">{targetUser.team_type} · {targetUser.sales_division || '-'}</p></div>
+            )}
+
+            {/* Auto: Reminder */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">🔔 Reminder Auto ({formReminders.length})</span>
+                <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9' }}>Auto-insert</span>
+              </div>
+              {formLoading ? <div className="flex items-center gap-2 text-xs text-slate-400 py-3"><div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />Memuat...</div>
+                : formReminders.length === 0 ? <p className="text-xs text-slate-400 py-2 italic">Tidak ada reminder pada tanggal ini</p>
+                : <div className="space-y-2">{formReminders.map((r, i) => {
+                  const c = CATEGORY_CONFIG[r.category] ?? CATEGORY_CONFIG['Internal'];
+                  return (
+                    <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                      <span className="text-base flex-shrink-0">{c.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-slate-800 truncate">{r.project_name || r.title}</p>
+                        {r.address && <p className="text-[11px] text-slate-400">📍 {r.address}</p>}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {r.due_time && <span className="text-[11px] font-bold text-red-500">{r.due_time}</span>}
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: sb(r.status).bg, color: sb(r.status).color }}>{sb(r.status).label}</span>
+                      </div>
+                    </div>
+                  );
+                })}</div>}
+              {formReminders.length > 0 && (
+                <div className="mt-2">
+                  <FormField label="Catatan Reminder (Opsional)">
+                    <textarea value={reminderNotes} onChange={e => setReminderNotes(e.target.value)} rows={2} className={`${inpCls} resize-none`} style={inp} placeholder="Kendala, hasil, info tambahan..." />
+                  </FormField>
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Tabel Reminder AUTO */}
-          <div style={cardStyle}>
-            <div style={cardHeaderStyle}>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-slate-700">🔔 Reminder Schedule</span>
-                {!activitiesLoading && (
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${reminderActs.length > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'}`}>
-                    {reminderActs.length}
-                  </span>
-                )}
+            {/* Auto: Ticket */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">🎫 Ticket Auto ({formTickets.length})</span>
+                <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9' }}>Auto-insert</span>
               </div>
-              <span className="text-[10px] font-bold tracking-widest uppercase px-2 py-1 rounded-full" style={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9' }}>Auto-insert</span>
-            </div>
-            {activitiesLoading
-              ? <div className="px-5 py-6 flex items-center gap-3 text-slate-400 text-sm"><div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin flex-shrink-0" />Memuat dari Reminder Schedule...</div>
-              : <>
-                  <ReminderTable activities={reminderActs} />
-                  {reminderActs.length > 0 && (
-                    <div className="px-5 py-3 border-t border-gray-50">
-                      <FormField label="Catatan Tambahan (Opsional)">
-                        <textarea value={reminderNotes} onChange={e => setReminderNotes(e.target.value)} rows={2}
-                          className={`${inputCls} resize-none`} style={inputStyle} placeholder="Kendala, hasil, atau info tambahan..." />
-                      </FormField>
+              {formLoading ? <div className="flex items-center gap-2 text-xs text-slate-400 py-3"><div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />Memuat...</div>
+                : formTickets.length === 0 ? <p className="text-xs text-slate-400 py-2 italic">Tidak ada ticket pada tanggal ini</p>
+                : <div className="space-y-2">{formTickets.map((t, i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(251,113,133,0.05)', border: '1px solid rgba(251,113,133,0.2)' }}>
+                    <span className="text-base flex-shrink-0">🔧</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-slate-800 truncate">{t.project_name}</p>
+                      <p className="text-[11px] text-rose-500 font-semibold">{t.issue_case}</p>
                     </div>
-                  )}
-                </>}
-          </div>
-
-          {/* Tabel Ticket AUTO */}
-          <div style={cardStyle}>
-            <div style={cardHeaderStyle}>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-slate-700">🎫 Ticket Troubleshooting</span>
-                {!activitiesLoading && (
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${ticketActs.length > 0 ? 'bg-rose-100 text-rose-700' : 'bg-gray-100 text-gray-400'}`}>
-                    {ticketActs.length}
-                  </span>
-                )}
-              </div>
-              <span className="text-[10px] font-bold tracking-widest uppercase px-2 py-1 rounded-full" style={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9' }}>Auto-insert</span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {t.log_time && <span className="text-[11px] font-bold text-red-500">{t.log_time}</span>}
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: sb(t.new_status).bg, color: sb(t.new_status).color }}>{sb(t.new_status).label}</span>
+                    </div>
+                  </div>
+                ))}</div>}
             </div>
-            {activitiesLoading
-              ? <div className="px-5 py-6 flex items-center gap-3 text-slate-400 text-sm"><div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin flex-shrink-0" />Memuat dari Ticket Troubleshooting...</div>
-              : <TicketTable activities={ticketActs} />}
-          </div>
 
-          {/* Aktivitas Manual */}
-          <div style={cardStyle}>
-            <div style={cardHeaderStyle}>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-slate-700">✍️ Aktivitas Manual</span>
-                <span className="bg-gray-100 text-gray-500 text-xs font-bold px-2 py-0.5 rounded-full">{manualActs.length}</span>
+            {/* Manual activities */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">✍️ Aktivitas Manual ({manualActs.length})</span>
               </div>
-              <span className="text-[10px] font-bold tracking-widest uppercase px-2 py-1 rounded-full" style={{ background: 'rgba(245,158,11,0.1)', color: '#b45309' }}>Manual</span>
+              <div className="space-y-4">
+                {manualActs.map((m, idx) => (
+                  <div key={m._key} className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
+                    <div className="flex items-center justify-between">
+                      <SectionHeaderSmall icon="📌" title={`Aktivitas #${idx + 1}`} />
+                      {manualActs.length > 1 && <button onClick={() => setManualActs(p => p.filter(x => x._key !== m._key))} className="text-xs text-red-400 hover:text-red-600">Hapus</button>}
+                    </div>
+                    <div><label className="block text-xs font-bold mb-1.5 text-slate-400 uppercase tracking-wider">Kategori</label><CatPicker value={m.category} onChange={v => updM(m._key, { category: v })} /></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <FormField label="Nama Project *"><input value={m.project_name} onChange={e => updM(m._key, { project_name: e.target.value })} className={inpCls} style={inp} placeholder="Project / kegiatan" /></FormField>
+                      <FormField label="Lokasi"><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">📍</span><input value={m.address} onChange={e => updM(m._key, { address: e.target.value })} className={`${inpCls} pl-9`} style={inp} placeholder="Alamat / Online" /></div></FormField>
+                    </div>
+                    <FormField label="Sales"><SalesDrop value={m.sales_name} division={m.sales_division} guests={guestUsers} onChange={(n, d) => updM(m._key, { sales_name: n, sales_division: d })} /></FormField>
+                    <div className="grid grid-cols-2 gap-3">
+                      <FormField label="PIC"><input value={m.pic_name} onChange={e => updM(m._key, { pic_name: e.target.value })} className={inpCls} style={inp} placeholder="Nama PIC" /></FormField>
+                      <FormField label="No. PIC"><input type="tel" value={m.pic_phone} onChange={e => updM(m._key, { pic_phone: e.target.value })} className={inpCls} style={inp} placeholder="08xxx" /></FormField>
+                    </div>
+                    <FormField label="Deskripsi"><textarea value={m.description} onChange={e => updM(m._key, { description: e.target.value })} rows={2} className={`${inpCls} resize-none`} style={inp} placeholder="Detail kegiatan..." /></FormField>
+                  </div>
+                ))}
+                <button onClick={() => setManualActs(p => [...p, emptyManual(currentUser?.username ?? '')])}
+                  className="w-full py-3 rounded-xl font-semibold text-sm" style={{ background: 'rgba(220,38,38,0.05)', color: '#dc2626', border: '1.5px dashed rgba(220,38,38,0.3)' }}>
+                  + Tambah Aktivitas Manual
+                </button>
+              </div>
             </div>
-            <div className="px-5 py-4 space-y-4">
-              <div className="flex items-center gap-2 px-4 py-3 rounded-xl" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.18)' }}>
-                <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0" style={{ background: avatarColor(currentUser?.full_name ?? '') }}>{initials(currentUser?.full_name ?? 'U')}</div>
-                <div><p className="text-xs font-semibold text-sky-800">Diisi oleh: {currentUser?.full_name}</p><p className="text-[10px] text-sky-600">@{currentUser?.username}</p></div>
-              </div>
-              {manualActs.map((m, idx) => (
-                <div key={m._key} className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
-                  <div className="flex items-center justify-between mb-1">
-                    <SectionHeaderSmall icon="📌" title={`Aktivitas #${idx + 1}`} />
-                    {manualActs.length > 1 && <button onClick={() => removeManual(m._key)} className="text-xs text-red-400 hover:text-red-600 transition-colors px-2 py-1 rounded-lg hover:bg-red-50">Hapus</button>}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold mb-2 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Kategori *</label>
-                    <CategoryPicker value={m.category} onChange={v => updateManual(m._key, { category: v })} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <FormField label="Nama Project / Keterangan *">
-                      <input value={m.project_name} onChange={e => updateManual(m._key, { project_name: e.target.value })} className={inputCls} style={inputStyle} placeholder="cth: Rapat internal" />
-                    </FormField>
-                    <FormField label="Lokasi / Alamat">
-                      <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2">📍</span>
-                        <input value={m.address} onChange={e => updateManual(m._key, { address: e.target.value })} className={`${inputCls} pl-9`} style={inputStyle} placeholder="cth: Kantor / Online" />
-                      </div>
-                    </FormField>
-                  </div>
-                  <FormField label="Sales">
-                    <SalesDropdown value={m.sales_name} division={m.sales_division} guestUsers={guestUsers}
-                      onChange={(name, div) => updateManual(m._key, { sales_name: name, sales_division: div })} />
-                  </FormField>
-                  <div className="grid grid-cols-2 gap-3">
-                    <FormField label="Nama PIC (Opsional)">
-                      <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2">🙋</span>
-                        <input value={m.pic_name} onChange={e => updateManual(m._key, { pic_name: e.target.value })} className={`${inputCls} pl-9`} style={inputStyle} placeholder="Nama PIC" />
-                      </div>
-                    </FormField>
-                    <FormField label="No. PIC (Opsional)">
-                      <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2">📱</span>
-                        <input type="tel" value={m.pic_phone} onChange={e => updateManual(m._key, { pic_phone: e.target.value })} className={`${inputCls} pl-9`} style={inputStyle} placeholder="08xxx" />
-                      </div>
-                    </FormField>
-                  </div>
-                  <FormField label="Deskripsi Kegiatan">
-                    <textarea value={m.description} onChange={e => updateManual(m._key, { description: e.target.value })} rows={2}
-                      className={`${inputCls} resize-none`} style={inputStyle} placeholder="Detail kegiatan..." />
-                  </FormField>
+
+            {/* Team Entries (admin) */}
+            {isAdmin && teamEntries.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">👥 Input Tim (Supervisor)</span>
                 </div>
-              ))}
-              <button onClick={addManual} className="w-full py-3 rounded-xl font-semibold text-sm hover:scale-[1.01] transition-all"
-                style={{ background: 'rgba(220,38,38,0.06)', color: '#dc2626', border: '1.5px dashed rgba(220,38,38,0.35)' }}>
-                + Tambah Aktivitas Manual
+                <div className="space-y-4">
+                  {teamEntries.map(e => (
+                    <div key={e._key} className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold" style={{ background: avc(e.member_name) }}>{ini(e.member_name)}</div>
+                        <p className="text-sm font-bold text-slate-700">{e.member_name}</p>
+                      </div>
+                      <CatPicker value={e.category} onChange={v => updT(e._key, { category: v })} />
+                      <div className="grid grid-cols-2 gap-3">
+                        <FormField label="Project"><input value={e.project_name} onChange={ev => updT(e._key, { project_name: ev.target.value })} className={inpCls} style={inp} placeholder="Nama project" /></FormField>
+                        <FormField label="Lokasi"><input value={e.address} onChange={ev => updT(e._key, { address: ev.target.value })} className={inpCls} style={inp} placeholder="Alamat" /></FormField>
+                      </div>
+                      <FormField label="Sales"><SalesDrop value={e.sales_name} division={e.sales_division} guests={guestUsers} onChange={(n, d) => updT(e._key, { sales_name: n, sales_division: d })} /></FormField>
+                      <FormField label="Catatan"><textarea value={e.supervisor_notes} onChange={ev => updT(e._key, { supervisor_notes: ev.target.value })} rows={2} className={`${inpCls} resize-none`} style={inp} placeholder="Catatan supervisor..." /></FormField>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Save */}
+            <div className="flex gap-3 pt-2 pb-2">
+              <button onClick={() => { setFormOpen(false); setEditingId(null); }} className="flex-1 py-3 rounded-xl font-semibold text-sm border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all">Batal</button>
+              <button onClick={handleSave} disabled={saving} className="flex-1 py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 4px 14px rgba(220,38,38,0.3)' }}>
+                {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                {editingId ? 'Simpan Perubahan' : '📋 Simpan Report'}
               </button>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  };
 
-          {/* Team Entries (admin only) */}
-          {isAdmin && (
-            <div style={cardStyle}>
-              <div style={cardHeaderStyle}>
-                <span className="text-sm font-bold text-slate-700">👥 Insert Report Tim (Supervisor)</span>
-                <span className="text-[10px] font-bold tracking-widest uppercase px-2 py-1 rounded-full" style={{ background: 'rgba(245,158,11,0.1)', color: '#b45309' }}>Manual</span>
-              </div>
-              <div className="px-5 py-4 space-y-4">
-                <div className="flex items-start gap-2 px-4 py-3 rounded-xl" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)' }}>
-                  <span>💡</span><p className="text-xs text-sky-700">Kosongkan baris yang tidak ada kegiatannya.</p>
-                </div>
-                {teamEntries.map(e => (
-                  <div key={e._key} className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: avatarColor(e.member_name) }}>{initials(e.member_name)}</div>
-                      <div><p className="text-sm font-bold text-slate-800">{e.member_name}</p><p className="text-xs text-slate-400">{e.sales_division || 'Team PTS'}</p></div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold mb-2 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Kategori</label>
-                      <CategoryPicker value={e.category} onChange={v => updateTeamEntry(e._key, { category: v })} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <FormField label="Nama Project"><input value={e.project_name} onChange={ev => updateTeamEntry(e._key, { project_name: ev.target.value })} className={inputCls} style={inputStyle} placeholder="cth: Konfigurasi NVR" /></FormField>
-                      <FormField label="Lokasi / Alamat"><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2">📍</span><input value={e.address} onChange={ev => updateTeamEntry(e._key, { address: ev.target.value })} className={`${inputCls} pl-9`} style={inputStyle} placeholder="cth: Kantor pelanggan" /></div></FormField>
-                    </div>
-                    <FormField label="Sales"><SalesDropdown value={e.sales_name} division={e.sales_division} guestUsers={guestUsers} onChange={(name, div) => updateTeamEntry(e._key, { sales_name: name, sales_division: div })} /></FormField>
-                    <FormField label="Catatan Supervisor"><textarea value={e.supervisor_notes} onChange={ev => updateTeamEntry(e._key, { supervisor_notes: ev.target.value })} rows={2} className={`${inputCls} resize-none`} style={inputStyle} placeholder="Hasil kerja, kendala, penilaian..." /></FormField>
-                  </div>
-                ))}
+  // ── DETAIL MODAL (popup persis reminder-schedule) ─────────────────────────────
+  const DetailModal = () => {
+    if (!modalRow) return null;
+    const row: FlatRow = modalRow;
+    const c = CATEGORY_CONFIG[row.category] ?? CATEGORY_CONFIG['Internal'];
+    const badge = sb(row.status);
+    const linkedReport = row.report_id ? reports.find(r => r.id === row.report_id) : undefined;
+    return (
+      <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }} onClick={() => setModalRow(null)}>
+        <div className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden" style={{ background: 'white' }} onClick={e => e.stopPropagation()}>
+          {/* Colored header */}
+          <div className="px-6 py-5 text-white relative" style={{ background: `linear-gradient(135deg, ${c.accent}, ${c.accent}cc)` }}>
+            <button onClick={() => setModalRow(null)} className="absolute top-4 right-4 p-1.5 rounded-xl bg-white/20 hover:bg-white/30 transition-all">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <div className="flex items-start gap-3">
+              <span className="text-3xl">{row.kegiatan_icon}</span>
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-widest opacity-80">
+                  {row.source === 'reminder' ? 'Reminder Schedule' : row.source === 'ticket' ? 'Ticket Troubleshooting' : 'Aktivitas Manual'}
+                </p>
+                <h3 className="text-base font-black mt-0.5 leading-tight">{row.project_name}</h3>
+                {row.address && <p className="text-xs opacity-80 mt-1">📍 {row.address}</p>}
               </div>
             </div>
-          )}
+            {/* Status + jam */}
+            <div className="flex items-center gap-2 mt-4">
+              <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/20">{badge.label}</span>
+              {row.jam !== '-' && <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/20">🕐 {row.jam}</span>}
+              <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/20">📅 {row.report_date}</span>
+            </div>
+          </div>
+          {/* Body */}
+          <div className="px-6 py-5 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              {/* Kategori */}
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Kategori</p>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold" style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}>
+                  {c.icon} {row.category}
+                </span>
+              </div>
+              {/* Product */}
+              {row.product && (
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Product</p>
+                  <span className="text-xs font-semibold text-violet-700 bg-violet-50 border border-violet-200 px-2.5 py-1.5 rounded-lg inline-block">{row.product}</span>
+                </div>
+              )}
+              {/* Handler */}
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Handler</p>
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
+                  <div><p className="text-xs font-bold text-slate-800">{row.handler_name}</p>{row.handler_username && <p className="text-[10px] text-slate-400">@{row.handler_username}</p>}</div>
+                </div>
+              </div>
+              {/* Sales */}
+              {row.sales_name && (
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Sales</p>
+                  <p className="text-xs font-bold text-slate-800">{row.sales_name}</p>
+                  {row.sales_division && <p className="text-[10px] text-slate-400">{row.sales_division}</p>}
+                </div>
+              )}
+            </div>
+            {/* Ticket detail */}
+            {row.source === 'ticket' && row.raw?.action_taken && (
+              <div className="px-4 py-3 rounded-xl" style={{ background: 'rgba(251,113,133,0.05)', border: '1px solid rgba(251,113,133,0.2)' }}>
+                <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-1">Tindakan</p>
+                <p className="text-xs text-slate-700">{row.raw.action_taken}</p>
+              </div>
+            )}
+            {/* Reminder detail */}
+            {row.source === 'reminder' && row.raw?.description && (
+              <div className="px-4 py-3 rounded-xl" style={{ background: c.bg, border: `1px solid ${c.border}` }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: c.color }}>Deskripsi</p>
+                <p className="text-xs" style={{ color: c.color }}>{row.raw.description}</p>
+              </div>
+            )}
+            {/* Manual detail */}
+            {row.source === 'manual' && row.raw?.description && (
+              <div className="px-4 py-3 rounded-xl" style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Deskripsi</p>
+                <p className="text-xs text-slate-700">{row.raw.description}</p>
+              </div>
+            )}
+            {/* PIC */}
+            {row.raw?.pic_name && (
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.07)' }}>
+                <span className="text-base">🙋</span>
+                <div><p className="text-xs font-bold text-slate-800">{row.raw.pic_name}</p>{row.raw.pic_phone && <p className="text-[10px] text-slate-400">📱 {row.raw.pic_phone}</p>}</div>
+              </div>
+            )}
+            {/* Link to submitted report */}
+            {linkedReport && (
+              <div className="flex items-center gap-2 px-4 py-3 rounded-xl" style={{ background: 'rgba(220,38,38,0.05)', border: '1px solid rgba(220,38,38,0.15)' }}>
+                <span className="text-sm">📋</span>
+                <p className="text-xs text-red-600 font-semibold">Sudah di-submit dalam Daily Report {formatDate(linkedReport.report_date)}</p>
+                <button onClick={() => { setModalRow(null); openEditForm(linkedReport); }} className="ml-auto text-[10px] font-bold px-2 py-1 rounded-lg text-white" style={{ background: '#dc2626' }}>Edit</button>
+              </div>
+            )}
+            {/* Source badge */}
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[10px] font-bold px-2.5 py-1.5 rounded-full"
+                style={row.source === 'reminder' ? { background: 'rgba(16,185,129,0.1)', color: '#059669' } : row.source === 'ticket' ? { background: 'rgba(251,113,133,0.1)', color: '#be185d' } : { background: 'rgba(245,158,11,0.1)', color: '#b45309' }}>
+                {row.source === 'reminder' ? '🔔 Reminder Schedule' : row.source === 'ticket' ? '🎫 Ticket Troubleshooting' : '✍️ Aktivitas Manual'}
+              </span>
+              {!linkedReport && row.source !== 'manual' && (
+                <button onClick={() => { setModalRow(null); openNewForm(); }} className="text-[10px] font-bold px-3 py-1.5 rounded-lg text-white" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>+ Buat Report</button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
-          {/* Save buttons */}
-          <div className="flex gap-3 pb-4">
-            <button onClick={() => { setView('list'); setEditingId(null); }}
-              className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
-              style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}>Batal</button>
-            <button onClick={handleSave} disabled={saving}
-              className="flex-1 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:scale-[1.02] transition-all"
-              style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 4px 14px rgba(220,38,38,0.35)' }}>
-              {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              {editingId ? 'Simpan Perubahan' : '📋 Simpan Daily Report'}
+  // ── MAIN LIST VIEW ────────────────────────────────────────────────────────────
+  // Build FlatRow type reference for TS
+  type FlatRow = ReturnType<typeof useMemo<any>>;
+  const PIE_COLORS = ['#dc2626','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#0ea5e9','#14b8a6'];
+
+  return (
+    <PW>
+      {/* ── Header identik reminder-schedule ── */}
+      <div className="sticky top-0 z-30 backdrop-blur-md border-b border-white/10" style={{ background: 'rgba(15,15,35,0.9)' }}>
+        <div className="max-w-7xl mx-auto px-5 py-3.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-lg" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>📋</div>
+            <div><h1 className="text-sm font-black text-white tracking-wide">Daily Report</h1><p className="text-white/40 text-[10px]">PTS IVP &amp; MLDS</p></div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => { loadLiveData(); loadReports(); }} disabled={liveLoading}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-white border border-white/20 hover:bg-white/10 transition-all">
+              <svg className={`w-3.5 h-3.5 ${liveLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              Refresh
+            </button>
+            <button onClick={openNewForm}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-sm text-white hover:scale-[1.02] transition-all"
+              style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 2px 12px rgba(220,38,38,0.4)' }}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              + Tambah Report
             </button>
           </div>
         </div>
-        <Toast />
-      </PageWrapper>
-    );
-  }
-
-  // ── LIST — persis reminder-schedule ──────────────────────────────────────────
-  // Flatten semua reports jadi per-baris aktivitas
-  const allFlatRows: (FlatRow & { report_date: string; report_id: string; user_name: string })[] = [];
-  reports.forEach(r => {
-    flattenReport(r).forEach(row => {
-      allFlatRows.push({ ...row, report_date: r.report_date, report_id: r.id, user_name: r.user_name });
-    });
-  });
-
-  // Filter search
-  const filteredRows = allFlatRows.filter(row => {
-    if (!searchProject) return true;
-    const q = searchProject.toLowerCase();
-    return row.project_name.toLowerCase().includes(q) ||
-      row.address.toLowerCase().includes(q) ||
-      row.sales_name.toLowerCase().includes(q) ||
-      row.handler_name.toLowerCase().includes(q);
-  });
-
-  return (
-    <PageWrapper>
-      {/* Sticky header */}
-      <div className="sticky top-0 z-30 backdrop-blur-md border-b border-white/10" style={{ background: 'rgba(15,15,35,0.85)' }}>
-        <div className="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-base font-bold text-white">📋 Daily Report</h1>
-            <p className="text-white/50 text-xs mt-0.5">PTS IVP &amp; MLDS · {currentUser?.full_name}</p>
-          </div>
-          <button onClick={openNewForm}
-            className="px-4 py-2 rounded-xl font-bold text-sm text-white hover:scale-[1.02] transition-all flex items-center gap-2"
-            style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 2px 8px rgba(220,38,38,0.3)' }}>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-            Buat Report
-          </button>
-        </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-5 py-5 space-y-4 pb-10 w-full">
+      <div className="max-w-7xl mx-auto px-5 py-5 space-y-5 pb-12 w-full">
 
-        {/* Stat cards */}
-        <div className="grid grid-cols-3 gap-3">
+        {/* ── Stat cards besar (identik reminder-schedule) ── */}
+        <div className="grid grid-cols-4 gap-4">
           {[
-            { label: 'Total Report', value: reports.length, gradient: 'linear-gradient(135deg,#4f46e5,#6d28d9)', icon: '📋', shadow: 'rgba(79,70,229,0.4)' },
-            { label: 'Bulan Ini', value: reports.filter(r => r.report_date?.startsWith(new Date().toISOString().slice(0,7))).length, gradient: 'linear-gradient(135deg,#0891b2,#0e7490)', icon: '📅', shadow: 'rgba(8,145,178,0.4)' },
-            { label: 'Total Aktivitas', value: allFlatRows.length, gradient: 'linear-gradient(135deg,#059669,#047857)', icon: '⚡', shadow: 'rgba(5,150,105,0.4)' },
-          ].map(card => (
-            <div key={card.label} className="rounded-2xl p-4 relative overflow-hidden flex flex-col gap-2" style={{ background: card.gradient, boxShadow: `0 4px 20px ${card.shadow}` }}>
-              <div className="absolute right-3 top-2 text-4xl opacity-[0.15] select-none">{card.icon}</div>
-              <span className="text-3xl font-black text-white leading-none">{card.value}</span>
-              <p className="text-xs font-bold text-white/80">{card.label}</p>
+            { label: 'Total Aktivitas', sub: 'Semua platform', value: stats.total, gradient: 'linear-gradient(135deg,#4f46e5,#6d28d9)', icon: '📋', shadow: 'rgba(79,70,229,0.45)' },
+            { label: 'Pending', sub: 'Menunggu tindakan', value: stats.pending, gradient: 'linear-gradient(135deg,#f59e0b,#d97706)', icon: '⏳', shadow: 'rgba(245,158,11,0.45)' },
+            { label: 'Selesai', sub: 'Terselesaikan', value: stats.selesai, gradient: 'linear-gradient(135deg,#10b981,#059669)', icon: '✅', shadow: 'rgba(16,185,129,0.45)' },
+            { label: 'Hari Ini', sub: todayISO(), value: stats.hariIni, gradient: 'linear-gradient(135deg,#0891b2,#0e7490)', icon: '📅', shadow: 'rgba(8,145,178,0.45)' },
+          ].map(s => (
+            <div key={s.label} className="rounded-2xl p-5 relative overflow-hidden text-white" style={{ background: s.gradient, boxShadow: `0 6px 24px ${s.shadow}` }}>
+              <div className="absolute right-4 top-3 text-5xl opacity-10 select-none">{s.icon}</div>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">{s.label}</p>
+              <span className="text-4xl font-black leading-none">{s.value}</span>
+              <p className="text-[10px] opacity-60 mt-2">{s.sub}</p>
             </div>
           ))}
         </div>
 
-        {/* Search & Filter — identik reminder-schedule */}
-        <div style={{ ...cardStyle, overflow: 'visible' }}>
-          <div className="px-5 py-3 flex flex-wrap gap-3 items-center">
-            {/* Search project/lokasi */}
-            <div className="flex items-center gap-2 rounded-xl px-3 py-2 flex-1 min-w-[180px]" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.1)' }}>
-              <svg className="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-              <input value={searchProject} onChange={e => setSearchProject(e.target.value)} placeholder="Cari project / lokasi..."
-                className="bg-transparent outline-none text-xs text-slate-700 placeholder-slate-400 w-full" />
+        {/* ── Charts row ── */}
+        <div className="grid grid-cols-3 gap-4">
+          {/* Kegiatan/Kategori */}
+          <div style={card}>
+            <div style={cardHdr}>
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">🖥️ Kegiatan / Kategori</span>
             </div>
-            {/* Filter tanggal */}
-            <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.1)', minWidth: '160px' }}>
-              <svg className="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-              <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
-                className="bg-transparent outline-none text-xs text-slate-700 w-full" />
+            <div className="px-5 py-4 flex items-center gap-4">
+              <div className="relative flex-shrink-0" style={{ width: 80, height: 80 }}>
+                <DonutChart data={catCounts.map(c => ({ value: c.cnt, color: c.color }))} total={stats.total} cx={40} cy={40} r={30} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-base font-black text-slate-800">{stats.total}</span>
+                  <span className="text-[9px] text-slate-400 font-bold">TOTAL</span>
+                </div>
+              </div>
+              <div className="flex-1 space-y-1 overflow-y-auto" style={{ maxHeight: 100 }}>
+                {catCounts.map(({ cat, cnt, color }) => (
+                  <div key={cat} className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
+                      <span className="text-[11px] text-slate-600 truncate">{cat}</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-slate-800 flex-shrink-0">{cnt}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            {/* Filter anggota (admin) */}
-            {isAdmin && (
-              <select value={filterUser} onChange={e => setFilterUser(e.target.value)}
-                className="rounded-xl px-3 py-2 text-xs outline-none"
-                style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.1)', color: '#1e293b', minWidth: '160px' }}>
-                <option value="">👤 Semua anggota</option>
-                {teamUsers.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
-              </select>
-            )}
-            {(filterDate || filterUser || searchProject) && (
-              <button onClick={() => { setFilterDate(''); setFilterUser(''); setSearchProject(''); }}
-                className="text-xs text-red-500 hover:text-red-700 font-semibold px-3 py-2 rounded-xl hover:bg-red-50 transition-all">
-                Reset
-              </button>
-            )}
+          </div>
+
+          {/* Team PTS Handler */}
+          <div style={card}>
+            <div style={cardHdr}>
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">👥 Team PTS</span>
+            </div>
+            <div className="px-5 py-4 flex items-center gap-4">
+              <div className="relative flex-shrink-0" style={{ width: 80, height: 80 }}>
+                <DonutChart data={handlerCounts.map((h, i) => ({ value: h.cnt, color: PIE_COLORS[i % PIE_COLORS.length] }))} total={stats.total} cx={40} cy={40} r={30} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-base font-black text-slate-800">{stats.total}</span>
+                  <span className="text-[9px] text-slate-400 font-bold">TOTAL</span>
+                </div>
+              </div>
+              <div className="flex-1 space-y-1 overflow-y-auto" style={{ maxHeight: 100 }}>
+                {handlerCounts.map(({ name, cnt }, i) => (
+                  <div key={name} className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                      <span className="text-[11px] text-slate-600 truncate">{name || '-'}</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-slate-800 flex-shrink-0">{cnt}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Divisi Sales */}
+          <div style={card}>
+            <div style={cardHdr}>
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">👔 Divisi Sales</span>
+            </div>
+            <div className="px-5 py-4 flex items-center gap-4">
+              <div className="relative flex-shrink-0" style={{ width: 80, height: 80 }}>
+                <DonutChart data={salesCounts.map((s, i) => ({ value: s.cnt, color: PIE_COLORS[(i + 3) % PIE_COLORS.length] }))} total={salesCounts.reduce((a, s) => a + s.cnt, 0)} cx={40} cy={40} r={30} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-base font-black text-slate-800">{salesCounts.reduce((a, s) => a + s.cnt, 0)}</span>
+                  <span className="text-[9px] text-slate-400 font-bold">TOTAL</span>
+                </div>
+              </div>
+              <div className="flex-1 space-y-1 overflow-y-auto" style={{ maxHeight: 100 }}>
+                {salesCounts.map(({ div, cnt }, i) => (
+                  <div key={div} className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[(i + 3) % PIE_COLORS.length] }} />
+                      <span className="text-[11px] text-slate-600 truncate">{div}</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-slate-800 flex-shrink-0">{cnt}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Main table — persis reminder-schedule: NO, PROJECT, PRODUCT, KEGIATAN, SALES, HANDLER, STATUS, TANGGAL, ACTION */}
-        <div style={cardStyle}>
-          <div style={cardHeaderStyle}>
+        {/* ── Schedule/Activity List ── */}
+        <div style={card}>
+          <div style={cardHdr}>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Daily Report</span>
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Activity List</span>
               <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{filteredRows.length}</span>
+              {liveLoading && <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />}
             </div>
-            <button onClick={fetchReportList} disabled={listLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-gray-100 border border-gray-200 text-gray-600 bg-white disabled:opacity-60 transition-all">
-              <svg className={`w-3.5 h-3.5 ${listLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-              Refresh
-            </button>
           </div>
 
-          {listLoading ? (
+          {/* Search + filter bar identik reminder-schedule */}
+          <div className="px-5 py-3 flex flex-wrap gap-2 border-b border-gray-100">
+            <div className="flex items-center gap-2 rounded-xl px-3 py-2 flex-1 min-w-[180px]" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)' }}>
+              <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <input value={searchProject} onChange={e => setSearchProject(e.target.value)} placeholder="Cari project / lokasi..." className="bg-transparent outline-none text-xs text-slate-700 placeholder-slate-400 w-full" />
+            </div>
+            {isAdmin && (
+              <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)', minWidth: '150px' }}>
+                <svg className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                <select value={filterUser} onChange={e => setFilterUser(e.target.value)} className="bg-transparent outline-none text-xs text-slate-700 w-full">
+                  <option value="">Team Handler</option>
+                  {teamUsers.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+                </select>
+              </div>
+            )}
+            <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)', minWidth: '130px' }}>
+              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-transparent outline-none text-xs text-slate-700 w-full">
+                <option value="">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="completed">Selesai</option>
+                <option value="in progress">Proses</option>
+                <option value="manual">Manual</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)' }}>
+              <svg className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="bg-transparent outline-none text-xs text-slate-700" />
+            </div>
+            {(filterDate || filterUser || filterStatus || searchProject) && (
+              <button onClick={() => { setFilterDate(''); setFilterUser(''); setFilterStatus(''); setSearchProject(''); }} className="px-3 py-2 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-50 transition-all">Reset</button>
+            )}
+          </div>
+
+          {/* Table */}
+          {liveLoading && filteredRows.length === 0 ? (
             <div className="flex items-center justify-center py-16 text-slate-400 gap-3">
               <div className="w-5 h-5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
-              <span className="text-sm">Memuat report...</span>
+              <span className="text-sm">Memuat aktivitas dari semua platform...</span>
             </div>
           ) : filteredRows.length === 0 ? (
-            <div className="text-center py-16 text-slate-400">
-              <div className="text-5xl mb-4">📋</div>
-              <p className="font-semibold text-slate-500">{reports.length === 0 ? 'Belum ada Daily Report' : 'Tidak ada hasil pencarian'}</p>
-              <p className="text-sm mt-1 text-slate-400">{reports.length === 0 ? 'Klik "Buat Report" untuk mulai' : 'Coba ubah filter atau keyword'}</p>
+            <div className="text-center py-16">
+              <div className="text-5xl mb-3">📋</div>
+              <p className="font-semibold text-slate-500">Belum ada aktivitas</p>
+              <p className="text-sm text-slate-400 mt-1">Data reminder &amp; ticket akan muncul otomatis di sini</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '960px' }}>
                 <thead>
                   <tr>
-                    <th style={{ ...thStyle, width: '40px' }}>NO</th>
-                    <th style={thStyle}>PROJECT</th>
-                    <th style={thStyle}>PRODUCT</th>
-                    <th style={thStyle}>KEGIATAN</th>
-                    <th style={thStyle}>SALES</th>
-                    <th style={thStyle}>HANDLER</th>
-                    <th style={thStyle}>STATUS</th>
-                    <th style={thStyle}>TANGGAL</th>
-                    <th style={{ ...thStyle, textAlign: 'center' as const }}>ACTION</th>
+                    <th style={{ ...TH, width: '40px', textAlign: 'center' as const }}>NO</th>
+                    <th style={TH}>PROJECT</th>
+                    <th style={TH}>PRODUCT</th>
+                    <th style={TH}>KEGIATAN</th>
+                    <th style={TH}>SALES</th>
+                    <th style={TH}>HANDLER</th>
+                    <th style={TH}>STATUS</th>
+                    <th style={TH}>TANGGAL</th>
+                    <th style={{ ...TH, textAlign: 'center' as const }}>ACTION</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredRows.map((row, i) => {
                     const c = CATEGORY_CONFIG[row.category] ?? CATEGORY_CONFIG['Internal'];
-                    const sb = row.source === 'manual'
-                      ? { label: 'Manual', bg: 'rgba(245,158,11,0.1)', color: '#b45309', border: 'rgba(245,158,11,0.3)' }
-                      : statusBadge(row.status);
-                    // tanggal cell: report_date + jam
-                    const report = reports.find(r => r.id === row.report_id);
+                    const badge = row.source === 'manual' ? SB.manual : sb(row.status);
                     return (
-                      <tr key={`${row.report_id}-${i}`}
-                        className="hover:bg-red-50/30 transition-colors cursor-pointer"
+                      <tr key={row.id} className="hover:bg-red-50/20 transition-colors cursor-pointer"
                         style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.6)' : 'rgba(248,250,252,0.5)' }}
-                        onClick={() => { if (report) { setDetailReport(report); setView('detail'); } }}>
-                        <td style={{ ...tdStyle, color: '#94a3b8', fontSize: '12px', textAlign: 'center' }}>{i + 1}</td>
-                        <td style={tdStyle}>
+                        onClick={() => setModalRow(row)}>
+                        <td style={{ ...TD, textAlign: 'center' as const, color: '#94a3b8', fontSize: '12px' }}>{i + 1}</td>
+                        <td style={TD}>
                           <p className="font-semibold text-slate-800 text-sm leading-tight">{row.project_name}</p>
                           {row.address && <p className="text-[11px] text-slate-400 mt-0.5">📍 {row.address}</p>}
-                          <p className="text-[10px] text-slate-400 mt-0.5">{row.report_date}</p>
                         </td>
-                        <td style={tdStyle}>
+                        <td style={TD}>
                           {row.product
                             ? <span className="text-xs font-semibold text-violet-700 bg-violet-50 border border-violet-200 px-2 py-1 rounded-lg">{row.product}</span>
                             : <span className="text-slate-300 text-xs">—</span>}
                         </td>
-                        <td style={tdStyle}>
+                        <td style={TD}>
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold"
                             style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}>
                             {row.kegiatan_icon} {row.source === 'ticket' ? 'Troubleshooting' : row.category}
                           </span>
                           {row.source === 'ticket' && <p className="text-[10px] text-slate-400 mt-0.5">{row.kegiatan_label}</p>}
-                          {row.source === 'reminder' && <p className="text-[10px] text-slate-400 mt-0.5">🔔 Reminder</p>}
-                          {row.source === 'manual' && <p className="text-[10px] text-slate-400 mt-0.5">✍️ Manual</p>}
                         </td>
-                        <td style={tdStyle}>
+                        <td style={TD}>
                           {row.sales_name
                             ? <div><p className="text-xs font-semibold text-slate-700">{row.sales_name}</p>{row.sales_division && <p className="text-[10px] text-slate-400">{row.sales_division}</p>}</div>
                             : <span className="text-slate-300">—</span>}
                         </td>
-                        <td style={tdStyle}>
+                        <td style={TD}>
                           <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
-                              style={{ background: avatarColor(row.handler_name) }}>
-                              {initials(row.handler_name)}
-                            </div>
-                            <span className="text-xs font-semibold text-slate-700">{row.handler_name}</span>
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
+                            <span className="text-xs font-semibold text-slate-700">{row.handler_name || '—'}</span>
                           </div>
                         </td>
-                        <td style={tdStyle}>
+                        <td style={TD}>
                           <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-bold"
-                            style={{ background: sb.bg, color: sb.color, border: `1px solid ${sb.border}` }}>
-                            {sb.label}
+                            style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.border}` }}>
+                            {badge.label}
                           </span>
                         </td>
-                        <td style={tdStyle}>
-                          <div className="rounded-xl text-center px-3 py-2 flex flex-col items-center" style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.12)', minWidth: '80px' }}>
-                            <span className="text-base font-black text-red-600 leading-none">{row.report_date.split('-')[2]}</span>
-                            <span className="text-[10px] font-bold text-red-400 uppercase mt-0.5">
-                              {new Date(row.report_date + 'T00:00:00').toLocaleDateString('id-ID', { month: 'short', year: '2-digit' }).toUpperCase()}
+                        <td style={TD}>
+                          <div className="rounded-xl text-center px-2.5 py-2 inline-flex flex-col items-center" style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.15)', minWidth: '64px' }}>
+                            <span className="text-base font-black text-red-600 leading-none">{row.report_date?.split('-')[2] ?? '—'}</span>
+                            <span className="text-[9px] font-bold text-red-400 uppercase">
+                              {row.report_date ? new Date(row.report_date + 'T00:00:00').toLocaleDateString('id-ID', { month: 'short', year: '2-digit' }).toUpperCase() : '—'}
                             </span>
-                            {row.tanggal !== '-' && <span className="text-[9px] text-slate-400 mt-0.5">{row.tanggal}</span>}
+                            {row.jam !== '-' && <span className="text-[9px] text-slate-400 mt-0.5">{row.jam}</span>}
                           </div>
                         </td>
-                        <td style={{ ...tdStyle, textAlign: 'center' as const }} onClick={ev => ev.stopPropagation()}>
+                        <td style={{ ...TD, textAlign: 'center' as const }} onClick={e => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-1.5">
-                            <button onClick={() => { if (report) { setDetailReport(report); setView('detail'); } }}
-                              className="p-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-500 transition-all" title="Detail">
+                            <button onClick={() => setModalRow(row)}
+                              className="p-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-500 transition-all" title="Lihat">
                               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                             </button>
-                            <button onClick={() => { if (report) openEditForm(report); }}
-                              className="p-1.5 rounded-lg text-white transition-all" title="Edit"
-                              style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                            </button>
+                            {row.report_id && (
+                              <button onClick={() => { const r = reports.find(x => x.id === row.report_id); if (r) openEditForm(r); }}
+                                className="p-1.5 rounded-lg text-white transition-all" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }} title="Edit Report">
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1222,7 +1121,10 @@ export default function DailyReportPage() {
           )}
         </div>
       </div>
-      <Toast />
-    </PageWrapper>
+
+      <FormModal />
+      <DetailModal />
+      <Toast t={toast} />
+    </PW>
   );
 }
