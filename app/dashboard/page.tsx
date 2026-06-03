@@ -55,6 +55,7 @@ export default function Dashboard() {
   const [adminPanelTab, setAdminPanelTab] = useState<'settings' | 'userManagement' | 'picBrand'>('settings');
   const [pendingCount, setPendingCount] = useState(0);
   const [showUserProfile, setShowUserProfile] = useState(false);
+  const [iframeLoading, setIframeLoading] = useState(false);
 
   const [visibleMenuItems, setVisibleMenuItems] = useState<MenuItem[]>([]);
 
@@ -65,7 +66,7 @@ export default function Dashboard() {
       description: 'Platform training, quiz online & analytics team',
       items: [{ name: 'Learning Center', url: '/learning-center', icon: '📚', internal: true, embed: true }]
     },
-	{
+    {
       title: 'Tech Note R&D', icon: '📝', key: 'tech-note',
       gradient: 'from-pink-700 via-pink-600 to-rose-500',
       description: 'Platform dokumentasi teknikal & R&D — KPI 10%',
@@ -203,6 +204,7 @@ export default function Dashboard() {
   const handleMenuClick = (item: MenuItem['items'][0], menuTitle: string) => {
     if (item.external && !item.embed) { window.open(item.url, '_blank'); return; }
     setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setShowDashboardPanel(false);
+    setIframeLoading(true);
     setTimeout(() => {
       if (item.internal) {
         setShowSidebar(true); setShowTicketing(true);
@@ -306,7 +308,7 @@ export default function Dashboard() {
   const PROJECT_KEYS = ['reminder-schedule', 'request-design-project', 'form-bast', 'ticket-troubleshooting'];
   const INTERNAL_DAILY_KEYS = ['picket-showroom', 'daily-report', 'database-pts', 'unit-movement'];
   // ── Learning Center sebagai section tersendiri ──
-  const LEARNING_KEYS = ['learning-center','tech-note'];
+  const LEARNING_KEYS = ['learning-center', 'tech-note'];
 
   const projectMenuItems = visibleMenuItems.filter(m => PROJECT_KEYS.includes(m.key));
   const internalMenuItems = visibleMenuItems.filter(m => INTERNAL_DAILY_KEYS.includes(m.key));
@@ -1157,7 +1159,23 @@ export default function Dashboard() {
 
         {/* MAIN CONTENT */}
         <div className="flex-1 flex flex-col overflow-y-auto">
-          <div className="flex-1 overflow-hidden bg-white">
+          <div className="flex-1 overflow-hidden bg-white relative">
+            {/* ── Loading Bar (muncul saat menu diklik, hilang setelah iframe loaded) ── */}
+            {iframeLoading && (
+              <div className="absolute top-0 left-0 right-0 z-50 pointer-events-none">
+                <div className="h-[3px] bg-slate-100 w-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      background: 'linear-gradient(90deg, #e2a84b, #f59e0b, #e2a84b)',
+                      backgroundSize: '200% 100%',
+                      animation: 'loadingBar 1.2s ease-in-out infinite',
+                      width: '60%',
+                    }}
+                  />
+                </div>
+              </div>
+            )}
             {showDashboardPanel && canAccessKPI && currentUser ? (
               /* ── Dashboard KPI Panel dalam sidebar ── */
               <div className="w-full h-full overflow-y-auto"
@@ -1167,12 +1185,40 @@ export default function Dashboard() {
                 </div>
               </div>
             ) : showTicketing ? (
-              <div className="w-full h-full overflow-auto">
-                <iframe src={internalUrl} className="w-full h-full border-0" title={iframeTitle} />
+              <div className="w-full h-full overflow-auto relative">
+                {iframeLoading && (
+                  <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-10 h-10 rounded-full border-[3px] border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.25)', borderTopColor: '#e2a84b' }} />
+                      <p className="text-slate-500 text-sm font-semibold tracking-wide">Memuat halaman...</p>
+                    </div>
+                  </div>
+                )}
+                <iframe
+                  key={internalUrl}
+                  src={internalUrl}
+                  className="w-full h-full border-0"
+                  title={iframeTitle}
+                  onLoad={() => setIframeLoading(false)}
+                />
               </div>
             ) : iframeUrl ? (
-              <div className="w-full h-full overflow-auto">
-                <iframe src={iframeUrl} className="w-full h-full border-0" title={iframeTitle} />
+              <div className="w-full h-full overflow-auto relative">
+                {iframeLoading && (
+                  <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-10 h-10 rounded-full border-[3px] border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.25)', borderTopColor: '#e2a84b' }} />
+                      <p className="text-slate-500 text-sm font-semibold tracking-wide">Memuat halaman...</p>
+                    </div>
+                  </div>
+                )}
+                <iframe
+                  key={iframeUrl}
+                  src={iframeUrl}
+                  className="w-full h-full border-0"
+                  title={iframeTitle}
+                  onLoad={() => setIframeLoading(false)}
+                />
               </div>
             ) : (
               <div className="flex items-center justify-center h-full text-slate-400">
@@ -1190,6 +1236,11 @@ export default function Dashboard() {
       <style jsx>{`
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes dropIn { from { opacity: 0; transform: translateY(-8px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes loadingBar {
+          0%   { transform: translateX(-100%); }
+          50%  { transform: translateX(80%); }
+          100% { transform: translateX(200%); }
+        }
       `}</style>
     </div>
   );
