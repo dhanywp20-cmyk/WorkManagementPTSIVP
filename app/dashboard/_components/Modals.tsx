@@ -1863,20 +1863,45 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
     // ── 3. Reminder Schedule ──
     try {
       if (isAdmin) {
-        // Admin: request jadwal dari sales yang belum di-assign (assigned_to kosong)
-        const { data } = await supabase
-          .from('reminders')
-          .select('id, project_name, category, due_date, status, assigned_to, notes, sales_name, sales_division, created_at')
-          .eq('status', 'pending')
-          .eq('assigned_to', '')
-          .ilike('notes', '%[REQUEST SALES]%')
-          .order('created_at', { ascending: false })
-          .limit(20);
-        setReminderNotifs((data ?? []).map((r: any) => ({
+        // Admin: (a) request jadwal sales belum di-assign + (b) semua reminder aktif belum done/cancelled
+        const [reqSalesRes, activeRes] = await Promise.all([
+          supabase
+            .from('reminders')
+            .select('id, project_name, category, due_date, status, assigned_to, notes, sales_name, sales_division, created_at')
+            .eq('status', 'pending')
+            .eq('assigned_to', '')
+            .ilike('notes', '%[REQUEST SALES]%')
+            .order('created_at', { ascending: false })
+            .limit(20),
+          supabase
+            .from('reminders')
+            .select('id, project_name, category, due_date, status, assigned_to, assign_name, notes, sales_name, sales_division, created_at')
+            .neq('status', 'done')
+            .neq('status', 'cancelled')
+            .order('due_date', { ascending: true })
+            .limit(50),
+        ]);
+
+        // Merge & deduplicate by id — request sales ditampilkan dengan ikon 📩, sisanya 🗓️
+        const seen = new Set<string>();
+        const merged: any[] = [];
+
+        // Request sales (priority pertama)
+        for (const r of (reqSalesRes.data ?? [])) {
+          if (!seen.has(r.id)) { seen.add(r.id); merged.push({ ...r, _isRequest: true }); }
+        }
+        // Semua active reminders
+        for (const r of (activeRes.data ?? [])) {
+          if (!seen.has(r.id)) { seen.add(r.id); merged.push({ ...r, _isRequest: false }); }
+        }
+
+        setReminderNotifs(merged.map((r: any) => ({
           id: r.id,
           type: 'reminder' as const,
           title: r.project_name,
-          subtitle: `📩 Req. Sales · ${r.sales_name}${r.sales_division ? ' · ' + r.sales_division : ''} · ${r.due_date}`,
+          subtitle: r._isRequest
+            ? `📩 Req. Sales · ${r.sales_name}${r.sales_division ? ' · ' + r.sales_division : ''} · ${r.due_date}`
+            : `🗓️ ${r.category}${r.assign_name ? ' · ' + r.assign_name : ''} · ${r.due_date}`,
           time: r.created_at,
           url: '/reminder-schedule',
           internalUrl: '/reminder-schedule',
