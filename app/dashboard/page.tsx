@@ -872,10 +872,6 @@ export default function Dashboard() {
                 {/* ── Dashboard item (untuk admin/supervisor) ── */}
                 {canAccessKPI && (
                   <div>
-                    <div className="flex items-center gap-2 px-1 mb-1.5">
-                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.38)' }}>Overview</span>
-                      <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
-                    </div>
                     <button
                       onClick={() => { setShowDashboardPanel(true); setShowTicketing(false); setIframeUrl(null); }}
                       className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
