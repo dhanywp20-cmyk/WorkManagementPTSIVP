@@ -306,7 +306,7 @@ export default function Dashboard() {
   const PROJECT_KEYS = ['reminder-schedule', 'request-design-project', 'form-bast', 'ticket-troubleshooting'];
   const INTERNAL_DAILY_KEYS = ['picket-showroom', 'daily-report', 'database-pts', 'unit-movement'];
   // ── Learning Center sebagai section tersendiri ──
-  const LEARNING_KEYS = ['learning-center'];
+  const LEARNING_KEYS = ['learning-center','tech-note'];
 
   const projectMenuItems = visibleMenuItems.filter(m => PROJECT_KEYS.includes(m.key));
   const internalMenuItems = visibleMenuItems.filter(m => INTERNAL_DAILY_KEYS.includes(m.key));
