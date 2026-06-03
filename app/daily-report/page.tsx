@@ -987,20 +987,20 @@ export default function DailyReportPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '960px', tableLayout: 'fixed' as const }}>
-                  <colgroup>
-                    <col style={{ width: '40px' }} />
-                    <col style={{ width: '22%' }} />
-                    <col style={{ width: '11%' }} />
-                    <col style={{ width: '18%' }} />
-                    <col style={{ width: '10%' }} />
-                    <col style={{ width: '10%' }} />
-                    <col style={{ width: '8%' }} />
-                    <col style={{ width: '9%' }} />
-                    <col style={{ width: '6%' }} />
-                  </colgroup>
-                  <thead>
-                <tbody>
+               <thead>
+                    <tr>
+                      <th style={{ ...TH, width: '40px', textAlign: 'center' as const }}>NO</th>
+                      <th style={TH}>PROJECT</th>
+                      <th style={TH}>PRODUCT</th>
+                      <th style={TH}>KEGIATAN</th>
+                      <th style={TH}>SALES</th>
+                      <th style={TH}>HANDLER</th>
+                      <th style={TH}>STATUS</th>
+                      <th style={TH}>TANGGAL</th>
+                      <th style={{ ...TH, textAlign: 'center' as const }}>ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                   {filteredRows.map((row, i) => {
                     const c = CATEGORY_CONFIG[row.category] ?? CATEGORY_CONFIG['Internal'];
                     const badge = row.source === 'manual' ? SB.manual : sb(row.status);
