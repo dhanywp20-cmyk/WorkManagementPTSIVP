@@ -47,10 +47,12 @@ const TH: React.CSSProperties = {
   fontWeight: 700, color: '#64748b', textTransform: 'uppercase' as const,
   letterSpacing: '0.06em', whiteSpace: 'nowrap' as const,
   background: 'rgba(248,250,252,0.97)', borderBottom: '2px solid rgba(0,0,0,0.07)',
+  borderRight: '1px solid rgba(0,0,0,0.06)',
 };
 const TD: React.CSSProperties = {
   padding: '11px 14px', fontSize: '13px', color: '#1e293b',
   verticalAlign: 'middle' as const, borderBottom: '1px solid rgba(0,0,0,0.04)',
+  borderRight: '1px solid rgba(0,0,0,0.04)',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -985,20 +987,19 @@ export default function DailyReportPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '960px' }}>
-                <thead>
-                  <tr>
-                    <th style={{ ...TH, width: '40px', textAlign: 'center' as const }}>NO</th>
-                    <th style={TH}>PROJECT</th>
-                    <th style={TH}>PRODUCT</th>
-                    <th style={TH}>KEGIATAN</th>
-                    <th style={TH}>SALES</th>
-                    <th style={TH}>HANDLER</th>
-                    <th style={TH}>STATUS</th>
-                    <th style={TH}>TANGGAL</th>
-                    <th style={{ ...TH, textAlign: 'center' as const }}>ACTION</th>
-                  </tr>
-                </thead>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '960px', tableLayout: 'fixed' }}>
+                    <colgroup>
+                      <col style={{ width: '40px' }} />   {/* NO */}
+                      <col style={{ width: '22%' }} />    {/* PROJECT */}
+                      <col style={{ width: '11%' }} />    {/* PRODUCT */}
+                      <col style={{ width: '18%' }} />    {/* KEGIATAN */}
+                      <col style={{ width: '10%' }} />    {/* SALES */}
+                      <col style={{ width: '10%' }} />    {/* HANDLER */}
+                      <col style={{ width: '8%' }} />     {/* STATUS */}
+                      <col style={{ width: '9%' }} />     {/* TANGGAL */}
+                      <col style={{ width: '6%' }} />     {/* ACTION */}
+                    </colgroup>
+                    <thead>
                 <tbody>
                   {filteredRows.map((row, i) => {
                     const c = CATEGORY_CONFIG[row.category] ?? CATEGORY_CONFIG['Internal'];
