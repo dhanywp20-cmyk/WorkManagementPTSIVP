@@ -260,13 +260,15 @@ export default function Dashboard() {
 
   const isAdmin = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
 
-  // KPI: admin + PTS supervisor + sales supervisor
+  // KPI: admin + PTS supervisor + sales supervisor + team member with dashboard permission
   const isPTSSupervisor = currentUser?.role === 'team'
     && ['Team PTS', 'Team PTS UMP', 'Team PTS MLDS'].includes(currentUser?.team_type ?? '')
     && currentUser?.jabatan === 'Supervisor';
   const isSalesSupervisor = ['guest', 'sales'].includes(currentUser?.role?.toLowerCase() ?? '')
     && ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'].includes(currentUser?.jabatan ?? '');
-  const canAccessKPI = isAdmin || isPTSSupervisor || isSalesSupervisor;
+  const hasTeamDashboardAccess = currentUser?.role === 'team'
+    && (currentUser?.allowed_menus ?? []).includes('dashboard');
+  const canAccessKPI = isAdmin || isPTSSupervisor || isSalesSupervisor || hasTeamDashboardAccess;
 
   useEffect(() => {
     if (!isAdmin) return;
