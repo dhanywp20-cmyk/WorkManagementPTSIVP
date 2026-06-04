@@ -398,13 +398,8 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
       const weekFilled = piketWeek.filter((p:any)=>p.pic_ivp_name||p.pic_ump_name||p.pic_mlds_name).length;
       // weekTotal = jumlah hari kerja (Senin-Jumat) dari awal minggu ini s.d. hari ini
-      const todayD = new Date(); todayD.setHours(0,0,0,0);
-      const monD = new Date(todayD); const dow = monD.getDay();
-      monD.setDate(monD.getDate() + (dow === 0 ? -6 : 1 - dow));
-      let weekWorkDays = 0;
-      for (let d = new Date(monD); d <= todayD; d.setDate(d.getDate()+1)) {
-        const wd = d.getDay(); if (wd >= 1 && wd <= 5) weekWorkDays++;
-      }
+      // weekTotal selalu 5 (Senin-Jumat), bukan hanya sampai hari ini
+      const weekWorkDays = 5;
 
       const roleMap: Record<string,number> = {};
       users.forEach((u:any)=>{ roleMap[u.role]=(roleMap[u.role]||0)+1; });
@@ -603,7 +598,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         const myLC = lcAttempts.filter((a: any) => a.user_id === uid);
         const lcScores = myLC.filter((a: any) => a.score != null).map((a: any) => a.score as number);
         const lcAvg = lcScores.length ? Math.round(lcScores.reduce((a: number, b: number) => a + b, 0) / lcScores.length) : 0;
-        const lcFailedBelow75 = myLC.filter((a: any) => a.score != null && a.score < 75).length;
+        const lcFailedBelow75 = myLC.filter((a: any) => a.score != null && a.score < 70).length;
 
         // Piket: count days where this member is assigned
         const tt = m.team_type as string;
@@ -878,7 +873,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       <MiniBar value={kpi.piket.weekFilled} max={kpi.piket.weekTotal} color="#10b981" h={5}/>
                       <div className="flex justify-between mt-0.5">
                         <span className="text-[8px] text-slate-300">0%</span>
-                        <span className="text-[8px] font-bold text-emerald-600">{Math.round((kpi.piket.weekFilled/Math.max(kpi.piket.weekTotal,1))*100)}% terpenuhi</span>
+                        <span className="text-[8px] font-bold text-emerald-600">{Math.min(100,Math.round((kpi.piket.weekFilled/Math.max(kpi.piket.weekTotal,1))*100))}% terpenuhi</span>
                       </div>
                     </div>
                   )}
@@ -1373,7 +1368,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                         const bastS = m.ticketsHandled === 0 ? 0 : m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating * 0.25);
                         const lcS   = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - m.lcFailedBelow75 / Math.max(m.lcAttempts,1));
                         const rndS  = m.techNotesApproved >= rndTarget ? 1 : m.techNotesApproved / rndTarget;
-                        const final = Math.round([0.20,0.30,0.40,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
+                        const final = Math.round([0.20,0.40,0.30,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
                         const noData = m.ticketsHandled===0&&m.lcAttempts===0&&m.techNotesApproved===0;
                         const label = noData?'Belum Ada Data':final>=85?'Excellent':final>=70?'Good':final>=50?'Fair':'Needs Work';
                         summaryAoa.push([
@@ -1391,7 +1386,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                             const bastS = m.ticketsHandled===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating*0.25);
                             const lcS   = m.lcAttempts===0?0:Math.max(0,1-(m.lcFailedBelow75/Math.max(m.lcAttempts,1)));
                             const rndS  = m.techNotesApproved>=rndTarget?1:m.techNotesApproved/rndTarget;
-                            return sum + Math.round([0.20,0.30,0.40,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
+                            return sum + Math.round([0.20,0.40,0.30,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
                           }, 0) / allMembers.length)
                         : 0;
                       summaryAoa.push(['','','','','','','','','','','RATA-RATA KPI', `${avgFinal}%`]);
@@ -1418,7 +1413,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                           const bastS = m.ticketsHandled===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating*0.25);
                           const lcS   = m.lcAttempts===0?0:Math.max(0,1-(m.lcFailedBelow75/Math.max(m.lcAttempts,1)));
                           const rndS  = m.techNotesApproved>=rndTarget?1:m.techNotesApproved/rndTarget;
-                          const final = Math.round([0.20,0.30,0.40,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
+                          const final = Math.round([0.20,0.40,0.30,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
                           aoa.push([m.name, m.jabatan, m.ticketsHandled, m.ticketsSolved, m.ticketsOverdue, m.avgResolutionDays, m.remindersDone, m.lcAttempts, m.lcAvgScore, m.piketFilled, m.techNotesApproved, final]);
                         });
                         const ws = XLSX_MOD.utils.aoa_to_sheet(aoa);
@@ -1446,10 +1441,10 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               {/* Legend */}
               <div className="bg-blue-50/80 border border-blue-200 rounded-xl px-4 py-3 text-[11px] text-blue-700 leading-relaxed">
                 <b>📌 Keterangan:</b> Data ✅ otomatis dari platform.
-                <span className="ml-2 font-semibold">🎫 Ticketing 20%</span> (overdue),
-                <span className="ml-1 font-semibold">⭐ BAST &amp; Demo 30%</span> (Form Review bintang 1-2),
-                <span className="ml-1 font-semibold">🎓 Tech Knowledge 40%</span> (LC nilai &lt;75),
-                <span className="ml-1 font-semibold">📝 R&amp;D Technote 10%</span> (input manual min 6/thn).
+                <span className="ml-2 font-semibold">🎫 Ticketing 20%</span> (nilai penuh jika 0 overdue),
+                <span className="ml-1 font-semibold">⭐ BAST &amp; Demo 40%</span> (nilai penuh jika tidak ada komplain/bintang &lt;3),
+                <span className="ml-1 font-semibold">🎓 Learning Center 30%</span> (nilai penuh jika tidak ada nilai &lt;70),
+                <span className="ml-1 font-semibold">📝 R&amp;D Tech Note 10%</span> (nilai penuh jika ≥2 approved/tahun).
                 Klik kartu untuk detail &amp; edit.
               </div>
 
@@ -1489,7 +1484,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   const periodMultiplier = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
                   const rndTarget = 2;
                   const rndScore = member.techNotesApproved >= rndTarget ? 1 : member.techNotesApproved / rndTarget;
-                  return Math.round([0.20, 0.30, 0.40, 0.10].reduce((s, w, i) => s + w * [tickScore, bastScore, lcScore, rndScore][i], 0) * 100);
+                  return Math.round([0.20, 0.40, 0.30, 0.10].reduce((s, w, i) => s + w * [tickScore, bastScore, lcScore, rndScore][i], 0) * 100);
                 };
                 // ── Compact horizontal member chip ───────────────────────
                   const MemberChip = ({ member }: { member: KPITeamMember }) => {
@@ -1598,7 +1593,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 const periodMultiplier = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
                 const rndTarget = 2;
                 const rndScore = member.techNotesApproved >= rndTarget ? 1 : member.techNotesApproved / rndTarget;
-                const finalKPI = Math.round([0.20, 0.30, 0.40, 0.10].reduce((s,w,i)=>s+w*[tickScore,bastScore,lcScore,rndScore][i],0)*100);
+                const finalKPI = Math.round([0.20, 0.40, 0.30, 0.10].reduce((s,w,i)=>s+w*[tickScore,bastScore,lcScore,rndScore][i],0)*100);
                 const noData = member.ticketsHandled === 0 && member.lcAttempts === 0 && member.techNotesApproved === 0;
                 const kpiColor = noData ? '#94a3b8' : finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
                 const isEditing = kpiTeam.editingMember === member.id;
@@ -1663,8 +1658,8 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                           {[
                             {label:'Ticketing', pct:Math.round(tickScore*100), weight:'20%', color:'#ef4444', icon:'🎫', bg:'#fef2f2', border:'#ef444440'},
-                            {label:'BAST & Demo', pct:Math.round(bastScore*100), weight:'30%', color:'#f59e0b', icon:'⭐', bg:'#fffbeb', border:'#f59e0b40'},
-                            {label:'Tech Knowledge', pct:Math.round(lcScore*100), weight:'40%', color:'#6366f1', icon:'🎓', bg:'#f5f3ff', border:'#6366f140'},
+                            {label:'BAST & Demo', pct:Math.round(bastScore*100), weight:'40%', color:'#f59e0b', icon:'⭐', bg:'#fffbeb', border:'#f59e0b40'},
+                            {label:'Learning Center', pct:Math.round(lcScore*100), weight:'30%', color:'#6366f1', icon:'🎓', bg:'#f5f3ff', border:'#6366f140'},
                             {label:'R&D Technote', pct:Math.round(rndScore*100), weight:'10%', color:'#ec4899', icon:'📝', bg:'#fdf4ff', border:'#ec489940'},
                           ].map(k=>(
                             <div key={k.label} className="rounded-xl border p-2.5 text-center" style={{background:k.bg, borderColor:k.border}}>
@@ -1711,36 +1706,38 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{background:bastScore>=1?'#d1fae5':'#fee2e2',color:bastScore>=1?'#065f46':'#991b1b'}}>{Math.round(bastScore*100)}% · 30%</span>
                               </div>
                               <div className="space-y-1.5 text-[11px] text-slate-600">
-                                <div className="text-[10px] text-slate-400 mb-1">Sumber: Form Review</div>
-                                <div className="flex justify-between"><span>Rating Rendah (★1-2)</span>
+                                <div className="text-[10px] text-slate-400 mb-1">Sumber: Form Review BAST & Demo (bintang &lt;3)</div>
+                                <div className="flex justify-between"><span>Komplain (★1-2)</span>
                                   <b className={member.formReviewLowRating > 0 ? 'text-red-600' : 'text-emerald-600'}>
                                     {member.formReviewLowRating}x
                                   </b>
                                 </div>
-                                {member.formReviewLowRating === 0
-                                  ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Tidak ada komplain</div>
-                                  : <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ {member.formReviewLowRating}x rating bintang rendah</div>}
+                                {member.ticketsHandled === 0
+                                  ? <div className="text-[10px] text-slate-400 font-semibold bg-slate-50 rounded-lg px-2 py-1">⏳ Belum ada aktivitas — belum dihitung</div>
+                                  : member.formReviewLowRating === 0
+                                    ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Tidak ada komplain</div>
+                                    : <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ {member.formReviewLowRating}x komplain (bintang rendah)</div>}
                               </div>
                             </div>
 
                             {/* Tech Knowledge — 40% (LC) */}
                             <div className="rounded-xl border p-3" style={{borderColor:'#6366f140', background:'#f5f3ff'}}>
                               <div className="flex items-center justify-between mb-2">
-                                <div className="text-[10px] font-bold text-violet-600 uppercase tracking-wider">🎓 Tech Knowledge</div>
+                                <div className="text-[10px] font-bold text-violet-600 uppercase tracking-wider">🎓 Learning Center</div>
                                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{background:lcScore>=1?'#d1fae5':'#fee2e2',color:lcScore>=1?'#065f46':'#991b1b'}}>{Math.round(lcScore*100)}% · 40%</span>
                               </div>
                               <div className="space-y-1.5 text-[11px] text-slate-600">
-                                <div className="text-[10px] text-slate-400 mb-1">Sumber: Learning Center</div>
+                                <div className="text-[10px] text-slate-400 mb-1">Sumber: Learning Center (nilai penuh jika tidak ada &lt;70)</div>
                                 <div className="flex justify-between"><span>Total Attempt</span><b className="text-slate-800">{member.lcAttempts}</b></div>
-                                <div className="flex justify-between"><span>Avg Score</span><b className={member.lcAvgScore < 75 ? 'text-red-600' : 'text-emerald-600'}>{member.lcAvgScore || '—'}</b></div>
+                                <div className="flex justify-between"><span>Avg Score</span><b className={member.lcAvgScore < 70 ? 'text-red-600' : 'text-emerald-600'}>{member.lcAvgScore || '—'}</b></div>
                                 <div className="flex justify-between"><span>Lulus</span><b className="text-emerald-600">{member.lcPassed}</b></div>
-                                <div className="flex justify-between"><span>Score &lt;75</span>
+                                <div className="flex justify-between"><span>Nilai &lt;70</span>
                                   <b className={member.lcFailedBelow75 > 0 ? 'text-red-600' : 'text-emerald-600'}>{member.lcFailedBelow75}x</b>
                                 </div>
                                 {member.lcFailedBelow75 > 0
-                                  ? <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ {member.lcFailedBelow75}x nilai di bawah 75</div>
+                                  ? <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ {member.lcFailedBelow75}x nilai di bawah 70</div>
                                   : member.lcAttempts > 0
-                                    ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Semua nilai ≥75</div>
+                                    ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Semua nilai ≥70</div>
                                     : null}
                               </div>
                             </div>
@@ -2034,7 +2031,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                           const bastS = m.ticketsHandled===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating*0.25);
                           const lcS   = m.lcAttempts===0?0:Math.max(0,1-(m.lcFailedBelow75/Math.max(m.lcAttempts,1)));
                           const rndS  = m.techNotesApproved>=rndTarget?1:m.techNotesApproved/rndTarget;
-                          const final = Math.round([0.20,0.30,0.40,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
+                          const final = Math.round([0.20,0.40,0.30,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
                           const noData = m.ticketsHandled===0&&m.lcAttempts===0&&m.techNotesApproved===0;
                           const c = noData?'#94a3b8':final>=85?'#10b981':final>=70?'#3b82f6':final>=50?'#f59e0b':'#ef4444';
                           return (
