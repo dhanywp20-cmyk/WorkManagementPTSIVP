@@ -86,7 +86,7 @@ function PW({ children }: { children: React.ReactNode }) {
       backgroundImage: `url('/IVP_Background.png')`,
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(10,10,30,0.52)' }} />
+
       <div className="relative z-10 flex flex-col min-h-screen">{children}</div>
     </div>
   );
@@ -896,49 +896,11 @@ export default function DailyReportPage() {
         </div>
 
         {/* ── Product Distribution Card ── */}
-        {productPieData.length > 0 && (() => {
-          const total = productPieData.reduce((s, d) => s + d.value, 0);
-          const size = 80;
-          const cx = size / 2, cy = size / 2, r = size / 2 - 2;
-          let cumulAngle = -Math.PI / 2;
-          const slices = productPieData.map(d => {
-            const angle = (d.value / total) * 2 * Math.PI;
-            const x1 = cx + r * Math.cos(cumulAngle);
-            const y1 = cy + r * Math.sin(cumulAngle);
-            cumulAngle += angle;
-            const x2 = cx + r * Math.cos(cumulAngle);
-            const y2 = cy + r * Math.sin(cumulAngle);
-            const large = angle > Math.PI ? 1 : 0;
-            return { path: `M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z`, color: d.color, label: d.label, value: d.value };
-          });
-          return (
-            <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: '1px solid rgba(255,255,255,0.8)', overflow: 'hidden', padding: '16px 20px', display: 'flex', gap: '20px', alignItems: 'center' }}>
-              <div style={{ flexShrink: 0 }}>
-                <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#94a3b8', marginBottom: '8px' }}>🏷️ Distribusi Produk</p>
-                <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-                  {slices.map((s, i) => <path key={i} d={s.path} fill={s.color} stroke="#fff" strokeWidth={1.5} />)}
-                  <circle cx={cx} cy={cy} r={r * 0.48} fill="white" />
-                  <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="middle" fontSize="12" fontWeight="800" fill="#1e293b">{total}</text>
-                </svg>
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{total} aktivitas · {productPieData.length} produk</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '100px', overflowY: 'auto' }}>
-                  {productPieData.map((d, i) => (
-                    <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: d.color, flexShrink: 0 }} />
-                      <span style={{ fontSize: '11px', color: '#475569', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>{d.label}</span>
-                      <span style={{ fontSize: '11px', fontWeight: 800, color: d.color, flexShrink: 0 }}>{d.value}</span>
-                      <div style={{ width: '64px', height: '6px', background: '#f1f5f9', borderRadius: '99px', overflow: 'hidden', flexShrink: 0 }}>
-                        <div style={{ height: '100%', borderRadius: '99px', background: d.color, width: `${(d.value / total) * 100}%`, transition: 'width 0.5s' }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          );
-        })()}
+        {productPieData.length > 0 && (
+          <MiniPieChart
+            data={productPieData} title="Distribusi Produk" icon="🏷️"
+          />
+        )}
 
         {/* ── Schedule/Activity List ── */}
         <div style={card}>
