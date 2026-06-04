@@ -457,6 +457,12 @@ export default function DailyReportPage() {
     return Array.from(m.entries()).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([label, value], i) => ({ label, value, color: PIE_C[(i+3) % PIE_C.length] }));
   }, [allRows]);
 
+  const productPieData = useMemo(() => {
+    const m = new Map<string, number>();
+    allRows.forEach(r => { if (r.product) m.set(r.product, (m.get(r.product) ?? 0) + 1); });
+    return Array.from(m.entries()).sort((a,b)=>b[1]-a[1]).map(([label, value], i) => ({ label, value, color: PIE_C[(i+2) % PIE_C.length] }));
+  }, [allRows]);
+
   // ── Form helpers ──────────────────────────────────────────────────────────────
   const openNewForm = async () => {
     const date = todayISO();
@@ -889,6 +895,51 @@ export default function DailyReportPage() {
           />
         </div>
 
+        {/* ── Product Distribution Card ── */}
+        {productPieData.length > 0 && (() => {
+          const total = productPieData.reduce((s, d) => s + d.value, 0);
+          const size = 80;
+          const cx = size / 2, cy = size / 2, r = size / 2 - 2;
+          let cumulAngle = -Math.PI / 2;
+          const slices = productPieData.map(d => {
+            const angle = (d.value / total) * 2 * Math.PI;
+            const x1 = cx + r * Math.cos(cumulAngle);
+            const y1 = cy + r * Math.sin(cumulAngle);
+            cumulAngle += angle;
+            const x2 = cx + r * Math.cos(cumulAngle);
+            const y2 = cy + r * Math.sin(cumulAngle);
+            const large = angle > Math.PI ? 1 : 0;
+            return { path: `M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z`, color: d.color, label: d.label, value: d.value };
+          });
+          return (
+            <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: '1px solid rgba(255,255,255,0.8)', overflow: 'hidden', padding: '16px 20px', display: 'flex', gap: '20px', alignItems: 'center' }}>
+              <div style={{ flexShrink: 0 }}>
+                <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#94a3b8', marginBottom: '8px' }}>🏷️ Distribusi Produk</p>
+                <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                  {slices.map((s, i) => <path key={i} d={s.path} fill={s.color} stroke="#fff" strokeWidth={1.5} />)}
+                  <circle cx={cx} cy={cy} r={r * 0.48} fill="white" />
+                  <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="middle" fontSize="12" fontWeight="800" fill="#1e293b">{total}</text>
+                </svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{total} aktivitas · {productPieData.length} produk</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '100px', overflowY: 'auto' }}>
+                  {productPieData.map((d, i) => (
+                    <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: d.color, flexShrink: 0 }} />
+                      <span style={{ fontSize: '11px', color: '#475569', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>{d.label}</span>
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: d.color, flexShrink: 0 }}>{d.value}</span>
+                      <div style={{ width: '64px', height: '6px', background: '#f1f5f9', borderRadius: '99px', overflow: 'hidden', flexShrink: 0 }}>
+                        <div style={{ height: '100%', borderRadius: '99px', background: d.color, width: `${(d.value / total) * 100}%`, transition: 'width 0.5s' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ── Schedule/Activity List ── */}
         <div style={card}>
           <div style={cardHdr}>
@@ -898,7 +949,7 @@ export default function DailyReportPage() {
               {liveLoading && <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />}
             </div>
             <button onClick={() => { loadLiveData(); loadReports(); }} disabled={liveLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:bg-slate-100"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:bg-slate-100 disabled:opacity-50"
               style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)', color: '#475569' }}>
               <svg className={`w-3.5 h-3.5 ${liveLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
               Refresh
@@ -987,16 +1038,16 @@ export default function DailyReportPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1100px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1200px' }}>
                   <colgroup>
                     <col style={{ width: '44px' }} />
-                    <col style={{ width: '22%' }} />
-                    <col style={{ width: '14%' }} />
-                    <col style={{ width: '16%' }} />
-                    <col style={{ width: '12%' }} />
-                    <col style={{ width: '13%' }} />
-                    <col style={{ width: '9%' }} />
-                    <col style={{ width: '8%' }} />
+                    <col />
+                    <col style={{ width: '140px' }} />
+                    <col style={{ width: '180px' }} />
+                    <col style={{ width: '130px' }} />
+                    <col style={{ width: '150px' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '95px' }} />
                     <col style={{ width: '80px' }} />
                   </colgroup>
                   <thead>
