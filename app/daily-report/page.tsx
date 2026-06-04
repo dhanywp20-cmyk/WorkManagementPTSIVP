@@ -818,12 +818,6 @@ export default function DailyReportPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => { loadLiveData(); loadReports(); }} disabled={liveLoading}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all"
-              style={{ background: 'white', border: '1.5px solid rgba(0,0,0,0.1)', color: '#475569' }}>
-              <svg className={`w-3.5 h-3.5 ${liveLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-              Refresh
-            </button>
             <button onClick={openNewForm}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-sm text-white hover:scale-[1.02] transition-all"
               style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 4px 14px rgba(220,38,38,0.4)' }}>
@@ -903,6 +897,12 @@ export default function DailyReportPage() {
               <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{filteredRows.length}</span>
               {liveLoading && <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />}
             </div>
+            <button onClick={() => { loadLiveData(); loadReports(); }} disabled={liveLoading}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:bg-slate-100"
+              style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)', color: '#475569' }}>
+              <svg className={`w-3.5 h-3.5 ${liveLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              Refresh
+            </button>
           </div>
 
           {/* Active filter chips from pie charts */}
@@ -987,17 +987,17 @@ export default function DailyReportPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '960px', tableLayout: 'fixed' as const }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1100px' }}>
                   <colgroup>
-                    <col style={{ width: '4%' }} />
+                    <col style={{ width: '44px' }} />
                     <col style={{ width: '22%' }} />
-                    <col style={{ width: '17%' }} />
-                    <col style={{ width: '18%' }} />
-                    <col style={{ width: '10%' }} />
-                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '14%' }} />
+                    <col style={{ width: '16%' }} />
+                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '13%' }} />
+                    <col style={{ width: '9%' }} />
                     <col style={{ width: '8%' }} />
-                    <col style={{ width: '7%' }} />
-                    <col style={{ width: '6%' }} />
+                    <col style={{ width: '80px' }} />
                   </colgroup>
                   <thead>
                     <tr>
