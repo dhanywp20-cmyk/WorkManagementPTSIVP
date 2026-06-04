@@ -48,6 +48,7 @@ interface KPITeamMember {
   piketFilled: number;
   ticketAvgResponseHours: number;
   formReviewLowRating: number;
+  formReviewTotal: number;     // total form review submitted by sales
   // Monthly sparkline data (12 bulan)
   monthlyTickets: number[];
   monthlyLC: number[];
@@ -74,6 +75,15 @@ interface KPITeamState {
   filterTeam: string;
 }
 
+interface KPISettings {
+  lcMinScore: number;       // batas minimum LC (default 70)
+  rndTarget: number;        // target tech note per tahun (default 2)
+  ticketOverdueWeight: number; // bobot ticketing (default 0.20)
+  bastWeight: number;       // bobot BAST (default 0.40)
+  lcWeight: number;         // bobot LC (default 0.30)
+  rndWeight: number;        // bobot RnD (default 0.10)
+}
+
 interface AuditEntry {
   id: string; module: string; actor: string; action: string;
   target: string; detail: string; ts: string;
@@ -81,7 +91,7 @@ interface AuditEntry {
 }
 
 interface Scope {
-  kind: 'admin' | 'pts_sup' | 'none';
+  kind: 'admin' | 'pts_sup' | 'team' | 'none';
   // pts_sup
   ptsTeamType?: string;
   ptsMemberNames?: string[];
@@ -270,6 +280,15 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     filterTeam: 'all',
   });
   const [selectedKPIMember, setSelectedKPIMember] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [kpiSettings, setKpiSettings] = useState<KPISettings>({
+    lcMinScore: 70,
+    rndTarget: 2,
+    ticketOverdueWeight: 0.20,
+    bastWeight: 0.40,
+    lcWeight: 0.30,
+    rndWeight: 0.10,
+  });
   const intervalRef = useRef<ReturnType<typeof setInterval>|null>(null);
 
   // ── 1. Resolve scope ──────────────────────────────────────────────────────
@@ -294,6 +313,11 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           ptsMemberNames: (data ?? []).map((u:any) => u.full_name as string),
         });
         setScopeReady(true); return;
+      }
+
+      // Regular team member — can see their own KPI
+      if (role === 'team' || role === 'team_pts') {
+        setScope({ kind: 'team' }); setScopeReady(true); return;
       }
 
       setScope({ kind:'none' }); setScopeReady(true);
@@ -502,6 +526,9 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         membersQ = membersQ.eq('role', 'team').eq('team_type', scope.ptsTeamType ?? '');
       } else if (scope.kind === 'admin') {
         membersQ = membersQ.in('team_type', ['Team PTS', 'Team PTS UMP', 'Team PTS MLDS']).eq('role', 'team');
+      } else if (scope.kind === 'team') {
+        // Team member: only fetch their own data
+        membersQ = membersQ.eq('id', currentUser.id);
       } else {
         setKpiTeam(prev => ({ ...prev, loading: false }));
         return;
@@ -617,13 +644,14 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         });
         const ticketAvgResponseHours = responseTimes.length ? Math.round(responseTimes.reduce((a: number, b: number) => a + b, 0) / responseTimes.length) : 0;
 
-        // Form Review: low rating (bintang 1 atau 2) per assign_name
+        // Form Review: low rating (bintang < 3) per assign_name
         const myReviews = formReviews.filter((r: any) => r.assign_name === name);
+        const formReviewTotal = myReviews.length;
         const formReviewLowRating = myReviews.filter((r: any) => {
           const g1 = r.grade_product_knowledge ?? 5;
           const g2 = r.grade_training_customer ?? 5;
           const g3 = r.grade_product_knowledge_bast ?? 5;
-          return g1 <= 2 || g2 <= 2 || g3 <= 2;
+          return g1 < 3 || g2 < 3 || g3 < 3;
         }).length;
 
         // Manual KPI values (from DB or defaults)
@@ -653,7 +681,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           ticketsHandled: myTickets.length, ticketsSolved: tSolved.length, ticketsOverdue: tOverdue.length, avgResolutionDays: avgRes,
           remindersAssigned: myRem.length, remindersDone: remDone, remindersOverdue: remOver,
           lcAttempts: myLC.length, lcAvgScore: lcAvg, lcPassed: myLC.filter((a: any) => a.passed === true).length,
-          lcFailedBelow75, piketFilled, ticketAvgResponseHours, formReviewLowRating,
+          lcFailedBelow75, piketFilled, ticketAvgResponseHours, formReviewLowRating, formReviewTotal,
           techNotesApproved,
           monthlyTickets, monthlyLC,
           manual,
@@ -674,8 +702,10 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
   useEffect(() => {
     if (tab === 'kpi_team' && scopeReady) fetchKPITeam();
+    // For team scope: auto-fetch their own KPI on load
+    if (scope.kind === 'team' && scopeReady) fetchKPITeam();
     return () => { if(intervalRef.current) clearInterval(intervalRef.current); };
-  }, [tab, scopeReady, fetchKPITeam]);
+  }, [tab, scopeReady, fetchKPITeam, scope.kind]);
 
   // ── Filtered Audit ────────────────────────────────────────────────────────
 
@@ -695,7 +725,121 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       <div className="w-8 h-8 border-3 border-white/30 border-t-white rounded-full animate-spin"/>
     </div>
   );
-  if (scope.kind === 'none') return null;
+  // ── Team member view — simple personal KPI ──────────────────────────────
+  if (scope.kind === 'team') {
+    const myMember = kpiTeam.members.find(m => m.id === currentUser.id);
+    const _s = kpiSettings;
+
+    if (kpiTeam.loading || (!myMember && kpiTeam.members.length === 0)) {
+      return (
+        <div className="flex items-center justify-center py-20">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 rounded-full border-2 border-blue-200 border-t-blue-600 animate-spin"/>
+            <span className="text-slate-400 text-xs">Memuat KPI kamu...</span>
+          </div>
+        </div>
+      );
+    }
+
+    const tickScore = myMember.ticketsHandled > 0 ? Math.max(0, 1 - myMember.ticketsOverdue / Math.max(myMember.ticketsHandled, 1)) : 0;
+    const bastScore = myMember.formReviewTotal === 0 ? 0 : myMember.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - myMember.formReviewLowRating / Math.max(myMember.formReviewTotal, 1));
+    const lcScore   = myMember.lcAttempts === 0 ? 0 : Math.max(0, 1 - (myMember.lcFailedBelow75 / Math.max(myMember.lcAttempts, 1)));
+    const rndScore  = myMember.techNotesApproved >= _s.rndTarget ? 1 : myMember.techNotesApproved / Math.max(_s.rndTarget, 1);
+    const finalKPI  = Math.round((_s.ticketOverdueWeight*tickScore + _s.bastWeight*bastScore + _s.lcWeight*lcScore + _s.rndWeight*rndScore) * 100);
+    const kpiColor  = finalKPI >= 85 ? '#10b981' : finalKPI >= 70 ? '#3b82f6' : finalKPI >= 50 ? '#f59e0b' : '#ef4444';
+    const kpiLabel  = finalKPI >= 85 ? 'Excellent' : finalKPI >= 70 ? 'Good' : finalKPI >= 50 ? 'Fair' : 'Needs Work';
+
+    return (
+      <div className="w-full" style={{ animation:'fadeInUp 0.35s ease forwards' }}>
+        <div className="rounded-3xl overflow-hidden"
+          style={{ background:'rgba(255,255,255,0.97)', border:'1px solid rgba(255,255,255,0.6)', boxShadow:'0 4px 32px rgba(0,0,0,0.10)' }}>
+
+          {/* Header */}
+          <div className="flex items-center justify-between gap-4 px-6 py-4"
+            style={{ background:'rgba(255,255,255,0.97)', borderBottom:'3px solid #dc2626' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-lg text-white"
+                style={{ background:`linear-gradient(135deg,${kpiColor},${kpiColor}99)` }}>
+                {myMember.name.charAt(0)}
+              </div>
+              <div>
+                <div className="font-bold text-slate-800 text-sm">{myMember.name}</div>
+                <div className="text-[11px] text-slate-400">{myMember.jabatan} · {myMember.team_type}</div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-black" style={{ color: kpiColor }}>{finalKPI}%</div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">KPI Score · {kpiLabel}</div>
+            </div>
+          </div>
+
+          <div className="p-5 space-y-4">
+            {/* 4 bobot cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label:'Ticketing', raw:Math.round(tickScore*100), pct:Math.round(tickScore*_s.ticketOverdueWeight*100), weight:Math.round(_s.ticketOverdueWeight*100)+'%', color:'#ef4444', icon:'🎫', bg:'#fef2f2', border:'#ef444420',
+                  status: myMember.ticketsHandled===0 ? '⏳ Belum ada ticket' : myMember.ticketsOverdue===0 ? '✓ Tidak ada overdue' : `⚠ ${myMember.ticketsOverdue} overdue` },
+                { label:'BAST & Demo', raw:Math.round(bastScore*100), pct:Math.round(bastScore*_s.bastWeight*100), weight:Math.round(_s.bastWeight*100)+'%', color:'#f59e0b', icon:'⭐', bg:'#fffbeb', border:'#f59e0b20',
+                  status: myMember.formReviewTotal===0 ? '⏳ Sales belum review' : myMember.formReviewLowRating===0 ? '✓ Tidak ada komplain' : `⚠ ${myMember.formReviewLowRating}x komplain` },
+                { label:'Learning Center', raw:Math.round(lcScore*100), pct:Math.round(lcScore*_s.lcWeight*100), weight:Math.round(_s.lcWeight*100)+'%', color:'#6366f1', icon:'🎓', bg:'#f5f3ff', border:'#6366f120',
+                  status: myMember.lcAttempts===0 ? '⏳ Belum ada quiz' : myMember.lcFailedBelow75===0 ? `✓ Semua nilai ≥${_s.lcMinScore}` : `⚠ ${myMember.lcFailedBelow75}x nilai <${_s.lcMinScore}` },
+                { label:'R&D Tech Note', raw:Math.round(rndScore*100), pct:Math.round(rndScore*_s.rndWeight*100), weight:Math.round(_s.rndWeight*100)+'%', color:'#ec4899', icon:'📝', bg:'#fdf4ff', border:'#ec489920',
+                  status: myMember.techNotesApproved===0 ? '⏳ Belum ada Tech Note' : myMember.techNotesApproved>=_s.rndTarget ? `✓ ${myMember.techNotesApproved}/${_s.rndTarget} KKM terpenuhi` : `⏳ ${myMember.techNotesApproved}/${_s.rndTarget} (kurang ${_s.rndTarget-myMember.techNotesApproved})` },
+              ].map(k => (
+                <div key={k.label} className="rounded-2xl border p-3 text-center" style={{ background:k.bg, borderColor:k.border }}>
+                  <div className="text-xl mb-1">{k.icon}</div>
+                  <div className="text-[9px] font-bold uppercase tracking-wide text-slate-400 mb-1">{k.label}</div>
+                  <div className="text-2xl font-black" style={{ color:k.color }}>{k.pct}<span className="text-sm font-medium text-slate-300">/{k.weight}</span></div>
+                  <div className="text-[9px] text-slate-400 mt-0.5">dari skor {k.raw}%</div>
+                  <div className="mt-2 text-[10px] font-semibold px-2 py-1 rounded-lg"
+                    style={{ background: k.status.startsWith('✓') ? '#d1fae5' : k.status.startsWith('⚠') ? '#fee2e2' : '#f1f5f9',
+                      color: k.status.startsWith('✓') ? '#065f46' : k.status.startsWith('⚠') ? '#991b1b' : '#64748b' }}>
+                    {k.status}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Progress bar total */}
+            <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">Total KPI Score</span>
+                <span className="text-lg font-black" style={{ color: kpiColor }}>{finalKPI}%</span>
+              </div>
+              <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-700" style={{ width:`${finalKPI}%`, background:`linear-gradient(90deg,${kpiColor},${kpiColor}aa)` }}/>
+              </div>
+              <div className="flex justify-between mt-1.5 text-[10px] text-slate-400">
+                <span>0%</span>
+                <span className="font-bold" style={{ color: kpiColor }}>{finalKPI}% — {kpiLabel}</span>
+                <span>100%</span>
+              </div>
+            </div>
+
+            {/* Detail rows */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="rounded-xl border border-slate-100 p-3 bg-white text-[12px] space-y-2">
+                <div className="font-bold text-slate-600 text-[11px] uppercase tracking-wide mb-2">📊 Detail Aktivitas</div>
+                <div className="flex justify-between"><span className="text-slate-500">Ticket Handled</span><b className="text-slate-800">{myMember.ticketsHandled}</b></div>
+                <div className="flex justify-between"><span className="text-slate-500">Ticket Solved</span><b className="text-emerald-600">{myMember.ticketsSolved}</b></div>
+                <div className="flex justify-between"><span className="text-slate-500">Ticket Overdue</span><b className={myMember.ticketsOverdue > 0 ? 'text-red-600' : 'text-emerald-600'}>{myMember.ticketsOverdue}</b></div>
+                <div className="flex justify-between"><span className="text-slate-500">Form Review Masuk</span><b className="text-slate-800">{myMember.formReviewTotal}</b></div>
+                <div className="flex justify-between"><span className="text-slate-500">Komplain (bintang &lt;3)</span><b className={myMember.formReviewLowRating > 0 ? 'text-red-600' : 'text-emerald-600'}>{myMember.formReviewLowRating}</b></div>
+              </div>
+              <div className="rounded-xl border border-slate-100 p-3 bg-white text-[12px] space-y-2">
+                <div className="font-bold text-slate-600 text-[11px] uppercase tracking-wide mb-2">🎓 Learning Center</div>
+                <div className="flex justify-between"><span className="text-slate-500">Total Attempt</span><b className="text-slate-800">{myMember.lcAttempts}</b></div>
+                <div className="flex justify-between"><span className="text-slate-500">Lulus</span><b className="text-emerald-600">{myMember.lcPassed}</b></div>
+                <div className="flex justify-between"><span className="text-slate-500">Nilai &lt;{_s.lcMinScore}</span><b className={myMember.lcFailedBelow75 > 0 ? 'text-red-600' : 'text-emerald-600'}>{myMember.lcFailedBelow75}x</b></div>
+                <div className="flex justify-between"><span className="text-slate-500">Avg Score</span><b className={myMember.lcAvgScore < _s.lcMinScore ? 'text-red-600' : 'text-emerald-600'}>{myMember.lcAvgScore || '—'}</b></div>
+                <div className="flex justify-between"><span className="text-slate-500">R&D Tech Note</span><b className={myMember.techNotesApproved >= _s.rndTarget ? 'text-emerald-600' : 'text-amber-600'}>{myMember.techNotesApproved}/{_s.rndTarget}</b></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ── Piket card highlight per team ─────────────────────────────────────────
   const isPTSIVP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS';
@@ -1144,6 +1288,13 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                     Refresh
                   </button>
+                  <button
+                    onClick={()=>setShowSettings(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-violet-600 hover:text-white hover:bg-violet-600 bg-white border border-violet-200 transition-all"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    Pengaturan KPI
+                  </button>
                   {/* Download Excel per orang — format corporate seperti Formulir KPI */}
                   <button
                     onClick={async () => {
@@ -1466,25 +1617,24 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 const mldsMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS MLDS');
                 const umpMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS UMP');
                 const calcKPI = (member: KPITeamMember) => {
-                  // Ticketing 20%: jika tidak ada ticket sama sekali → 0 (belum ada data), bukan 100%
+                  const s = kpiSettings;
+                  // Ticketing 20%: nilai penuh jika 0 overdue. Jika belum ada ticket = 0
                   const tickScore = member.ticketsHandled > 0
                     ? Math.max(0, 1 - member.ticketsOverdue / Math.max(member.ticketsHandled, 1))
                     : 0;
-                  // BAST & Demo 30%: dari formReviewLowRating — jika belum ada review sama sekali → 0
-                  // Punya review dan tidak ada bintang rendah = 100%, ada bintang rendah = kurang
-                  const hasFormReview = (member.ticketsHandled > 0); // proxy: aktif bekerja
-                  const bastScore = !hasFormReview ? 0
-                    : member.formReviewLowRating === 0 ? 1
-                    : Math.max(0, 1 - member.formReviewLowRating * 0.25);
-                  // Tech Knowledge 40%: dari LC — jika belum ada attempt sama sekali → 0
+                  // BAST & Demo: nilai penuh jika tidak ada komplain (bintang <3). Jika Sales belum submit review = 0
+                  const bastScore = member.formReviewTotal === 0
+                    ? 0  // belum ada review dari sales → belum dihitung
+                    : member.formReviewLowRating === 0
+                      ? 1
+                      : Math.max(0, 1 - member.formReviewLowRating / Math.max(member.formReviewTotal, 1));
+                  // Learning Center: nilai penuh jika tidak ada nilai < lcMinScore
                   const lcScore = member.lcAttempts === 0
                     ? 0
                     : Math.max(0, 1 - (member.lcFailedBelow75 / Math.max(member.lcAttempts, 1)));
-                  // R&D Technote 10%: input manual min 6/tahun (atau 3 untuk 6 bulan)
-                  const periodMultiplier = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
-                  const rndTarget = 2;
-                  const rndScore = member.techNotesApproved >= rndTarget ? 1 : member.techNotesApproved / rndTarget;
-                  return Math.round([0.20, 0.40, 0.30, 0.10].reduce((s, w, i) => s + w * [tickScore, bastScore, lcScore, rndScore][i], 0) * 100);
+                  // R&D Tech Note: nilai penuh jika >= rndTarget approved
+                  const rndScore = member.techNotesApproved >= s.rndTarget ? 1 : member.techNotesApproved / Math.max(s.rndTarget, 1);
+                  return Math.round((s.ticketOverdueWeight*tickScore + s.bastWeight*bastScore + s.lcWeight*lcScore + s.rndWeight*rndScore) * 100);
                 };
                 // ── Compact horizontal member chip ───────────────────────
                   const MemberChip = ({ member }: { member: KPITeamMember }) => {
@@ -1586,14 +1736,14 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 const member = kpiTeam.members.find(m => m.id === selectedKPIMember);
                 if (!member) return null;
                 // New 4-component scoring — belum ada data = 0, bukan 100%
+                const _s = kpiSettings;
                 const tickScore = member.ticketsHandled > 0 ? Math.max(0, 1 - member.ticketsOverdue / Math.max(member.ticketsHandled,1)) : 0;
-                const hasFormReview = member.ticketsHandled > 0;
-                const bastScore = !hasFormReview ? 0 : member.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - member.formReviewLowRating * 0.25);
+                const bastScore = member.formReviewTotal === 0
+                  ? 0
+                  : member.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - member.formReviewLowRating / Math.max(member.formReviewTotal, 1));
                 const lcScore = member.lcAttempts === 0 ? 0 : Math.max(0, 1 - (member.lcFailedBelow75 / Math.max(member.lcAttempts,1)));
-                const periodMultiplier = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
-                const rndTarget = 2;
-                const rndScore = member.techNotesApproved >= rndTarget ? 1 : member.techNotesApproved / rndTarget;
-                const finalKPI = Math.round([0.20, 0.40, 0.30, 0.10].reduce((s,w,i)=>s+w*[tickScore,bastScore,lcScore,rndScore][i],0)*100);
+                const rndScore = member.techNotesApproved >= _s.rndTarget ? 1 : member.techNotesApproved / Math.max(_s.rndTarget, 1);
+                const finalKPI = Math.round((_s.ticketOverdueWeight*tickScore + _s.bastWeight*bastScore + _s.lcWeight*lcScore + _s.rndWeight*rndScore) * 100);
                 const noData = member.ticketsHandled === 0 && member.lcAttempts === 0 && member.techNotesApproved === 0;
                 const kpiColor = noData ? '#94a3b8' : finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
                 const isEditing = kpiTeam.editingMember === member.id;
@@ -1657,10 +1807,10 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                         {/* ── KPI Score Breakdown ── */}
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                           {[
-                            {label:'Ticketing', pct:Math.round(tickScore*100), weight:'20%', color:'#ef4444', icon:'🎫', bg:'#fef2f2', border:'#ef444440'},
-                            {label:'BAST & Demo', pct:Math.round(bastScore*100), weight:'40%', color:'#f59e0b', icon:'⭐', bg:'#fffbeb', border:'#f59e0b40'},
-                            {label:'Learning Center', pct:Math.round(lcScore*100), weight:'30%', color:'#6366f1', icon:'🎓', bg:'#f5f3ff', border:'#6366f140'},
-                            {label:'R&D Technote', pct:Math.round(rndScore*100), weight:'10%', color:'#ec4899', icon:'📝', bg:'#fdf4ff', border:'#ec489940'},
+                            {label:'Ticketing', raw:Math.round(tickScore*100), pct:Math.round(tickScore*_s.ticketOverdueWeight*100), weight:Math.round(_s.ticketOverdueWeight*100)+'%', color:'#ef4444', icon:'🎫', bg:'#fef2f2', border:'#ef444440'},
+                            {label:'BAST & Demo', raw:Math.round(bastScore*100), pct:Math.round(bastScore*_s.bastWeight*100), weight:Math.round(_s.bastWeight*100)+'%', color:'#f59e0b', icon:'⭐', bg:'#fffbeb', border:'#f59e0b40'},
+                            {label:'Learning Center', raw:Math.round(lcScore*100), pct:Math.round(lcScore*_s.lcWeight*100), weight:Math.round(_s.lcWeight*100)+'%', color:'#6366f1', icon:'🎓', bg:'#f5f3ff', border:'#6366f140'},
+                            {label:'R&D Tech Note', raw:Math.round(rndScore*100), pct:Math.round(rndScore*_s.rndWeight*100), weight:Math.round(_s.rndWeight*100)+'%', color:'#ec4899', icon:'📝', bg:'#fdf4ff', border:'#ec489940'},
                           ].map(k=>(
                             <div key={k.label} className="rounded-xl border p-2.5 text-center" style={{background:k.bg, borderColor:k.border}}>
                               <div className="text-sm mb-0.5">{k.icon}</div>
@@ -1680,7 +1830,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                             <div className="rounded-xl border p-3" style={{borderColor:'#ef444440', background:'#fef2f2'}}>
                               <div className="flex items-center justify-between mb-2">
                                 <div className="text-[10px] font-bold text-red-600 uppercase tracking-wider">🎫 Ticketing</div>
-                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{background:tickScore>=1?'#d1fae5':'#fee2e2',color:tickScore>=1?'#065f46':'#991b1b'}}>{Math.round(tickScore*100)}% · 20%</span>
+                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{background:tickScore>=1?'#d1fae5':'#fee2e2',color:tickScore>=1?'#065f46':'#991b1b'}}>{Math.round(tickScore*_s.ticketOverdueWeight*100)}/{Math.round(_s.ticketOverdueWeight*100)}% bobot</span>
                               </div>
                               <div className="space-y-1.5 text-[11px] text-slate-600">
                                 <div className="flex justify-between"><span>Handled</span><b className="text-slate-800">{member.ticketsHandled}</b></div>
@@ -1703,20 +1853,21 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                             <div className="rounded-xl border p-3" style={{borderColor:'#f59e0b40', background:'#fffbeb'}}>
                               <div className="flex items-center justify-between mb-2">
                                 <div className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">⭐ BAST &amp; Demo</div>
-                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{background:bastScore>=1?'#d1fae5':'#fee2e2',color:bastScore>=1?'#065f46':'#991b1b'}}>{Math.round(bastScore*100)}% · 30%</span>
+                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{background:bastScore>=1?'#d1fae5':'#fee2e2',color:bastScore>=1?'#065f46':'#991b1b'}}>{Math.round(bastScore*_s.bastWeight*100)}/{Math.round(_s.bastWeight*100)}% bobot</span>
                               </div>
                               <div className="space-y-1.5 text-[11px] text-slate-600">
                                 <div className="text-[10px] text-slate-400 mb-1">Sumber: Form Review BAST & Demo (bintang &lt;3)</div>
+                                <div className="flex justify-between"><span>Total Review</span><b className="text-slate-800">{member.formReviewTotal}</b></div>
                                 <div className="flex justify-between"><span>Komplain (★1-2)</span>
                                   <b className={member.formReviewLowRating > 0 ? 'text-red-600' : 'text-emerald-600'}>
                                     {member.formReviewLowRating}x
                                   </b>
                                 </div>
-                                {member.ticketsHandled === 0
-                                  ? <div className="text-[10px] text-slate-400 font-semibold bg-slate-50 rounded-lg px-2 py-1">⏳ Belum ada aktivitas — belum dihitung</div>
+                                {member.formReviewTotal === 0
+                                  ? <div className="text-[10px] text-slate-400 font-semibold bg-slate-50 rounded-lg px-2 py-1">⏳ Sales belum submit review — belum dihitung</div>
                                   : member.formReviewLowRating === 0
-                                    ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Tidak ada komplain</div>
-                                    : <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ {member.formReviewLowRating}x komplain (bintang rendah)</div>}
+                                    ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Tidak ada komplain dari {member.formReviewTotal} review</div>
+                                    : <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ {member.formReviewLowRating}x komplain dari {member.formReviewTotal} review</div>}
                               </div>
                             </div>
 
@@ -1724,7 +1875,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                             <div className="rounded-xl border p-3" style={{borderColor:'#6366f140', background:'#f5f3ff'}}>
                               <div className="flex items-center justify-between mb-2">
                                 <div className="text-[10px] font-bold text-violet-600 uppercase tracking-wider">🎓 Learning Center</div>
-                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{background:lcScore>=1?'#d1fae5':'#fee2e2',color:lcScore>=1?'#065f46':'#991b1b'}}>{Math.round(lcScore*100)}% · 40%</span>
+                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{background:lcScore>=1?'#d1fae5':'#fee2e2',color:lcScore>=1?'#065f46':'#991b1b'}}>{Math.round(lcScore*_s.lcWeight*100)}/{Math.round(_s.lcWeight*100)}% bobot</span>
                               </div>
                               <div className="space-y-1.5 text-[11px] text-slate-600">
                                 <div className="text-[10px] text-slate-400 mb-1">Sumber: Learning Center (nilai penuh jika tidak ada &lt;70)</div>
@@ -1756,14 +1907,14 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                           <div className="rounded-xl border p-3" style={{borderColor:'#ec489940', background:'#fdf4ff'}}>
                             <div className="flex items-center justify-between mb-2">
                               <div className="text-[10px] font-bold text-pink-600 uppercase tracking-wider">📝 R&amp;D Tech Note</div>
-                              <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{background:rndScore>=1?'#d1fae5':'#fee2e2',color:rndScore>=1?'#065f46':'#991b1b'}}>{Math.round(rndScore*100)}% · 10%</span>
+                              <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{background:rndScore>=1?'#d1fae5':'#fee2e2',color:rndScore>=1?'#065f46':'#991b1b'}}>{Math.round(rndScore*_s.rndWeight*100)}/{Math.round(_s.rndWeight*100)}% bobot</span>
                             </div>
                             <div className="text-[10px] text-slate-500 mb-3">
-                              Target: <b className="text-slate-700">{rndTarget} Tech Note approved</b> per tahun · Data otomatis dari platform Tech Note
+                              Target: <b className="text-slate-700">{_s.rndTarget} Tech Note approved</b> per tahun · Data otomatis dari platform Tech Note
                             </div>
                             <div className="flex items-center gap-3 mb-2">
                               <span className="text-2xl font-black" style={{color: rndScore>=1?'#059669':'#dc2626'}}>{member.techNotesApproved}</span>
-                              <span className="text-sm text-slate-400 font-medium">/ {rndTarget}</span>
+                              <span className="text-sm text-slate-400 font-medium">/ {_s.rndTarget}</span>
                               <div className="h-2 flex-1 rounded-full bg-pink-100 overflow-hidden">
                                 <div className="h-full rounded-full transition-all duration-500" style={{width:`${Math.min(100,rndScore*100)}%`, background: rndScore>=1?'#10b981':'#f472b6'}}/>
                               </div>
@@ -1774,11 +1925,11 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                               </div>
                             ) : member.techNotesApproved >= rndTarget ? (
                               <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1.5 flex items-center gap-1.5">
-                                ✅ KKM Tech Note terpenuhi ({member.techNotesApproved} approved)
+                                ✅ KKM Tech Note terpenuhi ({member.techNotesApproved}/{_s.rndTarget} approved)
                               </div>
                             ) : (
                               <div className="text-[10px] text-amber-600 font-semibold bg-amber-50 rounded-lg px-2 py-1.5 flex items-center gap-1.5">
-                                ⏳ Kurang {rndTarget - member.techNotesApproved} Tech Note lagi untuk mencapai KKM
+                                ⏳ Kurang {_s.rndTarget - member.techNotesApproved} Tech Note lagi untuk mencapai KKM
                               </div>
                             )}
                             <a href="/tech-note" target="_blank" rel="noopener noreferrer"
@@ -2092,6 +2243,88 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
         </div>{/* end content */}
       </div>{/* end wrapper */}
+
+      {/* ══ Settings Modal ══ */}
+      {showSettings && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowSettings(false); }}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div>
+                <div className="font-bold text-slate-800 text-base">⚙️ Pengaturan KPI</div>
+                <div className="text-[11px] text-slate-400 mt-0.5">Atur batas & bobot masing-masing komponen</div>
+              </div>
+              <button onClick={()=>setShowSettings(false)} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100">×</button>
+            </div>
+            <div className="p-6 space-y-5">
+              {/* LC Min Score */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1.5 uppercase tracking-wide">🎓 Learning Center — Batas Nilai Minimum</label>
+                <div className="flex items-center gap-3">
+                  <input type="range" min={40} max={85} step={5} value={kpiSettings.lcMinScore}
+                    onChange={e=>setKpiSettings(p=>({...p, lcMinScore:Number(e.target.value)}))}
+                    className="flex-1 accent-violet-600"/>
+                  <span className="text-lg font-black text-violet-600 w-12 text-right">&lt;{kpiSettings.lcMinScore}</span>
+                </div>
+                <div className="text-[10px] text-slate-400 mt-1">Nilai di bawah ini dianggap tidak lulus KPI LC</div>
+              </div>
+              {/* RnD Target */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1.5 uppercase tracking-wide">📝 R&D Tech Note — Target per Tahun</label>
+                <div className="flex items-center gap-3">
+                  <input type="range" min={1} max={8} step={1} value={kpiSettings.rndTarget}
+                    onChange={e=>setKpiSettings(p=>({...p, rndTarget:Number(e.target.value)}))}
+                    className="flex-1 accent-pink-600"/>
+                  <span className="text-lg font-black text-pink-600 w-12 text-right">{kpiSettings.rndTarget}x</span>
+                </div>
+                <div className="text-[10px] text-slate-400 mt-1">Minimal Tech Note approved per tahun untuk nilai penuh</div>
+              </div>
+              {/* Bobot section */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-3 uppercase tracking-wide">📊 Bobot Komponen KPI (total harus 100%)</label>
+                <div className="space-y-3">
+                  {([
+                    {key:'ticketOverdueWeight', label:'🎫 Ticketing', color:'#ef4444'},
+                    {key:'bastWeight', label:'⭐ BAST & Demo', color:'#f59e0b'},
+                    {key:'lcWeight', label:'🎓 Learning Center', color:'#6366f1'},
+                    {key:'rndWeight', label:'📝 R&D Tech Note', color:'#ec4899'},
+                  ] as {key: keyof KPISettings, label:string, color:string}[]).map(item=>(
+                    <div key={item.key} className="flex items-center gap-3">
+                      <span className="text-[11px] font-semibold text-slate-600 w-36 flex-shrink-0">{item.label}</span>
+                      <input type="range" min={5} max={60} step={5} value={Math.round((kpiSettings[item.key] as number)*100)}
+                        onChange={e=>setKpiSettings(p=>({...p, [item.key]:Number(e.target.value)/100}))}
+                        className="flex-1" style={{accentColor:item.color}}/>
+                      <span className="text-sm font-black w-10 text-right" style={{color:item.color}}>
+                        {Math.round((kpiSettings[item.key] as number)*100)}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="text-[11px] text-slate-500">Total bobot sekarang:</span>
+                  <span className={`text-sm font-black ${Math.round((kpiSettings.ticketOverdueWeight+kpiSettings.bastWeight+kpiSettings.lcWeight+kpiSettings.rndWeight)*100)===100?'text-emerald-600':'text-red-500'}`}>
+                    {Math.round((kpiSettings.ticketOverdueWeight+kpiSettings.bastWeight+kpiSettings.lcWeight+kpiSettings.rndWeight)*100)}%
+                    {Math.round((kpiSettings.ticketOverdueWeight+kpiSettings.bastWeight+kpiSettings.lcWeight+kpiSettings.rndWeight)*100)===100?' ✓':' ⚠ harus 100%'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 px-6 pb-5 justify-end">
+              <button onClick={()=>{setKpiSettings({lcMinScore:70,rndTarget:2,ticketOverdueWeight:0.20,bastWeight:0.40,lcWeight:0.30,rndWeight:0.10}); }}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors">
+                Reset Default
+              </button>
+              <button onClick={()=>setShowSettings(false)}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-white transition-colors"
+                style={{background:'linear-gradient(135deg,#7c3aed,#6d28d9)'}}>
+                ✓ Simpan & Tutup
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
