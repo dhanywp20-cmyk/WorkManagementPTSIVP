@@ -1924,7 +1924,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                               <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1.5 flex items-center gap-1.5">
                                 ⚠️ Belum ada Tech Note yang diapprove tahun ini
                               </div>
-                            ) : member.techNotesApproved >= rndTarget ? (
+                            ) : member.techNotesApproved >= _s.rndTarget ? (
                               <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1.5 flex items-center gap-1.5">
                                 ✅ KKM Tech Note terpenuhi ({member.techNotesApproved}/{_s.rndTarget} approved)
                               </div>
