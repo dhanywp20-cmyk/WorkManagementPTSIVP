@@ -74,6 +74,7 @@ export const JABATAN_CC_RULES: Record<JabatanType, JabatanType[]> = {
 // ─── Account Settings Modal ──────────────────────────────────────────────────
 
 export const ALL_MENU_KEYS = [
+  'dashboard',
   'form-bast',
   'request-design-project',
   'ticket-troubleshooting',
@@ -87,6 +88,7 @@ export const ALL_MENU_KEYS = [
 ];
 
 export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = {
+  'dashboard':              { label: 'Analytics Dashboard (KPI)', icon: '📊' },
   'learning-center':        { label: 'Learning Center', icon: '🎓' },
   'form-bast':              { label: 'Form Review Demo & BAST', icon: '⭐' },
   'request-design-project': { label: 'Request Design Project', icon: '🏗️' },
