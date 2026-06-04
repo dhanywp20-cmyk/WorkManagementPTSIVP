@@ -189,6 +189,7 @@ export default function DailyReportPage() {
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [filterHandler, setFilterHandler]   = useState<string | null>(null);
   const [filterDivision, setFilterDivision] = useState<string | null>(null);
+  const [filterProduct, setFilterProduct]   = useState<string | null>(null);
 
   // ── Form state ────────────────────────────────────────────────────────────────
   const [formOpen, setFormOpen]       = useState(false);
@@ -419,9 +420,10 @@ export default function DailyReportPage() {
       if (filterCategory && row.category !== filterCategory) return false;
       if (filterHandler && (row.handler_name || row.handler_username) !== filterHandler) return false;
       if (filterDivision && row.sales_division !== filterDivision) return false;
+      if (filterProduct && row.product !== filterProduct) return false;
       return true;
     });
-  }, [allRows, searchProject, filterStatus, filterCategory, filterHandler, filterDivision]);
+  }, [allRows, searchProject, filterStatus, filterCategory, filterHandler, filterDivision, filterProduct]);
 
   // ── Stats ─────────────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
@@ -877,7 +879,7 @@ export default function DailyReportPage() {
         </div>
 
         {/* ── Charts row ── */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-4 gap-4">
           <MiniPieChart
             data={catPieData} title="Kegiatan / Kategori" icon="🖥️"
             activeFilter={filterCategory}
@@ -893,14 +895,12 @@ export default function DailyReportPage() {
             activeFilter={filterDivision}
             onSliceClick={label => setFilterDivision(filterDivision === label ? null : label)}
           />
-        </div>
-
-        {/* ── Product Distribution Card ── */}
-        {productPieData.length > 0 && (
           <MiniPieChart
             data={productPieData} title="Distribusi Produk" icon="🏷️"
+            activeFilter={filterProduct}
+            onSliceClick={label => setFilterProduct(filterProduct === label ? null : label)}
           />
-        )}
+        </div>
 
         {/* ── Schedule/Activity List ── */}
         <div style={card}>
@@ -919,7 +919,7 @@ export default function DailyReportPage() {
           </div>
 
           {/* Active filter chips from pie charts */}
-          {(filterCategory || filterHandler || filterDivision) && (
+          {(filterCategory || filterHandler || filterDivision || filterProduct) && (
             <div className="px-5 pt-3 flex flex-wrap gap-2">
               {filterCategory && (
                 <button onClick={() => setFilterCategory(null)}
@@ -940,6 +940,13 @@ export default function DailyReportPage() {
                   className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80"
                   style={{ background: '#10b981' }}>
                   👔 {filterDivision} ✕
+                </button>
+              )}
+              {filterProduct && (
+                <button onClick={() => setFilterProduct(null)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80"
+                  style={{ background: '#f59e0b' }}>
+                  🏷️ {filterProduct} ✕
                 </button>
               )}
             </div>
