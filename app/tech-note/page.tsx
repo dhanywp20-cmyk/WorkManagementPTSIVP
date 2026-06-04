@@ -63,9 +63,8 @@ function TechNoteKPISummary({ technotes, currentUser, year }:
     const pct = Math.min(100, Math.round((approved / KKM_REQUIRED) * 100));
     const met = approved >= KKM_REQUIRED;
     return (
-      <div className="rounded-2xl p-4 mb-5 border"
-        style={{ background: met ? 'rgba(16,185,129,0.06)' : 'rgba(236,72,153,0.05)',
-          borderColor: met ? 'rgba(52,211,153,0.35)' : 'rgba(236,72,153,0.25)' }}>
+      <div className="rounded-2xl p-4 mb-5 shadow-sm"
+        style={{ background: '#ffffff', border: `1.5px solid ${met ? '#d1fae5' : '#fce7f3'}`, borderLeft: `4px solid ${met ? '#10b981' : '#ec4899'}` }}>
         <div className="flex items-center justify-between mb-3">
           <div>
             <div className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
@@ -99,17 +98,17 @@ function TechNoteKPISummary({ technotes, currentUser, year }:
   const totalApproved = technotes.filter(t => t.status === 'approved').length;
   const totalPending  = technotes.filter(t => t.status === 'pending').length;
   return (
-    <div className="rounded-2xl p-4 mb-5 border border-pink-200" style={{ background: 'rgba(236,72,153,0.04)' }}>
+    <div className="rounded-2xl p-4 mb-5 shadow-sm" style={{ background: '#ffffff', border: '1.5px solid #fce7f3', borderLeft: '4px solid #ec4899' }}>
       <div className="text-[11px] font-bold uppercase tracking-wider text-pink-600 mb-3">
         📝 Ringkasan KPI R&D Tech Note {year} — Semua Tim (Target: {KKM_REQUIRED}/orang)
       </div>
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label:'Total Approved', value: totalApproved, color:'#059669', bg:'rgba(16,185,129,0.08)', border:'rgba(16,185,129,0.25)' },
-          { label:'Pending Review', value: totalPending,  color:'#d97706', bg:'rgba(245,158,11,0.08)', border:'rgba(245,158,11,0.25)' },
-          { label:'Total Submissions', value: technotes.length, color:'#7c3aed', bg:'rgba(139,92,246,0.08)', border:'rgba(139,92,246,0.25)' },
+          { label:'Total Approved', value: totalApproved, color:'#059669', bg:'#ffffff', border:'#d1fae5' },
+          { label:'Pending Review', value: totalPending,  color:'#d97706', bg:'#ffffff', border:'#fef3c7' },
+          { label:'Total Submissions', value: technotes.length, color:'#7c3aed', bg:'#ffffff', border:'#ede9fe' },
         ].map(c => (
-          <div key={c.label} className="rounded-xl p-3 text-center border"
+          <div key={c.label} className="rounded-xl p-3 text-center border shadow-sm"
             style={{ background: c.bg, borderColor: c.border }}>
             <div className="text-2xl font-black" style={{ color: c.color }}>{c.value}</div>
             <div className="text-[11px] text-slate-500 font-medium mt-0.5">{c.label}</div>
@@ -394,7 +393,7 @@ export default function TechNotePage() {
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden" style={{ background: '#ffffff' }}>
+      <div className="flex flex-1 overflow-hidden">
         {/* ── Sidebar ── */}
         <FolderSidebar folders={folders} technotes={technotes}
           selected={selectedFolder} onSelect={setSelectedFolder}
@@ -415,7 +414,7 @@ export default function TechNotePage() {
                 <button key={t.id} onClick={()=>setTab(t.id as typeof tab)}
                   className="px-4 py-1.5 rounded-xl text-[13px] font-bold transition-all border"
                   style={{
-                    background: tab===t.id ? 'linear-gradient(135deg,#be185d,#9d174d)' : '#fff',
+                    background: tab===t.id ? 'linear-gradient(135deg,#be185d,#9d174d)' : 'rgba(255,255,255,0.92)',
                     color: tab===t.id ? '#fff' : '#64748b',
                     borderColor: tab===t.id ? '#be185d' : '#e2e8f0',
                     boxShadow: tab===t.id ? '0 2px 8px rgba(190,24,93,0.25)' : 'none',
@@ -427,10 +426,10 @@ export default function TechNotePage() {
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
                   <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari judul, produk, tag..."
-                    className="pl-8 pr-3 py-2 text-[13px] rounded-xl outline-none w-52 text-slate-700 bg-white border border-gray-200 focus:border-pink-400 focus:ring-2 focus:ring-pink-100 placeholder-slate-400" />
+                    className="pl-8 pr-3 py-2 text-[13px] rounded-xl outline-none w-52 text-slate-700 border border-gray-200 focus:border-pink-400 focus:ring-2 focus:ring-pink-100 placeholder-slate-400" style={{ background: 'rgba(255,255,255,0.95)' }} />
                 </div>
                 <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}
-                  className="px-3 py-2 text-[13px] rounded-xl outline-none text-slate-700 bg-white border border-gray-200 focus:border-pink-400">
+                  className="px-3 py-2 text-[13px] rounded-xl outline-none text-slate-700 border border-gray-200 focus:border-pink-400" style={{ background: 'rgba(255,255,255,0.95)' }}>
                   <option value="all">Semua Status</option>
                   <option value="approved">✅ Approved</option>
                   <option value="pending">⏳ Pending</option>
@@ -442,7 +441,7 @@ export default function TechNotePage() {
 
             {/* Cards */}
             {loading ? <Spinner /> : filtered.length === 0 ? (
-              <div className="text-center py-20">
+              <div className="text-center py-20 rounded-2xl shadow-sm" style={{ background: 'rgba(255,255,255,0.90)' }}>
                 <div className="text-5xl mb-3">📭</div>
                 <div className="font-bold text-base text-slate-500">Tidak ada Tech Note ditemukan</div>
                 <div className="text-sm mt-1 text-slate-400">Coba ubah filter atau upload Tech Note baru</div>
