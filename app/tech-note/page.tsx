@@ -394,7 +394,7 @@ export default function TechNotePage() {
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden" style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(2px)' }}>
+      <div className="flex flex-1 overflow-hidden" style={{ background: '#ffffff' }}>
         {/* ── Sidebar ── */}
         <FolderSidebar folders={folders} technotes={technotes}
           selected={selectedFolder} onSelect={setSelectedFolder}
