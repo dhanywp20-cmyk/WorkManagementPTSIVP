@@ -159,7 +159,7 @@ function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManag
   }
 
   return (
-    <div className="w-56 shrink-0 overflow-y-auto flex flex-col gap-1 p-3 bg-gray-50 border-r border-gray-200">
+    <div className="w-56 shrink-0 overflow-y-auto flex flex-col gap-1 p-3 border-r border-gray-200" style={{ background: '#f8fafc' }}>
       <div className="flex items-center justify-between mb-2 px-1">
         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Folder</span>
         {canManage && (
@@ -394,7 +394,7 @@ export default function TechNotePage() {
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden" style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(2px)' }}>
         {/* ── Sidebar ── */}
         <FolderSidebar folders={folders} technotes={technotes}
           selected={selectedFolder} onSelect={setSelectedFolder}
