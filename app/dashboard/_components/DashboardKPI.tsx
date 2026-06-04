@@ -1150,7 +1150,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 <SectionPill icon="👥">KPI Team {scope.kind==='pts_sup'?scope.ptsTeamType:scope.kind==='team'?currentUser.team_type??'':'PTS IVP & MLDS'}</SectionPill>
                 <div className="ml-auto flex items-center gap-2 flex-wrap">
                   {/* Filter Periode — hidden for regular team members */}
-                  {scope.kind !== 'team' && (
+                  {scope.kind !== 'team' && (<>
                   <div className="flex items-center rounded-lg border border-slate-200 overflow-hidden bg-white">
                     {(['6m','1y'] as const).map(p=>(
                       <button key={p}
@@ -1473,7 +1473,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     Rekap Tim {kpiTeam.filterYear}
                   </button>
-                  )} {/* end scope.kind !== 'team' */}
+                  </>)} {/* end scope.kind !== 'team' */}
                 </div>
               </div>
 
