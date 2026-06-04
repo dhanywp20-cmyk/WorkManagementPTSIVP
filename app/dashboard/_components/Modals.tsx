@@ -38,6 +38,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
   const menuLabels: Record<string, { label: string; icon: string; gradient: string }> = {
+    'dashboard': { label: 'Analytics Dashboard (KPI)', icon: '📊', gradient: 'from-blue-600 to-indigo-500' },
     'learning-center': { label: 'Learning Center', icon: '🎓', gradient: 'from-teal-600 to-teal-500' },
     'form-bast': { label: 'Form Review Demo & BAST', icon: '⭐', gradient: 'from-slate-600 to-slate-500' },
     'request-design-project': { label: 'Request Design Project', icon: '🏗️', gradient: 'from-violet-600 to-violet-500' },
@@ -2233,6 +2234,7 @@ export function AccountSettingsInline() {
   const [approveMenus, setApproveMenus] = useState<string[]>(ALL_MENU_KEYS);
 
   const menuLabels: Record<string, { label: string; icon: string }> = {
+    'dashboard': { label: 'Analytics Dashboard (KPI)', icon: '📊' },
     'form-bast': { label: 'Form Review Demo & BAST', icon: '⭐' },
     'request-design-project': { label: 'Request Design Project', icon: '🏗️' },
     'ticket-troubleshooting': { label: 'Ticket Troubleshooting', icon: '🎫' },
