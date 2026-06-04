@@ -731,7 +731,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     const myMember = kpiTeam.members.find(m => m.id === currentUser.id);
     const _s = kpiSettings;
 
-    if (kpiTeam.loading || (!myMember && kpiTeam.members.length === 0)) {
+    if (kpiTeam.loading || !myMember) {
       return (
         <div className="flex items-center justify-center py-20">
           <div className="flex flex-col items-center gap-3">
