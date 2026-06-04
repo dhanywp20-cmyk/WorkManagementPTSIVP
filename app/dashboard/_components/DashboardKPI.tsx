@@ -44,7 +44,8 @@ interface KPITeamMember {
   lcAttempts: number;
   lcAvgScore: number;
   lcPassed: number;
-  lcFailedBelow75: number;   // LC: jumlah attempt score < 75
+  lcFailedBelow75: number;   // LC: jumlah attempt score < 75 (hardcode, untuk backward compat)
+  lcScores: number[];        // semua score mentah — untuk recompute dengan lcMinScore dinamis
   piketFilled: number;
   ticketAvgResponseHours: number;
   formReviewLowRating: number;
@@ -628,7 +629,6 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         const lcScores = myLC.filter((a: any) => a.score != null).map((a: any) => a.score as number);
         const lcAvg = lcScores.length ? Math.round(lcScores.reduce((a: number, b: number) => a + b, 0) / lcScores.length) : 0;
         const lcFailedBelow75 = myLC.filter((a: any) => a.score != null && a.score < 70).length;
-
         // Piket: count days where this member is assigned
         const tt = m.team_type as string;
         const picCol = tt === 'Team PTS' ? 'pic_ivp_name' : tt === 'Team PTS UMP' ? 'pic_ump_name' : 'pic_mlds_name';
@@ -683,7 +683,9 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           ticketsHandled: myTickets.length, ticketsSolved: tSolved.length, ticketsOverdue: tOverdue.length, avgResolutionDays: avgRes,
           remindersAssigned: myRem.length, remindersDone: remDone, remindersOverdue: remOver,
           lcAttempts: myLC.length, lcAvgScore: lcAvg, lcPassed: myLC.filter((a: any) => a.passed === true).length,
-          lcFailedBelow75, piketFilled, ticketAvgResponseHours, formReviewLowRating, formReviewTotal,
+          lcFailedBelow75,
+          lcScores: lcScores,
+          piketFilled, ticketAvgResponseHours, formReviewLowRating, formReviewTotal,
           techNotesApproved,
           monthlyTickets, monthlyLC,
           manual,
@@ -1203,11 +1205,13 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       const MONTHS = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','Sept','Okt','Nov','Des'];
 
                       const calcScores = (m: KPITeamMember) => {
+                        const _s = kpiSettings;
+                        const lcFailedDyn = (m.lcScores ?? []).filter((sc: number) => sc < _s.lcMinScore).length;
                         const tickS = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled,1)) : 0;
-                        const bastS = m.ticketsHandled === 0 ? 0 : m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating * 0.25);
-                        const lcS   = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - m.lcFailedBelow75 / Math.max(m.lcAttempts,1));
-                        const rndS  = rndTarget > 0 ? Math.min(1, m.techNotesApproved / rndTarget) : 0;
-                        const final = Math.round((0.20*tickS + 0.30*bastS + 0.40*lcS + 0.10*rndS) * 100);
+                        const bastS = m.formReviewTotal === 0 ? 0 : m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating / Math.max(m.formReviewTotal,1));
+                        const lcS   = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - lcFailedDyn / Math.max(m.lcAttempts,1));
+                        const rndS  = _s.rndTarget > 0 ? Math.min(1, m.techNotesApproved / _s.rndTarget) : 0;
+                        const final = Math.round((_s.ticketOverdueWeight*tickS + _s.bastWeight*bastS + _s.lcWeight*lcS + _s.rndWeight*rndS) * 100);
                         const noData = m.ticketsHandled === 0 && m.lcAttempts === 0 && m.techNotesApproved === 0;
                         const label = noData ? 'Belum Ada Data' : final>=85?'Excellent':final>=70?'Good':final>=50?'Fair':'Needs Work';
                         return { tickS, bastS, lcS, rndS, final, noData, label };
@@ -1402,11 +1406,13 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                         ['No','Nama','Tim','Jabatan','Ticket','Ticket Overdue','LC Attempts','LC Avg Score','Low Rating BAST','Technote','Skor KPI (%)','Predikat'],
                       ];
                       allMembers.forEach((m, idx) => {
+                        const _s = kpiSettings;
+                        const lcFailedDyn = (m.lcScores ?? []).filter((sc: number) => sc < _s.lcMinScore).length;
                         const tickS = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled,1)) : 0;
-                        const bastS = m.ticketsHandled === 0 ? 0 : m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating * 0.25);
-                        const lcS   = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - m.lcFailedBelow75 / Math.max(m.lcAttempts,1));
-                        const rndS  = m.techNotesApproved >= rndTarget ? 1 : m.techNotesApproved / rndTarget;
-                        const final = Math.round([0.20,0.40,0.30,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
+                        const bastS = m.formReviewTotal === 0 ? 0 : m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating / Math.max(m.formReviewTotal,1));
+                        const lcS   = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - lcFailedDyn / Math.max(m.lcAttempts,1));
+                        const rndS  = m.techNotesApproved >= _s.rndTarget ? 1 : m.techNotesApproved / _s.rndTarget;
+                        const final = Math.round((_s.ticketOverdueWeight*tickS + _s.bastWeight*bastS + _s.lcWeight*lcS + _s.rndWeight*rndS) * 100);
                         const noData = m.ticketsHandled===0&&m.lcAttempts===0&&m.techNotesApproved===0;
                         const label = noData?'Belum Ada Data':final>=85?'Excellent':final>=70?'Good':final>=50?'Fair':'Needs Work';
                         summaryAoa.push([
@@ -1420,11 +1426,13 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       summaryAoa.push(['','','','','','','','','','','TOTAL ANGGOTA',allMembers.length]);
                       const avgFinal = allMembers.length
                         ? Math.round(allMembers.reduce((sum, m) => {
+                            const _s = kpiSettings;
+                            const lcFailedDyn = (m.lcScores ?? []).filter((sc: number) => sc < _s.lcMinScore).length;
                             const tickS = m.ticketsHandled>0?Math.max(0,1-m.ticketsOverdue/Math.max(m.ticketsHandled,1)):0;
-                            const bastS = m.ticketsHandled===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating*0.25);
-                            const lcS   = m.lcAttempts===0?0:Math.max(0,1-(m.lcFailedBelow75/Math.max(m.lcAttempts,1)));
-                            const rndS  = m.techNotesApproved>=rndTarget?1:m.techNotesApproved/rndTarget;
-                            return sum + Math.round([0.20,0.40,0.30,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
+                            const bastS = m.formReviewTotal===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating/Math.max(m.formReviewTotal,1));
+                            const lcS   = m.lcAttempts===0?0:Math.max(0,1-(lcFailedDyn/Math.max(m.lcAttempts,1)));
+                            const rndS  = m.techNotesApproved>=_s.rndTarget?1:m.techNotesApproved/_s.rndTarget;
+                            return sum + Math.round((_s.ticketOverdueWeight*tickS + _s.bastWeight*bastS + _s.lcWeight*lcS + _s.rndWeight*rndS) * 100);
                           }, 0) / allMembers.length)
                         : 0;
                       summaryAoa.push(['','','','','','','','','','','RATA-RATA KPI', `${avgFinal}%`]);
@@ -1447,11 +1455,13 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                           ['Nama','Jabatan','Ticket Handled','Solved','Overdue','Avg Res (hr)','Reminder Done','LC Attempts','LC Avg','Piket','Technote','Skor KPI'],
                         ];
                         tMembers.forEach(m => {
+                          const _s = kpiSettings;
+                          const lcFailedDyn = (m.lcScores ?? []).filter((sc: number) => sc < _s.lcMinScore).length;
                           const tickS = m.ticketsHandled>0?Math.max(0,1-m.ticketsOverdue/Math.max(m.ticketsHandled,1)):0;
-                          const bastS = m.ticketsHandled===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating*0.25);
-                          const lcS   = m.lcAttempts===0?0:Math.max(0,1-(m.lcFailedBelow75/Math.max(m.lcAttempts,1)));
-                          const rndS  = m.techNotesApproved>=rndTarget?1:m.techNotesApproved/rndTarget;
-                          const final = Math.round([0.20,0.40,0.30,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
+                          const bastS = m.formReviewTotal===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating/Math.max(m.formReviewTotal,1));
+                          const lcS   = m.lcAttempts===0?0:Math.max(0,1-(lcFailedDyn/Math.max(m.lcAttempts,1)));
+                          const rndS  = m.techNotesApproved>=_s.rndTarget?1:m.techNotesApproved/_s.rndTarget;
+                          const final = Math.round((_s.ticketOverdueWeight*tickS + _s.bastWeight*bastS + _s.lcWeight*lcS + _s.rndWeight*rndS) * 100);
                           aoa.push([m.name, m.jabatan, m.ticketsHandled, m.ticketsSolved, m.ticketsOverdue, m.avgResolutionDays, m.remindersDone, m.lcAttempts, m.lcAvgScore, m.piketFilled, m.techNotesApproved, final]);
                         });
                         const ws = XLSX_MOD.utils.aoa_to_sheet(aoa);
@@ -1480,10 +1490,10 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               {/* Legend */}
               <div className="bg-blue-50/80 border border-blue-200 rounded-xl px-4 py-3 text-[11px] text-blue-700 leading-relaxed">
                 <b>📌 Keterangan:</b> Data ✅ otomatis dari platform.
-                <span className="ml-2 font-semibold">🎫 Ticketing 20%</span> (nilai penuh jika 0 overdue),
-                <span className="ml-1 font-semibold">⭐ BAST &amp; Demo 40%</span> (nilai penuh jika tidak ada komplain/bintang &lt;3),
-                <span className="ml-1 font-semibold">🎓 Learning Center 30%</span> (nilai penuh jika tidak ada nilai &lt;70),
-                <span className="ml-1 font-semibold">📝 R&amp;D Tech Note 10%</span> (nilai penuh jika ≥2 approved/tahun).
+                <span className="ml-2 font-semibold">🎫 Ticketing {Math.round(kpiSettings.ticketOverdueWeight*100)}%</span> (nilai penuh jika 0 overdue),
+                <span className="ml-1 font-semibold">⭐ BAST &amp; Demo {Math.round(kpiSettings.bastWeight*100)}%</span> (nilai penuh jika tidak ada komplain/bintang &lt;3),
+                <span className="ml-1 font-semibold">🎓 Learning Center {Math.round(kpiSettings.lcWeight*100)}%</span> (nilai penuh jika tidak ada nilai &lt;{kpiSettings.lcMinScore}),
+                <span className="ml-1 font-semibold">📝 R&amp;D Tech Note {Math.round(kpiSettings.rndWeight*100)}%</span> (nilai penuh jika ≥{kpiSettings.rndTarget} approved/tahun).
                 Klik kartu untuk detail &amp; edit.
               </div>
 
@@ -1506,6 +1516,8 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 const umpMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS UMP');
                 const calcKPI = (member: KPITeamMember) => {
                   const s = kpiSettings;
+                  // Helper: hitung jumlah LC score di bawah lcMinScore secara dinamis
+                  const lcFailedDyn = (member.lcScores ?? []).filter((sc: number) => sc < s.lcMinScore).length;
                   // Ticketing 20%: nilai penuh jika 0 overdue. Jika belum ada ticket = 0
                   const tickScore = member.ticketsHandled > 0
                     ? Math.max(0, 1 - member.ticketsOverdue / Math.max(member.ticketsHandled, 1))
@@ -1516,10 +1528,10 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     : member.formReviewLowRating === 0
                       ? 1
                       : Math.max(0, 1 - member.formReviewLowRating / Math.max(member.formReviewTotal, 1));
-                  // Learning Center: nilai penuh jika tidak ada nilai < lcMinScore
+                  // Learning Center: nilai penuh jika tidak ada nilai < lcMinScore (dinamis dari settings)
                   const lcScore = member.lcAttempts === 0
                     ? 0
-                    : Math.max(0, 1 - (member.lcFailedBelow75 / Math.max(member.lcAttempts, 1)));
+                    : Math.max(0, 1 - (lcFailedDyn / Math.max(member.lcAttempts, 1)));
                   // R&D Tech Note: nilai penuh jika >= rndTarget approved
                   const rndScore = member.techNotesApproved >= s.rndTarget ? 1 : member.techNotesApproved / Math.max(s.rndTarget, 1);
                   return Math.round((s.ticketOverdueWeight*tickScore + s.bastWeight*bastScore + s.lcWeight*lcScore + s.rndWeight*rndScore) * 100);
@@ -1530,11 +1542,12 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   const noData   = member.ticketsHandled===0 && member.lcAttempts===0 && member.techNotesApproved===0;
                   const kpiColor = noData?'#94a3b8':finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
                   const kpiLabel = noData?'—':finalKPI>=85?'Excellent':finalKPI>=70?'Good':finalKPI>=50?'Fair':'Needs Work';
+                  const lcFailedDynChip = (member.lcScores ?? []).filter((sc: number) => sc < kpiSettings.lcMinScore).length;
                   const alerts: string[] = [];
                   if (member.ticketsHandled===0)          alerts.push('🎫0');
-                  if (member.lcFailedBelow75>0)         alerts.push(`📚${member.lcFailedBelow75}×`);
-                  if (member.formReviewLowRating>0)     alerts.push(`⭐${member.formReviewLowRating}×`);
-                  if (member.ticketAvgResponseHours>24) alerts.push(`⏱${member.ticketAvgResponseHours}j`);
+                  if (lcFailedDynChip>0)                  alerts.push(`📚${lcFailedDynChip}×`);
+                  if (member.formReviewLowRating>0)       alerts.push(`⭐${member.formReviewLowRating}×`);
+                  if (member.ticketAvgResponseHours>24)   alerts.push(`⏱${member.ticketAvgResponseHours}j`);
                   // Sparkline: prefer tickets, fallback to LC attempts
                   const spark = member.monthlyTickets?.some(v=>v>0) ? member.monthlyTickets : (member.monthlyLC ?? []);
                   const sparkMax = Math.max(...spark, 1);
@@ -1625,11 +1638,12 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 if (!member) return null;
                 // New 4-component scoring — belum ada data = 0, bukan 100%
                 const _s = kpiSettings;
+                const lcFailedDyn = (member.lcScores ?? []).filter((sc: number) => sc < _s.lcMinScore).length;
                 const tickScore = member.ticketsHandled > 0 ? Math.max(0, 1 - member.ticketsOverdue / Math.max(member.ticketsHandled,1)) : 0;
                 const bastScore = member.formReviewTotal === 0
                   ? 0
                   : member.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - member.formReviewLowRating / Math.max(member.formReviewTotal, 1));
-                const lcScore = member.lcAttempts === 0 ? 0 : Math.max(0, 1 - (member.lcFailedBelow75 / Math.max(member.lcAttempts,1)));
+                const lcScore = member.lcAttempts === 0 ? 0 : Math.max(0, 1 - (lcFailedDyn / Math.max(member.lcAttempts,1)));
                 const rndScore = member.techNotesApproved >= _s.rndTarget ? 1 : member.techNotesApproved / Math.max(_s.rndTarget, 1);
                 const finalKPI = Math.round((_s.ticketOverdueWeight*tickScore + _s.bastWeight*bastScore + _s.lcWeight*lcScore + _s.rndWeight*rndScore) * 100);
                 const noData = member.ticketsHandled === 0 && member.lcAttempts === 0 && member.techNotesApproved === 0;
@@ -1766,17 +1780,17 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{background:lcScore>=1?'#d1fae5':'#fee2e2',color:lcScore>=1?'#065f46':'#991b1b'}}>{Math.round(lcScore*_s.lcWeight*100)}/{Math.round(_s.lcWeight*100)}% bobot</span>
                               </div>
                               <div className="space-y-1.5 text-[11px] text-slate-600">
-                                <div className="text-[10px] text-slate-400 mb-1">Sumber: Learning Center (nilai penuh jika tidak ada &lt;70)</div>
+                                <div className="text-[10px] text-slate-400 mb-1">Sumber: Learning Center (nilai penuh jika tidak ada &lt;{_s.lcMinScore})</div>
                                 <div className="flex justify-between"><span>Total Attempt</span><b className="text-slate-800">{member.lcAttempts}</b></div>
-                                <div className="flex justify-between"><span>Avg Score</span><b className={member.lcAvgScore < 70 ? 'text-red-600' : 'text-emerald-600'}>{member.lcAvgScore || '—'}</b></div>
+                                <div className="flex justify-between"><span>Avg Score</span><b className={member.lcAvgScore < _s.lcMinScore ? 'text-red-600' : 'text-emerald-600'}>{member.lcAvgScore || '—'}</b></div>
                                 <div className="flex justify-between"><span>Lulus</span><b className="text-emerald-600">{member.lcPassed}</b></div>
-                                <div className="flex justify-between"><span>Nilai &lt;70</span>
-                                  <b className={member.lcFailedBelow75 > 0 ? 'text-red-600' : 'text-emerald-600'}>{member.lcFailedBelow75}x</b>
+                                <div className="flex justify-between"><span>Nilai &lt;{_s.lcMinScore}</span>
+                                  <b className={lcFailedDyn > 0 ? 'text-red-600' : 'text-emerald-600'}>{lcFailedDyn}x</b>
                                 </div>
-                                {member.lcFailedBelow75 > 0
-                                  ? <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ {member.lcFailedBelow75}x nilai di bawah 70</div>
+                                {lcFailedDyn > 0
+                                  ? <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ {lcFailedDyn}x nilai di bawah {_s.lcMinScore}</div>
                                   : member.lcAttempts > 0
-                                    ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Semua nilai ≥70</div>
+                                    ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Semua nilai ≥{_s.lcMinScore}</div>
                                     : null}
                               </div>
                             </div>
@@ -2064,13 +2078,13 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       </thead>
                       <tbody>
                         {kpiTeam.members.map(m=>{
-                          const periodMultiplier = kpiTeam.filterPeriod==='6m'?0.5:1;
-                          const rndTarget = 2;
+                          const _s = kpiSettings;
+                          const lcFailedDyn = (m.lcScores ?? []).filter((sc: number) => sc < _s.lcMinScore).length;
                           const tickS = m.ticketsHandled>0?Math.max(0,1-m.ticketsOverdue/Math.max(m.ticketsHandled,1)):0;
-                          const bastS = m.ticketsHandled===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating*0.25);
-                          const lcS   = m.lcAttempts===0?0:Math.max(0,1-(m.lcFailedBelow75/Math.max(m.lcAttempts,1)));
-                          const rndS  = m.techNotesApproved>=rndTarget?1:m.techNotesApproved/rndTarget;
-                          const final = Math.round([0.20,0.40,0.30,0.10].reduce((s,w,i)=>s+w*[tickS,bastS,lcS,rndS][i],0)*100);
+                          const bastS = m.formReviewTotal===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating/Math.max(m.formReviewTotal,1));
+                          const lcS   = m.lcAttempts===0?0:Math.max(0,1-(lcFailedDyn/Math.max(m.lcAttempts,1)));
+                          const rndS  = m.techNotesApproved>=_s.rndTarget?1:m.techNotesApproved/_s.rndTarget;
+                          const final = Math.round((_s.ticketOverdueWeight*tickS + _s.bastWeight*bastS + _s.lcWeight*lcS + _s.rndWeight*rndS) * 100);
                           const noData = m.ticketsHandled===0&&m.lcAttempts===0&&m.techNotesApproved===0;
                           const c = noData?'#94a3b8':final>=85?'#10b981':final>=70?'#3b82f6':final>=50?'#f59e0b':'#ef4444';
                           return (
