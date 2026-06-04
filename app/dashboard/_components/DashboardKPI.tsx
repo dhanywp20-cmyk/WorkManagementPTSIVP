@@ -355,7 +355,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           scopeTickets(supabase.from('tickets').select('id,status,assign_name,sales_division,date,created_at')),
           supabase.from('activity_logs').select('id,ticket_id,new_status,created_at,handler_name').order('created_at',{ascending:false}).limit(500),
           scopeReminders(supabase.from('reminders').select('id,status,category,due_date')),
-          supabase.from('piket_schedules').select('day_of_week,pic_ivp_name,pic_ump_name,pic_mlds_name,day_date').eq('day_of_week', dayOfWeek()),
+          supabase.from('piket_schedules').select('day_of_week,pic_ivp_name,pic_ump_name,pic_mlds_name,day_date').eq('day_date', todayStr()),
           supabase.from('piket_schedules').select('id,day_date,pic_ivp_name,pic_ump_name,pic_mlds_name').gte('day_date', getMonday()).lte('day_date', todayStr()),
           supabase.from('piket_tamu_detail').select('id,created_at').gte('created_at', today),
           supabase.from('movement_logs').select('id,status_barang,tanggal,nama_pts').gte('tanggal', monthStart()),
