@@ -85,6 +85,27 @@ interface KPISettings {
   rndWeight: number;        // bobot RnD (default 0.10)
 }
 
+interface KPIPeriodSnapshot {
+  id: string;
+  period_label: string;       // e.g. "Jan–Jun 2025" atau "Jan–Des 2025"
+  year: number;
+  period: '6m' | '1y';
+  start_month: number;        // 1-12 (bulan mulai)
+  end_month: number;          // 1-12 (bulan akhir, otomatis)
+  team_type: string;          // scope: "all" | "Team PTS" | "Team PTS MLDS"
+  created_at: string;
+  created_by: string;
+  members_json: {
+    id: string; name: string; jabatan: string; team_type: string;
+    ticketsHandled: number; ticketsSolved: number; ticketsOverdue: number;
+    lcAttempts: number; lcAvgScore: number; lcPassed: number;
+    formReviewTotal: number; formReviewLowRating: number;
+    techNotesApproved: number;
+    tickScore: number; bastScore: number; lcScore: number; rndScore: number;
+    finalKPI: number;
+  }[];
+}
+
 interface AuditEntry {
   id: string; module: string; actor: string; action: string;
   target: string; detail: string; ts: string;
@@ -268,7 +289,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
   const [audit, setAudit]           = useState<AuditEntry[]>([]);
   const [loading, setLoading]       = useState(true);
   const [auditLoading, setAuditLoading] = useState(true);
-  const [tab, setTab]               = useState<'analytics'|'kpi_team'|'cross'|'audit'>('analytics');
+  const [tab, setTab]               = useState<'analytics'|'kpi_team'|'history'|'cross'|'audit'>('analytics');
   const [auditFilter, setAuditFilter] = useState<'all'|'ticket'|'reminder'|'piket'|'user'>('all');
   const [auditSearch, setAuditSearch] = useState('');
   const [lastRefresh, setLastRefresh] = useState(new Date());
@@ -291,6 +312,11 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     lcWeight: 0.30,
     rndWeight: 0.10,
   });
+  const [kpiSnapshots, setKpiSnapshots]   = useState<KPIPeriodSnapshot[]>([]);
+  const [showStartKPI, setShowStartKPI]   = useState(false);
+  const [savingSnapshot, setSavingSnapshot] = useState(false);
+  const [expandedSnapshot, setExpandedSnapshot] = useState<string | null>(null);
+  const [snapshotStartMonth, setSnapshotStartMonth] = useState<number>(new Date().getMonth() + 1); // default bulan ini
   const intervalRef = useRef<ReturnType<typeof setInterval>|null>(null);
 
   // ── 1. Resolve scope ──────────────────────────────────────────────────────
@@ -574,12 +600,13 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           .select('pic_ivp_name,pic_ump_name,pic_mlds_name,day_date')
           .gte('day_date', yearStart)
           .lte('day_date', yearEnd),
-        // Form Review: rating bintang 1/2 per assign_name
+        // Form Review: hanya yang sudah diisi rating oleh sales (grade_product_knowledge_bast NOT NULL)
         supabase.from('form_reviews')
           .select('id,assign_name,grade_product_knowledge,grade_training_customer,grade_product_knowledge_bast,created_at')
           .in('assign_name', memberNames)
           .gte('created_at', yearStart)
-          .lte('created_at', yearEnd + 'T23:59:59'),
+          .lte('created_at', yearEnd + 'T23:59:59')
+          .not('grade_product_knowledge_bast', 'is', null),
         // Manual KPI values stored in kpi_manual_values table (jika ada)
         supabase.from('kpi_manual_values')
           .select('*')
@@ -696,7 +723,83 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     } catch (e) { console.error('KPI Team fetch error:', e); setKpiTeam(prev => ({ ...prev, loading: false })); }
   }, [scope, scopeReady, kpiTeam.filterYear, kpiTeam.filterPeriod]);
 
-  // ── Effects ───────────────────────────────────────────────────────────────
+  // ── 5. Fetch KPI Period Snapshots ────────────────────────────────────────
+
+  const fetchKPISnapshots = useCallback(async () => {
+    if (!scopeReady || scope.kind === 'none') return;
+    try {
+      let q = supabase.from('kpi_period_snapshots')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (scope.kind === 'pts_sup') {
+        q = q.eq('team_type', scope.ptsTeamType ?? '');
+      }
+      const { data } = await q;
+      if (data) setKpiSnapshots(data as KPIPeriodSnapshot[]);
+    } catch (e) { console.error('fetchKPISnapshots error:', e); }
+  }, [scope, scopeReady]);
+
+  // ── Save KPI Snapshot ─────────────────────────────────────────────────────
+
+  const saveKPISnapshot = useCallback(async () => {
+    if (!kpiTeam.members.length) return;
+    setSavingSnapshot(true);
+    try {
+      const _s = kpiSettings;
+      const year = kpiTeam.filterYear;
+      const period = kpiTeam.filterPeriod;
+      const startMonth = snapshotStartMonth; // 1–12
+      const monthCount = period === '6m' ? 6 : 12;
+      // end month: startMonth + monthCount - 1, wrap ke tahun berikutnya jika perlu
+      const endMonthRaw = startMonth + monthCount - 1;
+      const endMonth = endMonthRaw > 12 ? 12 : endMonthRaw; // clamp ke akhir tahun ini
+      const MONTH_NAMES = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+      const periodLabel = `${MONTH_NAMES[startMonth-1]}–${MONTH_NAMES[endMonth-1]} ${year}`;
+      const teamType = scope.kind === 'pts_sup'
+        ? (scope.ptsTeamType ?? 'all')
+        : 'all';
+
+      const membersJson = kpiTeam.members.map(m => {
+        const lcFailedDyn = (m.lcScores ?? []).filter((sc: number) => sc < _s.lcMinScore).length;
+        const tickScore = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled,1)) : 0;
+        const bastScore = m.formReviewTotal === 0 ? 0
+          : m.formReviewLowRating === 0 ? 1
+          : Math.max(0, 1 - m.formReviewLowRating / Math.max(m.formReviewTotal,1));
+        const lcScore = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - (lcFailedDyn / Math.max(m.lcAttempts,1)));
+        const rndScore = m.techNotesApproved >= _s.rndTarget ? 1 : m.techNotesApproved / Math.max(_s.rndTarget,1);
+        const finalKPI = Math.round((_s.ticketOverdueWeight*tickScore + _s.bastWeight*bastScore + _s.lcWeight*lcScore + _s.rndWeight*rndScore) * 100);
+        return {
+          id: m.id, name: m.name, jabatan: m.jabatan, team_type: m.team_type,
+          ticketsHandled: m.ticketsHandled, ticketsSolved: m.ticketsSolved, ticketsOverdue: m.ticketsOverdue,
+          lcAttempts: m.lcAttempts, lcAvgScore: m.lcAvgScore, lcPassed: m.lcPassed,
+          formReviewTotal: m.formReviewTotal, formReviewLowRating: m.formReviewLowRating,
+          techNotesApproved: m.techNotesApproved,
+          tickScore: Math.round(tickScore*100), bastScore: Math.round(bastScore*100),
+          lcScore: Math.round(lcScore*100), rndScore: Math.round(rndScore*100),
+          finalKPI,
+        };
+      });
+
+      await supabase.from('kpi_period_snapshots').insert({
+        period_label: periodLabel,
+        year,
+        period,
+        start_month: startMonth,
+        end_month: endMonth,
+        team_type: teamType,
+        created_by: currentUser.full_name,
+        members_json: membersJson,
+        settings_json: _s,
+      });
+
+      await fetchKPISnapshots();
+      setShowStartKPI(false);
+    } catch (e) { console.error('saveKPISnapshot error:', e); }
+    finally { setSavingSnapshot(false); }
+  }, [kpiTeam, kpiSettings, scope, currentUser, fetchKPISnapshots, snapshotStartMonth]);
+
+
 
   useEffect(() => {
     if (!scopeReady) return;
@@ -706,10 +809,11 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
   useEffect(() => {
     if (tab === 'kpi_team' && scopeReady) fetchKPITeam();
+    if ((tab === 'kpi_team' || tab === 'history') && scopeReady) fetchKPISnapshots();
     // For team scope: auto-fetch their own KPI on load
     if (scope.kind === 'team' && scopeReady) fetchKPITeam();
     return () => { if(intervalRef.current) clearInterval(intervalRef.current); };
-  }, [tab, scopeReady, fetchKPITeam, scope.kind]);
+  }, [tab, scopeReady, fetchKPITeam, fetchKPISnapshots, scope.kind]);
 
   // ── Filtered Audit ────────────────────────────────────────────────────────
 
@@ -742,6 +846,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
   const TAB_CONFIG = [
     {key:'analytics' as const, icon:'📊', label:'Analytics'},
     {key:'kpi_team'  as const, icon:'👥', label:'KPI Team'},
+    {key:'history'   as const, icon:'📋', label:'Riwayat KPI'},
     {key:'cross'     as const, icon:'🔀', label:'Cross-Module'},
     {key:'audit'     as const, icon:'🔍', label:'Audit Trail'},
   ];
@@ -1183,6 +1288,14 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     Pengaturan KPI
+                  </button>
+                  {/* ── Mulai KPI (Snapshot) ── */}
+                  <button
+                    onClick={() => setShowStartKPI(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-rose-600 hover:text-white hover:bg-rose-600 bg-white border border-rose-200 transition-all"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                    Mulai KPI {kpiTeam.filterYear}
                   </button>
                   {/* Download Excel per orang — format corporate seperti Formulir KPI */}
                   <button
@@ -1941,6 +2054,148 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
             </div>
           )}
 
+          {/* ══════════ TAB RIWAYAT KPI ══════════ */}
+          {tab==='history' && (scope.kind==='admin' || scope.kind==='pts_sup') && (() => {
+            const MONTH_NAMES = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+            const kpiColor = (score: number, noData: boolean) =>
+              noData ? '#94a3b8' : score>=85?'#10b981':score>=70?'#3b82f6':score>=50?'#f59e0b':'#ef4444';
+            return (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="inline-flex items-center gap-1.5 bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm border border-slate-200 text-[10px] font-bold uppercase tracking-widest">
+                    <span>📋</span>Riwayat Snapshot KPI
+                  </div>
+                  <span className="text-[11px] text-slate-400 ml-1">
+                    {kpiSnapshots.length} periode tersimpan · data permanen, tidak berubah
+                  </span>
+                  <button onClick={fetchKPISnapshots}
+                    className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 transition-all">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    Refresh
+                  </button>
+                </div>
+
+                {kpiSnapshots.length === 0 ? (
+                  <div className="flex flex-col items-center gap-3 py-16 text-slate-400">
+                    <span className="text-4xl opacity-20">📋</span>
+                    <p className="text-sm">Belum ada snapshot KPI tersimpan.</p>
+                    <p className="text-xs text-slate-300">Klik <b className="text-rose-400">Mulai KPI</b> di tab KPI Team untuk merekam periode pertama.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {kpiSnapshots.map(snap => {
+                      const isExpanded = expandedSnapshot === snap.id;
+                      const avgScore = snap.members_json.length
+                        ? Math.round(snap.members_json.reduce((s,m)=>s+m.finalKPI,0)/snap.members_json.length)
+                        : 0;
+                      const avgColor = kpiColor(avgScore, snap.members_json.length===0);
+                      const createdFmt = new Date(snap.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+                      return (
+                        <div key={snap.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                          {/* Snapshot header — clickable */}
+                          <button
+                            onClick={()=>setExpandedSnapshot(isExpanded ? null : snap.id)}
+                            className="w-full flex items-center gap-4 px-4 py-3 hover:bg-slate-50/80 transition-all text-left">
+                            {/* Period badge */}
+                            <div className="flex flex-col items-center justify-center w-14 h-14 rounded-xl flex-shrink-0"
+                              style={{background:`${avgColor}12`, border:`1.5px solid ${avgColor}30`}}>
+                              <span className="text-[9px] font-bold uppercase tracking-wide" style={{color:avgColor}}>
+                                {snap.period==='6m'?'6 Bln':'1 Thn'}
+                              </span>
+                              <span className="text-lg font-black leading-none" style={{color:avgColor}}>{avgScore}%</span>
+                              <span className="text-[8px] text-slate-400">rata2</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-bold text-slate-800 text-sm">{snap.period_label}</div>
+                              <div className="text-[11px] text-slate-400 mt-0.5">
+                                Periode: <b className="text-slate-600">
+                                  {MONTH_NAMES[(snap.start_month ?? 1)-1]} – {MONTH_NAMES[(snap.end_month ?? 12)-1]} {snap.year}
+                                </b>
+                                &nbsp;·&nbsp;
+                                {snap.members_json.length} anggota
+                                &nbsp;·&nbsp;
+                                Disimpan {createdFmt} oleh <b className="text-slate-600">{snap.created_by}</b>
+                              </div>
+                              {/* Member pill preview */}
+                              <div className="flex gap-1 mt-1.5 flex-wrap">
+                                {snap.members_json.slice(0,6).map(m=>{
+                                  const c = kpiColor(m.finalKPI, false);
+                                  return (
+                                    <span key={m.id} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                                      style={{background:`${c}15`,color:c,border:`1px solid ${c}30`}}>
+                                      {m.name.split(' ')[0]} {m.finalKPI}%
+                                    </span>
+                                  );
+                                })}
+                                {snap.members_json.length > 6 && (
+                                  <span className="text-[9px] text-slate-400 px-1.5 py-0.5">+{snap.members_json.length-6} lagi</span>
+                                )}
+                              </div>
+                            </div>
+                            <svg className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform ${isExpanded?'rotate-180':''}`}
+                              fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
+                            </svg>
+                          </button>
+
+                          {/* Expanded detail */}
+                          {isExpanded && (
+                            <div className="border-t border-slate-100 px-4 py-3">
+                              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">
+                                Detail Skor — {snap.period_label}
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {snap.members_json.map(m => {
+                                  const c = kpiColor(m.finalKPI, false);
+                                  return (
+                                    <div key={m.id} className="rounded-xl border p-3 flex items-center gap-3"
+                                      style={{background:`${c}06`,borderColor:`${c}25`}}>
+                                      <div className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm text-white flex-shrink-0"
+                                        style={{background:`linear-gradient(135deg,${c},${c}88)`}}>
+                                        {m.name.charAt(0)}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-bold text-slate-800 text-[12px] truncate">{m.name}</div>
+                                        <div className="text-[10px] text-slate-400">{m.jabatan}</div>
+                                        {/* Component bars */}
+                                        <div className="mt-1.5 space-y-0.5">
+                                          {[
+                                            {label:'🎫 Ticket', val:m.tickScore, color:'#ef4444'},
+                                            {label:'⭐ BAST', val:m.bastScore, color:'#f59e0b'},
+                                            {label:'🎓 LC', val:m.lcScore, color:'#6366f1'},
+                                            {label:'📝 RnD', val:m.rndScore, color:'#ec4899'},
+                                          ].map(comp=>(
+                                            <div key={comp.label} className="flex items-center gap-1.5">
+                                              <span className="text-[8px] text-slate-400 w-12 flex-shrink-0">{comp.label}</span>
+                                              <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+                                                <div className="h-full rounded-full" style={{width:`${comp.val}%`,background:comp.color}}/>
+                                              </div>
+                                              <span className="text-[9px] font-bold w-7 text-right" style={{color:comp.color}}>{comp.val}%</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                      <div className="flex flex-col items-end flex-shrink-0">
+                                        <span className="text-xl font-black" style={{color:c}}>{m.finalKPI}%</span>
+                                        <span className="text-[8px] font-bold uppercase" style={{color:c}}>
+                                          {m.finalKPI>=85?'Excellent':m.finalKPI>=70?'Good':m.finalKPI>=50?'Fair':'Needs Work'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* ══════════ TAB CROSS-MODULE ANALYTICS ══════════ */}
           {tab==='cross'&&(
             <div className="space-y-5">
@@ -2145,6 +2400,129 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
         </div>{/* end content */}
       </div>{/* end wrapper */}
+
+      {/* ══ Modal Mulai KPI (Snapshot) ══ */}
+      {showStartKPI && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)' }}
+          onClick={e => { if (e.target === e.currentTarget && !savingSnapshot) setShowStartKPI(false); }}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100"
+              style={{background:'linear-gradient(135deg,#fff1f2,#fff'}}>
+              <div>
+                <div className="font-bold text-slate-800 text-base flex items-center gap-2">
+                  <span className="text-lg">📸</span> Mulai Periode KPI
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">
+                  Snapshot data akan tersimpan permanen & tidak berubah
+                </div>
+              </div>
+              {!savingSnapshot && (
+                <button onClick={()=>setShowStartKPI(false)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100">×</button>
+              )}
+            </div>
+
+            <div className="p-6 space-y-5">
+              {/* Tahun & Periode info */}
+              <div className="flex items-center gap-3 bg-slate-50 rounded-xl px-4 py-3 border border-slate-200">
+                <div className="text-2xl">📅</div>
+                <div>
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Tahun & Durasi</div>
+                  <div className="font-black text-slate-800">
+                    {kpiTeam.filterYear} · {kpiTeam.filterPeriod === '6m' ? '6 Bulan' : '1 Tahun'}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    Ganti di tab KPI Team sebelum klik Mulai KPI
+                  </div>
+                </div>
+              </div>
+
+              {/* Bulan Mulai */}
+              {(() => {
+                const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+                const monthCount = kpiTeam.filterPeriod === '6m' ? 6 : 12;
+                const endMonthRaw = snapshotStartMonth + monthCount - 1;
+                const endMonth = Math.min(endMonthRaw, 12);
+                const endLabel = MONTH_NAMES[endMonth - 1];
+                // Hanya bulan valid: jika 6 bulan, mulai max bulan 7 (Juli) agar tidak melebihi Des
+                const maxStart = kpiTeam.filterPeriod === '6m' ? 7 : 1;
+                const availableMonths = MONTH_NAMES.slice(0, maxStart);
+                return (
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-2 uppercase tracking-wide">
+                      📌 Bulan Mulai KPI
+                    </label>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {availableMonths.map((name, idx) => {
+                        const monthNum = idx + 1;
+                        const isSelected = snapshotStartMonth === monthNum;
+                        return (
+                          <button key={monthNum}
+                            onClick={()=>setSnapshotStartMonth(monthNum)}
+                            className="px-2 py-2 rounded-xl text-[11px] font-bold transition-all border"
+                            style={isSelected
+                              ? {background:'#be123c',color:'white',borderColor:'#be123c',boxShadow:'0 2px 8px #be123c40'}
+                              : {background:'#f8fafc',color:'#64748b',borderColor:'#e2e8f0'}}>
+                            {name.slice(0,3)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* Auto end month display */}
+                    <div className="mt-3 flex items-center gap-2 bg-rose-50 rounded-xl px-4 py-3 border border-rose-100">
+                      <div className="flex-1">
+                        <div className="text-[10px] text-rose-400 font-semibold uppercase tracking-wide">Periode yang akan disimpan</div>
+                        <div className="text-base font-black text-rose-700 mt-0.5">
+                          {MONTH_NAMES[snapshotStartMonth-1]} – {endLabel} {kpiTeam.filterYear}
+                        </div>
+                        <div className="text-[10px] text-rose-400 mt-0.5">
+                          {monthCount} bulan · {kpiTeam.members.length} anggota akan disimpan
+                        </div>
+                      </div>
+                      <div className="text-3xl opacity-40">🔒</div>
+                    </div>
+                    {endMonthRaw > 12 && (
+                      <div className="mt-2 text-[10px] text-amber-600 bg-amber-50 rounded-lg px-3 py-2 border border-amber-100">
+                        ⚠️ Periode melebihi Desember — end bulan dikunci ke Desember {kpiTeam.filterYear}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Warning */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-[11px] text-amber-700">
+                <b>⚠️ Perhatian:</b> Setelah disimpan, data KPI periode ini <b>tidak dapat diubah</b>.
+                Pastikan semua data sudah lengkap sebelum menyimpan.
+                {kpiTeam.members.length === 0 && (
+                  <div className="mt-1 text-red-600 font-bold">❌ Belum ada data anggota. Load data KPI Team dahulu.</div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3 px-6 pb-5 justify-end">
+              <button onClick={()=>setShowStartKPI(false)} disabled={savingSnapshot}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors disabled:opacity-40">
+                Batal
+              </button>
+              <button
+                onClick={saveKPISnapshot}
+                disabled={savingSnapshot || kpiTeam.members.length === 0}
+                className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40"
+                style={{background:'linear-gradient(135deg,#be123c,#9f1239)'}}>
+                {savingSnapshot ? (
+                  <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"/>Menyimpan...</>
+                ) : (
+                  <><span>📸</span> Simpan Snapshot KPI</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* ══ Settings Modal ══ */}
       {showSettings && typeof document !== 'undefined' && createPortal(
