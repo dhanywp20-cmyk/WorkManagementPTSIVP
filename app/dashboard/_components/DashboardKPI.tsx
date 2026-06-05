@@ -74,7 +74,8 @@ interface KPITeamState {
   editingMember: string | null;  // member id yang sedang diedit
   editValues: Partial<KPITeamMember['manual']>;
   filterYear: number;
-  filterPeriod: '6m' | '1y';   // NEW: 6 bulan atau 1 tahun
+  filterPeriod: '6m' | '1y';   // 6 bulan atau 1 tahun
+  filterStartMonth: number;     // 1–12: bulan mulai periode (sumber kebenaran utama)
   filterTeam: string;
 }
 
@@ -301,7 +302,8 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     editingMember: null,
     editValues: {},
     filterYear: new Date().getFullYear(),
-    filterPeriod: '1y',
+    filterPeriod: '6m',
+    filterStartMonth: new Date().getMonth() < 6 ? 1 : 7, // otomatis semester saat ini
     filterTeam: 'all',
   });
   const [selectedKPIMember, setSelectedKPIMember] = useState<string | null>(null);
@@ -318,7 +320,6 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
   const [showStartKPI, setShowStartKPI]   = useState(false);
   const [savingSnapshot, setSavingSnapshot] = useState(false);
   const [expandedSnapshot, setExpandedSnapshot] = useState<string | null>(null);
-  const [snapshotStartMonth, setSnapshotStartMonth] = useState<number>(new Date().getMonth() + 1); // default bulan ini
   const intervalRef = useRef<ReturnType<typeof setInterval>|null>(null);
 
   // ── 1. Resolve scope ──────────────────────────────────────────────────────
@@ -560,18 +561,15 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     try {
       const year = kpiTeam.filterYear;
       const period = kpiTeam.filterPeriod;
-      const yearEnd = `${year}-12-31`;
-      // 6 bulan: otomatis semester saat ini (Jan-Jun atau Jul-Des)
-      // 1 tahun: Jan-Des
-      const currentMonth = new Date().getMonth() + 1; // 1-12
-      const sem2Start = 7; // Juli
-      const yearStart = period === '6m'
-        ? (currentMonth >= sem2Start ? `${year}-07-01` : `${year}-01-01`)
-        : `${year}-01-01`;
-      const yearEnd6m = period === '6m'
-        ? (currentMonth >= sem2Start ? `${year}-12-31` : `${year}-06-30`)
-        : `${year}-12-31`;
-      const effectiveEnd = period === '6m' ? yearEnd6m : yearEnd;
+      const startMonth = kpiTeam.filterStartMonth; // ← pakai pilihan user, bukan auto-detect
+      const monthCount = period === '6m' ? 6 : 12;
+      const endMonth = Math.min(startMonth + monthCount - 1, 12);
+
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const yearStart = `${year}-${pad(startMonth)}-01`;
+      // Last day of endMonth
+      const endDay = new Date(year, endMonth, 0).getDate();
+      const effectiveEnd = `${year}-${pad(endMonth)}-${endDay}`;
 
       // Get team members
       let membersQ = supabase.from('users').select('id,full_name,jabatan,team_type,role');
@@ -745,7 +743,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
       setKpiTeam(prev => ({ ...prev, members, loading: false }));
     } catch (e) { console.error('KPI Team fetch error:', e); setKpiTeam(prev => ({ ...prev, loading: false })); }
-  }, [scope, scopeReady, kpiTeam.filterYear, kpiTeam.filterPeriod]);
+  }, [scope, scopeReady, kpiTeam.filterYear, kpiTeam.filterPeriod, kpiTeam.filterStartMonth]);
 
   // ── 5. Fetch KPI Period Snapshots ────────────────────────────────────────
 
@@ -773,11 +771,9 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const _s = kpiSettings;
       const year = kpiTeam.filterYear;
       const period = kpiTeam.filterPeriod;
-      const startMonth = snapshotStartMonth; // 1–12
+      const startMonth = kpiTeam.filterStartMonth; // ← satu sumber kebenaran
       const monthCount = period === '6m' ? 6 : 12;
-      // end month: startMonth + monthCount - 1, wrap ke tahun berikutnya jika perlu
-      const endMonthRaw = startMonth + monthCount - 1;
-      const endMonth = endMonthRaw > 12 ? 12 : endMonthRaw; // clamp ke akhir tahun ini
+      const endMonth = Math.min(startMonth + monthCount - 1, 12);
       const MONTH_NAMES = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
       const periodLabel = `${MONTH_NAMES[startMonth-1]}–${MONTH_NAMES[endMonth-1]} ${year}`;
       const teamType = scope.kind === 'pts_sup'
@@ -821,7 +817,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       setShowStartKPI(false);
     } catch (e) { console.error('saveKPISnapshot error:', e); }
     finally { setSavingSnapshot(false); }
-  }, [kpiTeam, kpiSettings, scope, currentUser, fetchKPISnapshots, snapshotStartMonth]);
+  }, [kpiTeam, kpiSettings, scope, currentUser, fetchKPISnapshots]);
 
 
 
@@ -1280,32 +1276,62 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               <div className="flex flex-wrap items-center gap-3">
                 <SectionPill icon="👥">KPI Team {scope.kind==='pts_sup'?scope.ptsTeamType:scope.kind==='team'?currentUser.team_type??'':'PTS IVP & MLDS'}</SectionPill>
                 <div className="ml-auto flex items-center gap-2 flex-wrap">
-                  {/* Filter Periode — hidden for regular team members */}
-                  {scope.kind !== 'team' && (<>
-                  <div className="flex items-center rounded-lg border border-slate-200 overflow-hidden bg-white">
-                    {(['6m','1y'] as const).map(p=>(
-                      <button key={p}
-                        onClick={()=>setKpiTeam(prev=>({...prev,filterPeriod:p}))}
-                        className={`px-3 py-1.5 text-[11px] font-bold transition-all ${kpiTeam.filterPeriod===p?'bg-blue-600 text-white':'text-slate-500 hover:bg-slate-50'}`}>
-                        {p==='6m'?'6 Bulan':'1 Tahun'}
+              {/* Filter Periode — hidden for regular team members */}
+                  {scope.kind !== 'team' && (() => {
+                    const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+                    const startM = kpiTeam.filterStartMonth;
+                    const duration = kpiTeam.filterPeriod === '6m' ? 6 : 12;
+                    const endM = Math.min(startM + duration - 1, 12);
+                    const periodLabel = `${MONTHS_SHORT[startM-1]}–${MONTHS_SHORT[endM-1]} ${kpiTeam.filterYear}`;
+                    return (
+                      <>
+                      {/* Durasi toggle */}
+                      <div className="flex items-center rounded-lg border border-slate-200 overflow-hidden bg-white">
+                        {(['6m','1y'] as const).map(p=>(
+                          <button key={p}
+                            onClick={()=>{
+                              const newDuration = p === '6m' ? 6 : 12;
+                              // Jika ganti ke 1y, start bulan otomatis Jan
+                              // Jika ganti ke 6m, start bulan otomatis ke semester saat ini
+                              const newStart = p === '1y' ? 1 : (kpiTeam.filterStartMonth <= 6 ? 1 : 7);
+                              setKpiTeam(prev=>({...prev, filterPeriod:p, filterStartMonth:newStart}));
+                            }}
+                            className={`px-3 py-1.5 text-[11px] font-bold transition-all ${kpiTeam.filterPeriod===p?'bg-blue-600 text-white':'text-slate-500 hover:bg-slate-50'}`}>
+                            {p==='6m'?'6 Bulan':'1 Tahun'}
+                          </button>
+                        ))}
+                      </div>
+                      {/* Bulan mulai — hanya tampil kalau 6 bulan */}
+                      {kpiTeam.filterPeriod === '6m' && (
+                        <select
+                          value={kpiTeam.filterStartMonth}
+                          onChange={e => setKpiTeam(prev=>({...prev, filterStartMonth:Number(e.target.value)}))}
+                          className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 outline-none focus:border-blue-300"
+                        >
+                          {[{v:1,l:'Jan – Jun'},{v:2,l:'Feb – Jul'},{v:3,l:'Mar – Agt'},{v:4,l:'Apr – Sep'},{v:5,l:'Mei – Okt'},{v:6,l:'Jun – Nov'},{v:7,l:'Jul – Des'}].map(o=>(
+                            <option key={o.v} value={o.v}>{o.l}</option>
+                          ))}
+                        </select>
+                      )}
+                      {/* Tahun */}
+                      <select
+                        value={kpiTeam.filterYear}
+                        onChange={e => setKpiTeam(prev=>({...prev, filterYear:Number(e.target.value)}))}
+                        className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 outline-none focus:border-blue-300"
+                      >
+                        {[2024,2025,2026,2027].map(y=>(<option key={y} value={y}>{y}</option>))}
+                      </select>
+                      {/* Periode badge aktif */}
+                      <span className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
+                        📅 {periodLabel}
+                      </span>
+                      <button
+                        onClick={()=>fetchKPITeam()}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 transition-all"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        Refresh
                       </button>
-                    ))}
-                  </div>
-                  {/* Filter Tahun */}
-                  <select
-                    value={kpiTeam.filterYear}
-                    onChange={e => setKpiTeam(prev=>({...prev, filterYear:Number(e.target.value)}))}
-                    className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 outline-none focus:border-blue-300"
-                  >
-                    {[2024,2025,2026,2027].map(y=>(<option key={y} value={y}>{y}</option>))}
-                  </select>
-                  <button
-                    onClick={()=>fetchKPITeam()}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 transition-all"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                    Refresh
-                  </button>
                   <button
                     onClick={()=>setShowSettings(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-violet-600 hover:text-white hover:bg-violet-600 bg-white border border-violet-200 transition-all"
@@ -1359,6 +1385,10 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                         const s = calcScores(m);
                         const team = m.team_type.replace('Team PTS ','').replace('Team PTS','IVP');
                         const year = kpiTeam.filterYear;
+                        const MNX = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+                        const smX = kpiTeam.filterStartMonth;
+                        const emX = Math.min(smX + (kpiTeam.filterPeriod === '6m' ? 5 : 11), 12);
+                        const periodStrX = `${MNX[smX-1]}–${MNX[emX-1]} ${year}`;
 
                         const wb = XLSX_MOD.utils.book_new();
                         const wsName = ('KPI ' + m.name).substring(0, 31);
@@ -1371,9 +1401,9 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                         // Row 3-5 — Identity
                         aoa.push([`Nama              : ${m.name}`,null,null,null,null,null,null,null,null,null,null,null,null,'Divisi',':', team,null,null,null,'Developed by :','']);
                         aoa.push([`No. Karyawan   : —`,null,null,null,null,null,null,null,null,null,null,null,null,'Department',':', 'Indovisual',null,null,null,'Initial by :','']);
-                        aoa.push([`Periode Penilaian : ${year}`,null,null,null,null,null,null,null,null,null,null,null,null,'Level / Posisi',':', m.jabatan,null,null,null,'','']);
+                        aoa.push([`Periode Penilaian : ${periodStrX}`,null,null,null,null,null,null,null,null,null,null,null,null,'Level / Posisi',':', m.jabatan,null,null,null,'','']);
                         // Row 6 — Col headers
-                        aoa.push(['Sasaran','Indikator Kinerja','Sumber Data','Periode Isla\nRata2/Total','TARGET\nRata2/Total','', 'January — December',null,null,null,null,null,null,null,null,null,null,null,null,'BOBOT','Nilai\nAkhir']);
+                        aoa.push(['Sasaran','Indikator Kinerja','Sumber Data','Periode Isla\nRata2/Total','TARGET\nRata2/Total','', `${MNX[smX-1]} — ${MNX[emX-1]} ${year}`,null,null,null,null,null,null,null,null,null,null,null,null,'BOBOT','Nilai\nAkhir']);
                         // Row 7 — Month names
                         aoa.push([null,null,null,null,null,...([''].concat(MONTHS)), null,'Rata2/Total',null,null]);
 
@@ -1534,13 +1564,17 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       const pm = kpiTeam.filterPeriod === '6m' ? 0.5 : 1;
                       const rndTarget = 2;
                       const wb = XLSX_MOD.utils.book_new();
+                      const MN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+                      const sm = kpiTeam.filterStartMonth;
+                      const em = Math.min(sm + (kpiTeam.filterPeriod === '6m' ? 5 : 11), 12);
+                      const periodStr = `${MN[sm-1]}–${MN[em-1]} ${year}`;
 
                       // ── Sheet 1: Rekap Tim ──
                       const summaryAoa: (string|number|null)[][] = [
                         ['REKAP KPI TIM PTS — INDOVISUAL GROUP', null, null, null, null, null, null, null, null],
-                        [`Tahun: ${year}  |  Periode: ${kpiTeam.filterPeriod==='6m'?'6 Bulan (Jul-Des)':'1 Tahun (Jan-Des)'}`, null, null, null, null, null, null, null, null],
+                        [`Tahun: ${year}  |  Periode: ${periodStr}  |  Durasi: ${kpiTeam.filterPeriod==='6m'?'6 Bulan':'1 Tahun'}`, null, null, null, null, null, null, null, null],
                         [],
-                        ['No','Nama','Tim','Jabatan','Ticket','Ticket Overdue','LC Attempts','LC Avg Score','Low Rating BAST','Technote','Skor KPI (%)','Predikat'],
+                        ['No','Nama','Tim','Jabatan','Ticket Handled','Ticket Overdue','LC Attempts','LC Avg Score','Low Rating BAST','Tech Note','Skor KPI (%)','Predikat'],
                       ];
                       allMembers.forEach((m, idx) => {
                         const _s = kpiSettings;
@@ -1620,7 +1654,8 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     Rekap Tim {kpiTeam.filterYear}
                   </button>
-                  </>)} {/* end scope.kind !== 'team' */}
+                  </>);
+                  })()} {/* end scope.kind !== 'team' */}
                 </div>
               </div>
 
@@ -2474,13 +2509,13 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)' }}
           onClick={e => { if (e.target === e.currentTarget && !savingSnapshot) setShowStartKPI(false); }}>
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100"
-              style={{background:'linear-gradient(135deg,#fff1f2,#fff'}}>
+              style={{background:'linear-gradient(135deg,#fff1f2,#fff)'}}>
               <div>
                 <div className="font-bold text-slate-800 text-base flex items-center gap-2">
-                  <span className="text-lg">📸</span> Mulai Periode KPI
+                  <span className="text-lg">📸</span> Simpan Periode KPI
                 </div>
                 <div className="text-[11px] text-slate-400 mt-0.5">
                   Snapshot data akan tersimpan permanen & tidak berubah
@@ -2492,79 +2527,96 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               )}
             </div>
 
-            <div className="p-6 space-y-5">
-              {/* Tahun & Periode info */}
-              <div className="flex items-center gap-3 bg-slate-50 rounded-xl px-4 py-3 border border-slate-200">
-                <div className="text-2xl">📅</div>
-                <div>
-                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Tahun & Durasi</div>
-                  <div className="font-black text-slate-800">
-                    {kpiTeam.filterYear} · {kpiTeam.filterPeriod === '6m' ? '6 Bulan' : '1 Tahun'}
-                  </div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">
-                    Ganti di tab KPI Team sebelum klik Mulai KPI
-                  </div>
-                </div>
-              </div>
-
-              {/* Bulan Mulai */}
+            <div className="p-6 space-y-4">
               {(() => {
-                const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-                const monthCount = kpiTeam.filterPeriod === '6m' ? 6 : 12;
-                const endMonthRaw = snapshotStartMonth + monthCount - 1;
-                const endMonth = Math.min(endMonthRaw, 12);
-                const endLabel = MONTH_NAMES[endMonth - 1];
-                // Hanya bulan valid: jika 6 bulan, mulai max bulan 7 (Juli) agar tidak melebihi Des
-                const maxStart = kpiTeam.filterPeriod === '6m' ? 7 : 1;
-                const availableMonths = MONTH_NAMES.slice(0, maxStart);
+                const MN_FULL = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+                const MN_SHORT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+                const sm = kpiTeam.filterStartMonth;
+                const dur = kpiTeam.filterPeriod === '6m' ? 6 : 12;
+                const em = Math.min(sm + dur - 1, 12);
+                const periodLabel = `${MN_SHORT[sm-1]}–${MN_SHORT[em-1]} ${kpiTeam.filterYear}`;
+                const avgKPI = kpiTeam.members.length
+                  ? Math.round(kpiTeam.members.reduce((sum, m) => {
+                      const _s = kpiSettings;
+                      const lcFd = (m.lcScores??[]).filter(sc=>sc<_s.lcMinScore).length;
+                      const tS = m.ticketsHandled>0?Math.max(0,1-m.ticketsOverdue/Math.max(m.ticketsHandled,1)):0;
+                      const bS = m.formReviewTotal===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating/Math.max(m.formReviewTotal,1));
+                      const lS = m.lcAttempts===0?0:Math.max(0,1-(lcFd/Math.max(m.lcAttempts,1)));
+                      const rS = m.techNotesApproved>=_s.rndTarget?1:m.techNotesApproved/_s.rndTarget;
+                      return sum+Math.round((_s.ticketOverdueWeight*tS+_s.bastWeight*bS+_s.lcWeight*lS+_s.rndWeight*rS)*100);
+                    },0)/kpiTeam.members.length)
+                  : 0;
+                const needsWork = kpiTeam.members.filter(m=>{
+                  const _s=kpiSettings; const lcFd=(m.lcScores??[]).filter(sc=>sc<_s.lcMinScore).length;
+                  const tS=m.ticketsHandled>0?Math.max(0,1-m.ticketsOverdue/Math.max(m.ticketsHandled,1)):0;
+                  const bS=m.formReviewTotal===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating/Math.max(m.formReviewTotal,1));
+                  const lS=m.lcAttempts===0?0:Math.max(0,1-(lcFd/Math.max(m.lcAttempts,1)));
+                  const rS=m.techNotesApproved>=_s.rndTarget?1:m.techNotesApproved/_s.rndTarget;
+                  return Math.round((_s.ticketOverdueWeight*tS+_s.bastWeight*bS+_s.lcWeight*lS+_s.rndWeight*rS)*100)<50;
+                }).length;
                 return (
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-2 uppercase tracking-wide">
-                      📌 Bulan Mulai KPI
-                    </label>
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {availableMonths.map((name, idx) => {
-                        const monthNum = idx + 1;
-                        const isSelected = snapshotStartMonth === monthNum;
-                        return (
-                          <button key={monthNum}
-                            onClick={()=>setSnapshotStartMonth(monthNum)}
-                            className="px-2 py-2 rounded-xl text-[11px] font-bold transition-all border"
-                            style={isSelected
-                              ? {background:'#be123c',color:'white',borderColor:'#be123c',boxShadow:'0 2px 8px #be123c40'}
-                              : {background:'#f8fafc',color:'#64748b',borderColor:'#e2e8f0'}}>
-                            {name.slice(0,3)}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {/* Auto end month display */}
-                    <div className="mt-3 flex items-center gap-2 bg-rose-50 rounded-xl px-4 py-3 border border-rose-100">
-                      <div className="flex-1">
-                        <div className="text-[10px] text-rose-400 font-semibold uppercase tracking-wide">Periode yang akan disimpan</div>
-                        <div className="text-base font-black text-rose-700 mt-0.5">
-                          {MONTH_NAMES[snapshotStartMonth-1]} – {endLabel} {kpiTeam.filterYear}
-                        </div>
-                        <div className="text-[10px] text-rose-400 mt-0.5">
-                          {monthCount} bulan · {kpiTeam.members.length} anggota akan disimpan
+                  <>
+                  {/* Periode card */}
+                  <div className="rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4">
+                    <div className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-2">Periode Review</div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-xl font-black text-blue-700">{periodLabel}</div>
+                        <div className="text-[11px] text-blue-500 mt-0.5">
+                          {MN_FULL[sm-1]} s.d. {MN_FULL[em-1]} {kpiTeam.filterYear} · {kpiTeam.filterPeriod==='6m'?'6 Bulan':'12 Bulan'}
                         </div>
                       </div>
-                      <div className="text-3xl opacity-40">🔒</div>
-                    </div>
-                    {endMonthRaw > 12 && (
-                      <div className="mt-2 text-[10px] text-amber-600 bg-amber-50 rounded-lg px-3 py-2 border border-amber-100">
-                        ⚠️ Periode melebihi Desember — end bulan dikunci ke Desember {kpiTeam.filterYear}
+                      <div className="text-right">
+                        <div className="text-[10px] text-blue-400 font-semibold">Tim</div>
+                        <div className="font-bold text-blue-700 text-sm">{scope.kind==='pts_sup'?scope.ptsTeamType:'Semua Tim PTS'}</div>
                       </div>
-                    )}
+                    </div>
                   </div>
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      {val:kpiTeam.members.length,label:'Anggota',c:'#64748b'},
+                      {val:`${avgKPI}%`,label:'Avg KPI',c:avgKPI>=70?'#10b981':avgKPI>=50?'#f59e0b':'#ef4444'},
+                      {val:needsWork,label:'Needs Work',c:'#ef4444'},
+                    ].map((s,i)=>(
+                      <div key={i} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-center">
+                        <div className="text-2xl font-black" style={{color:s.c}}>{s.val}</div>
+                        <div className="text-[10px] text-slate-400 font-semibold mt-0.5">{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Member pills */}
+                  {kpiTeam.members.length>0&&(
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">Preview Anggota</div>
+                      <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1" style={{scrollbarWidth:'thin'}}>
+                        {kpiTeam.members.map(m=>{
+                          const _s=kpiSettings; const lcFd=(m.lcScores??[]).filter(sc=>sc<_s.lcMinScore).length;
+                          const tS=m.ticketsHandled>0?Math.max(0,1-m.ticketsOverdue/Math.max(m.ticketsHandled,1)):0;
+                          const bS=m.formReviewTotal===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating/Math.max(m.formReviewTotal,1));
+                          const lS=m.lcAttempts===0?0:Math.max(0,1-(lcFd/Math.max(m.lcAttempts,1)));
+                          const rS=m.techNotesApproved>=_s.rndTarget?1:m.techNotesApproved/_s.rndTarget;
+                          const f=Math.round((_s.ticketOverdueWeight*tS+_s.bastWeight*bS+_s.lcWeight*lS+_s.rndWeight*rS)*100);
+                          const noData=m.ticketsHandled===0&&m.lcAttempts===0&&m.techNotesApproved===0;
+                          const c=noData?'#94a3b8':f>=85?'#10b981':f>=70?'#3b82f6':f>=50?'#f59e0b':'#ef4444';
+                          return (
+                            <span key={m.id} className="text-[10px] font-bold px-2 py-1 rounded-full"
+                              style={{background:`${c}15`,color:c,border:`1px solid ${c}30`}}>
+                              {m.name.split(' ')[0]} {noData?'—':`${f}%`}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  </>
                 );
               })()}
 
-              {/* Warning */}
               <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-[11px] text-amber-700">
                 <b>⚠️ Perhatian:</b> Setelah disimpan, data KPI periode ini <b>tidak dapat diubah</b>.
                 Pastikan semua data sudah lengkap sebelum menyimpan.
-                {kpiTeam.members.length === 0 && (
+                {kpiTeam.members.length===0&&(
                   <div className="mt-1 text-red-600 font-bold">❌ Belum ada data anggota. Load data KPI Team dahulu.</div>
                 )}
               </div>
@@ -2575,15 +2627,14 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 className="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors disabled:opacity-40">
                 Batal
               </button>
-              <button
-                onClick={saveKPISnapshot}
-                disabled={savingSnapshot || kpiTeam.members.length === 0}
+              <button onClick={saveKPISnapshot}
+                disabled={savingSnapshot||kpiTeam.members.length===0}
                 className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40"
                 style={{background:'linear-gradient(135deg,#be123c,#9f1239)'}}>
-                {savingSnapshot ? (
+                {savingSnapshot?(
                   <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"/>Menyimpan...</>
-                ) : (
-                  <><span>📸</span> Simpan Snapshot KPI</>
+                ):(
+                  <><span>📸</span> Simpan Periode KPI</>
                 )}
               </button>
             </div>
