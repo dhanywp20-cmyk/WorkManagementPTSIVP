@@ -52,7 +52,6 @@ export function AnalyticsPage() {
   const [divisionStats, setDivisionStats] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
-  const [teamFilter, setTeamFilter] = useState<'all' | 'pts' | 'sales' | 'marketing'>('all');
 
   // Drill-down state
   const [selectedUser, setSelectedUser] = useState<{ uid: string; name: string } | null>(null);
@@ -63,19 +62,19 @@ export function AnalyticsPage() {
     const load = async () => {
       const { data: a } = await supabase
         .from('lc_quiz_attempts')
-        .select('user_id, score, passed, started_at, submitted_at, users(full_name, sales_division, jabatan, role, team_type)')
+        .select('user_id, score, passed, started_at, submitted_at, users(full_name, sales_division)')
         .eq('is_submitted', true);
 
       if (a) {
         // ── Per user ──
-        const byUser: Record<string, { name: string; division: string | null; jabatan: string | null; role: string | null; teamType: string | null; scores: number[]; passed: number }> = {};
+        const byUser: Record<string, { name: string; division: string | null; scores: number[]; passed: number }> = {};
         a.forEach((att: any) => {
-          if (!byUser[att.user_id]) byUser[att.user_id] = { name: att.users?.full_name ?? '-', division: att.users?.sales_division ?? null, jabatan: att.users?.jabatan ?? null, role: att.users?.role ?? null, teamType: att.users?.team_type ?? null, scores: [], passed: 0 };
+          if (!byUser[att.user_id]) byUser[att.user_id] = { name: att.users?.full_name ?? '-', division: att.users?.sales_division ?? null, scores: [], passed: 0 };
           byUser[att.user_id].scores.push(att.score ?? 0);
           if (att.passed) byUser[att.user_id].passed++;
         });
         setTopUsers(Object.entries(byUser).map(([uid, v]) => ({
-          uid, name: v.name, division: v.division, jabatan: v.jabatan, role: v.role, teamType: v.teamType,
+          uid, name: v.name, division: v.division,
           avg: v.scores.reduce((s: number, n: number) => s + n, 0) / v.scores.length,
           total: v.scores.length, passed: v.passed,
         })).sort((a, b) => b.avg - a.avg).slice(0, 20));
@@ -145,18 +144,9 @@ export function AnalyticsPage() {
       .then(({ data }: { data: any[] | null }) => { setUserAttempts(data ?? []); setLoadingUser(false); });
   }, [selectedUser]);
 
-  const TEAM_CATEGORIES: Record<string, { label: string; icon: string; color: string; activeClass: string; match: (t: string) => boolean }> = {
-    all:       { label: 'Semua',     icon: '👥', match: () => true,                              color: 'border-slate-300 text-slate-600 bg-white',  activeClass: 'border-indigo-500 bg-indigo-600 text-white shadow-md' },
-    pts:       { label: 'Tim PTS',   icon: '🔧', match: (t) => t.toLowerCase().includes('pts'),  color: 'border-slate-300 text-slate-600 bg-white',  activeClass: 'border-blue-500 bg-blue-600 text-white shadow-md' },
-    sales:     { label: 'Sales',     icon: '💼', match: (t) => t.toLowerCase().includes('sales') || t.toLowerCase().includes('guest'), color: 'border-slate-300 text-slate-600 bg-white', activeClass: 'border-emerald-500 bg-emerald-600 text-white shadow-md' },
-    marketing: { label: 'Marketing', icon: '📣', match: (t) => t.toLowerCase().includes('marketing'), color: 'border-slate-300 text-slate-600 bg-white', activeClass: 'border-violet-500 bg-violet-600 text-white shadow-md' },
-  };
-
-  const filteredUsers = topUsers.filter(u => {
-    const matchTeam   = TEAM_CATEGORIES[teamFilter].match(u.teamType ?? '');
-    const matchSearch = !search || u.name.toLowerCase().includes(search.toLowerCase());
-    return matchTeam && matchSearch;
-  });
+  const filteredUsers = search
+    ? topUsers.filter(u => u.name.toLowerCase().includes(search.toLowerCase()))
+    : topUsers;
 
   return (
     <div>
@@ -247,32 +237,8 @@ export function AnalyticsPage() {
 
         {/* ── Top Performers — Team ─────────────────────────────────────── */}
         <section>
-          <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
-            <div>
-              <h3 className="text-[10px] font-bold uppercase tracking-widest inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">🏆 Top Performers — Team</h3>
-              <p className="text-xs text-slate-400 mt-1 ml-1">Klik nama untuk melihat detail nilai & aktivitas per quiz</p>
-            </div>
-            {/* ── Category Filter Buttons ── */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {(Object.entries(TEAM_CATEGORIES) as [string, typeof TEAM_CATEGORIES[string]][]).map(([key, cat]) => (
-                <button
-                  key={key}
-                  onClick={() => setTeamFilter(key as any)}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all duration-150 ${
-                    teamFilter === key ? cat.activeClass : cat.color + ' hover:border-slate-400 hover:bg-slate-50'
-                  }`}
-                >
-                  <span>{cat.icon}</span>
-                  <span>{cat.label}</span>
-                  {teamFilter !== key && (
-                    <span className="ml-0.5 bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
-                      {topUsers.filter(u => cat.match(u.teamType ?? '')).length}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
+          <h3 className="text-[10px] font-bold uppercase tracking-widest mb-1 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">🏆 Top Performers — Team</h3>
+          <p className="text-xs text-slate-400 mb-4 ml-1">Klik nama untuk melihat detail nilai & aktivitas per quiz</p>
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <table className="w-full text-sm table-zebra">
               <thead className="border-b border-slate-200 bg-slate-50">
