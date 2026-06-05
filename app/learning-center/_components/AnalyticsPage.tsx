@@ -145,15 +145,15 @@ export function AnalyticsPage() {
       .then(({ data }: { data: any[] | null }) => { setUserAttempts(data ?? []); setLoadingUser(false); });
   }, [selectedUser]);
 
-  const TEAM_CATEGORIES: Record<string, { label: string; icon: string; roles: string[]; color: string; activeClass: string }> = {
-    all:       { label: 'Semua',    icon: '👥', roles: [],                   color: 'border-slate-300 text-slate-600 bg-white',          activeClass: 'border-indigo-500 bg-indigo-600 text-white shadow-md' },
-    pts:       { label: 'Tim PTS',  icon: '🔧', roles: ['pts', 'admin', 'superadmin', 'staff', 'teknisi'], color: 'border-slate-300 text-slate-600 bg-white', activeClass: 'border-blue-500 bg-blue-600 text-white shadow-md' },
-    sales:     { label: 'Sales',    icon: '💼', roles: ['sales'],            color: 'border-slate-300 text-slate-600 bg-white',          activeClass: 'border-emerald-500 bg-emerald-600 text-white shadow-md' },
-    marketing: { label: 'Marketing',icon: '📣', roles: ['marketing'],        color: 'border-slate-300 text-slate-600 bg-white',          activeClass: 'border-violet-500 bg-violet-600 text-white shadow-md' },
+  const TEAM_CATEGORIES: Record<string, { label: string; icon: string; match: (role: string) => boolean; color: string; activeClass: string }> = {
+    all:       { label: 'Semua',     icon: '👥', match: () => true,                                      color: 'border-slate-300 text-slate-600 bg-white',  activeClass: 'border-indigo-500 bg-indigo-600 text-white shadow-md' },
+    pts:       { label: 'Tim PTS',   icon: '🔧', match: (r) => r.toLowerCase().includes('pts'),          color: 'border-slate-300 text-slate-600 bg-white',  activeClass: 'border-blue-500 bg-blue-600 text-white shadow-md' },
+    sales:     { label: 'Sales',     icon: '💼', match: (r) => r.toLowerCase().includes('sales'),        color: 'border-slate-300 text-slate-600 bg-white',  activeClass: 'border-emerald-500 bg-emerald-600 text-white shadow-md' },
+    marketing: { label: 'Marketing', icon: '📣', match: (r) => r.toLowerCase().includes('marketing'),    color: 'border-slate-300 text-slate-600 bg-white',  activeClass: 'border-violet-500 bg-violet-600 text-white shadow-md' },
   };
 
   const filteredUsers = topUsers.filter(u => {
-    const matchTeam = teamFilter === 'all' || TEAM_CATEGORIES[teamFilter].roles.includes((u.role ?? '').toLowerCase());
+    const matchTeam   = TEAM_CATEGORIES[teamFilter].match(u.role ?? '');
     const matchSearch = !search || u.name.toLowerCase().includes(search.toLowerCase());
     return matchTeam && matchSearch;
   });
@@ -266,7 +266,7 @@ export function AnalyticsPage() {
                   <span>{cat.label}</span>
                   {teamFilter !== key && (
                     <span className="ml-0.5 bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
-                      {topUsers.filter(u => key === 'all' || cat.roles.includes((u.role ?? '').toLowerCase())).length}
+                      {topUsers.filter(u => cat.match(u.role ?? '')).length}
                     </span>
                   )}
                 </button>
