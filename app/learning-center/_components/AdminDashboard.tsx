@@ -121,12 +121,17 @@ export function AdminDashboard({ user }: { user: User }) {
 
       // ── Top performers + consistency + fast-submit ─────────────────────────
       const byUser: Record<string, {
-        name: string; role: string | null; scores: number[]; passed: number; tabSw: number;
+        name: string; role: string | null; jabatan: string | null; division: string | null;
+        scores: number[]; passed: number; tabSw: number;
         minScore: number; maxScore: number; fastCount: number;
       }> = {};
       allAtt.forEach((a: any) => {
         if (!byUser[a.user_id]) byUser[a.user_id] = {
-          name: a.users?.full_name ?? '-', role: a.users?.role ?? null, scores: [], passed: 0, tabSw: 0,
+          name: a.users?.full_name ?? '-',
+          role: a.users?.role ?? null,
+          jabatan: a.users?.jabatan ?? null,
+          division: a.users?.sales_division ?? null,
+          scores: [], passed: 0, tabSw: 0,
           minScore: Infinity, maxScore: -Infinity, fastCount: 0,
         };
         const sc = a.score ?? 0;
@@ -140,7 +145,7 @@ export function AdminDashboard({ user }: { user: User }) {
         if (tq >= 5 && ts < tq * 5) byUser[a.user_id].fastCount++;
       });
       setTopUsers(Object.entries(byUser).map(([uid, v]) => ({
-        uid, name: v.name, role: v.role,
+        uid, name: v.name, role: v.role, jabatan: v.jabatan, division: v.division,
         avg: v.scores.reduce((s: number, n: number) => s + n, 0) / v.scores.length,
         total: v.scores.length, passed: v.passed, tabSw: v.tabSw,
         consistency: v.scores.length >= 2 ? v.maxScore - v.minScore : null,
@@ -240,15 +245,18 @@ export function AdminDashboard({ user }: { user: User }) {
     (a.users?.full_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (a.lc_quiz_sessions?.session_name ?? '').toLowerCase().includes(search.toLowerCase())
   );
-  const TEAM_CATS: Record<string, { label: string; icon: string; match: (role: string) => boolean; activeClass: string }> = {
-    all:       { label: 'Semua',     icon: '👥', match: () => true,                                                           activeClass: 'border-indigo-500 bg-indigo-600 text-white shadow' },
-    pts:       { label: 'Tim PTS',   icon: '🔧', match: (r) => r.toLowerCase().includes('pts'),                               activeClass: 'border-blue-500 bg-blue-600 text-white shadow' },
-    sales:     { label: 'Sales',     icon: '💼', match: (r) => r.toLowerCase().includes('sales'),                             activeClass: 'border-emerald-500 bg-emerald-600 text-white shadow' },
-    marketing: { label: 'Marketing', icon: '📣', match: (r) => r.toLowerCase().includes('marketing'),                         activeClass: 'border-violet-500 bg-violet-600 text-white shadow' },
+  // Match terhadap role, jabatan, DAN sales_division sekaligus
+  const userTag = (u: any) => [u.role ?? '', u.jabatan ?? '', u.division ?? ''].join('|').toLowerCase();
+
+  const TEAM_CATS: Record<string, { label: string; icon: string; match: (tag: string) => boolean; activeClass: string }> = {
+    all:       { label: 'Semua',     icon: '👥', match: () => true,                       activeClass: 'border-indigo-500 bg-indigo-600 text-white shadow' },
+    pts:       { label: 'Tim PTS',   icon: '🔧', match: (t) => t.includes('pts'),         activeClass: 'border-blue-500 bg-blue-600 text-white shadow' },
+    sales:     { label: 'Sales',     icon: '💼', match: (t) => t.includes('sales'),       activeClass: 'border-emerald-500 bg-emerald-600 text-white shadow' },
+    marketing: { label: 'Marketing', icon: '📣', match: (t) => t.includes('marketing'),   activeClass: 'border-violet-500 bg-violet-600 text-white shadow' },
   };
 
   const filteredPerformers = topUsers.filter(u => {
-    const matchTeam   = TEAM_CATS[teamFilter].match(u.role ?? '');
+    const matchTeam   = TEAM_CATS[teamFilter].match(userTag(u));
     const matchSearch = !searchPerformer || u.name.toLowerCase().includes(searchPerformer.toLowerCase());
     return matchTeam && matchSearch;
   });
@@ -344,7 +352,7 @@ export function AdminDashboard({ user }: { user: User }) {
                     <span>{cat.label}</span>
                     {teamFilter !== key && (
                       <span className="ml-0.5 bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
-                        {topUsers.filter(u => cat.match(u.role ?? '')).length}
+                        {topUsers.filter(u => cat.match(userTag(u))).length}
                       </span>
                     )}
                   </button>
@@ -409,8 +417,28 @@ export function AdminDashboard({ user }: { user: User }) {
                     </tr>
                   ))}
                   {filteredPerformers.length === 0 && (
-                    <tr><td colSpan={6} className="text-center py-10 text-slate-400 text-sm">
-                      {loadingAnalytics ? 'Memuat data...' : searchPerformer ? 'Tidak ada hasil' : 'Belum ada data'}
+                    <tr><td colSpan={6} className="text-center py-6 text-slate-400 text-sm">
+                      {loadingAnalytics ? 'Memuat data...' : searchPerformer ? 'Tidak ada hasil' : (
+                        <div className="space-y-2">
+                          <p>Belum ada data</p>
+                          {teamFilter !== 'all' && topUsers.length > 0 && (
+                            <div className="text-left inline-block bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-500 max-w-sm">
+                              <p className="font-bold text-slate-600 mb-1.5">🔍 Debug — nilai field user di DB:</p>
+                              <div className="space-y-1 max-h-40 overflow-y-auto">
+                                {topUsers.slice(0, 5).map(u => (
+                                  <div key={u.uid} className="font-mono text-[10px] bg-white border border-slate-100 rounded px-2 py-1">
+                                    <span className="text-slate-400">{u.name.split(' ')[0]}:</span>{' '}
+                                    role=<span className="text-blue-600">"{u.role ?? '-'}"</span>{' '}
+                                    jabatan=<span className="text-emerald-600">"{u.jabatan ?? '-'}"</span>{' '}
+                                    div=<span className="text-violet-600">"{u.division ?? '-'}"</span>
+                                  </div>
+                                ))}
+                              </div>
+                              <p className="mt-2 text-[10px] text-slate-400">Hapus blok debug ini setelah filter bekerja</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </td></tr>
                   )}
                 </tbody>
