@@ -65,7 +65,6 @@ export function AdminDashboard({ user }: { user: User }) {
   const [topUsers, setTopUsers] = useState<any[]>([]);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
   const [searchPerformer, setSearchPerformer] = useState('');
-  const [teamFilter, setTeamFilter] = useState<'all' | 'pts' | 'sales' | 'marketing'>('all');
 
   const [divisionStats, setDivisionStats] = useState<any[]>([]);
   const [batchPerf, setBatchPerf] = useState<any[]>([]);
@@ -94,7 +93,7 @@ export function AdminDashboard({ user }: { user: User }) {
           .select('*, users(full_name), lc_quiz_sessions(session_name, passing_grade)')
           .eq('is_submitted', true).order('submitted_at', { ascending: false }).limit(50),
         supabase.from('lc_quiz_attempts')
-          .select('user_id, score, passed, tab_switches, time_taken_sec, total_questions, users(full_name, jabatan, sales_division, role, team_category, team_type)')
+          .select('user_id, score, passed, tab_switches, time_taken_sec, total_questions, users(full_name, jabatan, sales_division)')
           .eq('is_submitted', true),
         supabase.from('lc_questions').select('id, batch_name'),
         supabase.from('lc_answers').select('question_id, is_correct'),
@@ -121,19 +120,12 @@ export function AdminDashboard({ user }: { user: User }) {
 
       // ── Top performers + consistency + fast-submit ─────────────────────────
       const byUser: Record<string, {
-        name: string; role: string | null; jabatan: string | null; division: string | null; teamCat: string | null; teamType: string | null;
-        scores: number[]; passed: number; tabSw: number;
+        name: string; scores: number[]; passed: number; tabSw: number;
         minScore: number; maxScore: number; fastCount: number;
       }> = {};
       allAtt.forEach((a: any) => {
         if (!byUser[a.user_id]) byUser[a.user_id] = {
-          name: a.users?.full_name ?? '-',
-          role: a.users?.role ?? null,
-          jabatan: a.users?.jabatan ?? null,
-          division: a.users?.sales_division ?? null,
-          teamCat: a.users?.team_category ?? null,
-          teamType: a.users?.team_type ?? null,
-          scores: [], passed: 0, tabSw: 0,
+          name: a.users?.full_name ?? '-', scores: [], passed: 0, tabSw: 0,
           minScore: Infinity, maxScore: -Infinity, fastCount: 0,
         };
         const sc = a.score ?? 0;
@@ -147,7 +139,7 @@ export function AdminDashboard({ user }: { user: User }) {
         if (tq >= 5 && ts < tq * 5) byUser[a.user_id].fastCount++;
       });
       setTopUsers(Object.entries(byUser).map(([uid, v]) => ({
-        uid, name: v.name, role: v.role, jabatan: v.jabatan, division: v.division, teamCat: v.teamCat, teamType: v.teamType,
+        uid, name: v.name,
         avg: v.scores.reduce((s: number, n: number) => s + n, 0) / v.scores.length,
         total: v.scores.length, passed: v.passed, tabSw: v.tabSw,
         consistency: v.scores.length >= 2 ? v.maxScore - v.minScore : null,
@@ -247,18 +239,9 @@ export function AdminDashboard({ user }: { user: User }) {
     (a.users?.full_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (a.lc_quiz_sessions?.session_name ?? '').toLowerCase().includes(search.toLowerCase())
   );
-  const TEAM_CATS: Record<string, { label: string; icon: string; activeClass: string; match: (t: string) => boolean }> = {
-    all:       { label: 'Semua',     icon: '👥', match: () => true,                             activeClass: 'border-indigo-500 bg-indigo-600 text-white shadow' },
-    pts:       { label: 'Tim PTS',   icon: '🔧', match: (t) => t.toLowerCase().includes('pts'), activeClass: 'border-blue-500 bg-blue-600 text-white shadow' },
-    sales:     { label: 'Sales',     icon: '💼', match: (t) => t.toLowerCase().includes('sales') || t.toLowerCase().includes('guest'), activeClass: 'border-emerald-500 bg-emerald-600 text-white shadow' },
-    marketing: { label: 'Marketing', icon: '📣', match: (t) => t.toLowerCase().includes('marketing'), activeClass: 'border-violet-500 bg-violet-600 text-white shadow' },
-  };
-
-  const filteredPerformers = topUsers.filter(u => {
-    const matchTeam   = TEAM_CATS[teamFilter].match(u.teamType ?? '');
-    const matchSearch = !searchPerformer || u.name.toLowerCase().includes(searchPerformer.toLowerCase());
-    return matchTeam && matchSearch;
-  });
+  const filteredPerformers = searchPerformer
+    ? topUsers.filter(u => u.name.toLowerCase().includes(searchPerformer.toLowerCase()))
+    : topUsers;
 
   const cards = [
     { label: 'Total Materi', value: stats.materials, icon: '📚', color: 'from-blue-500/90 to-blue-600/90' },
@@ -330,33 +313,9 @@ export function AdminDashboard({ user }: { user: User }) {
 
           {/* Right: Top Performers */}
           <div className="min-w-0">
-            <div className="flex flex-col gap-3 mb-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <SectionHeader>🏆 Top Performers</SectionHeader>
-                <SearchInput value={searchPerformer} onChange={setSearchPerformer} placeholder="Cari nama..." />
-              </div>
-              {/* ── Team Category Filter ── */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {(Object.entries(TEAM_CATS) as [string, typeof TEAM_CATS[string]][]).map(([key, cat]) => (
-                  <button
-                    key={key}
-                    onClick={() => setTeamFilter(key as any)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all duration-150 ${
-                      teamFilter === key
-                        ? cat.activeClass
-                        : 'border-slate-300 text-slate-600 bg-white hover:border-slate-400 hover:bg-slate-50'
-                    }`}
-                  >
-                    <span>{cat.icon}</span>
-                    <span>{cat.label}</span>
-                    {teamFilter !== key && (
-                      <span className="ml-0.5 bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
-                        {topUsers.filter(u => cat.match(u.teamType ?? '')).length}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+              <SectionHeader>🏆 Top Performers</SectionHeader>
+              <SearchInput value={searchPerformer} onChange={setSearchPerformer} placeholder="Cari nama..." />
             </div>
             <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
               <table className="w-full text-sm table-zebra" style={{ minWidth: '480px' }}>
@@ -417,7 +376,7 @@ export function AdminDashboard({ user }: { user: User }) {
                   ))}
                   {filteredPerformers.length === 0 && (
                     <tr><td colSpan={6} className="text-center py-10 text-slate-400 text-sm">
-                      {loadingAnalytics ? 'Memuat data...' : searchPerformer ? 'Tidak ada hasil' : teamFilter !== 'all' ? `Belum ada anggota di kategori ini. Set tim anggota di menu Team.` : 'Belum ada data'}
+                      {loadingAnalytics ? 'Memuat data...' : searchPerformer ? 'Tidak ada hasil' : 'Belum ada data'}
                     </td></tr>
                   )}
                 </tbody>
