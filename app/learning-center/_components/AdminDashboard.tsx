@@ -94,7 +94,7 @@ export function AdminDashboard({ user }: { user: User }) {
           .select('*, users(full_name), lc_quiz_sessions(session_name, passing_grade)')
           .eq('is_submitted', true).order('submitted_at', { ascending: false }).limit(50),
         supabase.from('lc_quiz_attempts')
-          .select('user_id, score, passed, tab_switches, time_taken_sec, total_questions, users(full_name, jabatan, sales_division, role)')
+          .select('user_id, score, passed, tab_switches, time_taken_sec, total_questions, users(full_name, jabatan, sales_division, role, team_category, team_type)')
           .eq('is_submitted', true),
         supabase.from('lc_questions').select('id, batch_name'),
         supabase.from('lc_answers').select('question_id, is_correct'),
@@ -121,7 +121,7 @@ export function AdminDashboard({ user }: { user: User }) {
 
       // ── Top performers + consistency + fast-submit ─────────────────────────
       const byUser: Record<string, {
-        name: string; role: string | null; jabatan: string | null; division: string | null;
+        name: string; role: string | null; jabatan: string | null; division: string | null; teamCat: string | null; teamType: string | null;
         scores: number[]; passed: number; tabSw: number;
         minScore: number; maxScore: number; fastCount: number;
       }> = {};
@@ -131,6 +131,8 @@ export function AdminDashboard({ user }: { user: User }) {
           role: a.users?.role ?? null,
           jabatan: a.users?.jabatan ?? null,
           division: a.users?.sales_division ?? null,
+          teamCat: a.users?.team_category ?? null,
+          teamType: a.users?.team_type ?? null,
           scores: [], passed: 0, tabSw: 0,
           minScore: Infinity, maxScore: -Infinity, fastCount: 0,
         };
@@ -145,7 +147,7 @@ export function AdminDashboard({ user }: { user: User }) {
         if (tq >= 5 && ts < tq * 5) byUser[a.user_id].fastCount++;
       });
       setTopUsers(Object.entries(byUser).map(([uid, v]) => ({
-        uid, name: v.name, role: v.role, jabatan: v.jabatan, division: v.division,
+        uid, name: v.name, role: v.role, jabatan: v.jabatan, division: v.division, teamCat: v.teamCat, teamType: v.teamType,
         avg: v.scores.reduce((s: number, n: number) => s + n, 0) / v.scores.length,
         total: v.scores.length, passed: v.passed, tabSw: v.tabSw,
         consistency: v.scores.length >= 2 ? v.maxScore - v.minScore : null,
@@ -245,18 +247,15 @@ export function AdminDashboard({ user }: { user: User }) {
     (a.users?.full_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (a.lc_quiz_sessions?.session_name ?? '').toLowerCase().includes(search.toLowerCase())
   );
-  // Match terhadap role, jabatan, DAN sales_division sekaligus
-  const userTag = (u: any) => [u.role ?? '', u.jabatan ?? '', u.division ?? ''].join('|').toLowerCase();
-
-  const TEAM_CATS: Record<string, { label: string; icon: string; match: (tag: string) => boolean; activeClass: string }> = {
-    all:       { label: 'Semua',     icon: '👥', match: () => true,                       activeClass: 'border-indigo-500 bg-indigo-600 text-white shadow' },
-    pts:       { label: 'Tim PTS',   icon: '🔧', match: (t) => t.includes('pts'),         activeClass: 'border-blue-500 bg-blue-600 text-white shadow' },
-    sales:     { label: 'Sales',     icon: '💼', match: (t) => t.includes('sales'),       activeClass: 'border-emerald-500 bg-emerald-600 text-white shadow' },
-    marketing: { label: 'Marketing', icon: '📣', match: (t) => t.includes('marketing'),   activeClass: 'border-violet-500 bg-violet-600 text-white shadow' },
+  const TEAM_CATS: Record<string, { label: string; icon: string; activeClass: string; match: (t: string) => boolean }> = {
+    all:       { label: 'Semua',     icon: '👥', match: () => true,                             activeClass: 'border-indigo-500 bg-indigo-600 text-white shadow' },
+    pts:       { label: 'Tim PTS',   icon: '🔧', match: (t) => t.toLowerCase().includes('pts'), activeClass: 'border-blue-500 bg-blue-600 text-white shadow' },
+    sales:     { label: 'Sales',     icon: '💼', match: (t) => t.toLowerCase().includes('sales') || t.toLowerCase().includes('guest'), activeClass: 'border-emerald-500 bg-emerald-600 text-white shadow' },
+    marketing: { label: 'Marketing', icon: '📣', match: (t) => t.toLowerCase().includes('marketing'), activeClass: 'border-violet-500 bg-violet-600 text-white shadow' },
   };
 
   const filteredPerformers = topUsers.filter(u => {
-    const matchTeam   = TEAM_CATS[teamFilter].match(userTag(u));
+    const matchTeam   = TEAM_CATS[teamFilter].match(u.teamType ?? '');
     const matchSearch = !searchPerformer || u.name.toLowerCase().includes(searchPerformer.toLowerCase());
     return matchTeam && matchSearch;
   });
@@ -352,7 +351,7 @@ export function AdminDashboard({ user }: { user: User }) {
                     <span>{cat.label}</span>
                     {teamFilter !== key && (
                       <span className="ml-0.5 bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
-                        {topUsers.filter(u => cat.match(userTag(u))).length}
+                        {topUsers.filter(u => cat.match(u.teamType ?? '')).length}
                       </span>
                     )}
                   </button>
@@ -417,28 +416,8 @@ export function AdminDashboard({ user }: { user: User }) {
                     </tr>
                   ))}
                   {filteredPerformers.length === 0 && (
-                    <tr><td colSpan={6} className="text-center py-6 text-slate-400 text-sm">
-                      {loadingAnalytics ? 'Memuat data...' : searchPerformer ? 'Tidak ada hasil' : (
-                        <div className="space-y-2">
-                          <p>Belum ada data</p>
-                          {teamFilter !== 'all' && topUsers.length > 0 && (
-                            <div className="text-left inline-block bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-500 max-w-sm">
-                              <p className="font-bold text-slate-600 mb-1.5">🔍 Debug — nilai field user di DB:</p>
-                              <div className="space-y-1 max-h-40 overflow-y-auto">
-                                {topUsers.slice(0, 5).map(u => (
-                                  <div key={u.uid} className="font-mono text-[10px] bg-white border border-slate-100 rounded px-2 py-1">
-                                    <span className="text-slate-400">{u.name.split(' ')[0]}:</span>{' '}
-                                    role=<span className="text-blue-600">"{u.role ?? '-'}"</span>{' '}
-                                    jabatan=<span className="text-emerald-600">"{u.jabatan ?? '-'}"</span>{' '}
-                                    div=<span className="text-violet-600">"{u.division ?? '-'}"</span>
-                                  </div>
-                                ))}
-                              </div>
-                              <p className="mt-2 text-[10px] text-slate-400">Hapus blok debug ini setelah filter bekerja</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                    <tr><td colSpan={6} className="text-center py-10 text-slate-400 text-sm">
+                      {loadingAnalytics ? 'Memuat data...' : searchPerformer ? 'Tidak ada hasil' : teamFilter !== 'all' ? `Belum ada anggota di kategori ini. Set tim anggota di menu Team.` : 'Belum ada data'}
                     </td></tr>
                   )}
                 </tbody>
