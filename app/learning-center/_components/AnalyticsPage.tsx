@@ -52,6 +52,7 @@ export function AnalyticsPage() {
   const [divisionStats, setDivisionStats] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [teamFilter, setTeamFilter] = useState<'all' | 'pts' | 'sales' | 'marketing'>('all');
 
   // Drill-down state
   const [selectedUser, setSelectedUser] = useState<{ uid: string; name: string } | null>(null);
@@ -62,19 +63,19 @@ export function AnalyticsPage() {
     const load = async () => {
       const { data: a } = await supabase
         .from('lc_quiz_attempts')
-        .select('user_id, score, passed, started_at, submitted_at, users(full_name, sales_division)')
+        .select('user_id, score, passed, started_at, submitted_at, users(full_name, sales_division, role)')
         .eq('is_submitted', true);
 
       if (a) {
         // ── Per user ──
-        const byUser: Record<string, { name: string; division: string | null; scores: number[]; passed: number }> = {};
+        const byUser: Record<string, { name: string; division: string | null; role: string | null; scores: number[]; passed: number }> = {};
         a.forEach((att: any) => {
-          if (!byUser[att.user_id]) byUser[att.user_id] = { name: att.users?.full_name ?? '-', division: att.users?.sales_division ?? null, scores: [], passed: 0 };
+          if (!byUser[att.user_id]) byUser[att.user_id] = { name: att.users?.full_name ?? '-', division: att.users?.sales_division ?? null, role: att.users?.role ?? null, scores: [], passed: 0 };
           byUser[att.user_id].scores.push(att.score ?? 0);
           if (att.passed) byUser[att.user_id].passed++;
         });
         setTopUsers(Object.entries(byUser).map(([uid, v]) => ({
-          uid, name: v.name, division: v.division,
+          uid, name: v.name, division: v.division, role: v.role,
           avg: v.scores.reduce((s: number, n: number) => s + n, 0) / v.scores.length,
           total: v.scores.length, passed: v.passed,
         })).sort((a, b) => b.avg - a.avg).slice(0, 20));
@@ -144,9 +145,18 @@ export function AnalyticsPage() {
       .then(({ data }: { data: any[] | null }) => { setUserAttempts(data ?? []); setLoadingUser(false); });
   }, [selectedUser]);
 
-  const filteredUsers = search
-    ? topUsers.filter(u => u.name.toLowerCase().includes(search.toLowerCase()))
-    : topUsers;
+  const TEAM_CATEGORIES: Record<string, { label: string; icon: string; roles: string[]; color: string; activeClass: string }> = {
+    all:       { label: 'Semua',    icon: '👥', roles: [],                   color: 'border-slate-300 text-slate-600 bg-white',          activeClass: 'border-indigo-500 bg-indigo-600 text-white shadow-md' },
+    pts:       { label: 'Tim PTS',  icon: '🔧', roles: ['pts', 'admin', 'superadmin', 'staff', 'teknisi'], color: 'border-slate-300 text-slate-600 bg-white', activeClass: 'border-blue-500 bg-blue-600 text-white shadow-md' },
+    sales:     { label: 'Sales',    icon: '💼', roles: ['sales'],            color: 'border-slate-300 text-slate-600 bg-white',          activeClass: 'border-emerald-500 bg-emerald-600 text-white shadow-md' },
+    marketing: { label: 'Marketing',icon: '📣', roles: ['marketing'],        color: 'border-slate-300 text-slate-600 bg-white',          activeClass: 'border-violet-500 bg-violet-600 text-white shadow-md' },
+  };
+
+  const filteredUsers = topUsers.filter(u => {
+    const matchTeam = teamFilter === 'all' || TEAM_CATEGORIES[teamFilter].roles.includes((u.role ?? '').toLowerCase());
+    const matchSearch = !search || u.name.toLowerCase().includes(search.toLowerCase());
+    return matchTeam && matchSearch;
+  });
 
   return (
     <div>
@@ -237,8 +247,32 @@ export function AnalyticsPage() {
 
         {/* ── Top Performers — Team ─────────────────────────────────────── */}
         <section>
-          <h3 className="text-[10px] font-bold uppercase tracking-widest mb-1 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">🏆 Top Performers — Team</h3>
-          <p className="text-xs text-slate-400 mb-4 ml-1">Klik nama untuk melihat detail nilai & aktivitas per quiz</p>
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
+            <div>
+              <h3 className="text-[10px] font-bold uppercase tracking-widest inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">🏆 Top Performers — Team</h3>
+              <p className="text-xs text-slate-400 mt-1 ml-1">Klik nama untuk melihat detail nilai & aktivitas per quiz</p>
+            </div>
+            {/* ── Category Filter Buttons ── */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {(Object.entries(TEAM_CATEGORIES) as [string, typeof TEAM_CATEGORIES[string]][]).map(([key, cat]) => (
+                <button
+                  key={key}
+                  onClick={() => setTeamFilter(key as any)}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all duration-150 ${
+                    teamFilter === key ? cat.activeClass : cat.color + ' hover:border-slate-400 hover:bg-slate-50'
+                  }`}
+                >
+                  <span>{cat.icon}</span>
+                  <span>{cat.label}</span>
+                  {teamFilter !== key && (
+                    <span className="ml-0.5 bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
+                      {topUsers.filter(u => key === 'all' || cat.roles.includes((u.role ?? '').toLowerCase())).length}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <table className="w-full text-sm table-zebra">
               <thead className="border-b border-slate-200 bg-slate-50">
