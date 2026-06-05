@@ -240,15 +240,15 @@ export function AdminDashboard({ user }: { user: User }) {
     (a.users?.full_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (a.lc_quiz_sessions?.session_name ?? '').toLowerCase().includes(search.toLowerCase())
   );
-  const TEAM_CATS: Record<string, { label: string; icon: string; roles: string[]; activeClass: string }> = {
-    all:       { label: 'Semua',     icon: '👥', roles: [],                                              activeClass: 'border-indigo-500 bg-indigo-600 text-white shadow' },
-    pts:       { label: 'Tim PTS',   icon: '🔧', roles: ['pts', 'admin', 'superadmin', 'staff', 'teknisi'], activeClass: 'border-blue-500 bg-blue-600 text-white shadow' },
-    sales:     { label: 'Sales',     icon: '💼', roles: ['sales'],                                       activeClass: 'border-emerald-500 bg-emerald-600 text-white shadow' },
-    marketing: { label: 'Marketing', icon: '📣', roles: ['marketing'],                                   activeClass: 'border-violet-500 bg-violet-600 text-white shadow' },
+  const TEAM_CATS: Record<string, { label: string; icon: string; match: (role: string) => boolean; activeClass: string }> = {
+    all:       { label: 'Semua',     icon: '👥', match: () => true,                                                           activeClass: 'border-indigo-500 bg-indigo-600 text-white shadow' },
+    pts:       { label: 'Tim PTS',   icon: '🔧', match: (r) => r.toLowerCase().includes('pts'),                               activeClass: 'border-blue-500 bg-blue-600 text-white shadow' },
+    sales:     { label: 'Sales',     icon: '💼', match: (r) => r.toLowerCase().includes('sales'),                             activeClass: 'border-emerald-500 bg-emerald-600 text-white shadow' },
+    marketing: { label: 'Marketing', icon: '📣', match: (r) => r.toLowerCase().includes('marketing'),                         activeClass: 'border-violet-500 bg-violet-600 text-white shadow' },
   };
 
   const filteredPerformers = topUsers.filter(u => {
-    const matchTeam   = teamFilter === 'all' || TEAM_CATS[teamFilter].roles.includes((u.role ?? '').toLowerCase());
+    const matchTeam   = TEAM_CATS[teamFilter].match(u.role ?? '');
     const matchSearch = !searchPerformer || u.name.toLowerCase().includes(searchPerformer.toLowerCase());
     return matchTeam && matchSearch;
   });
@@ -344,7 +344,7 @@ export function AdminDashboard({ user }: { user: User }) {
                     <span>{cat.label}</span>
                     {teamFilter !== key && (
                       <span className="ml-0.5 bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
-                        {key === 'all' ? topUsers.length : topUsers.filter(u => cat.roles.includes((u.role ?? '').toLowerCase())).length}
+                        {topUsers.filter(u => cat.match(u.role ?? '')).length}
                       </span>
                     )}
                   </button>
