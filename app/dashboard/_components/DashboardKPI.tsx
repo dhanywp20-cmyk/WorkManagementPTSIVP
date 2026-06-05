@@ -12,11 +12,13 @@ interface KPIData {
     byHandler: { name: string; count: number }[];
     byStatus: { status: string; count: number; color: string }[];
     byDivision: { div: string; count: number }[];
+    byProduct: { product: string; count: number }[];
     resolvedToday: number; avgResolutionDays: number;
   };
   reminders: {
     total: number; pending: number; done: number; dueSoon: number;
     byCategory: { cat: string; count: number; color: string }[];
+    byProduct: { product: string; byCategory: { cat: string; count: number }[] }[];
     overdueCount: number;
   };
   piket: {
@@ -380,9 +382,9 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       // ── Parallel fetches ──
       const [ticketsRes, actLogsRes, remindersRes, piketTodayRes, piketWeekRes, kegiatanRes, movRes, usersRes, lcSessionsRes] =
         await Promise.all([
-          scopeTickets(supabase.from('tickets').select('id,status,assign_name,sales_division,date,created_at')),
+          scopeTickets(supabase.from('tickets').select('id,status,assign_name,sales_division,date,created_at,product')),
           supabase.from('activity_logs').select('id,ticket_id,new_status,created_at,handler_name').order('created_at',{ascending:false}).limit(500),
-          scopeReminders(supabase.from('reminders').select('id,status,category,due_date')),
+          scopeReminders(supabase.from('reminders').select('id,status,category,due_date,product')),
           supabase.from('piket_schedules').select('day_of_week,pic_ivp_name,pic_ump_name,pic_mlds_name,day_date').eq('day_date', todayStr()),
           supabase.from('piket_schedules').select('id,day_date,pic_ivp_name,pic_ump_name,pic_mlds_name').gte('day_date', getMonday()).lte('day_date', todayStr()),
           supabase.from('piket_tamu_detail').select('id,created_at').gte('created_at', today),
@@ -435,6 +437,9 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const divMap: Record<string,number> = {};
       tickets.forEach((t:any)=>{ if(t.sales_division) divMap[t.sales_division]=(divMap[t.sales_division]||0)+1; });
       const byDivision = Object.entries(divMap).map(([div,count])=>({div,count})).sort((a,b)=>b.count-a.count);
+      const productTicketMap: Record<string,number> = {};
+      tickets.forEach((t:any)=>{ if(t.product) productTicketMap[t.product]=(productTicketMap[t.product]||0)+1; });
+      const byProduct = Object.entries(productTicketMap).map(([product,count])=>({product,count})).sort((a,b)=>b.count-a.count);
 
       const solvedT = tickets.filter((t:any)=>t.status==='Solved'&&t.date&&t.created_at);
       const totalDays = solvedT.reduce((acc:number,t:any)=>{
@@ -448,6 +453,18 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const byCategory = Object.entries(catMap).map(([cat,count])=>({ cat,count,color:CATEGORY_COLORS[cat]??'#94a3b8' })).sort((a,b)=>b.count-a.count);
       const dueSoon     = reminders.filter((r:any)=>r.status==='pending'&&r.due_date>=today&&r.due_date<=oneWeekStr).length;
       const overdueCount= reminders.filter((r:any)=>r.status==='pending'&&r.due_date<today).length;
+      // Reminder byProduct: per produk, group by category
+      const reminderProdMap: Record<string, Record<string,number>> = {};
+      reminders.forEach((r:any)=>{ 
+        if(r.product) {
+          if(!reminderProdMap[r.product]) reminderProdMap[r.product]={};
+          reminderProdMap[r.product][r.category||'Lainnya']=(reminderProdMap[r.product][r.category||'Lainnya']||0)+1;
+        }
+      });
+      const remindersByProduct = Object.entries(reminderProdMap).map(([product,catMap])=>({
+        product,
+        byCategory: Object.entries(catMap).map(([cat,count])=>({cat,count})).sort((a,b)=>b.count-a.count),
+      })).sort((a,b)=>b.byCategory.reduce((s,c)=>s+c.count,0)-a.byCategory.reduce((s,c)=>s+c.count,0));
 
       const weekFilled = piketWeek.filter((p:any)=>p.pic_ivp_name||p.pic_ump_name||p.pic_mlds_name).length;
       // weekTotal = jumlah hari kerja (Senin-Jumat) dari awal minggu ini s.d. hari ini
@@ -465,8 +482,8 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const lcAvgScore = lcScores.length ? Math.round(lcScores.reduce((a:number,b:number)=>a+b,0)/lcScores.length) : 0;
 
       setKpi({
-        tickets:{ total:tickets.length,open,solved,waitingApproval,byHandler,byStatus,byDivision,resolvedToday,avgResolutionDays },
-        reminders:{ total:reminders.length,pending:reminders.filter((r:any)=>r.status==='pending').length,done:reminders.filter((r:any)=>r.status==='done').length,dueSoon,byCategory,overdueCount },
+        tickets:{ total:tickets.length,open,solved,waitingApproval,byHandler,byStatus,byDivision,byProduct,resolvedToday,avgResolutionDays },
+        reminders:{ total:reminders.length,pending:reminders.filter((r:any)=>r.status==='pending').length,done:reminders.filter((r:any)=>r.status==='done').length,dueSoon,byCategory,byProduct:remindersByProduct,overdueCount },
         piket:{ todayIVP:piketToday?.pic_ivp_name??null,todayUMP:piketToday?.pic_ump_name??null,todayMlds:piketToday?.pic_mlds_name??null,weekFilled,weekTotal:weekWorkDays,kegiatanToday:kegiatan.length },
         units:{ totalLogs:movements.length,keluarThisMonth:movements.filter((m:any)=>m.status_barang==='Keluar').length,masukThisMonth:movements.filter((m:any)=>m.status_barang==='Masuk').length },
         users:{ total:users.length,byRole:Object.entries(roleMap).map(([role,count])=>({role,count})) },
@@ -544,10 +561,17 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const year = kpiTeam.filterYear;
       const period = kpiTeam.filterPeriod;
       const yearEnd = `${year}-12-31`;
-      // 6 bulan = Juli-Des, 1 tahun = Jan-Des
+      // 6 bulan: otomatis semester saat ini (Jan-Jun atau Jul-Des)
+      // 1 tahun: Jan-Des
+      const currentMonth = new Date().getMonth() + 1; // 1-12
+      const sem2Start = 7; // Juli
       const yearStart = period === '6m'
-        ? `${year}-07-01`
+        ? (currentMonth >= sem2Start ? `${year}-07-01` : `${year}-01-01`)
         : `${year}-01-01`;
+      const yearEnd6m = period === '6m'
+        ? (currentMonth >= sem2Start ? `${year}-12-31` : `${year}-06-30`)
+        : `${year}-12-31`;
+      const effectiveEnd = period === '6m' ? yearEnd6m : yearEnd;
 
       // Get team members
       let membersQ = supabase.from('users').select('id,full_name,jabatan,team_type,role');
@@ -577,35 +601,35 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           .select('id,assign_name,status,date,created_at')
           .in('assign_name', memberNames)
           .gte('created_at', yearStart)
-          .lte('created_at', yearEnd + 'T23:59:59'),
+          .lte('created_at', effectiveEnd + 'T23:59:59'),
         // Activity logs untuk response time (first response per ticket)
         supabase.from('activity_logs')
           .select('id,ticket_id,handler_name,created_at')
           .in('handler_name', memberNames)
           .gte('created_at', yearStart)
-          .lte('created_at', yearEnd + 'T23:59:59')
+          .lte('created_at', effectiveEnd + 'T23:59:59')
           .order('created_at', { ascending: true }),
         supabase.from('reminders')
           .select('id,assign_name,status,due_date,updated_at')
           .in('assign_name', memberNames)
           .gte('created_at', yearStart)
-          .lte('created_at', yearEnd + 'T23:59:59'),
+          .lte('created_at', effectiveEnd + 'T23:59:59'),
         supabase.from('lc_quiz_attempts')
           .select('id,user_id,score,passed,is_submitted')
           .in('user_id', memberIds)
           .eq('is_submitted', true)
           .gte('started_at', yearStart)
-          .lte('started_at', yearEnd + 'T23:59:59'),
+          .lte('started_at', effectiveEnd + 'T23:59:59'),
         supabase.from('piket_schedules')
           .select('pic_ivp_name,pic_ump_name,pic_mlds_name,day_date')
           .gte('day_date', yearStart)
-          .lte('day_date', yearEnd),
+          .lte('day_date', effectiveEnd),
         // Form Review: hanya yang sudah diisi rating oleh sales (grade_product_knowledge_bast NOT NULL)
         supabase.from('form_reviews')
           .select('id,assign_name,grade_product_knowledge,grade_training_customer,grade_product_knowledge_bast,created_at')
           .in('assign_name', memberNames)
           .gte('created_at', yearStart)
-          .lte('created_at', yearEnd + 'T23:59:59')
+          .lte('created_at', effectiveEnd + 'T23:59:59')
           .not('grade_product_knowledge_bast', 'is', null),
         // Manual KPI values stored in kpi_manual_values table (jika ada)
         supabase.from('kpi_manual_values')
@@ -618,7 +642,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           .in('author_id', memberIds)
           .eq('status', 'approved')
           .gte('reviewed_at', yearStart)
-          .lte('reviewed_at', yearEnd + 'T23:59:59'),
+          .lte('reviewed_at', effectiveEnd + 'T23:59:59'),
       ]);
 
       const tickets = (ticketsRes.data ?? []) as any[];
@@ -1731,14 +1755,33 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   );
                 };
 
+                // For team scope, show only their own card (single member)
+                if (scope.kind === 'team') {
+                  const myMember = kpiTeam.members.find(m => m.id === currentUser.id);
+                  if (!myMember) return <div className="text-center py-8 text-slate-400 text-sm">Data KPI kamu belum tersedia.</div>;
+                  return (
+                    <div className="bg-white/95 rounded-2xl border border-slate-200 shadow-sm p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-wider">📊 KPI Saya — {currentUser.full_name}</span>
+                      </div>
+                      <div className="flex justify-center">
+                        <MemberChip member={myMember}/>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Admin/supervisor: semua tim dalam 1 baris gabungan
+                const allPTSMembers = [...ivpMembers, ...mldsMembers, ...umpMembers];
+                if (!allPTSMembers.length) return null;
                 return (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    {ivpMembers.length>0 && (scope.kind==='admin'||scope.ptsTeamType==='Team PTS') && (
-                      <TeamRow members={ivpMembers} label="Team PTS IVP" color="#ef4444" abbr="IVP"/>
-                    )}
-                    {mldsMembers.length>0 && (scope.kind==='admin'||scope.ptsTeamType==='Team PTS MLDS') && (
-                      <TeamRow members={mldsMembers} label="Team PTS MLDS" color="#3b82f6" abbr="MLD"/>
-                    )}
+                  <div className="space-y-3">
+                    <TeamRow
+                      members={allPTSMembers}
+                      label={scope.kind==='pts_sup' ? (scope.ptsTeamType ?? 'Team PTS') : 'Team PTS (Semua)'}
+                      color="#be123c"
+                      abbr="PTS"
+                    />
                   </div>
                 );
               })()}
@@ -1966,7 +2009,8 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           {/* ══════════ TAB ANALYTICS — KPI Live Charts ══════════ */}
           {tab==='analytics'&&(
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* ── ROW A: 3-col Ticket charts ── */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {/* Handler */}
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">🎫 Ticket Open per Handler</h3>
@@ -1983,29 +2027,18 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       ? <HBarChart data={kpi.tickets.byDivision.map(d=>({label:d.div,value:d.count}))} color="#6366f1"/>
                       : <p className="text-xs text-center py-6 text-slate-400">Tidak ada data</p>}
                 </div>
+                {/* Product */}
+                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">📦 Ticket per Produk</h3>
+                  {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
+                    kpi?.tickets.byProduct?.length
+                      ? <HBarChart data={kpi.tickets.byProduct.map(p=>({label:p.product,value:p.count}))} color="#0891b2"/>
+                      : <p className="text-xs text-center py-6 text-slate-400">Tidak ada data produk</p>}
+                </div>
               </div>
 
-              {/* Status donut + kategori reminder */}
+              {/* ── ROW B: Reminder Kategori + Reminder per Produk ── */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
-                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">📊 Distribusi Status Ticket</h3>
-                  {loading?<div className="h-20 rounded animate-pulse bg-slate-100"/>:(
-                    <div className="flex items-center gap-5 flex-wrap">
-                      <DonutChart size={72} strokeWidth={10}
-                        segments={(kpi?.tickets.byStatus??[]).map(s=>({value:s.count,color:s.color}))}
-                        label={`${kpi?.tickets.total??0}`}/>
-                      <div className="flex flex-wrap gap-x-4 gap-y-2 flex-1">
-                        {(kpi?.tickets.byStatus??[]).map(s=>(
-                          <div key={s.status} className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background:s.color }}/>
-                            <span className="text-[11px] text-slate-500">{s.status}</span>
-                            <span className="text-[11px] font-bold text-slate-700">{s.count}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">🗂️ Reminder per Kategori</h3>
                   {loading?<div className="h-20 rounded animate-pulse bg-slate-100"/>:(
@@ -2021,8 +2054,43 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                             <span className="text-[10px] font-bold text-slate-700">{c.count}</span>
                           </div>
                         ))}
+                        <div className="flex justify-end mt-1">
+                          <span className="text-[10px] text-slate-400">Done rate </span>
+                          <span className="text-[10px] font-black text-emerald-600 ml-1">
+                            {kpi && kpi.reminders.total>0?Math.round((kpi.reminders.done/kpi.reminders.total)*100):0}%
+                          </span>
+                        </div>
                       </div>
                     </div>
+                  )}
+                </div>
+                {/* Reminder per Produk */}
+                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">🏷️ Reminder per Produk</h3>
+                  {loading?<div className="h-20 rounded animate-pulse bg-slate-100"/>:(
+                    (kpi?.reminders.byProduct??[]).length === 0
+                      ? <p className="text-xs text-center py-6 text-slate-400">Tidak ada data produk</p>
+                      : <div className="space-y-3 max-h-52 overflow-y-auto pr-1" style={{scrollbarWidth:'thin'}}>
+                          {(kpi?.reminders.byProduct??[]).map(p=>{
+                            const total = p.byCategory.reduce((s,c)=>s+c.count,0);
+                            return (
+                              <div key={p.product}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-[11px] font-bold text-slate-700 truncate">{p.product}</span>
+                                  <span className="text-[10px] font-black text-slate-500 ml-2 flex-shrink-0">{total}</span>
+                                </div>
+                                <div className="flex flex-wrap gap-1">
+                                  {p.byCategory.map(c=>(
+                                    <span key={c.cat} className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+                                      style={{background:CATEGORY_COLORS[c.cat]+'18'||'#f1f5f9',color:CATEGORY_COLORS[c.cat]||'#64748b',border:`1px solid ${CATEGORY_COLORS[c.cat]||'#e2e8f0'}40`}}>
+                                      {c.cat} {c.count}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                   )}
                 </div>
               </div>
