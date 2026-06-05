@@ -151,6 +151,24 @@ export default function Dashboard() {
       const now = Date.now();
       localStorage.setItem('currentUser', JSON.stringify(data));
       localStorage.setItem('loginTime', now.toString());
+      // Auto-route: langsung ke sidebar, tab pertama sesuai role
+      const role = data.role?.toLowerCase() ?? '';
+      const isAdminOrSup = ['admin','superadmin'].includes(role) ||
+        (role === 'team' && data.jabatan === 'Supervisor') ||
+        (['guest','sales'].includes(role) && ['Supervisor','Manager','Deputy General Manager','General Manager','Direktur'].includes(data.jabatan ?? ''));
+      const hasTeamDash = role === 'team' && (data.allowed_menus ?? []).includes('dashboard');
+      if (isAdminOrSup || hasTeamDash) {
+        // Admin/supervisor/team with dashboard: langsung tampilkan sidebar + dashboard panel
+        setTimeout(() => { setShowSidebar(true); setShowDashboardPanel(true); }, 50);
+      } else {
+        // Sales/guest/team tanpa dashboard: langsung ke menu pertama yang allowed
+        const firstMenu = (data.allowed_menus ?? [])[0];
+        if (firstMenu) {
+          setTimeout(() => { setShowSidebar(true); }, 50);
+        } else {
+          setTimeout(() => { setShowSidebar(true); }, 50);
+        }
+      }
     } catch { alert('Login gagal!'); }
   };
 
@@ -201,6 +219,29 @@ export default function Dashboard() {
     router.push('/dashboard');
   };
 
+  // Auto-navigate sales/guest to first allowed menu when sidebar opens
+  useEffect(() => {
+    if (!isLoggedIn || !currentUser || !showSidebar) return;
+    const role = currentUser.role?.toLowerCase() ?? '';
+    const isSalesGuest = ['guest','sales'].includes(role);
+    const isRegularTeam = role === 'team' && !(currentUser.allowed_menus ?? []).includes('dashboard') && currentUser.jabatan !== 'Supervisor';
+    if ((isSalesGuest || isRegularTeam) && visibleMenuItems.length > 0 && !showTicketing && !iframeUrl && !showDashboardPanel) {
+      const firstItem = visibleMenuItems[0]?.items?.[0];
+      const firstTitle = visibleMenuItems[0]?.title ?? '';
+      if (firstItem && firstItem.internal) {
+        setIframeLoading(true);
+        setInternalUrl(firstItem.url);
+        setIframeTitle(`${firstTitle} - ${firstItem.name}`);
+        setShowTicketing(true);
+      } else if (firstItem && firstItem.embed && !firstItem.external) {
+        setIframeLoading(true);
+        setIframeUrl(firstItem.url);
+        setIframeTitle(`${firstTitle} - ${firstItem.name}`);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn, showSidebar, visibleMenuItems.length]);
+
   const handleMenuClick = (item: MenuItem['items'][0], menuTitle: string) => {
     if (item.external && !item.embed) { window.open(item.url, '_blank'); return; }
     setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setShowDashboardPanel(false);
@@ -228,7 +269,30 @@ export default function Dashboard() {
   };
 
   const handleBackToDashboard = () => {
-    setShowSidebar(false); setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setIframeTitle('');
+    // Tidak kembali ke card view — untuk admin/supervisor: dashboard panel
+    // Untuk sales/guest: navigasikan ke menu pertama yang tersedia
+    setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setIframeTitle('');
+    const role = currentUser?.role?.toLowerCase() ?? '';
+    const isAdm = ['admin','superadmin'].includes(role) ||
+      (role === 'team' && (currentUser?.jabatan === 'Supervisor' || (currentUser?.allowed_menus ?? []).includes('dashboard')));
+    if (isAdm) {
+      setShowDashboardPanel(true);
+    } else {
+      // sales/guest: navigate to first visible menu
+      const firstItem = visibleMenuItems[0]?.items?.[0];
+      const firstTitle = visibleMenuItems[0]?.title ?? '';
+      if (firstItem) {
+        setIframeLoading(true);
+        if (firstItem.internal) {
+          setInternalUrl(firstItem.url);
+          setIframeTitle(`${firstTitle} - ${firstItem.name}`);
+          setShowTicketing(true);
+        } else if (firstItem.embed && !firstItem.external) {
+          setIframeUrl(firstItem.url);
+          setIframeTitle(`${firstTitle} - ${firstItem.name}`);
+        }
+      }
+    }
   };
 
   useEffect(() => {
@@ -248,9 +312,21 @@ export default function Dashboard() {
         setCurrentUser(parsed);
         setIsLoggedIn(true);
         const { data, error } = await supabase.from('users').select('*').eq('id', parsed.id).single();
+        const userData: User = (!error && data) ? data : parsed;
         if (!error && data) {
           setCurrentUser(data);
           localStorage.setItem('currentUser', JSON.stringify(data));
+        }
+        // Auto-route langsung ke sidebar sesuai role
+        const role = userData.role?.toLowerCase() ?? '';
+        const isAdminOrSup2 = ['admin','superadmin'].includes(role) ||
+          (role === 'team' && userData.jabatan === 'Supervisor') ||
+          (['guest','sales'].includes(role) && ['Supervisor','Manager','Deputy General Manager','General Manager','Direktur'].includes(userData.jabatan ?? ''));
+        const hasTeamDash2 = role === 'team' && (userData.allowed_menus ?? []).includes('dashboard');
+        if (isAdminOrSup2 || hasTeamDash2) {
+          setShowSidebar(true); setShowDashboardPanel(true);
+        } else {
+          setShowSidebar(true);
         }
       } catch { /* ignore */ }
       setLoading(false);
@@ -779,17 +855,17 @@ export default function Dashboard() {
             {!sidebarCollapsed && (
               <>
                 <button
-                  onClick={handleBackToDashboard}
+                  onClick={() => { if (canAccessKPI) { setShowDashboardPanel(true); setShowTicketing(false); setIframeUrl(null); } }}
                   className="flex-1 flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all duration-150 text-left group"
                   style={{ color: '#334155' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#92600a'; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#334155'; }}
-                  title="Kembali ke Main Menu"
+                  title="Dashboard"
                 >
-                  <svg className="w-4 h-4 flex-shrink-0 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                   </svg>
-                  <span className="text-sm font-semibold tracking-wide">Main Menu</span>
+                  <span className="text-sm font-semibold tracking-wide">PTS Portal</span>
                 </button>
                 <button
                   onClick={() => setSidebarCollapsed(true)}
@@ -1219,11 +1295,12 @@ export default function Dashboard() {
                 />
               </div>
             ) : (
-              <div className="flex items-center justify-center h-full text-slate-400">
-                <div className="text-center">
-                  <div className="text-6xl mb-4">📂</div>
-                  <p className="font-semibold text-lg">Pilih menu dari sidebar</p>
-                  <p className="text-sm mt-1">Klik salah satu menu di sebelah kiri untuk memulai</p>
+              <div className="flex items-center justify-center h-full text-slate-400"
+                style={{ backgroundImage: 'url(/IVP_Background.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                <div className="text-center bg-white/90 rounded-2xl px-8 py-6 shadow-lg backdrop-blur-sm">
+                  <div className="text-5xl mb-3">📂</div>
+                  <p className="font-semibold text-base text-slate-600">Pilih menu dari sidebar</p>
+                  <p className="text-sm mt-1 text-slate-400">Klik salah satu menu di sebelah kiri untuk memulai</p>
                 </div>
               </div>
             )}
