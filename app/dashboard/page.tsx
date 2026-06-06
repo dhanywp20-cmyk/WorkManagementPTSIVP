@@ -261,7 +261,7 @@ export default function Dashboard() {
   };
 
   const handleNotifNavigate = (navInternalUrl: string, title: string) => {
-    setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setIframeTitle('');
+    setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setIframeTitle(''); setShowDashboardPanel(false);
     setTimeout(() => {
       setShowTicketing(true);
       setInternalUrl(navInternalUrl);
