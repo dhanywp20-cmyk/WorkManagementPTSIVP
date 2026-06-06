@@ -1910,9 +1910,17 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
 
     // ── 4. Form Review ──
     try {
-      if (isAdmin || (isTeamPTS && !isTeamServices)) {
-        // Admin/superadmin & Team PTS: review yang di-assign ke mereka dan belum di-grade
-        // Fix: pakai .in() agar match meskipun ada variasi nama
+      if (isAdmin) {
+        // Admin/superadmin: semua review yang belum di-grade
+        const { data } = await supabase.from('form_reviews')
+          .select('id, project_name, reminder_category, sales_name, assign_name, created_at, grade_product_knowledge, grade_product_knowledge_bast, grade_training_customer')
+          .order('created_at', { ascending: false }).limit(50);
+        const pending = (data ?? []).filter((r: any) =>
+          !r.grade_product_knowledge && !r.grade_product_knowledge_bast && !r.grade_training_customer
+        );
+        setReviewNotifs(pending.map((r: any) => ({ id: r.id, type: 'require' as const, title: r.project_name, subtitle: `⭐ ${r.reminder_category} · ${r.sales_name}`, time: r.created_at, url: '/form-review', internalUrl: '/form-review', menuTitle: 'Form Review Demo & BAST' })));
+      } else if (isTeamPTS && !isTeamServices) {
+        // Team PTS: review yang di-assign ke mereka dan belum di-grade
         const { data } = await supabase.from('form_reviews').select('id, project_name, reminder_category, sales_name, created_at, grade_product_knowledge, grade_product_knowledge_bast, grade_training_customer').in('assign_name', namesToCheck).order('created_at', { ascending: false }).limit(30);
         const pending = (data ?? []).filter((r: any) =>
           !r.grade_product_knowledge && !r.grade_product_knowledge_bast && !r.grade_training_customer
