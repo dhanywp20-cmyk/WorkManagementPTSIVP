@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── IVP Brand Design Tokens ─────────────────────────────────────────────── */
+:root {
+  /* Brand color — rose-600 sebagai standar di SEMUA modul */
+  --ivp-brand:        #e11d48;
+  --ivp-brand-dark:   #be123c;
+  --ivp-brand-light:  #f43f5e;
+  --ivp-brand-hover:  #9f1239;
+  --ivp-brand-tint:   #fff1f2;
+  --ivp-brand-border: #fecdd3;
+
+  /* Z-index standar — jangan pakai angka arbitrary */
+  --z-dropdown: 40;
+  --z-sticky:   50;
+  --z-modal:    100;
+  --z-modal-top:110;
+  --z-toast:    200;
+  --z-tooltip:  300;
+}
+
+/* Utility classes brand */
+.ivp-btn-primary {
+  background: linear-gradient(135deg, var(--ivp-brand), var(--ivp-brand-dark));
+  color: white;
+  border: none;
+}
+.ivp-btn-primary:hover {
+  background: linear-gradient(135deg, var(--ivp-brand-dark), var(--ivp-brand-hover));
+}
+.ivp-modal-overlay {
+  position: fixed; inset: 0;
+  z-index: var(--z-modal);
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+}
+.ivp-modal-top-overlay {
+  position: fixed; inset: 0;
+  z-index: var(--z-modal-top);
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+}
+.ivp-toast {
+  position: fixed; top: 1rem; right: 1rem;
+  z-index: var(--z-toast);
+}
+
+/* ── Prevent white background flash on zoom/scale ───────────────────────── */
+html, body {
+  background: transparent;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* ── Global responsive safety ───────────────────────────────────────────── */
+html {
+  -webkit-text-size-adjust: 100%;   /* prevent iOS font-size inflation */
+}
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* ── Page / section transitions ─────────────────────────────────────────── */
+@keyframes lcPageIn {
+  from { opacity: 0; transform: translateY(50px) scale(0.92); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+.lc-page-enter { animation: lcPageIn 0.95s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.75); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(60px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-35px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in  { animation: fadeIn   0.65s ease-out both; }
+.animate-zoom-in  { animation: zoomIn   0.90s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-slide-up { animation: slideUp  0.80s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-slide-down { animation: slideDown 0.70s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Staggered list rows */
+.stagger-item { animation: slideUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.stagger-item:nth-child(1)  { animation-delay:  0ms; }
+.stagger-item:nth-child(2)  { animation-delay: 75ms; }
+.stagger-item:nth-child(3)  { animation-delay:140ms; }
+.stagger-item:nth-child(4)  { animation-delay:195ms; }
+.stagger-item:nth-child(5)  { animation-delay:242ms; }
+.stagger-item:nth-child(6)  { animation-delay:283ms; }
+.stagger-item:nth-child(7)  { animation-delay:318ms; }
+.stagger-item:nth-child(8)  { animation-delay:348ms; }
+.stagger-item:nth-child(n+9){ animation-delay:373ms; }
+
+/* ── Page section entrance delay helpers ─────────────────────────────────── */
+/* Use alongside animate-slide-up / animate-zoom-in / animate-slide-down     */
+.anim-d0   { animation-delay:   0ms !important; }
+.anim-d80  { animation-delay:  80ms !important; }
+.anim-d160 { animation-delay: 160ms !important; }
+.anim-d240 { animation-delay: 240ms !important; }
+.anim-d320 { animation-delay: 320ms !important; }
+.anim-d400 { animation-delay: 400ms !important; }
+.anim-d480 { animation-delay: 480ms !important; }
+.anim-d560 { animation-delay: 560ms !important; }
+
+/* ── Zebra stripe — in @layer base so Tailwind bg-* utilities override it ── */
+@layer base {
+  .table-zebra tbody tr:nth-child(even) {
+    background-color: rgba(219, 234, 254, 0.38);
+  }
+  .table-zebra tbody tr:nth-child(odd) {
+    background-color: transparent;
+  }
+}
+
+/* ── Dashboard KPI + GlobalSearch animations ──────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
