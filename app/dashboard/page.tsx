@@ -156,7 +156,7 @@ export default function Dashboard() {
       const role = data.role?.toLowerCase() ?? '';
       const isAdminOrSup = ['admin','superadmin'].includes(role) ||
         (role === 'team' && data.jabatan === 'Supervisor') ||
-        (['guest','sales'].includes(role) && ['Supervisor','Manager','Deputy General Manager','General Manager','Direktur'].includes(data.jabatan ?? ''));
+        (['guest','sales'].includes(role) && ['Supervisor','Manager','Deputy General Manager','General Manager','Direktur'].includes(data.jabatan ?? '') && (data.allowed_menus ?? []).includes('dashboard'));
       const hasTeamDash = role === 'team' && (data.allowed_menus ?? []).includes('dashboard');
       if (isAdminOrSup || hasTeamDash) {
         // Admin/supervisor/team with dashboard: langsung tampilkan sidebar + dashboard panel
@@ -314,7 +314,7 @@ export default function Dashboard() {
         const role = userData.role?.toLowerCase() ?? '';
         const isAdminOrSup2 = ['admin','superadmin'].includes(role) ||
           (role === 'team' && userData.jabatan === 'Supervisor') ||
-          (['guest','sales'].includes(role) && ['Supervisor','Manager','Deputy General Manager','General Manager','Direktur'].includes(userData.jabatan ?? ''));
+          (['guest','sales'].includes(role) && ['Supervisor','Manager','Deputy General Manager','General Manager','Direktur'].includes(userData.jabatan ?? '') && (userData.allowed_menus ?? []).includes('dashboard'));
         const hasTeamDash2 = role === 'team' && (userData.allowed_menus ?? []).includes('dashboard');
         if (isAdminOrSup2 || hasTeamDash2) {
           setShowSidebar(true); setShowDashboardPanel(true);
@@ -329,12 +329,13 @@ export default function Dashboard() {
 
   const isAdmin = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
 
-  // KPI: admin + PTS supervisor + sales supervisor + team member with dashboard permission
+  // KPI: admin + PTS supervisor + sales supervisor (harus ada allowed_menus dashboard) + team member with dashboard permission
   const isPTSSupervisor = currentUser?.role === 'team'
     && ['Team PTS', 'Team PTS UMP', 'Team PTS MLDS'].includes(currentUser?.team_type ?? '')
     && currentUser?.jabatan === 'Supervisor';
   const isSalesSupervisor = ['guest', 'sales'].includes(currentUser?.role?.toLowerCase() ?? '')
-    && ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'].includes(currentUser?.jabatan ?? '');
+    && ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'].includes(currentUser?.jabatan ?? '')
+    && (currentUser?.allowed_menus ?? []).includes('dashboard');
   const hasTeamDashboardAccess = currentUser?.role === 'team'
     && (currentUser?.allowed_menus ?? []).includes('dashboard');
   const canAccessKPI = isAdmin || isPTSSupervisor || isSalesSupervisor || hasTeamDashboardAccess;
