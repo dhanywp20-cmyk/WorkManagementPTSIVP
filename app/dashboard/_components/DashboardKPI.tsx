@@ -155,15 +155,15 @@ function getMonday() {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function MiniDonut({ segments, size = 56 }: { segments: { value: number; color: string }[]; size?: number }) {
+function MiniDonut({ segments, size = 72 }: { segments: { value: number; color: string }[]; size?: number }) {
   const total = segments.reduce((s, x) => s + x.value, 0);
-  if (!total) return <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}><circle cx={size/2} cy={size/2} r={size/2-4} fill="none" stroke="#e2e8f0" strokeWidth={7}/></svg>;
-  const r = size/2-5, circ = 2*Math.PI*r; let off = 0;
+  if (!total) return <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}><circle cx={size/2} cy={size/2} r={size/2-5} fill="none" stroke="#e2e8f0" strokeWidth={8}/></svg>;
+  const r = size/2-6, circ = 2*Math.PI*r; let off = 0;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform:'rotate(-90deg)' }}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#e8ecf0" strokeWidth={7}/>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#e8ecf0" strokeWidth={8}/>
       {segments.map((seg,i) => { const pct=seg.value/total, dash=pct*circ, gap=circ-dash;
-        const el=<circle key={i} cx={size/2} cy={size/2} r={r} fill="none" stroke={seg.color} strokeWidth={7} strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-off*circ} strokeLinecap="butt"/>;
+        const el=<circle key={i} cx={size/2} cy={size/2} r={r} fill="none" stroke={seg.color} strokeWidth={8} strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-off*circ} strokeLinecap="butt"/>;
         off+=pct; return el; })}
     </svg>
   );
@@ -1844,20 +1844,20 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
                     style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)' }}
                     onClick={e => { if (e.target === e.currentTarget) { setSelectedKPIMember(null); setKpiTeam(prev=>({...prev,editingMember:null,editValues:{}})); } }}>
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[85vh] overflow-y-auto"
                       style={{ scrollbarWidth:'thin' }}>
                       {/* Modal header */}
-                      <div className="flex items-center gap-4 px-6 py-4 border-b border-slate-100 sticky top-0 bg-white z-10 rounded-t-3xl">
-                        <div className="w-12 h-12 rounded-full flex items-center justify-center font-black text-lg text-white flex-shrink-0"
+                      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 sticky top-0 bg-white z-10 rounded-t-2xl">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-base text-white flex-shrink-0"
                           style={{ background: `linear-gradient(135deg, ${kpiColor}, ${kpiColor}99)` }}>
                           {member.name.charAt(0)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-bold text-slate-800 text-base truncate">{member.name}</div>
-                          <div className="text-[11px] text-slate-400">{member.jabatan} · {member.team_type}</div>
+                          <div className="font-bold text-slate-800 text-sm truncate">{member.name}</div>
+                          <div className="text-[10px] text-slate-400">{member.jabatan} · {member.team_type}</div>
                         </div>
-                        <div className="flex flex-col items-end mr-2 flex-shrink-0">
-                          <div className="text-3xl font-black" style={{ color: kpiColor }}>{noData ? '—' : `${finalKPI}%`}</div>
+                        <div className="flex flex-col items-end mr-1 flex-shrink-0">
+                          <div className="text-2xl font-black" style={{ color: kpiColor }}>{noData ? '—' : `${finalKPI}%`}</div>
                           <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">KPI Score</div>
                         </div>
                         {(scope.kind==='admin' || scope.kind==='pts_sup') && (
@@ -1882,7 +1882,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                                 setKpiTeam(prev=>({...prev, editingMember:member.id, editValues:{...member.manual}}));
                               }
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
                             style={isEditing
                               ? {background:'#10b98120',color:'#059669',borderColor:'#10b98140'}
                               : {background:'#f1f5f9',color:'#64748b',borderColor:'#e2e8f0'}}>
@@ -1890,26 +1890,26 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                           </button>
                         )}
                         <button onClick={() => { setSelectedKPIMember(null); setKpiTeam(prev=>({...prev,editingMember:null,editValues:{}})); }}
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all flex-shrink-0">
+                          className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all flex-shrink-0">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                       </div>
 
-                      <div className="p-5 space-y-4">
+                      <div className="p-4 space-y-3">
 
                         {/* ── KPI Score Breakdown ── */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div className="grid grid-cols-4 gap-2">
                           {[
                             {label:'Ticketing', raw:Math.round(tickScore*100), pct:Math.round(tickScore*_s.ticketOverdueWeight*100), weight:Math.round(_s.ticketOverdueWeight*100)+'%', color:'#ef4444', icon:'🎫', bg:'#fef2f2', border:'#ef444440'},
                             {label:'BAST & Demo', raw:Math.round(bastScore*100), pct:Math.round(bastScore*_s.bastWeight*100), weight:Math.round(_s.bastWeight*100)+'%', color:'#f59e0b', icon:'⭐', bg:'#fffbeb', border:'#f59e0b40'},
                             {label:'Learning Center', raw:Math.round(lcScore*100), pct:Math.round(lcScore*_s.lcWeight*100), weight:Math.round(_s.lcWeight*100)+'%', color:'#6366f1', icon:'🎓', bg:'#f5f3ff', border:'#6366f140'},
                             {label:'R&D Tech Note', raw:Math.round(rndScore*100), pct:Math.round(rndScore*_s.rndWeight*100), weight:Math.round(_s.rndWeight*100)+'%', color:'#ec4899', icon:'📝', bg:'#fdf4ff', border:'#ec489940'},
                           ].map(k=>(
-                            <div key={k.label} className="rounded-xl border p-2.5 text-center" style={{background:k.bg, borderColor:k.border}}>
-                              <div className="text-sm mb-0.5">{k.icon}</div>
+                            <div key={k.label} className="rounded-xl border p-2 text-center" style={{background:k.bg, borderColor:k.border}}>
+                              <div className="text-xs mb-0.5">{k.icon}</div>
                               <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wide leading-tight mb-1">{k.label}</div>
-                              <div className="text-xl font-black" style={{color:k.color}}>{k.pct}%</div>
-                              <div className="text-[9px] text-slate-400">bobot {k.weight}</div>
+                              <div className="text-lg font-black leading-none" style={{color:k.color}}>{k.pct}%</div>
+                              <div className="text-[9px] text-slate-400 mt-0.5">bobot {k.weight}</div>
                             </div>
                           ))}
                         </div>
@@ -1917,7 +1917,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                         {/* ── Platform auto section ── */}
                         <div>
                           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">✅ Data Platform (Otomatis)</div>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="grid grid-cols-3 gap-2">
 
                             {/* Ticketing — 20% */}
                             <div className="rounded-xl border p-3" style={{borderColor:'#ef444440', background:'#fef2f2'}}>
@@ -2076,22 +2076,24 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">🗂️ Reminder per Kategori</h3>
-                  {loading?<div className="h-20 rounded animate-pulse bg-slate-100"/>:(
-                    <div className="flex items-center gap-5">
-                      <DonutChart size={64} strokeWidth={9}
-                        segments={(kpi?.reminders.byCategory??[]).map(c=>({value:c.count,color:c.color}))}
-                        label={`${kpi?.reminders.total??0}`}/>
-                      <div className="space-y-1.5 flex-1">
+                  {loading?<div className="h-28 rounded animate-pulse bg-slate-100"/>:(
+                    <div className="flex items-center gap-6">
+                      <div className="flex-shrink-0">
+                        <DonutChart size={96} strokeWidth={11}
+                          segments={(kpi?.reminders.byCategory??[]).map(c=>({value:c.count,color:c.color}))}
+                          label={`${kpi?.reminders.total??0}`}/>
+                      </div>
+                      <div className="space-y-2 flex-1 min-w-0">
                         {(kpi?.reminders.byCategory??[]).map(c=>(
                           <div key={c.cat} className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background:c.color }}/>
-                            <span className="text-[10px] flex-1 truncate text-slate-500">{c.cat}</span>
-                            <span className="text-[10px] font-bold text-slate-700">{c.count}</span>
+                            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background:c.color }}/>
+                            <span className="text-[11px] flex-1 truncate text-slate-600 font-medium">{c.cat}</span>
+                            <span className="text-[11px] font-black text-slate-700 w-5 text-right">{c.count}</span>
                           </div>
                         ))}
-                        <div className="flex justify-end mt-1">
-                          <span className="text-[10px] text-slate-400">Done rate </span>
-                          <span className="text-[10px] font-black text-emerald-600 ml-1">
+                        <div className="pt-1 border-t border-slate-100 flex items-center justify-between">
+                          <span className="text-[10px] text-slate-400">Done rate</span>
+                          <span className="text-sm font-black text-emerald-600">
                             {kpi && kpi.reminders.total>0?Math.round((kpi.reminders.done/kpi.reminders.total)*100):0}%
                           </span>
                         </div>
@@ -2102,26 +2104,26 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 {/* Reminder per Produk */}
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">🏷️ Reminder per Produk</h3>
-                  {loading?<div className="h-20 rounded animate-pulse bg-slate-100"/>:(
+                  {loading?<div className="h-28 rounded animate-pulse bg-slate-100"/>:(
                     (kpi?.reminders.byProduct??[]).length === 0
-                      ? <p className="text-xs text-center py-6 text-slate-400">Tidak ada data produk</p>
-                      : <div className="space-y-3 max-h-52 overflow-y-auto pr-1" style={{scrollbarWidth:'thin'}}>
+                      ? <p className="text-xs text-center py-8 text-slate-400">Tidak ada data produk</p>
+                      : <div className="space-y-3 max-h-56 overflow-y-auto pr-1" style={{scrollbarWidth:'thin'}}>
                           {(kpi?.reminders.byProduct??[]).map(p=>{
                             const total = p.byCategory.reduce((s,c)=>s+c.count,0);
                             return (
-                              <div key={p.product}>
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="text-[11px] font-bold text-slate-700 truncate">{p.product}</span>
-                                  <span className="text-[10px] font-black text-slate-500 ml-2 flex-shrink-0">{total}</span>
+                              <div key={p.product} className="flex items-start gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-[12px] font-bold text-slate-700 truncate leading-snug">{p.product}</div>
+                                  <div className="flex flex-wrap gap-1.5 mt-1">
+                                    {p.byCategory.map(c=>(
+                                      <span key={c.cat} className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                                        style={{background:(CATEGORY_COLORS[c.cat]||'#64748b')+'18',color:CATEGORY_COLORS[c.cat]||'#64748b',border:`1px solid ${(CATEGORY_COLORS[c.cat]||'#e2e8f0')}40`}}>
+                                        {c.cat} <b>{c.count}</b>
+                                      </span>
+                                    ))}
+                                  </div>
                                 </div>
-                                <div className="flex flex-wrap gap-1">
-                                  {p.byCategory.map(c=>(
-                                    <span key={c.cat} className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-                                      style={{background:CATEGORY_COLORS[c.cat]+'18'||'#f1f5f9',color:CATEGORY_COLORS[c.cat]||'#64748b',border:`1px solid ${CATEGORY_COLORS[c.cat]||'#e2e8f0'}40`}}>
-                                      {c.cat} {c.count}
-                                    </span>
-                                  ))}
-                                </div>
+                                <span className="text-sm font-black text-slate-500 flex-shrink-0 pt-0.5">{total}</span>
                               </div>
                             );
                           })}
