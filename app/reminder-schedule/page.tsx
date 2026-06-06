@@ -98,6 +98,7 @@ function ReminderSchedulePageInner() {
 
   // ─── Guest Request Jadwal State ───────────────────────────────────────────
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [pendingReviewCount, setPendingReviewCount] = useState(0);
 
   // ─── Approve & Assign State (admin only) ─────────────────────────────────
   const [approveTarget, setApproveTarget] = useState<Reminder | null>(null);
@@ -789,7 +790,23 @@ function ReminderSchedulePageInner() {
 
   const isAdmin = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
   const canAddReminder = currentUser?.role === 'admin' || currentUser?.role === 'team';
-  const isGuest = currentUser?.role === 'guest';
+  const isGuest = currentUser?.role === 'guest' || currentUser?.role === 'sales';
+
+  // ─── Cek Form Review menggantung (guest/sales) ────────────────────────────
+  useEffect(() => {
+    if (!isGuest || !currentUser?.full_name) return;
+    const checkPendingReviews = async () => {
+      const { data } = await supabase
+        .from('form_reviews')
+        .select('id, grade_product_knowledge, grade_product_knowledge_bast, grade_training_customer')
+        .eq('sales_name', currentUser.full_name);
+      const pending = (data ?? []).filter((r: any) =>
+        !r.grade_product_knowledge && !r.grade_product_knowledge_bast && !r.grade_training_customer
+      );
+      setPendingReviewCount(pending.length);
+    };
+    checkPendingReviews();
+  }, [isGuest, currentUser?.full_name]);
 
   // ─── Handler: Guest Request Jadwal ────────────────────────────────────────
   const handleRequestJadwal = async (data: JadwalRequest) => {
@@ -2135,16 +2152,29 @@ jangan lupa peralatan & Semangat💪🏼
 
               {/* ── Tombol Request Jadwal — hanya untuk role Guest/Sales ── */}
               {isGuest && view === 'list' && (
-                <button
-                  onClick={() => setShowRequestModal(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90"
-                  style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', boxShadow: '0 4px 14px rgba(37,99,235,0.4)' }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                  </svg>
-                  📩 Request Jadwal
-                </button>
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    onClick={() => { if (pendingReviewCount === 0) setShowRequestModal(true); }}
+                    disabled={pendingReviewCount > 0}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all"
+                    style={pendingReviewCount > 0
+                      ? { background: 'linear-gradient(135deg,#9ca3af,#6b7280)', boxShadow: 'none', cursor: 'not-allowed', opacity: 0.7 }
+                      : { background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', boxShadow: '0 4px 14px rgba(37,99,235,0.4)', cursor: 'pointer' }
+                    }
+                    title={pendingReviewCount > 0 ? `Ada ${pendingReviewCount} form review belum dinilai` : ''}
+                  >
+                    {pendingReviewCount > 0
+                      ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+                      : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                    }
+                    📩 Request Jadwal
+                  </button>
+                  {pendingReviewCount > 0 && (
+                    <span className="text-[11px] font-semibold text-amber-600 flex items-center gap-1">
+                      ⚠️ Selesaikan {pendingReviewCount} form review dulu
+                    </span>
+                  )}
+                </div>
               )}
 
             </div>
