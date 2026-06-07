@@ -78,7 +78,8 @@ export const ALL_MENU_KEYS = [
   'dashboard',
   'form-bast',
   'request-design-project',
-  'ticket-troubleshooting',
+  'ticket-troubleshooting'
+  'incentive-pts',
   'daily-report',
   'database-pts',
   'unit-movement',
@@ -94,6 +95,7 @@ export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = 
   'form-bast':              { label: 'Form Review Demo & BAST', icon: '⭐' },
   'request-design-project': { label: 'Request Design Project', icon: '🏗️' },
   'ticket-troubleshooting': { label: 'Ticket Troubleshooting', icon: '🎫' },
+  'incentive-pts':          { label: 'Incentive Team PTS', icon: '💰' },
   'daily-report':           { label: 'Daily Report', icon: '📈' },
   'database-pts':           { label: 'Database PTS', icon: '💼' },
   'unit-movement':          { label: 'Unit Movement Log', icon: '🚚' },
