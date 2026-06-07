@@ -78,7 +78,7 @@ export const ALL_MENU_KEYS = [
   'dashboard',
   'form-bast',
   'request-design-project',
-  'ticket-troubleshooting'
+  'ticket-troubleshooting',
   'incentive-pts',
   'daily-report',
   'database-pts',
