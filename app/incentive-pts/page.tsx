@@ -562,7 +562,14 @@ function IncentivePTSPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 flex flex-col" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="h-screen flex flex-col overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+
+      {/* ── IVP Background (fixed, behind everything) ── */}
+      <div className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/IVP_Background.png')" }} />
+      {/* Overlay agar konten tetap terbaca */}
+      <div className="fixed inset-0 z-0" style={{ background: 'rgba(240,244,255,0.88)' }} />
+
       {/* Toast */}
       {toast && (
         <div className={`fixed top-4 right-4 z-[9999] px-4 py-3 rounded-xl shadow-lg text-sm font-semibold text-white flex items-center gap-2 transition-all ${toast.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`}>
@@ -570,10 +577,17 @@ function IncentivePTSPage() {
         </div>
       )}
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm px-6 py-3 flex items-center justify-between gap-4">
+      {/* ── Header — sticky, tidak ikut scroll ── */}
+      <header className="relative z-50 flex-shrink-0 px-6 py-3 flex items-center justify-between gap-4"
+        style={{
+          background: 'rgba(255,255,255,0.92)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          borderBottom: '3px solid #6366f1',
+          boxShadow: '0 2px 16px rgba(99,102,241,0.10)',
+        }}>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg">💰</div>
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg flex-shrink-0">💰</div>
           <div>
             <h1 className="text-base font-bold text-gray-800">Incentive PTS</h1>
             <p className="text-[11px] text-gray-400">IndoVisual Professional Tools</p>
@@ -595,8 +609,14 @@ function IncentivePTSPage() {
         </div>
       </header>
 
-      {/* Tabs */}
-      <div className="bg-white border-b border-gray-100 px-6">
+      {/* ── Tabs — sticky di bawah header ── */}
+      <div className="relative z-40 flex-shrink-0 px-6"
+        style={{
+          background: 'rgba(255,255,255,0.92)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(99,102,241,0.12)',
+        }}>
         <div className="flex gap-1 overflow-x-auto">
           {([
             { id: 'projects', label: '📋 Projects', adminOnly: false },
@@ -614,7 +634,9 @@ function IncentivePTSPage() {
         </div>
       </div>
 
-      <main className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-5">
+      {/* ── Scrollable content area ── */}
+      <main className="relative z-10 flex-1 overflow-y-auto">
+        <div className="p-6 max-w-7xl mx-auto w-full space-y-5">
 
         {/* ── Stats ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -949,6 +971,7 @@ function IncentivePTSPage() {
             </div>
           </div>
         )}
+        </div>{/* end inner content wrapper */}
       </main>
 
       {/* ── Modal: Input Biaya ── */}
