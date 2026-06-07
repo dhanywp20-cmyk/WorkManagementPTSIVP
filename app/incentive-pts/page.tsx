@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { getSession, setSession, clearSession, startSessionWatcher } from '@/lib/auth';
+import { getSession, startSessionWatcher } from '@/lib/auth';
+import * as XLSX from 'xlsx';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface User {
@@ -120,7 +121,10 @@ function IncentivePTSPage() {
   const [teamUsers, setTeamUsers] = useState<User[]>([]);
 
   // Filters
+  const [filterMode, setFilterMode] = useState<'bulan' | 'kuartal' | 'tahun'>('bulan');
   const [filterPeriode, setFilterPeriode] = useState<string>('all');
+  const [filterYear, setFilterYear] = useState<string>('all');
+  const [filterQuarter, setFilterQuarter] = useState<string>('all'); // 'Q1'|'Q2'|'Q3'|'Q4'|'all'
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQ, setSearchQ] = useState('');
 
@@ -365,26 +369,50 @@ function IncentivePTSPage() {
   };
 
   // ── Derived data ──
+  const allYears = useMemo(() => {
+    const set = new Set(projects.map(p => p.periode?.slice(0, 4)).filter(Boolean));
+    return Array.from(set).sort().reverse() as string[];
+  }, [projects]);
+
   const periodeOptions = useMemo(() => {
     const set = new Set(projects.map(p => p.periode).filter(Boolean));
     return Array.from(set).sort().reverse() as string[];
   }, [projects]);
 
+  // Match project to active filter combo
+  const projectMatchesFilter = (p: IncentiveProject) => {
+    const periode = p.periode ?? '';
+    if (filterMode === 'tahun') {
+      if (filterYear !== 'all' && !periode.startsWith(filterYear)) return false;
+    } else if (filterMode === 'kuartal') {
+      if (filterYear !== 'all' && !periode.startsWith(filterYear)) return false;
+      if (filterQuarter !== 'all') {
+        const month = parseInt(periode.slice(5, 7));
+        const q = Math.ceil(month / 3);
+        if (`Q${q}` !== filterQuarter) return false;
+      }
+    } else {
+      // bulan mode
+      if (filterPeriode !== 'all' && periode !== filterPeriode) return false;
+    }
+    return true;
+  };
+
   const filteredProjects = useMemo(() => projects.filter(p => {
-    if (filterPeriode !== 'all' && p.periode !== filterPeriode) return false;
+    if (!projectMatchesFilter(p)) return false;
     if (filterStatus !== 'all' && p.status !== filterStatus) return false;
     if (searchQ && !p.project_name.toLowerCase().includes(searchQ.toLowerCase()) &&
       !p.handler_name.toLowerCase().includes(searchQ.toLowerCase()) &&
       !(p.sales_name ?? '').toLowerCase().includes(searchQ.toLowerCase())) return false;
     return true;
-  }), [projects, filterPeriode, filterStatus, searchQ]);
+  }), [projects, filterMode, filterPeriode, filterYear, filterQuarter, filterStatus, searchQ]);
 
   // Rekap per orang
   const rekapData = useMemo(() => {
     const filtered = disbursements.filter(d => {
       const proj = projects.find(p => p.id === d.project_id);
       if (!proj) return false;
-      if (filterPeriode !== 'all' && d.periode !== filterPeriode) return false;
+      if (!projectMatchesFilter(proj)) return false;
       return true;
     });
     const map: Record<string, { person_name: string; total_rp: number; count: number; handler_count: number; backup_count: number }> = {};
@@ -396,11 +424,129 @@ function IncentivePTSPage() {
       else map[d.person_name].backup_count += 1;
     }
     return Object.values(map).sort((a, b) => b.total_rp - a.total_rp);
-  }, [disbursements, projects, filterPeriode]);
+  }, [disbursements, projects, filterMode, filterPeriode, filterYear, filterQuarter]);
 
   const totalBiaya = filteredProjects.reduce((s, p) => s + p.biaya_cadangan, 0);
   const totalIncentive = rekapData.reduce((s, r) => s + r.total_rp, 0);
   const totalPaid = filteredProjects.filter(p => p.status === 'paid').length;
+
+  // ── Filter period label for display ──
+  const filterLabel = useMemo(() => {
+    if (filterMode === 'tahun') return filterYear !== 'all' ? `Tahun ${filterYear}` : 'Semua Tahun';
+    if (filterMode === 'kuartal') {
+      const y = filterYear !== 'all' ? filterYear : '';
+      const q = filterQuarter !== 'all' ? filterQuarter : '';
+      if (y && q) return `${q} ${y}`;
+      if (y) return `Tahun ${y}`;
+      if (q) return q;
+      return 'Semua';
+    }
+    return filterPeriode !== 'all' ? fmtPeriode(filterPeriode) : 'Semua Periode';
+  }, [filterMode, filterYear, filterQuarter, filterPeriode]);
+
+  // ── Export Excel (mirip referensi) ──
+  const exportExcel = () => {
+    const wb = XLSX.utils.book_new();
+
+    // ── Sheet 1: Detail Project ──
+    const allPersons = Array.from(new Set(rekapData.map(r => r.person_name)));
+    const headerRow1 = ['No', 'Project Name', 'Sales Division', 'Final Incentive',
+      ...allPersons.flatMap(name => [name + ' %', name + ' Rp']),
+      'Control'];
+    const rows1 = filteredProjects.map((proj, idx) => {
+      const projDisb = disbursements.filter(d => d.project_id === proj.id);
+      const totalInc = projDisb.reduce((s, d) => s + d.amount_rp, 0);
+      const perPersonCols = allPersons.flatMap(name => {
+        const d = projDisb.find(d => d.person_name === name);
+        return d ? [fmtPct(d.pct), d.amount_rp] : ['', ''];
+      });
+      const pctTotal = projDisb.reduce((s, d) => s + d.pct, 0);
+      return [
+        idx + 1,
+        proj.project_name,
+        proj.sales_division ?? '',
+        proj.biaya_cadangan,
+        ...perPersonCols,
+        pctTotal > 0 ? `${Math.round(pctTotal)}%` : '',
+      ];
+    });
+    const totalRow1 = [
+      '', 'Total Finance', '', totalBiaya,
+      ...allPersons.flatMap(name => {
+        const personTotal = disbursements
+          .filter(d => d.person_name === name && filteredProjects.some(p => p.id === d.project_id))
+          .reduce((s, d) => s + d.amount_rp, 0);
+        return ['', personTotal];
+      }), '',
+    ];
+
+    const ws1 = XLSX.utils.aoa_to_sheet([
+      [`Pengajuan Incentive Project-Project IVP — ${filterLabel}`],
+      ['Saya yang bertanda tangan di bawah ini, ingin mengajukan pengeluaran Incentive Project-project IVP dengan dasar perhitungan sebagai berikut:'],
+      [],
+      headerRow1,
+      ...rows1,
+      totalRow1,
+    ]);
+    ws1['!cols'] = [
+      { wch: 4 }, { wch: 30 }, { wch: 16 }, { wch: 18 },
+      ...allPersons.flatMap(() => [{ wch: 8 }, { wch: 16 }]),
+      { wch: 10 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Detail Project');
+
+    // ── Sheet 2: Rekap Per Orang ──
+    const years = Array.from(new Set(filteredProjects.map(p => p.periode?.slice(0, 4)).filter(Boolean))).sort() as string[];
+    const header2 = ['Nama', ...years.flatMap(y => [`${y} %`, `${y} Amount`])];
+    const rows2 = rekapData.map(r => {
+      const yearCols = years.flatMap(y => {
+        const amt = disbursements
+          .filter(d => d.person_name === r.person_name && d.periode?.startsWith(y) && filteredProjects.some(p => p.id === d.project_id))
+          .reduce((s, d) => s + d.amount_rp, 0);
+        const pct = disbursements
+          .filter(d => d.person_name === r.person_name && d.periode?.startsWith(y) && filteredProjects.some(p => p.id === d.project_id));
+        const avgPct = pct.length > 0 ? pct.reduce((s, d) => s + d.pct, 0) / pct.length : 0;
+        return [amt > 0 ? fmtPct(avgPct) : '', amt || ''];
+      });
+      return [r.person_name, ...yearCols];
+    });
+    const totalRow2 = ['Total', ...years.flatMap(y => {
+      const amt = disbursements
+        .filter(d => d.periode?.startsWith(y) && filteredProjects.some(p => p.id === d.project_id))
+        .reduce((s, d) => s + d.amount_rp, 0);
+      return ['', amt || ''];
+    })];
+    const ws2 = XLSX.utils.aoa_to_sheet([
+      ['Rekap Nilai Pengajuan Incentive — ' + filterLabel],
+      [],
+      header2,
+      ...rows2,
+      totalRow2,
+    ]);
+    ws2['!cols'] = [{ wch: 22 }, ...years.flatMap(() => [{ wch: 10 }, { wch: 16 }])];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Rekap Per Orang');
+
+    // ── Sheet 3: Summary ──
+    const ws3 = XLSX.utils.aoa_to_sheet([
+      ['Ringkasan Incentive PTS — ' + filterLabel],
+      [],
+      ['Total Project', filteredProjects.length],
+      ['Total Biaya Cadangan', totalBiaya],
+      ['Total Incentive Terdistribusi', totalIncentive],
+      ['Project Sudah Lunas', totalPaid],
+      ['Project Masih Pending', filteredProjects.filter(p => p.status === 'pending').length],
+      [],
+      ['Persentase Setting'],
+      ['Handler Utama', settings ? `${settings.handler_pct}%` : '-'],
+      ['Backup Team', settings ? `${settings.backup_pct}%` : '-'],
+    ]);
+    ws3['!cols'] = [{ wch: 28 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, ws3, 'Summary');
+
+    const fileName = `Incentive_PTS_${filterLabel.replace(/\s/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    notify('success', `Export berhasil: ${fileName}`);
+  };
 
   // ─── Render ───────────────────────────────────────────────────────────────
   const inputCls = 'w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white';
@@ -479,23 +625,79 @@ function IncentivePTSPage() {
         </div>
 
         {/* ── Filters ── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-wrap gap-3 items-center">
-          <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-            <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Cari project, handler, sales..."
-              className="flex-1 text-sm outline-none text-gray-700 placeholder-gray-400" />
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
+          {/* Row 1: Search + Export */}
+          <div className="flex flex-wrap gap-3 items-center">
+            <div className="flex items-center gap-2 flex-1 min-w-[200px] bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+              <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Cari project, handler, sales..."
+                className="flex-1 text-sm outline-none text-gray-700 placeholder-gray-400 bg-transparent" />
+            </div>
+            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+              className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
+              <option value="all">Semua Status</option>
+              <option value="pending">Pending</option>
+              <option value="paid">Lunas</option>
+            </select>
+            <button onClick={exportExcel}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Export Excel
+            </button>
           </div>
-          <select value={filterPeriode} onChange={e => setFilterPeriode(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
-            <option value="all">Semua Periode</option>
-            {periodeOptions.map(p => <option key={p} value={p}>{fmtPeriode(p)}</option>)}
-          </select>
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
-            <option value="all">Semua Status</option>
-            <option value="pending">Pending</option>
-            <option value="paid">Lunas</option>
-          </select>
+
+          {/* Row 2: Mode toggle + period selectors */}
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* Mode toggle */}
+            <div className="flex bg-gray-100 rounded-xl p-0.5">
+              {(['bulan', 'kuartal', 'tahun'] as const).map(m => (
+                <button key={m} onClick={() => { setFilterMode(m); setFilterPeriode('all'); setFilterYear('all'); setFilterQuarter('all'); }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all capitalize ${filterMode === m ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}>
+                  {m === 'bulan' ? '📅 Bulan' : m === 'kuartal' ? '📊 Kuartal' : '📆 Tahun'}
+                </button>
+              ))}
+            </div>
+
+            {/* Tahun selector (always show for kuartal & tahun mode, optional for bulan) */}
+            {(filterMode === 'tahun' || filterMode === 'kuartal') && (
+              <select value={filterYear} onChange={e => setFilterYear(e.target.value)}
+                className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                <option value="all">Semua Tahun</option>
+                {allYears.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            )}
+
+            {/* Kuartal selector */}
+            {filterMode === 'kuartal' && (
+              <select value={filterQuarter} onChange={e => setFilterQuarter(e.target.value)}
+                className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                <option value="all">Semua Kuartal</option>
+                <option value="Q1">Q1 (Jan–Mar)</option>
+                <option value="Q2">Q2 (Apr–Jun)</option>
+                <option value="Q3">Q3 (Jul–Sep)</option>
+                <option value="Q4">Q4 (Okt–Des)</option>
+              </select>
+            )}
+
+            {/* Bulan selector */}
+            {filterMode === 'bulan' && (
+              <select value={filterPeriode} onChange={e => setFilterPeriode(e.target.value)}
+                className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                <option value="all">Semua Bulan</option>
+                {periodeOptions.map(p => <option key={p} value={p}>{fmtPeriode(p)}</option>)}
+              </select>
+            )}
+
+            {/* Active filter badge */}
+            {filterLabel !== 'Semua Periode' && filterLabel !== 'Semua Tahun' && filterLabel !== 'Semua' && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs font-semibold text-indigo-700">
+                🔍 {filterLabel}
+                <button onClick={() => { setFilterPeriode('all'); setFilterYear('all'); setFilterQuarter('all'); }}
+                  className="ml-1 text-indigo-400 hover:text-indigo-600">✕</button>
+              </span>
+            )}
+          </div>
         </div>
 
         {/* ══════════════════ TAB: PROJECTS ══════════════════ */}
@@ -587,7 +789,17 @@ function IncentivePTSPage() {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h2 className="font-bold text-gray-800">📊 Rekap Incentive Per Orang</h2>
-                {filterPeriode !== 'all' && <Badge color="blue">{fmtPeriode(filterPeriode)}</Badge>}
+                <div className="flex items-center gap-2">
+                  {filterLabel !== 'Semua Periode' && filterLabel !== 'Semua Tahun' && filterLabel !== 'Semua' && (
+                    <Badge color="blue">{filterLabel}</Badge>
+                  )}
+                  <button onClick={exportExcel}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white hover:opacity-90 transition-all"
+                    style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    Export Excel
+                  </button>
+                </div>
               </div>
               {rekapData.length === 0 ? (
                 <div className="p-12 text-center">
@@ -660,8 +872,7 @@ function IncentivePTSPage() {
               </div>
             ) : (
               <div className="divide-y divide-gray-50">
-                {projects.filter(p => p.status === 'paid' &&
-                  (filterPeriode === 'all' || p.periode === filterPeriode))
+                {projects.filter(p => p.status === 'paid' && projectMatchesFilter(p))
                   .map(proj => {
                     const projDisb = disbursements.filter(d => d.project_id === proj.id);
                     return (
@@ -853,7 +1064,10 @@ function AllowBiayaList({ isAdmin, notify }: { isAdmin: boolean; notify: (t: 'su
   useEffect(() => {
     supabase.from('users').select('id, full_name, role, allow_incentive_input')
       .in('role', ['guest', 'sales', 'team']).order('full_name')
-      .then(({ data }) => { setUsers(data ?? []); setLoading(false); });
+      .then(({ data }: { data: (User & { id: string })[] | null }) => {
+        setUsers(data ?? []);
+        setLoading(false);
+      });
   }, []);
 
   const toggle = async (userId: string, current: boolean) => {
