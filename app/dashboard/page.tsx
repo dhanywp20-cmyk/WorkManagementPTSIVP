@@ -176,8 +176,27 @@ export default function Dashboard() {
         // Admin/supervisor/team with dashboard: langsung tampilkan sidebar + dashboard panel
         setTimeout(() => { setShowSidebar(true); setShowDashboardPanel(true); }, 50);
       } else {
-        // Sales/guest/team tanpa dashboard: auto-navigate effect will handle first menu
-        setTimeout(() => { setShowSidebar(true); }, 50);
+        // Sales/guest/team tanpa dashboard: navigate directly to visual first menu (category order)
+        const allowedL = data.allowed_menus ?? [];
+        const firstKeyL = [
+          ...LEARNING_KEYS.filter(k => allowedL.includes(k)),
+          ...PROJECT_KEYS.filter(k => allowedL.includes(k)),
+          ...INTERNAL_DAILY_KEYS.filter(k => allowedL.includes(k)),
+        ][0] ?? null;
+        const firstMenuL = firstKeyL ? allMenuItems.find(m => m.key === firstKeyL) : null;
+        const firstItemL = firstMenuL?.items?.[0];
+        const firstTitleL = firstMenuL?.title ?? '';
+        setTimeout(() => {
+          autoNavigatedRef.current = true; // prevent useEffect from double-navigating
+          setShowSidebar(true);
+          if (firstItemL?.internal) {
+            setIframeLoading(true); setInternalUrl(firstItemL.url);
+            setIframeTitle(`${firstTitleL} - ${firstItemL.name}`); setShowTicketing(true);
+          } else if (firstItemL?.embed && !firstItemL?.external) {
+            setIframeLoading(true); setIframeUrl(firstItemL.url);
+            setIframeTitle(`${firstTitleL} - ${firstItemL.name}`);
+          }
+        }, 50);
       }
     } catch { setLoginErr('Login gagal. Coba lagi.'); }
   };
@@ -240,13 +259,17 @@ export default function Dashboard() {
     const isSalesGuest = ['guest','sales'].includes(role);
     const isRegularTeam = role === 'team' && !(currentUser.allowed_menus ?? []).includes('dashboard') && currentUser.jabatan !== 'Supervisor';
     if (isSalesGuest || isRegularTeam) {
-      // Navigate to FIRST key in allowed_menus array (user-defined order), not allMenuItems order
-      const allowed = currentUser.allowed_menus;
-      const roleLC = currentUser.role?.toLowerCase();
-      const firstMenuKey = (allowed && allowed.length > 0) ? allowed[0] : null;
-      const firstMenu = firstMenuKey
-        ? allMenuItems.find(m => m.key === firstMenuKey)
-        : ((!allowed || roleLC === 'superadmin' || roleLC === 'admin') ? allMenuItems[0] : null);
+      // Navigate to VISUAL FIRST menu — matches sidebar category order: LEARNING → PROJECT → INTERNAL DAILY
+      // Using allowed[0] was wrong because sidebar groups by category, not by allowed_menus order
+      const allowed = currentUser.allowed_menus ?? [];
+      const categoryOrderedKey = [
+        ...LEARNING_KEYS.filter(k => allowed.includes(k)),
+        ...PROJECT_KEYS.filter(k => allowed.includes(k)),
+        ...INTERNAL_DAILY_KEYS.filter(k => allowed.includes(k)),
+      ][0] ?? null;
+      const firstMenu = categoryOrderedKey
+        ? allMenuItems.find(m => m.key === categoryOrderedKey)
+        : null;
       if (!firstMenu) return;
       autoNavigatedRef.current = true; // mark before state updates to prevent concurrent fires
       const firstItem = firstMenu.items?.[0];
@@ -301,9 +324,15 @@ export default function Dashboard() {
     if (isAdm) {
       setShowDashboardPanel(true);
     } else {
-      // sales/guest: navigate to first visible menu
-      const firstItem = visibleMenuItems[0]?.items?.[0];
-      const firstTitle = visibleMenuItems[0]?.title ?? '';
+      // sales/guest: navigate to VISUAL first menu (category order, matches sidebar)
+      const catOrdered = [
+        ...visibleMenuItems.filter(m => LEARNING_KEYS.includes(m.key)),
+        ...visibleMenuItems.filter(m => PROJECT_KEYS.includes(m.key)),
+        ...visibleMenuItems.filter(m => INTERNAL_DAILY_KEYS.includes(m.key)),
+      ];
+      const firstMenu = catOrdered[0];
+      const firstItem = firstMenu?.items?.[0];
+      const firstTitle = firstMenu?.title ?? '';
       if (firstItem) {
         setIframeLoading(true);
         if (firstItem.internal) {
@@ -340,7 +369,25 @@ export default function Dashboard() {
         if (isAdminOrSup2 || hasTeamDash2) {
           setShowSidebar(true); setShowDashboardPanel(true);
         } else {
+          // Navigate directly to visual first menu on page load — uses same category order as sidebar
+          const allowedU = userData.allowed_menus ?? [];
+          const firstKeyU = [
+            ...LEARNING_KEYS.filter(k => allowedU.includes(k)),
+            ...PROJECT_KEYS.filter(k => allowedU.includes(k)),
+            ...INTERNAL_DAILY_KEYS.filter(k => allowedU.includes(k)),
+          ][0] ?? null;
+          const firstMenuU = firstKeyU ? allMenuItems.find(m => m.key === firstKeyU) : null;
+          const firstItemU = firstMenuU?.items?.[0];
+          const firstTitleU = firstMenuU?.title ?? '';
+          autoNavigatedRef.current = true; // prevent useEffect from overriding this navigation
           setShowSidebar(true);
+          if (firstItemU?.internal) {
+            setIframeLoading(true); setInternalUrl(firstItemU.url);
+            setIframeTitle(`${firstTitleU} - ${firstItemU.name}`); setShowTicketing(true);
+          } else if (firstItemU?.embed && !firstItemU?.external) {
+            setIframeLoading(true); setIframeUrl(firstItemU.url);
+            setIframeTitle(`${firstTitleU} - ${firstItemU.name}`);
+          }
         }
       } catch { /* ignore */ }
       setLoading(false);
