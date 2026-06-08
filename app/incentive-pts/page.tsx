@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
@@ -45,6 +45,13 @@ interface IncentiveProject {
   paid_at?: string;
   paid_by?: string;
   created_at: string;
+  // from reminder join
+  description?: string;
+  notes?: string;
+  address?: string;
+  pic_name?: string;
+  pic_phone?: string;
+  product?: string;
 }
 
 interface IncentiveDisbursement {
@@ -68,6 +75,12 @@ interface ReminderRow {
   sales_division?: string;
   due_date?: string;
   status?: string;
+  description?: string;
+  notes?: string;
+  address?: string;
+  pic_name?: string;
+  pic_phone?: string;
+  product?: string;
 }
 
 const INCENTIVE_CATEGORIES = ['Konfigurasi & Training', 'Training'];
@@ -84,12 +97,13 @@ const fmtPeriode = (s?: string) => {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function Badge({ color, children }: { color: string; children: React.ReactNode }) {
   const map: Record<string, string> = {
-    green: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
-    amber: 'bg-amber-100 text-amber-700 border border-amber-200',
-    blue: 'bg-blue-100 text-blue-700 border border-blue-200',
-    gray: 'bg-gray-100 text-gray-600 border border-gray-200',
-    red: 'bg-red-100 text-red-700 border border-red-200',
+    green:  'bg-emerald-100 text-emerald-700 border border-emerald-200',
+    amber:  'bg-amber-100 text-amber-700 border border-amber-200',
+    blue:   'bg-blue-100 text-blue-700 border border-blue-200',
+    gray:   'bg-gray-100 text-gray-600 border border-gray-200',
+    red:    'bg-red-100 text-red-700 border border-red-200',
     purple: 'bg-purple-100 text-purple-700 border border-purple-200',
+    indigo: 'bg-indigo-100 text-indigo-700 border border-indigo-200',
   };
   return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${map[color] ?? map.gray}`}>{children}</span>;
 }
@@ -124,7 +138,7 @@ function IncentivePTSPage() {
   const [filterMode, setFilterMode] = useState<'bulan' | 'kuartal' | 'tahun'>('bulan');
   const [filterPeriode, setFilterPeriode] = useState<string>('all');
   const [filterYear, setFilterYear] = useState<string>('all');
-  const [filterQuarter, setFilterQuarter] = useState<string>('all'); // 'Q1'|'Q2'|'Q3'|'Q4'|'all'
+  const [filterQuarter, setFilterQuarter] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQ, setSearchQ] = useState('');
 
@@ -132,6 +146,7 @@ function IncentivePTSPage() {
   const [showBiayaModal, setShowBiayaModal] = useState(false);
   const [showBackupModal, setShowBackupModal] = useState(false);
   const [showPaidModal, setShowPaidModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState<IncentiveProject | null>(null);
 
   // Settings form
@@ -162,10 +177,8 @@ function IncentivePTSPage() {
       window.location.href = '/dashboard'; return;
     }
     setCurrentUser(user);
-
     const q = searchParams.get('q');
     if (q) setSearchQ(q);
-
     const cleanup = startSessionWatcher();
     return cleanup;
   }, []);
@@ -173,11 +186,22 @@ function IncentivePTSPage() {
   useEffect(() => {
     if (!currentUser) return;
     fetchAll();
+
+    // ── Auto-sync realtime: listen to reminders table changes ──
+    const ch = supabase
+      .channel('incentive-reminder-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reminders' }, () => {
+        // Debounce: re-fetch projects after reminder changes
+        setTimeout(() => autoSyncAndFetch(), 800);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(ch); };
   }, [currentUser]);
 
   const fetchAll = async () => {
     setLoading(true);
-    await Promise.all([fetchSettings(), fetchProjects(), fetchDisbursements(), fetchTeamUsers()]);
+    await Promise.all([fetchSettings(), fetchProjectsAndAutoSync(), fetchDisbursements(), fetchTeamUsers()]);
     setLoading(false);
   };
 
@@ -190,10 +214,64 @@ function IncentivePTSPage() {
     }
   };
 
+  // ── Auto-sync: upsert reminders done → incentive_projects, then fetch ──
+  const autoSyncAndFetch = async () => {
+    await doAutoSync();
+    await fetchProjects();
+  };
+
+  const fetchProjectsAndAutoSync = async () => {
+    await doAutoSync();
+    await fetchProjects();
+  };
+
+  const doAutoSync = async () => {
+    const { data: reminders } = await supabase
+      .from('reminders')
+      .select('id, project_name, category, assign_name, assigned_to, sales_name, sales_division, due_date, status, description, notes, address, pic_name, pic_phone, product')
+      .in('category', INCENTIVE_CATEGORIES)
+      .eq('status', 'done');
+
+    if (!reminders?.length) return;
+
+    // Get existing reminder_ids already in incentive_projects
+    const { data: existing } = await supabase
+      .from('incentive_projects')
+      .select('reminder_id')
+      .not('reminder_id', 'is', null);
+
+    const existingIds = new Set((existing ?? []).map((e: { reminder_id: string }) => e.reminder_id));
+    const newReminders = reminders.filter((r: ReminderRow) => !existingIds.has(r.id));
+
+    if (!newReminders.length) return;
+
+    const toInsert = newReminders.map((r: ReminderRow) => ({
+      reminder_id: r.id,
+      project_name: r.project_name,
+      category: r.category,
+      sales_name: r.sales_name,
+      sales_division: r.sales_division,
+      due_date: r.due_date,
+      handler_name: r.assign_name ?? '',
+      handler_username: r.assigned_to ?? '',
+      backup_names: [],
+      biaya_cadangan: 0,
+      periode: r.due_date ? r.due_date.slice(0, 7) : new Date().toISOString().slice(0, 7),
+      status: 'pending',
+      description: r.description,
+      notes: r.notes,
+      address: r.address,
+      pic_name: r.pic_name,
+      pic_phone: r.pic_phone,
+      product: r.product,
+    }));
+
+    await supabase.from('incentive_projects').insert(toInsert);
+  };
+
   const fetchProjects = async () => {
     let q = supabase.from('incentive_projects').select('*').order('created_at', { ascending: false });
     if (isTeamPTS && !isAdmin) {
-      // team only sees projects where they are handler or backup
       q = q.or(`handler_name.eq.${currentUser!.full_name},backup_names.cs.{"${currentUser!.full_name}"}`);
     }
     const { data } = await q;
@@ -215,42 +293,6 @@ function IncentivePTSPage() {
     setTeamUsers(data ?? []);
   };
 
-  // ── Sync from reminders ──
-  const syncFromReminders = async () => {
-    const { data: reminders } = await supabase
-      .from('reminders')
-      .select('id, project_name, category, assign_name, assigned_to, sales_name, sales_division, due_date, status')
-      .in('category', INCENTIVE_CATEGORIES)
-      .eq('status', 'done');
-
-    if (!reminders?.length) { notify('error', 'Tidak ada data reminder baru untuk disync'); return; }
-
-    const existingIds = projects.map(p => p.reminder_id).filter(Boolean);
-    const newReminders = reminders.filter((r: ReminderRow) => !existingIds.includes(r.id));
-
-    if (!newReminders.length) { notify('error', 'Semua reminder sudah tersync'); return; }
-
-    const toInsert = newReminders.map((r: ReminderRow) => ({
-      reminder_id: r.id,
-      project_name: r.project_name,
-      category: r.category,
-      sales_name: r.sales_name,
-      sales_division: r.sales_division,
-      due_date: r.due_date,
-      handler_name: r.assign_name ?? '',
-      handler_username: r.assigned_to ?? '',
-      backup_names: [],
-      biaya_cadangan: 0,
-      periode: r.due_date ? r.due_date.slice(0, 7) : new Date().toISOString().slice(0, 7),
-      status: 'pending',
-    }));
-
-    const { error } = await supabase.from('incentive_projects').insert(toInsert);
-    if (error) { notify('error', 'Gagal sync: ' + error.message); return; }
-    notify('success', `${toInsert.length} project berhasil disync!`);
-    fetchProjects();
-  };
-
   // ── Save biaya cadangan ──
   const saveBiaya = async () => {
     if (!selectedProject) return;
@@ -265,10 +307,7 @@ function IncentivePTSPage() {
     }).eq('id', selectedProject.id);
 
     if (error) { notify('error', 'Gagal simpan biaya'); setSavingBiaya(false); return; }
-
-    // Auto-create disbursements
     await createDisbursements({ ...selectedProject, biaya_cadangan: biaya });
-
     notify('success', 'Biaya tersimpan & incentive dikalkulasi!');
     setSavingBiaya(false);
     setShowBiayaModal(false);
@@ -279,42 +318,25 @@ function IncentivePTSPage() {
 
   const createDisbursements = async (project: IncentiveProject) => {
     if (!settings || project.biaya_cadangan <= 0) return;
-
-    // Delete existing disbursements for this project (recalculate)
     await supabase.from('incentive_disbursements').delete().eq('project_id', project.id);
-
     const handlerAmt = (project.biaya_cadangan * settings.handler_pct) / 100;
     const backupTotal = (project.biaya_cadangan * settings.backup_pct) / 100;
     const backupCount = project.backup_names.length;
     const backupPerPerson = backupCount > 0 ? backupTotal / backupCount : 0;
-
     const rows: Omit<IncentiveDisbursement, 'id' | 'created_at'>[] = [];
-
-    // Handler
     rows.push({
-      project_id: project.id,
-      person_name: project.handler_name,
-      person_username: project.handler_username,
-      role_type: 'handler',
-      pct: settings.handler_pct,
-      amount_rp: handlerAmt,
-      periode: project.periode,
+      project_id: project.id, person_name: project.handler_name,
+      person_username: project.handler_username, role_type: 'handler',
+      pct: settings.handler_pct, amount_rp: handlerAmt, periode: project.periode,
     });
-
-    // Backup
     for (const name of project.backup_names) {
       const u = teamUsers.find(u => u.full_name === name);
       rows.push({
-        project_id: project.id,
-        person_name: name,
-        person_username: u?.username,
-        role_type: 'backup',
-        pct: backupCount > 0 ? settings.backup_pct / backupCount : 0,
-        amount_rp: backupPerPerson,
-        periode: project.periode,
+        project_id: project.id, person_name: name, person_username: u?.username,
+        role_type: 'backup', pct: backupCount > 0 ? settings.backup_pct / backupCount : 0,
+        amount_rp: backupPerPerson, periode: project.periode,
       });
     }
-
     await supabase.from('incentive_disbursements').insert(rows);
   };
 
@@ -322,18 +344,11 @@ function IncentivePTSPage() {
   const saveBackup = async () => {
     if (!selectedProject) return;
     setSavingBackup(true);
-
-    const { error } = await supabase.from('incentive_projects').update({
-      backup_names: backupSelected,
-    }).eq('id', selectedProject.id);
-
+    const { error } = await supabase.from('incentive_projects').update({ backup_names: backupSelected }).eq('id', selectedProject.id);
     if (error) { notify('error', 'Gagal simpan backup'); setSavingBackup(false); return; }
-
-    // Recalculate disbursements if biaya already set
     if (selectedProject.biaya_cadangan > 0) {
       await createDisbursements({ ...selectedProject, backup_names: backupSelected });
     }
-
     notify('success', 'Tim backup diperbarui!');
     setSavingBackup(false);
     setShowBackupModal(false);
@@ -345,9 +360,7 @@ function IncentivePTSPage() {
   const markPaid = async () => {
     if (!selectedProject) return;
     const { error } = await supabase.from('incentive_projects').update({
-      status: 'paid',
-      paid_at: new Date().toISOString(),
-      paid_by: currentUser?.full_name,
+      status: 'paid', paid_at: new Date().toISOString(), paid_by: currentUser?.full_name,
     }).eq('id', selectedProject.id);
     if (error) { notify('error', 'Gagal update status'); return; }
     notify('success', 'Project ditandai sebagai lunas!');
@@ -379,7 +392,6 @@ function IncentivePTSPage() {
     return Array.from(set).sort().reverse() as string[];
   }, [projects]);
 
-  // Match project to active filter combo
   const projectMatchesFilter = (p: IncentiveProject) => {
     const periode = p.periode ?? '';
     if (filterMode === 'tahun') {
@@ -392,7 +404,6 @@ function IncentivePTSPage() {
         if (`Q${q}` !== filterQuarter) return false;
       }
     } else {
-      // bulan mode
       if (filterPeriode !== 'all' && periode !== filterPeriode) return false;
     }
     return true;
@@ -407,13 +418,10 @@ function IncentivePTSPage() {
     return true;
   }), [projects, filterMode, filterPeriode, filterYear, filterQuarter, filterStatus, searchQ]);
 
-  // Rekap per orang
   const rekapData = useMemo(() => {
     const filtered = disbursements.filter(d => {
       const proj = projects.find(p => p.id === d.project_id);
-      if (!proj) return false;
-      if (!projectMatchesFilter(proj)) return false;
-      return true;
+      return proj && projectMatchesFilter(proj);
     });
     const map: Record<string, { person_name: string; total_rp: number; count: number; handler_count: number; backup_count: number }> = {};
     for (const d of filtered) {
@@ -430,7 +438,6 @@ function IncentivePTSPage() {
   const totalIncentive = rekapData.reduce((s, r) => s + r.total_rp, 0);
   const totalPaid = filteredProjects.filter(p => p.status === 'paid').length;
 
-  // ── Filter period label for display ──
   const filterLabel = useMemo(() => {
     if (filterMode === 'tahun') return filterYear !== 'all' ? `Tahun ${filterYear}` : 'Semua Tahun';
     if (filterMode === 'kuartal') {
@@ -444,105 +451,60 @@ function IncentivePTSPage() {
     return filterPeriode !== 'all' ? fmtPeriode(filterPeriode) : 'Semua Periode';
   }, [filterMode, filterYear, filterQuarter, filterPeriode]);
 
-  // ── Export Excel (mirip referensi) ──
+  // ── Export Excel ──
   const exportExcel = () => {
     const wb = XLSX.utils.book_new();
-
-    // ── Sheet 1: Detail Project ──
     const allPersons = Array.from(new Set(rekapData.map(r => r.person_name)));
     const headerRow1 = ['No', 'Project Name', 'Sales Division', 'Final Incentive',
-      ...allPersons.flatMap(name => [name + ' %', name + ' Rp']),
-      'Control'];
+      ...allPersons.flatMap(name => [name + ' %', name + ' Rp']), 'Control'];
     const rows1 = filteredProjects.map((proj, idx) => {
       const projDisb = disbursements.filter(d => d.project_id === proj.id);
-      const totalInc = projDisb.reduce((s, d) => s + d.amount_rp, 0);
       const perPersonCols = allPersons.flatMap(name => {
         const d = projDisb.find(d => d.person_name === name);
         return d ? [fmtPct(d.pct), d.amount_rp] : ['', ''];
       });
       const pctTotal = projDisb.reduce((s, d) => s + d.pct, 0);
-      return [
-        idx + 1,
-        proj.project_name,
-        proj.sales_division ?? '',
-        proj.biaya_cadangan,
-        ...perPersonCols,
-        pctTotal > 0 ? `${Math.round(pctTotal)}%` : '',
-      ];
+      return [idx + 1, proj.project_name, proj.sales_division ?? '', proj.biaya_cadangan, ...perPersonCols, pctTotal > 0 ? `${Math.round(pctTotal)}%` : ''];
     });
-    const totalRow1 = [
-      '', 'Total Finance', '', totalBiaya,
+    const totalRow1 = ['', 'Total Finance', '', totalBiaya,
       ...allPersons.flatMap(name => {
-        const personTotal = disbursements
-          .filter(d => d.person_name === name && filteredProjects.some(p => p.id === d.project_id))
-          .reduce((s, d) => s + d.amount_rp, 0);
+        const personTotal = disbursements.filter(d => d.person_name === name && filteredProjects.some(p => p.id === d.project_id)).reduce((s, d) => s + d.amount_rp, 0);
         return ['', personTotal];
-      }), '',
-    ];
-
+      }), ''];
     const ws1 = XLSX.utils.aoa_to_sheet([
       [`Pengajuan Incentive Project-Project IVP — ${filterLabel}`],
       ['Saya yang bertanda tangan di bawah ini, ingin mengajukan pengeluaran Incentive Project-project IVP dengan dasar perhitungan sebagai berikut:'],
-      [],
-      headerRow1,
-      ...rows1,
-      totalRow1,
+      [], headerRow1, ...rows1, totalRow1,
     ]);
-    ws1['!cols'] = [
-      { wch: 4 }, { wch: 30 }, { wch: 16 }, { wch: 18 },
-      ...allPersons.flatMap(() => [{ wch: 8 }, { wch: 16 }]),
-      { wch: 10 },
-    ];
+    ws1['!cols'] = [{ wch: 4 }, { wch: 30 }, { wch: 16 }, { wch: 18 }, ...allPersons.flatMap(() => [{ wch: 8 }, { wch: 16 }]), { wch: 10 }];
     XLSX.utils.book_append_sheet(wb, ws1, 'Detail Project');
 
-    // ── Sheet 2: Rekap Per Orang ──
     const years = Array.from(new Set(filteredProjects.map(p => p.periode?.slice(0, 4)).filter(Boolean))).sort() as string[];
     const header2 = ['Nama', ...years.flatMap(y => [`${y} %`, `${y} Amount`])];
     const rows2 = rekapData.map(r => {
       const yearCols = years.flatMap(y => {
-        const amt = disbursements
-          .filter(d => d.person_name === r.person_name && d.periode?.startsWith(y) && filteredProjects.some(p => p.id === d.project_id))
-          .reduce((s, d) => s + d.amount_rp, 0);
-        const pct = disbursements
-          .filter(d => d.person_name === r.person_name && d.periode?.startsWith(y) && filteredProjects.some(p => p.id === d.project_id));
+        const amt = disbursements.filter(d => d.person_name === r.person_name && d.periode?.startsWith(y) && filteredProjects.some(p => p.id === d.project_id)).reduce((s, d) => s + d.amount_rp, 0);
+        const pct = disbursements.filter(d => d.person_name === r.person_name && d.periode?.startsWith(y) && filteredProjects.some(p => p.id === d.project_id));
         const avgPct = pct.length > 0 ? pct.reduce((s, d) => s + d.pct, 0) / pct.length : 0;
         return [amt > 0 ? fmtPct(avgPct) : '', amt || ''];
       });
       return [r.person_name, ...yearCols];
     });
-    const totalRow2 = ['Total', ...years.flatMap(y => {
-      const amt = disbursements
-        .filter(d => d.periode?.startsWith(y) && filteredProjects.some(p => p.id === d.project_id))
-        .reduce((s, d) => s + d.amount_rp, 0);
-      return ['', amt || ''];
-    })];
-    const ws2 = XLSX.utils.aoa_to_sheet([
-      ['Rekap Nilai Pengajuan Incentive — ' + filterLabel],
-      [],
-      header2,
-      ...rows2,
-      totalRow2,
-    ]);
+    const ws2 = XLSX.utils.aoa_to_sheet([['Rekap Nilai Pengajuan Incentive — ' + filterLabel], [], header2, ...rows2]);
     ws2['!cols'] = [{ wch: 22 }, ...years.flatMap(() => [{ wch: 10 }, { wch: 16 }])];
     XLSX.utils.book_append_sheet(wb, ws2, 'Rekap Per Orang');
 
-    // ── Sheet 3: Summary ──
     const ws3 = XLSX.utils.aoa_to_sheet([
-      ['Ringkasan Incentive PTS — ' + filterLabel],
-      [],
-      ['Total Project', filteredProjects.length],
-      ['Total Biaya Cadangan', totalBiaya],
-      ['Total Incentive Terdistribusi', totalIncentive],
-      ['Project Sudah Lunas', totalPaid],
-      ['Project Masih Pending', filteredProjects.filter(p => p.status === 'pending').length],
-      [],
+      ['Ringkasan Incentive PTS — ' + filterLabel], [],
+      ['Total Project', filteredProjects.length], ['Total Biaya Cadangan', totalBiaya],
+      ['Total Incentive Terdistribusi', totalIncentive], ['Project Sudah Lunas', totalPaid],
+      ['Project Masih Pending', filteredProjects.filter(p => p.status === 'pending').length], [],
       ['Persentase Setting'],
       ['Handler Utama', settings ? `${settings.handler_pct}%` : '-'],
       ['Backup Team', settings ? `${settings.backup_pct}%` : '-'],
     ]);
     ws3['!cols'] = [{ wch: 28 }, { wch: 20 }];
     XLSX.utils.book_append_sheet(wb, ws3, 'Summary');
-
     const fileName = `Incentive_PTS_${filterLabel.replace(/\s/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`;
     XLSX.writeFile(wb, fileName);
     notify('success', `Export berhasil: ${fileName}`);
@@ -564,20 +526,19 @@ function IncentivePTSPage() {
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
 
-      {/* ── IVP Background (fixed, behind everything) ── */}
+      {/* Background */}
       <div className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: "url('/IVP_Background.png')" }} />
-      {/* Overlay agar konten tetap terbaca */}
       <div className="fixed inset-0 z-0" style={{ background: 'rgba(240,244,255,0.88)' }} />
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-4 right-4 z-[9999] px-4 py-3 rounded-xl shadow-lg text-sm font-semibold text-white flex items-center gap-2 transition-all ${toast.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`}>
+        <div className={`fixed top-4 right-4 z-[9999] px-4 py-3 rounded-xl shadow-lg text-sm font-semibold text-white flex items-center gap-2 ${toast.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`}>
           {toast.type === 'success' ? '✅' : '❌'} {toast.msg}
         </div>
       )}
 
-      {/* ── Header — sticky, tidak ikut scroll ── */}
+      {/* Header */}
       <header className="relative z-50 flex-shrink-0 px-6 py-3 flex items-center justify-between gap-4"
         style={{
           background: 'rgba(255,255,255,0.92)',
@@ -593,23 +554,12 @@ function IncentivePTSPage() {
             <p className="text-[11px] text-gray-400">IndoVisual Professional Tools</p>
           </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          {isAdmin && (
-            <button onClick={syncFromReminders}
-              className={`${btnPrimary} flex items-center gap-1.5`}
-              style={{ background: 'linear-gradient(135deg,#0ea5e9,#0284c7)' }}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-              Sync Reminder
-            </button>
-          )}
-          <div className="text-sm font-semibold text-gray-600 bg-gray-100 px-3 py-1.5 rounded-xl">
-            👤 {currentUser?.full_name}
-          </div>
+        <div className="text-sm font-semibold text-gray-600 bg-gray-100 px-3 py-1.5 rounded-xl">
+          👤 {currentUser?.full_name}
         </div>
       </header>
 
-      {/* ── Tabs — sticky di bawah header ── */}
+      {/* Tabs */}
       <div className="relative z-40 flex-shrink-0 px-6"
         style={{
           background: 'rgba(255,255,255,0.92)',
@@ -620,8 +570,8 @@ function IncentivePTSPage() {
         <div className="flex gap-1 overflow-x-auto">
           {([
             { id: 'projects', label: '📋 Projects', adminOnly: false },
-            { id: 'rekap', label: '📊 Rekap Incentive', adminOnly: false },
-            { id: 'history', label: '🕒 History', adminOnly: false },
+            { id: 'rekap',    label: '📊 Rekap Incentive', adminOnly: false },
+            { id: 'history',  label: '🕒 History', adminOnly: false },
             { id: 'settings', label: '⚙️ Settings', adminOnly: true },
           ] as { id: typeof activeTab; label: string; adminOnly: boolean }[])
             .filter(t => !t.adminOnly || isAdmin)
@@ -634,268 +584,300 @@ function IncentivePTSPage() {
         </div>
       </div>
 
-      {/* ── Scrollable content area ── */}
+      {/* Scrollable content */}
       <main className="relative z-10 flex-1 overflow-y-auto">
         <div className="p-6 max-w-7xl mx-auto w-full space-y-5">
 
-        {/* ── Stats ── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard icon="📋" label="Total Project" value={String(filteredProjects.length)} sub={`${totalPaid} sudah dibayar`} color="#6366f1" />
-          <StatCard icon="💵" label="Total Biaya Cadangan" value={fmtRp(totalBiaya)} sub="Project terfilter" color="#0ea5e9" />
-          <StatCard icon="💰" label="Total Incentive" value={fmtRp(totalIncentive)} sub="Terdistribusi" color="#10b981" />
-          <StatCard icon="⏳" label="Menunggu Pembayaran" value={String(filteredProjects.filter(p => p.status === 'pending' && p.biaya_cadangan > 0).length)} sub="Project pending" color="#f59e0b" />
-        </div>
-
-        {/* ── Filters ── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
-          {/* Row 1: Search + Export */}
-          <div className="flex flex-wrap gap-3 items-center">
-            <div className="flex items-center gap-2 flex-1 min-w-[200px] bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
-              <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-              <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Cari project, handler, sales..."
-                className="flex-1 text-sm outline-none text-gray-700 placeholder-gray-400 bg-transparent" />
-            </div>
-            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
-              <option value="all">Semua Status</option>
-              <option value="pending">Pending</option>
-              <option value="paid">Lunas</option>
-            </select>
-            <button onClick={exportExcel}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-              Export Excel
-            </button>
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <StatCard icon="📋" label="Total Project" value={String(filteredProjects.length)} sub={`${totalPaid} sudah dibayar`} color="#6366f1" />
+            <StatCard icon="💵" label="Total Biaya Cadangan" value={fmtRp(totalBiaya)} sub="Project terfilter" color="#0ea5e9" />
+            <StatCard icon="💰" label="Total Incentive" value={fmtRp(totalIncentive)} sub="Terdistribusi" color="#10b981" />
+            <StatCard icon="⏳" label="Menunggu Pembayaran" value={String(filteredProjects.filter(p => p.status === 'pending' && p.biaya_cadangan > 0).length)} sub="Project pending" color="#f59e0b" />
           </div>
 
-          {/* Row 2: Mode toggle + period selectors */}
-          <div className="flex flex-wrap gap-2 items-center">
-            {/* Mode toggle */}
-            <div className="flex bg-gray-100 rounded-xl p-0.5">
-              {(['bulan', 'kuartal', 'tahun'] as const).map(m => (
-                <button key={m} onClick={() => { setFilterMode(m); setFilterPeriode('all'); setFilterYear('all'); setFilterQuarter('all'); }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all capitalize ${filterMode === m ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}>
-                  {m === 'bulan' ? '📅 Bulan' : m === 'kuartal' ? '📊 Kuartal' : '📆 Tahun'}
-                </button>
-              ))}
-            </div>
-
-            {/* Tahun selector (always show for kuartal & tahun mode, optional for bulan) */}
-            {(filterMode === 'tahun' || filterMode === 'kuartal') && (
-              <select value={filterYear} onChange={e => setFilterYear(e.target.value)}
-                className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                <option value="all">Semua Tahun</option>
-                {allYears.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-            )}
-
-            {/* Kuartal selector */}
-            {filterMode === 'kuartal' && (
-              <select value={filterQuarter} onChange={e => setFilterQuarter(e.target.value)}
-                className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                <option value="all">Semua Kuartal</option>
-                <option value="Q1">Q1 (Jan–Mar)</option>
-                <option value="Q2">Q2 (Apr–Jun)</option>
-                <option value="Q3">Q3 (Jul–Sep)</option>
-                <option value="Q4">Q4 (Okt–Des)</option>
-              </select>
-            )}
-
-            {/* Bulan selector */}
-            {filterMode === 'bulan' && (
-              <select value={filterPeriode} onChange={e => setFilterPeriode(e.target.value)}
-                className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                <option value="all">Semua Bulan</option>
-                {periodeOptions.map(p => <option key={p} value={p}>{fmtPeriode(p)}</option>)}
-              </select>
-            )}
-
-            {/* Active filter badge */}
-            {filterLabel !== 'Semua Periode' && filterLabel !== 'Semua Tahun' && filterLabel !== 'Semua' && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs font-semibold text-indigo-700">
-                🔍 {filterLabel}
-                <button onClick={() => { setFilterPeriode('all'); setFilterYear('all'); setFilterQuarter('all'); }}
-                  className="ml-1 text-indigo-400 hover:text-indigo-600">✕</button>
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* ══════════════════ TAB: PROJECTS ══════════════════ */}
-        {activeTab === 'projects' && (
-          <div className="space-y-3">
-            {filteredProjects.length === 0 ? (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
-                <p className="text-4xl mb-3">📭</p>
-                <p className="text-gray-500 font-medium">Belum ada project incentive</p>
-                {isAdmin && <p className="text-gray-400 text-sm mt-1">Klik "Sync Reminder" untuk mengambil data dari Reminder Schedule</p>}
+          {/* Filters */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
+            <div className="flex flex-wrap gap-3 items-center">
+              <div className="flex items-center gap-2 flex-1 min-w-[200px] bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+                <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Cari project, handler, sales..."
+                  className="flex-1 text-sm outline-none text-gray-700 placeholder-gray-400 bg-transparent" />
               </div>
-            ) : filteredProjects.map(proj => {
-              const projDisb = disbursements.filter(d => d.project_id === proj.id);
-              return (
-                <div key={proj.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between gap-3 flex-wrap">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <h3 className="font-bold text-gray-800 text-base">{proj.project_name}</h3>
-                        <Badge color={proj.status === 'paid' ? 'green' : proj.biaya_cadangan > 0 ? 'amber' : 'gray'}>
-                          {proj.status === 'paid' ? '✅ Lunas' : proj.biaya_cadangan > 0 ? '⏳ Pending' : '⚪ Belum ada biaya'}
-                        </Badge>
-                        <Badge color="purple">{proj.category}</Badge>
-                      </div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-1">
-                        <span>👤 Handler: <strong className="text-gray-700">{proj.handler_name}</strong></span>
-                        {proj.sales_name && <span>🏢 Sales: <strong className="text-gray-700">{proj.sales_name}</strong></span>}
-                        {proj.due_date && <span>📅 {fmtDate(proj.due_date)}</span>}
-                        {proj.periode && <span>📆 {fmtPeriode(proj.periode)}</span>}
-                        {proj.backup_names.length > 0 && (
-                          <span>🤝 Backup: <strong className="text-gray-700">{proj.backup_names.join(', ')}</strong></span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
-                      {proj.biaya_cadangan > 0 && (
-                        <div className="text-right">
-                          <p className="text-xs text-gray-400">Biaya Cadangan</p>
-                          <p className="text-base font-bold text-indigo-600">{fmtRp(proj.biaya_cadangan)}</p>
-                        </div>
-                      )}
-                      {isAdmin && (
-                        <button onClick={() => { setSelectedProject(proj); setBackupSelected(proj.backup_names); setShowBackupModal(true); }}
-                          className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors border border-blue-200">
-                          🤝 Backup
-                        </button>
-                      )}
-                      {canInputBiaya && proj.status === 'pending' && (
-                        <button onClick={() => { setSelectedProject(proj); setBiayaInput(proj.biaya_cadangan > 0 ? String(proj.biaya_cadangan) : ''); setShowBiayaModal(true); }}
-                          className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors border border-indigo-200">
-                          💵 {proj.biaya_cadangan > 0 ? 'Edit Biaya' : 'Input Biaya'}
-                        </button>
-                      )}
-                      {isAdmin && proj.status === 'pending' && proj.biaya_cadangan > 0 && (
-                        <button onClick={() => { setSelectedProject(proj); setShowPaidModal(true); }}
-                          className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors border border-emerald-200">
-                          ✅ Tandai Lunas
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Disbursement breakdown */}
-                  {projDisb.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-gray-100">
-                      <p className="text-xs font-semibold text-gray-500 mb-2">💰 Distribusi Incentive</p>
-                      <div className="flex flex-wrap gap-2">
-                        {projDisb.map(d => (
-                          <div key={d.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs border ${d.role_type === 'handler' ? 'bg-indigo-50 border-indigo-200' : 'bg-blue-50 border-blue-200'}`}>
-                            <span>{d.role_type === 'handler' ? '⭐' : '🤝'}</span>
-                            <span className="font-semibold text-gray-700">{d.person_name}</span>
-                            <span className={d.role_type === 'handler' ? 'text-indigo-600' : 'text-blue-600'}>{fmtPct(d.pct)}</span>
-                            <span className="font-bold text-gray-800">{fmtRp(d.amount_rp)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* ══════════════════ TAB: REKAP ══════════════════ */}
-        {activeTab === 'rekap' && (
-          <div className="space-y-4">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="font-bold text-gray-800">📊 Rekap Incentive Per Orang</h2>
-                <div className="flex items-center gap-2">
-                  {filterLabel !== 'Semua Periode' && filterLabel !== 'Semua Tahun' && filterLabel !== 'Semua' && (
-                    <Badge color="blue">{filterLabel}</Badge>
-                  )}
-                  <button onClick={exportExcel}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white hover:opacity-90 transition-all"
-                    style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}>
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                    Export Excel
+              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+                className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                <option value="all">Semua Status</option>
+                <option value="pending">Pending</option>
+                <option value="paid">Lunas</option>
+              </select>
+              <button onClick={exportExcel}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
+                style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                Export Excel
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2 items-center">
+              <div className="flex bg-gray-100 rounded-xl p-0.5">
+                {(['bulan', 'kuartal', 'tahun'] as const).map(m => (
+                  <button key={m} onClick={() => { setFilterMode(m); setFilterPeriode('all'); setFilterYear('all'); setFilterQuarter('all'); }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all capitalize ${filterMode === m ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}>
+                    {m === 'bulan' ? '📅 Bulan' : m === 'kuartal' ? '📊 Kuartal' : '📆 Tahun'}
                   </button>
-                </div>
+                ))}
               </div>
-              {rekapData.length === 0 ? (
-                <div className="p-12 text-center">
-                  <p className="text-4xl mb-3">📊</p>
-                  <p className="text-gray-500">Belum ada data rekap untuk periode ini</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-50">
-                  {rekapData.map((r, i) => {
-                    const myData = isTeamPTS && !isAdmin && r.person_name !== currentUser?.full_name;
-                    if (myData) return null;
-                    const personDisb = disbursements.filter(d => d.person_name === r.person_name &&
-                      (filterPeriode === 'all' || d.periode === filterPeriode));
-                    return (
-                      <div key={r.person_name} className="px-5 py-4 hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center justify-between gap-4 flex-wrap">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                              {i + 1}
-                            </div>
-                            <div>
-                              <p className="font-bold text-gray-800">{r.person_name}</p>
-                              <p className="text-xs text-gray-400">{r.handler_count}x handler · {r.backup_count}x backup · {r.count} project total</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xl font-bold text-indigo-600">{fmtRp(r.total_rp)}</p>
-                            <p className="text-xs text-gray-400">{r.count} project</p>
-                          </div>
-                        </div>
-                        {/* Detail per project */}
-                        <div className="mt-3 space-y-1.5">
-                          {personDisb.map(d => {
-                            const proj = projects.find(p => p.id === d.project_id);
-                            return (
-                              <div key={d.id} className="flex items-center justify-between text-xs bg-gray-50 rounded-xl px-3 py-2">
-                                <div className="flex items-center gap-2">
-                                  <span>{d.role_type === 'handler' ? '⭐' : '🤝'}</span>
-                                  <span className="text-gray-700 font-medium">{proj?.project_name ?? '-'}</span>
-                                  <Badge color={d.role_type === 'handler' ? 'purple' : 'blue'}>{d.role_type}</Badge>
-                                  {proj?.status === 'paid' && <Badge color="green">Lunas</Badge>}
-                                </div>
-                                <div className="text-right">
-                                  <span className="text-gray-500 mr-2">{fmtPct(d.pct)}</span>
-                                  <span className="font-bold text-gray-800">{fmtRp(d.amount_rp)}</span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+              {(filterMode === 'tahun' || filterMode === 'kuartal') && (
+                <select value={filterYear} onChange={e => setFilterYear(e.target.value)}
+                  className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                  <option value="all">Semua Tahun</option>
+                  {allYears.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              )}
+              {filterMode === 'kuartal' && (
+                <select value={filterQuarter} onChange={e => setFilterQuarter(e.target.value)}
+                  className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                  <option value="all">Semua Kuartal</option>
+                  <option value="Q1">Q1 (Jan–Mar)</option>
+                  <option value="Q2">Q2 (Apr–Jun)</option>
+                  <option value="Q3">Q3 (Jul–Sep)</option>
+                  <option value="Q4">Q4 (Okt–Des)</option>
+                </select>
+              )}
+              {filterMode === 'bulan' && (
+                <select value={filterPeriode} onChange={e => setFilterPeriode(e.target.value)}
+                  className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                  <option value="all">Semua Bulan</option>
+                  {periodeOptions.map(p => <option key={p} value={p}>{fmtPeriode(p)}</option>)}
+                </select>
+              )}
+              {filterLabel !== 'Semua Periode' && filterLabel !== 'Semua Tahun' && filterLabel !== 'Semua' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs font-semibold text-indigo-700">
+                  🔍 {filterLabel}
+                  <button onClick={() => { setFilterPeriode('all'); setFilterYear('all'); setFilterQuarter('all'); }}
+                    className="ml-1 text-indigo-400 hover:text-indigo-600">✕</button>
+                </span>
               )}
             </div>
           </div>
-        )}
 
-        {/* ══════════════════ TAB: HISTORY ══════════════════ */}
-        {activeTab === 'history' && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h2 className="font-bold text-gray-800">🕒 History Pembayaran</h2>
-            </div>
-            {projects.filter(p => p.status === 'paid').length === 0 ? (
-              <div className="p-12 text-center">
-                <p className="text-4xl mb-3">🕒</p>
-                <p className="text-gray-500">Belum ada pembayaran yang diselesaikan</p>
+          {/* ══════════ TAB: PROJECTS — TABLE ══════════ */}
+          {activeTab === 'projects' && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              {/* Table header */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100" style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.04))' }}>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-10">No</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Project Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-32">Kategori</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-36">Handler</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-36">Sales</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-28">Tanggal</th>
+                      <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider w-36">Nominal Cadangan</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-36">Status</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-28">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {filteredProjects.length === 0 ? (
+                      <tr>
+                        <td colSpan={9} className="px-4 py-16 text-center">
+                          <p className="text-4xl mb-3">📭</p>
+                          <p className="text-gray-500 font-medium">Belum ada project incentive</p>
+                          <p className="text-gray-400 text-xs mt-1">Data otomatis muncul dari Reminder Schedule kategori Training / Konfigurasi & Training yang sudah selesai</p>
+                        </td>
+                      </tr>
+                    ) : filteredProjects.map((proj, idx) => (
+                      <tr key={proj.id} className="hover:bg-indigo-50/30 transition-colors group">
+                        {/* No */}
+                        <td className="px-4 py-3 text-xs text-gray-400 font-medium">{idx + 1}</td>
+                        {/* Project Name */}
+                        <td className="px-4 py-3">
+                          <p className="font-semibold text-gray-800 text-sm leading-snug">{proj.project_name}</p>
+                          {proj.address && <p className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[240px]">📍 {proj.address}</p>}
+                        </td>
+                        {/* Kategori */}
+                        <td className="px-4 py-3">
+                          <Badge color="purple">{proj.category}</Badge>
+                        </td>
+                        {/* Handler */}
+                        <td className="px-4 py-3">
+                          <p className="text-sm font-medium text-gray-700">{proj.handler_name}</p>
+                          {proj.backup_names.length > 0 && (
+                            <p className="text-[11px] text-gray-400 mt-0.5">+{proj.backup_names.length} backup</p>
+                          )}
+                        </td>
+                        {/* Sales */}
+                        <td className="px-4 py-3">
+                          {proj.sales_name ? (
+                            <>
+                              <p className="text-sm text-gray-700">{proj.sales_name}</p>
+                              {proj.sales_division && <p className="text-[11px] text-gray-400">{proj.sales_division}</p>}
+                            </>
+                          ) : <span className="text-gray-300 text-xs">—</span>}
+                        </td>
+                        {/* Tanggal — hanya due_date, periode hanya untuk filter */}
+                        <td className="px-4 py-3">
+                          <p className="text-sm text-gray-600">{fmtDate(proj.due_date)}</p>
+                          <p className="text-[11px] text-gray-400">{fmtPeriode(proj.periode)}</p>
+                        </td>
+                        {/* Nominal */}
+                        <td className="px-4 py-3 text-right">
+                          {proj.biaya_cadangan > 0 ? (
+                            <p className="font-bold text-indigo-600 text-sm">{fmtRp(proj.biaya_cadangan)}</p>
+                          ) : (
+                            <span className="text-gray-300 text-xs">Belum diinput</span>
+                          )}
+                        </td>
+                        {/* Status */}
+                        <td className="px-4 py-3 text-center">
+                          <Badge color={proj.status === 'paid' ? 'green' : proj.biaya_cadangan > 0 ? 'amber' : 'gray'}>
+                            {proj.status === 'paid' ? '✅ Lunas' : proj.biaya_cadangan > 0 ? '⏳ Pending' : '⚪ Belum ada biaya'}
+                          </Badge>
+                        </td>
+                        {/* Aksi */}
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                            {/* View */}
+                            <button
+                              onClick={() => { setSelectedProject(proj); setShowViewModal(true); }}
+                              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200 transition-colors"
+                              title="Lihat detail">
+                              👁 View
+                            </button>
+                            {/* Backup — admin only */}
+                            {isAdmin && (
+                              <button onClick={() => { setSelectedProject(proj); setBackupSelected(proj.backup_names); setShowBackupModal(true); }}
+                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 transition-colors"
+                                title="Set backup">
+                                🤝
+                              </button>
+                            )}
+                            {/* Input / Edit Biaya */}
+                            {canInputBiaya && proj.status === 'pending' && (
+                              <button onClick={() => { setSelectedProject(proj); setBiayaInput(proj.biaya_cadangan > 0 ? String(proj.biaya_cadangan) : ''); setShowBiayaModal(true); }}
+                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-colors"
+                                title={proj.biaya_cadangan > 0 ? 'Edit biaya' : 'Input biaya'}>
+                                {proj.biaya_cadangan > 0 ? '✏️' : '💵'}
+                              </button>
+                            )}
+                            {/* Tandai Lunas — admin only */}
+                            {isAdmin && proj.status === 'pending' && proj.biaya_cadangan > 0 && (
+                              <button onClick={() => { setSelectedProject(proj); setShowPaidModal(true); }}
+                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-green-50 text-green-600 hover:bg-green-100 border border-green-200 transition-colors"
+                                title="Tandai lunas">
+                                ✅
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ) : (
-              <div className="divide-y divide-gray-50">
-                {projects.filter(p => p.status === 'paid' && projectMatchesFilter(p))
-                  .map(proj => {
+              {/* Footer count */}
+              {filteredProjects.length > 0 && (
+                <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+                  <span className="text-xs text-gray-400">
+                    Menampilkan {filteredProjects.length} dari {projects.length} project
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    Total: <strong className="text-indigo-600">{fmtRp(totalBiaya)}</strong>
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ══════════ TAB: REKAP ══════════ */}
+          {activeTab === 'rekap' && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                  <h2 className="font-bold text-gray-800">📊 Rekap Incentive Per Orang</h2>
+                  <div className="flex items-center gap-2">
+                    {filterLabel !== 'Semua Periode' && filterLabel !== 'Semua Tahun' && filterLabel !== 'Semua' && (
+                      <Badge color="blue">{filterLabel}</Badge>
+                    )}
+                    <button onClick={exportExcel}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white hover:opacity-90"
+                      style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}>
+                      Export Excel
+                    </button>
+                  </div>
+                </div>
+                {rekapData.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <p className="text-4xl mb-3">📊</p>
+                    <p className="text-gray-500">Belum ada data rekap untuk periode ini</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-50">
+                    {rekapData.map((r, i) => {
+                      if (isTeamPTS && !isAdmin && r.person_name !== currentUser?.full_name) return null;
+                      const personDisb = disbursements.filter(d => d.person_name === r.person_name &&
+                        (filterPeriode === 'all' || d.periode === filterPeriode));
+                      return (
+                        <div key={r.person_name} className="px-5 py-4 hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center justify-between gap-4 flex-wrap">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                                {i + 1}
+                              </div>
+                              <div>
+                                <p className="font-bold text-gray-800">{r.person_name}</p>
+                                <p className="text-xs text-gray-400">{r.handler_count}x handler · {r.backup_count}x backup</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xl font-bold text-indigo-600">{fmtRp(r.total_rp)}</p>
+                              <p className="text-xs text-gray-400">{r.count} project</p>
+                            </div>
+                          </div>
+                          <div className="mt-3 space-y-1.5">
+                            {personDisb.map(d => {
+                              const proj = projects.find(p => p.id === d.project_id);
+                              return (
+                                <div key={d.id} className="flex items-center justify-between text-xs bg-gray-50 rounded-xl px-3 py-2">
+                                  <div className="flex items-center gap-2">
+                                    <span>{d.role_type === 'handler' ? '⭐' : '🤝'}</span>
+                                    <span className="text-gray-700 font-medium">{proj?.project_name ?? '-'}</span>
+                                    <Badge color={d.role_type === 'handler' ? 'purple' : 'blue'}>{d.role_type}</Badge>
+                                    {proj?.status === 'paid' && <Badge color="green">Lunas</Badge>}
+                                  </div>
+                                  <div className="text-right">
+                                    <span className="text-gray-500 mr-2">{fmtPct(d.pct)}</span>
+                                    <span className="font-bold text-gray-800">{fmtRp(d.amount_rp)}</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ══════════ TAB: HISTORY ══════════ */}
+          {activeTab === 'history' && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100">
+                <h2 className="font-bold text-gray-800">🕒 History Pembayaran</h2>
+              </div>
+              {projects.filter(p => p.status === 'paid').length === 0 ? (
+                <div className="p-12 text-center">
+                  <p className="text-4xl mb-3">🕒</p>
+                  <p className="text-gray-500">Belum ada pembayaran yang diselesaikan</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-50">
+                  {projects.filter(p => p.status === 'paid' && projectMatchesFilter(p)).map(proj => {
                     const projDisb = disbursements.filter(d => d.project_id === proj.id);
                     return (
                       <div key={proj.id} className="px-5 py-4">
@@ -924,61 +906,241 @@ function IncentivePTSPage() {
                       </div>
                     );
                   })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ══════════════════ TAB: SETTINGS ══════════════════ */}
-        {activeTab === 'settings' && isAdmin && (
-          <div className="grid md:grid-cols-2 gap-5">
-            {/* % Settings */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
-              <h2 className="font-bold text-gray-800 flex items-center gap-2">⚙️ Pengaturan Persentase</h2>
-              {settings && (
-                <p className="text-xs text-gray-400">Terakhir diperbarui: {fmtDate(settings.updated_at)} oleh {settings.updated_by}</p>
+                </div>
               )}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  ⭐ Handler Utama (%)
-                </label>
-                <input type="number" value={editHandlerPct} min="0" max="100"
-                  onChange={e => { setEditHandlerPct(e.target.value); setEditBackupPct(String(100 - parseFloat(e.target.value || '0'))); }}
-                  className={inputCls} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  🤝 Backup Team (%) — dibagi rata ke semua backup
-                </label>
-                <input type="number" value={editBackupPct} min="0" max="100"
-                  onChange={e => { setEditBackupPct(e.target.value); setEditHandlerPct(String(100 - parseFloat(e.target.value || '0'))); }}
-                  className={inputCls} />
-              </div>
-              <div className={`p-3 rounded-xl text-sm font-semibold text-center ${parseFloat(editHandlerPct) + parseFloat(editBackupPct) === 100 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-                Total: {(parseFloat(editHandlerPct || '0') + parseFloat(editBackupPct || '0')).toFixed(0)}% {parseFloat(editHandlerPct) + parseFloat(editBackupPct) === 100 ? '✅' : '❌ harus = 100%'}
-              </div>
-              <button onClick={saveSettings} disabled={savingSettings || parseFloat(editHandlerPct) + parseFloat(editBackupPct) !== 100}
-                className={`${btnPrimary} w-full`} style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
-                {savingSettings ? 'Menyimpan...' : '💾 Simpan Setting'}
-              </button>
             </div>
+          )}
 
-            {/* Allow Input Biaya */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
-              <h2 className="font-bold text-gray-800 flex items-center gap-2">👥 Izin Input Biaya Cadangan</h2>
-              <p className="text-xs text-gray-400">User yang diizinkan menginput biaya cadangan selain Admin</p>
-              <AllowBiayaList isAdmin={isAdmin} notify={notify} />
+          {/* ══════════ TAB: SETTINGS ══════════ */}
+          {activeTab === 'settings' && isAdmin && (
+            <div className="grid md:grid-cols-2 gap-5">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
+                <h2 className="font-bold text-gray-800 flex items-center gap-2">⚙️ Pengaturan Persentase</h2>
+                {settings && (
+                  <p className="text-xs text-gray-400">Terakhir diperbarui: {fmtDate(settings.updated_at)} oleh {settings.updated_by}</p>
+                )}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">⭐ Handler Utama (%)</label>
+                  <input type="number" value={editHandlerPct} min="0" max="100"
+                    onChange={e => { setEditHandlerPct(e.target.value); setEditBackupPct(String(100 - parseFloat(e.target.value || '0'))); }}
+                    className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">🤝 Backup Team (%) — dibagi rata ke semua backup</label>
+                  <input type="number" value={editBackupPct} min="0" max="100"
+                    onChange={e => { setEditBackupPct(e.target.value); setEditHandlerPct(String(100 - parseFloat(e.target.value || '0'))); }}
+                    className={inputCls} />
+                </div>
+                <div className={`p-3 rounded-xl text-sm font-semibold text-center ${parseFloat(editHandlerPct) + parseFloat(editBackupPct) === 100 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                  Total: {(parseFloat(editHandlerPct || '0') + parseFloat(editBackupPct || '0')).toFixed(0)}%
+                  {parseFloat(editHandlerPct) + parseFloat(editBackupPct) === 100 ? ' ✅' : ' ❌ harus = 100%'}
+                </div>
+                <button onClick={saveSettings} disabled={savingSettings || parseFloat(editHandlerPct) + parseFloat(editBackupPct) !== 100}
+                  className={`${btnPrimary} w-full`} style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+                  {savingSettings ? 'Menyimpan...' : '💾 Simpan Setting'}
+                </button>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
+                <h2 className="font-bold text-gray-800 flex items-center gap-2">👥 Izin Input Biaya Cadangan</h2>
+                <p className="text-xs text-gray-400">User yang diizinkan menginput biaya cadangan selain Admin</p>
+                <AllowBiayaList isAdmin={isAdmin} notify={notify} />
+              </div>
             </div>
-          </div>
-        )}
-        </div>{/* end inner content wrapper */}
+          )}
+
+        </div>
       </main>
 
-      {/* ── Modal: Input Biaya ── */}
+      {/* ══ MODAL: View Detail ══ */}
+      {showViewModal && selectedProject && (() => {
+        const projDisb = disbursements.filter(d => d.project_id === selectedProject.id);
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+              {/* Modal header */}
+              <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between gap-3 flex-shrink-0">
+                <div>
+                  <h3 className="font-bold text-gray-800 text-base leading-snug">{selectedProject.project_name}</h3>
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    <Badge color="purple">{selectedProject.category}</Badge>
+                    <Badge color={selectedProject.status === 'paid' ? 'green' : selectedProject.biaya_cadangan > 0 ? 'amber' : 'gray'}>
+                      {selectedProject.status === 'paid' ? '✅ Lunas' : selectedProject.biaya_cadangan > 0 ? '⏳ Pending' : '⚪ Belum ada biaya'}
+                    </Badge>
+                  </div>
+                </div>
+                <button onClick={() => setShowViewModal(false)} className="text-gray-400 hover:text-gray-600 text-lg leading-none flex-shrink-0">✕</button>
+              </div>
+
+              {/* Modal body — scrollable */}
+              <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+
+                {/* Info Proyek */}
+                <div className="space-y-2">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Informasi Proyek</p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div>
+                      <p className="text-[11px] text-gray-400">Handler</p>
+                      <p className="font-semibold text-gray-700">⭐ {selectedProject.handler_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-gray-400">Sales</p>
+                      <p className="font-semibold text-gray-700">{selectedProject.sales_name ?? '—'}</p>
+                      {selectedProject.sales_division && <p className="text-[11px] text-gray-400">{selectedProject.sales_division}</p>}
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-gray-400">Tanggal</p>
+                      <p className="font-semibold text-gray-700">{fmtDate(selectedProject.due_date)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-gray-400">Periode</p>
+                      <p className="font-semibold text-gray-700">{fmtPeriode(selectedProject.periode)}</p>
+                    </div>
+                    {selectedProject.address && (
+                      <div className="col-span-2">
+                        <p className="text-[11px] text-gray-400">Lokasi</p>
+                        <p className="font-semibold text-gray-700">📍 {selectedProject.address}</p>
+                      </div>
+                    )}
+                    {selectedProject.pic_name && (
+                      <div>
+                        <p className="text-[11px] text-gray-400">PIC</p>
+                        <p className="font-semibold text-gray-700">{selectedProject.pic_name}</p>
+                        {selectedProject.pic_phone && <p className="text-[11px] text-gray-400">📱 {selectedProject.pic_phone}</p>}
+                      </div>
+                    )}
+                    {selectedProject.product && (
+                      <div>
+                        <p className="text-[11px] text-gray-400">Produk</p>
+                        <p className="font-semibold text-gray-700">{selectedProject.product}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Keterangan */}
+                {(selectedProject.description || selectedProject.notes) && (
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Keterangan</p>
+                    {selectedProject.description && (
+                      <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-700">
+                        <p className="text-[11px] text-gray-400 mb-1">Deskripsi</p>
+                        {selectedProject.description}
+                      </div>
+                    )}
+                    {selectedProject.notes && (
+                      <div className="bg-amber-50 rounded-xl p-3 text-sm text-gray-700 border border-amber-100">
+                        <p className="text-[11px] text-amber-500 mb-1">📝 Catatan</p>
+                        {selectedProject.notes}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tim Backup */}
+                {selectedProject.backup_names.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Tim Backup</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedProject.backup_names.map(name => (
+                        <span key={name} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-xs font-semibold">
+                          🤝 {name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Biaya & Distribusi */}
+                <div className="space-y-2">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Biaya & Distribusi Incentive</p>
+                  {selectedProject.biaya_cadangan > 0 ? (
+                    <>
+                      <div className="bg-indigo-50 rounded-xl p-3 flex items-center justify-between">
+                        <p className="text-sm text-indigo-700 font-semibold">Biaya Cadangan</p>
+                        <p className="text-lg font-bold text-indigo-600">{fmtRp(selectedProject.biaya_cadangan)}</p>
+                      </div>
+                      {projDisb.length > 0 && (
+                        <div className="space-y-1.5">
+                          {projDisb.map(d => (
+                            <div key={d.id} className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm border ${d.role_type === 'handler' ? 'bg-indigo-50 border-indigo-200' : 'bg-blue-50 border-blue-200'}`}>
+                              <div className="flex items-center gap-2">
+                                <span>{d.role_type === 'handler' ? '⭐' : '🤝'}</span>
+                                <span className="font-semibold text-gray-700">{d.person_name}</span>
+                                <Badge color={d.role_type === 'handler' ? 'indigo' : 'blue'}>{d.role_type}</Badge>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-gray-500 text-xs mr-2">{fmtPct(d.pct)}</span>
+                                <span className="font-bold text-gray-800">{fmtRp(d.amount_rp)}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {selectedProject.biaya_input_by && (
+                        <p className="text-[11px] text-gray-400">
+                          Diinput oleh {selectedProject.biaya_input_by} · {fmtDate(selectedProject.biaya_input_at)}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <div className="bg-gray-50 rounded-xl p-4 text-center text-sm text-gray-400">
+                      Biaya cadangan belum diinput
+                    </div>
+                  )}
+                </div>
+
+                {/* Paid info */}
+                {selectedProject.status === 'paid' && (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm">
+                    <p className="font-semibold text-emerald-700">✅ Incentive Sudah Dibayarkan</p>
+                    <p className="text-emerald-600 text-xs mt-0.5">
+                      {fmtDate(selectedProject.paid_at)} · oleh {selectedProject.paid_by}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal footer actions */}
+              <div className="px-6 py-4 border-t border-gray-100 flex gap-2 flex-shrink-0 flex-wrap">
+                {isAdmin && (
+                  <button onClick={() => { setShowViewModal(false); setBackupSelected(selectedProject.backup_names); setShowBackupModal(true); }}
+                    className="flex-1 px-3 py-2 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90"
+                    style={{ background: 'linear-gradient(135deg,#0ea5e9,#0284c7)' }}>
+                    🤝 Set Backup
+                  </button>
+                )}
+                {canInputBiaya && selectedProject.status === 'pending' && (
+                  <button onClick={() => { setShowViewModal(false); setBiayaInput(selectedProject.biaya_cadangan > 0 ? String(selectedProject.biaya_cadangan) : ''); setShowBiayaModal(true); }}
+                    className="flex-1 px-3 py-2 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90"
+                    style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+                    {selectedProject.biaya_cadangan > 0 ? '✏️ Edit Biaya' : '💵 Input Biaya'}
+                  </button>
+                )}
+                {isAdmin && selectedProject.status === 'pending' && selectedProject.biaya_cadangan > 0 && (
+                  <button onClick={() => { setShowViewModal(false); setShowPaidModal(true); }}
+                    className="flex-1 px-3 py-2 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90"
+                    style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}>
+                    ✅ Tandai Lunas
+                  </button>
+                )}
+                <button onClick={() => setShowViewModal(false)}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200">
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ══ MODAL: Input / Edit Biaya ══ */}
       {showBiayaModal && selectedProject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
-            <h3 className="font-bold text-gray-800 text-lg">💵 Input Biaya Cadangan</h3>
+            <h3 className="font-bold text-gray-800 text-lg">
+              {selectedProject.biaya_cadangan > 0 ? '✏️ Edit Biaya Cadangan' : '💵 Input Biaya Cadangan'}
+            </h3>
             <div className="bg-indigo-50 rounded-xl p-3 text-sm">
               <p className="font-semibold text-indigo-700">{selectedProject.project_name}</p>
               <p className="text-indigo-500 text-xs">{selectedProject.category} · Handler: {selectedProject.handler_name}</p>
@@ -987,8 +1149,7 @@ function IncentivePTSPage() {
               <div className="bg-gray-50 rounded-xl p-3 text-xs text-gray-500 space-y-1">
                 <p>⭐ Handler ({selectedProject.handler_name}): <strong className="text-gray-700">{fmtPct(settings.handler_pct)}</strong></p>
                 {selectedProject.backup_names.length > 0 ? (
-                  <p>🤝 Backup ({selectedProject.backup_names.length} orang, {fmtPct(settings.backup_pct / selectedProject.backup_names.length)} each):
-                    <strong className="text-gray-700"> {selectedProject.backup_names.join(', ')}</strong></p>
+                  <p>🤝 Backup ({selectedProject.backup_names.length} orang): <strong className="text-gray-700">{selectedProject.backup_names.join(', ')}</strong></p>
                 ) : (
                   <p className="text-amber-600">⚠️ Belum ada backup — 100% ke handler</p>
                 )}
@@ -1011,7 +1172,7 @@ function IncentivePTSPage() {
               )}
             </div>
             <div className="flex gap-2 pt-2">
-              <button onClick={() => setShowBiayaModal(false)} className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">Batal</button>
+              <button onClick={() => setShowBiayaModal(false)} className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200">Batal</button>
               <button onClick={saveBiaya} disabled={savingBiaya} className={`flex-1 ${btnPrimary}`} style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
                 {savingBiaya ? 'Menyimpan...' : '💾 Simpan & Kalkulasi'}
               </button>
@@ -1020,7 +1181,7 @@ function IncentivePTSPage() {
         </div>
       )}
 
-      {/* ── Modal: Set Backup ── */}
+      {/* ══ MODAL: Set Backup ══ */}
       {showBackupModal && selectedProject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
@@ -1044,7 +1205,7 @@ function IncentivePTSPage() {
             </div>
             {backupSelected.length > 0 && settings && (
               <p className="text-xs text-blue-600 bg-blue-50 rounded-xl px-3 py-2">
-                🤝 {backupSelected.length} orang backup · masing-masing dapat {fmtPct(settings.backup_pct / backupSelected.length)} dari biaya cadangan
+                🤝 {backupSelected.length} orang backup · masing-masing {fmtPct(settings.backup_pct / backupSelected.length)} dari biaya cadangan
               </p>
             )}
             <div className="flex gap-2 pt-2">
@@ -1057,14 +1218,16 @@ function IncentivePTSPage() {
         </div>
       )}
 
-      {/* ── Modal: Konfirmasi Lunas ── */}
+      {/* ══ MODAL: Konfirmasi Lunas ══ */}
       {showPaidModal && selectedProject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 text-center">
             <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center text-3xl mx-auto">✅</div>
             <h3 className="font-bold text-gray-800 text-lg">Tandai Lunas?</h3>
             <p className="text-sm text-gray-500">
-              Project <strong className="text-gray-700">{selectedProject.project_name}</strong> akan ditandai sebagai <strong className="text-emerald-600">LUNAS</strong> dengan total incentive <strong className="text-indigo-600">{fmtRp(selectedProject.biaya_cadangan)}</strong>.
+              Project <strong className="text-gray-700">{selectedProject.project_name}</strong> akan ditandai sebagai{' '}
+              <strong className="text-emerald-600">LUNAS</strong> dengan total incentive{' '}
+              <strong className="text-indigo-600">{fmtRp(selectedProject.biaya_cadangan)}</strong>.
             </p>
             <div className="flex gap-2">
               <button onClick={() => setShowPaidModal(false)} className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200">Batal</button>
@@ -1079,7 +1242,7 @@ function IncentivePTSPage() {
   );
 }
 
-// ─── Allow Biaya List sub-component ─────────────────────────────────────────
+// ─── Allow Biaya List ─────────────────────────────────────────────────────────
 function AllowBiayaList({ isAdmin, notify }: { isAdmin: boolean; notify: (t: 'success' | 'error', m: string) => void }) {
   const [users, setUsers] = useState<(User & { id: string })[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1120,7 +1283,7 @@ function AllowBiayaList({ isAdmin, notify }: { isAdmin: boolean; notify: (t: 'su
   );
 }
 
-// ─── Export with Suspense ────────────────────────────────────────────────────
+// ─── Export ───────────────────────────────────────────────────────────────────
 export default function Page() {
   return (
     <Suspense>
