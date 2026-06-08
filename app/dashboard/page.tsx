@@ -229,15 +229,16 @@ export default function Dashboard() {
     const isSalesGuest = ['guest','sales'].includes(role);
     const isRegularTeam = role === 'team' && !(currentUser.allowed_menus ?? []).includes('dashboard') && currentUser.jabatan !== 'Supervisor';
     if ((isSalesGuest || isRegularTeam) && !showTicketing && !iframeUrl && !showDashboardPanel) {
-      // Compute first item directly from currentUser.allowed_menus to avoid stale visibleMenuItems
+      // Navigate to FIRST key in allowed_menus array (user-defined order), not allMenuItems order
       const allowed = currentUser.allowed_menus;
       const roleLC = currentUser.role?.toLowerCase();
-      const items = (!allowed || allowed.length === 0 || roleLC === 'superadmin' || roleLC === 'admin')
-        ? allMenuItems
-        : allMenuItems.filter(m => allowed.includes(m.key));
-      if (items.length === 0) return;
-      const firstItem = items[0]?.items?.[0];
-      const firstTitle = items[0]?.title ?? '';
+      const firstMenuKey = (allowed && allowed.length > 0) ? allowed[0] : null;
+      const firstMenu = firstMenuKey
+        ? allMenuItems.find(m => m.key === firstMenuKey)
+        : ((!allowed || roleLC === 'superadmin' || roleLC === 'admin') ? allMenuItems[0] : null);
+      if (!firstMenu) return;
+      const firstItem = firstMenu.items?.[0];
+      const firstTitle = firstMenu.title ?? '';
       if (firstItem && firstItem.internal) {
         setIframeLoading(true);
         setInternalUrl(firstItem.url);

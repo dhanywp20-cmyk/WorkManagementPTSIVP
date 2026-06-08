@@ -26,21 +26,7 @@ export function ViewModal({
   onInputBiaya,
   onMarkPaid,
 }: ViewModalProps) {
-  const statusColor =
-    project.status === 'paid' ? '#10b981' : project.biaya_cadangan > 0 ? '#f59e0b' : '#9ca3af';
-  void statusColor;
-  const statusLabel =
-    project.status === 'paid'
-      ? '✅ Lunas'
-      : project.biaya_cadangan > 0
-      ? '⏳ Menunggu Pembayaran'
-      : '⚪ Belum Ada Biaya';
-  const statusBg =
-    project.status === 'paid'
-      ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-      : project.biaya_cadangan > 0
-      ? 'bg-amber-50 border-amber-200 text-amber-700'
-      : 'bg-gray-50 border-gray-200 text-gray-500';
+  void onMarkPaid;
 
   return (
     <div
@@ -65,23 +51,6 @@ export function ViewModal({
 
         {/* Body */}
         <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
-          {/* Status banner */}
-          <div className={`flex items-center justify-between px-4 py-3 rounded-xl border ${statusBg}`}>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider opacity-60 mb-0.5">Status Incentive</p>
-              <p className="font-bold text-sm">{statusLabel}</p>
-            </div>
-            {project.status === 'paid' && (
-              <div className="text-right text-xs opacity-70">
-                <p>Lunas: {fmtDate(project.paid_at)}</p>
-                <p>oleh {project.paid_by}</p>
-              </div>
-            )}
-            {project.status === 'pending' && project.biaya_cadangan > 0 && (
-              <p className="text-lg font-bold">{fmtRp(project.biaya_cadangan)}</p>
-            )}
-          </div>
-
           {/* Assign + Jadwal */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-gray-50 rounded-xl border border-gray-200 p-3">
@@ -213,14 +182,9 @@ export function ViewModal({
               🤝 Set Backup
             </button>
           )}
-          {canInputBiaya && project.status === 'pending' && (
+          {canInputBiaya && (
             <button onClick={onInputBiaya} className={`flex-1 px-3 py-2 rounded-xl text-xs font-bold text-white hover:opacity-90`} style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
               {project.biaya_cadangan > 0 ? '✏️ Edit Biaya' : '💵 Input Biaya'}
-            </button>
-          )}
-          {isAdmin && project.status === 'pending' && project.biaya_cadangan > 0 && (
-            <button onClick={onMarkPaid} className={`flex-1 px-3 py-2 rounded-xl text-xs font-bold text-white hover:opacity-90`} style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}>
-              ✅ Tandai Lunas
             </button>
           )}
           <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200">
@@ -292,9 +256,9 @@ export function BiayaModal({
           <label className="block text-xs font-semibold text-gray-600 mb-1.5">Biaya Cadangan (Rp)</label>
           <input
             type="text"
-            value={biayaInput}
-            onChange={(e) => onBiayaChange(e.target.value.replace(/[^0-9]/g, ''))}
-            placeholder="Contoh: 5000000"
+            value={biayaInput ? Number(biayaInput).toLocaleString('id-ID') : ''}
+            onChange={(e) => onBiayaChange(e.target.value.replace(/\./g, '').replace(/[^0-9]/g, ''))}
+            placeholder="Contoh: 5.000.000"
             className={inputCls}
           />
           {biayaInput && settings && (

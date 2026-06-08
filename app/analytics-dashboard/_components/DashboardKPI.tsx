@@ -2258,7 +2258,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               <div className="space-y-0">
 
                 {/* ── Page header ── */}
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 px-4 py-3 bg-white/90 rounded-2xl border border-slate-100 shadow-sm">
                   <div>
                     <div className="font-bold text-slate-800 text-sm">Riwayat Periode KPI</div>
                     <div className="text-sm text-slate-400 mt-0.5">{kpiSnapshots.length} periode tersimpan</div>

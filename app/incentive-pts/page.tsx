@@ -452,8 +452,8 @@ function IncentivePTSPage() {
 
   // ── Loading state ────────────────────────────────────────────────────────
   if (loading) return (
-    <div className="flex items-center justify-center" style={{ minHeight: '100vh', background: 'transparent' }}>
-      <div className="flex flex-col items-center gap-3">
+    <div className="flex items-center justify-center" style={{ minHeight: '100vh', backgroundImage: "url('/IVP_Background.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div className="flex flex-col items-center gap-3 bg-white/90 rounded-2xl px-8 py-6 shadow-xl">
         <div className="w-12 h-12 rounded-full border-4 border-t-transparent animate-spin"
           style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#6366f1' }} />
         <p className="text-slate-500 text-sm font-semibold">Memuat Incentive PTS...</p>
@@ -465,10 +465,7 @@ function IncentivePTSPage() {
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col" style={{ fontFamily: "'Inter', sans-serif", minHeight: '100vh', background: 'transparent' }}>
-
-      {/* Background */}
-      <div className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat pointer-events-none" style={{ backgroundImage: "url('/IVP_Background.png')", opacity: 0.18 }} />
+    <div className="h-screen overflow-hidden flex flex-col" style={{ fontFamily: "'Inter', sans-serif", backgroundImage: "url('/IVP_Background.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
 
       {/* Toast */}
       {toast && (
@@ -477,8 +474,8 @@ function IncentivePTSPage() {
         </div>
       )}
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 flex-shrink-0"
+      {/* Header — stays at top, flex-shrink-0 so it never scrolls away */}
+      <header className="flex-shrink-0 z-50"
         style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderBottom: '3px solid #6366f1', boxShadow: '0 2px 12px rgba(99,102,241,0.10)' }}>
         <div className="w-full px-4 py-3 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg flex-shrink-0">💰</div>
@@ -489,8 +486,8 @@ function IncentivePTSPage() {
         </div>
       </header>
 
-      {/* Tabs */}
-      <div className="sticky top-[57px] z-40 flex-shrink-0"
+      {/* Tabs — stays below header, never scrolls */}
+      <div className="flex-shrink-0 z-40"
         style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(99,102,241,0.12)' }}>
         <div className="w-full px-4 flex gap-1 overflow-x-auto">
           {([
@@ -508,8 +505,8 @@ function IncentivePTSPage() {
         </div>
       </div>
 
-      {/* Main content */}
-      <main className="relative z-10">
+      {/* Main content — scrollable area */}
+      <main className="flex-1 overflow-y-auto">
         <div className="w-full px-4 py-4 space-y-5">
 
           {/* Stats */}

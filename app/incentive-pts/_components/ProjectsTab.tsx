@@ -3,7 +3,7 @@
 
 import { IncentiveProject } from './types';
 import { Badge, fmtRp, fmtDate, fmtPeriode } from './shared';
-import { ViewIconBtn, EditIconBtn, CompleteIconBtn, ActionGroup } from '@/components/shared/ActionIcons';
+import { ViewIconBtn, EditIconBtn, ActionGroup } from '@/components/shared/ActionIcons';
 
 interface Props {
   filteredProjects: IncentiveProject[];
@@ -137,14 +137,11 @@ export function ProjectsTab({
                         {isAdmin && (
                           <BackupIconBtn onClick={() => onSetBackup(proj)} title="Set Tim Backup" />
                         )}
-                        {canInputBiaya && proj.status === 'pending' && (
+                        {canInputBiaya && (
                           <EditIconBtn
                             onClick={() => onInputBiaya(proj)}
                             title={proj.biaya_cadangan > 0 ? 'Edit biaya cadangan' : 'Input biaya cadangan'}
                           />
-                        )}
-                        {isAdmin && proj.status === 'pending' && proj.biaya_cadangan > 0 && (
-                          <CompleteIconBtn onClick={() => onMarkPaid(proj)} title="Tandai lunas" />
                         )}
                       </ActionGroup>
                     </td>
