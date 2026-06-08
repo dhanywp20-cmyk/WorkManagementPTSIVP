@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<title>Icon Options Preview</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #1e293b; padding: 40px 32px; }
+  h1 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+  .subtitle { color: #64748b; font-size: 13px; margin-bottom: 36px; }
+  .group { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px 28px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .group-title { font-size: 13px; font-weight: 700; color: #6366f1; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; }
+  .row { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+  .icon-card { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; transition: all 0.15s; border: 1px solid; }
+  /* View */
+  .btn-view  { background: #eff6ff; border-color: #bfdbfe; color: #2563eb; padding: 7px; }
+  .btn-view:hover  { background: #dbeafe; }
+  /* Edit */
+  .btn-edit  { background: #f0fdf4; border-color: #bbf7d0; color: #16a34a; padding: 7px; }
+  .btn-edit:hover  { background: #dcfce7; }
+  /* Delete */
+  .btn-del   { background: #fff1f2; border-color: #fecdd3; color: #e11d48; padding: 7px; }
+  .btn-del:hover   { background: #ffe4e6; }
+  .label { font-size: 10px; color: #94a3b8; font-weight: 600; text-align: center; max-width: 64px; line-height: 1.3; }
+  .action-label { font-size: 11px; font-weight: 700; color: #475569; width: 52px; }
+  .divider { width: 1px; height: 36px; background: #e2e8f0; margin: 0 4px; }
+  .tag { display: inline-block; background: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 999px; margin-left: 10px; vertical-align: middle; }
+  svg { display: block; }
+</style>
+</head>
+<body>
+
+<h1>🎨 Icon Options — View · Edit · Delete</h1>
+<p class="subtitle">Hover setiap icon untuk melihat efek hover. Pilih style yang paling cocok.</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- A: Minimal Stroke -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="group">
+  <div class="group-title">🅰 Minimal Stroke <span class="tag">Paling Populer — Vercel / Linear / Supabase Style</span></div>
+  <div class="row">
+    <span class="action-label">👁 View</span>
+    <div class="icon-card">
+      <button class="icon-btn btn-view" title="Eye">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+      <span class="label">Eye</span>
+    </div>
+    <div class="divider"></div>
+    <span class="action-label">✏️ Edit</span>
+    <div class="icon-card">
+      <button class="icon-btn btn-edit" title="SquarePen">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </button>
+      <span class="label">SquarePen</span>
+    </div>
+    <div class="divider"></div>
+    <span class="action-label">🗑 Delete</span>
+    <div class="icon-card">
+      <button class="icon-btn btn-del" title="Trash2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+        </svg>
+      </button>
+      <span class="label">Trash2</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- B: Rounded Modern -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="group">
+  <div class="group-title">🅱 Rounded Modern <span class="tag">Playful tapi Profesional</span></div>
+  <div class="row">
+    <span class="action-label">👁 View</span>
+    <div class="icon-card">
+      <button class="icon-btn btn-view" title="ScanEye">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+          <path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+          <path d="M7 12s2-3 5-3 5 3 5 3-2 3-5 3-5-3-5-3Z"/><circle cx="12" cy="12" r="1"/>
+        </svg>
+      </button>
+      <span class="label">ScanEye</span>
+    </div>
+    <div class="divider"></div>
+    <span class="action-label">✏️ Edit</span>
+    <div class="icon-card">
+      <button class="icon-btn btn-edit" title="Pencil">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+        </svg>
+      </button>
+      <span class="label">Pencil</span>
+    </div>
+    <div class="divider"></div>
+    <span class="action-label">🗑 Delete</span>
+    <div class="icon-card">
+      <button class="icon-btn btn-del" title="Trash">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+        </svg>
+      </button>
+      <span class="label">Trash</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- C: Document Focused -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="group">
+  <div class="group-title">🅲 Document-Focused <span class="tag">Cocok untuk Quiz / Data</span></div>
+  <div class="row">
+    <span class="action-label">👁 View</span>
+    <div class="icon-card">
+      <button class="icon-btn btn-view" title="FileSearch">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/><circle cx="11.5" cy="14.5" r="2.5"/><path d="M13.25 16.25 15 18"/>
+        </svg>
+      </button>
+      <span class="label">FileSearch</span>
+    </div>
+    <div class="divider"></div>
+    <span class="action-label">✏️ Edit</span>
+    <div class="icon-card">
+      <button class="icon-btn btn-edit" title="FilePen">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l5 5v3"/>
+          <path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10.4 12.6a2 2 0 1 1 3 3L8 21l-4 1 1-4Z"/>
+        </svg>
+      </button>
+      <span class="label">FilePen</span>
+    </div>
+    <div class="divider"></div>
+    <span class="action-label">🗑 Delete</span>
+    <div class="icon-card">
+      <button class="icon-btn btn-del" title="FileX2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 22V4a2 2 0 0 1 2-2h7l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/>
+          <path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9.5 10.5 5 5"/><path d="m14.5 10.5-5 5"/>
+        </svg>
+      </button>
+      <span class="label">FileX2</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- D: Glass / Inspect -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="group">
+  <div class="group-title">🅳 Glass / Inspect <span class="tag">Terasa seperti "aksi investigasi"</span></div>
+  <div class="row">
+    <span class="action-label">👁 View</span>
+    <div class="icon-card">
+      <button class="icon-btn btn-view" title="Search / Magnifier">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </button>
+      <span class="label">Search</span>
+    </div>
+    <div class="divider"></div>
+    <span class="action-label">✏️ Edit</span>
+    <div class="icon-card">
+      <button class="icon-btn btn-edit" title="PenLine">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+        </svg>
+      </button>
+      <span class="label">PenLine</span>
+    </div>
+    <div class="divider"></div>
+    <span class="action-label">🗑 Delete</span>
+    <div class="icon-card">
+      <button class="icon-btn btn-del" title="XCircle">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
+        </svg>
+      </button>
+      <span class="label">XCircle</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- E: Outline Circle (Framed) -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="group">
+  <div class="group-title">🅴 Framed Circle <span class="tag">Modern SaaS — tiap aksi diberi frame lingkaran</span></div>
+  <div class="row">
+    <span class="action-label">👁 View</span>
+    <div class="icon-card">
+      <button class="icon-btn btn-view" title="EyeIcon in circle">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+      <span class="label">Eye</span>
+    </div>
+    <div class="icon-card">
+      <button style="display:inline-flex;align-items:center;justify-content:center;border-radius:999px;border:1.5px solid #bfdbfe;background:#eff6ff;color:#2563eb;padding:7px;cursor:pointer;" title="Eye Round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+      <span class="label">Eye + Round Button</span>
+    </div>
+    <div class="divider"></div>
+    <span class="action-label">✏️ Edit</span>
+    <div class="icon-card">
+      <button style="display:inline-flex;align-items:center;justify-content:center;border-radius:999px;border:1.5px solid #bbf7d0;background:#f0fdf4;color:#16a34a;padding:7px;cursor:pointer;" title="Pencil Round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+        </svg>
+      </button>
+      <span class="label">Pencil + Round</span>
+    </div>
+    <div class="divider"></div>
+    <span class="action-label">🗑 Delete</span>
+    <div class="icon-card">
+      <button style="display:inline-flex;align-items:center;justify-content:center;border-radius:999px;border:1.5px solid #fecdd3;background:#fff1f2;color:#e11d48;padding:7px;cursor:pointer;" title="Trash Round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+        </svg>
+      </button>
+      <span class="label">Trash2 + Round</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- F: Ultra Minimal — icon only, no background -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="group">
+  <div class="group-title">🅵 Ultra Minimal <span class="tag">Tanpa background — clean seperti Notion / Figma</span></div>
+  <div class="row">
+    <span class="action-label">👁 View</span>
+    <div class="icon-card">
+      <button style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;border:1px solid #e2e8f0;background:white;color:#2563eb;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='white'">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+        View
+      </button>
+    </div>
+    <div class="icon-card">
+      <button style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;border:1px solid #e2e8f0;background:white;color:#16a34a;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='white'">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+        </svg>
+        Edit
+      </button>
+    </div>
+    <div class="icon-card">
+      <button style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;border:1px solid #e2e8f0;background:white;color:#e11d48;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='#fff1f2'" onmouseout="this.style.background='white'">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
+        Hapus
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- G: Action Bold — icon with text label -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="group">
+  <div class="group-title">🅶 Bold Icon Only — berbeda shape per aksi <span class="tag">Mudah dibedakan sekilas</span></div>
+  <div class="row">
+    <span class="action-label">👁 View</span>
+    <div class="icon-card">
+      <button class="icon-btn btn-view" title="ExternalLink — buka detail">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+        </svg>
+      </button>
+      <span class="label">ExternalLink</span>
+    </div>
+    <div class="icon-card">
+      <button class="icon-btn btn-view" title="ArrowUpRight">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 17 17 7"/><path d="M7 7h10v10"/>
+        </svg>
+      </button>
+      <span class="label">ArrowUpRight</span>
+    </div>
+    <div class="divider"></div>
+    <span class="action-label">✏️ Edit</span>
+    <div class="icon-card">
+      <button class="icon-btn btn-edit" title="PenTool">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m12 19 7-7 3 3-7 7-3-3z"/><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+          <path d="m2 2 7.586 7.586"/><circle cx="11" cy="11" r="2"/>
+        </svg>
+      </button>
+      <span class="label">PenTool</span>
+    </div>
+    <div class="divider"></div>
+    <span class="action-label">🗑 Delete</span>
+    <div class="icon-card">
+      <button class="icon-btn btn-del" title="Eraser">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/>
+          <path d="M22 21H7"/><path d="m5 11 9 9"/>
+        </svg>
+      </button>
+      <span class="label">Eraser</span>
+    </div>
+    <div class="icon-card">
+      <button class="icon-btn btn-del" title="OctagonX">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+          <path d="m15 9-6 6"/><path d="m9 9 6 6"/>
+        </svg>
+      </button>
+      <span class="label">OctagonX</span>
+    </div>
+  </div>
+</div>
+
+<p style="text-align:center;color:#94a3b8;font-size:12px;margin-top:32px;">Semua icon dari <strong>Lucide React</strong> · install: <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">npm install lucide-react</code></p>
+
+</body>
+</html>

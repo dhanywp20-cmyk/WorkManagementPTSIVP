@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bank Soal — Style Preview</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1e293b; }
+
+  /* NAV */
+  .nav { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 14px 32px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .nav h1 { font-size: 15px; font-weight: 700; color: #0f172a; }
+  .nav span { font-size: 12px; color: #94a3b8; background: #f1f5f9; padding: 3px 10px; border-radius: 20px; border: 1px solid #e2e8f0; }
+  .nav-btns { margin-left: auto; display: flex; gap: 8px; }
+  .btn { padding: 7px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; }
+  .btn-outline { background: #f8fafc; border: 1.5px solid #e2e8f0; color: #475569; }
+  .btn-green { background: linear-gradient(135deg,#10b981,#059669); color: #fff; }
+  .btn-purple { background: linear-gradient(135deg,#8b5cf6,#7c3aed); color: #fff; }
+
+  /* LAYOUT */
+  .page { max-width: 1200px; margin: 0 auto; padding: 24px 24px 60px; }
+  .section-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; color: #94a3b8; margin: 32px 0 14px; display: flex; align-items: center; gap: 8px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+
+  /* ───── STYLE A — "Executive" accent-border cards ───── */
+  .styleA-card {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    padding: 0;
+    margin-bottom: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+    display: flex;
+    transition: box-shadow .2s;
+  }
+  .styleA-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.09); }
+  .styleA-accent { width: 5px; flex-shrink: 0; }
+  .accent-easy { background: linear-gradient(180deg,#10b981,#059669); }
+  .accent-medium { background: linear-gradient(180deg,#f59e0b,#d97706); }
+  .accent-hard { background: linear-gradient(180deg,#f43f5e,#db2777); }
+  .styleA-body { flex: 1; padding: 20px 22px; }
+  .styleA-num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 8px; background: #f1f5f9; color: #64748b; font-size: 11px; font-weight: 800; margin-right: 8px; float: left; margin-top: 1px; }
+  .styleA-q { font-size: 14px; font-weight: 600; color: #0f172a; line-height: 1.6; margin-bottom: 14px; }
+  .styleA-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .styleA-opt { display: flex; align-items: center; gap: 9px; padding: 9px 13px; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #f8fafc; font-size: 13px; color: #475569; }
+  .styleA-opt.correct { background: #f0fdf4; border-color: #86efac; color: #15803d; font-weight: 600; }
+  .styleA-opt .letter { width: 22px; height: 22px; border-radius: 6px; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; flex-shrink: 0; color: #64748b; }
+  .styleA-opt.correct .letter { background: #22c55e; color: #fff; }
+  .styleA-meta { display: flex; align-items: center; gap: 8px; margin-top: 13px; }
+  .diff-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
+  .diff-easy { background: #dcfce7; color: #15803d; }
+  .diff-medium { background: #fef3c7; color: #92400e; }
+  .diff-hard { background: #ffe4e6; color: #be123c; }
+  .cat-badge { font-size: 10px; color: #94a3b8; background: #f1f5f9; padding: 3px 9px; border-radius: 20px; border: 1px solid #e2e8f0; }
+
+  /* ───── STYLE B — "Quiz App" dark header cards ───── */
+  .styleB-card {
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    border: 1px solid #e2e8f0;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .styleB-card:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.11); }
+  .styleB-header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .styleB-num-bubble {
+    width: 36px; height: 36px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 900; flex-shrink: 0;
+    color: #fff;
+  }
+  .bh-easy { background: linear-gradient(135deg,#10b981,#059669); }
+  .bh-medium { background: linear-gradient(135deg,#f59e0b,#d97706); }
+  .bh-hard { background: linear-gradient(135deg,#f43f5e,#e11d48); }
+  .styleB-q { font-size: 13.5px; font-weight: 600; color: #0f172a; line-height: 1.6; padding-top: 4px; }
+  .styleB-options { padding: 4px 20px 18px; display: flex; flex-direction: column; gap: 7px; }
+  .styleB-opt {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: 12px;
+    border: 1.5px solid #e8edf3; background: #f8fafc;
+    font-size: 12.5px; color: #334155; cursor: pointer;
+    transition: all .15s;
+  }
+  .styleB-opt:hover { border-color: #94a3b8; background: #f1f5f9; }
+  .styleB-opt.correct { border-color: #4ade80; background: linear-gradient(135deg,#f0fdf4,#dcfce7); color: #166534; font-weight: 600; }
+  .styleB-letter {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; flex-shrink: 0;
+    background: #e2e8f0; color: #64748b;
+  }
+  .styleB-opt.correct .styleB-letter { background: #22c55e; color: #fff; }
+  .styleB-footer { padding: 8px 20px 14px; display: flex; gap: 8px; }
+
+  /* ───── STYLE C — "Academic" exam-paper style ───── */
+  .styleC-wrap { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,.07); border: 1px solid #e2e8f0; margin-bottom: 16px; }
+  .styleC-card {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex; gap: 16px;
+  }
+  .styleC-card:last-child { border-bottom: none; }
+  .styleC-idx {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 900; flex-shrink: 0; color: #fff;
+  }
+  .ci-1 { background: linear-gradient(135deg,#6366f1,#4f46e5); }
+  .ci-2 { background: linear-gradient(135deg,#8b5cf6,#7c3aed); }
+  .ci-3 { background: linear-gradient(135deg,#ec4899,#db2777); }
+  .styleC-right { flex: 1; }
+  .styleC-q { font-size: 13.5px; font-weight: 600; color: #1e293b; line-height: 1.65; margin-bottom: 14px; }
+  .styleC-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .styleC-opt { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 9px; border: 1px solid #e2e8f0; font-size: 12px; color: #475569; background: #fafafa; }
+  .styleC-opt.correct { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; font-weight: 600; }
+  .styleC-opt .ltr { font-size: 10px; font-weight: 800; width: 18px; height: 18px; border-radius: 5px; background: #e2e8f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #64748b; }
+  .styleC-opt.correct .ltr { background: #3b82f6; color: #fff; }
+  .styleC-tags { display: flex; gap: 6px; margin-top: 11px; }
+  .tag-pill { font-size: 10px; font-weight: 600; padding: 2px 10px; border-radius: 20px; background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+
+  /* ───── STYLE D — "Dashboard" info-rich cards ───── */
+  .styleD-card {
+    background: #fff;
+    border-radius: 18px;
+    margin-bottom: 12px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    box-shadow: 0 1px 6px rgba(0,0,0,.05);
+    transition: box-shadow .2s;
+  }
+  .styleD-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.09); }
+  .styleD-top { display: flex; align-items: stretch; }
+  .styleD-sidebar {
+    width: 56px; flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    padding: 18px 0;
+    gap: 6px;
+  }
+  .sd-easy { background: linear-gradient(180deg,#ecfdf5,#d1fae5); }
+  .sd-medium { background: linear-gradient(180deg,#fffbeb,#fef3c7); }
+  .sd-hard { background: linear-gradient(180deg,#fff1f2,#ffe4e6); }
+  .styleD-n {
+    width: 32px; height: 32px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 900;
+  }
+  .sdn-easy { background: #10b981; color: #fff; }
+  .sdn-medium { background: #f59e0b; color: #fff; }
+  .sdn-hard { background: #f43f5e; color: #fff; }
+  .styleD-body { flex: 1; padding: 18px 20px 16px; border-left: 1px solid #f1f5f9; }
+  .styleD-q { font-size: 13.5px; font-weight: 600; color: #0f172a; line-height: 1.6; margin-bottom: 14px; }
+  .styleD-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 12px; }
+  .styleD-opt { padding: 9px 12px; border-radius: 10px; border: 1.5px solid #e2e8f0; font-size: 12px; color: #475569; display: flex; align-items: center; gap: 8px; background: #f8fafc; }
+  .styleD-opt.correct { border-color: #6ee7b7; background: #ecfdf5; color: #065f46; font-weight: 600; }
+  .dl { width: 20px; height: 20px; border-radius: 6px; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; flex-shrink: 0; }
+  .styleD-opt.correct .dl { background: #10b981; color: #fff; }
+  .styleD-info { display: flex; align-items: center; justify-content: space-between; }
+  .styleD-left-info { display: flex; gap: 6px; align-items: center; }
+  .styleD-actions { display: flex; gap: 6px; }
+  .act-btn { padding: 5px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; border: 1.5px solid #e2e8f0; background: #f8fafc; color: #64748b; cursor: pointer; }
+  .act-btn:hover { background: #f1f5f9; }
+  .act-del { border-color: #fecdd3; color: #f43f5e; }
+  .act-del:hover { background: #fff1f2; }
+
+  /* FILTER BAR */
+  .filter-bar { background: #fff; border-radius: 14px; border: 1px solid #e2e8f0; padding: 12px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+  .f-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .08em; }
+  .f-chip { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1.5px solid #e2e8f0; background: #f8fafc; color: #475569; cursor: pointer; }
+  .f-chip.active { background: #6366f1; border-color: #6366f1; color: #fff; }
+  .f-select { padding: 6px 12px; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #f8fafc; font-size: 12px; color: #475569; outline: none; }
+  .f-count { margin-left: auto; font-size: 12px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 4px 12px; border-radius: 20px; }
+
+  /* STYLE LABELS */
+  .style-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px; }
+  .tag-A { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+  .tag-B { background: #f0fdf4; color: #15803d; border: 1px solid #86efac; }
+  .tag-C { background: #faf5ff; color: #7c3aed; border: 1px solid #d8b4fe; }
+  .tag-D { background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }
+
+  /* PAGE HEADER */
+  .page-header { background: #fff; border-radius: 18px; border: 1px solid #e2e8f0; padding: 20px 24px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+  .ph-left h2 { font-size: 20px; font-weight: 800; color: #0f172a; }
+  .ph-left p { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+  .ph-stats { display: flex; gap: 20px; }
+  .ph-stat { text-align: center; }
+  .ph-stat strong { display: block; font-size: 20px; font-weight: 900; color: #0f172a; }
+  .ph-stat span { font-size: 11px; color: #94a3b8; }
+
+  /* FOOTER */
+  .footer { text-align: center; padding: 20px; font-size: 11px; color: #94a3b8; }
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<div class="nav">
+  <div style="font-size:18px">🧩</div>
+  <h1>Bank Soal</h1>
+  <span>Produk — 15 soal</span>
+  <div class="nav-btns">
+    <button class="btn btn-outline">← Kembali</button>
+    <button class="btn btn-green">✏️ Tambah Manual</button>
+    <button class="btn btn-purple">✨ Generate AI</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- PAGE HEADER STATS -->
+  <div class="page-header">
+    <div class="ph-left">
+      <h2>🧩 Bank Soal</h2>
+      <p>Folder: Produk › Pengetahuan dasar</p>
+    </div>
+    <div class="ph-stats">
+      <div class="ph-stat"><strong>15</strong><span>Total Soal</span></div>
+      <div class="ph-stat"><strong style="color:#10b981">6</strong><span>Mudah</span></div>
+      <div class="ph-stat"><strong style="color:#f59e0b">7</strong><span>Sedang</span></div>
+      <div class="ph-stat"><strong style="color:#f43f5e">2</strong><span>Sulit</span></div>
+    </div>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <span class="f-label">Filter:</span>
+    <button class="f-chip active">Semua</button>
+    <button class="f-chip">Mudah</button>
+    <button class="f-chip">Sedang</button>
+    <button class="f-chip">Sulit</button>
+    <select class="f-select"><option>Semua Materi di Folder Ini</option><option>AV dasar</option><option>LED Display dasar</option></select>
+    <span class="f-count">15 soal</span>
+  </div>
+
+  <!-- ═══ STYLE A ═══ -->
+  <div class="section-label"><span class="style-tag tag-A">Style A — Executive Accent</span></div>
+
+  <div class="styleA-card">
+    <div class="styleA-accent accent-medium"></div>
+    <div class="styleA-body">
+      <div class="styleA-q"><span class="styleA-num">1</span>Sebuah stasiun TV ingin memasang sistem distribusi video baru. Konektor dan standar video apa yang paling cocok untuk transmisi sinyal berkualitas tinggi melalui kabel lebih dari 100 meter tanpa kehilangan sinyal?</div>
+      <div class="styleA-options">
+        <div class="styleA-opt"><span class="letter">A</span>HDMI 2.1 dengan kabel aktif</div>
+        <div class="styleA-opt correct"><span class="letter">B</span>SDI dengan kabel BNC coaxial</div>
+        <div class="styleA-opt"><span class="letter">C</span>DisplayPort 1.4 dengan extender</div>
+        <div class="styleA-opt"><span class="letter">D</span>USB-C Thunderbolt dengan docking station</div>
+      </div>
+      <div class="styleA-meta"><span class="diff-badge diff-medium">Sedang</span><span class="cat-badge">AV dasar</span></div>
+    </div>
+  </div>
+
+  <div class="styleA-card">
+    <div class="styleA-accent accent-easy"></div>
+    <div class="styleA-body">
+      <div class="styleA-q"><span class="styleA-num">2</span>Dalam sistem extender HDBaseT, apa peran utama dari TX Unit (Transmitter)?</div>
+      <div class="styleA-options">
+        <div class="styleA-opt"><span class="letter">A</span>Menerima sinyal HDBaseT dan mengembalikannya menjadi HDMI untuk display.</div>
+        <div class="styleA-opt correct"><span class="letter">B</span>Membawa sinyal AV, power (PoE), IR, dan RS232 hingga 100 meter.</div>
+        <div class="styleA-opt"><span class="letter">C</span>Mengonversi sinyal HDMI menjadi sinyal digital compressed.</div>
+        <div class="styleA-opt"><span class="letter">D</span>Mendistribusikan sinyal ke beberapa display sekaligus.</div>
+      </div>
+      <div class="styleA-meta"><span class="diff-badge diff-easy">Mudah</span><span class="cat-badge">AV dasar</span></div>
+    </div>
+  </div>
+
+  <!-- ═══ STYLE B ═══ -->
+  <div class="section-label"><span class="style-tag tag-B">Style B — Quiz App Cards</span></div>
+
+  <div class="styleB-card">
+    <div class="styleB-header">
+      <div class="styleB-num-bubble bh-medium">1</div>
+      <p class="styleB-q">Sebuah stasiun TV ingin memasang sistem distribusi video baru. Konektor dan standar video apa yang paling cocok untuk transmisi sinyal berkualitas tinggi melalui kabel lebih dari 100 meter tanpa kehilangan sinyal?</p>
+    </div>
+    <div class="styleB-options">
+      <div class="styleB-opt"><span class="styleB-letter">A</span>HDMI 2.1 dengan kabel aktif</div>
+      <div class="styleB-opt correct"><span class="styleB-letter">B</span>SDI dengan kabel BNC coaxial ✓</div>
+      <div class="styleB-opt"><span class="styleB-letter">C</span>DisplayPort 1.4 dengan extender</div>
+      <div class="styleB-opt"><span class="styleB-letter">D</span>USB-C Thunderbolt dengan docking station</div>
+    </div>
+    <div class="styleB-footer"><span class="diff-badge diff-medium">Sedang</span><span class="cat-badge">AV dasar</span></div>
+  </div>
+
+  <div class="styleB-card">
+    <div class="styleB-header">
+      <div class="styleB-num-bubble bh-easy">2</div>
+      <p class="styleB-q">Dalam sistem extender HDBaseT, apa peran utama dari TX Unit (Transmitter)?</p>
+    </div>
+    <div class="styleB-options">
+      <div class="styleB-opt"><span class="styleB-letter">A</span>Menerima sinyal HDBaseT dan mengembalikannya menjadi HDMI untuk display.</div>
+      <div class="styleB-opt correct"><span class="styleB-letter">B</span>Membawa sinyal AV, power (PoE), IR, dan RS232 hingga 100 meter. ✓</div>
+      <div class="styleB-opt"><span class="styleB-letter">C</span>Mengonversi sinyal HDMI menjadi sinyal digital compressed.</div>
+      <div class="styleB-opt"><span class="styleB-letter">D</span>Mendistribusikan sinyal ke beberapa display sekaligus.</div>
+    </div>
+    <div class="styleB-footer"><span class="diff-badge diff-easy">Mudah</span><span class="cat-badge">AV dasar</span></div>
+  </div>
+
+  <!-- ═══ STYLE C ═══ -->
+  <div class="section-label"><span class="style-tag tag-C">Style C — Academic Grouped</span></div>
+
+  <div class="styleC-wrap">
+    <div class="styleC-card">
+      <div class="styleC-idx ci-1">1</div>
+      <div class="styleC-right">
+        <p class="styleC-q">Sebuah stasiun TV ingin memasang sistem distribusi video baru. Konektor dan standar video apa yang paling cocok untuk transmisi sinyal berkualitas tinggi melalui kabel lebih dari 100 meter tanpa kehilangan sinyal?</p>
+        <div class="styleC-grid">
+          <div class="styleC-opt"><span class="ltr">A</span>HDMI 2.1 dengan kabel aktif</div>
+          <div class="styleC-opt correct"><span class="ltr">B</span>SDI dengan kabel BNC coaxial</div>
+          <div class="styleC-opt"><span class="ltr">C</span>DisplayPort 1.4 dengan extender</div>
+          <div class="styleC-opt"><span class="ltr">D</span>USB-C Thunderbolt dengan docking</div>
+        </div>
+        <div class="styleC-tags"><span class="tag-pill diff-medium">Sedang</span><span class="tag-pill">AV dasar</span></div>
+      </div>
+    </div>
+    <div class="styleC-card">
+      <div class="styleC-idx ci-2">2</div>
+      <div class="styleC-right">
+        <p class="styleC-q">Dalam sistem extender HDBaseT, apa peran utama dari TX Unit (Transmitter)?</p>
+        <div class="styleC-grid">
+          <div class="styleC-opt"><span class="ltr">A</span>Menerima sinyal HDBaseT ke display.</div>
+          <div class="styleC-opt correct"><span class="ltr">B</span>Membawa sinyal AV, PoE, IR, RS232 hingga 100m.</div>
+          <div class="styleC-opt"><span class="ltr">C</span>Mengonversi sinyal HDMI ke digital.</div>
+          <div class="styleC-opt"><span class="ltr">D</span>Mendistribusikan ke beberapa display.</div>
+        </div>
+        <div class="styleC-tags"><span class="tag-pill diff-easy">Mudah</span><span class="tag-pill">AV dasar</span></div>
+      </div>
+    </div>
+    <div class="styleC-card" style="border-bottom:none">
+      <div class="styleC-idx ci-3">3</div>
+      <div class="styleC-right">
+        <p class="styleC-q">Apa fungsi utama dari sebuah LED Video Processor dalam sistem LED Display besar?</p>
+        <div class="styleC-grid">
+          <div class="styleC-opt"><span class="ltr">A</span>Mengatur daya listrik LED panel.</div>
+          <div class="styleC-opt correct"><span class="ltr">B</span>Mengolah dan mendistribusikan sinyal video ke modul LED.</div>
+          <div class="styleC-opt"><span class="ltr">C</span>Mengontrol kecerahan secara manual.</div>
+          <div class="styleC-opt"><span class="ltr">D</span>Menghubungkan panel ke internet.</div>
+        </div>
+        <div class="styleC-tags"><span class="tag-pill diff-hard">Sulit</span><span class="tag-pill">LED Display dasar</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ STYLE D ═══ -->
+  <div class="section-label"><span class="style-tag tag-D">Style D — Dashboard Rich</span></div>
+
+  <div class="styleD-card">
+    <div class="styleD-top">
+      <div class="styleD-sidebar sd-medium">
+        <div class="styleD-n sdn-medium">1</div>
+      </div>
+      <div class="styleD-body">
+        <p class="styleD-q">Sebuah stasiun TV ingin memasang sistem distribusi video baru. Konektor dan standar video apa yang paling cocok untuk transmisi sinyal berkualitas tinggi melalui kabel lebih dari 100 meter tanpa kehilangan sinyal?</p>
+        <div class="styleD-opts">
+          <div class="styleD-opt"><span class="dl">A</span>HDMI 2.1 dengan kabel aktif</div>
+          <div class="styleD-opt correct"><span class="dl">B</span>SDI dengan kabel BNC coaxial</div>
+          <div class="styleD-opt"><span class="dl">C</span>DisplayPort 1.4 dengan extender</div>
+          <div class="styleD-opt"><span class="dl">D</span>USB-C Thunderbolt dengan docking</div>
+        </div>
+        <div class="styleD-info">
+          <div class="styleD-left-info">
+            <span class="diff-badge diff-medium">Sedang</span>
+            <span class="cat-badge">AV dasar</span>
+          </div>
+          <div class="styleD-actions">
+            <button class="act-btn">✏️ Edit</button>
+            <button class="act-btn act-del">🗑 Hapus</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="styleD-card">
+    <div class="styleD-top">
+      <div class="styleD-sidebar sd-easy">
+        <div class="styleD-n sdn-easy">2</div>
+      </div>
+      <div class="styleD-body">
+        <p class="styleD-q">Dalam sistem extender HDBaseT, apa peran utama dari TX Unit (Transmitter)?</p>
+        <div class="styleD-opts">
+          <div class="styleD-opt"><span class="dl">A</span>Menerima sinyal HDBaseT ke display.</div>
+          <div class="styleD-opt correct"><span class="dl">B</span>Membawa sinyal AV, PoE, IR, RS232 hingga 100m.</div>
+          <div class="styleD-opt"><span class="dl">C</span>Mengonversi sinyal HDMI ke digital.</div>
+          <div class="styleD-opt"><span class="dl">D</span>Mendistribusikan ke beberapa display.</div>
+        </div>
+        <div class="styleD-info">
+          <div class="styleD-left-info">
+            <span class="diff-badge diff-easy">Mudah</span>
+            <span class="cat-badge">AV dasar</span>
+          </div>
+          <div class="styleD-actions">
+            <button class="act-btn">✏️ Edit</button>
+            <button class="act-btn act-del">🗑 Hapus</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="styleD-card">
+    <div class="styleD-top">
+      <div class="styleD-sidebar sd-hard">
+        <div class="styleD-n sdn-hard">3</div>
+      </div>
+      <div class="styleD-body">
+        <p class="styleD-q">Apa fungsi utama dari sebuah LED Video Processor dalam sistem LED Display besar?</p>
+        <div class="styleD-opts">
+          <div class="styleD-opt"><span class="dl">A</span>Mengatur daya listrik LED panel.</div>
+          <div class="styleD-opt correct"><span class="dl">B</span>Mengolah dan mendistribusikan sinyal video ke modul LED.</div>
+          <div class="styleD-opt"><span class="dl">C</span>Mengontrol kecerahan secara manual.</div>
+          <div class="styleD-opt"><span class="dl">D</span>Menghubungkan panel ke internet.</div>
+        </div>
+        <div class="styleD-info">
+          <div class="styleD-left-info">
+            <span class="diff-badge diff-hard">Sulit</span>
+            <span class="cat-badge">LED Display dasar</span>
+          </div>
+          <div class="styleD-actions">
+            <button class="act-btn">✏️ Edit</button>
+            <button class="act-btn act-del">🗑 Hapus</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">Preview Bank Soal Style Options — Pilih A / B / C / D</div>
+</body>
+</html>
