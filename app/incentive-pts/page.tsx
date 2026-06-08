@@ -81,9 +81,6 @@ function IncentivePTSPage() {
   useEffect(() => {
     const user = getSession<User>();
     if (!user) { topRedirect('/dashboard'); return; }
-    if (!['admin', 'superadmin', 'team'].includes(user.role?.toLowerCase() ?? '')) {
-      topRedirect('/dashboard'); return;
-    }
     setCurrentUser(user);
     const q = searchParams.get('q');
     if (q) setSearchQ(q);
