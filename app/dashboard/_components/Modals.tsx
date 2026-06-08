@@ -2451,6 +2451,7 @@ export function AccountSettingsInline() {
     'form-bast': { label: 'Form Review Demo & BAST', icon: '⭐' },
     'request-design-project': { label: 'Request Design Project', icon: '🏗️' },
     'ticket-troubleshooting': { label: 'Ticket Troubleshooting', icon: '🎫' },
+    'incentive-pts': { label: 'Incentive Team PTS', icon: '💰' },
     'daily-report': { label: 'Daily Report', icon: '📈' },
     'database-pts': { label: 'Database PTS', icon: '💼' },
     'unit-movement': { label: 'Unit Movement Log', icon: '🚚' },
