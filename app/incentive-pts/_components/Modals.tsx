@@ -2,6 +2,10 @@
 // ─── Incentive PTS — Modals (View / Biaya / Backup / Paid) ───────────────────
 
 import { IncentiveProject, IncentiveDisbursement, IncentiveSetting, User } from './types';
+
+// Pajak 5% otomatis untuk jabatan Manager
+const MANAGER_TAX_PCT = 5;
+const isManagerJabatan = (jabatan?: string) => jabatan === 'Manager';
 import { Badge, fmtRp, fmtPct, fmtDate, fmtPeriode, inputCls, btnPrimary } from './shared';
 
 // ── 1. View Detail Modal ──────────────────────────────────────────────────────
@@ -213,6 +217,7 @@ function InfoRow({ icon, label, value }: { icon: string; label: string; value: s
 interface BiayaModalProps {
   project: IncentiveProject;
   settings: IncentiveSetting | null;
+  teamUsers: User[];
   biayaInput: string;
   cosInput: string;
   saving: boolean;
@@ -223,7 +228,7 @@ interface BiayaModalProps {
 }
 
 export function BiayaModal({
-  project, settings, biayaInput, cosInput, saving,
+  project, settings, teamUsers, biayaInput, cosInput, saving,
   onClose, onSave, onBiayaChange, onCosChange,
 }: BiayaModalProps) {
   return (
@@ -264,10 +269,28 @@ export function BiayaModal({
           {biayaInput && settings && (
             <div className="mt-2 p-3 bg-indigo-50 rounded-xl space-y-1 text-xs">
               <p className="font-semibold text-indigo-700">Preview distribusi:</p>
-              <p>⭐ {project.handler_name}: <strong>{fmtRp(parseFloat(biayaInput) * settings.handler_pct / 100)}</strong> ({fmtPct(settings.handler_pct)})</p>
-              {project.backup_names.map((b) => (
-                <p key={b}>🤝 {b}: <strong>{fmtRp(parseFloat(biayaInput) * settings.backup_pct / 100 / project.backup_names.length)}</strong> ({fmtPct(settings.backup_pct / project.backup_names.length)})</p>
-              ))}
+              {(() => {
+                const base = parseFloat(biayaInput);
+                const handlerGross = base * settings.handler_pct / 100;
+                const handlerUser = teamUsers.find(u => u.full_name === project.handler_name);
+                const handlerIsManager = isManagerJabatan(handlerUser?.jabatan);
+                const handlerNet = handlerIsManager ? handlerGross * (1 - MANAGER_TAX_PCT / 100) : handlerGross;
+                const backupGross = project.backup_names.length > 0
+                  ? base * settings.backup_pct / 100 / project.backup_names.length : 0;
+                return (
+                  <>
+                    <p>⭐ {project.handler_name}: <strong>{fmtRp(handlerNet)}</strong> ({fmtPct(settings.handler_pct)}){handlerIsManager && <span className="ml-1 text-amber-600 font-semibold">−{MANAGER_TAX_PCT}% pajak</span>}</p>
+                    {project.backup_names.map((b) => {
+                      const bu = teamUsers.find(u => u.full_name === b);
+                      const isManager = isManagerJabatan(bu?.jabatan);
+                      const net = isManager ? backupGross * (1 - MANAGER_TAX_PCT / 100) : backupGross;
+                      return (
+                        <p key={b}>🤝 {b}: <strong>{fmtRp(net)}</strong> ({fmtPct(settings.backup_pct / project.backup_names.length)}){isManager && <span className="ml-1 text-amber-600 font-semibold">−{MANAGER_TAX_PCT}% pajak</span>}</p>
+                      );
+                    })}
+                  </>
+                );
+              })()}
             </div>
           )}
         </div>

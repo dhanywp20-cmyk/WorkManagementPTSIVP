@@ -41,7 +41,6 @@ interface QuarterGroup {
   persons  : PersonRekap[];
   totalBiaya   : number;
   totalIncentive: number;
-  paidCount    : number;
 }
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -95,13 +94,11 @@ export function RekapTab({ projects, disbursements, isTeamPTS, isAdmin, currentU
           persons        : [],
           totalBiaya     : 0,
           totalIncentive : 0,
-          paidCount      : 0,
         });
       }
       const g = map.get(key)!;
       g.projects.push(proj);
       g.totalBiaya += proj.biaya_cadangan;
-      if (proj.status === 'paid') g.paidCount++;
 
       // Accumulate person incentives from disbursements
       const projDisb = disbursements.filter((d) => d.project_id === proj.id);
@@ -174,11 +171,7 @@ export function RekapTab({ projects, disbursements, isTeamPTS, isAdmin, currentU
                   <div className="min-w-0">
                     <p className="font-bold text-gray-800 text-sm truncate">{g.label}</p>
                     <p className="text-xs text-gray-400">
-                      {g.projects.length} project ·{' '}
-                      <span className="text-emerald-600 font-semibold">{g.paidCount} lunas</span>
-                      {g.projects.length - g.paidCount > 0 && (
-                        <> · <span className="text-amber-500 font-semibold">{g.projects.length - g.paidCount} pending</span></>
-                      )}
+                      {g.projects.length} project
                     </p>
                   </div>
                 </div>
@@ -269,15 +262,11 @@ export function RekapTab({ projects, disbursements, isTeamPTS, isAdmin, currentU
                             </p>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            {proj.biaya_cadangan > 0 && (
+                            {proj.biaya_cadangan > 0 ? (
                               <span className="text-xs font-semibold text-indigo-600">{fmtRp(proj.biaya_cadangan)}</span>
+                            ) : (
+                              <span className="text-xs text-gray-400">Belum diinput</span>
                             )}
-                            <Badge
-                              color={proj.status === 'paid' ? 'green' : proj.biaya_cadangan > 0 ? 'amber' : 'gray'}
-                              square
-                            >
-                              {proj.status === 'paid' ? 'Lunas' : proj.biaya_cadangan > 0 ? 'Pending' : 'Belum'}
-                            </Badge>
                           </div>
                         </div>
                       ))}

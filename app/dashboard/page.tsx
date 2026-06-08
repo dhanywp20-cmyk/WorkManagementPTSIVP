@@ -23,6 +23,9 @@ import OnboardingTour, { JelajahiButton } from './_components/OnboardingTour';
 
 export default function Dashboard() {
   const router = useRouter();
+  // Guard: ensure auto-navigation to first menu only happens ONCE per login session
+  // (prevents race-condition re-fires when currentUser/showSidebar update multiple times)
+  const autoNavigatedRef = useRef(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
@@ -215,6 +218,7 @@ export default function Dashboard() {
   };
 
   const handleLogout = () => {
+    autoNavigatedRef.current = false; // reset so next login re-navigates correctly
     setIsLoggedIn(false); setCurrentUser(null);
     clearSession();
     setShowSidebar(false); setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing');
@@ -223,12 +227,14 @@ export default function Dashboard() {
   };
 
   // Auto-navigate sales/guest to first allowed menu when sidebar opens
+  // Uses autoNavigatedRef so this runs EXACTLY ONCE per login — no race conditions
   useEffect(() => {
     if (!isLoggedIn || !currentUser || !showSidebar) return;
+    if (autoNavigatedRef.current) return; // already navigated this session
     const role = currentUser.role?.toLowerCase() ?? '';
     const isSalesGuest = ['guest','sales'].includes(role);
     const isRegularTeam = role === 'team' && !(currentUser.allowed_menus ?? []).includes('dashboard') && currentUser.jabatan !== 'Supervisor';
-    if ((isSalesGuest || isRegularTeam) && !showTicketing && !iframeUrl && !showDashboardPanel) {
+    if (isSalesGuest || isRegularTeam) {
       // Navigate to FIRST key in allowed_menus array (user-defined order), not allMenuItems order
       const allowed = currentUser.allowed_menus;
       const roleLC = currentUser.role?.toLowerCase();
@@ -237,6 +243,7 @@ export default function Dashboard() {
         ? allMenuItems.find(m => m.key === firstMenuKey)
         : ((!allowed || roleLC === 'superadmin' || roleLC === 'admin') ? allMenuItems[0] : null);
       if (!firstMenu) return;
+      autoNavigatedRef.current = true; // mark before state updates to prevent concurrent fires
       const firstItem = firstMenu.items?.[0];
       const firstTitle = firstMenu.title ?? '';
       if (firstItem && firstItem.internal) {

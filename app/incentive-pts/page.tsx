@@ -183,6 +183,10 @@ function IncentivePTSPage() {
   };
 
   // ── Actions ──────────────────────────────────────────────────────────────
+  // Pajak 5% untuk jabatan Manager (potongan otomatis dari bagian incentive mereka)
+  const MANAGER_TAX_PCT = 5;
+  const isManagerJabatan = (jabatan?: string) => jabatan === 'Manager';
+
   const createDisbursements = async (project: IncentiveProject) => {
     if (!settings || project.biaya_cadangan <= 0) return;
     await supabase.from('incentive_disbursements').delete().eq('project_id', project.id);
@@ -190,15 +194,20 @@ function IncentivePTSPage() {
     const backupTotal  = (project.biaya_cadangan * settings.backup_pct) / 100;
     const backupCount  = project.backup_names.length;
     const backupPer    = backupCount > 0 ? backupTotal / backupCount : 0;
+    const handlerUser  = teamUsers.find((u) => u.full_name === project.handler_name);
+    const handlerNet   = isManagerJabatan(handlerUser?.jabatan)
+      ? Math.round(handlerAmt * (1 - MANAGER_TAX_PCT / 100)) : handlerAmt;
     const rows: Omit<IncentiveDisbursement, 'id' | 'created_at'>[] = [
       { project_id: project.id, person_name: project.handler_name,
         person_username: project.handler_username, role_type: 'handler',
-        pct: settings.handler_pct, amount_rp: handlerAmt, periode: project.periode },
+        pct: settings.handler_pct, amount_rp: handlerNet, periode: project.periode },
       ...project.backup_names.map((name) => {
         const u = teamUsers.find((u) => u.full_name === name);
+        const netAmt = isManagerJabatan(u?.jabatan)
+          ? Math.round(backupPer * (1 - MANAGER_TAX_PCT / 100)) : backupPer;
         return { project_id: project.id, person_name: name, person_username: u?.username,
           role_type: 'backup' as const, pct: backupCount > 0 ? settings.backup_pct / backupCount : 0,
-          amount_rp: backupPer, periode: project.periode };
+          amount_rp: netAmt, periode: project.periode };
       }),
     ];
     await supabase.from('incentive_disbursements').insert(rows);
@@ -649,6 +658,7 @@ function IncentivePTSPage() {
         <BiayaModal
           project={selectedProject}
           settings={settings}
+          teamUsers={teamUsers}
           biayaInput={biayaInput}
           cosInput={cosProjectNoInput}
           saving={savingBiaya}

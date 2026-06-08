@@ -107,6 +107,10 @@ interface KPIPeriodSnapshot {
     tickScore: number; bastScore: number; lcScore: number; rndScore: number;
     finalKPI: number;
   }[];
+  settings_json?: {
+    lcMinScore: number; rndTarget: number;
+    ticketOverdueWeight: number; bastWeight: number; lcWeight: number; rndWeight: number;
+  } | null;
 }
 
 interface AuditEntry {
@@ -310,20 +314,53 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
   });
   const [selectedKPIMember, setSelectedKPIMember] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [kpiSettings, setKpiSettings] = useState<KPISettings>({
-    lcMinScore: 70,
-    rndTarget: 2,
-    ticketOverdueWeight: 0.20,
-    bastWeight: 0.40,
-    lcWeight: 0.30,
-    rndWeight: 0.10,
-  });
+  const DEFAULT_KPI_SETTINGS: KPISettings = {
+    lcMinScore: 70, rndTarget: 2,
+    ticketOverdueWeight: 0.20, bastWeight: 0.40, lcWeight: 0.30, rndWeight: 0.10,
+  };
+  const [kpiSettings, setKpiSettings] = useState<KPISettings>(DEFAULT_KPI_SETTINGS);
   const [kpiSnapshots, setKpiSnapshots]   = useState<KPIPeriodSnapshot[]>([]);
   const [showStartKPI, setShowStartKPI]   = useState(false);
   const [savingSnapshot, setSavingSnapshot] = useState(false);
   const [expandedSnapshot, setExpandedSnapshot] = useState<string | null>(null);
   const [selectedSnapMember, setSelectedSnapMember] = useState<string | null>(null); // popup detail member di Riwayat KPI
   const intervalRef = useRef<ReturnType<typeof setInterval>|null>(null);
+
+  // ── Load KPI settings from Supabase (fallback: localStorage) ────────────────
+  // Table needed in Supabase:
+  //   CREATE TABLE kpi_global_settings (
+  //     id INT PRIMARY KEY DEFAULT 1,
+  //     settings JSONB NOT NULL,
+  //     updated_at TIMESTAMPTZ DEFAULT NOW()
+  //   );
+  useEffect(() => {
+    const loadSettings = async () => {
+      // 1. Try Supabase first
+      try {
+        const { data } = await supabase.from('kpi_global_settings').select('settings').eq('id', 1).single();
+        if (data?.settings) {
+          setKpiSettings({ ...DEFAULT_KPI_SETTINGS, ...data.settings });
+          return;
+        }
+      } catch { /* table may not exist yet */ }
+      // 2. Fallback to localStorage
+      try {
+        const stored = typeof window !== 'undefined' ? localStorage.getItem('kpi_global_settings') : null;
+        if (stored) setKpiSettings({ ...DEFAULT_KPI_SETTINGS, ...JSON.parse(stored) });
+      } catch { /* ignore */ }
+    };
+    loadSettings();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const saveKpiSettings = async (s: KPISettings) => {
+    // Always save to localStorage immediately (works without any DB setup)
+    try { localStorage.setItem('kpi_global_settings', JSON.stringify(s)); } catch { /* ignore */ }
+    // Try to also save to Supabase (requires kpi_global_settings table)
+    try {
+      await supabase.from('kpi_global_settings').upsert({ id: 1, settings: s, updated_at: new Date().toISOString() });
+    } catch { /* table may not exist — localStorage is the fallback */ }
+  };
 
   // ── 1. Resolve scope ──────────────────────────────────────────────────────
 
@@ -2587,25 +2624,34 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                       <span>Data ini adalah <b>snapshot yang dikunci</b> pada periode <b>{snap.period_label}</b>. Nilai tidak akan berubah meski data platform terus update — ini adalah catatan final periode tersebut.</span>
                     </div>
 
-                    {/* KPI Score Breakdown */}
-                    <div className="grid grid-cols-4 gap-2">
-                      {[
-                        {label:'Ticketing',      val:m.tickScore, weight:'20%', color:'#ef4444', icon:'🎫', bg:'#fef2f2', border:'#ef444440'},
-                        {label:'BAST & Demo',     val:m.bastScore, weight:'40%', color:'#f59e0b', icon:'⭐', bg:'#fffbeb', border:'#f59e0b40'},
-                        {label:'Learning Center', val:m.lcScore,   weight:'30%', color:'#6366f1', icon:'🎓', bg:'#f5f3ff', border:'#6366f140'},
-                        {label:'R&D Tech Note',   val:m.rndScore,  weight:'10%', color:'#ec4899', icon:'📝', bg:'#fdf4ff', border:'#ec489940'},
-                      ].map(k=>(
-                        <div key={k.label} className="rounded-xl border p-2 text-center" style={{background:k.bg,borderColor:k.border}}>
-                          <div className="text-xs mb-0.5">{k.icon}</div>
-                          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wide leading-tight mb-1">{k.label}</div>
-                          <div className="text-lg font-black leading-none" style={{color:k.color}}>{k.val}%</div>
-                          <div className="text-[9px] text-slate-400 mt-0.5">bobot {k.weight}</div>
-                          <div className="w-full h-1 rounded-full bg-slate-100 overflow-hidden mt-1.5">
-                            <div className="h-full rounded-full" style={{width:`${k.val}%`,background:k.color}}/>
-                          </div>
+                    {/* KPI Score Breakdown — shows weighted contribution (score × weight), not raw score */}
+                    {(() => {
+                      const sj = snap.settings_json;
+                      const tw = Math.round((sj?.ticketOverdueWeight ?? 0.20) * 100);
+                      const bw = Math.round((sj?.bastWeight ?? 0.40) * 100);
+                      const lw = Math.round((sj?.lcWeight ?? 0.30) * 100);
+                      const rw = Math.round((sj?.rndWeight ?? 0.10) * 100);
+                      return (
+                        <div className="grid grid-cols-4 gap-2">
+                          {[
+                            {label:'Ticketing',      raw:m.tickScore, contrib:Math.round(m.tickScore*tw/100), maxW:tw, color:'#ef4444', icon:'🎫', bg:'#fef2f2', border:'#ef444440'},
+                            {label:'BAST & Demo',     raw:m.bastScore, contrib:Math.round(m.bastScore*bw/100), maxW:bw, color:'#f59e0b', icon:'⭐', bg:'#fffbeb', border:'#f59e0b40'},
+                            {label:'Learning Center', raw:m.lcScore,   contrib:Math.round(m.lcScore*lw/100),   maxW:lw, color:'#6366f1', icon:'🎓', bg:'#f5f3ff', border:'#6366f140'},
+                            {label:'R&D Tech Note',   raw:m.rndScore,  contrib:Math.round(m.rndScore*rw/100),  maxW:rw, color:'#ec4899', icon:'📝', bg:'#fdf4ff', border:'#ec489940'},
+                          ].map(k=>(
+                            <div key={k.label} className="rounded-xl border p-2 text-center" style={{background:k.bg,borderColor:k.border}}>
+                              <div className="text-xs mb-0.5">{k.icon}</div>
+                              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wide leading-tight mb-1">{k.label}</div>
+                              <div className="text-lg font-black leading-none" style={{color:k.color}}>{k.contrib}%</div>
+                              <div className="text-[9px] text-slate-400 mt-0.5">bobot {k.maxW}% | kinerja {k.raw}%</div>
+                              <div className="w-full h-1 rounded-full bg-slate-100 overflow-hidden mt-1.5">
+                                <div className="h-full rounded-full" style={{width:`${k.maxW > 0 ? (k.contrib/k.maxW)*100 : 0}%`,background:k.color}}/>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })()}
 
                     {/* Predikat final */}
                     <div className="flex items-center justify-between px-4 py-3 rounded-xl border"
@@ -3078,11 +3124,15 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               </div>
             </div>
             <div className="flex gap-3 px-6 pb-5 justify-end">
-              <button onClick={()=>{setKpiSettings({lcMinScore:70,rndTarget:2,ticketOverdueWeight:0.20,bastWeight:0.40,lcWeight:0.30,rndWeight:0.10}); }}
+              <button onClick={()=>{
+                  const def = {lcMinScore:70,rndTarget:2,ticketOverdueWeight:0.20,bastWeight:0.40,lcWeight:0.30,rndWeight:0.10};
+                  setKpiSettings(def);
+                  saveKpiSettings(def);
+                }}
                 className="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors">
                 Reset Default
               </button>
-              <button onClick={()=>setShowSettings(false)}
+              <button onClick={()=>{ saveKpiSettings(kpiSettings); setShowSettings(false); }}
                 className="px-4 py-2 rounded-xl text-sm font-bold text-white transition-colors"
                 style={{background:'linear-gradient(135deg,#7c3aed,#6d28d9)'}}>
                 ✓ Simpan & Tutup
