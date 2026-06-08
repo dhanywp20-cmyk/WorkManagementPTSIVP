@@ -520,7 +520,7 @@ function IncentivePTSPage() {
   const btnPrimary = 'px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 hover:scale-[1.02]';
 
   if (loading) return (
-    <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50" style={{ minHeight: '100vh' }}>
       <div className="flex flex-col items-center gap-3">
         <div className="w-12 h-12 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#6366f1' }} />
         <p className="text-slate-500 text-sm font-semibold">Memuat Incentive PTS...</p>
@@ -529,12 +529,12 @@ function IncentivePTSPage() {
   );
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="relative flex flex-col overflow-hidden" style={{ fontFamily: "'Inter', sans-serif", minHeight: '100vh' }}>
 
-      {/* Background */}
-      <div className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
+      {/* Background — absolute so it stays within iframe bounds */}
+      <div className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: "url('/IVP_Background.png')" }} />
-      <div className="fixed inset-0 z-0" style={{ background: 'rgba(240,244,255,0.88)' }} />
+      <div className="absolute inset-0 z-0" style={{ background: 'rgba(240,244,255,0.88)' }} />
 
       {/* Toast */}
       {toast && (
@@ -544,7 +544,7 @@ function IncentivePTSPage() {
       )}
 
       {/* Header */}
-      <header className="relative z-50 flex-shrink-0 px-6 py-3 flex items-center justify-between gap-4"
+      <header className="sticky top-0 z-50 flex-shrink-0 px-6 py-3 flex items-center justify-between gap-4"
         style={{
           background: 'rgba(255,255,255,0.92)',
           backdropFilter: 'blur(16px)',
@@ -565,7 +565,7 @@ function IncentivePTSPage() {
       </header>
 
       {/* Tabs */}
-      <div className="relative z-40 flex-shrink-0 px-6"
+      <div className="sticky top-[57px] z-40 flex-shrink-0 px-6"
         style={{
           background: 'rgba(255,255,255,0.92)',
           backdropFilter: 'blur(12px)',
@@ -590,7 +590,7 @@ function IncentivePTSPage() {
       </div>
 
       {/* Scrollable content */}
-      <main className="relative z-10 flex-1 overflow-y-auto">
+      <main className="relative z-10">
         <div className="p-4 w-full space-y-5">
 
           {/* Stats */}
@@ -972,101 +972,155 @@ function IncentivePTSPage() {
       {/* ══ MODAL: View Detail ══ */}
       {showViewModal && selectedProject && (() => {
         const projDisb = disbursements.filter(d => d.project_id === selectedProject.id);
+        const statusColor = selectedProject.status === 'paid' ? '#10b981' : selectedProject.biaya_cadangan > 0 ? '#f59e0b' : '#9ca3af';
+        const statusLabel = selectedProject.status === 'paid' ? '✅ Lunas' : selectedProject.biaya_cadangan > 0 ? '⏳ Menunggu Pembayaran' : '⚪ Belum Ada Biaya';
+        const statusBg = selectedProject.status === 'paid' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : selectedProject.biaya_cadangan > 0 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-gray-50 border-gray-200 text-gray-500';
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
-              {/* Modal header */}
-              <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between gap-3 flex-shrink-0">
+              {/* Modal header — no status badge here */}
+              <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between gap-3 flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.04))' }}>
                 <div>
-                  <h3 className="font-bold text-gray-800 text-base leading-snug">{selectedProject.project_name}</h3>
-                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                    <Badge color="purple">{selectedProject.category}</Badge>
-                    <Badge color={selectedProject.status === 'paid' ? 'green' : selectedProject.biaya_cadangan > 0 ? 'amber' : 'gray'}>
-                      {selectedProject.status === 'paid' ? '✅ Lunas' : selectedProject.biaya_cadangan > 0 ? '⏳ Pending' : '⚪ Belum ada biaya'}
-                    </Badge>
-                  </div>
+                  <Badge color="purple" square>{selectedProject.category}</Badge>
+                  <h3 className="font-bold text-gray-800 text-base leading-snug mt-1.5">{selectedProject.project_name}</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">{fmtDate(selectedProject.due_date)} · {fmtPeriode(selectedProject.periode)}</p>
                 </div>
-                <button onClick={() => setShowViewModal(false)} className="text-gray-400 hover:text-gray-600 text-lg leading-none flex-shrink-0">✕</button>
+                <button onClick={() => setShowViewModal(false)} className="text-gray-400 hover:text-gray-600 text-lg leading-none flex-shrink-0 mt-0.5">✕</button>
               </div>
 
               {/* Modal body — scrollable */}
-              <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+              <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
 
-                {/* Info Proyek */}
-                <div className="space-y-2">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Informasi Proyek</p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                    <div>
-                      <p className="text-[11px] text-gray-400">Handler</p>
-                      <p className="font-semibold text-gray-700">⭐ {selectedProject.handler_name}</p>
+                {/* STATUS BANNER */}
+                <div className={`flex items-center justify-between px-4 py-3 rounded-xl border ${statusBg}`}>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider opacity-60 mb-0.5">Status Incentive</p>
+                    <p className="font-bold text-sm">{statusLabel}</p>
+                  </div>
+                  {selectedProject.status === 'paid' && (
+                    <div className="text-right text-xs opacity-70">
+                      <p>Lunas: {fmtDate(selectedProject.paid_at)}</p>
+                      <p>oleh {selectedProject.paid_by}</p>
                     </div>
-                    <div>
-                      <p className="text-[11px] text-gray-400">Sales</p>
-                      <p className="font-semibold text-gray-700">{selectedProject.sales_name ?? '—'}</p>
-                      {selectedProject.sales_division && <p className="text-[11px] text-gray-400">{selectedProject.sales_division}</p>}
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-gray-400">Tanggal</p>
-                      <p className="font-semibold text-gray-700">{fmtDate(selectedProject.due_date)}</p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-gray-400">Periode</p>
-                      <p className="font-semibold text-gray-700">{fmtPeriode(selectedProject.periode)}</p>
-                    </div>
-                    {selectedProject.cos_project_no && (
-                      <div className="col-span-2">
-                        <p className="text-[11px] text-gray-400">No. COS Project</p>
-                        <p className="font-mono font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 inline-block text-sm">{selectedProject.cos_project_no}</p>
+                  )}
+                  {selectedProject.status === 'pending' && selectedProject.biaya_cadangan > 0 && (
+                    <p className="text-lg font-bold">{fmtRp(selectedProject.biaya_cadangan)}</p>
+                  )}
+                </div>
+
+                {/* ASSIGN TO + JADWAL — mirip style screenshot */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-50 rounded-xl border border-gray-200 p-3">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Assign To</p>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                        {selectedProject.handler_name.charAt(0)}
                       </div>
-                    )}
-                    {selectedProject.address && (
-                      <div className="col-span-2">
-                        <p className="text-[11px] text-gray-400">Lokasi</p>
-                        <p className="font-semibold text-gray-700">📍 {selectedProject.address}</p>
-                      </div>
-                    )}
-                    {selectedProject.pic_name && (
                       <div>
-                        <p className="text-[11px] text-gray-400">PIC</p>
-                        <p className="font-semibold text-gray-700">{selectedProject.pic_name}</p>
-                        {selectedProject.pic_phone && <p className="text-[11px] text-gray-400">📱 {selectedProject.pic_phone}</p>}
+                        <p className="font-semibold text-gray-800 text-sm leading-tight">{selectedProject.handler_name}</p>
+                        {selectedProject.backup_names.length > 0 && (
+                          <p className="text-[11px] text-gray-400">+{selectedProject.backup_names.length} backup</p>
+                        )}
                       </div>
-                    )}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl border border-gray-200 p-3">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">📅 Jadwal</p>
+                    <p className="font-bold text-gray-800 text-sm">{fmtDate(selectedProject.due_date)}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Periode: {fmtPeriode(selectedProject.periode)}</p>
+                  </div>
+                </div>
+
+                {/* INFORMASI PROJECT */}
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <div className="px-4 py-2.5 border-b border-gray-100" style={{ background: 'rgba(99,102,241,0.05)' }}>
+                    <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">📋 Informasi Project</p>
+                  </div>
+                  <div className="divide-y divide-gray-100">
+                    {/* Product */}
                     {selectedProject.product && (
+                      <div className="flex items-start gap-3 px-4 py-3">
+                        <span className="text-base mt-0.5">📦</span>
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Product / Unit</p>
+                          <p className="text-sm font-semibold text-gray-800 mt-0.5">{selectedProject.product}</p>
+                        </div>
+                      </div>
+                    )}
+                    {/* Sales */}
+                    <div className="flex items-start gap-3 px-4 py-3">
+                      <span className="text-base mt-0.5">👤</span>
                       <div>
-                        <p className="text-[11px] text-gray-400">Produk</p>
-                        <p className="font-semibold text-gray-700">{selectedProject.product}</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Nama Sales & Divisi</p>
+                        <p className="text-sm font-semibold text-gray-800 mt-0.5">
+                          {selectedProject.sales_name ?? '—'}{selectedProject.sales_division ? ` / ${selectedProject.sales_division}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    {/* COS Project No */}
+                    {selectedProject.cos_project_no && (
+                      <div className="flex items-start gap-3 px-4 py-3">
+                        <span className="text-base mt-0.5">🔖</span>
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">No. COS Project</p>
+                          <p className="font-mono font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 inline-block text-sm mt-0.5">{selectedProject.cos_project_no}</p>
+                        </div>
+                      </div>
+                    )}
+                    {/* Lokasi / Address */}
+                    {selectedProject.address && (
+                      <div className="flex items-start gap-3 px-4 py-3">
+                        <span className="text-base mt-0.5">📍</span>
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Lokasi</p>
+                          <p className="text-sm font-semibold text-gray-800 mt-0.5">{selectedProject.address}</p>
+                        </div>
+                      </div>
+                    )}
+                    {/* PIC */}
+                    {selectedProject.pic_name && (
+                      <div className="flex items-start gap-3 px-4 py-3">
+                        <span className="text-base mt-0.5">🙋</span>
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">PIC</p>
+                          <p className="text-sm font-semibold text-gray-800 mt-0.5">{selectedProject.pic_name}</p>
+                          {selectedProject.pic_phone && <p className="text-xs text-gray-400 mt-0.5">📱 {selectedProject.pic_phone}</p>}
+                        </div>
+                      </div>
+                    )}
+                    {/* Deskripsi */}
+                    {selectedProject.description && (
+                      <div className="flex items-start gap-3 px-4 py-3">
+                        <span className="text-base mt-0.5">📄</span>
+                        <div className="flex-1">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Deskripsi</p>
+                          <p className="text-sm text-gray-700 mt-0.5 leading-relaxed">{selectedProject.description}</p>
+                        </div>
+                      </div>
+                    )}
+                    {/* Catatan / Notes */}
+                    {selectedProject.notes && (
+                      <div className="flex items-start gap-3 px-4 py-3 bg-amber-50/50">
+                        <span className="text-base mt-0.5">📝</span>
+                        <div className="flex-1">
+                          <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Catatan</p>
+                          <p className="text-sm text-gray-700 mt-0.5 leading-relaxed">{selectedProject.notes}</p>
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Keterangan */}
-                {(selectedProject.description || selectedProject.notes) && (
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Keterangan</p>
-                    {selectedProject.description && (
-                      <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-700">
-                        <p className="text-[11px] text-gray-400 mb-1">Deskripsi</p>
-                        {selectedProject.description}
-                      </div>
-                    )}
-                    {selectedProject.notes && (
-                      <div className="bg-amber-50 rounded-xl p-3 text-sm text-gray-700 border border-amber-100">
-                        <p className="text-[11px] text-amber-500 mb-1">📝 Catatan</p>
-                        {selectedProject.notes}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Tim Backup */}
+                {/* TIM BACKUP */}
                 {selectedProject.backup_names.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Tim Backup</p>
-                    <div className="flex flex-wrap gap-2">
+                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <div className="px-4 py-2.5 border-b border-gray-100" style={{ background: 'rgba(14,165,233,0.05)' }}>
+                      <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">🤝 Tim Backup</p>
+                    </div>
+                    <div className="px-4 py-3 flex flex-wrap gap-2">
                       {selectedProject.backup_names.map(name => (
-                        <span key={name} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-xs font-semibold">
+                        <span key={name} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold">
                           🤝 {name}
                         </span>
                       ))}
@@ -1074,54 +1128,43 @@ function IncentivePTSPage() {
                   </div>
                 )}
 
-                {/* Biaya & Distribusi */}
-                <div className="space-y-2">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Biaya & Distribusi Incentive</p>
+                {/* BIAYA & DISTRIBUSI */}
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <div className="px-4 py-2.5 border-b border-gray-100" style={{ background: 'rgba(99,102,241,0.05)' }}>
+                    <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">💰 Biaya & Distribusi Incentive</p>
+                  </div>
                   {selectedProject.biaya_cadangan > 0 ? (
-                    <>
-                      <div className="bg-indigo-50 rounded-xl p-3 flex items-center justify-between">
+                    <div className="p-3 space-y-2">
+                      <div className="flex items-center justify-between bg-indigo-50 rounded-lg px-3 py-2.5 border border-indigo-100">
                         <p className="text-sm text-indigo-700 font-semibold">Biaya Cadangan</p>
-                        <p className="text-lg font-bold text-indigo-600">{fmtRp(selectedProject.biaya_cadangan)}</p>
+                        <p className="text-base font-bold text-indigo-600">{fmtRp(selectedProject.biaya_cadangan)}</p>
                       </div>
-                      {projDisb.length > 0 && (
-                        <div className="space-y-1.5">
-                          {projDisb.map(d => (
-                            <div key={d.id} className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm border ${d.role_type === 'handler' ? 'bg-indigo-50 border-indigo-200' : 'bg-blue-50 border-blue-200'}`}>
-                              <div className="flex items-center gap-2">
-                                <span>{d.role_type === 'handler' ? '⭐' : '🤝'}</span>
-                                <span className="font-semibold text-gray-700">{d.person_name}</span>
-                                <Badge color={d.role_type === 'handler' ? 'indigo' : 'blue'}>{d.role_type}</Badge>
-                              </div>
-                              <div className="text-right">
-                                <span className="text-gray-500 text-xs mr-2">{fmtPct(d.pct)}</span>
-                                <span className="font-bold text-gray-800">{fmtRp(d.amount_rp)}</span>
-                              </div>
-                            </div>
-                          ))}
+                      {projDisb.length > 0 && projDisb.map(d => (
+                        <div key={d.id} className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm border ${d.role_type === 'handler' ? 'bg-indigo-50 border-indigo-200' : 'bg-blue-50 border-blue-200'}`}>
+                          <div className="flex items-center gap-2">
+                            <span>{d.role_type === 'handler' ? '⭐' : '🤝'}</span>
+                            <span className="font-semibold text-gray-700">{d.person_name}</span>
+                            <Badge color={d.role_type === 'handler' ? 'indigo' : 'blue'}>{d.role_type}</Badge>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-gray-500 text-xs mr-2">{fmtPct(d.pct)}</span>
+                            <span className="font-bold text-gray-800">{fmtRp(d.amount_rp)}</span>
+                          </div>
                         </div>
-                      )}
+                      ))}
                       {selectedProject.biaya_input_by && (
-                        <p className="text-[11px] text-gray-400">
+                        <p className="text-[11px] text-gray-400 px-1">
                           Diinput oleh {selectedProject.biaya_input_by} · {fmtDate(selectedProject.biaya_input_at)}
                         </p>
                       )}
-                    </>
+                    </div>
                   ) : (
-                    <div className="bg-gray-50 rounded-xl p-4 text-center text-sm text-gray-400">
+                    <div className="px-4 py-5 text-center text-sm text-gray-400">
                       Biaya cadangan belum diinput
                     </div>
                   )}
                 </div>
 
-                {/* Paid info */}
-                {selectedProject.status === 'paid' && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm">
-                    <p className="font-semibold text-emerald-700">✅ Incentive Sudah Dibayarkan</p>
-                    <p className="text-emerald-600 text-xs mt-0.5">
-                      {fmtDate(selectedProject.paid_at)} · oleh {selectedProject.paid_by}
-                    </p>
-                  </div>
-                )}
               </div>
 
               {/* Modal footer actions */}
