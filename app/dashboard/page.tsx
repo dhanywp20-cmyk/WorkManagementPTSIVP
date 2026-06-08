@@ -48,6 +48,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [menuLoading, setMenuLoading] = useState(false);
   const [showTour, setShowTour] = useState(false);
+  const [tourHighlightKey, setTourHighlightKey] = useState<string | null>(null);
   const [showDashboardPanel, setShowDashboardPanel] = useState(false);
 
   const [showSidebar, setShowSidebar] = useState(false);
@@ -798,8 +799,10 @@ export default function Dashboard() {
           <>
             <OnboardingTour
               currentUser={currentUser}
+              visibleMenuKeys={visibleMenuItems.map(m => m.key)}
               forceShow={showTour}
               onDone={() => setShowTour(false)}
+              onHighlightKey={setTourHighlightKey}
             />
             {!showTour && (
               <JelajahiButton onClick={() => setShowTour(true)} />
@@ -1026,18 +1029,22 @@ export default function Dashboard() {
                         if (menu.items.length === 1) {
                           const item = menu.items[0];
                           const isActive = (showTicketing && item.internal && internalUrl === item.url) || (iframeUrl === item.url);
+                          const isTourHL = tourHighlightKey === menu.key;
                           return (
                             <button
                               key={menu.key}
+                              id={`tour-menu-${menu.key}`}
                               onClick={() => handleMenuClick(item, menu.title)}
                               className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
                               style={
-                                isActive
-                                  ? { background: 'rgba(67,56,202,0.10)', border: '1px solid rgba(67,56,202,0.25)', color: '#3730a3' }
-                                  : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
+                                isTourHL
+                                  ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite' }
+                                  : isActive
+                                    ? { background: 'rgba(67,56,202,0.10)', border: '1px solid rgba(67,56,202,0.25)', color: '#3730a3' }
+                                    : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
                               }
-                              onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(67,56,202,0.05)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(67,56,202,0.12)'; } }}
-                              onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; } }}
+                              onMouseEnter={e => { if (!isActive && !isTourHL) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(67,56,202,0.05)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(67,56,202,0.12)'; } }}
+                              onMouseLeave={e => { if (!isActive && !isTourHL) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; } }}
                             >
                               <span
                                 className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors"
@@ -1073,18 +1080,22 @@ export default function Dashboard() {
                         if (menu.items.length === 1) {
                           const item = menu.items[0];
                           const isActive = (showTicketing && item.internal && internalUrl === item.url) || (iframeUrl === item.url);
+                          const isTourHL = tourHighlightKey === menu.key;
                           return (
                             <button
                               key={menu.key}
+                              id={`tour-menu-${menu.key}`}
                               onClick={() => handleMenuClick(item, menu.title)}
                               className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
                               style={
-                                isActive
-                                  ? { background: 'rgba(200,134,29,0.11)', border: '1px solid rgba(200,134,29,0.28)', color: '#92600a' }
-                                  : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
+                                isTourHL
+                                  ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite' }
+                                  : isActive
+                                    ? { background: 'rgba(200,134,29,0.11)', border: '1px solid rgba(200,134,29,0.28)', color: '#92600a' }
+                                    : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
                               }
-                              onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.05)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,0,0,0.06)'; } }}
-                              onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; } }}
+                              onMouseEnter={e => { if (!isActive && !isTourHL) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.05)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,0,0,0.06)'; } }}
+                              onMouseLeave={e => { if (!isActive && !isTourHL) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; } }}
                             >
                               <span
                                 className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors"
@@ -1119,18 +1130,22 @@ export default function Dashboard() {
                       {visibleMenuItems.filter(m => INTERNAL_DAILY_KEYS.includes(m.key)).flatMap(menu =>
                         menu.items.map((item, itemIndex) => {
                           const isActive = (showTicketing && item.internal && internalUrl === item.url) || (iframeUrl === item.url);
+                          const isTourHL = tourHighlightKey === menu.key;
                           return (
                             <button
                               key={`${menu.key}-${itemIndex}`}
+                              id={`tour-menu-${menu.key}`}
                               onClick={() => handleMenuClick(item, menu.title)}
                               className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
                               style={
-                                isActive
-                                  ? { background: 'rgba(200,134,29,0.11)', border: '1px solid rgba(200,134,29,0.28)', color: '#92600a' }
-                                  : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
+                                isTourHL
+                                  ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite' }
+                                  : isActive
+                                    ? { background: 'rgba(200,134,29,0.11)', border: '1px solid rgba(200,134,29,0.28)', color: '#92600a' }
+                                    : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
                               }
-                              onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.05)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,0,0,0.06)'; } }}
-                              onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; } }}
+                              onMouseEnter={e => { if (!isActive && !isTourHL) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.05)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,0,0,0.06)'; } }}
+                              onMouseLeave={e => { if (!isActive && !isTourHL) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; } }}
                             >
                               <span
                                 className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors"

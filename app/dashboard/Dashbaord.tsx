@@ -646,6 +646,7 @@ export default function Dashboard() {
           <>
             <OnboardingTour
               currentUser={currentUser}
+              visibleMenuKeys={visibleMenuItems.map(m => m.key)}
               forceShow={showTour}
               onDone={() => setShowTour(false)}
             />

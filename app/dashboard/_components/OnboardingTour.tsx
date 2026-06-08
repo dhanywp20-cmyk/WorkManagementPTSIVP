@@ -2,257 +2,289 @@
 import { useState, useEffect, useCallback } from 'react';
 import { User } from './shared';
 
-// ─── Tour Steps ────────────────────────────────────────────────────────────────
+// ─── Tour step definitions ────────────────────────────────────────────────────
 
 interface TourStep {
   id: string;
+  menuKey: string | null; // null = center modal (welcome / done)
   icon: string;
   title: string;
   desc: string;
-  highlight?: string; // CSS selector atau keyword untuk highlight area
-  position: 'center' | 'top' | 'bottom';
   color: string;
-  bg: string;
+  accentBg: string;
 }
 
-const TOUR_STEPS: TourStep[] = [
+const ALL_STEPS: TourStep[] = [
   {
-    id: 'welcome',
-    icon: '👋',
+    id: 'welcome', menuKey: null, icon: '👋',
     title: 'Selamat datang di Work Management Platform!',
-    desc: 'Platform terpadu IndoVisual untuk mengelola jadwal, proyek, tiket, dan laporan tim PTS. Mari kami tunjukkan cara menggunakannya — hanya butuh 1 menit!',
-    position: 'center',
-    color: '#be123c',
-    bg: 'linear-gradient(135deg, #fff1f2, #ffe4e6)',
+    desc: 'Platform terpadu IndoVisual untuk tim PTS — jadwal, tiket, proyek, laporan & incentive dalam satu tempat. Mari kami kenalkan fitur-fiturnya!',
+    color: '#be123c', accentBg: 'linear-gradient(135deg,#fff1f2,#fecdd3)',
   },
   {
-    id: 'menu-cards',
-    icon: '🗂️',
-    title: 'Menu Utama — Pilih Modul',
-    desc: 'Halaman utama berisi kartu-kartu menu sesuai akses Anda. Klik kartu untuk membuka modul. Setiap modul memiliki fungsi berbeda — dari form proyek hingga jadwal piket.',
-    position: 'center',
-    color: '#0891b2',
-    bg: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)',
+    id: 'learning-center', menuKey: 'learning-center', icon: '🎓',
+    title: 'Learning Center',
+    desc: 'Platform training & quiz online. Pelajari materi produk, ikuti kuis interaktif, dan pantau progress belajar seluruh tim PTS.',
+    color: '#1d4ed8', accentBg: 'linear-gradient(135deg,#eff6ff,#dbeafe)',
   },
   {
-    id: 'reminder',
-    icon: '🗓️',
+    id: 'tech-note', menuKey: 'tech-note', icon: '📝',
+    title: 'Tech Note R&D',
+    desc: 'Dokumentasi teknikal produk dan catatan R&D tim. Semua temuan riset tersimpan di sini sebagai knowledge base yang bisa dicari.',
+    color: '#be185d', accentBg: 'linear-gradient(135deg,#fdf2f8,#fce7f3)',
+  },
+  {
+    id: 'reminder-schedule', menuKey: 'reminder-schedule', icon: '🗓️',
     title: 'Reminder Schedule',
-    desc: 'Jadwal kegiatan tim PTS: Demo Product, Meeting & Survey, Konfigurasi, Training. Anda bisa request jadwal dari sini dan melihat status penyelesaiannya.',
-    position: 'center',
-    color: '#0f766e',
-    bg: 'linear-gradient(135deg, #f0fdfa, #ccfbf1)',
+    desc: 'Jadwal Demo Produk, Meeting, Konfigurasi & Training. Request jadwal dari sini dan pantau status penyelesaian setiap kegiatan.',
+    color: '#0f766e', accentBg: 'linear-gradient(135deg,#f0fdfa,#ccfbf1)',
   },
   {
-    id: 'ticket',
-    icon: '🎫',
-    title: 'Ticket Troubleshooting',
-    desc: 'Laporkan masalah teknis produk di sini. Isi detail masalah, assign ke tim PTS, dan pantau statusnya dari Open hingga Solved — lengkap dengan SLA countdown.',
-    position: 'center',
-    color: '#be123c',
-    bg: 'linear-gradient(135deg, #fff1f2, #ffe4e6)',
-  },
-  {
-    id: 'form-bast',
-    icon: '⭐',
-    title: 'Form Review Demo & BAST',
-    desc: 'Setelah demo produk atau serah terima (BAST), isi form review di sini. Berikan penilaian (grade) untuk knowledge produk dan training customer.',
-    position: 'center',
-    color: '#d97706',
-    bg: 'linear-gradient(135deg, #fffbeb, #fef3c7)',
-  },
-  {
-    id: 'require-project',
-    icon: '🏗️',
+    id: 'request-design-project', menuKey: 'request-design-project', icon: '🏗️',
     title: 'Request Design Project',
-    desc: 'Butuh desain ruangan atau BOQ? Buat request di sini. Upload foto survei dan file BOQ, lalu tim IVP akan memproses dan memberikan hasilnya melalui platform.',
-    position: 'center',
-    color: '#7c3aed',
-    bg: 'linear-gradient(135deg, #faf5ff, #ede9fe)',
+    desc: 'Butuh desain ruangan atau BOQ? Ajukan request di sini — upload foto survei, tim IVP akan memproses dan mengirim hasilnya melalui platform.',
+    color: '#7c3aed', accentBg: 'linear-gradient(135deg,#f5f3ff,#ede9fe)',
   },
   {
-    id: 'search',
-    icon: '🔍',
-    title: 'Global Search — Cari Apa Saja',
-    desc: 'Gunakan tombol Search di header (atau tekan Ctrl+K / ⌘K) untuk mencari ticket, reminder, project, dan data lain di seluruh platform sekaligus.',
-    position: 'center',
-    color: '#374151',
-    bg: 'linear-gradient(135deg, #f9fafb, #f3f4f6)',
+    id: 'form-bast', menuKey: 'form-bast', icon: '⭐',
+    title: 'Form Review Demo & BAST',
+    desc: 'Beri penilaian (grade) setelah Demo Produk atau serah terima (BAST). Rekap nilai knowledge & kualitas training tersedia di sini.',
+    color: '#d97706', accentBg: 'linear-gradient(135deg,#fffbeb,#fef3c7)',
   },
   {
-    id: 'profile',
-    icon: '👤',
-    title: 'Profil & Pengaturan Akun',
-    desc: 'Klik "User Profile" di header untuk menambahkan nomor WhatsApp Anda. Nomor ini dipakai untuk notifikasi otomatis ketika ada update ticket atau jadwal.',
-    position: 'center',
-    color: '#065f46',
-    bg: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
+    id: 'ticket-troubleshooting', menuKey: 'ticket-troubleshooting', icon: '🎫',
+    title: 'Ticket Troubleshooting',
+    desc: 'Laporkan masalah teknis produk, assign ke tim PTS, dan pantau status dari Open hingga Solved — lengkap dengan SLA countdown otomatis.',
+    color: '#be123c', accentBg: 'linear-gradient(135deg,#fff1f2,#fecdd3)',
   },
   {
-    id: 'done',
-    icon: '🚀',
-    title: 'Siap digunakan!',
-    desc: 'Anda sudah siap! Jika ingin melihat panduan ini lagi, klik tombol "Jelajahi Platform" di pojok kanan bawah halaman utama.',
-    position: 'center',
-    color: '#be123c',
-    bg: 'linear-gradient(135deg, #fff1f2, #ffe4e6)',
+    id: 'picket-showroom', menuKey: 'picket-showroom', icon: '🏪',
+    title: 'Piket Showroom',
+    desc: 'Jadwal piket showroom Team PTS IVP, UMP & MLDS. Lihat siapa yang bertugas hari ini dan atur giliran dengan mudah.',
+    color: '#0f766e', accentBg: 'linear-gradient(135deg,#f0fdfa,#ccfbf1)',
+  },
+  {
+    id: 'daily-report', menuKey: 'daily-report', icon: '📈',
+    title: 'Daily Report',
+    desc: 'Catat aktivitas harian tim dan pantau performance metrics. Laporan terakumulasi otomatis setiap hari untuk pelaporan periodik.',
+    color: '#059669', accentBg: 'linear-gradient(135deg,#f0fdf4,#dcfce7)',
+  },
+  {
+    id: 'unit-movement', menuKey: 'unit-movement', icon: '🚚',
+    title: 'Unit Movement Log',
+    desc: 'Tracking keluar-masuk peralatan & unit demo. Check-in/check-out tercatat lengkap untuk menjaga akuntabilitas inventori tim.',
+    color: '#d97706', accentBg: 'linear-gradient(135deg,#fffbeb,#fef3c7)',
+  },
+  {
+    id: 'incentive-pts', menuKey: 'incentive-pts', icon: '💰',
+    title: 'Incentive PTS',
+    desc: 'Kalkulasi & rekap incentive tim per project. Pembagian otomatis ke handler & backup berdasarkan persentase, lengkap dengan pajak Manager 5%.',
+    color: '#6d28d9', accentBg: 'linear-gradient(135deg,#f5f3ff,#ede9fe)',
+  },
+  {
+    id: 'done', menuKey: null, icon: '🚀',
+    title: 'Semua fitur sudah dikenal!',
+    desc: 'Platform siap digunakan. Klik tombol "Jelajahi Platform" di pojok kanan bawah kapan saja untuk membuka panduan ini kembali.',
+    color: '#be123c', accentBg: 'linear-gradient(135deg,#fff1f2,#fecdd3)',
   },
 ];
 
-// ─── Storage key ──────────────────────────────────────────────────────────────
-
 const getTourKey = (userId: string) => `pts_tour_done_${userId}`;
 
-// ─── Progress Dots ────────────────────────────────────────────────────────────
+// ─── Progress indicator ───────────────────────────────────────────────────────
 
 function ProgressDots({ total, current, color }: { total: number; current: number; color: string }) {
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1 flex-wrap">
       {Array.from({ length: total }).map((_, i) => (
         <div key={i} className="rounded-full transition-all duration-300"
           style={{
-            width: i === current ? 20 : 6,
-            height: 6,
-            background: i === current ? color : `${color}40`,
+            width: i === current ? 14 : 4,
+            height: 4,
+            background: i === current ? color : `${color}30`,
           }} />
       ))}
     </div>
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Props ────────────────────────────────────────────────────────────────────
 
-interface OnboardingTourProps {
+interface Props {
   currentUser: User;
-  /** Paksa tampil (dari tombol "Jelajahi Platform") */
+  visibleMenuKeys: string[];
   forceShow?: boolean;
   onDone?: () => void;
+  /** Called with menu key when step changes, null when tour closes */
+  onHighlightKey?: (key: string | null) => void;
 }
 
-export default function OnboardingTour({ currentUser, forceShow, onDone }: OnboardingTourProps) {
-  const [visible, setVisible]   = useState(false);
-  const [step, setStep]         = useState(0);
-  const [animDir, setAnimDir]   = useState<'next' | 'prev'>('next');
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow, onDone, onHighlightKey }: Props) {
+  const [visible, setVisible]     = useState(false);
+  const [step, setStep]           = useState(0);
   const [animating, setAnimating] = useState(false);
+  const [animDir, setAnimDir]     = useState<'next' | 'prev'>('next');
+  const [popupPos, setPopupPos]   = useState<{ top: number; left: number } | null>(null);
 
-  const tourKey = getTourKey(currentUser.id);
+  const tourKey = getTourKey(String(currentUser.id));
 
-  // ── Show logic: tampil jika belum pernah selesai ATAU force ──
+  // Filter steps to menus visible to this user (always include welcome + done)
+  const steps = ALL_STEPS.filter(s => s.menuKey === null || visibleMenuKeys.includes(s.menuKey));
+  const s = steps[Math.min(step, steps.length - 1)] ?? steps[0];
+  const isLast = step >= steps.length - 1;
+
+  // ── Show on first login ──
   useEffect(() => {
     if (forceShow) { setStep(0); setVisible(true); return; }
     try {
-      const done = localStorage.getItem(tourKey);
-      if (!done) { setStep(0); setVisible(true); }
+      if (!localStorage.getItem(tourKey)) { setStep(0); setVisible(true); }
     } catch { /* ignore */ }
   }, [forceShow, tourKey]);
 
-  const markDone = useCallback(() => {
-    try { localStorage.setItem(tourKey, '1'); } catch { /* ignore */ }
-  }, [tourKey]);
+  // ── Position popup next to highlighted sidebar item ──
+  useEffect(() => {
+    if (!visible || !s?.menuKey) {
+      setPopupPos(null);
+      onHighlightKey?.(s?.menuKey ? s.menuKey : null);
+      if (!visible) onHighlightKey?.(null);
+      return;
+    }
+    const recompute = () => {
+      const el = document.getElementById(`tour-menu-${s.menuKey}`);
+      if (el) {
+        const r  = el.getBoundingClientRect();
+        const vH = window.innerHeight;
+        // Clamp vertically so card doesn't go off-screen
+        const top = Math.max(80, Math.min(r.top + r.height / 2, vH - 200));
+        setPopupPos({ top, left: r.right + 20 });
+      } else {
+        setPopupPos(null); // fallback: center modal
+      }
+    };
+    recompute();
+    onHighlightKey?.(s.menuKey);
+    window.addEventListener('resize', recompute);
+    return () => window.removeEventListener('resize', recompute);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, step]);
 
   const close = useCallback(() => {
     setVisible(false);
-    markDone();
+    onHighlightKey?.(null);
+    try { localStorage.setItem(tourKey, '1'); } catch { /* ignore */ }
     onDone?.();
-  }, [markDone, onDone]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourKey, onDone]);
 
-  const goTo = useCallback((nextStep: number, dir: 'next' | 'prev') => {
+  const goTo = useCallback((next: number, dir: 'next' | 'prev') => {
     if (animating) return;
     setAnimDir(dir);
     setAnimating(true);
-    setTimeout(() => {
-      setStep(nextStep);
-      setAnimating(false);
-    }, 180);
+    setTimeout(() => { setStep(next); setAnimating(false); }, 200);
   }, [animating]);
 
-  const next = () => {
-    if (step < TOUR_STEPS.length - 1) goTo(step + 1, 'next');
-    else close();
-  };
-  const prev = () => {
-    if (step > 0) goTo(step - 1, 'prev');
-  };
+  const goNext = () => { if (!isLast) goTo(step + 1, 'next'); else close(); };
+  const goPrev = () => { if (step > 0) goTo(step - 1, 'prev'); };
 
   if (!visible) return null;
 
-  const s = TOUR_STEPS[step];
-  const isLast = step === TOUR_STEPS.length - 1;
+  // ── Whether to use sidebar mode or center modal ──
+  const isSidebar = !!s.menuKey && popupPos !== null;
 
-  // Slide animation
+  // Slide animation for text content
   const slideStyle: React.CSSProperties = animating
-    ? {
-        opacity: 0,
-        transform: animDir === 'next' ? 'translateX(20px)' : 'translateX(-20px)',
-        transition: 'opacity 0.18s ease, transform 0.18s ease',
-      }
-    : {
-        opacity: 1,
-        transform: 'translateX(0)',
-        transition: 'opacity 0.2s ease, transform 0.2s ease',
-      };
+    ? { opacity: 0, transform: animDir === 'next' ? 'translateX(10px)' : 'translateX(-10px)', transition: 'all 0.18s ease' }
+    : { opacity: 1, transform: 'translateX(0)', transition: 'all 0.22s ease' };
 
   return (
     <>
-      {/* Backdrop */}
+      {/* ── Backdrop ── */}
       <div className="fixed inset-0 z-[210]"
-        style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)' }}
+        style={{ background: 'rgba(2,6,23,0.65)', backdropFilter: 'blur(3px)' }}
         onClick={close} />
 
-      {/* Tour card */}
-      <div className="fixed inset-0 z-[211] flex items-center justify-center p-4 pointer-events-none">
-        <div className="pointer-events-auto w-full max-w-md"
-          style={{ animation: 'dropIn 0.25s ease-out' }}>
+      {/* ── Popup container ── */}
+      <div className="fixed z-[211] pointer-events-none"
+        style={isSidebar
+          ? { top: popupPos.top, left: popupPos.left, transform: 'translateY(-50%)' }
+          : { top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }
+        }
+      >
+        {/* Animated wrapper (scale-in) — SEPARATE from translate so they don't fight */}
+        <div className="pointer-events-auto" style={{ width: 308, animation: 'tourCardIn 0.28s cubic-bezier(0.175,0.885,0.32,1.275) forwards' }}>
 
-          {/* Step number + skip */}
-          <div className="flex items-center justify-between mb-3 px-1">
-            <span className="text-[11px] font-bold text-white/60 tracking-widest uppercase">
-              Langkah {step + 1} dari {TOUR_STEPS.length}
-            </span>
-            <button onClick={close}
-              className="text-[11px] font-semibold text-white/60 hover:text-white transition-all px-2 py-1 rounded-lg hover:bg-white/10">
-              Lewati tour →
-            </button>
-          </div>
+          {/* Left-pointing arrow for sidebar mode */}
+          {isSidebar && (
+            <div style={{
+              position: 'absolute', left: -8, top: '50%', transform: 'translateY(-50%)',
+              width: 0, height: 0,
+              borderTop: '8px solid transparent',
+              borderBottom: '8px solid transparent',
+              borderRight: `8px solid white`,
+              filter: `drop-shadow(-3px 0px 4px ${s.color}30)`,
+            }} />
+          )}
 
-          {/* Card */}
-          <div className="rounded-3xl overflow-hidden shadow-2xl"
-            style={{ background: 'white', border: `2px solid ${s.color}30` }}>
+          {/* ── Card ── */}
+          <div className="rounded-2xl overflow-hidden"
+            style={{
+              background: 'white',
+              boxShadow: `0 20px 60px rgba(0,0,0,0.25), 0 0 0 1.5px ${s.color}20`,
+            }}>
 
-            {/* Color header */}
-            <div className="px-8 pt-8 pb-6 flex flex-col items-center text-center"
-              style={{ background: s.bg }}>
-              <div className="text-6xl mb-4" style={{ animation: 'bounceIn 0.4s ease' }}>
-                {s.icon}
-              </div>
-              <div style={slideStyle}>
-                <h2 className="text-lg font-black text-slate-800 leading-snug">{s.title}</h2>
+            {/* Top color accent strip */}
+            <div className="h-1" style={{ background: `linear-gradient(90deg,${s.color},${s.color}70,transparent)` }} />
+
+            {/* Gradient header */}
+            <div className="px-5 pt-4 pb-3.5" style={{ background: s.accentBg }}>
+              <div className="flex items-start gap-3" style={slideStyle}>
+                {/* Icon */}
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl"
+                  style={{ background: `${s.color}18`, border: `1px solid ${s.color}20` }}>
+                  {s.icon}
+                </div>
+                <div className="min-w-0 pt-0.5">
+                  <p className="text-[9px] font-black uppercase tracking-[0.15em] mb-0.5"
+                    style={{ color: `${s.color}99` }}>
+                    Langkah {step + 1} dari {steps.length}
+                  </p>
+                  <h3 className="font-black text-slate-800 leading-snug" style={{ fontSize: 13 }}>
+                    {s.title}
+                  </h3>
+                </div>
               </div>
             </div>
 
             {/* Body */}
-            <div className="px-8 py-6">
-              <div style={slideStyle}>
-                <p className="text-sm text-slate-600 leading-relaxed text-center">{s.desc}</p>
-              </div>
+            <div className="px-5 py-3.5">
+              <p className="text-slate-500 leading-relaxed" style={{ fontSize: 12.5, ...slideStyle }}>
+                {s.desc}
+              </p>
             </div>
 
             {/* Footer */}
-            <div className="px-8 pb-7 flex flex-col gap-4 items-center">
-              {/* Progress */}
-              <ProgressDots total={TOUR_STEPS.length} current={step} color={s.color} />
-
-              {/* Buttons */}
-              <div className="flex items-center gap-3 w-full">
+            <div className="px-5 pb-5 pt-1">
+              <ProgressDots total={steps.length} current={step} color={s.color} />
+              <div className="flex items-center gap-2 mt-3">
+                {/* Skip */}
+                <button onClick={close}
+                  className="px-3 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-80 flex-shrink-0"
+                  style={{ background: '#f1f5f9', color: '#64748b' }}>
+                  Lewati
+                </button>
+                {/* Back */}
                 {step > 0 && (
-                  <button onClick={prev}
-                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                    style={{ background: '#f1f5f9', color: '#64748b' }}>
+                  <button onClick={goPrev}
+                    className="px-3 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-80 flex-shrink-0"
+                    style={{ background: `${s.color}12`, color: s.color }}>
                     ← Kembali
                   </button>
                 )}
-                <button onClick={next}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all text-white shadow-md"
+                {/* Next */}
+                <button onClick={goNext}
+                  className="flex-1 py-2 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90"
                   style={{ background: s.color, boxShadow: `0 4px 14px ${s.color}40` }}>
                   {isLast ? '🚀 Mulai Sekarang!' : 'Lanjut →'}
                 </button>
@@ -262,24 +294,31 @@ export default function OnboardingTour({ currentUser, forceShow, onDone }: Onboa
         </div>
       </div>
 
+      {/* ── Global keyframes (injected while tour is visible) ── */}
       <style>{`
-        @keyframes bounceIn {
-          0%   { transform: scale(0.6); opacity: 0; }
-          60%  { transform: scale(1.15); opacity: 1; }
-          100% { transform: scale(1); }
+        @keyframes tourCardIn {
+          0%   { opacity: 0; transform: scale(0.85) translateY(6px); }
+          100% { opacity: 1; transform: scale(1)    translateY(0); }
+        }
+        @keyframes tourMenuPulse {
+          0%,100% { box-shadow: 0 0 0 0 rgba(250,200,21,0.65), 0 0 0 0 rgba(250,200,21,0.25); }
+          50%     { box-shadow: 0 0 0 4px rgba(250,200,21,0.30), 0 0 0 10px rgba(250,200,21,0.08); }
         }
       `}</style>
     </>
   );
 }
 
-// ─── Jelajahi Platform Button ─────────────────────────────────────────────────
+// ─── "Jelajahi Platform" floating button ─────────────────────────────────────
 
 export function JelajahiButton({ onClick }: { onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className="fixed bottom-6 right-6 z-[9990] flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold text-white shadow-lg transition-all hover:scale-105 active:scale-95"
-      style={{ background: 'linear-gradient(135deg,#be123c,#9f1239)', boxShadow: '0 4px 20px rgba(190,18,60,0.4)' }}
+      className="fixed bottom-6 right-6 z-[9990] flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold text-white shadow-xl transition-all hover:scale-105 active:scale-95"
+      style={{
+        background: 'linear-gradient(135deg,#be123c,#9f1239)',
+        boxShadow: '0 4px 20px rgba(190,18,60,0.45)',
+      }}
       title="Buka kembali panduan platform">
       <span className="text-base">🗺️</span>
       <span className="hidden sm:inline">Jelajahi Platform</span>
