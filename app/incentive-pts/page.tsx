@@ -88,7 +88,7 @@ function IncentivePTSPage() {
       .select('allow_incentive_input')
       .eq('username', user.username)
       .single()
-      .then(({ data }) => {
+      .then(({ data }: { data: { allow_incentive_input: boolean } | null }) => {
         if (data) {
           setCurrentUser((prev) =>
             prev ? { ...prev, allow_incentive_input: data.allow_incentive_input } : prev
