@@ -117,11 +117,13 @@ interface Props {
   onDone?: () => void;
   /** Called with menu key when step changes, null when tour closes */
   onHighlightKey?: (key: string | null) => void;
+  /** Called whenever the tour card becomes visible or hidden */
+  onVisibleChange?: (visible: boolean) => void;
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow, onDone, onHighlightKey }: Props) {
+export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow, onDone, onHighlightKey, onVisibleChange }: Props) {
   const [visible, setVisible]     = useState(false);
   const [step, setStep]           = useState(0);
   const [animating, setAnimating] = useState(false);
@@ -129,19 +131,29 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
   const [popupPos, setPopupPos]   = useState<{ top: number; left: number } | null>(null);
 
   const tourKey = getTourKey(String(currentUser.id));
+  const menuCount = visibleMenuKeys.length;
 
   // Filter steps to menus visible to this user (always include welcome + done)
   const steps = ALL_STEPS.filter(s => s.menuKey === null || visibleMenuKeys.includes(s.menuKey));
   const s = steps[Math.min(step, steps.length - 1)] ?? steps[0];
   const isLast = step >= steps.length - 1;
 
-  // ── Show on first login ──
+  // ── Notify parent when visible state changes ──
   useEffect(() => {
+    onVisibleChange?.(visible);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
+
+  // ── Auto-show: wait for menus to load, then check localStorage ──
+  useEffect(() => {
+    // Wait until sidebar menus are populated (avoids showing with 0 steps)
+    if (menuCount === 0) return;
     if (forceShow) { setStep(0); setVisible(true); return; }
     try {
       if (!localStorage.getItem(tourKey)) { setStep(0); setVisible(true); }
     } catch { /* ignore */ }
-  }, [forceShow, tourKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forceShow, tourKey, menuCount]);
 
   // ── Position popup next to highlighted sidebar item ──
   useEffect(() => {

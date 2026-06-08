@@ -48,6 +48,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [menuLoading, setMenuLoading] = useState(false);
   const [showTour, setShowTour] = useState(false);
+  const [tourVisible, setTourVisible] = useState(false);
   const [tourHighlightKey, setTourHighlightKey] = useState<string | null>(null);
   const [showDashboardPanel, setShowDashboardPanel] = useState(false);
 
@@ -794,20 +795,9 @@ export default function Dashboard() {
     return (
       <div className="flex flex-col bg-cover bg-center bg-fixed" style={{ backgroundImage: 'url(/IVP_Background.png)', height: '100dvh' }}>
         {renderModals()}
-        {/* ── Onboarding Tour ── */}
-        {currentUser && (
-          <>
-            <OnboardingTour
-              currentUser={currentUser}
-              visibleMenuKeys={visibleMenuItems.map(m => m.key)}
-              forceShow={showTour}
-              onDone={() => setShowTour(false)}
-              onHighlightKey={setTourHighlightKey}
-            />
-            {!showTour && (
-              <JelajahiButton onClick={() => setShowTour(true)} />
-            )}
-          </>
+        {/* ── Jelajahi Button (always visible while logged-in, before sidebar loads) ── */}
+        {currentUser && !tourVisible && (
+          <JelajahiButton onClick={() => setShowTour(true)} />
         )}
         {renderHeader()}
 
@@ -903,6 +893,22 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col bg-cover bg-center bg-fixed" style={{ backgroundImage: 'url(/IVP_Background.png)', height: '100dvh' }}>
       {renderModals()}
+      {/* ── Onboarding Tour + floating button (sidebar view — stable mount) ── */}
+      {currentUser && (
+        <>
+          <OnboardingTour
+            currentUser={currentUser}
+            visibleMenuKeys={visibleMenuItems.map(m => m.key)}
+            forceShow={showTour}
+            onDone={() => setShowTour(false)}
+            onHighlightKey={setTourHighlightKey}
+            onVisibleChange={setTourVisible}
+          />
+          {!tourVisible && (
+            <JelajahiButton onClick={() => setShowTour(true)} />
+          )}
+        </>
+      )}
       {renderHeader()}
 
       <div className="flex flex-1 overflow-hidden">
