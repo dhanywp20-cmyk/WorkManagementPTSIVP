@@ -306,7 +306,8 @@ function QuizPlayer({ session, user, attempt, onDone }: {
 
 export function MyQuizPage({ user }: { user: User }) {
   const [sessions, setSessions] = useState<QuizSession[]>([]);
-  const [activeAttempts, setActiveAttempts] = useState<Record<string, QuizAttempt>>({});
+  const [activeAttempts, setActiveAttempts]     = useState<Record<string, QuizAttempt>>({});
+  const [submittedSessionIds, setSubmittedIds]  = useState<Set<string>>(new Set());
   const [playingSession, setPlayingSession] = useState<QuizSession | null>(null);
   const [search, setSearch] = useState('');
   const [dialog, setDialog] = useState<DialogState>(null);
@@ -321,10 +322,20 @@ export function MyQuizPage({ user }: { user: User }) {
       return forMe && !notYetOpen && !alreadyClosed;
     });
     setSessions(filtered);
+
+    // Fetch active (in-progress) attempts
     const { data: a } = await supabase.from('lc_quiz_attempts').select('*').eq('user_id', user.id).eq('is_submitted', false);
     const map: Record<string, QuizAttempt> = {};
     (a ?? []).forEach((att: any) => { map[att.quiz_session_id] = att; });
     setActiveAttempts(map);
+
+    // Fetch submitted attempts — used to disable button when allow_retake=false
+    const { data: submitted } = await supabase
+      .from('lc_quiz_attempts')
+      .select('quiz_session_id')
+      .eq('user_id', user.id)
+      .eq('is_submitted', true);
+    setSubmittedIds(new Set((submitted ?? []).map((r: any) => r.quiz_session_id)));
   }, [user.id]);
   useEffect(() => { load(); }, [load]);
 
@@ -384,10 +395,11 @@ export function MyQuizPage({ user }: { user: User }) {
           </div>
         )}
         {filteredSessions.map(s => {
-          const inProgress = activeAttempts[s.id];
+          const inProgress  = activeAttempts[s.id];
+          const alreadyDone = !s.allow_retake && submittedSessionIds.has(s.id);
           return (
             <div key={s.id} className="stagger-item rounded-2xl border border-white/60 shadow-sm p-6 flex items-start gap-5 hover:shadow-md transition-all"
-              style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)' }}>
+              style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)', opacity: alreadyDone ? 0.75 : 1 }}>
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-2xl flex-shrink-0">🎯</div>
               <div className="flex-1 min-w-0">
                 <h4 className="font-bold text-slate-800 text-lg">{s.session_name}</h4>
@@ -403,11 +415,24 @@ export function MyQuizPage({ user }: { user: User }) {
                     <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">⏳ Sedang Berlangsung</span>
                   </div>
                 )}
+                {alreadyDone && (
+                  <div className="mt-2">
+                    <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold">✅ Sudah Dikerjakan</span>
+                  </div>
+                )}
               </div>
-              <button onClick={() => handleStart(s)}
-                className={`px-5 py-2.5 text-sm font-bold rounded-xl shadow transition-all flex-shrink-0 ${inProgress ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}>
-                {inProgress ? '▶️ Lanjutkan' : '🚀 Mulai Quiz'}
-              </button>
+              {alreadyDone ? (
+                <button disabled
+                  className="px-5 py-2.5 text-sm font-bold rounded-xl flex-shrink-0 bg-gray-200 text-gray-400 cursor-not-allowed"
+                  title="Quiz ini sudah kamu kerjakan dan tidak bisa diulang">
+                  ✅ Selesai
+                </button>
+              ) : (
+                <button onClick={() => handleStart(s)}
+                  className={`px-5 py-2.5 text-sm font-bold rounded-xl shadow transition-all flex-shrink-0 ${inProgress ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}>
+                  {inProgress ? '▶️ Lanjutkan' : '🚀 Mulai Quiz'}
+                </button>
+              )}
             </div>
           );
         })}

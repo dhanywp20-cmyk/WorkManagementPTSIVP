@@ -8,9 +8,9 @@ import * as XLSX from 'xlsx';
 
 import { User, IncentiveSetting, IncentiveProject, IncentiveDisbursement, ReminderRow, RekapItem } from './_components/types';
 import { INCENTIVE_CATEGORIES, StatCard, fmtRp, fmtPct, fmtPeriode } from './_components/shared';
+import { MiniPieChart } from '@/components/shared/MiniPieChart';
 import { ProjectsTab }  from './_components/ProjectsTab';
 import { RekapTab }     from './_components/RekapTab';
-import { HistoryTab }   from './_components/HistoryTab';
 import { SettingsTab }  from './_components/SettingsTab';
 import { ViewModal, BiayaModal, BackupModal, PaidModal } from './_components/Modals';
 
@@ -29,7 +29,7 @@ function IncentivePTSPage() {
   const [loading, setLoading]         = useState(true);
 
   // ── Tab ──
-  const [activeTab, setActiveTab] = useState<'projects' | 'rekap' | 'history' | 'settings'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'rekap' | 'settings'>('projects');
 
   // ── Data ──
   const [settings,      setSettings]      = useState<IncentiveSetting | null>(null);
@@ -82,6 +82,19 @@ function IncentivePTSPage() {
     const user = getSession<User>();
     if (!user) { topRedirect('/dashboard'); return; }
     setCurrentUser(user);
+    // Refresh allow_incentive_input from DB — may have changed since login
+    supabase
+      .from('users')
+      .select('allow_incentive_input')
+      .eq('username', user.username)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setCurrentUser((prev) =>
+            prev ? { ...prev, allow_incentive_input: data.allow_incentive_input } : prev
+          );
+        }
+      });
     const q = searchParams.get('q');
     if (q) setSearchQ(q);
     const cleanup = startSessionWatcher();
@@ -319,10 +332,50 @@ function IncentivePTSPage() {
     return filterPeriode !== 'all' ? fmtPeriode(filterPeriode) : 'Semua Periode';
   }, [filterMode, filterYear, filterQuarter, filterPeriode]);
 
+  // ── Mini pie chart data ──────────────────────────────────────────────────
+  const statusPieData = useMemo(() => [
+    { label: 'Lunas', value: filteredProjects.filter((p) => p.status === 'paid').length, color: '#10b981' },
+    { label: 'Pending', value: filteredProjects.filter((p) => p.status === 'pending' && p.biaya_cadangan > 0).length, color: '#f59e0b' },
+    { label: 'Belum input', value: filteredProjects.filter((p) => p.status === 'pending' && p.biaya_cadangan === 0).length, color: '#94a3b8' },
+  ].filter((d) => d.value > 0), [filteredProjects]);
+
+  const categoryPieData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    filteredProjects.forEach((p) => { counts[p.category] = (counts[p.category] || 0) + 1; });
+    const COLORS = ['#6366f1', '#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b'];
+    return Object.entries(counts).map(([label, value], i) => ({ label, value, color: COLORS[i % COLORS.length] }));
+  }, [filteredProjects]);
+
+  const divisionPieData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    filteredProjects.forEach((p) => { const div = p.sales_division || 'Lainnya'; counts[div] = (counts[div] || 0) + 1; });
+    const COLORS = ['#0ea5e9', '#06b6d4', '#14b8a6', '#84cc16', '#f97316', '#ef4444', '#ec4899', '#a855f7'];
+    return Object.entries(counts).map(([label, value], i) => ({ label, value, color: COLORS[i % COLORS.length] }));
+  }, [filteredProjects]);
+
   // ── Export Excel ─────────────────────────────────────────────────────────
   const exportExcel = () => {
     const wb = XLSX.utils.book_new();
     const allPersons = Array.from(new Set(rekapData.map((r) => r.person_name)));
+
+    // Helper: add thin borders to all occupied cells in a sheet
+    const addBorders = (ws: XLSX.WorkSheet) => {
+      if (!ws['!ref']) return;
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      const thin = { style: 'thin' as const, color: { rgb: 'CCCCCC' } };
+      for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const addr = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (ws[addr] as any).s = { border: { top: thin, bottom: thin, left: thin, right: thin } };
+        }
+      }
+    };
+
+    const colCount1 = 5 + allPersons.length * 2 + 1;
+    const blank1    = Array<string>(colCount1).fill('');
+
     const headerRow1 = ['No', 'Project Name', 'No. COS Project', 'Sales Division', 'Final Incentive',
       ...allPersons.flatMap((n) => [n + ' %', n + ' Rp']), 'Control'];
     const rows1 = filteredProjects.map((proj, idx) => {
@@ -339,12 +392,21 @@ function IncentivePTSPage() {
         const tot = disbursements.filter((d) => d.person_name === name && filteredProjects.some((p) => p.id === d.project_id)).reduce((s, d) => s + d.amount_rp, 0);
         return ['', tot];
       }), ''];
+
+    // Footer rows (signature block)
+    const half = Math.floor(colCount1 / 2);
+    const fRow1 = [...blank1]; fRow1[0] = 'Dibuat oleh'; fRow1[half] = 'Menyetujui';
+    const fRow2 = [...blank1]; fRow2[0] = 'Dhany Wahyu Perdana'; fRow2[half] = 'Jonny';
+    const fRow3 = [...blank1]; fRow3[0] = 'Manager PTS IVP'; fRow3[half] = 'Director';
+
     const ws1 = XLSX.utils.aoa_to_sheet([
       [`Pengajuan Incentive Project-Project IVP — ${filterLabel}`],
       ['Saya yang bertanda tangan di bawah ini, ingin mengajukan pengeluaran Incentive Project-project IVP dengan dasar perhitungan sebagai berikut:'],
       [], headerRow1, ...rows1, totalRow1,
+      [...blank1], fRow1, fRow2, fRow3,
     ]);
     ws1['!cols'] = [{ wch: 4 }, { wch: 30 }, { wch: 18 }, { wch: 16 }, { wch: 18 }, ...allPersons.flatMap(() => [{ wch: 8 }, { wch: 16 }]), { wch: 10 }];
+    addBorders(ws1);
     XLSX.utils.book_append_sheet(wb, ws1, 'Detail Project');
 
     const years = Array.from(new Set(filteredProjects.map((p) => p.periode?.slice(0, 4)).filter(Boolean))).sort() as string[];
@@ -357,8 +419,12 @@ function IncentivePTSPage() {
         const avgPct = pcts.length > 0 ? pcts.reduce((s, d) => s + d.pct, 0) / pcts.length : 0;
         return [amt > 0 ? fmtPct(avgPct) : '', amt || ''];
       })]),
+      [], ['Dibuat oleh', '', 'Menyetujui'],
+      ['Dhany Wahyu Perdana', '', 'Jonny'],
+      ['Manager PTS IVP', '', 'Director'],
     ]);
     ws2['!cols'] = [{ wch: 22 }, ...years.flatMap(() => [{ wch: 10 }, { wch: 16 }])];
+    addBorders(ws2);
     XLSX.utils.book_append_sheet(wb, ws2, 'Rekap Per Orang');
 
     const ws3 = XLSX.utils.aoa_to_sheet([
@@ -371,6 +437,7 @@ function IncentivePTSPage() {
       ['Backup Team',   settings ? `${settings.backup_pct}%` : '-'],
     ]);
     ws3['!cols'] = [{ wch: 28 }, { wch: 20 }];
+    addBorders(ws3);
     XLSX.utils.book_append_sheet(wb, ws3, 'Summary');
     const fileName = `Incentive_PTS_${filterLabel.replace(/\s/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`;
     XLSX.writeFile(wb, fileName);
@@ -385,7 +452,7 @@ function IncentivePTSPage() {
 
   // ── Loading state ────────────────────────────────────────────────────────
   if (loading) return (
-    <div className="flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50" style={{ minHeight: '100vh' }}>
+    <div className="flex items-center justify-center" style={{ minHeight: '100vh', background: '#f1f5f9' }}>
       <div className="flex flex-col items-center gap-3">
         <div className="w-12 h-12 rounded-full border-4 border-t-transparent animate-spin"
           style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#6366f1' }} />
@@ -398,11 +465,10 @@ function IncentivePTSPage() {
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="relative flex flex-col overflow-hidden" style={{ fontFamily: "'Inter', sans-serif", minHeight: '100vh' }}>
+    <div className="flex flex-col" style={{ fontFamily: "'Inter', sans-serif", minHeight: '100vh', background: '#f1f5f9' }}>
 
       {/* Background */}
-      <div className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/IVP_Background.png')" }} />
-      <div className="absolute inset-0 z-0" style={{ background: 'rgba(240,244,255,0.88)' }} />
+      <div className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat pointer-events-none" style={{ backgroundImage: "url('/IVP_Background.png')", opacity: 0.18 }} />
 
       {/* Toast */}
       {toast && (
@@ -412,28 +478,24 @@ function IncentivePTSPage() {
       )}
 
       {/* Header */}
-      <header className="sticky top-0 z-50 flex-shrink-0 px-6 py-3 flex items-center justify-between gap-4"
-        style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderBottom: '3px solid #6366f1', boxShadow: '0 2px 16px rgba(99,102,241,0.10)' }}>
-        <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-50 flex-shrink-0"
+        style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderBottom: '3px solid #6366f1', boxShadow: '0 2px 12px rgba(99,102,241,0.10)' }}>
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg flex-shrink-0">💰</div>
           <div>
             <h1 className="text-base font-bold text-gray-800">Incentive PTS</h1>
             <p className="text-[11px] text-gray-400">IndoVisual Professional Tools</p>
           </div>
         </div>
-        <div className="text-sm font-semibold text-gray-600 bg-gray-100 px-3 py-1.5 rounded-xl">
-          👤 {currentUser?.full_name}
-        </div>
       </header>
 
       {/* Tabs */}
-      <div className="sticky top-[57px] z-40 flex-shrink-0 px-6"
-        style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(99,102,241,0.12)' }}>
-        <div className="flex gap-1 overflow-x-auto">
+      <div className="sticky top-[57px] z-40 flex-shrink-0"
+        style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(99,102,241,0.12)' }}>
+        <div className="max-w-5xl mx-auto px-4 flex gap-1 overflow-x-auto">
           {([
             { id: 'projects', label: '📋 Projects',       adminOnly: false },
             { id: 'rekap',    label: '📊 Rekap Incentive', adminOnly: false },
-            { id: 'history',  label: '🕒 History',         adminOnly: false },
             { id: 'settings', label: '⚙️ Settings',        adminOnly: true  },
           ] as { id: typeof activeTab; label: string; adminOnly: boolean }[])
             .filter((t) => !t.adminOnly || isAdmin)
@@ -448,7 +510,7 @@ function IncentivePTSPage() {
 
       {/* Main content */}
       <main className="relative z-10">
-        <div className="p-4 w-full space-y-5">
+        <div className="max-w-5xl mx-auto px-4 py-4 space-y-5">
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -456,6 +518,13 @@ function IncentivePTSPage() {
             <StatCard icon="💵" label="Total Biaya Cadangan"   value={fmtRp(totalBiaya)}               sub="Project terfilter"           color="#0ea5e9" />
             <StatCard icon="💰" label="Total Incentive"        value={fmtRp(totalIncentive)}            sub="Terdistribusi"               color="#10b981" />
             <StatCard icon="⏳" label="Menunggu Pembayaran"    value={String(filteredProjects.filter((p) => p.status === 'pending' && p.biaya_cadangan > 0).length)} sub="Project pending" color="#f59e0b" />
+          </div>
+
+          {/* Mini Pie Charts */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <MiniPieChart data={statusPieData}   title="Status Pembayaran" icon="💳" />
+            <MiniPieChart data={categoryPieData} title="Kategori Project"  icon="📋" />
+            <MiniPieChart data={divisionPieData} title="Sales Division"    icon="🏢" />
           </div>
 
           {/* Filters */}
@@ -548,13 +617,6 @@ function IncentivePTSPage() {
               currentUser={currentUser}
               filterLabel={filterLabel}
               onExport={exportExcel}
-            />
-          )}
-          {activeTab === 'history' && (
-            <HistoryTab
-              projects={projects}
-              disbursements={disbursements}
-              projectMatchesFilter={projectMatchesFilter}
             />
           )}
           {activeTab === 'settings' && isAdmin && (

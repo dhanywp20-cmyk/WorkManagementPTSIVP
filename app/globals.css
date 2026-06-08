@@ -57,6 +57,20 @@ html, body {
   overflow-x: hidden;
 }
 
+/* ── Modern thin scrollbar — semua platform ─────────────────────────────── */
+/* Webkit (Chrome, Edge, Safari) */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; border-radius: 99px; }
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.25);
+  border-radius: 99px;
+  transition: background 0.2s;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.55); }
+::-webkit-scrollbar-corner { background: transparent; }
+/* Firefox */
+* { scrollbar-width: thin; scrollbar-color: rgba(99,102,241,0.25) transparent; }
+
 /* ── Global responsive safety ───────────────────────────────────────────── */
 html {
   -webkit-text-size-adjust: 100%;   /* prevent iOS font-size inflation */

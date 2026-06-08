@@ -64,14 +64,19 @@ export function ScorePage({ user }: { user: User }) {
           .eq('user_id', user.id).eq('is_submitted', true)
           .order('submitted_at', { ascending: false }),
         supabase.from('lc_quiz_attempts')
-          .select('user_id, score, passed, users(full_name)')
+          .select('user_id, score, passed, users(full_name, role)')
           .eq('is_submitted', true),
       ]);
       setAttempts(myRes.data ?? []);
 
       if (allRes.data) {
+        const myRole = user.role?.toLowerCase() ?? '';
         const byUser: Record<string, { name: string; scores: number[]; passed: number }> = {};
         allRes.data.forEach((a: any) => {
+          // Filter: only show users of the same role as the current user
+          // (always include self regardless of role)
+          const theirRole = (a.users?.role ?? '').toLowerCase();
+          if (a.user_id !== user.id && myRole && theirRole && theirRole !== myRole) return;
           if (!byUser[a.user_id]) byUser[a.user_id] = { name: a.users?.full_name ?? '-', scores: [], passed: 0 };
           byUser[a.user_id].scores.push(a.score ?? 0);
           if (a.passed) byUser[a.user_id].passed++;
@@ -181,7 +186,7 @@ export function ScorePage({ user }: { user: User }) {
 
             {/* Right: Leaderboard with user's row highlighted */}
             <div>
-              <SectionHeader>🏆 Posisi Kamu di Leaderboard</SectionHeader>
+              <SectionHeader>🏆 Top Performers — {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Semua'}</SectionHeader>
               <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
                 <table className="w-full text-sm table-zebra" style={{ minWidth: '300px' }}>
                   <thead className="border-b border-slate-200 bg-slate-50">

@@ -3,6 +3,7 @@
 
 import { IncentiveProject } from './types';
 import { Badge, fmtRp, fmtDate, fmtPeriode } from './shared';
+import { ViewIconBtn, EditIconBtn, CompleteIconBtn, ActionGroup } from '@/components/shared/ActionIcons';
 
 interface Props {
   filteredProjects: IncentiveProject[];
@@ -14,6 +15,22 @@ interface Props {
   onSetBackup: (p: IncentiveProject) => void;
   onInputBiaya: (p: IncentiveProject) => void;
   onMarkPaid: (p: IncentiveProject) => void;
+}
+
+// Backup icon button — same style as ActionIcons
+function BackupIconBtn({ onClick, title }: { onClick: () => void; title?: string }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title ?? 'Set Tim Backup'}
+      className="inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all duration-150 bg-white border-slate-200 text-sky-500 hover:bg-sky-50 hover:border-sky-300 hover:shadow-sm"
+    >
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    </button>
+  );
 }
 
 export function ProjectsTab({
@@ -46,14 +63,13 @@ export function ProjectsTab({
               <th className="px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[150px]">
                 Nominal Cadangan
               </th>
-              <th className={`${thCls} w-[140px] text-center`}>Status</th>
-              <th className={`${thCls} w-[160px] text-center`}>Aksi</th>
+              <th className={`${thCls} w-[120px] text-center`}>Action</th>
             </tr>
           </thead>
           <tbody>
             {filteredProjects.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-4 py-16 text-center border border-gray-200">
+                <td colSpan={9} className="px-4 py-16 text-center border border-gray-200">
                   <p className="text-4xl mb-3">📭</p>
                   <p className="text-gray-500 font-medium">Belum ada project incentive</p>
                   <p className="text-gray-400 text-xs mt-1">
@@ -116,54 +132,21 @@ export function ProjectsTab({
                       )}
                     </td>
                     <td className={`${cellCls} text-center`}>
-                      <Badge
-                        color={proj.status === 'paid' ? 'green' : proj.biaya_cadangan > 0 ? 'amber' : 'gray'}
-                        square
-                      >
-                        {proj.status === 'paid'
-                          ? '✅ Lunas'
-                          : proj.biaya_cadangan > 0
-                          ? '⏳ Pending'
-                          : '⚪ Belum ada biaya'}
-                      </Badge>
-                    </td>
-                    <td className={`${cellCls} text-center`}>
-                      <div className="flex items-center justify-center gap-1 flex-nowrap">
-                        <button
-                          onClick={() => onView(proj)}
-                          className="px-2 py-1 rounded text-xs font-semibold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200 transition-colors whitespace-nowrap"
-                          title="Lihat detail"
-                        >
-                          👁 View
-                        </button>
+                      <ActionGroup>
+                        <ViewIconBtn onClick={() => onView(proj)} title="Lihat detail" />
                         {isAdmin && (
-                          <button
-                            onClick={() => onSetBackup(proj)}
-                            className="px-2 py-1 rounded text-xs font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 transition-colors"
-                            title="Set backup"
-                          >
-                            🤝
-                          </button>
+                          <BackupIconBtn onClick={() => onSetBackup(proj)} title="Set Tim Backup" />
                         )}
                         {canInputBiaya && proj.status === 'pending' && (
-                          <button
+                          <EditIconBtn
                             onClick={() => onInputBiaya(proj)}
-                            className="px-2 py-1 rounded text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-colors"
-                            title={proj.biaya_cadangan > 0 ? 'Edit biaya' : 'Input biaya'}
-                          >
-                            {proj.biaya_cadangan > 0 ? '✏️' : '💵'}
-                          </button>
+                            title={proj.biaya_cadangan > 0 ? 'Edit biaya cadangan' : 'Input biaya cadangan'}
+                          />
                         )}
                         {isAdmin && proj.status === 'pending' && proj.biaya_cadangan > 0 && (
-                          <button
-                            onClick={() => onMarkPaid(proj)}
-                            className="px-2 py-1 rounded text-xs font-semibold bg-green-50 text-green-600 hover:bg-green-100 border border-green-200 transition-colors"
-                            title="Tandai lunas"
-                          >
-                            ✅
-                          </button>
+                          <CompleteIconBtn onClick={() => onMarkPaid(proj)} title="Tandai lunas" />
                         )}
-                      </div>
+                      </ActionGroup>
                     </td>
                   </tr>
                 );

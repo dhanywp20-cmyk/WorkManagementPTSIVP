@@ -141,16 +141,14 @@ export function ViewModal({
                   </div>
                 </div>
               )}
-              {project.description && <InfoRow icon="📄" label="Deskripsi" value={project.description} />}
-              {project.notes && (
-                <div className="flex items-start gap-3 px-4 py-3 bg-amber-50/50">
-                  <span className="text-base mt-0.5">📝</span>
-                  <div className="flex-1">
-                    <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Catatan</p>
-                    <p className="text-sm text-gray-700 mt-0.5 leading-relaxed">{project.notes}</p>
-                  </div>
+              <InfoRow icon="📄" label="Deskripsi" value={project.description || '—'} />
+              <div className="flex items-start gap-3 px-4 py-3 bg-amber-50/50">
+                <span className="text-base mt-0.5">📝</span>
+                <div className="flex-1">
+                  <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Catatan</p>
+                  <p className="text-sm text-gray-700 mt-0.5 leading-relaxed">{project.notes || '—'}</p>
                 </div>
-              )}
+              </div>
             </div>
           </div>
 

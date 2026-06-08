@@ -127,6 +127,37 @@ export function SessionsPage({ user }: { user: User }) {
     await supabase.from('lc_quiz_sessions').update({ is_active: !current }).eq('id', id); load();
   };
 
+  // Duplicate an existing session — re-sends the same quiz to the same targets
+  const handleResend = (session: QuizSession) => {
+    setDialog({
+      type: 'confirm',
+      title: '🔄 Kirim Ulang Sesi Quiz',
+      message: `Buat salinan baru dari "${session.session_name}" dengan pengaturan yang sama? Sesi baru akan langsung aktif sehingga peserta dapat mengerjakan kembali.`,
+      confirmLabel: 'Kirim Ulang',
+      onConfirm: async () => {
+        const { error } = await supabase.from('lc_quiz_sessions').insert([{
+          session_name    : session.session_name + ' (Ulang)',
+          material_id     : session.material_id,
+          materi_name     : session.materi_name,
+          question_ids    : session.question_ids ?? [],
+          question_count  : session.question_count,
+          timer_minutes   : session.timer_minutes,
+          passing_grade   : session.passing_grade,
+          allow_retake    : session.allow_retake,
+          is_active       : true,
+          created_by      : user.id,
+          target_user_ids : session.target_user_ids ?? null,
+        }]);
+        if (error) {
+          setDialog({ type: 'error', title: 'Gagal', message: 'Gagal menduplikasi sesi: ' + error.message });
+          return;
+        }
+        load();
+        setDialog({ type: 'success', message: 'Sesi berhasil dikirim ulang dan sudah aktif!' });
+      },
+    });
+  };
+
   const handleDelete = (id: string) => {
     setDialog({
       type: 'confirm', title: 'Hapus Sesi Quiz',
@@ -509,7 +540,17 @@ export function SessionsPage({ user }: { user: User }) {
                       })()}
                     </div>
                   </div>
-                  <div className="flex gap-2 flex-shrink-0">
+                  <div className="flex gap-2 flex-shrink-0 flex-wrap justify-end">
+                    <button
+                      onClick={() => handleResend(s)}
+                      title="Duplikat & kirim ulang ke peserta yang sama"
+                      className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 flex items-center gap-1"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Kirim Ulang
+                    </button>
                     <button onClick={() => toggleActive(s.id, s.is_active)}
                       className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${s.is_active ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'}`}>
                       {s.is_active ? 'Nonaktifkan' : 'Aktifkan'}
