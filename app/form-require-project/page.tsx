@@ -1707,7 +1707,7 @@ Hubungi Admin untuk info lebih lanjut.
                   <col style={{ width: '105px' }} />
                   <col style={{ width: '80px' }} />  {/* DueDate lebih sempit */}
                   <col style={{ width: '80px' }} />  {/* CreatedBy lebih sempit */}
-                  <col style={{ width: '140px' }} /> {/* Action lebih lebar */}
+                  <col style={{ width: '90px' }} />  {/* Action — cukup untuk 2-3 icon button */}
                 </colgroup>
                 <thead>
                   <tr className="border-b-2 border-gray-300" style={{ background: 'rgba(255,255,255,0.97)' }}>

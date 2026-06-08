@@ -1233,7 +1233,7 @@ export default function FormReviewPage() {
                     <col style={{ width: '10%' }} />  {/* Grade 1 */}
                     {switchTab === 'BAST' && <col style={{ width: '10%' }} />}  {/* Grade 2 */}
                     <col style={{ width: '9%' }} />   {/* Status */}
-                    <col style={{ width: '9%' }} />   {/* ACT */}
+                    <col style={{ width: '7%' }} />   {/* Action */}
                   </colgroup>
                   <thead>
                     <tr className="border-b-2 border-gray-300" style={{ background: 'rgba(255,255,255,0.97)' }}>
@@ -1241,8 +1241,8 @@ export default function FormReviewPage() {
                         switchTab === 'Demo Product' ? 'Product Demo' : 'Product BAST',
                         switchTab === 'Demo Product' ? 'Grade PK' : 'Grade Training',
                         switchTab === 'BAST' ? 'Grade PK' : null,
-                        'Status', 'ACT'].filter(Boolean).map((h, i) => (
-                        <th key={i} className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">
+                        'Status', 'Action'].filter(Boolean).map((h, i, arr) => (
+                        <th key={i} className={`px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200 ${h === 'Action' || h === 'No' ? 'text-center' : 'text-left'}`}>
                           {h === 'No' && selectMode && isAdmin
                             ? <input type="checkbox"
                                 checked={selectedIds.size === filteredReviews.length && filteredReviews.length > 0}
