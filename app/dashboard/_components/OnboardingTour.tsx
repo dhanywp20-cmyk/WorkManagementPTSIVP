@@ -18,7 +18,7 @@ const ALL_STEPS: TourStep[] = [
   {
     id: 'welcome', menuKey: null, icon: '👋',
     title: 'Selamat datang di Work Management Platform!',
-    desc: 'Platform terpadu IndoVisual untuk tim PTS — jadwal, tiket, proyek, laporan & incentive dalam satu tempat. Mari kami kenalkan fitur-fiturnya!',
+    desc: 'Platform terpadu IndoVisual untuk tim PTS — jadwal, tiket, proyek, laporan harian dalam satu tempat. Mari kami kenalkan fitur-fiturnya!',
     color: '#be123c', accentBg: 'linear-gradient(135deg,#fff1f2,#fecdd3)',
   },
   {
