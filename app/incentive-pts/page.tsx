@@ -45,6 +45,7 @@ interface IncentiveProject {
   paid_at?: string;
   paid_by?: string;
   created_at: string;
+  cos_project_no?: string;
   // from reminder join
   description?: string;
   notes?: string;
@@ -95,7 +96,7 @@ const fmtPeriode = (s?: string) => {
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-function Badge({ color, children }: { color: string; children: React.ReactNode }) {
+function Badge({ color, children, square }: { color: string; children: React.ReactNode; square?: boolean }) {
   const map: Record<string, string> = {
     green:  'bg-emerald-100 text-emerald-700 border border-emerald-200',
     amber:  'bg-amber-100 text-amber-700 border border-amber-200',
@@ -105,7 +106,8 @@ function Badge({ color, children }: { color: string; children: React.ReactNode }
     purple: 'bg-purple-100 text-purple-700 border border-purple-200',
     indigo: 'bg-indigo-100 text-indigo-700 border border-indigo-200',
   };
-  return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${map[color] ?? map.gray}`}>{children}</span>;
+  const rounded = square ? 'rounded' : 'rounded-full';
+  return <span className={`inline-flex items-center px-2 py-0.5 ${rounded} text-[11px] font-semibold ${map[color] ?? map.gray}`}>{children}</span>;
 }
 
 function StatCard({ icon, label, value, sub, color }: { icon: string; label: string; value: string; sub?: string; color: string }) {
@@ -156,6 +158,7 @@ function IncentivePTSPage() {
 
   // Biaya form
   const [biayaInput, setBiayaInput] = useState('');
+  const [cosProjectNoInput, setCosProjectNoInput] = useState('');
   const [savingBiaya, setSavingBiaya] = useState(false);
 
   // Backup form
@@ -304,6 +307,7 @@ function IncentivePTSPage() {
       biaya_cadangan: biaya,
       biaya_input_by: currentUser?.full_name,
       biaya_input_at: new Date().toISOString(),
+      ...(cosProjectNoInput.trim() ? { cos_project_no: cosProjectNoInput.trim() } : {}),
     }).eq('id', selectedProject.id);
 
     if (error) { notify('error', 'Gagal simpan biaya'); setSavingBiaya(false); return; }
@@ -312,6 +316,7 @@ function IncentivePTSPage() {
     setSavingBiaya(false);
     setShowBiayaModal(false);
     setBiayaInput('');
+    setCosProjectNoInput('');
     fetchProjects();
     fetchDisbursements();
   };
@@ -455,7 +460,7 @@ function IncentivePTSPage() {
   const exportExcel = () => {
     const wb = XLSX.utils.book_new();
     const allPersons = Array.from(new Set(rekapData.map(r => r.person_name)));
-    const headerRow1 = ['No', 'Project Name', 'Sales Division', 'Final Incentive',
+    const headerRow1 = ['No', 'Project Name', 'No. COS Project', 'Sales Division', 'Final Incentive',
       ...allPersons.flatMap(name => [name + ' %', name + ' Rp']), 'Control'];
     const rows1 = filteredProjects.map((proj, idx) => {
       const projDisb = disbursements.filter(d => d.project_id === proj.id);
@@ -464,9 +469,9 @@ function IncentivePTSPage() {
         return d ? [fmtPct(d.pct), d.amount_rp] : ['', ''];
       });
       const pctTotal = projDisb.reduce((s, d) => s + d.pct, 0);
-      return [idx + 1, proj.project_name, proj.sales_division ?? '', proj.biaya_cadangan, ...perPersonCols, pctTotal > 0 ? `${Math.round(pctTotal)}%` : ''];
+      return [idx + 1, proj.project_name, proj.cos_project_no ?? '', proj.sales_division ?? '', proj.biaya_cadangan, ...perPersonCols, pctTotal > 0 ? `${Math.round(pctTotal)}%` : ''];
     });
-    const totalRow1 = ['', 'Total Finance', '', totalBiaya,
+    const totalRow1 = ['', 'Total Finance', '', '', totalBiaya,
       ...allPersons.flatMap(name => {
         const personTotal = disbursements.filter(d => d.person_name === name && filteredProjects.some(p => p.id === d.project_id)).reduce((s, d) => s + d.amount_rp, 0);
         return ['', personTotal];
@@ -476,7 +481,7 @@ function IncentivePTSPage() {
       ['Saya yang bertanda tangan di bawah ini, ingin mengajukan pengeluaran Incentive Project-project IVP dengan dasar perhitungan sebagai berikut:'],
       [], headerRow1, ...rows1, totalRow1,
     ]);
-    ws1['!cols'] = [{ wch: 4 }, { wch: 30 }, { wch: 16 }, { wch: 18 }, ...allPersons.flatMap(() => [{ wch: 8 }, { wch: 16 }]), { wch: 10 }];
+    ws1['!cols'] = [{ wch: 4 }, { wch: 30 }, { wch: 18 }, { wch: 16 }, { wch: 18 }, ...allPersons.flatMap(() => [{ wch: 8 }, { wch: 16 }]), { wch: 10 }];
     XLSX.utils.book_append_sheet(wb, ws1, 'Detail Project');
 
     const years = Array.from(new Set(filteredProjects.map(p => p.periode?.slice(0, 4)).filter(Boolean))).sort() as string[];
@@ -586,7 +591,7 @@ function IncentivePTSPage() {
 
       {/* Scrollable content */}
       <main className="relative z-10 flex-1 overflow-y-auto">
-        <div className="p-6 max-w-7xl mx-auto w-full space-y-5">
+        <div className="p-4 w-full space-y-5">
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -660,126 +665,138 @@ function IncentivePTSPage() {
             </div>
           </div>
 
-          {/* ══════════ TAB: PROJECTS — TABLE ══════════ */}
           {activeTab === 'projects' && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              {/* Table header */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm border-collapse">
                   <thead>
-                    <tr className="border-b border-gray-100" style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.04))' }}>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-10">No</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Project Name</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-32">Kategori</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-36">Handler</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-36">Sales</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-28">Tanggal</th>
-                      <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider w-36">Nominal Cadangan</th>
-                      <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-36">Status</th>
-                      <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-28">Aksi</th>
+                    <tr style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.10),rgba(139,92,246,0.07))' }}>
+                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-10">No</th>
+                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 min-w-[180px]">Project Name</th>
+                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[140px]">Kategori</th>
+                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[140px]">Handler</th>
+                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[130px]">Sales</th>
+                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[110px]">Tanggal</th>
+                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[130px]">No. COS Project</th>
+                      <th className="px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[150px]">Nominal Cadangan</th>
+                      <th className="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[140px]">Status</th>
+                      <th className="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[160px]">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody>
                     {filteredProjects.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="px-4 py-16 text-center">
+                        <td colSpan={10} className="px-4 py-16 text-center border border-gray-200">
                           <p className="text-4xl mb-3">📭</p>
                           <p className="text-gray-500 font-medium">Belum ada project incentive</p>
                           <p className="text-gray-400 text-xs mt-1">Data otomatis muncul dari Reminder Schedule kategori Training / Konfigurasi & Training yang sudah selesai</p>
                         </td>
                       </tr>
-                    ) : filteredProjects.map((proj, idx) => (
-                      <tr key={proj.id} className="hover:bg-indigo-50/30 transition-colors group">
-                        {/* No */}
-                        <td className="px-4 py-3 text-xs text-gray-400 font-medium">{idx + 1}</td>
-                        {/* Project Name */}
-                        <td className="px-4 py-3">
-                          <p className="font-semibold text-gray-800 text-sm leading-snug">{proj.project_name}</p>
-                          {proj.address && <p className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[240px]">📍 {proj.address}</p>}
-                        </td>
-                        {/* Kategori */}
-                        <td className="px-4 py-3">
-                          <Badge color="purple">{proj.category}</Badge>
-                        </td>
-                        {/* Handler */}
-                        <td className="px-4 py-3">
-                          <p className="text-sm font-medium text-gray-700">{proj.handler_name}</p>
-                          {proj.backup_names.length > 0 && (
-                            <p className="text-[11px] text-gray-400 mt-0.5">+{proj.backup_names.length} backup</p>
-                          )}
-                        </td>
-                        {/* Sales */}
-                        <td className="px-4 py-3">
-                          {proj.sales_name ? (
-                            <>
-                              <p className="text-sm text-gray-700">{proj.sales_name}</p>
-                              {proj.sales_division && <p className="text-[11px] text-gray-400">{proj.sales_division}</p>}
-                            </>
-                          ) : <span className="text-gray-300 text-xs">—</span>}
-                        </td>
-                        {/* Tanggal — hanya due_date, periode hanya untuk filter */}
-                        <td className="px-4 py-3">
-                          <p className="text-sm text-gray-600">{fmtDate(proj.due_date)}</p>
-                          <p className="text-[11px] text-gray-400">{fmtPeriode(proj.periode)}</p>
-                        </td>
-                        {/* Nominal */}
-                        <td className="px-4 py-3 text-right">
-                          {proj.biaya_cadangan > 0 ? (
-                            <p className="font-bold text-indigo-600 text-sm">{fmtRp(proj.biaya_cadangan)}</p>
-                          ) : (
-                            <span className="text-gray-300 text-xs">Belum diinput</span>
-                          )}
-                        </td>
-                        {/* Status */}
-                        <td className="px-4 py-3 text-center">
-                          <Badge color={proj.status === 'paid' ? 'green' : proj.biaya_cadangan > 0 ? 'amber' : 'gray'}>
-                            {proj.status === 'paid' ? '✅ Lunas' : proj.biaya_cadangan > 0 ? '⏳ Pending' : '⚪ Belum ada biaya'}
-                          </Badge>
-                        </td>
-                        {/* Aksi */}
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                            {/* View */}
-                            <button
-                              onClick={() => { setSelectedProject(proj); setShowViewModal(true); }}
-                              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200 transition-colors"
-                              title="Lihat detail">
-                              👁 View
-                            </button>
-                            {/* Backup — admin only */}
-                            {isAdmin && (
-                              <button onClick={() => { setSelectedProject(proj); setBackupSelected(proj.backup_names); setShowBackupModal(true); }}
-                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 transition-colors"
-                                title="Set backup">
-                                🤝
-                              </button>
+                    ) : filteredProjects.map((proj, idx) => {
+                      const isEven = idx % 2 === 0;
+                      const rowBg = isEven ? 'bg-white' : 'bg-indigo-50/30';
+                      const cellCls = `border border-gray-200 px-3 py-2.5 ${rowBg}`;
+                      return (
+                        <tr key={proj.id} className={`hover:bg-indigo-50/60 transition-colors group`}>
+                          {/* No */}
+                          <td className={`${cellCls} text-xs text-gray-400 font-medium text-center`}>{idx + 1}</td>
+                          {/* Project Name */}
+                          <td className={cellCls}>
+                            <p className="font-semibold text-gray-800 text-sm leading-snug">{proj.project_name}</p>
+                            {proj.address && <p className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[220px]">📍 {proj.address}</p>}
+                          </td>
+                          {/* Kategori */}
+                          <td className={cellCls}>
+                            <Badge color="purple" square>{proj.category}</Badge>
+                          </td>
+                          {/* Handler */}
+                          <td className={cellCls}>
+                            <p className="text-sm font-medium text-gray-700">{proj.handler_name}</p>
+                            {proj.backup_names.length > 0 && (
+                              <p className="text-[11px] text-gray-400 mt-0.5">+{proj.backup_names.length} backup</p>
                             )}
-                            {/* Input / Edit Biaya */}
-                            {canInputBiaya && proj.status === 'pending' && (
-                              <button onClick={() => { setSelectedProject(proj); setBiayaInput(proj.biaya_cadangan > 0 ? String(proj.biaya_cadangan) : ''); setShowBiayaModal(true); }}
-                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-colors"
-                                title={proj.biaya_cadangan > 0 ? 'Edit biaya' : 'Input biaya'}>
-                                {proj.biaya_cadangan > 0 ? '✏️' : '💵'}
-                              </button>
+                          </td>
+                          {/* Sales */}
+                          <td className={cellCls}>
+                            {proj.sales_name ? (
+                              <>
+                                <p className="text-sm text-gray-700">{proj.sales_name}</p>
+                                {proj.sales_division && <p className="text-[11px] text-gray-400">{proj.sales_division}</p>}
+                              </>
+                            ) : <span className="text-gray-300 text-xs">—</span>}
+                          </td>
+                          {/* Tanggal */}
+                          <td className={cellCls}>
+                            <p className="text-sm text-gray-600">{fmtDate(proj.due_date)}</p>
+                            <p className="text-[11px] text-gray-400">{fmtPeriode(proj.periode)}</p>
+                          </td>
+                          {/* COS Project No */}
+                          <td className={cellCls}>
+                            {proj.cos_project_no ? (
+                              <span className="text-sm font-mono font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">{proj.cos_project_no}</span>
+                            ) : (
+                              <span className="text-gray-300 text-xs">—</span>
                             )}
-                            {/* Tandai Lunas — admin only */}
-                            {isAdmin && proj.status === 'pending' && proj.biaya_cadangan > 0 && (
-                              <button onClick={() => { setSelectedProject(proj); setShowPaidModal(true); }}
-                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-green-50 text-green-600 hover:bg-green-100 border border-green-200 transition-colors"
-                                title="Tandai lunas">
-                                ✅
-                              </button>
+                          </td>
+                          {/* Nominal */}
+                          <td className={`${cellCls} text-right`}>
+                            {proj.biaya_cadangan > 0 ? (
+                              <p className="font-bold text-indigo-600 text-sm">{fmtRp(proj.biaya_cadangan)}</p>
+                            ) : (
+                              <span className="text-gray-300 text-xs">Belum diinput</span>
                             )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          {/* Status */}
+                          <td className={`${cellCls} text-center`}>
+                            <Badge color={proj.status === 'paid' ? 'green' : proj.biaya_cadangan > 0 ? 'amber' : 'gray'} square>
+                              {proj.status === 'paid' ? '✅ Lunas' : proj.biaya_cadangan > 0 ? '⏳ Pending' : '⚪ Belum ada biaya'}
+                            </Badge>
+                          </td>
+                          {/* Aksi */}
+                          <td className={`${cellCls} text-center`}>
+                            <div className="flex items-center justify-center gap-1 flex-nowrap">
+                              {/* View */}
+                              <button
+                                onClick={() => { setSelectedProject(proj); setShowViewModal(true); }}
+                                className="px-2 py-1 rounded text-xs font-semibold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200 transition-colors whitespace-nowrap"
+                                title="Lihat detail">
+                                👁 View
+                              </button>
+                              {/* Backup — admin only */}
+                              {isAdmin && (
+                                <button onClick={() => { setSelectedProject(proj); setBackupSelected(proj.backup_names); setShowBackupModal(true); }}
+                                  className="px-2 py-1 rounded text-xs font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 transition-colors"
+                                  title="Set backup">
+                                  🤝
+                                </button>
+                              )}
+                              {/* Input / Edit Biaya */}
+                              {canInputBiaya && proj.status === 'pending' && (
+                                <button onClick={() => { setSelectedProject(proj); setBiayaInput(proj.biaya_cadangan > 0 ? String(proj.biaya_cadangan) : ''); setCosProjectNoInput(proj.cos_project_no ?? ''); setShowBiayaModal(true); }}
+                                  className="px-2 py-1 rounded text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-colors"
+                                  title={proj.biaya_cadangan > 0 ? 'Edit biaya' : 'Input biaya'}>
+                                  {proj.biaya_cadangan > 0 ? '✏️' : '💵'}
+                                </button>
+                              )}
+                              {/* Tandai Lunas — admin only */}
+                              {isAdmin && proj.status === 'pending' && proj.biaya_cadangan > 0 && (
+                                <button onClick={() => { setSelectedProject(proj); setShowPaidModal(true); }}
+                                  className="px-2 py-1 rounded text-xs font-semibold bg-green-50 text-green-600 hover:bg-green-100 border border-green-200 transition-colors"
+                                  title="Tandai lunas">
+                                  ✅
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
               {/* Footer count */}
               {filteredProjects.length > 0 && (
-                <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+                <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
                   <span className="text-xs text-gray-400">
                     Menampilkan {filteredProjects.length} dari {projects.length} project
                   </span>
@@ -996,6 +1013,12 @@ function IncentivePTSPage() {
                       <p className="text-[11px] text-gray-400">Periode</p>
                       <p className="font-semibold text-gray-700">{fmtPeriode(selectedProject.periode)}</p>
                     </div>
+                    {selectedProject.cos_project_no && (
+                      <div className="col-span-2">
+                        <p className="text-[11px] text-gray-400">No. COS Project</p>
+                        <p className="font-mono font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 inline-block text-sm">{selectedProject.cos_project_no}</p>
+                      </div>
+                    )}
                     {selectedProject.address && (
                       <div className="col-span-2">
                         <p className="text-[11px] text-gray-400">Lokasi</p>
@@ -1111,7 +1134,7 @@ function IncentivePTSPage() {
                   </button>
                 )}
                 {canInputBiaya && selectedProject.status === 'pending' && (
-                  <button onClick={() => { setShowViewModal(false); setBiayaInput(selectedProject.biaya_cadangan > 0 ? String(selectedProject.biaya_cadangan) : ''); setShowBiayaModal(true); }}
+                  <button onClick={() => { setShowViewModal(false); setBiayaInput(selectedProject.biaya_cadangan > 0 ? String(selectedProject.biaya_cadangan) : ''); setCosProjectNoInput(selectedProject.cos_project_no ?? ''); setShowBiayaModal(true); }}
                     className="flex-1 px-3 py-2 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90"
                     style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
                     {selectedProject.biaya_cadangan > 0 ? '✏️ Edit Biaya' : '💵 Input Biaya'}
@@ -1155,6 +1178,13 @@ function IncentivePTSPage() {
                 )}
               </div>
             )}
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">No. COS Project <span className="text-gray-400 font-normal">(opsional)</span></label>
+              <input type="text" value={cosProjectNoInput}
+                onChange={e => setCosProjectNoInput(e.target.value)}
+                placeholder="Contoh: COS-2026-001"
+                className={inputCls} />
+            </div>
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5">Biaya Cadangan (Rp)</label>
               <input type="text" value={biayaInput}
