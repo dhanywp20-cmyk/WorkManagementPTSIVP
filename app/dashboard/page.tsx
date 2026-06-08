@@ -168,13 +168,8 @@ export default function Dashboard() {
         // Admin/supervisor/team with dashboard: langsung tampilkan sidebar + dashboard panel
         setTimeout(() => { setShowSidebar(true); setShowDashboardPanel(true); }, 50);
       } else {
-        // Sales/guest/team tanpa dashboard: langsung ke menu pertama yang allowed
-        const firstMenu = (data.allowed_menus ?? [])[0];
-        if (firstMenu) {
-          setTimeout(() => { setShowSidebar(true); }, 50);
-        } else {
-          setTimeout(() => { setShowSidebar(true); }, 50);
-        }
+        // Sales/guest/team tanpa dashboard: auto-navigate effect will handle first menu
+        setTimeout(() => { setShowSidebar(true); }, 50);
       }
     } catch { setLoginErr('Login gagal. Coba lagi.'); }
   };
@@ -233,9 +228,16 @@ export default function Dashboard() {
     const role = currentUser.role?.toLowerCase() ?? '';
     const isSalesGuest = ['guest','sales'].includes(role);
     const isRegularTeam = role === 'team' && !(currentUser.allowed_menus ?? []).includes('dashboard') && currentUser.jabatan !== 'Supervisor';
-    if ((isSalesGuest || isRegularTeam) && visibleMenuItems.length > 0 && !showTicketing && !iframeUrl && !showDashboardPanel) {
-      const firstItem = visibleMenuItems[0]?.items?.[0];
-      const firstTitle = visibleMenuItems[0]?.title ?? '';
+    if ((isSalesGuest || isRegularTeam) && !showTicketing && !iframeUrl && !showDashboardPanel) {
+      // Compute first item directly from currentUser.allowed_menus to avoid stale visibleMenuItems
+      const allowed = currentUser.allowed_menus;
+      const roleLC = currentUser.role?.toLowerCase();
+      const items = (!allowed || allowed.length === 0 || roleLC === 'superadmin' || roleLC === 'admin')
+        ? allMenuItems
+        : allMenuItems.filter(m => allowed.includes(m.key));
+      if (items.length === 0) return;
+      const firstItem = items[0]?.items?.[0];
+      const firstTitle = items[0]?.title ?? '';
       if (firstItem && firstItem.internal) {
         setIframeLoading(true);
         setInternalUrl(firstItem.url);
@@ -248,7 +250,7 @@ export default function Dashboard() {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoggedIn, showSidebar, visibleMenuItems.length]);
+  }, [isLoggedIn, showSidebar, currentUser]);
 
   const handleMenuClick = (item: MenuItem['items'][0], menuTitle: string) => {
     if (item.external && !item.embed) { window.open(item.url, '_blank'); return; }

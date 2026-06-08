@@ -452,7 +452,7 @@ function IncentivePTSPage() {
 
   // ── Loading state ────────────────────────────────────────────────────────
   if (loading) return (
-    <div className="flex items-center justify-center" style={{ minHeight: '100vh', background: '#f1f5f9' }}>
+    <div className="flex items-center justify-center" style={{ minHeight: '100vh', background: 'transparent' }}>
       <div className="flex flex-col items-center gap-3">
         <div className="w-12 h-12 rounded-full border-4 border-t-transparent animate-spin"
           style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#6366f1' }} />
@@ -465,7 +465,7 @@ function IncentivePTSPage() {
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col" style={{ fontFamily: "'Inter', sans-serif", minHeight: '100vh', background: '#f1f5f9' }}>
+    <div className="flex flex-col" style={{ fontFamily: "'Inter', sans-serif", minHeight: '100vh', background: 'transparent' }}>
 
       {/* Background */}
       <div className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat pointer-events-none" style={{ backgroundImage: "url('/IVP_Background.png')", opacity: 0.18 }} />
@@ -480,7 +480,7 @@ function IncentivePTSPage() {
       {/* Header */}
       <header className="sticky top-0 z-50 flex-shrink-0"
         style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderBottom: '3px solid #6366f1', boxShadow: '0 2px 12px rgba(99,102,241,0.10)' }}>
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+        <div className="w-full px-4 py-3 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg flex-shrink-0">💰</div>
           <div>
             <h1 className="text-base font-bold text-gray-800">Incentive PTS</h1>
@@ -492,7 +492,7 @@ function IncentivePTSPage() {
       {/* Tabs */}
       <div className="sticky top-[57px] z-40 flex-shrink-0"
         style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(99,102,241,0.12)' }}>
-        <div className="max-w-5xl mx-auto px-4 flex gap-1 overflow-x-auto">
+        <div className="w-full px-4 flex gap-1 overflow-x-auto">
           {([
             { id: 'projects', label: '📋 Projects',       adminOnly: false },
             { id: 'rekap',    label: '📊 Rekap Incentive', adminOnly: false },
@@ -510,7 +510,7 @@ function IncentivePTSPage() {
 
       {/* Main content */}
       <main className="relative z-10">
-        <div className="max-w-5xl mx-auto px-4 py-4 space-y-5">
+        <div className="w-full px-4 py-4 space-y-5">
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

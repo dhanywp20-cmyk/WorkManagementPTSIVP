@@ -17,6 +17,7 @@ import { PriorityBadge, StatusBadge, CategoryBadge } from './_components/Badges'
 import {
   FormField, SectionHeader, SectionHeaderSmall, InfoRow,
   LoadingScreen, MiniPieChart,
+  ViewIconBtn, RescheduleIconBtn, ApproveIconBtn, DeleteIconBtn, ActionGroup,
 } from '@/components/shared';
 import { MiniCalendar } from './_components/MiniCalendar';
 import { RescheduleModal } from './_components/RescheduleModal';
@@ -2559,34 +2560,22 @@ jangan lupa peralatan & Semangat💪🏼
                                 </td>
                                 {/* ACT */}
                                 <td className="px-3 py-1 align-middle text-center" onClick={e => e.stopPropagation()}>
-                                  <div className="flex flex-nowrap items-center justify-center gap-1">
+                                  <ActionGroup>
                                     {/* Detail */}
-                                    <button onClick={() => setDetailReminder(r)} title="Detail"
-                                      className="text-blue-500 hover:text-blue-700 transition-colors">
-                                      <span className="text-sm">👁</span>
-                                    </button>
+                                    <ViewIconBtn onClick={() => setDetailReminder(r)} title="Detail" />
                                     {/* Re-Schedule — semua team PTS & admin bisa lihat */}
                                     {(isAdmin || currentUser?.role === 'team') && r.status !== 'done' && (
-                                      <button onClick={() => setRescheduleTarget(r)} title="Re-Schedule"
-                                        className="text-amber-500 hover:text-amber-700 transition-colors">
-                                        <span className="text-sm">📅</span>
-                                      </button>
+                                      <RescheduleIconBtn onClick={() => setRescheduleTarget(r)} title="Re-Schedule" />
                                     )}
                                     {/* Approve & Assign — admin only, hanya utk request sales yg belum di-assign */}
                                     {isAdmin && !r.assigned_to && r.notes?.includes('[REQUEST SALES]') && (
-                                      <button onClick={() => { setApproveTarget(r); setApproveAssignTo(''); setApproveDate(r.due_date); setApproveTime(r.due_time); }} title="Approve & Assign"
-                                        className="text-green-600 hover:text-green-800 transition-colors">
-                                        <span className="text-sm">✅</span>
-                                      </button>
+                                      <ApproveIconBtn onClick={() => { setApproveTarget(r); setApproveAssignTo(''); setApproveDate(r.due_date); setApproveTime(r.due_time); }} title="Approve & Assign" pulse />
                                     )}
                                     {/* Hapus — admin only */}
                                     {isAdmin && (
-                                      <button onClick={() => openDeleteModal(r)} title="Hapus"
-                                        className="text-red-400 hover:text-red-600 transition-colors">
-                                        <span className="text-sm">🗑️</span>
-                                      </button>
+                                      <DeleteIconBtn onClick={() => openDeleteModal(r)} title="Hapus" />
                                     )}
-                                  </div>
+                                  </ActionGroup>
                                 </td>
                               </tr>
                             );
