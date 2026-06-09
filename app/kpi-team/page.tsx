@@ -65,7 +65,7 @@ interface KPIPeriodSnapshot {
 }
 
 interface Scope {
-  kind: 'admin' | 'pts_sup' | 'none';
+  kind: 'admin' | 'pts_sup' | 'team' | 'none';
   ptsTeamType?: string;
 }
 
@@ -475,6 +475,10 @@ export default function KPITeamPage() {
         setScope({ kind: 'pts_sup', ptsTeamType: currentUser.team_type ?? '' });
         setScopeReady(true); return;
       }
+      // Regular team member — can view their own KPI (read-only)
+      if (role === 'team') {
+        setScope({ kind: 'team' }); setScopeReady(true); return;
+      }
       setScope({ kind: 'none' }); setScopeReady(true);
     })();
   }, [currentUser]);
@@ -618,7 +622,9 @@ export default function KPITeamPage() {
     try {
       // Fetch member list once
       let mQ = supabase.from('users').select('id,full_name,jabatan,team_type,role');
-      if (scope.kind === 'pts_sup') {
+      if (scope.kind === 'team') {
+        mQ = mQ.eq('id', currentUser!.id);
+      } else if (scope.kind === 'pts_sup') {
         mQ = mQ.eq('role', 'team').eq('team_type', scope.ptsTeamType ?? '');
       } else {
         mQ = mQ.in('team_type', ['Team PTS', 'Team PTS UMP', 'Team PTS MLDS']).eq('role', 'team');
@@ -635,7 +641,7 @@ export default function KPITeamPage() {
       setPrevMembers(prev);
     } catch { /* silent */ }
     finally { setLoading(false); }
-  }, [scopeReady, scope, period, buildMembers]);
+  }, [scopeReady, scope, period, buildMembers, currentUser]);
 
   useEffect(() => { fetchAllData(); }, [fetchAllData]);
 
@@ -652,12 +658,17 @@ export default function KPITeamPage() {
       const kpiStart   = `${kpiYear}-${pad(kpiStartMonth)}-01`;
       const kpiEnd     = `${kpiYear}-${pad(endMonth)}-${endDay}`;
 
-      let mQ = supabase.from('users').select('id,full_name,jabatan,team_type,role,kpi_enabled')
-        .eq('kpi_enabled', true);
-      if (scope.kind === 'pts_sup') {
-        mQ = mQ.eq('role', 'team').eq('team_type', scope.ptsTeamType ?? '');
+      let mQ = supabase.from('users').select('id,full_name,jabatan,team_type,role,kpi_enabled');
+      if (scope.kind === 'team') {
+        // Self-view: only current user's own record, no kpi_enabled filter
+        mQ = mQ.eq('id', currentUser!.id);
       } else {
-        mQ = mQ.in('team_type', ['Team PTS', 'Team PTS UMP', 'Team PTS MLDS']).eq('role', 'team');
+        mQ = mQ.eq('kpi_enabled', true);
+        if (scope.kind === 'pts_sup') {
+          mQ = mQ.eq('role', 'team').eq('team_type', scope.ptsTeamType ?? '');
+        } else {
+          mQ = mQ.in('team_type', ['Team PTS', 'Team PTS UMP', 'Team PTS MLDS']).eq('role', 'team');
+        }
       }
       const { data: mData } = await mQ;
       if (!mData?.length) { setKpiMembers([]); setKpiLoading(false); return; }
@@ -666,7 +677,7 @@ export default function KPITeamPage() {
       setKpiMembers(built);
     } catch { /* silent */ }
     finally { setKpiLoading(false); }
-  }, [scopeReady, scope, kpiYear, kpiPeriodLen, kpiStartMonth, buildMembers]);
+  }, [scopeReady, scope, kpiYear, kpiPeriodLen, kpiStartMonth, buildMembers, currentUser]);
 
   useEffect(() => { fetchKPIMembers(); }, [fetchKPIMembers]);
 
@@ -859,6 +870,12 @@ export default function KPITeamPage() {
       style={{ backgroundImage: "url('/IVP_Background.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
       <PageHeader icon="📊" title="KPI Team" subtitle="PTS IVP — Key Performance Indicators"
         color={KPI_COLOR} colorLight="#0369a1">
+        {scope.kind === 'team' && (
+          <span className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg"
+            style={{ background: 'rgba(14,165,233,0.12)', color: '#0369a1', border: '1px solid rgba(14,165,233,0.3)' }}>
+            👤 Profil KPI Saya
+          </span>
+        )}
         <button onClick={() => { fetchAllData(); fetchKPIMembers(); }}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
           style={{ background: 'rgba(255,255,255,0.9)', borderColor: '#e2e8f0', color: '#64748b' }}>
@@ -867,25 +884,29 @@ export default function KPITeamPage() {
           </svg>
           Sync
         </button>
-        <button onClick={() => setShowStartKPI(true)}
-          disabled={kpiLoading || kpiMembers.length === 0}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ background: 'rgba(16,185,129,0.9)', borderColor: '#059669', color: '#fff', boxShadow: '0 2px 8px rgba(16,185,129,0.4)' }}>
-          🚀 Mulai KPI {kpiYear}
-        </button>
-        <button onClick={() => setShowSettings(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
-          style={{ background: 'rgba(255,255,255,0.9)', borderColor: '#ddd6fe', color: '#7c3aed' }}>
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-          </svg>
-          Pengaturan KPI
-        </button>
-        <button onClick={() => exportCSV(sortedMembers, period)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
-          style={{ background: KPI_COLOR, borderColor: KPI_COLOR, color: '#fff', boxShadow: `0 2px 8px ${KPI_COLOR}40` }}>
-          ⬇ Export CSV
-        </button>
+        {scope.kind !== 'team' && (
+          <>
+            <button onClick={() => setShowStartKPI(true)}
+              disabled={kpiLoading || kpiMembers.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ background: 'rgba(16,185,129,0.9)', borderColor: '#059669', color: '#fff', boxShadow: '0 2px 8px rgba(16,185,129,0.4)' }}>
+              🚀 Mulai KPI {kpiYear}
+            </button>
+            <button onClick={() => setShowSettings(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
+              style={{ background: 'rgba(255,255,255,0.9)', borderColor: '#ddd6fe', color: '#7c3aed' }}>
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              Pengaturan KPI
+            </button>
+            <button onClick={() => exportCSV(sortedMembers, period)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
+              style={{ background: KPI_COLOR, borderColor: KPI_COLOR, color: '#fff', boxShadow: `0 2px 8px ${KPI_COLOR}40` }}>
+              ⬇ Export CSV
+            </button>
+          </>
+        )}
       </PageHeader>
 
       <div className="max-w-[1600px] mx-auto px-4 py-4 space-y-4">
