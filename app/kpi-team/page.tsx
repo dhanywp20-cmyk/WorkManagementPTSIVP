@@ -403,10 +403,15 @@ export default function KPITeamPage() {
   const [drillMember, setDrillMember] = useState<KPIMember | null>(null);
   const [searchQ, setSearchQ] = useState('');
 
-  // KPI scoring
+  // KPI scoring — separate data + period (tidak ikut period picker atas)
   const [kpiSettings, setKpiSettings] = useState<KPISettings>(DEFAULT_KPI_SETTINGS);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedKPIMember, setSelectedKPIMember] = useState<string | null>(null);
+  const [kpiMembers, setKpiMembers] = useState<KPIMember[]>([]);
+  const [kpiLoading, setKpiLoading] = useState(false);
+  const [kpiYear, setKpiYear] = useState(new Date().getFullYear());
+  const [kpiPeriodLen, setKpiPeriodLen] = useState<'6m' | '1y'>('1y');
+  const [kpiStartMonth, setKpiStartMonth] = useState(1);
 
   // ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -601,6 +606,37 @@ export default function KPITeamPage() {
   }, [scopeReady, scope, period, buildMembers]);
 
   useEffect(() => { fetchAllData(); }, [fetchAllData]);
+
+  // ── KPI scoring fetch (independent of period picker) ─────────────────────
+
+  const fetchKPIMembers = useCallback(async () => {
+    if (!scopeReady || scope.kind === 'none') return;
+    setKpiLoading(true);
+    try {
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const monthCount = kpiPeriodLen === '6m' ? 6 : 12;
+      const endMonth   = Math.min(kpiStartMonth + monthCount - 1, 12);
+      const endDay     = new Date(kpiYear, endMonth, 0).getDate();
+      const kpiStart   = `${kpiYear}-${pad(kpiStartMonth)}-01`;
+      const kpiEnd     = `${kpiYear}-${pad(endMonth)}-${endDay}`;
+
+      let mQ = supabase.from('users').select('id,full_name,jabatan,team_type,role,kpi_enabled')
+        .eq('kpi_enabled', true);
+      if (scope.kind === 'pts_sup') {
+        mQ = mQ.eq('role', 'team').eq('team_type', scope.ptsTeamType ?? '');
+      } else {
+        mQ = mQ.in('team_type', ['Team PTS', 'Team PTS UMP', 'Team PTS MLDS']).eq('role', 'team');
+      }
+      const { data: mData } = await mQ;
+      if (!mData?.length) { setKpiMembers([]); setKpiLoading(false); return; }
+
+      const built = await buildMembers(mData, kpiStart, kpiEnd);
+      setKpiMembers(built);
+    } catch { /* silent */ }
+    finally { setKpiLoading(false); }
+  }, [scopeReady, scope, kpiYear, kpiPeriodLen, kpiStartMonth, buildMembers]);
+
+  useEffect(() => { fetchKPIMembers(); }, [fetchKPIMembers]);
 
   // ── Computed values ───────────────────────────────────────────────────────
 
@@ -1078,7 +1114,7 @@ export default function KPITeamPage() {
           )}
         </div>
 
-        {/* ── Penilaian KPI (Scoring) ── */}
+        {/* ── Penilaian KPI (Scoring) — data mandiri, tidak ikut period picker ── */}
         {(() => {
           const calcKPI = (m: KPIMember) => {
             const s = kpiSettings;
@@ -1094,7 +1130,11 @@ export default function KPITeamPage() {
           const kpiLabel = (score: number, noData: boolean) =>
             noData ? 'Belum Ada Data' : score >= 85 ? 'Excellent' : score >= 70 ? 'Good' : score >= 50 ? 'Fair' : 'Needs Work';
 
-          const filtered = filterTeam === 'all' ? members : members.filter(m => m.team_type === filterTeam);
+          const MN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+          const kpiEndMonth = Math.min(kpiStartMonth + (kpiPeriodLen === '6m' ? 5 : 11), 12);
+          const kpiPeriodLabel = `${MN[kpiStartMonth-1]}–${MN[kpiEndMonth-1]} ${kpiYear}`;
+
+          const kpiFiltered = filterTeam === 'all' ? kpiMembers : kpiMembers.filter(m => m.team_type === filterTeam);
 
           return (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -1102,13 +1142,44 @@ export default function KPITeamPage() {
               <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">🏅 Penilaian KPI</span>
-                  <span className="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
-                    Periode: {period}
+                  <span className="text-[9px] font-bold px-2 py-1 rounded-lg text-blue-700" style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+                    📅 {kpiPeriodLabel}
                   </span>
+                  {kpiLoading && <div className="w-4 h-4 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin flex-shrink-0" />}
                 </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] font-semibold px-2 py-1 rounded-lg text-slate-500" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                    🎫 {Math.round(kpiSettings.ticketOverdueWeight * 100)}% Ticketing &nbsp;·&nbsp; ⭐ {Math.round(kpiSettings.bastWeight * 100)}% BAST &nbsp;·&nbsp; 🎓 {Math.round(kpiSettings.lcWeight * 100)}% LC &nbsp;·&nbsp; 📝 {Math.round(kpiSettings.rndWeight * 100)}% R&D
+                {/* KPI period controls */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {/* 6m / 1y toggle */}
+                  <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+                    {(['6m','1y'] as const).map(p => (
+                      <button key={p} onClick={() => { setKpiPeriodLen(p); if (p==='1y') setKpiStartMonth(1); }}
+                        className="px-2.5 py-1 text-[10px] font-bold transition-all"
+                        style={{ background: kpiPeriodLen===p ? '#0284c7' : '#fff', color: kpiPeriodLen===p ? '#fff' : '#64748b' }}>
+                        {p==='6m' ? '6 Bln' : '1 Thn'}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Start month (only for 6m) */}
+                  {kpiPeriodLen === '6m' && (
+                    <select value={kpiStartMonth} onChange={e => setKpiStartMonth(Number(e.target.value))}
+                      className="text-[10px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-none">
+                      {[{v:1,l:'Jan–Jun'},{v:2,l:'Feb–Jul'},{v:3,l:'Mar–Agt'},{v:4,l:'Apr–Sep'},{v:5,l:'Mei–Okt'},{v:6,l:'Jun–Nov'},{v:7,l:'Jul–Des'}].map(o=>(
+                        <option key={o.v} value={o.v}>{o.l}</option>
+                      ))}
+                    </select>
+                  )}
+                  {/* Year */}
+                  <select value={kpiYear} onChange={e => setKpiYear(Number(e.target.value))}
+                    className="text-[10px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-none">
+                    {[2024,2025,2026,2027].map(y=>(<option key={y} value={y}>{y}</option>))}
+                  </select>
+                  <button onClick={() => fetchKPIMembers()}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 transition-all">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    Refresh
+                  </button>
+                  <span className="text-[9px] font-semibold px-2 py-1 rounded-lg text-slate-500" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                    🎫{Math.round(kpiSettings.ticketOverdueWeight*100)}% ⭐{Math.round(kpiSettings.bastWeight*100)}% 🎓{Math.round(kpiSettings.lcWeight*100)}% 📝{Math.round(kpiSettings.rndWeight*100)}%
                   </span>
                 </div>
               </div>
@@ -1123,17 +1194,17 @@ export default function KPITeamPage() {
               </div>
 
               {/* Member chips */}
-              {loading ? (
+              {kpiLoading ? (
                 <div className="flex items-center justify-center py-10">
                   <div className="w-6 h-6 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin" />
                 </div>
-              ) : filtered.length === 0 ? (
-                <p className="text-center py-10 text-slate-400 text-sm">Tidak ada data anggota</p>
+              ) : kpiFiltered.length === 0 ? (
+                <p className="text-center py-10 text-slate-400 text-sm">Tidak ada anggota dengan KPI aktif. Aktifkan kpi_enabled di user management.</p>
               ) : (() => {
                 const teams = ['Team PTS', 'Team PTS MLDS', 'Team PTS UMP'];
                 const rows = filterTeam === 'all'
-                  ? teams.map(tt => ({ tt, ms: filtered.filter(m => m.team_type === tt) })).filter(r => r.ms.length > 0)
-                  : [{ tt: filterTeam, ms: filtered }];
+                  ? teams.map(tt => ({ tt, ms: kpiFiltered.filter(m => m.team_type === tt) })).filter(r => r.ms.length > 0)
+                  : [{ tt: filterTeam, ms: kpiFiltered }];
 
                 return (
                   <div className="p-4 space-y-3">
@@ -1217,7 +1288,7 @@ export default function KPITeamPage() {
 
       {/* ── KPI Member Detail Popup ── */}
       {selectedKPIMember && typeof document !== 'undefined' && (() => {
-        const member = members.find(m => m.id === selectedKPIMember);
+        const member = kpiMembers.find(m => m.id === selectedKPIMember);
         if (!member) return null;
         const _s = kpiSettings;
         const lcFailed = member.lcScores.filter(sc => sc < _s.lcMinScore).length;
