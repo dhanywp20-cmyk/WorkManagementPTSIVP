@@ -22,6 +22,23 @@ export function SessionsPage({ user }: { user: User }) {
   const [search, setSearch] = useState('');
   const [dialog, setDialog] = useState<DialogState>(null);
 
+  // ── Re-Assign (assign quiz ke target berbeda tanpa buat quiz baru) ──────────
+  const [showReassign, setShowReassign] = useState(false);
+  const [reassignSource, setReassignSource] = useState<QuizSession | null>(null);
+  const [reassignForm, setReassignForm] = useState({
+    session_name  : '',
+    timer_minutes : 30,
+    passing_grade : 70,
+    allow_retake  : true,
+    target_mode   : 'all' as 'all' | 'role' | 'user' | 'division',
+    target_roles  : [] as string[],
+    target_user_ids : [] as string[],
+    target_divisions: [] as string[],
+    open_at  : '',
+    close_at : '',
+  });
+  const [reassigning, setReassigning] = useState(false);
+
   const load = useCallback(async () => {
     const [{ data: s }, { data: m }, { data: q }, { data: u }] = await Promise.all([
       supabase.from('lc_quiz_sessions').select('*').order('created_at', { ascending: false }),
@@ -156,6 +173,70 @@ export function SessionsPage({ user }: { user: User }) {
         setDialog({ type: 'success', message: 'Sesi berhasil dikirim ulang dan sudah aktif!' });
       },
     });
+  };
+
+  // ── Open re-assign modal — pre-fill from source session ────────────────────
+  const openReassign = (session: QuizSession) => {
+    setReassignSource(session);
+    setReassignForm({
+      session_name   : session.session_name,
+      timer_minutes  : session.timer_minutes ?? 30,
+      passing_grade  : session.passing_grade,
+      allow_retake   : session.allow_retake,
+      target_mode    : 'all',
+      target_roles   : [],
+      target_user_ids: [],
+      target_divisions: [],
+      open_at  : '',
+      close_at : '',
+    });
+    setShowReassign(true);
+  };
+
+  // ── Confirm re-assign — creates a new session row with new targets ──────────
+  const handleReassign = async () => {
+    if (!reassignSource) return;
+    if (!reassignForm.session_name.trim()) { setDialog({ type: 'error', message: 'Nama sesi wajib diisi!' }); return; }
+    if (reassignForm.target_mode === 'role'     && reassignForm.target_roles.length     === 0) { setDialog({ type: 'error', message: 'Pilih minimal 1 role!' }); return; }
+    if (reassignForm.target_mode === 'user'     && reassignForm.target_user_ids.length  === 0) { setDialog({ type: 'error', message: 'Pilih minimal 1 anggota!' }); return; }
+    if (reassignForm.target_mode === 'division' && reassignForm.target_divisions.length === 0) { setDialog({ type: 'error', message: 'Pilih minimal 1 divisi!' }); return; }
+    if (reassignForm.open_at && reassignForm.close_at && new Date(reassignForm.open_at) >= new Date(reassignForm.close_at)) {
+      setDialog({ type: 'error', message: 'Waktu tutup harus setelah waktu buka!' }); return;
+    }
+    let resolvedTargetIds: string[] | null = null;
+    if (reassignForm.target_mode === 'role') {
+      resolvedTargetIds = teamUsers
+        .filter(u => reassignForm.target_roles.includes((u.role ?? '').toLowerCase()))
+        .map(u => u.id);
+    } else if (reassignForm.target_mode === 'user') {
+      resolvedTargetIds = reassignForm.target_user_ids;
+    } else if (reassignForm.target_mode === 'division') {
+      resolvedTargetIds = teamUsers
+        .filter(u => reassignForm.target_divisions.includes((u as any).sales_division ?? ''))
+        .map(u => u.id);
+    }
+    setReassigning(true);
+    const { error } = await supabase.from('lc_quiz_sessions').insert([{
+      session_name    : reassignForm.session_name.trim(),
+      material_id     : reassignSource.material_id,
+      materi_name     : reassignSource.materi_name,
+      question_ids    : reassignSource.question_ids ?? [],
+      question_count  : reassignSource.question_count,
+      timer_minutes   : reassignForm.timer_minutes || null,
+      passing_grade   : reassignForm.passing_grade,
+      allow_retake    : reassignForm.allow_retake,
+      is_active       : true,
+      created_by      : user.id,
+      target_user_ids : resolvedTargetIds,
+      open_at         : reassignForm.open_at  ? new Date(reassignForm.open_at).toISOString()  : null,
+      close_at        : reassignForm.close_at ? new Date(reassignForm.close_at).toISOString() : null,
+      scheduled_at    : reassignForm.open_at  ? new Date(reassignForm.open_at).toISOString()  : null,
+    }]);
+    setReassigning(false);
+    if (error) { setDialog({ type: 'error', message: 'Error: ' + error.message }); return; }
+    setShowReassign(false);
+    load();
+    setDialog({ type: 'success', message: `Quiz "${reassignForm.session_name}" berhasil di-assign ke target baru! ✅` });
   };
 
   const handleDelete = (id: string) => {
@@ -542,6 +623,16 @@ export function SessionsPage({ user }: { user: User }) {
                   </div>
                   <div className="flex gap-2 flex-shrink-0 flex-wrap justify-end">
                     <button
+                      onClick={() => openReassign(s)}
+                      title="Assign soal yang sama ke tim / target berbeda"
+                      className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 flex items-center gap-1"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Assign Ulang
+                    </button>
+                    <button
                       onClick={() => handleResend(s)}
                       title="Duplikat & kirim ulang ke peserta yang sama"
                       className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 flex items-center gap-1"
@@ -563,6 +654,203 @@ export function SessionsPage({ user }: { user: User }) {
           })}
         </div>
       </div>
+      {/* ════ Assign Ulang Modal ════ */}
+      {showReassign && reassignSource && (
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4 overflow-y-auto"
+          style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(6px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowReassign(false); }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-6 border border-slate-200 overflow-hidden">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between"
+              style={{ background: 'linear-gradient(135deg,#ecfdf5,#d1fae5)' }}>
+              <div>
+                <div className="font-bold text-slate-800 text-base">📤 Assign Ulang Quiz</div>
+                <div className="text-xs text-slate-500 mt-0.5 truncate max-w-xs">Soal dari: <span className="font-semibold text-emerald-700">{reassignSource.session_name}</span></div>
+              </div>
+              <button onClick={() => setShowReassign(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-white/80 text-lg leading-none">×</button>
+            </div>
+
+            {/* Info materi — read-only */}
+            <div className="mx-6 mt-4 px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3 flex-wrap">
+              <span className="text-sm">📚</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-700 truncate">{reassignSource.materi_name}</p>
+                <p className="text-[11px] text-slate-400">{reassignSource.question_count} soal · soal yang sama dipakai ulang</p>
+              </div>
+              <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 flex-shrink-0">Reuse ♻️</span>
+            </div>
+
+            <div className="px-6 py-4 space-y-4">
+              {/* Nama Sesi */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Sesi *</label>
+                <input value={reassignForm.session_name}
+                  onChange={e => setReassignForm(p => ({ ...p, session_name: e.target.value }))}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                  placeholder="Nama sesi untuk target baru..." />
+              </div>
+
+              {/* Pengaturan ringkas */}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Timer (mnt)</label>
+                  <input type="number" min={0} value={reassignForm.timer_minutes}
+                    onChange={e => setReassignForm(p => ({ ...p, timer_minutes: +e.target.value }))}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Passing (%)</label>
+                  <input type="number" min={0} max={100} value={reassignForm.passing_grade}
+                    onChange={e => setReassignForm(p => ({ ...p, passing_grade: +e.target.value }))}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                </div>
+                <div className="flex items-end pb-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={reassignForm.allow_retake}
+                      onChange={e => setReassignForm(p => ({ ...p, allow_retake: e.target.checked }))}
+                      className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-400" />
+                    <span className="text-sm font-medium text-slate-700">Retake</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Waktu buka / tutup */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">⏰ Waktu Dibuka</label>
+                  <input type="datetime-local" value={reassignForm.open_at}
+                    onChange={e => setReassignForm(p => ({ ...p, open_at: e.target.value }))}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">🔒 Waktu Ditutup</label>
+                  <input type="datetime-local" value={reassignForm.close_at}
+                    onChange={e => setReassignForm(p => ({ ...p, close_at: e.target.value }))}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                </div>
+              </div>
+
+              {/* Target Penerima */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-2">👥 Target Penerima</label>
+                <div className="flex gap-2 mb-3 flex-wrap">
+                  {([
+                    { mode: 'all',      icon: '🌐', label: 'Semua',    active: 'bg-indigo-600 text-white border-indigo-600' },
+                    { mode: 'role',     icon: '🏷️', label: 'Per Role',  active: 'bg-indigo-600 text-white border-indigo-600' },
+                    { mode: 'division', icon: '🏢', label: 'Per Divisi', active: 'bg-orange-500 text-white border-orange-500' },
+                    { mode: 'user',     icon: '👤', label: 'Per Anggota', active: 'bg-indigo-600 text-white border-indigo-600' },
+                  ] as const).map(opt => (
+                    <button key={opt.mode} type="button"
+                      onClick={() => setReassignForm(p => ({ ...p, target_mode: opt.mode, target_roles: [], target_user_ids: [], target_divisions: [] }))}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${reassignForm.target_mode === opt.mode ? opt.active + ' shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
+                      {opt.icon} {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                {reassignForm.target_mode === 'all' && (
+                  <p className="text-xs text-slate-500 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5 font-medium">
+                    🌐 Quiz akan dikirim ke <strong>semua user</strong>
+                  </p>
+                )}
+
+                {reassignForm.target_mode === 'role' && (
+                  <div className="border border-slate-200 rounded-xl p-3 space-y-1 max-h-44 overflow-y-auto">
+                    {uniqueRoles.length === 0 && <p className="text-xs text-slate-400 text-center py-3">Tidak ada role ditemukan</p>}
+                    {uniqueRoles.map(role => {
+                      const checked = reassignForm.target_roles.includes(role);
+                      const count = teamUsers.filter(u => (u.role ?? '').toLowerCase() === role).length;
+                      return (
+                        <label key={role} className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all ${checked ? 'bg-indigo-50 border border-indigo-200' : 'hover:bg-slate-50 border border-transparent'}`}>
+                          <input type="checkbox" checked={checked}
+                            onChange={() => setReassignForm(p => ({ ...p, target_roles: p.target_roles.includes(role) ? p.target_roles.filter(r => r !== role) : [...p.target_roles, role] }))}
+                            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400 flex-shrink-0" />
+                          <span className="text-sm font-semibold text-slate-800 flex-1">{roleLabel[role] ?? `📌 ${role}`}</span>
+                          <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full font-semibold">{count} user</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {reassignForm.target_mode === 'division' && (
+                  <div className="border border-slate-200 rounded-xl p-3 space-y-1 max-h-44 overflow-y-auto">
+                    {uniqueDivisions.length === 0 && <p className="text-xs text-slate-400 text-center py-3">Tidak ada sales division ditemukan</p>}
+                    {uniqueDivisions.map(div => {
+                      const checked = reassignForm.target_divisions.includes(div);
+                      const count = teamUsers.filter(u => (u as any).sales_division === div).length;
+                      return (
+                        <label key={div} className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all ${checked ? 'bg-orange-50 border border-orange-200' : 'hover:bg-slate-50 border border-transparent'}`}>
+                          <input type="checkbox" checked={checked}
+                            onChange={() => setReassignForm(p => ({ ...p, target_divisions: p.target_divisions.includes(div) ? p.target_divisions.filter(d => d !== div) : [...p.target_divisions, div] }))}
+                            className="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-400 flex-shrink-0" />
+                          <span className="text-sm font-semibold text-slate-800 flex-1">🏢 {div}</span>
+                          <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full font-semibold">{count} user</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {reassignForm.target_mode === 'user' && (
+                  <div className="border border-slate-200 rounded-xl p-3 max-h-48 overflow-y-auto space-y-1">
+                    {teamUsers.length === 0 && <p className="text-xs text-slate-400 text-center py-4">Tidak ada user ditemukan</p>}
+                    {teamUsers.map(u => {
+                      const checked = reassignForm.target_user_ids.includes(u.id);
+                      return (
+                        <label key={u.id} className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all ${checked ? 'bg-indigo-50 border border-indigo-200' : 'hover:bg-slate-50 border border-transparent'}`}>
+                          <input type="checkbox" checked={checked}
+                            onChange={() => setReassignForm(p => ({ ...p, target_user_ids: p.target_user_ids.includes(u.id) ? p.target_user_ids.filter(id => id !== u.id) : [...p.target_user_ids, u.id] }))}
+                            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400 flex-shrink-0" />
+                          <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-xs font-bold flex-shrink-0">
+                            {u.full_name?.[0]?.toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-slate-800 truncate">{u.full_name}</p>
+                            <p className="text-[10px] text-slate-400">{u.role}{u.jabatan ? ` · ${u.jabatan}` : ''}</p>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Summary */}
+                {reassignForm.target_mode === 'role' && reassignForm.target_roles.length > 0 && (
+                  <p className="text-xs text-indigo-600 font-semibold mt-1.5">
+                    ✓ {reassignForm.target_roles.length} role · {teamUsers.filter(u => reassignForm.target_roles.includes((u.role ?? '').toLowerCase())).length} user
+                  </p>
+                )}
+                {reassignForm.target_mode === 'division' && reassignForm.target_divisions.length > 0 && (
+                  <p className="text-xs text-orange-600 font-semibold mt-1.5">
+                    ✓ {reassignForm.target_divisions.length} divisi · {teamUsers.filter(u => reassignForm.target_divisions.includes((u as any).sales_division ?? '')).length} user
+                  </p>
+                )}
+                {reassignForm.target_mode === 'user' && reassignForm.target_user_ids.length > 0 && (
+                  <p className="text-xs text-indigo-600 font-semibold mt-1.5">✓ {reassignForm.target_user_ids.length} anggota dipilih</p>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 px-6 pb-5 pt-1 justify-end border-t border-slate-100">
+              <button onClick={() => setShowReassign(false)} disabled={reassigning}
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all disabled:opacity-50">
+                Batal
+              </button>
+              <button onClick={handleReassign} disabled={reassigning}
+                className="px-5 py-2.5 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60 flex items-center gap-2"
+                style={{ background: 'linear-gradient(135deg,#059669,#10b981)' }}>
+                {reassigning
+                  ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Menyimpan...</>
+                  : <>📤 Assign Sekarang</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
     </div>
   );
