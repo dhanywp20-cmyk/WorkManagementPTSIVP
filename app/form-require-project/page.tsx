@@ -598,7 +598,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
                 await Promise.allSettled(ccTargets.map(t => sendWANotif({ type: 'reminder_wa', target: t.phone, message: ccMsg })));
               }
             }
-          } catch (ccEx: any) { console.warn('[WA CC request-design]', ccEx?.message); }
+          } catch { }
 
           // ── Upload foto per ruangan tambahan ──
           try {
@@ -617,7 +617,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
                 }
               }
             }
-          } catch (rPhotoEx: any) { console.warn('[room photo upload]', rPhotoEx?.message); }
+          } catch { }
 
           // ── Upload BOQ per ruangan tambahan ──
           try {
@@ -638,7 +638,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
                 }]);
               }
             }
-          } catch (rBoqEx: any) { console.warn('[room boq upload]', rBoqEx?.message); }
+          } catch { }
 
           // ── WA notif ke Brand PIC dari rooms ──
           try {
@@ -671,7 +671,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
                 await sendWANotif({ type: 'reminder_wa', target: pic.phone_number, message: brandMsg });
               }
             }
-          } catch (brandEx: any) { console.warn('[WA Brand PIC]', brandEx?.message); }
+          } catch { }
         }
       }
       notify('success', '✅ Form berhasil dikirim! ⏳ Menunggu approval dari Superadmin.');
@@ -1324,7 +1324,6 @@ Hubungi Admin untuk info lebih lanjut.
       URL.revokeObjectURL(url);
       notify('success', `✅ "${folderName}.zip" berhasil didownload! (${zipFiles.length} file)`);
     } catch (err) {
-      console.error('Download package error:', err);
       notify('error', 'Gagal membuat paket download.');
     } finally {
       setDownloadingPackage(false);
@@ -1386,15 +1385,15 @@ Hubungi Admin untuk info lebih lanjut.
       )}
 
       {/* STICKY HEADER */}
-      <header className="sticky top-0 z-50 animate-slide-down anim-d0" style={{ background: 'rgba(255,255,255,0.95)', borderBottom: '3px solid #0d9488', backdropFilter: 'blur(16px)' }}>
+      <header className="sticky top-0 z-50 animate-slide-down anim-d0" style={{ background: 'rgba(255,255,255,0.95)', borderBottom: '3px solid #7c3aed', backdropFilter: 'blur(16px)' }}>
         <div className="max-w-[1600px] mx-auto px-6 py-3.5 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg,#0d9488,#0f766e)', boxShadow: '0 3px 12px rgba(13,148,136,0.4)' }}>
+              style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', boxShadow: '0 3px 12px rgba(124,58,237,0.4)' }}>
               <span className="text-lg">🏗️</span>
             </div>
             <div>
-              <h1 className="text-base font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-teal-800">Request Design Project</h1>
+              <h1 className="text-base font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-violet-800">Request Design Project</h1>
               <p className="text-[11px] text-gray-500 font-medium">IVP Product — AV Solution Request</p>
             </div>
           </div>

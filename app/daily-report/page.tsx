@@ -261,7 +261,7 @@ export default function DailyReportPage() {
       ]);
       setLiveReminders(rem as any);
       setLiveTickets(tick as any);
-    } catch (e) { console.error('loadLiveData error:', e); }
+    } catch { }
     setLiveLoading(false);
   }, [currentUser, isAdmin, teamUsers, filterDate, filterUser]);
 
@@ -271,7 +271,7 @@ export default function DailyReportPage() {
     try {
       const data = await fetchReports({ date: filterDate || undefined, userId: filterUser || undefined, isAdmin, currentUserId: currentUser.id });
       setReports(data);
-    } catch (e) { console.error('loadReports error:', e); }
+    } catch { }
   }, [currentUser, filterDate, filterUser, isAdmin]);
 
   useEffect(() => {
@@ -815,12 +815,12 @@ export default function DailyReportPage() {
   return (
     <PW>
       {/* ── Header identik reminder-schedule ── */}
-      <div className="sticky top-0 z-30" style={{ background: 'rgba(255,255,255,0.97)', borderBottom: '1px solid rgba(220,38,38,0.12)', backdropFilter: 'blur(12px)', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+      <div className="sticky top-0 z-30" style={{ background: 'rgba(255,255,255,0.95)', borderBottom: '3px solid #059669', backdropFilter: 'blur(12px)', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
         <div className="max-w-7xl mx-auto px-5 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-xl shadow-lg" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 4px 12px rgba(220,38,38,0.35)' }}>📋</div>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-xl shadow-lg" style={{ background: 'linear-gradient(135deg,#059669,#047857)', boxShadow: '0 4px 12px rgba(5,150,105,0.35)' }}>📋</div>
             <div>
-              <h1 className="text-base font-black tracking-wide" style={{ color: '#dc2626' }}>Daily Report</h1>
+              <h1 className="text-base font-black tracking-wide" style={{ color: '#059669' }}>Daily Report</h1>
               <p className="text-[10px] font-semibold text-slate-400">PTS IVP &amp; MLDS</p>
             </div>
           </div>

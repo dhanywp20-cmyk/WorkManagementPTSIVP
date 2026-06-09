@@ -249,7 +249,7 @@ function TicketingSystemInner() {
   };
 
   const fetchOverdueSettings = async () => {
-    try { const { data } = await supabase.from("overdue_settings").select("*"); if (data) setOverdueSettings(data); } catch (e) { console.error(e); }
+    try { const { data } = await supabase.from("overdue_settings").select("*"); if (data) setOverdueSettings(data); } catch { }
   };
 
   const saveOverdueSetting = async () => {
@@ -282,7 +282,7 @@ function TicketingSystemInner() {
       setLoadingMessage("Menghapus activity logs...");
       // Delete activity logs dari kedua DB
       await supabase.from("activity_logs").delete().eq("ticket_id", deleteTargetTicket.id);
-      try { await supabaseServices.from("activity_logs").delete().eq("ticket_id", deleteTargetTicket.id); } catch (e) { console.warn("Services DB activity logs delete failed:", e); }
+      try { await supabaseServices.from("activity_logs").delete().eq("ticket_id", deleteTargetTicket.id); } catch { }
       // Delete overdue setting jika ada
       const existingOverdue = getOverdueSetting(deleteTargetTicket.id);
       if (existingOverdue) await supabase.from("overdue_settings").delete().eq("id", existingOverdue.id);
@@ -536,9 +536,7 @@ function TicketingSystemInner() {
                 // Akses lintas divisi HARUS melalui explicit mapping di
                 // division_supervisor_mappings atau user_supervisor_mappings.
               }
-            } catch (fallbackErr) {
-              console.warn("[Supervisor fallback fetch]", fallbackErr);
-            }
+            } catch { }
             // ────────────────────────────────────────────────────────────────
 
             allDivTickets.forEach((t: Ticket) => {
@@ -597,7 +595,7 @@ function TicketingSystemInner() {
               return { ...ticket, activity_logs: allLogs };
             });
           }
-        } catch (svcErr) { console.warn("Could not fetch Services DB activity logs:", svcErr); }
+        } catch { }
         setTickets(mergedTickets);
       }
       if (membersData.data) setTeamMembers(membersData.data);
@@ -612,8 +610,7 @@ function TicketingSystemInner() {
       }
       // Fetch warranty/project reference data (fire-and-forget, non-blocking)
       fetchProjectReminders();
-    } catch (err: any) {
-      console.error("Error:", err);
+    } catch {
       setLoading(false);
       if (!silent) setTicketsLoading(false);
     }
@@ -695,9 +692,7 @@ function TicketingSystemInner() {
               )
             );
           }
-        } catch (waEx: any) {
-          console.error("[WA approval] exception:", waEx?.message);
-        }
+        } catch { }
         // ── CC ke atasan + IVP berdasarkan divisi user yang submit ──
         try {
           const ccDiv = ticketData.sales_division ?? currentUser?.sales_division ?? "";
@@ -718,7 +713,7 @@ function TicketingSystemInner() {
               await Promise.allSettled(ccTargets.map(t => sendWANotif({ type: "reminder_wa", target: t.phone, message: ccMsg })));
             }
           }
-        } catch (ccEx: any) { console.warn("[WA CC submit]", ccEx?.message); }
+        } catch { }
       }
 
       // ── Kirim WA ke handler jika ticket langsung di-assign (admin/superadmin create ticket) ──
@@ -749,9 +744,7 @@ function TicketingSystemInner() {
             ].join("\n");
             await sendWANotif({ type: "reminder_wa", target: handlerInfo.phone_number, message: waMsg });
           }
-        } catch (waEx: any) {
-          console.error("[WA assign] exception:", waEx?.message);
-        }
+        } catch { }
       }
 
       setNewTicket({
@@ -785,7 +778,7 @@ function TicketingSystemInner() {
         map[key].push({ due_date: r.due_date, assign_name: r.assign_name || "-", assigned_to: r.assigned_to || "-", category: r.category, warranty_years: r.warranty_years ?? null });
       });
       setProjectReminders(map);
-    } catch (e) { console.warn("[fetchProjectReminders]", e); }
+    } catch { }
   };
 
   // Helper: ambil warranty info terbaik (paling recent) untuk sebuah project
@@ -843,7 +836,7 @@ function TicketingSystemInner() {
           ].join("\n");
           await sendWANotif({ type: "reminder_wa", target: handlerUser.phone_number, message: waMsg });
         }
-      } catch (waEx: any) { console.warn("[approveTicket] WA failed:", waEx?.message); }
+      } catch { }
       // ── CC ke atasan + IVP berdasarkan divisi creator ticket ──
       try {
         const creatorUser = approvalTicket.created_by ? users.find((u) => u.username === approvalTicket.created_by) : null;
@@ -864,7 +857,7 @@ function TicketingSystemInner() {
             await Promise.allSettled(ccTargets.map(t => sendWANotif({ type: "reminder_wa", target: t.phone, message: ccMsg })));
           }
         }
-      } catch (ccEx: any) { console.warn("[WA CC approve]", ccEx?.message); }
+      } catch { }
       // ─────────────────────────────────────────────────────────────────────
       setShowApprovalModal(false);
       setApprovalTicket(null);
@@ -926,7 +919,7 @@ function TicketingSystemInner() {
           ].join("\n");
           await sendWANotif({ type: "reminder_wa", target: reopenHandler.phone_number, message: waMsg });
         }
-      } catch (waEx: any) { console.warn("[reopenTicket] WA failed:", waEx?.message); }
+      } catch { }
       // ─────────────────────────────────────────────────────────────────────
       await fetchData();
       setLoadingMessage("✅ Ticket berhasil dibuka kembali!");
@@ -1029,7 +1022,6 @@ function TicketingSystemInner() {
       if (isServicesTeam) {
         updateData.services_status = effectiveStatus;
         const { error: svcErr } = await supabaseServices.from("tickets").update(updateData).eq("id", selectedTicket.id);
-        if (svcErr) console.warn("Services DB ticket update failed:", svcErr.message);
         await supabase.from("tickets").update({ services_status: effectiveStatus }).eq("id", selectedTicket.id);
       } else {
         updateData.status = effectiveStatus;
@@ -1068,7 +1060,7 @@ function TicketingSystemInner() {
                 await sendWANotif({ type: "ticket_notif", target: admin.phone_number, message: waMsg });
               }
             }
-          } catch (waErr) { console.warn("WA to Services admin failed:", waErr); }
+          } catch { }
 
           // Mirror ticket ke Services DB
           try {
@@ -1100,7 +1092,7 @@ function TicketingSystemInner() {
                 current_team: "Team Services",
               }).eq("id", selectedTicket.id);
             }
-          } catch (svcInsertErr) { console.warn("Could not mirror ticket to Services DB:", svcInsertErr); }
+          } catch { }
         }
         const { error: updateError } = await supabase.from("tickets").update(updateData).eq("id", selectedTicket.id);
         if (updateError) throw new Error(`Failed to update ticket: ${updateError.message}`);
@@ -1152,14 +1144,7 @@ function TicketingSystemInner() {
               notes: `Ticket ID: ${selectedTicket.id} | Project: ${selectedTicket.project_name} | Dibuat otomatis dari Platform Ticketing saat status Onsite dijadwalkan`,
             };
             const { error: reminderErr } = await supabase.from("reminders").insert([reminderPayload]);
-            if (reminderErr) {
-              console.warn("[Auto Reminder] Gagal buat reminder otomatis:", reminderErr.message);
-            } else {
-              console.log("[Auto Reminder] ✅ Reminder Troubleshooting otomatis dibuat untuk:", selectedTicket.project_name);
-            }
-          } catch (reminderEx) {
-            console.warn("[Auto Reminder] Exception:", reminderEx);
-          }
+          } catch { }
         }
         // ────────────────────────────────────────────────────────────────────
       }
@@ -1774,7 +1759,7 @@ function TicketingSystemInner() {
       setShowLoadingPopup(true);
       setLoadingMessage("Approving ticket untuk Team Services...");
       await supabase.from("tickets").update({ services_status: "Pending" }).eq("id", ticket.id);
-      try { await supabaseServices.from("tickets").update({ services_status: "Pending", status: "Pending" }).eq("id", ticket.id); } catch (e) { console.warn("Services DB update failed:", e); }
+      try { await supabaseServices.from("tickets").update({ services_status: "Pending", status: "Pending" }).eq("id", ticket.id); } catch { }
       await supabaseServices.from("activity_logs").insert([{
         ticket_id: ticket.id,
         handler_name: currentUser?.full_name || "",
@@ -1823,7 +1808,7 @@ function TicketingSystemInner() {
           assigned_to_services: false,
           file_url: "", file_name: "", photo_url: "", photo_name: ""
         }]);
-      } catch (e) { console.warn("Services DB update failed:", e); }
+      } catch { }
       await fetchData();
       setLoadingMessage("✅ Ticket dikembalikan ke Team PTS.");
       setTimeout(() => { setShowLoadingPopup(false); setUploading(false); setShowServicesApprovalModal(false); }, 1500);

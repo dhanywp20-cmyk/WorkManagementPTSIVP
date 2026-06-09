@@ -971,7 +971,7 @@ export default function FormReviewPage() {
 
         {/* ── HEADER ── */}
         <div className="sticky top-0 z-50 animate-slide-down anim-d0"
-          style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(16px)', borderBottom: '3px solid #d97706', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
           {/* Loading Bar */}
           {loadingBar > 0 && (
             <div className="absolute top-0 left-0 w-full h-0.5 z-[60] overflow-hidden" style={{ background: 'rgba(124,58,237,0.15)' }}>

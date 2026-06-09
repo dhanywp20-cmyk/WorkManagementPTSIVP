@@ -423,7 +423,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         users:{ total:users.length,byRole:Object.entries(roleMap).map(([role,count])=>({role,count})) },
         learning:{ totalSessions:lcSubmitted, completedSessions:lcPassed, totalParticipants:lcParticipants, avgScore:lcAvgScore },
       });
-    } catch(e){ console.error('KPI fetch error:',e); }
+    } catch { }
     finally { setLoading(false); }
   }, [scope, scopeReady]);
 
@@ -482,7 +482,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
       entries.sort((a,b)=>new Date(b.ts).getTime()-new Date(a.ts).getTime());
       setAudit(entries);
-    } catch(e){ console.error('Audit error:',e); }
+    } catch { }
     finally { setAuditLoading(false); }
   }, [scope, scopeReady]);
 
@@ -654,7 +654,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       });
 
       setKpiTeam(prev => ({ ...prev, members, loading: false }));
-    } catch (e) { console.error('KPI Team fetch error:', e); setKpiTeam(prev => ({ ...prev, loading: false })); }
+    } catch { setKpiTeam(prev => ({ ...prev, loading: false })); }
   }, [scope, scopeReady, kpiTeam.filterYear, kpiTeam.filterPeriod]);
 
   // ── Effects ───────────────────────────────────────────────────────────────

@@ -315,10 +315,7 @@ function ReminderSchedulePageInner() {
         `jangan lupa peralatan & Semangat💪🏼`;
 
       const waResult = await sendFonnteWA(assignee.phone_number, msg, { reminderType: 'new_schedule' });
-      if (!waResult.ok) console.warn('[WA new schedule] Gagal kirim:', waResult.reason);
-      else notify('success', `WA notifikasi terkirim ke ${assigneeName}!`);
-    } else if (!editingReminder && !assignee?.phone_number) {
-      console.warn('[WA new schedule] Nomor WA assignee tidak tersedia:', formData.assigned_to);
+      if (waResult.ok) notify('success', `WA notifikasi terkirim ke ${assigneeName}!`);
     }
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -390,8 +387,6 @@ function ReminderSchedulePageInner() {
               // Fallback ke guestUsers state jika DB tidak return
               const resolvedGuest = guestFromDb ?? guestUsers.find(g => g.full_name === salesName) ?? null;
 
-              console.log('[Auto form_review] Resolved guest:', resolvedGuest?.username, '| salesName:', salesName);
-
               // Cek apakah sudah ada form_review untuk reminder ini
               const { data: existingReview } = await supabase
                 .from('form_reviews')
@@ -423,10 +418,7 @@ function ReminderSchedulePageInner() {
                   guest_username: resolvedGuest?.username ?? '',
                 }]);
 
-                if (reviewErr) {
-                  console.error('[Auto form_review] Gagal insert:', reviewErr.message);
-                } else {
-                  console.log('[Auto form_review] ✅ Form review dibuat untuk sales:', salesName, '| guest_username:', resolvedGuest?.username ?? 'TIDAK DITEMUKAN');
+                if (!reviewErr) {
                   notify('success', `Form review otomatis dibuat untuk ${salesName}!`);
 
                   // Kirim WA notifikasi ke guest
@@ -445,19 +437,13 @@ function ReminderSchedulePageInner() {
                       `🔗 https://work-management-ptsivp.vercel.app/dashboard\n\n` +
                       `Terima kasih! 🙏`;
                     await sendFonnteWA(resolvedGuest.phone_number, guestMsg);
-                  } else {
-                    console.warn('[Auto form_review] Guest tidak punya nomor WA atau tidak ditemukan:', salesName);
                   }
                 }
-              } else {
-                console.log('[Auto form_review] Form review sudah ada untuk reminder:', reminder.id);
               }
-            } catch (reviewEx) {
-              console.warn('[Auto form_review] Exception:', reviewEx);
-            }
+            } catch { }
           }
         }
-      } catch (waEx) { console.warn('[status done] WA failed:', waEx); }
+      } catch { }
     }
     // ─────────────────────────────────────────────────────────────────────
     fetchRemindersQuiet();
@@ -543,7 +529,6 @@ function ReminderSchedulePageInner() {
           await supabase.from('form_reviews')
             .update({ guest_username: resolvedGuest.username })
             .eq('id', existingReview.id);
-          console.log('[Resend] Patch guest_username:', resolvedGuest.username);
         }
         // Form sudah ada — hanya kirim ulang WA
       } else {
@@ -574,7 +559,6 @@ function ReminderSchedulePageInner() {
           setResendingFormReview(false);
           return;
         }
-        console.log('[Resend] ✅ Form review baru dibuat untuk:', salesName);
       }
 
       // Kirim / kirim ulang WA notif ke Guest
@@ -600,7 +584,6 @@ function ReminderSchedulePageInner() {
         notify('success', `Form review dibuat untuk ${resolvedGuest.full_name}. (Nomor WA tidak ada)`);
       }
     } catch (ex: any) {
-      console.error('[Resend form_review] Exception:', ex);
       notify('error', 'Terjadi kesalahan: ' + ex.message);
     }
     setResendingFormReview(false);
@@ -628,7 +611,6 @@ function ReminderSchedulePageInner() {
       notes: (rescheduleTarget.notes ?? '') + noteAdd,
     }).eq('id', rescheduleTarget.id);
     if (error) {
-      console.error('[Reschedule error]', error);
       notify('error', `Gagal re-schedule: ${error.message}`);
       return;
     }
@@ -655,7 +637,7 @@ function ReminderSchedulePageInner() {
           `\n🔗 https://work-management-ptsivp.vercel.app/dashboard`;
         await sendFonnteWA(handlerUser.phone_number, msg);
       }
-    } catch (waEx) { console.warn('[reschedule] WA failed:', waEx); }
+    } catch { }
     // ─────────────────────────────────────────────────────────────────────
     setRescheduleTarget(null);
     setDetailReminder(null);
@@ -894,9 +876,7 @@ function ReminderSchedulePageInner() {
           }
         }
       }
-    } catch (waEx) {
-      console.warn('[Request Jadwal] WA ke admin gagal:', waEx);
-    }
+    } catch { }
   };
 
   // ─── Handler: Admin Approve & Assign request dari Sales ─────────────────
@@ -2117,15 +2097,15 @@ jangan lupa peralatan & Semangat💪🏼
         )}
 
         {/* ── HEADER ── */}
-        <header className="sticky top-0 z-50" style={{ background: 'rgba(255,255,255,0.9)', borderBottom: '3px solid #dc2626', backdropFilter: 'blur(16px)' }}>
+        <header className="sticky top-0 z-50" style={{ background: 'rgba(255,255,255,0.9)', borderBottom: '3px solid #0891b2', backdropFilter: 'blur(16px)' }}>
           <div className="max-w-[1600px] mx-auto px-6 py-3.5 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)', boxShadow: '0 3px 12px rgba(220,38,38,0.4)' }}>
+                style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', boxShadow: '0 3px 12px rgba(8,145,178,0.4)' }}>
                 <span className="text-lg">🗓️</span>
               </div>
               <div>
-                <h1 className="text-base font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">Reminder Schedule</h1>
+                <h1 className="text-base font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-cyan-800">Reminder Schedule</h1>
               </div>
             </div>
             <div className="flex items-center gap-2">

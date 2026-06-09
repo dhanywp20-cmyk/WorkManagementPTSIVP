@@ -216,14 +216,14 @@ function PiketShowroomPageInner() {
 
       <div className="relative z-10 flex flex-col flex-1 overflow-hidden">
         {/* ── HEADER ── */}
-        <header className="sticky top-0 z-50 animate-slide-down anim-d0" style={{background:'rgba(255,255,255,0.9)',borderBottom:'3px solid #dc2626',backdropFilter:'blur(16px)'}}>
+        <header className="sticky top-0 z-50 animate-slide-down anim-d0" style={{background:'rgba(255,255,255,0.9)',borderBottom:'3px solid #0d9488',backdropFilter:'blur(16px)'}}>
           <div className="max-w-[1600px] mx-auto px-6 py-3.5 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:'linear-gradient(135deg,#dc2626,#991b1b)',boxShadow:'0 3px 12px rgba(220,38,38,0.4)'}}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:'linear-gradient(135deg,#0d9488,#0f766e)',boxShadow:'0 3px 12px rgba(13,148,136,0.4)'}}>
                 <span className="text-lg">🏪</span>
               </div>
               <div>
-                <h1 className="text-base font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">Piket Showroom</h1>
+                <h1 className="text-base font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-teal-800">Piket Showroom</h1>
                 <p className="text-[10px] text-slate-500 font-medium">IndoVisual Presentama · Jadwal Piket Tim PTS</p>
               </div>
             </div>
