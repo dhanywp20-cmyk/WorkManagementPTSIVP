@@ -7,15 +7,11 @@ import DashboardKPI from '@/app/kpi-team/_components/DashboardKPI';
 
 function LoadingScreen() {
   return (
-    <div className="flex items-center justify-center w-full h-screen"
-      style={{
-        backgroundImage: "linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.25)), url('/IVP_Background.png')",
-        backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
-      }}>
+    <div className="flex items-center justify-center w-full h-screen" style={{ background: '#f8fafc' }}>
       <div className="flex flex-col items-center gap-4 px-10 py-8 rounded-2xl"
-        style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
+        style={{ background: '#fff', boxShadow: '0 8px 32px rgba(0,0,0,0.10)', border: '1px solid #e2e8f0' }}>
         <div className="w-10 h-10 rounded-full border-[3px] border-t-transparent animate-spin"
-          style={{ borderColor: 'rgba(226,168,75,0.25)', borderTopColor: '#e2a84b' }} />
+          style={{ borderColor: 'rgba(2,132,199,0.2)', borderTopColor: '#0284c7' }} />
         <p className="text-slate-500 text-sm font-semibold tracking-wide">Memuat Dashboard...</p>
       </div>
     </div>
@@ -24,13 +20,9 @@ function LoadingScreen() {
 
 function UnauthorizedScreen() {
   return (
-    <div className="flex items-center justify-center w-full h-screen"
-      style={{
-        backgroundImage: "linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.25)), url('/IVP_Background.png')",
-        backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
-      }}>
+    <div className="flex items-center justify-center w-full h-screen" style={{ background: '#f8fafc' }}>
       <div className="text-center px-10 py-8 rounded-2xl"
-        style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
+        style={{ background: '#fff', boxShadow: '0 8px 32px rgba(0,0,0,0.10)', border: '1px solid #e2e8f0' }}>
         <div className="text-5xl mb-3">🔒</div>
         <p className="font-bold text-base text-slate-700">Akses Ditolak</p>
         <p className="text-sm mt-1 text-slate-400">Anda tidak memiliki izin untuk mengakses halaman ini.</p>
@@ -74,13 +66,7 @@ export default function AnalyticsDashboardPage() {
   if (!authorized || !currentUser) return <UnauthorizedScreen />;
 
   return (
-    <div
-      className="flex flex-col h-screen overflow-hidden font-sans"
-      style={{
-        backgroundImage: "linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.25)), url('/IVP_Background.png')",
-        backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
-      }}
-    >
+    <div className="flex flex-col h-screen overflow-hidden font-sans" style={{ background: '#f8fafc' }}>
       <div className="relative z-10 flex flex-col flex-1 overflow-hidden">
         <DashboardKPI currentUser={currentUser} />
       </div>

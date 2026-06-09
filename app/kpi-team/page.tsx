@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { PageHeader } from '@/components/shared';
@@ -17,9 +18,27 @@ interface KPIMember {
   ticketsHandled: number; ticketsSolved: number; ticketsOverdue: number; avgResolutionDays: number;
   remindersAssigned: number; remindersDone: number;
   lcAttempts: number; lcAvgScore: number; lcPassed: number;
+  lcScores: number[];
   piketFilled: number; ticketAvgResponseHours: number;
+  formReviewTotal: number;
+  formReviewLowRating: number;
+  techNotesApproved: number;
   monthlyTickets: number[];
 }
+
+interface KPISettings {
+  lcMinScore: number;
+  rndTarget: number;
+  ticketOverdueWeight: number;
+  bastWeight: number;
+  lcWeight: number;
+  rndWeight: number;
+}
+
+const DEFAULT_KPI_SETTINGS: KPISettings = {
+  lcMinScore: 70, rndTarget: 2,
+  ticketOverdueWeight: 0.20, bastWeight: 0.40, lcWeight: 0.30, rndWeight: 0.10,
+};
 
 interface Scope {
   kind: 'admin' | 'pts_sup' | 'none';
@@ -384,6 +403,11 @@ export default function KPITeamPage() {
   const [drillMember, setDrillMember] = useState<KPIMember | null>(null);
   const [searchQ, setSearchQ] = useState('');
 
+  // KPI scoring
+  const [kpiSettings, setKpiSettings] = useState<KPISettings>(DEFAULT_KPI_SETTINGS);
+  const [showSettings, setShowSettings] = useState(false);
+  const [selectedKPIMember, setSelectedKPIMember] = useState<string | null>(null);
+
   // ── Auth ──────────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -418,6 +442,28 @@ export default function KPITeamPage() {
     })();
   }, [currentUser]);
 
+  // ── Load / save KPI settings ──────────────────────────────────────────────
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data } = await supabase.from('kpi_global_settings').select('settings').eq('id', 1).single();
+        if (data?.settings) { setKpiSettings({ ...DEFAULT_KPI_SETTINGS, ...data.settings }); return; }
+      } catch { /* table may not exist */ }
+      try {
+        const s = typeof window !== 'undefined' ? localStorage.getItem('kpi_global_settings') : null;
+        if (s) setKpiSettings({ ...DEFAULT_KPI_SETTINGS, ...JSON.parse(s) });
+      } catch { /* ignore */ }
+    };
+    load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const saveKpiSettings = useCallback(async (s: KPISettings) => {
+    try { localStorage.setItem('kpi_global_settings', JSON.stringify(s)); } catch { /* ignore */ }
+    try { await supabase.from('kpi_global_settings').upsert({ id: 1, settings: s, updated_at: new Date().toISOString() }); } catch { /* ignore */ }
+  }, []);
+
   // ── Data fetching ─────────────────────────────────────────────────────────
 
   const buildMembers = useCallback(async (membersData: any[], start: string, end: string): Promise<KPIMember[]> => {
@@ -426,7 +472,7 @@ export default function KPITeamPage() {
     const mNames    = membersData.map((m: any) => m.full_name as string);
     const mIds      = membersData.map((m: any) => m.id as string);
 
-    const [ticketsR, actR, remR, lcR, piketR] = await Promise.all([
+    const [ticketsR, actR, remR, lcR, piketR, formRevR, techNotesR] = await Promise.all([
       supabase.from('tickets').select('id,assign_name,status,date,created_at')
         .in('assign_name', mNames).gte('created_at', start).lte('created_at', endFull),
       supabase.from('activity_logs').select('id,ticket_id,handler_name,created_at')
@@ -439,6 +485,13 @@ export default function KPITeamPage() {
         .gte('started_at', start).lte('started_at', endFull),
       supabase.from('piket_schedules').select('pic_ivp_name,pic_ump_name,pic_mlds_name,day_date')
         .gte('day_date', start).lte('day_date', end),
+      supabase.from('form_reviews')
+        .select('id,assign_name,grade_product_knowledge,grade_training_customer,grade_product_knowledge_bast,created_at')
+        .in('assign_name', mNames).gte('created_at', start).lte('created_at', endFull)
+        .not('grade_product_knowledge_bast', 'is', null),
+      supabase.from('tech_notes').select('id,author_id,status,reviewed_at')
+        .in('author_id', mIds).eq('status', 'approved')
+        .gte('reviewed_at', start).lte('reviewed_at', endFull),
     ]);
 
     const tickets  = (ticketsR.data  ?? []) as any[];
@@ -446,6 +499,8 @@ export default function KPITeamPage() {
     const reminders = (remR.data     ?? []) as any[];
     const lcAttempts = (lcR.data     ?? []) as any[];
     const piketRows  = (piketR.data  ?? []) as any[];
+    const formReviews = (formRevR.data ?? []) as any[];
+    const techNotes   = (techNotesR.data ?? []) as any[];
 
     return membersData.map((m: any): KPIMember => {
       const name = m.full_name as string;
@@ -467,8 +522,22 @@ export default function KPITeamPage() {
 
       // LC
       const myLC     = lcAttempts.filter((a: any) => a.user_id === uid);
-      const lcScores = myLC.filter((a: any) => a.score != null).map((a: any) => a.score as number);
-      const lcAvg    = lcScores.length ? Math.round(lcScores.reduce((a: number, b: number) => a + b, 0) / lcScores.length) : 0;
+      const lcScoreArr = myLC.filter((a: any) => a.score != null).map((a: any) => a.score as number);
+      const lcScores = lcScoreArr;
+      const lcAvg    = lcScoreArr.length ? Math.round(lcScoreArr.reduce((a: number, b: number) => a + b, 0) / lcScoreArr.length) : 0;
+
+      // Form reviews (BAST & Demo — low rating = bintang <3)
+      const myReviews = formReviews.filter((r: any) => r.assign_name === name);
+      const formReviewTotal = myReviews.length;
+      const formReviewLowRating = myReviews.filter((r: any) => {
+        const g1 = r.grade_product_knowledge ?? 5;
+        const g2 = r.grade_training_customer ?? 5;
+        const g3 = r.grade_product_knowledge_bast ?? 5;
+        return g1 < 3 || g2 < 3 || g3 < 3;
+      }).length;
+
+      // Tech Notes approved (R&D — auto from platform)
+      const techNotesApproved = techNotes.filter((tn: any) => tn.author_id === uid).length;
 
       // Piket
       const tt     = m.team_type as string;
@@ -497,7 +566,11 @@ export default function KPITeamPage() {
         remindersAssigned: myRem.length, remindersDone: remDone,
         lcAttempts: myLC.length, lcAvgScore: lcAvg,
         lcPassed: myLC.filter((a: any) => a.passed === true).length,
-        piketFilled, ticketAvgResponseHours: avgRT, monthlyTickets,
+        lcScores,
+        piketFilled, ticketAvgResponseHours: avgRT,
+        formReviewTotal, formReviewLowRating,
+        techNotesApproved,
+        monthlyTickets,
       };
     });
   }, []);
@@ -650,6 +723,14 @@ export default function KPITeamPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
           </svg>
           Sync
+        </button>
+        <button onClick={() => setShowSettings(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all bg-white hover:bg-violet-50"
+          style={{ borderColor: '#ddd6fe', color: '#7c3aed' }}>
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          Pengaturan KPI
         </button>
         <button onClick={() => exportCSV(sortedMembers, period)}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
@@ -997,11 +1078,388 @@ export default function KPITeamPage() {
           )}
         </div>
 
+        {/* ── Penilaian KPI (Scoring) ── */}
+        {(() => {
+          const calcKPI = (m: KPIMember) => {
+            const s = kpiSettings;
+            const lcFailed = m.lcScores.filter(sc => sc < s.lcMinScore).length;
+            const tickS = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled, 1)) : 0;
+            const bastS = m.formReviewTotal === 0 ? 0 : m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating / Math.max(m.formReviewTotal, 1));
+            const lcS   = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - lcFailed / Math.max(m.lcAttempts, 1));
+            const rndS  = m.techNotesApproved >= s.rndTarget ? 1 : m.techNotesApproved / Math.max(s.rndTarget, 1);
+            return Math.round((s.ticketOverdueWeight * tickS + s.bastWeight * bastS + s.lcWeight * lcS + s.rndWeight * rndS) * 100);
+          };
+          const kpiColor = (score: number, noData: boolean) =>
+            noData ? '#94a3b8' : score >= 85 ? '#10b981' : score >= 70 ? '#3b82f6' : score >= 50 ? '#f59e0b' : '#ef4444';
+          const kpiLabel = (score: number, noData: boolean) =>
+            noData ? 'Belum Ada Data' : score >= 85 ? 'Excellent' : score >= 70 ? 'Good' : score >= 50 ? 'Fair' : 'Needs Work';
+
+          const filtered = filterTeam === 'all' ? members : members.filter(m => m.team_type === filterTeam);
+
+          return (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              {/* Header */}
+              <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">🏅 Penilaian KPI</span>
+                  <span className="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
+                    Periode: {period}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-semibold px-2 py-1 rounded-lg text-slate-500" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                    🎫 {Math.round(kpiSettings.ticketOverdueWeight * 100)}% Ticketing &nbsp;·&nbsp; ⭐ {Math.round(kpiSettings.bastWeight * 100)}% BAST &nbsp;·&nbsp; 🎓 {Math.round(kpiSettings.lcWeight * 100)}% LC &nbsp;·&nbsp; 📝 {Math.round(kpiSettings.rndWeight * 100)}% R&D
+                  </span>
+                </div>
+              </div>
+
+              {/* Legend */}
+              <div className="mx-4 mt-3 px-3 py-2.5 rounded-xl text-[11px] text-sky-700 leading-relaxed"
+                style={{ background: '#f0f9ff', border: '1px solid #bae6fd' }}>
+                <b>📌 Keterangan:</b> Data ✅ otomatis dari platform.&nbsp;
+                <b>🎫 Ticketing</b> (nilai penuh jika 0 overdue) · <b>⭐ BAST &amp; Demo</b> (nilai penuh jika tidak ada bintang &lt;3) ·{' '}
+                <b>🎓 LC</b> (nilai penuh jika tidak ada nilai &lt;{kpiSettings.lcMinScore}) ·{' '}
+                <b>📝 R&D</b> (nilai penuh jika ≥{kpiSettings.rndTarget} tech note/tahun). Klik kartu untuk detail.
+              </div>
+
+              {/* Member chips */}
+              {loading ? (
+                <div className="flex items-center justify-center py-10">
+                  <div className="w-6 h-6 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin" />
+                </div>
+              ) : filtered.length === 0 ? (
+                <p className="text-center py-10 text-slate-400 text-sm">Tidak ada data anggota</p>
+              ) : (() => {
+                const teams = ['Team PTS', 'Team PTS MLDS', 'Team PTS UMP'];
+                const rows = filterTeam === 'all'
+                  ? teams.map(tt => ({ tt, ms: filtered.filter(m => m.team_type === tt) })).filter(r => r.ms.length > 0)
+                  : [{ tt: filterTeam, ms: filtered }];
+
+                return (
+                  <div className="p-4 space-y-3">
+                    {rows.map(({ tt, ms }) => {
+                      const col = TEAM_COLORS[tt] ?? '#64748b';
+                      const abbr = tt.replace('Team PTS ', '').replace('Team PTS', 'IVP');
+                      const scored = ms.filter(m => !(m.ticketsHandled === 0 && m.lcAttempts === 0 && m.techNotesApproved === 0));
+                      const avg = scored.length ? Math.round(scored.reduce((s, m) => s + calcKPI(m), 0) / scored.length) : null;
+                      const avgC = avg == null ? '#94a3b8' : avg >= 85 ? '#10b981' : avg >= 70 ? '#3b82f6' : avg >= 50 ? '#f59e0b' : '#ef4444';
+                      return (
+                        <div key={tt} className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                          <div className="flex items-center gap-2 px-3 py-1.5 border-b border-slate-100" style={{ background: `${col}08` }}>
+                            <div className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px] font-black flex-shrink-0" style={{ background: col }}>{abbr[0]}</div>
+                            <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">{tt}</span>
+                            <span className="text-[10px] text-slate-400">{ms.length} anggota</span>
+                            {avg !== null && <span className="ml-auto text-sm font-black" style={{ color: avgC }}>avg {avg}%</span>}
+                          </div>
+                          <div className="flex gap-2 px-3 py-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                            {ms.map(m => {
+                              const score = calcKPI(m);
+                              const noData = m.ticketsHandled === 0 && m.lcAttempts === 0 && m.techNotesApproved === 0;
+                              const c = kpiColor(score, noData);
+                              const lbl = kpiLabel(score, noData);
+                              const sparkMax = Math.max(...m.monthlyTickets, 1);
+                              const W = 72, H = 18;
+                              const pts = m.monthlyTickets.map((v, i) => `${(i / 11) * W},${H - (v / sparkMax) * H}`).join(' ');
+                              const lcFailed = m.lcScores.filter(sc => sc < kpiSettings.lcMinScore).length;
+                              const alerts: string[] = [];
+                              if (m.ticketsHandled === 0) alerts.push('🎫0');
+                              if (lcFailed > 0) alerts.push(`📚${lcFailed}×`);
+                              if (m.formReviewLowRating > 0) alerts.push(`⭐${m.formReviewLowRating}×`);
+                              if (m.ticketAvgResponseHours > 24) alerts.push(`⏱${m.ticketAvgResponseHours}j`);
+                              return (
+                                <div key={m.id} onClick={() => setSelectedKPIMember(m.id)}
+                                  className="flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl border cursor-pointer hover:shadow-md transition-all"
+                                  style={{ background: noData ? '#f8fafc' : `${c}08`, borderColor: noData ? '#e2e8f0' : `${c}40`, minWidth: 88, maxWidth: 104 }}>
+                                  <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm text-white shadow-sm flex-shrink-0"
+                                    style={{ background: `linear-gradient(135deg,${c},${c}88)` }}>
+                                    {m.name.charAt(0)}
+                                  </div>
+                                  <div className="text-[10px] font-bold text-slate-700 text-center leading-tight w-full truncate" title={m.name}>
+                                    {m.name.split(' ')[0]}
+                                  </div>
+                                  <div className="text-sm font-black leading-none" style={{ color: c }}>
+                                    {noData ? '—' : `${score}%`}
+                                  </div>
+                                  <div className="text-[8px] font-bold uppercase tracking-wide" style={{ color: c }}>{lbl}</div>
+                                  {m.monthlyTickets.some(v => v > 0) && (
+                                    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
+                                      <polyline points={pts} fill="none" stroke={c} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" opacity={0.7} />
+                                      <circle cx={W} cy={H - (m.monthlyTickets[11] / sparkMax) * H} r={2.5} fill={c} />
+                                    </svg>
+                                  )}
+                                  {alerts.length > 0 && (
+                                    <div className="flex gap-0.5 flex-wrap justify-center">
+                                      {alerts.map((a, i) => (
+                                        <span key={i} className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 leading-none">{a}</span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          );
+        })()}
+
       </div>
 
-      {/* ── Drill-down Modal ── */}
+      {/* ── Drill-down Modal (Performance) ── */}
       {drillMember && (
         <DrillModal member={drillMember} period={period} onClose={() => setDrillMember(null)} />
+      )}
+
+      {/* ── KPI Member Detail Popup ── */}
+      {selectedKPIMember && typeof document !== 'undefined' && (() => {
+        const member = members.find(m => m.id === selectedKPIMember);
+        if (!member) return null;
+        const _s = kpiSettings;
+        const lcFailed = member.lcScores.filter(sc => sc < _s.lcMinScore).length;
+        const tickScore = member.ticketsHandled > 0 ? Math.max(0, 1 - member.ticketsOverdue / Math.max(member.ticketsHandled, 1)) : 0;
+        const bastScore = member.formReviewTotal === 0 ? 0 : member.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - member.formReviewLowRating / Math.max(member.formReviewTotal, 1));
+        const lcScore   = member.lcAttempts === 0 ? 0 : Math.max(0, 1 - lcFailed / Math.max(member.lcAttempts, 1));
+        const rndScore  = member.techNotesApproved >= _s.rndTarget ? 1 : member.techNotesApproved / Math.max(_s.rndTarget, 1);
+        const finalKPI  = Math.round((_s.ticketOverdueWeight * tickScore + _s.bastWeight * bastScore + _s.lcWeight * lcScore + _s.rndWeight * rndScore) * 100);
+        const noData    = member.ticketsHandled === 0 && member.lcAttempts === 0 && member.techNotesApproved === 0;
+        const c         = noData ? '#94a3b8' : finalKPI >= 85 ? '#10b981' : finalKPI >= 70 ? '#3b82f6' : finalKPI >= 50 ? '#f59e0b' : '#ef4444';
+
+        return createPortal(
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
+            onClick={e => { if (e.target === e.currentTarget) setSelectedKPIMember(null); }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-y-auto" style={{ maxHeight: '90vh', scrollbarWidth: 'thin' }}>
+
+              {/* Modal header */}
+              <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 sticky top-0 bg-white z-10 rounded-t-2xl">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-base text-white flex-shrink-0"
+                  style={{ background: `linear-gradient(135deg,${c},${c}99)` }}>
+                  {member.name.charAt(0)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-slate-800 text-sm truncate">{member.name}</div>
+                  <div className="text-xs text-slate-400">{member.jabatan} · {member.team_type}</div>
+                </div>
+                <div className="flex flex-col items-end mr-1 flex-shrink-0">
+                  <div className="text-2xl font-black" style={{ color: c }}>{noData ? '—' : `${finalKPI}%`}</div>
+                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">KPI Score</div>
+                </div>
+                <button onClick={() => setSelectedKPIMember(null)}
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all flex-shrink-0">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+
+              <div className="p-4 space-y-3">
+                {/* Score breakdown cards */}
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { label: 'Ticketing',      raw: Math.round(tickScore * 100), pct: Math.round(tickScore * _s.ticketOverdueWeight * 100), w: Math.round(_s.ticketOverdueWeight * 100), color: '#ef4444', icon: '🎫', bg: '#fef2f2', border: '#ef444440' },
+                    { label: 'BAST & Demo',    raw: Math.round(bastScore * 100),  pct: Math.round(bastScore * _s.bastWeight * 100),          w: Math.round(_s.bastWeight * 100),          color: '#f59e0b', icon: '⭐', bg: '#fffbeb', border: '#f59e0b40' },
+                    { label: 'Learning Center',raw: Math.round(lcScore * 100),    pct: Math.round(lcScore * _s.lcWeight * 100),              w: Math.round(_s.lcWeight * 100),            color: '#6366f1', icon: '🎓', bg: '#f5f3ff', border: '#6366f140' },
+                    { label: 'R&D Tech Note',  raw: Math.round(rndScore * 100),   pct: Math.round(rndScore * _s.rndWeight * 100),            w: Math.round(_s.rndWeight * 100),           color: '#ec4899', icon: '📝', bg: '#fdf4ff', border: '#ec489940' },
+                  ].map(k => (
+                    <div key={k.label} className="rounded-xl border p-2 text-center" style={{ background: k.bg, borderColor: k.border }}>
+                      <div className="text-xs mb-0.5">{k.icon}</div>
+                      <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wide leading-tight mb-1">{k.label}</div>
+                      <div className="text-lg font-black leading-none" style={{ color: k.color }}>{k.pct}%</div>
+                      <div className="text-[9px] text-slate-400 mt-0.5">bobot {k.w}%</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Auto platform data */}
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">✅ Data Platform (Otomatis)</div>
+                  <div className="grid grid-cols-3 gap-2">
+
+                    {/* Ticketing */}
+                    <div className="rounded-xl border p-3" style={{ borderColor: '#ef444440', background: '#fef2f2' }}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="text-[10px] font-bold text-red-600 uppercase tracking-wider">🎫 Ticketing</div>
+                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full" style={{ background: tickScore >= 1 ? '#d1fae5' : '#fee2e2', color: tickScore >= 1 ? '#065f46' : '#991b1b' }}>
+                          {Math.round(tickScore * _s.ticketOverdueWeight * 100)}/{Math.round(_s.ticketOverdueWeight * 100)}%
+                        </span>
+                      </div>
+                      <div className="space-y-1.5 text-[11px] text-slate-600">
+                        <div className="flex justify-between"><span>Handled</span><b className="text-slate-800">{member.ticketsHandled}</b></div>
+                        <div className="flex justify-between"><span>Solved</span><b className="text-emerald-600">{member.ticketsSolved}</b></div>
+                        <div className="flex justify-between"><span>Overdue</span><b className={member.ticketsOverdue > 0 ? 'text-red-600' : 'text-emerald-600'}>{member.ticketsOverdue}</b></div>
+                        <div className="flex justify-between"><span>Avg Response</span><b className={member.ticketAvgResponseHours > 24 ? 'text-red-600' : 'text-emerald-600'}>{member.ticketAvgResponseHours > 0 ? `${member.ticketAvgResponseHours}j` : '—'}</b></div>
+                        {member.ticketsOverdue === 0
+                          ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Tidak ada overdue</div>
+                          : <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ {member.ticketsOverdue} ticket overdue</div>}
+                      </div>
+                    </div>
+
+                    {/* BAST & Demo */}
+                    <div className="rounded-xl border p-3" style={{ borderColor: '#f59e0b40', background: '#fffbeb' }}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">⭐ BAST &amp; Demo</div>
+                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full" style={{ background: bastScore >= 1 ? '#d1fae5' : '#fee2e2', color: bastScore >= 1 ? '#065f46' : '#991b1b' }}>
+                          {Math.round(bastScore * _s.bastWeight * 100)}/{Math.round(_s.bastWeight * 100)}%
+                        </span>
+                      </div>
+                      <div className="space-y-1.5 text-[11px] text-slate-600">
+                        <div className="text-[9px] text-slate-400 mb-1">Sumber: Form Review BAST &amp; Demo</div>
+                        <div className="flex justify-between"><span>Total Review</span><b className="text-slate-800">{member.formReviewTotal}</b></div>
+                        <div className="flex justify-between"><span>Komplain (★1-2)</span><b className={member.formReviewLowRating > 0 ? 'text-red-600' : 'text-emerald-600'}>{member.formReviewLowRating}x</b></div>
+                        {member.formReviewTotal === 0
+                          ? <div className="text-[10px] text-slate-400 font-semibold bg-slate-50 rounded-lg px-2 py-1">⏳ Belum ada review</div>
+                          : member.formReviewLowRating === 0
+                            ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Tidak ada komplain dari {member.formReviewTotal} review</div>
+                            : <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ {member.formReviewLowRating}x komplain dari {member.formReviewTotal} review</div>}
+                      </div>
+                    </div>
+
+                    {/* Learning Center */}
+                    <div className="rounded-xl border p-3" style={{ borderColor: '#6366f140', background: '#f5f3ff' }}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="text-[10px] font-bold text-violet-600 uppercase tracking-wider">🎓 Learning Center</div>
+                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full" style={{ background: lcScore >= 1 ? '#d1fae5' : '#fee2e2', color: lcScore >= 1 ? '#065f46' : '#991b1b' }}>
+                          {Math.round(lcScore * _s.lcWeight * 100)}/{Math.round(_s.lcWeight * 100)}%
+                        </span>
+                      </div>
+                      <div className="space-y-1.5 text-[11px] text-slate-600">
+                        <div className="text-[9px] text-slate-400 mb-1">Nilai penuh jika tidak ada &lt;{_s.lcMinScore}</div>
+                        <div className="flex justify-between"><span>Total Attempt</span><b className="text-slate-800">{member.lcAttempts}</b></div>
+                        <div className="flex justify-between"><span>Avg Score</span><b className={member.lcAvgScore < _s.lcMinScore && member.lcAvgScore > 0 ? 'text-red-600' : 'text-emerald-600'}>{member.lcAvgScore || '—'}</b></div>
+                        <div className="flex justify-between"><span>Lulus</span><b className="text-emerald-600">{member.lcPassed}</b></div>
+                        <div className="flex justify-between"><span>Nilai &lt;{_s.lcMinScore}</span><b className={lcFailed > 0 ? 'text-red-600' : 'text-emerald-600'}>{lcFailed}x</b></div>
+                        {lcFailed > 0
+                          ? <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ {lcFailed}x nilai &lt;{_s.lcMinScore}</div>
+                          : member.lcAttempts > 0
+                            ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Semua nilai ≥{_s.lcMinScore}</div>
+                            : null}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Reminder & Piket */}
+                  <div className="mt-2 bg-slate-50 rounded-xl border border-slate-100 p-3 text-[11px] text-slate-600 flex flex-wrap gap-x-5 gap-y-1">
+                    <span>📅 Reminder: <b className="text-slate-800">{member.remindersDone}</b>/{member.remindersAssigned} done</span>
+                    <span>🏪 Piket: <b className="text-slate-800">{member.piketFilled}</b> hari bertugas</span>
+                    <span>⏱ Avg response: <b className={member.ticketAvgResponseHours > 24 ? 'text-red-600 text-slate-800' : 'text-slate-800'}>{member.ticketAvgResponseHours > 0 ? `${member.ticketAvgResponseHours} jam` : '—'}</b></span>
+                  </div>
+                </div>
+
+                {/* R&D Tech Note */}
+                <div className="rounded-xl border p-3" style={{ borderColor: '#ec489940', background: '#fdf4ff' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-[10px] font-bold text-pink-600 uppercase tracking-wider">📝 R&amp;D Tech Note (Otomatis dari Platform)</div>
+                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full" style={{ background: rndScore >= 1 ? '#d1fae5' : '#fee2e2', color: rndScore >= 1 ? '#065f46' : '#991b1b' }}>
+                      {Math.round(rndScore * _s.rndWeight * 100)}/{Math.round(_s.rndWeight * 100)}%
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-500 mb-2">
+                    Target: <b className="text-slate-700">{_s.rndTarget} Tech Note approved</b> per tahun
+                  </div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-2xl font-black" style={{ color: rndScore >= 1 ? '#059669' : '#dc2626' }}>{member.techNotesApproved}</span>
+                    <span className="text-[10px] text-slate-400 font-medium">/ {_s.rndTarget}</span>
+                    <div className="h-2 flex-1 rounded-full bg-pink-100 overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, rndScore * 100)}%`, background: rndScore >= 1 ? '#10b981' : '#f472b6' }} />
+                    </div>
+                  </div>
+                  {member.techNotesApproved === 0
+                    ? <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1.5">⚠️ Belum ada Tech Note yang diapprove tahun ini</div>
+                    : member.techNotesApproved >= _s.rndTarget
+                      ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1.5">✅ KKM Tech Note terpenuhi ({member.techNotesApproved}/{_s.rndTarget})</div>
+                      : <div className="text-[10px] text-amber-600 font-semibold bg-amber-50 rounded-lg px-2 py-1.5">⏳ Kurang {_s.rndTarget - member.techNotesApproved} Tech Note lagi</div>}
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        );
+      })()}
+
+      {/* ── KPI Settings Modal ── */}
+      {showSettings && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowSettings(false); }}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div>
+                <div className="font-bold text-slate-800 text-base">⚙️ Pengaturan KPI</div>
+                <div className="text-xs text-slate-400 mt-0.5">Atur batas & bobot masing-masing komponen</div>
+              </div>
+              <button onClick={() => setShowSettings(false)} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100">✕</button>
+            </div>
+            <div className="p-6 space-y-5">
+              {/* LC Min Score */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">🎓 Learning Center — Batas Nilai Minimum</label>
+                <div className="flex items-center gap-3">
+                  <input type="range" min={40} max={85} step={5} value={kpiSettings.lcMinScore}
+                    onChange={e => setKpiSettings(p => ({ ...p, lcMinScore: Number(e.target.value) }))}
+                    className="flex-1 accent-violet-600" />
+                  <span className="text-lg font-black text-violet-600 w-12 text-right">&lt;{kpiSettings.lcMinScore}</span>
+                </div>
+                <div className="text-xs text-slate-400 mt-1">Nilai di bawah ini dianggap tidak lulus KPI LC</div>
+              </div>
+              {/* RnD Target */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">📝 R&D Tech Note — Target per Tahun</label>
+                <div className="flex items-center gap-3">
+                  <input type="range" min={1} max={8} step={1} value={kpiSettings.rndTarget}
+                    onChange={e => setKpiSettings(p => ({ ...p, rndTarget: Number(e.target.value) }))}
+                    className="flex-1 accent-pink-600" />
+                  <span className="text-lg font-black text-pink-600 w-12 text-right">{kpiSettings.rndTarget}x</span>
+                </div>
+                <div className="text-xs text-slate-400 mt-1">Minimal Tech Note approved per tahun untuk nilai penuh</div>
+              </div>
+              {/* Bobot */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-3 uppercase tracking-wide">📊 Bobot Komponen KPI (total harus 100%)</label>
+                <div className="space-y-3">
+                  {([
+                    { key: 'ticketOverdueWeight' as keyof KPISettings, label: '🎫 Ticketing',      color: '#ef4444' },
+                    { key: 'bastWeight'           as keyof KPISettings, label: '⭐ BAST & Demo',    color: '#f59e0b' },
+                    { key: 'lcWeight'             as keyof KPISettings, label: '🎓 Learning Center',color: '#6366f1' },
+                    { key: 'rndWeight'            as keyof KPISettings, label: '📝 R&D Tech Note',  color: '#ec4899' },
+                  ]).map(item => (
+                    <div key={item.key} className="flex items-center gap-3">
+                      <span className="text-xs font-semibold text-slate-600 w-36 flex-shrink-0">{item.label}</span>
+                      <input type="range" min={5} max={60} step={5}
+                        value={Math.round((kpiSettings[item.key] as number) * 100)}
+                        onChange={e => setKpiSettings(p => ({ ...p, [item.key]: Number(e.target.value) / 100 }))}
+                        className="flex-1" style={{ accentColor: item.color }} />
+                      <span className="text-xs font-black w-10 text-right" style={{ color: item.color }}>
+                        {Math.round((kpiSettings[item.key] as number) * 100)}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="text-xs text-slate-500">Total bobot sekarang:</span>
+                  <span className={`text-xs font-black ${Math.round((kpiSettings.ticketOverdueWeight + kpiSettings.bastWeight + kpiSettings.lcWeight + kpiSettings.rndWeight) * 100) === 100 ? 'text-emerald-600' : 'text-red-500'}`}>
+                    {Math.round((kpiSettings.ticketOverdueWeight + kpiSettings.bastWeight + kpiSettings.lcWeight + kpiSettings.rndWeight) * 100)}%
+                    {Math.round((kpiSettings.ticketOverdueWeight + kpiSettings.bastWeight + kpiSettings.lcWeight + kpiSettings.rndWeight) * 100) === 100 ? ' ✓' : ' ⚠ harus 100%'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 px-6 pb-5 justify-end">
+              <button onClick={() => { setKpiSettings(DEFAULT_KPI_SETTINGS); saveKpiSettings(DEFAULT_KPI_SETTINGS); }}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors">
+                Reset Default
+              </button>
+              <button onClick={() => { saveKpiSettings(kpiSettings); setShowSettings(false); }}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-white transition-colors"
+                style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
+                ✓ Simpan & Tutup
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
