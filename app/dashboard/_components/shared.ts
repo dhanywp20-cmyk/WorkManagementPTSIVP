@@ -76,6 +76,7 @@ export const JABATAN_CC_RULES: Record<JabatanType, JabatanType[]> = {
 
 export const ALL_MENU_KEYS = [
   'dashboard',
+  'kpi-team',
   'form-bast',
   'request-design-project',
   'ticket-troubleshooting',
@@ -91,6 +92,7 @@ export const ALL_MENU_KEYS = [
 
 export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = {
   'dashboard':              { label: 'Analytics Dashboard (KPI)', icon: '📊' },
+  'kpi-team':               { label: 'KPI Team', icon: '📊' },
   'learning-center':        { label: 'Learning Center', icon: '🎓' },
   'form-bast':              { label: 'Form Review Demo & BAST', icon: '⭐' },
   'request-design-project': { label: 'Request Design Project', icon: '🏗️' },

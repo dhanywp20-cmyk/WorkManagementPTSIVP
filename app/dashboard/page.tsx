@@ -134,6 +134,12 @@ export default function Dashboard() {
       description: 'Kalkulasi & rekap incentive tim PTS',
       items: [{ name: 'Incentive PTS', url: '/incentive-pts', icon: '💰', internal: true, embed: true }]
     },
+    {
+      title: 'KPI Team', icon: '📊', key: 'kpi-team',
+      gradient: 'from-sky-700 via-sky-600 to-blue-500',
+      description: 'Key Performance Indicators & analytics tim PTS',
+      items: [{ name: 'KPI Team', url: '/kpi-team', icon: '📊', internal: true, embed: true }]
+    },
   ];
 
   useEffect(() => {
@@ -446,7 +452,7 @@ export default function Dashboard() {
     return () => { supabase.removeChannel(ch); };
   }, [isAdmin]);
 
-  const INTERNAL_KEYS = ['reminder-schedule', 'request-design-project', 'form-bast', 'ticket-troubleshooting', 'picket-showroom'];
+  const INTERNAL_KEYS = ['reminder-schedule', 'request-design-project', 'form-bast', 'ticket-troubleshooting', 'picket-showroom', 'kpi-team'];
   const PROJECT_KEYS = ['reminder-schedule', 'request-design-project', 'form-bast', 'ticket-troubleshooting', 'incentive-pts'];
   const INTERNAL_DAILY_KEYS = ['picket-showroom', 'daily-report', 'database-pts', 'unit-movement'];
   // ── Learning Center sebagai section tersendiri ──
