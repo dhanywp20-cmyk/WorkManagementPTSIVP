@@ -587,7 +587,16 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
     finally { setAuditLoading(false); }
   }, [scope, scopeReady]);
 
+  // ── Effects: trigger fetch when scope is resolved ─────────────────────────
 
+  useEffect(() => {
+    if (!scopeReady) return;
+    fetchKPI(); fetchAudit();
+    intervalRef.current = setInterval(() => {
+      fetchKPI(); fetchAudit(); setLastRefresh(new Date());
+    }, 3 * 60 * 1000);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [scopeReady, fetchKPI, fetchAudit]);
 
   // ── Filtered Audit ────────────────────────────────────────────────────────
 
