@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup } from '@/components/shared';
+import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader } from '@/components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { User, MovementLog, EVENTS, COLORS, splitTypeLines, fmtDate } from './_components/shared';
 import { ViewModal } from './_components/ViewModal';
@@ -217,26 +217,17 @@ function UnitMovementPageInner() {
         </div>
       )}
 
-      {/* Header — tanpa logout & nama user (handled oleh dashboard) */}
-      <div className="bg-white/85 backdrop-blur-md shadow-md flex-shrink-0 z-30 animate-slide-down anim-d0" style={{borderBottom:'3px solid #d97706'}}>
-        <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-md" style={{background:'linear-gradient(135deg,#f59e0b,#d97706)'}}>🚚</span>
-            <div>
-              <h1 className="font-black text-gray-900 text-base tracking-wide">Unit Movement Log</h1>
-              <p className="text-[10px] text-gray-500 font-medium">PTS IVP — Equipment Tracking</p>
-            </div>
-          </div>
-          {canAddLog&&(
-            <button onClick={()=>setEditLog(null)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
-              style={{background:'linear-gradient(135deg,#f59e0b,#d97706)',boxShadow:'0 2px 8px rgba(245,158,11,0.35)'}}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/></svg>
-              Tambah Log
-            </button>
-          )}
-        </div>
-      </div>
+      {/* Header */}
+      <PageHeader icon="🚚" title="Unit Movement Log" subtitle="PTS IVP — Equipment Tracking" color="#d97706" colorLight="#b45309">
+        {canAddLog&&(
+          <button onClick={()=>setEditLog(null)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
+            style={{background:'linear-gradient(135deg,#f59e0b,#d97706)',boxShadow:'0 2px 8px rgba(245,158,11,0.35)'}}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/></svg>
+            Tambah Log
+          </button>
+        )}
+      </PageHeader>
 
       <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto px-6 py-6 space-y-6 w-full">
 

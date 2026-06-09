@@ -16,7 +16,7 @@ import {
 import { PriorityBadge, StatusBadge, CategoryBadge } from './_components/Badges';
 import {
   FormField, SectionHeader, SectionHeaderSmall, InfoRow,
-  LoadingScreen, MiniPieChart,
+  LoadingScreen, MiniPieChart, PageHeader,
   ViewIconBtn, RescheduleIconBtn, ApproveIconBtn, DeleteIconBtn, ActionGroup,
 } from '@/components/shared';
 import { MiniCalendar } from './_components/MiniCalendar';
@@ -2049,70 +2049,56 @@ jangan lupa peralatan & Semangat💪🏼
         )}
 
         {/* ── HEADER ── */}
-        <header className="sticky top-0 z-50" style={{ background: 'rgba(255,255,255,0.9)', borderBottom: '3px solid #0891b2', backdropFilter: 'blur(16px)' }}>
-          <div className="max-w-[1600px] mx-auto px-6 py-3.5 flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', boxShadow: '0 3px 12px rgba(8,145,178,0.4)' }}>
-                <span className="text-lg">🗓️</span>
-              </div>
-              <div>
-                <h1 className="text-base font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-cyan-800">Reminder Schedule</h1>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setShowBellPopup(true)}
-                className="relative p-2 rounded-xl transition-all hover:bg-red-50 border-2 border-transparent hover:border-red-200">
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                {myActiveReminders.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                    style={{ background: '#f59e0b' }}>
-                    {myActiveReminders.length}
-                  </span>
-                )}
+        <PageHeader icon="🗓️" title="Reminder Schedule" color="#0891b2" colorLight="#0e7490">
+          <button onClick={() => setShowBellPopup(true)}
+            className="relative p-2 rounded-xl transition-all hover:bg-cyan-50 border-2 border-transparent hover:border-cyan-200">
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            {myActiveReminders.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                style={{ background: '#f59e0b' }}>
+                {myActiveReminders.length}
+              </span>
+            )}
+          </button>
+
+          {canAddReminder && view === 'list' && (
+            <button onClick={() => { setEditingReminder(null); setFormData(emptyForm); setShowFormModal(true); }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', boxShadow: '0 4px 14px rgba(8,145,178,0.4)' }}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+              Tambah Reminder
+            </button>
+          )}
+
+          {/* ── Tombol Request Jadwal — hanya untuk role Guest/Sales ── */}
+          {isGuest && view === 'list' && (
+            <div className="flex flex-col items-end gap-1">
+              <button
+                onClick={() => { if (pendingReviewCount === 0) setShowRequestModal(true); }}
+                disabled={pendingReviewCount > 0}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all"
+                style={pendingReviewCount > 0
+                  ? { background: 'linear-gradient(135deg,#9ca3af,#6b7280)', boxShadow: 'none', cursor: 'not-allowed', opacity: 0.7 }
+                  : { background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', boxShadow: '0 4px 14px rgba(37,99,235,0.4)', cursor: 'pointer' }
+                }
+                title={pendingReviewCount > 0 ? `Ada ${pendingReviewCount} form review belum dinilai` : ''}
+              >
+                {pendingReviewCount > 0
+                  ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+                  : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                }
+                📩 Request Jadwal
               </button>
-
-              {canAddReminder && view === 'list' && (
-                <button onClick={() => { setEditingReminder(null); setFormData(emptyForm); setShowFormModal(true); }}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90"
-                  style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 4px 14px rgba(220,38,38,0.4)' }}>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-                  Tambah Reminder
-                </button>
+              {pendingReviewCount > 0 && (
+                <span className="text-[11px] font-semibold text-amber-600 flex items-center gap-1">
+                  ⚠️ Selesaikan {pendingReviewCount} form review dulu
+                </span>
               )}
-
-              {/* ── Tombol Request Jadwal — hanya untuk role Guest/Sales ── */}
-              {isGuest && view === 'list' && (
-                <div className="flex flex-col items-end gap-1">
-                  <button
-                    onClick={() => { if (pendingReviewCount === 0) setShowRequestModal(true); }}
-                    disabled={pendingReviewCount > 0}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all"
-                    style={pendingReviewCount > 0
-                      ? { background: 'linear-gradient(135deg,#9ca3af,#6b7280)', boxShadow: 'none', cursor: 'not-allowed', opacity: 0.7 }
-                      : { background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', boxShadow: '0 4px 14px rgba(37,99,235,0.4)', cursor: 'pointer' }
-                    }
-                    title={pendingReviewCount > 0 ? `Ada ${pendingReviewCount} form review belum dinilai` : ''}
-                  >
-                    {pendingReviewCount > 0
-                      ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
-                      : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-                    }
-                    📩 Request Jadwal
-                  </button>
-                  {pendingReviewCount > 0 && (
-                    <span className="text-[11px] font-semibold text-amber-600 flex items-center gap-1">
-                      ⚠️ Selesaikan {pendingReviewCount} form review dulu
-                    </span>
-                  )}
-                </div>
-              )}
-
             </div>
-          </div>
-        </header>
+          )}
+        </PageHeader>
 
         <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
           {view === 'list' && (

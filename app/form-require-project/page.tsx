@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { setSession, clearSession, getSession } from '@/lib/auth';
-import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup } from '@/components/shared';
+import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader } from '@/components/shared';
 import {
   User, ProjectRequest, RoomDetail, BrandPicMapping,
   ProjectMessage, ProjectAttachment,
@@ -1385,72 +1385,58 @@ Hubungi Admin untuk info lebih lanjut.
       )}
 
       {/* STICKY HEADER */}
-      <header className="sticky top-0 z-50 animate-slide-down anim-d0" style={{ background: 'rgba(255,255,255,0.95)', borderBottom: '3px solid #7c3aed', backdropFilter: 'blur(16px)' }}>
-        <div className="max-w-[1600px] mx-auto px-6 py-3.5 flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', boxShadow: '0 3px 12px rgba(124,58,237,0.4)' }}>
-              <span className="text-lg">🏗️</span>
-            </div>
-            <div>
-              <h1 className="text-base font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-violet-800">Request Design Project</h1>
-              <p className="text-[11px] text-gray-500 font-medium">IVP Product — AV Solution Request</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Bell notif — tiket pending/in_progress */}
-            {(() => {
-              const activeTickets = requests.filter(r => r.status === 'pending' || r.status === 'in_progress');
-              if (activeTickets.length === 0) return null;
-              return (
-                <div className="relative">
-                  <button
-                    onClick={() => setBellDropdownOpen(o => !o)}
-                    className="relative flex items-center justify-center w-9 h-9 rounded-xl transition-all hover:bg-red-50"
-                    style={{ border: '1.5px solid rgba(239,68,68,0.35)', background: 'rgba(239,68,68,0.07)' }}>
-                    <svg className="w-5 h-5 text-red-500 animate-[wiggle_1.5s_ease-in-out_infinite]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                    </svg>
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">
-                      {activeTickets.length}
-                    </span>
-                  </button>
-                  {bellDropdownOpen && (
-                    <div className="absolute right-0 top-11 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] overflow-hidden animate-scale-in">
-                      <div className="bg-gradient-to-r from-red-500 to-red-600 px-4 py-3 flex items-center justify-between">
-                        <p className="text-white text-xs font-bold">🔔 Tiket Aktif ({activeTickets.length})</p>
-                        <button onClick={() => setBellDropdownOpen(false)} className="text-white/70 hover:text-white text-xs font-bold">✕</button>
-                      </div>
-                      <div className="max-h-64 overflow-y-auto divide-y divide-gray-100">
-                        {activeTickets.map(req => {
-                          const sc = statusConfig[req.status];
-                          return (
-                            <button key={req.id} onClick={() => { setBellDropdownOpen(false); handleOpenDetail(req); }}
-                              className="w-full flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-all text-left">
-                              <span className={`mt-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${sc.color} ${sc.bg} ${sc.border}`}>{sc.label}</span>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold text-gray-800 truncate">{req.project_name}</p>
-                                <p className="text-[10px] text-gray-400 truncate">{req.sales_name} · {req.assign_name || 'Unassigned'}</p>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+      <PageHeader icon="🏗️" title="Request Design Project" subtitle="IVP Product — AV Solution Request" color="#7c3aed" colorLight="#6d28d9">
+        {/* Bell notif — tiket pending/in_progress */}
+        {(() => {
+          const activeTickets = requests.filter(r => r.status === 'pending' || r.status === 'in_progress');
+          if (activeTickets.length === 0) return null;
+          return (
+            <div className="relative">
+              <button
+                onClick={() => setBellDropdownOpen(o => !o)}
+                className="relative flex items-center justify-center w-9 h-9 rounded-xl transition-all hover:bg-violet-50"
+                style={{ border: '1.5px solid rgba(124,58,237,0.35)', background: 'rgba(124,58,237,0.07)' }}>
+                <svg className="w-5 h-5 text-violet-500 animate-[wiggle_1.5s_ease-in-out_infinite]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span className="absolute -top-1 -right-1 bg-violet-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">
+                  {activeTickets.length}
+                </span>
+              </button>
+              {bellDropdownOpen && (
+                <div className="absolute right-0 top-11 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] overflow-hidden animate-scale-in">
+                  <div className="bg-gradient-to-r from-violet-500 to-violet-600 px-4 py-3 flex items-center justify-between">
+                    <p className="text-white text-xs font-bold">🔔 Tiket Aktif ({activeTickets.length})</p>
+                    <button onClick={() => setBellDropdownOpen(false)} className="text-white/70 hover:text-white text-xs font-bold">✕</button>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto divide-y divide-gray-100">
+                    {activeTickets.map(req => {
+                      const sc = statusConfig[req.status];
+                      return (
+                        <button key={req.id} onClick={() => { setBellDropdownOpen(false); handleOpenDetail(req); }}
+                          className="w-full flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-all text-left">
+                          <span className={`mt-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${sc.color} ${sc.bg} ${sc.border}`}>{sc.label}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-gray-800 truncate">{req.project_name}</p>
+                            <p className="text-[10px] text-gray-400 truncate">{req.sales_name} · {req.assign_name || 'Unassigned'}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              );
-            })()}
+              )}
+            </div>
+          );
+        })()}
 
-            <button onClick={() => setShowNewFormModal(true)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg,#0d9488,#0f766e)', boxShadow: '0 4px 14px rgba(13,148,136,0.4)' }}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-              Buat Request
-            </button>
-          </div>
-        </div>
-      </header>
+        <button onClick={() => setShowNewFormModal(true)}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90"
+          style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', boxShadow: '0 4px 14px rgba(124,58,237,0.4)' }}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+          Buat Request
+        </button>
+      </PageHeader>
 
       <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
 

@@ -907,12 +907,12 @@ export default function FormReviewPage() {
           style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(16px)', borderBottom: '3px solid #d97706', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
           {/* Loading Bar */}
           {loadingBar > 0 && (
-            <div className="absolute top-0 left-0 w-full h-0.5 z-[60] overflow-hidden" style={{ background: 'rgba(124,58,237,0.15)' }}>
+            <div className="absolute top-0 left-0 w-full h-0.5 z-[60] overflow-hidden" style={{ background: 'rgba(217,119,6,0.15)' }}>
               <div
                 className="h-full transition-all duration-300 ease-out"
                 style={{
                   width: `${loadingBar}%`,
-                  background: 'linear-gradient(90deg,#7c3aed,#a78bfa,#7c3aed)',
+                  background: 'linear-gradient(90deg,#d97706,#fbbf24,#d97706)',
                   backgroundSize: '200% 100%',
                   animation: loadingBar < 100 ? 'shimmer 1.2s infinite' : 'none',
                   opacity: loadingBar === 100 ? 0 : 1,
@@ -924,18 +924,18 @@ export default function FormReviewPage() {
           <div className="px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)' }}>
+              style={{ background: 'linear-gradient(135deg,#d97706,#b45309)' }}>
               <span className="text-white text-base">⭐</span>
             </div>
             <div>
-              <p className="text-[10px] font-semibold tracking-[0.2em] uppercase" style={{ color: '#7c3aed' }}>IndoVisual</p>
+              <p className="text-[10px] font-semibold tracking-[0.2em] uppercase" style={{ color: '#d97706' }}>IndoVisual</p>
               <p className="font-bold text-sm leading-none tracking-wide text-slate-800">Form Review Demo & BAST</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             {/* Bell */}
             <button onClick={() => setShowBellPopup(true)}
-              className="relative p-2 rounded-xl transition-all hover:bg-red-50 border-2 border-transparent hover:border-red-200">
+              className="relative p-2 rounded-xl transition-all hover:bg-amber-50 border-2 border-transparent hover:border-amber-200">
               <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
