@@ -26,12 +26,9 @@ function TicketingSystemInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const ticketListRef = useRef<HTMLDivElement>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const notify = (type: 'success' | 'error', msg: string) => { setToast({ type, msg }); setTimeout(() => setToast(null), 4000); };
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [loginForm, setLoginForm] = useState({ username: "", password: "" });
-  const [loginErr, setLoginErr] = useState("");
   const [loginTime, setLoginTime] = useState<number | null>(null);
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -321,19 +318,8 @@ function TicketingSystemInner() {
     });
   };
 
-  const handleLogin = async () => {
-    try {
-      const { data, error } = await supabase.from("users").select("*").eq("username", loginForm.username).eq("password", loginForm.password).single();
-      if (error || !data) { setLoginErr("Incorrect username or password!"); return; }
-      setCurrentUser(data);
-      setIsLoggedIn(true);
-      setLoginTime(Date.now());
-      setSession(data);
-    } catch (err) { setLoginErr("Login failed!"); }
-  };
-
   const handleLogout = () => {
-    setIsLoggedIn(false); setCurrentUser(null); setLoginTime(null); setSelectedTicket(null);
+    setCurrentUser(null); setLoginTime(null); setSelectedTicket(null);
     setSelectMode(false); setSelectedIds(new Set()); setHandlerFilter(null); setSalesDivisionFilter(null); setProductFilter(null);
     setSearchProduct(""); setSearchProject(""); setSearchSalesName("");
     setFilterYear("All"); setFilterStatus("All"); setSelectedHandlerTeam("PTS");
@@ -1670,14 +1656,14 @@ function TicketingSystemInner() {
 
   useEffect(() => {
     const user = getSession();
-    if (user) {
-      setCurrentUser(user as any);
-      setIsLoggedIn(true);
-      setLoginTime(Date.now());
-      fetchData(user as any);
+    if (!user) {
+      const target = window.top !== window ? window.top : window;
+      if (target) target.location.href = '/dashboard';
       return;
     }
-    fetchData(null);
+    setCurrentUser(user as any);
+    setLoginTime(Date.now());
+    fetchData(user as any);
   }, []);
 
   useEffect(() => {
@@ -1690,12 +1676,12 @@ function TicketingSystemInner() {
   }, [currentUser, teamMembers]);
 
   useEffect(() => {
-    if (isLoggedIn && tickets.length > 0 && currentUser?.role !== "guest") {
+    if (currentUser && tickets.length > 0 && currentUser?.role !== "guest") {
       const notifs = getNotifications();
       setNotifications(notifs);
       if (notifs.length > 0 && !showNotificationPopup) setShowNotificationPopup(true);
     }
-  }, [tickets, isLoggedIn, currentUser]);
+  }, [tickets, currentUser]);
 
   useEffect(() => {
     const interval = setInterval(() => checkSessionTimeout(), 60000);
@@ -1711,7 +1697,7 @@ function TicketingSystemInner() {
 
   // ── Realtime subscription: auto-update tanpa refresh ─────────────────────
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (!currentUser) return;
     // PTS DB realtime
     const ptsCh = supabase.channel("pts-tickets-rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, () => {
@@ -1737,7 +1723,7 @@ function TicketingSystemInner() {
       supabaseServices.removeChannel(svcCh);
       clearInterval(pollInterval);
     };
-  }, [isLoggedIn, currentUser]);
+  }, [currentUser]);
 
   const canCreateTicket = true;
   const canUpdateTicket = currentUser?.role !== "guest";
@@ -1821,37 +1807,6 @@ function TicketingSystemInner() {
         <div className="bg-white/75 p-8 rounded-2xl shadow-2xl">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-red-600 mx-auto"></div>
           <p className="mt-4 font-bold">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isLoggedIn) {
-    return (
-      <div className="min-h-screen flex items-center justify-center relative" style={{ backgroundImage: "url(/IVP_Background.png)", backgroundSize: "cover", backgroundPosition: "center" }}>
-        <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.4)" }} />
-        <div className="relative z-10 bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-8 w-full max-w-md" style={{ border: "2px solid rgba(220,38,38,0.3)" }}>
-          <div className="flex justify-center mb-5">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl" style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)", boxShadow: "0 6px 24px rgba(220,38,38,0.4)" }}>
-              <span className="text-3xl">🗓️</span>
-            </div>
-          </div>
-          <h1 className="text-3xl font-black text-center mb-1 text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">Login</h1>
-          <p className="text-center text-gray-600 font-semibold mb-6 text-sm">Ticket Troubleshooting<br/><span className="text-red-600 font-bold">IVP Product — Team Support</span></p>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-bold mb-2 text-gray-700">Username</label>
-              <input type="text" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })} className="w-full border-2 border-gray-300 rounded-xl px-4 py-3 focus:border-red-600 focus:ring-4 focus:ring-red-200 transition-all font-medium bg-white" placeholder="Masukkan username" onKeyDown={(e) => e.key === "Enter" && handleLogin()} />
-            </div>
-            <div>
-              <label className="block text-sm font-bold mb-2 text-gray-700">Password</label>
-              <input type="password" value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} className="w-full border-2 border-gray-300 rounded-xl px-4 py-3 focus:border-red-600 focus:ring-4 focus:ring-red-200 transition-all font-medium bg-white" placeholder="Masukkan password" onKeyDown={(e) => { if (e.key === "Enter") { setLoginErr(""); handleLogin(); } }} />
-            </div>
-            {loginErr && (
-              <div className="px-4 py-2.5 rounded-xl text-sm font-medium text-red-700 bg-red-50 border border-red-200">{loginErr}</div>
-            )}
-            <button onClick={() => { setLoginErr(""); handleLogin(); }} className="w-full bg-gradient-to-r from-red-600 to-red-800 text-white py-3 rounded-xl hover:from-red-700 hover:to-red-900 font-bold shadow-xl transition-all">🔐 Login</button>
-          </div>
         </div>
       </div>
     );

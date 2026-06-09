@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { setSession, clearSession, getSession } from '@/lib/auth';
+import { clearSession, getSession } from '@/lib/auth';
 import {
   ReviewCategory, ReviewForm, Reminder, GuestUser,
   PIE_COLORS, REVIEW_TRIGGER_CATEGORIES,
@@ -20,10 +20,7 @@ export default function FormReviewPage() {
   const router = useRouter();
 
   // Auth
-  const [initializing, setInitializing] = useState(true); // prevent flash login
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<GuestUser | null>(null);
-  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [dashLoading, setDashLoading] = useState(false);
   const [appReady, setAppReady] = useState(false);
   const [loadingBar, setLoadingBar] = useState(0); // 0-100 progress bar
@@ -95,11 +92,12 @@ export default function FormReviewPage() {
 
   useEffect(() => {
     const user = getSession<GuestUser>();
-    if (user) {
-      setCurrentUser(user);
-      setIsLoggedIn(true);
+    if (!user) {
+      const target = window.top !== window ? window.top : window;
+      if (target) target.location.href = '/dashboard';
+      return;
     }
-    setInitializing(false);
+    setCurrentUser(user);
 
     // Set pesan loading sesuai role
     if (user?.role === 'guest') setLoadingMessage('Memuat form review Anda...');
@@ -312,26 +310,12 @@ export default function FormReviewPage() {
 
   // ─── Login ─────────────────────────────────────────────────────────────────
 
-  const handleLogin = async () => {
-    try {
-      const { data, error } = await supabase.from('users').select('*')
-        .eq('username', loginForm.username).eq('password', loginForm.password).single();
-      if (error || !data) { notify('error', 'Username atau password salah!'); return; }
-      setDashLoading(true);
-      setCurrentUser(data);
-      setIsLoggedIn(true);
-      setSession(data);
-      await fetchReviewsQuiet(data);
-      setTimeout(() => setDashLoading(false), 1800);
-    } catch { notify('error', 'Terjadi kesalahan.'); }
-  };
-
   const handleLogout = () => {
     setSelectMode(false); setSelectedIds(new Set()); setFilterCategory('all'); setFilterReviewCat('all');
     setSearchProject(''); setSearchHandler(''); setSearchSalesName('');
     setHandlerFilter(null); setProductFilterChart(null); setSalesDivisionFilter(null);
     clearSession();
-    setCurrentUser(null); setIsLoggedIn(false);
+    setCurrentUser(null);
     const target = window.top !== window ? window.top : window;
     if (target) target.location.href = '/dashboard';
   };
@@ -405,57 +389,6 @@ export default function FormReviewPage() {
 
   const inputCls = "w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-violet-500/40";
   const inputStyle = { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(0,0,0,0.12)' };
-
-  // ─── Login Page ─────────────────────────────────────────────────────────────
-
-  if (!isLoggedIn) {
-    // Saat masih baca localStorage, jangan tampilkan login — hindari flash
-    if (initializing) return null;
-    return (
-      <div className="min-h-screen flex items-center justify-center relative"
-        style={{ backgroundImage: `url('/IVP_Background.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-        <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.45)' }} />
-        {toast && (
-          <div className={`fixed top-5 right-5 z-[200] px-5 py-3.5 rounded-xl shadow-2xl text-sm font-bold flex items-center gap-2 text-white ${toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`}>
-            {toast.type === 'success' ? '✅' : '❌'} {toast.msg}
-          </div>
-        )}
-        <div className="relative z-10 bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-8 w-full max-w-md" style={{ border: '2px solid rgba(124,58,237,0.3)' }}>
-          <div className="flex justify-center mb-5">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl"
-              style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', boxShadow: '0 6px 24px rgba(124,58,237,0.4)' }}>
-              <span className="text-3xl">⭐</span>
-            </div>
-          </div>
-          <h1 className="text-3xl font-black text-center mb-1 text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-purple-800">Login</h1>
-          <p className="text-center text-gray-600 font-semibold mb-6 text-sm">Form Review Demo Produk & BAST<br /><span className="text-violet-600 font-bold">PTS IVP — Survey Team</span></p>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-bold mb-2 text-gray-700">Username</label>
-              <input type="text" value={loginForm.username}
-                onChange={e => setLoginForm({ ...loginForm, username: e.target.value })}
-                className="w-full border-2 border-gray-300 rounded-xl px-4 py-3 focus:border-violet-600 focus:ring-4 focus:ring-violet-200 transition-all font-medium bg-white"
-                placeholder="Masukkan username"
-                onKeyDown={e => e.key === 'Enter' && handleLogin()} />
-            </div>
-            <div>
-              <label className="block text-sm font-bold mb-2 text-gray-700">Password</label>
-              <input type="password" value={loginForm.password}
-                onChange={e => setLoginForm({ ...loginForm, password: e.target.value })}
-                className="w-full border-2 border-gray-300 rounded-xl px-4 py-3 focus:border-violet-600 focus:ring-4 focus:ring-violet-200 transition-all font-medium bg-white"
-                placeholder="Masukkan password"
-                onKeyDown={e => e.key === 'Enter' && handleLogin()} />
-            </div>
-            <button onClick={handleLogin}
-              className="w-full text-white py-3 rounded-xl font-bold shadow-xl transition-all hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)' }}>
-              🔐 Login
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // Loading awal — tampilkan sebelum data siap (sesuai role)
   if (!appReady) return <LoadingScreen message={loadingMessage} accentColor="#7c3aed" />;

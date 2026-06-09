@@ -29,8 +29,6 @@ function ReminderSchedulePageInner() {
   const searchParams = useSearchParams();
   const [appReady, setAppReady]             = useState(false);
   const [dashLoading, setDashLoading]       = useState(false);
-  const [isLoggedIn, setIsLoggedIn]         = useState(false);
-  const [loginForm, setLoginForm]           = useState({ username: '', password: '' });
   const [loginTime, setLoginTime]           = useState<number | null>(null);
   const [showNotificationPopup, setShowNotificationPopup] = useState(false);
   const [showBellPopup, setShowBellPopup]   = useState(false);
@@ -128,12 +126,13 @@ function ReminderSchedulePageInner() {
 
   useEffect(() => {
     const user = getSession<TeamUser>();
-
-    if (user) {
-      setCurrentUser(user);
-      setIsLoggedIn(true);
-      setLoginTime(Date.now());
+    if (!user) {
+      const target = window.top !== window ? window.top : window;
+      if (target) target.location.href = '/dashboard';
+      return;
     }
+    setCurrentUser(user);
+    setLoginTime(Date.now());
 
     // Fetch parallel — tidak tunggu satu selesai dulu
     Promise.all([
@@ -994,81 +993,14 @@ jangan lupa peralatan & Semangat💪🏼
     setSearchTeamHandler(''); setSearchProduct(''); setProductFilter(null);
     setSelectedCalDay(null); setGuestSearch('');
     clearSession();
-    setCurrentUser(null); setIsLoggedIn(false); setLoginTime(null);
+    setCurrentUser(null); setLoginTime(null);
     // Redirect ke halaman login dashboard (parent window jika di dalam iframe)
     const target = window.top !== window ? window.top : window;
     if (target) target.location.href = '/dashboard';
   };
 
-  const handleLogin = async () => {
-    try {
-      const { data, error } = await supabase.from('users').select('*')
-        .eq('username', loginForm.username).eq('password', loginForm.password).single();
-      if (error || !data) { notify('error', 'Username atau password salah!'); return; }
-      const now = Date.now();
-      setDashLoading(true);
-      setCurrentUser(data);
-      setIsLoggedIn(true);
-      setLoginTime(now);
-      setSession(data);
-      await fetchRemindersQuiet(data);
-
-      const active = reminders.filter(r => r.assigned_to === data.username && r.status !== 'done' && r.status !== 'cancelled');
-      setMyReminders(active);
-      if (active.length > 0) setTimeout(() => setShowNotificationPopup(true), 600);
-      setTimeout(() => setDashLoading(false), 2200);
-    } catch { notify('error', 'Terjadi kesalahan.'); }
-  };
-
   // ─── Not ready — tampilkan loading screen saat pertama kali fetch data ────
   if (!appReady) return <LoadingScreen />;
-
-  // ─── Login page ────────────────────────────────────────────────────────────
-  if (!isLoggedIn) {
-    return (
-      <div className="min-h-screen flex items-center justify-center relative"
-        style={{ backgroundImage: `url('/IVP_Background.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-        <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.4)' }} />
-        {toast && (
-          <div className={`fixed top-5 right-5 z-[200] px-5 py-3.5 rounded-xl shadow-2xl text-sm font-bold flex items-center gap-2 text-white ${toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`}>
-            {toast.type === 'success' ? '✅' : '❌'} {toast.msg}
-          </div>
-        )}
-        <div className="relative z-10 bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-8 w-full max-w-md" style={{ border: '2px solid rgba(220,38,38,0.3)' }}>
-          <div className="flex justify-center mb-5">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl"
-              style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)', boxShadow: '0 6px 24px rgba(220,38,38,0.4)' }}>
-              <span className="text-3xl">🗓️</span>
-            </div>
-          </div>
-          <h1 className="text-3xl font-black text-center mb-1 text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">Login</h1>
-          <p className="text-center text-gray-600 font-semibold mb-6 text-sm">Reminder Schedule<br/><span className="text-red-600 font-bold">PTS IVP — Team Work Planner</span></p>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-bold mb-2 text-gray-700">Username</label>
-              <input type="text" value={loginForm.username}
-                onChange={e => setLoginForm({ ...loginForm, username: e.target.value })}
-                className="w-full border-2 border-gray-300 rounded-xl px-4 py-3 focus:border-red-600 focus:ring-4 focus:ring-red-200 transition-all font-medium bg-white"
-                placeholder="Masukkan username"
-                onKeyDown={e => e.key === 'Enter' && handleLogin()} />
-            </div>
-            <div>
-              <label className="block text-sm font-bold mb-2 text-gray-700">Password</label>
-              <input type="password" value={loginForm.password}
-                onChange={e => setLoginForm({ ...loginForm, password: e.target.value })}
-                className="w-full border-2 border-gray-300 rounded-xl px-4 py-3 focus:border-red-600 focus:ring-4 focus:ring-red-200 transition-all font-medium bg-white"
-                placeholder="Masukkan password"
-                onKeyDown={e => e.key === 'Enter' && handleLogin()} />
-            </div>
-            <button onClick={handleLogin}
-              className="w-full bg-gradient-to-r from-red-600 to-red-800 text-white py-3 rounded-xl hover:from-red-700 hover:to-red-900 font-bold shadow-xl transition-all">
-              🔐 Login
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="h-screen overflow-hidden flex flex-col relative" style={{

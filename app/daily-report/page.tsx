@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
-import { setSession, clearSession, getSession } from '@/lib/auth';
+import { clearSession, getSession } from '@/lib/auth';
 
 import {
   CATEGORIES, CATEGORY_CONFIG,
@@ -166,9 +166,6 @@ function Toast({ t }: { t: { type: 'success' | 'error'; msg: string } | null }) 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function DailyReportPage() {
   const [appReady, setAppReady]       = useState(false);
-  const [isLoggedIn, setIsLoggedIn]   = useState(false);
-  const [loginForm, setLoginForm]     = useState({ username: '', password: '' });
-  const [loginErr, setLoginErr]       = useState('');
   const [currentUser, setCurrentUser] = useState<TeamUser | null>(null);
   const [teamUsers, setTeamUsers]     = useState<TeamUser[]>([]);
   const [guestUsers, setGuestUsers]   = useState<GuestUser[]>([]);
@@ -216,7 +213,12 @@ export default function DailyReportPage() {
   // ── Init ──────────────────────────────────────────────────────────────────────
   useEffect(() => {
     const user = getSession<TeamUser>();
-    if (user) { setCurrentUser(user); setIsLoggedIn(true); }
+    if (!user) {
+      const target = window.top !== window ? window.top : window;
+      if (target) target.location.href = '/dashboard';
+      return;
+    }
+    setCurrentUser(user);
     Promise.all([loadTeamUsers(), loadGuestUsers()]).then(() => setAppReady(true));
     // session check
     const iv = setInterval(() => {
@@ -547,26 +549,6 @@ export default function DailyReportPage() {
   const updT = (key: string, p: Partial<TeamEntry>) => setTeamEntries(prev => prev.map(e => e._key === key ? { ...e, ...p } : e));
 
   if (!appReady) return <LoadingScreen />;
-
-  // ── LOGIN ─────────────────────────────────────────────────────────────────────
-  if (!isLoggedIn) {
-    return (
-      <PW>
-        <div className="flex-1 flex items-center justify-center p-4">
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 w-full max-w-sm border border-white/20 shadow-2xl">
-            <div className="text-center mb-6"><span className="text-4xl">📋</span><h1 className="text-xl font-bold text-white mt-2">Daily Report</h1><p className="text-white/60 text-sm">PTS IVP &amp; MLDS</p></div>
-            <div className="space-y-3">
-              <input value={loginForm.username} onChange={e => setLoginForm(p => ({ ...p, username: e.target.value }))} placeholder="Username" className="w-full px-4 py-3 rounded-xl text-sm outline-none" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }} />
-              <input type="password" value={loginForm.password} onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))} onKeyDown={async e => { if (e.key === 'Enter') { setLoginErr(''); const { data } = await supabase.from('users').select('*').eq('username', loginForm.username.trim()).eq('password', loginForm.password).maybeSingle(); if (!data) { setLoginErr('Username atau password salah.'); return; } setSession(data); setCurrentUser(data); setIsLoggedIn(true); } }} placeholder="Password" className="w-full px-4 py-3 rounded-xl text-sm outline-none" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }} />
-              {loginErr && <p className="text-red-300 text-xs">{loginErr}</p>}
-              <button onClick={async () => { setLoginErr(''); const { data } = await supabase.from('users').select('*').eq('username', loginForm.username.trim()).eq('password', loginForm.password).maybeSingle(); if (!data) { setLoginErr('Username atau password salah.'); return; } setSession(data); setCurrentUser(data); setIsLoggedIn(true); }} className="w-full py-3 rounded-xl font-bold text-sm text-white" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>Masuk</button>
-            </div>
-          </div>
-        </div>
-        <Toast t={toast} />
-      </PW>
-    );
-  }
 
   // ── FORM MODAL ────────────────────────────────────────────────────────────────
   const FormModal = () => {
