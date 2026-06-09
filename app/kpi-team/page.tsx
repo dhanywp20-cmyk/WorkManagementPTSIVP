@@ -1315,8 +1315,8 @@ export default function KPITeamPage() {
                             {ms.map(m => {
                               const score = calcKPI(m);
                               const noData = m.ticketsHandled === 0 && m.lcAttempts === 0 && m.techNotesApproved === 0;
-                              const c = kpiColor(score, noData);
-                              const lbl = kpiLabel(score, noData);
+                              const c = kpiScoreColor(score, noData);
+                              const lbl = kpiScoreLabel(score, noData);
                               const sparkMax = Math.max(...m.monthlyTickets, 1);
                               const W = 72, H = 18;
                               const pts = m.monthlyTickets.map((v, i) => `${(i / 11) * W},${H - (v / sparkMax) * H}`).join(' ');
