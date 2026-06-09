@@ -99,6 +99,8 @@ function TicketingSystemInner() {
   const [selectMode, setSelectMode] = useState(false);
   const [bulkConfirm, setBulkConfirm] = useState(false);
   const [newMapping, setNewMapping] = useState({ guestUsername: "", projectName: "" });
+  const ITEMS_PER_PAGE = 30;
+  const [currentPage, setCurrentPage] = useState(1);
 
   const getJakartaDateString = () => {
     const now = new Date();
@@ -1597,6 +1599,15 @@ function TicketingSystemInner() {
     });
   }, [tickets, searchProject, searchSalesName, filterYear, filterStatus, currentUserTeamType, overdueSettings, handlerFilter, salesDivisionFilter, productFilter, searchProduct]);
 
+  // Reset to page 1 whenever any filter changes
+  useEffect(() => { setCurrentPage(1); }, [searchProject, searchSalesName, filterYear, filterStatus, handlerFilter, salesDivisionFilter, productFilter, searchProduct]);
+
+  const totalPages = Math.ceil(filteredTickets.length / ITEMS_PER_PAGE);
+  const paginatedTickets = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredTickets.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredTickets, currentPage, ITEMS_PER_PAGE]);
+
   const stats = useMemo(() => {
     const total = tickets.length;
     const processing = tickets.filter((t) => t.status === "In Progress").length;
@@ -2235,7 +2246,7 @@ function TicketingSystemInner() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredTickets.map((ticket, index) => {
+                    {paginatedTickets.map((ticket, index) => {
                       const overdue = isTicketOverdue(ticket);
                       const overdueSetting = getOverdueSetting(ticket.id);
                       const creatorUser = users.find((u) => u.username === ticket.created_by);
@@ -2249,7 +2260,7 @@ function TicketingSystemInner() {
                               ? <input type="checkbox" checked={selectedIds.has(ticket.id)}
                                   onChange={() => toggleSelectId(ticket.id)}
                                   className="w-4 h-4 rounded accent-red-600 cursor-pointer" />
-                              : <span className="text-[11px] font-bold text-gray-400">{index + 1}</span>}
+                              : <span className="text-[11px] font-bold text-gray-400">{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</span>}
                           </td>
                           <td className="px-3 py-3 border-r border-gray-100 align-middle">
                             <div className="flex items-start gap-1">
@@ -2374,7 +2385,40 @@ function TicketingSystemInner() {
                     })}
                   </tbody>
                 </table>
-                <div className="flex items-center justify-between px-5 py-3 border-t border-gray-200" style={{ background: "rgba(255,255,255,0.97)" }}><span className="text-xs text-gray-400">{filteredTickets.length} ticket{filteredTickets.length !== 1 ? "s" : ""} ditemukan</span><span className="text-xs text-gray-400">{filteredTickets.length > 0 ? `1–${filteredTickets.length}` : "0"} of {tickets.length}</span></div>
+                <div className="flex items-center justify-between px-5 py-3 border-t border-gray-200 flex-wrap gap-2" style={{ background: "rgba(255,255,255,0.97)" }}>
+                  <span className="text-xs text-gray-400">{filteredTickets.length} ticket{filteredTickets.length !== 1 ? "s" : ""} ditemukan</span>
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-1.5">
+                      <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1}
+                        className="px-2 py-1 rounded-lg text-xs font-bold border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-all" title="First page">«</button>
+                      <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
+                        className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-all">‹ Prev</button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let page: number;
+                          if (totalPages <= 5) page = i + 1;
+                          else if (currentPage <= 3) page = i + 1;
+                          else if (currentPage >= totalPages - 2) page = totalPages - 4 + i;
+                          else page = currentPage - 2 + i;
+                          return (
+                            <button key={page} onClick={() => setCurrentPage(page)}
+                              className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${currentPage === page ? 'text-white border-0' : 'border border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                              style={currentPage === page ? { background: 'linear-gradient(135deg,#dc2626,#b91c1c)' } : {}}>
+                              {page}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
+                        className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-all">Next ›</button>
+                      <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages}
+                        className="px-2 py-1 rounded-lg text-xs font-bold border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-all" title="Last page">»</button>
+                    </div>
+                  )}
+                  <span className="text-xs text-gray-400">
+                    {filteredTickets.length > 0 ? `${(currentPage - 1) * ITEMS_PER_PAGE + 1}–${Math.min(currentPage * ITEMS_PER_PAGE, filteredTickets.length)}` : "0"} of {tickets.length}
+                  </span>
+                </div>
               </div>
             )}
           </div>
