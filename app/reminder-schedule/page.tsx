@@ -72,7 +72,6 @@ function ReminderSchedulePageInner() {
   const [bulkConfirm, setBulkConfirm] = useState(false);
   // Kalender-only selection — tidak mempengaruhi filter list/chart/summary
   const [calOnlyDay, setCalOnlyDay]         = useState<string | null>(null);
-  const [exportLoading, setExportLoading]   = useState(false);
   const [sendingWA, setSendingWA]           = useState<string | null>(null);
 
   // ─── Guest search state ───────────────────────────────────────────────────
@@ -687,30 +686,51 @@ function ReminderSchedulePageInner() {
 
   // ─── Export Excel ──────────────────────────────────────────────────────────
 
-  const handleExportExcel = async () => {
-    setExportLoading(true);
-    try {
-      const headers = ['No','Project Name','Product','Kategori','Sales','Divisi Sales','Address','Assign To','Status','Prioritas','Tanggal','Waktu','PIC','No. PIC','Created By','Created At','Catatan','Link Foto Bukti'];
-      const rows = filteredReminders.map((r, i) => [
-        i + 1, r.project_name || (r as any).title || '', r.product ?? '', r.category, r.sales_name, r.sales_division, r.address, r.assign_name,
-        STATUS_CONFIG[r.status].label, PRIORITY_CONFIG[r.priority].label,
-        r.due_date, r.due_time, r.pic_name, r.pic_phone, r.created_by,
-        r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID') : '', r.notes ?? '', r.completion_photo_url ?? '',
-      ]);
-      const csvContent = [headers, ...rows]
-        .map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
-        .join('\n');
-      const BOM = '\uFEFF';
-      const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Reminder_Schedule_PTS_IVP_${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      notify('success', 'Export berhasil!');
-    } catch { notify('error', 'Gagal export.'); }
-    setExportLoading(false);
+  const handleExportExcel = () => {
+    const runExport = (XLSX: any) => {
+      const exportDate = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+      const border = { top:{style:'thin',color:{rgb:'E2E8F0'}},bottom:{style:'thin',color:{rgb:'E2E8F0'}},left:{style:'thin',color:{rgb:'E2E8F0'}},right:{style:'thin',color:{rgb:'E2E8F0'}} };
+      const boldBorder = { top:{style:'thin',color:{rgb:'000000'}},bottom:{style:'thin',color:{rgb:'000000'}},left:{style:'thin',color:{rgb:'000000'}},right:{style:'thin',color:{rgb:'000000'}} };
+      const hdr = { font:{name:'Arial',bold:true,sz:10,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:'0E7490'},patternType:'solid'}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border: boldBorder };
+      const cell = (v: any) => ({ v: v ?? '', t: 's', s: { font:{name:'Arial',sz:10}, alignment:{vertical:'center',wrapText:true}, border } });
+      const titleStyle = { font:{name:'Arial',bold:true,sz:14,color:{rgb:'0E7490'}}, alignment:{horizontal:'left',vertical:'center'} };
+      const COLS = 14;
+      const data: any[][] = [
+        [{ v:'\uD83D\uDDD3\uFE0F REMINDER SCHEDULE \u2014 PTS IVP', t:'s', s:titleStyle }, ...Array(COLS-1).fill({v:'',t:'s',s:{}})],
+        [{ v:`Tanggal Export: ${exportDate} | Total: ${filteredReminders.length} data`, t:'s', s:{font:{name:'Arial',sz:10,color:{rgb:'6B7280'}}} }, ...Array(COLS-1).fill({v:'',t:'s',s:{}})],
+        Array(COLS).fill({v:'',t:'s',s:{}}),
+        ['No','Project','Product','Kategori','Sales','Divisi','Assign To','Status','Prioritas','Tanggal','Waktu','PIC','Telepon PIC','Catatan'].map(h=>({v:h,t:'s',s:hdr})),
+        ...filteredReminders.map((r,i) => {
+          const status = STATUS_CONFIG[r.status];
+          const statusCell = { v: status.label, t:'s', s:{ font:{name:'Arial',sz:10,bold:true}, fill:{fgColor:{rgb: r.status==='done'?'DCFCE7':r.status==='cancelled'?'F3F4F6':'FEF3C7'},patternType:'solid'}, alignment:{horizontal:'center',vertical:'center'}, border } };
+          return [
+            {v:i+1, t:'n', s:{font:{name:'Arial',sz:10},alignment:{horizontal:'center',vertical:'center'},border}},
+            cell(r.project_name), cell(r.product), cell(r.category),
+            cell(r.sales_name), cell(r.sales_division), cell(r.assign_name),
+            statusCell,
+            cell(PRIORITY_CONFIG[r.priority].label),
+            cell(r.due_date), cell(r.due_time ?? '-'), cell(r.pic_name ?? '-'),
+            cell(r.pic_phone ?? '-'), cell(r.notes ?? '-'),
+          ];
+        }),
+      ];
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:COLS-1} }, { s:{r:1,c:0}, e:{r:1,c:COLS-1} }];
+      ws['!cols'] = [5,28,18,16,20,12,20,14,12,12,10,20,16,30].map(w=>({wch:w}));
+      ws['!rows'] = [{hpt:28},{hpt:16},{hpt:6},{hpt:26}];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '\uD83D\uDDD3\uFE0F Reminder Schedule');
+      XLSX.writeFile(wb, `ReminderSchedule_PTS_${new Date().toISOString().split('T')[0]}.xlsx`, { bookType:'xlsx', type:'binary', cellStyles:true });
+      notify('success', 'Export Excel berhasil!');
+    };
+    if ((window as any).XLSX) runExport((window as any).XLSX);
+    else {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = () => runExport((window as any).XLSX);
+      s.onerror = () => notify('error', 'Gagal memuat library Excel.');
+      document.head.appendChild(s);
+    }
   };
 
   // ─── Filters ───────────────────────────────────────────────────────────────
@@ -2197,11 +2217,11 @@ jangan lupa peralatan & Semangat💪🏼
                         <svg className={`w-3.5 h-3.5 ${listLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                         Refresh
                       </button>
-                      <button onClick={handleExportExcel} disabled={exportLoading}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:scale-105"
-                        style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 2px 8px rgba(220,38,38,0.3)' }}>
-                        {exportLoading ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '📊'}
-                        Export
+                      <button onClick={handleExportExcel} disabled={filteredReminders.length === 0}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:scale-105 disabled:opacity-40"
+                        style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', boxShadow: '0 2px 8px rgba(8,145,178,0.3)' }}>
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Export Excel
                       </button>
                     </div>
                   </div>

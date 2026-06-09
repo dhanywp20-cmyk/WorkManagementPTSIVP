@@ -106,6 +106,43 @@ function UnitMovementPageInner() {
     return true;
   }),[logs,filterStatus,filterEvent,filterPTS,filterYear,searchQuery]);
 
+  const exportToExcel = () => {
+    const runExport = (XLSX: any) => {
+      const exportDate = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+      const hdr = { font: { name: 'Arial', bold: true, sz: 10, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '92400E' }, patternType: 'solid' }, alignment: { horizontal: 'center', vertical: 'center' }, border: { top:{style:'thin',color:{rgb:'000000'}},bottom:{style:'thin',color:{rgb:'000000'}},left:{style:'thin',color:{rgb:'000000'}},right:{style:'thin',color:{rgb:'000000'}} } };
+      const cell = (v: any) => ({ v: v ?? '-', t: 's', s: { font: { name: 'Arial', sz: 10 }, alignment: { vertical: 'center', wrapText: true }, border: { top:{style:'thin',color:{rgb:'E2E8F0'}},bottom:{style:'thin',color:{rgb:'E2E8F0'}},left:{style:'thin',color:{rgb:'E2E8F0'}},right:{style:'thin',color:{rgb:'E2E8F0'}} } } });
+      const title = { font: { name: 'Arial', bold: true, sz: 14, color: { rgb: '92400E' } }, alignment: { horizontal: 'left', vertical: 'center' } };
+      const data: any[][] = [
+        [{ v: '📦 UNIT MOVEMENT LOG — PTS IVP', t: 's', s: title }, ...Array(8).fill({ v: '', t: 's', s: {} })],
+        [{ v: `Tanggal Export: ${exportDate}`, t: 's', s: { font: { name: 'Arial', sz: 10, color: { rgb: '6B7280' } } } }, ...Array(8).fill({ v: '', t: 's', s: {} })],
+        Array(9).fill({ v: '', t: 's', s: {} }),
+        [{ v: 'No', t: 's', s: hdr }, { v: 'Tanggal', t: 's', s: hdr }, { v: 'Status', t: 's', s: hdr }, { v: 'Nama PTS', t: 's', s: hdr }, { v: 'Nama Pihak Luar', t: 's', s: hdr }, { v: 'Event', t: 's', s: hdr }, { v: 'Project', t: 's', s: hdr }, { v: 'Type Barang', t: 's', s: hdr }, { v: 'Serial Number', t: 's', s: hdr }],
+        ...filteredLogs.map((l, i) => [
+          { v: i + 1, t: 'n', s: cell(i + 1).s },
+          cell(fmtDate(l.tanggal, true)),
+          { ...cell(l.status_barang), s: { ...cell(l.status_barang).s, font: { name: 'Arial', sz: 10, bold: true, color: { rgb: l.status_barang === 'Masuk' ? '166534' : '991B1B' } }, fill: { fgColor: { rgb: l.status_barang === 'Masuk' ? 'DCFCE7' : 'FEE2E2' }, patternType: 'solid' } } },
+          cell(l.nama_pts), cell(l.nama_luar), cell(l.event),
+          cell(l.project_name), cell(l.type_barang?.replace(/\n/g, ', ')), cell(l.serial_number),
+        ]),
+      ];
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }];
+      ws['!cols'] = [{ wch: 5 }, { wch: 16 }, { wch: 10 }, { wch: 22 }, { wch: 22 }, { wch: 18 }, { wch: 30 }, { wch: 28 }, { wch: 20 }];
+      ws['!rows'] = [{ hpt: 26 }, { hpt: 16 }, { hpt: 6 }, { hpt: 26 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '📦 Unit Movement');
+      XLSX.writeFile(wb, `UnitMovement_${new Date().toISOString().split('T')[0]}.xlsx`, { bookType: 'xlsx', type: 'binary', cellStyles: true });
+    };
+    if ((window as any).XLSX) runExport((window as any).XLSX);
+    else {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = () => runExport((window as any).XLSX);
+      s.onerror = () => notify('error', 'Gagal memuat library Excel.');
+      document.head.appendChild(s);
+    }
+  };
+
   const statusPieData = useMemo(()=>[
     {label:'Masuk',  value:filteredLogs.filter(l=>l.status_barang==='Masuk').length,  color:'#10b981'},
     {label:'Keluar', value:filteredLogs.filter(l=>l.status_barang==='Keluar').length, color:'#ef4444'},
@@ -267,6 +304,14 @@ function UnitMovementPageInner() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                 </svg>
                 Refresh
+              </button>
+              <button onClick={exportToExcel} disabled={filteredLogs.length === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all hover:opacity-90 disabled:opacity-40"
+                style={{background:'linear-gradient(135deg,#d97706,#b45309)',color:'white',border:'1px solid #b45309'}}>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Export Excel
               </button>
             </div>
           </div>
