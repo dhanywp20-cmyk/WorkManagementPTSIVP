@@ -40,6 +40,30 @@ const DEFAULT_KPI_SETTINGS: KPISettings = {
   ticketOverdueWeight: 0.20, bastWeight: 0.40, lcWeight: 0.30, rndWeight: 0.10,
 };
 
+interface KPIPeriodSnapshot {
+  id: string;
+  period_label: string;
+  year: number;
+  period: '6m' | '1y';
+  start_month: number;
+  end_month: number;
+  team_type: string;
+  created_at: string;
+  created_by: string;
+  members_json: {
+    id: string; name: string; jabatan: string; team_type: string;
+    ticketsHandled: number; ticketsSolved: number; ticketsOverdue: number;
+    lcAttempts: number; lcAvgScore: number; lcPassed: number;
+    formReviewTotal: number; formReviewLowRating: number; techNotesApproved: number;
+    tickScore: number; bastScore: number; lcScore: number; rndScore: number;
+    finalKPI: number;
+  }[];
+  settings_json?: {
+    lcMinScore: number; rndTarget: number; ticketOverdueWeight: number;
+    bastWeight: number; lcWeight: number; rndWeight: number;
+  } | null;
+}
+
 interface Scope {
   kind: 'admin' | 'pts_sup' | 'none';
   ptsTeamType?: string;
@@ -65,6 +89,7 @@ const STATUS_COLORS: Record<string, string> = {
   'Out Of Warranty': '#ec4899', 'Submit RMA': '#06b6d4',
 };
 const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+const MN     = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
 const KPI_COLOR = '#0284c7';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -413,6 +438,13 @@ export default function KPITeamPage() {
   const [kpiPeriodLen, setKpiPeriodLen] = useState<'6m' | '1y'>('1y');
   const [kpiStartMonth, setKpiStartMonth] = useState(1);
 
+  // Riwayat KPI snapshots
+  const [kpiSnapshots, setKpiSnapshots] = useState<KPIPeriodSnapshot[]>([]);
+  const [showStartKPI, setShowStartKPI] = useState(false);
+  const [savingSnapshot, setSavingSnapshot] = useState(false);
+  const [expandedSnapshot, setExpandedSnapshot] = useState<string | null>(null);
+  const [selectedSnapMember, setSelectedSnapMember] = useState<string | null>(null);
+
   // ── Auth ──────────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -638,6 +670,55 @@ export default function KPITeamPage() {
 
   useEffect(() => { fetchKPIMembers(); }, [fetchKPIMembers]);
 
+  // ── KPI Snapshots ─────────────────────────────────────────────────────────
+
+  const fetchKPISnapshots = useCallback(async () => {
+    try {
+      let q = supabase.from('kpi_period_snapshots').select('*').order('created_at', { ascending: false });
+      if (scope.kind === 'pts_sup') q = q.eq('team_type', scope.ptsTeamType ?? '');
+      const { data } = await q;
+      setKpiSnapshots((data ?? []) as KPIPeriodSnapshot[]);
+    } catch { /* silent */ }
+  }, [scope]);
+
+  useEffect(() => {
+    if (scopeReady && scope.kind !== 'none') fetchKPISnapshots();
+  }, [fetchKPISnapshots, scopeReady, scope]);
+
+  const saveKPISnapshot = useCallback(async () => {
+    if (!currentUser) return;
+    setSavingSnapshot(true);
+    try {
+      const _s = kpiSettings;
+      const membersJson = kpiMembers.map(m => {
+        const lcFailedDyn = m.lcScores.filter(sc => sc < _s.lcMinScore).length;
+        const tickScore = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled, 1)) : 0;
+        const bastScore = m.formReviewTotal === 0 ? 0 : m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating / Math.max(m.formReviewTotal, 1));
+        const lcScore   = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - lcFailedDyn / Math.max(m.lcAttempts, 1));
+        const rndScore  = m.techNotesApproved >= _s.rndTarget ? 1 : m.techNotesApproved / Math.max(_s.rndTarget, 1);
+        const finalKPI  = Math.round((_s.ticketOverdueWeight * tickScore + _s.bastWeight * bastScore + _s.lcWeight * lcScore + _s.rndWeight * rndScore) * 100);
+        return {
+          id: m.id, name: m.name, jabatan: m.jabatan, team_type: m.team_type,
+          ticketsHandled: m.ticketsHandled, ticketsSolved: m.ticketsSolved, ticketsOverdue: m.ticketsOverdue,
+          lcAttempts: m.lcAttempts, lcAvgScore: m.lcAvgScore, lcPassed: m.lcPassed,
+          formReviewTotal: m.formReviewTotal, formReviewLowRating: m.formReviewLowRating, techNotesApproved: m.techNotesApproved,
+          tickScore: Math.round(tickScore * 100), bastScore: Math.round(bastScore * 100),
+          lcScore: Math.round(lcScore * 100), rndScore: Math.round(rndScore * 100), finalKPI,
+        };
+      });
+      const endMonth = Math.min(kpiStartMonth + (kpiPeriodLen === '6m' ? 5 : 11), 12);
+      await supabase.from('kpi_period_snapshots').insert({
+        period_label: `${MN[kpiStartMonth - 1]}–${MN[endMonth - 1]} ${kpiYear}`,
+        year: kpiYear, period: kpiPeriodLen, start_month: kpiStartMonth, end_month: endMonth,
+        team_type: scope.kind === 'pts_sup' ? scope.ptsTeamType : 'all',
+        created_by: currentUser.full_name, members_json: membersJson, settings_json: _s,
+      });
+      await fetchKPISnapshots();
+      setShowStartKPI(false);
+    } catch { /* silent */ }
+    finally { setSavingSnapshot(false); }
+  }, [currentUser, kpiSettings, kpiMembers, kpiStartMonth, kpiPeriodLen, kpiYear, scope, fetchKPISnapshots]);
+
   // ── Computed values ───────────────────────────────────────────────────────
 
   const allTeamTypes = useMemo(() => Array.from(new Set(members.map(m => m.team_type))).sort(), [members]);
@@ -723,19 +804,44 @@ export default function KPITeamPage() {
   const { start, end } = getPeriodRange(period);
   const periodLabel = `${new Date(start).toLocaleDateString('id-ID', { day:'2-digit', month:'short' })} — ${new Date(end).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' })}`;
 
+  // ── KPI period + helpers (used both in Penilaian section and Mulai KPI) ──
+
+  const kpiEndMonth    = Math.min(kpiStartMonth + (kpiPeriodLen === '6m' ? 5 : 11), 12);
+  const kpiPeriodLabel = `${MN[kpiStartMonth - 1]}–${MN[kpiEndMonth - 1]} ${kpiYear}`;
+  const kpiFiltered    = filterTeam === 'all' ? kpiMembers : kpiMembers.filter(m => m.team_type === filterTeam);
+
+  const calcKPI = (m: KPIMember) => {
+    const s = kpiSettings;
+    const lcFailed = m.lcScores.filter(sc => sc < s.lcMinScore).length;
+    const tickS = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled, 1)) : 0;
+    const bastS = m.formReviewTotal === 0 ? 0 : m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating / Math.max(m.formReviewTotal, 1));
+    const lcS   = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - lcFailed / Math.max(m.lcAttempts, 1));
+    const rndS  = m.techNotesApproved >= s.rndTarget ? 1 : m.techNotesApproved / Math.max(s.rndTarget, 1);
+    return Math.round((s.ticketOverdueWeight * tickS + s.bastWeight * bastS + s.lcWeight * lcS + s.rndWeight * rndS) * 100);
+  };
+  const kpiScoreColor = (score: number, noData: boolean) =>
+    noData ? '#94a3b8' : score >= 85 ? '#10b981' : score >= 70 ? '#3b82f6' : score >= 50 ? '#f59e0b' : '#ef4444';
+  const kpiScoreLabel = (score: number, noData: boolean) =>
+    noData ? 'Belum Ada Data' : score >= 85 ? 'Excellent' : score >= 70 ? 'Good' : score >= 50 ? 'Fair' : 'Needs Work';
+
   // ── Guards ────────────────────────────────────────────────────────────────
 
   if (!isLoggedIn || !appReady) return (
-    <div className="flex items-center justify-center min-h-screen" style={{ background: '#f8fafc' }}>
-      <div className="w-8 h-8 border-[3px] border-sky-200 border-t-sky-600 rounded-full animate-spin" />
+    <div className="flex items-center justify-center min-h-screen"
+      style={{ backgroundImage: "url('/IVP_Background.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
+      <div className="w-8 h-8 border-[3px] rounded-full animate-spin" style={{ borderColor: 'rgba(2,132,199,0.2)', borderTopColor: '#0284c7' }} />
     </div>
   );
 
   if (scopeReady && scope.kind === 'none') return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-3" style={{ background: '#f8fafc' }}>
-      <span className="text-5xl">🔒</span>
-      <p className="text-slate-600 text-sm font-semibold">Akses Terbatas</p>
-      <p className="text-slate-400 text-xs">Halaman ini hanya untuk Admin & Supervisor PTS</p>
+    <div className="flex flex-col items-center justify-center min-h-screen gap-3"
+      style={{ backgroundImage: "url('/IVP_Background.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
+      <div className="flex flex-col items-center gap-3 px-8 py-6 rounded-2xl"
+        style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 8px 32px rgba(0,0,0,0.14)' }}>
+        <span className="text-5xl">🔒</span>
+        <p className="text-slate-600 text-sm font-semibold">Akses Terbatas</p>
+        <p className="text-slate-400 text-xs">Halaman ini hanya untuk Admin & Supervisor PTS</p>
+      </div>
     </div>
   );
 
@@ -749,20 +855,27 @@ export default function KPITeamPage() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen" style={{ background: '#f8fafc' }}>
+    <div className="min-h-screen"
+      style={{ backgroundImage: "url('/IVP_Background.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
       <PageHeader icon="📊" title="KPI Team" subtitle="PTS IVP — Key Performance Indicators"
         color={KPI_COLOR} colorLight="#0369a1">
-        <button onClick={() => fetchAllData()}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all bg-white hover:bg-sky-50"
-          style={{ borderColor: '#e2e8f0', color: '#64748b' }}>
+        <button onClick={() => { fetchAllData(); fetchKPIMembers(); }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
+          style={{ background: 'rgba(255,255,255,0.9)', borderColor: '#e2e8f0', color: '#64748b' }}>
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
           </svg>
           Sync
         </button>
+        <button onClick={() => setShowStartKPI(true)}
+          disabled={kpiLoading || kpiMembers.length === 0}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ background: 'rgba(16,185,129,0.9)', borderColor: '#059669', color: '#fff', boxShadow: '0 2px 8px rgba(16,185,129,0.4)' }}>
+          🚀 Mulai KPI {kpiYear}
+        </button>
         <button onClick={() => setShowSettings(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all bg-white hover:bg-violet-50"
-          style={{ borderColor: '#ddd6fe', color: '#7c3aed' }}>
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
+          style={{ background: 'rgba(255,255,255,0.9)', borderColor: '#ddd6fe', color: '#7c3aed' }}>
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
           </svg>
@@ -777,22 +890,160 @@ export default function KPITeamPage() {
 
       <div className="max-w-[1600px] mx-auto px-4 py-4 space-y-4">
 
+        {/* ── Penilaian KPI (TOP — data mandiri, tidak ikut period picker) ── */}
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)', border: '1px solid rgba(255,255,255,0.7)' }}>
+          {/* Header */}
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">🏅 Penilaian KPI</span>
+              <span className="text-[9px] font-bold px-2 py-1 rounded-lg text-blue-700" style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+                📅 {kpiPeriodLabel}
+              </span>
+              {kpiLoading && <div className="w-4 h-4 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin flex-shrink-0" />}
+            </div>
+            {/* KPI period controls */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+                {(['6m','1y'] as const).map(p => (
+                  <button key={p} onClick={() => { setKpiPeriodLen(p); if (p==='1y') setKpiStartMonth(1); }}
+                    className="px-2.5 py-1 text-[10px] font-bold transition-all"
+                    style={{ background: kpiPeriodLen===p ? '#0284c7' : '#fff', color: kpiPeriodLen===p ? '#fff' : '#64748b' }}>
+                    {p==='6m' ? '6 Bln' : '1 Thn'}
+                  </button>
+                ))}
+              </div>
+              {kpiPeriodLen === '6m' && (
+                <select value={kpiStartMonth} onChange={e => setKpiStartMonth(Number(e.target.value))}
+                  className="text-[10px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-none">
+                  {[{v:1,l:'Jan–Jun'},{v:2,l:'Feb–Jul'},{v:3,l:'Mar–Agt'},{v:4,l:'Apr–Sep'},{v:5,l:'Mei–Okt'},{v:6,l:'Jun–Nov'},{v:7,l:'Jul–Des'}].map(o=>(
+                    <option key={o.v} value={o.v}>{o.l}</option>
+                  ))}
+                </select>
+              )}
+              <select value={kpiYear} onChange={e => setKpiYear(Number(e.target.value))}
+                className="text-[10px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-none">
+                {[2024,2025,2026,2027].map(y=>(<option key={y} value={y}>{y}</option>))}
+              </select>
+              <button onClick={() => fetchKPIMembers()}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 transition-all">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                Refresh
+              </button>
+              <span className="text-[9px] font-semibold px-2 py-1 rounded-lg text-slate-500" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                🎫{Math.round(kpiSettings.ticketOverdueWeight*100)}% ⭐{Math.round(kpiSettings.bastWeight*100)}% 🎓{Math.round(kpiSettings.lcWeight*100)}% 📝{Math.round(kpiSettings.rndWeight*100)}%
+              </span>
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="mx-4 mt-3 px-3 py-2.5 rounded-xl text-[11px] text-sky-700 leading-relaxed"
+            style={{ background: '#f0f9ff', border: '1px solid #bae6fd' }}>
+            <b>📌 Keterangan:</b> Data ✅ otomatis dari platform.&nbsp;
+            <b>🎫 Ticketing</b> (nilai penuh jika 0 overdue) · <b>⭐ BAST &amp; Demo</b> (nilai penuh jika tidak ada bintang &lt;3) ·{' '}
+            <b>🎓 LC</b> (nilai penuh jika tidak ada nilai &lt;{kpiSettings.lcMinScore}) ·{' '}
+            <b>📝 R&D</b> (nilai penuh jika ≥{kpiSettings.rndTarget} tech note/tahun). Klik kartu untuk detail.
+          </div>
+
+          {/* Member chips */}
+          {kpiLoading ? (
+            <div className="flex items-center justify-center py-10">
+              <div className="w-6 h-6 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin" />
+            </div>
+          ) : kpiFiltered.length === 0 ? (
+            <p className="text-center py-10 text-slate-400 text-sm">Tidak ada anggota dengan KPI aktif. Aktifkan kpi_enabled di user management.</p>
+          ) : (() => {
+            const teams = ['Team PTS', 'Team PTS MLDS', 'Team PTS UMP'];
+            const rows = filterTeam === 'all'
+              ? teams.map(tt => ({ tt, ms: kpiFiltered.filter(m => m.team_type === tt) })).filter(r => r.ms.length > 0)
+              : [{ tt: filterTeam, ms: kpiFiltered }];
+
+            return (
+              <div className="p-4 space-y-3">
+                {rows.map(({ tt, ms }) => {
+                  const col = TEAM_COLORS[tt] ?? '#64748b';
+                  const abbr = tt.replace('Team PTS ', '').replace('Team PTS', 'IVP');
+                  const scored = ms.filter(m => !(m.ticketsHandled === 0 && m.lcAttempts === 0 && m.techNotesApproved === 0));
+                  const avg = scored.length ? Math.round(scored.reduce((s, m) => s + calcKPI(m), 0) / scored.length) : null;
+                  const avgC = avg == null ? '#94a3b8' : avg >= 85 ? '#10b981' : avg >= 70 ? '#3b82f6' : avg >= 50 ? '#f59e0b' : '#ef4444';
+                  return (
+                    <div key={tt} className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-slate-100" style={{ background: `${col}08` }}>
+                        <div className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px] font-black flex-shrink-0" style={{ background: col }}>{abbr[0]}</div>
+                        <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">{tt}</span>
+                        <span className="text-[10px] text-slate-400">{ms.length} anggota</span>
+                        {avg !== null && <span className="ml-auto text-sm font-black" style={{ color: avgC }}>avg {avg}%</span>}
+                      </div>
+                      <div className="flex gap-2 px-3 py-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                        {ms.map(m => {
+                          const score = calcKPI(m);
+                          const noData = m.ticketsHandled === 0 && m.lcAttempts === 0 && m.techNotesApproved === 0;
+                          const c = kpiScoreColor(score, noData);
+                          const lbl = kpiScoreLabel(score, noData);
+                          const sparkMax = Math.max(...m.monthlyTickets, 1);
+                          const W = 72, H = 18;
+                          const pts = m.monthlyTickets.map((v, i) => `${(i / 11) * W},${H - (v / sparkMax) * H}`).join(' ');
+                          const lcFailed = m.lcScores.filter(sc => sc < kpiSettings.lcMinScore).length;
+                          const alerts: string[] = [];
+                          if (m.ticketsHandled === 0) alerts.push('🎫0');
+                          if (lcFailed > 0) alerts.push(`📚${lcFailed}×`);
+                          if (m.formReviewLowRating > 0) alerts.push(`⭐${m.formReviewLowRating}×`);
+                          if (m.ticketAvgResponseHours > 24) alerts.push(`⏱${m.ticketAvgResponseHours}j`);
+                          return (
+                            <div key={m.id} onClick={() => setSelectedKPIMember(m.id)}
+                              className="flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl border cursor-pointer hover:shadow-md transition-all"
+                              style={{ background: noData ? '#f8fafc' : `${c}08`, borderColor: noData ? '#e2e8f0' : `${c}40`, minWidth: 88, maxWidth: 104 }}>
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm text-white shadow-sm flex-shrink-0"
+                                style={{ background: `linear-gradient(135deg,${c},${c}88)` }}>
+                                {m.name.charAt(0)}
+                              </div>
+                              <div className="text-[10px] font-bold text-slate-700 text-center leading-tight w-full truncate" title={m.name}>
+                                {m.name.split(' ')[0]}
+                              </div>
+                              <div className="text-sm font-black leading-none" style={{ color: c }}>
+                                {noData ? '—' : `${score}%`}
+                              </div>
+                              <div className="text-[8px] font-bold uppercase tracking-wide" style={{ color: c }}>{lbl}</div>
+                              {m.monthlyTickets.some(v => v > 0) && (
+                                <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
+                                  <polyline points={pts} fill="none" stroke={c} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" opacity={0.7} />
+                                  <circle cx={W} cy={H - (m.monthlyTickets[11] / sparkMax) * H} r={2.5} fill={c} />
+                                </svg>
+                              )}
+                              {alerts.length > 0 && (
+                                <div className="flex gap-0.5 flex-wrap justify-center">
+                                  {alerts.map((a, i) => (
+                                    <span key={i} className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 leading-none">{a}</span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
+
         {/* ── Period Selector Bar ── */}
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Periode</span>
+          <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider mr-1 drop-shadow">Periode</span>
           {PERIODS.map(p => (
             <button key={p} onClick={() => setPeriod(p)}
               className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all"
               style={{
-                background:   period === p ? KPI_COLOR : '#fff',
+                background:   period === p ? KPI_COLOR : 'rgba(255,255,255,0.85)',
                 color:        period === p ? '#fff' : '#64748b',
-                borderColor:  period === p ? KPI_COLOR : '#e2e8f0',
-                boxShadow:    period === p ? `0 2px 10px ${KPI_COLOR}50` : 'none',
+                borderColor:  period === p ? KPI_COLOR : 'rgba(255,255,255,0.6)',
+                boxShadow:    period === p ? `0 2px 10px ${KPI_COLOR}50` : '0 1px 4px rgba(0,0,0,0.08)',
               }}>
               {PERIOD_EMOJI[p]} {p}
             </button>
           ))}
-          <span className="ml-2 text-[10px] text-slate-400 italic">{periodLabel}</span>
+          <span className="ml-2 text-[10px] text-white/70 italic drop-shadow">{periodLabel}</span>
 
           {loading && (
             <div className="ml-2 w-4 h-4 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin flex-shrink-0" />
@@ -808,149 +1059,8 @@ export default function KPITeamPage() {
           )}
         </div>
 
-        {/* ── Summary Cards ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <SummaryCard icon="🎫" label="Total Ticket"
-            value={loading ? '…' : summary.totalT}
-            sub={`${summary.totalS} solved`}
-            color="#dc2626" trend={loading ? undefined : summary.trendT} />
-          <SummaryCard icon="✅" label="Solve Rate"
-            value={loading ? '…' : `${summary.sr}%`}
-            sub="target ≥90%"
-            color={loading ? '#94a3b8' : progressColor(summary.sr)}
-            trend={loading ? undefined : summary.trendSr} />
-          <SummaryCard icon="⏱️" label="Avg Resolusi"
-            value={loading ? '…' : `${summary.avgDays} hr`}
-            sub="rata-rata hari"
-            color="#f97316"
-            trend={loading ? undefined : summary.trendDays} lowerIsBetter />
-          <SummaryCard icon="📅" label="Reminder Done"
-            value={loading ? '…' : `${summary.rr}%`}
-            sub={`${summary.totalRD}/${summary.totalRA}`}
-            color={loading ? '#94a3b8' : progressColor(summary.rr)}
-            trend={loading ? undefined : summary.trendRr} />
-          <SummaryCard icon="📚" label="LC Score"
-            value={loading ? '…' : summary.lcAvg === 0 ? '—' : summary.lcAvg}
-            sub="rata-rata quiz"
-            color="#6366f1"
-            trend={loading ? undefined : summary.trendLc} />
-          <SummaryCard icon="⚠️" label="Overdue"
-            value={loading ? '…' : summary.totalOD}
-            sub="ticket terlambat"
-            color="#ef4444"
-            trend={loading ? undefined : summary.trendOD} lowerIsBetter />
-        </div>
-
-        {/* ── Charts Row ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-
-          {/* Ticket distribution donut per team */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
-              📊 Status Ticket
-            </div>
-            {loading
-              ? <div className="h-20 rounded-lg animate-pulse bg-slate-50" />
-              : (
-                <div className="flex items-center gap-4">
-                  <DonutChart
-                    segments={donutSegments}
-                    size={72}
-                    label={`${summary.totalT}`}
-                  />
-                  <div className="flex-1 space-y-1.5">
-                    {[
-                      { label: 'Solved',  value: summary.totalS,                                                color: '#10b981' },
-                      { label: 'Active',  value: Math.max(0, summary.totalT - summary.totalS - summary.totalOD), color: '#3b82f6' },
-                      { label: 'Overdue', value: summary.totalOD,                                               color: '#ef4444' },
-                    ].filter(s => s.value > 0).map(s => (
-                      <div key={s.label} className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color }} />
-                        <span className="text-[10px] text-slate-500 flex-1">{s.label}</span>
-                        <span className="text-[10px] font-bold text-slate-700">{s.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-            {/* Per-team breakdown */}
-            {!loading && allTeamTypes.length > 0 && (
-              <div className="mt-3 space-y-1.5 pt-3 border-t border-slate-50">
-                {allTeamTypes.filter(tt => filterTeam === 'all' || tt === filterTeam).map(tt => {
-                  const tm   = members.filter(m => m.team_type === tt);
-                  const ttot = tm.reduce((s, m) => s + m.ticketsHandled, 0);
-                  const tsol = tm.reduce((s, m) => s + m.ticketsSolved, 0);
-                  const pct  = ttot > 0 ? Math.round((tsol / ttot) * 100) : 0;
-                  const col  = TEAM_COLORS[tt] ?? '#64748b';
-                  return (
-                    <div key={tt}>
-                      <div className="flex justify-between text-[9px] mb-0.5">
-                        <span className="font-semibold text-slate-500">{tt.replace('Team ', '')}</span>
-                        <span className="font-bold" style={{ color: col }}>{ttot} · {pct}%</span>
-                      </div>
-                      <ProgressBar value={tsol} max={ttot} showPct={false} h={4} />
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Monthly ticket trend */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
-              📈 Trend Ticket Bulanan
-            </div>
-            {loading
-              ? <div className="h-20 rounded-lg animate-pulse bg-slate-50" />
-              : <MonthBarChart
-                  values={Array.from({ length: 12 }, (_, mi) =>
-                    members.filter(m => filterTeam === 'all' || m.team_type === filterTeam)
-                      .reduce((s, m) => s + m.monthlyTickets[mi], 0)
-                  )}
-                  color={KPI_COLOR}
-                />
-            }
-          </div>
-
-          {/* Top performers */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
-              🏆 Top Performer (Solved)
-            </div>
-            {loading
-              ? <div className="h-20 rounded-lg animate-pulse bg-slate-50" />
-              : (
-                <div className="space-y-2">
-                  {[...members]
-                    .filter(m => filterTeam === 'all' || m.team_type === filterTeam)
-                    .sort((a, b) => b.ticketsSolved - a.ticketsSolved)
-                    .slice(0, 6)
-                    .map((m, i) => {
-                      const teamCol = TEAM_COLORS[m.team_type] ?? '#64748b';
-                      const maxSol  = Math.max(...members.map(x => x.ticketsSolved), 1);
-                      return (
-                        <div key={m.id} className="flex items-center gap-2">
-                          <span className="text-[9px] font-black text-slate-300 w-3">{i + 1}</span>
-                          <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black text-white flex-shrink-0"
-                            style={{ background: teamCol }}>{m.name.charAt(0)}</div>
-                          <span className="text-[10px] text-slate-600 flex-1 truncate">{m.name.split(' ')[0]}</span>
-                          <ProgressBar value={m.ticketsSolved} max={maxSol} showPct={false} h={5} />
-                          <span className="text-[10px] font-bold w-5 text-right flex-shrink-0" style={{ color: '#10b981' }}>{m.ticketsSolved}</span>
-                        </div>
-                      );
-                    })}
-                  {members.length === 0 && !loading && (
-                    <p className="text-[10px] text-slate-400 text-center py-4">Tidak ada data</p>
-                  )}
-                </div>
-              )}
-          </div>
-        </div>
-
         {/* ── Handler Performance Table ── */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)', border: '1px solid rgba(255,255,255,0.7)' }}>
           {/* Table header */}
           <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
@@ -1114,29 +1224,8 @@ export default function KPITeamPage() {
           )}
         </div>
 
-        {/* ── Penilaian KPI (Scoring) — data mandiri, tidak ikut period picker ── */}
-        {(() => {
-          const calcKPI = (m: KPIMember) => {
-            const s = kpiSettings;
-            const lcFailed = m.lcScores.filter(sc => sc < s.lcMinScore).length;
-            const tickS = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled, 1)) : 0;
-            const bastS = m.formReviewTotal === 0 ? 0 : m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating / Math.max(m.formReviewTotal, 1));
-            const lcS   = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - lcFailed / Math.max(m.lcAttempts, 1));
-            const rndS  = m.techNotesApproved >= s.rndTarget ? 1 : m.techNotesApproved / Math.max(s.rndTarget, 1);
-            return Math.round((s.ticketOverdueWeight * tickS + s.bastWeight * bastS + s.lcWeight * lcS + s.rndWeight * rndS) * 100);
-          };
-          const kpiColor = (score: number, noData: boolean) =>
-            noData ? '#94a3b8' : score >= 85 ? '#10b981' : score >= 70 ? '#3b82f6' : score >= 50 ? '#f59e0b' : '#ef4444';
-          const kpiLabel = (score: number, noData: boolean) =>
-            noData ? 'Belum Ada Data' : score >= 85 ? 'Excellent' : score >= 70 ? 'Good' : score >= 50 ? 'Fair' : 'Needs Work';
-
-          const MN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
-          const kpiEndMonth = Math.min(kpiStartMonth + (kpiPeriodLen === '6m' ? 5 : 11), 12);
-          const kpiPeriodLabel = `${MN[kpiStartMonth-1]}–${MN[kpiEndMonth-1]} ${kpiYear}`;
-
-          const kpiFiltered = filterTeam === 'all' ? kpiMembers : kpiMembers.filter(m => m.team_type === filterTeam);
-
-          return (
+        {/* ── Riwayat KPI ── */}
+        {false && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
               {/* Header */}
               <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
@@ -1276,8 +1365,167 @@ export default function KPITeamPage() {
                 );
               })()}
             </div>
-          );
-        })()}
+        )}
+
+        {/* ── Riwayat KPI (Snapshot History) ── */}
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)', border: '1px solid rgba(255,255,255,0.7)' }}>
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">📋 Riwayat KPI</span>
+              <span className="text-[9px] px-2 py-0.5 rounded-full font-semibold" style={{ background: '#f0f9ff', color: '#0284c7', border: '1px solid #bae6fd' }}>{kpiSnapshots.length} periode tersimpan</span>
+            </div>
+            {expandedSnapshot && (
+              <button onClick={() => setExpandedSnapshot(null)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
+                style={{ background: '#f8fafc', borderColor: '#e2e8f0', color: '#64748b' }}>
+                ← Kembali ke Daftar
+              </button>
+            )}
+          </div>
+
+          {kpiSnapshots.length === 0 ? (
+            <p className="text-center py-10 text-slate-400 text-sm">
+              Belum ada riwayat KPI. Klik 🚀 <b>Mulai KPI {kpiYear}</b> untuk menyimpan penilaian periode ini.
+            </p>
+          ) : expandedSnapshot ? (() => {
+            const snap = kpiSnapshots.find(s => s.id === expandedSnapshot);
+            if (!snap) return null;
+            const snapMs = snap.members_json;
+            const avgFin = snapMs.length ? Math.round(snapMs.reduce((s, m) => s + m.finalKPI, 0) / snapMs.length) : 0;
+            const avgC   = avgFin >= 85 ? '#10b981' : avgFin >= 70 ? '#3b82f6' : avgFin >= 50 ? '#f59e0b' : '#ef4444';
+            return (
+              <div className="p-4">
+                <div className="mb-3 flex flex-wrap items-center gap-3">
+                  <span className="font-bold text-slate-700">{snap.period_label}</span>
+                  <span className="text-[9px] px-2 py-0.5 rounded-full font-semibold" style={{ background: '#f0f9ff', color: '#0284c7', border: '1px solid #bae6fd' }}>
+                    {snap.period === '1y' ? '1 Tahun' : '6 Bulan'}
+                  </span>
+                  <span className="text-xs text-slate-400">oleh <b className="text-slate-600">{snap.created_by}</b></span>
+                  <span className="text-xs text-slate-400">{new Date(snap.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' })}</span>
+                  <span className="ml-auto text-sm font-black" style={{ color: avgC }}>Avg Tim: {avgFin}%</span>
+                </div>
+                <div className="overflow-x-auto rounded-xl border border-slate-100">
+                  <table className="w-full text-[11px]">
+                    <thead>
+                      <tr style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
+                        {['Nama','🎫 Ticketing','⭐ BAST','🎓 LC','📝 R&D','KPI Final'].map((h, i) => (
+                          <th key={h} className={`px-3 py-2.5 font-bold text-slate-500 whitespace-nowrap ${i===0?'text-left':'text-center'}`}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {snapMs.map((m, idx) => {
+                        const c   = m.finalKPI >= 85 ? '#10b981' : m.finalKPI >= 70 ? '#3b82f6' : m.finalKPI >= 50 ? '#f59e0b' : '#ef4444';
+                        const lbl = m.finalKPI >= 85 ? 'Excellent' : m.finalKPI >= 70 ? 'Good' : m.finalKPI >= 50 ? 'Fair' : 'Needs Work';
+                        const tc  = TEAM_COLORS[m.team_type] ?? '#64748b';
+                        const sc  = (v: number) => v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b' : '#ef4444';
+                        return (
+                          <tr key={m.id} className="cursor-pointer transition-colors"
+                            style={{ background: idx % 2 === 0 ? '#fff' : '#fafafa' }}
+                            onClick={() => setSelectedSnapMember(m.id + '__' + snap.id)}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#e0f2fe')}
+                            onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? '#fff' : '#fafafa')}>
+                            <td className="px-3 py-2.5">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black text-white flex-shrink-0"
+                                  style={{ background: `linear-gradient(135deg,${tc},${tc}cc)` }}>{m.name.charAt(0)}</div>
+                                <div>
+                                  <div className="font-semibold text-slate-700 leading-tight">{m.name}</div>
+                                  <div className="text-[9px] text-slate-400">{m.team_type.replace('Team ','')}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5 text-center"><span className="font-bold" style={{ color: sc(m.tickScore) }}>{m.tickScore}%</span></td>
+                            <td className="px-3 py-2.5 text-center"><span className="font-bold" style={{ color: sc(m.bastScore) }}>{m.bastScore}%</span></td>
+                            <td className="px-3 py-2.5 text-center"><span className="font-bold" style={{ color: sc(m.lcScore) }}>{m.lcScore}%</span></td>
+                            <td className="px-3 py-2.5 text-center"><span className="font-bold" style={{ color: sc(m.rndScore) }}>{m.rndScore}%</span></td>
+                            <td className="px-3 py-2.5 text-center">
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span className="text-base font-black" style={{ color: c }}>{m.finalKPI}%</span>
+                                <span className="text-[8px] font-bold uppercase tracking-wide" style={{ color: c }}>{lbl}</span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {(() => {
+                        const at = snapMs.length ? Math.round(snapMs.reduce((s,m)=>s+m.tickScore,0)/snapMs.length) : 0;
+                        const ab = snapMs.length ? Math.round(snapMs.reduce((s,m)=>s+m.bastScore,0)/snapMs.length) : 0;
+                        const al = snapMs.length ? Math.round(snapMs.reduce((s,m)=>s+m.lcScore,0)/snapMs.length) : 0;
+                        const ar = snapMs.length ? Math.round(snapMs.reduce((s,m)=>s+m.rndScore,0)/snapMs.length) : 0;
+                        return (
+                          <tr style={{ background: '#f0f9ff', borderTop: '2px solid #bae6fd' }}>
+                            <td className="px-3 py-2 font-black text-sky-700 text-xs">RATA-RATA TIM</td>
+                            {[at,ab,al,ar].map((v,i) => <td key={i} className="px-3 py-2 text-center font-black text-sky-600">{v}%</td>)}
+                            <td className="px-3 py-2 text-center font-black text-sky-600 text-base">{avgFin}%</td>
+                          </tr>
+                        );
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })() : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-[11px]">
+                <thead>
+                  <tr style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
+                    {['Periode','Anggota','Avg KPI','Distribusi','Disimpan oleh','Tanggal','Aksi'].map((h,i) => (
+                      <th key={h} className={`px-4 py-2.5 font-bold text-slate-500 whitespace-nowrap ${i===0||i===4?'text-left':'text-center'}`}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {kpiSnapshots.map((snap, idx) => {
+                    const ms  = snap.members_json;
+                    const avg = ms.length ? Math.round(ms.reduce((s,m)=>s+m.finalKPI,0)/ms.length) : 0;
+                    const exc = ms.filter(m=>m.finalKPI>=85).length;
+                    const gd  = ms.filter(m=>m.finalKPI>=70&&m.finalKPI<85).length;
+                    const fr  = ms.filter(m=>m.finalKPI>=50&&m.finalKPI<70).length;
+                    const nw  = ms.filter(m=>m.finalKPI<50).length;
+                    const c   = avg >= 85 ? '#10b981' : avg >= 70 ? '#3b82f6' : avg >= 50 ? '#f59e0b' : '#ef4444';
+                    return (
+                      <tr key={snap.id} className="cursor-pointer transition-colors"
+                        style={{ background: idx % 2 === 0 ? '#fff' : '#fafafa' }}
+                        onClick={() => setExpandedSnapshot(snap.id)}
+                        onMouseEnter={e => (e.currentTarget.style.background = '#e0f2fe')}
+                        onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? '#fff' : '#fafafa')}>
+                        <td className="px-4 py-3">
+                          <div className="font-semibold text-slate-700">{snap.period_label}</div>
+                          <div className="text-[9px] text-slate-400">{snap.period === '1y' ? '1 Tahun' : '6 Bulan'}</div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="font-bold text-slate-700">{ms.length}</span>
+                          <div className="text-[9px] text-slate-400">anggota</div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-lg font-black" style={{ color: c }}>{avg}%</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1 justify-center flex-wrap">
+                            {exc > 0 && <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-700">{exc} Excellent</span>}
+                            {gd > 0  && <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-blue-100 text-blue-700">{gd} Good</span>}
+                            {fr > 0  && <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-700">{fr} Fair</span>}
+                            {nw > 0  && <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-red-100 text-red-600">{nw} NW</span>}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-slate-500">{snap.created_by}</td>
+                        <td className="px-4 py-3 text-center text-slate-400">{new Date(snap.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' })}</td>
+                        <td className="px-4 py-3 text-center">
+                          <button onClick={e => { e.stopPropagation(); setExpandedSnapshot(snap.id); }}
+                            className="px-2.5 py-1 rounded-lg text-[10px] font-bold text-sky-600 hover:bg-sky-50 border border-sky-200 transition-all">
+                            Detail →
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
 
       </div>
 
@@ -1442,6 +1690,119 @@ export default function KPITeamPage() {
                     : member.techNotesApproved >= _s.rndTarget
                       ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1.5">✅ KKM Tech Note terpenuhi ({member.techNotesApproved}/{_s.rndTarget})</div>
                       : <div className="text-[10px] text-amber-600 font-semibold bg-amber-50 rounded-lg px-2 py-1.5">⏳ Kurang {_s.rndTarget - member.techNotesApproved} Tech Note lagi</div>}
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        );
+      })()}
+
+      {/* ── Mulai KPI Confirm Modal ── */}
+      {showStartKPI && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowStartKPI(false); }}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}>🚀</div>
+              <div>
+                <div className="font-bold text-slate-800 text-base">Mulai KPI {kpiYear}</div>
+                <div className="text-xs text-slate-400 mt-0.5">Simpan snapshot penilaian KPI periode ini</div>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="rounded-xl p-4 text-sm text-slate-600 leading-relaxed" style={{ background: '#f0f9ff', border: '1px solid #bae6fd' }}>
+                <b>📋 Ringkasan yang akan disimpan:</b>
+                <ul className="mt-2 space-y-1 list-disc list-inside text-slate-500">
+                  <li>Periode: <b className="text-slate-700">{kpiPeriodLabel}</b></li>
+                  <li>Anggota: <b className="text-slate-700">{kpiMembers.length} orang</b></li>
+                  <li>Bobot: 🎫{Math.round(kpiSettings.ticketOverdueWeight*100)}% ⭐{Math.round(kpiSettings.bastWeight*100)}% 🎓{Math.round(kpiSettings.lcWeight*100)}% 📝{Math.round(kpiSettings.rndWeight*100)}%</li>
+                </ul>
+              </div>
+              <p className="text-sm text-slate-500">
+                Data KPI akan dibekukan dan disimpan ke Riwayat KPI. Proses ini tidak dapat dibatalkan.
+              </p>
+            </div>
+            <div className="flex gap-3 px-6 pb-5 justify-end">
+              <button onClick={() => setShowStartKPI(false)} disabled={savingSnapshot}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors">
+                Batal
+              </button>
+              <button onClick={() => saveKPISnapshot()} disabled={savingSnapshot}
+                className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-60"
+                style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 2px 8px rgba(16,185,129,0.4)' }}>
+                {savingSnapshot ? (
+                  <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan…</>
+                ) : (
+                  <>🚀 Simpan KPI</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── Snapshot Member Detail Popup ── */}
+      {selectedSnapMember && typeof document !== 'undefined' && (() => {
+        const [memberId, snapId] = selectedSnapMember.split('__');
+        const snap = kpiSnapshots.find(s => s.id === snapId);
+        const m    = snap?.members_json.find(x => x.id === memberId);
+        if (!snap || !m) return null;
+        const c   = m.finalKPI >= 85 ? '#10b981' : m.finalKPI >= 70 ? '#3b82f6' : m.finalKPI >= 50 ? '#f59e0b' : '#ef4444';
+        const lbl = m.finalKPI >= 85 ? 'Excellent' : m.finalKPI >= 70 ? 'Good' : m.finalKPI >= 50 ? 'Fair' : 'Needs Work';
+        const tc  = TEAM_COLORS[m.team_type] ?? '#64748b';
+        const sc  = (v: number) => v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b' : '#ef4444';
+        return createPortal(
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
+            onClick={e => { if (e.target === e.currentTarget) setSelectedSnapMember(null); }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-y-auto" style={{ maxHeight: '85vh' }}>
+              <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 sticky top-0 bg-white z-10 rounded-t-2xl">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-base text-white flex-shrink-0"
+                  style={{ background: `linear-gradient(135deg,${tc},${tc}cc)` }}>{m.name.charAt(0)}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-slate-800 text-sm truncate">{m.name}</div>
+                  <div className="text-xs text-slate-400 flex items-center gap-1.5">
+                    {m.jabatan} · {m.team_type}
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: '#f0f9ff', color: '#0284c7', border: '1px solid #bae6fd' }}>🔒 Snapshot</span>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end mr-1 flex-shrink-0">
+                  <div className="text-2xl font-black" style={{ color: c }}>{m.finalKPI}%</div>
+                  <div className="text-[9px] font-bold uppercase tracking-wide" style={{ color: c }}>{lbl}</div>
+                </div>
+                <button onClick={() => setSelectedSnapMember(null)}
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all flex-shrink-0">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="text-[10px] text-slate-400 text-center italic">📅 {snap.period_label} — Data dibekukan pada {new Date(snap.created_at).toLocaleDateString('id-ID')}</div>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { label: 'Ticketing', val: m.tickScore, color: '#ef4444', icon: '🎫', bg: '#fef2f2' },
+                    { label: 'BAST',      val: m.bastScore,  color: '#f59e0b', icon: '⭐', bg: '#fffbeb' },
+                    { label: 'LC',        val: m.lcScore,    color: '#6366f1', icon: '🎓', bg: '#f5f3ff' },
+                    { label: 'R&D',       val: m.rndScore,   color: '#ec4899', icon: '📝', bg: '#fdf4ff' },
+                  ].map(k => (
+                    <div key={k.label} className="rounded-xl border p-2 text-center" style={{ background: k.bg, borderColor: `${k.color}40` }}>
+                      <div className="text-xs mb-0.5">{k.icon}</div>
+                      <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wide leading-tight mb-1">{k.label}</div>
+                      <div className="text-lg font-black" style={{ color: sc(k.val) }}>{k.val}%</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="bg-slate-50 rounded-xl border border-slate-100 p-3 text-[11px] text-slate-600 space-y-1">
+                  <div className="flex justify-between"><span>Tickets Handled</span><b className="text-slate-800">{m.ticketsHandled}</b></div>
+                  <div className="flex justify-between"><span>Tickets Overdue</span><b className={m.ticketsOverdue > 0 ? 'text-red-600' : 'text-emerald-600'}>{m.ticketsOverdue}</b></div>
+                  <div className="flex justify-between"><span>LC Attempts</span><b className="text-slate-800">{m.lcAttempts}</b></div>
+                  <div className="flex justify-between"><span>LC Passed</span><b className="text-emerald-600">{m.lcPassed}</b></div>
+                  <div className="flex justify-between"><span>Form Reviews</span><b className="text-slate-800">{m.formReviewTotal}</b></div>
+                  <div className="flex justify-between"><span>Review Komplain</span><b className={m.formReviewLowRating > 0 ? 'text-red-600' : 'text-emerald-600'}>{m.formReviewLowRating}x</b></div>
+                  <div className="flex justify-between"><span>Tech Notes Approved</span><b className="text-slate-800">{m.techNotesApproved}</b></div>
                 </div>
               </div>
             </div>

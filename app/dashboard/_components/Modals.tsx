@@ -51,6 +51,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     'reminder-schedule': { label: 'Reminder Schedule', icon: '🗓️', gradient: 'from-cyan-600 to-cyan-500' },
     'picket-showroom': { label: 'Piket Showroom', icon: '🏪', gradient: 'from-teal-600 to-teal-500' },
     'tech-note': { label: 'Tech Note R&D', icon: '📝', gradient: 'from-pink-600 to-rose-500' },
+    'kpi-team': { label: 'KPI Team', icon: '📊', gradient: 'from-sky-600 to-sky-500' },
   };
 
   const notify = (type: 'success' | 'error', msg: string) => {
@@ -2459,6 +2460,7 @@ export function AccountSettingsInline() {
     'picket-showroom': { label: 'Piket Showroom', icon: '🏪' },
     'learning-center': { label: 'Learning Center', icon: '🎓' },
     'tech-note': { label: 'Tech Note R&D', icon: '📝' },
+    'kpi-team': { label: 'KPI Team', icon: '📊' },
   };
 
   const notify = (type: 'success' | 'error', msg: string) => { setNotification({ type, msg }); setTimeout(() => setNotification(null), 3000); };
