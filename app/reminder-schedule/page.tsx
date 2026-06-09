@@ -1003,7 +1003,7 @@ jangan lupa peralatan & Semangat💪🏼
     setSelectMode(false); setSelectedIds(new Set()); setFilterStatus('all'); setFilterYear('all'); setFilterCategory('all');
     setSearchProject(''); setSearchSales(''); setSearchDivisionSales('');
     setSearchTeamHandler(''); setSearchProduct(''); setProductFilter(null);
-    setSelectedCalDay(null); setGuestSearch('');
+    setSelectedCalDay(null);
     clearSession();
     setCurrentUser(null); setLoginTime(null);
     // Redirect ke halaman login dashboard (parent window jika di dalam iframe)
