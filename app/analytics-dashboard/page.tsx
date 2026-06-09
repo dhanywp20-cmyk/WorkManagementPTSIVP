@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { User } from '@/app/dashboard/_components/shared';
-import DashboardKPI from './_components/DashboardKPI';
+import DashboardKPI from '@/app/kpi-team/_components/DashboardKPI';
 
 function LoadingScreen() {
   return (
