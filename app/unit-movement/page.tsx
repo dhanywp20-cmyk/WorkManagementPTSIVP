@@ -342,8 +342,9 @@ function UnitMovementPageInner() {
                 ) : filteredLogs.length===0 ? (
                   <tr><td colSpan={9} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-2">
-                      <span className="text-4xl opacity-30">📦</span>
-                      <span className="text-gray-400 text-sm">Belum ada data movement log</span>
+                      <span className="text-4xl">📦</span>
+                      <p className="font-semibold text-gray-600 text-sm">Belum ada data movement log</p>
+                      <p className="text-xs text-gray-400">Coba ubah filter atau tambahkan log baru</p>
                     </div>
                   </td></tr>
                 ) : filteredLogs.map((log,idx)=>{
