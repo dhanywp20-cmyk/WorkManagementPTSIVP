@@ -14,6 +14,7 @@ interface KPIData {
     byDivision: { div: string; count: number }[];
     byProduct: { product: string; count: number }[];
     resolvedToday: number; avgResolutionDays: number;
+    monthlyTickets: number[];
   };
   reminders: {
     total: number; pending: number; done: number; dueSoon: number;
@@ -483,6 +484,14 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
       },0);
       const avgResolutionDays = solvedT.length?Math.round(totalDays/solvedT.length):0;
 
+      const currentYear = new Date().getFullYear();
+      const monthlyTickets = Array.from({length: 12}, (_, mi) =>
+        tickets.filter((t: any) => {
+          const d = new Date(t.created_at);
+          return d.getFullYear() === currentYear && d.getMonth() === mi;
+        }).length
+      );
+
       const catMap: Record<string,number> = {};
       reminders.forEach((r:any)=>{ catMap[r.category]=(catMap[r.category]||0)+1; });
       const byCategory = Object.entries(catMap).map(([cat,count])=>({ cat,count,color:CATEGORY_COLORS[cat]??'#94a3b8' })).sort((a,b)=>b.count-a.count);
@@ -517,7 +526,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
       const lcAvgScore = lcScores.length ? Math.round(lcScores.reduce((a:number,b:number)=>a+b,0)/lcScores.length) : 0;
 
       setKpi({
-        tickets:{ total:tickets.length,open,solved,waitingApproval,byHandler,byStatus,byDivision,byProduct,resolvedToday,avgResolutionDays },
+        tickets:{ total:tickets.length,open,solved,waitingApproval,byHandler,byStatus,byDivision,byProduct,resolvedToday,avgResolutionDays,monthlyTickets },
         reminders:{ total:reminders.length,pending:reminders.filter((r:any)=>r.status==='pending').length,done:reminders.filter((r:any)=>r.status==='done').length,dueSoon,byCategory,byProduct:remindersByProduct,overdueCount },
         piket:{ todayIVP:piketToday?.pic_ivp_name??null,todayUMP:piketToday?.pic_ump_name??null,todayMlds:piketToday?.pic_mlds_name??null,weekFilled,weekTotal:weekWorkDays,kegiatanToday:kegiatan.length },
         units:{ totalLogs:movements.length,keluarThisMonth:movements.filter((m:any)=>m.status_barang==='Keluar').length,masukThisMonth:movements.filter((m:any)=>m.status_barang==='Masuk').length },
@@ -1137,6 +1146,55 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                         </div>
                   )}
                 </div>
+              </div>
+
+              {/* ── Trend Ticket Bulanan ── */}
+              <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">📈 Trend Ticket Bulanan {new Date().getFullYear()}</h3>
+                {loading ? <div className="h-32 rounded animate-pulse bg-slate-100"/> : (
+                  kpi?.tickets.monthlyTickets?.some(v => v > 0) ? (() => {
+                    const MN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+                    const data = kpi.tickets.monthlyTickets;
+                    const max = Math.max(...data, 1);
+                    const total = data.reduce((s, v) => s + v, 0);
+                    const curMonth = new Date().getMonth();
+                    return (
+                      <div>
+                        <div className="flex items-end gap-1" style={{height: 120}}>
+                          {data.map((v, i) => {
+                            const hPct = Math.round((v / max) * 108);
+                            const isCur = i === curMonth;
+                            return (
+                              <div key={i} className="flex-1 flex flex-col items-center gap-0.5 group cursor-default" title={`${MN[i]}: ${v} ticket`}>
+                                <div className="w-full rounded-t transition-all duration-700"
+                                  style={{ height: v > 0 ? Math.max(hPct, 4) : 2, background: isCur ? '#ef4444' : '#fca5a5', opacity: isCur ? 1 : 0.7 }}/>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="flex items-center gap-1 mt-1 mb-2">
+                          {MN.map((m, i) => (
+                            <div key={i} className="flex-1 text-center">
+                              <span className={`text-[9px] ${i === curMonth ? 'font-black text-red-500' : 'text-slate-400'}`}>{m}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{background:'#ef4444'}}/><span className="text-[11px] text-slate-500">Bulan ini</span></div>
+                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{background:'#fca5a5'}}/><span className="text-[11px] text-slate-500">Bulan lain</span></div>
+                          </div>
+                          <span className="text-sm font-black text-red-500">{total} total</span>
+                        </div>
+                      </div>
+                    );
+                  })() : (
+                    <div className="flex flex-col items-center gap-2 py-8">
+                      <span className="text-3xl opacity-20">📊</span>
+                      <p className="text-[11px] text-slate-400">Belum ada data ticket tahun ini.</p>
+                    </div>
+                  )
+                )}
               </div>
 
               {/* Performa Resolusi */}
