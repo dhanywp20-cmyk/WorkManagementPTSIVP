@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import * as XLSX from 'xlsx';
 import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { PageHeader } from '@/components/shared';
@@ -141,19 +142,193 @@ function progressColor(pct: number): string {
   return '#ef4444';
 }
 
-function exportCSV(members: KPIMember[], period: string) {
-  const headers = ['Nama','Tim','Jabatan','Ticket Handled','Ticket Solved','Solve Rate%','Avg Resolusi(hari)','Overdue','Reminder Assigned','Reminder Done','Reminder Rate%','LC Attempts','LC Avg Score','Piket(hari)','Avg Response(jam)'];
-  const rows = members.map(m => {
-    const sr = m.ticketsHandled > 0 ? Math.round((m.ticketsSolved / m.ticketsHandled) * 100) : 0;
-    const rr = m.remindersAssigned > 0 ? Math.round((m.remindersDone / m.remindersAssigned) * 100) : 0;
-    return [m.name, m.team_type, m.jabatan, m.ticketsHandled, m.ticketsSolved, sr, m.avgResolutionDays, m.ticketsOverdue, m.remindersAssigned, m.remindersDone, rr, m.lcAttempts, m.lcAvgScore, m.piketFilled, m.ticketAvgResponseHours].join(',');
+const MONTHS_ID = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+function exportKPIExcel(
+  members: KPIMember[],
+  period: string,
+  settings: KPISettings,
+  yearLabel?: string
+) {
+  const wb = XLSX.utils.book_new();
+  const periodLabel = yearLabel ?? period;
+
+  members.forEach(member => {
+    // ── Calculate KPI scores ───────────────────────────────────────────────
+    const lcFailed = member.lcScores.filter(sc => sc < settings.lcMinScore).length;
+    const tickS  = member.ticketsHandled > 0 ? Math.max(0, 1 - member.ticketsOverdue / Math.max(member.ticketsHandled, 1)) : 0;
+    const bastS  = member.formReviewTotal === 0 ? 0 : member.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - member.formReviewLowRating / Math.max(member.formReviewTotal, 1));
+    const lcS    = member.lcAttempts === 0 ? 0 : Math.max(0, 1 - lcFailed / Math.max(member.lcAttempts, 1));
+    const rndS   = member.techNotesApproved >= settings.rndTarget ? 1 : member.techNotesApproved / Math.max(settings.rndTarget, 1);
+
+    // KPI template bobot (from official template)
+    const BOBOT_TECH     = 0.15; // Technical Knowledge (Troubleshooting)
+    const BOBOT_RESPON   = 0.10; // Kecepatan Respon
+    const BOBOT_LC       = 0.35; // Learning Center Platform
+    const BOBOT_BAST     = 0.20; // BAST Demo Product
+    const BOBOT_RND      = 0.15; // R&D Tech Note
+    const BOBOT_LAPORAN  = 0.05; // Pelaporan Report Bulanan
+
+    const techPct   = Math.round(tickS * 100);
+    const responPct = member.ticketsHandled > 0
+      ? Math.max(0, Math.round((1 - Math.min(member.ticketAvgResponseHours, 48) / 48) * 100))
+      : 0;
+    const lcPct    = Math.round(lcS * 100);
+    const bastPct  = Math.round(bastS * 100);
+    const rndPct   = Math.round(rndS * 100);
+    const laporanPct = member.piketFilled > 0 ? 100 : 0;
+
+    const nilaiAkhir =
+      BOBOT_TECH * (techPct / 100) +
+      BOBOT_RESPON * (responPct / 100) +
+      BOBOT_LC * (lcPct / 100) +
+      BOBOT_BAST * (bastPct / 100) +
+      BOBOT_RND * (rndPct / 100) +
+      BOBOT_LAPORAN * (laporanPct / 100);
+
+    // ── Build sheet data ────────────────────────────────────────────────────
+    // Column layout: A=No, B=KPI Item, C=Target, D..O=Jan-Dec, P=Rata2, Q=Bobot, R=Nilai Akhir
+    const COL_COUNT = 18; // A to R
+
+    const E = (v: string | number | null) => v ?? '';
+
+    const rows: (string | number | null)[][] = [
+      // Row 1: Company
+      ['INDOVISUAL GROUP', ...Array(COL_COUNT - 1).fill(null)],
+      // Row 2: empty
+      Array(COL_COUNT).fill(null),
+      // Row 3: Title
+      ['FORMULIR MONITORING KEY PERFORMANCE INDICATOR', ...Array(COL_COUNT - 1).fill(null)],
+      // Row 4: empty
+      Array(COL_COUNT).fill(null),
+      // Row 5: Nama / No. Karyawan
+      ['Nama', ':', member.name, null, null, null, null, null, null, 'No. Karyawan', ':', '-', ...Array(COL_COUNT - 12).fill(null)],
+      // Row 6: Divisi / Level
+      ['Divisi / Department', ':', member.team_type, null, null, null, null, null, null, 'Level / Posisi', ':', member.jabatan ?? '-', ...Array(COL_COUNT - 12).fill(null)],
+      // Row 7: Periode
+      ['Periode Penilaian', ':', periodLabel, ...Array(COL_COUNT - 3).fill(null)],
+      // Row 8: empty
+      Array(COL_COUNT).fill(null),
+      // Row 9: Table header row 1
+      ['No', 'Sasaran / KPI Item', 'Uraian', ...MONTHS_ID, 'Rata2 / Total', 'BOBOT', 'Nilai Akhir'],
+      // Row 10: Customer Perspective header
+      [null, 'CUSTOMER PERSPECTIVE', ...Array(COL_COUNT - 2).fill(null)],
+      // Row 11: Technical Knowledge - header
+      ['I', 'Technical Knowledge\n(Troubleshooting)', null, ...Array(14).fill(null)],
+      // Row 12: Technical Knowledge - Target
+      [null, null, 'Target', ...Array(12).fill('0 Overdue'), 100, BOBOT_TECH, null],
+      // Row 13: Technical Knowledge - Aktual
+      [null, null, 'Aktual', ...member.monthlyTickets.map((t, i) => {
+        // monthly overdue not available, show total tickets
+        return t;
+      }), member.ticketsHandled, null, null],
+      // Row 14: Technical Knowledge - % Pencapaian
+      [null, null, '% Pencapaian', ...Array(12).fill(null), techPct + '%', null, Math.round(BOBOT_TECH * (techPct / 100) * 100) / 100],
+      // Row 15: Kecepatan Respon - header
+      ['II', 'Kecepatan Respon\n(Response Ticket)', null, ...Array(14).fill(null)],
+      // Row 16: Kecepatan Respon - Target
+      [null, null, 'Target', ...Array(12).fill('< 2 Jam'), '< 2 Jam Rata2', BOBOT_RESPON, null],
+      // Row 17: Kecepatan Respon - Aktual
+      [null, null, 'Aktual', ...Array(12).fill(null), member.ticketAvgResponseHours > 0 ? member.ticketAvgResponseHours.toFixed(1) + ' Jam' : '—', null, null],
+      // Row 18: Kecepatan Respon - % Pencapaian
+      [null, null, '% Pencapaian', ...Array(12).fill(null), responPct + '%', null, Math.round(BOBOT_RESPON * (responPct / 100) * 100) / 100],
+      // Row 19: Internal Process header
+      [null, 'INTERNAL PROCESS PERSPECTIVE', ...Array(COL_COUNT - 2).fill(null)],
+      // Row 20: Learning Center - header
+      ['III', 'Learning Center Platform', null, ...Array(14).fill(null)],
+      // Row 21: LC - Target
+      [null, null, 'Target', ...Array(12).fill('Lulus ≥' + settings.lcMinScore + '%'), '100%', BOBOT_LC, null],
+      // Row 22: LC - Aktual
+      [null, null, 'Aktual', ...Array(12).fill(null),
+        member.lcAttempts > 0 ? `${member.lcPassed}/${member.lcAttempts} lulus` : '—', null, null],
+      // Row 23: LC - % Pencapaian
+      [null, null, '% Pencapaian', ...Array(12).fill(null), lcPct + '%', null, Math.round(BOBOT_LC * (lcPct / 100) * 100) / 100],
+      // Row 24: BAST Demo - header
+      ['IV', 'BAST Demo Product', null, ...Array(14).fill(null)],
+      // Row 25: BAST - Target
+      [null, null, 'Target', ...Array(12).fill('0 Komplain'), '0 Komplain', BOBOT_BAST, null],
+      // Row 26: BAST - Aktual
+      [null, null, 'Aktual', ...Array(12).fill(null),
+        member.formReviewTotal > 0 ? `${member.formReviewLowRating} komplain / ${member.formReviewTotal} review` : '—', null, null],
+      // Row 27: BAST - % Pencapaian
+      [null, null, '% Pencapaian', ...Array(12).fill(null), bastPct + '%', null, Math.round(BOBOT_BAST * (bastPct / 100) * 100) / 100],
+      // Row 28: R&D Tech Note - header
+      ['V', 'R&D Tech Note', null, ...Array(14).fill(null)],
+      // Row 29: RnD - Target
+      [null, null, 'Target', ...Array(12).fill(null), settings.rndTarget + ' Tech Note', BOBOT_RND, null],
+      // Row 30: RnD - Aktual
+      [null, null, 'Aktual', ...Array(12).fill(null), member.techNotesApproved + ' approved', null, null],
+      // Row 31: RnD - % Pencapaian
+      [null, null, '% Pencapaian', ...Array(12).fill(null), rndPct + '%', null, Math.round(BOBOT_RND * (rndPct / 100) * 100) / 100],
+      // Row 32: Pelaporan Bulanan - header
+      ['VI', 'Pelaporan Report Bulanan', null, ...Array(14).fill(null)],
+      // Row 33: Laporan - Target
+      [null, null, 'Target', ...Array(12).fill('1 Laporan'), '12 Laporan', BOBOT_LAPORAN, null],
+      // Row 34: Laporan - Aktual
+      [null, null, 'Aktual', ...Array(12).fill(null), member.piketFilled > 0 ? member.piketFilled + ' laporan' : '—', null, null],
+      // Row 35: Laporan - % Pencapaian
+      [null, null, '% Pencapaian', ...Array(12).fill(null), laporanPct + '%', null, Math.round(BOBOT_LAPORAN * (laporanPct / 100) * 100) / 100],
+      // Row 36: empty
+      Array(COL_COUNT).fill(null),
+      // Row 37: Total
+      [null, 'TOTAL NILAI', null, ...Array(13).fill(null), '1.00', (nilaiAkhir * 100).toFixed(1) + '%'],
+      // Row 38: empty
+      Array(COL_COUNT).fill(null),
+      // Row 39: Catatan
+      ['Catatan Insiden Penting:', ...Array(COL_COUNT - 1).fill(null)],
+      // Row 40: empty
+      Array(COL_COUNT).fill(null),
+      // Row 41: empty
+      Array(COL_COUNT).fill(null),
+      // Row 42: Signature header
+      ['Dibuat oleh,', null, null, null, null, 'Diperiksa oleh,', null, null, null, null, 'Disetujui oleh,', ...Array(COL_COUNT - 11).fill(null)],
+      // Row 43-45: empty (space for signature)
+      Array(COL_COUNT).fill(null),
+      Array(COL_COUNT).fill(null),
+      Array(COL_COUNT).fill(null),
+      // Row 46: Names
+      [member.name, null, null, null, null, 'Dhany Wahyu Perdana', null, null, null, null, 'Jony', ...Array(COL_COUNT - 11).fill(null)],
+      // Row 47: Title
+      ['Karyawan', null, null, null, null, 'Supervisor / Atasan Langsung', null, null, null, null, 'Manajer / Atasan Berikutnya', ...Array(COL_COUNT - 11).fill(null)],
+    ];
+    E; // suppress unused warning
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+
+    // Column widths
+    ws['!cols'] = [
+      { wch: 5 },  // A: No
+      { wch: 30 }, // B: KPI Item
+      { wch: 18 }, // C: Uraian
+      ...Array(12).fill({ wch: 9 }), // D-O: Jan-Dec
+      { wch: 18 }, // P: Rata2
+      { wch: 8 },  // Q: Bobot
+      { wch: 12 }, // R: Nilai Akhir
+    ];
+
+    // Merges for headers
+    ws['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: COL_COUNT - 1 } },  // Row 1: Company
+      { s: { r: 2, c: 0 }, e: { r: 2, c: COL_COUNT - 1 } },  // Row 3: Title
+      { s: { r: 9, c: 1 }, e: { r: 9, c: COL_COUNT - 1 } },  // Customer Perspective
+      { s: { r: 10, c: 1 }, e: { r: 12, c: 1 } },             // Tech Knowledge KPI item (3 rows merged)
+      { s: { r: 14, c: 1 }, e: { r: 16, c: 1 } },             // Kecepatan Respon
+      { s: { r: 18, c: 1 }, e: { r: 18, c: COL_COUNT - 1 } }, // Internal Process
+      { s: { r: 19, c: 1 }, e: { r: 21, c: 1 } },             // LC
+      { s: { r: 23, c: 1 }, e: { r: 25, c: 1 } },             // BAST
+      { s: { r: 27, c: 1 }, e: { r: 29, c: 1 } },             // RnD
+      { s: { r: 31, c: 1 }, e: { r: 33, c: 1 } },             // Laporan
+    ];
+
+    // Sheet name: limit to 31 chars (Excel max), strip invalid chars
+    const sheetName = member.name.replace(/[:\\/?*[\]]/g, '').slice(0, 31);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
   });
-  const csv = [headers.join(','), ...rows].join('\n');
-  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `KPI-Team-${period.replace(/\s/g,'-')}-${fmt(new Date())}.csv`;
-  a.click(); URL.revokeObjectURL(url);
+
+  // Write and download
+  const today = fmt(new Date());
+  const filename = `KPI-IVP-${periodLabel.replace(/\s/g, '-')}-${today}.xlsx`;
+  XLSX.writeFile(wb, filename);
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -866,7 +1041,7 @@ export default function KPITeamPage() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen"
+    <div className="h-screen overflow-hidden flex flex-col"
       style={{ backgroundImage: "url('/IVP_Background.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
       <PageHeader icon="📊" title="KPI Team" subtitle="PTS IVP — Key Performance Indicators"
         color={KPI_COLOR} colorLight="#0369a1">
@@ -900,15 +1075,16 @@ export default function KPITeamPage() {
               </svg>
               Pengaturan KPI
             </button>
-            <button onClick={() => exportCSV(sortedMembers, period)}
+            <button onClick={() => exportKPIExcel(sortedMembers, period, kpiSettings, `${kpiYear}`)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
               style={{ background: KPI_COLOR, borderColor: KPI_COLOR, color: '#fff', boxShadow: `0 2px 8px ${KPI_COLOR}40` }}>
-              ⬇ Export CSV
+              ⬇ Export KPI Excel
             </button>
           </>
         )}
       </PageHeader>
 
+      <div className="flex-1 overflow-y-auto">
       <div className="max-w-[1600px] mx-auto px-4 py-4 space-y-4">
 
         {/* ── Penilaian KPI (TOP — data mandiri, tidak ikut period picker) ── */}
@@ -1549,6 +1725,7 @@ export default function KPITeamPage() {
         </div>
 
       </div>
+      </div>{/* end flex-1 overflow-y-auto */}
 
       {/* ── Drill-down Modal (Performance) ── */}
       {drillMember && (
