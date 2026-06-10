@@ -140,23 +140,48 @@ function IncentivePTSPage() {
       .eq('status', 'done');
     if (!reminders?.length) return;
 
-    const { data: existing } = await supabase
-      .from('incentive_projects').select('reminder_id').not('reminder_id', 'is', null);
-    const existingIds = new Set((existing ?? []).map((e: { reminder_id: string }) => e.reminder_id));
-    const newReminders = reminders.filter((r: ReminderRow) => !existingIds.has(r.id));
-    if (!newReminders.length) return;
+    // Build quick lookup map
+    const reminderMap: Record<string, ReminderRow> = {};
+    (reminders as ReminderRow[]).forEach(r => { reminderMap[r.id] = r; });
 
-    await supabase.from('incentive_projects').insert(
-      newReminders.map((r: ReminderRow) => ({
-        reminder_id: r.id, project_name: r.project_name, category: r.category,
-        sales_name: r.sales_name, sales_division: r.sales_division, due_date: r.due_date,
-        handler_name: r.assign_name ?? '', handler_username: r.assigned_to ?? '',
-        backup_names: [], biaya_cadangan: 0,
-        periode: r.due_date ? r.due_date.slice(0, 7) : new Date().toISOString().slice(0, 7),
-        status: 'pending', description: r.description, notes: r.notes,
-        address: r.address, pic_name: r.pic_name, pic_phone: r.pic_phone, product: r.product,
-      }))
+    const { data: existing } = await supabase
+      .from('incentive_projects')
+      .select('id,reminder_id,description,notes,address,product')
+      .not('reminder_id', 'is', null);
+
+    const existingMap: Record<string, any> = {};
+    (existing ?? []).forEach((e: any) => { existingMap[e.reminder_id] = e; });
+
+    // Insert new
+    const newReminders = (reminders as ReminderRow[]).filter(r => !existingMap[r.id]);
+    if (newReminders.length) {
+      await supabase.from('incentive_projects').insert(
+        newReminders.map((r) => ({
+          reminder_id: r.id, project_name: r.project_name, category: r.category,
+          sales_name: r.sales_name, sales_division: r.sales_division, due_date: r.due_date,
+          handler_name: r.assign_name ?? '', handler_username: r.assigned_to ?? '',
+          backup_names: [], biaya_cadangan: 0,
+          periode: r.due_date ? r.due_date.slice(0, 7) : new Date().toISOString().slice(0, 7),
+          status: 'pending', description: r.description, notes: r.notes,
+          address: r.address, pic_name: r.pic_name, pic_phone: r.pic_phone, product: r.product,
+        }))
+      );
+    }
+
+    // Backfill missing detail fields for existing projects
+    const toBackfill = (existing ?? []).filter((p: any) =>
+      p.reminder_id && reminderMap[p.reminder_id] &&
+      (!p.description || !p.notes || !p.address || !p.product)
     );
+    await Promise.all(toBackfill.map(async (p: any) => {
+      const r = reminderMap[p.reminder_id];
+      await supabase.from('incentive_projects').update({
+        description: p.description || r.description || null,
+        notes: p.notes || r.notes || null,
+        address: p.address || r.address || null,
+        product: p.product || r.product || null,
+      }).eq('id', p.id);
+    }));
   };
 
   const fetchProjects = async () => {
@@ -519,11 +544,10 @@ function IncentivePTSPage() {
         <div className="w-full px-4 py-4 space-y-5">
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard icon="📋" label="Total Project"          value={String(filteredProjects.length)} sub={`${totalPaid} sudah dibayar`} color="#6366f1" />
-            <StatCard icon="💵" label="Total Biaya Cadangan"   value={fmtRp(totalBiaya)}               sub="Project terfilter"           color="#0ea5e9" />
-            <StatCard icon="💰" label="Total Incentive"        value={fmtRp(totalIncentive)}            sub="Terdistribusi"               color="#10b981" />
-            <StatCard icon="⏳" label="Menunggu Pembayaran"    value={String(filteredProjects.filter((p) => p.status === 'pending' && p.biaya_cadangan > 0).length)} sub="Project pending" color="#f59e0b" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <StatCard icon="📋" label="Total Project"        value={String(filteredProjects.length)} sub={`${totalPaid} sudah dibayar`} color="#6366f1" />
+            <StatCard icon="💵" label="Total Biaya Cadangan" value={fmtRp(totalBiaya)}               sub="Project terfilter"           color="#0ea5e9" />
+            <StatCard icon="💰" label="Total Incentive"      value={fmtRp(totalIncentive)}            sub="Terdistribusi"               color="#10b981" />
           </div>
 
           {/* Mini Pie Charts */}
@@ -533,84 +557,96 @@ function IncentivePTSPage() {
             <MiniPieChart data={divisionPieData} title="Sales Division"    icon="🏢" />
           </div>
 
-          {/* Filters */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
-            <div className="flex flex-wrap gap-3 items-center">
-              <div className="flex items-center gap-2 flex-1 min-w-[200px] bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
-                <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                <input value={searchQ} onChange={(e) => setSearchQ(e.target.value)} placeholder="Cari project, handler, sales..."
-                  className="flex-1 text-sm outline-none text-gray-700 placeholder-gray-400 bg-transparent" />
-              </div>
-              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                <option value="all">Semua Status</option>
-                <option value="pending">Pending</option>
-                <option value="paid">Lunas</option>
-              </select>
-              <button onClick={exportExcel}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
-                style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                Export Excel
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2 items-center">
-              <div className="flex bg-gray-100 rounded-xl p-0.5">
-                {(['bulan', 'kuartal', 'tahun'] as const).map((m) => (
-                  <button key={m}
-                    onClick={() => { setFilterMode(m); setFilterPeriode('all'); setFilterYear('all'); setFilterQuarter('all'); }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all capitalize ${filterMode === m ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}>
-                    {m === 'bulan' ? '📅 Bulan' : m === 'kuartal' ? '📊 Kuartal' : '📆 Tahun'}
-                  </button>
-                ))}
-              </div>
-              {(filterMode === 'tahun' || filterMode === 'kuartal') && (
-                <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)}
-                  className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                  <option value="all">Semua Tahun</option>
-                  {allYears.map((y) => <option key={y} value={y}>{y}</option>)}
-                </select>
-              )}
-              {filterMode === 'kuartal' && (
-                <select value={filterQuarter} onChange={(e) => setFilterQuarter(e.target.value)}
-                  className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                  <option value="all">Semua Kuartal</option>
-                  <option value="Q1">Q1 (Jan–Mar)</option>
-                  <option value="Q2">Q2 (Apr–Jun)</option>
-                  <option value="Q3">Q3 (Jul–Sep)</option>
-                  <option value="Q4">Q4 (Okt–Des)</option>
-                </select>
-              )}
-              {filterMode === 'bulan' && (
-                <select value={filterPeriode} onChange={(e) => setFilterPeriode(e.target.value)}
-                  className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                  <option value="all">Semua Bulan</option>
-                  {periodeOptions.map((p) => <option key={p} value={p}>{fmtPeriode(p)}</option>)}
-                </select>
-              )}
-              {isFilterActive && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs font-semibold text-indigo-700">
-                  🔍 {filterLabel}
-                  <button onClick={() => { setFilterPeriode('all'); setFilterYear('all'); setFilterQuarter('all'); }}
-                    className="ml-1 text-indigo-400 hover:text-indigo-600">✕</button>
-                </span>
-              )}
-            </div>
-          </div>
-
           {/* Tab content */}
           {activeTab === 'projects' && (
-            <ProjectsTab
-              filteredProjects={filteredProjects}
-              totalProjects={projects.length}
-              totalBiaya={totalBiaya}
-              isAdmin={isAdmin}
-              canInputBiaya={canInputBiaya}
-              onView={openView}
-              onSetBackup={openSetBackup}
-              onInputBiaya={openInputBiaya}
-              onMarkPaid={openMarkPaid}
-            />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              {/* ── Filter bar — integrated above table ── */}
+              <div className="px-4 pt-4 pb-3 border-b border-gray-200 space-y-3">
+                <div className="flex flex-wrap gap-2 items-center">
+                  {/* Search */}
+                  <div className="flex items-center gap-2 flex-1 min-w-[180px] bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+                    <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    <input value={searchQ} onChange={(e) => setSearchQ(e.target.value)} placeholder="Cari project, handler, sales..."
+                      className="flex-1 text-sm outline-none text-gray-700 placeholder-gray-400 bg-transparent" />
+                  </div>
+                  {/* Status filter */}
+                  <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
+                    className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                    <option value="all">Semua Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="paid">Lunas</option>
+                  </select>
+                  {/* Refresh button */}
+                  <button onClick={fetchProjectsAndAutoSync} title="Refresh data"
+                    className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-300 transition-all">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </button>
+                  {/* Export */}
+                  <button onClick={exportExcel}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
+                    style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    Export Excel
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <div className="flex bg-gray-100 rounded-xl p-0.5">
+                    {(['bulan', 'kuartal', 'tahun'] as const).map((m) => (
+                      <button key={m}
+                        onClick={() => { setFilterMode(m); setFilterPeriode('all'); setFilterYear('all'); setFilterQuarter('all'); }}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all capitalize ${filterMode === m ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}>
+                        {m === 'bulan' ? '📅 Bulan' : m === 'kuartal' ? '📊 Kuartal' : '📆 Tahun'}
+                      </button>
+                    ))}
+                  </div>
+                  {(filterMode === 'tahun' || filterMode === 'kuartal') && (
+                    <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)}
+                      className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                      <option value="all">Semua Tahun</option>
+                      {allYears.map((y) => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                  )}
+                  {filterMode === 'kuartal' && (
+                    <select value={filterQuarter} onChange={(e) => setFilterQuarter(e.target.value)}
+                      className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                      <option value="all">Semua Kuartal</option>
+                      <option value="Q1">Q1 (Jan–Mar)</option>
+                      <option value="Q2">Q2 (Apr–Jun)</option>
+                      <option value="Q3">Q3 (Jul–Sep)</option>
+                      <option value="Q4">Q4 (Okt–Des)</option>
+                    </select>
+                  )}
+                  {filterMode === 'bulan' && (
+                    <select value={filterPeriode} onChange={(e) => setFilterPeriode(e.target.value)}
+                      className="px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                      <option value="all">Semua Bulan</option>
+                      {periodeOptions.map((p) => <option key={p} value={p}>{fmtPeriode(p)}</option>)}
+                    </select>
+                  )}
+                  {isFilterActive && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs font-semibold text-indigo-700">
+                      🔍 {filterLabel}
+                      <button onClick={() => { setFilterPeriode('all'); setFilterYear('all'); setFilterQuarter('all'); }}
+                        className="ml-1 text-indigo-400 hover:text-indigo-600">✕</button>
+                    </span>
+                  )}
+                </div>
+              </div>
+              {/* ── Table ── */}
+              <ProjectsTab
+                filteredProjects={filteredProjects}
+                totalProjects={projects.length}
+                totalBiaya={totalBiaya}
+                isAdmin={isAdmin}
+                canInputBiaya={canInputBiaya}
+                onView={openView}
+                onSetBackup={openSetBackup}
+                onInputBiaya={openInputBiaya}
+                onMarkPaid={openMarkPaid}
+              />
+            </div>
           )}
           {activeTab === 'rekap' && (
             <RekapTab

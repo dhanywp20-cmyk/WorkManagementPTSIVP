@@ -48,7 +48,7 @@ export function ProjectsTab({
     'px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200';
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div className="overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
@@ -88,6 +88,9 @@ export function ProjectsTab({
                       <p className="font-semibold text-gray-800 text-sm leading-snug">{proj.project_name}</p>
                       {proj.address && (
                         <p className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[220px]">📍 {proj.address}</p>
+                      )}
+                      {proj.product && (
+                        <p className="text-[11px] text-indigo-500 mt-0.5 truncate max-w-[220px]">📦 {proj.product}</p>
                       )}
                     </td>
                     <td className={cellCls}>

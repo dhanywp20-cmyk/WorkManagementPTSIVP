@@ -646,10 +646,12 @@ export default function Dashboard() {
                         )}
                         {(registerForm.divisi === 'Sales' || registerForm.divisi === 'Marketing') && (
                           <div>
-                            <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Sales Division *</label>
+                            <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">
+                              {registerForm.divisi === 'Marketing' ? 'Marketing Division *' : 'Sales Division *'}
+                            </label>
                             <select value={registerForm.sales_division} onChange={e => setRegisterForm({ ...registerForm, sales_division: e.target.value })}
                               className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
-                              <option value="">-- Pilih Sales Division --</option>
+                              <option value="">-- Pilih {registerForm.divisi} Division --</option>
                               {SALES_DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
                             </select>
                           </div>
@@ -1309,7 +1311,7 @@ export default function Dashboard() {
 
         {/* MAIN CONTENT */}
         <div className="flex-1 flex flex-col overflow-y-auto">
-          <div className="flex-1 overflow-hidden bg-white relative">
+          <div className="flex-1 overflow-hidden relative">
             {/* ── Loading Bar (muncul saat menu diklik, hilang setelah iframe loaded) ── */}
             {iframeLoading && (
               <div className="absolute top-0 left-0 right-0 z-50 pointer-events-none">
@@ -1384,7 +1386,7 @@ export default function Dashboard() {
             ) : (
               <div className="flex items-center justify-center h-full text-slate-400"
                 style={{ backgroundImage: 'url(/IVP_Background.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
-                <div className="text-center bg-white/90 rounded-2xl px-8 py-6 shadow-lg backdrop-blur-sm">
+                <div className="text-center bg-white/75 rounded-2xl px-8 py-6 shadow-lg backdrop-blur-md">
                   <div className="text-5xl mb-3">📂</div>
                   <p className="font-semibold text-base text-slate-600">Pilih menu dari sidebar</p>
                   <p className="text-sm mt-1 text-slate-400">Klik salah satu menu di sebelah kiri untuk memulai</p>

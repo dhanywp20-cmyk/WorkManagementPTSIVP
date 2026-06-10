@@ -78,8 +78,8 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     if (newUser.divisi === 'PTS' && !newUser.pts_type) {
       notify('error', 'Tipe PTS wajib dipilih!'); return;
     }
-    if (newUser.divisi === 'Sales' && !newUser.sales_division) {
-      notify('error', 'Sales Division wajib diisi!'); return;
+    if ((newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') && !newUser.sales_division) {
+      notify('error', `${newUser.divisi} Division wajib dipilih!`); return;
     }
 
     let role = 'guest';
@@ -107,7 +107,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
       allowed_menus: newUser.allowed_menus,
       jabatan: newUser.jabatan || null,
       phone_number: newUser.phone_number || null,
-      sales_division: newUser.divisi === 'Sales' ? (newUser.sales_division || null) : null,
+      sales_division: (newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') ? (newUser.sales_division || null) : null,
     };
     const { error } = await supabase.from('users').insert([insertPayload]);
     setSaving(false);
@@ -150,7 +150,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
       allowed_menus: editingUser.allowed_menus ?? ALL_MENU_KEYS,
       jabatan: editingUser.jabatan ?? null,
       phone_number: editingUser.phone_number ?? null,
-      sales_division: editDivisi === 'Sales' ? (editingUser.sales_division ?? null) : null,
+      sales_division: (editDivisi === 'Sales' || editDivisi === 'Marketing') ? (editingUser.sales_division ?? null) : null,
     };
     const { error } = await supabase.from('users').update(updatePayload).eq('id', editingUser.id);
     setSaving(false);
@@ -310,12 +310,14 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                             </select>
                           </div>
                         )}
-                        {editDivisi === 'Sales' && (
+                        {(editDivisi === 'Sales' || editDivisi === 'Marketing') && (
                           <div className="col-span-2">
-                            <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division</label>
+                            <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">
+                              {editDivisi === 'Marketing' ? 'Marketing Division' : 'Sales Division'}
+                            </label>
                             <select value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
                               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
-                              <option value="">-- Pilih Divisi Sales --</option>
+                              <option value="">-- Pilih {editDivisi} Division --</option>
                               {SALES_DIVISIONS.map(div => <option key={div} value={div}>{div}</option>)}
                             </select>
                           </div>
@@ -436,12 +438,14 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                     </select>
                   </div>
                 )}
-                {newUser.divisi === 'Sales' && (
+                {(newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') && (
                   <div className="col-span-2">
-                    <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Sales Division *</label>
+                    <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">
+                      {newUser.divisi === 'Marketing' ? 'Marketing Division *' : 'Sales Division *'}
+                    </label>
                     <select value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
                       className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
-                      <option value="">-- Pilih Sales Division --</option>
+                      <option value="">-- Pilih {newUser.divisi} Division --</option>
                       {SALES_DIVISIONS.map(div => <option key={div} value={div}>{div}</option>)}
                     </select>
                   </div>

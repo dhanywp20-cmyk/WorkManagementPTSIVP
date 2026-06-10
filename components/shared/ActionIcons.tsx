@@ -212,5 +212,5 @@ export function OverdueIconBtn({ onClick, title = 'Overdue Setting', disabled, a
  * Wrapper untuk action column — flex container standar
  */
 export function ActionGroup({ children }: { children: React.ReactNode }) {
-  return <div className="flex items-center gap-1 flex-wrap justify-center">{children}</div>;
+  return <div className="flex items-center gap-1 flex-nowrap">{children}</div>;
 }
