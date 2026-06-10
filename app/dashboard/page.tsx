@@ -1052,7 +1052,7 @@ export default function Dashboard() {
                               className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
                               style={
                                 isTourHL
-                                  ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite' }
+                                  ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite', position: 'relative', zIndex: 220 }
                                   : isActive
                                     ? { background: 'rgba(67,56,202,0.10)', border: '1px solid rgba(67,56,202,0.25)', color: '#3730a3' }
                                     : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
@@ -1103,7 +1103,7 @@ export default function Dashboard() {
                               className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
                               style={
                                 isTourHL
-                                  ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite' }
+                                  ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite', position: 'relative', zIndex: 220 }
                                   : isActive
                                     ? { background: 'rgba(200,134,29,0.11)', border: '1px solid rgba(200,134,29,0.28)', color: '#92600a' }
                                     : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
@@ -1153,7 +1153,7 @@ export default function Dashboard() {
                               className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
                               style={
                                 isTourHL
-                                  ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite' }
+                                  ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite', position: 'relative', zIndex: 220 }
                                   : isActive
                                     ? { background: 'rgba(200,134,29,0.11)', border: '1px solid rgba(200,134,29,0.28)', color: '#92600a' }
                                     : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
