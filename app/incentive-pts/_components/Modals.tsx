@@ -84,9 +84,7 @@ export function ViewModal({
               <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">📋 Informasi Project</p>
             </div>
             <div className="divide-y divide-gray-100">
-              {project.product && (
-                <InfoRow icon="📦" label="Product / Unit" value={project.product} />
-              )}
+              <InfoRow icon="📦" label="Product / Unit" value={project.product || '—'} />
               <InfoRow
                 icon="👤"
                 label="Nama Sales & Divisi"

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { PageHeader } from '@/components/shared';
@@ -287,13 +287,111 @@ function exportKPIExcel(
       Array(COL_COUNT).fill(null),
       Array(COL_COUNT).fill(null),
       // Row 46: Names
-      [member.name, null, null, null, null, 'Dhany Wahyu Perdana', null, null, null, null, 'Jony', ...Array(COL_COUNT - 11).fill(null)],
+      [member.name, null, null, null, null, 'Dhany Wahyu Perdana', null, null, null, null, 'Jonny', ...Array(COL_COUNT - 11).fill(null)],
       // Row 47: Title
-      ['Karyawan', null, null, null, null, 'Supervisor / Atasan Langsung', null, null, null, null, 'Manajer / Atasan Berikutnya', ...Array(COL_COUNT - 11).fill(null)],
+      ['Karyawan', null, null, null, null, 'Manager / Atasan Langsung', null, null, null, null, 'Direktur / Atasan Berikutnya', ...Array(COL_COUNT - 11).fill(null)],
     ];
     E; // suppress unused warning
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
+
+    // ── Cell styling ─────────────────────────────────────────────────────────
+    const thin = { style: 'thin' as const, color: { rgb: 'FFD1D5DB' } };
+    const med  = { style: 'medium' as const, color: { rgb: 'FF6B7280' } };
+    const bThin = { top: thin, bottom: thin, left: thin, right: thin };
+    const bMed  = { top: med,  bottom: med,  left: med,  right: med  };
+    const F = (bold = false, sz = 10, rgb = 'FF1F2937') =>
+      ({ name: 'Calibri', sz, bold, color: { rgb } });
+    const BG = (rgb: string) => ({ patternType: 'solid' as const, fgColor: { rgb } });
+
+    const sc = (R: number, C: number, s: object) => {
+      const a = XLSX.utils.encode_cell({ r: R, c: C });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (!(ws as any)[a]) (ws as any)[a] = { t: 's', v: '' };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (ws as any)[a].s = s;
+    };
+    const fr = (R: number, s: object) => { for (let C = 0; C < COL_COUNT; C++) sc(R, C, s); };
+    const rng = (r1: number, r2: number, s: object) => { for (let R = r1; R <= r2; R++) fr(R, s); };
+
+    // Base: thin border on entire table (header → total NILAI)
+    rng(8, 36, { font: F(), border: bThin, alignment: { vertical: 'center' } });
+
+    // Table column header row (idx 8): navy bg, white bold
+    fr(8, {
+      font: F(true, 10, 'FFFFFFFF'), fill: BG('FF1E3A5F'), border: bMed,
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+    });
+
+    // CUSTOMER PERSPECTIVE (idx 9): blue tint
+    fr(9, {
+      font: F(true, 10, 'FF1D4ED8'), fill: BG('FFDBEAFE'), border: bThin,
+      alignment: { vertical: 'center' },
+    });
+
+    // INTERNAL PROCESS PERSPECTIVE (idx 18): green tint
+    fr(18, {
+      font: F(true, 10, 'FF065F46'), fill: BG('FFD1FAE5'), border: bThin,
+      alignment: { vertical: 'center' },
+    });
+
+    // KPI section number rows (I,II,III,IV,V,VI): soft gray, bold
+    [10, 14, 19, 23, 27, 31].forEach(R => fr(R, {
+      font: F(true, 10, 'FF374151'), fill: BG('FFF1F5F9'), border: bThin,
+      alignment: { vertical: 'center', wrapText: true },
+    }));
+
+    // Target rows: sky tint, blue text, centered
+    [11, 15, 20, 24, 28, 32].forEach(R => fr(R, {
+      font: F(false, 9, 'FF1D4ED8'), fill: BG('FFF0F9FF'), border: bThin,
+      alignment: { horizontal: 'center', vertical: 'center' },
+    }));
+
+    // Aktual rows: white bg
+    [12, 16, 21, 25, 29, 33].forEach(R => fr(R, {
+      font: F(false, 10, 'FF111827'), fill: BG('FFFFFFFF'), border: bThin,
+      alignment: { vertical: 'center' },
+    }));
+
+    // % Pencapaian rows: green tint, bold, right-align value columns
+    [13, 17, 22, 26, 30, 34].forEach(R => fr(R, {
+      font: F(true, 10, 'FF059669'), fill: BG('FFF0FDF4'), border: bThin,
+      alignment: { horizontal: 'right', vertical: 'center' },
+    }));
+
+    // TOTAL NILAI row (idx 36): amber bg, bold, medium border
+    fr(36, {
+      font: F(true, 11, 'FF78350F'), fill: BG('FFFEF3C7'), border: bMed,
+      alignment: { vertical: 'center' },
+    });
+
+    // Company name (idx 0): large bold
+    sc(0, 0, { font: F(true, 14), alignment: { horizontal: 'left', vertical: 'center' } });
+
+    // Form title (idx 2): medium bold
+    sc(2, 0, { font: F(true, 12), alignment: { horizontal: 'left', vertical: 'center' } });
+
+    // Info label cells (idx 4–6): bold labels
+    [[4,0],[4,9],[5,0],[5,9],[6,0]].forEach(([R,C]) =>
+      sc(R, C, { font: F(true, 10), alignment: { horizontal: 'left', vertical: 'center' } }));
+
+    // Fix: left-align Uraian column (C=2) in all table rows
+    for (let R = 8; R <= 34; R++) sc(R, 2, {
+      font: F(false, 10), border: bThin,
+      alignment: { horizontal: 'left', vertical: 'center' },
+    });
+
+    // Row heights
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (ws as any)['!rows'] = rows.map((_, i) => {
+      if (i === 0)  return { hpx: 28 };
+      if (i === 2)  return { hpx: 22 };
+      if (i === 8)  return { hpx: 30 };
+      if (i === 9 || i === 18) return { hpx: 20 };
+      if ([10,14,19,23,27,31].includes(i)) return { hpx: 22 };
+      if (i === 36) return { hpx: 24 };
+      return { hpx: 18 };
+    });
 
     // Column widths
     ws['!cols'] = [
@@ -328,7 +426,8 @@ function exportKPIExcel(
   // Write and download
   const today = fmt(new Date());
   const filename = `KPI-IVP-${periodLabel.replace(/\s/g, '-')}-${today}.xlsx`;
-  XLSX.writeFile(wb, filename);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  XLSX.writeFile(wb, filename, { bookType: 'xlsx', cellStyles: true } as any);
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────

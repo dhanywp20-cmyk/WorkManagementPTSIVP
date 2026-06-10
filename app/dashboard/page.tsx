@@ -929,6 +929,11 @@ export default function Dashboard() {
             WebkitBackdropFilter: 'blur(20px)',
             boxShadow: '2px 0 20px rgba(0,0,0,0.10)',
             borderRight: '1px solid rgba(0,0,0,0.07)',
+            // Raise sidebar above tour backdrop (z-[210]) when tour is active.
+            // The sidebar's own backdropFilter creates a stacking context that
+            // confines children — giving the container z-215 lifts the whole
+            // sidebar above the dark overlay so highlighted menus are visible.
+            ...(tourVisible ? { position: 'relative' as const, zIndex: 215 } : {}),
           }}
         >
           {/* Top accent line */}

@@ -59,7 +59,7 @@ export function ProjectsTab({
               <th className={`${thCls} w-[140px]`}>Handler</th>
               <th className={`${thCls} w-[130px]`}>Sales</th>
               <th className={`${thCls} w-[110px]`}>Tanggal</th>
-              <th className={`${thCls} w-[130px]`}>No. COS Project</th>
+              <th className={`${thCls} w-[180px]`}>No. COS Project</th>
               <th className="px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[150px]">
                 Nominal Cadangan
               </th>
@@ -86,11 +86,11 @@ export function ProjectsTab({
                     <td className={`${cellCls} text-xs text-gray-400 font-medium text-center`}>{idx + 1}</td>
                     <td className={cellCls}>
                       <p className="font-semibold text-gray-800 text-sm leading-snug">{proj.project_name}</p>
+                      <p className="text-[11px] text-indigo-500 mt-0.5 truncate max-w-[220px]">
+                        📦 {proj.product ?? <span className="text-gray-300">—</span>}
+                      </p>
                       {proj.address && (
                         <p className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[220px]">📍 {proj.address}</p>
-                      )}
-                      {proj.product && (
-                        <p className="text-[11px] text-indigo-500 mt-0.5 truncate max-w-[220px]">📦 {proj.product}</p>
                       )}
                     </td>
                     <td className={cellCls}>
