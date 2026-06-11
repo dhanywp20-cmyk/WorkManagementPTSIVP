@@ -14,7 +14,15 @@ export interface MovementLog {
   type_barang: string; serial_number: string; catatan: string;
   foto_surat_url: string; foto_barang_url: string;
   created_by: string; created_at: string;
+  // Asset tracking fields (added in migration 001)
+  kondisi_barang?: 'Baik' | 'Perlu Service' | 'Rusak';
+  expected_return_date?: string;        // ISO date — when item should return (Keluar only)
+  return_confirmed?: boolean;           // True when the Masuk log confirms this Keluar is returned
+  checkout_reference_id?: string;       // On a Masuk row: references the original Keluar row id
 }
+
+export const KONDISI_BARANG_LIST = ['Baik', 'Perlu Service', 'Rusak'] as const;
+export type KondisiBarang = typeof KONDISI_BARANG_LIST[number];
 
 // ── Constants ────────────────────────────────────────────────────────────────
 

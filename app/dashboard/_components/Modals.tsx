@@ -1,7 +1,8 @@
 'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { setSession } from '@/lib/auth';
+import { setSession, getSession } from '@/lib/auth';
+import { logAudit } from '@/lib/audit';
 import {
   User, MenuItem, NotificationItem,
   SALES_DIVISIONS, JABATAN_LIST, JabatanType, JABATAN_CONFIG, JABATAN_CC_RULES,
@@ -1674,6 +1675,8 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
   const [requireNotifs, setRequireNotifs] = useState<NotificationItem[]>([]);
   const [reminderNotifs, setReminderNotifs] = useState<NotificationItem[]>([]);
   const [reviewNotifs, setReviewNotifs]   = useState<NotificationItem[]>([]);
+  // User-specific in-app notifications (from `notifications` table)
+  const [personalNotifs, setPersonalNotifs] = useState<NotificationItem[]>([]);
 
   const roleLC = (currentUser.role ?? '').trim().toLowerCase();
   const teamType = (currentUser.team_type ?? '').trim();
@@ -1944,6 +1947,27 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         setReviewNotifs(pending.map((r: any) => ({ id: r.id, type: 'require' as const, title: r.project_name, subtitle: `⭐ ${r.reminder_category} · ${r.sales_name}`, time: r.created_at, url: '/form-review', internalUrl: '/form-review', menuTitle: 'Form Review Demo & BAST' })));
       } else { setReviewNotifs([]); }
     } catch (e) { console.error('[notif] review fetch error:', e); }
+
+    // ── 5. Personal / System Notifications (from `notifications` table) ──
+    try {
+      const { data: pn } = await supabase
+        .from('notifications')
+        .select('id, type, title, body, action_url, created_at')
+        .eq('user_id', currentUser.id)
+        .eq('is_read', false)
+        .order('created_at', { ascending: false })
+        .limit(30);
+      setPersonalNotifs((pn ?? []).map((n: any) => ({
+        id: n.id,
+        type: 'ticket' as const,   // generic type for rendering
+        title: n.title,
+        subtitle: n.body ?? '',
+        time: n.created_at,
+        url: n.action_url ?? '/dashboard',
+        internalUrl: n.action_url ?? '',
+        menuTitle: 'Notifikasi',
+      })));
+    } catch { /* notifications table might not exist yet — fail silently */ }
   }, [currentUser, isAdmin, roleLC, teamType]);
 
   useEffect(() => {
@@ -1957,22 +1981,25 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
     const ch2 = supabase.channel('dash-notif-requires-v2').on('postgres_changes', { event: '*', schema: 'public', table: 'project_requests' }, () => { setTimeout(fetchAll, 400); }).subscribe();
     const ch3 = supabase.channel('dash-notif-reminders-v2').on('postgres_changes', { event: '*', schema: 'public', table: 'reminders' }, () => { setTimeout(fetchAll, 400); }).subscribe();
     const ch4 = supabase.channel('dash-notif-reviews-v2').on('postgres_changes', { event: '*', schema: 'public', table: 'form_reviews' }, () => { setTimeout(fetchAll, 400); }).subscribe();
-    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); supabase.removeChannel(ch3); supabase.removeChannel(ch4); };
+    const ch5 = supabase.channel(`dash-notif-personal-${currentUser.id}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUser.id}` }, () => { setTimeout(fetchAll, 400); }).subscribe();
+    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); supabase.removeChannel(ch3); supabase.removeChannel(ch4); supabase.removeChannel(ch5); };
   }, [fetchAll]);
 
   const handleClick = (item: NotificationItem) => {
+    // Mark personal notification as read if it came from the `notifications` table
+    if (personalNotifs.find(n => n.id === item.id)) {
+      supabase.from('notifications').update({ is_read: true }).eq('id', item.id)
+        .then(() => setPersonalNotifs(p => p.filter(n => n.id !== item.id)))
+        .catch(() => {});
+    }
     if (item.internalUrl) onNavigate(item.internalUrl, item.menuTitle);
   };
 
-  const totalCount = ticketNotifs.length + requireNotifs.length + reminderNotifs.length + reviewNotifs.length;
+  const totalCount = ticketNotifs.length + requireNotifs.length + reminderNotifs.length + reviewNotifs.length + personalNotifs.length;
 
-  // Jika semua notif disembunyikan (misal Team PTS UMP/MLDS), tidak render apapun
-  const hasAnyBell = (
-    (!isTeamPTS_SubGroup && (isAdmin || roleLC === 'team' || roleLC === 'team_pts' || roleLC === 'guest' || roleLC === 'sales')) ||
-    (!isTeamPTS_SubGroup && (isAdmin || isPTS)) ||
-    (!isTeamPTS_SubGroup && (isAdmin || (isTeamPTS && !isTeamServices) || roleLC === 'guest' || roleLC === 'sales'))
-  );
-  if (!hasAnyBell) return null;
+  // Personal bell is shown to ALL users regardless of team type
+  // Other bells still respect team-type gating
+  const hasAnyBell = true; // personal notif bell always renders
 
   return (
     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl"
@@ -2014,6 +2041,8 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         {!isTeamPTS_SubGroup && (isAdmin || (isTeamPTS && !isTeamServices) || roleLC === 'guest' || roleLC === 'sales') && (
           <NotifBell icon="⭐" label="Review" count={reviewNotifs.length} color="#b45309" bgColor="rgba(254,243,199,0.6)" borderColor="#fcd34d" dotColor="#d97706" items={reviewNotifs} onItemClick={handleClick} />
         )}
+        {/* Personal / System Notifications — always shown to all users */}
+        <NotifBell icon="🔔" label="Notif" count={personalNotifs.length} color="#166534" bgColor="rgba(220,252,231,0.6)" borderColor="#86efac" dotColor="#16a34a" items={personalNotifs} onItemClick={handleClick} />
       </div>
     </div>
   );
@@ -2494,6 +2523,9 @@ export function AccountSettingsInline() {
     setSaving(false);
     if (error) { notify('error', 'Gagal approve: ' + error.message); return; }
     notify('success', `Akun ${approvingUser.full_name} berhasil disetujui!`);
+    // Audit
+    const admin = getSession<User>();
+    logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'approve', module: 'user', target_id: approvingUser.id, target_name: approvingUser.full_name, new_value: role }).catch(() => {});
     setApprovingUser(null); setApproveMenus(ALL_MENU_KEYS); fetchUsers();
   };
 
@@ -2501,7 +2533,10 @@ export function AccountSettingsInline() {
     if (!confirm(`Tolak & hapus pendaftaran "${name}"?`)) return;
     const { error } = await supabase.from('users').delete().eq('id', userId);
     if (error) { notify('error', 'Gagal menolak.'); return; }
-    notify('success', `Pendaftaran ${name} ditolak.`); fetchUsers();
+    notify('success', `Pendaftaran ${name} ditolak.`);
+    const admin = getSession<User>();
+    logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'reject', module: 'user', target_id: userId, target_name: name }).catch(() => {});
+    fetchUsers();
   };
 
   const handleAddUser = async () => {

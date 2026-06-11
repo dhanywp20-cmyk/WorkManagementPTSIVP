@@ -20,6 +20,7 @@ import {
 } from './_components/Modals';
 import GlobalSearch from './_components/GlobalSearch';
 import OnboardingTour, { JelajahiButton } from './_components/OnboardingTour';
+import { notifyNewUserRegistration } from '@/lib/notifications';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -229,7 +230,7 @@ export default function Dashboard() {
     try {
       const { data: existing } = await supabase.from('users').select('id').eq('username', username.trim().toLowerCase()).maybeSingle();
       if (existing) { setRegisterErr('Username / email sudah terdaftar. Gunakan username lain.'); setRegisterLoading(false); return; }
-      const { error } = await supabase.from('users').insert([{
+      const { data: newUser, error } = await supabase.from('users').insert([{
         full_name: full_name.trim(),
         username: username.trim().toLowerCase(),
         password: password,
@@ -239,9 +240,11 @@ export default function Dashboard() {
         jabatan: registerForm.jabatan.trim() || null,
         phone_number: registerForm.phone_number.trim() || null,
         allowed_menus: [],
-      }]);
+      }]).select('id').single();
       if (error) throw error;
       setRegisterSuccess(true);
+      // Notify all admins of new pending user
+      notifyNewUserRegistration(full_name.trim(), newUser?.id ?? '').catch(() => {});
       setRegisterForm({ full_name: '', username: '', password: '', confirm_password: '', divisi: '', pts_type: '', sales_division: '', jabatan: '', phone_number: '' });
     } catch (err: any) {
       setRegisterErr('Registrasi gagal: ' + err.message);
@@ -321,6 +324,30 @@ export default function Dashboard() {
       setShowSidebar(true);
     }, 150);
   };
+
+  // ── postMessage bridge ────────────────────────────────────────────────────────
+  // Receives CC_NAVIGATE messages from Command Center iframe and routes to the
+  // matching menu item, so Quick Access buttons in Command Center work seamlessly.
+  useEffect(() => {
+    const handleMsg = (e: MessageEvent) => {
+      if (!e.data || e.data.type !== 'CC_NAVIGATE') return;
+      const url: string = e.data.url ?? '';
+      if (!url) return;
+      // Find the menu item whose url matches
+      const match = allMenuItems.flatMap(m => m.items.map(it => ({ it, menu: m })))
+        .find(({ it }) => it.url === url);
+      if (match) {
+        handleMenuClick(match.it, match.menu.title);
+      } else {
+        // Fallback: open as internal iframe directly
+        setIframeUrl(null); setShowTicketing(true); setInternalUrl(url);
+        setIframeTitle(''); setShowDashboardPanel(false); setIframeLoading(true);
+      }
+    };
+    window.addEventListener('message', handleMsg);
+    return () => window.removeEventListener('message', handleMsg);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allMenuItems]);
 
   const handleBackToDashboard = () => {
     // Tidak kembali ke card view — untuk admin/supervisor: dashboard panel

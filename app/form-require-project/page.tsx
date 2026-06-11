@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { setSession, clearSession, getSession } from '@/lib/auth';
+import { notifyProjectStatusChange } from '@/lib/notifications';
+import { logAudit } from '@/lib/audit';
 import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader } from '@/components/shared';
 import {
   User, ProjectRequest, RoomDetail, BrandPicMapping,
@@ -737,6 +739,11 @@ Hubungi Admin untuk info lebih lanjut.
         });
       }
     } catch { /* ignore WA error */ }
+    // In-app notification for rejection
+    if (req.requester_id) {
+      notifyProjectStatusChange(req.requester_id, req.id, req.project_name, 'rejected', currentUser.full_name).catch(() => {});
+    }
+    logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'reject', module: 'project', target_id: req.id, target_name: req.project_name }).catch(() => {});
   };
 
   const handleDeleteConfirm = async () => {
@@ -770,6 +777,14 @@ Hubungi Admin untuk info lebih lanjut.
     if (selectedRequest) setSelectedRequest({ ...selectedRequest, status: newStatus as ProjectRequest['status'] });
     await supabase.from('project_messages').insert([{ request_id: req.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `🔄 Status diupdate menjadi: ${newStatus.replace('_', ' ').toUpperCase()}` }]);
     if (selectedRequest?.id === req.id) fetchMessages(req.id);
+    // In-app notification to the requester
+    try {
+      if (req.requester_id) {
+        notifyProjectStatusChange(req.requester_id, req.id, req.project_name, newStatus, currentUser.full_name).catch(() => {});
+      }
+    } catch { /* ignore */ }
+    // Audit
+    logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'status_change', module: 'project', target_id: req.id, target_name: req.project_name, old_value: req.status, new_value: newStatus }).catch(() => {});
   };
 
   const handleOpenEditForm = () => {

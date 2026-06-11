@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { User, MovementLog, EVENTS, uploadFiles } from './shared';
+import { User, MovementLog, EVENTS, KONDISI_BARANG_LIST, KondisiBarang, uploadFiles } from './shared';
 import { MultiFileField } from './MultiFileField';
 import { UrlListField } from './UrlListField';
 
@@ -10,17 +10,19 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
 }) {
   const isEdit = !!log;
   const [form, setForm] = useState({
-    tanggal:        log?.tanggal?.split('T')[0] ?? new Date().toISOString().split('T')[0],
-    status_barang:  (log?.status_barang ?? 'Keluar') as 'Masuk'|'Keluar',
-    nama_pts:       log?.nama_pts      ?? '',
-    nama_luar:      log?.nama_luar     ?? '',
-    event:          log?.event         ?? 'Project',
-    project_name:   log?.project_name  ?? '',
-    type_barang:    log?.type_barang   ?? '',
-    serial_number:  log?.serial_number ?? '',
-    catatan:        log?.catatan       ?? '',
-    foto_surat_url:  log?.foto_surat_url  ?? '',
-    foto_barang_url: log?.foto_barang_url ?? '',
+    tanggal:              log?.tanggal?.split('T')[0] ?? new Date().toISOString().split('T')[0],
+    status_barang:        (log?.status_barang ?? 'Keluar') as 'Masuk'|'Keluar',
+    nama_pts:             log?.nama_pts      ?? '',
+    nama_luar:            log?.nama_luar     ?? '',
+    event:                log?.event         ?? 'Project',
+    project_name:         log?.project_name  ?? '',
+    type_barang:          log?.type_barang   ?? '',
+    serial_number:        log?.serial_number ?? '',
+    catatan:              log?.catatan       ?? '',
+    foto_surat_url:       log?.foto_surat_url  ?? '',
+    foto_barang_url:      log?.foto_barang_url ?? '',
+    kondisi_barang:       (log?.kondisi_barang ?? 'Baik') as KondisiBarang,
+    expected_return_date: log?.expected_return_date ?? '',
   });
   const [suratFiles,  setSuratFiles]  = useState<File[]>([]);
   const [barangFiles, setBarangFiles] = useState<File[]>([]);
@@ -50,7 +52,16 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
         barangUrl = [...existing,...uploaded].join(',');
       }
       setUploading(false);
-      const payload = { tanggal:form.tanggal, status_barang:form.status_barang, nama_pts:form.nama_pts, nama_luar:form.nama_luar, event:form.event, project_name:form.project_name, type_barang:form.type_barang, serial_number:form.serial_number, catatan:form.catatan, foto_surat_url:suratUrl, foto_barang_url:barangUrl, created_by:currentUser.username };
+      const payload = {
+        tanggal: form.tanggal, status_barang: form.status_barang,
+        nama_pts: form.nama_pts, nama_luar: form.nama_luar,
+        event: form.event, project_name: form.project_name,
+        type_barang: form.type_barang, serial_number: form.serial_number,
+        catatan: form.catatan, foto_surat_url: suratUrl, foto_barang_url: barangUrl,
+        created_by: currentUser.username,
+        kondisi_barang: form.kondisi_barang || null,
+        expected_return_date: (!isMasuk && form.expected_return_date) ? form.expected_return_date : null,
+      };
       if (isEdit) { const {error:e}=await supabase.from('movement_logs').update(payload).eq('id',log!.id); if(e)throw e; }
       else        { const {error:e}=await supabase.from('movement_logs').insert([payload]); if(e)throw e; }
       onSave();
@@ -113,6 +124,37 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
 
           <div><label className={lbl}>🔢 Serial Number</label>
             <input type="text" className={inp} placeholder="Serial number..." value={form.serial_number} onChange={e=>set('serial_number',e.target.value)}/></div>
+
+          {/* Kondisi Barang */}
+          <div>
+            <label className={lbl}>🔍 Kondisi Barang</label>
+            <div className="flex gap-2">
+              {KONDISI_BARANG_LIST.map(k=>(
+                <button key={k} type="button" onClick={()=>set('kondisi_barang',k)}
+                  className="flex-1 py-2 rounded-xl text-xs font-bold transition-all border-2"
+                  style={form.kondisi_barang===k
+                    ? k==='Baik'         ? {background:'#d1fae5',color:'#065f46',borderColor:'#10b981'}
+                    : k==='Perlu Service'? {background:'#fef3c7',color:'#92400e',borderColor:'#f59e0b'}
+                    :                     {background:'#fee2e2',color:'#991b1b',borderColor:'#ef4444'}
+                    : {background:'#f8fafc',color:'#64748b',borderColor:'#e2e8f0'}}>
+                  {k==='Baik'?'✅':k==='Perlu Service'?'⚠️':'❌'} {k}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Expected Return Date — only for Keluar */}
+          {!isMasuk && (
+            <div>
+              <label className={lbl}>📅 Perkiraan Tanggal Kembali</label>
+              <input type="date" className={inp} value={form.expected_return_date}
+                onChange={e=>set('expected_return_date',e.target.value)}
+                min={form.tanggal}/>
+              <p className="text-[10px] text-amber-600 mt-1 font-medium">
+                ℹ️ Isi untuk memantau barang yang belum kembali (Open Loan alert)
+              </p>
+            </div>
+          )}
 
           <div><label className={lbl}>📝 Catatan</label>
             <textarea className={inp+" resize-none"} rows={3} placeholder="Keterangan tambahan..." value={form.catatan} onChange={e=>set('catatan',e.target.value)}/></div>

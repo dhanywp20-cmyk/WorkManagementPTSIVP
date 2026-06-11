@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase, supabaseServices } from "@/lib/supabase";
 import { setSession, clearSession, getSession } from "@/lib/auth";
+import { notifyTicketAssigned } from "@/lib/notifications";
+import { logAudit } from "@/lib/audit";
 
 import {
   sendWANotif, fetchWACCTargets,
@@ -810,6 +812,18 @@ function TicketingSystemInner() {
         const { data: handlerUser } = tm?.username ? await supabase
           .from("users").select("phone_number, full_name")
           .eq("username", tm.username).maybeSingle() : { data: null };
+        // In-app notification (using notifications table)
+        if (handlerUser) {
+          const { data: handlerFull } = await supabase.from('users').select('id').eq('username', tm!.username).maybeSingle();
+          if (handlerFull?.id) {
+            notifyTicketAssigned(
+              handlerFull.id, approvalAssignee, approvalTicket.id,
+              approvalTicket.project_name, currentUser?.full_name ?? 'Admin'
+            ).catch(() => {});
+          }
+        }
+        // Audit log
+        logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'assign', module: 'ticket', target_id: approvalTicket.id, target_name: approvalTicket.project_name, new_value: approvalAssignee }).catch(() => {});
         if (handlerUser?.phone_number) {
           const waMsg = [
             "🎫 *Ticket Assigned ke Kamu*",
@@ -1736,6 +1750,28 @@ function TicketingSystemInner() {
       clearInterval(pollInterval);
     };
   }, [currentUser]);
+
+  // ── SLA Auto-Escalation ──────────────────────────────────────────────────────
+  // Runs whenever tickets or overdueSettings change.
+  // Finds tickets that exceed their SLA deadline and automatically marks them
+  // as 'Overdue' in the DB so the Command Center and all clients see it in real-time.
+  // Admin-only: only admins/superadmins trigger the escalation to avoid race conditions.
+  useEffect(() => {
+    const isAdminUser = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
+    if (!isAdminUser || !tickets.length) return;
+    const toEscalate = tickets.filter(t =>
+      isTicketOverdue(t)
+      && t.status !== 'Solved'
+      && t.status !== 'Overdue'
+      && t.status !== 'Waiting Approval'
+    );
+    if (!toEscalate.length) return;
+    const ids = toEscalate.map(t => t.id);
+    supabase.from('tickets').update({ status: 'Overdue' }).in('id', ids)
+      .then(() => { if (currentUser) fetchData(currentUser, true); })
+      .catch((e: unknown) => console.warn('[SLA] auto-escalation error:', e));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tickets, overdueSettings]);
 
   const canCreateTicket = true;
   const canUpdateTicket = currentUser?.role !== "guest";

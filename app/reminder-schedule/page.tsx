@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { setSession, clearSession, getSession, startSessionWatcher } from '@/lib/auth';
 import { isAdmin as checkIsAdmin } from '@/lib/constants';
+import { notifyReminderApproved } from '@/lib/notifications';
+import { logAudit } from '@/lib/audit';
 
 import {
   Priority, Status, RepeatType, Reminder, TeamUser, GuestUser,
@@ -984,6 +986,36 @@ jangan lupa peralatan & Semangat💪🏼
         await sendFonnteWA(salesUser.phone_number, salesMsg);
       }
     } catch { /* ignore WA error */ }
+
+    // ── In-app notification to the sales requester ──────────────────────────
+    try {
+      if (approveTarget.notes?.includes('[REQUEST SALES]')) {
+        // Find the sales user by name to get their id
+        const { data: salesUserFull } = await supabase
+          .from('users').select('id, full_name')
+          .eq('full_name', approveTarget.sales_name)
+          .in('role', ['guest', 'sales']).maybeSingle();
+        if (salesUserFull?.id) {
+          notifyReminderApproved(
+            salesUserFull.id, salesUserFull.full_name,
+            approveTarget.id, approveTarget.project_name,
+            approveDate || approveTarget.due_date,
+            currentUser?.full_name ?? 'Admin'
+          ).catch(() => {});
+        }
+      }
+    } catch { /* ignore */ }
+
+    // ── Audit log ─────────────────────────────────────────────────────────────
+    logAudit({
+      user_id: currentUser?.id ?? '',
+      user_name: currentUser?.full_name ?? '',
+      action: 'approve',
+      module: 'reminder',
+      target_id: approveTarget.id,
+      target_name: approveTarget.project_name,
+      new_value: assignee.full_name,
+    }).catch(() => {});
 
     setApproveTarget(null);
     setApproveAssignTo('');

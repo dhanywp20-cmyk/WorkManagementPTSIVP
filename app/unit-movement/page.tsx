@@ -160,6 +160,15 @@ function UnitMovementPageInner() {
     return Object.entries(c).map(([label,value],i)=>({label,value,color:COLORS[i%COLORS.length]})).sort((a,b)=>b.value-a.value);
   },[filteredLogs]);
 
+  // Open Loans: Keluar items with expected_return_date that have passed & not confirmed returned
+  const today = new Date().toISOString().split('T')[0];
+  const openLoans = useMemo(()=>logs.filter(l=>
+    l.status_barang === 'Keluar'
+    && !l.return_confirmed
+    && l.expected_return_date
+    && l.expected_return_date < today
+  ).sort((a,b)=>(a.expected_return_date??'').localeCompare(b.expected_return_date??'')),[logs, today]);
+
   // ─── Loading / Not Authenticated screen ────────────────────────────────────
 
   if (!appReady) return (
@@ -245,6 +254,80 @@ function UnitMovementPageInner() {
             </div>
           ))}
         </div>
+
+        {/* ── Open Loans Alert ── */}
+        {openLoans.length > 0 && (
+          <div className="rounded-2xl overflow-hidden animate-slide-up" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(239,68,68,0.3)',boxShadow:'0 4px 16px rgba(239,68,68,0.12)'}}>
+            <div className="flex items-center gap-3 px-5 py-3" style={{background:'rgba(239,68,68,0.07)',borderBottom:'1px solid rgba(239,68,68,0.15)'}}>
+              <span className="text-base select-none animate-pulse">⚠️</span>
+              <span className="font-bold text-sm text-red-700 flex-1">
+                Open Loan — {openLoans.length} barang belum dikembalikan (lewat tanggal)
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">{openLoans.length}</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm" style={{minWidth:700}}>
+                <thead>
+                  <tr style={{background:'#fef2f2',borderBottom:'1px solid #fecaca'}}>
+                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Project</th>
+                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Nama PTS</th>
+                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Type Barang</th>
+                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Serial Number</th>
+                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Tgl Keluar</th>
+                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Jatuh Tempo</th>
+                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Kondisi</th>
+                    {isAdmin && <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-red-400">Aksi</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {openLoans.map((loan, idx)=>{
+                    const daysLate = Math.max(0, Math.round((new Date().getTime() - new Date(loan.expected_return_date!).getTime())/(24*60*60*1000)));
+                    const typeLines = splitTypeLines(loan.type_barang);
+                    return (
+                      <tr key={loan.id} className="hover:bg-red-50/40 transition-colors" style={{borderBottom:'1px solid #fef2f2'}}>
+                        <td className="px-4 py-2.5 text-xs font-semibold text-gray-800">{loan.project_name||'-'}</td>
+                        <td className="px-4 py-2.5">
+                          <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg">{loan.nama_pts||'-'}</span>
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-gray-700">{typeLines.join(', ')||'-'}</td>
+                        <td className="px-4 py-2.5 text-[11px] font-mono text-gray-500">{loan.serial_number||'-'}</td>
+                        <td className="px-4 py-2.5 text-xs text-gray-600 whitespace-nowrap">{fmtDate(loan.tanggal)}</td>
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs font-bold text-red-700 whitespace-nowrap">{fmtDate(loan.expected_return_date!)}</span>
+                            {daysLate > 0 && (
+                              <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-red-100 text-red-700 whitespace-nowrap">+{daysLate}h</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          {loan.kondisi_barang
+                            ? <span className={`text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap`}
+                                style={loan.kondisi_barang==='Baik'
+                                  ? {background:'#d1fae5',color:'#065f46'}
+                                  : loan.kondisi_barang==='Perlu Service'
+                                  ? {background:'#fef3c7',color:'#92400e'}
+                                  : {background:'#fee2e2',color:'#991b1b'}}>
+                                {loan.kondisi_barang==='Baik'?'✅':loan.kondisi_barang==='Perlu Service'?'⚠️':'❌'} {loan.kondisi_barang}
+                              </span>
+                            : <span className="text-[10px] text-gray-300">—</span>}
+                        </td>
+                        {isAdmin && (
+                          <td className="px-4 py-2.5">
+                            <ActionGroup>
+                              <ViewIconBtn onClick={()=>setViewLog(loan)} label="Lihat" />
+                              <EditIconBtn onClick={()=>setEditLog(loan)} />
+                            </ActionGroup>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Pie Charts */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-zoom-in anim-d160">
