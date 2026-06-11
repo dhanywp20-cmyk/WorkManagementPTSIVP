@@ -3,10 +3,10 @@
 /**
  * analytics-dashboard/page.tsx  —  Analytics Platform
  *
- * Unified admin dashboard with 3 tabs:
- *   1. Command Center  — live stats, bottleneck alerts, My Tasks, Quick Access
- *   2. KPI Analytics   — full DashboardKPI component (original, unchanged)
- *   3. Audit Log       — audit_trail table: siapa ngubah apa, kapan
+ * Tab order (default: Dashboard Analytics first):
+ *   1. Dashboard Analytics — full DashboardKPI component (original KPI view)
+ *   2. Command Center      — live bottleneck alerts, My Tasks, Aktivitas Terbaru
+ *   3. Audit Log           — audit_trail + activity_logs (historical ticketing logs)
  */
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
@@ -26,12 +26,12 @@ interface User {
 interface TicketRow   { id: string; project_name: string; assign_name: string; status: string; date: string; created_at: string; }
 interface ReminderRow { id: string; project_name: string; notes: string; due_date: string; status: string; assign_name: string; assigned_to: string; category: string; created_at: string; }
 interface ProjectRow  { id: string; project_name: string; sales_name: string; status: string; created_at: string; }
-interface NotifRow    { id: string; title: string; body: string | null; created_at: string; }
 
 interface AuditRow {
   id: string; user_name: string; action: string; module: string;
   target_name: string | null; old_value: string | null; new_value: string | null;
   notes: string | null; created_at: string;
+  source: 'audit_trail' | 'activity_logs';
 }
 
 interface Stats {
@@ -40,11 +40,10 @@ interface Stats {
   overdueTickets: TicketRow[]; pendingReminders: ReminderRow[];
   pendingProjects: ProjectRow[];
   myOpenTickets: TicketRow[]; myTodayReminders: ReminderRow[];
-  systemNotifs: NotifRow[];
   activity: { id: string; label: string; sub: string; time: string; dot: string }[];
 }
 
-type Tab = 'command' | 'kpi' | 'audit';
+type Tab = 'kpi' | 'command' | 'audit';
 
 // ── Small helper components ───────────────────────────────────────────────────
 
@@ -125,14 +124,18 @@ const ACTION_STYLE: Record<string, { bg: string; color: string; border: string }
   create:        { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
   approve:       { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
   mark_done:     { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
+  Solved:        { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
   update:        { bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
   assign:        { bg: '#ede9fe', color: '#5b21b6', border: '#c4b5fd' },
   status_change: { bg: '#fef3c7', color: '#92400e', border: '#fcd34d' },
   export:        { bg: '#fef3c7', color: '#92400e', border: '#fcd34d' },
   delete:        { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' },
   reject:        { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' },
+  Overdue:       { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' },
   login:         { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' },
   logout:        { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' },
+  'In Progress': { bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
+  'Waiting Approval': { bg: '#fef3c7', color: '#92400e', border: '#fcd34d' },
 };
 
 const MODULE_ICON: Record<string, string> = {
@@ -143,8 +146,8 @@ const MODULE_ICON: Record<string, string> = {
 };
 
 // ── Tab button ────────────────────────────────────────────────────────────────
-function TabBtn({ id, label, icon, active, onClick, badge }: {
-  id: Tab; label: string; icon: string; active: boolean; onClick: () => void; badge?: number;
+function TabBtn({ label, icon, active, onClick, badge }: {
+  label: string; icon: string; active: boolean; onClick: () => void; badge?: number;
 }) {
   return (
     <button onClick={onClick}
@@ -169,10 +172,9 @@ function TabBtn({ id, label, icon, active, onClick, badge }: {
 function AnalyticsPlatform() {
   const [user,    setUser]    = useState<User | null>(null);
   const [auth,    setAuth]    = useState<'checking' | 'ok' | 'denied'>('checking');
-  const [tab,     setTab]     = useState<Tab>('command');
+  const [tab,     setTab]     = useState<Tab>('kpi');   // Default: Dashboard Analytics
   const [stats,   setStats]   = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [clock,   setClock]   = useState(new Date());
 
   // Audit log state
   const [auditRows,    setAuditRows]    = useState<AuditRow[]>([]);
@@ -182,11 +184,6 @@ function AnalyticsPlatform() {
   const [auditSearch,  setAuditSearch]  = useState('');
   const [auditPage,    setAuditPage]    = useState(0);
   const AUDIT_PAGE_SIZE = 30;
-
-  useEffect(() => {
-    const t = setInterval(() => setClock(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
 
   useEffect(() => {
     const u = getSession<User>();
@@ -201,24 +198,21 @@ function AnalyticsPlatform() {
   }, []);
 
   const today = new Date().toISOString().split('T')[0];
-  const isAdmin = user && ['admin','superadmin'].includes((user.role ?? '').toLowerCase());
 
   // ── Load Command Center stats ─────────────────────────────────────────────
   const loadStats = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
-      const [tRes, rRes, pRes, uRes, nRes] = await Promise.all([
+      const [tRes, rRes, pRes, uRes] = await Promise.all([
         supabase.from('tickets').select('id,project_name,assign_name,status,date,created_at').not('status','eq','Solved').order('created_at',{ascending:false}).limit(100),
         supabase.from('reminders').select('id,project_name,notes,due_date,status,assign_name,assigned_to,category,created_at').not('status','in','("done","cancelled")').order('created_at',{ascending:false}).limit(100),
         supabase.from('project_requests').select('id,project_name,sales_name,status,created_at').in('status',['pending','approved','in_progress']).order('created_at',{ascending:false}).limit(30),
         supabase.from('users').select('id',{count:'exact',head:true}).eq('team_type','Pending Approval'),
-        supabase.from('notifications').select('id,title,body,created_at').eq('user_id',user.id).eq('is_read',false).order('created_at',{ascending:false}).limit(10).then((r: any) => r).catch(() => ({ data: [] })),
       ]);
-      const tickets  = (tRes.data ?? []) as TicketRow[];
-      const reminders= (rRes.data ?? []) as ReminderRow[];
-      const projects = (pRes.data ?? []) as ProjectRow[];
-      const notifs   = (nRes as any).data ?? [] as NotifRow[];
+      const tickets   = (tRes.data ?? []) as TicketRow[];
+      const reminders = (rRes.data ?? []) as ReminderRow[];
+      const projects  = (pRes.data ?? []) as ProjectRow[];
       const overdueTickets   = tickets.filter(t => t.status === 'Overdue');
       const openTickets      = tickets.filter(t => !['Solved','Overdue'].includes(t.status));
       const pendingReminders = reminders.filter(r => !r.assigned_to || r.assigned_to === '');
@@ -236,23 +230,77 @@ function AnalyticsPlatform() {
         overdueTickets: overdueTickets.slice(0,6), pendingReminders: pendingReminders.slice(0,6),
         pendingProjects: pendingProjects.slice(0,6),
         myOpenTickets: myTickets.slice(0,6), myTodayReminders: myToday.slice(0,6),
-        systemNotifs: notifs.slice(0,5), activity,
+        activity,
       });
     } catch (e) { console.error('[CC]', e); }
     setLoading(false);
   }, [user, today]);
 
-  // ── Load Audit Log ────────────────────────────────────────────────────────
+  // ── Load Audit Log — gabungan audit_trail + activity_logs ────────────────
   const loadAudit = useCallback(async () => {
     setAuditLoading(true);
     try {
-      let q = supabase.from('audit_trail').select('id,user_name,action,module,target_name,old_value,new_value,notes,created_at').order('created_at',{ascending:false}).limit(200);
-      if (auditModule !== 'All') q = q.eq('module', auditModule);
-      if (auditAction !== 'All') q = q.eq('action', auditAction);
-      const { data } = await q;
-      setAuditRows((data ?? []) as AuditRow[]);
+      // 1. New audit_trail table (platform-wide structured audit)
+      const auditQ = supabase
+        .from('audit_trail')
+        .select('id,user_name,action,module,target_name,old_value,new_value,notes,created_at')
+        .order('created_at', { ascending: false })
+        .limit(300);
+
+      // 2. Legacy activity_logs table (ticketing per-ticket activity — historical)
+      const actQ = supabase
+        .from('activity_logs')
+        .select('id,handler_name,action_taken,new_status,notes,created_at,ticket_id')
+        .order('created_at', { ascending: false })
+        .limit(300);
+
+      const [auditRes, actRes] = await Promise.all([auditQ, actQ]);
+
+      // Map audit_trail rows
+      const fromAudit: AuditRow[] = ((auditRes.data ?? []) as any[]).map(r => ({
+        id:          r.id,
+        user_name:   r.user_name ?? '—',
+        action:      r.action ?? '—',
+        module:      r.module ?? '—',
+        target_name: r.target_name ?? null,
+        old_value:   r.old_value ?? null,
+        new_value:   r.new_value ?? null,
+        notes:       r.notes ?? null,
+        created_at:  r.created_at,
+        source:      'audit_trail' as const,
+      }));
+
+      // Map activity_logs rows → same AuditRow shape
+      const fromActivity: AuditRow[] = ((actRes.data ?? []) as any[]).map(r => ({
+        id:          r.id,
+        user_name:   r.handler_name ?? '—',
+        action:      r.action_taken ?? r.new_status ?? '—',
+        module:      'ticket',
+        target_name: r.ticket_id ? `Tiket #${String(r.ticket_id).slice(0,8)}` : null,
+        old_value:   null,
+        new_value:   r.new_status ?? null,
+        notes:       r.notes ?? null,
+        created_at:  r.created_at,
+        source:      'activity_logs' as const,
+      }));
+
+      // Merge + sort by created_at desc
+      const merged = [...fromAudit, ...fromActivity]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      // Apply module/action filters
+      const filtered = merged.filter(row => {
+        const moduleMatch = auditModule === 'All' || row.module === auditModule;
+        const actionMatch = auditAction === 'All' || row.action === auditAction || row.new_value === auditAction;
+        return moduleMatch && actionMatch;
+      });
+
+      setAuditRows(filtered);
       setAuditPage(0);
-    } catch { setAuditRows([]); }
+    } catch (e) {
+      console.error('[Audit]', e);
+      setAuditRows([]);
+    }
     setAuditLoading(false);
   }, [auditModule, auditAction]);
 
@@ -272,28 +320,27 @@ function AnalyticsPlatform() {
     loadAudit();
   }, [auth, tab, loadAudit]);
 
-  const nav = (url: string) => { if (window.parent !== window) window.parent.postMessage({ type: 'CC_NAVIGATE', url }, '*'); };
-
-  const fmtD = (d: string) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); } catch { return d; } };
+  const fmtD  = (d: string) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); } catch { return d; } };
   const fmtDT = (d: string) => { if (!d) return '—'; try { return new Date(d).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); } catch { return d; } };
-  const rel = (d: string) => { if (!d) return ''; const m=Math.floor((Date.now()-new Date(d).getTime())/60000); if(m<1)return 'Baru'; if(m<60)return `${m}m`; const h=Math.floor(m/60); if(h<24)return `${h}j`; return `${Math.floor(h/24)}h`; };
-  const greeting = () => { const h=clock.getHours(); return h<11?'Selamat Pagi':h<15?'Selamat Siang':h<18?'Selamat Sore':'Selamat Malam'; };
+  const rel   = (d: string) => { if (!d) return ''; const m=Math.floor((Date.now()-new Date(d).getTime())/60000); if(m<1)return 'Baru'; if(m<60)return `${m}m`; const h=Math.floor(m/60); if(h<24)return `${h}j`; return `${Math.floor(h/24)}h`; };
+  const greeting = () => { const h = new Date().getHours(); return h<11?'Selamat Pagi':h<15?'Selamat Siang':h<18?'Selamat Sore':'Selamat Malam'; };
 
   const totalAlerts = (stats?.ticketOverdue ?? 0) + (stats?.reminderPending ?? 0) + (stats?.userPending ?? 0);
 
-  // Audit filtered + paged
+  // Audit filtered + paged (search on top of already-filtered rows)
   const auditFiltered = auditRows.filter(a => {
     if (!auditSearch) return true;
     const q = auditSearch.toLowerCase();
     return (a.user_name ?? '').toLowerCase().includes(q)
       || (a.target_name ?? '').toLowerCase().includes(q)
-      || (a.module ?? '').toLowerCase().includes(q);
+      || (a.module ?? '').toLowerCase().includes(q)
+      || (a.action ?? '').toLowerCase().includes(q);
   });
-  const auditPaged = auditFiltered.slice(auditPage * AUDIT_PAGE_SIZE, (auditPage + 1) * AUDIT_PAGE_SIZE);
+  const auditPaged      = auditFiltered.slice(auditPage * AUDIT_PAGE_SIZE, (auditPage + 1) * AUDIT_PAGE_SIZE);
   const auditTotalPages = Math.ceil(auditFiltered.length / AUDIT_PAGE_SIZE);
 
   const AUDIT_MODULES = ['All','ticket','reminder','project','piket','kpi','incentive','movement','user','learning','system'];
-  const AUDIT_ACTIONS = ['All','create','update','delete','approve','reject','assign','status_change','login','logout','export','mark_done'];
+  const AUDIT_ACTIONS = ['All','create','update','delete','approve','reject','assign','status_change','login','logout','export','mark_done','Solved','Overdue','In Progress','Waiting Approval'];
 
   // ── Auth screens ──────────────────────────────────────────────────────────
   if (auth === 'denied') return (
@@ -317,7 +364,7 @@ function AnalyticsPlatform() {
   // ── RENDER ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen overflow-y-auto bg-cover bg-center bg-fixed" style={{backgroundImage:'url(/IVP_Background.png)'}}>
-      <div className="max-w-[1280px] mx-auto px-4 py-5 pb-8 space-y-4">
+      <div className="w-full px-4 py-5 pb-8 space-y-4">
 
         {/* ── HEADER ── */}
         <div className="rounded-2xl px-5 py-4"
@@ -331,12 +378,8 @@ function AnalyticsPlatform() {
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Work Management PTS</p>
                 <p className="text-xl font-black text-gray-900 leading-tight">Analytics Platform</p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {greeting()}, <span className="font-semibold text-gray-600">{user.full_name}</span>
-                  <span className="mx-1.5 opacity-40">·</span>
-                  <span className="font-bold text-amber-600 tabular-nums">
-                    {clock.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
-                  </span>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {greeting()}, <span className="font-semibold text-gray-700">{user.full_name}</span>
                 </p>
               </div>
             </div>
@@ -362,14 +405,24 @@ function AnalyticsPlatform() {
 
           {/* Tab navigation */}
           <div className="flex gap-2 mt-4 flex-wrap">
-            <TabBtn id="command" label="Command Center" icon="🏠" active={tab==='command'} onClick={() => setTab('command')} badge={totalAlerts || undefined} />
-            <TabBtn id="kpi"     label="KPI Analytics"  icon="📊" active={tab==='kpi'}     onClick={() => setTab('kpi')} />
-            <TabBtn id="audit"   label="Audit Log"      icon="📋" active={tab==='audit'}   onClick={() => setTab('audit')} />
+            <TabBtn label="Dashboard Analytics" icon="📊" active={tab==='kpi'}     onClick={() => setTab('kpi')} />
+            <TabBtn label="Command Center"      icon="🏠" active={tab==='command'} onClick={() => setTab('command')} badge={totalAlerts || undefined} />
+            <TabBtn label="Audit Log"           icon="📋" active={tab==='audit'}   onClick={() => setTab('audit')} badge={auditRows.length > 0 ? auditRows.length : undefined} />
           </div>
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* TAB 1 — COMMAND CENTER                                         */}
+        {/* TAB 1 — DASHBOARD ANALYTICS (original DashboardKPI, unchanged) */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {tab === 'kpi' && (
+          <div className="rounded-2xl overflow-hidden"
+            style={{minHeight:'75vh',background:'rgba(255,255,255,0.97)',boxShadow:'0 4px 24px rgba(0,0,0,0.1)'}}>
+            <DashboardKPI currentUser={user as unknown as DashUser} />
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {/* TAB 2 — COMMAND CENTER                                          */}
         {/* ═══════════════════════════════════════════════════════════════ */}
         {tab === 'command' && (
           <div className="space-y-4">
@@ -378,28 +431,11 @@ function AnalyticsPlatform() {
               : <>
                 {/* Stat Cards */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <StatCard icon="🎫" label="Tiket Open"     value={stats?.ticketOpen ?? 0}      sub={`${stats?.ticketOverdue??0} overdue`}           gradient="linear-gradient(135deg,#dc2626,#991b1b)" alert={stats?.ticketOverdue} />
-                  <StatCard icon="📅" label="Jadwal Pending" value={stats?.reminderPending ?? 0} sub="Belum di-assign"                                gradient="linear-gradient(135deg,#2563eb,#1e40af)" alert={stats?.reminderPending} />
-                  <StatCard icon="🏗️" label="Proyek Pending" value={stats?.projectPending ?? 0} sub="Design request"                                  gradient="linear-gradient(135deg,#7c3aed,#4c1d95)" alert={stats?.projectPending} />
-                  <StatCard icon="👥" label="User Pending"   value={stats?.userPending ?? 0}    sub="Menunggu aktivasi"                               gradient="linear-gradient(135deg,#d97706,#92400e)" alert={stats?.userPending} />
+                  <StatCard icon="🎫" label="Tiket Open"     value={stats?.ticketOpen ?? 0}      sub={`${stats?.ticketOverdue??0} overdue`}  gradient="linear-gradient(135deg,#dc2626,#991b1b)" alert={stats?.ticketOverdue} />
+                  <StatCard icon="📅" label="Jadwal Pending" value={stats?.reminderPending ?? 0} sub="Belum di-assign"                       gradient="linear-gradient(135deg,#2563eb,#1e40af)" alert={stats?.reminderPending} />
+                  <StatCard icon="🏗️" label="Proyek Pending" value={stats?.projectPending ?? 0} sub="Design request"                        gradient="linear-gradient(135deg,#7c3aed,#4c1d95)" alert={stats?.projectPending} />
+                  <StatCard icon="👥" label="User Pending"   value={stats?.userPending ?? 0}    sub="Menunggu aktivasi"                    gradient="linear-gradient(135deg,#d97706,#92400e)" alert={stats?.userPending} />
                 </div>
-
-                {/* Personal notifs */}
-                {(stats?.systemNotifs ?? []).length > 0 && (
-                  <div className="rounded-2xl px-4 py-3 space-y-2" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(245,158,11,0.3)'}}>
-                    <p className="text-xs font-bold text-amber-600 uppercase tracking-widest">🔔 Notifikasi Untukmu</p>
-                    {(stats?.systemNotifs ?? []).map(n => (
-                      <div key={n.id} className="flex items-start gap-3 py-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-800 truncate">{n.title}</p>
-                          {n.body && <p className="text-xs text-gray-400 truncate">{n.body}</p>}
-                        </div>
-                        <span className="text-[10px] text-gray-300 whitespace-nowrap">{rel(n.created_at)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
 
                 {/* Bottleneck 2×2 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -449,54 +485,23 @@ function AnalyticsPlatform() {
                       ))
                   }
                 </div>
-
-                {/* Quick Access */}
-                <div className="rounded-2xl p-4" style={{background:'rgba(255,255,255,0.94)',backdropFilter:'blur(12px)',border:'1px solid rgba(255,255,255,0.55)'}}>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.14em] mb-3">⚡ Quick Access</p>
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                    {[
-                      { icon:'🎫', label:'Ticketing',  url:'/ticketing' },
-                      { icon:'🗓️', label:'Reminder',   url:'/reminder-schedule' },
-                      { icon:'🏗️', label:'Design Req', url:'/form-require-project' },
-                      { icon:'📊', label:'KPI Team',   url:'/kpi-team' },
-                      { icon:'💰', label:'Insentif',   url:'/incentive-pts' },
-                      { icon:'🎓', label:'Learning',   url:'/learning-center' },
-                    ].map((item, i) => (
-                      <button key={i} onClick={() => nav(item.url)}
-                        className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl transition-all hover:scale-105 active:scale-95 select-none"
-                        style={{background:'rgba(0,0,0,0.04)',border:'1px solid rgba(0,0,0,0.06)'}}
-                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background='rgba(200,134,29,0.09)'}
-                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background='rgba(0,0,0,0.04)'}>
-                        <span className="text-2xl">{item.icon}</span>
-                        <span className="text-xs font-semibold text-gray-600 text-center leading-tight">{item.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </>
             }
           </div>
         )}
 
         {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* TAB 2 — KPI ANALYTICS (original DashboardKPI, unchanged)       */}
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        {tab === 'kpi' && (
-          <div className="rounded-2xl overflow-hidden" style={{minHeight:'75vh',background:'rgba(255,255,255,0.97)',boxShadow:'0 4px 24px rgba(0,0,0,0.1)'}}>
-            <DashboardKPI currentUser={user as unknown as DashUser} />
-          </div>
-        )}
-
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* TAB 3 — AUDIT LOG                                               */}
+        {/* TAB 3 — AUDIT LOG  (audit_trail + activity_logs)               */}
         {/* ═══════════════════════════════════════════════════════════════ */}
         {tab === 'audit' && (
-          <div className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 2px 12px rgba(0,0,0,0.06)'}}>
+          <div className="rounded-2xl overflow-hidden"
+            style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 2px 12px rgba(0,0,0,0.06)'}}>
             {/* Filters */}
             <div className="flex flex-wrap items-center gap-2 px-5 py-4 border-b border-gray-100">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mr-1">Audit Trail</span>
               <input className="px-3 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 focus:bg-white w-44"
-                placeholder="🔍 User / Target / Modul..." value={auditSearch} onChange={e => { setAuditSearch(e.target.value); setAuditPage(0); }} />
+                placeholder="🔍 User / Target / Aksi..." value={auditSearch}
+                onChange={e => { setAuditSearch(e.target.value); setAuditPage(0); }} />
               <select className="px-2.5 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
                 value={auditModule} onChange={e => { setAuditModule(e.target.value); setAuditPage(0); }}>
                 {AUDIT_MODULES.map(m => <option key={m} value={m}>{m === 'All' ? 'Semua Modul' : m}</option>)}
@@ -510,7 +515,12 @@ function AnalyticsPlatform() {
                 <svg className={`w-3.5 h-3.5 ${auditLoading?'animate-spin':''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                 Refresh
               </button>
-              <span className="text-[10px] text-gray-400 ml-auto">{auditFiltered.length} log ditemukan</span>
+              <div className="ml-auto flex items-center gap-2">
+                <span className="text-[10px] text-gray-400">{auditFiltered.length} log</span>
+                {/* Source legend */}
+                <span className="text-[10px] px-1.5 py-0.5 rounded" style={{background:'#ede9fe',color:'#5b21b6',border:'1px solid #c4b5fd'}}>audit_trail</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded" style={{background:'#dbeafe',color:'#1e40af',border:'1px solid #93c5fd'}}>activity_logs</span>
+              </div>
             </div>
 
             {/* Table */}
@@ -520,42 +530,44 @@ function AnalyticsPlatform() {
               ? <div className="flex flex-col items-center py-16 gap-2">
                   <span className="text-4xl">📋</span>
                   <p className="text-sm text-gray-500 font-medium">Belum ada audit log</p>
-                  <p className="text-xs text-gray-400">Log akan muncul setelah ada aksi di platform</p>
+                  <p className="text-xs text-gray-400">Log muncul setelah ada aksi di platform</p>
                 </div>
               : <div className="overflow-x-auto">
-                  <table className="w-full text-sm" style={{minWidth:720}}>
+                  <table className="w-full text-sm" style={{minWidth:750}}>
                     <thead>
                       <tr style={{background:'#f8fafc',borderBottom:'1px solid #e2e8f0'}}>
-                        {['Waktu','User','Aksi','Modul','Target','Perubahan','Catatan'].map(h => (
-                          <th key={h} className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400">{h}</th>
+                        {['Waktu','User','Aksi','Modul','Target','Perubahan','Catatan','Sumber'].map(h => (
+                          <th key={h} className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {auditPaged.map((a, idx) => {
                         const as = ACTION_STYLE[a.action] ?? { bg:'#f1f5f9', color:'#475569', border:'#cbd5e1' };
+                        const isLegacy = a.source === 'activity_logs';
                         return (
-                          <tr key={a.id} className="hover:bg-amber-50/30 transition-colors" style={{borderBottom:'1px solid #f1f5f9',background:idx%2===0?'white':'#fafafa'}}>
-                            <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap tabular-nums">{fmtDT(a.created_at)}</td>
-                            <td className="px-4 py-3">
+                          <tr key={`${a.source}-${a.id}`} className="hover:bg-amber-50/30 transition-colors"
+                            style={{borderBottom:'1px solid #f1f5f9',background:idx%2===0?'white':'#fafafa'}}>
+                            <td className="px-4 py-2.5 text-xs text-gray-500 whitespace-nowrap tabular-nums">{fmtDT(a.created_at)}</td>
+                            <td className="px-4 py-2.5">
                               <span className="text-xs font-semibold text-gray-800">{a.user_name || '—'}</span>
                             </td>
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-2.5">
                               <span className="text-[10px] font-black px-2 py-0.5 rounded whitespace-nowrap"
                                 style={{background:as.bg,color:as.color,border:`1px solid ${as.border}`}}>
                                 {a.action}
                               </span>
                             </td>
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-2.5">
                               <span className="text-xs text-gray-600 flex items-center gap-1">
                                 <span>{MODULE_ICON[a.module] ?? '📁'}</span>
                                 {a.module}
                               </span>
                             </td>
-                            <td className="px-4 py-3 max-w-[160px]">
+                            <td className="px-4 py-2.5 max-w-[160px]">
                               <span className="text-xs text-gray-700 truncate block" title={a.target_name ?? ''}>{a.target_name || '—'}</span>
                             </td>
-                            <td className="px-4 py-3 max-w-[180px]">
+                            <td className="px-4 py-2.5 max-w-[180px]">
                               {(a.old_value || a.new_value)
                                 ? <div className="flex items-center gap-1 flex-wrap">
                                     {a.old_value && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-50 text-red-600 border border-red-100 line-through">{a.old_value}</span>}
@@ -564,8 +576,16 @@ function AnalyticsPlatform() {
                                   </div>
                                 : <span className="text-[10px] text-gray-300">—</span>}
                             </td>
-                            <td className="px-4 py-3 max-w-[160px]">
+                            <td className="px-4 py-2.5 max-w-[160px]">
                               <span className="text-[11px] text-gray-400 truncate block" title={a.notes ?? ''}>{a.notes || '—'}</span>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap"
+                                style={isLegacy
+                                  ? {background:'#dbeafe',color:'#1e40af',border:'1px solid #93c5fd'}
+                                  : {background:'#ede9fe',color:'#5b21b6',border:'1px solid #c4b5fd'}}>
+                                {isLegacy ? 'activity' : 'audit'}
+                              </span>
                             </td>
                           </tr>
                         );
@@ -581,7 +601,7 @@ function AnalyticsPlatform() {
                 <button onClick={() => setAuditPage(p => Math.max(0, p-1))} disabled={auditPage === 0}
                   className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40">← Prev</button>
                 <span className="text-xs text-gray-400">
-                  Hal {auditPage + 1} dari {auditTotalPages} · {auditFiltered.length} log
+                  Hal {auditPage+1} dari {auditTotalPages} · {auditFiltered.length} log
                 </span>
                 <button onClick={() => setAuditPage(p => Math.min(auditTotalPages-1, p+1))} disabled={auditPage >= auditTotalPages-1}
                   className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40">Next →</button>
