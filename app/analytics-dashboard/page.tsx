@@ -1,37 +1,41 @@
 'use client';
 
 /**
- * analytics-dashboard/page.tsx  —  Command Center
+ * analytics-dashboard/page.tsx  —  Analytics Platform
  *
- * Replaces the single-KPI view with a multi-source Command Center:
- *   • Live stats (tickets, reminders, projects, pending users)
- *   • Bottleneck alerts (overdue, stale, pending)
- *   • My Tasks (personal task list for current user)
- *   • Recent activity feed
- *   • Quick Access shortcuts
- *
- * Navigation: clicking Quick Access sends postMessage to parent frame
- * which is caught by dashboard/page.tsx and handled via handleMenuClick.
+ * Unified admin dashboard with 3 tabs:
+ *   1. Command Center  — live stats, bottleneck alerts, My Tasks, Quick Access
+ *   2. KPI Analytics   — full DashboardKPI component (original, unchanged)
+ *   3. Audit Log       — audit_trail table: siapa ngubah apa, kapan
  */
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
+import DashboardKPI from '@/app/kpi-team/_components/DashboardKPI';
+import { User as DashUser } from '@/app/dashboard/_components/shared';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface User {
   id: string; full_name: string; role: string;
   team_type?: string; jabatan?: string; allowed_menus?: string[];
+  username?: string; sales_division?: string;
 }
 
 interface TicketRow   { id: string; project_name: string; assign_name: string; status: string; date: string; created_at: string; }
 interface ReminderRow { id: string; project_name: string; notes: string; due_date: string; status: string; assign_name: string; assigned_to: string; category: string; created_at: string; }
-interface ProjectRow  { id: string; project_name: string; sales_name: string; status: string; created_at: string; requester_name?: string; }
-interface NotifRow    { id: string; type: string; title: string; body: string | null; action_url: string | null; created_by: string | null; created_at: string; }
+interface ProjectRow  { id: string; project_name: string; sales_name: string; status: string; created_at: string; }
+interface NotifRow    { id: string; title: string; body: string | null; created_at: string; }
+
+interface AuditRow {
+  id: string; user_name: string; action: string; module: string;
+  target_name: string | null; old_value: string | null; new_value: string | null;
+  notes: string | null; created_at: string;
+}
 
 interface Stats {
-  ticketOpen: number;  ticketOverdue: number;
+  ticketOpen: number; ticketOverdue: number;
   reminderPending: number; projectPending: number; userPending: number;
   overdueTickets: TicketRow[]; pendingReminders: ReminderRow[];
   pendingProjects: ProjectRow[];
@@ -40,11 +44,12 @@ interface Stats {
   activity: { id: string; label: string; sub: string; time: string; dot: string }[];
 }
 
-// ── Helper components ─────────────────────────────────────────────────────────
+type Tab = 'command' | 'kpi' | 'audit';
+
+// ── Small helper components ───────────────────────────────────────────────────
 
 function StatCard({ icon, label, value, sub, gradient, alert }: {
-  icon: string; label: string; value: number; sub?: string;
-  gradient: string; alert?: number;
+  icon: string; label: string; value: number; sub?: string; gradient: string; alert?: number;
 }) {
   return (
     <div className="rounded-2xl p-4 relative overflow-hidden"
@@ -79,9 +84,7 @@ function Panel({ title, icon, color, borderClr, count, children }: {
           </span>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto max-h-56 p-3 space-y-1.5">
-        {children}
-      </div>
+      <div className="flex-1 overflow-y-auto max-h-56 p-3 space-y-1.5">{children}</div>
     </div>
   );
 }
@@ -117,194 +120,219 @@ function Row({ dot, title, sub, badge, badgeBg, badgeColor, badgeBorder }: {
   );
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+// ── Action badge colors ───────────────────────────────────────────────────────
+const ACTION_STYLE: Record<string, { bg: string; color: string; border: string }> = {
+  create:        { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
+  approve:       { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
+  mark_done:     { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
+  update:        { bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
+  assign:        { bg: '#ede9fe', color: '#5b21b6', border: '#c4b5fd' },
+  status_change: { bg: '#fef3c7', color: '#92400e', border: '#fcd34d' },
+  export:        { bg: '#fef3c7', color: '#92400e', border: '#fcd34d' },
+  delete:        { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' },
+  reject:        { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' },
+  login:         { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' },
+  logout:        { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' },
+};
 
-function CommandCenter() {
+const MODULE_ICON: Record<string, string> = {
+  ticket: '🎫', reminder: '📅', project: '🏗️', piket: '🏪',
+  kpi: '📊', incentive: '💰', movement: '🚚', user: '👥',
+  learning: '🎓', 'tech-note': '📝', 'form-review': '⭐',
+  'daily-report': '📈', system: '⚙️',
+};
+
+// ── Tab button ────────────────────────────────────────────────────────────────
+function TabBtn({ id, label, icon, active, onClick, badge }: {
+  id: Tab; label: string; icon: string; active: boolean; onClick: () => void; badge?: number;
+}) {
+  return (
+    <button onClick={onClick}
+      className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all relative whitespace-nowrap"
+      style={active
+        ? { background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white', boxShadow: '0 4px 14px rgba(245,158,11,0.35)' }
+        : { background: 'rgba(0,0,0,0.04)', color: '#6b7280' }}>
+      <span className="select-none">{icon}</span>
+      {label}
+      {badge !== undefined && badge > 0 && (
+        <span className="ml-1 min-w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-black px-1"
+          style={{ background: active ? 'rgba(255,255,255,0.3)' : '#ef4444', color: 'white' }}>
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
+    </button>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
+function AnalyticsPlatform() {
   const [user,    setUser]    = useState<User | null>(null);
   const [auth,    setAuth]    = useState<'checking' | 'ok' | 'denied'>('checking');
+  const [tab,     setTab]     = useState<Tab>('command');
   const [stats,   setStats]   = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [clock,   setClock]   = useState(new Date());
 
-  // Live clock
+  // Audit log state
+  const [auditRows,    setAuditRows]    = useState<AuditRow[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditModule,  setAuditModule]  = useState('All');
+  const [auditAction,  setAuditAction]  = useState('All');
+  const [auditSearch,  setAuditSearch]  = useState('');
+  const [auditPage,    setAuditPage]    = useState(0);
+  const AUDIT_PAGE_SIZE = 30;
+
   useEffect(() => {
     const t = setInterval(() => setClock(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  // Auth
   useEffect(() => {
     const u = getSession<User>();
-    if (!u) {
-      const tgt = window.top !== window ? window.top : window;
-      if (tgt) tgt.location.href = '/dashboard';
-      return;
-    }
+    if (!u) { const tgt = window.top !== window ? window.top : window; if (tgt) tgt.location.href = '/dashboard'; return; }
     const r = (u.role ?? '').toLowerCase();
-    const isAdmin   = ['admin', 'superadmin'].includes(r);
-    const isPTSSup  = r === 'team' && u.jabatan === 'Supervisor';
-    const isSalesSup= ['guest', 'sales'].includes(r)
-                    && ['Supervisor','Manager','Deputy General Manager','General Manager','Direktur']
-                       .includes(u.jabatan ?? '');
-    const hasAccess = r === 'team' && (u.allowed_menus ?? []).includes('dashboard');
-    if (!isAdmin && !isPTSSup && !isSalesSup && !hasAccess) { setAuth('denied'); return; }
-    setUser(u);
-    setAuth('ok');
+    const ok = ['admin','superadmin'].includes(r)
+      || (r === 'team' && u.jabatan === 'Supervisor')
+      || (['guest','sales'].includes(r) && ['Supervisor','Manager','Deputy General Manager','General Manager','Direktur'].includes(u.jabatan ?? ''))
+      || (r === 'team' && (u.allowed_menus ?? []).includes('dashboard'));
+    setUser(u); setAuth(ok ? 'ok' : 'denied');
     return startSessionWatcher();
   }, []);
 
-  const today   = new Date().toISOString().split('T')[0];
-  const isAdmin = user && ['admin', 'superadmin'].includes((user.role ?? '').toLowerCase());
+  const today = new Date().toISOString().split('T')[0];
+  const isAdmin = user && ['admin','superadmin'].includes((user.role ?? '').toLowerCase());
 
-  const load = useCallback(async () => {
+  // ── Load Command Center stats ─────────────────────────────────────────────
+  const loadStats = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
       const [tRes, rRes, pRes, uRes, nRes] = await Promise.all([
-        // Tickets — non-solved
-        supabase.from('tickets')
-          .select('id,project_name,assign_name,status,date,created_at')
-          .not('status', 'eq', 'Solved')
-          .order('created_at', { ascending: false }).limit(100),
-
-        // Reminders — active
-        supabase.from('reminders')
-          .select('id,project_name,notes,due_date,status,assign_name,assigned_to,category,created_at')
-          .not('status', 'in', '("done","cancelled")')
-          .order('created_at', { ascending: false }).limit(100),
-
-        // Design project requests — active
-        supabase.from('project_requests')
-          .select('id,project_name,sales_name,status,created_at,requester_name')
-          .in('status', ['pending', 'approved', 'in_progress'])
-          .order('created_at', { ascending: false }).limit(30),
-
-        // Pending users
-        supabase.from('users')
-          .select('id', { count: 'exact', head: true })
-          .eq('team_type', 'Pending Approval'),
-
-        // System notifications for this user (if notifications table exists)
-        supabase.from('notifications')
-          .select('id,type,title,body,action_url,created_by,created_at')
-          .eq('user_id', user.id).eq('is_read', false)
-          .order('created_at', { ascending: false }).limit(10)
-          .then((r: any) => r).catch(() => ({ data: [] })),
+        supabase.from('tickets').select('id,project_name,assign_name,status,date,created_at').not('status','eq','Solved').order('created_at',{ascending:false}).limit(100),
+        supabase.from('reminders').select('id,project_name,notes,due_date,status,assign_name,assigned_to,category,created_at').not('status','in','("done","cancelled")').order('created_at',{ascending:false}).limit(100),
+        supabase.from('project_requests').select('id,project_name,sales_name,status,created_at').in('status',['pending','approved','in_progress']).order('created_at',{ascending:false}).limit(30),
+        supabase.from('users').select('id',{count:'exact',head:true}).eq('team_type','Pending Approval'),
+        supabase.from('notifications').select('id,title,body,created_at').eq('user_id',user.id).eq('is_read',false).order('created_at',{ascending:false}).limit(10).then((r: any) => r).catch(() => ({ data: [] })),
       ]);
-
       const tickets  = (tRes.data ?? []) as TicketRow[];
       const reminders= (rRes.data ?? []) as ReminderRow[];
       const projects = (pRes.data ?? []) as ProjectRow[];
-      const userPend = (uRes as any).count ?? 0;
       const notifs   = (nRes as any).data ?? [] as NotifRow[];
-
-      const overdueTickets  = tickets.filter(t => t.status === 'Overdue');
-      const openTickets     = tickets.filter(t => !['Solved','Overdue'].includes(t.status));
-      const pendingReminders= reminders.filter(r => !r.assigned_to || r.assigned_to === '');
-      const pendingProjects = projects.filter(p => p.status === 'pending');
-      const myTickets       = tickets.filter(t => t.assign_name === user.full_name && !['Solved'].includes(t.status));
-      const myToday         = reminders.filter(r => r.assign_name === user.full_name && r.due_date === today);
-
+      const overdueTickets   = tickets.filter(t => t.status === 'Overdue');
+      const openTickets      = tickets.filter(t => !['Solved','Overdue'].includes(t.status));
+      const pendingReminders = reminders.filter(r => !r.assigned_to || r.assigned_to === '');
+      const pendingProjects  = projects.filter(p => p.status === 'pending');
+      const myTickets        = tickets.filter(t => t.assign_name === user.full_name && t.status !== 'Solved');
+      const myToday          = reminders.filter(r => r.assign_name === user.full_name && r.due_date === today);
       const activity = [
-        ...tickets.slice(0,5).map(t => ({ id:t.id, label:t.project_name, sub:`🎫 ${t.assign_name} · ${t.status}`, time:t.created_at, dot:'#dc2626' })),
-        ...reminders.filter(r=>r.assign_name).slice(0,5).map(r => ({ id:r.id, label:r.project_name, sub:`📅 ${r.category} · ${r.assign_name}`, time:r.created_at, dot:'#2563eb' })),
+        ...tickets.slice(0,4).map(t => ({ id:t.id, label:t.project_name, sub:`🎫 ${t.assign_name} · ${t.status}`, time:t.created_at, dot:'#dc2626' })),
+        ...reminders.filter(r=>r.assign_name).slice(0,4).map(r => ({ id:r.id, label:r.project_name, sub:`📅 ${r.category} · ${r.assign_name}`, time:r.created_at, dot:'#2563eb' })),
       ].sort((a,b) => new Date(b.time).getTime()-new Date(a.time).getTime()).slice(0,8);
-
       setStats({
         ticketOpen: openTickets.length, ticketOverdue: overdueTickets.length,
-        reminderPending: pendingReminders.length, projectPending: pendingProjects.length, userPending: userPend,
+        reminderPending: pendingReminders.length, projectPending: pendingProjects.length,
+        userPending: (uRes as any).count ?? 0,
         overdueTickets: overdueTickets.slice(0,6), pendingReminders: pendingReminders.slice(0,6),
         pendingProjects: pendingProjects.slice(0,6),
         myOpenTickets: myTickets.slice(0,6), myTodayReminders: myToday.slice(0,6),
         systemNotifs: notifs.slice(0,5), activity,
       });
-    } catch (e) {
-      console.error('[CC] load error:', e);
-    }
+    } catch (e) { console.error('[CC]', e); }
     setLoading(false);
   }, [user, today]);
 
+  // ── Load Audit Log ────────────────────────────────────────────────────────
+  const loadAudit = useCallback(async () => {
+    setAuditLoading(true);
+    try {
+      let q = supabase.from('audit_trail').select('id,user_name,action,module,target_name,old_value,new_value,notes,created_at').order('created_at',{ascending:false}).limit(200);
+      if (auditModule !== 'All') q = q.eq('module', auditModule);
+      if (auditAction !== 'All') q = q.eq('action', auditAction);
+      const { data } = await q;
+      setAuditRows((data ?? []) as AuditRow[]);
+      setAuditPage(0);
+    } catch { setAuditRows([]); }
+    setAuditLoading(false);
+  }, [auditModule, auditAction]);
+
   useEffect(() => {
     if (auth !== 'ok' || !user) return;
-    load();
+    loadStats();
     const chs = [
-      supabase.channel('cc-t').on('postgres_changes',{event:'*',schema:'public',table:'tickets'},load).subscribe(),
-      supabase.channel('cc-r').on('postgres_changes',{event:'*',schema:'public',table:'reminders'},load).subscribe(),
-      supabase.channel('cc-p').on('postgres_changes',{event:'*',schema:'public',table:'project_requests'},load).subscribe(),
+      supabase.channel('cc-t').on('postgres_changes',{event:'*',schema:'public',table:'tickets'},loadStats).subscribe(),
+      supabase.channel('cc-r').on('postgres_changes',{event:'*',schema:'public',table:'reminders'},loadStats).subscribe(),
+      supabase.channel('cc-p').on('postgres_changes',{event:'*',schema:'public',table:'project_requests'},loadStats).subscribe(),
     ];
     return () => { chs.forEach(c => supabase.removeChannel(c)); };
-  }, [auth, user, load]);
+  }, [auth, user, loadStats]);
 
-  // Navigate parent
-  const nav = (url: string) => {
-    if (window.parent !== window) window.parent.postMessage({ type: 'CC_NAVIGATE', url }, '*');
-  };
+  useEffect(() => {
+    if (auth !== 'ok' || tab !== 'audit') return;
+    loadAudit();
+  }, [auth, tab, loadAudit]);
 
-  const greeting = () => {
-    const h = clock.getHours();
-    return h < 11 ? 'Selamat Pagi' : h < 15 ? 'Selamat Siang' : h < 18 ? 'Selamat Sore' : 'Selamat Malam';
-  };
+  const nav = (url: string) => { if (window.parent !== window) window.parent.postMessage({ type: 'CC_NAVIGATE', url }, '*'); };
 
-  const fmtD = (d: string) => {
-    if (!d) return '—';
-    try { return new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }
-    catch { return d; }
-  };
-
-  const rel = (d: string) => {
-    if (!d) return '';
-    const ms = Date.now() - new Date(d).getTime();
-    const m  = Math.floor(ms/60000);
-    if (m<1) return 'Baru';
-    if (m<60) return `${m}m`;
-    const h = Math.floor(m/60);
-    if (h<24) return `${h}j`;
-    return `${Math.floor(h/24)}h`;
-  };
-
-  // ── Auth states ─────────────────────────────────────────────────────────
-  if (auth === 'denied') return (
-    <div className="flex items-center justify-center h-screen" style={{ background: '#f8fafc' }}>
-      <div className="bg-white rounded-2xl p-8 text-center shadow-xl">
-        <div className="text-5xl mb-3">🔒</div>
-        <p className="font-bold text-gray-800">Akses Ditolak</p>
-        <p className="text-sm text-gray-400 mt-1">Anda tidak memiliki izin ke halaman ini.</p>
-      </div>
-    </div>
-  );
-
-  if (auth === 'checking' || !user || loading) return (
-    <div className="flex items-center justify-center h-screen bg-cover bg-center"
-      style={{ backgroundImage: 'url(/IVP_Background.png)' }}>
-      <div className="flex flex-col items-center gap-4 bg-white/85 backdrop-blur-md rounded-2xl px-10 py-8">
-        <div className="w-10 h-10 rounded-full border-4 border-t-amber-500 border-amber-200 animate-spin" />
-        <p className="text-gray-700 font-semibold text-sm">Memuat Command Center...</p>
-      </div>
-    </div>
-  );
+  const fmtD = (d: string) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); } catch { return d; } };
+  const fmtDT = (d: string) => { if (!d) return '—'; try { return new Date(d).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); } catch { return d; } };
+  const rel = (d: string) => { if (!d) return ''; const m=Math.floor((Date.now()-new Date(d).getTime())/60000); if(m<1)return 'Baru'; if(m<60)return `${m}m`; const h=Math.floor(m/60); if(h<24)return `${h}j`; return `${Math.floor(h/24)}h`; };
+  const greeting = () => { const h=clock.getHours(); return h<11?'Selamat Pagi':h<15?'Selamat Siang':h<18?'Selamat Sore':'Selamat Malam'; };
 
   const totalAlerts = (stats?.ticketOverdue ?? 0) + (stats?.reminderPending ?? 0) + (stats?.userPending ?? 0);
 
-  // ── Main render ─────────────────────────────────────────────────────────
-  return (
-    <div className="min-h-screen overflow-y-auto bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: 'url(/IVP_Background.png)' }}>
-      <div className="max-w-[1200px] mx-auto px-4 py-5 pb-8 space-y-4">
+  // Audit filtered + paged
+  const auditFiltered = auditRows.filter(a => {
+    if (!auditSearch) return true;
+    const q = auditSearch.toLowerCase();
+    return (a.user_name ?? '').toLowerCase().includes(q)
+      || (a.target_name ?? '').toLowerCase().includes(q)
+      || (a.module ?? '').toLowerCase().includes(q);
+  });
+  const auditPaged = auditFiltered.slice(auditPage * AUDIT_PAGE_SIZE, (auditPage + 1) * AUDIT_PAGE_SIZE);
+  const auditTotalPages = Math.ceil(auditFiltered.length / AUDIT_PAGE_SIZE);
 
-        {/* HEADER */}
+  const AUDIT_MODULES = ['All','ticket','reminder','project','piket','kpi','incentive','movement','user','learning','system'];
+  const AUDIT_ACTIONS = ['All','create','update','delete','approve','reject','assign','status_change','login','logout','export','mark_done'];
+
+  // ── Auth screens ──────────────────────────────────────────────────────────
+  if (auth === 'denied') return (
+    <div className="flex items-center justify-center h-screen" style={{backgroundImage:'url(/IVP_Background.png)',backgroundSize:'cover'}}>
+      <div className="bg-white rounded-2xl p-8 text-center shadow-xl">
+        <div className="text-5xl mb-3">🔒</div>
+        <p className="font-bold text-gray-800">Akses Ditolak</p>
+      </div>
+    </div>
+  );
+
+  if (auth === 'checking' || !user) return (
+    <div className="flex items-center justify-center h-screen bg-cover bg-center" style={{backgroundImage:'url(/IVP_Background.png)'}}>
+      <div className="flex flex-col items-center gap-4 bg-white/85 backdrop-blur-md rounded-2xl px-10 py-8">
+        <div className="w-10 h-10 rounded-full border-4 border-t-amber-500 border-amber-200 animate-spin" />
+        <p className="text-gray-700 font-semibold text-sm">Memuat Analytics Platform...</p>
+      </div>
+    </div>
+  );
+
+  // ── RENDER ────────────────────────────────────────────────────────────────
+  return (
+    <div className="min-h-screen overflow-y-auto bg-cover bg-center bg-fixed" style={{backgroundImage:'url(/IVP_Background.png)'}}>
+      <div className="max-w-[1280px] mx-auto px-4 py-5 pb-8 space-y-4">
+
+        {/* ── HEADER ── */}
         <div className="rounded-2xl px-5 py-4"
-          style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 4px 24px rgba(0,0,0,0.12)' }}>
+          style={{background:'rgba(255,255,255,0.96)',backdropFilter:'blur(20px)',border:'1px solid rgba(255,255,255,0.6)',boxShadow:'0 4px 24px rgba(0,0,0,0.12)'}}>
           <div className="flex flex-wrap gap-3 items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl font-black flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#78350f' }}>
-                {user.full_name.charAt(0).toUpperCase()}
+                style={{background:'linear-gradient(135deg,#f59e0b,#d97706)',color:'#78350f'}}>
+                📊
               </div>
               <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{greeting()},</p>
-                <p className="text-xl font-black text-gray-900 leading-tight">{user.full_name}</p>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Work Management PTS</p>
+                <p className="text-xl font-black text-gray-900 leading-tight">Analytics Platform</p>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {clock.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+                  {greeting()}, <span className="font-semibold text-gray-600">{user.full_name}</span>
                   <span className="mx-1.5 opacity-40">·</span>
                   <span className="font-bold text-amber-600 tabular-nums">
                     {clock.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
@@ -312,164 +340,259 @@ function CommandCenter() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
               {totalAlerts > 0
-                ? <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: '#fee2e2', border: '1px solid #fca5a5' }}>
+                ? <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{background:'#fee2e2',border:'1px solid #fca5a5'}}>
                     <span className="text-base animate-pulse select-none">⚠️</span>
                     <div>
                       <p className="text-sm font-black text-red-700">{totalAlerts} item perlu perhatian</p>
-                      <p className="text-xs text-red-400">Lihat bottleneck di bawah</p>
+                      <p className="text-xs text-red-400">Lihat Command Center</p>
                     </div>
                   </div>
-                : <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: '#d1fae5', border: '1px solid #6ee7b7' }}>
+                : <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{background:'#d1fae5',border:'1px solid #6ee7b7'}}>
                     <span className="text-base select-none">✅</span>
                     <p className="text-sm font-bold text-emerald-700">Platform berjalan baik</p>
                   </div>
               }
-              <button onClick={load}
-                className="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                style={{ background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)' }}
-                title="Refresh">
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                </svg>
+              <button onClick={loadStats} className="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:scale-110" style={{background:'rgba(0,0,0,0.05)',border:'1px solid rgba(0,0,0,0.08)'}}>
+                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
               </button>
             </div>
           </div>
+
+          {/* Tab navigation */}
+          <div className="flex gap-2 mt-4 flex-wrap">
+            <TabBtn id="command" label="Command Center" icon="🏠" active={tab==='command'} onClick={() => setTab('command')} badge={totalAlerts || undefined} />
+            <TabBtn id="kpi"     label="KPI Analytics"  icon="📊" active={tab==='kpi'}     onClick={() => setTab('kpi')} />
+            <TabBtn id="audit"   label="Audit Log"      icon="📋" active={tab==='audit'}   onClick={() => setTab('audit')} />
+          </div>
         </div>
 
-        {/* STAT CARDS */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard icon="🎫" label="Tiket Open"       value={stats?.ticketOpen ?? 0}       sub={`${stats?.ticketOverdue ?? 0} overdue`}     gradient="linear-gradient(135deg,#dc2626,#991b1b)" alert={stats?.ticketOverdue} />
-          <StatCard icon="📅" label="Jadwal Pending"   value={stats?.reminderPending ?? 0}  sub="Belum di-assign ke handler"                  gradient="linear-gradient(135deg,#2563eb,#1e40af)" alert={stats?.reminderPending} />
-          <StatCard icon="🏗️" label="Proyek Pending"   value={stats?.projectPending ?? 0}   sub="Design request belum diproses"               gradient="linear-gradient(135deg,#7c3aed,#4c1d95)" alert={stats?.projectPending} />
-          <StatCard icon="👥" label="User Pending"     value={stats?.userPending ?? 0}      sub="Menunggu aktivasi akun"                      gradient="linear-gradient(135deg,#d97706,#92400e)" alert={stats?.userPending} />
-        </div>
-
-        {/* SYSTEM NOTIFICATIONS (jika ada) */}
-        {(stats?.systemNotifs ?? []).length > 0 && (
-          <div className="rounded-2xl px-4 py-3 space-y-2"
-            style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(245,158,11,0.3)', boxShadow: '0 2px 12px rgba(245,158,11,0.1)' }}>
-            <p className="text-xs font-bold text-amber-600 uppercase tracking-widest">🔔 Notifikasi Untukmu</p>
-            {(stats?.systemNotifs ?? []).map(n => (
-              <div key={n.id} className="flex items-start gap-3 py-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 truncate">{n.title}</p>
-                  {n.body && <p className="text-xs text-gray-400 truncate">{n.body}</p>}
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {/* TAB 1 — COMMAND CENTER                                         */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {tab === 'command' && (
+          <div className="space-y-4">
+            {loading
+              ? <div className="flex justify-center py-16"><div className="w-10 h-10 rounded-full border-4 border-t-amber-500 border-amber-200 animate-spin" /></div>
+              : <>
+                {/* Stat Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <StatCard icon="🎫" label="Tiket Open"     value={stats?.ticketOpen ?? 0}      sub={`${stats?.ticketOverdue??0} overdue`}           gradient="linear-gradient(135deg,#dc2626,#991b1b)" alert={stats?.ticketOverdue} />
+                  <StatCard icon="📅" label="Jadwal Pending" value={stats?.reminderPending ?? 0} sub="Belum di-assign"                                gradient="linear-gradient(135deg,#2563eb,#1e40af)" alert={stats?.reminderPending} />
+                  <StatCard icon="🏗️" label="Proyek Pending" value={stats?.projectPending ?? 0} sub="Design request"                                  gradient="linear-gradient(135deg,#7c3aed,#4c1d95)" alert={stats?.projectPending} />
+                  <StatCard icon="👥" label="User Pending"   value={stats?.userPending ?? 0}    sub="Menunggu aktivasi"                               gradient="linear-gradient(135deg,#d97706,#92400e)" alert={stats?.userPending} />
                 </div>
-                <span className="text-[10px] text-gray-300 whitespace-nowrap">{rel(n.created_at)}</span>
-              </div>
-            ))}
+
+                {/* Personal notifs */}
+                {(stats?.systemNotifs ?? []).length > 0 && (
+                  <div className="rounded-2xl px-4 py-3 space-y-2" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(245,158,11,0.3)'}}>
+                    <p className="text-xs font-bold text-amber-600 uppercase tracking-widest">🔔 Notifikasi Untukmu</p>
+                    {(stats?.systemNotifs ?? []).map(n => (
+                      <div key={n.id} className="flex items-start gap-3 py-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-800 truncate">{n.title}</p>
+                          {n.body && <p className="text-xs text-gray-400 truncate">{n.body}</p>}
+                        </div>
+                        <span className="text-[10px] text-gray-300 whitespace-nowrap">{rel(n.created_at)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Bottleneck 2×2 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Panel title="Tiket Overdue" icon="🚨" color="#dc2626" borderClr="rgba(220,38,38,0.22)" count={stats?.ticketOverdue}>
+                    {!(stats?.overdueTickets?.length) ? <Empty emoji="✅" msg="Tidak ada tiket overdue" /> : (stats?.overdueTickets ?? []).map(t => (
+                      <Row key={t.id} dot="#dc2626" title={t.project_name} sub={`${t.assign_name} · ${fmtD(t.date)}`} badge="OVERDUE" badgeBg="#fee2e2" badgeColor="#991b1b" badgeBorder="#fca5a5" />
+                    ))}
+                  </Panel>
+                  <Panel title="Request Jadwal Belum Di-Assign" icon="📅" color="#2563eb" borderClr="rgba(37,99,235,0.22)" count={stats?.reminderPending}>
+                    {!(stats?.pendingReminders?.length) ? <Empty emoji="✅" msg="Semua jadwal sudah diproses" /> : (stats?.pendingReminders ?? []).map(r => (
+                      <Row key={r.id} dot="#2563eb" title={r.project_name} sub={`${r.category??'—'} · Due: ${fmtD(r.due_date)}`} badge="UNASSIGNED" badgeBg="#eff6ff" badgeColor="#1d4ed8" badgeBorder="#bfdbfe" />
+                    ))}
+                  </Panel>
+                  <Panel title="Proyek Design Menunggu Proses" icon="🏗️" color="#7c3aed" borderClr="rgba(124,58,237,0.22)" count={stats?.projectPending}>
+                    {!(stats?.pendingProjects?.length) ? <Empty emoji="✅" msg="Tidak ada proyek pending" /> : (stats?.pendingProjects ?? []).map(p => (
+                      <Row key={p.id} dot="#7c3aed" title={p.project_name} sub={`${p.sales_name} · ${fmtD(p.created_at)}`} badge="PENDING" badgeBg="#faf5ff" badgeColor="#6d28d9" badgeBorder="#e9d5ff" />
+                    ))}
+                  </Panel>
+                  <Panel title={`My Tasks — ${user.full_name.split(' ')[0]}`} icon="📋" color="#059669" borderClr="rgba(5,150,105,0.22)">
+                    {!(stats?.myTodayReminders?.length) && !(stats?.myOpenTickets?.length)
+                      ? <Empty emoji="🎉" msg="Tidak ada task aktif untukmu" />
+                      : <>
+                          {(stats?.myTodayReminders ?? []).map(r => (<Row key={r.id} dot="#059669" title={r.project_name} sub={`📅 ${r.category} · Hari ini`} badge="TODAY" badgeBg="#d1fae5" badgeColor="#065f46" badgeBorder="#6ee7b7" />))}
+                          {(stats?.myOpenTickets ?? []).map(t => (<Row key={t.id} dot={t.status==='Overdue'?'#dc2626':'#059669'} title={t.project_name} sub={`🎫 Tiket · ${t.status}`} badge={t.status} badgeBg={t.status==='Overdue'?'#fee2e2':'#d1fae5'} badgeColor={t.status==='Overdue'?'#991b1b':'#065f46'} badgeBorder={t.status==='Overdue'?'#fca5a5':'#6ee7b7'} />))}
+                        </>
+                    }
+                  </Panel>
+                </div>
+
+                {/* Recent Activity */}
+                <div className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(0,0,0,0.07)'}}>
+                  <div className="px-4 py-3 flex items-center gap-2" style={{background:'rgba(0,0,0,0.025)',borderBottom:'1px solid rgba(0,0,0,0.06)'}}>
+                    <span className="text-base select-none">⚡</span>
+                    <span className="font-bold text-gray-700 text-sm">Aktivitas Platform Terbaru</span>
+                  </div>
+                  {!(stats?.activity?.length)
+                    ? <Empty emoji="📭" msg="Belum ada aktivitas" />
+                    : (stats?.activity ?? []).map(a => (
+                        <div key={a.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0">
+                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{background:a.dot}} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-800 truncate">{a.label}</p>
+                            <p className="text-xs text-gray-400 truncate">{a.sub}</p>
+                          </div>
+                          <span className="text-[10px] text-gray-300 flex-shrink-0 tabular-nums">{rel(a.time)}</span>
+                        </div>
+                      ))
+                  }
+                </div>
+
+                {/* Quick Access */}
+                <div className="rounded-2xl p-4" style={{background:'rgba(255,255,255,0.94)',backdropFilter:'blur(12px)',border:'1px solid rgba(255,255,255,0.55)'}}>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.14em] mb-3">⚡ Quick Access</p>
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                    {[
+                      { icon:'🎫', label:'Ticketing',  url:'/ticketing' },
+                      { icon:'🗓️', label:'Reminder',   url:'/reminder-schedule' },
+                      { icon:'🏗️', label:'Design Req', url:'/form-require-project' },
+                      { icon:'📊', label:'KPI Team',   url:'/kpi-team' },
+                      { icon:'💰', label:'Insentif',   url:'/incentive-pts' },
+                      { icon:'🎓', label:'Learning',   url:'/learning-center' },
+                    ].map((item, i) => (
+                      <button key={i} onClick={() => nav(item.url)}
+                        className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl transition-all hover:scale-105 active:scale-95 select-none"
+                        style={{background:'rgba(0,0,0,0.04)',border:'1px solid rgba(0,0,0,0.06)'}}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background='rgba(200,134,29,0.09)'}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background='rgba(0,0,0,0.04)'}>
+                        <span className="text-2xl">{item.icon}</span>
+                        <span className="text-xs font-semibold text-gray-600 text-center leading-tight">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            }
           </div>
         )}
 
-        {/* BOTTLENECK PANELS 2×2 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-          {/* Overdue Tickets */}
-          <Panel title="Tiket Overdue" icon="🚨" color="#dc2626" borderClr="rgba(220,38,38,0.22)" count={stats?.ticketOverdue}>
-            {(stats?.overdueTickets ?? []).length === 0
-              ? <Empty emoji="✅" msg="Tidak ada tiket overdue" />
-              : (stats?.overdueTickets ?? []).map(t => (
-                <Row key={t.id} dot="#dc2626" title={t.project_name} sub={`${t.assign_name} · ${fmtD(t.date)}`}
-                  badge="OVERDUE" badgeBg="#fee2e2" badgeColor="#991b1b" badgeBorder="#fca5a5" />
-              ))}
-          </Panel>
-
-          {/* Pending Reminders */}
-          <Panel title="Request Jadwal Belum Di-Assign" icon="📅" color="#2563eb" borderClr="rgba(37,99,235,0.22)" count={stats?.reminderPending}>
-            {(stats?.pendingReminders ?? []).length === 0
-              ? <Empty emoji="✅" msg="Semua jadwal sudah diproses" />
-              : (stats?.pendingReminders ?? []).map(r => (
-                <Row key={r.id} dot="#2563eb" title={r.project_name} sub={`${r.category ?? '—'} · Due: ${fmtD(r.due_date)}`}
-                  badge="UNASSIGNED" badgeBg="#eff6ff" badgeColor="#1d4ed8" badgeBorder="#bfdbfe" />
-              ))}
-          </Panel>
-
-          {/* Pending Projects */}
-          <Panel title="Proyek Design Menunggu Proses" icon="🏗️" color="#7c3aed" borderClr="rgba(124,58,237,0.22)" count={stats?.projectPending}>
-            {(stats?.pendingProjects ?? []).length === 0
-              ? <Empty emoji="✅" msg="Tidak ada proyek design pending" />
-              : (stats?.pendingProjects ?? []).map(p => (
-                <Row key={p.id} dot="#7c3aed" title={p.project_name} sub={`${p.sales_name} · ${fmtD(p.created_at)}`}
-                  badge="PENDING" badgeBg="#faf5ff" badgeColor="#6d28d9" badgeBorder="#e9d5ff" />
-              ))}
-          </Panel>
-
-          {/* My Tasks */}
-          <Panel title={`My Tasks — ${user.full_name.split(' ')[0]}`} icon="📋" color="#059669" borderClr="rgba(5,150,105,0.22)">
-            {(stats?.myTodayReminders ?? []).length === 0 && (stats?.myOpenTickets ?? []).length === 0
-              ? <Empty emoji="🎉" msg="Tidak ada task aktif untukmu" />
-              : <>
-                  {(stats?.myTodayReminders ?? []).map(r => (
-                    <Row key={r.id} dot="#059669" title={r.project_name} sub={`📅 ${r.category} · Hari ini`}
-                      badge="TODAY" badgeBg="#d1fae5" badgeColor="#065f46" badgeBorder="#6ee7b7" />
-                  ))}
-                  {(stats?.myOpenTickets ?? []).map(t => (
-                    <Row key={t.id} dot={t.status === 'Overdue' ? '#dc2626' : '#059669'}
-                      title={t.project_name} sub={`🎫 Tiket · ${t.status}`}
-                      badge={t.status}
-                      badgeBg={t.status === 'Overdue' ? '#fee2e2' : '#d1fae5'}
-                      badgeColor={t.status === 'Overdue' ? '#991b1b' : '#065f46'}
-                      badgeBorder={t.status === 'Overdue' ? '#fca5a5' : '#6ee7b7'} />
-                  ))}
-                </>
-            }
-          </Panel>
-        </div>
-
-        {/* RECENT ACTIVITY */}
-        <div className="rounded-2xl overflow-hidden"
-          style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
-          <div className="px-4 py-3 flex items-center gap-2" style={{ background: 'rgba(0,0,0,0.025)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-            <span className="text-base select-none">⚡</span>
-            <span className="font-bold text-gray-700 text-sm">Aktivitas Platform Terbaru</span>
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {/* TAB 2 — KPI ANALYTICS (original DashboardKPI, unchanged)       */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {tab === 'kpi' && (
+          <div className="rounded-2xl overflow-hidden" style={{minHeight:'75vh',background:'rgba(255,255,255,0.97)',boxShadow:'0 4px 24px rgba(0,0,0,0.1)'}}>
+            <DashboardKPI currentUser={user as unknown as DashUser} />
           </div>
-          {(stats?.activity ?? []).length === 0
-            ? <Empty emoji="📭" msg="Belum ada aktivitas" />
-            : (stats?.activity ?? []).map(a => (
-              <div key={a.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0">
-                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: a.dot }} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 truncate">{a.label}</p>
-                  <p className="text-xs text-gray-400 truncate">{a.sub}</p>
-                </div>
-                <span className="text-[10px] text-gray-300 flex-shrink-0 tabular-nums">{rel(a.time)}</span>
-              </div>
-            ))}
-        </div>
+        )}
 
-        {/* QUICK ACCESS */}
-        <div className="rounded-2xl p-4"
-          style={{ background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.55)' }}>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.14em] mb-3">⚡ Quick Access</p>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            {[
-              { icon: '🎫', label: 'Ticketing',   url: '/ticketing' },
-              { icon: '🗓️', label: 'Reminder',    url: '/reminder-schedule' },
-              { icon: '🏗️', label: 'Design Req',  url: '/form-require-project' },
-              { icon: '📊', label: 'KPI Team',    url: '/kpi-team' },
-              { icon: '💰', label: 'Insentif',    url: '/incentive-pts' },
-              { icon: '🎓', label: 'Learning',    url: '/learning-center' },
-            ].map((item, i) => (
-              <button key={i} onClick={() => nav(item.url)}
-                className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl transition-all hover:scale-105 active:scale-95 select-none"
-                style={{ background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)' }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(200,134,29,0.09)'}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.04)'}>
-                <span className="text-2xl">{item.icon}</span>
-                <span className="text-xs font-semibold text-gray-600 text-center leading-tight">{item.label}</span>
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {/* TAB 3 — AUDIT LOG                                               */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {tab === 'audit' && (
+          <div className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 2px 12px rgba(0,0,0,0.06)'}}>
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-2 px-5 py-4 border-b border-gray-100">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mr-1">Audit Trail</span>
+              <input className="px-3 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 focus:bg-white w-44"
+                placeholder="🔍 User / Target / Modul..." value={auditSearch} onChange={e => { setAuditSearch(e.target.value); setAuditPage(0); }} />
+              <select className="px-2.5 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
+                value={auditModule} onChange={e => { setAuditModule(e.target.value); setAuditPage(0); }}>
+                {AUDIT_MODULES.map(m => <option key={m} value={m}>{m === 'All' ? 'Semua Modul' : m}</option>)}
+              </select>
+              <select className="px-2.5 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
+                value={auditAction} onChange={e => { setAuditAction(e.target.value); setAuditPage(0); }}>
+                {AUDIT_ACTIONS.map(a => <option key={a} value={a}>{a === 'All' ? 'Semua Aksi' : a}</option>)}
+              </select>
+              <button onClick={loadAudit} disabled={auditLoading}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-60 bg-white">
+                <svg className={`w-3.5 h-3.5 ${auditLoading?'animate-spin':''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                Refresh
               </button>
-            ))}
+              <span className="text-[10px] text-gray-400 ml-auto">{auditFiltered.length} log ditemukan</span>
+            </div>
+
+            {/* Table */}
+            {auditLoading
+              ? <div className="flex justify-center py-16"><div className="w-8 h-8 rounded-full border-4 border-t-amber-500 border-amber-200 animate-spin" /></div>
+              : auditPaged.length === 0
+              ? <div className="flex flex-col items-center py-16 gap-2">
+                  <span className="text-4xl">📋</span>
+                  <p className="text-sm text-gray-500 font-medium">Belum ada audit log</p>
+                  <p className="text-xs text-gray-400">Log akan muncul setelah ada aksi di platform</p>
+                </div>
+              : <div className="overflow-x-auto">
+                  <table className="w-full text-sm" style={{minWidth:720}}>
+                    <thead>
+                      <tr style={{background:'#f8fafc',borderBottom:'1px solid #e2e8f0'}}>
+                        {['Waktu','User','Aksi','Modul','Target','Perubahan','Catatan'].map(h => (
+                          <th key={h} className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {auditPaged.map((a, idx) => {
+                        const as = ACTION_STYLE[a.action] ?? { bg:'#f1f5f9', color:'#475569', border:'#cbd5e1' };
+                        return (
+                          <tr key={a.id} className="hover:bg-amber-50/30 transition-colors" style={{borderBottom:'1px solid #f1f5f9',background:idx%2===0?'white':'#fafafa'}}>
+                            <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap tabular-nums">{fmtDT(a.created_at)}</td>
+                            <td className="px-4 py-3">
+                              <span className="text-xs font-semibold text-gray-800">{a.user_name || '—'}</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-[10px] font-black px-2 py-0.5 rounded whitespace-nowrap"
+                                style={{background:as.bg,color:as.color,border:`1px solid ${as.border}`}}>
+                                {a.action}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-xs text-gray-600 flex items-center gap-1">
+                                <span>{MODULE_ICON[a.module] ?? '📁'}</span>
+                                {a.module}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 max-w-[160px]">
+                              <span className="text-xs text-gray-700 truncate block" title={a.target_name ?? ''}>{a.target_name || '—'}</span>
+                            </td>
+                            <td className="px-4 py-3 max-w-[180px]">
+                              {(a.old_value || a.new_value)
+                                ? <div className="flex items-center gap-1 flex-wrap">
+                                    {a.old_value && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-50 text-red-600 border border-red-100 line-through">{a.old_value}</span>}
+                                    {a.old_value && a.new_value && <span className="text-[10px] text-gray-300">→</span>}
+                                    {a.new_value && <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-50 text-green-700 border border-green-100">{a.new_value}</span>}
+                                  </div>
+                                : <span className="text-[10px] text-gray-300">—</span>}
+                            </td>
+                            <td className="px-4 py-3 max-w-[160px]">
+                              <span className="text-[11px] text-gray-400 truncate block" title={a.notes ?? ''}>{a.notes || '—'}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+            }
+
+            {/* Pagination */}
+            {auditTotalPages > 1 && (
+              <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
+                <button onClick={() => setAuditPage(p => Math.max(0, p-1))} disabled={auditPage === 0}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40">← Prev</button>
+                <span className="text-xs text-gray-400">
+                  Hal {auditPage + 1} dari {auditTotalPages} · {auditFiltered.length} log
+                </span>
+                <button onClick={() => setAuditPage(p => Math.min(auditTotalPages-1, p+1))} disabled={auditPage >= auditTotalPages-1}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40">Next →</button>
+              </div>
+            )}
           </div>
-        </div>
+        )}
 
-        {/* Footer */}
-        <p className="text-center text-[10px] text-white/40 select-none">
-          Work Management Platform — IndoVisual PTS · Realtime · Auto-refresh
+        <p className="text-center text-[10px] text-white/40 select-none pb-2">
+          Analytics Platform — IndoVisual PTS · Work Management
         </p>
-
       </div>
     </div>
   );
@@ -478,12 +601,11 @@ function CommandCenter() {
 export default function Page() {
   return (
     <Suspense fallback={
-      <div className="flex items-center justify-center h-screen bg-cover bg-center"
-        style={{ backgroundImage: 'url(/IVP_Background.png)' }}>
+      <div className="flex items-center justify-center h-screen bg-cover bg-center" style={{backgroundImage:'url(/IVP_Background.png)'}}>
         <div className="w-10 h-10 rounded-full border-4 border-t-amber-500 border-amber-200 animate-spin" />
       </div>
     }>
-      <CommandCenter />
+      <AnalyticsPlatform />
     </Suspense>
   );
 }
