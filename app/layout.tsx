@@ -27,15 +27,17 @@ export default function RootLayout({
   if(typeof window==='undefined')return;
   if(window.parent===window)return;
 
-  /* ── 1. CSS fixes: give all modals comfortable top spacing ──────────────── */
+  /* ── 1. CSS fixes: give all modals comfortable top/bottom spacing ───────── */
   var st=document.createElement('style');
   st.textContent=
-    /* flex-center modals: cap direct child height so centering leaves ~10% margin */
-    '.fixed.inset-0.items-center>div,.fixed.inset-0.justify-center>div{max-height:80vh!important;}'+
-    /* scrollable backdrops (daily-report style) + items-start: push content below header */
-    '.fixed.inset-0.overflow-y-auto,.fixed.inset-0.items-start{padding-top:80px!important;}'+
-    /* ensure overflow-y on capped cards so content still scrolls */
-    '.fixed.inset-0.items-center>div{overflow-y:auto!important;}';
+    /* ALL direct children of modal backdrops: cap height so ~10% margins remain */
+    /* !important overrides both Tailwind max-h-[92vh] AND inline style maxHeight */
+    '.fixed.inset-0>*{max-height:80vh!important;overflow-y:auto!important;}'+
+    /* scrollable backdrops (daily-report) + items-start: push down past header */
+    '.fixed.inset-0.overflow-y-auto{padding-top:80px!important;}'+
+    '.fixed.inset-0.items-start{padding-top:80px!important;}'+
+    /* restore full-size for loading screens (they have a small centered card, not a form) */
+    '.fixed.inset-0.z-\\[9999\\]>*{max-height:none!important;}';
   document.head.appendChild(st);
 
   /* ── 2. postMessage: tell parent to expand iframe to full screen ─────────── */

@@ -862,8 +862,9 @@ export default function Dashboard() {
               <>
                 {/* ── Analytics Dashboard — admin, PTS sup, sales sup ── */}
                 {canAccessKPI && currentUser && (
-                  <div style={childModalOpen ? {} : { animation: "fadeInUp 0.35s ease forwards", opacity: 0, height: '85vh' }}
-                    className={childModalOpen ? "fixed inset-0 z-[69]" : ""}>
+                  <div
+                    className={childModalOpen ? "fixed inset-0 overflow-hidden" : ""}
+                    style={childModalOpen ? { zIndex: 200 } : { animation: "fadeInUp 0.35s ease forwards", opacity: 0, height: '85vh' }}>
                     <iframe
                       src="/analytics-dashboard"
                       className="w-full h-full border-0 rounded-3xl overflow-hidden"
@@ -1396,7 +1397,8 @@ export default function Dashboard() {
             )}
             {showDashboardPanel && canAccessKPI && currentUser ? (
               /* ── Analytics Dashboard — iframe ke /analytics-dashboard ── */
-              <div className={childModalOpen ? "fixed inset-0 z-[69]" : "w-full h-full overflow-hidden relative"}>
+              <div className={childModalOpen ? "fixed inset-0 overflow-hidden" : "w-full h-full overflow-hidden relative"}
+                style={childModalOpen ? { zIndex: 200 } : {}}>
                 {iframeLoading && !childModalOpen && (
                   <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-4">
@@ -1414,7 +1416,8 @@ export default function Dashboard() {
                 />
               </div>
             ) : showTicketing ? (
-              <div className={childModalOpen ? "fixed inset-0 z-[69]" : "w-full h-full overflow-auto relative"}>
+              <div className={childModalOpen ? "fixed inset-0 overflow-hidden" : "w-full h-full overflow-auto relative"}
+                style={childModalOpen ? { zIndex: 200 } : {}}>
                 {iframeLoading && !childModalOpen && (
                   <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-4">
@@ -1432,7 +1435,8 @@ export default function Dashboard() {
                 />
               </div>
             ) : iframeUrl ? (
-              <div className={childModalOpen ? "fixed inset-0 z-[69]" : "w-full h-full overflow-auto relative"}>
+              <div className={childModalOpen ? "fixed inset-0 overflow-hidden" : "w-full h-full overflow-auto relative"}
+                style={childModalOpen ? { zIndex: 200 } : {}}>
                 {iframeLoading && !childModalOpen && (
                   <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-4">
