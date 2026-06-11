@@ -66,7 +66,6 @@ export default function Dashboard() {
   const [pendingCount, setPendingCount] = useState(0);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [iframeLoading, setIframeLoading] = useState(false);
-  const [childModalOpen, setChildModalOpen] = useState(false);
 
   const [visibleMenuItems, setVisibleMenuItems] = useState<MenuItem[]>([]);
 
@@ -331,12 +330,10 @@ export default function Dashboard() {
   // ── postMessage bridge ────────────────────────────────────────────────────────
   // Receives CC_NAVIGATE messages from Command Center iframe and routes to the
   // matching menu item, so Quick Access buttons in Command Center work seamlessly.
-  // Also receives IFRAME_MODAL_OPEN/CLOSE to show a full-screen overlay over the header.
   useEffect(() => {
     const handleMsg = (e: MessageEvent) => {
       if (!e.data) return;
-      if (e.data.type === 'IFRAME_MODAL_OPEN') { setChildModalOpen(true); return; }
-      if (e.data.type === 'IFRAME_MODAL_CLOSE') { setChildModalOpen(false); return; }
+      if (e.data.type === 'IFRAME_MODAL_OPEN' || e.data.type === 'IFRAME_MODAL_CLOSE') return;
       if (e.data.type !== 'CC_NAVIGATE') return;
       const url: string = e.data.url ?? '';
       if (!url) return;
@@ -863,12 +860,11 @@ export default function Dashboard() {
                 {/* ── Analytics Dashboard — admin, PTS sup, sales sup ── */}
                 {canAccessKPI && currentUser && (
                   <div
-                    className={childModalOpen ? "fixed inset-0 overflow-hidden" : ""}
-                    style={childModalOpen ? { zIndex: 200 } : { animation: "fadeInUp 0.35s ease forwards", opacity: 0, height: '85vh' }}>
+                    style={{ animation: "fadeInUp 0.35s ease forwards", opacity: 0, height: '85vh' }}>
                     <iframe
                       src="/analytics-dashboard"
                       className="w-full h-full border-0 rounded-3xl overflow-hidden"
-                      style={childModalOpen ? {} : { boxShadow: '0 4px 32px rgba(0,0,0,0.12)' }}
+                      style={{ boxShadow: '0 4px 32px rgba(0,0,0,0.12)' }}
                       title="Analytics Dashboard"
                     />
                   </div>
@@ -1397,9 +1393,8 @@ export default function Dashboard() {
             )}
             {showDashboardPanel && canAccessKPI && currentUser ? (
               /* ── Analytics Dashboard — iframe ke /analytics-dashboard ── */
-              <div className={childModalOpen ? "fixed inset-0 overflow-hidden" : "w-full h-full overflow-hidden relative"}
-                style={childModalOpen ? { zIndex: 200 } : {}}>
-                {iframeLoading && !childModalOpen && (
+              <div className="w-full h-full overflow-hidden relative">
+                {iframeLoading && (
                   <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-10 h-10 rounded-full border-[3px] border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.25)', borderTopColor: '#e2a84b' }} />
@@ -1416,9 +1411,8 @@ export default function Dashboard() {
                 />
               </div>
             ) : showTicketing ? (
-              <div className={childModalOpen ? "fixed inset-0 overflow-hidden" : "w-full h-full overflow-auto relative"}
-                style={childModalOpen ? { zIndex: 200 } : {}}>
-                {iframeLoading && !childModalOpen && (
+              <div className="w-full h-full overflow-auto relative">
+                {iframeLoading && (
                   <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-10 h-10 rounded-full border-[3px] border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.25)', borderTopColor: '#e2a84b' }} />
@@ -1435,9 +1429,8 @@ export default function Dashboard() {
                 />
               </div>
             ) : iframeUrl ? (
-              <div className={childModalOpen ? "fixed inset-0 overflow-hidden" : "w-full h-full overflow-auto relative"}
-                style={childModalOpen ? { zIndex: 200 } : {}}>
-                {iframeLoading && !childModalOpen && (
+              <div className="w-full h-full overflow-auto relative">
+                {iframeLoading && (
                   <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-10 h-10 rounded-full border-[3px] border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.25)', borderTopColor: '#e2a84b' }} />
