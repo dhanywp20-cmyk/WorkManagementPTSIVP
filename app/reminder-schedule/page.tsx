@@ -2019,7 +2019,60 @@ jangan lupa peralatan & Semangat💪🏼
                       <p className="text-xs text-gray-400 mt-1">Coba ubah filter atau tambahkan reminder baru</p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
+                    <>
+                    {/* ── MOBILE: Card view ── */}
+                    <div className="md:hidden divide-y divide-gray-100">
+                      {filteredReminders.map((r, idx) => {
+                        const today = isDueToday(r.due_date);
+                        const dueDate = new Date(r.due_date + 'T00:00:00');
+                        return (
+                          <div key={r.id}
+                            className={`px-4 py-3.5 ${today ? 'bg-red-50/50 border-l-4 border-l-red-400' : 'border-l-4 border-l-transparent'}`}>
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-sm text-gray-800 leading-tight truncate">{(r.project_name || r.title || '').trim() || '—'}</p>
+                                {r.address && <p className="text-[10px] text-gray-400 mt-0.5 truncate">📍 {r.address.split(',')[0]}</p>}
+                                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                  <span className="text-[10px] font-semibold text-indigo-600">{(CATEGORY_CONFIG[r.category] ?? { icon: '📁' }).icon} {r.category}</span>
+                                  {r.product && <span className="text-[10px] text-indigo-500 font-medium">{r.product}</span>}
+                                </div>
+                              </div>
+                              <div className="shrink-0 flex flex-col items-end gap-1">
+                                <div className="inline-flex flex-col items-center px-2 py-1 rounded-lg text-center"
+                                  style={{ background: today ? 'rgba(220,38,38,0.12)' : 'rgba(99,102,241,0.08)', border: today ? '1px solid rgba(220,38,38,0.35)' : '1px solid rgba(99,102,241,0.2)' }}>
+                                  <span className="text-base font-black leading-none" style={{ color: today ? '#dc2626' : '#4f46e5' }}>{dueDate.getDate()}</span>
+                                  <span className="text-[8px] font-bold uppercase" style={{ color: today ? '#dc2626' : '#6366f1' }}>{dueDate.toLocaleDateString('id-ID',{month:'short',year:'2-digit'})}</span>
+                                </div>
+                                <StatusBadge status={r.status} />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2 text-xs">
+                              {r.sales_name && <div className="truncate"><span className="text-gray-400">Sales: </span><span className="text-gray-700 font-medium">{r.sales_name}</span></div>}
+                              {r.assign_name && <div className="truncate"><span className="text-gray-400">Handler: </span><span className="text-gray-700 font-medium">{r.assign_name}</span></div>}
+                              {r.notes && !r.notes.includes('[REQUEST SALES]') && <div className="col-span-2 truncate text-gray-400">{r.notes.substring(0,60)}{r.notes.length>60?'…':''}</div>}
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-3">
+                              <ViewIconBtn onClick={() => setDetailReminder(r)} title="Detail" />
+                              {(isAdmin || currentUser?.role === 'team') && r.status !== 'done' && (
+                                <RescheduleIconBtn onClick={() => setRescheduleTarget(r)} title="Re-Schedule" />
+                              )}
+                              {isAdmin && !r.assigned_to && r.notes?.includes('[REQUEST SALES]') && (
+                                <ApproveIconBtn onClick={() => { setApproveTarget(r); setApproveAssignTo(''); setApproveDate(r.due_date); setApproveTime(r.due_time); }} title="Approve & Assign" pulse />
+                              )}
+                              {isAdmin && (
+                                <DeleteIconBtn onClick={() => openDeleteModal(r)} title="Hapus" />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-white/90">
+                        <span className="text-xs text-gray-400">{filteredReminders.length} jadwal</span>
+                      </div>
+                    </div>
+
+                    {/* ── DESKTOP: Table view ── */}
+                    <div className="hidden md:block overflow-x-auto">
                       <table className="w-full border-collapse" style={{ tableLayout: 'fixed', background: 'transparent' }}>
                         <colgroup>
                           <col style={{ width: '3%' }} />
@@ -2195,7 +2248,8 @@ jangan lupa peralatan & Semangat💪🏼
                         <span className="text-[10px] text-gray-400">{filteredReminders.length} jadwal ditemukan</span>
                         <span className="text-[10px] text-gray-400">{filteredReminders.length > 0 ? `1–${filteredReminders.length}` : '0'} of {reminders.length}</span>
                       </div>
-                    </div>
+                    </div>{/* end hidden md:block */}
+                    </>{/* end fragment */}
                   )}
                 </div>
 

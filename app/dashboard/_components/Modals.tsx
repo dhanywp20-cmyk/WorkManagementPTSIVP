@@ -2021,10 +2021,10 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
           </svg>
         </div>
       )}
-      {/* Separator */}
-      <div className="w-px h-5 flex-shrink-0" style={{ background: 'rgba(0,0,0,0.09)' }} />
-      {/* Individual bells */}
-      <div className="flex items-center gap-1">
+      {/* Separator — hidden on small mobile */}
+      <div className="hidden sm:block w-px h-5 flex-shrink-0" style={{ background: 'rgba(0,0,0,0.09)' }} />
+      {/* Individual bells — hidden on small mobile (summary badge is enough) */}
+      <div className="hidden sm:flex items-center gap-1">
         {/* Ticket */}
         {!isTeamPTS_SubGroup && (isAdmin || roleLC === 'team' || roleLC === 'team_pts' || roleLC === 'guest' || roleLC === 'sales') && (
           <NotifBell icon="🎫" label="Ticket" count={ticketNotifs.length} color="#be123c" bgColor="rgba(254,205,211,0.6)" borderColor="#fda4af" dotColor="#e11d48" items={ticketNotifs} onItemClick={handleClick} />
@@ -2041,8 +2041,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         {!isTeamPTS_SubGroup && (isAdmin || (isTeamPTS && !isTeamServices) || roleLC === 'guest' || roleLC === 'sales') && (
           <NotifBell icon="⭐" label="Review" count={reviewNotifs.length} color="#b45309" bgColor="rgba(254,243,199,0.6)" borderColor="#fcd34d" dotColor="#d97706" items={reviewNotifs} onItemClick={handleClick} />
         )}
-        {/* Personal / System Notifications — always shown to all users */}
-        <NotifBell icon="🔔" label="Notif" count={personalNotifs.length} color="#166534" bgColor="rgba(220,252,231,0.6)" borderColor="#86efac" dotColor="#16a34a" items={personalNotifs} onItemClick={handleClick} />
+        {/* Personal notifications included in totalCount but no separate bell — summary badge is enough */}
       </div>
     </div>
   );

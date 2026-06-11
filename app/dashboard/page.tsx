@@ -59,6 +59,7 @@ export default function Dashboard() {
   const [showTicketing, setShowTicketing] = useState(false);
   const [internalUrl, setInternalUrl] = useState<string>('/ticketing');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarMobileOpen, setSidebarMobileOpen] = useState(false);
 
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [adminPanelTab, setAdminPanelTab] = useState<'settings' | 'userManagement' | 'picBrand'>('settings');
@@ -301,6 +302,7 @@ export default function Dashboard() {
 
   const handleMenuClick = (item: MenuItem['items'][0], menuTitle: string) => {
     if (item.external && !item.embed) { window.open(item.url, '_blank'); return; }
+    setSidebarMobileOpen(false); // close overlay on mobile
     setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setShowDashboardPanel(false);
     setIframeLoading(true);
     setTimeout(() => {
@@ -747,6 +749,19 @@ export default function Dashboard() {
 
           {/* RIGHT */}
           <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+            {/* Mobile hamburger — only when sidebar is open (in sidebar mode) */}
+            {showSidebar && (
+              <button
+                onClick={() => setSidebarMobileOpen(o => !o)}
+                className="md:hidden w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
+                style={{ background: sidebarMobileOpen ? 'rgba(200,134,29,0.15)' : 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', color: '#64748b' }}
+                title="Menu">
+                {sidebarMobileOpen
+                  ? <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                  : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/></svg>
+                }
+              </button>
+            )}
             {/* Global Search icon — sebelah kiri notif */}
             {currentUser && (
               <GlobalSearch
@@ -946,21 +961,34 @@ export default function Dashboard() {
       )}
       {renderHeader()}
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Mobile sidebar backdrop */}
+        {sidebarMobileOpen && (
+          <div
+            className="fixed inset-0 z-[180] md:hidden"
+            style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(2px)' }}
+            onClick={() => setSidebarMobileOpen(false)}
+          />
+        )}
+
         {/* SIDEBAR */}
         <div
-          className={`relative flex flex-col transition-all duration-300 ease-in-out flex-shrink-0 ${sidebarCollapsed ? 'w-[48px] md:w-[64px]' : 'w-[220px] md:w-[272px]'}`}
+          className={`
+            flex flex-col transition-all duration-300 ease-in-out flex-shrink-0
+            ${sidebarCollapsed ? 'w-[48px] md:w-[64px]' : 'w-[220px] md:w-[272px]'}
+            md:relative
+            fixed top-0 bottom-0 left-0 z-[190]
+            ${sidebarMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+          `}
           style={{
-            background: 'rgba(255,255,255,0.88)',
+            background: 'rgba(255,255,255,0.96)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
             boxShadow: '2px 0 20px rgba(0,0,0,0.10)',
             borderRight: '1px solid rgba(0,0,0,0.07)',
-            // Raise sidebar above tour backdrop (z-[210]) when tour is active.
-            // The sidebar's own backdropFilter creates a stacking context that
-            // confines children — giving the container z-215 lifts the whole
-            // sidebar above the dark overlay so highlighted menus are visible.
-            ...(tourVisible ? { position: 'relative' as const, zIndex: 215 } : {}),
+            // On desktop: position:static so it participates in flex layout
+            // On mobile: fixed overlay (overridden by Tailwind fixed above)
+            ...(tourVisible ? { zIndex: 215 } : {}),
           }}
         >
           {/* Top accent line */}

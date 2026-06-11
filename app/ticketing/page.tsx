@@ -2247,7 +2247,82 @@ function TicketingSystemInner() {
             ) : filteredTickets.length === 0 ? (
               <div className="text-center py-12"><div className="text-6xl mb-4">📭</div><p className="text-gray-600 font-medium">{searchProject || filterStatus !== "All" ? "No tickets match the search." : "No tickets yet. Create your first ticket!"}</p></div>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+              {/* ── MOBILE: Card view (hidden on md+) ── */}
+              <div className="md:hidden divide-y divide-gray-100">
+                {paginatedTickets.map((ticket, index) => {
+                  const overdue = isTicketOverdue(ticket);
+                  const overdueSetting = getOverdueSetting(ticket.id);
+                  const isActiveOverdue = overdue && ticket.status !== "Solved";
+                  return (
+                    <div key={ticket.id}
+                      className={`px-4 py-3.5 ${isActiveOverdue ? 'bg-red-50/60 border-l-4 border-l-red-400' : 'border-l-4 border-l-transparent'}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            {isActiveOverdue && <span className="text-red-500 text-xs shrink-0">🚨</span>}
+                            <p className="font-bold text-sm text-gray-800 leading-tight">{ticket.project_name}</p>
+                          </div>
+                          {ticket.address && (
+                            <p className="text-[10px] text-gray-400 mt-0.5 truncate">📍 {ticket.address.split(',')[0]}</p>
+                          )}
+                          <p className="text-[10px] text-gray-400 mt-0.5">{ticket.created_at ? formatDateTime(ticket.created_at) : '—'}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <span className={`px-2 py-0.5 text-[10px] font-bold rounded ${ticket.status === "Waiting Approval" ? statusColors["Waiting Approval"] : statusColors[ticket.status] || statusColors["Pending"]}`}>
+                            {ticket.status === "Waiting Approval" ? "⏳ Waiting" : ticket.status}
+                          </span>
+                          {overdue && (
+                            <span className={`px-2 py-0.5 text-[10px] font-bold rounded ${ticket.status === "Solved" ? "bg-purple-100 text-purple-800 border-purple-400" : statusColors["Overdue"]}`}>
+                              {ticket.status === "Solved" ? "⚠️ Overdue" : "🚨 Overdue"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2.5 text-xs">
+                        <div className="truncate"><span className="text-gray-400">Issue: </span><span className="text-gray-700 font-medium">{ticket.issue_case}</span></div>
+                        <div className="truncate"><span className="text-gray-400">Handler: </span><span className="text-gray-700 font-medium">{ticket.assign_name || '—'}</span></div>
+                        {ticket.product && <div className="truncate"><span className="text-gray-400">Product: </span><span className="text-indigo-600 font-semibold">{ticket.product}</span></div>}
+                        {ticket.sales_name && <div className="truncate"><span className="text-gray-400">Sales: </span><span className="text-gray-700 font-medium">{ticket.sales_name}</span></div>}
+                        {ticket.sn_unit && <div className="col-span-2 truncate"><span className="text-gray-400">SN: </span><span className="text-gray-600">{ticket.sn_unit}</span></div>}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-3 flex-wrap">
+                        <ViewIconBtn onClick={() => { setSelectedTicket(ticket); setShowTicketDetailPopup(true); }} title="Detail" />
+                        <FlowchartIconBtn onClick={() => { setSummaryTicket(ticket); setShowActivitySummary(true); }} />
+                        <PrintIconBtn onClick={() => exportToPDF(ticket)} />
+                        {canAccessAccountSettings && ticket.status === "Waiting Approval" && (
+                          <ApproveIconBtn onClick={() => { setApprovalTicket(ticket); setApprovalAssignee(""); fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} pulse />
+                        )}
+                        {ticket.status === "Solved" && canUpdateTicket && (
+                          <ReopenIconBtn onClick={() => { setReopenTargetTicket(ticket); setReopenAssignee(ticket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} />
+                        )}
+                        {canAccessAccountSettings && (
+                          <DeleteIconBtn onClick={() => { setDeleteTargetTicket(ticket); setDeleteConfirmText(""); setShowDeleteModal(true); }} />
+                        )}
+                        {canAccessAccountSettings && (
+                          <OverdueIconBtn onClick={() => { setOverdueTargetTicket(ticket); const existing = getOverdueSetting(ticket.id); setOverdueForm({ due_hours: existing?.due_hours ? String(existing.due_hours) : "48" }); setShowOverdueSetting(true); }} active={!!overdueSetting} />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                {/* Mobile pagination */}
+                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-white/90">
+                  <span className="text-xs text-gray-400">{filteredTickets.length} tiket</span>
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage===1}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 disabled:opacity-30">‹ Prev</button>
+                      <span className="text-xs text-gray-500 font-medium">{currentPage}/{totalPages}</span>
+                      <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage===totalPages}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 disabled:opacity-30">Next ›</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ── DESKTOP: Table view (hidden on mobile) ── */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full table-fixed border-collapse table-zebra" style={{ background: "transparent", minWidth: '1100px' }}>
                   <colgroup>
                     <col style={{ width: "3%" }} />   {/* No */}
@@ -2456,7 +2531,8 @@ function TicketingSystemInner() {
                     {filteredTickets.length > 0 ? `${(currentPage - 1) * ITEMS_PER_PAGE + 1}–${Math.min(currentPage * ITEMS_PER_PAGE, filteredTickets.length)}` : "0"} of {tickets.length}
                   </span>
                 </div>
-              </div>
+              </div>{/* end hidden md:block */}
+              </>{/* end fragment */}
             )}
           </div>
         </div>

@@ -299,7 +299,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
   const [audit, setAudit]           = useState<AuditEntry[]>([]);
   const [loading, setLoading]       = useState(true);
   const [auditLoading, setAuditLoading] = useState(true);
-  const [tab, setTab]               = useState<'analytics'|'cross'|'audit'>('analytics');
+  const [tab, setTab]               = useState<'analytics'>('analytics');
   const [auditFilter, setAuditFilter] = useState<'all'|'ticket'|'reminder'|'piket'|'user'>('all');
   const [auditSearch, setAuditSearch] = useState('');
   const [lastRefresh, setLastRefresh] = useState(new Date());
@@ -637,8 +637,6 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
 
   const TAB_CONFIG = [
     {key:'analytics' as const, icon:'📊', label:'Analytics'},
-    {key:'cross'     as const, icon:'🔀', label:'Cross-Module'},
-    {key:'audit'     as const, icon:'🔍', label:'Audit Trail'},
   ];
 
   // ─── LC-style design helpers ────────────────────────────────────────────────
@@ -1224,8 +1222,8 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
             </div>
           )}
 
-          {/* ══════════ TAB CROSS-MODULE ANALYTICS ══════════ */}
-          {tab==='cross'&&(
+          {/* Cross-Module and Audit Trail tabs removed — moved to Analytics Platform page */}
+          {tab==='cross_removed'&&(
             <div className="space-y-5">
               <div className="text-sm font-bold uppercase tracking-widest text-slate-500 mb-1">🔀 Cross-Module Overview — Ticket · Reminder · Learning Center</div>
 
@@ -1384,8 +1382,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
             </div>
           )}
 
-          {/* ══════════ TAB AUDIT TRAIL ══════════ */}
-          {tab==='audit'&&(
+          {tab==='audit_removed'&&(
             <div className="rounded-2xl p-4 space-y-3"
               style={{ background:'rgba(255,255,255,0.92)', backdropFilter:'blur(14px)', WebkitBackdropFilter:'blur(14px)', border:'1px solid rgba(0,0,0,0.07)', boxShadow:'0 2px 16px rgba(0,0,0,0.08)' }}>
               {/* Search + filter */}
