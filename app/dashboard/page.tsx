@@ -849,10 +849,6 @@ export default function Dashboard() {
   if (!showSidebar) {
     return (
       <div className="flex flex-col bg-cover bg-center bg-fixed" style={{ backgroundImage: 'url(/IVP_Background.png)', height: '100dvh' }}>
-        {/* Full-screen overlay when a child iframe modal is open — covers the header */}
-        {childModalOpen && (
-          <div className="fixed inset-0 pointer-events-none" style={{ background: 'rgba(0,0,0,0.42)', zIndex: 60 }} />
-        )}
         {renderModals()}
         {/* ── Jelajahi Button (always visible while logged-in, before sidebar loads) ── */}
         {currentUser && !tourVisible && (
@@ -866,11 +862,12 @@ export default function Dashboard() {
               <>
                 {/* ── Analytics Dashboard — admin, PTS sup, sales sup ── */}
                 {canAccessKPI && currentUser && (
-                  <div style={{ animation: "fadeInUp 0.35s ease forwards", opacity: 0, height: '85vh' }}>
+                  <div style={childModalOpen ? {} : { animation: "fadeInUp 0.35s ease forwards", opacity: 0, height: '85vh' }}
+                    className={childModalOpen ? "fixed inset-0 z-[69]" : ""}>
                     <iframe
                       src="/analytics-dashboard"
                       className="w-full h-full border-0 rounded-3xl overflow-hidden"
-                      style={{ boxShadow: '0 4px 32px rgba(0,0,0,0.12)' }}
+                      style={childModalOpen ? {} : { boxShadow: '0 4px 32px rgba(0,0,0,0.12)' }}
                       title="Analytics Dashboard"
                     />
                   </div>
@@ -951,10 +948,6 @@ export default function Dashboard() {
   // ── VIEW: SIDEBAR ──
   return (
     <div className="flex flex-col bg-cover bg-center bg-fixed" style={{ backgroundImage: 'url(/IVP_Background.png)', height: '100dvh' }}>
-      {/* Full-screen overlay when a child iframe modal is open — covers the header */}
-      {childModalOpen && (
-        <div className="fixed inset-0 pointer-events-none" style={{ background: 'rgba(0,0,0,0.42)', zIndex: 60 }} />
-      )}
       {renderModals()}
       {/* ── Onboarding Tour + floating button (sidebar view — stable mount) ── */}
       {currentUser && (
@@ -1403,8 +1396,8 @@ export default function Dashboard() {
             )}
             {showDashboardPanel && canAccessKPI && currentUser ? (
               /* ── Analytics Dashboard — iframe ke /analytics-dashboard ── */
-              <div className="w-full h-full overflow-hidden relative">
-                {iframeLoading && (
+              <div className={childModalOpen ? "fixed inset-0 z-[69]" : "w-full h-full overflow-hidden relative"}>
+                {iframeLoading && !childModalOpen && (
                   <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-10 h-10 rounded-full border-[3px] border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.25)', borderTopColor: '#e2a84b' }} />
@@ -1421,8 +1414,8 @@ export default function Dashboard() {
                 />
               </div>
             ) : showTicketing ? (
-              <div className="w-full h-full overflow-auto relative">
-                {iframeLoading && (
+              <div className={childModalOpen ? "fixed inset-0 z-[69]" : "w-full h-full overflow-auto relative"}>
+                {iframeLoading && !childModalOpen && (
                   <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-10 h-10 rounded-full border-[3px] border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.25)', borderTopColor: '#e2a84b' }} />
@@ -1439,8 +1432,8 @@ export default function Dashboard() {
                 />
               </div>
             ) : iframeUrl ? (
-              <div className="w-full h-full overflow-auto relative">
-                {iframeLoading && (
+              <div className={childModalOpen ? "fixed inset-0 z-[69]" : "w-full h-full overflow-auto relative"}>
+                {iframeLoading && !childModalOpen && (
                   <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-10 h-10 rounded-full border-[3px] border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.25)', borderTopColor: '#e2a84b' }} />

@@ -32,7 +32,7 @@ export default function RootLayout({
     t=setTimeout(function(){
       var open=!!document.querySelector('.fixed.inset-0');
       if(open!==last){last=open;window.parent.postMessage({type:open?'IFRAME_MODAL_OPEN':'IFRAME_MODAL_CLOSE'},'*');}
-    },80);
+    },0);
   }
   function init(){var o=new MutationObserver(chk);o.observe(document.body,{childList:true,subtree:true});chk();}
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
