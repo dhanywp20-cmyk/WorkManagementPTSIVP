@@ -1223,7 +1223,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
           )}
 
           {/* Cross-Module and Audit Trail tabs removed — moved to Analytics Platform page */}
-          {tab==='cross_removed'&&(
+          {(tab as string)==='cross_removed'&&(
             <div className="space-y-5">
               <div className="text-sm font-bold uppercase tracking-widest text-slate-500 mb-1">🔀 Cross-Module Overview — Ticket · Reminder · Learning Center</div>
 
@@ -1382,7 +1382,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
             </div>
           )}
 
-          {tab==='audit_removed'&&(
+          {(tab as string)==='audit_removed'&&(
             <div className="rounded-2xl p-4 space-y-3"
               style={{ background:'rgba(255,255,255,0.92)', backdropFilter:'blur(14px)', WebkitBackdropFilter:'blur(14px)', border:'1px solid rgba(0,0,0,0.07)', boxShadow:'0 2px 16px rgba(0,0,0,0.08)' }}>
               {/* Search + filter */}
