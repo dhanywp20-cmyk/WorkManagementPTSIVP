@@ -1867,9 +1867,9 @@ Hubungi Admin untuk info lebih lanjut.
         </div>
       )}
 
-      {/* Reject Modal */}
+      {/* Reject Modal — z-[9995] so it appears above the detail modal (z-[9990]) */}
       {rejectModal.open && rejectModal.req && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9995] p-4">
           <div className="bg-white/90 rounded-2xl shadow-2xl max-w-md w-full border-2 border-red-400 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-red-500 to-red-700 px-6 py-4">
               <h3 className="font-bold text-white text-lg">❌ Tolak Request</h3>
@@ -1888,9 +1888,9 @@ Hubungi Admin untuk info lebih lanjut.
         </div>
       )}
 
-      {/* Status Update Modal */}
+      {/* Status Update Modal — z-[9995] so it appears above the detail modal (z-[9990]) */}
       {statusUpdateModal.open && statusUpdateModal.req && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9995] p-4">
           <div className="bg-white/90 rounded-2xl shadow-2xl max-w-sm w-full border border-gray-200 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4 flex items-center justify-between">
               <div>
@@ -1951,9 +1951,9 @@ Hubungi Admin untuk info lebih lanjut.
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal — z-[9995] so it appears above the detail modal (z-[9990]) */}
       {deleteModal.open && deleteModal.req && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9995] p-4">
           <div className="bg-white/90 rounded-2xl shadow-2xl max-w-md w-full animate-scale-in overflow-hidden" style={{ border: '1.5px solid #e5e7eb' }}>
             {/* Header */}
             <div className="p-6 pb-4">

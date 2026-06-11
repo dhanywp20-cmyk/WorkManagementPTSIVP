@@ -173,7 +173,7 @@ function buildRollingTemplate(dbRows: PiketRow[]): RollingTemplate | null {
   const sortedWeeks = Array.from(weekSet).sort(); // ascending chronological
   if (sortedWeeks.length === 0) return null;
 
-  // Build name maps for every week once (avoid repeated scanning)
+  // Build name + uid maps for every week once (avoid repeated scanning)
   const nameMapsCache: Record<string, DayNameMap> = {};
   const uidMapsCache:  Record<string, DayNameMap> = {};
   sortedWeeks.forEach(wk => {
@@ -182,41 +182,69 @@ function buildRollingTemplate(dbRows: PiketRow[]): RollingTemplate | null {
     uidMapsCache[wk]  = uidMap;
   });
 
+  // --- Helpers ---
+
+  const isConsecutivePair = (a: string, b: string) => {
+    const msA = new Date(a + 'T00:00:00').getTime();
+    const msB = new Date(b + 'T00:00:00').getTime();
+    return Math.round((msB - msA) / (7 * 24 * 60 * 60 * 1000)) === 1;
+  };
+
+  // A week is "complete" when all 5 weekdays have a PIC assigned (name OR uid).
+  // Incomplete weeks (e.g. only Monday saved after a partial edit) must NOT be
+  // used as the template — otherwise one partial save corrupts the whole pattern.
+  const isComplete = (wk: string): boolean =>
+    DAYS_OF_WEEK.every(d => nameMapsCache[wk][d] || uidMapsCache[wk][d]);
+
+  // Heterogeneous check: use whichever map has data (names in display context,
+  // uids in ScheduleModal pre-fill context where names aren't fetched).
+  const areHeterogeneous = (a: string, b: string): boolean => {
+    const hasNames = DAYS_OF_WEEK.some(d => nameMapsCache[a][d] || nameMapsCache[b][d]);
+    if (hasNames) return !mapsAreIdentical(nameMapsCache[a], nameMapsCache[b]);
+    return !mapsAreIdentical(uidMapsCache[a], uidMapsCache[b]);
+  };
+
   let week1Key: string | null = null;
   let week2Key: string | null = null;
 
-  // Pass 1: scan from the end, find the latest consecutive + HETEROGENEOUS pair
+  // Pass 1 (preferred): latest COMPLETE + CONSECUTIVE + HETEROGENEOUS pair.
+  //   Skipping incomplete weeks prevents a single partial save from overwriting
+  //   the established 2-week rotation template.
   for (let i = sortedWeeks.length - 1; i >= 1; i--) {
-    const a = sortedWeeks[i - 1];
-    const b = sortedWeeks[i];
-    const msA = new Date(a + 'T00:00:00').getTime();
-    const msB = new Date(b + 'T00:00:00').getTime();
-    const diffWeeks = Math.round((msB - msA) / (7 * 24 * 60 * 60 * 1000));
-    if (diffWeeks === 1 && !mapsAreIdentical(nameMapsCache[a], nameMapsCache[b])) {
-      week1Key = a;
-      week2Key = b;
-      break;
-    }
+    const a = sortedWeeks[i - 1], b = sortedWeeks[i];
+    if (!isConsecutivePair(a, b)) continue;
+    if (!isComplete(a) || !isComplete(b)) continue;
+    if (areHeterogeneous(a, b)) { week1Key = a; week2Key = b; break; }
   }
 
-  // Pass 2 fallback: no heterogeneous pair found → use latest consecutive pair
-  // (pattern is effectively a 1-week repeat, W1 = W2)
+  // Pass 2: latest COMPLETE + CONSECUTIVE pair (1-week repeat pattern is OK)
   if (week1Key === null) {
     for (let i = sortedWeeks.length - 1; i >= 1; i--) {
-      const a = sortedWeeks[i - 1];
-      const b = sortedWeeks[i];
-      const msA = new Date(a + 'T00:00:00').getTime();
-      const msB = new Date(b + 'T00:00:00').getTime();
-      const diffWeeks = Math.round((msB - msA) / (7 * 24 * 60 * 60 * 1000));
-      if (diffWeeks === 1) {
-        week1Key = a;
-        week2Key = b;
-        break;
-      }
+      const a = sortedWeeks[i - 1], b = sortedWeeks[i];
+      if (!isConsecutivePair(a, b)) continue;
+      if (!isComplete(a) || !isComplete(b)) continue;
+      week1Key = a; week2Key = b; break;
     }
   }
 
-  // Pass 3 final fallback: only one week in DB at all
+  // Pass 3: latest CONSECUTIVE + HETEROGENEOUS pair (relaxed — allows incomplete)
+  if (week1Key === null) {
+    for (let i = sortedWeeks.length - 1; i >= 1; i--) {
+      const a = sortedWeeks[i - 1], b = sortedWeeks[i];
+      if (!isConsecutivePair(a, b)) continue;
+      if (areHeterogeneous(a, b)) { week1Key = a; week2Key = b; break; }
+    }
+  }
+
+  // Pass 4: any consecutive pair (last resort)
+  if (week1Key === null) {
+    for (let i = sortedWeeks.length - 1; i >= 1; i--) {
+      const a = sortedWeeks[i - 1], b = sortedWeeks[i];
+      if (isConsecutivePair(a, b)) { week1Key = a; week2Key = b; break; }
+    }
+  }
+
+  // Pass 5 final fallback: only one week exists in DB
   if (week1Key === null) {
     week1Key = sortedWeeks[sortedWeeks.length - 1];
     week2Key = null;
