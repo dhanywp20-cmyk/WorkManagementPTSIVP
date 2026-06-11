@@ -2249,7 +2249,7 @@ jangan lupa peralatan & Semangat💪🏼
                         <span className="text-[10px] text-gray-400">{filteredReminders.length > 0 ? `1–${filteredReminders.length}` : '0'} of {reminders.length}</span>
                       </div>
                     </div>{/* end hidden md:block */}
-                    </>{/* end fragment */}
+                    </>
                   )}
                 </div>
 

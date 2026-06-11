@@ -2532,7 +2532,7 @@ function TicketingSystemInner() {
                   </span>
                 </div>
               </div>{/* end hidden md:block */}
-              </>{/* end fragment */}
+              </>
             )}
           </div>
         </div>
