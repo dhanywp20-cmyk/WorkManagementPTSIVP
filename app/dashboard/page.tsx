@@ -66,6 +66,7 @@ export default function Dashboard() {
   const [pendingCount, setPendingCount] = useState(0);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [iframeLoading, setIframeLoading] = useState(false);
+  const [childModalOpen, setChildModalOpen] = useState(false);
 
   const [visibleMenuItems, setVisibleMenuItems] = useState<MenuItem[]>([]);
 
@@ -330,9 +331,13 @@ export default function Dashboard() {
   // ── postMessage bridge ────────────────────────────────────────────────────────
   // Receives CC_NAVIGATE messages from Command Center iframe and routes to the
   // matching menu item, so Quick Access buttons in Command Center work seamlessly.
+  // Also receives IFRAME_MODAL_OPEN/CLOSE to show a full-screen overlay over the header.
   useEffect(() => {
     const handleMsg = (e: MessageEvent) => {
-      if (!e.data || e.data.type !== 'CC_NAVIGATE') return;
+      if (!e.data) return;
+      if (e.data.type === 'IFRAME_MODAL_OPEN') { setChildModalOpen(true); return; }
+      if (e.data.type === 'IFRAME_MODAL_CLOSE') { setChildModalOpen(false); return; }
+      if (e.data.type !== 'CC_NAVIGATE') return;
       const url: string = e.data.url ?? '';
       if (!url) return;
       // Find the menu item whose url matches
@@ -844,6 +849,10 @@ export default function Dashboard() {
   if (!showSidebar) {
     return (
       <div className="flex flex-col bg-cover bg-center bg-fixed" style={{ backgroundImage: 'url(/IVP_Background.png)', height: '100dvh' }}>
+        {/* Full-screen overlay when a child iframe modal is open — covers the header */}
+        {childModalOpen && (
+          <div className="fixed inset-0 pointer-events-none" style={{ background: 'rgba(0,0,0,0.42)', zIndex: 60 }} />
+        )}
         {renderModals()}
         {/* ── Jelajahi Button (always visible while logged-in, before sidebar loads) ── */}
         {currentUser && !tourVisible && (
@@ -942,6 +951,10 @@ export default function Dashboard() {
   // ── VIEW: SIDEBAR ──
   return (
     <div className="flex flex-col bg-cover bg-center bg-fixed" style={{ backgroundImage: 'url(/IVP_Background.png)', height: '100dvh' }}>
+      {/* Full-screen overlay when a child iframe modal is open — covers the header */}
+      {childModalOpen && (
+        <div className="fixed inset-0 pointer-events-none" style={{ background: 'rgba(0,0,0,0.42)', zIndex: 60 }} />
+      )}
       {renderModals()}
       {/* ── Onboarding Tour + floating button (sidebar view — stable mount) ── */}
       {currentUser && (
