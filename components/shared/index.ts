@@ -13,3 +13,4 @@ export { LoadingScreen, InlineSpinner } from './LoadingScreen';
 export { FormField, SectionHeader, SectionHeaderSmall, InfoRow, InfoLine } from './FormParts';
 export { StarRating } from './StarRating';
 export { PageHeader } from './PageHeader';
+export { SalesPicker, type SalesPickerUser } from './SalesPicker';

@@ -1,6 +1,7 @@
 'use client';
 
 import { User, TeamMember } from './shared';
+import { SalesPicker } from '@/components/shared';
 
 export interface NewTicketForm {
   project_name: string;
@@ -181,24 +182,13 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                 <span className="text-sm font-bold tracking-wide text-slate-700">Informasi Sales</span>
               </div>
               <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Sales Name</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2">👤</span>
-                <select value={form.sales_name}
-                  onChange={e => {
-                    const sel = users.find(u => u.full_name === e.target.value && u.role === "guest");
-                    set({ sales_name: e.target.value, sales_division: sel?.sales_division || "" });
-                  }}
-                  className="w-full rounded-xl pl-9 pr-4 py-3 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-red-500/40 appearance-none cursor-pointer"
-                  style={{ background: "rgba(255,255,255,0.90)", border: "1px solid rgba(0,0,0,0.12)" }}>
-                  <option value="">— Pilih Sales —</option>
-                  {users.filter(u => u.role === "guest").map(u => (
-                    <option key={u.id} value={u.full_name}>
-                      {u.full_name}{u.sales_division ? ` (${u.sales_division})` : ""}
-                    </option>
-                  ))}
-                </select>
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs">▾</span>
-              </div>
+              <SalesPicker
+                value={form.sales_name}
+                users={users.filter(u => u.role === "guest")}
+                onChange={(name, div) => set({ sales_name: name, sales_division: div })}
+                triggerClassName="rounded-xl px-4 py-3 cursor-pointer"
+                triggerStyle={{ background: "rgba(255,255,255,0.90)", border: "1px solid rgba(0,0,0,0.12)" }}
+              />
             </div>
           )}
 

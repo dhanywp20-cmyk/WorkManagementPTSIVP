@@ -9,6 +9,7 @@ import {
   SALES_DIVISIONS, DISPLAY_BRANDS, MIDDLEWARE_BRANDS,
   PIE_COLORS,
 } from './shared';
+import { SalesPicker } from '@/components/shared';
 
 export function AssignPTSModal({
   req, onClose, onAssigned, currentUser,
@@ -689,14 +690,12 @@ export function NewFormModal({
               {['admin','superadmin','team_pts','team'].includes((currentUser?.role || '').toLowerCase().trim()) && (
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Sales / Account</label>
-                  <div className="relative">
-                    <select value={form.sales_name} onChange={e => { const sel = salesGuestUsers.find(u => u.full_name === e.target.value); setForm(prev => ({ ...prev, sales_name: e.target.value, sales_division: sel?.sales_division || '' })); }}
-                      className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all text-sm bg-white outline-none appearance-none cursor-pointer">
-                      <option value="">— Pilih Sales —</option>
-                      {salesGuestUsers.map(u => (<option key={u.id} value={u.full_name}>{u.full_name}{u.sales_division ? ` (${u.sales_division})` : ''}</option>))}
-                    </select>
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs">▾</span>
-                  </div>
+                  <SalesPicker
+                    value={form.sales_name}
+                    users={salesGuestUsers}
+                    onChange={(name, div) => setForm(prev => ({ ...prev, sales_name: name, sales_division: div }))}
+                    triggerClassName="border-2 border-gray-200 rounded-xl px-3 py-2.5 bg-white cursor-pointer hover:border-teal-400 transition-all"
+                  />
                 </div>
               )}
               <div>
