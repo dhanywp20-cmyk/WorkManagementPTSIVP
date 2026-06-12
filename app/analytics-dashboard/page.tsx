@@ -363,14 +363,18 @@ function AnalyticsPlatform() {
 
   // ── RENDER ────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen overflow-y-auto bg-cover bg-center bg-fixed" style={{backgroundImage:'url(/IVP_Background.png)'}}>
-      <div className="w-full px-4 py-5 pb-8 space-y-4">
+    <div className="flex flex-col bg-cover bg-center bg-fixed" style={{height:'100dvh',backgroundImage:'url(/IVP_Background.png)'}}>
 
-        {/* ── HEADER ── */}
+      {/* ── HEADER (sticky — stays at top while content scrolls) ── */}
+      <div className="flex-shrink-0 px-4 pt-5 pb-0">
         <div className="rounded-2xl px-5 py-4"
           style={{background:'rgba(255,255,255,0.96)',backdropFilter:'blur(20px)',border:'1px solid rgba(255,255,255,0.6)',boxShadow:'0 4px 24px rgba(0,0,0,0.12)'}}>
           <div className="flex flex-wrap gap-3 items-center justify-between">
-            <div className="flex items-center gap-3">
+            <button
+              className="flex items-center gap-3 text-left"
+              onClick={() => setTab('kpi')}
+              title="Kembali ke Dashboard Analytics"
+            >
               <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl font-black flex-shrink-0"
                 style={{background:'linear-gradient(135deg,#f59e0b,#d97706)',color:'#78350f'}}>
                 📊
@@ -382,7 +386,7 @@ function AnalyticsPlatform() {
                   {greeting()}, <span className="font-semibold text-gray-700">{user.full_name}</span>
                 </p>
               </div>
-            </div>
+            </button>
             <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
               {totalAlerts > 0
                 ? <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{background:'#fee2e2',border:'1px solid #fca5a5'}}>
@@ -403,22 +407,22 @@ function AnalyticsPlatform() {
             </div>
           </div>
 
-          {/* Tab navigation */}
+          {/* Tab navigation — hanya Command Center & Audit Log (Dashboard Analytics is default) */}
           <div className="flex gap-2 mt-4 flex-wrap">
-            <TabBtn label="Dashboard Analytics" icon="📊" active={tab==='kpi'}     onClick={() => setTab('kpi')} />
-            <TabBtn label="Command Center"      icon="🏠" active={tab==='command'} onClick={() => setTab('command')} badge={totalAlerts || undefined} />
-            <TabBtn label="Audit Log"           icon="📋" active={tab==='audit'}   onClick={() => setTab('audit')} badge={auditRows.length > 0 ? auditRows.length : undefined} />
+            <TabBtn label="Command Center" icon="🏠" active={tab==='command'} onClick={() => setTab('command')} badge={totalAlerts || undefined} />
+            <TabBtn label="Audit Log"      icon="📋" active={tab==='audit'}   onClick={() => setTab('audit')} badge={auditRows.length > 0 ? auditRows.length : undefined} />
           </div>
         </div>
+      </div>
+
+      {/* ── SCROLLABLE CONTENT ── */}
+      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-8 space-y-4">
 
         {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* TAB 1 — DASHBOARD ANALYTICS (original DashboardKPI, unchanged) */}
+        {/* TAB 1 — DASHBOARD ANALYTICS (no white wrapper — same as other platforms) */}
         {/* ═══════════════════════════════════════════════════════════════ */}
         {tab === 'kpi' && (
-          <div className="rounded-2xl overflow-hidden"
-            style={{minHeight:'75vh',background:'rgba(255,255,255,0.97)',boxShadow:'0 4px 24px rgba(0,0,0,0.1)'}}>
-            <DashboardKPI currentUser={user as unknown as DashUser} />
-          </div>
+          <DashboardKPI currentUser={user as unknown as DashUser} />
         )}
 
         {/* ═══════════════════════════════════════════════════════════════ */}
@@ -613,7 +617,7 @@ function AnalyticsPlatform() {
         <p className="text-center text-[10px] text-white/40 select-none pb-2">
           Analytics Platform — IndoVisual PTS · Work Management
         </p>
-      </div>
+      </div>{/* end scrollable content */}
     </div>
   );
 }
