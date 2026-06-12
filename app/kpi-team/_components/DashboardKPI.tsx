@@ -642,7 +642,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
   // ─── LC-style design helpers ────────────────────────────────────────────────
   function SectionPill({ icon, children }: { icon: string; children: React.ReactNode }) {
     return (
-      <h3 className="text-sm font-bold uppercase tracking-widest mb-4 inline-flex items-center gap-1.5 bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm border border-slate-200">
+      <h3 className="text-sm font-bold uppercase tracking-widest mb-4 inline-flex items-center gap-1.5 bg-white text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm border border-slate-200">
         <span>{icon}</span>{children}
       </h3>
     );
@@ -751,7 +751,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               <div className="grid grid-cols-2 gap-3">
 
                 {/* PIKET SHOWROOM */}
-                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-3">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">🏪 Piket Showroom</span>
                     <span className="text-[10px] text-slate-400">{new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'short'})}</span>
@@ -791,7 +791,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 </div>
 
                 {/* TICKET TROUBLESHOOTING */}
-                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-3">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">🎫 Ticket</span>
                     <span className="text-[10px] text-slate-400">{scope.kind==='pts_sup'?scope.ptsTeamType:'Semua'}</span>
@@ -841,7 +841,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               <div className="grid grid-cols-2 gap-3">
 
                 {/* REMINDER SCHEDULE */}
-                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-3">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">📅 Reminder Schedule</span>
                   </div>
@@ -889,7 +889,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 </div>
 
                 {/* UNIT MOVEMENT + PENGGUNA (admin) / hanya unit (pts_sup) */}
-                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-3">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">🚚 Unit Movement</span>
                     <span className="text-[10px] text-slate-400">Bulan ini</span>
@@ -967,7 +967,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
 
               {/* ── ROW 3: Learning Center (admin) — compact 1 card full width ── */}
               {scope.kind==='admin'&&(
-                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-3">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">🎓 Learning Center</span>
                   </div>
@@ -1039,7 +1039,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               {/* ── ROW A: 3-col Ticket charts ── */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {/* Handler */}
-                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">🎫 Ticket Open per Handler</h3>
                   {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
                     kpi?.tickets.byHandler.length
@@ -1047,7 +1047,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                       : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data</p>}
                 </div>
                 {/* Divisi */}
-                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">🏢 Ticket per Divisi</h3>
                   {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
                     kpi?.tickets.byDivision.length
@@ -1055,7 +1055,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                       : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data</p>}
                 </div>
                 {/* Product */}
-                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">📦 Ticket per Produk</h3>
                   {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
                     kpi?.tickets.byProduct?.length
@@ -1066,7 +1066,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
 
               {/* ── ROW B: Reminder Kategori + Reminder per Produk ── */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">🗂️ Reminder per Kategori</h3>
                   {loading?<div className="h-28 rounded animate-pulse bg-slate-100"/>:(
                     <div className="flex items-start gap-5">
@@ -1097,7 +1097,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                   )}
                 </div>
                 {/* Reminder per Produk */}
-                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">🏷️ Reminder per Produk</h3>
                   {loading?<div className="h-28 rounded animate-pulse bg-slate-100"/>:(
                     (kpi?.reminders.byProduct??[]).length === 0
@@ -1137,7 +1137,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               </div>
 
               {/* ── Trend Ticket Bulanan ── */}
-              <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">📈 Trend Ticket Bulanan {new Date().getFullYear()}</h3>
                 {loading ? <div className="h-32 rounded animate-pulse bg-slate-100"/> : (
                   kpi?.tickets.monthlyTickets?.some(v => v > 0) ? (() => {
@@ -1186,7 +1186,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               </div>
 
               {/* Performa Resolusi */}
-              <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">⚡ Ringkasan Performa</h3>
                 {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:(
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -1233,7 +1233,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 // For reminders we use kpi.reminders.byCategory total as flat (no monthly breakdown yet)
                 const maxVal = Math.max(...ticketsByMonth, ...lcByMonth, 1);
                 return (
-                  <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                     <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                       <h3 className="text-sm font-bold uppercase tracking-widest text-slate-500">📅 Aktivitas Bulanan {year}</h3>
                       <div className="flex items-center gap-4 text-sm">
@@ -1272,7 +1272,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               {/* Module summary comparison */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Tickets */}
-                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#fee2e2'}}>🎫</div>
                     <span className="text-sm font-black uppercase tracking-widest text-slate-500">Ticketing</span>
@@ -1290,7 +1290,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                   ))}
                 </div>
                 {/* Reminders */}
-                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#ede9fe'}}>📅</div>
                     <span className="text-sm font-black uppercase tracking-widest text-slate-500">Reminder</span>
@@ -1308,7 +1308,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                   ))}
                 </div>
                 {/* Learning Center */}
-                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#ede9fe'}}>🎓</div>
                     <span className="text-sm font-black uppercase tracking-widest text-slate-500">Learning Center</span>
@@ -1329,7 +1329,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
 
               {/* Team KPI summary table */}
               {kpiTeam.members.length > 0 && (
-                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                   <div className="px-5 py-3 border-b border-slate-100">
                     <span className="text-sm font-black uppercase tracking-widest text-slate-500">👥 Ringkasan KPI Tim — {kpiTeam.filterYear}</span>
                   </div>
@@ -1387,7 +1387,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 </div>
                 {(['all','ticket','reminder','piket','user'] as const).map(f=>(
                   <button key={f} onClick={()=>setAuditFilter(f)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-bold tracking-wide transition-all border ${auditFilter===f ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white/90 text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
+                    className={`px-3 py-1.5 rounded-lg text-sm font-bold tracking-wide transition-all border ${auditFilter===f ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
                     {f==='all'?'SEMUA':f.toUpperCase()}
                   </button>
                 ))}

@@ -365,26 +365,23 @@ function AnalyticsPlatform() {
   return (
     <div className="flex flex-col bg-cover bg-center bg-fixed" style={{height:'100dvh',backgroundImage:'url(/IVP_Background.png)'}}>
 
-      {/* ── HEADER (sticky — stays at top while content scrolls) ── */}
-      <div className="flex-shrink-0 px-4 pt-5 pb-0">
-        <div className="rounded-2xl px-5 py-4"
-          style={{background:'rgba(255,255,255,0.96)',backdropFilter:'blur(20px)',border:'1px solid rgba(255,255,255,0.6)',boxShadow:'0 4px 24px rgba(0,0,0,0.12)'}}>
-          <div className="flex flex-wrap gap-3 items-center justify-between">
+      {/* ── HEADER — full width, same style as PageHeader used in other platforms ── */}
+      <header className="flex-shrink-0 z-50"
+        style={{background:'rgba(255,255,255,0.95)',backdropFilter:'blur(16px)',borderBottom:'3px solid #f59e0b'}}>
+        <div className="max-w-[1600px] mx-auto px-6 py-3.5">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
             <button
               className="flex items-center gap-3 text-left"
               onClick={() => setTab('kpi')}
               title="Kembali ke Dashboard Analytics"
             >
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl font-black flex-shrink-0"
-                style={{background:'linear-gradient(135deg,#f59e0b,#d97706)',color:'#78350f'}}>
-                📊
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{background:'linear-gradient(135deg,#f59e0b,#d97706)',boxShadow:'0 3px 12px #f59e0b40'}}>
+                <span className="text-lg">📊</span>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Work Management PTS</p>
-                <p className="text-xl font-black text-gray-900 leading-tight">Analytics Platform</p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {greeting()}, <span className="font-semibold text-gray-700">{user.full_name}</span>
-                </p>
+                <h1 className="text-base font-black tracking-tight leading-tight" style={{color:'#d97706'}}>Analytics Platform</h1>
+                <p className="text-[10px] text-slate-500 font-medium">Work Management PTS · {greeting()}, {user.full_name}</p>
               </div>
             </button>
             <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
@@ -406,14 +403,13 @@ function AnalyticsPlatform() {
               </button>
             </div>
           </div>
-
-          {/* Tab navigation — hanya Command Center & Audit Log (Dashboard Analytics is default) */}
-          <div className="flex gap-2 mt-4 flex-wrap">
+          {/* Tab navigation */}
+          <div className="flex gap-2 mt-3 flex-wrap">
             <TabBtn label="Command Center" icon="🏠" active={tab==='command'} onClick={() => setTab('command')} badge={totalAlerts || undefined} />
             <TabBtn label="Audit Log"      icon="📋" active={tab==='audit'}   onClick={() => setTab('audit')} badge={auditRows.length > 0 ? auditRows.length : undefined} />
           </div>
         </div>
-      </div>
+      </header>
 
       {/* ── SCROLLABLE CONTENT ── */}
       <div className="flex-1 overflow-y-auto px-4 pt-4 pb-8 space-y-4">
