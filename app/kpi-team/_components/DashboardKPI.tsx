@@ -711,37 +711,9 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col flex-1 overflow-hidden" style={{ animation:'fadeInUp 0.35s ease forwards', background:'rgba(0,0,0,0.10)' }}>
-
-        {/* ── Top bar — sticky menempel di atas seperti Learning Center ── */}
-        <div className="flex items-center justify-between gap-4 px-6 py-4 flex-shrink-0 sticky top-0 z-50"
-          style={{ background:'rgba(255,255,255,0.92)', backdropFilter:'blur(16px)', WebkitBackdropFilter:'blur(16px)', borderBottom:'3px solid #dc2626' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-              </svg>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-slate-800 leading-tight">{scopeTitle}</span>
-                <ScopeBadge scope={scope}/>
-              </div>
-              <span className="text-[10px] text-slate-400 font-medium">SYNC {lastRefresh.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <button onClick={()=>{ setLoading(true); setAuditLoading(true); fetchKPI(); fetchAudit(); setLastRefresh(new Date()); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-50 border border-slate-200 transition-all">
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-              Sync
-            </button>
-          </div>
-        </div>
-
-        {/* ── Content area — scrollable, transparan ── */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+    <div className="w-full">
+        {/* ── Content area ── */}
+        <div className="p-4 space-y-5">
 
           {/* ══════════ TAB ANALYTICS ══════════ */}
           {tab==='analytics' && (

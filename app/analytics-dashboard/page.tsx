@@ -405,6 +405,7 @@ function AnalyticsPlatform() {
           </div>
           {/* Tab navigation */}
           <div className="flex gap-2 mt-3 flex-wrap">
+            <TabBtn label="Analytics"      icon="📊" active={tab==='kpi'}     onClick={() => setTab('kpi')} />
             <TabBtn label="Command Center" icon="🏠" active={tab==='command'} onClick={() => setTab('command')} badge={totalAlerts || undefined} />
             <TabBtn label="Audit Log"      icon="📋" active={tab==='audit'}   onClick={() => setTab('audit')} badge={auditRows.length > 0 ? auditRows.length : undefined} />
           </div>
