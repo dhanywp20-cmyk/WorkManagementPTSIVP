@@ -80,8 +80,8 @@ function IcoClock({ s = 13 }: { s?: number }) {
   );
 }
 
-// ─── Base style — icon-only square button ─────────────────────────────────────
-const base = 'inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed';
+// ─── Base style — icon-only, no background ────────────────────────────────────
+const base = 'inline-flex items-center justify-center w-7 h-7 rounded-lg transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed';
 
 // ─── Action Button Components ─────────────────────────────────────────────────
 
@@ -90,7 +90,7 @@ export function ViewIconBtn({ onClick, title, label, disabled }: {
 }) {
   return (
     <button onClick={onClick} title={label || title || 'Lihat'} disabled={disabled}
-      className={`${base} text-blue-600 bg-white border-slate-200 hover:bg-blue-50 hover:border-blue-200`}>
+      className={`${base} text-blue-600 hover:bg-blue-50`}>
       <IcoEye />
     </button>
   );
@@ -101,7 +101,7 @@ export function EditIconBtn({ onClick, title, label, disabled }: {
 }) {
   return (
     <button onClick={onClick} title={label || title || 'Edit'} disabled={disabled}
-      className={`${base} text-emerald-600 bg-white border-slate-200 hover:bg-emerald-50 hover:border-emerald-200`}>
+      className={`${base} text-emerald-600 hover:bg-emerald-50`}>
       <IcoPen />
     </button>
   );
@@ -112,7 +112,7 @@ export function DeleteIconBtn({ onClick, title, label, disabled }: {
 }) {
   return (
     <button onClick={onClick} title={label || title || 'Hapus'} disabled={disabled}
-      className={`${base} text-rose-600 bg-white border-slate-200 hover:bg-rose-50 hover:border-rose-200`}>
+      className={`${base} text-rose-600 hover:bg-rose-50`}>
       <IcoTrash />
     </button>
   );
@@ -123,7 +123,7 @@ export function RescheduleIconBtn({ onClick, title, label, disabled }: {
 }) {
   return (
     <button onClick={onClick} title={label || title || 'Reschedule'} disabled={disabled}
-      className={`${base} text-amber-600 bg-white border-slate-200 hover:bg-amber-50 hover:border-amber-200`}>
+      className={`${base} text-amber-600 hover:bg-amber-50`}>
       <IcoCalendar />
     </button>
   );
@@ -134,7 +134,7 @@ export function DuplicateIconBtn({ onClick, title, label, disabled }: {
 }) {
   return (
     <button onClick={onClick} title={label || title || 'Duplikat'} disabled={disabled}
-      className={`${base} text-violet-600 bg-white border-slate-200 hover:bg-violet-50 hover:border-violet-200`}>
+      className={`${base} text-violet-600 hover:bg-violet-50`}>
       <IcoCopy />
     </button>
   );
@@ -145,7 +145,7 @@ export function CompleteIconBtn({ onClick, title, label, disabled }: {
 }) {
   return (
     <button onClick={onClick} title={label || title || 'Selesai'} disabled={disabled}
-      className={`${base} text-emerald-700 bg-white border-slate-200 hover:bg-emerald-50 hover:border-emerald-200`}>
+      className={`${base} text-emerald-700 hover:bg-emerald-50`}>
       <IcoCheck />
     </button>
   );
@@ -156,7 +156,7 @@ export function FlowchartIconBtn({ onClick, title = 'Flowchart / Riwayat', disab
 }) {
   return (
     <button onClick={onClick} title={title} disabled={disabled}
-      className={`${base} text-indigo-600 bg-white border-slate-200 hover:bg-indigo-50 hover:border-indigo-200`}>
+      className={`${base} text-indigo-600 hover:bg-indigo-50`}>
       <IcoBarChart />
     </button>
   );
@@ -167,7 +167,7 @@ export function PrintIconBtn({ onClick, title = 'Print PDF', disabled }: {
 }) {
   return (
     <button onClick={onClick} title={title} disabled={disabled}
-      className={`${base} text-slate-500 bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300`}>
+      className={`${base} text-slate-500 hover:bg-slate-100`}>
       <IcoPrinter />
     </button>
   );
@@ -178,7 +178,7 @@ export function ApproveIconBtn({ onClick, title = 'Approve', disabled, pulse }: 
 }) {
   return (
     <button onClick={onClick} title={title} disabled={disabled}
-      className={`${base} text-orange-500 bg-white border-orange-200 hover:bg-orange-50 hover:border-orange-300${pulse ? ' animate-pulse' : ''}`}>
+      className={`${base} text-orange-500 hover:bg-orange-50${pulse ? ' animate-pulse' : ''}`}>
       <IcoCheck />
     </button>
   );
@@ -189,7 +189,7 @@ export function ReopenIconBtn({ onClick, title = 'Re-open', disabled }: {
 }) {
   return (
     <button onClick={onClick} title={title} disabled={disabled}
-      className={`${base} text-amber-600 bg-white border-slate-200 hover:bg-amber-50 hover:border-amber-200`}>
+      className={`${base} text-amber-600 hover:bg-amber-50`}>
       <IcoUnlock />
     </button>
   );
@@ -200,9 +200,7 @@ export function OverdueIconBtn({ onClick, title = 'Overdue Setting', disabled, a
 }) {
   return (
     <button onClick={onClick} title={title} disabled={disabled}
-      className={`${base} ${active
-        ? 'text-red-600 bg-white border-red-200 hover:bg-red-50 hover:border-red-300'
-        : 'text-slate-400 bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+      className={`${base} ${active ? 'text-red-600 hover:bg-red-50' : 'text-slate-400 hover:bg-slate-100'}`}>
       <IcoClock />
     </button>
   );

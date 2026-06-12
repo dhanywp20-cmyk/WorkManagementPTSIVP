@@ -1116,7 +1116,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                             <optgroup key={tier} label={`${cfg.icon} ${tier}`}>
                               {list.map(u => (
                                 <option key={u.id} value={u.id}>
-                                  {u.full_name} (@{u.username}){u.sales_division ? ` [${u.sales_division}]` : ''}
+                                  {u.full_name}{u.sales_division ? ` — ${u.sales_division}` : ''}
                                 </option>
                               ))}
                             </optgroup>
@@ -1272,7 +1272,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                         className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 bg-white">
                         <option value="">— Pilih IVP —</option>
                         {ivpUsers.map(u => (
-                          <option key={u.id} value={u.id}>{u.full_name} (@{u.username}){!u.phone_number ? ' ⚠️' : ''}</option>
+                          <option key={u.id} value={u.id}>{u.full_name}{!u.phone_number ? ' ⚠️' : ''}</option>
                         ))}
                       </select>
                     )}
