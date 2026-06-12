@@ -1875,20 +1875,19 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
     // ── 3. Reminder Schedule ──
     try {
       if (isAdmin) {
-        // Admin: request jadwal dari sales yang belum di-assign (assigned_to kosong)
+        // Admin: semua reminder aktif (tidak done/cancelled)
         const { data } = await supabase
           .from('reminders')
-          .select('id, project_name, category, due_date, status, assigned_to, notes, sales_name, sales_division, created_at')
-          .eq('status', 'pending')
-          .eq('assigned_to', '')
-          .ilike('notes', '%[REQUEST SALES]%')
-          .order('created_at', { ascending: false })
-          .limit(20);
+          .select('id, project_name, category, due_date, status, assigned_to, sales_name, sales_division, created_at')
+          .neq('status', 'done')
+          .neq('status', 'cancelled')
+          .order('due_date', { ascending: true })
+          .limit(30);
         setReminderNotifs((data ?? []).map((r: any) => ({
           id: r.id,
           type: 'reminder' as const,
           title: r.project_name,
-          subtitle: `📩 Req. Sales · ${r.sales_name}${r.sales_division ? ' · ' + r.sales_division : ''} · ${r.due_date}`,
+          subtitle: `🗓️ ${r.category} · ${r.due_date}${r.sales_name ? ' · ' + r.sales_name : ''}`,
           time: r.created_at,
           url: '/reminder-schedule',
           internalUrl: '/reminder-schedule',
