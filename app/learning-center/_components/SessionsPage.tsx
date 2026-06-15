@@ -126,7 +126,7 @@ export function SessionsPage({ user }: { user: User }) {
       materi_name: form.batch_filter ? `${mat?.materi_name ?? ''} — ${form.batch_filter}` : (mat?.materi_name ?? ''),
       question_ids: shuffled.map(q => q.id), question_count: form.question_count,
       timer_minutes: form.timer_minutes || null, passing_grade: form.passing_grade,
-      allow_retake: form.allow_retake, is_active: true, created_by: user.id,
+      allow_retake: form.allow_retake, is_active: true, created_by: user.username,
       target_user_ids: resolvedTargetIds,
       open_at: form.open_at ? new Date(form.open_at).toISOString() : null,
       close_at: form.close_at ? new Date(form.close_at).toISOString() : null,

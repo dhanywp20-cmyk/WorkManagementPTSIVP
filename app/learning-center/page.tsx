@@ -23,7 +23,7 @@ export default function LearningCenterPage() {
       const parsed = getSession<User>();
       if (!parsed) { setLoading(false); return; }
       try {
-        const { data } = await supabase.from('users').select('*').eq('id', parsed.id).single();
+        const { data } = await supabase.from('users').select('id,full_name,username,role,jabatan,sales_division,phone_number,allowed_menus,team_type').eq('id', parsed.id).single();
         const user = data ?? parsed;
         setCurrentUser(user);
         if (data) setSession(user); // refresh session dengan data terbaru
