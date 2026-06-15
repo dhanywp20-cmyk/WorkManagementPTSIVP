@@ -1428,13 +1428,14 @@ jangan lupa peralatan & Semangat💪🏼
         {detailReminder && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4 overflow-y-auto"
             onClick={e => { if (e.target === e.currentTarget) { setDetailReminder(null); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); } }}>
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 overflow-hidden"
+            <div className="relative w-full max-w-2xl my-4">
+            <button onClick={() => { setDetailReminder(null); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); }}
+              className="absolute -top-3 -right-3 z-10 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-600 shadow-lg flex items-center justify-center font-bold text-base">✕</button>
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full overflow-hidden flex flex-col"
               style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '96vh' }}>
-              <div className="px-6 py-5 relative" style={{
+              <div className="px-6 py-5 flex-shrink-0" style={{
                 background: (() => { const c = CATEGORY_CONFIG[detailReminder.category]; return c ? `linear-gradient(135deg,${c.accent}dd,${c.accent}88)` : 'linear-gradient(135deg,#1d4ed8,#1e40af)'; })()
               }}>
-                <button onClick={() => { setDetailReminder(null); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); }}
-                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 text-white flex items-center justify-center font-bold text-lg">✕</button>
                 <div className="flex flex-wrap gap-2 mb-3">
                   <PriorityBadge priority={detailReminder.priority} onHeader />
                   <StatusBadge status={detailReminder.status} onHeader />
@@ -1451,11 +1452,11 @@ jangan lupa peralatan & Semangat💪🏼
                 <h2 className="text-2xl font-bold text-white leading-tight">{(detailReminder.project_name || '').trim() || ((detailReminder as any).title || '').trim() || '—'}</h2>
                 {/* Lokasi Project langsung di bawah nama project */}
                 {detailReminder.address && (
-                  <p className="text-white/80 text-sm mt-1 flex items-center gap-1.5">
+                  <p className="text-white text-sm mt-1 flex items-center gap-1.5">
                     <span>📍</span>{detailReminder.address}
                   </p>
                 )}
-                {detailReminder.description && <p className="text-white/70 text-xs mt-1.5">{detailReminder.description}</p>}
+                {detailReminder.description && <p className="text-white/90 text-xs mt-1.5">{detailReminder.description}</p>}
                 {/* Troubleshooting link ke Ticketing — navigasi internal */}
                 {detailReminder.category === 'Troubleshooting' && (
                   <button
@@ -1467,7 +1468,7 @@ jangan lupa peralatan & Semangat💪🏼
                 )}
               </div>
 
-              <div className="p-5 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(95vh - 180px)' }}>
+              <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
                 <div>
                   <SectionHeaderSmall icon="📋" title="Detail Jadwal" />
                   <div className="mt-3 grid grid-cols-2 gap-4">
@@ -1728,7 +1729,7 @@ jangan lupa peralatan & Semangat💪🏼
 
                 {/* Action buttons di detail popup */}
                 {(isAdmin || currentUser?.role === 'team') && (
-                  <div className="flex gap-3 pt-2 flex-wrap">
+                  <div className="flex gap-3 pt-3 pb-2 flex-wrap sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-gray-100 -mx-5 px-5 z-10">
                     {/* Approve & Assign — admin only, request sales belum di-assign */}
                     {isAdmin && !detailReminder.assigned_to && detailReminder.notes?.includes('[REQUEST SALES]') && (
                       <button
@@ -1785,6 +1786,7 @@ jangan lupa peralatan & Semangat💪🏼
                   </div>
                 )}
               </div>
+            </div>
             </div>
           </div>
         )}

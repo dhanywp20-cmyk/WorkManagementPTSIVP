@@ -49,9 +49,9 @@ export function InfoRow({ icon, label, value }: { icon: string; label: string; v
 export function InfoLine({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
   return (
-    <div className="py-2 border-b border-gray-50 last:border-0">
-      <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400 block">{label}</span>
-      <span className="text-sm text-gray-800 font-medium break-words">{value}</span>
+    <div className="py-2 border-b border-gray-100 last:border-0">
+      <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 mr-1.5">{label}:</span>
+      <span className="text-sm text-slate-800 font-medium">{value}</span>
     </div>
   );
 }
