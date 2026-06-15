@@ -37,13 +37,13 @@ export function ViewModal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.5)' }}
     >
-      <button onClick={onClose} className="fixed top-4 right-4 z-[110] w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-xl flex items-center justify-center font-bold text-base">✕</button>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
         {/* Header */}
         <div
-          className="px-6 py-4 border-b border-gray-100 flex-shrink-0"
+          className="px-6 py-4 border-b border-gray-100 flex-shrink-0 relative"
           style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.04))' }}
         >
+          <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-sm">✕</button>
           <div>
             <Badge color="purple" square>{project.category}</Badge>
             <h3 className="font-bold text-gray-800 text-base leading-snug mt-1.5">{project.project_name}</h3>

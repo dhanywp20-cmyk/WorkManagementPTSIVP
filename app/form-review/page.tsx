@@ -581,12 +581,11 @@ export default function FormReviewPage() {
         {detailReview && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4 overflow-y-auto"
             onClick={e => { if (e.target === e.currentTarget) setDetailReview(null); }}>
-            <button onClick={() => setDetailReview(null)} className="fixed top-4 right-4 z-[110] w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-xl flex items-center justify-center font-bold text-base">✕</button>
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 overflow-hidden"
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 overflow-hidden flex flex-col"
               style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '96vh' }}>
 
               {/* Header */}
-              <div className="px-6 py-5"
+              <div className="px-6 py-5 flex-shrink-0 relative"
                 style={{ background: detailReview.review_category === 'Demo Product' ? 'linear-gradient(135deg,#7c3aeddd,#5b21b688)' : 'linear-gradient(135deg,#0ea5e9dd,#0284c788)' }}>
                 <div className="flex flex-wrap gap-2 mb-3">
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white"
@@ -617,9 +616,11 @@ export default function FormReviewPage() {
                 </div>
                 <h2 className="text-xl font-bold text-white leading-tight">{detailReview.project_name || '—'}</h2>
                 {detailReview.address && <p className="text-white/80 text-sm mt-1 flex items-center gap-1.5">📍 {detailReview.address}</p>}
+                <button onClick={() => setDetailReview(null)}
+                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
               </div>
 
-              <div className="p-5 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(95vh - 180px)' }}>
+              <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
 
                 {/* Info Cards Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">

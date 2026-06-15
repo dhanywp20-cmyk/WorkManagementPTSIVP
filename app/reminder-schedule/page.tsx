@@ -1439,12 +1439,9 @@ jangan lupa peralatan & Semangat💪🏼
         {detailReminder && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4 overflow-y-auto"
             onClick={e => { if (e.target === e.currentTarget) { setDetailReminder(null); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); } }}>
-            <button onClick={() => { setDetailReminder(null); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); }}
-              className="fixed top-4 right-4 z-[110] w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-xl flex items-center justify-center font-bold text-base">✕</button>
-            <div className="relative w-full max-w-2xl my-4">
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full overflow-hidden flex flex-col"
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 overflow-hidden flex flex-col"
               style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '96vh' }}>
-              <div className="px-6 py-5 flex-shrink-0" style={{
+              <div className="px-6 py-5 flex-shrink-0 relative" style={{
                 background: (() => { const c = CATEGORY_CONFIG[detailReminder.category]; const base = c ? `linear-gradient(135deg,${c.accent}dd,${c.accent}88)` : 'linear-gradient(135deg,#1d4ed8,#1e40af)'; return `linear-gradient(rgba(0,0,0,0.3),rgba(0,0,0,0.15)),${base}`; })()
               }}>
                 <div className="flex flex-wrap gap-2 mb-3">
@@ -1477,6 +1474,8 @@ jangan lupa peralatan & Semangat💪🏼
                     🎫 Buka Platform Ticketing
                   </button>
                 )}
+                <button onClick={() => { setDetailReminder(null); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); }}
+                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
               </div>
 
               <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
@@ -1798,7 +1797,6 @@ jangan lupa peralatan & Semangat💪🏼
                 )}
               </div>
             </div>
-            </div>
           </div>
         )}
 
@@ -2118,17 +2116,19 @@ jangan lupa peralatan & Semangat💪🏼
                             </div>
                             <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2 text-xs">
                               {r.sales_name && <div className="truncate"><span className="text-gray-400">Sales: </span><span className="text-gray-700 font-medium">{r.sales_name}</span></div>}
-                              <div className="flex flex-wrap gap-1">
-                                {group.map(gr => (
-                                  <span key={gr.id} className="flex items-center gap-0.5">
-                                    <span className="w-4 h-4 rounded-full inline-flex items-center justify-center text-[8px] font-bold text-white flex-shrink-0"
-                                      style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }} title={gr.assign_name || ''}>
-                                      {gr.assign_name?.charAt(0)?.toUpperCase() || '?'}
-                                    </span>
-                                    {group.length === 1 && <span className="text-[10px] text-gray-700 font-medium">{gr.assign_name}</span>}
+                              <div className="flex flex-wrap gap-0.5">
+                                {group.slice(0, 4).map(gr => (
+                                  <span key={gr.id} title={gr.assign_name || ''}
+                                    className="w-5 h-5 rounded-full inline-flex items-center justify-center text-[8px] font-bold text-white flex-shrink-0"
+                                    style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
+                                    {gr.assign_name?.charAt(0)?.toUpperCase() || '?'}
                                   </span>
                                 ))}
-                                {group.length > 1 && <span className="text-[9px] text-gray-400">({group.length} orang)</span>}
+                                {group.length > 4 && (
+                                  <span className="w-5 h-5 rounded-full inline-flex items-center justify-center text-[7px] font-bold bg-gray-100 text-gray-600 flex-shrink-0">+{group.length - 4}</span>
+                                )}
+                                {group.length === 1 && <span className="text-[10px] text-gray-700 font-medium ml-0.5">{group[0].assign_name}</span>}
+                                {group.length > 1 && <span className="text-[9px] text-gray-400 ml-0.5">({group.length} orang)</span>}
                               </div>
                               {r.notes && !r.notes.includes('[REQUEST SALES]') && <div className="col-span-2 truncate text-gray-400">{r.notes.substring(0,60)}{r.notes.length>60?'…':''}</div>}
                             </div>
@@ -2255,23 +2255,23 @@ jangan lupa peralatan & Semangat💪🏼
                                   {r.sales_division && <div className="text-[10px] text-purple-600 font-semibold truncate mt-0.5">{r.sales_division}</div>}
                                 </td>
                                 {/* Handler */}
-                                <td className="px-3 py-3 border-r border-gray-200 align-middle">
-                                  <div className="flex flex-wrap gap-1">
-                                    {group.map(gr => (
-                                      <div key={gr.id} className="flex items-center gap-0.5" title={gr.assign_name || ''}>
-                                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
-                                          style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
-                                          {gr.assign_name?.charAt(0)?.toUpperCase() || '?'}
-                                        </div>
-                                        {group.length === 1 && (
-                                          <span className="text-[10px] font-bold text-gray-800 truncate max-w-[80px]">{gr.assign_name}</span>
-                                        )}
+                                <td className="px-3 py-3 border-r border-gray-200 align-middle" style={{ width: '110px', maxWidth: '110px', overflow: 'hidden' }}>
+                                  <div className="flex flex-nowrap gap-0.5">
+                                    {group.slice(0, 3).map(gr => (
+                                      <div key={gr.id} title={gr.assign_name || ''}
+                                        className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
+                                        style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
+                                        {gr.assign_name?.charAt(0)?.toUpperCase() || '?'}
                                       </div>
                                     ))}
+                                    {group.length > 3 && (
+                                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold bg-gray-100 text-gray-600 flex-shrink-0">+{group.length - 3}</div>
+                                    )}
                                   </div>
-                                  {group.length > 1 && (
-                                    <div className="text-[9px] text-gray-400 mt-0.5">{group.length} orang</div>
-                                  )}
+                                  {group.length === 1
+                                    ? <span className="text-[10px] font-bold text-gray-800 block mt-0.5 truncate">{group[0].assign_name}</span>
+                                    : <span className="text-[9px] text-gray-400 mt-0.5 block">{group.length} orang</span>
+                                  }
                                 </td>
                                 {/* Status */}
                                 <td className="px-3 py-3 border-r border-gray-200 align-middle">

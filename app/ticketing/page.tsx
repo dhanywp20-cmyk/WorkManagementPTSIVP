@@ -2636,13 +2636,10 @@ function TicketingSystemInner() {
             <div className="flex items-start gap-3 w-full my-2" style={{ maxWidth: showUpdateForm ? '1120px' : '720px', transition: 'max-width 0.2s' }}>
 
               {/* LEFT: Detail */}
-              <div className="relative flex-1 min-w-0">
-              <button onClick={() => { setShowTicketDetailPopup(false); setSelectedTicket(null); setShowUpdateForm(false); }}
-                className="absolute -top-3 -right-3 z-10 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-600 shadow-lg flex items-center justify-center font-bold text-base">✕</button>
-              <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden w-full flex flex-col"
+              <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden w-full flex flex-col flex-1 min-w-0"
                 style={{ animation: "scale-in 0.25s ease-out", border: "1px solid rgba(0,0,0,0.1)", maxHeight: "94vh" }}>
                 {/* Header */}
-                <div className="px-5 py-4 flex-shrink-0" style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)" }}>
+                <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)" }}>
                   <div className="flex flex-wrap gap-1.5 mb-2">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: 'rgba(255,255,255,0.22)', border: '1px solid rgba(255,255,255,0.4)', color: 'white' }}>🎫 Tim: {selectedTicket.current_team}</span>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: selectedTicket.status === "Solved" ? "#059669" : selectedTicket.status === "In Progress" ? "#2563eb" : selectedTicket.status === "Onsite" ? "#7c3aed" : selectedTicket.status === "Call" ? "#0891b2" : "#d97706" }}>Status: {selectedTicket.status}</span>
@@ -2657,6 +2654,8 @@ function TicketingSystemInner() {
                       🗓️ Lihat Jadwal Reminder
                     </button>
                   )}
+                  <button onClick={() => { setShowTicketDetailPopup(false); setSelectedTicket(null); setShowUpdateForm(false); }}
+                    className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
                 </div>
 
                 <div className="overflow-y-auto flex-1 min-h-0">
@@ -2795,7 +2794,6 @@ function TicketingSystemInner() {
                     )}
                     <button onClick={() => { setShowTicketDetailPopup(false); setSelectedTicket(null); setShowUpdateForm(false); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border border-gray-200 text-gray-600 bg-white">✕ Close</button>
                   </div>
-              </div>
               </div>
 
               {/* RIGHT: Update Status Panel */}

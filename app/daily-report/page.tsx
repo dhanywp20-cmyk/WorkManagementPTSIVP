@@ -684,10 +684,9 @@ export default function DailyReportPage() {
     const linkedReport = row.report_id ? reports.find(r => r.id === row.report_id) : undefined;
     return (
       <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }} onClick={() => setModalRow(null)}>
-        <button onClick={() => setModalRow(null)} className="fixed top-4 right-4 z-[110] w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-xl flex items-center justify-center font-bold text-base">✕</button>
         <div className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden" style={{ background: 'white' }} onClick={e => e.stopPropagation()}>
           {/* Colored header */}
-          <div className="px-6 py-5 text-white" style={{ background: `linear-gradient(135deg, ${c.accent}, ${c.accent}cc)` }}>
+          <div className="px-6 py-5 text-white relative" style={{ background: `linear-gradient(135deg, ${c.accent}, ${c.accent}cc)` }}>
             <div className="flex items-start gap-3">
               <span className="text-3xl">{row.kegiatan_icon}</span>
               <div>
@@ -704,6 +703,8 @@ export default function DailyReportPage() {
               {row.jam !== '-' && <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/20">🕐 {row.jam}</span>}
               <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/20">📅 {row.report_date}</span>
             </div>
+            <button onClick={() => setModalRow(null)}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
           </div>
           {/* Body */}
           <div className="px-6 py-5 space-y-4">

@@ -563,13 +563,13 @@ function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <button onClick={onClose} className="fixed top-4 right-4 z-[110] w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-xl flex items-center justify-center font-bold text-base">✕</button>
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
-        style={{ maxHeight: '90vh', overflowY: 'auto' }}>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col"
+        style={{ maxHeight: '90vh' }}>
 
         {/* Header */}
-        <div className="px-5 py-4 flex items-center justify-between"
+        <div className="px-5 py-4 flex items-center gap-3 flex-shrink-0 relative"
           style={{ background: `linear-gradient(135deg, ${teamColor}, ${teamColor}cc)` }}>
+          <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-black text-white"
               style={{ background: 'rgba(255,255,255,0.2)' }}>
@@ -582,7 +582,7 @@ function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: (
           </div>
         </div>
 
-        <div className="p-5 space-y-5">
+        <div className="p-5 space-y-5 overflow-y-auto flex-1 min-h-0">
 
           {/* Ticket Stats */}
           <section>
