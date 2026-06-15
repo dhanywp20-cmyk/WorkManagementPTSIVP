@@ -803,6 +803,17 @@ function ReminderSchedulePageInner() {
     return (b.created_at || '').localeCompare(a.created_at || '');
   });
 
+  // Group same-event reminders (same project/category/date/time) into one display row
+  const groupedReminders = (() => {
+    const map = new Map<string, typeof filteredReminders>();
+    for (const r of filteredReminders) {
+      const key = `${(r.project_name || r.title || '').trim()}|${r.category}|${r.due_date}|${r.due_time || ''}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(r);
+    }
+    return Array.from(map.values());
+  })();
+
   const todayCount      = reminders.filter(r => isDueToday(r.due_date) && r.status !== 'done' && r.status !== 'cancelled').length;
   const pendingCount    = reminders.filter(r => r.status === 'pending').length;
   const doneCount       = reminders.filter(r => r.status === 'done').length;
@@ -2074,7 +2085,8 @@ jangan lupa peralatan & Semangat💪🏼
                     <>
                     {/* ── MOBILE: Card view ── */}
                     <div className="md:hidden divide-y divide-gray-100">
-                      {filteredReminders.map((r, idx) => {
+                      {groupedReminders.map((group, idx) => {
+                        const r = group[0];
                         const today = isDueToday(r.due_date);
                         const dueDate = new Date(r.due_date + 'T00:00:00');
                         return (
@@ -2095,12 +2107,29 @@ jangan lupa peralatan & Semangat💪🏼
                                   <span className="text-base font-black leading-none" style={{ color: today ? '#dc2626' : '#4f46e5' }}>{dueDate.getDate()}</span>
                                   <span className="text-[8px] font-bold uppercase" style={{ color: today ? '#dc2626' : '#6366f1' }}>{dueDate.toLocaleDateString('id-ID',{month:'short',year:'2-digit'})}</span>
                                 </div>
-                                <StatusBadge status={r.status} />
+                                {(() => {
+                                  const counts: Record<string,number> = {};
+                                  for (const gr of group) counts[gr.status] = (counts[gr.status]||0)+1;
+                                  const entries = Object.entries(counts);
+                                  if (entries.length === 1) return <StatusBadge status={group[0].status} />;
+                                  return <div className="flex flex-wrap gap-0.5">{entries.map(([s,n]) => <span key={s} className="flex items-center gap-0.5"><StatusBadge status={s} /><span className="text-[8px] text-gray-500">{n}×</span></span>)}</div>;
+                                })()}
                               </div>
                             </div>
                             <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2 text-xs">
                               {r.sales_name && <div className="truncate"><span className="text-gray-400">Sales: </span><span className="text-gray-700 font-medium">{r.sales_name}</span></div>}
-                              {r.assign_name && <div className="truncate"><span className="text-gray-400">Handler: </span><span className="text-gray-700 font-medium">{r.assign_name}</span></div>}
+                              <div className="flex flex-wrap gap-1">
+                                {group.map(gr => (
+                                  <span key={gr.id} className="flex items-center gap-0.5">
+                                    <span className="w-4 h-4 rounded-full inline-flex items-center justify-center text-[8px] font-bold text-white flex-shrink-0"
+                                      style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }} title={gr.assign_name || ''}>
+                                      {gr.assign_name?.charAt(0)?.toUpperCase() || '?'}
+                                    </span>
+                                    {group.length === 1 && <span className="text-[10px] text-gray-700 font-medium">{gr.assign_name}</span>}
+                                  </span>
+                                ))}
+                                {group.length > 1 && <span className="text-[9px] text-gray-400">({group.length} orang)</span>}
+                              </div>
                               {r.notes && !r.notes.includes('[REQUEST SALES]') && <div className="col-span-2 truncate text-gray-400">{r.notes.substring(0,60)}{r.notes.length>60?'…':''}</div>}
                             </div>
                             <div className="flex items-center gap-1.5 mt-3">
@@ -2119,7 +2148,7 @@ jangan lupa peralatan & Semangat💪🏼
                         );
                       })}
                       <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-white/90">
-                        <span className="text-xs text-gray-400">{filteredReminders.length} jadwal</span>
+                        <span className="text-xs text-gray-400">{groupedReminders.length} event · {filteredReminders.length} jadwal</span>
                       </div>
                     </div>
 
@@ -2159,7 +2188,8 @@ jangan lupa peralatan & Semangat💪🏼
                           </tr>
                         </thead>
                         <tbody>
-                          {filteredReminders.map((r, idx) => {
+                          {groupedReminders.map((group, idx) => {
+                            const r = group[0];
                             const today = isDueToday(r.due_date);
                             return (
                               <tr key={r.id}
@@ -2168,8 +2198,17 @@ jangan lupa peralatan & Semangat💪🏼
                                 {/* No */}
                                 <td className="px-3 py-3 border-r border-gray-200 align-middle text-center" onClick={e => e.stopPropagation()}>
                             {selectMode && (isAdmin || currentUser?.role === 'superadmin')
-                              ? <input type="checkbox" checked={selectedIds.has(r.id)}
-                                  onChange={() => toggleSelectId(r.id)} className="w-4 h-4 rounded accent-red-600 cursor-pointer" />
+                              ? <input type="checkbox"
+                                  checked={group.every(gr => selectedIds.has(gr.id))}
+                                  onChange={() => {
+                                    const allSelected = group.every(gr => selectedIds.has(gr.id));
+                                    setSelectedIds(prev => {
+                                      const next = new Set(prev);
+                                      for (const gr of group) allSelected ? next.delete(gr.id) : next.add(gr.id);
+                                      return next;
+                                    });
+                                  }}
+                                  className="w-4 h-4 rounded accent-red-600 cursor-pointer" />
                               : <span className="text-[11px] font-bold text-gray-500">{idx + 1}</span>}
                           </td>
                                 {/* Project */}
@@ -2217,24 +2256,52 @@ jangan lupa peralatan & Semangat💪🏼
                                 </td>
                                 {/* Handler */}
                                 <td className="px-3 py-3 border-r border-gray-200 align-middle">
-                                  <div className="flex items-center gap-1">
-                                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
-                                      style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
-                                      {r.assign_name?.charAt(0)?.toUpperCase() || '?'}
-                                    </div>
-                                    <span className="text-[10px] font-bold text-gray-800 truncate">{r.assign_name}</span>
+                                  <div className="flex flex-wrap gap-1">
+                                    {group.map(gr => (
+                                      <div key={gr.id} className="flex items-center gap-0.5" title={gr.assign_name || ''}>
+                                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
+                                          style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
+                                          {gr.assign_name?.charAt(0)?.toUpperCase() || '?'}
+                                        </div>
+                                        {group.length === 1 && (
+                                          <span className="text-[10px] font-bold text-gray-800 truncate max-w-[80px]">{gr.assign_name}</span>
+                                        )}
+                                      </div>
+                                    ))}
                                   </div>
+                                  {group.length > 1 && (
+                                    <div className="text-[9px] text-gray-400 mt-0.5">{group.length} orang</div>
+                                  )}
                                 </td>
                                 {/* Status */}
                                 <td className="px-3 py-3 border-r border-gray-200 align-middle">
-                                  <StatusBadge status={r.status} />
-                                  {!r.assigned_to && r.notes?.includes('[REQUEST SALES]') && (
-                                    <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 text-[5px] font-bold text-white"
+                                  {(() => {
+                                    const counts: Record<string,number> = {};
+                                    for (const gr of group) counts[gr.status] = (counts[gr.status]||0)+1;
+                                    const entries = Object.entries(counts);
+                                    if (entries.length === 1) {
+                                      return <>
+                                        <StatusBadge status={group[0].status} />
+                                        {group[0].wa_sent_h1 && <p className="text-[9px] font-bold text-green-600 mt-0.5">✅ WA H-1</p>}
+                                      </>;
+                                    }
+                                    return (
+                                      <div className="space-y-0.5">
+                                        {entries.map(([s,n]) => (
+                                          <div key={s} className="flex items-center gap-1">
+                                            <StatusBadge status={s} />
+                                            <span className="text-[9px] text-gray-500 font-bold">{n}×</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    );
+                                  })()}
+                                  {!group[0].assigned_to && group[0].notes?.includes('[REQUEST SALES]') && (
+                                    <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 text-[9px] font-bold text-white"
                                       style={{ background: '#2563eb' }}>
                                       📩 Req. Sales
                                     </span>
                                   )}
-                                  {r.wa_sent_h1 && <p className="text-[9px] font-bold text-green-600 mt-0.5">✅ WA H-1</p>}
                                 </td>
                                 {/* Garansi */}
                                 <td className="px-3 py-3 border-r border-gray-200 align-middle">
@@ -2276,18 +2343,18 @@ jangan lupa peralatan & Semangat💪🏼
                                 <td className="px-3 py-1 align-middle text-center" onClick={e => e.stopPropagation()}>
                                   <ActionGroup>
                                     {/* Detail */}
-                                    <ViewIconBtn onClick={() => setDetailReminder(r)} title="Detail" />
+                                    <ViewIconBtn onClick={() => setDetailReminder(group[0])} title="Detail" />
                                     {/* Re-Schedule — semua team PTS & admin bisa lihat */}
-                                    {(isAdmin || currentUser?.role === 'team') && r.status !== 'done' && (
-                                      <RescheduleIconBtn onClick={() => setRescheduleTarget(r)} title="Re-Schedule" />
+                                    {(isAdmin || currentUser?.role === 'team') && group[0].status !== 'done' && (
+                                      <RescheduleIconBtn onClick={() => setRescheduleTarget(group[0])} title="Re-Schedule" />
                                     )}
                                     {/* Approve & Assign — admin only, hanya utk request sales yg belum di-assign */}
-                                    {isAdmin && !r.assigned_to && r.notes?.includes('[REQUEST SALES]') && (
-                                      <ApproveIconBtn onClick={() => { setApproveTarget(r); setApproveAssignTo(''); setApproveDate(r.due_date); setApproveTime(r.due_time); }} title="Approve & Assign" pulse />
+                                    {isAdmin && !group[0].assigned_to && group[0].notes?.includes('[REQUEST SALES]') && (
+                                      <ApproveIconBtn onClick={() => { setApproveTarget(group[0]); setApproveAssignTo(''); setApproveDate(group[0].due_date); setApproveTime(group[0].due_time); }} title="Approve & Assign" pulse />
                                     )}
                                     {/* Hapus — admin only */}
                                     {isAdmin && (
-                                      <DeleteIconBtn onClick={() => openDeleteModal(r)} title="Hapus" />
+                                      <DeleteIconBtn onClick={() => openDeleteModal(group[0])} title="Hapus" />
                                     )}
                                   </ActionGroup>
                                 </td>
@@ -2297,7 +2364,7 @@ jangan lupa peralatan & Semangat💪🏼
                         </tbody>
                       </table>
                       <div className="flex items-center justify-between px-5 py-2.5 border-t border-gray-200" style={{ background: 'rgba(255,255,255,0.97)' }}>
-                        <span className="text-[10px] text-gray-400">{filteredReminders.length} jadwal ditemukan</span>
+                        <span className="text-[10px] text-gray-400">{groupedReminders.length} event ({filteredReminders.length} jadwal)</span>
                         <span className="text-[10px] text-gray-400">{filteredReminders.length > 0 ? `1–${filteredReminders.length}` : '0'} of {reminders.length}</span>
                       </div>
                     </div>{/* end hidden md:block */}
