@@ -1428,13 +1428,13 @@ jangan lupa peralatan & Semangat💪🏼
         {detailReminder && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4 overflow-y-auto"
             onClick={e => { if (e.target === e.currentTarget) { setDetailReminder(null); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); } }}>
-            <div className="relative w-full max-w-2xl my-4">
             <button onClick={() => { setDetailReminder(null); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); }}
-              className="absolute -top-3 -right-3 z-10 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-600 shadow-lg flex items-center justify-center font-bold text-base">✕</button>
+              className="fixed top-4 right-4 z-[110] w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-xl flex items-center justify-center font-bold text-base">✕</button>
+            <div className="relative w-full max-w-2xl my-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full overflow-hidden flex flex-col"
               style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '96vh' }}>
               <div className="px-6 py-5 flex-shrink-0" style={{
-                background: (() => { const c = CATEGORY_CONFIG[detailReminder.category]; return c ? `linear-gradient(135deg,${c.accent}dd,${c.accent}88)` : 'linear-gradient(135deg,#1d4ed8,#1e40af)'; })()
+                background: (() => { const c = CATEGORY_CONFIG[detailReminder.category]; const base = c ? `linear-gradient(135deg,${c.accent}dd,${c.accent}88)` : 'linear-gradient(135deg,#1d4ed8,#1e40af)'; return `linear-gradient(rgba(0,0,0,0.3),rgba(0,0,0,0.15)),${base}`; })()
               }}>
                 <div className="flex flex-wrap gap-2 mb-3">
                   <PriorityBadge priority={detailReminder.priority} onHeader />
