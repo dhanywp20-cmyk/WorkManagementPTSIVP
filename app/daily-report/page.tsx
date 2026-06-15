@@ -233,7 +233,7 @@ export default function DailyReportPage() {
 
   const loadTeamUsers = async () => {
     const { data } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,allowed_menus').order('full_name');
-    if (data) setTeamUsers(data.filter((u: TeamUser) => u.team_type === 'Team PTS'));
+    if (data) setTeamUsers(data.filter((u: TeamUser) => u.team_type === 'Team PTS' && u.role !== 'admin' && u.role !== 'superadmin'));
   };
   const loadGuestUsers = async () => {
     const { data } = await supabase.from('users').select('id,username,full_name,role,phone_number,sales_division').eq('role', 'guest').order('full_name');

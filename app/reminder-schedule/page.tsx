@@ -190,7 +190,7 @@ function ReminderSchedulePageInner() {
 
   const fetchTeamUsers = async () => {
     const { data } = await supabase.from('users').select('id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus').order('full_name');
-    if (data) setTeamUsers(data.filter((u: TeamUser) => u.team_type === 'Team PTS' || u.team_type === 'Team PTS MLDS' || u.team_type === 'Team PTS UMP'));
+    if (data) setTeamUsers(data.filter((u: TeamUser) => (u.team_type === 'Team PTS' || u.team_type === 'Team PTS MLDS' || u.team_type === 'Team PTS UMP') && u.role !== 'admin' && u.role !== 'superadmin'));
   };
 
   const fetchGuestUsers = async () => {

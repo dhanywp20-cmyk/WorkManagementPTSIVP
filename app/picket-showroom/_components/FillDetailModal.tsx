@@ -28,7 +28,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
       setLoadingE(true);
       const[detailRes,usersRes]=await Promise.all([
         supabase.from('piket_tamu_detail').select('*').eq('piket_id',row.id).order('created_at'),
-        supabase.from('users').select('id,full_name,team_type').in('team_type',['Team PTS','Team PTS UMP','Team PTS MLDS']).order('full_name'),
+        supabase.from('users').select('id,full_name,team_type,role').in('team_type',['Team PTS','Team PTS UMP','Team PTS MLDS']).order('full_name'),
       ]);
       if(detailRes.data&&detailRes.data.length>0){
         setEntries((detailRes.data as KegiatanEntry[]).map(d=>({
@@ -39,7 +39,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
           team_rnd:(d as any).team_rnd||'',
         })));
       }
-      if(usersRes.data)setPtUsers(usersRes.data as any[]);
+      if(usersRes.data)setPtUsers(usersRes.data.filter((u:any)=>u.role!=='admin'&&u.role!=='superadmin') as any[]);
       setLoadingE(false);
     })();
   },[row.id]);

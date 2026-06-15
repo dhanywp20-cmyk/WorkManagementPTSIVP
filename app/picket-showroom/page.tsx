@@ -65,7 +65,7 @@ function PiketShowroomPageInner() {
     ]);
     if(wRes.data)setRows(wRes.data as PiketRow[]);
     if(aRes.data)setAllRows(aRes.data as PiketRow[]);
-    if(uRes.data)setPtUsers(uRes.data as UserRow[]);
+    if(uRes.data)setPtUsers(uRes.data.filter((u:any)=>u.role!=='admin'&&u.role!=='superadmin') as UserRow[]);
     if(kgRes.data)setKegiatanList(kgRes.data as KegiatanEntry[]);
     setLoading(false);
   },[weekStart]);
