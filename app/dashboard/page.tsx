@@ -405,7 +405,7 @@ export default function Dashboard() {
       try {
         setCurrentUser(parsed);
         setIsLoggedIn(true);
-        const { data, error } = await supabase.from('users').select('*').eq('id', parsed.id).single();
+        const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,sales_division,jabatan,phone_number,allowed_menus,kpi_enabled').eq('id', parsed.id).single();
         const userData: User = (!error && data) ? data : parsed;
         if (!error && data) {
           setCurrentUser(data);

@@ -541,11 +541,11 @@ function SummaryCard({ icon, label, value, sub, color, trend, lowerIsBetter }: {
         style={{ background: color, transform: 'translate(30%,-30%)' }} />
       <div className="flex items-center gap-1.5">
         <span className="text-sm">{icon}</span>
-        <span className="text-[9px] font-bold uppercase tracking-widest truncate" style={{ color: 'rgba(0,0,0,0.38)' }}>{label}</span>
+        <span className="text-[11px] font-bold uppercase tracking-widest truncate" style={{ color: 'rgba(0,0,0,0.38)' }}>{label}</span>
       </div>
       <div className="text-2xl font-black leading-none tracking-tight" style={{ color }}>{value}</div>
       <div className="flex items-center justify-between gap-1 min-h-[14px]">
-        {sub && <span className="text-[9px] text-slate-400 truncate">{sub}</span>}
+        {sub && <span className="text-[10px] text-slate-400 truncate">{sub}</span>}
         {trend !== undefined && <TrendBadge delta={trend} lowerIsBetter={lowerIsBetter} />}
       </div>
     </div>
@@ -589,7 +589,7 @@ function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: (
 
           {/* Ticket Stats */}
           <section>
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3">🎫 Ticketing</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">🎫 Ticketing</p>
             <div className="grid grid-cols-3 gap-2 mb-3">
               {[
                 { label: 'Ditangani', value: member.ticketsHandled, c: teamColor },
@@ -599,7 +599,7 @@ function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: (
                 <div key={s.label} className="flex flex-col items-center p-2.5 rounded-xl"
                   style={{ background: `${s.c}12` }}>
                   <span className="text-2xl font-black leading-none" style={{ color: s.c }}>{s.value}</span>
-                  <span className="text-[8px] text-slate-400 mt-0.5">{s.label}</span>
+                  <span className="text-[10px] text-slate-400 mt-0.5 text-center leading-tight">{s.label}</span>
                 </div>
               ))}
             </div>
@@ -628,7 +628,7 @@ function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: (
 
           {/* Reminder */}
           <section>
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3">📅 Reminder Schedule</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">📅 Reminder Schedule</p>
             <div>
               <div className="flex justify-between text-[10px] mb-1">
                 <span className="text-slate-500">Done Rate</span>
@@ -644,7 +644,7 @@ function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: (
 
           {/* Learning Center */}
           <section>
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3">📚 Learning Center</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">📚 Learning Center</p>
             <div className="grid grid-cols-3 gap-2">
               {[
                 { label: 'Quiz Attempts', value: member.lcAttempts,  c: '#6366f1' },
@@ -654,7 +654,7 @@ function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: (
                 <div key={s.label} className="flex flex-col items-center p-2.5 rounded-xl"
                   style={{ background: `${s.c}12` }}>
                   <span className="text-2xl font-black leading-none" style={{ color: s.c }}>{s.value}</span>
-                  <span className="text-[8px] text-slate-400 mt-0.5">{s.label}</span>
+                  <span className="text-[10px] text-slate-400 mt-0.5 text-center leading-tight">{s.label}</span>
                 </div>
               ))}
             </div>
@@ -671,7 +671,7 @@ function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: (
 
           {/* Monthly Trend */}
           <section>
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3">📈 Trend Ticket per Bulan</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">📈 Trend Ticket per Bulan</p>
             <MonthBarChart values={member.monthlyTickets} color={teamColor} />
           </section>
 

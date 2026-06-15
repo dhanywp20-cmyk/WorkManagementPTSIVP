@@ -269,14 +269,14 @@ export async function fetchTicketActivities(username: string, date: string): Pro
 }
 
 export async function fetchExistingReport(userId: string, date: string): Promise<DailyReport | null> {
-  const { data } = await supabase.from('daily_reports').select('*').eq('user_id', userId).eq('report_date', date).maybeSingle();
+  const { data } = await supabase.from('daily_reports').select('id,report_date,user_id,user_name,sales_division,reminder_activities,ticket_activities,manual_activities,reminder_notes,created_by,created_at,updated_at').eq('user_id', userId).eq('report_date', date).maybeSingle();
   return data ?? null;
 }
 
 export async function fetchReports(filters: {
   date?: string; userId?: string; isAdmin: boolean; currentUserId: string;
 }): Promise<DailyReport[]> {
-  let q = supabase.from('daily_reports').select('*').order('report_date', { ascending: false }).order('created_at', { ascending: false });
+  let q = supabase.from('daily_reports').select('id,report_date,user_id,user_name,sales_division,reminder_activities,ticket_activities,manual_activities,reminder_notes,created_by,created_at,updated_at').order('report_date', { ascending: false }).order('created_at', { ascending: false });
   if (!filters.isAdmin) q = q.eq('user_id', filters.currentUserId);
   if (filters.date) q = q.eq('report_date', filters.date);
   if (filters.userId && filters.isAdmin) q = q.eq('user_id', filters.userId);

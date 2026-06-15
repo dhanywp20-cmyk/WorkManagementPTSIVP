@@ -799,9 +799,9 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                             <span className="text-[10px] font-bold text-slate-700 flex-shrink-0 w-5 text-right">{s.count}</span>
                           </div>
                         ))}
-                        <div className="flex justify-end mt-0.5">
-                          <span className="text-[9px] text-slate-400">Avg resolusi </span>
-                          <span className="text-[10px] font-black text-rose-500 ml-1">{kpi.tickets.avgResolutionDays}h</span>
+                        <div className="flex justify-between items-center mt-1 border-t border-slate-100 pt-1">
+                          <span className="text-[10px] text-slate-400">Avg resolusi</span>
+                          <span className="text-[10px] font-black text-rose-500">{kpi.tickets.avgResolutionDays}h</span>
                         </div>
                       </div>
                     </div>
@@ -849,9 +849,9 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                           </div>
                         ))}
                         {/* Done rate */}
-                        <div className="flex justify-end mt-0.5">
-                          <span className="text-[9px] text-slate-400">Done rate </span>
-                          <span className="text-[10px] font-black text-emerald-600 ml-1">
+                        <div className="flex justify-between items-center mt-1 border-t border-slate-100 pt-1">
+                          <span className="text-[10px] text-slate-400">Done rate</span>
+                          <span className="text-[10px] font-black text-emerald-600">
                             {kpi.reminders.total>0?Math.round((kpi.reminders.done/kpi.reminders.total)*100):0}%
                           </span>
                         </div>
