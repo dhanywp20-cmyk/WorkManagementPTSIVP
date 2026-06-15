@@ -224,7 +224,7 @@ function ReminderSchedulePageInner() {
   const fetchRemindersForUser = async (activeUser: TeamUser | null): Promise<Reminder[]> => {
     if (!activeUser || activeUser.role !== 'guest') {
       // Admin & team: ambil semua
-      const { data, error } = await supabase.from('reminders').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('reminders').select('*').order('created_at', { ascending: false }).limit(500);
       return (!error && data) ? (data as Reminder[]) : [];
     }
     // Guest: ambil schedule yg atas nama dia (dibuat admin) + yg dia request sendiri (created_by)

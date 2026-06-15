@@ -146,7 +146,7 @@ export default function FormReviewPage() {
     let activeUser: GuestUser | null = user ?? currentUser;
     if (!activeUser) activeUser = getSession<GuestUser>();
 
-    let query = supabase.from('form_reviews').select('*').order('created_at', { ascending: false });
+    let query = supabase.from('form_reviews').select('*').order('created_at', { ascending: false }).limit(500);
 
     // Guest hanya melihat data milik mereka (OR filter untuk kompatibilitas data lama)
     if (activeUser?.role === 'guest') {

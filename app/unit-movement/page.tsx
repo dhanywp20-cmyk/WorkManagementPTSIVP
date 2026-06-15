@@ -65,7 +65,7 @@ function UnitMovementPageInner() {
 
   const fetchLogs = async () => {
     setLoading(true);
-    const {data} = await supabase.from('movement_logs').select('*').order('tanggal',{ascending:false});
+    const {data} = await supabase.from('movement_logs').select('*').order('tanggal',{ascending:false}).limit(500);
     if (data) setLogs(data as MovementLog[]);
     setLoading(false);
   };

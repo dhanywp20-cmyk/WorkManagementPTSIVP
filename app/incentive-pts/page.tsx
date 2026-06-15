@@ -185,7 +185,7 @@ function IncentivePTSPage() {
   };
 
   const fetchProjects = async () => {
-    let q = supabase.from('incentive_projects').select('*').order('created_at', { ascending: false });
+    let q = supabase.from('incentive_projects').select('*').order('created_at', { ascending: false }).limit(500);
     if (isTeamPTS && !isAdmin) {
       q = q.or(`handler_name.eq.${currentUser!.full_name},backup_names.cs.{"${currentUser!.full_name}"}`);
     }
@@ -194,7 +194,7 @@ function IncentivePTSPage() {
   };
 
   const fetchDisbursements = async () => {
-    let q = supabase.from('incentive_disbursements').select('*').order('created_at', { ascending: false });
+    let q = supabase.from('incentive_disbursements').select('*').order('created_at', { ascending: false }).limit(500);
     if (isTeamPTS && !isAdmin) q = q.eq('person_name', currentUser!.full_name);
     const { data } = await q;
     setDisbursements(data ?? []);

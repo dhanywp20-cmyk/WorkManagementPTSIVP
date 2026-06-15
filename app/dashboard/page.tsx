@@ -167,8 +167,14 @@ export default function Dashboard() {
 
   const handleLogin = async () => {
     try {
-      const { data, error } = await supabase.from('users').select('*').eq('username', loginForm.username).eq('password', loginForm.password).single();
-      if (error || !data) { setLoginErr('Username atau password salah!'); return; }
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: loginForm.username, password: loginForm.password }),
+      });
+      const result = await res.json();
+      if (!res.ok || !result.user) { setLoginErr(result.error || 'Username atau password salah!'); return; }
+      const data = result.user;
       if (data.team_type === 'Pending Approval') {
         setLoginErr('Akun kamu masih menunggu persetujuan admin. Kamu akan dihubungi setelah akun diaktifkan.');
         return;
@@ -231,10 +237,16 @@ export default function Dashboard() {
     try {
       const { data: existing } = await supabase.from('users').select('id').eq('username', username.trim().toLowerCase()).maybeSingle();
       if (existing) { setRegisterErr('Username / email sudah terdaftar. Gunakan username lain.'); setRegisterLoading(false); return; }
+      const hashRes = await fetch('/api/auth/hash', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      const { hash: pwdHash } = await hashRes.json();
       const { data: newUser, error } = await supabase.from('users').insert([{
         full_name: full_name.trim(),
         username: username.trim().toLowerCase(),
-        password: password,
+        password: pwdHash,
         role: 'guest',
         team_type: 'Pending Approval',
         sales_division: requestedDivision,

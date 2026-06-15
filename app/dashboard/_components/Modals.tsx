@@ -64,7 +64,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
-    const { data, error } = await supabase.from('users').select('*').order('full_name');
+    const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,sales_division,jabatan,phone_number,allowed_menus,kpi_enabled').order('full_name');
     if (!error && data) setUsers(data);
     setLoadingUsers(false);
   };
@@ -99,9 +99,16 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     }
 
     setSaving(true);
+    const hashRes = await fetch('/api/auth/hash', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: newUser.password }),
+    });
+    const { hash: pwdHash, error: hashErr } = await hashRes.json();
+    if (hashErr) { notify('error', 'Gagal proses password.'); setSaving(false); return; }
     const insertPayload: Record<string, unknown> = {
       username: newUser.username,
-      password: newUser.password,
+      password: pwdHash,
       full_name: newUser.full_name,
       role,
       team_type,
@@ -144,7 +151,6 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
 
     const updatePayload: Record<string, unknown> = {
       username: editingUser.username,
-      password: editingUser.password,
       full_name: editingUser.full_name,
       role,
       team_type,
@@ -153,6 +159,15 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
       phone_number: editingUser.phone_number ?? null,
       sales_division: (editDivisi === 'Sales' || editDivisi === 'Marketing') ? (editingUser.sales_division ?? null) : null,
     };
+    if (editingUser.password) {
+      const hashRes = await fetch('/api/auth/hash', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: editingUser.password }),
+      });
+      const { hash: pwdHash } = await hashRes.json();
+      if (pwdHash) updatePayload.password = pwdHash;
+    }
     const { error } = await supabase.from('users').update(updatePayload).eq('id', editingUser.id);
     setSaving(false);
     if (error) { notify('error', 'Gagal menyimpan: ' + error.message); return; }
@@ -277,8 +292,8 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                           <input value={editingUser.username} onChange={e => setEditingUser({ ...editingUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password</label>
-                          <input value={editingUser.password} onChange={e => setEditingUser({ ...editingUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password Baru</label>
+                          <input type="password" value={editingUser.password ?? ''} onChange={e => setEditingUser({ ...editingUser, password: e.target.value })} placeholder="Kosongkan jika tidak diubah" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Role</label>
@@ -415,7 +430,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                 </div>
                 <div>
                   <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Password *</label>
-                  <input value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="password" />
+                  <input type="password" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="Minimal 6 karakter" />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Divisi *</label>

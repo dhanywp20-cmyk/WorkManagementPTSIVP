@@ -1,7 +1,7 @@
 export interface User {
   id: string;
   username: string;
-  password: string;
+  password?: string;
   full_name: string;
   role: string;
   team_type?: string;
