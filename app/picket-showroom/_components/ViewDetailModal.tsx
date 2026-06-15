@@ -27,20 +27,16 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
   return(
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4 overflow-y-auto"
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <button onClick={onClose} className="fixed top-4 right-4 z-[110] w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-xl flex items-center justify-center font-bold text-base">✕</button>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-4"
         style={{animation:'scale-in 0.2s ease-out',border:`1.5px solid ${dc.accent}40`}}>
 
         {/* Header */}
-        <div className="px-6 py-5 rounded-t-2xl flex items-center justify-between" style={{background:dc.grad}}>
+        <div className="px-6 py-5 rounded-t-2xl" style={{background:dc.grad}}>
           <div>
             <h2 className="text-lg font-black text-white">📋 Detail Jadwal Piket</h2>
             <p className="text-white/70 text-xs mt-1">{row.day_of_week} · {dateLabel}</p>
           </div>
-          <button onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
         </div>
 
         <div className="p-6 space-y-6">

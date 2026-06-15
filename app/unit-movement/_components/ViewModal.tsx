@@ -9,8 +9,9 @@ export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void 
   const typeLines  = splitTypeLines(log.type_barang);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
+      <button onClick={onClose} className="fixed top-4 right-4 z-[110] w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-xl flex items-center justify-center font-bold text-base">✕</button>
       <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10 rounded-t-2xl">
+        <div className="flex items-center px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <span className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{background:'linear-gradient(135deg,#f59e0b,#d97706)'}}>📦</span>
             <div>
@@ -18,7 +19,6 @@ export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void 
               <p className="text-xs text-gray-500">{fmtDate(log.tanggal,true)}</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors">✕</button>
         </div>
         <div className="p-6 space-y-4">
           <div className="flex items-center gap-2 flex-wrap">

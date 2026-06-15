@@ -563,6 +563,7 @@ function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <button onClick={onClose} className="fixed top-4 right-4 z-[110] w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-xl flex items-center justify-center font-bold text-base">✕</button>
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
         style={{ maxHeight: '90vh', overflowY: 'auto' }}>
 
@@ -579,10 +580,6 @@ function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: (
               <div className="text-white/70 text-[10px]">{member.team_type.replace('Team ','')} · {member.jabatan} · {period}</div>
             </div>
           </div>
-          <button onClick={onClose}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/15 transition-all text-xs">
-            ✕
-          </button>
         </div>
 
         <div className="p-5 space-y-5">

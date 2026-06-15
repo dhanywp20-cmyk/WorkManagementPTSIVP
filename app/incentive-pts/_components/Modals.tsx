@@ -37,10 +37,11 @@ export function ViewModal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.5)' }}
     >
+      <button onClick={onClose} className="fixed top-4 right-4 z-[110] w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-xl flex items-center justify-center font-bold text-base">✕</button>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
         {/* Header */}
         <div
-          className="px-6 py-4 border-b border-gray-100 flex items-start justify-between gap-3 flex-shrink-0"
+          className="px-6 py-4 border-b border-gray-100 flex-shrink-0"
           style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.04))' }}
         >
           <div>
@@ -50,7 +51,6 @@ export function ViewModal({
               {fmtDate(project.due_date)} · {fmtPeriode(project.periode)}
             </p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none flex-shrink-0 mt-0.5">✕</button>
         </div>
 
         {/* Body */}

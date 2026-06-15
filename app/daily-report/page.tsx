@@ -684,12 +684,10 @@ export default function DailyReportPage() {
     const linkedReport = row.report_id ? reports.find(r => r.id === row.report_id) : undefined;
     return (
       <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }} onClick={() => setModalRow(null)}>
+        <button onClick={() => setModalRow(null)} className="fixed top-4 right-4 z-[110] w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-xl flex items-center justify-center font-bold text-base">✕</button>
         <div className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden" style={{ background: 'white' }} onClick={e => e.stopPropagation()}>
           {/* Colored header */}
-          <div className="px-6 py-5 text-white relative" style={{ background: `linear-gradient(135deg, ${c.accent}, ${c.accent}cc)` }}>
-            <button onClick={() => setModalRow(null)} className="absolute top-4 right-4 p-1.5 rounded-xl bg-white/20 hover:bg-white/30 transition-all">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+          <div className="px-6 py-5 text-white" style={{ background: `linear-gradient(135deg, ${c.accent}, ${c.accent}cc)` }}>
             <div className="flex items-start gap-3">
               <span className="text-3xl">{row.kegiatan_icon}</span>
               <div>

@@ -581,14 +581,13 @@ export default function FormReviewPage() {
         {detailReview && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4 overflow-y-auto"
             onClick={e => { if (e.target === e.currentTarget) setDetailReview(null); }}>
+            <button onClick={() => setDetailReview(null)} className="fixed top-4 right-4 z-[110] w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-xl flex items-center justify-center font-bold text-base">✕</button>
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 overflow-hidden"
               style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '96vh' }}>
 
               {/* Header */}
-              <div className="px-6 py-5 relative"
+              <div className="px-6 py-5"
                 style={{ background: detailReview.review_category === 'Demo Product' ? 'linear-gradient(135deg,#7c3aeddd,#5b21b688)' : 'linear-gradient(135deg,#0ea5e9dd,#0284c788)' }}>
-                <button onClick={() => setDetailReview(null)}
-                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 text-white flex items-center justify-center font-bold text-lg">✕</button>
                 <div className="flex flex-wrap gap-2 mb-3">
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white"
                     style={{ background: detailReview.review_category === 'Demo Product' ? '#7c3aed' : '#0ea5e9', border: '2px solid rgba(255,255,255,0.6)' }}>
