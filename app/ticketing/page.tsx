@@ -1199,14 +1199,13 @@ function TicketingSystemInner() {
     try {
       const selectedUser = users.find((u) => u.id === selectedUserForPassword);
       if (!selectedUser) { notify("error", "User not found!"); return; }
-      const { data: userData } = await supabase.from("users").select("password").eq("id", selectedUserForPassword).single();
-      if (!userData || userData.password !== changePassword.current) { notify("error", "Password lama salah!"); return; }
-      await supabase.from("users").update({ password: changePassword.new }).eq("id", selectedUserForPassword);
-      if (currentUser?.id === selectedUserForPassword) {
-        const updatedUser = { ...currentUser, password: changePassword.new };
-        setCurrentUser(updatedUser);
-        setSession(updatedUser);
-      }
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: selectedUserForPassword, currentPassword: changePassword.current, newPassword: changePassword.new }),
+      });
+      const result = await res.json();
+      if (!res.ok) { notify("error", result.error || "Gagal mengubah password."); return; }
       notify("success", "Password changed successfully!");
       setChangePassword({ current: "", new: "", confirm: "" });
       setSelectedUserForPassword("");

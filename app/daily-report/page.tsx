@@ -684,9 +684,9 @@ export default function DailyReportPage() {
     const linkedReport = row.report_id ? reports.find(r => r.id === row.report_id) : undefined;
     return (
       <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }} onClick={() => setModalRow(null)}>
-        <div className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden" style={{ background: 'white' }} onClick={e => e.stopPropagation()}>
+        <div className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col" style={{ background: 'white', maxHeight: '96vh' }} onClick={e => e.stopPropagation()}>
           {/* Colored header */}
-          <div className="px-6 py-5 text-white relative" style={{ background: `linear-gradient(135deg, ${c.accent}, ${c.accent}cc)` }}>
+          <div className="px-6 py-5 text-white flex-shrink-0 relative" style={{ background: `linear-gradient(135deg, ${c.accent}, ${c.accent}cc)` }}>
             <div className="flex items-start gap-3">
               <span className="text-3xl">{row.kegiatan_icon}</span>
               <div>
@@ -707,7 +707,7 @@ export default function DailyReportPage() {
               className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
           </div>
           {/* Body */}
-          <div className="px-6 py-5 space-y-4">
+          <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1 min-h-0">
             <div className="grid grid-cols-2 gap-4">
               {/* Kategori */}
               <div>

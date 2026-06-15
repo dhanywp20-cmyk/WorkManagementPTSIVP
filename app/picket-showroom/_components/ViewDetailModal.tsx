@@ -27,11 +27,11 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
   return(
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4 overflow-y-auto"
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-4"
-        style={{animation:'scale-in 0.2s ease-out',border:`1.5px solid ${dc.accent}40`}}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-4 flex flex-col"
+        style={{animation:'scale-in 0.2s ease-out',border:`1.5px solid ${dc.accent}40`,maxHeight:'96vh'}}>
 
         {/* Header */}
-        <div className="px-6 py-5 rounded-t-2xl relative" style={{background:dc.grad}}>
+        <div className="px-6 py-5 rounded-t-2xl flex-shrink-0 relative" style={{background:dc.grad}}>
           <div>
             <h2 className="text-lg font-black text-white">📋 Detail Jadwal Piket</h2>
             <p className="text-white/70 text-xs mt-1">{row.day_of_week} · {dateLabel}</p>
@@ -39,7 +39,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
           <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
 
           {/* PIC Section */}
           <div>

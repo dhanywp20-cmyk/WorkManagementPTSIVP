@@ -519,7 +519,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('users').select('*').eq('id', currentUser.id).single();
+      const { data } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type').eq('id', currentUser.id).single();
       if (data) { setUserData(data); setPhoneInput(data.phone_number || ''); }
 
       const userDiv = currentUser.sales_division;
@@ -571,7 +571,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
     else {
       notify('success', 'Nomor WhatsApp berhasil diperbarui!');
       setEditPhone(false);
-      const { data } = await supabase.from('users').select('*').eq('id', currentUser.id).single();
+      const { data } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type').eq('id', currentUser.id).single();
       if (data) { setUserData(data); setSession(data); }
     }
     setSaving(false);
@@ -581,8 +581,13 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
     if (!passwordInput || passwordInput.length < 6) { notify('error', 'Password minimal 6 karakter.'); return; }
     if (passwordInput !== confirmPassword) { notify('error', 'Konfirmasi password tidak cocok.'); return; }
     setSaving(true);
-    const { error } = await supabase.from('users').update({ password: passwordInput }).eq('id', currentUser.id);
-    if (error) { notify('error', 'Gagal mengubah password.'); }
+    const res = await fetch('/api/auth/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: currentUser.id, newPassword: passwordInput }),
+    });
+    const result = await res.json();
+    if (!res.ok) { notify('error', result.error || 'Gagal mengubah password.'); }
     else { notify('success', 'Password berhasil diubah!'); setEditPassword(false); setPasswordInput(''); setConfirmPassword(''); }
     setSaving(false);
   };
@@ -2514,7 +2519,7 @@ export function AccountSettingsInline() {
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
-    const { data, error } = await supabase.from('users').select('*').order('full_name');
+    const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type').order('full_name');
     if (!error && data) {
       setPendingUsers(data.filter((u: User) => u.team_type === 'Pending Approval'));
       setUsers(data.filter((u: User) => u.team_type !== 'Pending Approval'));

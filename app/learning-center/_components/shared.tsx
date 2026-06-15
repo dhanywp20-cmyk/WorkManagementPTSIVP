@@ -86,10 +86,9 @@ export interface AnswerRecord {
 export type AdminView = 'dashboard' | 'materi' | 'questions' | 'sessions' | 'team' | 'report';
 export type TeamView = 'my-quiz' | 'materi' | 'history' | 'score';
 
-// ─── Gemini ───────────────────────────────────────────────────────────────────
+// ─── Gemini (server-side proxy — API key tidak terekspos ke browser) ─────────
 
-export const GEMINI_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY ?? '';
-export const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+export const GEMINI_URL = '/api/ai/generate';
 
 export const DIFF_COLOR: Record<string, string> = {
   easy: 'bg-emerald-100 text-emerald-700 border-emerald-200',
