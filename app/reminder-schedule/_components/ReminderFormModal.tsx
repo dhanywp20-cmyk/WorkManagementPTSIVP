@@ -9,6 +9,10 @@ import {
 import { FormField, SectionHeader } from '@/components/shared';
 
 export type ReminderForm = Omit<Reminder, 'id' | 'created_at' | 'created_by' | 'wa_sent_h1'>;
+export type BulkTarget = 'none' | 'ivp' | 'mlds' | 'ump';
+
+const BULK_TEAM_TYPE: Record<string, string> = { ivp: 'Team PTS', mlds: 'Team PTS MLDS', ump: 'Team PTS UMP' };
+const BULK_LABEL: Record<string, string> = { ivp: 'PTS IVP', mlds: 'PTS MLDS', ump: 'PTS UMP' };
 
 interface Props {
   editingReminder: Reminder | null;
@@ -17,11 +21,13 @@ interface Props {
   saving: boolean;
   teamUsers: TeamUser[];
   guestUsers: GuestUser[];
+  bulkTarget: BulkTarget;
+  onBulkTargetChange: (t: BulkTarget) => void;
   onClose: () => void;
   onSubmit: () => void;
 }
 
-export function ReminderFormModal({ editingReminder, formData, setFormData, saving, teamUsers, guestUsers, onClose, onSubmit }: Props) {
+export function ReminderFormModal({ editingReminder, formData, setFormData, saving, teamUsers, guestUsers, bulkTarget, onBulkTargetChange, onClose, onSubmit }: Props) {
   const fd = (patch: Partial<ReminderForm>) => setFormData({ ...formData, ...patch });
 
   const [guestSearch, setGuestSearch] = useState('');
@@ -96,21 +102,70 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <FormField label="Assign To *">
+          {/* Assign To — single or bulk */}
+          <div>
+            <label className="block text-xs font-bold mb-2 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Assign To *</label>
+            {!editingReminder && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {([
+                  { key: 'none', label: '👤 Per Orang' },
+                  { key: 'ivp',  label: '👥 Semua PTS IVP' },
+                  { key: 'mlds', label: '👥 Semua PTS MLDS' },
+                  { key: 'ump',  label: '👥 Semua PTS UMP' },
+                ] as { key: BulkTarget; label: string }[]).map(opt => (
+                  <button key={opt.key} type="button"
+                    onClick={() => { onBulkTargetChange(opt.key); if (opt.key !== 'none') fd({ assigned_to: '' }); }}
+                    className="px-3 py-1.5 rounded-xl text-xs font-semibold border-2 transition-all"
+                    style={bulkTarget === opt.key
+                      ? { borderColor: '#0891b2', background: 'rgba(8,145,178,0.12)', color: '#0369a1' }
+                      : { borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.7)', color: '#64748b' }}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {bulkTarget === 'none' ? (
               <select value={formData.assigned_to} onChange={e => fd({ assigned_to: e.target.value })}
                 className={inputCls} style={inputStyle}>
-                <option value="">-- Pilih Team PTS --</option>
-                {teamUsers.map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
+                <option value="">-- Pilih Anggota Team --</option>
+                {teamUsers.filter(u => u.team_type === 'Team PTS').length > 0 && (
+                  <optgroup label="PTS IVP">
+                    {teamUsers.filter(u => u.team_type === 'Team PTS').map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
+                  </optgroup>
+                )}
+                {teamUsers.filter(u => u.team_type === 'Team PTS MLDS').length > 0 && (
+                  <optgroup label="PTS MLDS">
+                    {teamUsers.filter(u => u.team_type === 'Team PTS MLDS').map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
+                  </optgroup>
+                )}
+                {teamUsers.filter(u => u.team_type === 'Team PTS UMP').length > 0 && (
+                  <optgroup label="PTS UMP">
+                    {teamUsers.filter(u => u.team_type === 'Team PTS UMP').map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
+                  </optgroup>
+                )}
               </select>
-            </FormField>
-            <FormField label="Pengulangan">
-              <select value={formData.repeat} onChange={e => fd({ repeat: e.target.value as RepeatType })}
-                className={inputCls} style={inputStyle}>
-                {REPEAT_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-              </select>
-            </FormField>
+            ) : (
+              <div className="rounded-xl px-4 py-3 flex items-center gap-3"
+                style={{ background: 'rgba(8,145,178,0.07)', border: '1.5px solid rgba(8,145,178,0.3)' }}>
+                <span className="text-2xl">👥</span>
+                <div>
+                  <p className="text-sm font-bold text-cyan-700">
+                    {teamUsers.filter(u => u.team_type === BULK_TEAM_TYPE[bulkTarget]).length} anggota
+                  </p>
+                  <p className="text-xs text-cyan-600">
+                    Akan membuat reminder untuk seluruh Tim {BULK_LABEL[bulkTarget]}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
+
+          <FormField label="Pengulangan">
+            <select value={formData.repeat} onChange={e => fd({ repeat: e.target.value as RepeatType })}
+              className={inputCls} style={inputStyle}>
+              {REPEAT_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+            </select>
+          </FormField>
 
           {/* Warranty Years — for Konfigurasi categories */}
           {(formData.category === 'Konfigurasi' || formData.category === 'Konfigurasi & Training') && (
@@ -330,14 +385,17 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             </FormField>
           </div>
 
-          {formData.assigned_to && (
+          {(formData.assigned_to || bulkTarget !== 'none') && (
             <div className="rounded-xl p-3 flex items-start gap-3"
               style={{ background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.25)' }}>
               <span className="text-green-500 text-lg">💬</span>
               <div>
                 <p className="text-sm font-bold text-green-700">WA Otomatis H-1</p>
                 <p className="text-xs text-green-600 mt-0.5">
-                  Pesan pengingat akan otomatis dikirim via WA ke <strong>{formData.assigned_to}</strong> sehari sebelum jadwal.
+                  {bulkTarget !== 'none'
+                    ? <span>Pesan pengingat otomatis dikirim ke seluruh anggota Tim <strong>{BULK_LABEL[bulkTarget]}</strong> sehari sebelum jadwal.</span>
+                    : <span>Pesan pengingat akan otomatis dikirim via WA ke <strong>{formData.assigned_to}</strong> sehari sebelum jadwal.</span>
+                  }
                 </p>
               </div>
             </div>
@@ -360,7 +418,12 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
               className="flex-1 text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02]"
               style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', boxShadow: '0 4px 14px rgba(8,145,178,0.35)' }}>
               {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              {editingReminder ? 'Simpan Perubahan' : '➕ Tambah Reminder'}
+              {editingReminder
+                ? 'Simpan Perubahan'
+                : bulkTarget !== 'none'
+                  ? `➕ Buat ${teamUsers.filter(u => u.team_type === BULK_TEAM_TYPE[bulkTarget]).length} Reminder`
+                  : '➕ Tambah Reminder'
+              }
             </button>
           </div>
         </div>

@@ -73,6 +73,7 @@ function ReminderSchedulePageInner() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
   const [bulkConfirm, setBulkConfirm] = useState(false);
+  const [bulkTarget, setBulkTarget] = useState<'none' | 'ivp' | 'mlds' | 'ump'>('none');
   // Kalender-only selection — tidak mempengaruhi filter list/chart/summary
   const [calOnlyDay, setCalOnlyDay]         = useState<string | null>(null);
   const [sendingWA, setSendingWA]           = useState<string | null>(null);
@@ -189,7 +190,7 @@ function ReminderSchedulePageInner() {
 
   const fetchTeamUsers = async () => {
     const { data } = await supabase.from('users').select('id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus').order('full_name');
-    if (data) setTeamUsers(data.filter((u: TeamUser) => u.team_type === 'Team PTS'));
+    if (data) setTeamUsers(data.filter((u: TeamUser) => u.team_type === 'Team PTS' || u.team_type === 'Team PTS MLDS' || u.team_type === 'Team PTS UMP'));
   };
 
   const fetchGuestUsers = async () => {
@@ -260,7 +261,7 @@ function ReminderSchedulePageInner() {
 
   const handleSave = async () => {
     if (!formData.project_name.trim())            { notify('error', 'Nama project wajib diisi!');  return; }
-    if (!formData.assigned_to)             { notify('error', 'Pilih anggota team!');           return; }
+    if (bulkTarget === 'none' && !formData.assigned_to) { notify('error', 'Pilih anggota team!'); return; }
     if (!formData.due_date)                { notify('error', 'Tanggal wajib diisi!');          return; }
     if (!formData.address.trim()) { notify('error', 'Lokasi Project wajib diisi!');  return; }
 
@@ -273,6 +274,53 @@ function ReminderSchedulePageInner() {
       notify('error', `Kategori "${formData.category}" memerlukan pilihan Guest / Sales untuk form review!`);
       return;
     }
+
+    // ── BULK ASSIGN ──────────────────────────────────────────────────────────
+    if (bulkTarget !== 'none') {
+      const teamTypeMap: Record<string, string> = { ivp: 'Team PTS', mlds: 'Team PTS MLDS', ump: 'Team PTS UMP' };
+      const bulkLabelMap: Record<string, string> = { ivp: 'PTS IVP', mlds: 'PTS MLDS', ump: 'PTS UMP' };
+      const targets = teamUsers.filter(u => u.team_type === teamTypeMap[bulkTarget]);
+      if (targets.length === 0) { notify('error', 'Tidak ada anggota team yang ditemukan!'); return; }
+      setSaving(true);
+      const payloads = targets.map(u => ({
+        ...formData,
+        assigned_to: u.username,
+        assign_name: u.full_name,
+        created_by: currentUser?.username ?? 'system',
+      }));
+      const { error: bulkErr } = await supabase.from('reminders').insert(payloads);
+      if (bulkErr) { notify('error', 'Gagal menyimpan: ' + bulkErr.message); setSaving(false); return; }
+      notify('success', `${targets.length} reminder dibuat untuk Tim ${bulkLabelMap[bulkTarget]}!`);
+      for (const u of targets) {
+        if (u.phone_number) {
+          const msg =
+            `🗓️ *JADWAL BARU — PTS IVP*\n\n` +
+            `Halo *${u.full_name}*, kamu mendapat jadwal baru:\n\n` +
+            `*Nama Project: ${formData.project_name}*\n` +
+            `*Deskripsi: ${formData.description}*\n` +
+            `📦 *Product: ${formData.product}*\n` +
+            `🏷️ Kategori: ${formData.category}\n` +
+            `📍 Lokasi: ${formData.address || '-'}\n` +
+            `👤 Sales: ${formData.sales_name}${formData.sales_division ? ' - ' + formData.sales_division : ''}\n` +
+            `🕐 Jadwal: *${formatDate(formData.due_date)}${formData.due_time ? ' · ' + formData.due_time : ''}*\n` +
+            (formData.pic_name  ? `🙋 PIC: ${formData.pic_name}${formData.pic_phone ? ' - ' + formData.pic_phone : ''}\n\n` : '') +
+            (formData.notes     ? `📝 Catatan: ${formData.notes}\n\n` : '') +
+            `-\n` +
+            `Link Dashboard: https://work-management-ptsivp.vercel.app/dashboard\n` +
+            `jangan lupa peralatan & Semangat💪🏼`;
+          await sendFonnteWA(u.phone_number, msg, { reminderType: 'new_schedule' });
+        }
+      }
+      setSaving(false);
+      setShowFormModal(false);
+      setView('list');
+      setEditingReminder(null);
+      setFormData(emptyForm);
+      setBulkTarget('none');
+      fetchRemindersQuiet();
+      return;
+    }
+    // ── SINGLE ASSIGN ────────────────────────────────────────────────────────
 
     const assignee = teamUsers.find(u => u.username === formData.assigned_to);
     const payload = { ...formData, assign_name: assignee?.full_name ?? formData.assigned_to, created_by: currentUser?.username ?? 'system', ...(editingReminder ? { updated_at: new Date().toISOString() } : {}) };
@@ -1267,7 +1315,9 @@ jangan lupa peralatan & Semangat💪🏼
           saving={saving}
           teamUsers={teamUsers}
           guestUsers={guestUsers}
-          onClose={() => { setShowFormModal(false); setEditingReminder(null); setFormData(emptyForm); }}
+          bulkTarget={bulkTarget}
+          onBulkTargetChange={setBulkTarget}
+          onClose={() => { setShowFormModal(false); setEditingReminder(null); setFormData(emptyForm); setBulkTarget('none'); }}
           onSubmit={handleSave}
         />
       )}
