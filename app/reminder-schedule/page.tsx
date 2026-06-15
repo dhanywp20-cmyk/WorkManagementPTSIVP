@@ -2112,7 +2112,7 @@ jangan lupa peralatan & Semangat💪🏼
                                   for (const gr of group) counts[gr.status] = (counts[gr.status]||0)+1;
                                   const entries = Object.entries(counts);
                                   if (entries.length === 1) return <StatusBadge status={group[0].status} />;
-                                  return <div className="flex flex-wrap gap-0.5">{entries.map(([s,n]) => <span key={s} className="flex items-center gap-0.5"><StatusBadge status={s} /><span className="text-[8px] text-gray-500">{n}×</span></span>)}</div>;
+                                  return <div className="flex flex-wrap gap-0.5">{entries.map(([s,n]) => <span key={s} className="flex items-center gap-0.5"><StatusBadge status={s as any} /><span className="text-[8px] text-gray-500">{n}×</span></span>)}</div>;
                                 })()}
                               </div>
                             </div>
@@ -2289,7 +2289,7 @@ jangan lupa peralatan & Semangat💪🏼
                                       <div className="space-y-0.5">
                                         {entries.map(([s,n]) => (
                                           <div key={s} className="flex items-center gap-1">
-                                            <StatusBadge status={s} />
+                                            <StatusBadge status={s as any} />
                                             <span className="text-[9px] text-gray-500 font-bold">{n}×</span>
                                           </div>
                                         ))}
