@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase, supabaseServices } from "@/lib/supabase";
 import { setSession, clearSession, getSession } from "@/lib/auth";
-import { notifyTicketAssigned } from "@/lib/notifications";
+import { notifyTicketAssigned, createNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
 
 import {
@@ -806,7 +806,9 @@ function TicketingSystemInner() {
       if (error) throw error;
       if (approvalTicket.created_by) {
         const creatorUser = users.find((u) => u.username === approvalTicket.created_by);
-        if (creatorUser && creatorUser.role === "guest") {
+        if (creatorUser && creatorUser.role === "guest" && creatorUser.id) {
+          // Notify guest/sales bahwa ticket mereka sudah diproses
+          void createNotification({ user_id: creatorUser.id, type: 'ticket', title: `🎫 Ticket disetujui`, body: `${approvalTicket.project_name} — ditugaskan ke ${approvalAssignee}`, action_url: '/ticketing', ref_id: approvalTicket.id, created_by: currentUser?.full_name || '' });
         }
       }
       // ── WA ke handler yang di-assign ──────────────────────────────────────

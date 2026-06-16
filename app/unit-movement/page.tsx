@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader } from '@/components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { User, MovementLog, EVENTS, COLORS, splitTypeLines, fmtDate } from './_components/shared';
+import { logAudit } from '@/lib/audit';
 import { ViewModal } from './_components/ViewModal';
 import { AddEditModal } from './_components/AddEditModal';
 
@@ -82,6 +83,7 @@ function UnitMovementPageInner() {
     const {error} = await supabase.from('movement_logs').delete().eq('id',deleteConfirm.id);
     setDeleting(false); setDeleteConfirm(null);
     if (error) { notify('error','Gagal hapus: '+error.message); return; }
+    void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'delete', module: 'movement', target_id: deleteConfirm.id, target_name: deleteConfirm.project_name ?? '' });
     notify('success','Log berhasil dihapus!'); fetchLogs();
   };
 

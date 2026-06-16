@@ -159,10 +159,8 @@ export async function sendFonnteWA(
       body: JSON.stringify({ type: 'reminder_wa', target, message }),
     });
     const data = await res.json();
-    console.log('[sendFonnteWA] response:', data);
     return { ok: data?.ok === true, reason: data?.reason };
-  } catch (err: any) {
-    console.error('[sendFonnteWA] error:', err.message);
-    return { ok: false, reason: err.message };
+  } catch {
+    return { ok: false, reason: 'network error' };
   }
 }

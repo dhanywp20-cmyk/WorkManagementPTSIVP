@@ -288,6 +288,7 @@ export default function FormReviewPage() {
 
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
+    if (!isAdmin) { notify('error', 'Hanya admin yang bisa menghapus data.'); return; }
     if (!window.confirm(`Hapus ${selectedIds.size} review terpilih?`)) return;
     setBulkDeleting(true);
     const { error } = await supabase.from('form_reviews').delete().in('id', Array.from(selectedIds));

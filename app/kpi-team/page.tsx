@@ -6,6 +6,7 @@ import * as XLSX from 'xlsx-js-style';
 import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { PageHeader } from '@/components/shared';
+import { notifyKPIAlert } from '@/lib/notifications';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -912,6 +913,13 @@ export default function KPITeamPage() {
       ]);
       setMembers(cur);
       setPrevMembers(prev);
+      // Notify members whose solve rate is critically low (< 50% of handled tickets)
+      cur.forEach(m => {
+        if (m.ticketsHandled >= 5 && m.id) {
+          const solveRate = (m.ticketsSolved / m.ticketsHandled) * 100;
+          if (solveRate < 50) void notifyKPIAlert(m.id, m.name, solveRate);
+        }
+      });
     } catch { /* silent */ }
     finally { setLoading(false); }
   }, [scopeReady, scope, period, buildMembers, currentUser]);

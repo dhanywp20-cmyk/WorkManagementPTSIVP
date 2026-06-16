@@ -14,10 +14,9 @@ export async function sendWANotif(body: Record<string, unknown>): Promise<void> 
       },
       body: JSON.stringify(body),
     });
-    const data = await res.json();
-    console.log("[sendWANotif] response:", data);
-  } catch (err: any) {
-    console.error("[sendWANotif] error:", err.message);
+    await res.json();
+  } catch {
+    // silent — WA notif failure should not break main flow
   }
 }
 

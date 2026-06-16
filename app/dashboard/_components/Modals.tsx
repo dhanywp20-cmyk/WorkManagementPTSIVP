@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { setSession, getSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
+import { createNotification } from '@/lib/notifications';
 import {
   User, MenuItem, NotificationItem,
   SALES_DIVISIONS, JABATAN_LIST, JabatanType, JABATAN_CONFIG, JABATAN_CC_RULES,
@@ -2544,6 +2545,7 @@ export function AccountSettingsInline() {
     // Audit
     const admin = getSession<User>();
     logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'approve', module: 'user', target_id: approvingUser.id, target_name: approvingUser.full_name, new_value: role }).catch(() => {});
+    void createNotification({ user_id: approvingUser.id, type: 'user', title: '✅ Akun kamu telah disetujui', body: `Selamat! Akun ${approvingUser.full_name} sudah aktif. Silakan login.`, action_url: '/dashboard', created_by: admin?.full_name ?? '' });
     setApprovingUser(null); setApproveMenus(ALL_MENU_KEYS); fetchUsers();
   };
 
