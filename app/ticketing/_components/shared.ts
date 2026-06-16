@@ -128,7 +128,6 @@ export type ServicesStatus = (typeof SERVICES_STATUSES)[number];
 export interface User {
   id: string;
   username: string;
-  password: string;
   full_name: string;
   role: string;
   team_type?: string;

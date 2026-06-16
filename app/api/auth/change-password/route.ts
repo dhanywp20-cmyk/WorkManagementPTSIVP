@@ -16,7 +16,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password minimal 8 karakter.' }, { status: 400 });
     }
 
-    // Validasi kompleksitas password
     if (!/[A-Z]/.test(newPassword)) {
       return NextResponse.json({ error: 'Password harus mengandung minimal 1 huruf kapital.' }, { status: 400 });
     }
@@ -25,36 +24,26 @@ export async function POST(request: NextRequest) {
     }
 
     if (currentPassword) {
-      // Cek password lama dari user_credentials dulu, fallback ke users.password
       const { data: cred } = await supabase
         .from('user_credentials')
         .select('password_hash')
         .eq('user_id', userId)
         .single();
 
-      let valid = false;
-      if (cred?.password_hash) {
-        const isHashed = cred.password_hash.startsWith('$2b$') || cred.password_hash.startsWith('$2a$');
-        valid = isHashed
-          ? await bcrypt.compare(currentPassword, cred.password_hash)
-          : cred.password_hash === currentPassword;
-      } else {
-        const { data: legacyUser } = await supabase
-          .from('users')
-          .select('password')
-          .eq('id', userId)
-          .single();
-        const stored: string = (legacyUser as any)?.password ?? '';
-        const isHashed = stored.startsWith('$2b$') || stored.startsWith('$2a$');
-        valid = isHashed ? await bcrypt.compare(currentPassword, stored) : stored === currentPassword;
+      if (!cred?.password_hash) {
+        return NextResponse.json({ error: 'Credential tidak ditemukan.' }, { status: 404 });
       }
+
+      const isHashed = cred.password_hash.startsWith('$2b$') || cred.password_hash.startsWith('$2a$');
+      const valid = isHashed
+        ? await bcrypt.compare(currentPassword, cred.password_hash)
+        : cred.password_hash === currentPassword;
 
       if (!valid) {
         return NextResponse.json({ error: 'Password lama salah!' }, { status: 401 });
       }
     }
 
-    // Simpan ke user_credentials (cost 12 untuk keamanan lebih baik)
     const hash = await bcrypt.hash(newPassword, 12);
 
     const { error: upsertErr } = await supabase
@@ -62,11 +51,10 @@ export async function POST(request: NextRequest) {
       .upsert({ user_id: userId, password_hash: hash, algorithm: 'bcrypt' }, { onConflict: 'user_id' });
 
     if (upsertErr) {
-      // Fallback: update di users table juga (during migration period)
-      await supabase.from('users').update({ password: hash }).eq('id', userId);
+      return NextResponse.json({ error: 'Gagal menyimpan password baru.' }, { status: 500 });
     }
 
-    // Invalidate semua session user ini (force re-login untuk keamanan)
+    // Invalidate semua session user ini (force re-login)
     await supabase.from('user_sessions').delete().eq('user_id', userId);
 
     return NextResponse.json({ success: true });

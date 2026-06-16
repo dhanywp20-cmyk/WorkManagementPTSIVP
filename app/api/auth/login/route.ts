@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Username dan password wajib diisi.' }, { status: 400 });
     }
 
-    // ── Rate limiting: cek percobaan gagal dalam window ──────────────────
+    // ── Rate limiting ─────────────────────────────────────────────────────
     const windowCutoff = new Date(Date.now() - WINDOW_MINUTES * 60 * 1000).toISOString();
     const { count: failCount } = await supabase
       .from('login_attempts')
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── Ambil user dari DB ────────────────────────────────────────────────
+    // ── Ambil user ────────────────────────────────────────────────────────
     const { data: user, error: userErr } = await supabase
       .from('users')
       .select('id, username, full_name, role, team_type, sales_division, jabatan, phone_number, allowed_menus, kpi_enabled')
@@ -63,49 +63,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Username atau password salah!' }, { status: 401 });
     }
 
-    // ── Verifikasi password: cek user_credentials dulu, fallback ke users.password ──
-    let valid = false;
+    // ── Ambil password hash dari user_credentials ─────────────────────────
     const { data: cred } = await supabase
       .from('user_credentials')
       .select('password_hash')
       .eq('user_id', user.id)
       .single();
 
-    if (cred?.password_hash) {
-      // Password sudah dimigrasikan ke tabel terpisah
-      const stored = cred.password_hash;
-      const isHashed = stored.startsWith('$2b$') || stored.startsWith('$2a$');
-      if (isHashed) {
-        valid = await bcrypt.compare(password, stored);
-      } else {
-        // Plaintext tersisa — hash dan pindahkan
-        valid = stored === password;
-        if (valid) {
-          const hash = await bcrypt.hash(password, 12);
-          await supabase.from('user_credentials').update({ password_hash: hash }).eq('user_id', user.id);
-        }
-      }
-    } else {
-      // Fallback: cek users.password (sebelum migrasi selesai)
-      const { data: legacyUser } = await supabase
-        .from('users')
-        .select('password')
-        .eq('id', user.id)
-        .single();
+    if (!cred?.password_hash) {
+      // Tidak ada credential — akun belum dimigrasi atau tidak punya password
+      await supabase.from('login_attempts').insert({ username, ip_address: ip, success: false });
+      return NextResponse.json({ error: 'Akun belum aktif. Hubungi admin.' }, { status: 401 });
+    }
 
-      const stored: string = (legacyUser as any)?.password ?? '';
-      if (stored) {
-        const isHashed = stored.startsWith('$2b$') || stored.startsWith('$2a$');
-        if (isHashed) {
-          valid = await bcrypt.compare(password, stored);
-        } else {
-          valid = stored === password;
-        }
-        if (valid) {
-          // Upgrade: pindahkan ke user_credentials
-          const hash = await bcrypt.hash(password, 12);
-          await supabase.from('user_credentials').upsert({ user_id: user.id, password_hash: hash });
-        }
+    // ── Verifikasi password ───────────────────────────────────────────────
+    const stored = cred.password_hash;
+    const isHashed = stored.startsWith('$2b$') || stored.startsWith('$2a$');
+    let valid = false;
+
+    if (isHashed) {
+      valid = await bcrypt.compare(password, stored);
+    } else {
+      // Plaintext tersisa — bandingkan lalu upgrade ke bcrypt
+      valid = stored === password;
+      if (valid) {
+        const hash = await bcrypt.hash(password, 12);
+        await supabase.from('user_credentials')
+          .update({ password_hash: hash })
+          .eq('user_id', user.id);
       }
     }
 
@@ -114,10 +99,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Username atau password salah!' }, { status: 401 });
     }
 
-    // ── Login berhasil: catat success + buat session ──────────────────────
+    // ── Login berhasil ────────────────────────────────────────────────────
     await supabase.from('login_attempts').insert({ username, ip_address: ip, success: true });
 
-    // Cleanup expired sessions saat login (housekeeping ringan)
+    // Cleanup expired sessions (housekeeping)
     supabase.from('user_sessions').delete().lt('expires_at', new Date().toISOString()).then(() => {});
 
     const sessionToken = crypto.randomUUID() + '-' + crypto.randomUUID();
@@ -132,7 +117,6 @@ export async function POST(request: NextRequest) {
       expires_at: expiresAt,
     });
 
-    // ── Set httpOnly cookie ───────────────────────────────────────────────
     const response = NextResponse.json({ user });
     response.cookies.set('ivp_session', sessionToken, {
       httpOnly: true,
@@ -143,7 +127,7 @@ export async function POST(request: NextRequest) {
     });
     return response;
 
-  } catch (e: any) {
+  } catch {
     return NextResponse.json({ error: 'Login gagal. Coba lagi.' }, { status: 500 });
   }
 }
