@@ -576,7 +576,9 @@ function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: (
               {member.name.charAt(0)}
             </div>
             <div>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-white/50 mb-0.5">Nama</p>
               <div className="text-white font-black text-sm leading-tight">{member.name}</div>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-white/50 mt-1.5 mb-0.5">Tim · Jabatan · Periode</p>
               <div className="text-white/70 text-[10px]">{member.team_type.replace('Team ','')} · {member.jabatan} · {period}</div>
             </div>
           </div>

@@ -690,11 +690,18 @@ export default function DailyReportPage() {
             <div className="flex items-start gap-3">
               <span className="text-3xl">{row.kegiatan_icon}</span>
               <div>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mb-0.5">Sumber</p>
                 <p className="text-[11px] font-bold uppercase tracking-widest opacity-80">
                   {row.source === 'reminder' ? 'Reminder Schedule' : row.source === 'ticket' ? 'Ticket Troubleshooting' : 'Aktivitas Manual'}
                 </p>
-                <h3 className="text-base font-black mt-0.5 leading-tight">{row.project_name}</h3>
-                {row.address && <p className="text-xs opacity-80 mt-1">📍 {row.address}</p>}
+                <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-2 mb-0.5">Nama Project</p>
+                <h3 className="text-base font-black leading-tight">{row.project_name}</h3>
+                {row.address && (
+                  <>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-1.5 mb-0.5">Lokasi</p>
+                    <p className="text-xs opacity-80 flex items-center gap-1">📍 {row.address}</p>
+                  </>
+                )}
               </div>
             </div>
             {/* Status + jam */}

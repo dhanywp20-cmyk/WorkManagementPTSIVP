@@ -46,8 +46,10 @@ export function ViewModal({
           <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-sm">✕</button>
           <div>
             <Badge color="purple" square>{project.category}</Badge>
-            <h3 className="font-bold text-gray-800 text-base leading-snug mt-1.5">{project.project_name}</h3>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mt-2 mb-0.5">Nama Project</p>
+            <h3 className="font-bold text-gray-800 text-base leading-snug">{project.project_name}</h3>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mt-1.5 mb-0.5">Tanggal · Periode</p>
+            <p className="text-xs text-gray-600">
               {fmtDate(project.due_date)} · {fmtPeriode(project.periode)}
             </p>
           </div>

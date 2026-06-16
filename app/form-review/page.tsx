@@ -614,8 +614,14 @@ export default function FormReviewPage() {
                     );
                   })()}
                 </div>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-1 mb-0.5">Nama Project</p>
                 <h2 className="text-xl font-bold text-white leading-tight">{detailReview.project_name || '—'}</h2>
-                {detailReview.address && <p className="text-white/80 text-sm mt-1 flex items-center gap-1.5">📍 {detailReview.address}</p>}
+                {detailReview.address && (
+                  <>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-1.5 mb-0.5">Lokasi</p>
+                    <p className="text-white/80 text-sm flex items-center gap-1.5">📍 {detailReview.address}</p>
+                  </>
+                )}
                 <button onClick={() => setDetailReview(null)}
                   className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
               </div>

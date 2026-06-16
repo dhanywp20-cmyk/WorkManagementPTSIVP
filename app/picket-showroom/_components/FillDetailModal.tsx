@@ -100,8 +100,10 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 flex flex-col" style={{animation:'scale-in 0.25s ease-out',border:`1.5px solid ${dc.accent}40`,maxHeight:'96vh'}}>
         <div className="px-6 py-5 rounded-t-2xl flex-shrink-0 relative" style={{background:dc.grad}}>
           <div>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-white/50 mb-0.5">Hari Piket</p>
             <h2 className="text-lg font-bold text-white">✍️ Detail Piket — {row.day_of_week}</h2>
-            <p className="text-white/70 text-xs mt-0.5">{new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})} · {[row.pic_ivp_name,row.pic_ump_name,row.pic_mlds_name].filter(Boolean).join(' / ')||'Belum ada PIC'}</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-white/50 mt-1.5 mb-0.5">Tanggal · PIC</p>
+            <p className="text-white/70 text-xs">{new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})} · {[row.pic_ivp_name,row.pic_ump_name,row.pic_mlds_name].filter(Boolean).join(' / ')||'Belum ada PIC'}</p>
           </div>
           <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
         </div>

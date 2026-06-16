@@ -14,8 +14,10 @@ export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void 
           <div className="flex items-center gap-3">
             <span className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{background:'linear-gradient(135deg,#f59e0b,#d97706)'}}>📦</span>
             <div>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">Log</p>
               <h2 className="font-bold text-gray-900 text-base">Detail Movement Log</h2>
-              <p className="text-xs text-gray-500">{fmtDate(log.tanggal,true)}</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mt-1 mb-0.5">Tanggal</p>
+              <p className="text-xs text-gray-600">{fmtDate(log.tanggal,true)}</p>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-sm flex-shrink-0">✕</button>

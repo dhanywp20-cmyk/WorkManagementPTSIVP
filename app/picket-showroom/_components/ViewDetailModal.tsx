@@ -33,8 +33,10 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
         {/* Header */}
         <div className="px-6 py-5 rounded-t-2xl flex-shrink-0 relative" style={{background:dc.grad}}>
           <div>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-white/50 mb-0.5">Jadwal</p>
             <h2 className="text-lg font-black text-white">📋 Detail Jadwal Piket</h2>
-            <p className="text-white/70 text-xs mt-1">{row.day_of_week} · {dateLabel}</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-white/50 mt-1.5 mb-0.5">Hari · Tanggal</p>
+            <p className="text-white/70 text-xs">{row.day_of_week} · {dateLabel}</p>
           </div>
           <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
         </div>

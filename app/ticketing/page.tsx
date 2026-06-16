@@ -2644,8 +2644,14 @@ function TicketingSystemInner() {
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: selectedTicket.status === "Solved" ? "#059669" : selectedTicket.status === "In Progress" ? "#2563eb" : selectedTicket.status === "Onsite" ? "#7c3aed" : selectedTicket.status === "Call" ? "#0891b2" : "#d97706" }}>Status: {selectedTicket.status}</span>
                     {selectedTicket.services_status && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: '#7c3aed' }}>Svc Status: {selectedTicket.services_status}</span>}
                   </div>
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-1 mb-0.5">Nama Project</p>
                   <h2 className="text-lg font-bold text-white leading-tight">{selectedTicket.project_name}</h2>
-                  {selectedTicket.address && <p className="text-white/75 text-xs mt-0.5">📍 {selectedTicket.address}</p>}
+                  {selectedTicket.address && (
+                    <>
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-1.5 mb-0.5">Lokasi</p>
+                      <p className="text-white/75 text-xs flex items-center gap-1">📍 {selectedTicket.address}</p>
+                    </>
+                  )}
                   {selectedTicket.status === "Onsite" && (
                     <button onClick={() => { setShowTicketDetailPopup(false); setSelectedTicket(null); setShowUpdateForm(false); router.push('/reminder-schedule'); }}
                       className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold text-white"

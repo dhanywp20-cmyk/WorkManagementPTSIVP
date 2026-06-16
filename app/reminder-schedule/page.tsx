@@ -1457,14 +1457,20 @@ jangan lupa peralatan & Semangat💪🏼
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/80 text-white">✅ WA H-1 Terkirim</span>
                   )}
                 </div>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-1 mb-0.5">Nama Project</p>
                 <h2 className="text-2xl font-bold text-white leading-tight">{(detailReminder.project_name || '').trim() || ((detailReminder as any).title || '').trim() || '—'}</h2>
-                {/* Lokasi Project langsung di bawah nama project */}
                 {detailReminder.address && (
-                  <p className="text-white text-sm mt-1 flex items-center gap-1.5">
-                    <span>📍</span>{detailReminder.address}
-                  </p>
+                  <>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-2 mb-0.5">Lokasi</p>
+                    <p className="text-white text-sm flex items-center gap-1.5"><span>📍</span>{detailReminder.address}</p>
+                  </>
                 )}
-                {detailReminder.description && <p className="text-white/90 text-xs mt-1.5">{detailReminder.description}</p>}
+                {detailReminder.description && (
+                  <>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-2 mb-0.5">Deskripsi</p>
+                    <p className="text-white/90 text-xs">{detailReminder.description}</p>
+                  </>
+                )}
                 {/* Troubleshooting link ke Ticketing — navigasi internal */}
                 {detailReminder.category === 'Troubleshooting' && (
                   <button
