@@ -184,6 +184,10 @@ export interface Ticket {
   photo_url?: string;
   photo_name?: string;
   activity_logs?: ActivityLog[];
+  rejection_reason?: string;
+  reminder_id?: string | null | undefined;
+  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
+  escalation_notified_at?: string | null;
 }
 
 export interface OverdueSetting {

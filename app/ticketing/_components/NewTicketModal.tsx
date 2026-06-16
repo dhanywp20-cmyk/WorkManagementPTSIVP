@@ -20,6 +20,7 @@ export interface NewTicketForm {
   status: string;
   current_team: string;
   photo: File | null;
+  reminder_id: string | null;
 }
 
 interface ReminderRef {
@@ -89,6 +90,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
       product: r.product || '',
       customer_phone: r.pic_phone || '',
       assign_name: r.assign_name || form.assign_name,
+      reminder_id: r.id,
     });
   };
 
@@ -98,7 +100,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     setReminderQuery('');
     setReminderResults([]);
     if (type === 'new') {
-      setForm({ ...form, project_name: '', address: '', sales_name: '', sales_division: '', product: '', customer_phone: '', assign_name: '' });
+      setForm({ ...form, project_name: '', address: '', sales_name: '', sales_division: '', product: '', customer_phone: '', assign_name: '', reminder_id: null });
     }
   };
 

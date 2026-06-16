@@ -1,47 +1,52 @@
 /**
  * lib/auth.ts — Helper auth terpusat
- * Dipakai di semua halaman login untuk set/clear session secara konsisten.
+ *
+ * Arsitektur session (v2):
+ * - Auth TOKEN  → httpOnly cookie (diset oleh /api/auth/login, tidak bisa dibaca JS)
+ * - User PROFILE → sessionStorage (bisa dibaca JS, cleared on tab close, bukan localStorage)
+ *
+ * Keuntungan vs localStorage:
+ * - Token tidak bisa dicuri via XSS (httpOnly cookie)
+ * - Profile hilang saat browser/tab ditutup (lebih singkat exposure)
+ * - Cookie expired = session otomatis invalid di server
  */
 
 import { SESSION_DURATION_MS } from './constants';
 
-const SESSION_COOKIE = 'ivp_session';
-const LS_USER = 'currentUser';
-const LS_TIME = 'loginTime';
+const SS_USER = 'ivp_user';
+const SS_TIME = 'ivp_login_time';
 
 /**
  * Set session setelah login berhasil.
- * Menyimpan user di localStorage DAN cookie (untuk middleware).
+ * Token sudah diset sebagai httpOnly cookie oleh API route /api/auth/login.
+ * Di sini kita hanya simpan profile user di sessionStorage untuk akses sync.
  */
 export function setSession(userData: object): void {
   const now = Date.now();
-  // localStorage — untuk dibaca komponen client
-  localStorage.setItem(LS_USER, JSON.stringify(userData));
-  localStorage.setItem(LS_TIME, String(now));
-  // Cookie — untuk dibaca middleware Edge (session marker, bukan data user)
-  // max-age dalam detik
-  const maxAge = Math.floor(SESSION_DURATION_MS / 1000);
-  document.cookie = `${SESSION_COOKIE}=1; path=/; max-age=${maxAge}; SameSite=Lax`;
+  sessionStorage.setItem(SS_USER, JSON.stringify(userData));
+  sessionStorage.setItem(SS_TIME, String(now));
 }
 
 /**
  * Hapus session (logout).
+ * Hapus profile dari sessionStorage + invalidate httpOnly cookie via API.
  */
 export function clearSession(): void {
-  localStorage.removeItem(LS_USER);
-  localStorage.removeItem(LS_TIME);
-  // Hapus cookie dengan max-age=0
-  document.cookie = `${SESSION_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
+  sessionStorage.removeItem(SS_USER);
+  sessionStorage.removeItem(SS_TIME);
+  // Fire-and-forget: invalidate cookie di server
+  fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
 }
 
 /**
- * Baca session dari localStorage.
+ * Baca session dari sessionStorage (sync, fast).
  * Mengembalikan null jika tidak ada atau sudah expired.
+ * Untuk verifikasi dari cookie: gunakan verifySessionFromCookie().
  */
 export function getSession<T = Record<string, unknown>>(): T | null {
   try {
-    const saved = localStorage.getItem(LS_USER);
-    const savedTime = localStorage.getItem(LS_TIME);
+    const saved = sessionStorage.getItem(SS_USER);
+    const savedTime = sessionStorage.getItem(SS_TIME);
     if (!saved) return null;
     if (savedTime) {
       const elapsed = Date.now() - parseInt(savedTime, 10);
@@ -57,8 +62,27 @@ export function getSession<T = Record<string, unknown>>(): T | null {
 }
 
 /**
+ * Verifikasi session dari httpOnly cookie (async).
+ * Digunakan saat sessionStorage kosong (refresh halaman).
+ * Mengembalikan user data jika cookie valid, null jika tidak.
+ */
+export async function verifySessionFromCookie<T = Record<string, unknown>>(): Promise<T | null> {
+  try {
+    const res = await fetch('/api/auth/session', { credentials: 'include' });
+    if (!res.ok) return null;
+    const { user } = await res.json();
+    if (user) {
+      // Re-populate sessionStorage dari cookie yang valid
+      setSession(user);
+    }
+    return user ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Cek session dan redirect ke dashboard jika expired.
- * Panggil ini di useEffect pada setiap halaman yang embedded via iframe.
  * Mengembalikan true jika session masih valid.
  */
 export function checkSessionOrRedirect(): boolean {

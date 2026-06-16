@@ -43,6 +43,9 @@ function TicketingSystemInner() {
   const [reopenTargetTicket, setReopenTargetTicket] = useState<Ticket | null>(null);
   const [reopenAssignee, setReopenAssignee] = useState("");
   const [reopenNotes, setReopenNotes] = useState("");
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectTargetTicket, setRejectTargetTicket] = useState<Ticket | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTargetTicket, setDeleteTargetTicket] = useState<Ticket | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
@@ -131,6 +134,7 @@ function TicketingSystemInner() {
     status: "Pending",
     current_team: "Team PTS",
     photo: null as File | null,
+    reminder_id: null as string | null,
   });
 
   const [newActivity, setNewActivity] = useState({
@@ -166,6 +170,7 @@ function TicketingSystemInner() {
 
   const statusColors: Record<string, string> = {
     "Waiting Approval": "bg-orange-50 text-orange-600 border-orange-200",
+    Rejected: "bg-red-100 text-red-700 border-red-300",
     Pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
     Call: "bg-sky-50 text-sky-600 border-sky-200",
     Onsite: "bg-purple-50 text-purple-600 border-purple-200",
@@ -656,6 +661,7 @@ function TicketingSystemInner() {
         created_by: currentUser?.username || null,
         photo_url: photoUrl || null,
         photo_name: photoName || null,
+        reminder_id: (newTicket as any).reminder_id || null,
       };
       const { data: insertedTicket, error } = await supabase.from("tickets").insert([ticketData]).select("id").single();
       if (error) throw error;
@@ -745,7 +751,7 @@ function TicketingSystemInner() {
       }
 
       setNewTicket({
-        project_name: "", address: "", customer_phone: "", sales_name: "", sales_division: "", sn_unit: "", product: "", issue_case: "", description: "", assign_name: "", date: getJakartaDateString(), status: "Pending", current_team: "Team PTS", photo: null
+        project_name: "", address: "", customer_phone: "", sales_name: "", sales_division: "", sn_unit: "", product: "", issue_case: "", description: "", assign_name: "", date: getJakartaDateString(), status: "Pending", current_team: "Team PTS", photo: null, reminder_id: null
       });
       setShowNewTicket(false);
       await fetchData();
@@ -879,22 +885,47 @@ function TicketingSystemInner() {
   };
 
   const rejectTicket = (ticket: Ticket) => {
-    setConfirmState({
-      message: `Reject ticket "${ticket.project_name} - ${ticket.issue_case}"?`,
-      description: 'Ticket will be deleted.',
-      danger: true,
-      confirmLabel: 'Reject',
-      onConfirm: async () => {
-        try {
-          setUploading(true);
-          await supabase.from("activity_logs").delete().eq("ticket_id", ticket.id);
-          const { error } = await supabase.from("tickets").delete().eq("id", ticket.id);
-          if (error) throw error;
-          await fetchData();
-          notify("success", "Ticket rejected and removed.");
-        } catch (err: any) { notify("error", "Error: " + err.message); } finally { setUploading(false); }
-      },
-    });
+    setRejectTargetTicket(ticket);
+    setRejectReason("");
+    setShowRejectModal(true);
+  };
+
+  const confirmReject = async () => {
+    if (!rejectTargetTicket) return;
+    if (!rejectReason.trim()) { notify("error", "Mohon isi alasan penolakan!"); return; }
+    try {
+      setUploading(true);
+      const { error } = await supabase
+        .from("tickets")
+        .update({ status: "Rejected", rejection_reason: rejectReason.trim() })
+        .eq("id", rejectTargetTicket.id);
+      if (error) throw error;
+
+      // Notifikasi ke pembuat tiket
+      if (rejectTargetTicket.created_by) {
+        const creatorUser = users.find((u) => u.username === rejectTargetTicket.created_by);
+        if (creatorUser?.id) {
+          try {
+            const { createNotification } = await import('@/lib/notifications');
+            void createNotification({
+              user_id: creatorUser.id,
+              type: 'ticket',
+              title: `❌ Ticket ditolak`,
+              body: `${rejectTargetTicket.project_name} — ${rejectReason.trim().slice(0, 80)}`,
+              action_url: '/ticketing',
+              ref_id: rejectTargetTicket.id,
+              created_by: currentUser?.full_name || 'Admin',
+            });
+          } catch { }
+        }
+      }
+
+      await fetchData();
+      setShowRejectModal(false);
+      setRejectTargetTicket(null);
+      setRejectReason("");
+      notify("success", "Ticket ditolak. Sales dapat melihat alasan penolakan.");
+    } catch (err: any) { notify("error", "Error: " + err.message); } finally { setUploading(false); }
   };
 
   const reopenTicket = async () => {
@@ -3253,6 +3284,46 @@ function TicketingSystemInner() {
             </div>
           </div>
         )}
+        {/* ── REJECT TICKET MODAL — Soft reject dengan alasan ── */}
+        {showRejectModal && rejectTargetTicket && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4">
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(220,38,38,0.4)" }}>
+              <div className="flex items-center gap-3 mb-1">
+                <span className="text-3xl">❌</span>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800">Tolak Ticket</h3>
+                  <p className="text-xs text-gray-500 font-medium">{rejectTargetTicket.project_name}</p>
+                  <p className="text-xs text-gray-400">{rejectTargetTicket.issue_case}</p>
+                </div>
+              </div>
+              <div className="rounded-xl p-3 mb-4 mt-3 text-xs" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.3)", color: "#92400e" }}>
+                💡 Ticket <strong>tidak dihapus</strong> — tetap tersimpan dengan status "Rejected". Sales dapat melihat alasan penolakan dan mengajukan ulang jika diperlukan.
+              </div>
+              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#64748b" }}>Alasan Penolakan *</label>
+              <textarea
+                value={rejectReason}
+                onChange={e => setRejectReason(e.target.value)}
+                rows={3}
+                placeholder="Contoh: Data tidak lengkap, harap isi nomor SN unit dan deskripsi masalah lebih detail..."
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-none focus:ring-2 focus:ring-red-400"
+                style={{ border: "1.5px solid rgba(220,38,38,0.3)", background: "rgba(255,255,255,0.95)" }}
+                autoFocus
+              />
+              <div className="flex gap-3 mt-4">
+                <button onClick={() => { setShowRejectModal(false); setRejectTargetTicket(null); setRejectReason(""); }}
+                  className="flex-1 py-2.5 rounded-xl font-semibold text-sm" style={{ background: "rgba(0,0,0,0.06)", color: "#475569" }}>
+                  Batal
+                </button>
+                <button onClick={confirmReject} disabled={uploading || !rejectReason.trim()}
+                  className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white disabled:opacity-50"
+                  style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)" }}>
+                  {uploading ? "⏳ Menyimpan..." : "❌ Tolak Ticket"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── DELETE TICKET MODAL (Admin Only) ── */}
         {showDeleteModal && deleteTargetTicket && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
