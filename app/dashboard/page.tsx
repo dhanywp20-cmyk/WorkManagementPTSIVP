@@ -31,6 +31,7 @@ export default function Dashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [loginErr, setLoginErr] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
   const [registerErr, setRegisterErr] = useState('');
   const [showRegister, setShowRegister] = useState(false);
   const [registerForm, setRegisterForm] = useState({
@@ -162,6 +163,9 @@ export default function Dashboard() {
   }, [currentUser]);
 
   const handleLogin = async () => {
+    if (loginLoading) return;
+    setLoginLoading(true);
+    setLoginErr('');
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -210,7 +214,7 @@ export default function Dashboard() {
           }
         }, 50);
       }
-    } catch { setLoginErr('Login gagal. Coba lagi.'); }
+    } catch { setLoginErr('Login gagal. Coba lagi.'); } finally { setLoginLoading(false); }
   };
 
   const handleRegister = async () => {
@@ -617,8 +621,15 @@ export default function Dashboard() {
                     {loginErr}
                   </div>
                 )}
-                <button onClick={() => { setLoginErr(''); handleLogin(); }} className="w-full bg-gradient-to-r from-rose-600 to-rose-700 text-white py-3.5 rounded-xl hover:from-rose-700 hover:to-rose-800 font-bold shadow-lg transition-all tracking-wide text-sm mt-2">
-                  🔐 Sign In to Portal
+                <button onClick={handleLogin} disabled={loginLoading} className="w-full bg-gradient-to-r from-rose-600 to-rose-700 text-white py-3.5 rounded-xl hover:from-rose-700 hover:to-rose-800 font-bold shadow-lg transition-all tracking-wide text-sm mt-2 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                  {loginLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Memverifikasi...
+                    </>
+                  ) : (
+                    <>🔐 Sign In to Portal</>
+                  )}
                 </button>
                 <p className="text-center text-xs text-slate-400 pt-1">Belum punya akun? <button onClick={() => setShowRegister(true)} className="text-indigo-600 font-bold hover:underline">Daftar di sini</button></p>
               </div>
