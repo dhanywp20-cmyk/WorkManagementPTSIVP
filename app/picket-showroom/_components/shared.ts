@@ -264,21 +264,58 @@ function buildRollingTemplate(dbRows: PiketRow[]): RollingTemplate | null {
   };
 }
 
+// Count working (Mon–Fri) non-holiday days from `from` (inclusive) up to `to` (exclusive).
+function countWorkingNonHolidayDays(from: Date, to: Date, holidaySet: Set<string>): number {
+  let count = 0;
+  const cur = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const end = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+  while (cur < end) {
+    const dow = cur.getDay();
+    if (dow >= 1 && dow <= 5 && !holidaySet.has(toKey(cur))) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}
+
 function resolveSlot(
   date: Date,
-  tpl: RollingTemplate
+  tpl: RollingTemplate,
+  holidaySet?: Set<string>
 ): { nameMap: DayNameMap; uidMap: DayNameMap; dayName: DayOfWeek } | null {
   const dow = date.getDay();
   if (dow === 0 || dow === 6) return null; // weekend
+
+  if (holidaySet) {
+    // Holiday-aware: skip holiday dates in the working-day count so PIC shifts forward.
+    if (holidaySet.has(toKey(date))) return null; // holiday → no PIC
+
+    const anchorDate = new Date(tpl.anchorMonday.getFullYear(), tpl.anchorMonday.getMonth(), tpl.anchorMonday.getDate());
+    const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+    // Position in 10-slot cycle (5 days × 2 weeks), counting only working non-holiday days.
+    let position: number;
+    if (targetDate >= anchorDate) {
+      position = countWorkingNonHolidayDays(anchorDate, targetDate, holidaySet) % 10;
+    } else {
+      const count = countWorkingNonHolidayDays(targetDate, anchorDate, holidaySet);
+      position = (10 - (count % 10)) % 10;
+    }
+
+    const isW2 = position >= 5;
+    return {
+      nameMap: isW2 ? tpl.nameW2 : tpl.nameW1,
+      uidMap:  isW2 ? tpl.uidW2  : tpl.uidW1,
+      dayName: DAYS_OF_WEEK[position % 5],
+    };
+  }
+
+  // Original logic (no holiday awareness)
   const dayName = DAYS_OF_WEEK[dow - 1];
   if (!dayName) return null;
 
-  // Days from anchor Monday (may be negative for past dates)
   const anchorMs = tpl.anchorMonday.getTime();
   const targetMs = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
   const diffDays = Math.round((targetMs - anchorMs) / (24 * 60 * 60 * 1000));
-
-  // Always-positive modulo 14
   const mod14 = ((diffDays % 14) + 14) % 14;
 
   return {
@@ -288,20 +325,22 @@ function resolveSlot(
   };
 }
 
-/** Rolling PIC display name for a date. Returns '' if weekend or no pattern. */
-export function getRollingNameForDate(date: Date, dbRows: PiketRow[]): string {
+/** Rolling PIC display name for a date. Pass holidays[] to shift PIC away from holiday dates. */
+export function getRollingNameForDate(date: Date, dbRows: PiketRow[], holidays?: string[]): string {
   const tpl = buildRollingTemplate(dbRows);
   if (!tpl) return '';
-  const slot = resolveSlot(date, tpl);
+  const holidaySet = holidays && holidays.length > 0 ? new Set(holidays) : undefined;
+  const slot = resolveSlot(date, tpl, holidaySet);
   if (!slot) return '';
   return slot.nameMap[slot.dayName] || '';
 }
 
-/** Rolling PIC user_id for a date. Returns '' if weekend or no pattern. */
-export function getRollingUserIdForDate(date: Date, dbRows: PiketRow[]): string {
+/** Rolling PIC user_id for a date. Pass holidays[] to shift PIC away from holiday dates. */
+export function getRollingUserIdForDate(date: Date, dbRows: PiketRow[], holidays?: string[]): string {
   const tpl = buildRollingTemplate(dbRows);
   if (!tpl) return '';
-  const slot = resolveSlot(date, tpl);
+  const holidaySet = holidays && holidays.length > 0 ? new Set(holidays) : undefined;
+  const slot = resolveSlot(date, tpl, holidaySet);
   if (!slot) return '';
   return slot.uidMap[slot.dayName] || '';
 }

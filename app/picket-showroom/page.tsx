@@ -114,7 +114,7 @@ function PiketShowroomPageInner() {
         // Hari lampau yang belum di-DB: tampilkan kosong (jangan pakai rolling)
         // supaya history tidak berubah retroaktif saat rolling di-update
         const isPast = dateKey < todayKey;
-        const name = isPast ? null : getRollingNameForDate(date, allRows);
+        const name = isPast ? null : getRollingNameForDate(date, allRows, holidays);
         const u = name ? ptUsers.find(x=>x.full_name===name) : undefined;
         const tt = u?.team_type||'';
         const isIVP=tt==='Team PTS', isUMP=tt==='Team PTS UMP', isMlds=tt==='Team PTS MLDS';
@@ -135,7 +135,7 @@ function PiketShowroomPageInner() {
       });
     });
     return [...rows, ...virtual];
-  }, [rows, allRows, weekStart, ptUsers]);
+  }, [rows, allRows, weekStart, ptUsers, holidays]);
 
   // Auto-save virtual row ke DB lalu buka FillDetailModal
   const handleFillVirtual = useCallback(async(row: PiketRow)=>{
