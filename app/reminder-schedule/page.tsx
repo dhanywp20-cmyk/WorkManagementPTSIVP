@@ -207,7 +207,7 @@ function ReminderSchedulePageInner() {
     if (selectedIds.size === 0) return;
     if (!window.confirm(`Hapus ${selectedIds.size} jadwal yang dipilih?`)) return;
     setBulkDeleting(true);
-    const { error } = await supabase.from('service_reminders').delete().in('id', Array.from(selectedIds));
+    const { error } = await supabase.from('reminders').delete().in('id', Array.from(selectedIds));
     if (!error) { setReminders(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); }
     else notify('error', 'Gagal: ' + error.message);
     setBulkDeleting(false);
@@ -1305,7 +1305,7 @@ jangan lupa peralatan & Semangat💪🏼
                 <button onClick={() => setBulkConfirm(false)} className="flex-1 border-2 border-gray-300 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-50 transition-all text-sm">Batal</button>
                 <button onClick={async () => {
                   setBulkConfirm(false); setBulkDeleting(true);
-                  const { error } = await supabase.from('service_reminders').delete().in('id', Array.from(selectedIds));
+                  const { error } = await supabase.from('reminders').delete().in('id', Array.from(selectedIds));
                   if (!error) { setReminders(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); setSelectMode(false); }
                   else notify('error', 'Gagal: ' + error.message);
                   setBulkDeleting(false);

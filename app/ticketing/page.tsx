@@ -260,8 +260,10 @@ function TicketingSystemInner() {
     try {
       const existing = getOverdueSetting(overdueTargetTicket.id);
       const payload: any = { ticket_id: overdueTargetTicket.id, set_by: currentUser?.username || "", due_date: null, due_hours: parseInt(overdueForm.due_hours) };
-      if (existing) await supabase.from("overdue_settings").update(payload).eq("id", existing.id);
-      else await supabase.from("overdue_settings").insert([payload]);
+      let mutErr;
+      if (existing) { const r = await supabase.from("overdue_settings").update(payload).eq("id", existing.id); mutErr = r.error; }
+      else { const r = await supabase.from("overdue_settings").insert([payload]); mutErr = r.error; }
+      if (mutErr) { notify("error", "Gagal simpan overdue setting: " + mutErr.message); return; }
       await fetchOverdueSettings();
       setShowOverdueSetting(false);
       setOverdueForm({ due_hours: "48" });
@@ -272,12 +274,14 @@ function TicketingSystemInner() {
   const deleteOverdueSetting = async (ticketId: string) => {
     const existing = getOverdueSetting(ticketId);
     if (!existing) return;
-    await supabase.from("overdue_settings").delete().eq("id", existing.id);
+    const { error } = await supabase.from("overdue_settings").delete().eq("id", existing.id);
+    if (error) { notify("error", "Gagal hapus overdue setting: " + error.message); return; }
     await fetchOverdueSettings();
   };
 
   const deleteTicket = async () => {
     if (!deleteTargetTicket) return;
+    if (currentUser?.role !== 'admin' && currentUser?.role !== 'superadmin') { notify("error", "Tidak ada akses untuk menghapus ticket."); return; }
     try {
       setUploading(true);
       setShowLoadingPopup(true);
@@ -1406,9 +1410,14 @@ function TicketingSystemInner() {
 
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
+    if (currentUser?.role !== 'admin' && currentUser?.role !== 'superadmin') { notify("error", "Tidak ada akses untuk menghapus ticket."); return; }
     if (!window.confirm(`Hapus ${selectedIds.size} ticket yang dipilih? Tindakan ini tidak bisa dibatalkan.`)) return;
     setBulkDeleting(true);
     const ids = Array.from(selectedIds);
+    // Cascade: hapus activity_logs + overdue_settings dulu
+    await supabase.from("activity_logs").delete().in("ticket_id", ids);
+    try { await supabaseServices.from("activity_logs").delete().in("ticket_id", ids); } catch { }
+    await supabase.from("overdue_settings").delete().in("ticket_id", ids);
     const { error } = await supabase.from("tickets").delete().in("id", ids);
     if (!error) {
       setTickets(prev => prev.filter(t => !selectedIds.has(t.id)));
