@@ -281,7 +281,7 @@ function IncentivePTSPage() {
     if (error) { notify('error', 'Gagal update status'); return; }
     void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'update', module: 'incentive-pts', target_id: selectedProject.id, target_name: selectedProject.project_name, notes: 'Status → paid' });
     const handlerUser = teamUsers.find(u => u.username === selectedProject.handler_username || u.full_name === selectedProject.handler_name);
-    if (handlerUser) {
+    if (handlerUser?.id) {
       void createNotification({ user_id: handlerUser.id, type: 'system', title: '💰 Incentive Dibayarkan', body: `Project "${selectedProject.project_name}" telah ditandai lunas oleh ${currentUser?.full_name ?? 'Admin'}.`, action_url: '/incentive-pts', ref_id: selectedProject.id, created_by: currentUser?.full_name ?? '' });
     }
     notify('success', 'Project ditandai sebagai lunas!');
