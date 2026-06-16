@@ -13,7 +13,7 @@ import {
 import {
   FormField, SectionHeader, StarRating, LoadingScreen, MiniPieChart,
   ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup,
-  ConfirmDialog, type ConfirmState,
+  ConfirmDialog, type ConfirmState, ErrorState,
 } from '@/components/shared';
 
 // ─── Main Component ────────────────────────────────────────────────────────────
@@ -31,6 +31,7 @@ export default function FormReviewPage() {
   // Data
   const [reviews, setReviews] = useState<ReviewForm[]>([]);
   const [listLoading, setListLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string|null>(null);
   const [saving, setSaving] = useState(false);
 
   // Notifications
@@ -164,7 +165,8 @@ export default function FormReviewPage() {
     // Admin: lihat semua
 
     const { data, error } = await query;
-    if (!error && data) {
+    if (error) { setFetchError(error.message); return; }
+    if (data) {
       setReviews(data as ReviewForm[]);
 
       // ── Notif untuk Guest: pending review yang belum diisi
@@ -1163,6 +1165,8 @@ export default function FormReviewPage() {
               <div className="flex items-center justify-center py-16">
                 <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'rgba(124,58,237,0.3)', borderTopColor: '#7c3aed' }} />
               </div>
+            ) : fetchError ? (
+              <ErrorState message={fetchError} onRetry={() => { setFetchError(null); fetchReviews(); }} />
             ) : tableReviews.length === 0 ? (
               <div className="text-center py-16">
                 <p className="text-5xl mb-3">📭</p>

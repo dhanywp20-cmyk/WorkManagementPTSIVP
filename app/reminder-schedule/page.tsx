@@ -20,7 +20,7 @@ import {
   FormField, SectionHeader, SectionHeaderSmall, InfoRow,
   LoadingScreen, MiniPieChart, PageHeader,
   ViewIconBtn, RescheduleIconBtn, ApproveIconBtn, DeleteIconBtn, ActionGroup,
-  ConfirmDialog, type ConfirmState,
+  ConfirmDialog, type ConfirmState, ErrorState,
 } from '@/components/shared';
 import { MiniCalendar } from './_components/MiniCalendar';
 import { RescheduleModal } from './_components/RescheduleModal';
@@ -42,6 +42,7 @@ function ReminderSchedulePageInner() {
   const [guestUsers, setGuestUsers]         = useState<GuestUser[]>([]);
   const [reminders, setReminders]           = useState<Reminder[]>([]);
   const [listLoading, setListLoading]       = useState(false);
+  const [fetchError, setFetchError]         = useState<string|null>(null);
   const [saving, setSaving]                 = useState(false);
   const [rescheduleTarget, setRescheduleTarget] = useState<Reminder | null>(null);
 
@@ -229,7 +230,8 @@ function ReminderSchedulePageInner() {
     if (!activeUser || activeUser.role !== 'guest') {
       // Admin & team: ambil semua
       const { data, error } = await supabase.from('reminders').select('*').order('created_at', { ascending: false }).limit(500);
-      return (!error && data) ? (data as Reminder[]) : [];
+      if (error) throw new Error(error.message);
+      return (data as Reminder[]) ?? [];
     }
     // Guest: ambil schedule yg atas nama dia (dibuat admin) + yg dia request sendiri (created_by)
     const [bySales, byCreator] = await Promise.all([
@@ -253,10 +255,15 @@ function ReminderSchedulePageInner() {
 
   const fetchReminders = async () => {
     setListLoading(true);
+    setFetchError(null);
     let activeUser: TeamUser | null = currentUser;
     if (!activeUser) activeUser = getSession<TeamUser>();
-    const data = await fetchRemindersForUser(activeUser);
-    setReminders(data);
+    try {
+      const data = await fetchRemindersForUser(activeUser);
+      setReminders(data);
+    } catch (err: any) {
+      setFetchError(err?.message ?? 'Gagal memuat data');
+    }
     setTimeout(() => setListLoading(false), 400);
   };
 
@@ -2073,7 +2080,9 @@ jangan lupa peralatan & Semangat💪🏼
                   )}
 
                   {/* ── TABLE ── */}
-                  {listLoading ? (
+                  {fetchError ? (
+                    <ErrorState message={fetchError} onRetry={() => { setFetchError(null); fetchReminders(); }} />
+                  ) : listLoading ? (
                     <div className="space-y-2 p-4">
                       {[...Array(4)].map((_, i) => (
                         <div key={i} className="animate-pulse flex gap-3 items-center bg-white/60 rounded-xl p-3 border border-gray-200">

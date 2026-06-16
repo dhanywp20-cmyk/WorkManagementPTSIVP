@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader } from '@/components/shared';
+import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ErrorState } from '@/components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { User, MovementLog, EVENTS, COLORS, splitTypeLines, fmtDate } from './_components/shared';
 import { logAudit } from '@/lib/audit';
@@ -20,6 +20,7 @@ function UnitMovementPageInner() {
 
   const [logs,        setLogs]        = useState<MovementLog[]>([]);
   const [loading,     setLoading]     = useState(false);
+  const [fetchError,  setFetchError]  = useState<string|null>(null);
   const [teamMembers, setTeamMembers] = useState<string[]>([]);
 
   const [filterStatus, setFilterStatus] = useState<'All'|'Masuk'|'Keluar'>('All');
@@ -66,7 +67,9 @@ function UnitMovementPageInner() {
 
   const fetchLogs = async () => {
     setLoading(true);
-    const {data} = await supabase.from('movement_logs').select('id,tanggal,nama_pts,nama_luar,status_barang,event,project_name,type_barang,serial_number,catatan,foto_surat_url,foto_barang_url,created_by,created_at,kondisi_barang,expected_return_date,return_confirmed,checkout_reference_id').order('tanggal',{ascending:false}).limit(500);
+    setFetchError(null);
+    const {data, error} = await supabase.from('movement_logs').select('id,tanggal,nama_pts,nama_luar,status_barang,event,project_name,type_barang,serial_number,catatan,foto_surat_url,foto_barang_url,created_by,created_at,kondisi_barang,expected_return_date,return_confirmed,checkout_reference_id').order('tanggal',{ascending:false}).limit(500);
+    if (error) { setFetchError(error.message); setLoading(false); return; }
     if (data) setLogs(data as MovementLog[]);
     setLoading(false);
   };
@@ -282,7 +285,9 @@ function UnitMovementPageInner() {
                   </tr>
                 </thead>
                 <tbody>
-                  {openLoans.map((loan, idx)=>{
+                  {fetchError ? (
+                    <tr><td colSpan={8} className="py-2"><ErrorState message={fetchError} onRetry={fetchLogs} /></td></tr>
+                  ) : openLoans.map((loan, idx)=>{
                     const daysLate = Math.max(0, Math.round((new Date().getTime() - new Date(loan.expected_return_date!).getTime())/(24*60*60*1000)));
                     const typeLines = splitTypeLines(loan.type_barang);
                     return (
@@ -408,7 +413,9 @@ function UnitMovementPageInner() {
                 </tr>
               </thead>
               <tbody>
-                {loading ? (
+                {fetchError ? (
+                  <tr><td colSpan={9} className="py-2"><ErrorState message={fetchError} onRetry={fetchLogs} /></td></tr>
+                ) : loading ? (
                   <tr><td colSpan={9} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-8 h-8 rounded-full animate-spin" style={{border:'3px solid #fde68a',borderTopColor:'#f59e0b'}}/>

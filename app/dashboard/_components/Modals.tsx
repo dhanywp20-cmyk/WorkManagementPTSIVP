@@ -2538,10 +2538,10 @@ export function AccountSettingsInline() {
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
-    const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type').order('full_name');
+    const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type,created_at').order('full_name');
     if (error) {
       // Fallback: try without extended columns (divisi/pts_type may not exist yet)
-      const { data: fallback, error: err2 } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled').order('full_name');
+      const { data: fallback, error: err2 } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,created_at').order('full_name');
       if (!err2 && fallback) {
         setPendingUsers(fallback.filter((u: User) => u.team_type === 'Pending Approval'));
         setUsers(fallback.filter((u: User) => u.team_type !== 'Pending Approval'));
@@ -3019,13 +3019,25 @@ export function AccountSettingsInline() {
               </div>
             ) : (
               <div className="space-y-2">
-                {pendingUsers.map(user => (
-                  <div key={user.id} className="flex items-center gap-3 p-3 rounded-xl border border-amber-200 bg-amber-50">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 bg-amber-200 text-amber-800">
+                {pendingUsers.map(user => {
+                  const daysPending = user.created_at
+                    ? Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000)
+                    : null;
+                  const isStale = daysPending !== null && daysPending > 14;
+                  return (
+                  <div key={user.id} className={`flex items-center gap-3 p-3 rounded-xl border ${isStale ? 'border-red-300 bg-red-50' : 'border-amber-200 bg-amber-50'}`}>
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 ${isStale ? 'bg-red-200 text-red-800' : 'bg-amber-200 text-amber-800'}`}>
                       {user.full_name?.charAt(0)?.toUpperCase() ?? '?'}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-slate-800 text-sm truncate">{user.full_name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-slate-800 text-sm truncate">{user.full_name}</p>
+                        {daysPending !== null && (
+                          <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black flex-shrink-0 ${isStale ? 'bg-red-200 text-red-800' : 'bg-amber-100 text-amber-700'}`}>
+                            {isStale ? `⚠️ ${daysPending}h` : `${daysPending}h`}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-slate-500">@{user.username}</p>
                       <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                         <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-200 text-amber-800">
@@ -3042,7 +3054,8 @@ export function AccountSettingsInline() {
                         className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-all">Tolak</button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

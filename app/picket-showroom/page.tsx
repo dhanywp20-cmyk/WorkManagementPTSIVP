@@ -11,7 +11,7 @@ import {
   JENIS_KEGIATAN_LIST, KEGIATAN_COLORS, PIE_COLORS,
   getMonday, addDays, toKey, getDayDate, getRollingNameForDate,
 } from './_components/shared';
-import { MiniPieChart, PageHeader, ConfirmDialog, type ConfirmState } from '@/components/shared';
+import { MiniPieChart, PageHeader, ConfirmDialog, type ConfirmState, ErrorState } from '@/components/shared';
 import { TamuSummaryCards } from './_components/TamuSummaryCards';
 import { MiniCalendarPopup } from './_components/MiniCalendarPopup';
 import { FillDetailModal } from './_components/FillDetailModal';
@@ -31,6 +31,8 @@ function PiketShowroomPageInner() {
   const [kegiatanList,setKegiatanList]=useState<KegiatanEntry[]>([]);
   const [ptUsers,setPtUsers]=useState<UserRow[]>([]);
   const [loading,setLoading]=useState(true);
+  const [fetchError,setFetchError]=useState<string|null>(null);
+  const [holidays,setHolidays]=useState<string[]>([]);
   const [showSchedule,setShowSchedule]=useState(false);
   const [showCalendar,setShowCalendar]=useState(false);
   const [fillDetail,setFillDetail]=useState<PiketRow|null>(null);
@@ -58,17 +60,27 @@ function PiketShowroomPageInner() {
 
   const fetchData=useCallback(async()=>{
     setLoading(true);
+    setFetchError(null);
     const wk2=toKey(addDays(weekStart,7));
-    const[wRes,aRes,uRes,kgRes]=await Promise.all([
-      supabase.from('piket_schedules').select('*').in('week_start',[wk,wk2]).order('day_date'),
-      supabase.from('piket_schedules').select('id,day_date,week_start,day_of_week,pic_ivp_name,pic_ump_name,pic_mlds_name'),
-      supabase.from('users').select('id,full_name,username,team_type,role').in('team_type',['Team PTS','Team PTS UMP','Team PTS MLDS']).order('full_name'),
-      supabase.from('piket_tamu_detail').select('*').order('created_at'),
-    ]);
-    if(wRes.data)setRows(wRes.data as PiketRow[]);
-    if(aRes.data)setAllRows(aRes.data as PiketRow[]);
-    if(uRes.data)setPtUsers(uRes.data.filter((u:any)=>u.role!=='admin'&&u.role!=='superadmin') as UserRow[]);
-    if(kgRes.data)setKegiatanList(kgRes.data as KegiatanEntry[]);
+    try {
+      const[wRes,aRes,uRes,kgRes]=await Promise.all([
+        supabase.from('piket_schedules').select('*').in('week_start',[wk,wk2]).order('day_date'),
+        supabase.from('piket_schedules').select('id,day_date,week_start,day_of_week,pic_ivp_name,pic_ump_name,pic_mlds_name'),
+        supabase.from('users').select('id,full_name,username,team_type,role').in('team_type',['Team PTS','Team PTS UMP','Team PTS MLDS']).order('full_name'),
+        supabase.from('piket_tamu_detail').select('*').order('created_at'),
+      ]);
+      const firstErr = wRes.error || aRes.error || uRes.error || kgRes.error;
+      if (firstErr) { setFetchError(firstErr.message); setLoading(false); return; }
+      if(wRes.data)setRows(wRes.data as PiketRow[]);
+      if(aRes.data)setAllRows(aRes.data as PiketRow[]);
+      if(uRes.data)setPtUsers(uRes.data.filter((u:any)=>u.role!=='admin'&&u.role!=='superadmin') as UserRow[]);
+      if(kgRes.data)setKegiatanList(kgRes.data as KegiatanEntry[]);
+      // Holidays: optional — if table doesn't exist yet, silently ignore
+      const hRes = await supabase.from('picket_holidays').select('date');
+      if (hRes.data) setHolidays(hRes.data.map((h: any) => h.date));
+    } catch (err: any) {
+      setFetchError(err?.message ?? 'Gagal memuat data');
+    }
     setLoading(false);
   },[weekStart]);
 
@@ -159,6 +171,16 @@ function PiketShowroomPageInner() {
       },
     });
   },[fetchData, currentUser, setConfirmState]);
+
+  const toggleHoliday = useCallback(async (date: string) => {
+    if (holidays.includes(date)) {
+      await supabase.from('picket_holidays').delete().eq('date', date);
+      setHolidays(prev => prev.filter(d => d !== date));
+    } else {
+      await supabase.from('picket_holidays').insert({ date, label: 'Libur', created_by: currentUser?.full_name ?? '' });
+      setHolidays(prev => [...prev, date]);
+    }
+  }, [holidays, currentUser]);
 
   const formatTime = (timeStr:string) => {
     if(!timeStr) return '';
@@ -346,7 +368,9 @@ function PiketShowroomPageInner() {
                 </div>
               );
             })()}
-            {loading?(
+            {fetchError?(
+              <ErrorState message={fetchError} onRetry={()=>{setFetchError(null);fetchData();}} />
+            ):loading?(
               <div className="flex justify-center py-16"><div className="flex flex-col items-center gap-3"><div className="w-8 h-8 rounded-full border-2 border-t-red-600 border-red-200 animate-spin"/><p className="text-sm text-slate-500">Memuat jadwal...</p></div></div>
             ):(
               <div className="overflow-x-auto animate-zoom-in">
@@ -378,6 +402,7 @@ function PiketShowroomPageInner() {
                       const todayMs=new Date(todayKey+'T00:00:00').getTime();
                       const diffDays=Math.round((rowDateMs-todayMs)/(1000*60*60*24));
                       const isVirtual=row.id.startsWith('virtual-');
+                      const isHoliday=holidays.includes(row.day_date);
                       const rowKg=kegiatanList.filter(k=>k.piket_id===row.id);
                       const kgToShow=rowKg.length>0?rowKg:[null];
                       const countdownBadge=todayRow?null:diffDays===1?{label:'BESOK',color:'#d97706'}:diffDays>1&&diffDays<=9?{label:`${diffDays} hr lagi`,color:'#64748b'}:null;
@@ -394,6 +419,8 @@ function PiketShowroomPageInner() {
                                   <span className="text-xs font-bold mt-0.5" style={{color:dc.accent}}>{row.day_of_week}</span>
                                   {todayRow&&<span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md text-white mt-0.5 w-fit" style={{background:dc.accent,boxShadow:`0 2px 6px ${dc.accent}50`}}>📍 HARI INI</span>}
                                   {countdownBadge&&<span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md mt-0.5 w-fit" style={{background:`${countdownBadge.color}15`,color:countdownBadge.color,border:`1px solid ${countdownBadge.color}40`}}>{countdownBadge.label}</span>}
+                                  {isHoliday&&<span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md text-white mt-0.5 w-fit" style={{background:'#dc2626'}}>🎌 LIBUR</span>}
+                                  {isAdmin&&<button onClick={()=>toggleHoliday(row.day_date)} className="text-[8px] font-bold mt-1 px-1.5 py-0.5 rounded-md w-fit transition-all" style={isHoliday?{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca'}:{background:'#f8fafc',color:'#94a3b8',border:'1px solid #e2e8f0'}}>{isHoliday?'✕ Batal Libur':'🎌 Tandai Libur'}</button>}
                                 </div>
                               </td>
                               {/* PIC — tambah keterangan tim */}

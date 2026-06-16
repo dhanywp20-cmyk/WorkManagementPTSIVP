@@ -1001,12 +1001,26 @@ export default function KPITeamPage() {
       });
       const endMonth = Math.min(kpiStartMonth + (kpiPeriodLen === '6m' ? 5 : 11), 12);
       const snapshotLabel = `${MN[kpiStartMonth - 1]}–${MN[endMonth - 1]} ${kpiYear}`;
-      await supabase.from('kpi_period_snapshots').insert({
+      const { data: snapInserted } = await supabase.from('kpi_period_snapshots').insert({
         period_label: snapshotLabel,
         year: kpiYear, period: kpiPeriodLen, start_month: kpiStartMonth, end_month: endMonth,
         team_type: scope.kind === 'pts_sup' ? scope.ptsTeamType : 'all',
         created_by: currentUser.full_name, members_json: membersJson, settings_json: _s,
-      });
+      }).select('id').single();
+      // Also write to relational table (requires migration 004_kpi_snapshot_members.sql)
+      if (snapInserted?.id) {
+        const memberRows = membersJson.map(m => ({
+          snapshot_id: snapInserted.id,
+          member_id: m.id, name: m.name, jabatan: m.jabatan, team_type: m.team_type,
+          tickets_handled: m.ticketsHandled, tickets_solved: m.ticketsSolved, tickets_overdue: m.ticketsOverdue,
+          lc_attempts: m.lcAttempts, lc_avg_score: m.lcAvgScore, lc_passed: m.lcPassed,
+          form_review_total: m.formReviewTotal, form_review_low: m.formReviewLowRating,
+          tech_notes_approved: m.techNotesApproved,
+          tick_score: m.tickScore / 100, bast_score: m.bastScore / 100,
+          lc_score: m.lcScore / 100, rnd_score: m.rndScore / 100, final_kpi: m.finalKPI,
+        }));
+        void supabase.from('kpi_snapshot_members').insert(memberRows);
+      }
       void logAudit({ user_id: currentUser.id, user_name: currentUser.full_name ?? '', action: 'create', module: 'kpi-team', notes: `Snapshot KPI ${snapshotLabel}` });
       await fetchKPISnapshots();
       setShowStartKPI(false);

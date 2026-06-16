@@ -22,7 +22,7 @@ import { NewTicketModal } from "./_components/NewTicketModal";
 import {
   ViewIconBtn, DeleteIconBtn,
   FlowchartIconBtn, PrintIconBtn, ApproveIconBtn, ReopenIconBtn, OverdueIconBtn,
-  Toast, PageHeader, ConfirmDialog, type ConfirmState,
+  Toast, PageHeader, ConfirmDialog, type ConfirmState, ErrorState,
 } from "@/components/shared";
 
 function TicketingSystemInner() {
@@ -74,6 +74,7 @@ function TicketingSystemInner() {
   const [showTicketDetailPopup, setShowTicketDetailPopup] = useState(false);
   const [loading, setLoading] = useState(true);
   const [ticketsLoading, setTicketsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string|null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [silentUpdating, setSilentUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -606,9 +607,9 @@ function TicketingSystemInner() {
       }
       // Fetch warranty/project reference data (fire-and-forget, non-blocking)
       fetchProjectReminders();
-    } catch {
+    } catch (err: any) {
       setLoading(false);
-      if (!silent) setTicketsLoading(false);
+      if (!silent) { setTicketsLoading(false); setFetchError(err?.message ?? 'Gagal memuat data. Coba refresh halaman.'); }
     }
   };
 
@@ -2266,7 +2267,9 @@ function TicketingSystemInner() {
               </div>
             )}
 
-            {ticketsLoading ? (
+            {fetchError ? (
+              <ErrorState message={fetchError} onRetry={() => { setFetchError(null); fetchData(); }} />
+            ) : ticketsLoading ? (
               <div className="space-y-3 py-2 p-4">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="animate-pulse flex gap-3 items-center bg-white/60 rounded-xl p-4 border border-gray-200">
