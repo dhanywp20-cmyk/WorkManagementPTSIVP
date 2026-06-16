@@ -146,7 +146,7 @@ export default function FormReviewPage() {
     let activeUser: GuestUser | null = user ?? currentUser;
     if (!activeUser) activeUser = getSession<GuestUser>();
 
-    let query = supabase.from('form_reviews').select('*').order('created_at', { ascending: false }).limit(500);
+    let query = supabase.from('form_reviews').select('id,reminder_id,project_name,address,sales_name,sales_division,assign_name,assigned_to,reminder_category,review_category,product_demo,grade_product_knowledge,catatan_grade_product_knowledge,product_bast,grade_training_customer,catatan_grade_training_customer,grade_product_knowledge_bast,catatan_grade_product_knowledge_bast,foto_dokumentasi_url,guest_username,created_at,updated_at').order('created_at', { ascending: false }).limit(500);
 
     // Guest hanya melihat data milik mereka (OR filter untuk kompatibilitas data lama)
     if (activeUser?.role === 'guest') {

@@ -251,7 +251,7 @@ function TicketingSystemInner() {
   };
 
   const fetchOverdueSettings = async () => {
-    try { const { data } = await supabase.from("overdue_settings").select("*"); if (data) setOverdueSettings(data); } catch { }
+    try { const { data } = await supabase.from("overdue_settings").select("id,ticket_id,due_date,due_hours,set_by,created_at"); if (data) setOverdueSettings(data); } catch { }
   };
 
   const saveOverdueSetting = async () => {
@@ -576,7 +576,7 @@ function TicketingSystemInner() {
         const { data: ticketsData } = await supabase.from("tickets").select("*, activity_logs(*)").order("created_at", { ascending: false });
         let mergedTickets: Ticket[] = ticketsData || [];
         try {
-          const { data: svcLogs } = await supabaseServices.from("activity_logs").select("*").order("created_at", { ascending: false });
+          const { data: svcLogs } = await supabaseServices.from("activity_logs").select("id,ticket_id,handler_name,handler_username,action_taken,notes,file_url,file_name,photo_url,photo_name,new_status,team_type,assigned_to_services,created_at").order("created_at", { ascending: false });
           if (svcLogs && svcLogs.length > 0) {
             mergedTickets = mergedTickets.map((ticket: Ticket) => {
               const svcTicketLogs = svcLogs.filter((l: ActivityLog) => l.ticket_id === ticket.id);

@@ -66,7 +66,7 @@ function UnitMovementPageInner() {
 
   const fetchLogs = async () => {
     setLoading(true);
-    const {data} = await supabase.from('movement_logs').select('*').order('tanggal',{ascending:false}).limit(500);
+    const {data} = await supabase.from('movement_logs').select('id,tanggal,nama_pts,nama_luar,status_barang,event,project_name,type_barang,serial_number,catatan,foto_surat_url,foto_barang_url,created_by,created_at,kondisi_barang,expected_return_date,return_confirmed,checkout_reference_id').order('tanggal',{ascending:false}).limit(500);
     if (data) setLogs(data as MovementLog[]);
     setLoading(false);
   };

@@ -926,9 +926,9 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
     setLoadingData(true);
     const [usersRes, divSupRes, divIvpRes, userSupRes] = await Promise.all([
       supabase.from('users').select('id, username, full_name, role, team_type, sales_division, phone_number, jabatan').order('full_name'),
-      supabase.from('division_supervisor_mappings').select('*').order('sales_division'),
-      supabase.from('division_ivp_mappings').select('*').order('sales_division'),
-      supabase.from('user_supervisor_mappings').select('*'),
+      supabase.from('division_supervisor_mappings').select('id,sales_division,supervisor_id').order('sales_division'),
+      supabase.from('division_ivp_mappings').select('id,sales_division,ivp_id').order('sales_division'),
+      supabase.from('user_supervisor_mappings').select('id,user_id,supervisor_id'),
     ]);
     if (usersRes.data) setAllUsers(usersRes.data);
     if (divSupRes.data) setDivSupMaps(divSupRes.data);
@@ -1497,7 +1497,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     Promise.all([
       supabase.from('users').select('id, full_name, sales_division').eq('role','guest').eq('team_type','Marketing').order('full_name'),
-      supabase.from('brand_pic_mappings').select('*'),
+      supabase.from('brand_pic_mappings').select('id,brand_type,brand_name,pic_user_id,pic_user_name'),
     ]).then(([usersRes, mapsRes]) => {
       if (usersRes.data) setBrandUsers(usersRes.data as any[]);
       if (mapsRes.data) {
@@ -2078,7 +2078,7 @@ export function BrandPicSettingContent() {
   useEffect(() => {
     Promise.all([
       supabase.from('users').select('id, full_name, sales_division').eq('role','guest').eq('team_type','Marketing').order('full_name'),
-      supabase.from('brand_pic_mappings').select('*'),
+      supabase.from('brand_pic_mappings').select('id,brand_type,brand_name,pic_user_id,pic_user_name'),
     ]).then(([usersRes, mapsRes]) => {
       if (usersRes.data) setBrandUsers(usersRes.data as any[]);
       if (mapsRes.data) {
@@ -3043,9 +3043,9 @@ export function UserManagementInline() {
     setLoadingData(true);
     const [usersRes, divSupRes, divIvpRes, userSupRes] = await Promise.all([
       supabase.from('users').select('id, username, full_name, role, team_type, sales_division, phone_number, jabatan').order('full_name'),
-      supabase.from('division_supervisor_mappings').select('*').order('sales_division'),
-      supabase.from('division_ivp_mappings').select('*').order('sales_division'),
-      supabase.from('user_supervisor_mappings').select('*'),
+      supabase.from('division_supervisor_mappings').select('id,sales_division,supervisor_id').order('sales_division'),
+      supabase.from('division_ivp_mappings').select('id,sales_division,ivp_id').order('sales_division'),
+      supabase.from('user_supervisor_mappings').select('id,user_id,supervisor_id'),
     ]);
     if (usersRes.data) setAllUsers(usersRes.data);
     if (divSupRes.data) setDivSupMaps(divSupRes.data);

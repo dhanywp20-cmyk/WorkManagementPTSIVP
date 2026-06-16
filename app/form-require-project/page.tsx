@@ -165,7 +165,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     supabase.from('users').select('id, full_name, username, sales_division').eq('role', 'guest').then(({ data }: { data: {id:string;full_name:string;username:string;sales_division?:string}[] | null }) => {
       if (data) setSalesGuestUsers(data);
     });
-    supabase.from('brand_pic_mappings').select('*').order('brand_name').then(({ data }: { data: BrandPicMapping[] | null }) => {
+    supabase.from('brand_pic_mappings').select('id,brand_type,brand_name,pic_user_id,pic_user_name').order('brand_name').then(({ data }: { data: BrandPicMapping[] | null }) => {
       if (data) setBrandPicMappings(data);
     });
   }, []);
@@ -277,12 +277,12 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   }, [currentUser.id, currentUser.sales_division, (currentUser as any).jabatan, isPTS, isIVPGuest]);
 
   const fetchMessages = useCallback(async (requestId: string) => {
-    const { data, error } = await supabase.from('project_messages').select('*').eq('request_id', requestId).order('created_at', { ascending: true });
+    const { data, error } = await supabase.from('project_messages').select('id,request_id,sender_id,sender_name,sender_role,message,created_at').eq('request_id', requestId).order('created_at', { ascending: true });
     if (!error && data) setMessages(data as ProjectMessage[]);
   }, []);
 
   const fetchAttachments = useCallback(async (requestId: string) => {
-    const { data, error } = await supabase.from('project_attachments').select('*').eq('request_id', requestId).order('uploaded_at', { ascending: false });
+    const { data, error } = await supabase.from('project_attachments').select('id,message_id,request_id,file_name,file_url,file_type,file_size,uploaded_by,uploaded_at,attachment_category,revision_version').eq('request_id', requestId).order('uploaded_at', { ascending: false });
     if (!error && data) {
       const normalized = (data as ProjectAttachment[]).map(a => ({
         ...a,
@@ -356,7 +356,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
     const pollInterval = setInterval(async () => {
       if (activeRequestIdRef.current !== reqId) return;
-      const { data } = await supabase.from('project_messages').select('*').eq('request_id', reqId).order('created_at', { ascending: true });
+      const { data } = await supabase.from('project_messages').select('id,request_id,sender_id,sender_name,sender_role,message,created_at').eq('request_id', reqId).order('created_at', { ascending: true });
       if (data && activeRequestIdRef.current === reqId) {
         setMessages(prev => { if (data.length === prev.length) return prev; return data as ProjectMessage[]; });
       }
