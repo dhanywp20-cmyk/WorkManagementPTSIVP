@@ -188,7 +188,33 @@ function PiketShowroomPageInner() {
     return `${h}:${m}`;
   };
 
-  const displayRows = effectiveRows.filter(row=>{
+  // ── Holiday cascade ────────────────────────────────────────────────────────
+  // When a saved row's date is a holiday, its PIC is not consumed from the pool.
+  // The next non-holiday row takes that PIC instead — cascading forward.
+  const cascadedRows = useMemo(() => {
+    if (holidays.length === 0) return effectiveRows;
+    const holidaySet = new Set(holidays);
+    const savedSorted = [...effectiveRows]
+      .filter(r => !r.id.startsWith('virtual-'))
+      .sort((a, b) => a.day_date.localeCompare(b.day_date));
+    if (savedSorted.length === 0) return effectiveRows;
+    const picPool = savedSorted.map(r => ({
+      pic_ivp_id: r.pic_ivp_id, pic_ivp_name: r.pic_ivp_name,
+      pic_ump_id: r.pic_ump_id, pic_ump_name: r.pic_ump_name,
+      pic_mlds_id: r.pic_mlds_id, pic_mlds_name: r.pic_mlds_name,
+    }));
+    let poolIdx = 0;
+    const remapped = new Map(savedSorted.map(row => {
+      if (holidaySet.has(row.day_date)) {
+        return [row.id, { ...row, pic_ivp_id: null, pic_ivp_name: null, pic_ump_id: null, pic_ump_name: null, pic_mlds_id: null, pic_mlds_name: null }];
+      }
+      const pic = picPool[Math.min(poolIdx++, picPool.length - 1)];
+      return [row.id, { ...row, ...pic }];
+    }));
+    return effectiveRows.map(r => remapped.get(r.id) ?? r);
+  }, [effectiveRows, holidays]);
+
+  const displayRows = cascadedRows.filter(row=>{
     const d=new Date(row.day_date+'T00:00:00');
     if(d.getDay()===0||d.getDay()===6)return false;
     if(filterDay&&row.day_of_week!==filterDay)return false;
