@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { clearSession, getSession } from '@/lib/auth';
+import { logAudit } from '@/lib/audit';
 import {
   ReviewCategory, ReviewForm, Reminder, GuestUser,
   PIE_COLORS, REVIEW_TRIGGER_CATEGORIES,
@@ -249,6 +250,7 @@ export default function FormReviewPage() {
 
     if (error) { notify('error', 'Gagal menyimpan: ' + error.message); return; }
     notify('success', 'Review berhasil disimpan!');
+    void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.username ?? '', action: 'update', module: 'form-review', target_id: editingReview.id, target_name: editingReview.project_name, notes: `Grade ${editingReview.review_category}` });
     setShowFormModal(false);
     setEditingReview(null);
     setReviewFormData(emptyReviewForm);
@@ -262,6 +264,7 @@ export default function FormReviewPage() {
     const { error } = await supabase.from('form_reviews').delete().eq('id', deleteTarget.id);
     if (error) { notify('error', 'Gagal menghapus.'); return; }
     notify('success', 'Review dihapus.');
+    void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.username ?? '', action: 'delete', module: 'form-review', target_id: deleteTarget.id, target_name: deleteTarget.project_name });
     setDetailReview(null);
     setShowDeleteModal(false);
     setDeleteTarget(null);
@@ -294,8 +297,10 @@ export default function FormReviewPage() {
     setConfirmState({ message: `Hapus ${selectedIds.size} review terpilih?`, danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
       setBulkDeleting(true);
       const { error } = await supabase.from('form_reviews').delete().in('id', Array.from(selectedIds));
-      if (!error) { setReviews(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); }
-      else notify('error', 'Gagal hapus: ' + error.message);
+      if (!error) {
+        void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.username ?? '', action: 'delete', module: 'form-review', notes: `Bulk delete ${selectedIds.size} reviews` });
+        setReviews(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set());
+      } else notify('error', 'Gagal hapus: ' + error.message);
       setBulkDeleting(false);
     }});
   };

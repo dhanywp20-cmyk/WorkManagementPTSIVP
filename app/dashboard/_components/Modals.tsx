@@ -130,6 +130,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     setSaving(false);
     if (error) { notify('error', 'Gagal menambah akun: ' + error.message); return; }
     notify('success', 'Akun berhasil ditambahkan!');
+    const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'create', module: 'user', target_name: newUser.full_name, notes: `Tambah akun: ${newUser.username}` });
     setNewUser({ username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: ALL_MENU_KEYS, divisi: '', pts_type: '' });
     setActiveTab('list');
     fetchUsers();
@@ -181,6 +182,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     setSaving(false);
     if (error) { notify('error', 'Gagal menyimpan: ' + error.message); return; }
     notify('success', 'Akun berhasil diperbarui!');
+    const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'update', module: 'user', target_id: editingUser.id, target_name: editingUser.full_name });
     setEditingUser(null);
     setEditDivisi('');
     setEditPtsType('');
@@ -191,7 +193,9 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     setConfirmState({ message: 'Hapus akun ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
       const { error } = await supabase.from('users').delete().eq('id', userId);
       if (error) { notify('error', 'Gagal menghapus akun.'); return; }
-      notify('success', 'Akun dihapus.'); fetchUsers();
+      notify('success', 'Akun dihapus.');
+      const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'delete', module: 'user', target_id: userId });
+      fetchUsers();
     }});
   };
 
@@ -2608,6 +2612,7 @@ export function AccountSettingsInline() {
     setSaving(false);
     if (error) { notify('error', 'Gagal menambah akun: ' + error.message); return; }
     notify('success', 'Akun berhasil ditambahkan!');
+    const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'create', module: 'user', target_name: newUser.full_name, notes: `Tambah akun: ${newUser.username}` });
     setNewUser({ username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: ALL_MENU_KEYS, divisi: '', pts_type: '' });
     setActiveTab('list'); fetchUsers();
   };
@@ -2632,6 +2637,7 @@ export function AccountSettingsInline() {
     setSaving(false);
     if (error) { notify('error', 'Gagal menyimpan: ' + error.message); return; }
     notify('success', 'Akun berhasil diperbarui!');
+    const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'update', module: 'user', target_id: editingUser.id, target_name: editingUser.full_name });
     setEditingUser(null); setEditDivisi(''); setEditPtsType(''); fetchUsers();
   };
 
@@ -2639,7 +2645,9 @@ export function AccountSettingsInline() {
     setConfirmState({ message: 'Hapus akun ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
       const { error } = await supabase.from('users').delete().eq('id', userId);
       if (error) { notify('error', 'Gagal menghapus akun.'); return; }
-      notify('success', 'Akun dihapus.'); fetchUsers();
+      notify('success', 'Akun dihapus.');
+      const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'delete', module: 'user', target_id: userId });
+      fetchUsers();
     }});
   };
 

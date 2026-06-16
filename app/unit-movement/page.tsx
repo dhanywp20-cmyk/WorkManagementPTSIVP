@@ -207,7 +207,7 @@ function UnitMovementPageInner() {
         onClose={()=>setEditLog(undefined)}
         onSave={()=>{setEditLog(undefined);fetchLogs();notify('success',editLog?'Log diperbarui!':'Log ditambahkan!');}}/>}
       {deleteConfirm&&(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
+        <div className="fixed inset-0 z-[210] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center space-y-4">
             <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl" style={{background:'#fee2e2'}}>🗑️</div>
             <h3 className="font-bold text-gray-900">Hapus Log?</h3>
