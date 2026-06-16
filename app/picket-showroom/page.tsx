@@ -408,7 +408,7 @@ function PiketShowroomPageInner() {
                       const countdownBadge=todayRow?null:diffDays===1?{label:'BESOK',color:'#d97706'}:diffDays>1&&diffDays<=9?{label:`${diffDays} hr lagi`,color:'#64748b'}:null;
                       return kgToShow.map((kg,kgIdx)=>(
                         <tr key={`${row.id}-${kgIdx}`} className="stagger-item transition-all duration-150"
-                          style={{borderBottom:kgIdx===kgToShow.length-1?(todayRow?'2px solid #16a34a60':'2px solid #cbd5e1'):'1px solid #e2e8f0',background:todayRow?'rgba(22,163,74,0.10)':isVirtual?'rgba(148,163,184,0.04)':idx%2===0?'rgba(255,255,255,1)':'rgba(219,234,254,0.38)'}}>
+                          style={{borderBottom:kgIdx===kgToShow.length-1?(todayRow?'2px solid #16a34a60':isHoliday?'2px solid #fca5a580':'2px solid #cbd5e1'):'1px solid #e2e8f0',background:isHoliday?'rgba(254,226,226,0.45)':todayRow?'rgba(22,163,74,0.10)':isVirtual?'rgba(148,163,184,0.04)':idx%2===0?'rgba(255,255,255,1)':'rgba(219,234,254,0.38)'}}>
                           {kgIdx===0&&(
                             <>
                               <td className="px-3 py-3 text-gray-400 text-xs align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #cbd5e1',verticalAlign:'middle'}}>{idx+1}</td>
@@ -419,8 +419,7 @@ function PiketShowroomPageInner() {
                                   <span className="text-xs font-bold mt-0.5" style={{color:dc.accent}}>{row.day_of_week}</span>
                                   {todayRow&&<span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md text-white mt-0.5 w-fit" style={{background:dc.accent,boxShadow:`0 2px 6px ${dc.accent}50`}}>📍 HARI INI</span>}
                                   {countdownBadge&&<span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md mt-0.5 w-fit" style={{background:`${countdownBadge.color}15`,color:countdownBadge.color,border:`1px solid ${countdownBadge.color}40`}}>{countdownBadge.label}</span>}
-                                  {isHoliday&&<span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md text-white mt-0.5 w-fit" style={{background:'#dc2626'}}>🎌 LIBUR</span>}
-                                  {isAdmin&&<button onClick={()=>toggleHoliday(row.day_date)} className="text-[8px] font-bold mt-1 px-1.5 py-0.5 rounded-md w-fit transition-all" style={isHoliday?{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca'}:{background:'#f8fafc',color:'#94a3b8',border:'1px solid #e2e8f0'}}>{isHoliday?'✕ Batal Libur':'🎌 Tandai Libur'}</button>}
+                                  {isHoliday&&<span className="text-[10px] font-black px-2 py-0.5 rounded-full text-white mt-0.5 w-fit" style={{background:'#dc2626',letterSpacing:'0.03em'}}>🎌 LIBUR</span>}
                                 </div>
                               </td>
                               {/* PIC — tambah keterangan tim */}
@@ -534,6 +533,18 @@ function PiketShowroomPageInner() {
                                 <EditIconBtn onClick={()=>isVirtual?handleFillVirtual(row):setFillDetail(row)} />
                                 {!isVirtual&&isAdmin&&<DeleteIconBtn onClick={()=>handleDeleteRow(row)} />}
                               </ActionGroup>
+                              {isAdmin&&(
+                                <button
+                                  onClick={()=>toggleHoliday(row.day_date)}
+                                  className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-md transition-all mx-auto"
+                                  style={isHoliday
+                                    ?{background:'#fef2f2',color:'#dc2626',border:'1px solid #fca5a5'}
+                                    :{background:'#f8fafc',color:'#64748b',border:'1px solid #e2e8f0'}}
+                                  title={isHoliday?'Batalkan libur':'Tandai sebagai hari libur'}
+                                >
+                                  {isHoliday?'✕ Batal':'🎌 Libur'}
+                                </button>
+                              )}
                             </td>
                           )}
                         </tr>
