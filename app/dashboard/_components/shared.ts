@@ -10,6 +10,7 @@ export interface User {
   jabatan?: string;
   allowed_menus?: string[];
   kpi_enabled?: boolean;  // true = masuk roster KPI, false = dikecualikan
+  created_at?: string;    // used to calculate days pending for Pending Approval users
 }
 
 export interface MenuItem {

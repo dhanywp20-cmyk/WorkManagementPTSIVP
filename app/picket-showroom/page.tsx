@@ -4,13 +4,14 @@ import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { getSession } from '@/lib/auth';
+import { logAudit } from '@/lib/audit';
 import {
   PiketRow, KegiatanEntry, UserRow, DayOfWeek,
   DAYS_OF_WEEK, DAY_COLOR, TEAM_LABEL,
   JENIS_KEGIATAN_LIST, KEGIATAN_COLORS, PIE_COLORS,
   getMonday, addDays, toKey, getDayDate, getRollingNameForDate,
 } from './_components/shared';
-import { MiniPieChart, PageHeader } from '@/components/shared';
+import { MiniPieChart, PageHeader, ConfirmDialog, type ConfirmState, ErrorState } from '@/components/shared';
 import { TamuSummaryCards } from './_components/TamuSummaryCards';
 import { MiniCalendarPopup } from './_components/MiniCalendarPopup';
 import { FillDetailModal } from './_components/FillDetailModal';
@@ -30,6 +31,8 @@ function PiketShowroomPageInner() {
   const [kegiatanList,setKegiatanList]=useState<KegiatanEntry[]>([]);
   const [ptUsers,setPtUsers]=useState<UserRow[]>([]);
   const [loading,setLoading]=useState(true);
+  const [fetchError,setFetchError]=useState<string|null>(null);
+  const [holidays,setHolidays]=useState<string[]>([]);
   const [showSchedule,setShowSchedule]=useState(false);
   const [showCalendar,setShowCalendar]=useState(false);
   const [fillDetail,setFillDetail]=useState<PiketRow|null>(null);
@@ -49,6 +52,7 @@ function PiketShowroomPageInner() {
   const [filterKegiatan,setFilterKegiatan]=useState<string|null>(null);
   const [summaryYear,setSummaryYear]=useState<number>(new Date().getFullYear());
   const [summaryMonth,setSummaryMonth]=useState<number|null>(null);
+  const [confirmState,setConfirmState]=useState<ConfirmState|null>(null);
   const wk=toKey(weekStart);
 
   useEffect(()=>{ const u=getSession(); if(u) setCurrentUser(u as unknown as UserRow); },[]);
@@ -56,17 +60,27 @@ function PiketShowroomPageInner() {
 
   const fetchData=useCallback(async()=>{
     setLoading(true);
+    setFetchError(null);
     const wk2=toKey(addDays(weekStart,7));
-    const[wRes,aRes,uRes,kgRes]=await Promise.all([
-      supabase.from('piket_schedules').select('*').in('week_start',[wk,wk2]).order('day_date'),
-      supabase.from('piket_schedules').select('id,day_date,week_start,day_of_week,pic_ivp_name,pic_ump_name,pic_mlds_name'),
-      supabase.from('users').select('id,full_name,username,team_type,role').in('team_type',['Team PTS','Team PTS UMP','Team PTS MLDS']).order('full_name'),
-      supabase.from('piket_tamu_detail').select('*').order('created_at'),
-    ]);
-    if(wRes.data)setRows(wRes.data as PiketRow[]);
-    if(aRes.data)setAllRows(aRes.data as PiketRow[]);
-    if(uRes.data)setPtUsers(uRes.data.filter((u:any)=>u.role!=='admin'&&u.role!=='superadmin') as UserRow[]);
-    if(kgRes.data)setKegiatanList(kgRes.data as KegiatanEntry[]);
+    try {
+      const[wRes,aRes,uRes,kgRes]=await Promise.all([
+        supabase.from('piket_schedules').select('*').in('week_start',[wk,wk2]).order('day_date'),
+        supabase.from('piket_schedules').select('id,day_date,week_start,day_of_week,pic_ivp_name,pic_ump_name,pic_mlds_name'),
+        supabase.from('users').select('id,full_name,username,team_type,role').in('team_type',['Team PTS','Team PTS UMP','Team PTS MLDS']).order('full_name'),
+        supabase.from('piket_tamu_detail').select('*').order('created_at'),
+      ]);
+      const firstErr = wRes.error || aRes.error || uRes.error || kgRes.error;
+      if (firstErr) { setFetchError(firstErr.message); setLoading(false); return; }
+      if(wRes.data)setRows(wRes.data as PiketRow[]);
+      if(aRes.data)setAllRows(aRes.data as PiketRow[]);
+      if(uRes.data)setPtUsers(uRes.data.filter((u:any)=>u.role!=='admin'&&u.role!=='superadmin') as UserRow[]);
+      if(kgRes.data)setKegiatanList(kgRes.data as KegiatanEntry[]);
+      // Holidays: optional — if table doesn't exist yet, silently ignore
+      const hRes = await supabase.from('picket_holidays').select('date');
+      if (hRes.data) setHolidays(hRes.data.map((h: any) => h.date));
+    } catch (err: any) {
+      setFetchError(err?.message ?? 'Gagal memuat data');
+    }
     setLoading(false);
   },[weekStart]);
 
@@ -144,11 +158,29 @@ function PiketShowroomPageInner() {
     if(data){setFillDetail(data as PiketRow);fetchData();}
   },[fetchData]);
 
-  const handleDeleteRow = useCallback(async(row: PiketRow)=>{
-    if(!confirm(`Hapus semua kegiatan ${row.day_of_week}? Jadwal piket tetap ada.`)) return;
-    await supabase.from('piket_tamu_detail').delete().eq('piket_id',row.id);
-    fetchData();
-  },[fetchData]);
+  const handleDeleteRow = useCallback((row: PiketRow)=>{
+    setConfirmState({
+      message: `Hapus semua kegiatan ${row.day_of_week}?`,
+      description: 'Jadwal piket tetap ada.',
+      danger: true,
+      confirmLabel: 'Hapus',
+      onConfirm: async () => {
+        await supabase.from('piket_tamu_detail').delete().eq('piket_id',row.id);
+        void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? currentUser?.username ?? '', action: 'delete', module: 'picket-showroom', target_id: row.id, notes: `Hapus kegiatan ${row.day_of_week} ${row.day_date}` });
+        fetchData();
+      },
+    });
+  },[fetchData, currentUser, setConfirmState]);
+
+  const toggleHoliday = useCallback(async (date: string) => {
+    if (holidays.includes(date)) {
+      await supabase.from('picket_holidays').delete().eq('date', date);
+      setHolidays(prev => prev.filter(d => d !== date));
+    } else {
+      await supabase.from('picket_holidays').insert({ date, label: 'Libur', created_by: currentUser?.full_name ?? '' });
+      setHolidays(prev => [...prev, date]);
+    }
+  }, [holidays, currentUser]);
 
   const formatTime = (timeStr:string) => {
     if(!timeStr) return '';
@@ -203,6 +235,7 @@ function PiketShowroomPageInner() {
 
   return(
     <div className="h-screen overflow-hidden flex flex-col relative" style={{backgroundImage:`url('/IVP_Background.png')`,backgroundSize:'cover',backgroundPosition:'center',backgroundAttachment:'fixed'}}>
+      <ConfirmDialog state={confirmState} onCancel={()=>setConfirmState(null)} />
       <div className="absolute inset-0 pointer-events-none" style={{background:'rgba(255,255,255,0.08)'}}/>
       {loading&&rows.length===0&&(
         <div className="fixed inset-0 z-[100] flex items-center justify-center" style={{backgroundImage:`url('/IVP_Background.png')`,backgroundSize:'cover'}}>
@@ -335,7 +368,9 @@ function PiketShowroomPageInner() {
                 </div>
               );
             })()}
-            {loading?(
+            {fetchError?(
+              <ErrorState message={fetchError} onRetry={()=>{setFetchError(null);fetchData();}} />
+            ):loading?(
               <div className="flex justify-center py-16"><div className="flex flex-col items-center gap-3"><div className="w-8 h-8 rounded-full border-2 border-t-red-600 border-red-200 animate-spin"/><p className="text-sm text-slate-500">Memuat jadwal...</p></div></div>
             ):(
               <div className="overflow-x-auto animate-zoom-in">
@@ -367,12 +402,13 @@ function PiketShowroomPageInner() {
                       const todayMs=new Date(todayKey+'T00:00:00').getTime();
                       const diffDays=Math.round((rowDateMs-todayMs)/(1000*60*60*24));
                       const isVirtual=row.id.startsWith('virtual-');
+                      const isHoliday=holidays.includes(row.day_date);
                       const rowKg=kegiatanList.filter(k=>k.piket_id===row.id);
                       const kgToShow=rowKg.length>0?rowKg:[null];
                       const countdownBadge=todayRow?null:diffDays===1?{label:'BESOK',color:'#d97706'}:diffDays>1&&diffDays<=9?{label:`${diffDays} hr lagi`,color:'#64748b'}:null;
                       return kgToShow.map((kg,kgIdx)=>(
                         <tr key={`${row.id}-${kgIdx}`} className="stagger-item transition-all duration-150"
-                          style={{borderBottom:kgIdx===kgToShow.length-1?(todayRow?'2px solid #16a34a60':'2px solid #cbd5e1'):'1px solid #e2e8f0',background:todayRow?'rgba(22,163,74,0.10)':isVirtual?'rgba(148,163,184,0.04)':idx%2===0?'rgba(255,255,255,1)':'rgba(219,234,254,0.38)'}}>
+                          style={{borderBottom:kgIdx===kgToShow.length-1?(todayRow?'2px solid #16a34a60':isHoliday?'2px solid #fca5a580':'2px solid #cbd5e1'):'1px solid #e2e8f0',background:isHoliday?'rgba(254,226,226,0.45)':todayRow?'rgba(22,163,74,0.10)':isVirtual?'rgba(148,163,184,0.04)':idx%2===0?'rgba(255,255,255,1)':'rgba(219,234,254,0.38)'}}>
                           {kgIdx===0&&(
                             <>
                               <td className="px-3 py-3 text-gray-400 text-xs align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #cbd5e1',verticalAlign:'middle'}}>{idx+1}</td>
@@ -383,6 +419,7 @@ function PiketShowroomPageInner() {
                                   <span className="text-xs font-bold mt-0.5" style={{color:dc.accent}}>{row.day_of_week}</span>
                                   {todayRow&&<span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md text-white mt-0.5 w-fit" style={{background:dc.accent,boxShadow:`0 2px 6px ${dc.accent}50`}}>📍 HARI INI</span>}
                                   {countdownBadge&&<span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md mt-0.5 w-fit" style={{background:`${countdownBadge.color}15`,color:countdownBadge.color,border:`1px solid ${countdownBadge.color}40`}}>{countdownBadge.label}</span>}
+                                  {isHoliday&&<span className="text-[10px] font-black px-2 py-0.5 rounded-full text-white mt-0.5 w-fit" style={{background:'#dc2626',letterSpacing:'0.03em'}}>🎌 LIBUR</span>}
                                 </div>
                               </td>
                               {/* PIC — tambah keterangan tim */}
@@ -496,6 +533,18 @@ function PiketShowroomPageInner() {
                                 <EditIconBtn onClick={()=>isVirtual?handleFillVirtual(row):setFillDetail(row)} />
                                 {!isVirtual&&isAdmin&&<DeleteIconBtn onClick={()=>handleDeleteRow(row)} />}
                               </ActionGroup>
+                              {isAdmin&&(
+                                <button
+                                  onClick={()=>toggleHoliday(row.day_date)}
+                                  className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-md transition-all mx-auto"
+                                  style={isHoliday
+                                    ?{background:'#fef2f2',color:'#dc2626',border:'1px solid #fca5a5'}
+                                    :{background:'#f8fafc',color:'#64748b',border:'1px solid #e2e8f0'}}
+                                  title={isHoliday?'Batalkan libur':'Tandai sebagai hari libur'}
+                                >
+                                  {isHoliday?'✕ Batal':'🎌 Libur'}
+                                </button>
+                              )}
                             </td>
                           )}
                         </tr>

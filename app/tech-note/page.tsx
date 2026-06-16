@@ -9,6 +9,8 @@ import {
   STATUS_CONFIG, ACTION_CONFIG, KKM_REQUIRED,
   formatDate, formatDateShort, getInitials,
 } from './_components/shared';
+import { logAudit } from '@/lib/audit';
+import { createNotification, createNotificationForAdmins } from '@/lib/notifications';
 
 // ─── Spinner ──────────────────────────────────────────────────────────────────
 function Spinner() {
@@ -371,6 +373,11 @@ export default function TechNotePage() {
         note:'Submitted for review', created_at: now,
       });
     }
+    if (inserted && (inserted as { id:string }).id) {
+      const noteId = (inserted as { id:string }).id;
+      void logAudit({ user_id: currentUser.id, user_name: currentUser.full_name ?? '', action: 'create', module: 'tech-note', target_id: noteId, target_name: uploadForm.title.trim() });
+      void createNotificationForAdmins({ type: 'system', title: `📄 Tech Note baru menunggu review`, body: `"${uploadForm.title.trim()}" oleh ${currentUser.full_name}`, action_url: '/tech-note', ref_id: noteId, created_by: currentUser.full_name ?? '' });
+    }
     setUploadForm({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' });
     setSaving(false); setShowUploadModal(false); fetchNotes();
   }
@@ -387,6 +394,11 @@ export default function TechNotePage() {
       performed_by:currentUser.id, performed_by_name:currentUser.full_name,
       note:approvalForm.note||null, created_at:now,
     });
+    void logAudit({ user_id: currentUser.id, user_name: currentUser.full_name ?? '', action: approvalForm.action === 'approved' ? 'approve' : 'reject', module: 'tech-note', target_id: approveModal.id, target_name: approveModal.title, notes: approvalForm.note || undefined });
+    if (approveModal.author_id) {
+      const actionLabel = approvalForm.action === 'approved' ? '✅ Disetujui' : approvalForm.action === 'rejected' ? '❌ Ditolak' : '🔄 Perlu Revisi';
+      void createNotification({ user_id: approveModal.author_id, type: 'system', title: `📄 Tech Note ${actionLabel}`, body: `"${approveModal.title}" — ${approvalForm.note || 'Tanpa catatan'}`, action_url: '/tech-note', ref_id: approveModal.id, created_by: currentUser.full_name ?? '' });
+    }
     setSaving(false); setApproveModal(null); setDetailNote(null);
     setApprovalForm({ action:'approved', note:'' }); fetchNotes();
   }

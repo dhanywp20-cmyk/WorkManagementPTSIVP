@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { clearSession, getSession } from '@/lib/auth';
+import { logAudit } from '@/lib/audit';
 import {
   ReviewCategory, ReviewForm, Reminder, GuestUser,
   PIE_COLORS, REVIEW_TRIGGER_CATEGORIES,
@@ -12,6 +13,7 @@ import {
 import {
   FormField, SectionHeader, StarRating, LoadingScreen, MiniPieChart,
   ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup,
+  ConfirmDialog, type ConfirmState, ErrorState,
 } from '@/components/shared';
 
 // ─── Main Component ────────────────────────────────────────────────────────────
@@ -29,6 +31,7 @@ export default function FormReviewPage() {
   // Data
   const [reviews, setReviews] = useState<ReviewForm[]>([]);
   const [listLoading, setListLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string|null>(null);
   const [saving, setSaving] = useState(false);
 
   // Notifications
@@ -49,6 +52,7 @@ export default function FormReviewPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
   const [bulkConfirm, setBulkConfirm] = useState(false);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
 
   // Switch tabs
   const [switchTab, setSwitchTab] = useState<'Demo Product' | 'BAST'>('Demo Product');
@@ -146,7 +150,7 @@ export default function FormReviewPage() {
     let activeUser: GuestUser | null = user ?? currentUser;
     if (!activeUser) activeUser = getSession<GuestUser>();
 
-    let query = supabase.from('form_reviews').select('*').order('created_at', { ascending: false }).limit(500);
+    let query = supabase.from('form_reviews').select('id,reminder_id,project_name,address,sales_name,sales_division,assign_name,assigned_to,reminder_category,review_category,product_demo,grade_product_knowledge,catatan_grade_product_knowledge,product_bast,grade_training_customer,catatan_grade_training_customer,grade_product_knowledge_bast,catatan_grade_product_knowledge_bast,foto_dokumentasi_url,guest_username,created_at,updated_at').order('created_at', { ascending: false }).limit(500);
 
     // Guest hanya melihat data milik mereka (OR filter untuk kompatibilitas data lama)
     if (activeUser?.role === 'guest') {
@@ -161,7 +165,8 @@ export default function FormReviewPage() {
     // Admin: lihat semua
 
     const { data, error } = await query;
-    if (!error && data) {
+    if (error) { setFetchError(error.message); return; }
+    if (data) {
       setReviews(data as ReviewForm[]);
 
       // ── Notif untuk Guest: pending review yang belum diisi
@@ -247,6 +252,7 @@ export default function FormReviewPage() {
 
     if (error) { notify('error', 'Gagal menyimpan: ' + error.message); return; }
     notify('success', 'Review berhasil disimpan!');
+    void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.username ?? '', action: 'update', module: 'form-review', target_id: editingReview.id, target_name: editingReview.project_name, notes: `Grade ${editingReview.review_category}` });
     setShowFormModal(false);
     setEditingReview(null);
     setReviewFormData(emptyReviewForm);
@@ -260,6 +266,7 @@ export default function FormReviewPage() {
     const { error } = await supabase.from('form_reviews').delete().eq('id', deleteTarget.id);
     if (error) { notify('error', 'Gagal menghapus.'); return; }
     notify('success', 'Review dihapus.');
+    void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.username ?? '', action: 'delete', module: 'form-review', target_id: deleteTarget.id, target_name: deleteTarget.project_name });
     setDetailReview(null);
     setShowDeleteModal(false);
     setDeleteTarget(null);
@@ -286,14 +293,18 @@ export default function FormReviewPage() {
     setShowFormModal(true);
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`Hapus ${selectedIds.size} review terpilih?`)) return;
-    setBulkDeleting(true);
-    const { error } = await supabase.from('form_reviews').delete().in('id', Array.from(selectedIds));
-    if (!error) { setReviews(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); }
-    else notify('error', 'Gagal hapus: ' + error.message);
-    setBulkDeleting(false);
+    if (!isAdmin) { notify('error', 'Hanya admin yang bisa menghapus data.'); return; }
+    setConfirmState({ message: `Hapus ${selectedIds.size} review terpilih?`, danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+      setBulkDeleting(true);
+      const { error } = await supabase.from('form_reviews').delete().in('id', Array.from(selectedIds));
+      if (!error) {
+        void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.username ?? '', action: 'delete', module: 'form-review', notes: `Bulk delete ${selectedIds.size} reviews` });
+        setReviews(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set());
+      } else notify('error', 'Gagal hapus: ' + error.message);
+      setBulkDeleting(false);
+    }});
   };
   const toggleSelectId = (id: string) => setSelectedIds(prev => {
     const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
@@ -402,6 +413,7 @@ export default function FormReviewPage() {
       backgroundImage: `url('/IVP_Background.png')`,
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
+      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.08)' }} />
       <div className="relative z-10 flex flex-col flex-1 overflow-hidden">
 
@@ -1153,6 +1165,8 @@ export default function FormReviewPage() {
               <div className="flex items-center justify-center py-16">
                 <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'rgba(124,58,237,0.3)', borderTopColor: '#7c3aed' }} />
               </div>
+            ) : fetchError ? (
+              <ErrorState message={fetchError} onRetry={() => { setFetchError(null); fetchReviews(); }} />
             ) : tableReviews.length === 0 ? (
               <div className="text-center py-16">
                 <p className="text-5xl mb-3">📭</p>

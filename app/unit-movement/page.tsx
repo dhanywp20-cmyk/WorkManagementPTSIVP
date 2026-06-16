@@ -3,9 +3,10 @@
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader } from '@/components/shared';
+import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ErrorState } from '@/components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { User, MovementLog, EVENTS, COLORS, splitTypeLines, fmtDate } from './_components/shared';
+import { logAudit } from '@/lib/audit';
 import { ViewModal } from './_components/ViewModal';
 import { AddEditModal } from './_components/AddEditModal';
 
@@ -19,6 +20,7 @@ function UnitMovementPageInner() {
 
   const [logs,        setLogs]        = useState<MovementLog[]>([]);
   const [loading,     setLoading]     = useState(false);
+  const [fetchError,  setFetchError]  = useState<string|null>(null);
   const [teamMembers, setTeamMembers] = useState<string[]>([]);
 
   const [filterStatus, setFilterStatus] = useState<'All'|'Masuk'|'Keluar'>('All');
@@ -65,7 +67,9 @@ function UnitMovementPageInner() {
 
   const fetchLogs = async () => {
     setLoading(true);
-    const {data} = await supabase.from('movement_logs').select('*').order('tanggal',{ascending:false}).limit(500);
+    setFetchError(null);
+    const {data, error} = await supabase.from('movement_logs').select('id,tanggal,nama_pts,nama_luar,status_barang,event,project_name,type_barang,serial_number,catatan,foto_surat_url,foto_barang_url,created_by,created_at,kondisi_barang,expected_return_date,return_confirmed,checkout_reference_id').order('tanggal',{ascending:false}).limit(500);
+    if (error) { setFetchError(error.message); setLoading(false); return; }
     if (data) setLogs(data as MovementLog[]);
     setLoading(false);
   };
@@ -82,6 +86,7 @@ function UnitMovementPageInner() {
     const {error} = await supabase.from('movement_logs').delete().eq('id',deleteConfirm.id);
     setDeleting(false); setDeleteConfirm(null);
     if (error) { notify('error','Gagal hapus: '+error.message); return; }
+    void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'delete', module: 'movement', target_id: deleteConfirm.id, target_name: deleteConfirm.project_name ?? '' });
     notify('success','Log berhasil dihapus!'); fetchLogs();
   };
 
@@ -205,7 +210,7 @@ function UnitMovementPageInner() {
         onClose={()=>setEditLog(undefined)}
         onSave={()=>{setEditLog(undefined);fetchLogs();notify('success',editLog?'Log diperbarui!':'Log ditambahkan!');}}/>}
       {deleteConfirm&&(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
+        <div className="fixed inset-0 z-[210] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center space-y-4">
             <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl" style={{background:'#fee2e2'}}>🗑️</div>
             <h3 className="font-bold text-gray-900">Hapus Log?</h3>
@@ -276,15 +281,17 @@ function UnitMovementPageInner() {
                     <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Tgl Keluar</th>
                     <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Jatuh Tempo</th>
                     <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Kondisi</th>
-                    {isAdmin && <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-red-400">Aksi</th>}
+                    {isAdmin && <th className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-widest text-red-400">Aksi</th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {openLoans.map((loan, idx)=>{
+                  {fetchError ? (
+                    <tr><td colSpan={8} className="py-2"><ErrorState message={fetchError} onRetry={fetchLogs} /></td></tr>
+                  ) : openLoans.map((loan, idx)=>{
                     const daysLate = Math.max(0, Math.round((new Date().getTime() - new Date(loan.expected_return_date!).getTime())/(24*60*60*1000)));
                     const typeLines = splitTypeLines(loan.type_barang);
                     return (
-                      <tr key={loan.id} className="hover:bg-red-50/40 transition-colors" style={{borderBottom:'1px solid #fef2f2'}}>
+                      <tr key={loan.id} className="hover:bg-red-50/40 transition-colors" style={{borderBottom:'1px solid #e5e7eb'}}>
                         <td className="px-4 py-2.5 text-xs font-semibold text-gray-800">{loan.project_name||'-'}</td>
                         <td className="px-4 py-2.5">
                           <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg">{loan.nama_pts||'-'}</span>
@@ -313,7 +320,7 @@ function UnitMovementPageInner() {
                             : <span className="text-[10px] text-gray-300">—</span>}
                         </td>
                         {isAdmin && (
-                          <td className="px-4 py-2.5">
+                          <td className="px-4 py-2.5 text-center">
                             <ActionGroup>
                               <ViewIconBtn onClick={()=>setViewLog(loan)} label="Lihat" />
                               <EditIconBtn onClick={()=>setEditLog(loan)} />
@@ -402,11 +409,13 @@ function UnitMovementPageInner() {
                   <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap w-24">Status</th>
                   <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap w-28">Event</th>
                   <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400" style={{minWidth:300}}>Type &amp; SN</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 w-36">Action</th>
+                  <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-widest text-gray-400 w-36">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {loading ? (
+                {fetchError ? (
+                  <tr><td colSpan={9} className="py-2"><ErrorState message={fetchError} onRetry={fetchLogs} /></td></tr>
+                ) : loading ? (
                   <tr><td colSpan={9} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-8 h-8 rounded-full animate-spin" style={{border:'3px solid #fde68a',borderTopColor:'#f59e0b'}}/>
@@ -425,7 +434,7 @@ function UnitMovementPageInner() {
                   const isMasuk   = log.status_barang==='Masuk';
                   const typeLines = splitTypeLines(log.type_barang);
                   return (
-                    <tr key={log.id} className="stagger-item transition-colors hover:bg-amber-50/40" style={{borderBottom:'1px solid #f1f5f9'}}>
+                    <tr key={log.id} className="stagger-item transition-colors hover:bg-amber-50/40" style={{borderBottom:'1px solid #e5e7eb'}}>
                       <td className="px-3 py-3 text-xs font-bold text-gray-400">{idx+1}</td>
                       <td className="px-3 py-3 text-xs text-gray-600 whitespace-nowrap">{fmtDate(log.tanggal)}</td>
                       <td className="px-3 py-3">
@@ -466,7 +475,7 @@ function UnitMovementPageInner() {
                         )}
                       </td>
                       {/* Action */}
-                      <td className="px-1 py-3">
+                      <td className="px-1 py-3 text-center">
                         <ActionGroup>
                           <ViewIconBtn onClick={()=>setViewLog(log)} label="Lihat" />
                           {isAdmin&&<>

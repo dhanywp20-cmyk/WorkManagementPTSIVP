@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { setSession, getSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
+import { createNotification } from '@/lib/notifications';
 import {
   User, MenuItem, NotificationItem,
   SALES_DIVISIONS, JABATAN_LIST, JabatanType, JABATAN_CONFIG, JABATAN_CC_RULES,
@@ -10,6 +11,7 @@ import {
   NotifBellProps, AdminPanelModalProps,
   DISPLAY_BRANDS_DB, MIDDLEWARE_BRANDS_DB, BrandPicMappingDB,
 } from './shared';
+import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 
 interface AccountSettingsModalProps {
   onClose: () => void;
@@ -24,6 +26,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
   const [editPtsType, setEditPtsType] = useState('');
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [newUser, setNewUser] = useState({
     username: '',
     password: '',
@@ -65,7 +68,13 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
   const fetchUsers = async () => {
     setLoadingUsers(true);
     const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,sales_division,jabatan,phone_number,allowed_menus,kpi_enabled').order('full_name');
-    if (!error && data) setUsers(data);
+    if (error) {
+      const { data: fallback } = await supabase.from('users').select('id,username,full_name,role,team_type,sales_division,jabatan,phone_number,allowed_menus').order('full_name');
+      if (fallback) setUsers(fallback);
+      else notify('error', `Gagal memuat akun: ${error.message}`);
+    } else if (data) {
+      setUsers(data);
+    }
     setLoadingUsers(false);
   };
 
@@ -121,6 +130,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     setSaving(false);
     if (error) { notify('error', 'Gagal menambah akun: ' + error.message); return; }
     notify('success', 'Akun berhasil ditambahkan!');
+    const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'create', module: 'user', target_name: newUser.full_name, notes: `Tambah akun: ${newUser.username}` });
     setNewUser({ username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: ALL_MENU_KEYS, divisi: '', pts_type: '' });
     setActiveTab('list');
     fetchUsers();
@@ -172,18 +182,21 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     setSaving(false);
     if (error) { notify('error', 'Gagal menyimpan: ' + error.message); return; }
     notify('success', 'Akun berhasil diperbarui!');
+    const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'update', module: 'user', target_id: editingUser.id, target_name: editingUser.full_name });
     setEditingUser(null);
     setEditDivisi('');
     setEditPtsType('');
     fetchUsers();
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Hapus akun ini?')) return;
-    const { error } = await supabase.from('users').delete().eq('id', userId);
-    if (error) { notify('error', 'Gagal menghapus akun.'); return; }
-    notify('success', 'Akun dihapus.');
-    fetchUsers();
+  const handleDeleteUser = (userId: string) => {
+    setConfirmState({ message: 'Hapus akun ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+      const { error } = await supabase.from('users').delete().eq('id', userId);
+      if (error) { notify('error', 'Gagal menghapus akun.'); return; }
+      notify('success', 'Akun dihapus.');
+      const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'delete', module: 'user', target_id: userId });
+      fetchUsers();
+    }});
   };
 
   function MenuPermissionSelector({ selected, target }: { selected: string[]; target: 'new' | 'edit' }) {
@@ -230,6 +243,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
 
   return (
     <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
         <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-8 py-6 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -903,6 +917,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
   const [userSupMaps, setUserSupMaps] = useState<{ id: string; user_id: string; supervisor_id: string }[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; msg: string } | null>(null);
   const [activeTab, setActiveTab] = useState<'atasan' | 'ivp' | 'user_cc'>('atasan');
   const [atasanDiv, setAtasanDiv] = useState('');
@@ -925,9 +940,9 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
     setLoadingData(true);
     const [usersRes, divSupRes, divIvpRes, userSupRes] = await Promise.all([
       supabase.from('users').select('id, username, full_name, role, team_type, sales_division, phone_number, jabatan').order('full_name'),
-      supabase.from('division_supervisor_mappings').select('*').order('sales_division'),
-      supabase.from('division_ivp_mappings').select('*').order('sales_division'),
-      supabase.from('user_supervisor_mappings').select('*'),
+      supabase.from('division_supervisor_mappings').select('id,sales_division,supervisor_id').order('sales_division'),
+      supabase.from('division_ivp_mappings').select('id,sales_division,ivp_id').order('sales_division'),
+      supabase.from('user_supervisor_mappings').select('id,user_id,supervisor_id'),
     ]);
     if (usersRes.data) setAllUsers(usersRes.data);
     if (divSupRes.data) setDivSupMaps(divSupRes.data);
@@ -1004,10 +1019,11 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
     setSaving(false);
   };
 
-  const handleDeleteAtasan = async (id: string) => {
-    if (!confirm('Hapus mapping atasan ini?')) return;
-    await supabase.from('division_supervisor_mappings').delete().eq('id', id);
-    notify('success', 'Dihapus.'); await fetchAll();
+  const handleDeleteAtasan = (id: string) => {
+    setConfirmState({ message: 'Hapus mapping atasan ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+      await supabase.from('division_supervisor_mappings').delete().eq('id', id);
+      notify('success', 'Dihapus.'); await fetchAll();
+    }});
   };
 
   const handleAddIvp = async () => {
@@ -1021,10 +1037,11 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
     setSaving(false);
   };
 
-  const handleDeleteIvp = async (id: string) => {
-    if (!confirm('Hapus mapping IVP ini?')) return;
-    await supabase.from('division_ivp_mappings').delete().eq('id', id);
-    notify('success', 'Dihapus.'); await fetchAll();
+  const handleDeleteIvp = (id: string) => {
+    setConfirmState({ message: 'Hapus mapping IVP ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+      await supabase.from('division_ivp_mappings').delete().eq('id', id);
+      notify('success', 'Dihapus.'); await fetchAll();
+    }});
   };
 
   const jabatanBadge = (u: User | undefined) => {
@@ -1059,6 +1076,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
 
   return (
     <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col border border-slate-200">
 
         {/* Header */}
@@ -1496,7 +1514,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     Promise.all([
       supabase.from('users').select('id, full_name, sales_division').eq('role','guest').eq('team_type','Marketing').order('full_name'),
-      supabase.from('brand_pic_mappings').select('*'),
+      supabase.from('brand_pic_mappings').select('id,brand_type,brand_name,pic_user_id,pic_user_name'),
     ]).then(([usersRes, mapsRes]) => {
       if (usersRes.data) setBrandUsers(usersRes.data as any[]);
       if (mapsRes.data) {
@@ -2077,7 +2095,7 @@ export function BrandPicSettingContent() {
   useEffect(() => {
     Promise.all([
       supabase.from('users').select('id, full_name, sales_division').eq('role','guest').eq('team_type','Marketing').order('full_name'),
-      supabase.from('brand_pic_mappings').select('*'),
+      supabase.from('brand_pic_mappings').select('id,brand_type,brand_name,pic_user_id,pic_user_name'),
     ]).then(([usersRes, mapsRes]) => {
       if (usersRes.data) setBrandUsers(usersRes.data as any[]);
       if (mapsRes.data) {
@@ -2493,6 +2511,7 @@ export function AccountSettingsInline() {
   const [newUser, setNewUser] = useState({
     username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: ALL_MENU_KEYS, divisi: '', pts_type: '',
   });
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [approvingUser, setApprovingUser] = useState<User | null>(null);
@@ -2519,8 +2538,17 @@ export function AccountSettingsInline() {
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
-    const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type').order('full_name');
-    if (!error && data) {
+    const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type,created_at').order('full_name');
+    if (error) {
+      // Fallback: try without extended columns (divisi/pts_type may not exist yet)
+      const { data: fallback, error: err2 } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,created_at').order('full_name');
+      if (!err2 && fallback) {
+        setPendingUsers(fallback.filter((u: User) => u.team_type === 'Pending Approval'));
+        setUsers(fallback.filter((u: User) => u.team_type !== 'Pending Approval'));
+      } else {
+        notify('error', `Gagal memuat akun: ${err2?.message ?? error.message}`);
+      }
+    } else if (data) {
       setPendingUsers(data.filter((u: User) => u.team_type === 'Pending Approval'));
       setUsers(data.filter((u: User) => u.team_type !== 'Pending Approval'));
     }
@@ -2544,17 +2572,19 @@ export function AccountSettingsInline() {
     // Audit
     const admin = getSession<User>();
     logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'approve', module: 'user', target_id: approvingUser.id, target_name: approvingUser.full_name, new_value: role }).catch(() => {});
+    void createNotification({ user_id: approvingUser.id, type: 'user', title: '✅ Akun kamu telah disetujui', body: `Selamat! Akun ${approvingUser.full_name} sudah aktif. Silakan login.`, action_url: '/dashboard', created_by: admin?.full_name ?? '' });
     setApprovingUser(null); setApproveMenus(ALL_MENU_KEYS); fetchUsers();
   };
 
-  const handleRejectUser = async (userId: string, name: string) => {
-    if (!confirm(`Tolak & hapus pendaftaran "${name}"?`)) return;
-    const { error } = await supabase.from('users').delete().eq('id', userId);
-    if (error) { notify('error', 'Gagal menolak.'); return; }
-    notify('success', `Pendaftaran ${name} ditolak.`);
-    const admin = getSession<User>();
-    logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'reject', module: 'user', target_id: userId, target_name: name }).catch(() => {});
-    fetchUsers();
+  const handleRejectUser = (userId: string, name: string) => {
+    setConfirmState({ message: `Tolak & hapus pendaftaran "${name}"?`, description: 'Tindakan ini tidak bisa dibatalkan.', danger: true, confirmLabel: 'Tolak', onConfirm: async () => {
+      const { error } = await supabase.from('users').delete().eq('id', userId);
+      if (error) { notify('error', 'Gagal menolak.'); return; }
+      notify('success', `Pendaftaran ${name} ditolak.`);
+      const admin = getSession<User>();
+      logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'reject', module: 'user', target_id: userId, target_name: name }).catch(() => {});
+      fetchUsers();
+    }});
   };
 
   const handleAddUser = async () => {
@@ -2582,6 +2612,7 @@ export function AccountSettingsInline() {
     setSaving(false);
     if (error) { notify('error', 'Gagal menambah akun: ' + error.message); return; }
     notify('success', 'Akun berhasil ditambahkan!');
+    const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'create', module: 'user', target_name: newUser.full_name, notes: `Tambah akun: ${newUser.username}` });
     setNewUser({ username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: ALL_MENU_KEYS, divisi: '', pts_type: '' });
     setActiveTab('list'); fetchUsers();
   };
@@ -2606,14 +2637,18 @@ export function AccountSettingsInline() {
     setSaving(false);
     if (error) { notify('error', 'Gagal menyimpan: ' + error.message); return; }
     notify('success', 'Akun berhasil diperbarui!');
+    const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'update', module: 'user', target_id: editingUser.id, target_name: editingUser.full_name });
     setEditingUser(null); setEditDivisi(''); setEditPtsType(''); fetchUsers();
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Hapus akun ini?')) return;
-    const { error } = await supabase.from('users').delete().eq('id', userId);
-    if (error) { notify('error', 'Gagal menghapus akun.'); return; }
-    notify('success', 'Akun dihapus.'); fetchUsers();
+  const handleDeleteUser = (userId: string) => {
+    setConfirmState({ message: 'Hapus akun ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+      const { error } = await supabase.from('users').delete().eq('id', userId);
+      if (error) { notify('error', 'Gagal menghapus akun.'); return; }
+      notify('success', 'Akun dihapus.');
+      const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'delete', module: 'user', target_id: userId });
+      fetchUsers();
+    }});
   };
 
   function MenuPermissionSelector({ selected, target }: { selected: string[]; target: 'new' | 'edit' }) {
@@ -2648,6 +2683,7 @@ export function AccountSettingsInline() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
+      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       {notification && (
         <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 flex-shrink-0 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
           {notification.type === 'success' ? '✅' : '❌'} {notification.msg}
@@ -2983,13 +3019,25 @@ export function AccountSettingsInline() {
               </div>
             ) : (
               <div className="space-y-2">
-                {pendingUsers.map(user => (
-                  <div key={user.id} className="flex items-center gap-3 p-3 rounded-xl border border-amber-200 bg-amber-50">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 bg-amber-200 text-amber-800">
+                {pendingUsers.map(user => {
+                  const daysPending = user.created_at
+                    ? Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000)
+                    : null;
+                  const isStale = daysPending !== null && daysPending > 14;
+                  return (
+                  <div key={user.id} className={`flex items-center gap-3 p-3 rounded-xl border ${isStale ? 'border-red-300 bg-red-50' : 'border-amber-200 bg-amber-50'}`}>
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 ${isStale ? 'bg-red-200 text-red-800' : 'bg-amber-200 text-amber-800'}`}>
                       {user.full_name?.charAt(0)?.toUpperCase() ?? '?'}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-slate-800 text-sm truncate">{user.full_name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-slate-800 text-sm truncate">{user.full_name}</p>
+                        {daysPending !== null && (
+                          <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black flex-shrink-0 ${isStale ? 'bg-red-200 text-red-800' : 'bg-amber-100 text-amber-700'}`}>
+                            {isStale ? `⚠️ ${daysPending}h` : `${daysPending}h`}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-slate-500">@{user.username}</p>
                       <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                         <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-200 text-amber-800">
@@ -3006,7 +3054,8 @@ export function AccountSettingsInline() {
                         className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-all">Tolak</button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -3023,6 +3072,7 @@ export function UserManagementInline() {
   const [userSupMaps, setUserSupMaps] = useState<{ id: string; user_id: string; supervisor_id: string }[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; msg: string } | null>(null);
   const [activeTab, setActiveTab] = useState<'atasan' | 'ivp' | 'user_cc'>('atasan');
   const [atasanDiv, setAtasanDiv] = useState('');
@@ -3041,9 +3091,9 @@ export function UserManagementInline() {
     setLoadingData(true);
     const [usersRes, divSupRes, divIvpRes, userSupRes] = await Promise.all([
       supabase.from('users').select('id, username, full_name, role, team_type, sales_division, phone_number, jabatan').order('full_name'),
-      supabase.from('division_supervisor_mappings').select('*').order('sales_division'),
-      supabase.from('division_ivp_mappings').select('*').order('sales_division'),
-      supabase.from('user_supervisor_mappings').select('*'),
+      supabase.from('division_supervisor_mappings').select('id,sales_division,supervisor_id').order('sales_division'),
+      supabase.from('division_ivp_mappings').select('id,sales_division,ivp_id').order('sales_division'),
+      supabase.from('user_supervisor_mappings').select('id,user_id,supervisor_id'),
     ]);
     if (usersRes.data) setAllUsers(usersRes.data);
     if (divSupRes.data) setDivSupMaps(divSupRes.data);
@@ -3101,10 +3151,11 @@ export function UserManagementInline() {
     setSaving(false);
   };
 
-  const handleDeleteAtasan = async (id: string) => {
-    if (!confirm('Hapus mapping atasan ini?')) return;
-    await supabase.from('division_supervisor_mappings').delete().eq('id', id);
-    notify('success', 'Dihapus.'); await fetchAll();
+  const handleDeleteAtasan = (id: string) => {
+    setConfirmState({ message: 'Hapus mapping atasan ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+      await supabase.from('division_supervisor_mappings').delete().eq('id', id);
+      notify('success', 'Dihapus.'); await fetchAll();
+    }});
   };
 
   const handleAddIvp = async () => {
@@ -3118,10 +3169,11 @@ export function UserManagementInline() {
     setSaving(false);
   };
 
-  const handleDeleteIvp = async (id: string) => {
-    if (!confirm('Hapus mapping IVP ini?')) return;
-    await supabase.from('division_ivp_mappings').delete().eq('id', id);
-    notify('success', 'Dihapus.'); await fetchAll();
+  const handleDeleteIvp = (id: string) => {
+    setConfirmState({ message: 'Hapus mapping IVP ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+      await supabase.from('division_ivp_mappings').delete().eq('id', id);
+      notify('success', 'Dihapus.'); await fetchAll();
+    }});
   };
 
   const jabatanBadge = (u: User | undefined) => {
@@ -3164,6 +3216,7 @@ export function UserManagementInline() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
+      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       {notification && (
         <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 flex-shrink-0 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : notification.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
           {notification.type === 'success' ? '✅' : notification.type === 'error' ? '❌' : 'ℹ️'} {notification.msg}

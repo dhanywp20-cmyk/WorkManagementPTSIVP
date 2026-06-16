@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase, supabaseServices } from "@/lib/supabase";
 import { setSession, clearSession, getSession } from "@/lib/auth";
-import { notifyTicketAssigned } from "@/lib/notifications";
+import { notifyTicketAssigned, createNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
 
 import {
@@ -22,7 +22,7 @@ import { NewTicketModal } from "./_components/NewTicketModal";
 import {
   ViewIconBtn, DeleteIconBtn,
   FlowchartIconBtn, PrintIconBtn, ApproveIconBtn, ReopenIconBtn, OverdueIconBtn,
-  Toast, PageHeader,
+  Toast, PageHeader, ConfirmDialog, type ConfirmState, ErrorState,
 } from "@/components/shared";
 
 function TicketingSystemInner() {
@@ -74,6 +74,7 @@ function TicketingSystemInner() {
   const [showTicketDetailPopup, setShowTicketDetailPopup] = useState(false);
   const [loading, setLoading] = useState(true);
   const [ticketsLoading, setTicketsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string|null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [silentUpdating, setSilentUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -101,6 +102,7 @@ function TicketingSystemInner() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
   const [bulkConfirm, setBulkConfirm] = useState(false);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [newMapping, setNewMapping] = useState({ guestUsername: "", projectName: "" });
   const ITEMS_PER_PAGE = 30;
   const [currentPage, setCurrentPage] = useState(1);
@@ -251,7 +253,7 @@ function TicketingSystemInner() {
   };
 
   const fetchOverdueSettings = async () => {
-    try { const { data } = await supabase.from("overdue_settings").select("*"); if (data) setOverdueSettings(data); } catch { }
+    try { const { data } = await supabase.from("overdue_settings").select("id,ticket_id,due_date,due_hours,set_by,created_at"); if (data) setOverdueSettings(data); } catch { }
   };
 
   const saveOverdueSetting = async () => {
@@ -260,8 +262,10 @@ function TicketingSystemInner() {
     try {
       const existing = getOverdueSetting(overdueTargetTicket.id);
       const payload: any = { ticket_id: overdueTargetTicket.id, set_by: currentUser?.username || "", due_date: null, due_hours: parseInt(overdueForm.due_hours) };
-      if (existing) await supabase.from("overdue_settings").update(payload).eq("id", existing.id);
-      else await supabase.from("overdue_settings").insert([payload]);
+      let mutErr;
+      if (existing) { const r = await supabase.from("overdue_settings").update(payload).eq("id", existing.id); mutErr = r.error; }
+      else { const r = await supabase.from("overdue_settings").insert([payload]); mutErr = r.error; }
+      if (mutErr) { notify("error", "Gagal simpan overdue setting: " + mutErr.message); return; }
       await fetchOverdueSettings();
       setShowOverdueSetting(false);
       setOverdueForm({ due_hours: "48" });
@@ -272,12 +276,14 @@ function TicketingSystemInner() {
   const deleteOverdueSetting = async (ticketId: string) => {
     const existing = getOverdueSetting(ticketId);
     if (!existing) return;
-    await supabase.from("overdue_settings").delete().eq("id", existing.id);
+    const { error } = await supabase.from("overdue_settings").delete().eq("id", existing.id);
+    if (error) { notify("error", "Gagal hapus overdue setting: " + error.message); return; }
     await fetchOverdueSettings();
   };
 
   const deleteTicket = async () => {
     if (!deleteTargetTicket) return;
+    if (currentUser?.role !== 'admin' && currentUser?.role !== 'superadmin') { notify("error", "Tidak ada akses untuk menghapus ticket."); return; }
     try {
       setUploading(true);
       setShowLoadingPopup(true);
@@ -572,7 +578,7 @@ function TicketingSystemInner() {
         const { data: ticketsData } = await supabase.from("tickets").select("*, activity_logs(*)").order("created_at", { ascending: false });
         let mergedTickets: Ticket[] = ticketsData || [];
         try {
-          const { data: svcLogs } = await supabaseServices.from("activity_logs").select("*").order("created_at", { ascending: false });
+          const { data: svcLogs } = await supabaseServices.from("activity_logs").select("id,ticket_id,handler_name,handler_username,action_taken,notes,file_url,file_name,photo_url,photo_name,new_status,team_type,assigned_to_services,created_at").order("created_at", { ascending: false });
           if (svcLogs && svcLogs.length > 0) {
             mergedTickets = mergedTickets.map((ticket: Ticket) => {
               const svcTicketLogs = svcLogs.filter((l: ActivityLog) => l.ticket_id === ticket.id);
@@ -601,9 +607,9 @@ function TicketingSystemInner() {
       }
       // Fetch warranty/project reference data (fire-and-forget, non-blocking)
       fetchProjectReminders();
-    } catch {
+    } catch (err: any) {
       setLoading(false);
-      if (!silent) setTicketsLoading(false);
+      if (!silent) { setTicketsLoading(false); setFetchError(err?.message ?? 'Gagal memuat data. Coba refresh halaman.'); }
     }
   };
 
@@ -802,7 +808,9 @@ function TicketingSystemInner() {
       if (error) throw error;
       if (approvalTicket.created_by) {
         const creatorUser = users.find((u) => u.username === approvalTicket.created_by);
-        if (creatorUser && creatorUser.role === "guest") {
+        if (creatorUser && creatorUser.role === "guest" && creatorUser.id) {
+          // Notify guest/sales bahwa ticket mereka sudah diproses
+          void createNotification({ user_id: creatorUser.id, type: 'ticket', title: `🎫 Ticket disetujui`, body: `${approvalTicket.project_name} — ditugaskan ke ${approvalAssignee}`, action_url: '/ticketing', ref_id: approvalTicket.id, created_by: currentUser?.full_name || '' });
         }
       }
       // ── WA ke handler yang di-assign ──────────────────────────────────────
@@ -870,16 +878,23 @@ function TicketingSystemInner() {
     } catch (err: any) { notify("error", "Error: " + err.message); } finally { setUploading(false); }
   };
 
-  const rejectTicket = async (ticket: Ticket) => {
-    if (!confirm(`Reject ticket "${ticket.project_name} - ${ticket.issue_case}"? Ticket will be deleted.`)) return;
-    try {
-      setUploading(true);
-      await supabase.from("activity_logs").delete().eq("ticket_id", ticket.id);
-      const { error } = await supabase.from("tickets").delete().eq("id", ticket.id);
-      if (error) throw error;
-      await fetchData();
-      notify("success", "Ticket rejected and removed.");
-    } catch (err: any) { notify("error", "Error: " + err.message); } finally { setUploading(false); }
+  const rejectTicket = (ticket: Ticket) => {
+    setConfirmState({
+      message: `Reject ticket "${ticket.project_name} - ${ticket.issue_case}"?`,
+      description: 'Ticket will be deleted.',
+      danger: true,
+      confirmLabel: 'Reject',
+      onConfirm: async () => {
+        try {
+          setUploading(true);
+          await supabase.from("activity_logs").delete().eq("ticket_id", ticket.id);
+          const { error } = await supabase.from("tickets").delete().eq("id", ticket.id);
+          if (error) throw error;
+          await fetchData();
+          notify("success", "Ticket rejected and removed.");
+        } catch (err: any) { notify("error", "Error: " + err.message); } finally { setUploading(false); }
+      },
+    });
   };
 
   const reopenTicket = async () => {
@@ -1404,19 +1419,30 @@ function TicketingSystemInner() {
     if (win) { win.document.write(printContent); win.document.close(); setTimeout(() => win.print(), 300); }
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`Hapus ${selectedIds.size} ticket yang dipilih? Tindakan ini tidak bisa dibatalkan.`)) return;
-    setBulkDeleting(true);
-    const ids = Array.from(selectedIds);
-    const { error } = await supabase.from("tickets").delete().in("id", ids);
-    if (!error) {
-      setTickets(prev => prev.filter(t => !selectedIds.has(t.id)));
-      setSelectedIds(new Set());
-    } else {
-      notify("error", "Gagal menghapus: " + error.message);
-    }
-    setBulkDeleting(false);
+    if (currentUser?.role !== 'admin' && currentUser?.role !== 'superadmin') { notify("error", "Tidak ada akses untuk menghapus ticket."); return; }
+    setConfirmState({
+      message: `Hapus ${selectedIds.size} ticket yang dipilih?`,
+      description: 'Tindakan ini tidak bisa dibatalkan.',
+      danger: true,
+      confirmLabel: 'Hapus',
+      onConfirm: async () => {
+        setBulkDeleting(true);
+        const ids = Array.from(selectedIds);
+        await supabase.from("activity_logs").delete().in("ticket_id", ids);
+        try { await supabaseServices.from("activity_logs").delete().in("ticket_id", ids); } catch { }
+        await supabase.from("overdue_settings").delete().in("ticket_id", ids);
+        const { error } = await supabase.from("tickets").delete().in("id", ids);
+        if (!error) {
+          setTickets(prev => prev.filter(t => !selectedIds.has(t.id)));
+          setSelectedIds(new Set());
+        } else {
+          notify("error", "Gagal menghapus: " + error.message);
+        }
+        setBulkDeleting(false);
+      },
+    });
   };
 
   const toggleSelectId = (id: string) => setSelectedIds(prev => {
@@ -1810,42 +1836,49 @@ function TicketingSystemInner() {
     } catch (err: any) { setShowLoadingPopup(false); setUploading(false); notify("error", "Error: " + err.message); }
   };
 
-  const rejectServicesTicket = async (ticket: Ticket) => {
-    if (!confirm(`Tolak ticket "${ticket.project_name} - ${ticket.issue_case}"?\nTicket akan dikembalikan ke Team PTS.`)) return;
-    try {
-      setUploading(true);
-      setShowLoadingPopup(true);
-      setLoadingMessage("Mengembalikan ticket ke Team PTS...");
-      await supabase.from("tickets").update({ current_team: "Team PTS", services_status: null, status: "In Progress" }).eq("id", ticket.id);
-      await supabase.from("activity_logs").insert([{
-        ticket_id: ticket.id,
-        handler_name: currentUser?.full_name || "",
-        handler_username: currentUser?.username || "",
-        action_taken: "Ticket Dikembalikan ke Team PTS",
-        notes: `Ticket dikembalikan ke Team PTS oleh Team Services karena tidak dapat ditangani.`,
-        new_status: "In Progress",
-        team_type: "Team Services",
-        assigned_to_services: false,
-        file_url: "", file_name: "", photo_url: "", photo_name: ""
-      }]);
-      try {
-        await supabaseServices.from("tickets").update({ services_status: "Returned to PTS", current_team: "Team PTS" }).eq("id", ticket.id);
-        await supabaseServices.from("activity_logs").insert([{
-          ticket_id: ticket.id,
-          handler_name: currentUser?.full_name || "",
-          handler_username: currentUser?.username || "",
-          action_taken: "Ticket Dikembalikan ke Team PTS",
-          notes: `Ticket dikembalikan ke Team PTS. History Services tetap tersimpan.`,
-          new_status: "Returned to PTS",
-          team_type: "Team Services",
-          assigned_to_services: false,
-          file_url: "", file_name: "", photo_url: "", photo_name: ""
-        }]);
-      } catch { }
-      await fetchData();
-      setLoadingMessage("✅ Ticket dikembalikan ke Team PTS.");
-      setTimeout(() => { setShowLoadingPopup(false); setUploading(false); setShowServicesApprovalModal(false); }, 1500);
-    } catch (err: any) { setShowLoadingPopup(false); setUploading(false); notify("error", "Error: " + err.message); }
+  const rejectServicesTicket = (ticket: Ticket) => {
+    setConfirmState({
+      message: `Tolak ticket "${ticket.project_name} - ${ticket.issue_case}"?`,
+      description: 'Ticket akan dikembalikan ke Team PTS.',
+      danger: true,
+      confirmLabel: 'Tolak',
+      onConfirm: async () => {
+        try {
+          setUploading(true);
+          setShowLoadingPopup(true);
+          setLoadingMessage("Mengembalikan ticket ke Team PTS...");
+          await supabase.from("tickets").update({ current_team: "Team PTS", services_status: null, status: "In Progress" }).eq("id", ticket.id);
+          await supabase.from("activity_logs").insert([{
+            ticket_id: ticket.id,
+            handler_name: currentUser?.full_name || "",
+            handler_username: currentUser?.username || "",
+            action_taken: "Ticket Dikembalikan ke Team PTS",
+            notes: `Ticket dikembalikan ke Team PTS oleh Team Services karena tidak dapat ditangani.`,
+            new_status: "In Progress",
+            team_type: "Team Services",
+            assigned_to_services: false,
+            file_url: "", file_name: "", photo_url: "", photo_name: ""
+          }]);
+          try {
+            await supabaseServices.from("tickets").update({ services_status: "Returned to PTS", current_team: "Team PTS" }).eq("id", ticket.id);
+            await supabaseServices.from("activity_logs").insert([{
+              ticket_id: ticket.id,
+              handler_name: currentUser?.full_name || "",
+              handler_username: currentUser?.username || "",
+              action_taken: "Ticket Dikembalikan ke Team PTS",
+              notes: `Ticket dikembalikan ke Team PTS. History Services tetap tersimpan.`,
+              new_status: "Returned to PTS",
+              team_type: "Team Services",
+              assigned_to_services: false,
+              file_url: "", file_name: "", photo_url: "", photo_name: ""
+            }]);
+          } catch { }
+          await fetchData();
+          setLoadingMessage("✅ Ticket dikembalikan ke Team PTS.");
+          setTimeout(() => { setShowLoadingPopup(false); setUploading(false); setShowServicesApprovalModal(false); }, 1500);
+        } catch (err: any) { setShowLoadingPopup(false); setUploading(false); notify("error", "Error: " + err.message); }
+      },
+    });
   };
 
   if (loading) {
@@ -1861,6 +1894,7 @@ function TicketingSystemInner() {
 
   return (
     <div className="h-screen overflow-hidden flex flex-col relative" style={{ backgroundImage: "url(/IVP_Background.png)", backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }}>
+      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="absolute inset-0 pointer-events-none" style={{ background: "rgba(255,255,255,0.08)" }} />
       {/* Toast notifications */}
       {toast && <Toast notif={toast} />}
@@ -2233,7 +2267,9 @@ function TicketingSystemInner() {
               </div>
             )}
 
-            {ticketsLoading ? (
+            {fetchError ? (
+              <ErrorState message={fetchError} onRetry={() => { setFetchError(null); fetchData(); }} />
+            ) : ticketsLoading ? (
               <div className="space-y-3 py-2 p-4">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="animate-pulse flex gap-3 items-center bg-white/60 rounded-xl p-4 border border-gray-200">
@@ -2630,7 +2666,7 @@ function TicketingSystemInner() {
 
         {/* ── TICKET DETAIL POPUP — detail kiri + update panel kanan ── */}
         {showTicketDetailPopup && selectedTicket && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-3 overflow-y-auto"
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-3"
             onClick={e => { if (e.target === e.currentTarget) { setShowTicketDetailPopup(false); setSelectedTicket(null); setShowUpdateForm(false); } }}>
             <div className="flex items-start gap-3 w-full my-2" style={{ maxWidth: showUpdateForm ? '1120px' : '720px', transition: 'max-width 0.2s' }}>
 

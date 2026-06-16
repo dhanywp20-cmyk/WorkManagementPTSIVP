@@ -556,7 +556,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           .lte('created_at', yearEnd + 'T23:59:59'),
         // Manual KPI values stored in kpi_manual_values table (jika ada)
         supabase.from('kpi_manual_values')
-          .select('*')
+          .select('user_id,year,komplain_count,respon_time,technical_note,bast_demo,bast_demo_total,report_bulanan,learning_mastery')
           .in('user_id', memberIds)
           .eq('year', year),
       ]);

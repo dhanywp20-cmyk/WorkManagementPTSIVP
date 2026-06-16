@@ -6,6 +6,7 @@ import {
   buildFolderTree, countMaterials, fmtDate, SearchInput,
   AppDialog, DialogState, BtnEdit, BtnDelete, BtnOpen,
 } from './shared';
+import { logAudit } from '@/lib/audit';
 
 // ─── Folder Color Palette ─────────────────────────────────────────────────────
 
@@ -243,6 +244,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
         if (qErr) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Gagal hapus soal terkait: ' + qErr.message }); return; }
         const { error } = await supabase.from('lc_materials').delete().eq('id', id);
         if (error) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Gagal hapus materi: ' + error.message }); return; }
+        void logAudit({ user_id: user.id, user_name: user.full_name ?? '', action: 'delete', module: 'learning-center', target_id: id, notes: 'Hapus materi' });
         load();
       },
     });
@@ -286,6 +288,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
         const results = await Promise.all(affected.map(m => supabase.from('lc_materials').delete().eq('id', m.id)));
         const err = results.find((r: { error: unknown }) => r.error)?.error as { message: string } | undefined;
         if (err) { setDialog({ type: 'error', title: 'Gagal Hapus Folder', message: 'Gagal hapus materi: ' + err.message }); return; }
+        void logAudit({ user_id: user.id, user_name: user.full_name ?? '', action: 'delete', module: 'learning-center', notes: `Hapus folder "${folderName}" (${affected.length} materi)` });
         if (selectedFolderKey === folderName) setSelectedFolderKey(null);
         load();
       },

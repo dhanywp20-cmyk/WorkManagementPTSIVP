@@ -20,6 +20,7 @@ import {
   FormField, SectionHeader, SectionHeaderSmall, InfoRow,
   LoadingScreen, MiniPieChart, PageHeader,
   ViewIconBtn, RescheduleIconBtn, ApproveIconBtn, DeleteIconBtn, ActionGroup,
+  ConfirmDialog, type ConfirmState, ErrorState,
 } from '@/components/shared';
 import { MiniCalendar } from './_components/MiniCalendar';
 import { RescheduleModal } from './_components/RescheduleModal';
@@ -41,6 +42,7 @@ function ReminderSchedulePageInner() {
   const [guestUsers, setGuestUsers]         = useState<GuestUser[]>([]);
   const [reminders, setReminders]           = useState<Reminder[]>([]);
   const [listLoading, setListLoading]       = useState(false);
+  const [fetchError, setFetchError]         = useState<string|null>(null);
   const [saving, setSaving]                 = useState(false);
   const [rescheduleTarget, setRescheduleTarget] = useState<Reminder | null>(null);
 
@@ -72,6 +74,7 @@ function ReminderSchedulePageInner() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [bulkConfirm, setBulkConfirm] = useState(false);
   const [bulkTarget, setBulkTarget] = useState<'none' | 'ivp' | 'mlds' | 'ump'>('none');
   // Kalender-only selection — tidak mempengaruhi filter list/chart/summary
@@ -203,14 +206,15 @@ function ReminderSchedulePageInner() {
   };
 
   // 🔥 PERUBAHAN UTAMA: Urutkan berdasarkan created_at terbaru di paling atas
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`Hapus ${selectedIds.size} jadwal yang dipilih?`)) return;
-    setBulkDeleting(true);
-    const { error } = await supabase.from('service_reminders').delete().in('id', Array.from(selectedIds));
-    if (!error) { setReminders(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); }
-    else notify('error', 'Gagal: ' + error.message);
-    setBulkDeleting(false);
+    setConfirmState({ message: `Hapus ${selectedIds.size} jadwal yang dipilih?`, danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+      setBulkDeleting(true);
+      const { error } = await supabase.from('reminders').delete().in('id', Array.from(selectedIds));
+      if (!error) { setReminders(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); }
+      else notify('error', 'Gagal: ' + error.message);
+      setBulkDeleting(false);
+    }});
   };
 
   const toggleSelectId = (id: string) => setSelectedIds(prev => {
@@ -226,7 +230,8 @@ function ReminderSchedulePageInner() {
     if (!activeUser || activeUser.role !== 'guest') {
       // Admin & team: ambil semua
       const { data, error } = await supabase.from('reminders').select('*').order('created_at', { ascending: false }).limit(500);
-      return (!error && data) ? (data as Reminder[]) : [];
+      if (error) throw new Error(error.message);
+      return (data as Reminder[]) ?? [];
     }
     // Guest: ambil schedule yg atas nama dia (dibuat admin) + yg dia request sendiri (created_by)
     const [bySales, byCreator] = await Promise.all([
@@ -250,10 +255,15 @@ function ReminderSchedulePageInner() {
 
   const fetchReminders = async () => {
     setListLoading(true);
+    setFetchError(null);
     let activeUser: TeamUser | null = currentUser;
     if (!activeUser) activeUser = getSession<TeamUser>();
-    const data = await fetchRemindersForUser(activeUser);
-    setReminders(data);
+    try {
+      const data = await fetchRemindersForUser(activeUser);
+      setReminders(data);
+    } catch (err: any) {
+      setFetchError(err?.message ?? 'Gagal memuat data');
+    }
     setTimeout(() => setListLoading(false), 400);
   };
 
@@ -1110,6 +1120,7 @@ jangan lupa peralatan & Semangat💪🏼
       backgroundImage: `url('/IVP_Background.png')`,
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
+      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.08)' }} />
       <div className="relative z-10 flex flex-col flex-1 overflow-hidden">
 
@@ -1305,7 +1316,7 @@ jangan lupa peralatan & Semangat💪🏼
                 <button onClick={() => setBulkConfirm(false)} className="flex-1 border-2 border-gray-300 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-50 transition-all text-sm">Batal</button>
                 <button onClick={async () => {
                   setBulkConfirm(false); setBulkDeleting(true);
-                  const { error } = await supabase.from('service_reminders').delete().in('id', Array.from(selectedIds));
+                  const { error } = await supabase.from('reminders').delete().in('id', Array.from(selectedIds));
                   if (!error) { setReminders(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); setSelectMode(false); }
                   else notify('error', 'Gagal: ' + error.message);
                   setBulkDeleting(false);
@@ -2069,7 +2080,9 @@ jangan lupa peralatan & Semangat💪🏼
                   )}
 
                   {/* ── TABLE ── */}
-                  {listLoading ? (
+                  {fetchError ? (
+                    <ErrorState message={fetchError} onRetry={() => { setFetchError(null); fetchReminders(); }} />
+                  ) : listLoading ? (
                     <div className="space-y-2 p-4">
                       {[...Array(4)].map((_, i) => (
                         <div key={i} className="animate-pulse flex gap-3 items-center bg-white/60 rounded-xl p-3 border border-gray-200">

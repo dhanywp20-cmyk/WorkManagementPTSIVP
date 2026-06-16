@@ -21,6 +21,8 @@ import {
   type DailyReport,
 } from './_components/shared';
 
+import { logAudit } from '@/lib/audit';
+
 import {
   FormField, SectionHeaderSmall, LoadingScreen,
 } from '@/components/shared';
@@ -540,6 +542,7 @@ export default function DailyReportPage() {
       const clean = teamEntries.filter(e => e.project_name.trim()).map(({ _key, ...rest }) => ({ ...rest, report_date: formDate, source: 'manual' as const }));
       if (clean.length) await saveTeamEntries(clean as any, formDate, currentUser?.username ?? '');
     }
+    void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: editingId ? 'update' : 'create', module: 'daily-report', target_id: editingId ?? formDate, target_name: `Report ${targetUser?.full_name} - ${formDate}` });
     notify('success', editingId ? 'Report diperbarui!' : 'Report berhasil disimpan!');
     setSaving(false); setFormOpen(false); setEditingId(null);
     loadReports(); loadLiveData();

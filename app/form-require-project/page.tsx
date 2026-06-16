@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { setSession, clearSession, getSession } from '@/lib/auth';
 import { notifyProjectStatusChange } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
-import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader } from '@/components/shared';
+import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, type ConfirmState } from '@/components/shared';
 import {
   User, ProjectRequest, RoomDetail, BrandPicMapping,
   ProjectMessage, ProjectAttachment,
@@ -102,6 +102,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
   const [bulkConfirm, setBulkConfirm] = useState(false);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [downloadingPackage, setDownloadingPackage] = useState(false);
   const [assignModal, setAssignModal] = useState<{ open: boolean; req: ProjectRequest | null }>({ open: false, req: null });
   // Pop-up notif tiket aktif (pending/in_progress) saat masuk platform
@@ -165,7 +166,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     supabase.from('users').select('id, full_name, username, sales_division').eq('role', 'guest').then(({ data }: { data: {id:string;full_name:string;username:string;sales_division?:string}[] | null }) => {
       if (data) setSalesGuestUsers(data);
     });
-    supabase.from('brand_pic_mappings').select('*').order('brand_name').then(({ data }: { data: BrandPicMapping[] | null }) => {
+    supabase.from('brand_pic_mappings').select('id,brand_type,brand_name,pic_user_id,pic_user_name').order('brand_name').then(({ data }: { data: BrandPicMapping[] | null }) => {
       if (data) setBrandPicMappings(data);
     });
   }, []);
@@ -277,12 +278,12 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   }, [currentUser.id, currentUser.sales_division, (currentUser as any).jabatan, isPTS, isIVPGuest]);
 
   const fetchMessages = useCallback(async (requestId: string) => {
-    const { data, error } = await supabase.from('project_messages').select('*').eq('request_id', requestId).order('created_at', { ascending: true });
+    const { data, error } = await supabase.from('project_messages').select('id,request_id,sender_id,sender_name,sender_role,message,created_at').eq('request_id', requestId).order('created_at', { ascending: true });
     if (!error && data) setMessages(data as ProjectMessage[]);
   }, []);
 
   const fetchAttachments = useCallback(async (requestId: string) => {
-    const { data, error } = await supabase.from('project_attachments').select('*').eq('request_id', requestId).order('uploaded_at', { ascending: false });
+    const { data, error } = await supabase.from('project_attachments').select('id,message_id,request_id,file_name,file_url,file_type,file_size,uploaded_by,uploaded_at,attachment_category,revision_version').eq('request_id', requestId).order('uploaded_at', { ascending: false });
     if (!error && data) {
       const normalized = (data as ProjectAttachment[]).map(a => ({
         ...a,
@@ -356,7 +357,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
     const pollInterval = setInterval(async () => {
       if (activeRequestIdRef.current !== reqId) return;
-      const { data } = await supabase.from('project_messages').select('*').eq('request_id', reqId).order('created_at', { ascending: true });
+      const { data } = await supabase.from('project_messages').select('id,request_id,sender_id,sender_name,sender_role,message,created_at').eq('request_id', reqId).order('created_at', { ascending: true });
       if (data && activeRequestIdRef.current === reqId) {
         setMessages(prev => { if (data.length === prev.length) return prev; return data as ProjectMessage[]; });
       }
@@ -685,14 +686,20 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     finally { setSubmitting(false); }
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`Hapus ${selectedIds.size} request terpilih?`)) return;
-    setBulkDeleting(true);
-    const { error } = await supabase.from('project_requests').delete().in('id', Array.from(selectedIds));
-    if (!error) { setRequests(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); }
-    else notify('error', 'Gagal hapus: ' + error.message);
-    setBulkDeleting(false);
+    setConfirmState({
+      message: `Hapus ${selectedIds.size} request terpilih?`,
+      danger: true,
+      confirmLabel: 'Hapus',
+      onConfirm: async () => {
+        setBulkDeleting(true);
+        const { error } = await supabase.from('project_requests').delete().in('id', Array.from(selectedIds));
+        if (!error) { setRequests(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); }
+        else notify('error', 'Gagal hapus: ' + error.message);
+        setBulkDeleting(false);
+      },
+    });
   };
   const toggleSelectId = (id: string) => setSelectedIds(prev => {
     const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
@@ -1354,6 +1361,7 @@ Hubungi Admin untuk info lebih lanjut.
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-cover bg-center bg-fixed bg-no-repeat" style={{ backgroundImage: 'url(/IVP_Background.png)' }}>
+      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <NotifToast />
 
 
