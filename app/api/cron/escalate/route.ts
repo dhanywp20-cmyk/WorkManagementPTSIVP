@@ -3,7 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-// Threshold: tiket dianggap "stuck" jika tidak ada aktivitas dalam N jam
 const ESCALATION_HOURS: Record<string, number> = {
   Critical : 4,
   High     : 12,
@@ -12,110 +11,127 @@ const ESCALATION_HOURS: Record<string, number> = {
 };
 const DEFAULT_HOURS = 24;
 
-export async function POST(request: NextRequest) {
-  // Proteksi endpoint: hanya boleh dari cron job dengan secret
-  const secret = request.headers.get('x-cron-secret');
-  if (secret !== process.env.CRON_SECRET) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+function isAuthorized(request: NextRequest): boolean {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return false;
+  // Vercel Cron: Authorization: Bearer <secret>
+  const auth = request.headers.get('authorization');
+  if (auth === `Bearer ${secret}`) return true;
+  // Manual POST: X-Cron-Secret: <secret>
+  if (request.headers.get('x-cron-secret') === secret) return true;
+  return false;
+}
 
+async function runEscalation() {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  try {
-    // Ambil semua tiket yang berpotensi stuck
-    const { data: tickets } = await supabase
+  const { data: tickets } = await supabase
+    .from('tickets')
+    .select('id, project_name, issue_case, assign_name, status, priority, created_at, escalation_notified_at, activity_logs(created_at)')
+    .in('status', ['Pending', 'Call', 'Onsite', 'In Progress', 'Waiting sparepart', 'Waiting PO from Sales', 'Submit RMA']);
+
+  if (!tickets?.length) return { escalated: 0 };
+
+  const now = Date.now();
+  const escalatedIds: string[] = [];
+
+  for (const ticket of tickets) {
+    const threshold = ESCALATION_HOURS[ticket.priority ?? 'Medium'] ?? DEFAULT_HOURS;
+    const logs = (ticket.activity_logs ?? []) as { created_at: string }[];
+    const lastActivity = logs.length
+      ? Math.max(...logs.map(l => new Date(l.created_at).getTime()))
+      : new Date(ticket.created_at).getTime();
+
+    const hoursIdle = (now - lastActivity) / 3_600_000;
+    if (hoursIdle < threshold) continue;
+
+    if (ticket.escalation_notified_at) {
+      const lastEsc = new Date(ticket.escalation_notified_at).getTime();
+      if (now - lastEsc < 24 * 3_600_000) continue;
+    }
+
+    const { data: handlerUser } = await supabase
+      .from('users')
+      .select('phone_number, full_name')
+      .eq('full_name', ticket.assign_name)
+      .maybeSingle();
+
+    const { data: admins } = await supabase
+      .from('users')
+      .select('phone_number')
+      .in('role', ['admin', 'superadmin'])
+      .not('phone_number', 'is', null);
+
+    const hoursStr = hoursIdle < 1
+      ? `${Math.round(hoursIdle * 60)} menit`
+      : `${Math.floor(hoursIdle)} jam`;
+
+    const waMsg = [
+      `⚠️ *[ESKALASI] Tiket Idle ${hoursStr}*`,
+      '━━━━━━━━━━━━━━━━━━',
+      `📌 *Project :* ${ticket.project_name}`,
+      `⚠️ *Issue   :* ${ticket.issue_case}`,
+      `🔴 *Status  :* ${ticket.status}`,
+      `👷 *Handler :* ${ticket.assign_name || '-'}`,
+      `⏱️ *Idle    :* ${hoursStr}`,
+      '━━━━━━━━━━━━━━━━━━',
+      'Mohon segera ditindaklanjuti.',
+      '🔗 https://team-ticketing.vercel.app/dashboard',
+    ].join('\n');
+
+    const targets: string[] = [];
+    if (handlerUser?.phone_number) targets.push(handlerUser.phone_number);
+    (admins ?? []).forEach((a: any) => {
+      if (a.phone_number && !targets.includes(a.phone_number)) targets.push(a.phone_number);
+    });
+
+    const waBase = process.env.NEXT_PUBLIC_WA_API_URL ?? '';
+    for (const phone of targets) {
+      try {
+        await fetch(`${waBase}/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target: phone, message: waMsg }),
+        });
+      } catch { }
+    }
+
+    await supabase
       .from('tickets')
-      .select('id, project_name, issue_case, assign_name, status, priority, created_at, escalation_notified_at, activity_logs(created_at)')
-      .in('status', ['Pending', 'Call', 'Onsite', 'In Progress', 'Waiting sparepart', 'Waiting PO from Sales', 'Submit RMA'])
-      .neq('status', 'Rejected');
+      .update({ escalation_notified_at: new Date().toISOString() })
+      .eq('id', ticket.id);
 
-    if (!tickets?.length) {
-      return NextResponse.json({ escalated: 0 });
-    }
+    escalatedIds.push(ticket.id);
+  }
 
-    const now = Date.now();
-    const escalatedIds: string[] = [];
+  return { escalated: escalatedIds.length, ids: escalatedIds };
+}
 
-    for (const ticket of tickets) {
-      const threshold = ESCALATION_HOURS[ticket.priority ?? 'Medium'] ?? DEFAULT_HOURS;
-      const logs = (ticket.activity_logs ?? []) as { created_at: string }[];
-      const lastActivity = logs.length
-        ? Math.max(...logs.map(l => new Date(l.created_at).getTime()))
-        : new Date(ticket.created_at).getTime();
-
-      const hoursIdle = (now - lastActivity) / 3_600_000;
-
-      // Skip jika belum melewati threshold
-      if (hoursIdle < threshold) continue;
-
-      // Skip jika sudah dinaikkan escalasi dalam 24 jam terakhir
-      if (ticket.escalation_notified_at) {
-        const lastEsc = new Date(ticket.escalation_notified_at).getTime();
-        if (now - lastEsc < 24 * 3_600_000) continue;
-      }
-
-      // Cari phone handler
-      const { data: handlerUser } = await supabase
-        .from('users')
-        .select('phone_number, full_name')
-        .eq('full_name', ticket.assign_name)
-        .maybeSingle();
-
-      // Cari semua admin
-      const { data: admins } = await supabase
-        .from('users')
-        .select('phone_number, full_name')
-        .in('role', ['admin', 'superadmin'])
-        .not('phone_number', 'is', null);
-
-      const hoursStr = hoursIdle < 1 ? `${Math.round(hoursIdle * 60)} menit` : `${Math.floor(hoursIdle)} jam`;
-      const waMsg = [
-        `⚠️ *[ESKALASI] Tiket Tidak Ada Aktivitas ${hoursStr}*`,
-        '━━━━━━━━━━━━━━━━━━',
-        `📌 *Project :* ${ticket.project_name}`,
-        `⚠️ *Issue   :* ${ticket.issue_case}`,
-        `🔴 *Status  :* ${ticket.status}`,
-        `👷 *Handler :* ${ticket.assign_name || '-'}`,
-        `⏱️ *Idle    :* ${hoursStr}`,
-        '━━━━━━━━━━━━━━━━━━',
-        'Mohon segera ditindaklanjuti.',
-        '🔗 https://team-ticketing.vercel.app/dashboard',
-      ].join('\n');
-
-      // Kirim WA ke handler
-      const targets: string[] = [];
-      if (handlerUser?.phone_number) targets.push(handlerUser.phone_number);
-      (admins ?? []).forEach((a: any) => { if (a.phone_number && !targets.includes(a.phone_number)) targets.push(a.phone_number); });
-
-      for (const phone of targets) {
-        try {
-          await fetch(`${process.env.NEXT_PUBLIC_WA_API_URL ?? ''}/send`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ target: phone, message: waMsg }),
-          });
-        } catch { /* WA gagal — tetap lanjut */ }
-      }
-
-      // Update escalation_notified_at
-      await supabase
-        .from('tickets')
-        .update({ escalation_notified_at: new Date().toISOString() })
-        .eq('id', ticket.id);
-
-      escalatedIds.push(ticket.id);
-    }
-
-    return NextResponse.json({ escalated: escalatedIds.length, ids: escalatedIds });
+// GET — dipanggil Vercel Cron (Authorization: Bearer <CRON_SECRET>)
+export async function GET(request: NextRequest) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  try {
+    const result = await runEscalation();
+    return NextResponse.json(result);
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
 
-// Juga support GET untuk testing manual dari browser (admin only, tanpa secret check)
-export async function GET() {
-  return NextResponse.json({ message: 'Escalation cron endpoint. Use POST with X-Cron-Secret header.' });
+// POST — dipanggil manual atau external cron (X-Cron-Secret: <secret>)
+export async function POST(request: NextRequest) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  try {
+    const result = await runEscalation();
+    return NextResponse.json(result);
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
 }
