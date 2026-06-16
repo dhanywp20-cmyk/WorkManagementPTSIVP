@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { getSession } from '@/lib/auth';
+import { logAudit } from '@/lib/audit';
 import {
   PiketRow, KegiatanEntry, UserRow, DayOfWeek,
   DAYS_OF_WEEK, DAY_COLOR, TEAM_LABEL,
@@ -147,8 +148,9 @@ function PiketShowroomPageInner() {
   const handleDeleteRow = useCallback(async(row: PiketRow)=>{
     if(!confirm(`Hapus semua kegiatan ${row.day_of_week}? Jadwal piket tetap ada.`)) return;
     await supabase.from('piket_tamu_detail').delete().eq('piket_id',row.id);
+    void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? currentUser?.username ?? '', action: 'delete', module: 'picket-showroom', target_id: row.id, notes: `Hapus kegiatan ${row.day_of_week} ${row.day_date}` });
     fetchData();
-  },[fetchData]);
+  },[fetchData, currentUser]);
 
   const formatTime = (timeStr:string) => {
     if(!timeStr) return '';

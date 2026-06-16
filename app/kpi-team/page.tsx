@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { PageHeader } from '@/components/shared';
 import { notifyKPIAlert } from '@/lib/notifications';
+import { logAudit } from '@/lib/audit';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -999,12 +1000,14 @@ export default function KPITeamPage() {
         };
       });
       const endMonth = Math.min(kpiStartMonth + (kpiPeriodLen === '6m' ? 5 : 11), 12);
+      const snapshotLabel = `${MN[kpiStartMonth - 1]}–${MN[endMonth - 1]} ${kpiYear}`;
       await supabase.from('kpi_period_snapshots').insert({
-        period_label: `${MN[kpiStartMonth - 1]}–${MN[endMonth - 1]} ${kpiYear}`,
+        period_label: snapshotLabel,
         year: kpiYear, period: kpiPeriodLen, start_month: kpiStartMonth, end_month: endMonth,
         team_type: scope.kind === 'pts_sup' ? scope.ptsTeamType : 'all',
         created_by: currentUser.full_name, members_json: membersJson, settings_json: _s,
       });
+      void logAudit({ user_id: currentUser.id, user_name: currentUser.full_name ?? '', action: 'create', module: 'kpi-team', notes: `Snapshot KPI ${snapshotLabel}` });
       await fetchKPISnapshots();
       setShowStartKPI(false);
     } catch { /* silent */ }

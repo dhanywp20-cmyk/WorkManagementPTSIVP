@@ -7,6 +7,8 @@ import { getSession, startSessionWatcher } from '@/lib/auth';
 import * as XLSX from 'xlsx';
 
 import { User, IncentiveSetting, IncentiveProject, IncentiveDisbursement, ReminderRow, RekapItem } from './_components/types';
+import { logAudit } from '@/lib/audit';
+import { createNotification } from '@/lib/notifications';
 import { INCENTIVE_CATEGORIES, StatCard, fmtRp, fmtPct, fmtPeriode } from './_components/shared';
 import { MiniPieChart } from '@/components/shared/MiniPieChart';
 import { ProjectsTab }  from './_components/ProjectsTab';
@@ -250,6 +252,7 @@ function IncentivePTSPage() {
     }).eq('id', selectedProject.id);
     if (error) { notify('error', 'Gagal simpan biaya'); setSavingBiaya(false); return; }
     await createDisbursements({ ...selectedProject, biaya_cadangan: biaya });
+    void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'update', module: 'incentive-pts', target_id: selectedProject.id, target_name: selectedProject.project_name, notes: `Biaya cadangan: ${biaya}` });
     notify('success', 'Biaya tersimpan & incentive dikalkulasi!');
     setSavingBiaya(false); setShowBiayaModal(false); setBiayaInput(''); setCosProjectNoInput('');
     fetchProjects(); fetchDisbursements();
@@ -264,6 +267,7 @@ function IncentivePTSPage() {
     if (selectedProject.biaya_cadangan > 0) {
       await createDisbursements({ ...selectedProject, backup_names: backupSelected });
     }
+    void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'update', module: 'incentive-pts', target_id: selectedProject.id, target_name: selectedProject.project_name, notes: `Backup team: ${backupSelected.join(', ')}` });
     notify('success', 'Tim backup diperbarui!');
     setSavingBackup(false); setShowBackupModal(false);
     fetchProjects(); fetchDisbursements();
@@ -275,6 +279,11 @@ function IncentivePTSPage() {
       status: 'paid', paid_at: new Date().toISOString(), paid_by: currentUser?.full_name,
     }).eq('id', selectedProject.id);
     if (error) { notify('error', 'Gagal update status'); return; }
+    void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'update', module: 'incentive-pts', target_id: selectedProject.id, target_name: selectedProject.project_name, notes: 'Status → paid' });
+    const handlerUser = teamUsers.find(u => u.username === selectedProject.handler_username || u.full_name === selectedProject.handler_name);
+    if (handlerUser) {
+      void createNotification({ user_id: handlerUser.id, type: 'system', title: '💰 Incentive Dibayarkan', body: `Project "${selectedProject.project_name}" telah ditandai lunas oleh ${currentUser?.full_name ?? 'Admin'}.`, action_url: '/incentive-pts', ref_id: selectedProject.id, created_by: currentUser?.full_name ?? '' });
+    }
     notify('success', 'Project ditandai sebagai lunas!');
     setShowPaidModal(false); fetchProjects();
   };

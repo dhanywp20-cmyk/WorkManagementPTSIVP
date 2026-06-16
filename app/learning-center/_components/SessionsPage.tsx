@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, User, Material, Question, QuizSession, fmtDate, SearchInput, AppDialog, DialogState, BtnDelete } from './shared';
+import { logAudit } from '@/lib/audit';
 
 export function SessionsPage({ user }: { user: User }) {
   const [sessions, setSessions] = useState<QuizSession[]>([]);
@@ -266,6 +267,7 @@ export function SessionsPage({ user }: { user: User }) {
           setDialog({ type: 'error', title: 'Gagal Menghapus', message: 'Error: ' + error.message });
           return;
         }
+        void logAudit({ user_id: user.id, user_name: user.full_name ?? '', action: 'delete', module: 'learning-center', target_id: id, notes: 'Hapus sesi quiz' });
         load();
       },
     });
