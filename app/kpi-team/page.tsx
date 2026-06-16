@@ -1016,8 +1016,8 @@ export default function KPITeamPage() {
           lc_attempts: m.lcAttempts, lc_avg_score: m.lcAvgScore, lc_passed: m.lcPassed,
           form_review_total: m.formReviewTotal, form_review_low: m.formReviewLowRating,
           tech_notes_approved: m.techNotesApproved,
-          tick_score: m.tickScore / 100, bast_score: m.bastScore / 100,
-          lc_score: m.lcScore / 100, rnd_score: m.rndScore / 100, final_kpi: m.finalKPI,
+          tick_score: m.tickScore, bast_score: m.bastScore,
+          lc_score: m.lcScore, rnd_score: m.rndScore, final_kpi: m.finalKPI,
         }));
         void supabase.from('kpi_snapshot_members').insert(memberRows);
       }
