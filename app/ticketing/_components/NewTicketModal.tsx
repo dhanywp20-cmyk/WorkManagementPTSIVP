@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useRef, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
 import { User, TeamMember } from './shared';
 import { SalesPicker } from '@/components/shared';
 
@@ -20,6 +22,19 @@ export interface NewTicketForm {
   photo: File | null;
 }
 
+interface ReminderRef {
+  id: string;
+  project_name: string;
+  address: string;
+  sales_name: string;
+  sales_division: string;
+  product?: string;
+  pic_name: string;
+  pic_phone: string;
+  category: string;
+  assign_name: string;
+}
+
 interface Props {
   onClose: () => void;
   form: NewTicketForm;
@@ -33,6 +48,59 @@ interface Props {
 
 export function NewTicketModal({ onClose, form, setForm, uploading, currentUser, users, teamPTSMembers, onSubmit }: Props) {
   const set = (patch: Partial<NewTicketForm>) => setForm({ ...form, ...patch });
+
+  const [projectType, setProjectType] = useState<'new' | 'existing'>('new');
+  const [reminderQuery, setReminderQuery] = useState('');
+  const [reminderResults, setReminderResults] = useState<ReminderRef[]>([]);
+  const [reminderSearching, setReminderSearching] = useState(false);
+  const [selectedReminder, setSelectedReminder] = useState<ReminderRef | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const searchReminders = useCallback(async (q: string) => {
+    if (!q.trim()) { setReminderResults([]); return; }
+    setReminderSearching(true);
+    const { data } = await supabase
+      .from('reminders')
+      .select('id, project_name, address, sales_name, sales_division, product, pic_name, pic_phone, category, assign_name')
+      .in('category', ['Konfigurasi & Training', 'Training'])
+      .ilike('project_name', `%${q}%`)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    setReminderResults(data ?? []);
+    setReminderSearching(false);
+  }, []);
+
+  const handleQueryChange = (q: string) => {
+    setReminderQuery(q);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => searchReminders(q), 300);
+  };
+
+  const selectReminder = (r: ReminderRef) => {
+    setSelectedReminder(r);
+    setReminderResults([]);
+    setReminderQuery('');
+    setForm({
+      ...form,
+      project_name: r.project_name,
+      address: r.address || '',
+      sales_name: r.sales_name || '',
+      sales_division: r.sales_division || '',
+      product: r.product || '',
+      customer_phone: r.pic_phone || '',
+      assign_name: r.assign_name || form.assign_name,
+    });
+  };
+
+  const switchProjectType = (type: 'new' | 'existing') => {
+    setProjectType(type);
+    setSelectedReminder(null);
+    setReminderQuery('');
+    setReminderResults([]);
+    if (type === 'new') {
+      setForm({ ...form, project_name: '', address: '', sales_name: '', sales_division: '', product: '', customer_phone: '', assign_name: '' });
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4 overflow-y-auto"
@@ -63,17 +131,108 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
             <span className="text-sm font-bold tracking-wide text-slate-700">Informasi Ticket</span>
           </div>
 
+          {/* Project Type Toggle */}
+          <div>
+            <label className="block text-xs font-bold mb-2 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Tipe Project</label>
+            <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: "rgba(0,0,0,0.12)" }}>
+              <button type="button"
+                onClick={() => switchProjectType('new')}
+                className="flex-1 py-2.5 text-sm font-bold transition-all"
+                style={projectType === 'new'
+                  ? { background: "linear-gradient(135deg,#dc2626,#991b1b)", color: "white" }
+                  : { background: "rgba(255,255,255,0.95)", color: "#64748b" }}>
+                ✏️ Project Baru
+              </button>
+              <button type="button"
+                onClick={() => switchProjectType('existing')}
+                className="flex-1 py-2.5 text-sm font-bold transition-all border-l"
+                style={projectType === 'existing'
+                  ? { background: "linear-gradient(135deg,#dc2626,#991b1b)", color: "white", borderColor: "transparent" }
+                  : { background: "rgba(255,255,255,0.95)", color: "#64748b", borderColor: "rgba(0,0,0,0.12)" }}>
+                🔍 Project Existing
+              </button>
+            </div>
+          </div>
+
+          {/* Project Existing: Search */}
+          {projectType === 'existing' && (
+            <div>
+              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
+                Cari Project (Konfigurasi & Training / Training)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                <input
+                  type="text"
+                  value={reminderQuery}
+                  onChange={e => handleQueryChange(e.target.value)}
+                  placeholder="Ketik nama project untuk mencari..."
+                  className="w-full rounded-xl pl-9 pr-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+                  style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}
+                />
+                {reminderSearching && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">mencari...</span>
+                )}
+              </div>
+
+              {/* Search Results */}
+              {reminderResults.length > 0 && (
+                <div className="mt-1 rounded-xl border overflow-hidden shadow-lg z-10"
+                  style={{ background: "white", borderColor: "rgba(220,38,38,0.2)" }}>
+                  {reminderResults.map(r => (
+                    <button key={r.id} type="button"
+                      onClick={() => selectReminder(r)}
+                      className="w-full text-left px-4 py-3 hover:bg-red-50 transition-colors border-b last:border-b-0 flex flex-col gap-0.5"
+                      style={{ borderColor: "rgba(0,0,0,0.06)" }}>
+                      <span className="text-sm font-bold text-slate-800">{r.project_name}</span>
+                      <span className="text-xs text-slate-500 flex gap-3">
+                        {r.category && <span className="text-red-600 font-semibold">{r.category}</span>}
+                        {r.address && <span>📍 {r.address.slice(0, 50)}{r.address.length > 50 ? '…' : ''}</span>}
+                        {r.sales_name && <span>👤 {r.sales_name}</span>}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Selected reminder badge */}
+              {selectedReminder && (
+                <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl"
+                  style={{ background: "rgba(220,38,38,0.07)", border: "1px solid rgba(220,38,38,0.2)" }}>
+                  <span className="text-red-600 font-bold text-sm">✓</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-slate-800 truncate">{selectedReminder.project_name}</p>
+                    <p className="text-xs text-slate-500">{selectedReminder.category} · Data berhasil di-fill otomatis</p>
+                  </div>
+                  <button type="button"
+                    onClick={() => { setSelectedReminder(null); set({ project_name: '' }); }}
+                    className="text-xs text-red-400 hover:text-red-600 font-bold flex-shrink-0">✕</button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Row 1: Project Name | Address */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Project Name *</label>
+              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
+                Project Name *
+                {projectType === 'existing' && selectedReminder && (
+                  <span className="ml-2 text-red-400 font-semibold normal-case text-[10px]">🔒 dari reminder</span>
+                )}
+              </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2">📌</span>
                 <input type="text" value={form.project_name}
-                  onChange={e => set({ project_name: e.target.value })}
-                  placeholder="Example: BCA Cibitung Project"
+                  onChange={e => projectType === 'new' || !selectedReminder ? set({ project_name: e.target.value }) : undefined}
+                  readOnly={projectType === 'existing' && !!selectedReminder}
+                  placeholder={projectType === 'existing' ? 'Pilih project dari pencarian di atas' : 'Example: BCA Cibitung Project'}
                   className="w-full rounded-xl pl-9 pr-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
-                  style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
+                  style={{
+                    background: projectType === 'existing' && selectedReminder ? "rgba(220,38,38,0.05)" : "rgba(255,255,255,0.95)",
+                    border: projectType === 'existing' && selectedReminder ? "1px solid rgba(220,38,38,0.3)" : "1px solid rgba(0,0,0,0.12)",
+                    cursor: projectType === 'existing' && selectedReminder ? 'default' : 'text',
+                  }} />
               </div>
             </div>
             <div>
