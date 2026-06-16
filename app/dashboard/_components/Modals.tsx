@@ -11,6 +11,7 @@ import {
   NotifBellProps, AdminPanelModalProps,
   DISPLAY_BRANDS_DB, MIDDLEWARE_BRANDS_DB, BrandPicMappingDB,
 } from './shared';
+import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 
 interface AccountSettingsModalProps {
   onClose: () => void;
@@ -25,6 +26,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
   const [editPtsType, setEditPtsType] = useState('');
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [newUser, setNewUser] = useState({
     username: '',
     password: '',
@@ -179,12 +181,12 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     fetchUsers();
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Hapus akun ini?')) return;
-    const { error } = await supabase.from('users').delete().eq('id', userId);
-    if (error) { notify('error', 'Gagal menghapus akun.'); return; }
-    notify('success', 'Akun dihapus.');
-    fetchUsers();
+  const handleDeleteUser = (userId: string) => {
+    setConfirmState({ message: 'Hapus akun ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+      const { error } = await supabase.from('users').delete().eq('id', userId);
+      if (error) { notify('error', 'Gagal menghapus akun.'); return; }
+      notify('success', 'Akun dihapus.'); fetchUsers();
+    }});
   };
 
   function MenuPermissionSelector({ selected, target }: { selected: string[]; target: 'new' | 'edit' }) {
@@ -231,6 +233,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
 
   return (
     <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
         <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-8 py-6 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -904,6 +907,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
   const [userSupMaps, setUserSupMaps] = useState<{ id: string; user_id: string; supervisor_id: string }[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; msg: string } | null>(null);
   const [activeTab, setActiveTab] = useState<'atasan' | 'ivp' | 'user_cc'>('atasan');
   const [atasanDiv, setAtasanDiv] = useState('');
@@ -1005,10 +1009,11 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
     setSaving(false);
   };
 
-  const handleDeleteAtasan = async (id: string) => {
-    if (!confirm('Hapus mapping atasan ini?')) return;
-    await supabase.from('division_supervisor_mappings').delete().eq('id', id);
-    notify('success', 'Dihapus.'); await fetchAll();
+  const handleDeleteAtasan = (id: string) => {
+    setConfirmState({ message: 'Hapus mapping atasan ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+      await supabase.from('division_supervisor_mappings').delete().eq('id', id);
+      notify('success', 'Dihapus.'); await fetchAll();
+    }});
   };
 
   const handleAddIvp = async () => {
@@ -1022,10 +1027,11 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
     setSaving(false);
   };
 
-  const handleDeleteIvp = async (id: string) => {
-    if (!confirm('Hapus mapping IVP ini?')) return;
-    await supabase.from('division_ivp_mappings').delete().eq('id', id);
-    notify('success', 'Dihapus.'); await fetchAll();
+  const handleDeleteIvp = (id: string) => {
+    setConfirmState({ message: 'Hapus mapping IVP ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+      await supabase.from('division_ivp_mappings').delete().eq('id', id);
+      notify('success', 'Dihapus.'); await fetchAll();
+    }});
   };
 
   const jabatanBadge = (u: User | undefined) => {
@@ -1060,6 +1066,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
 
   return (
     <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col border border-slate-200">
 
         {/* Header */}
@@ -2494,6 +2501,7 @@ export function AccountSettingsInline() {
   const [newUser, setNewUser] = useState({
     username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: ALL_MENU_KEYS, divisi: '', pts_type: '',
   });
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [approvingUser, setApprovingUser] = useState<User | null>(null);
@@ -2549,14 +2557,15 @@ export function AccountSettingsInline() {
     setApprovingUser(null); setApproveMenus(ALL_MENU_KEYS); fetchUsers();
   };
 
-  const handleRejectUser = async (userId: string, name: string) => {
-    if (!confirm(`Tolak & hapus pendaftaran "${name}"?`)) return;
-    const { error } = await supabase.from('users').delete().eq('id', userId);
-    if (error) { notify('error', 'Gagal menolak.'); return; }
-    notify('success', `Pendaftaran ${name} ditolak.`);
-    const admin = getSession<User>();
-    logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'reject', module: 'user', target_id: userId, target_name: name }).catch(() => {});
-    fetchUsers();
+  const handleRejectUser = (userId: string, name: string) => {
+    setConfirmState({ message: `Tolak & hapus pendaftaran "${name}"?`, description: 'Tindakan ini tidak bisa dibatalkan.', danger: true, confirmLabel: 'Tolak', onConfirm: async () => {
+      const { error } = await supabase.from('users').delete().eq('id', userId);
+      if (error) { notify('error', 'Gagal menolak.'); return; }
+      notify('success', `Pendaftaran ${name} ditolak.`);
+      const admin = getSession<User>();
+      logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'reject', module: 'user', target_id: userId, target_name: name }).catch(() => {});
+      fetchUsers();
+    }});
   };
 
   const handleAddUser = async () => {
@@ -2611,11 +2620,12 @@ export function AccountSettingsInline() {
     setEditingUser(null); setEditDivisi(''); setEditPtsType(''); fetchUsers();
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Hapus akun ini?')) return;
-    const { error } = await supabase.from('users').delete().eq('id', userId);
-    if (error) { notify('error', 'Gagal menghapus akun.'); return; }
-    notify('success', 'Akun dihapus.'); fetchUsers();
+  const handleDeleteUser = (userId: string) => {
+    setConfirmState({ message: 'Hapus akun ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+      const { error } = await supabase.from('users').delete().eq('id', userId);
+      if (error) { notify('error', 'Gagal menghapus akun.'); return; }
+      notify('success', 'Akun dihapus.'); fetchUsers();
+    }});
   };
 
   function MenuPermissionSelector({ selected, target }: { selected: string[]; target: 'new' | 'edit' }) {
@@ -2650,6 +2660,7 @@ export function AccountSettingsInline() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
+      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       {notification && (
         <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 flex-shrink-0 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
           {notification.type === 'success' ? '✅' : '❌'} {notification.msg}
@@ -3025,6 +3036,7 @@ export function UserManagementInline() {
   const [userSupMaps, setUserSupMaps] = useState<{ id: string; user_id: string; supervisor_id: string }[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; msg: string } | null>(null);
   const [activeTab, setActiveTab] = useState<'atasan' | 'ivp' | 'user_cc'>('atasan');
   const [atasanDiv, setAtasanDiv] = useState('');
@@ -3103,10 +3115,11 @@ export function UserManagementInline() {
     setSaving(false);
   };
 
-  const handleDeleteAtasan = async (id: string) => {
-    if (!confirm('Hapus mapping atasan ini?')) return;
-    await supabase.from('division_supervisor_mappings').delete().eq('id', id);
-    notify('success', 'Dihapus.'); await fetchAll();
+  const handleDeleteAtasan = (id: string) => {
+    setConfirmState({ message: 'Hapus mapping atasan ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+      await supabase.from('division_supervisor_mappings').delete().eq('id', id);
+      notify('success', 'Dihapus.'); await fetchAll();
+    }});
   };
 
   const handleAddIvp = async () => {
@@ -3120,10 +3133,11 @@ export function UserManagementInline() {
     setSaving(false);
   };
 
-  const handleDeleteIvp = async (id: string) => {
-    if (!confirm('Hapus mapping IVP ini?')) return;
-    await supabase.from('division_ivp_mappings').delete().eq('id', id);
-    notify('success', 'Dihapus.'); await fetchAll();
+  const handleDeleteIvp = (id: string) => {
+    setConfirmState({ message: 'Hapus mapping IVP ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+      await supabase.from('division_ivp_mappings').delete().eq('id', id);
+      notify('success', 'Dihapus.'); await fetchAll();
+    }});
   };
 
   const jabatanBadge = (u: User | undefined) => {
@@ -3166,6 +3180,7 @@ export function UserManagementInline() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
+      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       {notification && (
         <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 flex-shrink-0 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : notification.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
           {notification.type === 'success' ? '✅' : notification.type === 'error' ? '❌' : 'ℹ️'} {notification.msg}

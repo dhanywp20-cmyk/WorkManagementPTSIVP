@@ -14,3 +14,4 @@ export { FormField, SectionHeader, SectionHeaderSmall, InfoRow, InfoLine } from 
 export { StarRating } from './StarRating';
 export { PageHeader } from './PageHeader';
 export { SalesPicker, type SalesPickerUser } from './SalesPicker';
+export { ConfirmDialog, type ConfirmState } from './ConfirmDialog';

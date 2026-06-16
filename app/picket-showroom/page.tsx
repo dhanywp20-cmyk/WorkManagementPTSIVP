@@ -11,7 +11,7 @@ import {
   JENIS_KEGIATAN_LIST, KEGIATAN_COLORS, PIE_COLORS,
   getMonday, addDays, toKey, getDayDate, getRollingNameForDate,
 } from './_components/shared';
-import { MiniPieChart, PageHeader } from '@/components/shared';
+import { MiniPieChart, PageHeader, ConfirmDialog, type ConfirmState } from '@/components/shared';
 import { TamuSummaryCards } from './_components/TamuSummaryCards';
 import { MiniCalendarPopup } from './_components/MiniCalendarPopup';
 import { FillDetailModal } from './_components/FillDetailModal';
@@ -50,6 +50,7 @@ function PiketShowroomPageInner() {
   const [filterKegiatan,setFilterKegiatan]=useState<string|null>(null);
   const [summaryYear,setSummaryYear]=useState<number>(new Date().getFullYear());
   const [summaryMonth,setSummaryMonth]=useState<number|null>(null);
+  const [confirmState,setConfirmState]=useState<ConfirmState|null>(null);
   const wk=toKey(weekStart);
 
   useEffect(()=>{ const u=getSession(); if(u) setCurrentUser(u as unknown as UserRow); },[]);
@@ -145,12 +146,19 @@ function PiketShowroomPageInner() {
     if(data){setFillDetail(data as PiketRow);fetchData();}
   },[fetchData]);
 
-  const handleDeleteRow = useCallback(async(row: PiketRow)=>{
-    if(!confirm(`Hapus semua kegiatan ${row.day_of_week}? Jadwal piket tetap ada.`)) return;
-    await supabase.from('piket_tamu_detail').delete().eq('piket_id',row.id);
-    void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? currentUser?.username ?? '', action: 'delete', module: 'picket-showroom', target_id: row.id, notes: `Hapus kegiatan ${row.day_of_week} ${row.day_date}` });
-    fetchData();
-  },[fetchData, currentUser]);
+  const handleDeleteRow = useCallback((row: PiketRow)=>{
+    setConfirmState({
+      message: `Hapus semua kegiatan ${row.day_of_week}?`,
+      description: 'Jadwal piket tetap ada.',
+      danger: true,
+      confirmLabel: 'Hapus',
+      onConfirm: async () => {
+        await supabase.from('piket_tamu_detail').delete().eq('piket_id',row.id);
+        void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? currentUser?.username ?? '', action: 'delete', module: 'picket-showroom', target_id: row.id, notes: `Hapus kegiatan ${row.day_of_week} ${row.day_date}` });
+        fetchData();
+      },
+    });
+  },[fetchData, currentUser, setConfirmState]);
 
   const formatTime = (timeStr:string) => {
     if(!timeStr) return '';
@@ -205,6 +213,7 @@ function PiketShowroomPageInner() {
 
   return(
     <div className="h-screen overflow-hidden flex flex-col relative" style={{backgroundImage:`url('/IVP_Background.png')`,backgroundSize:'cover',backgroundPosition:'center',backgroundAttachment:'fixed'}}>
+      <ConfirmDialog state={confirmState} onCancel={()=>setConfirmState(null)} />
       <div className="absolute inset-0 pointer-events-none" style={{background:'rgba(255,255,255,0.08)'}}/>
       {loading&&rows.length===0&&(
         <div className="fixed inset-0 z-[100] flex items-center justify-center" style={{backgroundImage:`url('/IVP_Background.png')`,backgroundSize:'cover'}}>

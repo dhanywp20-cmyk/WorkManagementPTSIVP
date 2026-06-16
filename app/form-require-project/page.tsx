@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { setSession, clearSession, getSession } from '@/lib/auth';
 import { notifyProjectStatusChange } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
-import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader } from '@/components/shared';
+import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, type ConfirmState } from '@/components/shared';
 import {
   User, ProjectRequest, RoomDetail, BrandPicMapping,
   ProjectMessage, ProjectAttachment,
@@ -102,6 +102,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
   const [bulkConfirm, setBulkConfirm] = useState(false);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [downloadingPackage, setDownloadingPackage] = useState(false);
   const [assignModal, setAssignModal] = useState<{ open: boolean; req: ProjectRequest | null }>({ open: false, req: null });
   // Pop-up notif tiket aktif (pending/in_progress) saat masuk platform
@@ -685,14 +686,20 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     finally { setSubmitting(false); }
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`Hapus ${selectedIds.size} request terpilih?`)) return;
-    setBulkDeleting(true);
-    const { error } = await supabase.from('project_requests').delete().in('id', Array.from(selectedIds));
-    if (!error) { setRequests(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); }
-    else notify('error', 'Gagal hapus: ' + error.message);
-    setBulkDeleting(false);
+    setConfirmState({
+      message: `Hapus ${selectedIds.size} request terpilih?`,
+      danger: true,
+      confirmLabel: 'Hapus',
+      onConfirm: async () => {
+        setBulkDeleting(true);
+        const { error } = await supabase.from('project_requests').delete().in('id', Array.from(selectedIds));
+        if (!error) { setRequests(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); }
+        else notify('error', 'Gagal hapus: ' + error.message);
+        setBulkDeleting(false);
+      },
+    });
   };
   const toggleSelectId = (id: string) => setSelectedIds(prev => {
     const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
@@ -1354,6 +1361,7 @@ Hubungi Admin untuk info lebih lanjut.
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-cover bg-center bg-fixed bg-no-repeat" style={{ backgroundImage: 'url(/IVP_Background.png)' }}>
+      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <NotifToast />
 
 

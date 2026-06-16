@@ -12,6 +12,7 @@ import {
 import {
   FormField, SectionHeader, StarRating, LoadingScreen, MiniPieChart,
   ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup,
+  ConfirmDialog, type ConfirmState,
 } from '@/components/shared';
 
 // ─── Main Component ────────────────────────────────────────────────────────────
@@ -49,6 +50,7 @@ export default function FormReviewPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
   const [bulkConfirm, setBulkConfirm] = useState(false);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
 
   // Switch tabs
   const [switchTab, setSwitchTab] = useState<'Demo Product' | 'BAST'>('Demo Product');
@@ -286,15 +288,16 @@ export default function FormReviewPage() {
     setShowFormModal(true);
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (selectedIds.size === 0) return;
     if (!isAdmin) { notify('error', 'Hanya admin yang bisa menghapus data.'); return; }
-    if (!window.confirm(`Hapus ${selectedIds.size} review terpilih?`)) return;
-    setBulkDeleting(true);
-    const { error } = await supabase.from('form_reviews').delete().in('id', Array.from(selectedIds));
-    if (!error) { setReviews(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); }
-    else notify('error', 'Gagal hapus: ' + error.message);
-    setBulkDeleting(false);
+    setConfirmState({ message: `Hapus ${selectedIds.size} review terpilih?`, danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+      setBulkDeleting(true);
+      const { error } = await supabase.from('form_reviews').delete().in('id', Array.from(selectedIds));
+      if (!error) { setReviews(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); }
+      else notify('error', 'Gagal hapus: ' + error.message);
+      setBulkDeleting(false);
+    }});
   };
   const toggleSelectId = (id: string) => setSelectedIds(prev => {
     const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
@@ -403,6 +406,7 @@ export default function FormReviewPage() {
       backgroundImage: `url('/IVP_Background.png')`,
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
+      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.08)' }} />
       <div className="relative z-10 flex flex-col flex-1 overflow-hidden">
 
