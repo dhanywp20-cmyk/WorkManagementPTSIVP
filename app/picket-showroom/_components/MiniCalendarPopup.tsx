@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { PiketRow, DayOfWeek, DAY_COLOR, DAYS_OF_WEEK, MONTH_NAMES, addDays, toKey, getRollingNameForDate } from './shared';
 
-export function MiniCalendarPopup({allRows,onClose}:{allRows:PiketRow[];onClose:()=>void}) {
+export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRow[];holidays?:string[];onClose:()=>void}) {
   const [calMonth,setCalMonth]=useState(()=>new Date());
   const y=calMonth.getFullYear(),m=calMonth.getMonth();
   const today=toKey(new Date());
@@ -61,16 +61,18 @@ export function MiniCalendarPopup({allRows,onClose}:{allRows:PiketRow[];onClose:
               : [];
             const dc=hasDB ? DAY_COLOR[dayRows[0].day_of_week] : null;
 
+            const isHoliday = holidays.includes(ds);
+
             // Rolling projection — ONLY shown for weekdays in the current month
-            // that have NO actual DB row. Uses the fixed rolling engine from shared.ts.
-            const showRolling = !hasDB && !isWeekend && inMonth;
-            const rollingName = showRolling ? getRollingNameForDate(date, allRows) : '';
+            // that have NO actual DB row. Uses the holiday-aware rolling engine.
+            const showRolling = !hasDB && !isWeekend && inMonth && !isHoliday;
+            const rollingName = showRolling ? getRollingNameForDate(date, allRows, holidays) : '';
             const rollingDow = DAYS_OF_WEEK[dow-1] as DayOfWeek|undefined;
             const rollingDc = rollingDow ? DAY_COLOR[rollingDow] : null;
 
             return(
               <div key={i} className="border-r border-b border-gray-100 p-1.5 min-h-[60px] relative"
-                style={{background:isT?'rgba(220,38,38,0.06)':!inMonth?'rgba(0,0,0,0.015)':'white'}}>
+                style={{background:isHoliday&&inMonth?'rgba(254,226,226,0.5)':isT?'rgba(220,38,38,0.06)':!inMonth?'rgba(0,0,0,0.015)':'white'}}>
                 <div className="w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold mb-1"
                   style={{
                     background:isT?'#dc2626':'transparent',
@@ -80,8 +82,14 @@ export function MiniCalendarPopup({allRows,onClose}:{allRows:PiketRow[];onClose:
                   {date.getDate()}
                 </div>
 
-                {/* Actual DB PIC names — always shown, always override */}
-                {hasDB && inMonth && dbPics.map((name,pi)=>(
+                {/* Holiday marker */}
+                {isHoliday && inMonth && (
+                  <div className="text-[8px] font-black px-1 py-0.5 rounded-full text-white mb-0.5 w-fit"
+                    style={{background:'#dc2626'}}>🎌 LIBUR</div>
+                )}
+
+                {/* Actual DB PIC names — hidden on holiday */}
+                {hasDB && inMonth && !isHoliday && dbPics.map((name,pi)=>(
                   <div key={pi} className="text-[9px] font-semibold leading-tight truncate px-0.5 py-0.5 rounded mb-0.5"
                     style={{color:dc?.accent||'#374151',background:`${dc?.accent||'#dc2626'}18`}}>
                     {name}
@@ -113,6 +121,10 @@ export function MiniCalendarPopup({allRows,onClose}:{allRows:PiketRow[];onClose:
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded" style={{background:'rgba(148,163,184,0.18)',opacity:0.75}}/>
             <span className="text-[10px] text-gray-400 font-medium">Proyeksi rolling (belum dikonfirmasi)</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full" style={{background:'#dc2626'}}/>
+            <span className="text-[10px] text-gray-400 font-medium">Hari libur</span>
           </div>
         </div>
       </div>

@@ -153,12 +153,8 @@ export default function Dashboard() {
       if (!allowed || roleLC === 'superadmin' || roleLC === 'admin') {
         setVisibleMenuItems(allMenuItems);
       } else {
-        // Preserve allowed_menus ORDER so sidebar matches auto-navigate target
-        // (allMenuItems.filter preserves allMenuItems order, not user priority order)
-        const ordered = allowed
-          .map((key: string) => allMenuItems.find(m => m.key === key))
-          .filter((m): m is MenuItem => m !== undefined);
-        setVisibleMenuItems(ordered);
+        // Always use allMenuItems order (code order), not allowed_menus DB order
+        setVisibleMenuItems(allMenuItems.filter(m => allowed.includes(m.key)));
       }
       setMenuLoading(false);
     }, 400);

@@ -591,7 +591,7 @@ function PiketShowroomPageInner() {
       {showSchedule&&isAdmin&&<ScheduleModal weekStart={weekStart} users={ptUsers} currentUser={currentUser} onClose={()=>setShowSchedule(false)} onSaved={fetchData}/>}
       {fillDetail&&<FillDetailModal row={fillDetail} onClose={()=>setFillDetail(null)} onSaved={fetchData} currentUser={currentUser}/>}
       {viewDetail&&<ViewDetailModal row={viewDetail} kegiatanList={kegiatanList} currentUser={currentUser} onClose={()=>setViewDetail(null)} onEdit={()=>{setViewDetail(null);setFillDetail(viewDetail);}}/>}
-      {showCalendar&&<MiniCalendarPopup allRows={allRows} onClose={()=>setShowCalendar(false)}/>}
+      {showCalendar&&<MiniCalendarPopup allRows={allRows} holidays={holidays} onClose={()=>setShowCalendar(false)}/>}
 
       <style>{`
         @keyframes scale-in{from{opacity:0;transform:scale(0.92)}to{opacity:1;transform:scale(1)}}
