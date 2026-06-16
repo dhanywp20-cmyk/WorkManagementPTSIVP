@@ -68,7 +68,13 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
   const fetchUsers = async () => {
     setLoadingUsers(true);
     const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,sales_division,jabatan,phone_number,allowed_menus,kpi_enabled').order('full_name');
-    if (!error && data) setUsers(data);
+    if (error) {
+      const { data: fallback } = await supabase.from('users').select('id,username,full_name,role,team_type,sales_division,jabatan,phone_number,allowed_menus').order('full_name');
+      if (fallback) setUsers(fallback);
+      else notify('error', `Gagal memuat akun: ${error.message}`);
+    } else if (data) {
+      setUsers(data);
+    }
     setLoadingUsers(false);
   };
 
@@ -2529,7 +2535,16 @@ export function AccountSettingsInline() {
   const fetchUsers = async () => {
     setLoadingUsers(true);
     const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type').order('full_name');
-    if (!error && data) {
+    if (error) {
+      // Fallback: try without extended columns (divisi/pts_type may not exist yet)
+      const { data: fallback, error: err2 } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled').order('full_name');
+      if (!err2 && fallback) {
+        setPendingUsers(fallback.filter((u: User) => u.team_type === 'Pending Approval'));
+        setUsers(fallback.filter((u: User) => u.team_type !== 'Pending Approval'));
+      } else {
+        notify('error', `Gagal memuat akun: ${err2?.message ?? error.message}`);
+      }
+    } else if (data) {
       setPendingUsers(data.filter((u: User) => u.team_type === 'Pending Approval'));
       setUsers(data.filter((u: User) => u.team_type !== 'Pending Approval'));
     }

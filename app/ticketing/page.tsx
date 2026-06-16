@@ -2663,7 +2663,7 @@ function TicketingSystemInner() {
 
         {/* ── TICKET DETAIL POPUP — detail kiri + update panel kanan ── */}
         {showTicketDetailPopup && selectedTicket && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-3 overflow-y-auto"
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-3"
             onClick={e => { if (e.target === e.currentTarget) { setShowTicketDetailPopup(false); setSelectedTicket(null); setShowUpdateForm(false); } }}>
             <div className="flex items-start gap-3 w-full my-2" style={{ maxWidth: showUpdateForm ? '1120px' : '720px', transition: 'max-width 0.2s' }}>
 
