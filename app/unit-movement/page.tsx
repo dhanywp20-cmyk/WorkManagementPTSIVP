@@ -278,7 +278,7 @@ function UnitMovementPageInner() {
                     <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Tgl Keluar</th>
                     <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Jatuh Tempo</th>
                     <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Kondisi</th>
-                    {isAdmin && <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-red-400">Aksi</th>}
+                    {isAdmin && <th className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-widest text-red-400">Aksi</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -286,7 +286,7 @@ function UnitMovementPageInner() {
                     const daysLate = Math.max(0, Math.round((new Date().getTime() - new Date(loan.expected_return_date!).getTime())/(24*60*60*1000)));
                     const typeLines = splitTypeLines(loan.type_barang);
                     return (
-                      <tr key={loan.id} className="hover:bg-red-50/40 transition-colors" style={{borderBottom:'1px solid #fef2f2'}}>
+                      <tr key={loan.id} className="hover:bg-red-50/40 transition-colors" style={{borderBottom:'1px solid #e5e7eb'}}>
                         <td className="px-4 py-2.5 text-xs font-semibold text-gray-800">{loan.project_name||'-'}</td>
                         <td className="px-4 py-2.5">
                           <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg">{loan.nama_pts||'-'}</span>
@@ -315,7 +315,7 @@ function UnitMovementPageInner() {
                             : <span className="text-[10px] text-gray-300">—</span>}
                         </td>
                         {isAdmin && (
-                          <td className="px-4 py-2.5">
+                          <td className="px-4 py-2.5 text-center">
                             <ActionGroup>
                               <ViewIconBtn onClick={()=>setViewLog(loan)} label="Lihat" />
                               <EditIconBtn onClick={()=>setEditLog(loan)} />
@@ -404,7 +404,7 @@ function UnitMovementPageInner() {
                   <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap w-24">Status</th>
                   <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap w-28">Event</th>
                   <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400" style={{minWidth:300}}>Type &amp; SN</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 w-36">Action</th>
+                  <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-widest text-gray-400 w-36">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -427,7 +427,7 @@ function UnitMovementPageInner() {
                   const isMasuk   = log.status_barang==='Masuk';
                   const typeLines = splitTypeLines(log.type_barang);
                   return (
-                    <tr key={log.id} className="stagger-item transition-colors hover:bg-amber-50/40" style={{borderBottom:'1px solid #f1f5f9'}}>
+                    <tr key={log.id} className="stagger-item transition-colors hover:bg-amber-50/40" style={{borderBottom:'1px solid #e5e7eb'}}>
                       <td className="px-3 py-3 text-xs font-bold text-gray-400">{idx+1}</td>
                       <td className="px-3 py-3 text-xs text-gray-600 whitespace-nowrap">{fmtDate(log.tanggal)}</td>
                       <td className="px-3 py-3">
@@ -468,7 +468,7 @@ function UnitMovementPageInner() {
                         )}
                       </td>
                       {/* Action */}
-                      <td className="px-1 py-3">
+                      <td className="px-1 py-3 text-center">
                         <ActionGroup>
                           <ViewIconBtn onClick={()=>setViewLog(log)} label="Lihat" />
                           {isAdmin&&<>
