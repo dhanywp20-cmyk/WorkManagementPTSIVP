@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { PiketRow, DayOfWeek, DAY_COLOR, DAYS_OF_WEEK, MONTH_NAMES, addDays, toKey, getRollingNameForDate } from './shared';
 
 export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRow[];holidays?:string[];onClose:()=>void}) {
@@ -14,12 +14,42 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
   const gridStart=new Date(y,m,1-startOffset);
   const gridCells:Date[]=Array.from({length:42},(_,i)=>addDays(gridStart,i));
 
-  // Map actual DB rows by date key — these are ground truth
+  // Map actual DB rows by date key
   const rowMap:Record<string,PiketRow[]>={};
   allRows.forEach(r=>{
     if(!rowMap[r.day_date]) rowMap[r.day_date]=[];
     rowMap[r.day_date].push(r);
   });
+
+  // Holiday cascade: same algorithm as main table — non-holiday rows inherit
+  // PICs in sequence (pool index only advances for non-holiday rows)
+  const gridStartKey = toKey(gridStart);
+  const gridEndKey = toKey(addDays(gridStart, 42));
+  const cascadedRowMap = useMemo(() => {
+    if (holidays.length === 0) return rowMap;
+    const holidaySet = new Set(holidays);
+    const gridSaved = allRows
+      .filter(r => r.day_date >= gridStartKey && r.day_date < gridEndKey)
+      .sort((a, b) => a.day_date.localeCompare(b.day_date));
+    if (gridSaved.length === 0) return rowMap;
+    const picPool = gridSaved.map(r => ({
+      pic_ivp_id: r.pic_ivp_id, pic_ivp_name: r.pic_ivp_name,
+      pic_ump_id: r.pic_ump_id, pic_ump_name: r.pic_ump_name,
+      pic_mlds_id: r.pic_mlds_id, pic_mlds_name: r.pic_mlds_name,
+    }));
+    let poolIdx = 0;
+    const newMap: Record<string, PiketRow[]> = { ...rowMap };
+    for (const row of gridSaved) {
+      if (holidaySet.has(row.day_date)) {
+        newMap[row.day_date] = [{ ...row, pic_ivp_id: null, pic_ivp_name: null, pic_ump_id: null, pic_ump_name: null, pic_mlds_id: null, pic_mlds_name: null }];
+      } else {
+        const pic = picPool[Math.min(poolIdx++, picPool.length - 1)];
+        newMap[row.day_date] = [{ ...row, ...pic }];
+      }
+    }
+    return newMap;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allRows, holidays, gridStartKey, gridEndKey]);
 
   const WEEK_DAYS=['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
 
@@ -51,8 +81,8 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
             const dow=date.getDay();
             const isWeekend=dow===0||dow===6;
 
-            // Actual saved rows for this date (ground truth)
-            const dayRows=rowMap[ds]||[];
+            // Actual saved rows for this date (cascade-adjusted)
+            const dayRows=cascadedRowMap[ds]||[];
             const hasDB=dayRows.length>0;
 
             // Names to display from actual DB rows
