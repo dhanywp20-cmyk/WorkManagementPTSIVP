@@ -228,7 +228,7 @@ function IncentivePTSPage() {
   };
 
   const fetchProjects = async () => {
-    let q = supabase.from('incentive_projects').select('*').order('created_at', { ascending: false }).limit(500);
+    let q = supabase.from('incentive_projects').select('*').order('created_at', { ascending: false }).order('id', { ascending: true }).limit(500);
     if (isTeamPTS && !isAdmin) {
       q = q.or(`handler_name.eq.${currentUser!.full_name},backup_names.cs.{"${currentUser!.full_name}"}`);
     }
