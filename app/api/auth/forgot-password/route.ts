@@ -20,7 +20,7 @@ function maskPhone(phone: string): string {
 }
 
 // Kirim WA via Supabase Edge Function swift-responder (sama seperti reminder-schedule)
-async function sendWA(target: string, message: string): Promise<boolean> {
+async function sendWA(target: string, message: string): Promise<{ ok: boolean; detail: string }> {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const anonKey    = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -34,10 +34,11 @@ async function sendWA(target: string, message: string): Promise<boolean> {
       body: JSON.stringify({ type: 'reminder_wa', target, message }),
     });
     const data = await res.json();
-    return data?.ok === true;
+    console.log('[forgot-password] WA response:', JSON.stringify(data));
+    return { ok: data?.ok === true, detail: JSON.stringify(data) };
   } catch (e) {
     console.error('[forgot-password] WA send error:', e);
-    return false;
+    return { ok: false, detail: String(e) };
   }
 }
 
@@ -111,14 +112,16 @@ export async function POST(request: NextRequest) {
       'Abaikan pesan ini jika kamu tidak meminta reset password.',
     ].join('\n');
 
-    const waSent = await sendWA(user.phone_number, waMsg);
+    const waResult = await sendWA(user.phone_number, waMsg);
 
     return NextResponse.json({
       success: true,
       maskedPhone: maskPhone(user.phone_number),
-      message: waSent
+      waSent: waResult.ok,
+      waDetail: waResult.detail,
+      message: waResult.ok
         ? `OTP dikirim ke WA ${maskPhone(user.phone_number)}`
-        : `OTP dibuat tapi WA gagal dikirim. Coba kirim ulang.`,
+        : `OTP dibuat, WA gagal: ${waResult.detail}`,
     });
 
   } catch (e) {
