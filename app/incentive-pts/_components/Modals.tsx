@@ -6,7 +6,7 @@ import { IncentiveProject, IncentiveDisbursement, IncentiveSetting, User } from 
 // Pajak 5% otomatis untuk jabatan Manager
 const MANAGER_TAX_PCT = 5;
 const isManagerJabatan = (jabatan?: string) => jabatan === 'Manager';
-import { Badge, fmtRp, fmtPct, fmtDate, fmtPeriode, inputCls, btnPrimary } from './shared';
+import { Badge, fmtRp, fmtPct, fmtDate, fmtPeriode, inputCls, btnPrimary, INCENTIVE_TRIGGER_CATEGORIES } from './shared';
 
 // ── 1. View Detail Modal ──────────────────────────────────────────────────────
 interface ViewModalProps {
@@ -45,7 +45,15 @@ export function ViewModal({
         >
           <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-sm">✕</button>
           <div>
-            <Badge color="purple" square>{project.category}</Badge>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge color="purple" square>{project.category}</Badge>
+              {project.mode_penyelesaian === 'onsite' && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">🏢 ONSITE</span>
+              )}
+              {project.mode_penyelesaian === 'remote' && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200">💻 REMOTE</span>
+              )}
+            </div>
             <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mt-2 mb-0.5">Nama Project</p>
             <h3 className="font-bold text-gray-800 text-base leading-snug">{project.project_name}</h3>
             <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mt-1.5 mb-0.5">Tanggal · Periode</p>
@@ -125,6 +133,25 @@ export function ViewModal({
             </div>
           </div>
 
+          {/* Installer (Remote only) */}
+          {project.mode_penyelesaian === 'remote' && project.installer_name && (
+            <div className="bg-white rounded-xl border border-blue-200 overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-blue-100" style={{ background: 'rgba(59,130,246,0.06)' }}>
+                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">💻 Installer Daerah (Remote)</p>
+              </div>
+              <div className="px-4 py-3 space-y-1">
+                <p className="text-sm font-semibold text-gray-800">{project.installer_name}</p>
+                {project.installer_daerah && <p className="text-xs text-gray-500">📍 {project.installer_daerah}</p>}
+                {project.installer_incentive_pct ? (
+                  <p className="text-xs text-blue-600 font-semibold mt-1">
+                    Incentive: {fmtPct(project.installer_incentive_pct)}
+                    {project.installer_incentive_nominal ? ` → ${fmtRp(project.installer_incentive_nominal)}` : ''}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          )}
+
           {/* Tim Backup */}
           {project.backup_names.length > 0 && (
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -152,19 +179,27 @@ export function ViewModal({
                   <p className="text-sm text-indigo-700 font-semibold">Biaya Cadangan</p>
                   <p className="text-base font-bold text-indigo-600">{fmtRp(project.biaya_cadangan)}</p>
                 </div>
-                {disbursements.map((d) => (
-                  <div key={d.id} className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm border ${d.role_type === 'handler' ? 'bg-indigo-50 border-indigo-200' : 'bg-blue-50 border-blue-200'}`}>
-                    <div className="flex items-center gap-2">
-                      <span>{d.role_type === 'handler' ? '⭐' : '🤝'}</span>
-                      <span className="font-semibold text-gray-700">{d.person_name}</span>
-                      <Badge color={d.role_type === 'handler' ? 'indigo' : 'blue'}>{d.role_type}</Badge>
+                {disbursements.map((d) => {
+                  const roleStyle = {
+                    handler:   { cls: 'bg-indigo-50 border-indigo-200', icon: '⭐', color: 'indigo' as const },
+                    backup:    { cls: 'bg-blue-50 border-blue-200',   icon: '🤝', color: 'blue' as const },
+                    installer: { cls: 'bg-sky-50 border-sky-200',     icon: '🔧', color: 'blue' as const },
+                    atasan:    { cls: 'bg-purple-50 border-purple-200', icon: '👔', color: 'purple' as const },
+                  }[d.role_type] ?? { cls: 'bg-gray-50 border-gray-200', icon: '•', color: 'gray' as const };
+                  return (
+                    <div key={d.id} className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm border ${roleStyle.cls}`}>
+                      <div className="flex items-center gap-2">
+                        <span>{roleStyle.icon}</span>
+                        <span className="font-semibold text-gray-700">{d.person_name}</span>
+                        <Badge color={roleStyle.color}>{d.role_type}</Badge>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-gray-500 text-xs mr-2">{fmtPct(d.pct)}</span>
+                        <span className="font-bold text-gray-800">{fmtRp(d.amount_rp)}</span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-gray-500 text-xs mr-2">{fmtPct(d.pct)}</span>
-                      <span className="font-bold text-gray-800">{fmtRp(d.amount_rp)}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {project.biaya_input_by && (
                   <p className="text-[11px] text-gray-400 px-1">
                     Diinput oleh {project.biaya_input_by} · {fmtDate(project.biaya_input_at)}
@@ -241,16 +276,50 @@ export function BiayaModal({
           <p className="font-semibold text-indigo-700">{project.project_name}</p>
           <p className="text-indigo-500 text-xs">{project.category} · Handler: {project.handler_name}</p>
         </div>
-        {settings && (
-          <div className="bg-gray-50 rounded-xl p-3 text-xs text-gray-500 space-y-1">
-            <p>⭐ Handler ({project.handler_name}): <strong className="text-gray-700">{fmtPct(settings.handler_pct)}</strong></p>
-            {project.backup_names.length > 0 ? (
-              <p>🤝 Backup ({project.backup_names.length} orang): <strong className="text-gray-700">{project.backup_names.join(', ')}</strong></p>
-            ) : (
-              <p className="text-amber-600">⚠️ Belum ada backup — 100% ke handler</p>
-            )}
-          </div>
-        )}
+        {settings && (() => {
+          const isIncentiveCat = (INCENTIVE_TRIGGER_CATEGORIES as string[]).includes(project.category);
+          const mode = project.mode_penyelesaian;
+          if (isIncentiveCat) {
+            if (!mode) return (
+              <div className="bg-amber-50 rounded-xl p-3 text-xs text-amber-700 border border-amber-200">
+                ⚠️ Mode penyelesaian (Onsite/Remote) belum dipilih. Lengkapi di reminder terlebih dahulu.
+              </div>
+            );
+            const backupCount = project.backup_names.length;
+            if (mode === 'onsite') return (
+              <div className="bg-emerald-50 rounded-xl p-3 text-xs text-gray-600 space-y-1 border border-emerald-200">
+                <p className="font-bold text-emerald-700 mb-1">🏢 Mode ONSITE — Distribusi Fixed:</p>
+                <p>⭐ {project.handler_name}: <strong>60%</strong></p>
+                {backupCount > 0
+                  ? project.backup_names.map(n => <p key={n}>🤝 {n}: <strong>{fmtPct(30 / backupCount)}</strong></p>)
+                  : <p className="text-amber-600">⚠️ Belum ada backup (30% unused)</p>}
+                <p>👔 Atasan: <strong>10%</strong></p>
+              </div>
+            );
+            const picPct = backupCount > 0 ? 60 : 70;
+            return (
+              <div className="bg-blue-50 rounded-xl p-3 text-xs text-gray-600 space-y-1 border border-blue-200">
+                <p className="font-bold text-blue-700 mb-1">💻 Mode REMOTE — Distribusi Fixed:</p>
+                <p>⭐ {project.handler_name}: <strong>{picPct}%</strong>{backupCount === 0 && <span className="text-blue-600"> (+10% karena tidak ada support)</span>}</p>
+                <p>🔧 Installer ({project.installer_name ?? '?'}): <strong>20%</strong></p>
+                {backupCount > 0
+                  ? project.backup_names.map(n => <p key={n}>🤝 {n}: <strong>{fmtPct(10 / backupCount)}</strong></p>)
+                  : <p className="text-gray-400">— Tidak ada support aktif</p>}
+                <p>👔 Atasan: <strong>10%</strong></p>
+              </div>
+            );
+          }
+          return (
+            <div className="bg-gray-50 rounded-xl p-3 text-xs text-gray-500 space-y-1">
+              <p>⭐ Handler ({project.handler_name}): <strong className="text-gray-700">{fmtPct(settings.handler_pct)}</strong></p>
+              {project.backup_names.length > 0 ? (
+                <p>🤝 Backup ({project.backup_names.length} orang): <strong className="text-gray-700">{project.backup_names.join(', ')}</strong></p>
+              ) : (
+                <p className="text-amber-600">⚠️ Belum ada backup — 100% ke handler</p>
+              )}
+            </div>
+          );
+        })()}
         <div>
           <label className="block text-xs font-semibold text-gray-600 mb-1.5">
             No. COS Project <span className="text-gray-400 font-normal">(opsional)</span>
@@ -271,25 +340,42 @@ export function BiayaModal({
               <p className="font-semibold text-indigo-700">Preview distribusi:</p>
               {(() => {
                 const base = parseFloat(biayaInput);
-                const handlerGross = base * settings.handler_pct / 100;
+                if (isNaN(base) || base <= 0) return null;
+                const isIncentiveCat = (INCENTIVE_TRIGGER_CATEGORIES as string[]).includes(project.category);
+                const mode = project.mode_penyelesaian;
                 const handlerUser = teamUsers.find(u => u.full_name === project.handler_name);
-                const handlerIsManager = isManagerJabatan(handlerUser?.jabatan);
-                const handlerNet = handlerIsManager ? handlerGross * (1 - MANAGER_TAX_PCT / 100) : handlerGross;
-                const backupGross = project.backup_names.length > 0
-                  ? base * settings.backup_pct / 100 / project.backup_names.length : 0;
-                return (
-                  <>
-                    <p>⭐ {project.handler_name}: <strong>{fmtRp(handlerNet)}</strong> ({fmtPct(settings.handler_pct)}){handlerIsManager && <span className="ml-1 text-amber-600 font-semibold">−{MANAGER_TAX_PCT}% pajak</span>}</p>
-                    {project.backup_names.map((b) => {
-                      const bu = teamUsers.find(u => u.full_name === b);
-                      const isManager = isManagerJabatan(bu?.jabatan);
-                      const net = isManager ? backupGross * (1 - MANAGER_TAX_PCT / 100) : backupGross;
-                      return (
-                        <p key={b}>🤝 {b}: <strong>{fmtRp(net)}</strong> ({fmtPct(settings.backup_pct / project.backup_names.length)}){isManager && <span className="ml-1 text-amber-600 font-semibold">−{MANAGER_TAX_PCT}% pajak</span>}</p>
-                      );
-                    })}
-                  </>
-                );
+                const backupCount = project.backup_names.length;
+                const tax = (amt: number, u?: User) => isManagerJabatan(u?.jabatan) ? amt * (1 - MANAGER_TAX_PCT / 100) : amt;
+
+                if (isIncentiveCat && mode === 'onsite') {
+                  const picAmt = tax(base * 60 / 100, handlerUser);
+                  const perBackup = backupCount > 0 ? base * 30 / 100 / backupCount : 0;
+                  return (<>
+                    <p>⭐ {project.handler_name}: <strong>{fmtRp(picAmt)}</strong> (60%){isManagerJabatan(handlerUser?.jabatan) && <span className="ml-1 text-amber-600">−{MANAGER_TAX_PCT}% pajak</span>}</p>
+                    {project.backup_names.map(b => { const u = teamUsers.find(u => u.full_name === b); return <p key={b}>🤝 {b}: <strong>{fmtRp(tax(perBackup, u))}</strong> ({fmtPct(30 / backupCount)}){isManagerJabatan(u?.jabatan) && <span className="ml-1 text-amber-600">−{MANAGER_TAX_PCT}% pajak</span>}</p>; })}
+                    <p>👔 Atasan: <strong>{fmtRp(base * 10 / 100 * (1 - MANAGER_TAX_PCT / 100))}</strong> (10% −pajak)</p>
+                  </>);
+                }
+                if (isIncentiveCat && mode === 'remote') {
+                  const picPct = backupCount > 0 ? 60 : 70;
+                  const picAmt = tax(base * picPct / 100, handlerUser);
+                  const instAmt = base * 20 / 100;
+                  const perSupport = backupCount > 0 ? base * 10 / 100 / backupCount : 0;
+                  return (<>
+                    <p>⭐ {project.handler_name}: <strong>{fmtRp(picAmt)}</strong> ({picPct}%){isManagerJabatan(handlerUser?.jabatan) && <span className="ml-1 text-amber-600">−{MANAGER_TAX_PCT}% pajak</span>}</p>
+                    <p>🔧 Installer ({project.installer_name ?? '?'}): <strong>{fmtRp(instAmt)}</strong> (20%)</p>
+                    {project.backup_names.map(b => { const u = teamUsers.find(u => u.full_name === b); return <p key={b}>🤝 {b}: <strong>{fmtRp(tax(perSupport, u))}</strong> ({fmtPct(10 / backupCount)}){isManagerJabatan(u?.jabatan) && <span className="ml-1 text-amber-600">−{MANAGER_TAX_PCT}% pajak</span>}</p>; })}
+                    <p>👔 Atasan: <strong>{fmtRp(base * 10 / 100 * (1 - MANAGER_TAX_PCT / 100))}</strong> (10% −pajak)</p>
+                  </>);
+                }
+                // Legacy
+                const handlerGross = base * settings.handler_pct / 100;
+                const handlerNet = tax(handlerGross, handlerUser);
+                const backupPer = backupCount > 0 ? base * settings.backup_pct / 100 / backupCount : 0;
+                return (<>
+                  <p>⭐ {project.handler_name}: <strong>{fmtRp(handlerNet)}</strong> ({fmtPct(settings.handler_pct)}){isManagerJabatan(handlerUser?.jabatan) && <span className="ml-1 text-amber-600 font-semibold">−{MANAGER_TAX_PCT}% pajak</span>}</p>
+                  {project.backup_names.map(b => { const u = teamUsers.find(u => u.full_name === b); const net = tax(backupPer, u); return <p key={b}>🤝 {b}: <strong>{fmtRp(net)}</strong> ({fmtPct(settings.backup_pct / backupCount)}){isManagerJabatan(u?.jabatan) && <span className="ml-1 text-amber-600 font-semibold">−{MANAGER_TAX_PCT}% pajak</span>}</p>; })}
+                </>);
               })()}
             </div>
           )}

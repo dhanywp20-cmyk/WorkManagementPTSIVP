@@ -95,6 +95,12 @@ export function ProjectsTab({
                     </td>
                     <td className={cellCls}>
                       <Badge color="purple" square>{proj.category}</Badge>
+                      {proj.mode_penyelesaian === 'onsite' && (
+                        <span className="mt-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 block w-fit">🏢 ONSITE</span>
+                      )}
+                      {proj.mode_penyelesaian === 'remote' && (
+                        <span className="mt-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200 block w-fit">💻 REMOTE</span>
+                      )}
                     </td>
                     <td className={cellCls}>
                       <p className="text-sm font-medium text-gray-700">{proj.handler_name}</p>

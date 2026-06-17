@@ -9,7 +9,7 @@ import * as XLSX from 'xlsx';
 import { User, IncentiveSetting, IncentiveProject, IncentiveDisbursement, ReminderRow, RekapItem } from './_components/types';
 import { logAudit } from '@/lib/audit';
 import { createNotification } from '@/lib/notifications';
-import { INCENTIVE_CATEGORIES, StatCard, fmtRp, fmtPct, fmtPeriode } from './_components/shared';
+import { INCENTIVE_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, StatCard, fmtRp, fmtPct, fmtPeriode } from './_components/shared';
 import { MiniPieChart } from '@/components/shared/MiniPieChart';
 import { ProjectsTab }  from './_components/ProjectsTab';
 import { RekapTab }     from './_components/RekapTab';
@@ -137,7 +137,7 @@ function IncentivePTSPage() {
   const doAutoSync = async () => {
     const { data: reminders } = await supabase
       .from('reminders')
-      .select('id,project_name,category,assign_name,assigned_to,sales_name,sales_division,due_date,status,description,notes,address,pic_name,pic_phone,product')
+      .select('id,project_name,category,assign_name,assigned_to,sales_name,sales_division,due_date,status,description,notes,address,pic_name,pic_phone,product,mode_penyelesaian,installer_name,installer_daerah')
       .in('category', INCENTIVE_CATEGORIES)
       .eq('status', 'done');
     if (!reminders?.length) return;
@@ -148,7 +148,7 @@ function IncentivePTSPage() {
 
     const { data: existing } = await supabase
       .from('incentive_projects')
-      .select('id,reminder_id,description,notes,address,product')
+      .select('id,reminder_id,description,notes,address,product,mode_penyelesaian,installer_name,installer_daerah')
       .not('reminder_id', 'is', null);
 
     const existingMap: Record<string, any> = {};
@@ -166,6 +166,9 @@ function IncentivePTSPage() {
           periode: r.due_date ? r.due_date.slice(0, 7) : new Date().toISOString().slice(0, 7),
           status: 'pending', description: r.description, notes: r.notes,
           address: r.address, pic_name: r.pic_name, pic_phone: r.pic_phone, product: r.product,
+          mode_penyelesaian: r.mode_penyelesaian ?? null,
+          installer_name: r.installer_name ?? null,
+          installer_daerah: r.installer_daerah ?? null,
         }))
       );
     }
@@ -173,7 +176,8 @@ function IncentivePTSPage() {
     // Backfill missing detail fields for existing projects
     const toBackfill = (existing ?? []).filter((p: any) =>
       p.reminder_id && reminderMap[p.reminder_id] &&
-      (!p.description || !p.notes || !p.address || !p.product)
+      (!p.description || !p.notes || !p.address || !p.product ||
+        (reminderMap[p.reminder_id].mode_penyelesaian && !p.mode_penyelesaian))
     );
     await Promise.all(toBackfill.map(async (p: any) => {
       const r = reminderMap[p.reminder_id];
@@ -182,6 +186,9 @@ function IncentivePTSPage() {
         notes: p.notes || r.notes || null,
         address: p.address || r.address || null,
         product: p.product || r.product || null,
+        mode_penyelesaian: p.mode_penyelesaian || r.mode_penyelesaian || null,
+        installer_name: p.installer_name || r.installer_name || null,
+        installer_daerah: p.installer_daerah || r.installer_daerah || null,
       }).eq('id', p.id);
     }));
   };
@@ -217,27 +224,96 @@ function IncentivePTSPage() {
   const createDisbursements = async (project: IncentiveProject) => {
     if (!settings || project.biaya_cadangan <= 0) return;
     await supabase.from('incentive_disbursements').delete().eq('project_id', project.id);
-    const handlerAmt   = (project.biaya_cadangan * settings.handler_pct) / 100;
-    const backupTotal  = (project.biaya_cadangan * settings.backup_pct) / 100;
-    const backupCount  = project.backup_names.length;
-    const backupPer    = backupCount > 0 ? backupTotal / backupCount : 0;
-    const handlerUser  = teamUsers.find((u) => u.full_name === project.handler_name);
-    const handlerNet   = isManagerJabatan(handlerUser?.jabatan)
-      ? Math.round(handlerAmt * (1 - MANAGER_TAX_PCT / 100)) : handlerAmt;
-    const rows: Omit<IncentiveDisbursement, 'id' | 'created_at'>[] = [
-      { project_id: project.id, person_name: project.handler_name,
+
+    const base = project.biaya_cadangan;
+    const isIncentiveCat = (INCENTIVE_TRIGGER_CATEGORIES as string[]).includes(project.category);
+    const mode = project.mode_penyelesaian;
+    const backupCount = project.backup_names.length;
+    const handlerUser = teamUsers.find((u) => u.full_name === project.handler_name);
+    const atasanUser  = teamUsers.find((u) => u.jabatan === 'Manager' && u.full_name !== project.handler_name);
+    const rows: Omit<IncentiveDisbursement, 'id' | 'created_at'>[] = [];
+
+    const netAmt = (amt: number, u?: User) =>
+      isManagerJabatan(u?.jabatan) ? Math.round(amt * (1 - MANAGER_TAX_PCT / 100)) : amt;
+
+    if (isIncentiveCat && (mode === 'onsite' || mode === 'remote')) {
+      if (mode === 'onsite') {
+        // PIC 60%, Support 30% (split), Atasan 10%
+        const picPct      = 60;
+        const supportPool = 30;
+        const atasanPct   = 10;
+        rows.push({ project_id: project.id, person_name: project.handler_name,
+          person_username: project.handler_username, role_type: 'handler',
+          pct: picPct, amount_rp: netAmt((base * picPct) / 100, handlerUser), periode: project.periode });
+        if (backupCount > 0) {
+          const perPct = supportPool / backupCount;
+          project.backup_names.forEach(name => {
+            const u = teamUsers.find(u => u.full_name === name);
+            rows.push({ project_id: project.id, person_name: name, person_username: u?.username,
+              role_type: 'backup', pct: perPct, amount_rp: netAmt((base * perPct) / 100, u), periode: project.periode });
+          });
+        }
+        if (atasanUser) {
+          rows.push({ project_id: project.id, person_name: atasanUser.full_name,
+            person_username: atasanUser.username, role_type: 'atasan',
+            pct: atasanPct, amount_rp: netAmt((base * atasanPct) / 100, atasanUser), periode: project.periode });
+          await supabase.from('incentive_projects').update({ atasan_name: atasanUser.full_name }).eq('id', project.id);
+        }
+
+      } else {
+        // Remote — PIC 60% (or 70% if no active support), Installer 20%, Support 10%, Atasan 10%
+        const picPct        = backupCount > 0 ? 60 : 70;
+        const installerPct  = 20;
+        const supportEachPct = backupCount > 0 ? 10 / backupCount : 0;
+        const atasanPct     = 10;
+
+        rows.push({ project_id: project.id, person_name: project.handler_name,
+          person_username: project.handler_username, role_type: 'handler',
+          pct: picPct, amount_rp: netAmt((base * picPct) / 100, handlerUser), periode: project.periode });
+
+        if (project.installer_name) {
+          const installerAmt = (base * installerPct) / 100;
+          rows.push({ project_id: project.id, person_name: project.installer_name,
+            person_username: undefined, role_type: 'installer',
+            pct: installerPct, amount_rp: installerAmt, periode: project.periode });
+          await supabase.from('incentive_projects').update({
+            installer_incentive_pct: installerPct, installer_incentive_nominal: installerAmt,
+          }).eq('id', project.id);
+        }
+
+        if (backupCount > 0) {
+          project.backup_names.forEach(name => {
+            const u = teamUsers.find(u => u.full_name === name);
+            rows.push({ project_id: project.id, person_name: name, person_username: u?.username,
+              role_type: 'backup', pct: supportEachPct,
+              amount_rp: netAmt((base * supportEachPct) / 100, u), periode: project.periode });
+          });
+        }
+
+        if (atasanUser) {
+          rows.push({ project_id: project.id, person_name: atasanUser.full_name,
+            person_username: atasanUser.username, role_type: 'atasan',
+            pct: atasanPct, amount_rp: netAmt((base * atasanPct) / 100, atasanUser), periode: project.periode });
+          await supabase.from('incentive_projects').update({ atasan_name: atasanUser.full_name }).eq('id', project.id);
+        }
+      }
+
+    } else {
+      // Legacy — use settings.handler_pct / settings.backup_pct
+      const handlerAmt = (base * settings.handler_pct) / 100;
+      const backupPer  = backupCount > 0 ? (base * settings.backup_pct) / 100 / backupCount : 0;
+      rows.push({ project_id: project.id, person_name: project.handler_name,
         person_username: project.handler_username, role_type: 'handler',
-        pct: settings.handler_pct, amount_rp: handlerNet, periode: project.periode },
-      ...project.backup_names.map((name) => {
-        const u = teamUsers.find((u) => u.full_name === name);
-        const netAmt = isManagerJabatan(u?.jabatan)
-          ? Math.round(backupPer * (1 - MANAGER_TAX_PCT / 100)) : backupPer;
-        return { project_id: project.id, person_name: name, person_username: u?.username,
-          role_type: 'backup' as const, pct: backupCount > 0 ? settings.backup_pct / backupCount : 0,
-          amount_rp: netAmt, periode: project.periode };
-      }),
-    ];
-    await supabase.from('incentive_disbursements').insert(rows);
+        pct: settings.handler_pct, amount_rp: netAmt(handlerAmt, handlerUser), periode: project.periode });
+      project.backup_names.forEach(name => {
+        const u = teamUsers.find(u => u.full_name === name);
+        rows.push({ project_id: project.id, person_name: name, person_username: u?.username,
+          role_type: 'backup', pct: backupCount > 0 ? settings.backup_pct / backupCount : 0,
+          amount_rp: netAmt(backupPer, u), periode: project.periode });
+      });
+    }
+
+    if (rows.length) await supabase.from('incentive_disbursements').insert(rows);
   };
 
   const saveBiaya = async () => {

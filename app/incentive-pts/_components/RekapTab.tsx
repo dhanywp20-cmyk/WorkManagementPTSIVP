@@ -28,10 +28,12 @@ function getQuarterLabel(key: string): string {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface PersonRekap {
-  name: string;
-  handlerCount: number;
-  backupCount : number;
-  totalRp     : number;
+  name          : string;
+  handlerCount  : number;
+  backupCount   : number;
+  installerCount: number;
+  atasanCount   : number;
+  totalRp       : number;
 }
 
 interface QuarterGroup {
@@ -108,12 +110,14 @@ export function RekapTab({ projects, disbursements, isTeamPTS, isAdmin, currentU
         g.totalIncentive += d.amount_rp;
         let person = g.persons.find((p) => p.name === d.person_name);
         if (!person) {
-          person = { name: d.person_name, handlerCount: 0, backupCount: 0, totalRp: 0 };
+          person = { name: d.person_name, handlerCount: 0, backupCount: 0, installerCount: 0, atasanCount: 0, totalRp: 0 };
           g.persons.push(person);
         }
         person.totalRp += d.amount_rp;
         if (d.role_type === 'handler') person.handlerCount++;
-        else person.backupCount++;
+        else if (d.role_type === 'backup') person.backupCount++;
+        else if (d.role_type === 'installer') person.installerCount++;
+        else if (d.role_type === 'atasan') person.atasanCount++;
       }
     }
 
@@ -235,9 +239,11 @@ export function RekapTab({ projects, disbursements, isTeamPTS, isAdmin, currentU
                                     style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#6366f1,#8b5cf6)' }}
                                   />
                                 </div>
-                                <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                                  {person.handlerCount > 0 && <span>H:{person.handlerCount} </span>}
-                                  {person.backupCount  > 0 && <span>B:{person.backupCount}</span>}
+                                <span className="text-[10px] text-gray-400 whitespace-nowrap flex gap-1">
+                                  {person.handlerCount   > 0 && <span>H:{person.handlerCount}</span>}
+                                  {person.backupCount    > 0 && <span>B:{person.backupCount}</span>}
+                                  {person.installerCount > 0 && <span className="text-sky-500">INS:{person.installerCount}</span>}
+                                  {person.atasanCount    > 0 && <span className="text-purple-500">MGR:{person.atasanCount}</span>}
                                 </span>
                               </div>
                             </div>
