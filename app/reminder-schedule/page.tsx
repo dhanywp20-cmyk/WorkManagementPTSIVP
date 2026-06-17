@@ -565,15 +565,55 @@ function ReminderSchedulePageInner() {
       if (!installerName.trim()) { notify('error', 'Nama Installer wajib diisi untuk mode Remote!'); return; }
       if (!installerDaerah.trim()) { notify('error', 'Daerah Installer wajib diisi untuk mode Remote!'); return; }
     }
+    // snapshot sebelum state berubah
+    const snap = detailReminder;
+    const reminderId = snap.id;
+    const modeVal = modePenyelesaian;
+    const installerNameVal = installerName.trim();
+    const installerDaerahVal = installerDaerah.trim();
+
     setSavingMode(true);
     await supabase.from('reminders').update({
-      mode_penyelesaian: modePenyelesaian,
-      installer_name: modePenyelesaian === 'remote' ? installerName.trim() : null,
-      installer_daerah: modePenyelesaian === 'remote' ? installerDaerah.trim() : null,
-    }).eq('id', detailReminder.id);
+      mode_penyelesaian: modeVal,
+      installer_name: modeVal === 'remote' ? installerNameVal : null,
+      installer_daerah: modeVal === 'remote' ? installerDaerahVal : null,
+    }).eq('id', reminderId);
     setShowModeModal(false);
     setSavingMode(false);
-    await handleStatusChange(detailReminder.id, 'done', pendingPhotoUrl);
+    await handleStatusChange(reminderId, 'done', pendingPhotoUrl);
+
+    // Langsung insert ke incentive_projects tanpa nunggu doAutoSync
+    const { data: existingIp } = await supabase
+      .from('incentive_projects')
+      .select('id')
+      .eq('reminder_id', reminderId)
+      .maybeSingle();
+    if (!existingIp) {
+      await supabase.from('incentive_projects').insert({
+        reminder_id: reminderId,
+        project_name: snap.project_name,
+        category: snap.category,
+        sales_name: snap.sales_name,
+        sales_division: snap.sales_division,
+        due_date: snap.due_date,
+        handler_name: snap.assign_name ?? '',
+        handler_username: snap.assigned_to ?? '',
+        backup_names: [],
+        biaya_cadangan: 0,
+        periode: snap.due_date ? snap.due_date.slice(0, 7) : new Date().toISOString().slice(0, 7),
+        status: 'pending',
+        description: snap.description,
+        notes: snap.notes,
+        address: snap.address,
+        pic_name: snap.pic_name,
+        pic_phone: snap.pic_phone,
+        product: snap.product,
+        mode_penyelesaian: modeVal,
+        installer_name: modeVal === 'remote' ? installerNameVal : null,
+        installer_daerah: modeVal === 'remote' ? installerDaerahVal : null,
+      });
+    }
+
     setPendingStatus(null);
     setStatusPhoto(null);
     setStatusPhotoPreview(null);
