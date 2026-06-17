@@ -5,8 +5,6 @@ import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
-const MAX_ATTEMPTS   = 5;
-const WINDOW_MINUTES = 15;
 const SESSION_HOURS  = 6;
 
 function hashToken(token: string): string {
@@ -33,22 +31,6 @@ export async function POST(request: NextRequest) {
     const { username, password } = await request.json();
     if (!username || !password) {
       return NextResponse.json({ error: 'Username dan password wajib diisi.' }, { status: 400 });
-    }
-
-    // ── Rate limiting ─────────────────────────────────────────────────────
-    const windowCutoff = new Date(Date.now() - WINDOW_MINUTES * 60 * 1000).toISOString();
-    const { count: failCount } = await supabase
-      .from('login_attempts')
-      .select('*', { count: 'exact', head: true })
-      .or(`username.eq.${username},ip_address.eq.${ip}`)
-      .eq('success', false)
-      .gte('attempted_at', windowCutoff);
-
-    if ((failCount ?? 0) >= MAX_ATTEMPTS) {
-      return NextResponse.json(
-        { error: `Terlalu banyak percobaan login. Coba lagi dalam ${WINDOW_MINUTES} menit.` },
-        { status: 429 }
-      );
     }
 
     // ── Ambil user ────────────────────────────────────────────────────────
