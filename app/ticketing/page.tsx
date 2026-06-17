@@ -752,7 +752,10 @@ function TicketingSystemInner() {
             ].join("\n");
             await sendWANotif({ type: "reminder_wa", target: handlerInfo.phone_number, message: waMsg });
           }
-        } catch { }
+        } catch (err: any) {
+          console.warn('[ticket] WA to handler (new ticket) failed:', err?.message);
+          notify('error', 'WA ke handler gagal dikirim. Ticket berhasil disimpan.');
+        }
       }
 
       setNewTicket({
@@ -858,7 +861,10 @@ function TicketingSystemInner() {
           ].join("\n");
           await sendWANotif({ type: "reminder_wa", target: handlerUser.phone_number, message: waMsg });
         }
-      } catch { }
+      } catch (err: any) {
+        console.warn('[ticket] WA to handler (approval) failed:', err?.message);
+        notify('error', 'WA ke handler gagal dikirim. Ticket berhasil di-approve.');
+      }
       // ── CC ke atasan + IVP berdasarkan divisi creator ticket ──
       try {
         const creatorUser = approvalTicket.created_by ? users.find((u) => u.username === approvalTicket.created_by) : null;

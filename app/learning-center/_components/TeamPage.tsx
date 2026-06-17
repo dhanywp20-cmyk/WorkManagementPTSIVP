@@ -203,7 +203,7 @@ export function TeamPage() {
         <SearchInput value={search} onChange={setSearch} placeholder="Cari anggota..." />
       </div>
       <div className="p-8">
-        <div className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
+        <div className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto"
           style={{ background: '#ffffff' }}>
           <table className="w-full text-sm table-zebra">
             <thead className="border-b border-slate-200" style={{ background: 'rgba(248,250,252,0.98)' }}>

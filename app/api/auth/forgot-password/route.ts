@@ -59,6 +59,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Username wajib diisi.' }, { status: 400 });
     }
 
+    // ── Rate limiting: max 3 request OTP per jam per username ────────────
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: recentCount } = await supabase
+      .from('password_reset_otps')
+      .select('*', { count: 'exact', head: true })
+      .ilike('username', username.trim())
+      .gte('created_at', oneHourAgo);
+
+    if ((recentCount ?? 0) >= 3) {
+      return NextResponse.json({
+        error: 'Terlalu banyak permintaan OTP. Coba lagi dalam 1 jam.',
+      }, { status: 429 });
+    }
+
     const { data: user } = await supabase
       .from('users')
       .select('id, username, full_name, phone_number')

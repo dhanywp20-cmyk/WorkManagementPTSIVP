@@ -65,6 +65,7 @@ export interface ProjectRequest {
   brand_middleware?: string;
   brand_middleware_pic_id?: string;
   brand_middleware_pic_name?: string;
+  rejection_reason?: string;
 }
 
 export interface RoomDetail {

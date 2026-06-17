@@ -715,10 +715,21 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
   const handleReject = (req: ProjectRequest) => { setRejectNote(''); setRejectModal({ open: true, req }); };
 
+  const handleResubmit = async (req: ProjectRequest) => {
+    const { error } = await supabase.from('project_requests').update({ status: 'pending', rejection_reason: null }).eq('id', req.id);
+    if (error) { notify('error', 'Gagal re-submit: ' + error.message); return; }
+    notify('success', 'Request berhasil di-submit ulang!');
+    await supabase.from('project_messages').insert([{ request_id: req.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `🔄 Request di-submit ulang oleh ${currentUser.full_name}.` }]);
+    fetchRequests();
+    if (selectedRequest?.id === req.id) fetchMessages(req.id);
+    logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'resubmit', module: 'project', target_id: req.id, target_name: req.project_name }).catch(() => {});
+  };
+
   const handleRejectConfirm = async () => {
     const req = rejectModal.req;
     if (!req) return;
-    const { error } = await supabase.from('project_requests').update({ status: 'rejected' }).eq('id', req.id);
+    if (!rejectNote.trim()) { notify('error', 'Alasan penolakan wajib diisi!'); return; }
+    const { error } = await supabase.from('project_requests').update({ status: 'rejected', rejection_reason: rejectNote.trim() }).eq('id', req.id);
     if (error) { notify('error', 'Gagal reject.'); return; }
     notify('info', 'Request ditolak.');
     setRejectModal({ open: false, req: null });
@@ -1899,7 +1910,7 @@ Hubungi Admin untuk info lebih lanjut.
               <p className="text-red-100 text-xs mt-0.5">{rejectModal.req.project_name}</p>
             </div>
             <div className="p-6">
-              <label className="block text-sm font-bold text-gray-700 mb-2">Alasan penolakan (opsional):</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Alasan penolakan <span className="text-red-500">*</span></label>
               <textarea value={rejectNote} onChange={e => setRejectNote(e.target.value)} rows={3} placeholder="Tuliskan alasan penolakan..."
                 className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-red-400 transition-all outline-none resize-none mb-4" />
               <div className="flex gap-3">
@@ -2178,6 +2189,29 @@ Hubungi Admin untuk info lebih lanjut.
                 <div>
                   <p className="text-sm font-bold text-amber-800">Sales Division belum diset di akun kamu!</p>
                   <p className="text-xs text-amber-700 mt-0.5">Hubungi admin untuk set <strong>Sales Division</strong> di profil akunmu. Tanpa ini, request tidak bisa di-link ke IVP Sales internal.</p>
+                </div>
+              </div>
+            )}
+
+            {/* Rejection reason banner */}
+            {selectedRequest.status === 'rejected' && (
+              <div className="mx-4 my-2 px-4 py-3 rounded-xl flex items-start gap-3 border-2 border-red-300" style={{ background: 'rgba(254,226,226,0.9)' }}>
+                <span className="text-2xl flex-shrink-0 mt-0.5">❌</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-red-800">Request ini ditolak</p>
+                  {selectedRequest.rejection_reason && (
+                    <p className="text-xs text-red-700 mt-1">
+                      <strong>Alasan:</strong> {selectedRequest.rejection_reason}
+                    </p>
+                  )}
+                  {!isPTS && (
+                    <button
+                      onClick={() => handleResubmit(selectedRequest)}
+                      className="mt-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg transition-all"
+                    >
+                      🔄 Submit Ulang Request
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -2762,7 +2796,7 @@ Hubungi Admin untuk info lebih lanjut.
                     </div>
                   )}
                   {selectedRequest.status === 'rejected' ? (
-                    <div className="text-center text-xs font-bold text-red-500 bg-red-50 border border-red-200 rounded-xl py-3">Request ini ditolak. Chat tidak tersedia.</div>
+                    <div className="text-center text-xs font-bold text-red-500 bg-red-50 border border-red-200 rounded-xl py-3">Request ditolak. Chat tidak tersedia.{!isPTS && <span className="block mt-1 font-normal text-red-400">Klik &quot;Submit Ulang Request&quot; di atas untuk mengajukan ulang.</span>}</div>
                   ) : selectedRequest.status === 'pending' ? (
                     <div className="text-center text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-xl py-3">🔒 Chat tersedia setelah di-approve.</div>
                   ) : (

@@ -270,7 +270,9 @@ export default function Dashboard() {
     const { full_name, username, password, confirm_password, divisi, pts_type, sales_division } = registerForm;
     if (!full_name.trim()) { setRegisterErr('Nama lengkap wajib diisi!'); return; }
     if (!username.trim()) { setRegisterErr('Email / username wajib diisi!'); return; }
-    if (!password || password.length < 6) { setRegisterErr('Password minimal 6 karakter!'); return; }
+    if (!password || password.length < 8) { setRegisterErr('Password minimal 8 karakter!'); return; }
+    if (!/[A-Z]/.test(password)) { setRegisterErr('Password harus mengandung minimal 1 huruf kapital!'); return; }
+    if (!/[0-9]/.test(password)) { setRegisterErr('Password harus mengandung minimal 1 angka!'); return; }
     if (password !== confirm_password) { setRegisterErr('Konfirmasi password tidak cocok!'); return; }
     if (!divisi) { setRegisterErr('Pilih divisi!'); return; }
     if (divisi === 'PTS' && !pts_type) { setRegisterErr('Pilih tipe PTS!'); return; }
@@ -586,6 +588,42 @@ export default function Dashboard() {
     );
   }
 
+  function AnalyticsIframe() {
+    const [iframeState, setIframeState] = useState<'loading' | 'ready' | 'error'>('loading');
+    return (
+      <div style={{ animation: 'fadeInUp 0.35s ease forwards', opacity: 0, height: '85vh', position: 'relative' }}>
+        {iframeState === 'loading' && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/10 rounded-3xl z-10">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.3)', borderTopColor: '#e2a84b' }} />
+              <p className="text-white/70 text-sm">Memuat analytics...</p>
+            </div>
+          </div>
+        )}
+        {iframeState === 'error' && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/5 rounded-3xl z-10">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <span className="text-4xl">📊</span>
+              <p className="text-white/80 font-semibold">Analytics tidak dapat dimuat</p>
+              <p className="text-white/50 text-sm">Coba refresh halaman</p>
+              <button onClick={() => setIframeState('loading')} className="mt-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all">
+                Coba Lagi
+              </button>
+            </div>
+          </div>
+        )}
+        <iframe
+          src="/analytics-dashboard"
+          className="w-full h-full border-0 rounded-3xl overflow-hidden"
+          style={{ boxShadow: '0 4px 32px rgba(0,0,0,0.12)', opacity: iframeState === 'ready' ? 1 : 0, transition: 'opacity 0.3s' }}
+          title="Analytics Dashboard"
+          onLoad={() => setIframeState('ready')}
+          onError={() => setIframeState('error')}
+        />
+      </div>
+    );
+  }
+
   const renderMenuCard = (menu: MenuItem, index: number, accentColor: string) => {
     const isSingleInternal = menu.items.length === 1 && menu.items[0].internal;
     return (
@@ -722,7 +760,7 @@ export default function Dashboard() {
                         <div>
                           <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Password *</label>
                           <input type="password" value={registerForm.password} onChange={e => setRegisterForm({ ...registerForm, password: e.target.value })}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="min. 6 karakter" />
+                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="min. 8 karakter, ada kapital & angka" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Konfirmasi Password *</label>
@@ -992,15 +1030,7 @@ export default function Dashboard() {
               <>
                 {/* ── Analytics Dashboard — admin, PTS sup, sales sup ── */}
                 {canAccessKPI && currentUser && (
-                  <div
-                    style={{ animation: "fadeInUp 0.35s ease forwards", opacity: 0, height: '85vh' }}>
-                    <iframe
-                      src="/analytics-dashboard"
-                      className="w-full h-full border-0 rounded-3xl overflow-hidden"
-                      style={{ boxShadow: '0 4px 32px rgba(0,0,0,0.12)' }}
-                      title="Analytics Dashboard"
-                    />
-                  </div>
+                  <AnalyticsIframe />
                 )}
 				{/* ── Learning Center section (BARU) ── */}
                 {learningMenuItems.length > 0 && (

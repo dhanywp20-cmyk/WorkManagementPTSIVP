@@ -494,10 +494,15 @@ function ReminderSchedulePageInner() {
                   }
                 }
               }
-            } catch { }
+            } catch (err: any) {
+              console.warn('[reminder] form-review creation/WA to guest failed:', err?.message);
+            }
           }
         }
-      } catch { }
+      } catch (err: any) {
+        console.warn('[reminder] WA to handler failed:', err?.message);
+        notify('error', 'WA ke handler gagal dikirim. Status berhasil disimpan.');
+      }
     }
     // ─────────────────────────────────────────────────────────────────────
     fetchRemindersQuiet();

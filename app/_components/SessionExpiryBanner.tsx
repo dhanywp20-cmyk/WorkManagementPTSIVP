@@ -3,12 +3,12 @@
 import { useEffect, useState } from 'react';
 import { SESSION_DURATION_MS } from '@/lib/constants';
 
-const WARN_BEFORE_MS = 5 * 60 * 1000; // tampilkan peringatan 5 menit sebelum expired
+const WARN_BEFORE_MS  = 5 * 60 * 1000;
 const CHECK_INTERVAL_MS = 30_000;
 
 export default function SessionExpiryBanner() {
   const [minutesLeft, setMinutesLeft] = useState<number | null>(null);
-  const [extended, setExtended] = useState(false);
+  const [extended, setExtended]       = useState(false);
 
   useEffect(() => {
     const check = () => {
@@ -27,7 +27,6 @@ export default function SessionExpiryBanner() {
         }
       } catch { }
     };
-
     check();
     const id = setInterval(check, CHECK_INTERVAL_MS);
     return () => clearInterval(id);
@@ -49,12 +48,27 @@ export default function SessionExpiryBanner() {
 
   if (minutesLeft === 0) {
     return (
-      <div className="fixed top-0 left-0 right-0 z-[500] bg-red-600 text-white px-4 py-2.5 flex items-center justify-center gap-3 text-sm font-semibold shadow-lg">
-        <span>⏰ Sesi Anda telah berakhir. Silakan login ulang.</span>
-        <button onClick={() => { window.location.href = '/dashboard'; }} className="bg-white text-red-600 px-3 py-1 rounded-lg text-xs font-bold hover:bg-red-50 transition-all">
-          Login Ulang
-        </button>
-      </div>
+      <>
+        {/* Overlay blok semua interaksi saat sesi expired */}
+        <div
+          className="fixed inset-0 z-[499] bg-black/30 cursor-not-allowed"
+          onClick={e => e.stopPropagation()}
+          style={{ pointerEvents: 'all' }}
+        />
+        <div className="fixed top-0 left-0 right-0 z-[500] bg-red-600 text-white px-4 py-3 flex items-center justify-center gap-3 text-sm font-semibold shadow-lg">
+          <span>⏰ Sesi Anda telah berakhir. Silakan login ulang.</span>
+          <button
+            onClick={() => {
+              sessionStorage.removeItem('ivp_login_time');
+              sessionStorage.removeItem('ivp_user');
+              window.location.href = '/dashboard';
+            }}
+            className="bg-white text-red-600 px-3 py-1 rounded-lg text-xs font-bold hover:bg-red-50 transition-all"
+          >
+            Login Ulang
+          </button>
+        </div>
+      </>
     );
   }
 
