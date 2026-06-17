@@ -1765,7 +1765,7 @@ jangan lupa peralatan & Semangat💪🏼
                       </button>
                       <button
                         onClick={handleConfirmStatusUpdate}
-                        disabled={updatingStatus || (pendingStatus === 'done' && !statusPhoto)}
+                        disabled={updatingStatus}
                         className="flex-1 py-2 rounded-xl text-xs font-bold text-white transition-all flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{ background: 'linear-gradient(135deg,#059669,#047857)', boxShadow: '0 3px 12px rgba(5,150,105,0.35)' }}>
                         {updatingStatus
@@ -2520,13 +2520,6 @@ jangan lupa peralatan & Semangat💪🏼
                       placeholder="Contoh: Surabaya, Bandung, Medan..."
                       className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
                   </div>
-                  <p className="text-[11px] text-blue-600">💡 Installer daerah mendapat <strong>20%</strong> dari incentive project ini.</p>
-                </div>
-              )}
-
-              {modePenyelesaian === 'onsite' && (
-                <div className="p-3 rounded-xl text-xs text-emerald-700" style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                  ✅ Mode Onsite: PIC 60% · Support 30% · Atasan 10%
                 </div>
               )}
 
