@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
     const { data: user } = await supabase
       .from('users')
       .select('id, username, full_name, phone_number')
-      .eq('username', username.trim().toLowerCase())
-      .single();
+      .ilike('username', username.trim())
+      .maybeSingle();
 
     if (!user) {
       return NextResponse.json({
@@ -91,11 +91,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Fonnte token belum dikonfigurasi.' }, { status: 500 });
     }
 
+    const normalizedUsername = user.username; // pakai nilai persis dari DB
+
     // Hapus OTP lama
     await supabase
       .from('password_reset_otps')
       .delete()
-      .eq('username', username.trim().toLowerCase())
+      .eq('username', normalizedUsername)
       .eq('used', false);
 
     const otp      = generateOTP();
@@ -103,7 +105,7 @@ export async function POST(request: NextRequest) {
     const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000).toISOString();
 
     const { error: insertErr } = await supabase.from('password_reset_otps').insert({
-      username:   username.trim().toLowerCase(),
+      username:   normalizedUsername,
       otp_hash:   otpHash,
       expires_at: expiresAt,
     });
