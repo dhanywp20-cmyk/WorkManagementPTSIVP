@@ -19,25 +19,30 @@ function maskPhone(phone: string): string {
   return phone.slice(0, 4) + '****' + phone.slice(-3);
 }
 
-// Kirim WA via Supabase Edge Function swift-responder (sama seperti reminder-schedule)
-async function sendWA(target: string, message: string): Promise<{ ok: boolean; detail: string }> {
+// Panggil Fonnte langsung — tidak perlu swift-responder sebagai perantara
+async function sendFonnteWA(
+  target: string,
+  message: string,
+  token: string
+): Promise<{ ok: boolean; detail: string }> {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const anonKey    = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    const res = await fetch(`${supabaseUrl}/functions/v1/swift-responder`, {
+    const phone = target.replace(/\D/g, '').replace(/^0/, '62');
+    if (!phone || phone.length < 8) {
+      return { ok: false, detail: `Nomor tidak valid: "${target}"` };
+    }
+    const formData = new FormData();
+    formData.append('target', phone);
+    formData.append('message', message);
+    const res = await fetch('https://api.fonnte.com/send', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${anonKey}`,
-        'apikey': anonKey,
-      },
-      body: JSON.stringify({ type: 'forgot_password_otp', target, message }),
+      headers: { Authorization: token },
+      body: formData,
     });
     const data = await res.json();
-    console.log('[forgot-password] WA response:', JSON.stringify(data));
-    return { ok: data?.ok === true, detail: JSON.stringify(data) };
+    console.log('[forgot-password] Fonnte response:', JSON.stringify(data));
+    return { ok: data?.status === true, detail: JSON.stringify(data) };
   } catch (e) {
-    console.error('[forgot-password] WA send error:', e);
+    console.error('[forgot-password] Fonnte error:', e);
     return { ok: false, detail: String(e) };
   }
 }
@@ -72,6 +77,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         error: 'Akun ini tidak memiliki nomor WA terdaftar. Hubungi admin.',
       }, { status: 400 });
+    }
+
+    // Ambil Fonnte token dari app_settings, fallback ke env var
+    const { data: tokenRow } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'fonnte_token')
+      .maybeSingle();
+    const fonnteToken = tokenRow?.value || process.env.NEXT_PUBLIC_FONNTE_TOKEN || '';
+
+    if (!fonnteToken) {
+      return NextResponse.json({ error: 'Fonnte token belum dikonfigurasi.' }, { status: 500 });
     }
 
     // Hapus OTP lama
@@ -112,13 +129,12 @@ export async function POST(request: NextRequest) {
       'Abaikan pesan ini jika kamu tidak meminta reset password.',
     ].join('\n');
 
-    const waResult = await sendWA(user.phone_number, waMsg);
+    const waResult = await sendFonnteWA(user.phone_number, waMsg, fonnteToken);
 
     return NextResponse.json({
       success: true,
       maskedPhone: maskPhone(user.phone_number),
       waSent: waResult.ok,
-      waDetail: waResult.detail,
       message: waResult.ok
         ? `OTP dikirim ke WA ${maskPhone(user.phone_number)}`
         : `OTP dibuat, WA gagal: ${waResult.detail}`,
