@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     if (insertErr) {
       console.error('[forgot-password] insert error:', insertErr);
       return NextResponse.json({
-        error: 'Gagal membuat OTP. Pastikan SQL migration 006 sudah dijalankan di Supabase.',
+        error: `Gagal insert OTP: ${insertErr.message} [code: ${insertErr.code}]`,
       }, { status: 500 });
     }
 
