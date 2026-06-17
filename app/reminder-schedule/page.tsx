@@ -520,10 +520,6 @@ function ReminderSchedulePageInner() {
 
   const handleConfirmStatusUpdate = async () => {
     if (!detailReminder || !pendingStatus) return;
-    if (pendingStatus === 'done' && !statusPhoto) {
-      notify('error', 'Foto wajib diupload untuk status Completed!');
-      return;
-    }
     setUpdatingStatus(true);
     let photoUrl: string | undefined;
     if (statusPhoto) {
@@ -1714,11 +1710,11 @@ jangan lupa peralatan & Semangat💪🏼
                   </div>
                   )}
 
-                  {/* Photo upload - wajib jika status Completed, sembunyikan jika sudah done */}
+                  {/* Photo upload - opsional untuk status Completed */}
                   {detailReminder.status !== 'done' && (pendingStatus ?? detailReminder.status) === 'done' && (
                     <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(16,185,129,0.07)', border: '1.5px solid rgba(16,185,129,0.3)' }}>
                       <p className="text-[10px] font-bold tracking-widest uppercase mb-2" style={{ color: '#059669' }}>
-                        📸 Foto Bukti Selesai <span className="text-red-500">*Wajib</span>
+                        📸 Foto Bukti Selesai <span className="text-gray-400 font-normal normal-case">(opsional)</span>
                       </p>
                       <input
                         ref={statusPhotoRef}
