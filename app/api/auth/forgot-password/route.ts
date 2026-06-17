@@ -134,10 +134,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       maskedPhone: maskPhone(user.phone_number),
-      waSent: waResult.ok,
       message: waResult.ok
         ? `OTP dikirim ke WA ${maskPhone(user.phone_number)}`
-        : `OTP dibuat, WA gagal: ${waResult.detail}`,
+        : `OTP dibuat tapi WA gagal dikirim. Coba kirim ulang.`,
     });
 
   } catch (e) {
