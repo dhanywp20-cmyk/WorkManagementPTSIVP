@@ -68,6 +68,9 @@ function IncentivePTSPage() {
   const [backupSelected, setBackupSelected] = useState<string[]>([]);
   const [savingBackup,   setSavingBackup]   = useState(false);
 
+  // ── Sync loading ──
+  const [syncing, setSyncing] = useState(false);
+
   // ── Toast ──
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const notify = (type: 'success' | 'error', msg: string) => {
@@ -132,7 +135,12 @@ function IncentivePTSPage() {
   };
 
   const autoSyncAndFetch = async () => { await doAutoSync(); await fetchProjects(); };
-  const fetchProjectsAndAutoSync = async () => { await doAutoSync(); await fetchProjects(); };
+  const fetchProjectsAndAutoSync = async () => {
+    setSyncing(true);
+    await doAutoSync();
+    await fetchProjects();
+    setSyncing(false);
+  };
 
   const doAutoSync = async () => {
     // Try with mode columns; fall back to core-only if migration not yet applied
@@ -696,11 +704,12 @@ function IncentivePTSPage() {
                     <option value="paid">Lunas</option>
                   </select>
                   {/* Refresh button */}
-                  <button onClick={fetchProjectsAndAutoSync} title="Refresh data"
-                    className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-300 transition-all">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <button onClick={fetchProjectsAndAutoSync} disabled={syncing} title="Refresh data"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-300 transition-all text-xs font-semibold disabled:opacity-60">
+                    <svg className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
+                    {syncing ? 'Memuat...' : 'Refresh'}
                   </button>
                   {/* Export */}
                   <button onClick={exportExcel}
