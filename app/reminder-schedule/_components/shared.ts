@@ -32,6 +32,9 @@ export interface Reminder {
   product?: string;
   updated_at?: string;
   warranty_years?: 1 | 2 | 3 | null;
+  mode_penyelesaian?: 'onsite' | 'remote' | null;
+  installer_name?: string | null;
+  installer_daerah?: string | null;
 }
 
 export interface TeamUser {
@@ -56,6 +59,9 @@ export interface GuestUser {
 
 // Kategori yang men-trigger auto form_review ke Guest
 export const REVIEW_TRIGGER_CATEGORIES = ['Demo Product', 'Konfigurasi & Training', 'Training'] as const;
+
+// Kategori yang wajib memilih Onsite/Remote saat status → Completed
+export const INCENTIVE_TRIGGER_CATEGORIES = ['Konfigurasi', 'Konfigurasi & Training', 'Training'] as const;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 export const PRIORITY_CONFIG: Record<Priority, { label: string; color: string; bg: string; border: string; dot: string }> = {

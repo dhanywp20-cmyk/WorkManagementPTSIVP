@@ -45,6 +45,12 @@ export interface IncentiveProject {
   pic_name?: string;
   pic_phone?: string;
   product?: string;
+  mode_penyelesaian?: 'onsite' | 'remote' | null;
+  installer_name?: string | null;
+  installer_daerah?: string | null;
+  installer_incentive_pct?: number;
+  installer_incentive_nominal?: number;
+  atasan_name?: string | null;
 }
 
 export interface IncentiveDisbursement {
@@ -52,7 +58,7 @@ export interface IncentiveDisbursement {
   project_id: string;
   person_name: string;
   person_username?: string;
-  role_type: 'handler' | 'backup';
+  role_type: 'handler' | 'backup' | 'installer' | 'atasan';
   pct: number;
   amount_rp: number;
   periode?: string;
@@ -74,6 +80,9 @@ export interface ReminderRow {
   pic_name?: string;
   pic_phone?: string;
   product?: string;
+  mode_penyelesaian?: 'onsite' | 'remote' | null;
+  installer_name?: string | null;
+  installer_daerah?: string | null;
 }
 
 export interface RekapItem {

@@ -10,7 +10,8 @@ import { logAudit } from '@/lib/audit';
 
 import {
   Priority, Status, RepeatType, Reminder, TeamUser, GuestUser,
-  REVIEW_TRIGGER_CATEGORIES, PRIORITY_CONFIG, STATUS_CONFIG, CATEGORIES, CATEGORY_CONFIG,
+  REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES,
+  PRIORITY_CONFIG, STATUS_CONFIG, CATEGORIES, CATEGORY_CONFIG,
   REPEAT_OPTIONS, SALES_DIVISIONS, PIE_COLORS,
   formatDate, formatDatetime, isDueToday,
   getFonnteToken, sendFonnteWA,
@@ -92,6 +93,14 @@ function ReminderSchedulePageInner() {
   const [statusPhotoPreview, setStatusPhotoPreview] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const statusPhotoRef = useRef<HTMLInputElement>(null);
+
+  // ─── Onsite / Remote Mode Modal ────────────────────────────────────────────
+  const [showModeModal, setShowModeModal]             = useState(false);
+  const [modePenyelesaian, setModePenyelesaian]       = useState<'onsite' | 'remote' | null>(null);
+  const [installerName, setInstallerName]             = useState('');
+  const [installerDaerah, setInstallerDaerah]         = useState('');
+  const [pendingPhotoUrl, setPendingPhotoUrl]         = useState<string | undefined>(undefined);
+  const [savingMode, setSavingMode]                   = useState(false);
 
   // ─── Resend Form Review ────────────────────────────────────────────────────
   const [resendingFormReview, setResendingFormReview] = useState(false);
@@ -531,11 +540,51 @@ function ReminderSchedulePageInner() {
       const { data: urlData } = supabase.storage.from('reminder-photos').getPublicUrl(fileName);
       photoUrl = urlData?.publicUrl;
     }
+
+    // Jika kategori incentive-trigger dan status Completed → tampilkan mode modal
+    const isIncentiveCat = (INCENTIVE_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category);
+    if (pendingStatus === 'done' && isIncentiveCat) {
+      setPendingPhotoUrl(photoUrl);
+      setModePenyelesaian(null);
+      setInstallerName('');
+      setInstallerDaerah('');
+      setUpdatingStatus(false);
+      setShowModeModal(true);
+      return;
+    }
+
     await handleStatusChange(detailReminder.id, pendingStatus, photoUrl);
     setPendingStatus(null);
     setStatusPhoto(null);
     setStatusPhotoPreview(null);
     setUpdatingStatus(false);
+  };
+
+  const handleModeConfirm = async () => {
+    if (!detailReminder || !modePenyelesaian) {
+      notify('error', 'Pilih mode penyelesaian terlebih dahulu!');
+      return;
+    }
+    if (modePenyelesaian === 'remote') {
+      if (!installerName.trim()) { notify('error', 'Nama Installer wajib diisi untuk mode Remote!'); return; }
+      if (!installerDaerah.trim()) { notify('error', 'Daerah Installer wajib diisi untuk mode Remote!'); return; }
+    }
+    setSavingMode(true);
+    await supabase.from('reminders').update({
+      mode_penyelesaian: modePenyelesaian,
+      installer_name: modePenyelesaian === 'remote' ? installerName.trim() : null,
+      installer_daerah: modePenyelesaian === 'remote' ? installerDaerah.trim() : null,
+    }).eq('id', detailReminder.id);
+    setShowModeModal(false);
+    setSavingMode(false);
+    await handleStatusChange(detailReminder.id, 'done', pendingPhotoUrl);
+    setPendingStatus(null);
+    setStatusPhoto(null);
+    setStatusPhotoPreview(null);
+    setModePenyelesaian(null);
+    setInstallerName('');
+    setInstallerDaerah('');
+    setPendingPhotoUrl(undefined);
   };
 
   // ─── Resend / Manual Send Form Review ke Guest ────────────────────────────
@@ -2436,6 +2485,70 @@ jangan lupa peralatan & Semangat💪🏼
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(220,38,38,0.25); border-radius: 4px; }
       `}</style>
+
+      {/* ── ONSITE / REMOTE MODE MODAL ── */}
+      {showModeModal && detailReminder && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[200] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" style={{ animation: 'scale-in 0.25s ease-out' }}>
+            <div className="px-6 py-4" style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}>
+              <h3 className="text-white font-bold text-lg">📍 Mode Penyelesaian</h3>
+              <p className="text-emerald-100 text-xs mt-0.5 truncate">{detailReminder.project_name} · {detailReminder.category}</p>
+            </div>
+            <div className="p-6 space-y-5">
+              <div>
+                <p className="text-sm font-bold text-gray-700 mb-3">Pilih mode pelaksanaan: <span className="text-red-500">*</span></p>
+                <div className="grid grid-cols-2 gap-3">
+                  {(['onsite', 'remote'] as const).map(m => (
+                    <button key={m} onClick={() => setModePenyelesaian(m)}
+                      className={`py-4 rounded-xl border-2 font-bold text-sm transition-all flex flex-col items-center gap-2 ${modePenyelesaian === m ? (m === 'onsite' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-blue-500 bg-blue-50 text-blue-700') : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300'}`}>
+                      <span className="text-2xl">{m === 'onsite' ? '🏠' : '📡'}</span>
+                      {m === 'onsite' ? 'ONSITE' : 'REMOTE'}
+                      <span className="text-[10px] font-normal opacity-70">{m === 'onsite' ? 'Tim hadir langsung' : 'Tim dari jarak jauh'}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {modePenyelesaian === 'remote' && (
+                <div className="space-y-3 p-4 rounded-xl" style={{ background: 'rgba(59,130,246,0.06)', border: '1.5px solid rgba(59,130,246,0.25)' }}>
+                  <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">🔧 Data Installer Daerah</p>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Nama Installer <span className="text-red-500">*</span></label>
+                    <input value={installerName} onChange={e => setInstallerName(e.target.value)}
+                      placeholder="Nama installer / mitra daerah"
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Daerah / Kota <span className="text-red-500">*</span></label>
+                    <input value={installerDaerah} onChange={e => setInstallerDaerah(e.target.value)}
+                      placeholder="Contoh: Surabaya, Bandung, Medan..."
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                  </div>
+                  <p className="text-[11px] text-blue-600">💡 Installer daerah mendapat <strong>20%</strong> dari incentive project ini.</p>
+                </div>
+              )}
+
+              {modePenyelesaian === 'onsite' && (
+                <div className="p-3 rounded-xl text-xs text-emerald-700" style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                  ✅ Mode Onsite: PIC 60% · Support 30% · Atasan 10%
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button onClick={() => { setShowModeModal(false); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); setPendingPhotoUrl(undefined); }}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all">
+                  Batal
+                </button>
+                <button onClick={handleModeConfirm} disabled={savingMode || !modePenyelesaian}
+                  className="flex-[2] py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 transition-all"
+                  style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}>
+                  {savingMode ? 'Menyimpan...' : '✅ Konfirmasi & Selesaikan'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
