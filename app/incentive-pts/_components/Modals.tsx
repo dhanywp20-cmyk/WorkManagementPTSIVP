@@ -3,9 +3,6 @@
 
 import { IncentiveProject, IncentiveDisbursement, IncentiveSetting, User } from './types';
 
-// Pajak 5% otomatis untuk jabatan Manager
-const MANAGER_TAX_PCT = 5;
-const isManagerJabatan = (jabatan?: string) => jabatan === 'Manager';
 import { Badge, fmtRp, fmtPct, fmtDate, fmtPeriode, inputCls, btnPrimary, INCENTIVE_TRIGGER_CATEGORIES } from './shared';
 
 // ── 1. View Detail Modal ──────────────────────────────────────────────────────
@@ -266,6 +263,10 @@ export function BiayaModal({
   project, settings, teamUsers, biayaInput, cosInput, saving,
   onClose, onSave, onBiayaChange, onCosChange,
 }: BiayaModalProps) {
+  // Cari Manager PTS — bisa sama dengan handler (Dhany)
+  const atasanUser = teamUsers.find(u => u.jabatan === 'Manager');
+  const atasanIsHandler = atasanUser?.full_name === project.handler_name;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
@@ -286,26 +287,34 @@ export function BiayaModal({
               </div>
             );
             const backupCount = project.backup_names.length;
-            if (mode === 'onsite') return (
-              <div className="bg-emerald-50 rounded-xl p-3 text-xs text-gray-600 space-y-1 border border-emerald-200">
-                <p className="font-bold text-emerald-700 mb-1">🏢 Mode ONSITE — Distribusi Fixed:</p>
-                <p>⭐ {project.handler_name}: <strong>60%</strong></p>
-                {backupCount > 0
-                  ? project.backup_names.map(n => <p key={n}>🤝 {n}: <strong>{fmtPct(30 / backupCount)}</strong></p>)
-                  : <p className="text-amber-600">⚠️ Belum ada backup (30% unused)</p>}
-                <p>👔 Atasan: <strong>10%</strong></p>
-              </div>
-            );
-            const picPct = backupCount > 0 ? 60 : 70;
+            if (mode === 'onsite') {
+              const picPct = atasanIsHandler ? 70 : 60;
+              return (
+                <div className="bg-emerald-50 rounded-xl p-3 text-xs text-gray-600 space-y-1 border border-emerald-200">
+                  <p className="font-bold text-emerald-700 mb-1">🏢 Mode ONSITE — Distribusi Fixed:</p>
+                  <p>⭐ {project.handler_name}: <strong>{picPct}%</strong>{atasanIsHandler && <span className="text-emerald-600"> (termasuk 10% Atasan)</span>}</p>
+                  {backupCount > 0
+                    ? project.backup_names.map(n => <p key={n}>🤝 {n}: <strong>{fmtPct(30 / backupCount)}</strong></p>)
+                    : <p className="text-amber-600">⚠️ Belum ada backup (30% unused)</p>}
+                  {!atasanIsHandler && <p>👔 Atasan ({atasanUser?.full_name ?? '?'}): <strong>10%</strong></p>}
+                </div>
+              );
+            }
+            const basePicPct = backupCount > 0 ? 60 : 70;
+            const picPct = atasanIsHandler ? basePicPct + 10 : basePicPct;
             return (
               <div className="bg-blue-50 rounded-xl p-3 text-xs text-gray-600 space-y-1 border border-blue-200">
                 <p className="font-bold text-blue-700 mb-1">💻 Mode REMOTE — Distribusi Fixed:</p>
-                <p>⭐ {project.handler_name}: <strong>{picPct}%</strong>{backupCount === 0 && <span className="text-blue-600"> (+10% karena tidak ada support)</span>}</p>
+                <p>⭐ {project.handler_name}: <strong>{picPct}%</strong>
+                  {atasanIsHandler
+                    ? <span className="text-blue-600"> (termasuk 10% Atasan)</span>
+                    : backupCount === 0 && <span className="text-blue-600"> (+10% karena tidak ada support)</span>}
+                </p>
                 <p>🔧 Installer ({project.installer_name ?? '?'}): <strong>20%</strong></p>
                 {backupCount > 0
                   ? project.backup_names.map(n => <p key={n}>🤝 {n}: <strong>{fmtPct(10 / backupCount)}</strong></p>)
                   : <p className="text-gray-400">— Tidak ada support aktif</p>}
-                <p>👔 Atasan: <strong>10%</strong></p>
+                {!atasanIsHandler && <p>👔 Atasan ({atasanUser?.full_name ?? '?'}): <strong>10%</strong></p>}
               </div>
             );
           }
@@ -343,38 +352,34 @@ export function BiayaModal({
                 if (isNaN(base) || base <= 0) return null;
                 const isIncentiveCat = (INCENTIVE_TRIGGER_CATEGORIES as string[]).includes(project.category);
                 const mode = project.mode_penyelesaian;
-                const handlerUser = teamUsers.find(u => u.full_name === project.handler_name);
                 const backupCount = project.backup_names.length;
-                const tax = (amt: number, u?: User) => isManagerJabatan(u?.jabatan) ? amt * (1 - MANAGER_TAX_PCT / 100) : amt;
+                const amt = (pct: number) => Math.round(base * pct / 100);
 
                 if (isIncentiveCat && mode === 'onsite') {
-                  const picAmt = tax(base * 60 / 100, handlerUser);
-                  const perBackup = backupCount > 0 ? base * 30 / 100 / backupCount : 0;
+                  const picPct = atasanIsHandler ? 70 : 60;
+                  const perBackupPct = backupCount > 0 ? 30 / backupCount : 0;
                   return (<>
-                    <p>⭐ {project.handler_name}: <strong>{fmtRp(picAmt)}</strong> (60%){isManagerJabatan(handlerUser?.jabatan) && <span className="ml-1 text-amber-600">−{MANAGER_TAX_PCT}% pajak</span>}</p>
-                    {project.backup_names.map(b => { const u = teamUsers.find(u => u.full_name === b); return <p key={b}>🤝 {b}: <strong>{fmtRp(tax(perBackup, u))}</strong> ({fmtPct(30 / backupCount)}){isManagerJabatan(u?.jabatan) && <span className="ml-1 text-amber-600">−{MANAGER_TAX_PCT}% pajak</span>}</p>; })}
-                    <p>👔 Atasan: <strong>{fmtRp(base * 10 / 100 * (1 - MANAGER_TAX_PCT / 100))}</strong> (10% −pajak)</p>
+                    <p>⭐ {project.handler_name}: <strong>{fmtRp(amt(picPct))}</strong> ({picPct}%){atasanIsHandler && <span className="ml-1 text-emerald-600">(+Atasan)</span>}</p>
+                    {project.backup_names.map(b => <p key={b}>🤝 {b}: <strong>{fmtRp(amt(perBackupPct))}</strong> ({fmtPct(perBackupPct)})</p>)}
+                    {!atasanIsHandler && <p>👔 Atasan ({atasanUser?.full_name ?? '?'}): <strong>{fmtRp(amt(10))}</strong> (10%)</p>}
                   </>);
                 }
                 if (isIncentiveCat && mode === 'remote') {
-                  const picPct = backupCount > 0 ? 60 : 70;
-                  const picAmt = tax(base * picPct / 100, handlerUser);
-                  const instAmt = base * 20 / 100;
-                  const perSupport = backupCount > 0 ? base * 10 / 100 / backupCount : 0;
+                  const basePicPct = backupCount > 0 ? 60 : 70;
+                  const picPct = atasanIsHandler ? basePicPct + 10 : basePicPct;
+                  const perSupportPct = backupCount > 0 ? 10 / backupCount : 0;
                   return (<>
-                    <p>⭐ {project.handler_name}: <strong>{fmtRp(picAmt)}</strong> ({picPct}%){isManagerJabatan(handlerUser?.jabatan) && <span className="ml-1 text-amber-600">−{MANAGER_TAX_PCT}% pajak</span>}</p>
-                    <p>🔧 Installer ({project.installer_name ?? '?'}): <strong>{fmtRp(instAmt)}</strong> (20%)</p>
-                    {project.backup_names.map(b => { const u = teamUsers.find(u => u.full_name === b); return <p key={b}>🤝 {b}: <strong>{fmtRp(tax(perSupport, u))}</strong> ({fmtPct(10 / backupCount)}){isManagerJabatan(u?.jabatan) && <span className="ml-1 text-amber-600">−{MANAGER_TAX_PCT}% pajak</span>}</p>; })}
-                    <p>👔 Atasan: <strong>{fmtRp(base * 10 / 100 * (1 - MANAGER_TAX_PCT / 100))}</strong> (10% −pajak)</p>
+                    <p>⭐ {project.handler_name}: <strong>{fmtRp(amt(picPct))}</strong> ({picPct}%){atasanIsHandler && <span className="ml-1 text-blue-600">(+Atasan)</span>}</p>
+                    <p>🔧 Installer ({project.installer_name ?? '?'}): <strong>{fmtRp(amt(20))}</strong> (20%)</p>
+                    {project.backup_names.map(b => <p key={b}>🤝 {b}: <strong>{fmtRp(amt(perSupportPct))}</strong> ({fmtPct(perSupportPct)})</p>)}
+                    {!atasanIsHandler && <p>👔 Atasan ({atasanUser?.full_name ?? '?'}): <strong>{fmtRp(amt(10))}</strong> (10%)</p>}
                   </>);
                 }
                 // Legacy
-                const handlerGross = base * settings.handler_pct / 100;
-                const handlerNet = tax(handlerGross, handlerUser);
-                const backupPer = backupCount > 0 ? base * settings.backup_pct / 100 / backupCount : 0;
+                const backupPer = backupCount > 0 ? settings.backup_pct / backupCount : 0;
                 return (<>
-                  <p>⭐ {project.handler_name}: <strong>{fmtRp(handlerNet)}</strong> ({fmtPct(settings.handler_pct)}){isManagerJabatan(handlerUser?.jabatan) && <span className="ml-1 text-amber-600 font-semibold">−{MANAGER_TAX_PCT}% pajak</span>}</p>
-                  {project.backup_names.map(b => { const u = teamUsers.find(u => u.full_name === b); const net = tax(backupPer, u); return <p key={b}>🤝 {b}: <strong>{fmtRp(net)}</strong> ({fmtPct(settings.backup_pct / backupCount)}){isManagerJabatan(u?.jabatan) && <span className="ml-1 text-amber-600 font-semibold">−{MANAGER_TAX_PCT}% pajak</span>}</p>; })}
+                  <p>⭐ {project.handler_name}: <strong>{fmtRp(amt(settings.handler_pct))}</strong> ({fmtPct(settings.handler_pct)})</p>
+                  {project.backup_names.map(b => <p key={b}>🤝 {b}: <strong>{fmtRp(amt(backupPer))}</strong> ({fmtPct(backupPer)})</p>)}
                 </>);
               })()}
             </div>
