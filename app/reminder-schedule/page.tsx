@@ -617,7 +617,8 @@ function ReminderSchedulePageInner() {
         installer_daerah: modeVal === 'remote' ? installerDaerahVal : null,
       });
       if (ipErr) {
-        await supabase.from('incentive_projects').insert(baseRow);
+        const { error: ipErr2 } = await supabase.from('incentive_projects').insert(baseRow);
+        if (ipErr2) notify('error', `Gagal sync ke Incentive PTS: ${ipErr2.message}`);
       }
     }
 

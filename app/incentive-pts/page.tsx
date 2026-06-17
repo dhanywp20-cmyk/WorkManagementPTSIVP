@@ -137,6 +137,7 @@ function IncentivePTSPage() {
   const doAutoSync = async () => {
     // Try with mode columns; fall back to core-only if migration not yet applied
     let reminders: ReminderRow[] | null = null;
+    let queryError: string | null = null;
     {
       const { data, error } = await supabase
         .from('reminders')
@@ -144,18 +145,23 @@ function IncentivePTSPage() {
         .in('category', INCENTIVE_CATEGORIES)
         .eq('status', 'done');
       if (error) {
+        queryError = error.message;
         // Fallback: mode columns may not exist yet
-        const { data: fallback } = await supabase
+        const { data: fallback, error: fbErr } = await supabase
           .from('reminders')
           .select('id,project_name,category,assign_name,assigned_to,sales_name,sales_division,due_date,status,description,notes,address,pic_name,pic_phone,product')
           .in('category', INCENTIVE_CATEGORIES)
           .eq('status', 'done');
+        if (fbErr) { notify('error', `Sync gagal baca reminders: ${fbErr.message}`); return; }
         reminders = fallback;
       } else {
         reminders = data;
       }
     }
-    if (!reminders?.length) return;
+    if (!reminders?.length) {
+      if (queryError) notify('error', `Query reminders error: ${queryError}`);
+      return;
+    }
 
     // Build quick lookup map
     const reminderMap: Record<string, ReminderRow> = {};
@@ -192,8 +198,13 @@ function IncentivePTSPage() {
       );
       if (insErr) {
         // Fallback: insert without mode columns
-        await supabase.from('incentive_projects').insert(baseRows);
+        const { error: insErr2 } = await supabase.from('incentive_projects').insert(baseRows);
+        if (insErr2) {
+          notify('error', `Sync insert gagal: ${insErr2.message}`);
+          return;
+        }
       }
+      notify('success', `${newReminders.length} project baru disync ke Incentive PTS!`);
     }
 
     // Backfill missing detail fields for existing projects
