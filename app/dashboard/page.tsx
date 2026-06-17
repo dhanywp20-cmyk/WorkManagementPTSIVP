@@ -295,7 +295,6 @@ export default function Dashboard() {
       const { data: newUser, error } = await supabase.from('users').insert([{
         full_name: full_name.trim(),
         username: username.trim().toLowerCase(),
-        password: pwdHash,
         role: 'guest',
         team_type: 'Pending Approval',
         sales_division: requestedDivision,
@@ -304,6 +303,14 @@ export default function Dashboard() {
         allowed_menus: [],
       }]).select('id').single();
       if (error) throw error;
+      // Simpan password hash ke user_credentials (terpisah dari users)
+      if (newUser?.id) {
+        await supabase.from('user_credentials').insert({
+          user_id: newUser.id,
+          password_hash: pwdHash,
+          algorithm: 'bcrypt',
+        });
+      }
       setRegisterSuccess(true);
       // Notify all admins of new pending user
       notifyNewUserRegistration(full_name.trim(), newUser?.id ?? '').catch(() => {});

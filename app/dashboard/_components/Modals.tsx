@@ -2647,8 +2647,20 @@ export function AccountSettingsInline() {
     }
 
     setSaving(true);
-    const insertPayload: Record<string, unknown> = { username: newUser.username, password: newUser.password, full_name: newUser.full_name, role, team_type, allowed_menus: newUser.allowed_menus, jabatan: newUser.jabatan || null, phone_number: newUser.phone_number || null, sales_division: (newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') ? (newUser.sales_division || null) : null };
-    const { error } = await supabase.from('users').insert([insertPayload]);
+    // Hash password dulu sebelum simpan ke user_credentials
+    let pwdHash = '';
+    if (newUser.password) {
+      const hashRes = await fetch('/api/auth/hash', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: newUser.password }),
+      });
+      if (hashRes.ok) { const hd = await hashRes.json(); pwdHash = hd.hash ?? ''; }
+    }
+    const insertPayload: Record<string, unknown> = { username: newUser.username, full_name: newUser.full_name, role, team_type, allowed_menus: newUser.allowed_menus, jabatan: newUser.jabatan || null, phone_number: newUser.phone_number || null, sales_division: (newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') ? (newUser.sales_division || null) : null };
+    const { data: createdUser, error } = await supabase.from('users').insert([insertPayload]).select('id').single();
+    if (!error && createdUser?.id && pwdHash) {
+      await supabase.from('user_credentials').insert({ user_id: createdUser.id, password_hash: pwdHash, algorithm: 'bcrypt' });
+    }
     setSaving(false);
     if (error) { notify('error', 'Gagal menambah akun: ' + error.message); return; }
     notify('success', 'Akun berhasil ditambahkan!');
@@ -2672,7 +2684,7 @@ export function AccountSettingsInline() {
       } else if (editDivisi === 'Sales') { role = 'guest'; team_type = 'Guest'; }
       else if (editDivisi === 'Marketing') { role = 'guest'; team_type = 'Marketing'; }
     }
-    const updatePayload: Record<string, unknown> = { username: editingUser.username, password: editingUser.password, full_name: editingUser.full_name, role, team_type, allowed_menus: editingUser.allowed_menus ?? ALL_MENU_KEYS, jabatan: editingUser.jabatan ?? null, phone_number: editingUser.phone_number ?? null, sales_division: (editDivisi === 'Sales' || editDivisi === 'Marketing') ? (editingUser.sales_division ?? null) : null };
+    const updatePayload: Record<string, unknown> = { username: editingUser.username, full_name: editingUser.full_name, role, team_type, allowed_menus: editingUser.allowed_menus ?? ALL_MENU_KEYS, jabatan: editingUser.jabatan ?? null, phone_number: editingUser.phone_number ?? null, sales_division: (editDivisi === 'Sales' || editDivisi === 'Marketing') ? (editingUser.sales_division ?? null) : null };
     const { error } = await supabase.from('users').update(updatePayload).eq('id', editingUser.id);
     setSaving(false);
     if (error) { notify('error', 'Gagal menyimpan: ' + error.message); return; }
