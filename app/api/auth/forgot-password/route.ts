@@ -31,7 +31,7 @@ async function sendWA(target: string, message: string): Promise<{ ok: boolean; d
         'Authorization': `Bearer ${anonKey}`,
         'apikey': anonKey,
       },
-      body: JSON.stringify({ type: 'reminder_wa', target, message }),
+      body: JSON.stringify({ type: 'forgot_password_otp', target, message }),
     });
     const data = await res.json();
     console.log('[forgot-password] WA response:', JSON.stringify(data));
