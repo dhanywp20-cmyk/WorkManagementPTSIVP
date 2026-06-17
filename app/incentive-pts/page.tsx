@@ -135,11 +135,26 @@ function IncentivePTSPage() {
   const fetchProjectsAndAutoSync = async () => { await doAutoSync(); await fetchProjects(); };
 
   const doAutoSync = async () => {
-    const { data: reminders } = await supabase
-      .from('reminders')
-      .select('id,project_name,category,assign_name,assigned_to,sales_name,sales_division,due_date,status,description,notes,address,pic_name,pic_phone,product,mode_penyelesaian,installer_name,installer_daerah')
-      .in('category', INCENTIVE_CATEGORIES)
-      .eq('status', 'done');
+    // Try with mode columns; fall back to core-only if migration not yet applied
+    let reminders: ReminderRow[] | null = null;
+    {
+      const { data, error } = await supabase
+        .from('reminders')
+        .select('id,project_name,category,assign_name,assigned_to,sales_name,sales_division,due_date,status,description,notes,address,pic_name,pic_phone,product,mode_penyelesaian,installer_name,installer_daerah')
+        .in('category', INCENTIVE_CATEGORIES)
+        .eq('status', 'done');
+      if (error) {
+        // Fallback: mode columns may not exist yet
+        const { data: fallback } = await supabase
+          .from('reminders')
+          .select('id,project_name,category,assign_name,assigned_to,sales_name,sales_division,due_date,status,description,notes,address,pic_name,pic_phone,product')
+          .in('category', INCENTIVE_CATEGORIES)
+          .eq('status', 'done');
+        reminders = fallback;
+      } else {
+        reminders = data;
+      }
+    }
     if (!reminders?.length) return;
 
     // Build quick lookup map
@@ -157,20 +172,28 @@ function IncentivePTSPage() {
     // Insert new
     const newReminders = (reminders as ReminderRow[]).filter(r => !existingMap[r.id]);
     if (newReminders.length) {
-      await supabase.from('incentive_projects').insert(
-        newReminders.map((r) => ({
-          reminder_id: r.id, project_name: r.project_name, category: r.category,
-          sales_name: r.sales_name, sales_division: r.sales_division, due_date: r.due_date,
-          handler_name: r.assign_name ?? '', handler_username: r.assigned_to ?? '',
-          backup_names: [], biaya_cadangan: 0,
-          periode: r.due_date ? r.due_date.slice(0, 7) : new Date().toISOString().slice(0, 7),
-          status: 'pending', description: r.description, notes: r.notes,
-          address: r.address, pic_name: r.pic_name, pic_phone: r.pic_phone, product: r.product,
-          mode_penyelesaian: r.mode_penyelesaian ?? null,
-          installer_name: r.installer_name ?? null,
-          installer_daerah: r.installer_daerah ?? null,
+      const baseRows = newReminders.map((r) => ({
+        reminder_id: r.id, project_name: r.project_name, category: r.category,
+        sales_name: r.sales_name, sales_division: r.sales_division, due_date: r.due_date,
+        handler_name: r.assign_name ?? '', handler_username: r.assigned_to ?? '',
+        backup_names: [], biaya_cadangan: 0,
+        periode: r.due_date ? r.due_date.slice(0, 7) : new Date().toISOString().slice(0, 7),
+        status: 'pending', description: r.description, notes: r.notes,
+        address: r.address, pic_name: r.pic_name, pic_phone: r.pic_phone, product: r.product,
+      }));
+      // Try inserting with mode columns first; fall back to base if columns missing
+      const { error: insErr } = await supabase.from('incentive_projects').insert(
+        newReminders.map((r, i) => ({
+          ...baseRows[i],
+          mode_penyelesaian: (r as ReminderRow).mode_penyelesaian ?? null,
+          installer_name: (r as ReminderRow).installer_name ?? null,
+          installer_daerah: (r as ReminderRow).installer_daerah ?? null,
         }))
       );
+      if (insErr) {
+        // Fallback: insert without mode columns
+        await supabase.from('incentive_projects').insert(baseRows);
+      }
     }
 
     // Backfill missing detail fields for existing projects

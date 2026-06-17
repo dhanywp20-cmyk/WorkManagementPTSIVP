@@ -589,7 +589,7 @@ function ReminderSchedulePageInner() {
       .eq('reminder_id', reminderId)
       .maybeSingle();
     if (!existingIp) {
-      await supabase.from('incentive_projects').insert({
+      const baseRow = {
         reminder_id: reminderId,
         project_name: snap.project_name,
         category: snap.category,
@@ -608,10 +608,17 @@ function ReminderSchedulePageInner() {
         pic_name: snap.pic_name,
         pic_phone: snap.pic_phone,
         product: snap.product,
+      };
+      // Coba insert dengan mode columns; fallback tanpa mode jika kolom belum ada
+      const { error: ipErr } = await supabase.from('incentive_projects').insert({
+        ...baseRow,
         mode_penyelesaian: modeVal,
         installer_name: modeVal === 'remote' ? installerNameVal : null,
         installer_daerah: modeVal === 'remote' ? installerDaerahVal : null,
       });
+      if (ipErr) {
+        await supabase.from('incentive_projects').insert(baseRow);
+      }
     }
 
     setPendingStatus(null);
