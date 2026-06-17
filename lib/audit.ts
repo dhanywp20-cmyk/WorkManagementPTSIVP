@@ -38,6 +38,7 @@ export type AuditAction =
   | 'view'     // Sensitive record viewed
   | 'upload'   // File uploaded
   | 'download' // File downloaded
+  | 'resubmit' // Rejected request re-submitted
   | 'mark_paid'  // Incentive marked paid
   | 'mark_done'; // Task marked done
 
