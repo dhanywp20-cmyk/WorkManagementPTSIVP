@@ -21,6 +21,7 @@ import {
 import GlobalSearch from './_components/GlobalSearch';
 import OnboardingTour, { JelajahiButton } from './_components/OnboardingTour';
 import { notifyNewUserRegistration } from '@/lib/notifications';
+import SessionExpiryBanner from '@/app/_components/SessionExpiryBanner';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -47,6 +48,16 @@ export default function Dashboard() {
   });
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerSuccess, setRegisterSuccess] = useState(false);
+  // Forgot password flow
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotStep, setForgotStep] = useState<'request' | 'verify'>('request');
+  const [forgotUsername, setForgotUsername] = useState('');
+  const [forgotOtp, setForgotOtp] = useState('');
+  const [forgotNewPwd, setForgotNewPwd] = useState('');
+  const [forgotConfirmPwd, setForgotConfirmPwd] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotMsg, setForgotMsg] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const [forgotMaskedPhone, setForgotMaskedPhone] = useState('');
   const [loading, setLoading] = useState(true);
   const [menuLoading, setMenuLoading] = useState(false);
   const [showTour, setShowTour] = useState(false);
@@ -215,6 +226,44 @@ export default function Dashboard() {
         }, 50);
       }
     } catch { setLoginErr('Login gagal. Coba lagi.'); } finally { setLoginLoading(false); }
+  };
+
+  const handleForgotRequest = async () => {
+    if (!forgotUsername.trim()) { setForgotMsg({ type: 'error', text: 'Masukkan username.' }); return; }
+    setForgotLoading(true); setForgotMsg(null);
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: forgotUsername.trim().toLowerCase() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setForgotMsg({ type: 'error', text: data.error }); return; }
+      setForgotMaskedPhone(data.maskedPhone ?? '');
+      setForgotStep('verify');
+      setForgotMsg({ type: 'success', text: data.message ?? 'OTP dikirim.' });
+    } catch { setForgotMsg({ type: 'error', text: 'Gagal mengirim OTP.' }); }
+    finally { setForgotLoading(false); }
+  };
+
+  const handleForgotVerify = async () => {
+    if (!forgotOtp || !forgotNewPwd) { setForgotMsg({ type: 'error', text: 'Isi semua field.' }); return; }
+    if (forgotNewPwd !== forgotConfirmPwd) { setForgotMsg({ type: 'error', text: 'Konfirmasi password tidak cocok.' }); return; }
+    setForgotLoading(true); setForgotMsg(null);
+    try {
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: forgotUsername, otp: forgotOtp, newPassword: forgotNewPwd }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setForgotMsg({ type: 'error', text: data.error }); return; }
+      setForgotMsg({ type: 'success', text: 'Password berhasil diubah! Silakan login.' });
+      setTimeout(() => {
+        setShowForgot(false); setForgotStep('request');
+        setForgotUsername(''); setForgotOtp(''); setForgotNewPwd(''); setForgotConfirmPwd('');
+        setForgotMsg(null);
+      }, 2000);
+    } catch { setForgotMsg({ type: 'error', text: 'Gagal mereset password.' }); }
+    finally { setForgotLoading(false); }
   };
 
   const handleRegister = async () => {
@@ -631,7 +680,11 @@ export default function Dashboard() {
                     <>🔐 Sign In to Portal</>
                   )}
                 </button>
-                <p className="text-center text-xs text-slate-400 pt-1">Belum punya akun? <button onClick={() => setShowRegister(true)} className="text-indigo-600 font-bold hover:underline">Daftar di sini</button></p>
+                <p className="text-center text-xs text-slate-400 pt-1">
+                  Belum punya akun? <button onClick={() => setShowRegister(true)} className="text-indigo-600 font-bold hover:underline">Daftar di sini</button>
+                  <span className="mx-2 text-slate-300">|</span>
+                  <button onClick={() => { setShowForgot(true); setForgotStep('request'); setForgotMsg(null); }} className="text-rose-500 font-bold hover:underline">Lupa Password?</button>
+                </p>
               </div>
             )}
 
@@ -964,7 +1017,63 @@ export default function Dashboard() {
   // ── VIEW: SIDEBAR ──
   return (
     <div className="flex flex-col bg-cover bg-center bg-fixed" style={{ backgroundImage: 'url(/IVP_Background.png)', height: '100dvh' }}>
+      {isLoggedIn && <SessionExpiryBanner />}
       {renderModals()}
+
+      {/* ── Forgot Password Modal ── */}
+      {showForgot && (
+        <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-800">🔐 Reset Password</h3>
+              <button onClick={() => setShowForgot(false)} className="text-slate-400 hover:text-slate-600 font-bold text-lg leading-none">✕</button>
+            </div>
+            {forgotMsg && (
+              <div className={`px-3 py-2 rounded-lg text-xs font-semibold ${forgotMsg.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+                {forgotMsg.text}
+              </div>
+            )}
+            {forgotStep === 'request' ? (
+              <div className="space-y-3">
+                <p className="text-xs text-slate-500">Masukkan username kamu. Kode OTP akan dikirim ke nomor WhatsApp yang terdaftar.</p>
+                <input type="text" value={forgotUsername} onChange={e => setForgotUsername(e.target.value)}
+                  placeholder="Username" onKeyDown={e => e.key === 'Enter' && handleForgotRequest()}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none" />
+                <button onClick={handleForgotRequest} disabled={forgotLoading}
+                  className="w-full bg-rose-600 text-white py-2.5 rounded-xl font-bold text-sm hover:bg-rose-700 disabled:opacity-60 transition-all">
+                  {forgotLoading ? 'Mengirim...' : 'Kirim Kode OTP'}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-slate-500">Masukkan kode 6-digit yang dikirim ke WA <strong>{forgotMaskedPhone}</strong>, lalu buat password baru.</p>
+                <input type="text" value={forgotOtp} onChange={e => setForgotOtp(e.target.value)}
+                  placeholder="Kode OTP (6 digit)" maxLength={6}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-center tracking-widest font-bold focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none" />
+                <input type="password" value={forgotNewPwd} onChange={e => setForgotNewPwd(e.target.value)}
+                  placeholder="Password baru (min. 8, ada kapital & angka)"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none" />
+                <input type="password" value={forgotConfirmPwd} onChange={e => setForgotConfirmPwd(e.target.value)}
+                  placeholder="Konfirmasi password baru"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none" />
+                <div className="flex gap-2">
+                  <button onClick={() => { setForgotStep('request'); setForgotMsg(null); }}
+                    className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold hover:bg-slate-200 transition-all">Kembali</button>
+                  <button onClick={handleForgotVerify} disabled={forgotLoading}
+                    className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white text-sm font-bold hover:bg-rose-700 disabled:opacity-60 transition-all">
+                    {forgotLoading ? 'Menyimpan...' : 'Reset Password'}
+                  </button>
+                </div>
+                <button onClick={handleForgotRequest} disabled={forgotLoading}
+                  className="w-full text-xs text-slate-400 hover:text-rose-500 transition-all">
+                  Kirim ulang OTP
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── Onboarding Tour + floating button (sidebar view — stable mount) ── */}
       {currentUser && (
         <>

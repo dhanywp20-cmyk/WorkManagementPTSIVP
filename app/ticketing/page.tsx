@@ -629,9 +629,14 @@ function TicketingSystemInner() {
       setLoadingMessage("Saving new ticket...");
       let photoUrl = "", photoName = "";
       if (newTicket.photo) {
+        const ALLOWED_IMG = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        const MAX_IMG_MB = 5;
+        if (!ALLOWED_IMG.includes(newTicket.photo.type)) { notify("error", "Foto hanya boleh format JPG, PNG, atau WebP."); setUploading(false); setShowLoadingPopup(false); return; }
+        if (newTicket.photo.size > MAX_IMG_MB * 1024 * 1024) { notify("error", `Ukuran foto maksimal ${MAX_IMG_MB}MB.`); setUploading(false); setShowLoadingPopup(false); return; }
         setLoadingMessage("Uploading photo...");
         try {
-          const fileName = `${Date.now()}_${newTicket.photo.name}`;
+          const ext = newTicket.photo.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+          const fileName = `${Date.now()}.${ext}`;
           const { error } = await supabase.storage.from("ticket-photos").upload(`photos/${fileName}`, newTicket.photo);
           if (error) throw error;
           const { data } = supabase.storage.from("ticket-photos").getPublicUrl(`photos/${fileName}`);
@@ -1010,9 +1015,21 @@ function TicketingSystemInner() {
       setShowLoadingPopup(true);
       setLoadingMessage("Updating ticket status...");
       let fileUrl = "", fileName = "", photoUrl = "", photoName = "";
+      const ALLOWED_IMG = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      const MAX_IMG_MB = 5;
+      const MAX_PDF_MB = 10;
+      if (newActivity.file) {
+        if (newActivity.file.type !== 'application/pdf') { notify("error", "File laporan hanya boleh format PDF."); setUploading(false); setShowLoadingPopup(false); return; }
+        if (newActivity.file.size > MAX_PDF_MB * 1024 * 1024) { notify("error", `Ukuran PDF maksimal ${MAX_PDF_MB}MB.`); setUploading(false); setShowLoadingPopup(false); return; }
+      }
+      if (newActivity.photo) {
+        if (!ALLOWED_IMG.includes(newActivity.photo.type)) { notify("error", "Foto bukti hanya boleh format JPG, PNG, atau WebP."); setUploading(false); setShowLoadingPopup(false); return; }
+        if (newActivity.photo.size > MAX_IMG_MB * 1024 * 1024) { notify("error", `Ukuran foto maksimal ${MAX_IMG_MB}MB.`); setUploading(false); setShowLoadingPopup(false); return; }
+      }
       const uploadFileToBucket = async (file: File, folder: string, useServicesDb: boolean = false) => {
         const client = useServicesDb ? supabaseServices : supabase;
-        const filePath = `${folder}/${Date.now()}_${file.name}`;
+        const ext = file.name.split('.').pop()?.toLowerCase() ?? 'bin';
+        const filePath = `${folder}/${Date.now()}.${ext}`;
         const { error } = await client.storage.from("ticket-photos").upload(filePath, file);
         if (error) throw error;
         const { data } = client.storage.from("ticket-photos").getPublicUrl(filePath);

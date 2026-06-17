@@ -514,6 +514,11 @@ interface UserProfileModalProps {
   onClose: () => void;
 }
 
+function maskPhone(phone?: string): string {
+  if (!phone || phone.length < 6) return '••••';
+  return phone.slice(0, 4) + '••••' + phone.slice(-3);
+}
+
 export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps) {
   const [userData, setUserData] = useState<User>(currentUser);
   const [editPhone, setEditPhone] = useState(false);
@@ -591,8 +596,24 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
     setSaving(false);
   };
 
+  const getPasswordStrength = (pwd: string): { score: number; label: string; color: string } => {
+    if (!pwd) return { score: 0, label: '', color: '' };
+    let score = 0;
+    if (pwd.length >= 8) score++;
+    if (pwd.length >= 12) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    if (score <= 1) return { score, label: 'Lemah', color: 'bg-red-400' };
+    if (score <= 2) return { score, label: 'Cukup', color: 'bg-amber-400' };
+    if (score <= 3) return { score, label: 'Baik', color: 'bg-yellow-400' };
+    return { score, label: 'Kuat', color: 'bg-emerald-500' };
+  };
+
   const handleSavePassword = async () => {
-    if (!passwordInput || passwordInput.length < 6) { notify('error', 'Password minimal 6 karakter.'); return; }
+    if (!passwordInput || passwordInput.length < 8) { notify('error', 'Password minimal 8 karakter.'); return; }
+    if (!/[A-Z]/.test(passwordInput)) { notify('error', 'Password harus mengandung minimal 1 huruf kapital.'); return; }
+    if (!/[0-9]/.test(passwordInput)) { notify('error', 'Password harus mengandung minimal 1 angka.'); return; }
     if (passwordInput !== confirmPassword) { notify('error', 'Konfirmasi password tidak cocok.'); return; }
     setSaving(true);
     const res = await fetch('/api/auth/change-password', {
@@ -736,10 +757,29 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
               <div className="px-4 py-3">
                 {editPassword ? (
                   <div className="space-y-2">
-                    <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} placeholder="Password baru (min. 6)"
+                    <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} placeholder="Password baru (min. 8, ada kapital & angka)"
                       className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none" />
+                    {passwordInput.length > 0 && (() => {
+                      const { score, label, color } = getPasswordStrength(passwordInput);
+                      const bars = [1,2,3,4,5];
+                      return (
+                        <div className="space-y-1">
+                          <div className="flex gap-1">
+                            {bars.map(b => (
+                              <div key={b} className={`h-1.5 flex-1 rounded-full transition-all ${b <= score ? color : 'bg-slate-200'}`} />
+                            ))}
+                          </div>
+                          <p className={`text-[10px] font-bold ${score <= 1 ? 'text-red-500' : score <= 2 ? 'text-amber-500' : score <= 3 ? 'text-yellow-600' : 'text-emerald-600'}`}>
+                            Kekuatan: {label}
+                          </p>
+                        </div>
+                      );
+                    })()}
                     <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Konfirmasi password"
                       className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none" />
+                    {confirmPassword && passwordInput !== confirmPassword && (
+                      <p className="text-[10px] text-red-500 font-semibold">Password tidak cocok</p>
+                    )}
                     <div className="flex gap-2">
                       <button onClick={handleSavePassword} disabled={saving} className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-all">
                         {saving ? 'Menyimpan...' : 'Simpan'}
@@ -820,7 +860,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                             <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-300 flex-shrink-0">IVP</span>
                           </div>
                           {ivp.phone_number
-                            ? <p className="text-[10px] text-emerald-600">📱 {ivp.phone_number}</p>
+                            ? <p className="text-[10px] text-emerald-600">📱 {maskPhone(ivp.phone_number)}</p>
                             : <p className="text-[10px] text-rose-400">⚠️ No WA</p>}
                         </div>
                       </div>
@@ -1263,7 +1303,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                     <div className="flex items-center gap-2 mt-0.5">
                                       <p className="text-[10px] text-slate-400">@{sup?.username}</p>
                                       {sup?.phone_number
-                                        ? <span className="text-[10px] text-emerald-600">📱 {sup.phone_number}</span>
+                                        ? <span className="text-[10px] text-emerald-600">📱 {maskPhone(sup.phone_number)}</span>
                                         : <span className="text-[10px] text-rose-400">⚠️ No WA</span>}
                                     </div>
                                   </div>
@@ -1347,7 +1387,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                   <div className="flex items-center gap-2 mt-0.5">
                                     <p className="text-[10px] text-slate-400">@{ivp?.username}</p>
                                     {ivp?.phone_number
-                                      ? <span className="text-[10px] text-emerald-600">📱 {ivp.phone_number}</span>
+                                      ? <span className="text-[10px] text-emerald-600">📱 {maskPhone(ivp.phone_number)}</span>
                                       : <span className="text-[10px] text-rose-400">⚠️ No WA</span>}
                                   </div>
                                 </div>
@@ -1470,7 +1510,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                   </div>
                                   <p className="text-[10px] text-slate-400">{u.jabatan}{u.sales_division ? ` · ${u.sales_division}` : ''}</p>
                                   {u.phone_number
-                                    ? <p className="text-[10px] text-emerald-600">📱 {u.phone_number}</p>
+                                    ? <p className="text-[10px] text-emerald-600">📱 {maskPhone(u.phone_number)}</p>
                                     : <p className="text-[10px] text-rose-400">⚠️ No WA — tidak akan di-CC</p>}
                                 </div>
                               </button>
