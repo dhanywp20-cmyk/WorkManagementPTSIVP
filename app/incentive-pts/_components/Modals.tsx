@@ -414,6 +414,7 @@ interface BackupModalProps {
   project: IncentiveProject;
   teamUsers: User[];
   backupSelected: string[];
+  detectedSupport: string[];
   settings: IncentiveSetting | null;
   saving: boolean;
   onClose: () => void;
@@ -422,52 +423,98 @@ interface BackupModalProps {
 }
 
 export function BackupModal({
-  project, teamUsers, backupSelected, settings, saving,
+  project, teamUsers, backupSelected, detectedSupport, settings, saving,
   onClose, onSave, onToggle,
 }: BackupModalProps) {
+  const isIncentiveCat = (INCENTIVE_TRIGGER_CATEGORIES as string[]).includes(project.category);
+  const mode = project.mode_penyelesaian;
+
+  // Hitung preview pct untuk info
+  const backupCount = backupSelected.length;
+  let supportPct = 0;
+  if (isIncentiveCat && mode === 'onsite') supportPct = backupCount > 0 ? 30 / backupCount : 0;
+  else if (isIncentiveCat && mode === 'remote') supportPct = backupCount > 0 ? 10 / backupCount : 0;
+  else if (settings) supportPct = backupCount > 0 ? settings.backup_pct / backupCount : 0;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
-        <h3 className="font-bold text-gray-800 text-lg">🤝 Set Tim Backup</h3>
+        <h3 className="font-bold text-gray-800 text-lg">🤝 Set Tim Support</h3>
         <div className="bg-blue-50 rounded-xl p-3 text-sm">
           <p className="font-semibold text-blue-700">{project.project_name}</p>
           <p className="text-blue-500 text-xs">Handler: {project.handler_name}</p>
         </div>
-        <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+
+        {/* Info auto-detected dari Troubleshooting */}
+        {detectedSupport.length > 0 ? (
+          <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200">
+            <p className="text-xs font-bold text-emerald-700 mb-1.5">🔍 Auto-detected dari Troubleshooting:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {detectedSupport.map(name => (
+                <span key={name} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-semibold border border-emerald-200">
+                  ✓ {name}
+                </span>
+              ))}
+            </div>
+            <p className="text-[10px] text-emerald-600 mt-1.5">Berdasarkan reminder Troubleshooting dengan nama project yang sama.</p>
+          </div>
+        ) : (
+          <div className="bg-amber-50 rounded-xl p-3 border border-amber-200">
+            <p className="text-xs text-amber-700">⚠️ Tidak ada Troubleshooting aktif untuk project ini. Pilih manual jika diperlukan.</p>
+          </div>
+        )}
+
+        <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
           {teamUsers
             .filter((u) => u.full_name !== project.handler_name)
-            .map((u) => (
-              <label
-                key={u.username}
-                className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border transition-colors ${
-                  backupSelected.includes(u.full_name)
-                    ? 'bg-blue-50 border-blue-300'
-                    : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={backupSelected.includes(u.full_name)}
-                  onChange={(e) => onToggle(u.full_name, e.target.checked)}
-                  className="w-4 h-4 rounded accent-blue-600"
-                />
-                <div>
-                  <p className="text-sm font-semibold text-gray-700">{u.full_name}</p>
-                  <p className="text-xs text-gray-400">{u.jabatan ?? u.team_type ?? u.role}</p>
-                </div>
-              </label>
-            ))}
+            .map((u) => {
+              const isDetected = detectedSupport.includes(u.full_name);
+              const isChecked = backupSelected.includes(u.full_name);
+              return (
+                <label
+                  key={u.username}
+                  className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border transition-colors ${
+                    isChecked
+                      ? isDetected
+                        ? 'bg-emerald-50 border-emerald-300'
+                        : 'bg-blue-50 border-blue-300'
+                      : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={(e) => onToggle(u.full_name, e.target.checked)}
+                    className="w-4 h-4 rounded accent-blue-600"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-700">{u.full_name}</p>
+                    <p className="text-xs text-gray-400">{u.jabatan ?? u.team_type ?? u.role}</p>
+                  </div>
+                  {isDetected && (
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">🔍 TS</span>
+                  )}
+                </label>
+              );
+            })}
         </div>
-        {backupSelected.length > 0 && settings && (
-          <p className="text-xs text-blue-600 bg-blue-50 rounded-xl px-3 py-2">
-            🤝 {backupSelected.length} orang backup · masing-masing{' '}
-            {fmtPct(settings.backup_pct / backupSelected.length)} dari biaya cadangan
-          </p>
+
+        {backupCount > 0 && (
+          <div className="text-xs rounded-xl px-3 py-2 border" style={{
+            background: isIncentiveCat && mode === 'onsite' ? '#f0fdf4' : isIncentiveCat && mode === 'remote' ? '#eff6ff' : '#f0f9ff',
+            borderColor: isIncentiveCat && mode === 'onsite' ? '#bbf7d0' : isIncentiveCat && mode === 'remote' ? '#bfdbfe' : '#bae6fd',
+            color: isIncentiveCat ? '#065f46' : '#0c4a6e',
+          }}>
+            🤝 {backupCount} orang support · masing-masing <strong>{fmtPct(supportPct)}</strong>
+            {isIncentiveCat && mode === 'onsite' && ' dari pool 30% Onsite'}
+            {isIncentiveCat && mode === 'remote' && ' dari pool 10% Remote'}
+          </div>
         )}
+
         <div className="flex gap-2 pt-2">
           <button onClick={onClose} className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200">Batal</button>
           <button onClick={onSave} disabled={saving} className={`flex-1 ${btnPrimary}`} style={{ background: 'linear-gradient(135deg,#0ea5e9,#0284c7)' }}>
-            {saving ? 'Menyimpan...' : '💾 Simpan Backup'}
+            {saving ? 'Menyimpan...' : '💾 Simpan Support'}
           </button>
         </div>
       </div>

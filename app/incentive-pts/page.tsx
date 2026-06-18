@@ -65,8 +65,9 @@ function IncentivePTSPage() {
   const [savingBiaya,     setSavingBiaya]     = useState(false);
 
   // ── Backup form ──
-  const [backupSelected, setBackupSelected] = useState<string[]>([]);
-  const [savingBackup,   setSavingBackup]   = useState(false);
+  const [backupSelected,  setBackupSelected]  = useState<string[]>([]);
+  const [detectedSupport, setDetectedSupport] = useState<string[]>([]);
+  const [savingBackup,    setSavingBackup]    = useState(false);
 
   // ── Sync loading ──
   const [syncing, setSyncing] = useState(false);
@@ -610,9 +611,30 @@ function IncentivePTSPage() {
 
   // ── Modal helpers ────────────────────────────────────────────────────────
   const openView       = (p: IncentiveProject) => { setSelectedProject(p); setShowViewModal(true); };
-  const openSetBackup  = (p: IncentiveProject) => { setSelectedProject(p); setBackupSelected(p.backup_names); setShowBackupModal(true); };
   const openInputBiaya = (p: IncentiveProject) => { setSelectedProject(p); setBiayaInput(p.biaya_cadangan > 0 ? String(p.biaya_cadangan) : ''); setCosProjectNoInput(p.cos_project_no ?? ''); setShowBiayaModal(true); };
   const openMarkPaid   = (p: IncentiveProject) => { setSelectedProject(p); setShowPaidModal(true); };
+
+  const openSetBackup = async (p: IncentiveProject) => {
+    setSelectedProject(p);
+    // Auto-detect support dari reminder Troubleshooting dengan project_name yang sama
+    const { data: tsData } = await supabase
+      .from('reminders')
+      .select('assign_name')
+      .eq('project_name', p.project_name)
+      .eq('category', 'Troubleshooting')
+      .not('assign_name', 'is', null);
+
+    const detected: string[] = [...new Set(
+      (tsData ?? [])
+        .map((r: any) => r.assign_name as string)
+        .filter((name) => name && name !== p.handler_name)
+    )];
+
+    setDetectedSupport(detected);
+    // Prioritaskan auto-detected; jika tidak ada, gunakan backup yang sudah ada
+    setBackupSelected(detected.length > 0 ? detected : p.backup_names);
+    setShowBackupModal(true);
+  };
 
   // ── Loading state ────────────────────────────────────────────────────────
   if (loading) return (
@@ -843,6 +865,7 @@ function IncentivePTSPage() {
           project={selectedProject}
           teamUsers={teamUsers}
           backupSelected={backupSelected}
+          detectedSupport={detectedSupport}
           settings={settings}
           saving={savingBackup}
           onClose={() => setShowBackupModal(false)}
