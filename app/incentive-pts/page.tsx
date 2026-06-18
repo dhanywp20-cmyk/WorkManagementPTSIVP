@@ -175,44 +175,46 @@ function IncentivePTSPage() {
     const reminderMap: Record<string, ReminderRow> = {};
     (reminders as ReminderRow[]).forEach(r => { reminderMap[r.id] = r; });
 
-    const { data: existing } = await supabase
+    const { data: existing, error: existingErr } = await supabase
       .from('incentive_projects')
       .select('id,reminder_id,description,notes,address,product,mode_penyelesaian,installer_name,installer_daerah')
       .not('reminder_id', 'is', null);
 
+    if (existingErr) { notify('error', `Sync gagal baca existing projects: ${existingErr.message}`); return; }
+
     const existingMap: Record<string, any> = {};
     (existing ?? []).forEach((e: any) => { existingMap[e.reminder_id] = e; });
 
-    // Insert new
+    // Insert new — satu per satu agar satu gagal tidak memblokir yang lain
     const newReminders = (reminders as ReminderRow[]).filter(r => !existingMap[r.id]);
     if (newReminders.length) {
-      const baseRows = newReminders.map((r) => ({
-        reminder_id: r.id, project_name: r.project_name, category: r.category,
-        sales_name: r.sales_name, sales_division: r.sales_division, due_date: r.due_date,
-        handler_name: r.assign_name ?? '', handler_username: r.assigned_to ?? '',
-        backup_names: [], biaya_cadangan: 0,
-        periode: r.due_date ? r.due_date.slice(0, 7) : new Date().toISOString().slice(0, 7),
-        status: 'pending', description: r.description, notes: r.notes,
-        address: r.address, pic_name: r.pic_name, pic_phone: r.pic_phone, product: r.product,
-      }));
-      // Try inserting with mode columns first; fall back to base if columns missing
-      const { error: insErr } = await supabase.from('incentive_projects').insert(
-        newReminders.map((r, i) => ({
-          ...baseRows[i],
+      let insertedCount = 0;
+      for (const r of newReminders) {
+        const baseRow = {
+          reminder_id: r.id, project_name: r.project_name, category: r.category,
+          sales_name: r.sales_name, sales_division: r.sales_division, due_date: r.due_date,
+          handler_name: r.assign_name ?? '', handler_username: r.assigned_to ?? '',
+          backup_names: [], biaya_cadangan: 0,
+          periode: r.due_date ? r.due_date.slice(0, 7) : new Date().toISOString().slice(0, 7),
+          status: 'pending', description: r.description, notes: r.notes,
+          address: r.address, pic_name: r.pic_name, pic_phone: r.pic_phone, product: r.product,
+        };
+        // Coba insert dengan mode columns
+        const { error: insErr } = await supabase.from('incentive_projects').insert({
+          ...baseRow,
           mode_penyelesaian: (r as ReminderRow).mode_penyelesaian ?? null,
           installer_name: (r as ReminderRow).installer_name ?? null,
           installer_daerah: (r as ReminderRow).installer_daerah ?? null,
-        }))
-      );
-      if (insErr) {
-        // Fallback: insert without mode columns
-        const { error: insErr2 } = await supabase.from('incentive_projects').insert(baseRows);
-        if (insErr2) {
-          notify('error', `Sync insert gagal: ${insErr2.message}`);
-          return;
+        });
+        if (insErr) {
+          // Fallback: insert tanpa mode columns (untuk DB yang belum migrasi)
+          const { error: insErr2 } = await supabase.from('incentive_projects').insert(baseRow);
+          if (!insErr2) insertedCount++;
+        } else {
+          insertedCount++;
         }
       }
-      notify('success', `${newReminders.length} project baru disync ke Incentive PTS!`);
+      if (insertedCount > 0) notify('success', `${insertedCount} project baru disync ke Incentive PTS!`);
     }
 
     // Backfill missing detail fields for existing projects
@@ -398,6 +400,13 @@ function IncentivePTSPage() {
     }
     notify('success', 'Project ditandai sebagai lunas!');
     setShowPaidModal(false); fetchProjects();
+  };
+
+  const recalculateDisbursements = async () => {
+    if (!selectedProject || selectedProject.biaya_cadangan <= 0) return;
+    await createDisbursements(selectedProject);
+    await fetchDisbursements();
+    notify('success', 'Distribusi incentive diperbarui!');
   };
 
   const saveSettings = async () => {
@@ -757,17 +766,19 @@ function IncentivePTSPage() {
                 </div>
               </div>
               {/* ── Table ── */}
-              <ProjectsTab
-                filteredProjects={filteredProjects}
-                totalProjects={projects.length}
-                totalBiaya={totalBiaya}
-                isAdmin={isAdmin}
-                canInputBiaya={canInputBiaya}
-                onView={openView}
-                onSetBackup={openSetBackup}
-                onInputBiaya={openInputBiaya}
-                onMarkPaid={openMarkPaid}
-              />
+              <div className={`transition-opacity duration-300 ${syncing ? 'opacity-40' : 'opacity-100'}`}>
+                <ProjectsTab
+                  filteredProjects={filteredProjects}
+                  totalProjects={projects.length}
+                  totalBiaya={totalBiaya}
+                  isAdmin={isAdmin}
+                  canInputBiaya={canInputBiaya}
+                  onView={openView}
+                  onSetBackup={openSetBackup}
+                  onInputBiaya={openInputBiaya}
+                  onMarkPaid={openMarkPaid}
+                />
+              </div>
             </div>
           )}
           {activeTab === 'rekap' && (
@@ -810,6 +821,7 @@ function IncentivePTSPage() {
           onSetBackup={() => { setShowViewModal(false); setBackupSelected(selectedProject.backup_names); setShowBackupModal(true); }}
           onInputBiaya={() => { setShowViewModal(false); setBiayaInput(selectedProject.biaya_cadangan > 0 ? String(selectedProject.biaya_cadangan) : ''); setCosProjectNoInput(selectedProject.cos_project_no ?? ''); setShowBiayaModal(true); }}
           onMarkPaid={() => { setShowViewModal(false); setShowPaidModal(true); }}
+          onRecalculate={recalculateDisbursements}
         />
       )}
       {showBiayaModal && selectedProject && (

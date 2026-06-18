@@ -15,6 +15,7 @@ interface ViewModalProps {
   onSetBackup: () => void;
   onInputBiaya: () => void;
   onMarkPaid: () => void;
+  onRecalculate?: () => void;
 }
 
 export function ViewModal({
@@ -26,6 +27,7 @@ export function ViewModal({
   onSetBackup,
   onInputBiaya,
   onMarkPaid,
+  onRecalculate,
 }: ViewModalProps) {
   void onMarkPaid;
 
@@ -174,7 +176,18 @@ export function ViewModal({
               <div className="p-3 space-y-2">
                 <div className="flex items-center justify-between bg-indigo-50 rounded-lg px-3 py-2.5 border border-indigo-100">
                   <p className="text-sm text-indigo-700 font-semibold">Biaya Cadangan</p>
-                  <p className="text-base font-bold text-indigo-600">{fmtRp(project.biaya_cadangan)}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-base font-bold text-indigo-600">{fmtRp(project.biaya_cadangan)}</p>
+                    {canInputBiaya && onRecalculate && (
+                      <button
+                        onClick={onRecalculate}
+                        title="Hitung ulang distribusi berdasarkan formula terbaru"
+                        className="text-[11px] font-semibold text-indigo-400 hover:text-indigo-700 border border-indigo-200 hover:border-indigo-400 rounded-lg px-2 py-0.5 transition-all bg-white"
+                      >
+                        🔄 Recalculate
+                      </button>
+                    )}
+                  </div>
                 </div>
                 {disbursements.map((d) => {
                   const roleStyle = {
