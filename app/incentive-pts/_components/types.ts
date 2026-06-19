@@ -50,7 +50,9 @@ export interface IncentiveProject {
   installer_daerah?: string | null;
   installer_incentive_pct?: number;
   installer_incentive_nominal?: number;
+  installer_paid?: boolean;
   atasan_name?: string | null;
+  supervisor_name?: string | null;
 }
 
 export interface IncentiveDisbursement {
@@ -58,10 +60,18 @@ export interface IncentiveDisbursement {
   project_id: string;
   person_name: string;
   person_username?: string;
-  role_type: 'handler' | 'backup' | 'installer' | 'atasan';
+  role_type: 'handler' | 'backup' | 'installer' | 'atasan' | 'supervisor' | 'manager';
   pct: number;
   amount_rp: number;
   periode?: string;
+  // 3-year payment scheme (50% / 35% / 15%)
+  payment_year_1_paid?: boolean;
+  payment_year_2_paid?: boolean;
+  payment_year_3_paid?: boolean;
+  // Resign redistribution
+  member_status?: 'active' | 'resigned';
+  resigned_at?: string | null;
+  redistributed_to?: string[] | null;
 }
 
 export interface ReminderRow {

@@ -270,89 +270,105 @@ function IncentivePTSPage() {
     const isIncentiveCat = (INCENTIVE_TRIGGER_CATEGORIES as string[]).includes(project.category);
     const mode = project.mode_penyelesaian;
     const backupCount = project.backup_names.length;
-    const handlerUser = teamUsers.find((u) => u.full_name === project.handler_name);
 
-    // Cari Manager PTS — bisa saja orang yang sama dengan handler
-    const atasanUser = teamUsers.find((u) => u.jabatan === 'Manager');
-    const atasanIsHandler = atasanUser?.full_name === project.handler_name;
+    const managerUser    = teamUsers.find(u => u.jabatan === 'Manager');
+    const supervisorUser = teamUsers.find(u => u.jabatan === 'Supervisor');
+    const supervisorIsHandler = supervisorUser?.full_name === project.handler_name;
 
-    const rows: Omit<IncentiveDisbursement, 'id' | 'created_at'>[] = [];
+    const rows: Omit<IncentiveDisbursement, 'id'>[] = [];
     const amt = (pct: number) => Math.round((base * pct) / 100);
 
+    const mkPTS = (name: string, username: string | undefined, role: IncentiveDisbursement['role_type'], pct: number) => ({
+      project_id: project.id, person_name: name, person_username: username,
+      role_type: role, pct, amount_rp: amt(pct), periode: project.periode,
+      payment_year_1_paid: false, payment_year_2_paid: false, payment_year_3_paid: false,
+      member_status: 'active' as const,
+    });
+
     if (isIncentiveCat && (mode === 'onsite' || mode === 'remote')) {
-      const atasanPct = 10;
+      const SUPERVISOR_PCT = 10;
+      const MANAGER_BASE   = 10;
+      const managerPct     = supervisorIsHandler ? MANAGER_BASE + SUPERVISOR_PCT : MANAGER_BASE;
 
       if (mode === 'onsite') {
-        // PIC 60% (+10% jika atasan sama dengan handler), Support 30% split, Atasan 10%
-        const picPct = atasanIsHandler ? 60 + atasanPct : 60;
-        rows.push({ project_id: project.id, person_name: project.handler_name,
-          person_username: project.handler_username, role_type: 'handler',
-          pct: picPct, amount_rp: amt(picPct), periode: project.periode });
+        // PIC 65%, Support pool 15% (ke PIC jika kosong), Supervisor 10%, Manager 10/20%
+        const SUPPORT_POOL = 15;
+        const picPct = backupCount === 0 ? 65 + SUPPORT_POOL : 65;
+        rows.push(mkPTS(project.handler_name, project.handler_username, 'handler', picPct));
         if (backupCount > 0) {
-          const perPct = 30 / backupCount;
+          const perPct = SUPPORT_POOL / backupCount;
           project.backup_names.forEach(name => {
             const u = teamUsers.find(u => u.full_name === name);
-            rows.push({ project_id: project.id, person_name: name, person_username: u?.username,
-              role_type: 'backup', pct: perPct, amount_rp: amt(perPct), periode: project.periode });
+            rows.push(mkPTS(name, u?.username, 'backup', perPct));
           });
         }
-        if (atasanUser && !atasanIsHandler) {
-          rows.push({ project_id: project.id, person_name: atasanUser.full_name,
-            person_username: atasanUser.username, role_type: 'atasan',
-            pct: atasanPct, amount_rp: amt(atasanPct), periode: project.periode });
-          await supabase.from('incentive_projects').update({ atasan_name: atasanUser.full_name }).eq('id', project.id);
+        if (supervisorUser && !supervisorIsHandler) {
+          rows.push(mkPTS(supervisorUser.full_name, supervisorUser.username, 'supervisor', SUPERVISOR_PCT));
+          await supabase.from('incentive_projects').update({ supervisor_name: supervisorUser.full_name }).eq('id', project.id);
+        }
+        if (managerUser) {
+          rows.push(mkPTS(managerUser.full_name, managerUser.username, 'manager', managerPct));
+          await supabase.from('incentive_projects').update({ atasan_name: managerUser.full_name }).eq('id', project.id);
         }
 
       } else {
-        // Remote — PIC 60/70% (+10% jika atasan sama dengan handler), Installer 20%, Support 10%
-        const basePicPct = backupCount > 0 ? 60 : 70;
-        const picPct = atasanIsHandler ? basePicPct + atasanPct : basePicPct;
-        const installerPct = 20;
-        const supportEachPct = backupCount > 0 ? 10 / backupCount : 0;
+        // PIC 60% + missed pools, Installer 10%, Support pool 10%, Supervisor 10%, Manager 10/20%
+        const INSTALLER_PCT = 10;
+        const SUPPORT_POOL  = 10;
+        const hasInstaller  = !!project.installer_name;
+        const hasSupport    = backupCount > 0;
+        const picPct = 60 + (hasInstaller ? 0 : INSTALLER_PCT) + (hasSupport ? 0 : SUPPORT_POOL);
 
-        rows.push({ project_id: project.id, person_name: project.handler_name,
-          person_username: project.handler_username, role_type: 'handler',
-          pct: picPct, amount_rp: amt(picPct), periode: project.periode });
+        rows.push(mkPTS(project.handler_name, project.handler_username, 'handler', picPct));
 
-        if (project.installer_name) {
-          rows.push({ project_id: project.id, person_name: project.installer_name,
-            person_username: undefined, role_type: 'installer',
-            pct: installerPct, amount_rp: amt(installerPct), periode: project.periode });
+        if (hasInstaller) {
+          rows.push({
+            project_id: project.id, person_name: project.installer_name!, person_username: undefined,
+            role_type: 'installer', pct: INSTALLER_PCT, amount_rp: amt(INSTALLER_PCT), periode: project.periode,
+            payment_year_1_paid: false, payment_year_2_paid: false, payment_year_3_paid: false,
+            member_status: 'active' as const,
+          });
           await supabase.from('incentive_projects').update({
-            installer_incentive_pct: installerPct, installer_incentive_nominal: amt(installerPct),
+            installer_incentive_pct: INSTALLER_PCT, installer_incentive_nominal: amt(INSTALLER_PCT),
           }).eq('id', project.id);
         }
 
-        if (backupCount > 0) {
+        if (hasSupport) {
+          const perPct = SUPPORT_POOL / backupCount;
           project.backup_names.forEach(name => {
             const u = teamUsers.find(u => u.full_name === name);
-            rows.push({ project_id: project.id, person_name: name, person_username: u?.username,
-              role_type: 'backup', pct: supportEachPct, amount_rp: amt(supportEachPct), periode: project.periode });
+            rows.push(mkPTS(name, u?.username, 'backup', perPct));
           });
         }
 
-        if (atasanUser && !atasanIsHandler) {
-          rows.push({ project_id: project.id, person_name: atasanUser.full_name,
-            person_username: atasanUser.username, role_type: 'atasan',
-            pct: atasanPct, amount_rp: amt(atasanPct), periode: project.periode });
-          await supabase.from('incentive_projects').update({ atasan_name: atasanUser.full_name }).eq('id', project.id);
+        if (supervisorUser && !supervisorIsHandler) {
+          rows.push(mkPTS(supervisorUser.full_name, supervisorUser.username, 'supervisor', SUPERVISOR_PCT));
+          await supabase.from('incentive_projects').update({ supervisor_name: supervisorUser.full_name }).eq('id', project.id);
+        }
+        if (managerUser) {
+          rows.push(mkPTS(managerUser.full_name, managerUser.username, 'manager', managerPct));
+          await supabase.from('incentive_projects').update({ atasan_name: managerUser.full_name }).eq('id', project.id);
         }
       }
 
     } else {
       // Legacy — use settings.handler_pct / settings.backup_pct
       const backupPer = backupCount > 0 ? settings.backup_pct / backupCount : 0;
-      rows.push({ project_id: project.id, person_name: project.handler_name,
-        person_username: project.handler_username, role_type: 'handler',
-        pct: settings.handler_pct, amount_rp: amt(settings.handler_pct), periode: project.periode });
+      rows.push(mkPTS(project.handler_name, project.handler_username, 'handler', settings.handler_pct));
       project.backup_names.forEach(name => {
         const u = teamUsers.find(u => u.full_name === name);
-        rows.push({ project_id: project.id, person_name: name, person_username: u?.username,
-          role_type: 'backup', pct: backupPer, amount_rp: amt(backupPer), periode: project.periode });
+        rows.push(mkPTS(name, u?.username, 'backup', backupPer));
       });
     }
 
-    if (rows.length) await supabase.from('incentive_disbursements').insert(rows);
+    if (rows.length) {
+      const { error } = await supabase.from('incentive_disbursements').insert(rows);
+      if (error) {
+        // Fallback: columns not yet migrated — insert without year-tracking fields
+        const legacyRows = rows.map(({ payment_year_1_paid: _y1, payment_year_2_paid: _y2, payment_year_3_paid: _y3, member_status: _ms, ...r }) => r);
+        await supabase.from('incentive_disbursements').insert(legacyRows);
+      }
+    }
   };
 
   const saveBiaya = async () => {
@@ -408,6 +424,47 @@ function IncentivePTSPage() {
     await createDisbursements(selectedProject);
     await fetchDisbursements();
     notify('success', 'Distribusi incentive diperbarui!');
+  };
+
+  const markYearPaid = async (disbId: string, year: 1 | 2 | 3) => {
+    const field = year === 1 ? 'payment_year_1_paid' : year === 2 ? 'payment_year_2_paid' : 'payment_year_3_paid';
+    const { error } = await supabase.from('incentive_disbursements').update({ [field]: true }).eq('id', disbId);
+    if (error) { notify('error', `Gagal update: ${error.message}`); return; }
+    await fetchDisbursements();
+    notify('success', `Tahun ${year} ditandai lunas!`);
+  };
+
+  const markMemberResigned = async (disbId: string) => {
+    if (!selectedProject) return;
+    const disb = disbursements.find(d => d.id === disbId);
+    if (!disb) return;
+    await supabase.from('incentive_disbursements')
+      .update({ member_status: 'resigned', resigned_at: new Date().toISOString() }).eq('id', disbId);
+    const remainingPct =
+      (disb.payment_year_1_paid ? 0 : 0.50) +
+      (disb.payment_year_2_paid ? 0 : 0.35) +
+      (disb.payment_year_3_paid ? 0 : 0.15);
+    const remainingRp = Math.round(disb.amount_rp * remainingPct);
+    if (remainingRp > 0) {
+      const activeDisbs = disbursements.filter(d =>
+        d.project_id === selectedProject.id && d.id !== disbId &&
+        d.role_type !== 'installer' && d.member_status !== 'resigned'
+      );
+      if (activeDisbs.length > 0) {
+        const perPerson = Math.round(remainingRp / activeDisbs.length);
+        await Promise.all(activeDisbs.map(d =>
+          supabase.from('incentive_disbursements').update({ amount_rp: d.amount_rp + perPerson }).eq('id', d.id)
+        ));
+        await supabase.from('incentive_disbursements')
+          .update({ redistributed_to: activeDisbs.map(d => d.person_name) }).eq('id', disbId);
+        notify('success', `Resign dicatat. Sisa ${fmtRp(remainingRp)} didistribusikan ke ${activeDisbs.length} anggota.`);
+      } else {
+        notify('success', `${disb.person_name} ditandai resign.`);
+      }
+    } else {
+      notify('success', `${disb.person_name} ditandai resign. Semua sudah lunas.`);
+    }
+    await fetchDisbursements();
   };
 
   const saveSettings = async () => {
@@ -844,6 +901,8 @@ function IncentivePTSPage() {
           onInputBiaya={() => { setShowViewModal(false); setBiayaInput(selectedProject.biaya_cadangan > 0 ? String(selectedProject.biaya_cadangan) : ''); setCosProjectNoInput(selectedProject.cos_project_no ?? ''); setShowBiayaModal(true); }}
           onMarkPaid={() => { setShowViewModal(false); setShowPaidModal(true); }}
           onRecalculate={recalculateDisbursements}
+          onMarkYearPaid={canInputBiaya ? markYearPaid : undefined}
+          onMarkResigned={isAdmin ? markMemberResigned : undefined}
         />
       )}
       {showBiayaModal && selectedProject && (

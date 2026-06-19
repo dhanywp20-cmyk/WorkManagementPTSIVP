@@ -16,6 +16,8 @@ interface ViewModalProps {
   onInputBiaya: () => void;
   onMarkPaid: () => void;
   onRecalculate?: () => void;
+  onMarkYearPaid?: (disbId: string, year: 1 | 2 | 3) => void;
+  onMarkResigned?: (disbId: string) => void;
 }
 
 export function ViewModal({
@@ -28,6 +30,8 @@ export function ViewModal({
   onInputBiaya,
   onMarkPaid,
   onRecalculate,
+  onMarkYearPaid,
+  onMarkResigned,
 }: ViewModalProps) {
   void onMarkPaid;
 
@@ -190,23 +194,75 @@ export function ViewModal({
                   </div>
                 </div>
                 {disbursements.map((d) => {
-                  const roleStyle = {
-                    handler:   { cls: 'bg-indigo-50 border-indigo-200', icon: '⭐', color: 'indigo' as const },
-                    backup:    { cls: 'bg-blue-50 border-blue-200',   icon: '🤝', color: 'blue' as const },
-                    installer: { cls: 'bg-sky-50 border-sky-200',     icon: '🔧', color: 'blue' as const },
-                    atasan:    { cls: 'bg-purple-50 border-purple-200', icon: '👔', color: 'purple' as const },
-                  }[d.role_type] ?? { cls: 'bg-gray-50 border-gray-200', icon: '•', color: 'gray' as const };
+                  const isInstaller = d.role_type === 'installer';
+                  const isResigned  = d.member_status === 'resigned';
+                  const ri = ({
+                    handler:    { cls: 'bg-indigo-50 border-indigo-200',  icon: '⭐', label: 'PIC',        color: 'indigo'  as const },
+                    backup:     { cls: 'bg-blue-50 border-blue-200',      icon: '🤝', label: 'Support',    color: 'blue'    as const },
+                    installer:  { cls: 'bg-sky-50 border-sky-200',        icon: '🔧', label: 'Installer',  color: 'blue'    as const },
+                    atasan:     { cls: 'bg-purple-50 border-purple-200',  icon: '👔', label: 'Manager',    color: 'purple'  as const },
+                    supervisor: { cls: 'bg-purple-50 border-purple-200',  icon: '🎖️', label: 'Supervisor', color: 'purple'  as const },
+                    manager:    { cls: 'bg-purple-50 border-purple-200',  icon: '👔', label: 'Manager',    color: 'purple'  as const },
+                  } as Record<string, { cls: string; icon: string; label: string; color: 'indigo'|'blue'|'purple'|'gray' }>)[d.role_type]
+                    ?? { cls: 'bg-gray-50 border-gray-200', icon: '•', label: d.role_type, color: 'gray' as const };
+                  const y1rp = Math.round(d.amount_rp * 0.50);
+                  const y2rp = Math.round(d.amount_rp * 0.35);
+                  const y3rp = Math.round(d.amount_rp * 0.15);
+                  const hasYearFields = d.payment_year_1_paid !== undefined;
                   return (
-                    <div key={d.id} className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm border ${roleStyle.cls}`}>
-                      <div className="flex items-center gap-2">
-                        <span>{roleStyle.icon}</span>
-                        <span className="font-semibold text-gray-700">{d.person_name}</span>
-                        <Badge color={roleStyle.color}>{d.role_type}</Badge>
+                    <div key={d.id} className={`rounded-lg border ${ri.cls} ${isResigned ? 'opacity-60' : ''}`}>
+                      <div className="flex items-center justify-between px-3 py-2 text-sm">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span>{ri.icon}</span>
+                          <span className="font-semibold text-gray-700">{d.person_name}</span>
+                          <Badge color={ri.color}>{ri.label}</Badge>
+                          {isResigned && <Badge color="red">Resign</Badge>}
+                        </div>
+                        <div className="text-right flex-shrink-0 ml-2">
+                          <span className="text-gray-400 text-xs mr-1">{fmtPct(d.pct)}</span>
+                          <span className="font-bold text-gray-800">{fmtRp(d.amount_rp)}</span>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <span className="text-gray-500 text-xs mr-2">{fmtPct(d.pct)}</span>
-                        <span className="font-bold text-gray-800">{fmtRp(d.amount_rp)}</span>
-                      </div>
+                      {isInstaller ? (
+                        <div className="border-t border-sky-100 px-3 py-1.5 flex items-center gap-2">
+                          <span className="text-[11px] text-sky-600 font-semibold">Langsung Lunas · 1× Bayar</span>
+                          {project.installer_daerah && <span className="text-[10px] text-gray-400">📍 {project.installer_daerah}</span>}
+                        </div>
+                      ) : hasYearFields ? (
+                        <div className="border-t border-opacity-40 px-3 pb-2 pt-1 space-y-1.5">
+                          {([1, 2, 3] as const).map(yr => {
+                            const yrRp  = yr === 1 ? y1rp : yr === 2 ? y2rp : y3rp;
+                            const yrPct = yr === 1 ? 50   : yr === 2 ? 35    : 15;
+                            const paid  = yr === 1 ? !!d.payment_year_1_paid : yr === 2 ? !!d.payment_year_2_paid : !!d.payment_year_3_paid;
+                            return (
+                              <div key={yr} className="flex items-center justify-between text-xs">
+                                <span className="text-gray-500">Thn {yr} ({yrPct}%) · {fmtRp(yrRp)}</span>
+                                {paid ? (
+                                  <span className="text-emerald-600 font-bold text-[11px]">✓ Lunas</span>
+                                ) : canInputBiaya && onMarkYearPaid && !isResigned ? (
+                                  <button
+                                    onClick={() => onMarkYearPaid(d.id, yr)}
+                                    className="px-1.5 py-0.5 rounded text-[10px] font-bold border border-emerald-300 text-emerald-700 bg-white hover:bg-emerald-50"
+                                  >Tandai Lunas</button>
+                                ) : (
+                                  <span className="text-gray-300 text-[11px]">Pending</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                          {isAdmin && onMarkResigned && !isResigned && (
+                            <div className="pt-0.5 flex justify-end">
+                              <button
+                                onClick={() => onMarkResigned(d.id)}
+                                className="text-[10px] text-red-400 hover:text-red-600 border border-red-200 hover:border-red-300 rounded px-2 py-0.5"
+                              >Tandai Resign</button>
+                            </div>
+                          )}
+                          {d.redistributed_to && Array.isArray(d.redistributed_to) && d.redistributed_to.length > 0 && (
+                            <p className="text-[10px] text-red-400 pt-0.5">Redistribusi → {(d.redistributed_to as string[]).join(', ')}</p>
+                          )}
+                        </div>
+                      ) : null}
                     </div>
                   );
                 })}
@@ -276,9 +332,9 @@ export function BiayaModal({
   project, settings, teamUsers, biayaInput, cosInput, saving,
   onClose, onSave, onBiayaChange, onCosChange,
 }: BiayaModalProps) {
-  // Cari Manager PTS — bisa sama dengan handler (Dhany)
-  const atasanUser = teamUsers.find(u => u.jabatan === 'Manager');
-  const atasanIsHandler = atasanUser?.full_name === project.handler_name;
+  const managerUser    = teamUsers.find(u => u.jabatan === 'Manager');
+  const supervisorUser = teamUsers.find(u => u.jabatan === 'Supervisor');
+  const supervisorIsHandler = supervisorUser?.full_name === project.handler_name;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
@@ -300,34 +356,45 @@ export function BiayaModal({
               </div>
             );
             const backupCount = project.backup_names.length;
+            const managerPct = supervisorIsHandler ? 20 : 10;
             if (mode === 'onsite') {
-              const picPct = atasanIsHandler ? 70 : 60;
+              const picPct = backupCount === 0 ? 80 : 65;
               return (
                 <div className="bg-emerald-50 rounded-xl p-3 text-xs text-gray-600 space-y-1 border border-emerald-200">
-                  <p className="font-bold text-emerald-700 mb-1">🏢 Mode ONSITE — Distribusi Fixed:</p>
-                  <p>⭐ {project.handler_name}: <strong>{picPct}%</strong>{atasanIsHandler && <span className="text-emerald-600"> (termasuk 10% Atasan)</span>}</p>
+                  <p className="font-bold text-emerald-700 mb-1">🏢 Mode ONSITE — Distribusi:</p>
+                  <p>⭐ {project.handler_name}: <strong>{picPct}%</strong>
+                    {backupCount === 0 && <span className="text-emerald-600"> (+15% pool kosong)</span>}
+                    {supervisorIsHandler && <span className="text-emerald-600"> (merangkap Supervisor)</span>}
+                  </p>
                   {backupCount > 0
-                    ? project.backup_names.map(n => <p key={n}>🤝 {n}: <strong>{fmtPct(30 / backupCount)}</strong></p>)
-                    : <p className="text-amber-600">⚠️ Belum ada backup (30% unused)</p>}
-                  {!atasanIsHandler && <p>👔 Atasan ({atasanUser?.full_name ?? '?'}): <strong>10%</strong></p>}
+                    ? project.backup_names.map(n => <p key={n}>🤝 {n}: <strong>{fmtPct(15 / backupCount)}</strong></p>)
+                    : <p className="text-amber-600">⚠️ Tidak ada support (pool 15% ke PIC)</p>}
+                  {supervisorUser && !supervisorIsHandler && <p>🎖️ {supervisorUser.full_name} (Supervisor): <strong>10%</strong></p>}
+                  <p>👔 {managerUser?.full_name ?? 'Manager PTS'}: <strong>{managerPct}%</strong>
+                    {supervisorIsHandler && <span className="text-purple-600"> (+10% dari Supervisor)</span>}
+                  </p>
                 </div>
               );
             }
-            const basePicPct = backupCount > 0 ? 60 : 70;
-            const picPct = atasanIsHandler ? basePicPct + 10 : basePicPct;
+            const hasInstaller = !!project.installer_name;
+            const picPct = 60 + (hasInstaller ? 0 : 10) + (backupCount === 0 ? 10 : 0);
             return (
               <div className="bg-blue-50 rounded-xl p-3 text-xs text-gray-600 space-y-1 border border-blue-200">
-                <p className="font-bold text-blue-700 mb-1">💻 Mode REMOTE — Distribusi Fixed:</p>
+                <p className="font-bold text-blue-700 mb-1">💻 Mode REMOTE — Distribusi:</p>
                 <p>⭐ {project.handler_name}: <strong>{picPct}%</strong>
-                  {atasanIsHandler
-                    ? <span className="text-blue-600"> (termasuk 10% Atasan)</span>
-                    : backupCount === 0 && <span className="text-blue-600"> (+10% karena tidak ada support)</span>}
+                  {!hasInstaller && <span className="text-blue-600"> (+10% no installer)</span>}
+                  {backupCount === 0 && <span className="text-blue-600"> (+10% no support)</span>}
                 </p>
-                <p>🔧 Installer ({project.installer_name ?? '?'}): <strong>20%</strong></p>
+                {hasInstaller
+                  ? <p>🔧 Installer ({project.installer_name}): <strong>10%</strong></p>
+                  : <p className="text-gray-400">— Tidak ada installer</p>}
                 {backupCount > 0
                   ? project.backup_names.map(n => <p key={n}>🤝 {n}: <strong>{fmtPct(10 / backupCount)}</strong></p>)
                   : <p className="text-gray-400">— Tidak ada support aktif</p>}
-                {!atasanIsHandler && <p>👔 Atasan ({atasanUser?.full_name ?? '?'}): <strong>10%</strong></p>}
+                {supervisorUser && !supervisorIsHandler && <p>🎖️ {supervisorUser.full_name} (Supervisor): <strong>10%</strong></p>}
+                <p>👔 {managerUser?.full_name ?? 'Manager PTS'}: <strong>{managerPct}%</strong>
+                  {supervisorIsHandler && <span className="text-purple-600"> (+10% dari Supervisor)</span>}
+                </p>
               </div>
             );
           }
@@ -369,23 +436,27 @@ export function BiayaModal({
                 const amt = (pct: number) => Math.round(base * pct / 100);
 
                 if (isIncentiveCat && mode === 'onsite') {
-                  const picPct = atasanIsHandler ? 70 : 60;
-                  const perBackupPct = backupCount > 0 ? 30 / backupCount : 0;
+                  const picPct = backupCount === 0 ? 80 : 65;
+                  const perBackupPct = backupCount > 0 ? 15 / backupCount : 0;
+                  const mgrPct = supervisorIsHandler ? 20 : 10;
                   return (<>
-                    <p>⭐ {project.handler_name}: <strong>{fmtRp(amt(picPct))}</strong> ({picPct}%){atasanIsHandler && <span className="ml-1 text-emerald-600">(+Atasan)</span>}</p>
+                    <p>⭐ {project.handler_name}: <strong>{fmtRp(amt(picPct))}</strong> ({picPct}%)</p>
                     {project.backup_names.map(b => <p key={b}>🤝 {b}: <strong>{fmtRp(amt(perBackupPct))}</strong> ({fmtPct(perBackupPct)})</p>)}
-                    {!atasanIsHandler && <p>👔 Atasan ({atasanUser?.full_name ?? '?'}): <strong>{fmtRp(amt(10))}</strong> (10%)</p>}
+                    {supervisorUser && !supervisorIsHandler && <p>🎖️ {supervisorUser.full_name}: <strong>{fmtRp(amt(10))}</strong> (10%)</p>}
+                    <p>👔 {managerUser?.full_name ?? 'Manager'}: <strong>{fmtRp(amt(mgrPct))}</strong> ({mgrPct}%)</p>
                   </>);
                 }
                 if (isIncentiveCat && mode === 'remote') {
-                  const basePicPct = backupCount > 0 ? 60 : 70;
-                  const picPct = atasanIsHandler ? basePicPct + 10 : basePicPct;
+                  const hasInstaller = !!project.installer_name;
+                  const picPct = 60 + (hasInstaller ? 0 : 10) + (backupCount === 0 ? 10 : 0);
                   const perSupportPct = backupCount > 0 ? 10 / backupCount : 0;
+                  const mgrPct = supervisorIsHandler ? 20 : 10;
                   return (<>
-                    <p>⭐ {project.handler_name}: <strong>{fmtRp(amt(picPct))}</strong> ({picPct}%){atasanIsHandler && <span className="ml-1 text-blue-600">(+Atasan)</span>}</p>
-                    <p>🔧 Installer ({project.installer_name ?? '?'}): <strong>{fmtRp(amt(20))}</strong> (20%)</p>
+                    <p>⭐ {project.handler_name}: <strong>{fmtRp(amt(picPct))}</strong> ({picPct}%)</p>
+                    {hasInstaller && <p>🔧 Installer ({project.installer_name}): <strong>{fmtRp(amt(10))}</strong> (10%)</p>}
                     {project.backup_names.map(b => <p key={b}>🤝 {b}: <strong>{fmtRp(amt(perSupportPct))}</strong> ({fmtPct(perSupportPct)})</p>)}
-                    {!atasanIsHandler && <p>👔 Atasan ({atasanUser?.full_name ?? '?'}): <strong>{fmtRp(amt(10))}</strong> (10%)</p>}
+                    {supervisorUser && !supervisorIsHandler && <p>🎖️ {supervisorUser.full_name}: <strong>{fmtRp(amt(10))}</strong> (10%)</p>}
+                    <p>👔 {managerUser?.full_name ?? 'Manager'}: <strong>{fmtRp(amt(mgrPct))}</strong> ({mgrPct}%)</p>
                   </>);
                 }
                 // Legacy
@@ -432,7 +503,7 @@ export function BackupModal({
   // Hitung preview pct untuk info
   const backupCount = backupSelected.length;
   let supportPct = 0;
-  if (isIncentiveCat && mode === 'onsite') supportPct = backupCount > 0 ? 30 / backupCount : 0;
+  if (isIncentiveCat && mode === 'onsite') supportPct = backupCount > 0 ? 15 / backupCount : 0;
   else if (isIncentiveCat && mode === 'remote') supportPct = backupCount > 0 ? 10 / backupCount : 0;
   else if (settings) supportPct = backupCount > 0 ? settings.backup_pct / backupCount : 0;
 
@@ -506,7 +577,7 @@ export function BackupModal({
             color: isIncentiveCat ? '#065f46' : '#0c4a6e',
           }}>
             🤝 {backupCount} orang support · masing-masing <strong>{fmtPct(supportPct)}</strong>
-            {isIncentiveCat && mode === 'onsite' && ' dari pool 30% Onsite'}
+            {isIncentiveCat && mode === 'onsite' && ' dari pool 15% Onsite'}
             {isIncentiveCat && mode === 'remote' && ' dari pool 10% Remote'}
           </div>
         )}
