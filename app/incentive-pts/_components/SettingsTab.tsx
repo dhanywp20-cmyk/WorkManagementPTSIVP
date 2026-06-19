@@ -95,6 +95,137 @@ export function SettingsTab({
         <p className="text-xs text-gray-400">User yang diizinkan menginput biaya cadangan selain Admin</p>
         <AllowBiayaList isAdmin={isAdmin} notify={notify} />
       </div>
+
+      {/* Konfigurasi Supervisor & Manager PTS */}
+      {settings && (
+        <div className="md:col-span-2 bg-white rounded-2xl shadow-sm border border-indigo-100 p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <h2 className="font-bold text-gray-800">🎖️ Konfigurasi Struktur Tim PTS (Incentive)</h2>
+          </div>
+          <p className="text-xs text-gray-400">
+            Tentukan siapa Supervisor dan Manager PTS untuk kalkulasi distribusi incentive.
+            Jika tidak diset, sistem akan fallback ke field Jabatan di profil user.
+          </p>
+          <PtsRolesConfig settings={settings} isAdmin={isAdmin} notify={notify} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── PTS Roles Config (sub-component) ────────────────────────────────────────
+function PtsRolesConfig({
+  settings,
+  isAdmin,
+  notify,
+}: {
+  settings: IncentiveSetting;
+  isAdmin: boolean;
+  notify: (t: 'success' | 'error', m: string) => void;
+}) {
+  const [teamUsers, setTeamUsers]       = useState<User[]>([]);
+  const [supervisorUn, setSupervisorUn] = useState(settings.pts_supervisor_username ?? '');
+  const [managerUn,    setManagerUn]    = useState(settings.pts_manager_username ?? '');
+  const [saving,       setSaving]       = useState(false);
+
+  useEffect(() => {
+    supabase.from('users').select('username,full_name,jabatan,team_type')
+      .eq('role', 'team').order('full_name')
+      .then(({ data }: { data: User[] | null }) => setTeamUsers(data ?? []));
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    const { error } = await supabase.from('incentive_settings').update({
+      pts_supervisor_username: supervisorUn || null,
+      pts_manager_username:    managerUn    || null,
+    }).eq('id', settings.id);
+    setSaving(false);
+    if (error) notify('error', 'Gagal simpan: ' + error.message);
+    else       notify('success', 'Konfigurasi struktur tim disimpan!');
+  };
+
+  const supUser = teamUsers.find(u => u.username === supervisorUn);
+  const mgrUser = teamUsers.find(u => u.username === managerUn);
+
+  return (
+    <div className="grid sm:grid-cols-2 gap-4">
+      {/* Supervisor */}
+      <div className="space-y-2">
+        <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider">
+          🎖️ Supervisor PTS
+        </label>
+        <select
+          value={supervisorUn}
+          onChange={e => setSupervisorUn(e.target.value)}
+          disabled={!isAdmin}
+          className={inputCls}
+        >
+          <option value="">— Tidak diset (pakai jabatan) —</option>
+          {teamUsers.map(u => (
+            <option key={u.username} value={u.username}>
+              {u.full_name}{u.jabatan ? ` · ${u.jabatan}` : ''}
+            </option>
+          ))}
+        </select>
+        {supUser && (
+          <div className="flex items-center gap-2 bg-purple-50 border border-purple-200 rounded-xl px-3 py-2">
+            <div className="w-7 h-7 rounded-lg bg-purple-200 flex items-center justify-center text-xs font-bold text-purple-800 flex-shrink-0">
+              {supUser.full_name.charAt(0)}
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-purple-800">{supUser.full_name}</p>
+              <p className="text-[10px] text-purple-500">{supUser.team_type ?? ''}</p>
+            </div>
+            <span className="ml-auto text-[10px] font-bold text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded">Supervisor</span>
+          </div>
+        )}
+      </div>
+
+      {/* Manager */}
+      <div className="space-y-2">
+        <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider">
+          👔 Manager PTS
+        </label>
+        <select
+          value={managerUn}
+          onChange={e => setManagerUn(e.target.value)}
+          disabled={!isAdmin}
+          className={inputCls}
+        >
+          <option value="">— Tidak diset (pakai jabatan) —</option>
+          {teamUsers.map(u => (
+            <option key={u.username} value={u.username}>
+              {u.full_name}{u.jabatan ? ` · ${u.jabatan}` : ''}
+            </option>
+          ))}
+        </select>
+        {mgrUser && (
+          <div className="flex items-center gap-2 bg-violet-50 border border-violet-200 rounded-xl px-3 py-2">
+            <div className="w-7 h-7 rounded-lg bg-violet-200 flex items-center justify-center text-xs font-bold text-violet-800 flex-shrink-0">
+              {mgrUser.full_name.charAt(0)}
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-violet-800">{mgrUser.full_name}</p>
+              <p className="text-[10px] text-violet-500">{mgrUser.team_type ?? ''}</p>
+            </div>
+            <span className="ml-auto text-[10px] font-bold text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded">Manager</span>
+          </div>
+        )}
+      </div>
+
+      {isAdmin && (
+        <div className="sm:col-span-2">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className={`${btnPrimary} w-full`}
+            style={{ background: 'linear-gradient(135deg,#8b5cf6,#7c3aed)' }}
+          >
+            {saving ? 'Menyimpan...' : '💾 Simpan Konfigurasi Tim'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -17,6 +17,8 @@ export interface IncentiveSetting {
   backup_pct: number;
   updated_by?: string;
   updated_at?: string;
+  pts_supervisor_username?: string | null;
+  pts_manager_username?: string | null;
 }
 
 export interface IncentiveProject {

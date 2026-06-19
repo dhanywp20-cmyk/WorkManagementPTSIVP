@@ -271,8 +271,12 @@ function IncentivePTSPage() {
     const mode = project.mode_penyelesaian;
     const backupCount = project.backup_names.length;
 
-    const managerUser    = teamUsers.find(u => u.jabatan === 'Manager');
-    const supervisorUser = teamUsers.find(u => u.jabatan === 'Supervisor');
+    const managerUser    = settings?.pts_manager_username
+      ? teamUsers.find(u => u.username === settings.pts_manager_username)
+      : teamUsers.find(u => u.jabatan === 'Manager');
+    const supervisorUser = settings?.pts_supervisor_username
+      ? teamUsers.find(u => u.username === settings.pts_supervisor_username)
+      : teamUsers.find(u => u.jabatan === 'Supervisor');
     const supervisorIsHandler = supervisorUser?.full_name === project.handler_name;
 
     const rows: Omit<IncentiveDisbursement, 'id'>[] = [];
