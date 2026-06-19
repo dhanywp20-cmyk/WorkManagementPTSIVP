@@ -158,6 +158,35 @@ function getMonday() {
   return d.toISOString().split('T')[0];
 }
 
+// Same holiday-cascade logic used by piket-showroom page:
+// When a holiday occurs, subsequent days shift their PIC one slot earlier from the pool.
+type PiketPic = { pic_ivp_name: string|null; pic_ump_name: string|null; pic_mlds_name: string|null };
+function computeCascadedPiketToday(
+  weekRows: (PiketPic & { day_date: string })[],
+  holidays: string[],
+  todayDate: string
+): PiketPic | null {
+  if (weekRows.length === 0) return null;
+  const holidaySet = new Set(holidays);
+  const sorted = [...weekRows].sort((a, b) => a.day_date.localeCompare(b.day_date));
+  const picPool: PiketPic[] = sorted.map(r => ({
+    pic_ivp_name: r.pic_ivp_name ?? null,
+    pic_ump_name: r.pic_ump_name ?? null,
+    pic_mlds_name: r.pic_mlds_name ?? null,
+  }));
+  let poolIdx = 0;
+  for (const row of sorted) {
+    if (holidaySet.has(row.day_date)) {
+      if (row.day_date === todayDate) return { pic_ivp_name: null, pic_ump_name: null, pic_mlds_name: null };
+    } else {
+      const pic = picPool[Math.min(poolIdx, picPool.length - 1)];
+      poolIdx++;
+      if (row.day_date === todayDate) return pic;
+    }
+  }
+  return null;
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function MiniDonut({ segments, size = 72 }: { segments: { value: number; color: string }[]; size?: number }) {
@@ -416,13 +445,13 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
       };
 
       // ── Parallel fetches ──
-      const [ticketsRes, actLogsRes, remindersRes, piketTodayRes, piketWeekRes, kegiatanRes, movRes, usersRes, lcSessionsRes] =
+      const [ticketsRes, actLogsRes, remindersRes, piketHolidaysRes, piketWeekRes, kegiatanRes, movRes, usersRes, lcSessionsRes] =
         await Promise.all([
           scopeTickets(supabase.from('tickets').select('id,status,assign_name,sales_division,date,created_at,product')),
           supabase.from('activity_logs').select('id,ticket_id,new_status,created_at,handler_name').order('created_at',{ascending:false}).limit(500),
           scopeReminders(supabase.from('reminders').select('id,status,category,due_date,product')),
-          supabase.from('piket_schedules').select('day_of_week,pic_ivp_name,pic_ump_name,pic_mlds_name,day_date').eq('day_date', todayStr()),
-          supabase.from('piket_schedules').select('id,day_date,pic_ivp_name,pic_ump_name,pic_mlds_name').gte('day_date', getMonday()).lte('day_date', todayStr()),
+          supabase.from('picket_holidays').select('date'),
+          supabase.from('piket_schedules').select('id,day_date,pic_ivp_name,pic_ump_name,pic_mlds_name').gte('day_date', getMonday()).lte('day_date', todayStr()).order('day_date'),
           supabase.from('piket_tamu_detail').select('id,created_at').gte('created_at', today),
           supabase.from('movement_logs').select('id,status_barang,tanggal,nama_pts').gte('tanggal', monthStart()),
           scope.kind === 'admin'
@@ -436,9 +465,10 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
       let tickets   = (ticketsRes.data   ?? []) as any[];
       let reminders = (remindersRes.data ?? []) as any[];
       let movements = (movRes.data       ?? []) as any[];
-      const actLogs    = (actLogsRes.data    ?? []) as any[];
-      const piketToday = ((piketTodayRes.data ?? [])[0]) ?? null;
-      const piketWeek  = (piketWeekRes.data  ?? []) as any[];
+      const actLogs       = (actLogsRes.data     ?? []) as any[];
+      const piketHolidays = (piketHolidaysRes.data ?? []).map((h: any) => h.date as string);
+      const piketWeek     = (piketWeekRes.data   ?? []) as (PiketPic & { day_date: string; id: string })[];
+      const piketToday    = computeCascadedPiketToday(piketWeek, piketHolidays, today);
       const kegiatan   = (kegiatanRes.data   ?? []) as any[];
       const users      = (usersRes.data      ?? []) as any[];
       const lcAttempts = (lcSessionsRes.data ?? []) as any[];
