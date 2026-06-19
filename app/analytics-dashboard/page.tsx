@@ -312,7 +312,9 @@ function AnalyticsPlatform() {
       supabase.channel('cc-r').on('postgres_changes',{event:'*',schema:'public',table:'reminders'},loadStats).subscribe(),
       supabase.channel('cc-p').on('postgres_changes',{event:'*',schema:'public',table:'project_requests'},loadStats).subscribe(),
     ];
-    return () => { chs.forEach(c => supabase.removeChannel(c)); };
+    // Polling fallback — realtime can miss events in iframe context
+    const poll = setInterval(loadStats, 30000);
+    return () => { chs.forEach(c => supabase.removeChannel(c)); clearInterval(poll); };
   }, [auth, user, loadStats]);
 
   useEffect(() => {

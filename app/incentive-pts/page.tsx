@@ -624,10 +624,10 @@ function IncentivePTSPage() {
       .eq('category', 'Troubleshooting')
       .not('assign_name', 'is', null);
 
-    const detected: string[] = [...new Set(
+    const detected: string[] = [...new Set<string>(
       (tsData ?? [])
         .map((r: any) => r.assign_name as string)
-        .filter((name) => name && name !== p.handler_name)
+        .filter((name: string) => name && name !== p.handler_name)
     )];
 
     setDetectedSupport(detected);
