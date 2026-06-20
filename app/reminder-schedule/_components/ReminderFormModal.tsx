@@ -4,7 +4,9 @@ import { useRef, useState } from 'react';
 import {
   Reminder, TeamUser, GuestUser, Priority, Status, RepeatType,
   CATEGORIES, CATEGORY_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG,
-  REPEAT_OPTIONS, REVIEW_TRIGGER_CATEGORIES,
+  REPEAT_OPTIONS, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES,
+  CONTROLLER_BRANDS, CONTROLLER_CATEGORIES, CONTROLLER_AUTOMATION_ELIGIBLE,
+  MANAGER_PIC_USERNAME, PicType, ControllerBrand,
 } from './shared';
 import { FormField, SectionHeader } from '@/components/shared';
 
@@ -204,6 +206,104 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                       })()}
                     </strong>
                   </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Controller Automation — shown for CONTROLLER_CATEGORIES */}
+          {(CONTROLLER_CATEGORIES as readonly string[]).includes(formData.category) && (
+            <div className="rounded-xl p-4 space-y-4" style={{ background: 'rgba(8,145,178,0.07)', border: '1.5px solid rgba(8,145,178,0.35)' }}>
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🎛️</span>
+                <p className="text-sm font-bold text-cyan-700">Incentive & Controller Automation</p>
+              </div>
+
+              {/* Controller Automation checkbox */}
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox"
+                  checked={!!formData.requires_controller_automation}
+                  onChange={e => fd({ requires_controller_automation: e.target.checked, controller_automation_brand: e.target.checked ? formData.controller_automation_brand : null })}
+                  className="w-4 h-4 accent-cyan-600" />
+                <span className="text-sm font-semibold text-slate-700">Controller Automation</span>
+                <span className="text-xs text-slate-400">(Cue / Extron / Wyrestorm)</span>
+              </label>
+
+              {formData.requires_controller_automation && (
+                <FormField label="Brand Controller *">
+                  <div className="flex flex-wrap gap-2">
+                    {CONTROLLER_BRANDS.map(b => (
+                      <button key={b.value} type="button"
+                        onClick={() => fd({ controller_automation_brand: b.value as ControllerBrand })}
+                        className="px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all"
+                        style={formData.controller_automation_brand === b.value
+                          ? { borderColor: '#0891b2', background: 'rgba(8,145,178,0.18)', color: '#0369a1' }
+                          : { borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.7)', color: '#64748b' }}>
+                        {b.label}
+                      </button>
+                    ))}
+                  </div>
+                </FormField>
+              )}
+
+              {/* PIC Type */}
+              <FormField label="Tipe PIC">
+                <div className="flex gap-3">
+                  {([
+                    { value: 'standard', label: '👤 Standard (Yoga / Farhan)', desc: 'PIC 60%, Support 30%, Manager 10%' },
+                    { value: 'manager_pic', label: '🏅 Manager sebagai PIC', desc: 'Dhany sebagai PIC langsung' },
+                  ] as { value: PicType; label: string; desc: string }[]).map(opt => (
+                    <button key={opt.value} type="button"
+                      onClick={() => fd({ pic_type: opt.value })}
+                      className="flex-1 flex flex-col gap-1 px-3 py-3 rounded-xl border-2 text-left transition-all"
+                      style={(formData.pic_type ?? 'standard') === opt.value
+                        ? { borderColor: '#0891b2', background: 'rgba(8,145,178,0.12)', color: '#0369a1' }
+                        : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.6)', color: '#64748b' }}>
+                      <span className="text-xs font-bold">{opt.label}</span>
+                      <span className="text-[11px] opacity-70">{opt.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </FormField>
+
+              {/* Execution Mode */}
+              <FormField label="Mode Pelaksanaan">
+                <div className="flex gap-3">
+                  {(['onsite', 'remote'] as const).map(mode => (
+                    <button key={mode} type="button"
+                      onClick={() => fd({ mode_penyelesaian: mode })}
+                      className="flex-1 py-2.5 rounded-xl text-sm font-bold border-2 transition-all"
+                      style={formData.mode_penyelesaian === mode
+                        ? { borderColor: mode === 'onsite' ? '#10b981' : '#7c3aed', background: mode === 'onsite' ? 'rgba(16,185,129,0.14)' : 'rgba(124,58,237,0.12)', color: mode === 'onsite' ? '#065f46' : '#6d28d9' }
+                        : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.6)', color: '#64748b' }}>
+                      {mode === 'onsite' ? '🏢 Onsite' : '🌐 Remote'}
+                    </button>
+                  ))}
+                </div>
+              </FormField>
+
+              {/* Incentive Value */}
+              <FormField label="Nilai Incentive (Rp)">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">Rp</span>
+                  <input type="number" min={0} value={formData.incentive_value ?? 0}
+                    onChange={e => fd({ incentive_value: Number(e.target.value) })}
+                    className={`${inputCls} pl-10`} style={inputStyle} placeholder="0" />
+                </div>
+              </FormField>
+
+              {/* BAST Date */}
+              <FormField label="Tanggal BAST">
+                <input type="date" value={formData.bast_date ?? ''}
+                  onChange={e => fd({ bast_date: e.target.value || null })}
+                  className={inputCls} style={inputStyle} />
+              </FormField>
+
+              {/* Validation hint */}
+              {formData.requires_controller_automation && (formData.pic_type ?? 'standard') === 'standard' && (
+                <div className="flex items-start gap-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}>
+                  <span className="text-sm">⚠️</span>
+                  <p className="text-xs text-amber-700">Controller Automation standard PIC harus Yoga atau Farhan. Pastikan "Assign To" di atas sudah sesuai.</p>
                 </div>
               )}
             </div>

@@ -128,6 +128,8 @@ function ReminderSchedulePageInner() {
     repeat: 'none', category: 'Demo Product',
     sales_name: '', sales_division: '', address: '', pic_name: '', pic_phone: '',
     notes: '', product: '', warranty_years: null,
+    requires_controller_automation: false, controller_automation_brand: null,
+    pic_type: 'standard', pic_id: null, incentive_value: 0, bast_date: null,
   };
   const [formData, setFormData] = useState(emptyForm);
   const fd = (patch: Partial<typeof emptyForm>) => setFormData(prev => ({ ...prev, ...patch }));
@@ -746,7 +748,14 @@ function ReminderSchedulePageInner() {
     setFormData({ project_name: r.project_name || (r as any).title || '', description: r.description, assigned_to: r.assigned_to, assign_name: r.assign_name ?? '', due_date: r.due_date,
       due_time: r.due_time, priority: r.priority, status: r.status, repeat: r.repeat, category: r.category,
       sales_name: r.sales_name ?? '', sales_division: r.sales_division ?? '', address: r.address ?? '',
-      pic_name: r.pic_name ?? '', pic_phone: r.pic_phone ?? '', notes: r.notes ?? '', product: r.product ?? '' });
+      pic_name: r.pic_name ?? '', pic_phone: r.pic_phone ?? '', notes: r.notes ?? '', product: r.product ?? '',
+      warranty_years: r.warranty_years ?? null, mode_penyelesaian: r.mode_penyelesaian ?? null,
+      installer_name: r.installer_name ?? null, installer_daerah: r.installer_daerah ?? null,
+      requires_controller_automation: r.requires_controller_automation ?? false,
+      controller_automation_brand: r.controller_automation_brand ?? null,
+      pic_type: r.pic_type ?? 'standard', pic_id: r.pic_id ?? null,
+      incentive_value: r.incentive_value ?? 0, bast_date: r.bast_date ?? null,
+    });
     setDetailReminder(null);
     setShowFormModal(true);
   };

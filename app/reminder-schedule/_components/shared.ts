@@ -5,6 +5,8 @@ import { supabase } from '@/lib/supabase';
 export type Priority = 'low' | 'medium' | 'high' | 'urgent';
 export type Status = 'pending' | 'done' | 'cancelled';
 export type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly';
+export type PicType = 'standard' | 'manager_pic';
+export type ControllerBrand = 'cue' | 'extron' | 'wyrestorm';
 
 export interface Reminder {
   id: string;
@@ -35,6 +37,12 @@ export interface Reminder {
   mode_penyelesaian?: 'onsite' | 'remote' | null;
   installer_name?: string | null;
   installer_daerah?: string | null;
+  requires_controller_automation?: boolean;
+  controller_automation_brand?: ControllerBrand | null;
+  pic_type?: PicType;
+  pic_id?: string | null;
+  incentive_value?: number;
+  bast_date?: string | null;
 }
 
 export interface TeamUser {
@@ -62,6 +70,21 @@ export const REVIEW_TRIGGER_CATEGORIES = ['Demo Product', 'Konfigurasi & Trainin
 
 // Kategori yang wajib memilih Onsite/Remote saat status → Completed
 export const INCENTIVE_TRIGGER_CATEGORIES = ['Konfigurasi', 'Konfigurasi & Training', 'Training'] as const;
+
+// Kategori yang mendukung Controller Automation (subset dari INCENTIVE_TRIGGER_CATEGORIES)
+export const CONTROLLER_CATEGORIES = ['Konfigurasi', 'Konfigurasi & Training', 'Training'] as const;
+
+export const CONTROLLER_BRANDS: { value: ControllerBrand; label: string }[] = [
+  { value: 'cue', label: 'Cue System' },
+  { value: 'extron', label: 'Extron' },
+  { value: 'wyrestorm', label: 'Wyrestorm' },
+];
+
+// PTS IVP user yang boleh handle Controller Automation (standard pic_type)
+export const CONTROLLER_AUTOMATION_ELIGIBLE = ['yoga', 'farhan'] as const;
+
+// Manager/PIC fixed user (Dhany)
+export const MANAGER_PIC_USERNAME = 'dhany';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 export const PRIORITY_CONFIG: Record<Priority, { label: string; color: string; bg: string; border: string; dot: string }> = {
