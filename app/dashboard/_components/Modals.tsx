@@ -3156,11 +3156,14 @@ export function UserManagementInline() {
 
   const getUserById = (id: string) => allUsers.find(u => u.id === id);
   const ATASAN_JABATAN: JabatanType[] = ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'];
-  const supervisorCandidates = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.jabatan && ATASAN_JABATAN.includes(u.jabatan as JabatanType));
+  // Kandidat atasan: guest (Sales) ATAU team (PTS) dengan jabatan struktural
+  const supervisorCandidates = allUsers.filter(u => ['guest', 'team'].includes(u.role?.toLowerCase() ?? '') && u.jabatan && ATASAN_JABATAN.includes(u.jabatan as JabatanType));
   const ivpUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.sales_division === 'IVP');
   const mviUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.sales_division === 'MVI');
   const salesHandleUsers = [...ivpUsers, ...mviUsers];
   const nonIvpDivisions = SALES_DIVISIONS.filter(d => d !== 'IVP' && d !== 'MVI');
+  // Grup non-Sales (tim internal) yang juga bisa dipetakan atasan-nya
+  const INTERNAL_GROUPS = ['PTS'];
   const ccEligibleUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.jabatan && u.sales_division && u.sales_division !== 'IVP' && u.sales_division !== 'MVI').sort((a, b) => (JABATAN_CONFIG[a.jabatan as JabatanType]?.tier ?? 0) - (JABATAN_CONFIG[b.jabatan as JabatanType]?.tier ?? 0));
 
   useEffect(() => {
@@ -3312,15 +3315,17 @@ export function UserManagementInline() {
                   <p className="text-xs font-bold text-amber-700 mb-3">➕ Tambah Mapping Atasan</p>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Divisi Sales</label>
+                      <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Divisi / Grup</label>
                       <select value={atasanDiv} onChange={e => setAtasanDiv(e.target.value)} className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
-                        <option value="">-- Pilih Divisi --</option>{nonIvpDivisions.map(d => <option key={d} value={d}>{d}</option>)}
+                        <option value="">-- Pilih Divisi / Grup --</option>
+                        <optgroup label="Divisi Sales">{nonIvpDivisions.map(d => <option key={d} value={d}>{d}</option>)}</optgroup>
+                        <optgroup label="Tim Internal">{INTERNAL_GROUPS.map(d => <option key={d} value={d}>🔧 {d}</option>)}</optgroup>
                       </select>
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Atasan</label>
                       <select value={atasanSupId} onChange={e => setAtasanSupId(e.target.value)} className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
-                        <option value="">-- Pilih Atasan --</option>{supervisorCandidates.map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.jabatan})</option>)}
+                        <option value="">-- Pilih Atasan --</option>{supervisorCandidates.map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.jabatan}{u.team_type ? ` · ${u.team_type}` : ''})</option>)}
                       </select>
                     </div>
                     <div className="flex items-end">

@@ -38,6 +38,7 @@ function IncentivePTSPage() {
   const [projects,      setProjects]      = useState<IncentiveProject[]>([]);
   const [disbursements, setDisbursements] = useState<IncentiveDisbursement[]>([]);
   const [teamUsers,     setTeamUsers]     = useState<User[]>([]);
+  const [ptsAtasan,     setPtsAtasan]     = useState<User[]>([]);
 
   // ── Filters ──
   const [filterMode,    setFilterMode]    = useState<'bulan' | 'kuartal' | 'tahun'>('bulan');
@@ -122,7 +123,7 @@ function IncentivePTSPage() {
   // ── Fetch helpers ────────────────────────────────────────────────────────
   const fetchAll = async () => {
     setLoading(true);
-    await Promise.all([fetchSettings(), fetchProjectsAndAutoSync(), fetchDisbursements(), fetchTeamUsers()]);
+    await Promise.all([fetchSettings(), fetchProjectsAndAutoSync(), fetchDisbursements(), fetchTeamUsers(), fetchPtsAtasan()]);
     setLoading(false);
   };
 
@@ -256,9 +257,20 @@ function IncentivePTSPage() {
 
   const fetchTeamUsers = async () => {
     const { data } = await supabase
-      .from('users').select('username,full_name,role,team_type,jabatan')
+      .from('users').select('id,username,full_name,role,team_type,jabatan')
       .eq('role', 'team').order('full_name');
     setTeamUsers(data ?? []);
+  };
+
+  // Atasan PTS dari hierarki terpusat: Admin Panel → Mapping Atasan → grup 'PTS'
+  const fetchPtsAtasan = async () => {
+    const { data: maps } = await supabase
+      .from('division_supervisor_mappings').select('supervisor_id').eq('sales_division', 'PTS');
+    const ids = (maps ?? []).map((m: any) => m.supervisor_id as string);
+    if (ids.length === 0) { setPtsAtasan([]); return; }
+    const { data: users } = await supabase
+      .from('users').select('id,username,full_name,role,team_type,jabatan').in('id', ids);
+    setPtsAtasan(users ?? []);
   };
 
   // ── Actions ──────────────────────────────────────────────────────────────
@@ -271,12 +283,10 @@ function IncentivePTSPage() {
     const mode = project.mode_penyelesaian;
     const backupCount = project.backup_names.length;
 
-    const managerUser    = settings?.pts_manager_username
-      ? teamUsers.find(u => u.username === settings.pts_manager_username)
-      : teamUsers.find(u => u.jabatan === 'Manager');
-    const supervisorUser = settings?.pts_supervisor_username
-      ? teamUsers.find(u => u.username === settings.pts_supervisor_username)
-      : teamUsers.find(u => u.jabatan === 'Supervisor');
+    // Supervisor & Manager dari hierarki terpusat (Mapping Atasan grup 'PTS'),
+    // fallback ke pencarian berdasarkan jabatan di tim PTS jika mapping belum diisi.
+    const supervisorUser = ptsAtasan.find(u => u.jabatan === 'Supervisor') ?? teamUsers.find(u => u.jabatan === 'Supervisor');
+    const managerUser    = ptsAtasan.find(u => u.jabatan === 'Manager')    ?? teamUsers.find(u => u.jabatan === 'Manager');
     const supervisorIsHandler = supervisorUser?.full_name === project.handler_name;
 
     const rows: Omit<IncentiveDisbursement, 'id'>[] = [];
@@ -914,6 +924,7 @@ function IncentivePTSPage() {
           project={selectedProject}
           settings={settings}
           teamUsers={teamUsers}
+          ptsAtasan={ptsAtasan}
           biayaInput={biayaInput}
           cosInput={cosProjectNoInput}
           saving={savingBiaya}

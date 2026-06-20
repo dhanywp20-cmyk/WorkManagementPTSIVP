@@ -319,6 +319,7 @@ interface BiayaModalProps {
   project: IncentiveProject;
   settings: IncentiveSetting | null;
   teamUsers: User[];
+  ptsAtasan?: User[];
   biayaInput: string;
   cosInput: string;
   saving: boolean;
@@ -329,11 +330,12 @@ interface BiayaModalProps {
 }
 
 export function BiayaModal({
-  project, settings, teamUsers, biayaInput, cosInput, saving,
+  project, settings, teamUsers, ptsAtasan = [], biayaInput, cosInput, saving,
   onClose, onSave, onBiayaChange, onCosChange,
 }: BiayaModalProps) {
-  const managerUser    = teamUsers.find(u => u.jabatan === 'Manager');
-  const supervisorUser = teamUsers.find(u => u.jabatan === 'Supervisor');
+  // Selaras dengan createDisbursements: atasan dari mapping grup 'PTS', fallback jabatan
+  const supervisorUser = ptsAtasan.find(u => u.jabatan === 'Supervisor') ?? teamUsers.find(u => u.jabatan === 'Supervisor');
+  const managerUser    = ptsAtasan.find(u => u.jabatan === 'Manager')    ?? teamUsers.find(u => u.jabatan === 'Manager');
   const supervisorIsHandler = supervisorUser?.full_name === project.handler_name;
 
   return (
