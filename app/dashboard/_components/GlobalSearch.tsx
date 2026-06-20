@@ -48,7 +48,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
   const isAdmin  = ['admin','superadmin'].includes(currentUser.role?.toLowerCase() ?? '');
   const isPTSsup = currentUser.role === 'team' &&
-    ['Team PTS','Team PTS UMP','Team PTS MLDS'].includes(currentUser.team_type ?? '') &&
+    ['Team PTS IVP','Team PTS UMP','Team PTS MLDS'].includes(currentUser.team_type ?? '') &&
     currentUser.jabatan === 'Supervisor';
   const isSalesSup = ['guest','sales'].includes(currentUser.role?.toLowerCase() ?? '') &&
     ['Supervisor','Manager','Deputy General Manager','General Manager','Direktur'].includes(currentUser.jabatan ?? '');
@@ -250,7 +250,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       if (isPTSsup) {
         const myTeam = currentUser.team_type;
         pikets = pikets.filter((p: any) => {
-          if (myTeam === 'Team PTS') return (p.pic_ivp_name ?? '').toLowerCase().includes(ql);
+          if (myTeam === 'Team PTS IVP') return (p.pic_ivp_name ?? '').toLowerCase().includes(ql);
           if (myTeam === 'Team PTS UMP') return (p.pic_ump_name ?? '').toLowerCase().includes(ql);
           if (myTeam === 'Team PTS MLDS') return (p.pic_mlds_name ?? '').toLowerCase().includes(ql);
           return true;

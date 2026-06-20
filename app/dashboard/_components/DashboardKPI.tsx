@@ -277,7 +277,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     (async () => {
       const role   = currentUser.role?.toLowerCase() ?? '';
       const jabatan = currentUser.jabatan ?? '';
-      const PTS_TYPES = ['Team PTS','Team PTS UMP','Team PTS MLDS'];
+      const PTS_TYPES = ['Team PTS IVP','Team PTS UMP','Team PTS MLDS'];
 
       if (['admin','superadmin'].includes(role)) {
         setScope({ kind: 'admin' }); setScopeReady(true); return;
@@ -505,7 +505,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       if (scope.kind === 'pts_sup') {
         membersQ = membersQ.eq('role', 'team').eq('team_type', scope.ptsTeamType ?? '');
       } else if (scope.kind === 'admin') {
-        membersQ = membersQ.in('team_type', ['Team PTS', 'Team PTS UMP', 'Team PTS MLDS']).eq('role', 'team');
+        membersQ = membersQ.in('team_type', ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MLDS']).eq('role', 'team');
       } else {
         setKpiTeam(prev => ({ ...prev, loading: false }));
         return;
@@ -598,7 +598,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
         // Piket: count days where this member is assigned
         const tt = m.team_type as string;
-        const picCol = tt === 'Team PTS' ? 'pic_ivp_name' : tt === 'Team PTS UMP' ? 'pic_ump_name' : 'pic_mlds_name';
+        const picCol = tt === 'Team PTS IVP' ? 'pic_ivp_name' : tt === 'Team PTS UMP' ? 'pic_ump_name' : 'pic_mlds_name';
         const piketFilled = piketSchedules.filter((p: any) => p[picCol] === name).length;
 
         // Ticket response time: avg jam dari ticket created → first activity_log per ticket
@@ -691,7 +691,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
   if (scope.kind === 'none') return null;
 
   // ── Piket card highlight per team ─────────────────────────────────────────
-  const isPTSIVP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS';
+  const isPTSIVP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS IVP';
   const isPTSUMP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS UMP';
   const isPTSMLDS = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS MLDS';
 
@@ -1171,7 +1171,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       for (let mi = 0; mi < allMembers.length; mi++) {
                         const m = allMembers[mi];
                         const s = calcScores(m);
-                        const team = m.team_type.replace('Team PTS ','').replace('Team PTS','IVP');
+                        const team = m.team_type.replace('Team PTS ','').replace('Team PTS IVP','IVP');
                         const year = kpiTeam.filterYear;
 
                         const wb = XLSX_MOD.utils.book_new();
@@ -1365,7 +1365,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                         const noData = m.ticketsHandled===0&&m.lcAttempts===0&&m.manual.technicalNote===0;
                         const label = noData?'Belum Ada Data':final>=85?'Excellent':final>=70?'Good':final>=50?'Fair':'Needs Work';
                         summaryAoa.push([
-                          idx+1, m.name, m.team_type.replace('Team PTS ','').replace('Team PTS','IVP'),
+                          idx+1, m.name, m.team_type.replace('Team PTS ','').replace('Team PTS IVP','IVP'),
                           m.jabatan, m.ticketsHandled, m.ticketsOverdue,
                           m.lcAttempts, m.lcAvgScore, m.formReviewLowRating,
                           m.manual.technicalNote, noData ? 0 : final, label,
@@ -1395,7 +1395,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                         teams[k].push(m);
                       });
                       Object.entries(teams).forEach(([teamName, tMembers]) => {
-                        const sheetName = ('Detail ' + teamName.replace('Team PTS ','').replace('Team PTS','IVP')).substring(0,31);
+                        const sheetName = ('Detail ' + teamName.replace('Team PTS ','').replace('Team PTS IVP','IVP')).substring(0,31);
                         const aoa: (string|number|null)[][] = [
                           [`Detail KPI — ${teamName} — ${year}`, null, null, null, null, null],
                           [],
@@ -1455,7 +1455,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
               {/* ── Team PTS IVP ── */}
               {!kpiTeam.loading && (() => {
-                const ivpMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS');
+                const ivpMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS IVP');
                 const mldsMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS MLDS');
                 const umpMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS UMP');
                 const calcKPI = (member: KPITeamMember) => {
@@ -1562,7 +1562,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
                 return (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    {ivpMembers.length>0 && (scope.kind==='admin'||scope.ptsTeamType==='Team PTS') && (
+                    {ivpMembers.length>0 && (scope.kind==='admin'||scope.ptsTeamType==='Team PTS IVP') && (
                       <TeamRow members={ivpMembers} label="Team PTS IVP" color="#ef4444" abbr="IVP"/>
                     )}
                     {mldsMembers.length>0 && (scope.kind==='admin'||scope.ptsTeamType==='Team PTS MLDS') && (

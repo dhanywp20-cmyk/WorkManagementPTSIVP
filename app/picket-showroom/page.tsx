@@ -66,7 +66,7 @@ function PiketShowroomPageInner() {
       const[wRes,aRes,uRes,kgRes]=await Promise.all([
         supabase.from('piket_schedules').select('*').in('week_start',[wk,wk2]).order('day_date'),
         supabase.from('piket_schedules').select('id,day_date,week_start,day_of_week,pic_ivp_name,pic_ump_name,pic_mlds_name'),
-        supabase.from('users').select('id,full_name,username,team_type,role').in('team_type',['Team PTS','Team PTS UMP','Team PTS MLDS']).order('full_name'),
+        supabase.from('users').select('id,full_name,username,team_type,role').in('team_type',['Team PTS IVP','Team PTS UMP','Team PTS MLDS']).order('full_name'),
         supabase.from('piket_tamu_detail').select('*').order('created_at'),
       ]);
       const firstErr = wRes.error || aRes.error || uRes.error || kgRes.error;
@@ -117,7 +117,7 @@ function PiketShowroomPageInner() {
         const name = isPast ? null : getRollingNameForDate(date, allRows, holidays);
         const u = name ? ptUsers.find(x=>x.full_name===name) : undefined;
         const tt = u?.team_type||'';
-        const isIVP=tt==='Team PTS', isUMP=tt==='Team PTS UMP', isMlds=tt==='Team PTS MLDS';
+        const isIVP=tt==='Team PTS IVP', isUMP=tt==='Team PTS UMP', isMlds=tt==='Team PTS MLDS';
         virtual.push({
           id: `virtual-${wkKey}-${day}`,
           week_start: wkKey,
@@ -485,7 +485,7 @@ function PiketShowroomPageInner() {
                                     {/* Cari PTS team dari ptUsers */}
                                     {(()=>{
                                       const u=ptUsers.find(x=>x.full_name===(kg as any).team_rnd);
-                                      const teamLabel=u?.team_type==='Team PTS'?'PTS IVP':u?.team_type==='Team PTS UMP'?'PTS UMP':u?.team_type==='Team PTS MLDS'?'PTS MLDS':'';
+                                      const teamLabel=u?.team_type==='Team PTS IVP'?'PTS IVP':u?.team_type==='Team PTS UMP'?'PTS UMP':u?.team_type==='Team PTS MLDS'?'PTS MLDS':'';
                                       const tc=teamLabel?TEAM_LABEL[teamLabel]:null;
                                       return tc?<span className="text-[8px] font-black px-1 py-0.5 rounded text-white" style={{background:tc.dot}}>{teamLabel}</span>:null;
                                     })()}

@@ -202,7 +202,7 @@ function ReminderSchedulePageInner() {
 
   const fetchTeamUsers = async () => {
     const { data } = await supabase.from('users').select('id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus').order('full_name');
-    if (data) setTeamUsers(data.filter((u: TeamUser) => (u.team_type === 'Team PTS' || u.team_type === 'Team PTS MLDS' || u.team_type === 'Team PTS UMP') && u.role !== 'admin' && u.role !== 'superadmin'));
+    if (data) setTeamUsers(data.filter((u: TeamUser) => (u.team_type === 'Team PTS IVP' || u.team_type === 'Team PTS MLDS' || u.team_type === 'Team PTS UMP') && u.role !== 'admin' && u.role !== 'superadmin'));
   };
 
   const fetchGuestUsers = async () => {
@@ -296,7 +296,7 @@ function ReminderSchedulePageInner() {
 
     // ── BULK ASSIGN ──────────────────────────────────────────────────────────
     if (bulkTarget !== 'none') {
-      const teamTypeMap: Record<string, string> = { ivp: 'Team PTS', mlds: 'Team PTS MLDS', ump: 'Team PTS UMP' };
+      const teamTypeMap: Record<string, string> = { ivp: 'Team PTS IVP', mlds: 'Team PTS MLDS', ump: 'Team PTS UMP' };
       const bulkLabelMap: Record<string, string> = { ivp: 'PTS IVP', mlds: 'PTS MLDS', ump: 'PTS UMP' };
       const targets = teamUsers.filter(u => u.team_type === teamTypeMap[bulkTarget]);
       if (targets.length === 0) { notify('error', 'Tidak ada anggota team yang ditemukan!'); return; }
@@ -422,7 +422,7 @@ function ReminderSchedulePageInner() {
           const { data: handlerUser } = await supabase
             .from('users').select('phone_number, full_name')
             .eq('username', reminder.assigned_to)
-            .eq('team_type', 'Team PTS').single();
+            .eq('team_type', 'Team PTS IVP').single();
           if (handlerUser?.phone_number) {
             const msg =
               `✅ *JADWAL SELESAI — PTS IVP*\n\n` +
@@ -772,7 +772,7 @@ function ReminderSchedulePageInner() {
       const { data: handlerUser } = await supabase
         .from('users').select('phone_number, full_name')
         .eq('username', rescheduleTarget.assigned_to)
-        .eq('team_type', 'Team PTS').single();
+        .eq('team_type', 'Team PTS IVP').single();
       if (handlerUser?.phone_number) {
         const msg =
           `📅 *JADWAL DIUBAH — PTS IVP*\n\n` +
@@ -807,7 +807,7 @@ function ReminderSchedulePageInner() {
       .from('users')
       .select('phone_number, full_name')
       .eq('username', r.assigned_to)
-      .eq('team_type', 'Team PTS')
+      .eq('team_type', 'Team PTS IVP')
       .single();
 
     if (handlerErr || !handlerData?.phone_number) {
@@ -1052,7 +1052,7 @@ function ReminderSchedulePageInner() {
           `🕐 Usulan: *${formatDate(data.due_date)}${data.due_time ? ' · ' + data.due_time : ''}*\n` +
           (data.description ? `📝 Deskripsi: ${data.description}\n` : '') +
           (data.pic_name ? `🙋 PIC: ${data.pic_name}${data.pic_phone ? ' - ' + data.pic_phone : ''}\n` : '') +
-          `\nSilakan review & assign ke Team PTS:\n` +
+          `\nSilakan review & assign ke Team PTS IVP:\n` +
           `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
         for (const admin of admins) {
           if (admin.phone_number) {
@@ -1324,7 +1324,7 @@ jangan lupa peralatan & Semangat💪🏼
                   style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)' }}>
                   <span className="text-base flex-shrink-0">💬</span>
                   <p className="text-[11px] text-green-700 leading-relaxed">
-                    WA notifikasi akan otomatis dikirim ke <strong>Team PTS</strong> yang di-assign dan ke <strong>Sales</strong> yang request bahwa jadwalnya sudah disetujui.
+                    WA notifikasi akan otomatis dikirim ke <strong>Team PTS IVP</strong> yang di-assign dan ke <strong>Sales</strong> yang request bahwa jadwalnya sudah disetujui.
                   </p>
                 </div>
 
@@ -2034,7 +2034,7 @@ jangan lupa peralatan & Semangat💪🏼
                   onSliceClick={label => setSearchDivisionSales(searchDivisionSales === label ? '' : label)}
                 />
                 <MiniPieChart
-                  data={teamPtsPieData} title="Team PTS" icon="👥"
+                  data={teamPtsPieData} title="Team PTS IVP" icon="👥"
                   activeFilter={searchTeamHandler || null}
                   onSliceClick={label => setSearchTeamHandler(searchTeamHandler === label ? '' : label)}
                 />

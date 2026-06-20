@@ -367,7 +367,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                   className="w-full rounded-xl pl-9 pr-4 py-3 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-red-500/40 appearance-none cursor-pointer"
                   style={{ background: "rgba(255,255,255,0.90)", border: "1px solid rgba(0,0,0,0.12)" }}>
                   <option value="">— Pilih Handler —</option>
-                  <optgroup label="Team PTS">
+                  <optgroup label="Team PTS IVP">
                     {teamPTSMembers.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
                   </optgroup>
                 </select>

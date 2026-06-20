@@ -96,7 +96,7 @@ interface KPIPeriodSnapshot {
   period: '6m' | '1y';
   start_month: number;        // 1-12 (bulan mulai)
   end_month: number;          // 1-12 (bulan akhir, otomatis)
-  team_type: string;          // scope: "all" | "Team PTS" | "Team PTS MLDS"
+  team_type: string;          // scope: "all" | "Team PTS IVP" | "Team PTS MLDS"
   created_at: string;
   created_by: string;
   members_json: {
@@ -392,7 +392,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
     (async () => {
       const role   = currentUser.role?.toLowerCase() ?? '';
       const jabatan = currentUser.jabatan ?? '';
-      const PTS_TYPES = ['Team PTS','Team PTS UMP','Team PTS MLDS'];
+      const PTS_TYPES = ['Team PTS IVP','Team PTS UMP','Team PTS MLDS'];
 
       if (['admin','superadmin'].includes(role)) {
         setScope({ kind: 'admin' }); setScopeReady(true); return;
@@ -656,7 +656,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
     </div>
   );
   // ── Piket card highlight per team ─────────────────────────────────────────
-  const isPTSIVP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS';
+  const isPTSIVP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS IVP';
   const isPTSUMP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS UMP';
   const isPTSMLDS = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS MLDS';
 

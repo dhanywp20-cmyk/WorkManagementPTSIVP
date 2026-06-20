@@ -28,7 +28,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
       setLoadingE(true);
       const[detailRes,usersRes]=await Promise.all([
         supabase.from('piket_tamu_detail').select('*').eq('piket_id',row.id).order('created_at'),
-        supabase.from('users').select('id,full_name,team_type,role').in('team_type',['Team PTS','Team PTS UMP','Team PTS MLDS']).order('full_name'),
+        supabase.from('users').select('id,full_name,team_type,role').in('team_type',['Team PTS IVP','Team PTS UMP','Team PTS MLDS']).order('full_name'),
       ]);
       if(detailRes.data&&detailRes.data.length>0){
         setEntries((detailRes.data as KegiatanEntry[]).map(d=>({
@@ -54,7 +54,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
   const getPTSTeamLabel=(name:string)=>{
     const u=ptUsers.find(x=>x.full_name===name);
     const tt=u?.team_type||'';
-    return tt==='Team PTS'?'PTS IVP':tt==='Team PTS UMP'?'PTS UMP':tt==='Team PTS MLDS'?'PTS MLDS':'';
+    return tt==='Team PTS IVP'?'PTS IVP':tt==='Team PTS UMP'?'PTS UMP':tt==='Team PTS MLDS'?'PTS MLDS':'';
   };
 
   const handleSave=async()=>{
@@ -223,7 +223,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                             className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
                             <option value="">— Pilih Team —</option>
                             <optgroup label="Team PTS IVP">
-                              {ptUsers.filter(u=>u.team_type==='Team PTS').map(u=><option key={u.id} value={u.full_name}>{u.full_name}</option>)}
+                              {ptUsers.filter(u=>u.team_type==='Team PTS IVP').map(u=><option key={u.id} value={u.full_name}>{u.full_name}</option>)}
                             </optgroup>
                             <optgroup label="Team PTS UMP">
                               {ptUsers.filter(u=>u.team_type==='Team PTS UMP').map(u=><option key={u.id} value={u.full_name}>{u.full_name}</option>)}

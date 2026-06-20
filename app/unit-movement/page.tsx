@@ -75,8 +75,8 @@ function UnitMovementPageInner() {
   };
 
   const fetchTeamMembers = async () => {
-    // Hanya Team PTS
-    const {data} = await supabase.from('users').select('full_name').eq('team_type','Team PTS').order('full_name');
+    // Hanya Team PTS IVP
+    const {data} = await supabase.from('users').select('full_name').eq('team_type','Team PTS IVP').order('full_name');
     if (data&&data.length>0) setTeamMembers(data.map((u:any)=>u.full_name));
   };
 

@@ -83,7 +83,7 @@ const PERIOD_EMOJI: Record<PeriodKey, string> = {
   'Minggu Ini': '📅', 'Bulan Ini': '🗓️', '3 Bulan': '📆', '6 Bulan': '🗃️', '1 Tahun': '📊',
 };
 const TEAM_COLORS: Record<string, string> = {
-  'Team PTS': '#0284c7', 'Team PTS UMP': '#7c3aed', 'Team PTS MLDS': '#0d9488',
+  'Team PTS IVP': '#0284c7', 'Team PTS UMP': '#7c3aed', 'Team PTS MLDS': '#0d9488',
 };
 const STATUS_COLORS: Record<string, string> = {
   'Solved': '#10b981', 'Pending': '#3b82f6', 'Overdue': '#ef4444',
@@ -742,7 +742,7 @@ export default function KPITeamPage() {
     (async () => {
       const role    = currentUser.role?.toLowerCase() ?? '';
       const jabatan = currentUser.jabatan ?? '';
-      const PTS_TYPES = ['Team PTS', 'Team PTS UMP', 'Team PTS MLDS'];
+      const PTS_TYPES = ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MLDS'];
       if (['admin', 'superadmin'].includes(role)) {
         setScope({ kind: 'admin' }); setScopeReady(true); return;
       }
@@ -857,7 +857,7 @@ export default function KPITeamPage() {
 
       // Piket
       const tt     = m.team_type as string;
-      const picCol = tt === 'Team PTS' ? 'pic_ivp_name' : tt === 'Team PTS UMP' ? 'pic_ump_name' : 'pic_mlds_name';
+      const picCol = tt === 'Team PTS IVP' ? 'pic_ivp_name' : tt === 'Team PTS UMP' ? 'pic_ump_name' : 'pic_mlds_name';
       const piketFilled = piketRows.filter((p: any) => p[picCol] === name).length;
 
       // Avg response time (first activity per ticket)
@@ -902,7 +902,7 @@ export default function KPITeamPage() {
       } else if (scope.kind === 'pts_sup') {
         mQ = mQ.eq('role', 'team').eq('team_type', scope.ptsTeamType ?? '');
       } else {
-        mQ = mQ.in('team_type', ['Team PTS', 'Team PTS UMP', 'Team PTS MLDS']).eq('role', 'team');
+        mQ = mQ.in('team_type', ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MLDS']).eq('role', 'team');
       }
       const { data: mData } = await mQ;
       if (!mData?.length) { setLoading(false); return; }
@@ -949,7 +949,7 @@ export default function KPITeamPage() {
         if (scope.kind === 'pts_sup') {
           mQ = mQ.eq('role', 'team').eq('team_type', scope.ptsTeamType ?? '');
         } else {
-          mQ = mQ.in('team_type', ['Team PTS', 'Team PTS UMP', 'Team PTS MLDS']).eq('role', 'team');
+          mQ = mQ.in('team_type', ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MLDS']).eq('role', 'team');
         }
       }
       const { data: mData } = await mQ;
@@ -1272,7 +1272,7 @@ export default function KPITeamPage() {
           ) : kpiFiltered.length === 0 ? (
             <p className="text-center py-10 text-slate-400 text-sm">Tidak ada anggota dengan KPI aktif. Aktifkan kpi_enabled di user management.</p>
           ) : (() => {
-            const teams = ['Team PTS', 'Team PTS MLDS', 'Team PTS UMP'];
+            const teams = ['Team PTS IVP', 'Team PTS MLDS', 'Team PTS UMP'];
             const rows = filterTeam === 'all'
               ? teams.map(tt => ({ tt, ms: kpiFiltered.filter(m => m.team_type === tt) })).filter(r => r.ms.length > 0)
               : [{ tt: filterTeam, ms: kpiFiltered }];
@@ -1281,7 +1281,7 @@ export default function KPITeamPage() {
               <div className="p-4 space-y-3">
                 {rows.map(({ tt, ms }) => {
                   const col = TEAM_COLORS[tt] ?? '#64748b';
-                  const abbr = tt.replace('Team PTS ', '').replace('Team PTS', 'IVP');
+                  const abbr = tt.replace('Team PTS ', '').replace('Team PTS IVP', 'IVP');
                   const scored = ms.filter(m => !(m.ticketsHandled === 0 && m.lcAttempts === 0 && m.techNotesApproved === 0));
                   const avg = scored.length ? Math.round(scored.reduce((s, m) => s + calcKPI(m), 0) / scored.length) : null;
                   const avgC = avg == null ? '#94a3b8' : avg >= 85 ? '#10b981' : avg >= 70 ? '#3b82f6' : avg >= 50 ? '#f59e0b' : '#ef4444';
@@ -1610,7 +1610,7 @@ export default function KPITeamPage() {
               ) : kpiFiltered.length === 0 ? (
                 <p className="text-center py-10 text-slate-400 text-sm">Tidak ada anggota dengan KPI aktif. Aktifkan kpi_enabled di user management.</p>
               ) : (() => {
-                const teams = ['Team PTS', 'Team PTS MLDS', 'Team PTS UMP'];
+                const teams = ['Team PTS IVP', 'Team PTS MLDS', 'Team PTS UMP'];
                 const rows = filterTeam === 'all'
                   ? teams.map(tt => ({ tt, ms: kpiFiltered.filter(m => m.team_type === tt) })).filter(r => r.ms.length > 0)
                   : [{ tt: filterTeam, ms: kpiFiltered }];
@@ -1619,7 +1619,7 @@ export default function KPITeamPage() {
                   <div className="p-4 space-y-3">
                     {rows.map(({ tt, ms }) => {
                       const col = TEAM_COLORS[tt] ?? '#64748b';
-                      const abbr = tt.replace('Team PTS ', '').replace('Team PTS', 'IVP');
+                      const abbr = tt.replace('Team PTS ', '').replace('Team PTS IVP', 'IVP');
                       const scored = ms.filter(m => !(m.ticketsHandled === 0 && m.lcAttempts === 0 && m.techNotesApproved === 0));
                       const avg = scored.length ? Math.round(scored.reduce((s, m) => s + calcKPI(m), 0) / scored.length) : null;
                       const avgC = avg == null ? '#94a3b8' : avg >= 85 ? '#10b981' : avg >= 70 ? '#3b82f6' : avg >= 50 ? '#f59e0b' : '#ef4444';

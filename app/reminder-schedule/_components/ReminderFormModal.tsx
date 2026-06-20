@@ -11,7 +11,7 @@ import { FormField, SectionHeader } from '@/components/shared';
 export type ReminderForm = Omit<Reminder, 'id' | 'created_at' | 'created_by' | 'wa_sent_h1'>;
 export type BulkTarget = 'none' | 'ivp' | 'mlds' | 'ump';
 
-const BULK_TEAM_TYPE: Record<string, string> = { ivp: 'Team PTS', mlds: 'Team PTS MLDS', ump: 'Team PTS UMP' };
+const BULK_TEAM_TYPE: Record<string, string> = { ivp: 'Team PTS IVP', mlds: 'Team PTS MLDS', ump: 'Team PTS UMP' };
 const BULK_LABEL: Record<string, string> = { ivp: 'PTS IVP', mlds: 'PTS MLDS', ump: 'PTS UMP' };
 
 interface Props {
@@ -128,9 +128,9 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
               <select value={formData.assigned_to} onChange={e => fd({ assigned_to: e.target.value })}
                 className={inputCls} style={inputStyle}>
                 <option value="">-- Pilih Anggota Team --</option>
-                {teamUsers.filter(u => u.team_type === 'Team PTS').length > 0 && (
+                {teamUsers.filter(u => u.team_type === 'Team PTS IVP').length > 0 && (
                   <optgroup label="PTS IVP">
-                    {teamUsers.filter(u => u.team_type === 'Team PTS').map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
+                    {teamUsers.filter(u => u.team_type === 'Team PTS IVP').map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
                   </optgroup>
                 )}
                 {teamUsers.filter(u => u.team_type === 'Team PTS MLDS').length > 0 && (

@@ -132,7 +132,7 @@ function TicketingSystemInner() {
     assign_name: "",
     date: getJakartaDateString(),
     status: "Pending",
-    current_team: "Team PTS",
+    current_team: "Team PTS IVP",
     photo: null as File | null,
     reminder_id: null as string | null,
   });
@@ -159,7 +159,7 @@ function TicketingSystemInner() {
     full_name: "",
     team_member: "",
     role: "team",
-    team_type: "Team PTS",
+    team_type: "Team PTS IVP",
   });
 
   const [changePassword, setChangePassword] = useState({
@@ -360,7 +360,7 @@ function TicketingSystemInner() {
           username: u.username,
           photo_url: "",
           role: u.role,
-          team_type: u.team_type || "Team PTS",
+          team_type: u.team_type || "Team PTS IVP",
           phone_number: u.phone_number,
         }));
       }
@@ -622,7 +622,7 @@ function TicketingSystemInner() {
     if (!newTicket.project_name || !newTicket.issue_case) { notify("error", "Project name and Issue case must be filled!"); return; }
     // admin & superadmin: ticket langsung masuk (tidak perlu approval), wajib assign handler
     const isElevated = currentUser?.role === "admin" || currentUser?.role === "superadmin";
-    if (isElevated && !newTicket.assign_name) { notify("error", "Please assign to a Team PTS member!"); return; }
+    if (isElevated && !newTicket.assign_name) { notify("error", "Please assign to a Team PTS IVP member!"); return; }
     try {
       setUploading(true);
       setShowLoadingPopup(true);
@@ -661,7 +661,7 @@ function TicketingSystemInner() {
         assign_name: ticketAssignedTo,
         date: newTicket.date,
         status: ticketStatus,
-        current_team: "Team PTS",
+        current_team: "Team PTS IVP",
         services_status: null,
         created_by: currentUser?.username || null,
         photo_url: photoUrl || null,
@@ -759,7 +759,7 @@ function TicketingSystemInner() {
       }
 
       setNewTicket({
-        project_name: "", address: "", customer_phone: "", sales_name: "", sales_division: "", sn_unit: "", product: "", issue_case: "", description: "", assign_name: "", date: getJakartaDateString(), status: "Pending", current_team: "Team PTS", photo: null, reminder_id: null
+        project_name: "", address: "", customer_phone: "", sales_name: "", sales_division: "", sn_unit: "", product: "", issue_case: "", description: "", assign_name: "", date: getJakartaDateString(), status: "Pending", current_team: "Team PTS IVP", photo: null, reminder_id: null
       });
       setShowNewTicket(false);
       await fetchData();
@@ -815,7 +815,7 @@ function TicketingSystemInner() {
   };
 
   const approveTicket = async () => {
-    if (!approvalTicket || !approvalAssignee) { notify("error", "Please select a Team PTS member to assign!"); return; }
+    if (!approvalTicket || !approvalAssignee) { notify("error", "Please select a Team PTS IVP member to assign!"); return; }
     try {
       setUploading(true);
       const { error } = await supabase.from("tickets").update({ status: "Pending", assign_name: approvalAssignee }).eq("id", approvalTicket.id);
@@ -945,7 +945,7 @@ function TicketingSystemInner() {
       setUploading(true);
       setShowLoadingPopup(true);
       setLoadingMessage("Re-opening ticket...");
-      const { error: ue } = await supabase.from("tickets").update({ status: "Pending", assign_name: reopenAssignee, current_team: "Team PTS", services_status: null }).eq("id", reopenTargetTicket.id);
+      const { error: ue } = await supabase.from("tickets").update({ status: "Pending", assign_name: reopenAssignee, current_team: "Team PTS IVP", services_status: null }).eq("id", reopenTargetTicket.id);
       if (ue) throw ue;
       await supabase.from("activity_logs").insert([{
         ticket_id: reopenTargetTicket.id,
@@ -954,7 +954,7 @@ function TicketingSystemInner() {
         action_taken: "Re-open Ticket",
         notes: reopenNotes ? `Dibuka kembali: ${reopenNotes}` : `Ticket dibuka kembali oleh ${currentUser?.full_name}`,
         new_status: "Pending",
-        team_type: "Team PTS",
+        team_type: "Team PTS IVP",
         assigned_to_services: false,
         file_url: "", file_name: "", photo_url: "", photo_name: ""
       }]);
@@ -1007,7 +1007,7 @@ function TicketingSystemInner() {
     if (!isSimpleStatus && !isSvcSimple && !newActivity.notes) { notify("error", "Notes must be filled!"); return; }
     if (!selectedTicket) { notify("error", "No ticket selected!"); return; }
     const member = teamMembers.find((m) => (m.username || "").toLowerCase() === (currentUser?.username || "").toLowerCase());
-    const teamType = member?.team_type || "Team PTS";
+    const teamType = member?.team_type || "Team PTS IVP";
     const isServicesTeam = teamType === "Team Services";
     const validStatusesPTS = ["Waiting Approval", "Pending", "Call", "Onsite", "In Progress", "Solved"];
     if (isServicesTeam) {
@@ -1250,12 +1250,12 @@ function TicketingSystemInner() {
     const lowerUsername = newUser.username.toLowerCase();
     let finalTeamType = newUser.team_type;
     if (newUser.role === "guest") finalTeamType = "Guest";
-    else if (newUser.role === "admin") finalTeamType = "Team PTS";
+    else if (newUser.role === "admin") finalTeamType = "Team PTS IVP";
     try {
       const { error: userError } = await supabase.from("users").insert([{ username: lowerUsername, password: newUser.password, full_name: newUser.full_name, role: newUser.role, team_type: finalTeamType }]);
       if (userError) throw userError;
       // team_members table tidak digunakan — data handler dari tabel users langsung
-      setNewUser({ username: "", password: "", full_name: "", team_member: "", role: "team", team_type: "Team PTS" });
+      setNewUser({ username: "", password: "", full_name: "", team_member: "", role: "team", team_type: "Team PTS IVP" });
       await fetchData();
       notify("success", "User created successfully!");
     } catch (err: any) { notify("error", "Error: " + err.message); }
@@ -1385,7 +1385,7 @@ function TicketingSystemInner() {
     <div class="header-right">
       <div><b>Dicetak:</b> ${printDate}</div>
       <div><b>Handler:</b> ${ticket.assign_name || "—"}</div>
-      <div><b>Team:</b> ${ticket.current_team || "Team PTS"}</div>
+      <div><b>Team:</b> ${ticket.current_team || "Team PTS IVP"}</div>
       <div><b>Dibuat:</b> ${formatDateTime(ticket.created_at)}</div>
     </div>
   </div>
@@ -1417,7 +1417,7 @@ function TicketingSystemInner() {
         <div class="info-box"><div class="info-label">Customer / User</div><div class="info-value">${ticket.customer_phone || "—"}</div></div>
       </div>
       <div>
-        <div class="info-box"><div class="info-label">Status Team PTS</div>
+        <div class="info-box"><div class="info-label">Status Team PTS IVP</div>
           <div><span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;background:${statusColor}22;color:${statusColor};border:1.5px solid ${statusColor}66">${ticket.status}</span></div>
         </div>
         ${ticket.services_status ? `<div class="info-box"><div class="info-label">Status Team Services</div>
@@ -1660,9 +1660,9 @@ function TicketingSystemInner() {
   };
 
   const currentUserTeamType = useMemo(() => {
-    if (!currentUser) return "Team PTS";
+    if (!currentUser) return "Team PTS IVP";
     const member = teamMembers.find((m) => (m.username || "").toLowerCase() === (currentUser.username || "").toLowerCase());
-    return member?.team_type || "Team PTS";
+    return member?.team_type || "Team PTS IVP";
   }, [currentUser, teamMembers]);
 
   const filteredTickets = useMemo(() => {
@@ -1720,7 +1720,7 @@ function TicketingSystemInner() {
       ].filter((d) => d.value > 0),
       handlerData: Object.entries(tickets.reduce((acc, t) => { acc[t.assign_name] = (acc[t.assign_name] || 0) + 1; return acc; }, {} as Record<string, number>)).map(([name, tickets]) => {
         const member = teamMembers.find((m) => m.name.trim().toLowerCase() === name.trim().toLowerCase());
-        return { name, tickets, team: member?.team_type || "Team PTS" };
+        return { name, tickets, team: member?.team_type || "Team PTS IVP" };
       }),
     };
   }, [tickets, overdueSettings]);
@@ -1756,7 +1756,7 @@ function TicketingSystemInner() {
     return Array.from(new Set(names)).sort();
   }, [tickets]);
 
-  const teamPTSMembers = useMemo(() => teamMembers.filter((m) => m.team_type === "Team PTS"), [teamMembers]);
+  const teamPTSMembers = useMemo(() => teamMembers.filter((m) => m.team_type === "Team PTS IVP"), [teamMembers]);
   const teamServicesMembers = useMemo(() => teamMembers.filter((m) => m.team_type === "Team Services"), [teamMembers]);
 
   useEffect(() => {
@@ -1893,34 +1893,34 @@ function TicketingSystemInner() {
   const rejectServicesTicket = (ticket: Ticket) => {
     setConfirmState({
       message: `Tolak ticket "${ticket.project_name} - ${ticket.issue_case}"?`,
-      description: 'Ticket akan dikembalikan ke Team PTS.',
+      description: 'Ticket akan dikembalikan ke Team PTS IVP.',
       danger: true,
       confirmLabel: 'Tolak',
       onConfirm: async () => {
         try {
           setUploading(true);
           setShowLoadingPopup(true);
-          setLoadingMessage("Mengembalikan ticket ke Team PTS...");
-          await supabase.from("tickets").update({ current_team: "Team PTS", services_status: null, status: "In Progress" }).eq("id", ticket.id);
+          setLoadingMessage("Mengembalikan ticket ke Team PTS IVP...");
+          await supabase.from("tickets").update({ current_team: "Team PTS IVP", services_status: null, status: "In Progress" }).eq("id", ticket.id);
           await supabase.from("activity_logs").insert([{
             ticket_id: ticket.id,
             handler_name: currentUser?.full_name || "",
             handler_username: currentUser?.username || "",
-            action_taken: "Ticket Dikembalikan ke Team PTS",
-            notes: `Ticket dikembalikan ke Team PTS oleh Team Services karena tidak dapat ditangani.`,
+            action_taken: "Ticket Dikembalikan ke Team PTS IVP",
+            notes: `Ticket dikembalikan ke Team PTS IVP oleh Team Services karena tidak dapat ditangani.`,
             new_status: "In Progress",
             team_type: "Team Services",
             assigned_to_services: false,
             file_url: "", file_name: "", photo_url: "", photo_name: ""
           }]);
           try {
-            await supabaseServices.from("tickets").update({ services_status: "Returned to PTS", current_team: "Team PTS" }).eq("id", ticket.id);
+            await supabaseServices.from("tickets").update({ services_status: "Returned to PTS", current_team: "Team PTS IVP" }).eq("id", ticket.id);
             await supabaseServices.from("activity_logs").insert([{
               ticket_id: ticket.id,
               handler_name: currentUser?.full_name || "",
               handler_username: currentUser?.username || "",
-              action_taken: "Ticket Dikembalikan ke Team PTS",
-              notes: `Ticket dikembalikan ke Team PTS. History Services tetap tersimpan.`,
+              action_taken: "Ticket Dikembalikan ke Team PTS IVP",
+              notes: `Ticket dikembalikan ke Team PTS IVP. History Services tetap tersimpan.`,
               new_status: "Returned to PTS",
               team_type: "Team Services",
               assigned_to_services: false,
@@ -1928,7 +1928,7 @@ function TicketingSystemInner() {
             }]);
           } catch { }
           await fetchData();
-          setLoadingMessage("✅ Ticket dikembalikan ke Team PTS.");
+          setLoadingMessage("✅ Ticket dikembalikan ke Team PTS IVP.");
           setTimeout(() => { setShowLoadingPopup(false); setUploading(false); setShowServicesApprovalModal(false); }, 1500);
         } catch (err: any) { setShowLoadingPopup(false); setUploading(false); notify("error", "Error: " + err.message); }
       },
@@ -2103,7 +2103,7 @@ function TicketingSystemInner() {
             </div>
           )}
 
-          {(currentUser?.role === "admin" || currentUser?.role === "superadmin" || (currentUser?.role === "team" && currentUserTeamType === "Team PTS" || currentUserTeamType === "Guest")) && (
+          {(currentUser?.role === "admin" || currentUser?.role === "superadmin" || (currentUser?.role === "team" && currentUserTeamType === "Team PTS IVP" || currentUserTeamType === "Guest")) && (
             <div className="mb-4 space-y-4">
               {/* ── Stat Cards (Redesigned like ReminderSchedule) ── */}
               <div className="grid grid-cols-2 md:grid-cols-6 gap-3 animate-slide-up anim-d80">
@@ -2518,7 +2518,7 @@ function TicketingSystemInner() {
                             {/* Tampilkan team handler (dari users), bukan current_team ticket */}
                             {(() => {
                               const handler = teamMembers.find(m => m.name === ticket.assign_name);
-                              const handlerTeam = handler?.team_type || "Team PTS";
+                              const handlerTeam = handler?.team_type || "Team PTS IVP";
                               const isServices = ticket.current_team === "Team Services" || !!ticket.services_status;
                               return (
                                 <div className="flex items-center gap-1 mt-0.5">
@@ -3119,7 +3119,7 @@ function TicketingSystemInner() {
                     })()}
 
                     <div className="mt-3 border-t pt-3" style={{ borderColor: "rgba(245,158,11,0.3)" }}>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">👨‍💼 Assign ke Team PTS:</label>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">👨‍💼 Assign ke Team PTS IVP:</label>
                       {/* Suggested handler dari referensi project */}
                       {(() => {
                         const key = (ticket.project_name || "").trim().toLowerCase();
@@ -3154,10 +3154,10 @@ function TicketingSystemInner() {
                           style={{ border: "2px solid rgba(245,158,11,0.3)", background: "white" }}
                           value={approvalTicket?.id === ticket.id ? approvalAssignee : ""}
                           onChange={(e) => { setApprovalTicket(ticket); setApprovalAssignee(e.target.value); }}>
-                          <option value="">Pilih anggota Team PTS</option>
+                          <option value="">Pilih anggota Team PTS IVP</option>
                           {teamPTSMembers.map((m) => (<option key={m.id} value={m.name}>{m.name}</option>))}
                         </select>
-                        <button onClick={async () => { if (!approvalAssignee || approvalTicket?.id !== ticket.id) { notify("error", "Pilih anggota Team PTS terlebih dahulu!"); return; } await approveTicket(); }} disabled={uploading || !(approvalTicket?.id === ticket.id && approvalAssignee)} className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-bold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm">✅ Approve</button>
+                        <button onClick={async () => { if (!approvalAssignee || approvalTicket?.id !== ticket.id) { notify("error", "Pilih anggota Team PTS IVP terlebih dahulu!"); return; } await approveTicket(); }} disabled={uploading || !(approvalTicket?.id === ticket.id && approvalAssignee)} className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-bold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm">✅ Approve</button>
                         <button onClick={() => rejectTicket(ticket)} disabled={uploading} className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg font-bold hover:from-red-600 hover:to-red-700 transition-all disabled:opacity-40 text-sm">❌ Reject</button>
                       </div>
                     </div>
@@ -3178,8 +3178,8 @@ function TicketingSystemInner() {
               <div className="max-h-[calc(85vh-80px)] overflow-y-auto p-4 space-y-4">
                 {pendingServicesApprovalTickets.length === 0 ? (<div className="text-center py-12"><div className="text-5xl mb-3">✅</div><p className="text-gray-500 font-medium">Tidak ada ticket yang menunggu konfirmasi</p></div>) : pendingServicesApprovalTickets.map((ticket) => (
                   <div key={ticket.id} className="rounded-xl p-4" style={{ background: "rgba(219,39,119,0.1)", border: "2px solid rgba(219,39,119,0.3)" }}>
-                    <div className="flex justify-between items-start mb-3"><div className="flex-1"><p className="font-bold text-lg text-gray-800">🏢 {ticket.project_name}</p><p className="text-sm text-gray-600 mt-0.5">⚠️ {ticket.issue_case}</p>{ticket.description && <p className="text-xs text-gray-500 mt-1">{ticket.description}</p>}<div className="flex gap-3 mt-2 flex-wrap text-xs text-gray-500">{ticket.customer_phone && <span>👤 {ticket.customer_phone}</span>}{ticket.sales_name && <span>💼 {ticket.sales_name}</span>}{ticket.sn_unit && <span>🔢 SN: {ticket.sn_unit}</span>}{ticket.address && <span>📍 {ticket.address}</span>}</div><p className="text-xs text-rose-700 font-semibold mt-2">Dikirim oleh Team PTS • {ticket.date}</p></div><span className="px-3 py-1 rounded-full text-xs font-bold border-2 bg-rose-100 text-rose-800 border-rose-400 whitespace-nowrap ml-3">⏳ Menunggu Konfirmasi</span></div>
-                    <div className="mt-3 border-t pt-3" style={{ borderColor: "rgba(219,39,119,0.3)" }}><p className="text-xs text-gray-600 mb-3 rounded-lg px-3 py-2" style={{ background: "rgba(219,39,119,0.05)", border: "1px solid rgba(219,39,119,0.2)" }}>💡 Terima ticket untuk mulai proses penanganan, atau tolak untuk mengembalikan ke Team PTS.</p><div className="flex gap-2"><button onClick={() => approveServicesTicket(ticket)} disabled={uploading} className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2.5 rounded-lg font-bold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm">✅ Terima & Mulai Proses</button><button onClick={() => rejectServicesTicket(ticket)} disabled={uploading} className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2.5 rounded-lg font-bold hover:from-red-600 hover:to-red-700 transition-all disabled:opacity-40 text-sm">❌ Tolak (Kembalikan ke PTS)</button></div></div>
+                    <div className="flex justify-between items-start mb-3"><div className="flex-1"><p className="font-bold text-lg text-gray-800">🏢 {ticket.project_name}</p><p className="text-sm text-gray-600 mt-0.5">⚠️ {ticket.issue_case}</p>{ticket.description && <p className="text-xs text-gray-500 mt-1">{ticket.description}</p>}<div className="flex gap-3 mt-2 flex-wrap text-xs text-gray-500">{ticket.customer_phone && <span>👤 {ticket.customer_phone}</span>}{ticket.sales_name && <span>💼 {ticket.sales_name}</span>}{ticket.sn_unit && <span>🔢 SN: {ticket.sn_unit}</span>}{ticket.address && <span>📍 {ticket.address}</span>}</div><p className="text-xs text-rose-700 font-semibold mt-2">Dikirim oleh Team PTS IVP • {ticket.date}</p></div><span className="px-3 py-1 rounded-full text-xs font-bold border-2 bg-rose-100 text-rose-800 border-rose-400 whitespace-nowrap ml-3">⏳ Menunggu Konfirmasi</span></div>
+                    <div className="mt-3 border-t pt-3" style={{ borderColor: "rgba(219,39,119,0.3)" }}><p className="text-xs text-gray-600 mb-3 rounded-lg px-3 py-2" style={{ background: "rgba(219,39,119,0.05)", border: "1px solid rgba(219,39,119,0.2)" }}>💡 Terima ticket untuk mulai proses penanganan, atau tolak untuk mengembalikan ke Team PTS IVP.</p><div className="flex gap-2"><button onClick={() => approveServicesTicket(ticket)} disabled={uploading} className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2.5 rounded-lg font-bold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm">✅ Terima & Mulai Proses</button><button onClick={() => rejectServicesTicket(ticket)} disabled={uploading} className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2.5 rounded-lg font-bold hover:from-red-600 hover:to-red-700 transition-all disabled:opacity-40 text-sm">❌ Tolak (Kembalikan ke PTS)</button></div></div>
                   </div>
                 ))}
               </div>
@@ -3207,7 +3207,7 @@ function TicketingSystemInner() {
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(75,85,99,0.3)" }}>
               <div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-bold text-gray-800">⚙️ Account Management</h2><button onClick={() => setShowAccountSettings(false)} className="text-gray-500 hover:text-gray-700 text-xl font-bold">✕</button></div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div className="rounded-xl p-5" style={{ background: "rgba(255,255,255,0.6)", border: "1px solid rgba(0,0,0,0.08)" }}><h3 className="font-bold mb-4 text-blue-900">➕ Create New Account</h3><div className="space-y-3"><input type="text" placeholder="Username" value={newUser.username} onChange={(e) => setNewUser({ ...newUser, username: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><input type="password" placeholder="Password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><input type="text" placeholder="Full Name" value={newUser.full_name} onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><select value={newUser.role} onChange={(e) => setNewUser({ ...newUser, role: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}><option value="admin">Administrator</option><option value="team">Team</option><option value="guest">Guest</option></select>{newUser.role === "team" && (<select value={newUser.team_type} onChange={(e) => setNewUser({ ...newUser, team_type: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}><option value="Team PTS">Team PTS</option><option value="Team Services">Team Services</option></select>)}<button onClick={createUser} className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white py-3 rounded-xl hover:from-blue-700 hover:to-blue-900 font-bold transition-all">➕ Create Account</button></div></div>
+                <div className="rounded-xl p-5" style={{ background: "rgba(255,255,255,0.6)", border: "1px solid rgba(0,0,0,0.08)" }}><h3 className="font-bold mb-4 text-blue-900">➕ Create New Account</h3><div className="space-y-3"><input type="text" placeholder="Username" value={newUser.username} onChange={(e) => setNewUser({ ...newUser, username: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><input type="password" placeholder="Password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><input type="text" placeholder="Full Name" value={newUser.full_name} onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><select value={newUser.role} onChange={(e) => setNewUser({ ...newUser, role: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}><option value="admin">Administrator</option><option value="team">Team</option><option value="guest">Guest</option></select>{newUser.role === "team" && (<select value={newUser.team_type} onChange={(e) => setNewUser({ ...newUser, team_type: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}><option value="Team PTS IVP">Team PTS IVP</option><option value="Team Services">Team Services</option></select>)}<button onClick={createUser} className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white py-3 rounded-xl hover:from-blue-700 hover:to-blue-900 font-bold transition-all">➕ Create Account</button></div></div>
                 <div className="rounded-xl p-5" style={{ background: "rgba(255,255,255,0.6)", border: "1px solid rgba(0,0,0,0.08)" }}><h3 className="font-bold mb-4 text-orange-900">🔒 Change Password</h3><div className="space-y-3"><select value={selectedUserForPassword} onChange={(e) => { setSelectedUserForPassword(e.target.value); setChangePassword({ current: "", new: "", confirm: "" }); }} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}><option value="">Select User</option>{users.map((u) => (<option key={u.id} value={u.id}>{u.full_name} ({u.username})</option>))}</select>{selectedUserForPassword && (<><input type="password" placeholder="Old Password" value={changePassword.current} onChange={(e) => setChangePassword({ ...changePassword, current: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><input type="password" placeholder="New Password" value={changePassword.new} onChange={(e) => setChangePassword({ ...changePassword, new: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><input type="password" placeholder="Confirm Password" value={changePassword.confirm} onChange={(e) => setChangePassword({ ...changePassword, confirm: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><button onClick={updatePassword} className="w-full bg-gradient-to-r from-orange-600 to-orange-800 text-white py-3 rounded-xl hover:from-orange-700 hover:to-orange-900 font-bold transition-all">🔒 Change Password</button></>)}</div></div>
               </div>
               <div className="rounded-xl p-5" style={{ background: "rgba(255,255,255,0.6)", border: "1px solid rgba(0,0,0,0.08)" }}><h3 className="font-bold mb-4 text-gray-800">👥 User List</h3><div className="max-h-[400px] overflow-y-auto"><div className="space-y-2">{users.map((u) => (<div key={u.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200 flex justify-between items-center"><div><p className="font-bold text-sm">{u.full_name}</p><p className="text-xs text-gray-600">{u.username}</p></div><div className="flex gap-2"><span className={`text-xs px-2 py-1 rounded ${u.role === "admin" ? "bg-red-100 text-red-800" : u.role === "team" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}`}>{u.role === "admin" ? "Admin" : u.role === "team" ? "Team" : "Guest"}</span>{u.team_type && <span className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-800">{u.team_type}</span>}</div></div>))}</div></div></div>

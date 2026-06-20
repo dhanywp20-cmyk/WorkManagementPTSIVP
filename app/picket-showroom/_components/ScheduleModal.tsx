@@ -74,7 +74,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
           }
 
           const tt=u.team_type||'';
-          const isIVP=tt==='Team PTS';
+          const isIVP=tt==='Team PTS IVP';
           const isUMP=tt==='Team PTS UMP';
           const isMlds=tt==='Team PTS MLDS';
 
@@ -151,7 +151,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
                       const date=getDayDate(ws,day);
                       const u=users.find(x=>x.id===assign[wk]?.[day]);
                       const tt=u?.team_type||'';
-                      const teamKey=tt==='Team PTS'?'PTS IVP':tt==='Team PTS UMP'?'PTS UMP':tt==='Team PTS MLDS'?'PTS MLDS':'';
+                      const teamKey=tt==='Team PTS IVP'?'PTS IVP':tt==='Team PTS UMP'?'PTS UMP':tt==='Team PTS MLDS'?'PTS MLDS':'';
                       const tc=teamKey?TEAM_LABEL[teamKey]:null;
                       return(
                         <div key={wk} className="relative">
@@ -161,8 +161,8 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
                             <select value={assign[wk]?.[day]||''} onChange={e=>setAssign(p=>({...p,[wk]:{...p[wk],[day]:e.target.value}}))}
                               className="flex-1 text-[11px] outline-none bg-transparent min-w-0 py-1">
                               <option value="">— Belum —</option>
-                              <optgroup label="Team PTS">
-                                {users.filter(u=>u.team_type==='Team PTS').map(u=><option key={u.id} value={u.id}>{u.full_name}</option>)}
+                              <optgroup label="Team PTS IVP">
+                                {users.filter(u=>u.team_type==='Team PTS IVP').map(u=><option key={u.id} value={u.id}>{u.full_name}</option>)}
                               </optgroup>
                               <optgroup label="Team PTS UMP">
                                 {users.filter(u=>u.team_type==='Team PTS UMP').map(u=><option key={u.id} value={u.id}>{u.full_name}</option>)}

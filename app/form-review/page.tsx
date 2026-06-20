@@ -1030,7 +1030,7 @@ export default function FormReviewPage() {
             <MiniPieChart data={salesDivisionPieData} title="Divisi Sales" icon="👤"
               activeFilter={salesDivisionFilter}
               onSliceClick={label => setSalesDivisionFilter(prev => prev === label ? null : label)} />
-            <MiniPieChart data={handlerPieData} title="Handler Team PTS" icon="👥"
+            <MiniPieChart data={handlerPieData} title="Handler Team PTS IVP" icon="👥"
               activeFilter={handlerFilter}
               onSliceClick={label => setHandlerFilter(prev => prev === label ? null : label)} />
             <MiniPieChart data={productPieData} title="Product" icon="📦"

@@ -508,7 +508,7 @@ export default function Dashboard() {
 
   // KPI: admin + PTS supervisor + sales supervisor (harus ada allowed_menus dashboard) + team member with dashboard permission
   const isPTSSupervisor = currentUser?.role === 'team'
-    && ['Team PTS', 'Team PTS UMP', 'Team PTS MLDS'].includes(currentUser?.team_type ?? '')
+    && ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MLDS'].includes(currentUser?.team_type ?? '')
     && currentUser?.jabatan === 'Supervisor';
   const isSalesSupervisor = ['guest', 'sales'].includes(currentUser?.role?.toLowerCase() ?? '')
     && ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'].includes(currentUser?.jabatan ?? '')

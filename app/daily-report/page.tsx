@@ -235,7 +235,7 @@ export default function DailyReportPage() {
 
   const loadTeamUsers = async () => {
     const { data } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,allowed_menus').order('full_name');
-    if (data) setTeamUsers(data.filter((u: TeamUser) => u.team_type === 'Team PTS' && u.role !== 'admin' && u.role !== 'superadmin'));
+    if (data) setTeamUsers(data.filter((u: TeamUser) => u.team_type === 'Team PTS IVP' && u.role !== 'admin' && u.role !== 'superadmin'));
   };
   const loadGuestUsers = async () => {
     const { data } = await supabase.from('users').select('id,username,full_name,role,phone_number,sales_division').eq('role', 'guest').order('full_name');
@@ -864,7 +864,7 @@ export default function DailyReportPage() {
             onSliceClick={label => setFilterCategory(filterCategory === label ? null : label)}
           />
           <MiniPieChart
-            data={handlerPieData} title="Team PTS" icon="👥"
+            data={handlerPieData} title="Team PTS IVP" icon="👥"
             activeFilter={filterHandler}
             onSliceClick={label => setFilterHandler(filterHandler === label ? null : label)}
           />
