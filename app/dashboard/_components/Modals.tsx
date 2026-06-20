@@ -3162,8 +3162,8 @@ export function UserManagementInline() {
   const mviUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.sales_division === 'MVI');
   const salesHandleUsers = [...ivpUsers, ...mviUsers];
   const nonIvpDivisions = SALES_DIVISIONS.filter(d => d !== 'IVP' && d !== 'MVI');
-  // Grup non-Sales (tim internal) yang juga bisa dipetakan atasan-nya
-  const INTERNAL_GROUPS = ['PTS'];
+  // Grup non-Sales (tim internal / IVP) yang juga bisa dipetakan atasan-nya
+  const INTERNAL_GROUPS = ['PTS', 'IVP'];
   const ccEligibleUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.jabatan && u.sales_division && u.sales_division !== 'IVP' && u.sales_division !== 'MVI').sort((a, b) => (JABATAN_CONFIG[a.jabatan as JabatanType]?.tier ?? 0) - (JABATAN_CONFIG[b.jabatan as JabatanType]?.tier ?? 0));
 
   useEffect(() => {
@@ -3319,7 +3319,7 @@ export function UserManagementInline() {
                       <select value={atasanDiv} onChange={e => setAtasanDiv(e.target.value)} className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
                         <option value="">-- Pilih Divisi / Grup --</option>
                         <optgroup label="Divisi Sales">{nonIvpDivisions.map(d => <option key={d} value={d}>{d}</option>)}</optgroup>
-                        <optgroup label="Tim Internal">{INTERNAL_GROUPS.map(d => <option key={d} value={d}>🔧 {d}</option>)}</optgroup>
+                        <optgroup label="Tim Internal / IVP">{INTERNAL_GROUPS.map(d => <option key={d} value={d}>{d === 'IVP' ? '🔗' : '🔧'} {d}</option>)}</optgroup>
                       </select>
                     </div>
                     <div>
