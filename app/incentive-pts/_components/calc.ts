@@ -223,12 +223,15 @@ export function generateTranches(projectId: string, bastDate: string): { tranche
 
 // ─── DB Helpers ───────────────────────────────────────────────────────────────
 
+export const INCENTIVE_CATEGORIES = ['Konfigurasi', 'Konfigurasi & Training', 'Training'] as const;
+
 export async function fetchIncentiveProjects() {
   const { data, error } = await supabase
     .from('reminders')
     .select('*')
-    .gt('incentive_value', 0)
-    .order('created_at', { ascending: false });
+    .in('category', ['Konfigurasi', 'Konfigurasi & Training', 'Training'])
+    .eq('status', 'done')
+    .order('due_date', { ascending: false });
   return { data: (data || []) as IncentiveProjectRow[], error };
 }
 

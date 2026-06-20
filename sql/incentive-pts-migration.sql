@@ -15,6 +15,9 @@ ALTER TABLE reminders ADD COLUMN IF NOT EXISTS bast_date DATE;
 ALTER TABLE reminders ADD COLUMN IF NOT EXISTS incentive_value NUMERIC DEFAULT 0;
 -- mode_penyelesaian ('onsite'|'remote') already exists — skip
 
+-- 1b. ALTER TABLE users — akses input nominal incentive
+ALTER TABLE users ADD COLUMN IF NOT EXISTS allow_incentive_input BOOLEAN DEFAULT FALSE;
+
 -- 2. CREATE TABLE incentive_tranches
 CREATE TABLE IF NOT EXISTS incentive_tranches (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

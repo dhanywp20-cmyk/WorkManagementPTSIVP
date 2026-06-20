@@ -266,39 +266,6 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                 </div>
               </FormField>
 
-              {/* Execution Mode */}
-              <FormField label="Mode Pelaksanaan">
-                <div className="flex gap-3">
-                  {(['onsite', 'remote'] as const).map(mode => (
-                    <button key={mode} type="button"
-                      onClick={() => fd({ mode_penyelesaian: mode })}
-                      className="flex-1 py-2.5 rounded-xl text-sm font-bold border-2 transition-all"
-                      style={formData.mode_penyelesaian === mode
-                        ? { borderColor: mode === 'onsite' ? '#10b981' : '#7c3aed', background: mode === 'onsite' ? 'rgba(16,185,129,0.14)' : 'rgba(124,58,237,0.12)', color: mode === 'onsite' ? '#065f46' : '#6d28d9' }
-                        : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.6)', color: '#64748b' }}>
-                      {mode === 'onsite' ? '🏢 Onsite' : '🌐 Remote'}
-                    </button>
-                  ))}
-                </div>
-              </FormField>
-
-              {/* Incentive Value */}
-              <FormField label="Nilai Incentive (Rp)">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">Rp</span>
-                  <input type="number" min={0} value={formData.incentive_value ?? 0}
-                    onChange={e => fd({ incentive_value: Number(e.target.value) })}
-                    className={`${inputCls} pl-10`} style={inputStyle} placeholder="0" />
-                </div>
-              </FormField>
-
-              {/* BAST Date */}
-              <FormField label="Tanggal BAST">
-                <input type="date" value={formData.bast_date ?? ''}
-                  onChange={e => fd({ bast_date: e.target.value || null })}
-                  className={inputCls} style={inputStyle} />
-              </FormField>
-
               {/* Validation hint */}
               {formData.requires_controller_automation && (formData.pic_type ?? 'standard') === 'standard' && (
                 <div className="flex items-start gap-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}>
