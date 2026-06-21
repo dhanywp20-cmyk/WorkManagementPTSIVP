@@ -390,7 +390,7 @@ export function formatPct(n: number): string {
 export const ROLE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   pic:       { label: 'PIC',       color: '#2563eb', bg: 'rgba(37,99,235,0.12)' },
   support:   { label: 'Support',   color: '#7c3aed', bg: 'rgba(124,58,237,0.12)' },
-  manager:   { label: 'Manager',   color: '#059669', bg: 'rgba(5,150,105,0.12)' },
+  manager:   { label: 'Supervisor', color: '#059669', bg: 'rgba(5,150,105,0.12)' },
   installer: { label: 'Installer', color: '#d97706', bg: 'rgba(217,119,6,0.12)' },
 };
 
