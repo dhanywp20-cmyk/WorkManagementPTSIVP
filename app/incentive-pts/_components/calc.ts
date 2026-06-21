@@ -260,9 +260,10 @@ export async function fetchSupportFromTickets(projectName: string): Promise<{ da
     .eq('project_name', projectName)
     .eq('status', 'done');
   const seen = new Set<string>();
-  const unique = (data || [])
+  const rows = (data || []) as { assigned_to: string | null; assign_name: string | null }[];
+  const unique = rows
     .filter(r => r.assigned_to && !seen.has(r.assigned_to) && seen.add(r.assigned_to))
-    .map(r => ({ user_id: r.assigned_to as string, user_name: r.assign_name as string || '' }));
+    .map(r => ({ user_id: r.assigned_to as string, user_name: r.assign_name || '' }));
   return { data: unique, error };
 }
 
