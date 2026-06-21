@@ -31,6 +31,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     phone_number: '',
     sales_division: '',
     jabatan: '',
+    atasan_id: '',
     allowed_menus: ALL_MENU_KEYS,
     divisi: '',
     pts_type: '',
@@ -81,7 +82,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     let team_type: string | null = null;
     if (newUser.divisi === 'PTS') {
       role = 'team';
-      if (newUser.pts_type === 'PTS IVP') team_type = 'Team PTS';
+      if (newUser.pts_type === 'PTS IVP') team_type = 'Team PTS IVP';
       else if (newUser.pts_type === 'PTS UMP') team_type = 'Team PTS UMP';
       else if (newUser.pts_type === 'PTS MLDS') team_type = 'Team PTS MLDS';
     } else if (newUser.divisi === 'Sales') {
@@ -101,6 +102,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
       team_type,
       allowed_menus: newUser.allowed_menus,
       jabatan: newUser.jabatan || null,
+      atasan_id: newUser.atasan_id || null,
       phone_number: newUser.phone_number || null,
       sales_division: newUser.divisi === 'Sales' ? (newUser.sales_division || null) : null,
     };
@@ -108,7 +110,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     setSaving(false);
     if (error) { notify('error', 'Gagal menambah akun: ' + error.message); return; }
     notify('success', 'Akun berhasil ditambahkan!');
-    setNewUser({ username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: ALL_MENU_KEYS, divisi: '', pts_type: '' });
+    setNewUser({ username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', atasan_id: '', allowed_menus: ALL_MENU_KEYS, divisi: '', pts_type: '' });
     setActiveTab('list');
     fetchUsers();
   };
@@ -123,7 +125,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     if (editDivisi) {
       if (editDivisi === 'PTS') {
         role = 'team';
-        if (editPtsType === 'PTS IVP') team_type = 'Team PTS';
+        if (editPtsType === 'PTS IVP') team_type = 'Team PTS IVP';
         else if (editPtsType === 'PTS UMP') team_type = 'Team PTS UMP';
         else if (editPtsType === 'PTS MLDS') team_type = 'Team PTS MLDS';
         else team_type = null;
@@ -144,6 +146,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
       team_type,
       allowed_menus: editingUser.allowed_menus ?? ALL_MENU_KEYS,
       jabatan: editingUser.jabatan ?? null,
+      atasan_id: editingUser.atasan_id ?? null,
       phone_number: editingUser.phone_number ?? null,
       sales_division: editDivisi === 'Sales' ? (editingUser.sales_division ?? null) : null,
     };
@@ -297,7 +300,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                             <select value={editPtsType} onChange={e => setEditPtsType(e.target.value)}
                               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                               <option value="">-- Pilih Tipe PTS --</option>
-                              <option value="PTS IVP">PTS IVP → Team PTS</option>
+                              <option value="PTS IVP">PTS IVP → Team PTS IVP</option>
                               <option value="PTS UMP">PTS UMP → Team PTS UMP</option>
                               <option value="PTS MLDS">PTS MLDS → Team PTS MLDS</option>
                             </select>
@@ -318,6 +321,21 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                           <select value={editingUser.jabatan || ''} onChange={e => setEditingUser({ ...editingUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                             <option value="">— Pilih Jabatan —</option>
                             {JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Atasan Langsung</label>
+                          <select value={editingUser.atasan_id || ''} onChange={e => setEditingUser({ ...editingUser, atasan_id: e.target.value || null })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                            <option value="">— Tidak ada / kosong —</option>
+                            {users.filter(u => u.id !== editingUser.id).sort((a, b) => {
+                              const ta = JABATAN_CONFIG[a.jabatan as JabatanType]?.tier ?? 0;
+                              const tb = JABATAN_CONFIG[b.jabatan as JabatanType]?.tier ?? 0;
+                              return tb - ta || a.full_name.localeCompare(b.full_name, 'id');
+                            }).map(u => (
+                              <option key={u.id} value={u.id}>
+                                {u.jabatan ? `${JABATAN_CONFIG[u.jabatan as JabatanType]?.icon || ''} ` : ''}{u.full_name} {u.jabatan ? `(${u.jabatan})` : ''}
+                              </option>
+                            ))}
                           </select>
                         </div>
                         <div className="col-span-2">
@@ -353,6 +371,10 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                               {user.jabatan && (
                                 <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🏷️ {user.jabatan}</span>
                               )}
+                              {user.atasan_id && (() => {
+                                const atasan = users.find(u => u.id === user.atasan_id);
+                                return atasan ? <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">↑ {atasan.full_name}</span> : null;
+                              })()}
                               {user.team_type && (
                                 <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-rose-100 text-rose-600 border border-rose-200">👥 {user.team_type}</span>
                               )}
@@ -366,7 +388,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                               let d = '', p = '';
                               if (user.role === 'team') {
                                 d = 'PTS';
-                                if (user.team_type === 'Team PTS') p = 'PTS IVP';
+                                if (user.team_type === 'Team PTS IVP') p = 'PTS IVP';
                                 else if (user.team_type === 'Team PTS UMP') p = 'PTS UMP';
                                 else if (user.team_type === 'Team PTS MLDS') p = 'PTS MLDS';
                               } else if (user.team_type === 'Guest') { d = 'Sales'; }
@@ -423,7 +445,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                     <select value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value })}
                       className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
                       <option value="">-- Pilih Tipe PTS --</option>
-                      <option value="PTS IVP">PTS IVP → Team PTS</option>
+                      <option value="PTS IVP">PTS IVP → Team PTS IVP</option>
                       <option value="PTS UMP">PTS UMP → Team PTS UMP</option>
                       <option value="PTS MLDS">PTS MLDS → Team PTS MLDS</option>
                     </select>
@@ -444,6 +466,21 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                   <select value={newUser.jabatan} onChange={e => setNewUser({ ...newUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
                     <option value="">— Pilih Jabatan —</option>
                     {JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Atasan Langsung</label>
+                  <select value={newUser.atasan_id} onChange={e => setNewUser({ ...newUser, atasan_id: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
+                    <option value="">— Tidak ada / kosong —</option>
+                    {users.sort((a, b) => {
+                      const ta = JABATAN_CONFIG[a.jabatan as JabatanType]?.tier ?? 0;
+                      const tb = JABATAN_CONFIG[b.jabatan as JabatanType]?.tier ?? 0;
+                      return tb - ta || a.full_name.localeCompare(b.full_name, 'id');
+                    }).map(u => (
+                      <option key={u.id} value={u.id}>
+                        {u.jabatan ? `${JABATAN_CONFIG[u.jabatan as JabatanType]?.icon || ''} ` : ''}{u.full_name} {u.jabatan ? `(${u.jabatan})` : ''}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -1669,7 +1706,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
   const roleLC = (currentUser.role ?? '').trim().toLowerCase();
   const teamType = (currentUser.team_type ?? '').trim();
   const isTeamServices = roleLC === 'team' && teamType === 'Team Services';
-  const isTeamPTS = roleLC === 'team' && teamType === 'Team PTS';
+  const isTeamPTS = roleLC === 'team' && teamType === 'Team PTS IVP';
   const isTeamPTS_UMP = roleLC === 'team' && teamType === 'Team PTS UMP';
   const isTeamPTS_MLDS = roleLC === 'team' && teamType === 'Team PTS MLDS';
   const isTeamPTS_SubGroup = isTeamPTS_UMP || isTeamPTS_MLDS;
@@ -2224,7 +2261,7 @@ export function AccountSettingsInline() {
     setSaving(true);
     const sd = approvingUser.sales_division ?? '';
     let role = 'guest'; let team_type: string | null = null; let sales_division: string | null = null;
-    if (sd === 'PTS IVP') { role = 'team'; team_type = 'Team PTS'; }
+    if (sd === 'PTS IVP') { role = 'team'; team_type = 'Team PTS IVP'; }
     else if (sd === 'PTS UMP') { role = 'team'; team_type = 'Team PTS UMP'; }
     else if (sd === 'PTS MLDS') { role = 'team'; team_type = 'Team PTS MLDS'; }
     else if (sd.startsWith('Marketing:')) { role = 'guest'; team_type = 'Marketing'; sales_division = sd.replace('Marketing:', '') || null; }
@@ -2253,7 +2290,7 @@ export function AccountSettingsInline() {
     let team_type: string | null = null;
     if (newUser.divisi === 'PTS') {
       role = 'team';
-      if (newUser.pts_type === 'PTS IVP') team_type = 'Team PTS';
+      if (newUser.pts_type === 'PTS IVP') team_type = 'Team PTS IVP';
       else if (newUser.pts_type === 'PTS UMP') team_type = 'Team PTS UMP';
       else if (newUser.pts_type === 'PTS MLDS') team_type = 'Team PTS MLDS';
     } else if (newUser.divisi === 'Sales') {
@@ -2280,7 +2317,7 @@ export function AccountSettingsInline() {
     if (editDivisi) {
       if (editDivisi === 'PTS') {
         role = 'team';
-        if (editPtsType === 'PTS IVP') team_type = 'Team PTS';
+        if (editPtsType === 'PTS IVP') team_type = 'Team PTS IVP';
         else if (editPtsType === 'PTS UMP') team_type = 'Team PTS UMP';
         else if (editPtsType === 'PTS MLDS') team_type = 'Team PTS MLDS';
         else team_type = null;
@@ -2409,7 +2446,7 @@ export function AccountSettingsInline() {
                       <select value={editPtsType} onChange={e => setEditPtsType(e.target.value)}
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                         <option value="">-- Pilih Tipe PTS --</option>
-                        <option value="PTS IVP">PTS IVP → Team PTS</option>
+                        <option value="PTS IVP">PTS IVP → Team PTS IVP</option>
                         <option value="PTS UMP">PTS UMP → Team PTS UMP</option>
                         <option value="PTS MLDS">PTS MLDS → Team PTS MLDS</option>
                       </select>
@@ -2469,7 +2506,7 @@ export function AccountSettingsInline() {
                     <div className="flex flex-col gap-1 flex-shrink-0">
                       <button onClick={() => {
                         let d = '', p = '';
-                        if (user.role === 'team') { d = 'PTS'; if (user.team_type === 'Team PTS') p = 'PTS IVP'; else if (user.team_type === 'Team PTS UMP') p = 'PTS UMP'; else if (user.team_type === 'Team PTS MLDS') p = 'PTS MLDS'; }
+                        if (user.role === 'team') { d = 'PTS'; if (user.team_type === 'Team PTS IVP') p = 'PTS IVP'; else if (user.team_type === 'Team PTS UMP') p = 'PTS UMP'; else if (user.team_type === 'Team PTS MLDS') p = 'PTS MLDS'; }
                         else if (user.team_type === 'Guest') { d = 'Sales'; }
                         else if (user.team_type === 'Marketing') { d = 'Marketing'; }
                         setEditDivisi(d); setEditPtsType(p); setEditingUser(user);
@@ -2515,7 +2552,7 @@ export function AccountSettingsInline() {
                   <select value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value })}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                     <option value="">-- Pilih Tipe PTS --</option>
-                    <option value="PTS IVP">PTS IVP → Team PTS</option>
+                    <option value="PTS IVP">PTS IVP → Team PTS IVP</option>
                     <option value="PTS UMP">PTS UMP → Team PTS UMP</option>
                     <option value="PTS MLDS">PTS MLDS → Team PTS MLDS</option>
                   </select>

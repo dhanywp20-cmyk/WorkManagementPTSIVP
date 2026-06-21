@@ -8,6 +8,7 @@ export interface User {
   phone_number?: string;
   sales_division?: string;
   jabatan?: string;
+  atasan_id?: string | null;
   allowed_menus?: string[];
 }
 
@@ -82,7 +83,8 @@ export const ALL_MENU_KEYS = [
   'unit-movement',
   'reminder-schedule',
   'picket-showroom',
-  'learning-center',         // ← tambahan baru
+  'learning-center',
+  'incentive-pts',
 ];
 
 export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = {
@@ -95,6 +97,7 @@ export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = 
   'unit-movement':          { label: 'Unit Movement Log', icon: '🚚' },
   'reminder-schedule':      { label: 'Reminder Schedule', icon: '🗓️' },
   'picket-showroom':        { label: 'Piket Showroom', icon: '🏪' },
+  'incentive-pts':          { label: 'Incentive PTS', icon: '💰' },
 };
 
 export const ROLE_BADGE: Record<string, string> = {
