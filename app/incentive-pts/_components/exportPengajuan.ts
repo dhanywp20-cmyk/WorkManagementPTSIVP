@@ -2,7 +2,11 @@
 
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
-import { IncentiveProjectRow, IncentiveSplit, IncentiveTranche, formatRupiah } from './calc';
+import {
+  IncentiveProjectRow, IncentiveSplit, IncentiveTranche,
+  SplitResult, formatRupiah, formatPct,
+  calculateIncentiveSplits, getSupervisorTeamForPic,
+} from './calc';
 
 const NAVY = '1B3A6B';
 const LIGHT_GRAY = 'F5F5F5';
@@ -363,6 +367,183 @@ export async function exportPengajuanIncentive(data: ExportData) {
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   saveAs(blob, `Pengajuan_Incentive_PTS_IVP_${year}.xlsx`);
+}
+
+// ─── Summary Export (semua project, split dihitung on-the-fly) ───────────────
+
+export async function exportSummaryIncentive(data: {
+  projects: IncentiveProjectRow[];
+  allUsers: { id?: string; full_name?: string }[];
+  supportsMap: Map<string, { user_id: string; user_name: string }[]>;
+  managerName: string;
+  managerUserId: string;
+}) {
+  const { projects, allUsers, supportsMap, managerName, managerUserId } = data;
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Work Management PTS IVP';
+  wb.created = new Date();
+
+  const ws = wb.addWorksheet('Summary Semua Incentive', {
+    pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1 },
+  });
+
+  let row = 1;
+
+  // Title
+  const titleCell = ws.getCell(row, 1);
+  titleCell.value = `Summary Incentive PTS IVP — Semua Project`;
+  titleCell.font = { bold: true, size: 14, name: 'Arial' };
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.mergeCells(row, 1, row, 12);
+  ws.getRow(row).height = 28;
+  row++;
+
+  const genCell = ws.getCell(row, 1);
+  genCell.value = `Generated: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} · Dibuat oleh: ${managerName}`;
+  genCell.font = { italic: true, size: 9, name: 'Arial', color: { argb: '888888' } };
+  ws.mergeCells(row, 1, row, 12);
+  row += 2;
+
+  // Column headers
+  const COLS = [
+    { h: 'No',            w: 5  },
+    { h: 'Project',       w: 38 },
+    { h: 'Handler',       w: 18 },
+    { h: 'Kategori',      w: 18 },
+    { h: 'Mode',          w: 10 },
+    { h: 'BAST',          w: 13 },
+    { h: 'Nominal (Rp)',  w: 18 },
+    { h: 'PIC\nNama / %',        w: 24 },
+    { h: 'Support\nNama / %',    w: 24 },
+    { h: 'Supervisor\nNama / %', w: 24 },
+    { h: 'Manager\nNama / %',    w: 24 },
+    { h: 'Installer\nNama / %',  w: 24 },
+  ];
+
+  COLS.forEach((col, i) => {
+    const cell = ws.getCell(row, i + 1);
+    cell.value = col.h;
+    cell.font = headerFont(10);
+    cell.fill = headerFill();
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.border = thinBorder();
+    ws.getColumn(i + 1).width = col.w;
+  });
+  ws.getRow(row).height = 36;
+  const headerRow = row;
+  row++;
+
+  const dataStart = row;
+
+  for (let idx = 0; idx < projects.length; idx++) {
+    const p = projects[idx];
+    const isAlt = idx % 2 === 1;
+    const altFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8F9FA' } };
+
+    const projectSupports = supportsMap.get(p.project_name) || [];
+    const supTeam = getSupervisorTeamForPic(p.assign_name);
+    const supUser = supTeam ? allUsers.find(u => (u.full_name || '').toLowerCase().includes(supTeam)) : null;
+    const supervisorId   = (supUser?.id        || '') as string;
+    const supervisorName = (supUser?.full_name || 'Supervisor') as string;
+
+    const hasNominal = (p.incentive_value || 0) > 0;
+    const effectivePool = hasNominal ? p.incentive_value : 1_000_000;
+    const effectiveMode = p.mode_penyelesaian || 'onsite';
+    const displayProject = { ...p, incentive_value: effectivePool, mode_penyelesaian: effectiveMode };
+    const splits = calculateIncentiveSplits(displayProject, managerUserId, managerName, supervisorId, supervisorName, projectSupports);
+    const isEstimate = !hasNominal || !p.mode_penyelesaian;
+
+    const picSplit    = splits.find((s: SplitResult) => s.role === 'pic');
+    const suppSplits  = splits.filter((s: SplitResult) => s.role === 'support');
+    const supvSplit   = splits.find((s: SplitResult) => s.role === 'supervisor');
+    const mgrSplit    = splits.find((s: SplitResult) => s.role === 'manager');
+    const instSplit   = splits.find((s: SplitResult) => s.role === 'installer');
+
+    const fmtSplit = (s: SplitResult | undefined, pool: number, est: boolean): string => {
+      if (!s) return '—';
+      const pct = formatPct(s.percentage);
+      const amt = pool > 0 && !est ? '\n' + formatRupiah(s.amount) : '';
+      return `${s.user_name}\n${pct}${amt}`;
+    };
+    const fmtMulti = (arr: SplitResult[], pool: number, est: boolean): string => {
+      if (!arr.length) return '—';
+      return arr.map(s => {
+        const amt = pool > 0 && !est ? ' · ' + formatRupiah(s.amount) : '';
+        return `${s.user_name} ${formatPct(s.percentage)}${amt}`;
+      }).join('\n');
+    };
+
+    const rowData: (string | number)[] = [
+      idx + 1,
+      p.project_name,
+      p.assign_name || '—',
+      p.category,
+      effectiveMode === 'remote' ? 'Remote' : 'Onsite',
+      p.bast_date ? new Date(p.bast_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—',
+      hasNominal ? p.incentive_value : 0,
+      fmtSplit(picSplit,   hasNominal ? p.incentive_value : 0, isEstimate),
+      fmtMulti(suppSplits, hasNominal ? p.incentive_value : 0, isEstimate),
+      fmtSplit(supvSplit,  hasNominal ? p.incentive_value : 0, isEstimate),
+      fmtSplit(mgrSplit,   hasNominal ? p.incentive_value : 0, isEstimate),
+      fmtSplit(instSplit,  hasNominal ? p.incentive_value : 0, isEstimate),
+    ];
+
+    rowData.forEach((val, i) => {
+      const cell = ws.getCell(row, i + 1);
+      cell.value = val;
+      cell.font = i === 6 ? { ...dataFont(), bold: true } : dataFont();
+      cell.border = thinBorder();
+      if (isAlt) cell.fill = altFill;
+      if (i === 0) cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      else if (i === 6) {
+        cell.numFmt = '#,##0';
+        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+        if (!hasNominal) {
+          cell.font = { ...dataFont(), italic: true, color: { argb: 'BBBBBB' } };
+          cell.value = 'belum input';
+        }
+      } else if (i >= 7) {
+        cell.alignment = { wrapText: true, vertical: 'top' };
+        if (isEstimate) cell.font = { ...dataFont(), color: { argb: isEstimate && !hasNominal ? 'AAAAAA' : '888844' }, italic: isEstimate };
+      } else {
+        cell.alignment = { vertical: 'middle', wrapText: true };
+      }
+    });
+    ws.getRow(row).height = 48;
+    row++;
+  }
+  const dataEnd = row - 1;
+
+  // Total row
+  const totRow = row;
+  ws.getCell(totRow, 1).value = 'TOTAL';
+  ws.getCell(totRow, 1).font = { bold: true, size: 10, name: 'Arial' };
+  ws.getCell(totRow, 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
+  ws.getCell(totRow, 1).border = thinBorder();
+  ws.mergeCells(totRow, 1, totRow, 6);
+  ws.getCell(totRow, 7).value = { formula: `SUM(G${dataStart}:G${dataEnd})` };
+  ws.getCell(totRow, 7).numFmt = '#,##0';
+  ws.getCell(totRow, 7).font = { bold: true, size: 10, name: 'Arial' };
+  ws.getCell(totRow, 7).alignment = { horizontal: 'right', vertical: 'middle' };
+  ws.getCell(totRow, 7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
+  ws.getCell(totRow, 7).border = thinBorder();
+  for (let c = 8; c <= 12; c++) {
+    ws.getCell(totRow, c).border = thinBorder();
+    ws.getCell(totRow, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
+  }
+
+  // Estimate note
+  row = totRow + 2;
+  ws.getCell(row, 1).value = '* Estimasi: ditampilkan jika nominal belum diinput atau mode penyelesaian belum diset (default Onsite). Angka rupiah tidak tertera.';
+  ws.getCell(row, 1).font = { italic: true, size: 9, name: 'Arial', color: { argb: 'BBBB44' } };
+  ws.mergeCells(row, 1, row, 12);
+
+  ws.views = [{ state: 'frozen', ySplit: headerRow, xSplit: 0 }];
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  saveAs(blob, `Summary_Incentive_PTS_IVP_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
 function getColLetter(colNum: number): string {

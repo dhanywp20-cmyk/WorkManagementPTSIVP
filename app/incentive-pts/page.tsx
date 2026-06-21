@@ -11,7 +11,7 @@ import {
   formatRupiah, formatPct,
   ROLE_LABELS, TRANCHE_STATUS,
 } from './_components/calc';
-import { exportPengajuanIncentive } from './_components/exportPengajuan';
+import { exportPengajuanIncentive, exportSummaryIncentive } from './_components/exportPengajuan';
 
 void insertSplits; void validateSplitTotal;
 
@@ -159,6 +159,27 @@ export default function IncentivePTSPage() {
     setExporting(false);
   }
 
+  async function handleExportSummary() {
+    setExporting(true);
+    try {
+      const { data: dhany } = await supabase.from('users').select('id, full_name').ilike('full_name', '%dhany%').limit(1).single();
+      const managerUserId = (dhany?.id || '') as string;
+      const managerName   = (dhany?.full_name || 'Dhany Widya Putra') as string;
+      // Fetch ALL troubleshooting tickets done in one call
+      const { data: trouble } = await supabase.from('reminders').select('project_name, assigned_to, assign_name').eq('category', 'Troubleshooting').eq('status', 'done');
+      const supportsMap = new Map<string, { user_id: string; user_name: string }[]>();
+      for (const t of (trouble || []) as { project_name: string; assigned_to: string | null; assign_name: string | null }[]) {
+        if (!t.assigned_to) continue;
+        const arr = supportsMap.get(t.project_name) || [];
+        if (!arr.find(x => x.user_id === t.assigned_to)) arr.push({ user_id: t.assigned_to, user_name: t.assign_name || '' });
+        supportsMap.set(t.project_name, arr);
+      }
+      await exportSummaryIncentive({ projects, allUsers: allUsers as { id?: string; full_name?: string }[], supportsMap, managerName, managerUserId });
+      notify('success', 'Export summary semua project berhasil!');
+    } catch (err: unknown) { notify('error', 'Export gagal: ' + (err as Error).message); }
+    setExporting(false);
+  }
+
   async function handleMarkPaid(trancheId: string) {
     const { error } = await supabase.from('incentive_tranches').update({ status: 'paid', paid_at: new Date().toISOString() }).eq('id', trancheId);
     if (error) { notify('error', error.message); return; }
@@ -256,9 +277,15 @@ export default function IncentivePTSPage() {
                 <input value={searchProject} onChange={e => setSearchProject(e.target.value)}
                   placeholder="🔍 Cari project atau handler..."
                   className="flex-1 min-w-[180px] max-w-sm px-4 py-2 rounded-lg text-sm outline-none bg-gray-50 border border-gray-200 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-indigo-400" />
-                {canInputNominal(currentUser) && (
-                  <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200">✏️ Kamu bisa input nominal</span>
-                )}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {canInputNominal(currentUser) && (
+                    <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200">✏️ Kamu bisa input nominal</span>
+                  )}
+                  <button onClick={handleExportSummary} disabled={exporting}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 flex items-center gap-1.5">
+                    {exporting ? <div className="w-3 h-3 border-2 border-emerald-400/30 border-t-emerald-500 rounded-full animate-spin" /> : '📊'} Export Summary
+                  </button>
+                </div>
               </div>
               <p className="text-xs text-gray-400">
                 <span className="font-bold text-gray-600">{filteredProjects.length}</span> project ·&nbsp;
@@ -623,27 +650,34 @@ export default function IncentivePTSPage() {
                 </div>
               </div>
 
-              {/* Full incentive split preview — live calculated */}
-              {(detailProject.incentive_value || 0) > 0 && detailProject.mode_penyelesaian && (() => {
+              {/* Pembagian Incentive — auto-calculated, selalu tampil */}
+              {(() => {
+                const pool = detailProject.incentive_value || 0;
+                const effectiveMode = detailProject.mode_penyelesaian || 'onsite';
+                const effectivePool = pool > 0 ? pool : 1_000_000;
+                const isEstimate = pool <= 0 || !detailProject.mode_penyelesaian;
                 const dhany = allUsers.find(u => (u.full_name as string || '').toLowerCase().includes('dhany'));
                 const managerId   = (dhany?.id        || '') as string;
                 const managerName = (dhany?.full_name || 'Dhany') as string;
-                // Supervisor = based on PIC's reporting line (Tim Wahyu → Wahyu, Tim Yoga → Yoga)
                 const supTeam = getSupervisorTeamForPic(detailProject.assign_name);
                 const supUser = supTeam
                   ? allUsers.find(u => (u.full_name as string || '').toLowerCase().includes(supTeam))
                   : undefined;
                 const supervisorId   = (supUser?.id        || '') as string;
                 const supervisorName = (supUser?.full_name || 'Supervisor') as string;
-                const splits = calculateIncentiveSplits(detailProject, managerId, managerName, supervisorId, supervisorName, detailSupports);
+                const displayProject: IncentiveProjectRow = { ...detailProject, incentive_value: effectivePool, mode_penyelesaian: effectiveMode };
+                const splits = calculateIncentiveSplits(displayProject, managerId, managerName, supervisorId, supervisorName, detailSupports);
                 if (!splits.length) return null;
                 const schemeLabel = detailProject.pic_type === 'manager_pic' ? 'Manager sebagai PIC' : 'Standard';
-                const modeLabel = detailProject.mode_penyelesaian === 'remote' ? 'Remote' : 'Onsite';
+                const modeLabel = effectiveMode === 'remote' ? 'Remote' : 'Onsite';
                 return (
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-sm font-bold text-gray-700">💰 Pembagian Incentive</h3>
-                      <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{schemeLabel} · {modeLabel}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{schemeLabel} · {modeLabel}</span>
+                        {isEstimate && <span className="text-[10px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">Estimasi</span>}
+                      </div>
                     </div>
                     <div className="space-y-1.5">
                       {splits.map((s, i) => {
@@ -662,13 +696,22 @@ export default function IncentivePTSPage() {
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="text-sm font-black text-gray-800">{formatRupiah(s.amount)}</p>
-                              <p className="text-[10px] text-gray-400">{formatPct(s.percentage)} pool</p>
+                              <p className="text-sm font-black text-gray-800">
+                                {pool > 0 ? formatRupiah(s.amount) : '—'}
+                              </p>
+                              <p className="text-[10px] text-gray-400">{formatPct(s.percentage)}</p>
                             </div>
                           </div>
                         );
                       })}
                     </div>
+                    {isEstimate && (
+                      <p className="text-[10px] text-amber-500 mt-1.5 italic">
+                        {!pool
+                          ? '* Belum ada nominal — angka Rp akan muncul setelah input nominal.'
+                          : '* Mode belum diset (estimasi Onsite) — akan update setelah Handler klik Completed di Reminder Schedule.'}
+                      </p>
+                    )}
                   </div>
                 );
               })()}
@@ -776,7 +819,13 @@ export default function IncentivePTSPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[120] p-4" onClick={e => { if (e.target === e.currentTarget) setBatchConfirm(false); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-red-200">
             <h3 className="text-lg font-bold text-gray-800 mb-2">🚀 Konfirmasi Process Batch</h3>
-            <p className="text-sm text-gray-500 mb-4">Proses semua tranche <strong>payment_year = {batchYear}</strong> status <strong>pending</strong>.</p>
+            <p className="text-sm text-gray-500 mb-2">Proses semua tranche <strong>payment_year = {batchYear}</strong> status <strong>pending</strong>.</p>
+            {(() => {
+              const cnt = tranches.filter(t => t.payment_year === batchYear && t.status === 'pending').length;
+              return cnt > 0
+                ? <p className="text-sm font-bold text-indigo-600 mb-3">📋 {cnt} tranche siap diproses</p>
+                : <p className="text-sm font-bold text-amber-600 mb-3">⚠️ Tidak ada tranche pending untuk tahun {batchYear}. Pastikan tranche sudah di-generate terlebih dahulu.</p>;
+            })()}
             <div className="px-4 py-3 rounded-xl mb-4 bg-red-50 border border-red-200">
               <p className="text-xs font-bold text-red-600">⚠️ Aksi ini tidak bisa di-undo.</p>
             </div>
