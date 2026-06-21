@@ -214,12 +214,18 @@ export function validateSplitTotal(splits: SplitResult[], pool: number): { valid
 
 // ─── Tranche Generation ──────────────────────────────────────────────────────
 
-export function generateTranches(projectId: string, bastDate: string): { tranche_number: number; percentage: number; payment_year: number }[] {
+export function generateTranches(
+  projectId: string,
+  bastDate: string,
+  modePenyelesaian?: 'onsite' | 'remote' | null,
+): { tranche_number: number; percentage: number; payment_year: number }[] {
   const baseYear = new Date(bastDate).getFullYear();
+  const isRemote = modePenyelesaian === 'remote';
   return [
     { tranche_number: 1, percentage: 50, payment_year: baseYear + 1 },
     { tranche_number: 2, percentage: 35, payment_year: baseYear + 2 },
-    { tranche_number: 3, percentage: 15, payment_year: baseYear + 3 },
+    // Remote: T3 = Installer carve-out, paid upfront at same year as T1 (N+1), not N+3
+    { tranche_number: 3, percentage: 15, payment_year: isRemote ? baseYear + 1 : baseYear + 3 },
   ];
 }
 
@@ -274,8 +280,8 @@ export async function fetchLateTickets(parentProjectId?: string) {
   return { data: (data || []) as LateTicketLink[], error };
 }
 
-export async function insertTranches(projectId: string, bastDate: string) {
-  const tranches = generateTranches(projectId, bastDate);
+export async function insertTranches(projectId: string, bastDate: string, modePenyelesaian?: 'onsite' | 'remote' | null) {
+  const tranches = generateTranches(projectId, bastDate, modePenyelesaian);
   const rows = tranches.map(t => ({
     project_id: projectId,
     tranche_number: t.tranche_number,
@@ -328,11 +334,32 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
       (supports || []).map(s => ({ user_id: s.user_id, user_name: s.user_name || '' })),
     );
 
-    const tranchePool = (project.incentive_value || 0) * (tranche.percentage / 100);
-    const trancheSplits = splits.map(s => ({
-      ...s,
-      amount: Math.round(s.amount * (tranche.percentage / 100)),
-    }));
+    const pool = project.incentive_value || 0;
+    const isRemote = project.mode_penyelesaian === 'remote';
+    const tranchePool = pool * (tranche.percentage / 100);
+
+    let trancheSplits: SplitResult[];
+    if (isRemote && tranche.tranche_number === 3) {
+      // T3 Remote: Installer carve-out only, paid upfront (payment_year = N+1)
+      trancheSplits = [{
+        role: 'installer',
+        user_id: '',
+        user_name: project.installer_name || 'Installer Cabang',
+        percentage: 15,
+        amount: Math.round(pool * 0.15),
+      }];
+    } else if (isRemote) {
+      // T1/T2 Remote: PIC/Support/Manager only; installer excluded — scale within the 85% base
+      trancheSplits = splits
+        .filter(s => s.role !== 'installer')
+        .map(s => ({ ...s, amount: Math.round(s.amount * (tranche.percentage / 85)) }));
+    } else {
+      // Onsite: all splits scaled by tranche percentage
+      trancheSplits = splits.map(s => ({
+        ...s,
+        amount: Math.round(s.amount * (tranche.percentage / 100)),
+      }));
+    }
 
     const validation = validateSplitTotal(trancheSplits, tranchePool);
     if (!validation.valid) {

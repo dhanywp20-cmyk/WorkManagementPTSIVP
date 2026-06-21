@@ -30,11 +30,25 @@ interface Props {
 }
 
 export function ReminderFormModal({ editingReminder, formData, setFormData, saving, teamUsers, guestUsers, bulkTarget, onBulkTargetChange, onClose, onSubmit }: Props) {
-  const fd = (patch: Partial<ReminderForm>) => setFormData({ ...formData, ...patch });
-
   const [guestSearch, setGuestSearch] = useState('');
   const [guestDropdownOpen, setGuestDropdownOpen] = useState(false);
   const guestDropdownRef = useRef<HTMLDivElement>(null);
+  const [caError, setCaError] = useState('');
+
+  const fd = (patch: Partial<ReminderForm>) => { setCaError(''); setFormData({ ...formData, ...patch }); };
+
+  function handleSubmit() {
+    if (formData.requires_controller_automation && (formData.pic_type ?? 'standard') === 'standard') {
+      const name = (formData.assign_name || '').toLowerCase();
+      const eligible = CONTROLLER_AUTOMATION_ELIGIBLE.some(n => name.includes(n));
+      if (!eligible) {
+        setCaError('Controller Automation dengan Standard PIC harus di-assign ke Yoga atau Farhan.');
+        return;
+      }
+    }
+    setCaError('');
+    onSubmit();
+  }
 
   const inputCls = "w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40";
   const inputStyle = { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(0,0,0,0.12)' };
@@ -475,13 +489,20 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
               rows={2} className={`${inputCls} resize-none`} style={inputStyle} placeholder="Informasi tambahan untuk team..." />
           </FormField>
 
+          {caError && (
+            <div className="px-4 py-2.5 rounded-xl flex items-start gap-2" style={{ background: 'rgba(239,68,68,0.08)', border: '1.5px solid rgba(239,68,68,0.35)' }}>
+              <span className="text-sm mt-0.5">🚫</span>
+              <p className="text-xs font-semibold text-red-700">{caError}</p>
+            </div>
+          )}
+
           <div className="flex gap-3 pt-2">
             <button onClick={onClose}
               className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
               style={{ background: 'rgba(255,255,255,0.95)', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>
               Batal
             </button>
-            <button onClick={onSubmit} disabled={saving}
+            <button onClick={handleSubmit} disabled={saving}
               className="flex-1 text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02]"
               style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', boxShadow: '0 4px 14px rgba(8,145,178,0.35)' }}>
               {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}

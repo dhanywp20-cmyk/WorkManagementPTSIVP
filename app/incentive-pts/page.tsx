@@ -31,7 +31,7 @@ function calcHandlerSplit(p: IncentiveProjectRow): { pct: number; amt: number } 
   return { pct: 60 * factor, amt: Math.round(pool * 0.60 * factor) };
 }
 
-type TabKey = 'projects' | 'tranches' | 'settings';
+type TabKey = 'projects' | 'tranches' | 'late' | 'settings';
 
 export default function IncentivePTSPage() {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
@@ -123,7 +123,7 @@ export default function IncentivePTSPage() {
   async function handleGenerateTranches() {
     if (!generateProject?.bast_date) { notify('error', 'BAST belum ada — isi saat Handler klik Completed di Reminder Schedule!'); return; }
     setGenerating(true);
-    const { error } = await insertTranches(generateProject.id, generateProject.bast_date);
+    const { error } = await insertTranches(generateProject.id, generateProject.bast_date, generateProject.mode_penyelesaian);
     if (error) { notify('error', 'Gagal: ' + error.message); } else { notify('success', 'Tranche berhasil di-generate!'); }
     setGenerating(false); setShowGenerateModal(false); setGenerateProject(null);
     loadAll();
@@ -225,9 +225,10 @@ export default function IncentivePTSPage() {
         style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(99,102,241,0.12)' }}>
         <div className="w-full px-4 flex gap-1 overflow-x-auto">
           {([
-            { id: 'projects', label: '📋 Projects',         adminOnly: false },
-            { id: 'tranches', label: '📅 Tranche Schedule', adminOnly: false },
-            { id: 'settings', label: '⚙️ Pengaturan Akses', adminOnly: true  },
+            { id: 'projects', label: '📋 Projects',            adminOnly: false },
+            { id: 'tranches', label: '📅 Tranche Schedule',    adminOnly: false },
+            { id: 'late',     label: '🕐 Late Ticket Queue',   adminOnly: false },
+            { id: 'settings', label: '⚙️ Pengaturan Akses',   adminOnly: true  },
           ] as { id: TabKey; label: string; adminOnly: boolean }[])
             .filter(t => !t.adminOnly || isAdmin(currentUser))
             .map(t => (
@@ -460,6 +461,40 @@ export default function IncentivePTSPage() {
           </div>
         )}
 
+        {/* ─── Late Ticket Queue tab ─── */}
+        {tab === 'late' && !loading && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-200" style={{ background: 'linear-gradient(135deg,rgba(245,158,11,0.08),rgba(234,88,12,0.05))' }}>
+              <h2 className="font-bold text-gray-800">🕐 Late Ticket Queue</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Ticket Troubleshooting yang masuk setelah cutoff project induk — dilampirkan ke tranche berikutnya yang belum dibayar.</p>
+            </div>
+            {lateTickets.length === 0
+              ? (
+                <div className="px-5 py-10 text-center">
+                  <p className="text-2xl mb-2">📭</p>
+                  <p className="text-sm text-gray-500 italic">Belum ada late ticket yang dilampirkan.</p>
+                </div>
+              )
+              : (
+                <div className="divide-y divide-gray-100">
+                  {lateTickets.map(lt => (
+                    <div key={lt.id} className="px-5 py-3 flex items-center justify-between hover:bg-amber-50/40 transition-colors">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">Tranche {lt.attached_tranche_number}</p>
+                        <p className="text-xs text-gray-400">{new Date(lt.attached_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}{lt.note ? ` · ${lt.note}` : ''}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-amber-700">{formatRupiah(lt.ticket_value || 0)}</span>
+                        {lt.is_sunset && <span className="px-2 py-0.5 rounded text-[10px] font-bold text-orange-600 bg-orange-50 border border-orange-200">Sunset</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            }
+          </div>
+        )}
+
         {/* ─── Settings tab ─── */}
         {tab === 'settings' && isAdmin(currentUser) && !loading && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -678,12 +713,18 @@ export default function IncentivePTSPage() {
             <p className="text-sm text-gray-500 mb-1">Project: <strong className="text-gray-800">{generateProject.project_name}</strong></p>
             <p className="text-sm text-gray-500 mb-4">BAST: <strong>{generateProject.bast_date}</strong> · Pool: <strong className="text-emerald-600">{formatRupiah(generateProject.incentive_value || 0)}</strong></p>
             <div className="space-y-2 mb-6">
-              {generateTranches(generateProject.id, generateProject.bast_date!).map(t => (
-                <div key={t.tranche_number} className="flex justify-between rounded-lg px-4 py-2.5 bg-gray-50 border border-gray-100">
-                  <span className="text-sm font-bold text-gray-700">Tranche {t.tranche_number}</span>
-                  <span className="text-sm text-gray-500">{t.percentage}% · Bayar {t.payment_year} · {formatRupiah(Math.round((generateProject.incentive_value || 0) * t.percentage / 100))}</span>
-                </div>
-              ))}
+              {generateTranches(generateProject.id, generateProject.bast_date!, generateProject.mode_penyelesaian).map(t => {
+                const isInstallerT3 = t.tranche_number === 3 && generateProject.mode_penyelesaian === 'remote';
+                return (
+                  <div key={t.tranche_number} className="flex justify-between rounded-lg px-4 py-2.5 border border-gray-100" style={{ background: isInstallerT3 ? 'rgba(245,158,11,0.07)' : 'rgb(249,250,251)' }}>
+                    <div>
+                      <span className="text-sm font-bold text-gray-700">Tranche {t.tranche_number}</span>
+                      {isInstallerT3 && <span className="ml-2 text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Installer (upfront)</span>}
+                    </div>
+                    <span className="text-sm text-gray-500">{t.percentage}% · Bayar {t.payment_year} · {formatRupiah(Math.round((generateProject.incentive_value || 0) * t.percentage / 100))}</span>
+                  </div>
+                );
+              })}
             </div>
             <div className="flex gap-3">
               <button onClick={() => { setShowGenerateModal(false); setGenerateProject(null); }} className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-gray-500 border border-gray-200 hover:bg-gray-50">Batal</button>
@@ -718,7 +759,6 @@ export default function IncentivePTSPage() {
         </div>
       )}
 
-      {lateTickets.length < 0 && null}
     </div>
   );
 }
