@@ -173,9 +173,10 @@ export default function IncentivePTSPage() {
   async function handleExportSummary() {
     setExporting(true);
     try {
-      const { data: dhany } = await supabase.from('users').select('id, full_name').ilike('full_name', '%dhany%').limit(1).single();
-      const managerUserId = (dhany?.id || '') as string;
-      const managerName   = (dhany?.full_name || 'Dhany Widya Putra') as string;
+      // Manager fallback berbasis jabatan (utama tetap dari Struktur Organisasi di export)
+      const { data: mgr } = await supabase.from('users').select('id, full_name').eq('jabatan', 'Manager').eq('team_type', 'Team PTS IVP').limit(1).single();
+      const managerUserId = (mgr?.id || '') as string;
+      const managerName   = (mgr?.full_name || 'Manager PTS IVP') as string;
       // Fetch ALL troubleshooting tickets done in one call
       const { data: trouble } = await supabase.from('reminders').select('project_name, assigned_to, assign_name').eq('category', 'Troubleshooting').eq('status', 'done');
       const supportsMap = new Map<string, { user_id: string; user_name: string }[]>();
@@ -185,7 +186,7 @@ export default function IncentivePTSPage() {
         if (!arr.find(x => x.user_id === t.assigned_to)) arr.push({ user_id: t.assigned_to, user_name: t.assign_name || '' });
         supportsMap.set(t.project_name, arr);
       }
-      await exportSummaryIncentive({ projects, allUsers: allUsers as { id?: string; full_name?: string }[], supportsMap, managerName, managerUserId });
+      await exportSummaryIncentive({ projects, allUsers: allUsers as { id?: string; full_name?: string; jabatan?: string; atasan_id?: string | null }[], supportsMap, managerName, managerUserId });
       notify('success', 'Export summary semua project berhasil!');
     } catch (err: unknown) { notify('error', 'Export gagal: ' + (err as Error).message); }
     setExporting(false);

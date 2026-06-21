@@ -5,7 +5,7 @@ import { saveAs } from 'file-saver';
 import {
   IncentiveProjectRow, IncentiveSplit, IncentiveTranche,
   SplitResult, formatRupiah, formatPct,
-  calculateIncentiveSplits, getSupervisorTeamForPic,
+  calculateIncentiveSplits, findUpline, OrgUser,
 } from './calc';
 
 const NAVY = '1B3A6B';
@@ -373,12 +373,15 @@ export async function exportPengajuanIncentive(data: ExportData) {
 
 export async function exportSummaryIncentive(data: {
   projects: IncentiveProjectRow[];
-  allUsers: { id?: string; full_name?: string }[];
+  allUsers: { id?: string; full_name?: string; jabatan?: string; atasan_id?: string | null }[];
   supportsMap: Map<string, { user_id: string; user_name: string }[]>;
   managerName: string;
   managerUserId: string;
 }) {
   const { projects, allUsers, supportsMap, managerName, managerUserId } = data;
+  const orgList = allUsers as unknown as OrgUser[];
+  // Akumulasi total per orang (hanya project dgn nominal & mode final)
+  const personMap = new Map<string, { name: string; role: string; amount: number; count: number }>();
 
   const wb = new ExcelJS.Workbook();
   wb.creator = 'Work Management PTS IVP';
@@ -442,17 +445,33 @@ export async function exportSummaryIncentive(data: {
     const altFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8F9FA' } };
 
     const projectSupports = supportsMap.get(p.project_name) || [];
-    const supTeam = getSupervisorTeamForPic(p.assign_name);
-    const supUser = supTeam ? allUsers.find(u => (u.full_name || '').toLowerCase().includes(supTeam)) : null;
-    const supervisorId   = (supUser?.id        || '') as string;
-    const supervisorName = (supUser?.full_name || 'Supervisor') as string;
+    // Supervisor & Manager dari Struktur Organisasi (atasan_id), bukan name-matching
+    const picId = (p.pic_id || p.assigned_to || '') as string;
+    const supUp = findUpline(picId, 'Supervisor', orgList);
+    const mgrUp = findUpline(picId, 'Manager', orgList);
+    const supervisorId   = (supUp?.id        || '') as string;
+    const supervisorName = (supUp?.full_name || 'Supervisor') as string;
+    const projManagerId   = mgrUp?.id || managerUserId;
+    const projManagerName = mgrUp?.full_name || managerName;
 
     const hasNominal = (p.incentive_value || 0) > 0;
     const effectivePool = hasNominal ? p.incentive_value : 1_000_000;
     const effectiveMode = p.mode_penyelesaian || 'onsite';
     const displayProject = { ...p, incentive_value: effectivePool, mode_penyelesaian: effectiveMode };
-    const splits = calculateIncentiveSplits(displayProject, managerUserId, managerName, supervisorId, supervisorName, projectSupports);
+    const splits = calculateIncentiveSplits(displayProject, projManagerId, projManagerName, supervisorId, supervisorName, projectSupports);
     const isEstimate = !hasNominal || !p.mode_penyelesaian;
+
+    // Akumulasi total per orang — hanya project final (ada nominal & mode), pakai amount asli
+    if (!isEstimate) {
+      for (const s of splits) {
+        const nm = s.user_name || '—';
+        const key = `${s.role}::${nm}`;
+        const prev = personMap.get(key) || { name: nm, role: s.role, amount: 0, count: 0 };
+        prev.amount += s.amount;
+        prev.count += 1;
+        personMap.set(key, prev);
+      }
+    }
 
     const picSplit    = splits.find((s: SplitResult) => s.role === 'pic');
     const suppSplits  = splits.filter((s: SplitResult) => s.role === 'support');
@@ -538,6 +557,71 @@ export async function exportSummaryIncentive(data: {
   ws.getCell(row, 1).value = '* Estimasi: ditampilkan jika nominal belum diinput atau mode penyelesaian belum diset (default Onsite). Angka rupiah tidak tertera.';
   ws.getCell(row, 1).font = { italic: true, size: 9, name: 'Arial', color: { argb: 'BBBB44' } };
   ws.mergeCells(row, 1, row, 12);
+
+  // ── Rekapitulasi Total Incentive Per Orang ──────────────────────────────────
+  row += 2;
+  const rpTitle = ws.getCell(row, 1);
+  rpTitle.value = 'Rekapitulasi Total Incentive Per Orang';
+  rpTitle.font = { bold: true, size: 12, name: 'Arial', color: { argb: NAVY } };
+  ws.mergeCells(row, 1, row, 4);
+  row++;
+  const rpSub = ws.getCell(row, 1);
+  rpSub.value = 'Akumulasi seluruh project dgn nominal & mode final (estimasi tidak dihitung)';
+  rpSub.font = { italic: true, size: 9, name: 'Arial', color: { argb: '888888' } };
+  ws.mergeCells(row, 1, row, 4);
+  row++;
+
+  ['Nama', 'Role', 'Jumlah Project', 'Total Nominal (Rp)'].forEach((h, i) => {
+    const cell = ws.getCell(row, i + 1);
+    cell.value = h;
+    cell.font = headerFont(10);
+    cell.fill = headerFill();
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.border = thinBorder();
+  });
+  row++;
+
+  const roleOrder: Record<string, number> = { manager: 0, supervisor: 1, pic: 2, support: 3, installer: 4 };
+  const roleLabel = (r: string) => r === 'pic' ? 'PIC' : r === 'support' ? 'Support' : r === 'supervisor' ? 'Supervisor' : r === 'manager' ? 'Manager' : 'Installer';
+  const persons = [...personMap.values()].sort((a, b) => (roleOrder[a.role] ?? 9) - (roleOrder[b.role] ?? 9) || a.name.localeCompare(b.name, 'id'));
+
+  const pStart = row;
+  persons.forEach((person, idx) => {
+    const isAlt = idx % 2 === 1;
+    const altFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8F9FA' } };
+    [person.name, roleLabel(person.role), person.count, person.amount].forEach((val, ci) => {
+      const cell = ws.getCell(row, ci + 1);
+      cell.value = val;
+      cell.font = ci === 3 ? { ...dataFont(), bold: true } : dataFont();
+      cell.border = thinBorder();
+      if (isAlt) cell.fill = altFill;
+      if (ci === 2) cell.alignment = { horizontal: 'center' };
+      if (ci === 3) { cell.numFmt = '#,##0'; cell.alignment = { horizontal: 'right' }; }
+    });
+    row++;
+  });
+  const pEnd = row - 1;
+  if (persons.length === 0) {
+    ws.getCell(row, 1).value = '(Belum ada project dengan nominal & mode final)';
+    ws.getCell(row, 1).font = { ...dataFont(), italic: true, color: { argb: '999999' } };
+    ws.mergeCells(row, 1, row, 4);
+    row++;
+  }
+
+  // Grand Total per orang (= total pembagian semua orang)
+  const gRow = row;
+  ws.getCell(gRow, 1).value = 'GRAND TOTAL';
+  ws.getCell(gRow, 1).font = { bold: true, size: 10, name: 'Arial' };
+  ws.getCell(gRow, 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
+  ws.getCell(gRow, 1).border = thinBorder();
+  ws.mergeCells(gRow, 1, gRow, 3);
+  const gCell = ws.getCell(gRow, 4);
+  gCell.value = persons.length ? { formula: `SUM(D${pStart}:D${pEnd})` } : 0;
+  gCell.numFmt = '#,##0';
+  gCell.font = { bold: true, size: 10, name: 'Arial' };
+  gCell.alignment = { horizontal: 'right' };
+  gCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
+  gCell.border = thinBorder();
 
   ws.views = [{ state: 'frozen', ySplit: headerRow, xSplit: 0 }];
 
