@@ -13,7 +13,7 @@ import {
 } from './_components/calc';
 import { exportPengajuanIncentive } from './_components/exportPengajuan';
 
-void insertSplits; void calculateIncentiveSplits; void validateSplitTotal;
+void insertSplits; void validateSplitTotal;
 
 interface CurrentUser { id?: string; username?: string; full_name?: string; role?: string; team_type?: string; allow_incentive_input?: boolean; [k: string]: unknown; }
 
@@ -623,21 +623,47 @@ export default function IncentivePTSPage() {
                 </div>
               </div>
 
-              {/* Handler split preview */}
-              {(() => {
-                const split = calcHandlerSplit(detailProject);
-                return split ? (
-                  <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-indigo-50 border border-indigo-200">
-                    <div>
-                      <p className="text-sm font-bold text-indigo-700">{detailProject.assign_name}</p>
-                      <p className="text-xs text-gray-400">{detailProject.pic_type === 'manager_pic' ? 'Manager PIC' : 'Handler (Standard)'}</p>
+              {/* Full incentive split preview — live calculated */}
+              {(detailProject.incentive_value || 0) > 0 && detailProject.mode_penyelesaian && (() => {
+                const dhany = allUsers.find(u => (u.full_name as string || '').toLowerCase().includes('dhany'));
+                const managerId = (dhany?.id || '') as string;
+                const managerName = (dhany?.full_name || 'Dhany') as string;
+                const splits = calculateIncentiveSplits(detailProject, managerId, managerName, detailSupports);
+                if (!splits.length) return null;
+                const schemeLabel = detailProject.pic_type === 'manager_pic' ? 'Manager sebagai PIC' : 'Standard';
+                const modeLabel = detailProject.mode_penyelesaian === 'remote' ? 'Remote' : 'Onsite';
+                return (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-bold text-gray-700">💰 Pembagian Incentive</h3>
+                      <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{schemeLabel} · {modeLabel}</span>
                     </div>
-                    <div className="text-right">
-                      <p className="text-base font-black text-indigo-700">{formatRupiah(split.amt)}</p>
-                      <p className="text-[10px] text-gray-400">{formatPct(split.pct)} dari pool</p>
+                    <div className="space-y-1.5">
+                      {splits.map((s, i) => {
+                        const rl = ROLE_LABELS[s.role] || { label: s.role, color: '#94a3b8', bg: 'rgba(148,163,184,0.12)' };
+                        const isInstaller = s.role === 'installer';
+                        return (
+                          <div key={i} className="flex items-center justify-between rounded-xl px-4 py-2.5"
+                            style={{ background: isInstaller ? 'rgba(245,158,11,0.07)' : 'rgba(99,102,241,0.05)', border: `1px solid ${isInstaller ? 'rgba(245,158,11,0.2)' : 'rgba(99,102,241,0.12)'}` }}>
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: rl.bg, color: rl.color }}>{rl.label}</span>
+                              <div>
+                                <p className="text-sm font-semibold text-gray-800">{s.user_name || '—'}</p>
+                                {isInstaller && detailProject.installer_daerah && (
+                                  <p className="text-[10px] text-gray-400">📍 {detailProject.installer_daerah}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-black text-gray-800">{formatRupiah(s.amount)}</p>
+                              <p className="text-[10px] text-gray-400">{formatPct(s.percentage)} pool</p>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                ) : null;
+                );
               })()}
 
               <div>
