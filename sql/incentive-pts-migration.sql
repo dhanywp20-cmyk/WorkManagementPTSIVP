@@ -10,7 +10,9 @@ ALTER TABLE reminders ADD COLUMN IF NOT EXISTS requires_controller_automation BO
 ALTER TABLE reminders ADD COLUMN IF NOT EXISTS controller_automation_brand TEXT; -- 'cue' | 'extron' | 'wyrestorm' | NULL
 ALTER TABLE reminders ADD COLUMN IF NOT EXISTS pic_type TEXT DEFAULT 'standard'; -- 'standard' | 'manager_pic'
 ALTER TABLE reminders ADD COLUMN IF NOT EXISTS pic_id UUID REFERENCES users(id);
-ALTER TABLE reminders ADD COLUMN IF NOT EXISTS domain_owner TEXT; -- 'led' | 'middleware' | NULL
+ALTER TABLE reminders ADD COLUMN IF NOT EXISTS domain_owner TEXT; -- 'led' | 'middleware' | NULL (legacy, supervisor now based on PIC team)
+ALTER TABLE reminders ADD COLUMN IF NOT EXISTS display_type TEXT; -- 'led' | 'lcd' | 'mix' | NULL
+ALTER TABLE reminders ADD COLUMN IF NOT EXISTS requires_middleware BOOLEAN DEFAULT FALSE;
 ALTER TABLE reminders ADD COLUMN IF NOT EXISTS bast_date DATE;
 ALTER TABLE reminders ADD COLUMN IF NOT EXISTS incentive_value NUMERIC DEFAULT 0;
 -- mode_penyelesaian ('onsite'|'remote') already exists — skip

@@ -37,6 +37,8 @@ export interface Reminder {
   mode_penyelesaian?: 'onsite' | 'remote' | null;
   installer_name?: string | null;
   installer_daerah?: string | null;
+  display_type?: 'led' | 'lcd' | 'mix' | null;
+  requires_middleware?: boolean;
   requires_controller_automation?: boolean;
   controller_automation_brand?: ControllerBrand | null;
   pic_type?: PicType;

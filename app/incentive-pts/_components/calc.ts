@@ -44,7 +44,7 @@ export interface IncentiveSplit {
   id: string;
   project_id: string;
   tranche_id: string | null;
-  role: 'pic' | 'support' | 'installer' | 'manager';
+  role: 'pic' | 'support' | 'installer' | 'supervisor' | 'manager';
   user_id: string;
   user_name: string;
   percentage: number;
@@ -76,7 +76,7 @@ export interface LateTicketLink {
 }
 
 export interface SplitResult {
-  role: 'pic' | 'support' | 'installer' | 'manager';
+  role: 'pic' | 'support' | 'installer' | 'supervisor' | 'manager';
   user_id: string;
   user_name: string;
   percentage: number;
@@ -85,6 +85,20 @@ export interface SplitResult {
 
 // ─── Calculation Engine ───────────────────────────────────────────────────────
 
+// Determine which supervisor team a PIC belongs to based on their name.
+// Tim Wahyu: Wahyu (supervisor), Ade, Pandu
+// Tim Yoga : Yoga (supervisor), Farhan, Ferdinan/Ferdinand, Deni
+export function getSupervisorTeamForPic(picName: string): 'wahyu' | 'yoga' | null {
+  const n = (picName || '').toLowerCase();
+  if (n.includes('wahyu') || n.includes('ade') || n.includes('pandu')) return 'wahyu';
+  if (n.includes('yoga') || n.includes('farhan') || n.includes('ferdin') || n.includes('deni')) return 'yoga';
+  return null;
+}
+
+// StandardScheme: PIC 65% / Support 15% / Supervisor 10% / Manager 10%
+// Forfeiture: if PIC IS the supervisor → supervisor 0%, manager 20%
+// Fallback no support: PIC absorbs 15% → PIC 80%
+// Remote: all roles ×0.85, Installer 15% (T3 carve-out, paid upfront)
 export function calculateStandardScheme(
   pool: number,
   modePenyelesaian: 'onsite' | 'remote' | null,
@@ -92,118 +106,94 @@ export function calculateStandardScheme(
   picUserName: string,
   managerUserId: string,
   managerUserName: string,
+  supervisorUserId: string,
+  supervisorUserName: string,
   assignedSupports: { user_id: string; user_name: string }[],
 ): SplitResult[] {
   const results: SplitResult[] = [];
-  const trancheFactor = modePenyelesaian === 'remote' ? 0.85 : 1.0;
+  const f = modePenyelesaian === 'remote' ? 0.85 : 1.0; // tranche factor
 
-  const managerShare = pool * 0.10 * trancheFactor;
-  const picBase = pool * 0.60 * trancheFactor;
-  const supportPool = pool * 0.30 * trancheFactor;
+  // Forfeiture: PIC is the supervisor → supervisor share goes to manager
+  const isForfeit = supervisorUserId !== '' && picUserId === supervisorUserId;
+  const supervisorShare = isForfeit ? 0 : pool * 0.10 * f;
+  const managerShare    = pool * (isForfeit ? 0.20 : 0.10) * f;
+  const picBase         = pool * 0.65 * f;
+  const supportPool     = pool * 0.15 * f;
 
+  // PIC
+  const hasSupport = assignedSupports.length > 0;
   results.push({
-    role: 'manager',
-    user_id: managerUserId,
-    user_name: managerUserName,
-    percentage: 10 * trancheFactor,
-    amount: Math.round(managerShare),
+    role: 'pic',
+    user_id: picUserId,
+    user_name: picUserName,
+    percentage: hasSupport ? 65 * f : 80 * f,
+    amount: Math.round(hasSupport ? picBase : picBase + supportPool),
   });
 
-  if (assignedSupports.length > 0) {
-    results.push({
-      role: 'pic',
-      user_id: picUserId,
-      user_name: picUserName,
-      percentage: 60 * trancheFactor,
-      amount: Math.round(picBase),
-    });
+  // Support (divided equally among assigned)
+  if (hasSupport) {
     const supportEach = supportPool / assignedSupports.length;
-    const supportPct = (30 * trancheFactor) / assignedSupports.length;
+    const supportPct  = (15 * f) / assignedSupports.length;
     for (const s of assignedSupports) {
-      results.push({
-        role: 'support',
-        user_id: s.user_id,
-        user_name: s.user_name,
-        percentage: supportPct,
-        amount: Math.round(supportEach),
-      });
+      results.push({ role: 'support', user_id: s.user_id, user_name: s.user_name, percentage: supportPct, amount: Math.round(supportEach) });
     }
-  } else {
-    results.push({
-      role: 'pic',
-      user_id: picUserId,
-      user_name: picUserName,
-      percentage: 90 * trancheFactor,
-      amount: Math.round(picBase + supportPool),
-    });
   }
 
+  // Supervisor (skip if forfeiture)
+  if (!isForfeit && supervisorUserId) {
+    results.push({ role: 'supervisor', user_id: supervisorUserId, user_name: supervisorUserName, percentage: 10 * f, amount: Math.round(supervisorShare) });
+  }
+
+  // Manager (Dhany)
+  results.push({ role: 'manager', user_id: managerUserId, user_name: managerUserName, percentage: isForfeit ? 20 * f : 10 * f, amount: Math.round(managerShare) });
+
+  // Installer (Remote only — T3 carve-out 15%, paid upfront)
   if (modePenyelesaian === 'remote') {
-    results.push({
-      role: 'installer',
-      user_id: '',
-      user_name: 'Installer Cabang',
-      percentage: 15,
-      amount: Math.round(pool * 0.15),
-    });
+    results.push({ role: 'installer', user_id: '', user_name: 'Installer Cabang', percentage: 15, amount: Math.round(pool * 0.15) });
   }
 
   return results;
 }
 
+// ManagerPicScheme: Dhany 100% onsite / Dhany 85% + Installer 15% remote
+// No supervisor, no manager slot
 export function calculateManagerPicScheme(
   pool: number,
   modePenyelesaian: 'onsite' | 'remote' | null,
   dhanyUserId: string,
   dhanyUserName: string,
 ): SplitResult[] {
-  const results: SplitResult[] = [];
-
   if (modePenyelesaian === 'remote') {
-    results.push({
-      role: 'pic',
-      user_id: dhanyUserId,
-      user_name: dhanyUserName,
-      percentage: 85,
-      amount: Math.round(pool * 0.85),
-    });
-    results.push({
-      role: 'installer',
-      user_id: '',
-      user_name: 'Installer Cabang',
-      percentage: 15,
-      amount: Math.round(pool * 0.15),
-    });
-  } else {
-    results.push({
-      role: 'pic',
-      user_id: dhanyUserId,
-      user_name: dhanyUserName,
-      percentage: 100,
-      amount: pool,
-    });
+    return [
+      { role: 'pic', user_id: dhanyUserId, user_name: dhanyUserName, percentage: 85, amount: Math.round(pool * 0.85) },
+      { role: 'installer', user_id: '', user_name: 'Installer Cabang', percentage: 15, amount: Math.round(pool * 0.15) },
+    ];
   }
-
-  return results;
+  return [{ role: 'pic', user_id: dhanyUserId, user_name: dhanyUserName, percentage: 100, amount: pool }];
 }
 
 export function calculateIncentiveSplits(
   project: IncentiveProjectRow,
   managerUserId: string,
   managerUserName: string,
+  supervisorUserId: string,
+  supervisorUserName: string,
   assignedSupports: { user_id: string; user_name: string }[],
 ): SplitResult[] {
   const pool = project.incentive_value || 0;
   if (pool <= 0) return [];
 
-  const picUserId = project.pic_id || '';
-  const picUserName = project.assign_name || '';
-
   if (project.pic_type === 'manager_pic') {
     return calculateManagerPicScheme(pool, project.mode_penyelesaian, managerUserId, managerUserName);
   }
 
-  return calculateStandardScheme(pool, project.mode_penyelesaian, picUserId, picUserName, managerUserId, managerUserName, assignedSupports);
+  return calculateStandardScheme(
+    pool, project.mode_penyelesaian,
+    project.pic_id || '', project.assign_name || '',
+    managerUserId, managerUserName,
+    supervisorUserId, supervisorUserName,
+    assignedSupports,
+  );
 }
 
 export function validateSplitTotal(splits: SplitResult[], pool: number): { valid: boolean; diff: number } {
@@ -320,6 +310,11 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
 
   if (fetchErr || !dueTranches) return { error: fetchErr, processed: 0 };
 
+  // Pre-fetch Wahyu and Yoga for supervisor lookup
+  const { data: supUsers } = await supabase.from('users').select('id, full_name').or('full_name.ilike.%wahyu%,full_name.ilike.%yoga%');
+  const wahyu = supUsers?.find(u => (u.full_name || '').toLowerCase().includes('wahyu'));
+  const yoga  = supUsers?.find(u => (u.full_name || '').toLowerCase().includes('yoga'));
+
   let processed = 0;
   const errors: string[] = [];
 
@@ -328,9 +323,16 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
     if (!project) { errors.push(`Tranche ${tranche.id}: project not found`); continue; }
     if (!project.mode_penyelesaian) { errors.push(`Project "${project.project_name}": mode_penyelesaian kosong`); continue; }
 
+    // Determine supervisor based on PIC's team (reporting line)
+    const supTeam = getSupervisorTeamForPic(project.assign_name);
+    const supUser = supTeam === 'wahyu' ? wahyu : supTeam === 'yoga' ? yoga : null;
+    const supervisorUserId   = (supUser?.id   || '') as string;
+    const supervisorUserName = (supUser?.full_name || 'Supervisor') as string;
+
     const { data: supports } = await fetchSupportFromTickets(project.project_name);
     const splits = calculateIncentiveSplits(
       project, managerUserId, managerUserName,
+      supervisorUserId, supervisorUserName,
       (supports || []).map(s => ({ user_id: s.user_id, user_name: s.user_name || '' })),
     );
 
@@ -340,25 +342,20 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
 
     let trancheSplits: SplitResult[];
     if (isRemote && tranche.tranche_number === 3) {
-      // T3 Remote: Installer carve-out only, paid upfront (payment_year = N+1)
+      // T3 Remote: Installer carve-out only, paid upfront
       trancheSplits = [{
-        role: 'installer',
-        user_id: '',
+        role: 'installer', user_id: '',
         user_name: project.installer_name || 'Installer Cabang',
-        percentage: 15,
-        amount: Math.round(pool * 0.15),
+        percentage: 15, amount: Math.round(pool * 0.15),
       }];
     } else if (isRemote) {
-      // T1/T2 Remote: PIC/Support/Manager only; installer excluded — scale within the 85% base
+      // T1/T2 Remote: exclude installer, scale within the 85% base
       trancheSplits = splits
         .filter(s => s.role !== 'installer')
         .map(s => ({ ...s, amount: Math.round(s.amount * (tranche.percentage / 85)) }));
     } else {
-      // Onsite: all splits scaled by tranche percentage
-      trancheSplits = splits.map(s => ({
-        ...s,
-        amount: Math.round(s.amount * (tranche.percentage / 100)),
-      }));
+      // Onsite: all splits (no installer) scaled by tranche %
+      trancheSplits = splits.map(s => ({ ...s, amount: Math.round(s.amount * (tranche.percentage / 100)) }));
     }
 
     const validation = validateSplitTotal(trancheSplits, tranchePool);
@@ -388,10 +385,11 @@ export function formatPct(n: number): string {
 }
 
 export const ROLE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  pic:       { label: 'PIC',       color: '#2563eb', bg: 'rgba(37,99,235,0.12)' },
-  support:   { label: 'Support',   color: '#7c3aed', bg: 'rgba(124,58,237,0.12)' },
-  manager:   { label: 'Supervisor', color: '#059669', bg: 'rgba(5,150,105,0.12)' },
-  installer: { label: 'Installer', color: '#d97706', bg: 'rgba(217,119,6,0.12)' },
+  pic:        { label: 'PIC',        color: '#2563eb', bg: 'rgba(37,99,235,0.12)'   },
+  support:    { label: 'Support',    color: '#7c3aed', bg: 'rgba(124,58,237,0.12)'  },
+  supervisor: { label: 'Supervisor', color: '#0891b2', bg: 'rgba(8,145,178,0.12)'   },
+  manager:    { label: 'Manager',    color: '#059669', bg: 'rgba(5,150,105,0.12)'   },
+  installer:  { label: 'Installer',  color: '#d97706', bg: 'rgba(217,119,6,0.12)'   },
 };
 
 export const TRANCHE_STATUS: Record<string, { label: string; color: string; bg: string; icon: string }> = {

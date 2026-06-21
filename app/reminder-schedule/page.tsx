@@ -100,6 +100,8 @@ function ReminderSchedulePageInner() {
   const [installerName, setInstallerName]             = useState('');
   const [installerDaerah, setInstallerDaerah]         = useState('');
   const [bastDate, setBastDate]                       = useState<string>('');
+  const [displayType, setDisplayType]                 = useState<'led' | 'lcd' | 'mix' | null>(null);
+  const [requiresMiddleware, setRequiresMiddleware]   = useState(false);
   const [pendingPhotoUrl, setPendingPhotoUrl]         = useState<string | undefined>(undefined);
   const [savingMode, setSavingMode]                   = useState(false);
 
@@ -548,6 +550,8 @@ function ReminderSchedulePageInner() {
       setInstallerName('');
       setInstallerDaerah('');
       setBastDate(new Date().toISOString().split('T')[0]);
+      setDisplayType(null);
+      setRequiresMiddleware(false);
       setUpdatingStatus(false);
       setShowModeModal(true);
       return;
@@ -566,11 +570,11 @@ function ReminderSchedulePageInner() {
       return;
     }
     if (!bastDate) { notify('error', 'Tanggal BAST wajib diisi!'); return; }
+    if (!displayType) { notify('error', 'Tipe Display wajib dipilih!'); return; }
     if (modePenyelesaian === 'remote') {
       if (!installerName.trim()) { notify('error', 'Nama Installer wajib diisi untuk mode Remote!'); return; }
       if (!installerDaerah.trim()) { notify('error', 'Daerah Installer wajib diisi untuk mode Remote!'); return; }
     }
-    // snapshot sebelum state berubah
     const snap = detailReminder;
     const reminderId = snap.id;
     const modeVal = modePenyelesaian;
@@ -584,6 +588,8 @@ function ReminderSchedulePageInner() {
       installer_name: modeVal === 'remote' ? installerNameVal : null,
       installer_daerah: modeVal === 'remote' ? installerDaerahVal : null,
       bast_date: bastDateVal,
+      display_type: displayType,
+      requires_middleware: requiresMiddleware,
     }).eq('id', reminderId);
     setShowModeModal(false);
     setSavingMode(false);
@@ -635,6 +641,8 @@ function ReminderSchedulePageInner() {
     setModePenyelesaian(null);
     setInstallerName('');
     setInstallerDaerah('');
+    setDisplayType(null);
+    setRequiresMiddleware(false);
     setPendingPhotoUrl(undefined);
   };
 
@@ -2575,6 +2583,32 @@ jangan lupa peralatan & Semangat💪🏼
                   <p className="text-[10px] text-gray-400 mt-1">Tranche T1 bayar {new Date(bastDate).getFullYear()+1} · T2 bayar {new Date(bastDate).getFullYear()+2} · T3 bayar {new Date(bastDate).getFullYear()+3}</p>
                 )}
               </div>
+
+              {/* Display Type */}
+              <div>
+                <p className="text-xs font-bold text-gray-600 mb-2">🖥️ Tipe Display <span className="text-red-500">*</span></p>
+                <div className="grid grid-cols-4 gap-2">
+                  {([
+                    { value: 'led',  label: 'LED' },
+                    { value: 'lcd',  label: 'LCD' },
+                    { value: 'mix',  label: 'Mix' },
+                    { value: null,   label: 'Tidak ada' },
+                  ] as { value: 'led' | 'lcd' | 'mix' | null; label: string }[]).map(opt => (
+                    <button key={String(opt.value)} type="button" onClick={() => setDisplayType(opt.value)}
+                      className={`py-2 rounded-xl border-2 text-xs font-bold transition-all ${displayType === opt.value ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300'}`}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Middleware toggle */}
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" checked={requiresMiddleware} onChange={e => setRequiresMiddleware(e.target.checked)}
+                  className="w-4 h-4 accent-emerald-600" />
+                <span className="text-sm font-semibold text-gray-700">Middleware / System / Matrix</span>
+                <span className="text-xs text-gray-400">(Cue, DSP, Matrix, dll)</span>
+              </label>
 
               {modePenyelesaian === 'remote' && (
                 <div className="space-y-3 p-4 rounded-xl" style={{ background: 'rgba(59,130,246,0.06)', border: '1.5px solid rgba(59,130,246,0.25)' }}>

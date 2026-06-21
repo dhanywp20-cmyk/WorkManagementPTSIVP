@@ -7,7 +7,7 @@ import {
   IncentiveProjectRow, IncentiveTranche, IncentiveSplit, LateTicketLink,
   fetchIncentiveProjects, fetchTranches, fetchSplits, fetchSupportFromTickets, fetchLateTickets,
   insertTranches, insertSplits, processYearlyBatch,
-  calculateIncentiveSplits, validateSplitTotal, generateTranches,
+  calculateIncentiveSplits, validateSplitTotal, generateTranches, getSupervisorTeamForPic,
   formatRupiah, formatPct,
   ROLE_LABELS, TRANCHE_STATUS,
 } from './_components/calc';
@@ -626,9 +626,16 @@ export default function IncentivePTSPage() {
               {/* Full incentive split preview — live calculated */}
               {(detailProject.incentive_value || 0) > 0 && detailProject.mode_penyelesaian && (() => {
                 const dhany = allUsers.find(u => (u.full_name as string || '').toLowerCase().includes('dhany'));
-                const managerId = (dhany?.id || '') as string;
+                const managerId   = (dhany?.id        || '') as string;
                 const managerName = (dhany?.full_name || 'Dhany') as string;
-                const splits = calculateIncentiveSplits(detailProject, managerId, managerName, detailSupports);
+                // Supervisor = based on PIC's reporting line (Tim Wahyu → Wahyu, Tim Yoga → Yoga)
+                const supTeam = getSupervisorTeamForPic(detailProject.assign_name);
+                const supUser = supTeam
+                  ? allUsers.find(u => (u.full_name as string || '').toLowerCase().includes(supTeam))
+                  : undefined;
+                const supervisorId   = (supUser?.id        || '') as string;
+                const supervisorName = (supUser?.full_name || 'Supervisor') as string;
+                const splits = calculateIncentiveSplits(detailProject, managerId, managerName, supervisorId, supervisorName, detailSupports);
                 if (!splits.length) return null;
                 const schemeLabel = detailProject.pic_type === 'manager_pic' ? 'Manager sebagai PIC' : 'Standard';
                 const modeLabel = detailProject.mode_penyelesaian === 'remote' ? 'Remote' : 'Onsite';
