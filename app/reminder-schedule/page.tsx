@@ -99,6 +99,7 @@ function ReminderSchedulePageInner() {
   const [modePenyelesaian, setModePenyelesaian]       = useState<'onsite' | 'remote' | null>(null);
   const [installerName, setInstallerName]             = useState('');
   const [installerDaerah, setInstallerDaerah]         = useState('');
+  const [bastDate, setBastDate]                       = useState<string>('');
   const [pendingPhotoUrl, setPendingPhotoUrl]         = useState<string | undefined>(undefined);
   const [savingMode, setSavingMode]                   = useState(false);
 
@@ -546,6 +547,7 @@ function ReminderSchedulePageInner() {
       setModePenyelesaian(null);
       setInstallerName('');
       setInstallerDaerah('');
+      setBastDate(new Date().toISOString().split('T')[0]);
       setUpdatingStatus(false);
       setShowModeModal(true);
       return;
@@ -563,6 +565,7 @@ function ReminderSchedulePageInner() {
       notify('error', 'Pilih mode penyelesaian terlebih dahulu!');
       return;
     }
+    if (!bastDate) { notify('error', 'Tanggal BAST wajib diisi!'); return; }
     if (modePenyelesaian === 'remote') {
       if (!installerName.trim()) { notify('error', 'Nama Installer wajib diisi untuk mode Remote!'); return; }
       if (!installerDaerah.trim()) { notify('error', 'Daerah Installer wajib diisi untuk mode Remote!'); return; }
@@ -573,12 +576,14 @@ function ReminderSchedulePageInner() {
     const modeVal = modePenyelesaian;
     const installerNameVal = installerName.trim();
     const installerDaerahVal = installerDaerah.trim();
+    const bastDateVal = bastDate || null;
 
     setSavingMode(true);
     await supabase.from('reminders').update({
       mode_penyelesaian: modeVal,
       installer_name: modeVal === 'remote' ? installerNameVal : null,
       installer_daerah: modeVal === 'remote' ? installerDaerahVal : null,
+      bast_date: bastDateVal,
     }).eq('id', reminderId);
     setShowModeModal(false);
     setSavingMode(false);
@@ -2560,6 +2565,15 @@ jangan lupa peralatan & Semangat💪🏼
                     </button>
                   ))}
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-2">📅 Tanggal BAST <span className="text-red-500">*</span></label>
+                <input type="date" value={bastDate} onChange={e => setBastDate(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white" />
+                {bastDate && (
+                  <p className="text-[10px] text-gray-400 mt-1">Tranche T1 bayar {new Date(bastDate).getFullYear()+1} · T2 bayar {new Date(bastDate).getFullYear()+2} · T3 bayar {new Date(bastDate).getFullYear()+3}</p>
+                )}
               </div>
 
               {modePenyelesaian === 'remote' && (
