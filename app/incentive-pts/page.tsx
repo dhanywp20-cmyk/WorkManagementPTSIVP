@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import {
-  IncentiveProjectRow, IncentiveTranche, IncentiveSplit, SupportAssignment, LateTicketLink,
-  fetchIncentiveProjects, fetchTranches, fetchSplits, fetchSupportAssignments, fetchLateTickets,
+  IncentiveProjectRow, IncentiveTranche, IncentiveSplit, LateTicketLink,
+  fetchIncentiveProjects, fetchTranches, fetchSplits, fetchSupportFromTickets, fetchLateTickets,
   insertTranches, insertSplits, processYearlyBatch,
   calculateIncentiveSplits, validateSplitTotal, generateTranches,
   formatRupiah, formatPct,
@@ -42,7 +42,6 @@ export default function IncentivePTSPage() {
   const [tranches, setTranches] = useState<(IncentiveTranche & { project: IncentiveProjectRow })[]>([]);
   const [allSplits, setAllSplits] = useState<IncentiveSplit[]>([]);
   const [allUsers, setAllUsers] = useState<CurrentUser[]>([]);
-  const [supportUsers, setSupportUsers] = useState<{ id: string; full_name: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
@@ -56,16 +55,11 @@ export default function IncentivePTSPage() {
   const [detailProject, setDetailProject] = useState<IncentiveProjectRow | null>(null);
   const [detailSplits, setDetailSplits] = useState<IncentiveSplit[]>([]);
   const [detailTranches, setDetailTranches] = useState<IncentiveTranche[]>([]);
-  const [detailSupports, setDetailSupports] = useState<SupportAssignment[]>([]);
+  const [detailSupports, setDetailSupports] = useState<{ user_id: string; user_name: string }[]>([]);
 
   const [nominalProject, setNominalProject] = useState<IncentiveProjectRow | null>(null);
   const [nominalValue, setNominalValue] = useState('');
   const [savingNominal, setSavingNominal] = useState(false);
-
-  const [showSupportModal, setShowSupportModal] = useState(false);
-  const [supportProject, setSupportProject] = useState<IncentiveProjectRow | null>(null);
-  const [newSupportUserId, setNewSupportUserId] = useState('');
-  const [newSupportDomain, setNewSupportDomain] = useState<'led' | 'middleware'>('led');
 
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generateProject, setGenerateProject] = useState<IncentiveProjectRow | null>(null);
@@ -99,10 +93,7 @@ export default function IncentivePTSPage() {
     if (splitRes.data) setAllSplits(splitRes.data);
     if (lateRes.data) setLateTickets(lateRes.data);
     const { data: users } = await supabase.from('users').select('id, username, full_name, role, team_type, allow_incentive_input').order('full_name');
-    if (users) {
-      setAllUsers(users as CurrentUser[]);
-      setSupportUsers((users as { id: string; full_name: string; team_type?: string }[]).filter(u => u.team_type === 'Team PTS IVP'));
-    }
+    if (users) setAllUsers(users as CurrentUser[]);
     setLoading(false);
   }
 
@@ -111,7 +102,7 @@ export default function IncentivePTSPage() {
     const [splitsRes, tranchesRes, supportsRes] = await Promise.all([
       fetchSplits(p.id),
       supabase.from('incentive_tranches').select('*').eq('project_id', p.id).order('tranche_number'),
-      fetchSupportAssignments(p.id),
+      fetchSupportFromTickets(p.project_name),
     ]);
     setDetailSplits(splitsRes.data || []);
     setDetailTranches((tranchesRes.data || []) as IncentiveTranche[]);
@@ -152,16 +143,6 @@ export default function IncentivePTSPage() {
       notify(result.errors?.length ? 'error' : 'success', msg);
     }
     setBatchProcessing(false); setBatchConfirm(false); loadAll();
-  }
-
-  async function handleAddSupport() {
-    if (!supportProject || !newSupportUserId) return;
-    const user = allUsers.find(u => u.id === newSupportUserId);
-    const { error } = await supabase.from('ticket_support_assignment').insert([{ project_id: supportProject.id, user_id: newSupportUserId, user_name: user?.full_name || '', domain: newSupportDomain, assigned_by: currentUser?.id || null }]);
-    if (error) { notify('error', 'Gagal: ' + error.message); return; }
-    notify('success', 'Support assigned!'); setNewSupportUserId('');
-    if (detailProject?.id === supportProject.id) openProjectDetail(supportProject);
-    loadAll();
   }
 
   async function handleExport() {
@@ -333,7 +314,13 @@ export default function IncentivePTSPage() {
                         </td>
                         <td className={cellCls}>
                           {p.mode_penyelesaian === 'onsite' && <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">🏢 Onsite</span>}
-                          {p.mode_penyelesaian === 'remote' && <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200">💻 Remote</span>}
+                          {p.mode_penyelesaian === 'remote' && (
+                            <div>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200">💻 Remote</span>
+                              {p.installer_name && <p className="text-[10px] text-blue-600 mt-0.5 truncate max-w-[90px]">🔧 {p.installer_name}</p>}
+                              {p.installer_daerah && <p className="text-[10px] text-gray-400 truncate max-w-[90px]">📍 {p.installer_daerah}</p>}
+                            </div>
+                          )}
                           {!p.mode_penyelesaian && <span className="text-xs text-gray-300">—</span>}
                         </td>
                         <td className={cellCls}>
@@ -380,11 +367,6 @@ export default function IncentivePTSPage() {
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                               </button>
                             )}
-                            <button onClick={() => { setSupportProject(p); setShowSupportModal(true); }}
-                              title="Assign Support"
-                              className="inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all bg-white border-slate-200 text-violet-500 hover:bg-violet-50 hover:border-violet-300 hover:shadow-sm">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                            </button>
                           </div>
                         </td>
                       </tr>
@@ -596,6 +578,9 @@ export default function IncentivePTSPage() {
                 <div className="rounded-xl p-3 text-center bg-blue-50 border border-blue-100">
                   <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Mode</p>
                   <p className="text-sm font-bold text-blue-700">{detailProject.mode_penyelesaian === 'onsite' ? '🏢 Onsite' : detailProject.mode_penyelesaian === 'remote' ? '💻 Remote' : '—'}</p>
+                  {detailProject.mode_penyelesaian === 'remote' && detailProject.installer_name && (
+                    <p className="text-[10px] text-blue-500 mt-0.5 font-medium">🔧 {detailProject.installer_name}{detailProject.installer_daerah ? ` · ${detailProject.installer_daerah}` : ''}</p>
+                  )}
                 </div>
                 <div className="rounded-xl p-3 text-center bg-violet-50 border border-violet-100">
                   <p className="text-[10px] font-bold text-violet-600 uppercase tracking-widest">BAST</p>
@@ -669,13 +654,13 @@ export default function IncentivePTSPage() {
               </div>
 
               <div>
-                <h3 className="text-sm font-bold text-gray-700 mb-2">👥 Support Assignments</h3>
+                <h3 className="text-sm font-bold text-gray-700 mb-1">👥 Support (Auto dari Ticket Troubleshooting)</h3>
                 {detailSupports.length === 0
-                  ? <p className="text-xs text-gray-400 italic">Belum ada support.</p>
+                  ? <p className="text-xs text-gray-400 italic">Belum ada ticket Troubleshooting selesai untuk project ini.</p>
                   : detailSupports.map(s => (
-                    <div key={s.id} className="flex items-center justify-between rounded-lg px-4 py-2 bg-gray-50 mb-1">
-                      <span className="text-sm text-gray-700">{s.user_name}</span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold text-violet-700 bg-violet-50 border border-violet-200">{s.domain}</span>
+                    <div key={s.user_id} className="flex items-center justify-between rounded-lg px-4 py-2 bg-gray-50 mb-1">
+                      <span className="text-sm text-gray-700">{s.user_name || s.user_id}</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold text-violet-700 bg-violet-50 border border-violet-200">Troubleshooting</span>
                     </div>
                   ))
                 }
@@ -706,45 +691,6 @@ export default function IncentivePTSPage() {
                 className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-50" style={{ background: 'linear-gradient(135deg,#4f46e5,#7c3aed)' }}>
                 {generating && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                 Generate
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ─── MODAL: Assign Support ─── */}
-      {showSupportModal && supportProject && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[120] p-4" onClick={e => { if (e.target === e.currentTarget) { setShowSupportModal(false); setSupportProject(null); } }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-gray-200">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">👥 Assign Support</h3>
-            <p className="text-sm text-gray-500 mb-4">Project: <strong>{supportProject.project_name}</strong></p>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold mb-1.5 text-gray-500 uppercase tracking-widest">Team Member</label>
-                <select value={newSupportUserId} onChange={e => setNewSupportUserId(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl text-sm border border-gray-200 bg-white text-gray-700 outline-none focus:ring-2 focus:ring-indigo-400">
-                  <option value="">-- Pilih --</option>
-                  {supportUsers.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold mb-1.5 text-gray-500 uppercase tracking-widest">Domain</label>
-                <div className="flex gap-2">
-                  {(['led', 'middleware'] as const).map(d => (
-                    <button key={d} type="button" onClick={() => setNewSupportDomain(d)}
-                      className="flex-1 px-3 py-2 rounded-xl text-sm font-bold transition-all border-2"
-                      style={newSupportDomain === d ? { borderColor: '#7c3aed', background: 'rgba(124,58,237,0.08)', color: '#7c3aed' } : { borderColor: '#e5e7eb', color: '#6b7280' }}>
-                      {d === 'led' ? '💡 LED' : '🔌 Middleware'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button onClick={() => { setShowSupportModal(false); setSupportProject(null); }} className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-gray-500 border border-gray-200 hover:bg-gray-50">Batal</button>
-              <button onClick={handleAddSupport} disabled={!newSupportUserId}
-                className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white disabled:opacity-50" style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
-                ✅ Assign
               </button>
             </div>
           </div>

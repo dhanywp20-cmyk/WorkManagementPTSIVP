@@ -15,6 +15,8 @@ export interface IncentiveProjectRow {
   pic_id: string | null;
   domain_owner: string | null;
   mode_penyelesaian: 'onsite' | 'remote' | null;
+  installer_name: string | null;
+  installer_daerah: string | null;
   bast_date: string | null;
   incentive_value: number;
   sales_name: string;
@@ -250,12 +252,18 @@ export async function fetchSplits(projectId?: string) {
   return { data: (data || []) as IncentiveSplit[], error };
 }
 
-export async function fetchSupportAssignments(projectId: string) {
+export async function fetchSupportFromTickets(projectName: string): Promise<{ data: { user_id: string; user_name: string }[]; error: unknown }> {
   const { data, error } = await supabase
-    .from('ticket_support_assignment')
-    .select('*')
-    .eq('project_id', projectId);
-  return { data: (data || []) as SupportAssignment[], error };
+    .from('reminders')
+    .select('assigned_to, assign_name')
+    .eq('category', 'Troubleshooting')
+    .eq('project_name', projectName)
+    .eq('status', 'done');
+  const seen = new Set<string>();
+  const unique = (data || [])
+    .filter(r => r.assigned_to && !seen.has(r.assigned_to) && seen.add(r.assigned_to))
+    .map(r => ({ user_id: r.assigned_to as string, user_name: r.assign_name as string || '' }));
+  return { data: unique, error };
 }
 
 export async function fetchLateTickets(parentProjectId?: string) {
@@ -313,7 +321,7 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
     if (!project) { errors.push(`Tranche ${tranche.id}: project not found`); continue; }
     if (!project.mode_penyelesaian) { errors.push(`Project "${project.project_name}": mode_penyelesaian kosong`); continue; }
 
-    const { data: supports } = await fetchSupportAssignments(project.id);
+    const { data: supports } = await fetchSupportFromTickets(project.project_name);
     const splits = calculateIncentiveSplits(
       project, managerUserId, managerUserName,
       (supports || []).map(s => ({ user_id: s.user_id, user_name: s.user_name || '' })),
