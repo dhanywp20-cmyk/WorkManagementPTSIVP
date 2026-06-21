@@ -80,8 +80,8 @@ export default function IncentivePTSPage() {
     const u = getSession<CurrentUser>();
     if (!u) { window.location.href = '/dashboard'; return; }
     setCurrentUser(u);
-    supabase.from('users').select('allow_incentive_input').eq('username', u.username as string).single().then(({ data }) => {
-      if (data) setCurrentUser(prev => prev ? { ...prev, allow_incentive_input: (data as { allow_incentive_input: boolean }).allow_incentive_input } : prev);
+    supabase.from('users').select('allow_incentive_input').eq('username', u.username as string).single().then(({ data }: { data: { allow_incentive_input: boolean } | null }) => {
+      if (data) setCurrentUser(prev => prev ? { ...prev, allow_incentive_input: data.allow_incentive_input } : prev);
     });
     loadAll().then(() => setAppReady(true));
     const cleanup = startSessionWatcher();
