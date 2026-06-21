@@ -3126,7 +3126,7 @@ export function UserManagementInline() {
   const [saving, setSaving] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; msg: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<'atasan' | 'ivp' | 'user_cc'>('atasan');
+  const [activeTab, setActiveTab] = useState<'atasan' | 'ivp' | 'user_cc' | 'pts_team'>('atasan');
   const [atasanDiv, setAtasanDiv] = useState('');
   const [atasanSupId, setAtasanSupId] = useState('');
   const [ivpDiv, setIvpDiv] = useState('');
@@ -3135,22 +3135,27 @@ export function UserManagementInline() {
   const [ccChecked, setCcChecked] = useState<Set<string>>(new Set());
   const [ccSaving, setCcSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [ptsTeamMappings, setPtsTeamMappings] = useState<{ id: string; staff_user_id: string; supervisor_user_id: string }[]>([]);
+  const [ptsMappingStaffId, setPtsMappingStaffId] = useState('');
+  const [ptsMappingSupId, setPtsMappingSupId] = useState('');
 
   const notify = (type: 'success' | 'error' | 'info', msg: string) => { setNotification({ type, msg }); setTimeout(() => setNotification(null), 3500); };
   useEffect(() => { fetchAll(); }, []);
 
   const fetchAll = async () => {
     setLoadingData(true);
-    const [usersRes, divSupRes, divIvpRes, userSupRes] = await Promise.all([
+    const [usersRes, divSupRes, divIvpRes, userSupRes, ptsTeamRes] = await Promise.all([
       supabase.from('users').select('id, username, full_name, role, team_type, sales_division, phone_number, jabatan').order('full_name'),
       supabase.from('division_supervisor_mappings').select('id,sales_division,supervisor_id').order('sales_division'),
       supabase.from('division_ivp_mappings').select('id,sales_division,ivp_id').order('sales_division'),
       supabase.from('user_supervisor_mappings').select('id,user_id,supervisor_id'),
+      supabase.from('pts_team_mappings').select('id,staff_user_id,supervisor_user_id'),
     ]);
     if (usersRes.data) setAllUsers(usersRes.data);
     if (divSupRes.data) setDivSupMaps(divSupRes.data);
     if (divIvpRes.data) setDivIvpMaps(divIvpRes.data);
     if (userSupRes.data) setUserSupMaps(userSupRes.data);
+    if (ptsTeamRes.data) setPtsTeamMappings(ptsTeamRes.data as { id: string; staff_user_id: string; supervisor_user_id: string }[]);
     setLoadingData(false);
   };
 
@@ -3231,6 +3236,23 @@ export function UserManagementInline() {
     }});
   };
 
+  const handleAddPtsTeam = async () => {
+    if (!ptsMappingStaffId || !ptsMappingSupId) { notify('error', 'Pilih staff dan supervisor.'); return; }
+    if (ptsMappingStaffId === ptsMappingSupId) { notify('error', 'Staff dan supervisor tidak boleh sama.'); return; }
+    setSaving(true);
+    const { error } = await supabase.from('pts_team_mappings').upsert([{ staff_user_id: ptsMappingStaffId, supervisor_user_id: ptsMappingSupId }], { onConflict: 'staff_user_id' });
+    if (error) notify('error', 'Gagal: ' + error.message);
+    else { notify('success', 'Mapping tim PTS disimpan!'); setPtsMappingStaffId(''); setPtsMappingSupId(''); await fetchAll(); }
+    setSaving(false);
+  };
+
+  const handleDeletePtsTeam = (id: string) => {
+    setConfirmState({ message: 'Hapus mapping tim PTS ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+      await supabase.from('pts_team_mappings').delete().eq('id', id);
+      notify('success', 'Dihapus.'); await fetchAll();
+    }});
+  };
+
   const jabatanBadge = (u: User | undefined) => {
     if (!u?.jabatan) return null;
     const cfg = JABATAN_CONFIG[u.jabatan as JabatanType];
@@ -3288,6 +3310,9 @@ export function UserManagementInline() {
         </button>
         <button onClick={() => setActiveTab('user_cc')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'user_cc' ? 'border-teal-500 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           🏷️ CC per User ({userSupMaps.length})
+        </button>
+        <button onClick={() => setActiveTab('pts_team')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'pts_team' ? 'border-indigo-500 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+          🏢 Tim PTS ({ptsTeamMappings.length})
         </button>
       </div>
 
@@ -3510,6 +3535,119 @@ export function UserManagementInline() {
                     )}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* ══ TAB PTS TEAM ══ */}
+            {activeTab === 'pts_team' && (
+              <div className="p-5 space-y-5">
+                <div className="px-4 py-3 rounded-xl bg-indigo-50 border border-indigo-200">
+                  <p className="text-xs font-bold text-indigo-800 mb-1">🏢 Hierarki Tim PTS — Mapping SPV & Staff</p>
+                  <p className="text-[11px] text-indigo-600 leading-relaxed">Menentukan siapa Supervisor dari setiap Handler PTS. Digunakan otomatis saat kalkulasi Incentive PTS (Supervisor mendapat 10% dari pool). Jika staff tidak dipetakan, bagian supervisor tidak akan keluar.</p>
+                </div>
+
+                {/* Add / Update form */}
+                <div className="p-4 rounded-xl border border-indigo-200 bg-indigo-50/40 space-y-3">
+                  <p className="text-xs font-bold text-indigo-700 uppercase tracking-widest">➕ Tambah / Update Mapping</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Staff / Handler PTS</label>
+                      <select value={ptsMappingStaffId} onChange={e => setPtsMappingStaffId(e.target.value)}
+                        className="w-full border border-indigo-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white">
+                        <option value="">-- Pilih Staff --</option>
+                        {allUsers.filter(u => u.role?.toLowerCase() === 'team').map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Supervisor PTS</label>
+                      <select value={ptsMappingSupId} onChange={e => setPtsMappingSupId(e.target.value)}
+                        className="w-full border border-indigo-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white">
+                        <option value="">-- Pilih Supervisor --</option>
+                        {allUsers.filter(u => ['team', 'admin', 'superadmin'].includes(u.role?.toLowerCase() ?? '')).map(u => <option key={u.id} value={u.id}>{u.full_name}{u.jabatan ? ` (${u.jabatan})` : ''}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex items-end">
+                      <button onClick={handleAddPtsTeam} disabled={saving || !ptsMappingStaffId || !ptsMappingSupId}
+                        className="w-full py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 transition-all">
+                        {saving ? '...' : '💾 Simpan'}
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-indigo-500">Jika staff sudah punya mapping sebelumnya, akan di-update (upsert per staff).</p>
+                </div>
+
+                {/* Mapping list */}
+                {ptsTeamMappings.length === 0 ? (
+                  <div className="text-center py-10 text-slate-400">
+                    <p className="text-3xl mb-2">🏢</p>
+                    <p className="text-sm font-medium">Belum ada mapping tim PTS</p>
+                    <p className="text-xs mt-1">Tambahkan di atas agar kalkulasi Incentive PTS mengenali Supervisor tiap handler</p>
+                  </div>
+                ) : (() => {
+                  const bySup: Record<string, typeof ptsTeamMappings> = {};
+                  ptsTeamMappings.forEach(m => { if (!bySup[m.supervisor_user_id]) bySup[m.supervisor_user_id] = []; bySup[m.supervisor_user_id].push(m); });
+                  const mappedStaffIds = new Set(ptsTeamMappings.map(m => m.staff_user_id));
+                  const unmapped = allUsers.filter(u => u.role?.toLowerCase() === 'team' && !mappedStaffIds.has(u.id));
+                  return (
+                    <div className="space-y-3">
+                      {Object.entries(bySup).map(([supId, maps]) => {
+                        const supUser = getUserById(supId);
+                        return (
+                          <div key={supId} className="rounded-xl border border-indigo-200 overflow-hidden">
+                            <div className="px-4 py-2.5 bg-indigo-50 border-b border-indigo-200 flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-base">👑</span>
+                                <span className="font-bold text-indigo-800 text-sm">{supUser?.full_name ?? supId}</span>
+                                <span className="text-[10px] font-bold text-indigo-500 bg-white px-2 py-0.5 rounded border border-indigo-200">Supervisor</span>
+                              </div>
+                              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full border border-indigo-200">{maps.length} staff</span>
+                            </div>
+                            <div className="divide-y divide-indigo-100">
+                              {maps.map(m => {
+                                const staffUser = getUserById(m.staff_user_id);
+                                return (
+                                  <div key={m.id} className="px-4 py-2.5 flex items-center gap-3 bg-white hover:bg-indigo-50/30 transition-colors">
+                                    <div className="w-7 h-7 rounded-lg bg-indigo-100 border border-indigo-200 flex items-center justify-center text-sm flex-shrink-0">👤</div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-semibold text-slate-800 text-sm truncate">{staffUser?.full_name ?? m.staff_user_id}</p>
+                                      <p className="text-[10px] text-slate-400">@{staffUser?.username ?? '—'}</p>
+                                    </div>
+                                    <button onClick={() => handleDeletePtsTeam(m.id)}
+                                      className="text-red-400 hover:text-red-600 flex-shrink-0 p-1.5 rounded hover:bg-red-50 transition-all" title="Hapus mapping">
+                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {unmapped.length > 0 && (
+                        <div className="rounded-xl border border-amber-200 overflow-hidden">
+                          <div className="px-4 py-2.5 bg-amber-50 border-b border-amber-200 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">⚠️</span>
+                              <span className="font-bold text-amber-800 text-sm">Belum Dipetakan</span>
+                            </div>
+                            <span className="text-[10px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">{unmapped.length} staff</span>
+                          </div>
+                          <div className="divide-y divide-amber-100">
+                            {unmapped.map(u => (
+                              <div key={u.id} className="px-4 py-2.5 flex items-center gap-3 bg-white">
+                                <div className="w-7 h-7 rounded-lg bg-amber-100 border border-amber-200 flex items-center justify-center text-sm flex-shrink-0">❓</div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-amber-800 text-sm truncate">{u.full_name}</p>
+                                  <p className="text-[10px] text-amber-500">Belum punya supervisor — set di form atas</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </>

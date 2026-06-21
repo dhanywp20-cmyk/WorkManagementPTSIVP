@@ -310,10 +310,9 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
 
   if (fetchErr || !dueTranches) return { error: fetchErr, processed: 0 };
 
-  // Pre-fetch Wahyu and Yoga for supervisor lookup
-  const { data: supUsers } = await supabase.from('users').select('id, full_name').or('full_name.ilike.%wahyu%,full_name.ilike.%yoga%');
-  const wahyu = (supUsers as { id: string; full_name: string }[] | null)?.find(u => (u.full_name || '').toLowerCase().includes('wahyu'));
-  const yoga  = (supUsers as { id: string; full_name: string }[] | null)?.find(u => (u.full_name || '').toLowerCase().includes('yoga'));
+  // Pre-fetch PTS team mappings from Admin Panel (staff_user_id → supervisor_user_id+name)
+  type PtsMap = { staff_user_id: string; supervisor_user_id: string; supervisor: { id: string; full_name: string } };
+  const { data: ptsTeamData } = await supabase.from('pts_team_mappings').select('staff_user_id, supervisor_user_id, supervisor:users!supervisor_user_id(id, full_name)');
 
   let processed = 0;
   const errors: string[] = [];
@@ -323,11 +322,10 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
     if (!project) { errors.push(`Tranche ${tranche.id}: project not found`); continue; }
     if (!project.mode_penyelesaian) { errors.push(`Project "${project.project_name}": mode_penyelesaian kosong`); continue; }
 
-    // Determine supervisor based on PIC's team (reporting line)
-    const supTeam = getSupervisorTeamForPic(project.assign_name);
-    const supUser = supTeam === 'wahyu' ? wahyu : supTeam === 'yoga' ? yoga : null;
-    const supervisorUserId   = (supUser?.id   || '') as string;
-    const supervisorUserName = (supUser?.full_name || 'Supervisor') as string;
+    // Determine supervisor from Admin Panel mapping (pts_team_mappings)
+    const ptsMap = (ptsTeamData as PtsMap[] | null)?.find(m => m.staff_user_id === project.assigned_to);
+    const supervisorUserId   = ptsMap?.supervisor_user_id || '';
+    const supervisorUserName = ptsMap?.supervisor?.full_name || 'Supervisor';
 
     const { data: supports } = await fetchSupportFromTickets(project.project_name);
     const splits = calculateIncentiveSplits(

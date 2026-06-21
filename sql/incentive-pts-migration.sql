@@ -71,6 +71,15 @@ CREATE TABLE IF NOT EXISTS late_ticket_links (
   is_sunset BOOLEAN DEFAULT FALSE
 );
 
+-- 5b. CREATE TABLE pts_team_mappings (Supervisor ↔ Staff PTS, dikonfigurasi dari Admin Panel)
+CREATE TABLE IF NOT EXISTS pts_team_mappings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  staff_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  supervisor_user_id UUID NOT NULL REFERENCES users(id),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(staff_user_id)
+);
+
 -- 6. Indexes
 CREATE INDEX IF NOT EXISTS idx_incentive_tranches_project ON incentive_tranches(project_id);
 CREATE INDEX IF NOT EXISTS idx_incentive_tranches_year ON incentive_tranches(payment_year, status);
@@ -78,15 +87,19 @@ CREATE INDEX IF NOT EXISTS idx_incentive_splits_project ON incentive_splits(proj
 CREATE INDEX IF NOT EXISTS idx_incentive_splits_tranche ON incentive_splits(tranche_id);
 CREATE INDEX IF NOT EXISTS idx_ticket_support_project ON ticket_support_assignment(project_id);
 CREATE INDEX IF NOT EXISTS idx_late_ticket_parent ON late_ticket_links(parent_project_id);
+CREATE INDEX IF NOT EXISTS idx_pts_team_staff ON pts_team_mappings(staff_user_id);
+CREATE INDEX IF NOT EXISTS idx_pts_team_supervisor ON pts_team_mappings(supervisor_user_id);
 
 -- 7. Enable RLS
 ALTER TABLE incentive_tranches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE incentive_splits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ticket_support_assignment ENABLE ROW LEVEL SECURITY;
 ALTER TABLE late_ticket_links ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pts_team_mappings ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policies first (safe to re-run)
 DROP POLICY IF EXISTS "Allow all for anon" ON incentive_tranches;
+DROP POLICY IF EXISTS "Allow all for anon" ON pts_team_mappings;
 DROP POLICY IF EXISTS "Allow all for anon" ON incentive_splits;
 DROP POLICY IF EXISTS "Allow all for anon" ON ticket_support_assignment;
 DROP POLICY IF EXISTS "Allow all for anon" ON late_ticket_links;
@@ -95,3 +108,4 @@ CREATE POLICY "Allow all for anon" ON incentive_tranches FOR ALL USING (true) WI
 CREATE POLICY "Allow all for anon" ON incentive_splits FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all for anon" ON ticket_support_assignment FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all for anon" ON late_ticket_links FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON pts_team_mappings FOR ALL USING (true) WITH CHECK (true);

@@ -42,6 +42,7 @@ export default function IncentivePTSPage() {
   const [tranches, setTranches] = useState<(IncentiveTranche & { project: IncentiveProjectRow })[]>([]);
   const [allSplits, setAllSplits] = useState<IncentiveSplit[]>([]);
   const [allUsers, setAllUsers] = useState<CurrentUser[]>([]);
+  const [ptsTeamMappings, setPtsTeamMappings] = useState<{ staff_user_id: string; supervisor_user_id: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
@@ -92,8 +93,12 @@ export default function IncentivePTSPage() {
     if (trancheRes.data) setTranches(trancheRes.data);
     if (splitRes.data) setAllSplits(splitRes.data);
     if (lateRes.data) setLateTickets(lateRes.data);
-    const { data: users } = await supabase.from('users').select('id, username, full_name, role, team_type, allow_incentive_input').order('full_name');
-    if (users) setAllUsers(users as CurrentUser[]);
+    const [usersRes, ptsTeamRes] = await Promise.all([
+      supabase.from('users').select('id, username, full_name, role, team_type, allow_incentive_input').order('full_name'),
+      supabase.from('pts_team_mappings').select('staff_user_id, supervisor_user_id'),
+    ]);
+    if (usersRes.data) setAllUsers(usersRes.data as CurrentUser[]);
+    if (ptsTeamRes.data) setPtsTeamMappings(ptsTeamRes.data as { staff_user_id: string; supervisor_user_id: string }[]);
     setLoading(false);
   }
 
@@ -659,10 +664,12 @@ export default function IncentivePTSPage() {
                 const dhany = allUsers.find(u => (u.full_name as string || '').toLowerCase().includes('dhany'));
                 const managerId   = (dhany?.id        || '') as string;
                 const managerName = (dhany?.full_name || 'Dhany') as string;
-                const supTeam = getSupervisorTeamForPic(detailProject.assign_name);
-                const supUser = supTeam
-                  ? allUsers.find(u => (u.full_name as string || '').toLowerCase().includes(supTeam))
-                  : undefined;
+                // Supervisor from Admin Panel DB mapping (pts_team_mappings), fallback to name-based
+                const dbPtsMap = ptsTeamMappings.find(m => m.staff_user_id === detailProject.assigned_to);
+                const supTeam = dbPtsMap ? null : getSupervisorTeamForPic(detailProject.assign_name);
+                const supUser = dbPtsMap
+                  ? allUsers.find(u => u.id === dbPtsMap.supervisor_user_id)
+                  : supTeam ? allUsers.find(u => (u.full_name as string || '').toLowerCase().includes(supTeam)) : undefined;
                 const supervisorId   = (supUser?.id        || '') as string;
                 const supervisorName = (supUser?.full_name || 'Supervisor') as string;
                 const displayProject: IncentiveProjectRow = { ...detailProject, incentive_value: effectivePool, mode_penyelesaian: effectiveMode };
