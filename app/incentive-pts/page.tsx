@@ -7,7 +7,7 @@ import {
   IncentiveProjectRow, IncentiveTranche, IncentiveSplit, LateTicketLink,
   fetchIncentiveProjects, fetchTranches, fetchSplits, fetchSupportFromTickets, fetchLateTickets,
   insertTranches, insertSplits, processYearlyBatch,
-  calculateIncentiveSplits, validateSplitTotal, generateTranches, getSupervisorTeamForPic,
+  calculateIncentiveSplits, validateSplitTotal, generateTranches, findUpline, OrgUser,
   formatRupiah, formatPct,
   ROLE_LABELS, TRANCHE_STATUS,
 } from './_components/calc';
@@ -93,11 +93,16 @@ export default function IncentivePTSPage() {
     if (trancheRes.data) setTranches(trancheRes.data);
     if (splitRes.data) setAllSplits(splitRes.data);
     if (lateRes.data) setLateTickets(lateRes.data);
-    const [usersRes, ptsTeamRes] = await Promise.all([
-      supabase.from('users').select('id, username, full_name, role, team_type, allow_incentive_input').order('full_name'),
+    const [usersRes, ptsTeamRes, orgRes] = await Promise.all([
+      supabase.from('users').select('id, username, full_name, role, team_type, allow_incentive_input, jabatan').order('full_name'),
       supabase.from('pts_team_mappings').select('staff_user_id, supervisor_user_id'),
+      // Query terpisah & tahan-error: atasan_id dari Struktur Organisasi
+      supabase.from('users').select('id, atasan_id'),
     ]);
-    if (usersRes.data) setAllUsers(usersRes.data as CurrentUser[]);
+    if (usersRes.data) {
+      const atasanMap = new Map<string, string | null>((orgRes.data ?? []).map((r: { id: string; atasan_id: string | null }) => [r.id, r.atasan_id]));
+      setAllUsers((usersRes.data as CurrentUser[]).map(u => ({ ...u, atasan_id: atasanMap.get(u.id as string) ?? null })));
+    }
     if (ptsTeamRes.data) setPtsTeamMappings(ptsTeamRes.data as { staff_user_id: string; supervisor_user_id: string }[]);
     setLoading(false);
   }
@@ -137,9 +142,10 @@ export default function IncentivePTSPage() {
   async function handleBatchProcess() {
     if (!currentUser) return;
     setBatchProcessing(true);
-    const { data: dhanyData } = await supabase.from('users').select('id, full_name').ilike('full_name', '%dhany%').limit(1).single();
-    const managerId = (dhanyData?.id || currentUser.id || '') as string;
-    const managerName = (dhanyData?.full_name || 'Dhany') as string;
+    // Fallback manager (berbasis jabatan, bukan nama) — utama tetap dari Struktur Organisasi di calc.ts
+    const { data: mgrData } = await supabase.from('users').select('id, full_name').eq('jabatan', 'Manager').eq('team_type', 'Team PTS IVP').limit(1).single();
+    const managerId = (mgrData?.id || currentUser.id || '') as string;
+    const managerName = (mgrData?.full_name || 'Manager') as string;
     const result = await processYearlyBatch(batchYear, managerId, managerName);
     if (result.error) { notify('error', 'Batch error: ' + (result.error as { message: string }).message); }
     else {
@@ -386,6 +392,12 @@ export default function IncentivePTSPage() {
                         </td>
                         <td className={`${cellCls} text-center`} onClick={e => e.stopPropagation()}>
                           <div className="flex gap-1 justify-center">
+                            {/* View — semua role bisa akses */}
+                            <button onClick={() => openProjectDetail(p)}
+                              title="Lihat Detail"
+                              className="inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all bg-white border-slate-200 text-blue-500 hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                            </button>
                             {canInputNominal(currentUser) && (
                               <button onClick={() => { setNominalProject(p); setNominalValue(String(p.incentive_value || '')); }}
                                 title="Input Nominal"
@@ -661,15 +673,22 @@ export default function IncentivePTSPage() {
                 const effectiveMode = detailProject.mode_penyelesaian || 'onsite';
                 const effectivePool = pool > 0 ? pool : 1_000_000;
                 const isEstimate = pool <= 0 || !detailProject.mode_penyelesaian;
-                const dhany = allUsers.find(u => (u.full_name as string || '').toLowerCase().includes('dhany'));
-                const managerId   = (dhany?.id        || '') as string;
-                const managerName = (dhany?.full_name || 'Dhany') as string;
-                // Supervisor from Admin Panel DB mapping (pts_team_mappings), fallback to name-based
+                // Manager & Supervisor dibaca dari Struktur Organisasi (users.atasan_id + jabatan),
+                // BUKAN hardcode nama. Walk-up pohon atasan dari PIC project.
+                const picId = (detailProject.pic_id || detailProject.assigned_to || '') as string;
+                const orgList = allUsers as unknown as OrgUser[];
+                const mgrUp = findUpline(picId, 'Manager', orgList);
+                const supUp = findUpline(picId, 'Supervisor', orgList);
+                // Fallback transisi (tanpa hardcode nama): pts_team_mappings utk supervisor, jabatan utk manager
                 const dbPtsMap = ptsTeamMappings.find(m => m.staff_user_id === detailProject.assigned_to);
-                const supTeam = dbPtsMap ? null : getSupervisorTeamForPic(detailProject.assign_name);
-                const supUser = dbPtsMap
-                  ? allUsers.find(u => u.id === dbPtsMap.supervisor_user_id)
-                  : supTeam ? allUsers.find(u => (u.full_name as string || '').toLowerCase().includes(supTeam)) : undefined;
+                const mgrUser = mgrUp
+                  ? allUsers.find(u => u.id === mgrUp.id)
+                  : allUsers.find(u => ((u.jabatan as string) || '') === 'Manager');
+                const supUser = supUp
+                  ? allUsers.find(u => u.id === supUp.id)
+                  : dbPtsMap ? allUsers.find(u => u.id === dbPtsMap.supervisor_user_id) : undefined;
+                const managerId   = (mgrUser?.id        || '') as string;
+                const managerName = (mgrUser?.full_name || 'Manager') as string;
                 const supervisorId   = (supUser?.id        || '') as string;
                 const supervisorName = (supUser?.full_name || 'Supervisor') as string;
                 const displayProject: IncentiveProjectRow = { ...detailProject, incentive_value: effectivePool, mode_penyelesaian: effectiveMode };

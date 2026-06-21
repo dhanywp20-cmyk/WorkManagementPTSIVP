@@ -85,9 +85,32 @@ export interface SplitResult {
 
 // ─── Calculation Engine ───────────────────────────────────────────────────────
 
-// Determine which supervisor team a PIC belongs to based on their name.
-// Tim Wahyu: Wahyu (supervisor), Ade, Pandu
-// Tim Yoga : Yoga (supervisor), Farhan, Ferdinan/Ferdinand, Deni
+// ─── Org hierarchy lookup — baca dari Struktur Organisasi (users.atasan_id + jabatan)
+// JANGAN hardcode nama di code. Manager & Supervisor ditentukan dari pohon atasan
+// yang dikelola di Admin Panel → User Management → Struktur Organisasi.
+export interface OrgUser { id: string; full_name?: string | null; jabatan?: string | null; atasan_id?: string | null }
+
+// Telusuri rantai atasan ke atas (TERMASUK node awal) → user pertama dengan jabatan cocok.
+// Untuk PIC staff: Supervisor = atasan langsung yg ber-jabatan Supervisor; Manager = di atasnya lagi.
+// Kalau PIC sendiri ber-jabatan Supervisor, ia dikembalikan sebagai supervisor (memicu forfeiture).
+export function findUpline(startId: string, targetJabatan: string, users: OrgUser[]): OrgUser | null {
+  let cur: OrgUser | undefined = users.find(u => u.id === startId);
+  let guard = 0;
+  while (cur && guard < 60) {
+    if ((cur.jabatan || '') === targetJabatan) return cur;
+    cur = cur.atasan_id ? users.find(u => u.id === cur!.atasan_id) : undefined;
+    guard++;
+  }
+  return null;
+}
+
+// Tahan-error: kalau kolom atasan_id belum ada (migration belum jalan), kembalikan [].
+export async function fetchOrgUsers(): Promise<OrgUser[]> {
+  const { data } = await supabase.from('users').select('id, full_name, jabatan, atasan_id');
+  return (data || []) as OrgUser[];
+}
+
+// Deprecated — name-based fallback lama. Hanya dipakai bila Struktur Organisasi belum diisi.
 export function getSupervisorTeamForPic(picName: string): 'wahyu' | 'yoga' | null {
   const n = (picName || '').toLowerCase();
   if (n.includes('wahyu') || n.includes('ade') || n.includes('pandu')) return 'wahyu';
@@ -310,7 +333,9 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
 
   if (fetchErr || !dueTranches) return { error: fetchErr, processed: 0 };
 
-  // Pre-fetch PTS team mappings from Admin Panel (staff_user_id → supervisor_user_id+name)
+  // Baca hierarki dari Struktur Organisasi (users.atasan_id + jabatan).
+  // Fallback transisi: pts_team_mappings bila atasan_id belum dipetakan.
+  const orgUsers = await fetchOrgUsers();
   type PtsMap = { staff_user_id: string; supervisor_user_id: string; supervisor: { id: string; full_name: string } };
   const { data: ptsTeamData } = await supabase.from('pts_team_mappings').select('staff_user_id, supervisor_user_id, supervisor:users!supervisor_user_id(id, full_name)');
 
@@ -322,14 +347,19 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
     if (!project) { errors.push(`Tranche ${tranche.id}: project not found`); continue; }
     if (!project.mode_penyelesaian) { errors.push(`Project "${project.project_name}": mode_penyelesaian kosong`); continue; }
 
-    // Determine supervisor from Admin Panel mapping (pts_team_mappings)
+    // Manager & Supervisor dari pohon atasan PIC (Struktur Organisasi)
+    const picId = project.pic_id || project.assigned_to;
+    const supUp = findUpline(picId, 'Supervisor', orgUsers);
+    const mgrUp = findUpline(picId, 'Manager', orgUsers);
     const ptsMap = (ptsTeamData as PtsMap[] | null)?.find(m => m.staff_user_id === project.assigned_to);
-    const supervisorUserId   = ptsMap?.supervisor_user_id || '';
-    const supervisorUserName = ptsMap?.supervisor?.full_name || 'Supervisor';
+    const supervisorUserId   = supUp?.id || ptsMap?.supervisor_user_id || '';
+    const supervisorUserName = supUp?.full_name || ptsMap?.supervisor?.full_name || 'Supervisor';
+    const projManagerId   = mgrUp?.id || managerUserId;
+    const projManagerName = mgrUp?.full_name || managerUserName;
 
     const { data: supports } = await fetchSupportFromTickets(project.project_name);
     const splits = calculateIncentiveSplits(
-      project, managerUserId, managerUserName,
+      project, projManagerId, projManagerName,
       supervisorUserId, supervisorUserName,
       (supports || []).map(s => ({ user_id: s.user_id, user_name: s.user_name || '' })),
     );
