@@ -3126,7 +3126,10 @@ export function UserManagementInline() {
   const [saving, setSaving] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; msg: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<'atasan' | 'ivp' | 'user_cc' | 'pts_team'>('atasan');
+  const [activeTab, setActiveTab] = useState<'org' | 'atasan' | 'ivp' | 'user_cc' | 'pts_team'>('org');
+  const [orgFilter, setOrgFilter] = useState<'all' | 'Sales' | 'Marketing' | 'PTS'>('all');
+  const [orgSelectedId, setOrgSelectedId] = useState('');
+  const [orgSearch, setOrgSearch] = useState('');
   const [atasanDiv, setAtasanDiv] = useState('');
   const [atasanSupId, setAtasanSupId] = useState('');
   const [ivpDiv, setIvpDiv] = useState('');
@@ -3144,14 +3147,20 @@ export function UserManagementInline() {
 
   const fetchAll = async () => {
     setLoadingData(true);
-    const [usersRes, divSupRes, divIvpRes, userSupRes, ptsTeamRes] = await Promise.all([
+    const [usersRes, divSupRes, divIvpRes, userSupRes, ptsTeamRes, atasanRes] = await Promise.all([
       supabase.from('users').select('id, username, full_name, role, team_type, sales_division, phone_number, jabatan').order('full_name'),
       supabase.from('division_supervisor_mappings').select('id,sales_division,supervisor_id').order('sales_division'),
       supabase.from('division_ivp_mappings').select('id,sales_division,ivp_id').order('sales_division'),
       supabase.from('user_supervisor_mappings').select('id,user_id,supervisor_id'),
       supabase.from('pts_team_mappings').select('id,staff_user_id,supervisor_user_id'),
+      // Query terpisah & tahan-error: jika kolom atasan_id belum ada (migration belum jalan),
+      // ini hanya error sendiri tanpa mematahkan load user utama.
+      supabase.from('users').select('id, atasan_id'),
     ]);
-    if (usersRes.data) setAllUsers(usersRes.data);
+    if (usersRes.data) {
+      const atasanMap = new Map<string, string | null>((atasanRes.data ?? []).map((r: { id: string; atasan_id: string | null }) => [r.id, r.atasan_id]));
+      setAllUsers(usersRes.data.map((u: User) => ({ ...u, atasan_id: atasanMap.get(u.id) ?? null })));
+    }
     if (divSupRes.data) setDivSupMaps(divSupRes.data);
     if (divIvpRes.data) setDivIvpMaps(divIvpRes.data);
     if (userSupRes.data) setUserSupMaps(userSupRes.data);
@@ -3260,6 +3269,69 @@ export function UserManagementInline() {
     return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}>{cfg.icon} {u.jabatan}</span>;
   };
 
+  // ─── Struktur Organisasi (atasan_id) helpers ──────────────────────────────
+  const orgGroupOf = (u: User | undefined): 'Sales' | 'Marketing' | 'PTS' | 'Lainnya' => {
+    if (!u) return 'Lainnya';
+    const tt = (u.team_type || '').toLowerCase();
+    if (tt.startsWith('team pts')) return 'PTS';
+    if (tt === 'marketing') return 'Marketing';
+    if ((u.role || '').toLowerCase() === 'guest' || u.sales_division) return 'Sales';
+    if (['team', 'admin', 'superadmin'].includes((u.role || '').toLowerCase())) return 'PTS';
+    return 'Lainnya';
+  };
+  const ORG_GROUP_STYLE: Record<string, { bg: string; color: string }> = {
+    Sales:     { bg: '#E6F1FB', color: '#0C447C' },
+    Marketing: { bg: '#FBEAF0', color: '#72243E' },
+    PTS:       { bg: '#E1F5EE', color: '#085041' },
+    Lainnya:   { bg: '#F1EFE8', color: '#444441' },
+  };
+  const orgWouldCycle = (userId: string, newAtasanId: string): boolean => {
+    let cur: string | null | undefined = newAtasanId;
+    let guard = 0;
+    while (cur && guard < 60) {
+      if (cur === userId) return true;
+      cur = allUsers.find(u => u.id === cur)?.atasan_id;
+      guard++;
+    }
+    return false;
+  };
+  const handleSetAtasan = async (userId: string, atasanId: string) => {
+    if (atasanId && atasanId === userId) { notify('error', 'Tidak bisa menjadi atasan diri sendiri.'); return; }
+    if (atasanId && orgWouldCycle(userId, atasanId)) { notify('error', 'Ditolak — pilihan ini membuat lingkaran hierarki.'); return; }
+    setSaving(true);
+    const { error } = await supabase.from('users').update({ atasan_id: atasanId || null }).eq('id', userId);
+    if (error) notify('error', 'Gagal: ' + error.message + ' (pastikan migration atasan_id sudah dijalankan)');
+    else { notify('success', 'Atasan diperbarui!'); await fetchAll(); }
+    setSaving(false);
+  };
+  const orgChildren: Record<string, User[]> = {};
+  const orgUserIds = new Set(allUsers.map(u => u.id));
+  allUsers.forEach(u => {
+    const pid = u.atasan_id && orgUserIds.has(u.atasan_id) ? u.atasan_id : '__root__';
+    (orgChildren[pid] ||= []).push(u);
+  });
+  const orgTierOf = (u: User) => JABATAN_CONFIG[u.jabatan as JabatanType]?.tier ?? 0;
+  Object.values(orgChildren).forEach(list => list.sort((a, b) => orgTierOf(b) - orgTierOf(a) || a.full_name.localeCompare(b.full_name, 'id')));
+  const orgAncestorsOf = (u: User): Set<string> => {
+    const out = new Set<string>();
+    let cur = u.atasan_id; let g = 0;
+    while (cur && g < 60) { out.add(cur); cur = allUsers.find(x => x.id === cur)?.atasan_id; g++; }
+    return out;
+  };
+  let orgVisible: Set<string> | null = null;
+  if (orgFilter !== 'all' || orgSearch.trim()) {
+    orgVisible = new Set<string>();
+    const q = orgSearch.trim().toLowerCase();
+    allUsers.forEach(u => {
+      const matchGroup = orgFilter === 'all' || orgGroupOf(u) === orgFilter;
+      const matchSearch = !q || u.full_name.toLowerCase().includes(q) || (u.username || '').toLowerCase().includes(q);
+      if (matchGroup && matchSearch) {
+        orgVisible!.add(u.id);
+        orgAncestorsOf(u).forEach(id => orgVisible!.add(id));
+      }
+    });
+  }
+
   const atasanByDiv: Record<string, typeof divSupMaps> = {};
   divSupMaps.forEach(m => { if (!atasanByDiv[m.sales_division]) atasanByDiv[m.sales_division] = []; atasanByDiv[m.sales_division].push(m); });
   const ivpByDiv: Record<string, typeof divIvpMaps> = {};
@@ -3302,6 +3374,9 @@ export function UserManagementInline() {
 
       {/* Tabs */}
       <div className="flex border-b border-slate-200 px-5 pt-3 gap-1 flex-shrink-0 flex-wrap">
+        <button onClick={() => setActiveTab('org')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'org' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+          🏛️ Struktur Organisasi
+        </button>
         <button onClick={() => setActiveTab('atasan')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'atasan' ? 'border-amber-500 text-amber-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           👨‍💼 Mapping Atasan ({Object.keys(atasanByDiv).length} divisi)
         </button>
@@ -3321,6 +3396,88 @@ export function UserManagementInline() {
           <div className="flex items-center justify-center py-16"><div className="w-6 h-6 rounded-full border-2 border-t-teal-600 border-teal-200 animate-spin" /></div>
         ) : (
           <>
+            {/* ══ TAB STRUKTUR ORGANISASI ══ */}
+            {activeTab === 'org' && (() => {
+              const flat: { u: User; depth: number; directCount: number }[] = [];
+              const walk = (u: User, depth: number) => {
+                if (orgVisible && !orgVisible.has(u.id)) return;
+                flat.push({ u, depth, directCount: (orgChildren[u.id] || []).length });
+                (orgChildren[u.id] || []).forEach(k => walk(k, depth + 1));
+              };
+              (orgChildren['__root__'] || []).forEach(r => walk(r, 0));
+              return (
+                <div className="p-5 space-y-4">
+                  <div className="px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                    <p className="text-xs font-bold text-emerald-800 mb-1">🏛️ Struktur Organisasi — satu tempat untuk semua divisi</p>
+                    <p className="text-[11px] text-emerald-600 leading-relaxed">Atur atasan langsung setiap orang (Sales, Marketing, PTS) dalam satu pohon Direktur → Staff. Satu atasan bisa membawahi banyak orang. Klik nama untuk mengubah atasannya.</p>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {(['all', 'Sales', 'Marketing', 'PTS'] as const).map(f => (
+                      <button key={f} onClick={() => setOrgFilter(f)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${orgFilter === f ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'}`}>
+                        {f === 'all' ? 'Semua' : f}
+                      </button>
+                    ))}
+                    <div className="relative flex-1 min-w-[160px]">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+                      <input type="text" value={orgSearch} onChange={e => setOrgSearch(e.target.value)} placeholder="Cari nama / username..."
+                        className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-[10px] text-slate-400 flex-wrap">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#185FA5' }} /> Sales</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#D4537E' }} /> Marketing</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#1D9E75' }} /> PTS</span>
+                    <span className="ml-auto">Indentasi = tingkat jabatan · {flat.length} orang</span>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 bg-white p-2">
+                    {flat.length === 0 ? (
+                      <div className="text-center py-10 text-slate-400 text-sm">
+                        <p className="text-2xl mb-1">🏛️</p>
+                        Tidak ada hasil. Coba ubah filter atau jalankan migration <code className="text-[10px]">atasan_id</code>.
+                      </div>
+                    ) : flat.map(({ u, depth, directCount }) => {
+                      const grp = orgGroupOf(u);
+                      const gs = ORG_GROUP_STYLE[grp];
+                      const isSel = orgSelectedId === u.id;
+                      return (
+                        <div key={u.id}>
+                          <div className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                            style={{ marginLeft: depth * 18 }} onClick={() => setOrgSelectedId(isSel ? '' : u.id)}>
+                            {depth > 0 && <span className="text-slate-300 text-xs flex-shrink-0">└</span>}
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ background: gs.bg, color: gs.color }}>
+                              {u.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                            </div>
+                            <span className="text-sm font-semibold text-slate-800 truncate">{u.full_name}</span>
+                            {jabatanBadge(u)}
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: gs.bg, color: gs.color }}>{grp}</span>
+                            {directCount > 0 && <span className="text-[10px] text-slate-400 flex-shrink-0">· {directCount} bawahan</span>}
+                            <span className="ml-auto text-slate-300 text-xs flex-shrink-0">{isSel ? '▲' : '▼'}</span>
+                          </div>
+                          {isSel && (
+                            <div style={{ marginLeft: depth * 18 + 30 }} className="my-1 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+                              <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest mb-1.5">Atur atasan langsung — {u.full_name}</p>
+                              <select value={u.atasan_id || ''} onChange={e => { handleSetAtasan(u.id, e.target.value); setOrgSelectedId(''); }} disabled={saving}
+                                className="w-full border border-emerald-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-200 bg-white">
+                                <option value="">— Tidak ada (puncak / Direktur) —</option>
+                                {allUsers.filter(c => c.id !== u.id).slice().sort((a, b) => orgTierOf(b) - orgTierOf(a) || a.full_name.localeCompare(b.full_name, 'id')).map(c => (
+                                  <option key={c.id} value={c.id}>{c.full_name}{c.jabatan ? ` · ${c.jabatan}` : ''} ({orgGroupOf(c)})</option>
+                                ))}
+                              </select>
+                              <p className="text-[10px] text-emerald-500 mt-1.5">Daftar berisi SEMUA user lintas divisi · otomatis tervalidasi anti-loop.</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Search bar for atasan & ivp tabs */}
             {(activeTab === 'atasan' || activeTab === 'ivp') && (
               <div className="px-5 pt-4 flex-shrink-0">

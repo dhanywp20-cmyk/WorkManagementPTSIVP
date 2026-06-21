@@ -8,6 +8,7 @@ export interface User {
   phone_number?: string;
   sales_division?: string;
   jabatan?: string;
+  atasan_id?: string | null;  // atasan langsung — pohon hierarki Struktur Organisasi
   allowed_menus?: string[];
   kpi_enabled?: boolean;  // true = masuk roster KPI, false = dikecualikan
   created_at?: string;    // used to calculate days pending for Pending Approval users
