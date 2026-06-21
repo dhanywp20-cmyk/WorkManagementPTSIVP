@@ -83,6 +83,12 @@ ALTER TABLE incentive_splits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ticket_support_assignment ENABLE ROW LEVEL SECURITY;
 ALTER TABLE late_ticket_links ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies first (safe to re-run)
+DROP POLICY IF EXISTS "Allow all for anon" ON incentive_tranches;
+DROP POLICY IF EXISTS "Allow all for anon" ON incentive_splits;
+DROP POLICY IF EXISTS "Allow all for anon" ON ticket_support_assignment;
+DROP POLICY IF EXISTS "Allow all for anon" ON late_ticket_links;
+
 CREATE POLICY "Allow all for anon" ON incentive_tranches FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all for anon" ON incentive_splits FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all for anon" ON ticket_support_assignment FOR ALL USING (true) WITH CHECK (true);
