@@ -312,8 +312,8 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
 
   // Pre-fetch Wahyu and Yoga for supervisor lookup
   const { data: supUsers } = await supabase.from('users').select('id, full_name').or('full_name.ilike.%wahyu%,full_name.ilike.%yoga%');
-  const wahyu = supUsers?.find(u => (u.full_name || '').toLowerCase().includes('wahyu'));
-  const yoga  = supUsers?.find(u => (u.full_name || '').toLowerCase().includes('yoga'));
+  const wahyu = (supUsers as { id: string; full_name: string }[] | null)?.find(u => (u.full_name || '').toLowerCase().includes('wahyu'));
+  const yoga  = (supUsers as { id: string; full_name: string }[] | null)?.find(u => (u.full_name || '').toLowerCase().includes('yoga'));
 
   let processed = 0;
   const errors: string[] = [];
