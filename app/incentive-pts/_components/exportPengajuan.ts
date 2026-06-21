@@ -5,7 +5,7 @@ import { saveAs } from 'file-saver';
 import {
   IncentiveProjectRow, IncentiveSplit, IncentiveTranche,
   SplitResult, formatRupiah, formatPct,
-  calculateIncentiveSplits, findUpline, OrgUser,
+  calculateIncentiveSplits, findUpline, resolveUserId, OrgUser,
 } from './calc';
 
 const NAVY = '1B3A6B';
@@ -445,8 +445,8 @@ export async function exportSummaryIncentive(data: {
     const altFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8F9FA' } };
 
     const projectSupports = supportsMap.get(p.project_name) || [];
-    // Supervisor & Manager dari Struktur Organisasi (atasan_id), bukan name-matching
-    const picId = (p.pic_id || p.assigned_to || '') as string;
+    // Supervisor & Manager dari Struktur Organisasi (atasan_id), resolve PIC via id/nama
+    const picId = resolveUserId((p.pic_id || p.assigned_to) as string, p.assign_name, orgList);
     const supUp = findUpline(picId, 'Supervisor', orgList);
     const mgrUp = findUpline(picId, 'Manager', orgList);
     const supervisorId   = (supUp?.id        || '') as string;

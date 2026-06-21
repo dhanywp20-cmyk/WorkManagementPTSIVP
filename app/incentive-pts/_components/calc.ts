@@ -110,6 +110,18 @@ export async function fetchOrgUsers(): Promise<OrgUser[]> {
   return (data || []) as OrgUser[];
 }
 
+// Resolve user id dari kandidat id ATAU nama. reminders.assigned_to belum tentu
+// UUID user — fallback cocokkan via full_name (assign_name) supaya walk-up atasan jalan.
+export function resolveUserId(idCandidate: string | null | undefined, nameCandidate: string | null | undefined, users: OrgUser[]): string {
+  if (idCandidate && users.some(u => u.id === idCandidate)) return idCandidate;
+  const nm = (nameCandidate || '').toLowerCase().trim();
+  if (nm) {
+    const byName = users.find(u => (u.full_name || '').toLowerCase().trim() === nm);
+    if (byName) return byName.id;
+  }
+  return idCandidate || '';
+}
+
 // Deprecated — name-based fallback lama. Hanya dipakai bila Struktur Organisasi belum diisi.
 export function getSupervisorTeamForPic(picName: string): 'wahyu' | 'yoga' | null {
   const n = (picName || '').toLowerCase();
@@ -348,7 +360,7 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
     if (!project.mode_penyelesaian) { errors.push(`Project "${project.project_name}": mode_penyelesaian kosong`); continue; }
 
     // Manager & Supervisor dari pohon atasan PIC (Struktur Organisasi)
-    const picId = project.pic_id || project.assigned_to;
+    const picId = resolveUserId(project.pic_id || project.assigned_to, project.assign_name, orgUsers);
     const supUp = findUpline(picId, 'Supervisor', orgUsers);
     const mgrUp = findUpline(picId, 'Manager', orgUsers);
     const ptsMap = (ptsTeamData as PtsMap[] | null)?.find(m => m.staff_user_id === project.assigned_to);

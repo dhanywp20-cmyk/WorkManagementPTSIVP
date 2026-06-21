@@ -7,7 +7,7 @@ import {
   IncentiveProjectRow, IncentiveTranche, IncentiveSplit, LateTicketLink,
   fetchIncentiveProjects, fetchTranches, fetchSplits, fetchSupportFromTickets, fetchLateTickets,
   insertTranches, insertSplits, processYearlyBatch,
-  calculateIncentiveSplits, validateSplitTotal, generateTranches, findUpline, OrgUser,
+  calculateIncentiveSplits, validateSplitTotal, generateTranches, findUpline, resolveUserId, OrgUser,
   formatRupiah, formatPct,
   ROLE_LABELS, TRANCHE_STATUS,
 } from './_components/calc';
@@ -675,16 +675,17 @@ export default function IncentivePTSPage() {
                 const effectivePool = pool > 0 ? pool : 1_000_000;
                 const isEstimate = pool <= 0 || !detailProject.mode_penyelesaian;
                 // Manager & Supervisor dibaca dari Struktur Organisasi (users.atasan_id + jabatan),
-                // BUKAN hardcode nama. Walk-up pohon atasan dari PIC project.
-                const picId = (detailProject.pic_id || detailProject.assigned_to || '') as string;
+                // BUKAN hardcode nama. Resolve PIC via id/nama, lalu walk-up pohon atasan.
                 const orgList = allUsers as unknown as OrgUser[];
+                const picId = resolveUserId((detailProject.pic_id || detailProject.assigned_to) as string, detailProject.assign_name, orgList);
                 const mgrUp = findUpline(picId, 'Manager', orgList);
                 const supUp = findUpline(picId, 'Supervisor', orgList);
                 // Fallback transisi (tanpa hardcode nama): pts_team_mappings utk supervisor, jabatan utk manager
                 const dbPtsMap = ptsTeamMappings.find(m => m.staff_user_id === detailProject.assigned_to);
                 const mgrUser = mgrUp
                   ? allUsers.find(u => u.id === mgrUp.id)
-                  : allUsers.find(u => ((u.jabatan as string) || '') === 'Manager');
+                  : (allUsers.find(u => ((u.jabatan as string) || '') === 'Manager' && ((u.team_type as string) || '').toLowerCase().includes('pts'))
+                     ?? allUsers.find(u => ((u.jabatan as string) || '') === 'Manager'));
                 const supUser = supUp
                   ? allUsers.find(u => u.id === supUp.id)
                   : dbPtsMap ? allUsers.find(u => u.id === dbPtsMap.supervisor_user_id) : undefined;
