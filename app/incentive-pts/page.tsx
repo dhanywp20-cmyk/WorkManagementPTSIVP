@@ -73,7 +73,9 @@ export default function IncentivePTSPage() {
 
   useEffect(() => {
     const u = getSession<CurrentUser>();
-    if (!u) { window.location.href = '/dashboard'; return; }
+    // Saat di dalam iframe dashboard, redirect window INDUK (bukan iframe) agar tidak
+    // muncul dashboard-di-dalam-dashboard (layer dobel). Konsisten dgn modul lain.
+    if (!u) { const target = window.top !== window ? window.top : window; if (target) target.location.href = '/dashboard'; return; }
     setCurrentUser(u);
     supabase.from('users').select('allow_incentive_input').eq('username', u.username as string).single().then(({ data }: { data: { allow_incentive_input: boolean } | null }) => {
       if (data) setCurrentUser(prev => prev ? { ...prev, allow_incentive_input: data.allow_incentive_input } : prev);
