@@ -1584,9 +1584,9 @@ jangan lupa peralatan & Semangat💪🏼
         {detailReminder && (
           <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-[100] p-4 overflow-y-auto"
             onClick={e => { if (e.target === e.currentTarget) { setDetailReminder(null); setShowModeModal(false); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); } }}>
-            <div className="flex items-start gap-3 w-full my-4 justify-center" style={{ maxWidth: showModeModal ? '1140px' : '672px', transition: 'max-width 0.25s ease' }}>
+            <div className="flex items-start gap-3 w-full justify-center" style={{ maxWidth: showModeModal ? '1140px' : '672px', transition: 'max-width 0.25s ease' }}>
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full flex-1 min-w-0 overflow-hidden flex flex-col"
-              style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '96vh' }}>
+              style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: 'calc(100vh - 2rem)' }}>
               <div className="px-6 py-5 flex-shrink-0 relative" style={{
                 background: (() => { const c = CATEGORY_CONFIG[detailReminder.category]; const base = c ? `linear-gradient(135deg,${c.accent}dd,${c.accent}88)` : 'linear-gradient(135deg,#1d4ed8,#1e40af)'; return `linear-gradient(rgba(0,0,0,0.3),rgba(0,0,0,0.15)),${base}`; })()
               }}>
@@ -1631,6 +1631,39 @@ jangan lupa peralatan & Semangat💪🏼
               </div>
 
               <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
+                {/* Action bar — sticky di atas, menempel header detail */}
+                {(isAdmin || currentUser?.role === 'team') && (
+                  <div className="flex gap-2 flex-wrap sticky top-0 z-20 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-gray-100">
+                    {isAdmin && !detailReminder.assigned_to && detailReminder.notes?.includes('[REQUEST SALES]') && (
+                      <button onClick={() => { setApproveTarget(detailReminder); setApproveAssignTo(''); setApproveDate(detailReminder.due_date); setApproveTime(detailReminder.due_time); }}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
+                        style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: 'white' }}>✅ Approve &amp; Assign</button>
+                    )}
+                    {detailReminder.status !== 'done' && (
+                      <button onClick={() => { setRescheduleTarget(detailReminder); }}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
+                        style={{ background: 'linear-gradient(135deg,#d97706,#b45309)', color: 'white' }}>📅 Re-Schedule</button>
+                    )}
+                    {(isAdmin || currentUser?.role === 'team') && detailReminder.status === 'done' && detailReminder.sales_name?.trim() && (REVIEW_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category) && (
+                      <button onClick={() => handleResendFormReview(detailReminder)} disabled={resendingFormReview}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02] disabled:opacity-60"
+                        style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', color: 'white' }}>
+                        {resendingFormReview ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '⭐'} Resend Review</button>
+                    )}
+                    {isAdmin && (
+                      <button onClick={() => handleSendWA(detailReminder)} disabled={sendingWA === detailReminder.id}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02] disabled:opacity-60"
+                        style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: 'white' }}>
+                        {sendingWA === detailReminder.id ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '💬'} Kirim WA</button>
+                    )}
+                    {isAdmin && (
+                      <button onClick={() => openEdit(detailReminder)}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
+                        style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', color: 'white' }}>✏️ Edit</button>
+                    )}
+                  </div>
+                )}
+
                 <div>
                   <SectionHeaderSmall icon="📋" title="Detail Jadwal" />
                   <div className="mt-3 grid grid-cols-2 gap-4">
@@ -1784,7 +1817,16 @@ jangan lupa peralatan & Semangat💪🏼
                         <button key={s}
                           onClick={() => {
                             setPendingStatus(s);
-                            if (s !== 'done') { setStatusPhoto(null); setStatusPhotoPreview(null); }
+                            if (s !== 'done') { setStatusPhoto(null); setStatusPhotoPreview(null); setShowModeModal(false); }
+                            else if ((INCENTIVE_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category)) {
+                              // Kategori incentive → panel Mode langsung muncul di kanan (tanpa scroll)
+                              setPendingPhotoUrl(undefined);
+                              setModePenyelesaian(null); setInstallerName(''); setInstallerDaerah('');
+                              setBastDate(new Date().toISOString().split('T')[0]);
+                              setDisplayType(null); setRequiresMiddleware(false);
+                              setRequiresControllerAuto(false); setControllerBrand(null);
+                              setShowModeModal(true);
+                            }
                           }}
                           className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isActive ? 'ring-2 ring-offset-1 scale-105' : 'opacity-70 hover:opacity-100'}`}
                           style={{ background: c.bg, color: c.color, border: `2px solid ${c.border}`, '--tw-ring-color': c.border } as React.CSSProperties}>
@@ -1796,7 +1838,7 @@ jangan lupa peralatan & Semangat💪🏼
                   )}
 
                   {/* Photo upload - opsional untuk status Completed */}
-                  {detailReminder.status !== 'done' && (pendingStatus ?? detailReminder.status) === 'done' && (
+                  {detailReminder.status !== 'done' && (pendingStatus ?? detailReminder.status) === 'done' && !showModeModal && (
                     <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(16,185,129,0.07)', border: '1.5px solid rgba(16,185,129,0.3)' }}>
                       <p className="text-[10px] font-bold tracking-widest uppercase mb-2" style={{ color: '#059669' }}>
                         📸 Foto Bukti Selesai <span className="text-gray-400 font-normal normal-case">(opsional)</span>
@@ -1840,7 +1882,7 @@ jangan lupa peralatan & Semangat💪🏼
                   )}
 
                   {/* Tombol Update Status */}
-                  {pendingStatus && pendingStatus !== detailReminder.status && (
+                  {pendingStatus && pendingStatus !== detailReminder.status && !showModeModal && (
                     <div className="flex gap-2">
                       <button
                         onClick={() => { setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); }}
@@ -1889,71 +1931,13 @@ jangan lupa peralatan & Semangat💪🏼
                   </div>
                 )}
 
-                {/* Action buttons di detail popup */}
-                {(isAdmin || currentUser?.role === 'team') && (
-                  <div className="flex gap-3 pt-3 pb-2 flex-wrap sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-gray-100 -mx-5 px-5 z-10">
-                    {/* Approve & Assign — admin only, request sales belum di-assign */}
-                    {isAdmin && !detailReminder.assigned_to && detailReminder.notes?.includes('[REQUEST SALES]') && (
-                      <button
-                        onClick={() => { setApproveTarget(detailReminder); setApproveAssignTo(''); setApproveDate(detailReminder.due_date); setApproveTime(detailReminder.due_time); }}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-[1.02]"
-                        style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: 'white', boxShadow: '0 4px 12px rgba(22,163,74,0.3)' }}>
-                        ✅ Approve &amp; Assign ke Team
-                      </button>
-                    )}
-                    {/* Re-Schedule — admin + team PTS bisa */}
-                    {detailReminder.status !== 'done' && (
-                      <button onClick={() => { setRescheduleTarget(detailReminder); }}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-[1.02]"
-                        style={{ background: 'linear-gradient(135deg,#d97706,#b45309)', color: 'white', boxShadow: '0 4px 12px rgba(217,119,6,0.3)' }}>
-                        📅 Re-Schedule
-                      </button>
-                    )}
-                    {/* Resend Form Review — muncul jika kategori trigger & status done & ada sales_name */}
-                    {(isAdmin || currentUser?.role === 'team') &&
-                      detailReminder.status === 'done' &&
-                      detailReminder.sales_name?.trim() &&
-                      (REVIEW_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category) && (
-                      <button
-                        onClick={() => handleResendFormReview(detailReminder)}
-                        disabled={resendingFormReview}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-[1.02] disabled:opacity-60"
-                        style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', color: 'white', boxShadow: '0 4px 12px rgba(124,58,237,0.3)' }}>
-                        {resendingFormReview
-                          ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          : '⭐'}
-                        {resendingFormReview ? 'Mengirim...' : 'Resend Form Review'}
-                      </button>
-                    )}
-                    {/* Send WA — admin only */}
-                    {isAdmin && (
-                      <button onClick={() => handleSendWA(detailReminder)} disabled={sendingWA === detailReminder.id}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-[1.02] disabled:opacity-60"
-                        style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: 'white', boxShadow: '0 4px 12px rgba(22,163,74,0.3)' }}>
-                        {sendingWA === detailReminder.id
-                          ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          : '💬'}
-                        Kirim WA
-                      </button>
-                    )}
-                    {/* Edit — admin only */}
-                    {isAdmin && (
-                      <button onClick={() => openEdit(detailReminder)}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-[1.02]"
-                        style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', color: 'white', boxShadow: '0 4px 12px rgba(37,99,235,0.3)' }}>
-                        ✏️ Edit
-                      </button>
-                    )}
-                    {/* TIDAK ADA tombol Hapus di detail popup — hapus hanya dari ACT di tabel */}
-                  </div>
-                )}
               </div>
             </div>
 
             {/* RIGHT: panel Mode Penyelesaian (muncul saat klik Completed) — seperti detail Ticketing */}
             {showModeModal && (
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex-shrink-0 overflow-hidden flex flex-col"
-                style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '96vh' }}>
+                style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: 'calc(100vh - 2rem)' }}>
                 <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}>
                   <h3 className="text-white font-bold text-base">📍 Mode Penyelesaian</h3>
                   <p className="text-emerald-100 text-[11px] mt-0.5">Lengkapi data sebelum status jadi Completed</p>
