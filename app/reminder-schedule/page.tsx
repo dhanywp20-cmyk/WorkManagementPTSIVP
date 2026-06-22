@@ -102,6 +102,8 @@ function ReminderSchedulePageInner() {
   const [bastDate, setBastDate]                       = useState<string>('');
   const [displayType, setDisplayType]                 = useState<'led' | 'lcd' | 'mix' | null>(null);
   const [requiresMiddleware, setRequiresMiddleware]   = useState(false);
+  const [requiresControllerAuto, setRequiresControllerAuto] = useState(false);
+  const [controllerBrand, setControllerBrand]         = useState<'cue' | 'extron' | 'wyrestorm' | null>(null);
   const [pendingPhotoUrl, setPendingPhotoUrl]         = useState<string | undefined>(undefined);
   const [savingMode, setSavingMode]                   = useState(false);
 
@@ -552,6 +554,8 @@ function ReminderSchedulePageInner() {
       setBastDate(new Date().toISOString().split('T')[0]);
       setDisplayType(null);
       setRequiresMiddleware(false);
+      setRequiresControllerAuto(false);
+      setControllerBrand(null);
       setUpdatingStatus(false);
       setShowModeModal(true);
       return;
@@ -570,7 +574,8 @@ function ReminderSchedulePageInner() {
       return;
     }
     if (!bastDate) { notify('error', 'Tanggal BAST wajib diisi!'); return; }
-    if (!displayType) { notify('error', 'Tipe Display wajib dipilih!'); return; }
+    if (!displayType) { notify('error', 'Tipe Display wajib dipilih (LED / LCD / Mix)!'); return; }
+    if (requiresControllerAuto && !controllerBrand) { notify('error', 'Pilih brand Controller Automation (Cue / Extron / Wyrestorm)!'); return; }
     if (modePenyelesaian === 'remote') {
       if (!installerName.trim()) { notify('error', 'Nama Installer wajib diisi untuk mode Remote!'); return; }
       if (!installerDaerah.trim()) { notify('error', 'Daerah Installer wajib diisi untuk mode Remote!'); return; }
@@ -583,6 +588,10 @@ function ReminderSchedulePageInner() {
     const bastDateVal = bastDate || null;
 
     setSavingMode(true);
+    // Auto: kalau handler ber-jabatan Manager (dari Struktur Organisasi), skema
+    // Manager-as-PIC berlaku otomatis — tidak perlu dipilih manual.
+    const { data: handlerUser } = await supabase.from('users').select('jabatan').eq('username', snap.assigned_to).maybeSingle();
+    const autoPicType: 'standard' | 'manager_pic' = handlerUser?.jabatan === 'Manager' ? 'manager_pic' : 'standard';
     await supabase.from('reminders').update({
       mode_penyelesaian: modeVal,
       installer_name: modeVal === 'remote' ? installerNameVal : null,
@@ -590,6 +599,9 @@ function ReminderSchedulePageInner() {
       bast_date: bastDateVal,
       display_type: displayType,
       requires_middleware: requiresMiddleware,
+      requires_controller_automation: requiresControllerAuto,
+      controller_automation_brand: requiresControllerAuto ? controllerBrand : null,
+      pic_type: autoPicType,
     }).eq('id', reminderId);
     setShowModeModal(false);
     setSavingMode(false);
@@ -643,6 +655,8 @@ function ReminderSchedulePageInner() {
     setInstallerDaerah('');
     setDisplayType(null);
     setRequiresMiddleware(false);
+    setRequiresControllerAuto(false);
+    setControllerBrand(null);
     setPendingPhotoUrl(undefined);
   };
 
@@ -2584,17 +2598,16 @@ jangan lupa peralatan & Semangat💪🏼
                 )}
               </div>
 
-              {/* Display Type */}
+              {/* 1. Display Type — wajib pilih LED / LCD / Mix */}
               <div>
-                <p className="text-xs font-bold text-gray-600 mb-2">🖥️ Tipe Display <span className="text-red-500">*</span></p>
-                <div className="grid grid-cols-4 gap-2">
+                <p className="text-xs font-bold text-gray-600 mb-2">🖥️ Tipe Display <span className="text-red-500">*</span> <span className="font-normal text-gray-400">(Mix = LED + LCD)</span></p>
+                <div className="grid grid-cols-3 gap-2">
                   {([
-                    { value: 'led',  label: 'LED' },
-                    { value: 'lcd',  label: 'LCD' },
-                    { value: 'mix',  label: 'Mix' },
-                    { value: null,   label: 'Tidak ada' },
-                  ] as { value: 'led' | 'lcd' | 'mix' | null; label: string }[]).map(opt => (
-                    <button key={String(opt.value)} type="button" onClick={() => setDisplayType(opt.value)}
+                    { value: 'led', label: 'LED' },
+                    { value: 'lcd', label: 'LCD' },
+                    { value: 'mix', label: 'Mix' },
+                  ] as { value: 'led' | 'lcd' | 'mix'; label: string }[]).map(opt => (
+                    <button key={opt.value} type="button" onClick={() => setDisplayType(opt.value)}
                       className={`py-2 rounded-xl border-2 text-xs font-bold transition-all ${displayType === opt.value ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300'}`}>
                       {opt.label}
                     </button>
@@ -2602,13 +2615,46 @@ jangan lupa peralatan & Semangat💪🏼
                 </div>
               </div>
 
-              {/* Middleware toggle */}
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" checked={requiresMiddleware} onChange={e => setRequiresMiddleware(e.target.checked)}
-                  className="w-4 h-4 accent-emerald-600" />
-                <span className="text-sm font-semibold text-gray-700">Middleware / System / Matrix</span>
-                <span className="text-xs text-gray-400">(Cue, DSP, Matrix, dll)</span>
-              </label>
+              {/* 2. Controller Automation — Yes/No + brand */}
+              <div>
+                <p className="text-xs font-bold text-gray-600 mb-2">🎛️ Controller Automation <span className="text-red-500">*</span></p>
+                <div className="grid grid-cols-2 gap-2">
+                  {([{ v: false, l: 'Tidak' }, { v: true, l: 'Ya' }] as { v: boolean; l: string }[]).map(opt => (
+                    <button key={opt.l} type="button"
+                      onClick={() => { setRequiresControllerAuto(opt.v); if (!opt.v) setControllerBrand(null); }}
+                      className={`py-2 rounded-xl border-2 text-xs font-bold transition-all ${requiresControllerAuto === opt.v ? 'border-cyan-500 bg-cyan-50 text-cyan-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300'}`}>
+                      {opt.l}
+                    </button>
+                  ))}
+                </div>
+                {requiresControllerAuto && (
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {([
+                      { value: 'cue', label: 'Cue' },
+                      { value: 'extron', label: 'Extron' },
+                      { value: 'wyrestorm', label: 'Wyrestorm' },
+                    ] as { value: 'cue' | 'extron' | 'wyrestorm'; label: string }[]).map(b => (
+                      <button key={b.value} type="button" onClick={() => setControllerBrand(b.value)}
+                        className={`py-2 rounded-xl border-2 text-xs font-bold transition-all ${controllerBrand === b.value ? 'border-cyan-500 bg-cyan-50 text-cyan-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300'}`}>
+                        {b.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 3. Middleware — Yes/No */}
+              <div>
+                <p className="text-xs font-bold text-gray-600 mb-2">🔌 Middleware / System / Matrix <span className="text-red-500">*</span></p>
+                <div className="grid grid-cols-2 gap-2">
+                  {([{ v: false, l: 'Tidak' }, { v: true, l: 'Ya' }] as { v: boolean; l: string }[]).map(opt => (
+                    <button key={opt.l} type="button" onClick={() => setRequiresMiddleware(opt.v)}
+                      className={`py-2 rounded-xl border-2 text-xs font-bold transition-all ${requiresMiddleware === opt.v ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300'}`}>
+                      {opt.l}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {modePenyelesaian === 'remote' && (
                 <div className="space-y-3 p-4 rounded-xl" style={{ background: 'rgba(59,130,246,0.06)', border: '1.5px solid rgba(59,130,246,0.25)' }}>

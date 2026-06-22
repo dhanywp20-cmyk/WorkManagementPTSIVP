@@ -335,7 +335,7 @@ export default function IncentivePTSPage() {
                     const projTranches = tranches.filter(t => t.project_id === p.id);
                     const handlerSplit = calcHandlerSplit(p);
                     return (
-                      <tr key={p.id} className="hover:bg-indigo-50/60 transition-colors cursor-pointer group" onClick={() => openProjectDetail(p)}>
+                      <tr key={p.id} className="hover:bg-indigo-50/60 transition-colors group">
                         <td className={`${cellCls} text-xs text-gray-400 text-center`}>{idx + 1}</td>
                         <td className={cellCls}>
                           <p className="font-semibold text-gray-800 leading-snug">{p.project_name}</p>
