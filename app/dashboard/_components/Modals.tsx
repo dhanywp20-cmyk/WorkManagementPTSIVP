@@ -13,6 +13,26 @@ import {
 } from './shared';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 
+// Sebar perubahan nama/username user ke semua snapshot di tabel terkait
+// (via SQL function propagate_user_rename). Return pesan error atau null.
+async function propagateUserRename(
+  edited: { id?: string; username?: string; full_name?: string },
+  orig: { username?: string; full_name?: string } | null,
+): Promise<string | null> {
+  if (!orig || !edited.id) return null;
+  const nameChanged = (orig.full_name ?? '') !== (edited.full_name ?? '');
+  const userChanged = (orig.username ?? '') !== (edited.username ?? '');
+  if (!nameChanged && !userChanged) return null;
+  const { error } = await supabase.rpc('propagate_user_rename', {
+    p_user_id: edited.id,
+    p_old_username: orig.username ?? null,
+    p_new_username: edited.username ?? null,
+    p_old_name: orig.full_name ?? null,
+    p_new_name: edited.full_name ?? null,
+  });
+  return error ? error.message : null;
+}
+
 interface AccountSettingsModalProps {
   onClose: () => void;
 }
@@ -22,6 +42,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [activeTab, setActiveTab] = useState<'list' | 'add'>('list');
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editOrig, setEditOrig] = useState<{ username: string; full_name: string } | null>(null);
   const [editDivisi, setEditDivisi] = useState('');
   const [editPtsType, setEditPtsType] = useState('');
   const [saving, setSaving] = useState(false);
@@ -179,9 +200,10 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
       if (pwdHash) updatePayload.password = pwdHash;
     }
     const { error } = await supabase.from('users').update(updatePayload).eq('id', editingUser.id);
+    if (error) { setSaving(false); notify('error', 'Gagal menyimpan: ' + error.message); return; }
+    const propErr = await propagateUserRename(editingUser, editOrig);
     setSaving(false);
-    if (error) { notify('error', 'Gagal menyimpan: ' + error.message); return; }
-    notify('success', 'Akun berhasil diperbarui!');
+    notify(propErr ? 'error' : 'success', propErr ? ('Akun tersimpan, tapi sebar nama ke data terkait gagal: ' + propErr) : 'Akun diperbarui & nama tersebar ke data terkait.');
     const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'update', module: 'user', target_id: editingUser.id, target_name: editingUser.full_name });
     setEditingUser(null);
     setEditDivisi('');
@@ -412,6 +434,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                               else if (user.team_type === 'Marketing') { d = 'Marketing'; }
                               setEditDivisi(d);
                               setEditPtsType(p);
+                              setEditOrig({ username: user.username, full_name: user.full_name });
                               setEditingUser(user);
                             }} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all">Edit</button>
                             <button onClick={() => handleDeleteUser(user.id)} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-all">Hapus</button>
@@ -2544,6 +2567,7 @@ export function AccountSettingsInline() {
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [activeTab, setActiveTab] = useState<'list' | 'add' | 'pending'>('list');
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editOrig, setEditOrig] = useState<{ username: string; full_name: string } | null>(null);
   const [editDivisi, setEditDivisi] = useState('');
   const [editPtsType, setEditPtsType] = useState('');
   const [saving, setSaving] = useState(false);
@@ -2686,9 +2710,10 @@ export function AccountSettingsInline() {
     }
     const updatePayload: Record<string, unknown> = { username: editingUser.username, full_name: editingUser.full_name, role, team_type, allowed_menus: editingUser.allowed_menus ?? ALL_MENU_KEYS, jabatan: editingUser.jabatan ?? null, phone_number: editingUser.phone_number ?? null, sales_division: (editDivisi === 'Sales' || editDivisi === 'Marketing') ? (editingUser.sales_division ?? null) : null };
     const { error } = await supabase.from('users').update(updatePayload).eq('id', editingUser.id);
+    if (error) { setSaving(false); notify('error', 'Gagal menyimpan: ' + error.message); return; }
+    const propErr = await propagateUserRename(editingUser, editOrig);
     setSaving(false);
-    if (error) { notify('error', 'Gagal menyimpan: ' + error.message); return; }
-    notify('success', 'Akun berhasil diperbarui!');
+    notify(propErr ? 'error' : 'success', propErr ? ('Akun tersimpan, tapi sebar nama ke data terkait gagal: ' + propErr) : 'Akun diperbarui & nama tersebar ke data terkait.');
     const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'update', module: 'user', target_id: editingUser.id, target_name: editingUser.full_name });
     setEditingUser(null); setEditDivisi(''); setEditPtsType(''); fetchUsers();
   };
@@ -2926,7 +2951,7 @@ export function AccountSettingsInline() {
                                       if (user.role === 'team') { d = 'PTS'; if (user.team_type === 'Team PTS IVP') p = 'PTS IVP'; else if (user.team_type === 'Team PTS UMP') p = 'PTS UMP'; else if (user.team_type === 'Team PTS MLDS') p = 'PTS MLDS'; }
                                       else if (user.team_type === 'Guest') { d = 'Sales'; }
                                       else if (user.team_type === 'Marketing') { d = 'Marketing'; }
-                                      setEditDivisi(d); setEditPtsType(p); setEditingUser(user);
+                                      setEditDivisi(d); setEditPtsType(p); setEditOrig({ username: user.username, full_name: user.full_name }); setEditingUser(user);
                                     }} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all">Edit</button>
                                     <button onClick={() => handleDeleteUser(user.id)} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-all">Hapus</button>
                                   </div>
