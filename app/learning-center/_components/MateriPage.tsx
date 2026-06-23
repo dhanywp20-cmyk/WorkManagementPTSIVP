@@ -220,7 +220,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
       content_text: form.content_text || null,
       file_url: form.file_url || null,
       folder_path: form.folder_path.trim() || null,
-      file_name: null, file_type: null, created_by: user.username,
+      file_name: null, file_type: null, created_by: user.id,
     }]);
     setUploading(false);
     if (error) {

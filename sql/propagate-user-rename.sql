@@ -70,7 +70,7 @@ BEGIN
       ('user_credentials','user_name','user_id','userid')
     ) AS t(tbl, namecol, keycol, kind)
   LOOP
-    SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name=m.tbl AND column_name=m.namecol) INTO col_ok;
+    SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name=m.tbl AND column_name=m.namecol AND data_type IN ('text','character varying','character')) INTO col_ok;
     SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name=m.tbl AND column_name=m.keycol)  INTO key_ok;
     IF col_ok AND key_ok THEN
       IF m.kind = 'username' THEN
@@ -107,7 +107,7 @@ BEGIN
         ('users','created_by')
       ) AS t(tbl, namecol)
     LOOP
-      SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name=m.tbl AND column_name=m.namecol) INTO col_ok;
+      SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name=m.tbl AND column_name=m.namecol AND data_type IN ('text','character varying','character')) INTO col_ok;
       IF col_ok THEN
         EXECUTE format('UPDATE public.%I SET %I=$1 WHERE %I=$2', m.tbl, m.namecol, m.namecol)
           USING p_new_name, p_old_name;
@@ -128,7 +128,7 @@ BEGIN
         ('user_credentials','username')
       ) AS t(tbl, ucol)
     LOOP
-      SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name=m.tbl AND column_name=m.ucol) INTO col_ok;
+      SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name=m.tbl AND column_name=m.ucol AND data_type IN ('text','character varying','character')) INTO col_ok;
       IF col_ok THEN
         EXECUTE format('UPDATE public.%I SET %I=$1 WHERE %I=$2', m.tbl, m.ucol, m.ucol)
           USING p_new_username, p_old_username;

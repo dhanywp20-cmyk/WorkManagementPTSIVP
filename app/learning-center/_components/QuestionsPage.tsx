@@ -206,7 +206,7 @@ export function QuestionsPage({ user }: { user: User }) {
         question: q.question, option_a: q.option_a, option_b: q.option_b,
         option_c: q.option_c, option_d: q.option_d,
         correct_answer: (q.correct_answer ?? 'A').toUpperCase(),
-        difficulty: q.difficulty ?? 'medium', created_by: user.username,
+        difficulty: q.difficulty ?? 'medium', created_by: user.id,
       }));
       setGenStatus('💾 Menyimpan soal ke database...');
       const { error } = await supabase.from('lc_questions').insert(rows);
@@ -279,7 +279,7 @@ export function QuestionsPage({ user }: { user: User }) {
     }
     const mat = materials.find(m => m.id === newQ.material_id);
     const { error } = await supabase.from('lc_questions').insert([{
-      ...newQ, materi_name: mat?.materi_name ?? '', created_by: user.username,
+      ...newQ, materi_name: mat?.materi_name ?? '', created_by: user.id,
     }]);
     if (error) { setDialog({ type: 'error', message: 'Error: ' + error.message }); return; }
     setShowAddManual(false);
