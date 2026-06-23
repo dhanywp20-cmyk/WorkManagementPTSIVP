@@ -246,7 +246,7 @@ function PiketShowroomPageInner() {
   const divPieAll=Object.entries(filteredKgPie.reduce((acc,k)=>{if(k.sales_division)acc[k.sales_division]=(acc[k.sales_division]||0)+1;return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
   const kgTypePie=JENIS_KEGIATAN_LIST.map(j=>({label:j,value:filteredKgPie.filter(k=>k.jenis_kegiatan===j).length,color:KEGIATAN_COLORS[j]})).filter(d=>d.value>0);
   const instansiPie=Object.entries(filteredKgPie.filter(k=>k.tamu_instansi).reduce((acc,k)=>{const key=k.tamu_instansi!;acc[key]=(acc[key]||0)+1;return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
-  const PRODUK_SPESIFIK=['Videowall','LED','IFP','Audio System','Lighting','Kiosk'];
+  const PRODUK_SPESIFIK=['Videowall','LED','IFP','Projector','Audio System','Lighting','Kiosk'];
   const produkPie=Object.entries(filteredKgPie.reduce((acc,k)=>{
     const produk=k.produk||[];
     if(produk.includes('All Product')){
