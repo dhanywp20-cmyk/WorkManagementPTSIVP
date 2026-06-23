@@ -26,7 +26,7 @@ export const KEBUTUHAN_LIST = [
   'Paperless System','Delegate System','Camera Tracking',
 ];
 
-export const PRODUK_LIST = ['All Product','Videowall','LED','IFP','Audio System','Lighting','Kiosk'];
+export const PRODUK_LIST = ['All Product','Videowall','LED','IFP','Projector','Audio System','Lighting','Kiosk'];
 
 export const JENIS_KEGIATAN_LIST = ['Demo Product','RnD','Maintenance','Shooting Markom'] as const;
 export type JenisKegiatan = typeof JENIS_KEGIATAN_LIST[number];
