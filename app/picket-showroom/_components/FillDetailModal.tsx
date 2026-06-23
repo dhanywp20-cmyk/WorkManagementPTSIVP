@@ -2,17 +2,18 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
-  PiketRow, KegiatanEntry, JenisKegiatan, UserRow,
+  PiketRow, KegiatanEntry, JenisKegiatan, UserRow, ProdukLain,
   DAY_COLOR, JENIS_KEGIATAN_LIST, KEGIATAN_COLORS,
   KEBUTUHAN_LIST, PRODUK_LIST, SALES_DIVISIONS, TEAM_LABEL,
 } from './shared';
 
 interface KFEntry {
   id?:string; jenis_kegiatan:JenisKegiatan; jam_mulai:string; jam_selesai:string; produk:string[];
+  produk_lain:ProdukLain[];
   tamu_instansi:string; nama_sales:string; sales_division:string; kebutuhan:string[]; keterangan:string;
   team_rnd:string;
 }
-const emptyKF=():KFEntry=>({jenis_kegiatan:'Demo Product',jam_mulai:'09:00',jam_selesai:'10:00',produk:[],tamu_instansi:'',nama_sales:'',sales_division:'',kebutuhan:[],keterangan:'',team_rnd:''});
+const emptyKF=():KFEntry=>({jenis_kegiatan:'Demo Product',jam_mulai:'09:00',jam_selesai:'10:00',produk:[],produk_lain:[],tamu_instansi:'',nama_sales:'',sales_division:'',kebutuhan:[],keterangan:'',team_rnd:''});
 
 export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;onClose:()=>void;onSaved:()=>void;currentUser?:any}) {
   const [entries,setEntries]=useState<KFEntry[]>([emptyKF()]);
@@ -34,6 +35,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
         setEntries((detailRes.data as KegiatanEntry[]).map(d=>({
           id:d.id,jenis_kegiatan:d.jenis_kegiatan||'Demo Product',
           jam_mulai:d.jam_mulai||'09:00',jam_selesai:d.jam_selesai||'10:00',produk:d.produk||[],
+          produk_lain:Array.isArray(d.produk_lain)?d.produk_lain:[],
           tamu_instansi:d.tamu_instansi||'',nama_sales:d.nama_sales||'',sales_division:d.sales_division||'',
           kebutuhan:d.kebutuhan||[],keterangan:d.keterangan||'',
           team_rnd:(d as any).team_rnd||'',
@@ -50,6 +52,9 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
     if(p==='All Product') setEntries(prev=>prev.map((e,x)=>x===i?{...e,produk:e.produk.includes('All Product')?[]:['All Product']}:e));
     else setEntries(prev=>prev.map((e,x)=>{if(x!==i)return e;const wo=e.produk.filter(v=>v!=='All Product');return{...e,produk:wo.includes(p)?wo.filter(v=>v!==p):[...wo,p]};}));
   };
+  const addProdukLain=(i:number)=>setEntries(prev=>prev.map((e,x)=>x===i?{...e,produk_lain:[...e.produk_lain,{nama:'',watt:0}]}:e));
+  const updProdukLain=(i:number,j:number,p:Partial<ProdukLain>)=>setEntries(prev=>prev.map((e,x)=>x===i?{...e,produk_lain:e.produk_lain.map((pl,y)=>y===j?{...pl,...p}:pl)}:e));
+  const rmProdukLain=(i:number,j:number)=>setEntries(prev=>prev.map((e,x)=>x===i?{...e,produk_lain:e.produk_lain.filter((_,y)=>y!==j)}:e));
 
   const getPTSTeamLabel=(name:string)=>{
     const u=ptUsers.find(x=>x.full_name===name);
@@ -66,6 +71,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
       const ins=entries.filter(e=>e.jenis_kegiatan).map(e=>({
         piket_id:row.id,jenis_kegiatan:e.jenis_kegiatan,
         jam_mulai:e.jam_mulai||null,jam_selesai:e.jam_selesai||null,produk:e.produk,
+        produk_lain:(e.produk_lain||[]).filter(x=>x.nama.trim()!==''||x.watt>0),
         tamu_instansi:e.jenis_kegiatan==='Demo Product'?(e.tamu_instansi||null):null,
         nama_sales:e.jenis_kegiatan==='Demo Product'?(e.nama_sales||null):null,
         sales_division:e.jenis_kegiatan==='Demo Product'?(e.sales_division||null):null,
@@ -76,7 +82,15 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
         updated_at:now,
         edited_by_name:editedByName,
       }));
-      if(ins.length>0){const{error}=await supabase.from('piket_tamu_detail').insert(ins);if(error)throw error;}
+      if(ins.length>0){
+        let{error}=await supabase.from('piket_tamu_detail').insert(ins);
+        if(error&&/produk_lain/i.test(error.message)){
+          // kolom produk_lain belum ada (migration belum jalan) → simpan tanpa kolom itu
+          const insNoPL=ins.map(e=>{const c={...e} as Record<string,unknown>;delete c.produk_lain;return c;});
+          ({error}=await supabase.from('piket_tamu_detail').insert(insNoPL));
+        }
+        if(error)throw error;
+      }
       const fd=ins.find(e=>e.jenis_kegiatan==='Demo Product');
 
       const updatePayload: Record<string,any> = {
@@ -161,6 +175,35 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                     <div className="mt-2 p-2.5 rounded-xl flex flex-wrap gap-1.5" style={{background:'rgba(0,0,0,0.03)',border:'1px solid rgba(0,0,0,0.08)'}}>
                       {entry.produk.map(p=><span key={p} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{background:dc.grad}}>{p}<button onClick={()=>toggleP(idx,p)} className="ml-0.5 opacity-80">✕</button></span>)}
                     </div>
+                  )}
+                </div>
+                {/* Produk Lain — barang temporer di luar list + beban daya (watt) */}
+                <div>
+                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">⚡ Produk Lain (di luar list) — beban daya</label>
+                  {entry.produk_lain.length===0&&(
+                    <p className="text-[11px] text-slate-400 mb-2">Tambah bila ada unit temporer di luar list. Beban dayanya dicatat (Watt); jam hidupnya mengikuti jam mulai/selesai kegiatan ini.</p>
+                  )}
+                  <div className="space-y-2">
+                    {entry.produk_lain.map((pl,j)=>(
+                      <div key={j} className="flex items-center gap-2">
+                        <input value={pl.nama} onChange={e=>updProdukLain(idx,j,{nama:e.target.value})} placeholder="Nama barang (mis. Genset event)"
+                          className="flex-1 rounded-xl px-3 py-2 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}}/>
+                        <div className="relative w-28 flex-shrink-0">
+                          <input type="number" min={0} value={pl.watt||''} onChange={e=>updProdukLain(idx,j,{watt:Number(e.target.value)||0})} placeholder="Watt"
+                            className="w-full rounded-xl pl-3 pr-8 py-2 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}}/>
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">W</span>
+                        </div>
+                        <button type="button" onClick={()=>rmProdukLain(idx,j)} className="w-8 h-8 rounded-lg text-red-500 hover:bg-red-50 flex items-center justify-center flex-shrink-0" style={{border:'1px solid rgba(220,38,38,0.25)'}}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                  <button type="button" onClick={()=>addProdukLain(idx)}
+                    className="mt-2 w-full py-2 rounded-xl border-2 border-dashed text-xs font-bold flex items-center justify-center gap-1.5"
+                    style={{borderColor:`${dc.accent}50`,color:dc.accent,background:`${dc.accent}06`}}>
+                    + Tambah Produk Lain
+                  </button>
+                  {entry.produk_lain.length>0&&(
+                    <p className="text-[10px] text-slate-500 mt-1.5">Total beban daya tambahan: <strong>{entry.produk_lain.reduce((s,p)=>s+(p.watt||0),0).toLocaleString('id-ID')} W</strong></p>
                   )}
                 </div>
                 {/* Demo Product fields */}

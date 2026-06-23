@@ -117,6 +117,22 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                         </div>
                       )}
 
+                      {/* Produk Lain — beban daya unit di luar list */}
+                      {kg.produk_lain&&kg.produk_lain.length>0&&(
+                        <div className="col-span-2">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">⚡ Produk Lain (di luar list) — beban daya</p>
+                          <div className="space-y-1">
+                            {kg.produk_lain.map((pl,j)=>(
+                              <div key={j} className="flex items-center justify-between rounded-lg px-3 py-1.5" style={{background:'rgba(0,0,0,0.03)',border:'1px solid rgba(0,0,0,0.06)'}}>
+                                <span className="text-sm font-semibold text-slate-700">{pl.nama||'—'}</span>
+                                <span className="text-xs font-black" style={{color:kColor}}>{(pl.watt||0).toLocaleString('id-ID')} W</span>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-[10px] text-slate-500 mt-1.5">Total beban daya tambahan: <strong>{kg.produk_lain.reduce((s,p)=>s+(p.watt||0),0).toLocaleString('id-ID')} W</strong></p>
+                        </div>
+                      )}
+
                       {/* Demo Product fields */}
                       {kg.jenis_kegiatan==='Demo Product'&&(
                         <>

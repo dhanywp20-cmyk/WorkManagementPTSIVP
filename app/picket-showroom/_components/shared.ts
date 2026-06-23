@@ -60,9 +60,13 @@ export interface PiketRow {
   edited_by_name?:string|null;
 }
 
+// Barang temporer di luar PRODUK_LIST default — dicatat beban dayanya (watt)
+export interface ProdukLain { nama:string; watt:number }
+
 export interface KegiatanEntry {
   id?:string; piket_id:string;
   jenis_kegiatan:JenisKegiatan; jam_mulai:string; jam_selesai:string; produk:string[];
+  produk_lain?:ProdukLain[];
   tamu_instansi:string|null; nama_sales:string|null; sales_division:string|null;
   kebutuhan:string[]; keterangan:string|null; created_at:string;
   updated_at?:string|null; edited_by_name?:string|null;
