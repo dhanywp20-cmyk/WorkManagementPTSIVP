@@ -43,6 +43,8 @@ export default function IncentivePTSPage() {
   const [allSplits, setAllSplits] = useState<IncentiveSplit[]>([]);
   const [allUsers, setAllUsers] = useState<CurrentUser[]>([]);
   const [ptsTeamMappings, setPtsTeamMappings] = useState<{ staff_user_id: string; supervisor_user_id: string }[]>([]);
+  // project_name → set username/full_name (lowercase) yang membantu di ticket Troubleshooting
+  const [supportMap, setSupportMap] = useState<Map<string, Set<string>>>(new Map());
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
@@ -106,6 +108,17 @@ export default function IncentivePTSPage() {
       setAllUsers((usersRes.data as CurrentUser[]).map(u => ({ ...u, atasan_id: atasanMap.get(u.id as string) ?? null })));
     }
     if (ptsTeamRes.data) setPtsTeamMappings(ptsTeamRes.data as { staff_user_id: string; supervisor_user_id: string }[]);
+    // Support per project (dari ticket Troubleshooting selesai) — untuk filter visibilitas list
+    const { data: trouble } = await supabase.from('reminders').select('project_name, assigned_to, assign_name').eq('category', 'Troubleshooting').eq('status', 'done');
+    const sm = new Map<string, Set<string>>();
+    for (const t of (trouble || []) as { project_name: string | null; assigned_to: string | null; assign_name: string | null }[]) {
+      if (!t.project_name) continue;
+      const set = sm.get(t.project_name) || new Set<string>();
+      if (t.assigned_to) set.add(t.assigned_to.toLowerCase());
+      if (t.assign_name) set.add(t.assign_name.toLowerCase());
+      sm.set(t.project_name, set);
+    }
+    setSupportMap(sm);
     setLoading(false);
   }
 
@@ -217,9 +230,28 @@ export default function IncentivePTSPage() {
     </div>
   );
 
+  // Privasi list: non-privileged hanya melihat project di mana dia terlibat
+  // (handler/PIC, support dari ticket Troubleshooting, supervisor, atau manager).
+  const canSeeAll = canInputNominal(currentUser);
+  const orgListAll = allUsers as unknown as OrgUser[];
+  const userInProject = (p: IncentiveProjectRow): boolean => {
+    if (!currentUser) return false;
+    const uid = currentUser.id;
+    const uname = (currentUser.username || '').toLowerCase();
+    const ufull = (currentUser.full_name || '').toLowerCase();
+    if (uid && p.pic_id && p.pic_id === uid) return true;                       // PIC by id
+    if (uname && (p.assigned_to || '').toLowerCase() === uname) return true;    // handler by username
+    if (ufull && (p.assign_name || '').toLowerCase() === ufull) return true;    // handler by name
+    const sup = supportMap.get(p.project_name);                                 // support (troubleshooting)
+    if (sup && ((uname && sup.has(uname)) || (ufull && sup.has(ufull)))) return true;
+    const picId = resolveUserId((p.pic_id || p.assigned_to) as string, p.assign_name, orgListAll);
+    if (uid && findUpline(picId, 'Supervisor', orgListAll)?.id === uid) return true; // supervisor
+    if (uid && findUpline(picId, 'Manager', orgListAll)?.id === uid) return true;    // manager
+    return false;
+  };
   const filteredProjects = projects.filter(p =>
-    !searchProject || p.project_name.toLowerCase().includes(searchProject.toLowerCase()) || (p.assign_name || '').toLowerCase().includes(searchProject.toLowerCase())
-  );
+    (!searchProject || p.project_name.toLowerCase().includes(searchProject.toLowerCase()) || (p.assign_name || '').toLowerCase().includes(searchProject.toLowerCase()))
+  ).filter(p => canSeeAll || userInProject(p));
   const uniqueYears = [...new Set(tranches.map(t => t.payment_year))].sort();
   const filteredTranches = tranches.filter(t => !filterYear || t.payment_year === filterYear);
   const totalPool = projects.filter(p => (p.incentive_value || 0) > 0).reduce((s, p) => s + (p.incentive_value || 0), 0);
