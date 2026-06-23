@@ -260,12 +260,12 @@ export default function IncentivePTSPage() {
         style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(99,102,241,0.12)' }}>
         <div className="w-full px-4 flex gap-1 overflow-x-auto">
           {([
-            { id: 'projects', label: '📋 Projects',            adminOnly: false },
-            { id: 'tranches', label: '📅 Tranche Schedule',    adminOnly: false },
-            { id: 'late',     label: '🕐 Late Ticket Queue',   adminOnly: false },
-            { id: 'settings', label: '⚙️ Pengaturan Akses',   adminOnly: true  },
-          ] as { id: TabKey; label: string; adminOnly: boolean }[])
-            .filter(t => !t.adminOnly || isAdmin(currentUser))
+            { id: 'projects', label: '📋 Projects',            show: true },
+            { id: 'tranches', label: '📅 Tranche Schedule',    show: canInputNominal(currentUser) },
+            { id: 'late',     label: '🕐 Late Ticket Queue',   show: canInputNominal(currentUser) },
+            { id: 'settings', label: '⚙️ Pengaturan Akses',   show: isAdmin(currentUser) },
+          ] as { id: TabKey; label: string; show: boolean }[])
+            .filter(t => t.show)
             .map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
                 className={`px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-all ${tab === t.id ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
@@ -295,16 +295,20 @@ export default function IncentivePTSPage() {
                   {canInputNominal(currentUser) && (
                     <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200">✏️ Kamu bisa input nominal</span>
                   )}
-                  <button onClick={handleExportSummary} disabled={exporting}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 flex items-center gap-1.5">
-                    {exporting ? <div className="w-3 h-3 border-2 border-emerald-400/30 border-t-emerald-500 rounded-full animate-spin" /> : '📊'} Export Summary
-                  </button>
+                  {canInputNominal(currentUser) && (
+                    <button onClick={handleExportSummary} disabled={exporting}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 flex items-center gap-1.5">
+                      {exporting ? <div className="w-3 h-3 border-2 border-emerald-400/30 border-t-emerald-500 rounded-full animate-spin" /> : '📊'} Export Summary
+                    </button>
+                  )}
                 </div>
               </div>
               <p className="text-xs text-gray-400">
-                <span className="font-bold text-gray-600">{filteredProjects.length}</span> project ·&nbsp;
-                <span className="font-bold text-emerald-600">{filteredProjects.filter(p => (p.incentive_value||0)>0).length}</span> ada nominal ·&nbsp;
-                <span className="font-bold text-amber-600">{filteredProjects.filter(p => !(p.incentive_value||0)).length}</span> belum isi nominal
+                <span className="font-bold text-gray-600">{filteredProjects.length}</span> project
+                {canInputNominal(currentUser) && (<>
+                  &nbsp;·&nbsp;<span className="font-bold text-emerald-600">{filteredProjects.filter(p => (p.incentive_value||0)>0).length}</span> ada nominal ·&nbsp;
+                  <span className="font-bold text-amber-600">{filteredProjects.filter(p => !(p.incentive_value||0)).length}</span> belum isi nominal
+                </>)}
               </p>
             </div>
             <div className="overflow-x-auto">
@@ -312,20 +316,20 @@ export default function IncentivePTSPage() {
                 <thead>
                   <tr style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.10),rgba(139,92,246,0.07))' }}>
                     <th className={`${thCls} w-10 text-center`}>No</th>
-                    <th className={`${thCls} min-w-[200px]`}>Project</th>
+                    <th className={`${thCls} w-[210px] max-w-[210px]`}>Project</th>
                     <th className={`${thCls} w-[130px]`}>Handler</th>
                     <th className={`${thCls} w-[140px]`}>Kategori</th>
                     <th className={`${thCls} w-[100px]`}>Mode</th>
                     <th className={`${thCls} w-[110px]`}>BAST</th>
-                    <th className="px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[155px]">Nominal</th>
-                    <th className="px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[145px]">Bagian Handler</th>
+                    {canInputNominal(currentUser) && <th className="px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[150px]">Nominal</th>}
+                    {canInputNominal(currentUser) && <th className="px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[145px]">Bagian Handler</th>}
                     <th className={`${thCls} w-[90px] text-center`}>Tranche</th>
                     <th className={`${thCls} w-[100px] text-center`}>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredProjects.length === 0 ? (
-                    <tr><td colSpan={10} className="px-4 py-16 text-center border border-gray-200">
+                    <tr><td colSpan={canInputNominal(currentUser) ? 10 : 8} className="px-4 py-16 text-center border border-gray-200">
                       <p className="text-4xl mb-3">📭</p>
                       <p className="text-gray-500 font-medium">Belum ada project incentive</p>
                       <p className="text-gray-400 text-xs mt-1">Data muncul dari Reminder Schedule kategori Konfigurasi / Training yang sudah Completed</p>
@@ -339,10 +343,10 @@ export default function IncentivePTSPage() {
                     return (
                       <tr key={p.id} className="hover:bg-indigo-50/60 transition-colors group">
                         <td className={`${cellCls} text-xs text-gray-400 text-center`}>{idx + 1}</td>
-                        <td className={cellCls}>
-                          <p className="font-semibold text-gray-800 leading-snug">{p.project_name}</p>
-                          {p.product && <p className="text-[11px] text-indigo-500 mt-0.5 truncate max-w-[240px]">📦 {p.product}</p>}
-                          {p.address && <p className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[240px]">📍 {p.address}</p>}
+                        <td className={`${cellCls} max-w-[210px]`}>
+                          <p className="font-semibold text-gray-800 leading-snug truncate max-w-[195px]" title={p.project_name}>{p.project_name}</p>
+                          {p.product && <p className="text-[11px] text-indigo-500 mt-0.5 truncate max-w-[195px]" title={p.product}>📦 {p.product}</p>}
+                          {p.address && <p className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[195px]" title={p.address}>📍 {p.address}</p>}
                         </td>
                         <td className={cellCls}>
                           <p className="text-sm font-medium text-gray-700">{p.assign_name || '—'}</p>
@@ -370,19 +374,23 @@ export default function IncentivePTSPage() {
                             ? <p className="text-xs font-semibold text-gray-700">{new Date(p.bast_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                             : <span className="text-xs text-amber-500 italic">Belum diisi</span>}
                         </td>
-                        <td className={`${cellCls} text-right`}>
-                          {hasNominal
-                            ? <p className="text-sm font-black text-emerald-600">{formatRupiah(p.incentive_value || 0)}</p>
-                            : <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">⏳ Belum</span>}
-                        </td>
-                        <td className={`${cellCls} text-right`}>
-                          {handlerSplit ? (
-                            <div>
-                              <p className="text-sm font-black text-indigo-700">{formatRupiah(handlerSplit.amt)}</p>
-                              <p className="text-[10px] text-gray-400">{handlerSplit.pct.toFixed(0)}% pool</p>
-                            </div>
-                          ) : <span className="text-xs text-gray-300">—</span>}
-                        </td>
+                        {canInputNominal(currentUser) && (
+                          <td className={`${cellCls} text-right`}>
+                            {hasNominal
+                              ? <p className="text-sm font-black text-emerald-600">{formatRupiah(p.incentive_value || 0)}</p>
+                              : <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">⏳ Belum</span>}
+                          </td>
+                        )}
+                        {canInputNominal(currentUser) && (
+                          <td className={`${cellCls} text-right`}>
+                            {handlerSplit ? (
+                              <div>
+                                <p className="text-sm font-black text-indigo-700">{formatRupiah(handlerSplit.amt)}</p>
+                                <p className="text-[10px] text-gray-400">{handlerSplit.pct.toFixed(0)}% pool</p>
+                              </div>
+                            ) : <span className="text-xs text-gray-300">—</span>}
+                          </td>
+                        )}
                         <td className={`${cellCls} text-center`}>
                           {projTranches.length > 0 ? (
                             <div className="flex gap-0.5 justify-center">
@@ -421,7 +429,7 @@ export default function IncentivePTSPage() {
                     );
                   })}
                 </tbody>
-                {filteredProjects.length > 0 && (
+                {filteredProjects.length > 0 && canInputNominal(currentUser) && (
                   <tfoot>
                     <tr style={{ background: 'rgba(99,102,241,0.06)' }}>
                       <td colSpan={6} className="px-3 py-2.5 border border-gray-200 text-xs font-bold text-gray-600 text-right">TOTAL</td>
@@ -439,7 +447,7 @@ export default function IncentivePTSPage() {
         )}
 
         {/* ─── Tranches tab ─── */}
-        {tab === 'tranches' && !loading && (
+        {tab === 'tranches' && canInputNominal(currentUser) && !loading && (
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex gap-2 items-center">
@@ -509,7 +517,7 @@ export default function IncentivePTSPage() {
         )}
 
         {/* ─── Late Ticket Queue tab ─── */}
-        {tab === 'late' && !loading && (
+        {tab === 'late' && canInputNominal(currentUser) && !loading && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200" style={{ background: 'linear-gradient(135deg,rgba(245,158,11,0.08),rgba(234,88,12,0.05))' }}>
               <h2 className="font-bold text-gray-800">🕐 Late Ticket Queue</h2>
@@ -652,11 +660,13 @@ export default function IncentivePTSPage() {
               </div>
             </div>
             <div className="p-6 max-h-[65vh] overflow-y-auto space-y-5">
-              <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-xl p-3 text-center bg-emerald-50 border border-emerald-100">
-                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Total Pool</p>
-                  <p className="text-base font-black text-emerald-700">{formatRupiah(detailProject.incentive_value || 0)}</p>
-                </div>
+              <div className={`grid ${canInputNominal(currentUser) ? 'grid-cols-3' : 'grid-cols-2'} gap-3`}>
+                {canInputNominal(currentUser) && (
+                  <div className="rounded-xl p-3 text-center bg-emerald-50 border border-emerald-100">
+                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Total Pool</p>
+                    <p className="text-base font-black text-emerald-700">{formatRupiah(detailProject.incentive_value || 0)}</p>
+                  </div>
+                )}
                 <div className="rounded-xl p-3 text-center bg-blue-50 border border-blue-100">
                   <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Mode</p>
                   <p className="text-sm font-bold text-blue-700">{detailProject.mode_penyelesaian === 'onsite' ? '🏢 Onsite' : detailProject.mode_penyelesaian === 'remote' ? '💻 Remote' : '—'}</p>
@@ -698,19 +708,31 @@ export default function IncentivePTSPage() {
                 const displayProject: IncentiveProjectRow = { ...detailProject, incentive_value: effectivePool, mode_penyelesaian: effectiveMode };
                 const splits = calculateIncentiveSplits(displayProject, managerId, managerName, supervisorId, supervisorName, detailSupports);
                 if (!splits.length) return null;
+                // Privasi: non-privileged (selain Admin & yang ditunjuk input nominal)
+                // hanya melihat bagiannya sendiri — bukan total pool / bagian orang lain.
+                const privileged = canInputNominal(currentUser);
+                const myName = (currentUser?.full_name || '').toLowerCase().trim();
+                const visibleSplits = privileged
+                  ? splits
+                  : splits.filter(s => (s.user_id && s.user_id === currentUser?.id) || (!!myName && (s.user_name || '').toLowerCase().trim() === myName));
                 const schemeLabel = detailProject.pic_type === 'manager_pic' ? 'Manager sebagai PIC' : 'Standard';
                 const modeLabel = effectiveMode === 'remote' ? 'Remote' : 'Onsite';
                 return (
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-bold text-gray-700">💰 Pembagian Incentive</h3>
+                      <h3 className="text-sm font-bold text-gray-700">{privileged ? '💰 Pembagian Incentive' : '💰 Bagian Saya'}</h3>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{schemeLabel} · {modeLabel}</span>
+                        {privileged && <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{schemeLabel} · {modeLabel}</span>}
                         {isEstimate && <span className="text-[10px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">Estimasi</span>}
                       </div>
                     </div>
+                    {!privileged && visibleSplits.length === 0 && (
+                      <div className="rounded-xl px-4 py-6 text-center bg-gray-50 border border-gray-100">
+                        <p className="text-sm text-gray-400">Kamu tidak tercatat mendapat bagian di project ini.</p>
+                      </div>
+                    )}
                     <div className="space-y-1.5">
-                      {splits.map((s, i) => {
+                      {visibleSplits.map((s, i) => {
                         const rl = ROLE_LABELS[s.role] || { label: s.role, color: '#94a3b8', bg: 'rgba(148,163,184,0.12)' };
                         const isInstaller = s.role === 'installer';
                         return (
@@ -757,7 +779,7 @@ export default function IncentivePTSPage() {
                       <div key={t.id} className="flex items-center justify-between rounded-lg px-4 py-3 bg-gray-50 border border-gray-100 mb-2">
                         <div className="flex items-center gap-3">
                           <span className="text-sm font-black text-gray-700">T{t.tranche_number}</span>
-                          <span className="text-sm text-gray-600">{t.percentage}% · {formatRupiah(Math.round(amt))}</span>
+                          <span className="text-sm text-gray-600">{t.percentage}%{canInputNominal(currentUser) ? ` · ${formatRupiah(Math.round(amt))}` : ''}</span>
                           <span className="text-xs text-gray-400">Tahun {t.payment_year}</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -773,10 +795,13 @@ export default function IncentivePTSPage() {
               </div>
 
               <div>
-                <h3 className="text-sm font-bold text-gray-700 mb-2">💰 Incentive Splits</h3>
-                {detailSplits.length === 0
-                  ? <p className="text-xs text-gray-400 italic">Belum ada split. Proses batch untuk generate.</p>
-                  : detailSplits.map(s => {
+                <h3 className="text-sm font-bold text-gray-700 mb-2">{canInputNominal(currentUser) ? '💰 Incentive Splits' : '💰 Bagian Saya (Tercatat)'}</h3>
+                {(() => {
+                  const myNm = (currentUser?.full_name || '').toLowerCase().trim();
+                  const visDb = canInputNominal(currentUser) ? detailSplits : detailSplits.filter(s => (s.user_id && s.user_id === currentUser?.id) || (!!myNm && (s.user_name || '').toLowerCase().trim() === myNm));
+                  return visDb.length === 0
+                  ? <p className="text-xs text-gray-400 italic">{canInputNominal(currentUser) ? 'Belum ada split. Proses batch untuk generate.' : 'Belum ada bagian tercatat untukmu.'}</p>
+                  : visDb.map(s => {
                     const rl = ROLE_LABELS[s.role] || { label: s.role, color: '#94a3b8', bg: 'rgba(148,163,184,0.12)' };
                     return (
                       <div key={s.id} className="flex items-center justify-between rounded-lg px-4 py-2.5 bg-gray-50 mb-1.5">
@@ -790,8 +815,8 @@ export default function IncentivePTSPage() {
                         </div>
                       </div>
                     );
-                  })
-                }
+                  });
+                })()}
               </div>
 
               <div>
