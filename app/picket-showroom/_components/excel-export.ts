@@ -336,6 +336,76 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[]) 
       XLSX.utils.book_append_sheet(wb,ws,'🔧 Kegiatan Lain');
     }
 
+    // ════════════════════════════════════════════════════════════════════════
+    // SHEET 5 — ⚡ Beban Daya Tambahan (Produk Lain di luar list default)
+    // ════════════════════════════════════════════════════════════════════════
+    {
+      const piketMap:Record<string,PiketRow>={};
+      sorted.forEach(r=>{piketMap[r.id]=r;});
+      const hoursBetween=(a?:string,b?:string)=>{
+        if(!a||!b)return 0;
+        const [ah,am]=a.split(':').map(Number); const [bh,bm]=b.split(':').map(Number);
+        const mins=(bh*60+bm)-(ah*60+am);
+        return mins>0?mins/60:0;
+      };
+      type PLRow={piket:PiketRow;kg:KegiatanEntry;nama:string;watt:number};
+      const plRows:PLRow[]=[];
+      kegiatanList.forEach(kg=>{
+        const piket=piketMap[kg.piket_id]; if(!piket)return;
+        (kg.produk_lain||[]).forEach(pl=>{ if((pl.nama&&pl.nama.trim())||(pl.watt||0)>0) plRows.push({piket,kg,nama:pl.nama,watt:pl.watt||0}); });
+      });
+      plRows.sort((a,b)=>a.piket.day_date.localeCompare(b.piket.day_date));
+      const headers=['No.','Tanggal','Hari','PIC','Kegiatan','Jam Mulai','Jam Selesai','Nama Barang','Watt','Durasi (jam)','Estimasi Wh'];
+      const COLS=headers.length;
+      const data:any[][]=[
+        [cell('⚡ BEBAN DAYA TAMBAHAN — Produk di Luar List Default',{...titleStyle,font:{name:'Arial',bold:true,sz:14,color:{rgb:'B45309'}}}),...row0(COLS-1)],
+        [cell(`Total: ${plRows.length} unit · Export: ${exportDate}`,subTitleStyle),...row0(COLS-1)],
+        row0(COLS),
+        headers.map(h=>ctr(h,{...hdrStyle,fill:{fgColor:{rgb:'B45309'},patternType:'solid'}})),
+      ];
+      let totalWatt=0; let totalWh=0;
+      plRows.forEach((r,i)=>{
+        const rs=i%2===0?cellStyle:altStyle;
+        const ctrStyle={...rs,alignment:{horizontal:'center',vertical:'center'}};
+        const dateStr=new Date(r.piket.day_date+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+        const picNames=[r.piket.pic_ivp_name,r.piket.pic_ump_name,r.piket.pic_mlds_name].filter(Boolean).join(' / ')||'-';
+        const dur=hoursBetween(r.kg.jam_mulai,r.kg.jam_selesai);
+        const wh=Math.round(r.watt*dur);
+        totalWatt+=r.watt; totalWh+=wh;
+        data.push([
+          ctr(i+1,ctrStyle),
+          cell(dateStr,rs),
+          cell(r.piket.day_of_week,{...rs,font:{name:'Arial',sz:10,bold:true,color:{rgb:'991B1B'}}}),
+          cell(picNames,rs),
+          cell(r.kg.jenis_kegiatan,rs),
+          r.kg.jam_mulai?ctr(r.kg.jam_mulai,ctrStyle):cell('-',rs),
+          r.kg.jam_selesai?ctr(r.kg.jam_selesai,ctrStyle):cell('-',rs),
+          cell(r.nama||'-',rs),
+          ctr(r.watt,{...ctrStyle,font:{name:'Arial',sz:10,bold:true}}),
+          ctr(dur?Number(dur.toFixed(2)):0,ctrStyle),
+          ctr(wh,{...ctrStyle,font:{name:'Arial',sz:10,bold:true,color:{rgb:'B45309'}}}),
+        ]);
+      });
+      if(plRows.length>0){
+        const totStyle={font:{name:'Arial',bold:true,sz:10},fill:{fgColor:{rgb:'FEF3C7'},patternType:'solid'},alignment:{vertical:'center'},border:boldBorder};
+        const totCtr={...totStyle,alignment:{horizontal:'center',vertical:'center'}};
+        data.push([
+          cell('TOTAL',{...totStyle,alignment:{horizontal:'right',vertical:'center'}}),
+          empty(totStyle),empty(totStyle),empty(totStyle),empty(totStyle),empty(totStyle),empty(totStyle),empty(totStyle),
+          ctr(totalWatt,totCtr),
+          empty(totStyle),
+          ctr(totalWh,totCtr),
+        ]);
+      } else {
+        data.push([cell('Belum ada produk lain dicatat.',{...cellStyle,alignment:{horizontal:'center',vertical:'center'}}),...row0(COLS-1)]);
+      }
+      const ws=XLSX.utils.aoa_to_sheet(data);
+      ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:COLS-1}},{s:{r:1,c:0},e:{r:1,c:COLS-1}}];
+      ws['!cols']=[{wch:5},{wch:24},{wch:10},{wch:22},{wch:18},{wch:10},{wch:10},{wch:30},{wch:10},{wch:12},{wch:12}];
+      ws['!rows']=[{hpt:28},{hpt:18},{hpt:8},{hpt:32}];
+      XLSX.utils.book_append_sheet(wb,ws,'⚡ Beban Daya');
+    }
+
     const fileName=`Piket_Showroom_${new Date().toISOString().slice(0,10)}.xlsx`;
     XLSX.writeFile(wb,fileName,{bookType:'xlsx',type:'binary',cellStyles:true});
   };
