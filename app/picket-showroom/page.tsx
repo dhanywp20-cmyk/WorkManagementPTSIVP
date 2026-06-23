@@ -63,18 +63,23 @@ function PiketShowroomPageInner() {
     setFetchError(null);
     const wk2=toKey(addDays(weekStart,7));
     try {
-      const[wRes,aRes,uRes,kgRes]=await Promise.all([
+      const[wRes,aRes,uRes,kgRes,plRes]=await Promise.all([
         supabase.from('piket_schedules').select('*').in('week_start',[wk,wk2]).order('day_date'),
         supabase.from('piket_schedules').select('id,day_date,week_start,day_of_week,pic_ivp_name,pic_ump_name,pic_mlds_name'),
         supabase.from('users').select('id,full_name,username,team_type,role').in('team_type',['Team PTS IVP','Team PTS UMP','Team PTS MLDS']).order('full_name'),
         supabase.from('piket_tamu_detail').select('*').order('created_at'),
+        supabase.from('piket_produk_lain').select('kegiatan_id,nama,watt'), // optional — tabel mungkin belum ada
       ]);
-      const firstErr = wRes.error || aRes.error || uRes.error || kgRes.error;
+      const firstErr = wRes.error || aRes.error || uRes.error || kgRes.error; // plRes sengaja tidak diikutkan (opsional)
       if (firstErr) { setFetchError(firstErr.message); setLoading(false); return; }
       if(wRes.data)setRows(wRes.data as PiketRow[]);
       if(aRes.data)setAllRows(aRes.data as PiketRow[]);
       if(uRes.data)setPtUsers(uRes.data.filter((u:any)=>u.role!=='admin'&&u.role!=='superadmin') as UserRow[]);
-      if(kgRes.data)setKegiatanList(kgRes.data as KegiatanEntry[]);
+      if(kgRes.data){
+        const plByKg:Record<string,{nama:string;watt:number}[]>={};
+        (plRes.data||[]).forEach((pl:{kegiatan_id:string;nama:string;watt:number})=>{(plByKg[pl.kegiatan_id]=plByKg[pl.kegiatan_id]||[]).push({nama:pl.nama||'',watt:pl.watt||0});});
+        setKegiatanList((kgRes.data as KegiatanEntry[]).map(k=>({...k,produk_lain:plByKg[k.id||'']||[]})));
+      }
       // Holidays: optional — if table doesn't exist yet, silently ignore
       const hRes = await supabase.from('picket_holidays').select('date');
       if (hRes.data) setHolidays(hRes.data.map((h: any) => h.date));

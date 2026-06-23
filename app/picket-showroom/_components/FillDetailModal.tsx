@@ -27,15 +27,18 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
   useEffect(()=>{
     (async()=>{
       setLoadingE(true);
-      const[detailRes,usersRes]=await Promise.all([
+      const[detailRes,usersRes,plRes]=await Promise.all([
         supabase.from('piket_tamu_detail').select('*').eq('piket_id',row.id).order('created_at'),
         supabase.from('users').select('id,full_name,team_type,role').in('team_type',['Team PTS IVP','Team PTS UMP','Team PTS MLDS']).order('full_name'),
+        supabase.from('piket_produk_lain').select('kegiatan_id,nama,watt').eq('piket_id',row.id),
       ]);
+      const plByKg:Record<string,ProdukLain[]>={};
+      (plRes.data||[]).forEach((pl:{kegiatan_id:string;nama:string;watt:number})=>{(plByKg[pl.kegiatan_id]=plByKg[pl.kegiatan_id]||[]).push({nama:pl.nama||'',watt:pl.watt||0});});
       if(detailRes.data&&detailRes.data.length>0){
         setEntries((detailRes.data as KegiatanEntry[]).map(d=>({
           id:d.id,jenis_kegiatan:d.jenis_kegiatan||'Demo Product',
           jam_mulai:d.jam_mulai||'09:00',jam_selesai:d.jam_selesai||'10:00',produk:d.produk||[],
-          produk_lain:Array.isArray(d.produk_lain)?d.produk_lain:[],
+          produk_lain:plByKg[d.id||'']||[],
           tamu_instansi:d.tamu_instansi||'',nama_sales:d.nama_sales||'',sales_division:d.sales_division||'',
           kebutuhan:d.kebutuhan||[],keterangan:d.keterangan||'',
           team_rnd:(d as any).team_rnd||'',
@@ -68,10 +71,12 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
       await supabase.from('piket_tamu_detail').delete().eq('piket_id',row.id);
       const editedByName=currentUser?.full_name||null;
       const now=new Date().toISOString();
-      const ins=entries.filter(e=>e.jenis_kegiatan).map(e=>({
-        piket_id:row.id,jenis_kegiatan:e.jenis_kegiatan,
+      // id kegiatan dibuat di client agar bisa langsung dipakai sebagai kegiatan_id produk_lain
+      const newId=()=>(typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():`kg-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const withId=entries.filter(e=>e.jenis_kegiatan).map(e=>({kgId:newId(),e}));
+      const ins=withId.map(({kgId,e})=>({
+        id:kgId,piket_id:row.id,jenis_kegiatan:e.jenis_kegiatan,
         jam_mulai:e.jam_mulai||null,jam_selesai:e.jam_selesai||null,produk:e.produk,
-        produk_lain:(e.produk_lain||[]).filter(x=>x.nama.trim()!==''||x.watt>0),
         tamu_instansi:e.jenis_kegiatan==='Demo Product'?(e.tamu_instansi||null):null,
         nama_sales:e.jenis_kegiatan==='Demo Product'?(e.nama_sales||null):null,
         sales_division:e.jenis_kegiatan==='Demo Product'?(e.sales_division||null):null,
@@ -82,15 +87,13 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
         updated_at:now,
         edited_by_name:editedByName,
       }));
-      if(ins.length>0){
-        let{error}=await supabase.from('piket_tamu_detail').insert(ins);
-        if(error&&/produk_lain/i.test(error.message)){
-          // kolom produk_lain belum ada (migration belum jalan) → simpan tanpa kolom itu
-          const insNoPL=ins.map(e=>{const c={...e} as Record<string,unknown>;delete c.produk_lain;return c;});
-          ({error}=await supabase.from('piket_tamu_detail').insert(insNoPL));
-        }
-        if(error)throw error;
-      }
+      if(ins.length>0){const{error}=await supabase.from('piket_tamu_detail').insert(ins);if(error)throw error;}
+      // Produk Lain → tabel piket_produk_lain (kegiatan_id = id kegiatan yg barusan dibuat)
+      const plRows=withId.flatMap(({kgId,e})=>
+        (e.produk_lain||[]).filter(x=>x.nama.trim()!==''||(x.watt||0)>0)
+          .map(pl=>({kegiatan_id:kgId,piket_id:row.id,nama:pl.nama.trim(),watt:pl.watt||0}))
+      );
+      if(plRows.length>0){const{error:plErr}=await supabase.from('piket_produk_lain').insert(plRows);if(plErr)console.warn('Gagal simpan produk_lain:',plErr.message);}
       const fd=ins.find(e=>e.jenis_kegiatan==='Demo Product');
 
       const updatePayload: Record<string,any> = {
