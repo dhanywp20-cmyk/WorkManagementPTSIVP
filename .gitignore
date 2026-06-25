@@ -39,5 +39,6 @@ Thumbs.db
 
 # Claude Code
 .claude/
+.git-commit-msg.tmp
 
 .vercel

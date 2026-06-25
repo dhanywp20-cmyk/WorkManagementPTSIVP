@@ -73,7 +73,7 @@ export function ViewModal({
             <div className="bg-gray-50 rounded-xl border border-gray-200 p-3">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Assign To</p>
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                   {project.handler_name.charAt(0)}
                 </div>
                 <div>
@@ -94,7 +94,7 @@ export function ViewModal({
           {/* Info project */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="px-4 py-2.5 border-b border-gray-100" style={{ background: 'rgba(99,102,241,0.05)' }}>
-              <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">📋 Informasi Project</p>
+              <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider">📋 Informasi Project</p>
             </div>
             <div className="divide-y divide-gray-100">
               <InfoRow icon="📦" label="Product / Unit" value={project.product || '—'} />
@@ -108,7 +108,7 @@ export function ViewModal({
                   <span className="text-base mt-0.5">🔖</span>
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">No. COS Project</p>
-                    <p className="font-mono font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 inline-block text-sm mt-0.5">
+                    <p className="font-mono font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 inline-block text-sm mt-0.5">
                       {project.cos_project_no}
                     </p>
                   </div>
@@ -174,19 +174,19 @@ export function ViewModal({
           {/* Biaya & Distribusi */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="px-4 py-2.5 border-b border-gray-100" style={{ background: 'rgba(99,102,241,0.05)' }}>
-              <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">💰 Biaya & Distribusi Incentive</p>
+              <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider">💰 Biaya & Distribusi Incentive</p>
             </div>
             {project.biaya_cadangan > 0 ? (
               <div className="p-3 space-y-2">
-                <div className="flex items-center justify-between bg-indigo-50 rounded-lg px-3 py-2.5 border border-indigo-100">
-                  <p className="text-sm text-indigo-700 font-semibold">Biaya Cadangan</p>
+                <div className="flex items-center justify-between bg-rose-50 rounded-lg px-3 py-2.5 border border-rose-100">
+                  <p className="text-sm text-rose-700 font-semibold">Biaya Cadangan</p>
                   <div className="flex items-center gap-2">
-                    <p className="text-base font-bold text-indigo-600">{fmtRp(project.biaya_cadangan)}</p>
+                    <p className="text-base font-bold text-rose-600">{fmtRp(project.biaya_cadangan)}</p>
                     {canInputBiaya && onRecalculate && (
                       <button
                         onClick={onRecalculate}
                         title="Hitung ulang distribusi berdasarkan formula terbaru"
-                        className="text-[11px] font-semibold text-indigo-400 hover:text-indigo-700 border border-indigo-200 hover:border-indigo-400 rounded-lg px-2 py-0.5 transition-all bg-white"
+                        className="text-[11px] font-semibold text-rose-400 hover:text-rose-700 border border-rose-200 hover:border-rose-400 rounded-lg px-2 py-0.5 transition-all bg-white"
                       >
                         🔄 Recalculate
                       </button>
@@ -197,7 +197,7 @@ export function ViewModal({
                   const isInstaller = d.role_type === 'installer';
                   const isResigned  = d.member_status === 'resigned';
                   const ri = ({
-                    handler:    { cls: 'bg-indigo-50 border-indigo-200',  icon: '⭐', label: 'PIC',        color: 'indigo'  as const },
+                    handler:    { cls: 'bg-rose-50 border-rose-200',  icon: '⭐', label: 'PIC',        color: 'indigo'  as const },
                     backup:     { cls: 'bg-blue-50 border-blue-200',      icon: '🤝', label: 'Support',    color: 'blue'    as const },
                     installer:  { cls: 'bg-sky-50 border-sky-200',        icon: '🔧', label: 'Installer',  color: 'blue'    as const },
                     atasan:     { cls: 'bg-purple-50 border-purple-200',  icon: '👔', label: 'Manager',    color: 'purple'  as const },
@@ -288,7 +288,7 @@ export function ViewModal({
             </button>
           )}
           {canInputBiaya && (
-            <button onClick={onInputBiaya} className={`flex-1 px-3 py-2 rounded-xl text-xs font-bold text-white hover:opacity-90`} style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+            <button onClick={onInputBiaya} className={`flex-1 px-3 py-2 rounded-xl text-xs font-bold text-white hover:opacity-90`} style={{ background: 'linear-gradient(135deg,#f43f5e,#8b5cf6)' }}>
               {project.biaya_cadangan > 0 ? '✏️ Edit Biaya' : '💵 Input Biaya'}
             </button>
           )}
@@ -344,9 +344,9 @@ export function BiayaModal({
         <h3 className="font-bold text-gray-800 text-lg">
           {project.biaya_cadangan > 0 ? '✏️ Edit Biaya Cadangan' : '💵 Input Biaya Cadangan'}
         </h3>
-        <div className="bg-indigo-50 rounded-xl p-3 text-sm">
-          <p className="font-semibold text-indigo-700">{project.project_name}</p>
-          <p className="text-indigo-500 text-xs">{project.category} · Handler: {project.handler_name}</p>
+        <div className="bg-rose-50 rounded-xl p-3 text-sm">
+          <p className="font-semibold text-rose-700">{project.project_name}</p>
+          <p className="text-rose-500 text-xs">{project.category} · Handler: {project.handler_name}</p>
         </div>
         {settings && (() => {
           const isIncentiveCat = (INCENTIVE_TRIGGER_CATEGORIES as string[]).includes(project.category);
@@ -427,8 +427,8 @@ export function BiayaModal({
             className={inputCls}
           />
           {biayaInput && settings && (
-            <div className="mt-2 p-3 bg-indigo-50 rounded-xl space-y-1 text-xs">
-              <p className="font-semibold text-indigo-700">Preview distribusi:</p>
+            <div className="mt-2 p-3 bg-rose-50 rounded-xl space-y-1 text-xs">
+              <p className="font-semibold text-rose-700">Preview distribusi:</p>
               {(() => {
                 const base = parseFloat(biayaInput);
                 if (isNaN(base) || base <= 0) return null;
@@ -473,7 +473,7 @@ export function BiayaModal({
         </div>
         <div className="flex gap-2 pt-2">
           <button onClick={onClose} className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200">Batal</button>
-          <button onClick={onSave} disabled={saving} className={`flex-1 ${btnPrimary}`} style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+          <button onClick={onSave} disabled={saving} className={`flex-1 ${btnPrimary}`} style={{ background: 'linear-gradient(135deg,#f43f5e,#8b5cf6)' }}>
             {saving ? 'Menyimpan...' : '💾 Simpan & Kalkulasi'}
           </button>
         </div>
@@ -611,7 +611,7 @@ export function PaidModal({ project, onClose, onConfirm }: PaidModalProps) {
         <p className="text-sm text-gray-500">
           Project <strong className="text-gray-700">{project.project_name}</strong> akan ditandai sebagai{' '}
           <strong className="text-emerald-600">LUNAS</strong> dengan total incentive{' '}
-          <strong className="text-indigo-600">{fmtRp(project.biaya_cadangan)}</strong>.
+          <strong className="text-rose-600">{fmtRp(project.biaya_cadangan)}</strong>.
         </p>
         <div className="flex gap-2">
           <button onClick={onClose} className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200">Batal</button>

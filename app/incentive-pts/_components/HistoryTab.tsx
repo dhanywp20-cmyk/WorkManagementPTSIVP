@@ -40,7 +40,7 @@ export function HistoryTab({ projects, disbursements, projectMatchesFilter }: Pr
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-gray-400">Biaya Cadangan</p>
-                    <p className="font-bold text-indigo-600">{fmtRp(proj.biaya_cadangan)}</p>
+                    <p className="font-bold text-rose-600">{fmtRp(proj.biaya_cadangan)}</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -49,7 +49,7 @@ export function HistoryTab({ projects, disbursements, projectMatchesFilter }: Pr
                       key={d.id}
                       className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs border ${
                         d.role_type === 'handler'
-                          ? 'bg-indigo-50 border-indigo-200'
+                          ? 'bg-rose-50 border-rose-200'
                           : 'bg-blue-50 border-blue-200'
                       }`}
                     >

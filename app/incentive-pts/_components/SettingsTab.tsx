@@ -83,7 +83,7 @@ export function SettingsTab({
           onClick={onSave}
           disabled={savingSettings || !totalOk}
           className={`${btnPrimary} w-full`}
-          style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}
+          style={{ background: 'linear-gradient(135deg,#f43f5e,#8b5cf6)' }}
         >
           {savingSettings ? 'Menyimpan...' : '💾 Simpan Setting'}
         </button>
@@ -97,11 +97,11 @@ export function SettingsTab({
       </div>
 
       {/* Info struktur tim — dikelola di admin panel */}
-      <div className="md:col-span-2 bg-indigo-50/60 rounded-2xl border border-indigo-100 p-4 flex items-start gap-3">
+      <div className="md:col-span-2 bg-rose-50/60 rounded-2xl border border-rose-100 p-4 flex items-start gap-3">
         <span className="text-lg flex-shrink-0">🎖️</span>
-        <div className="text-xs text-indigo-700 leading-relaxed">
+        <div className="text-xs text-rose-700 leading-relaxed">
           <p className="font-bold">Struktur Supervisor &amp; Manager PTS</p>
-          <p className="text-indigo-500 mt-0.5">
+          <p className="text-rose-500 mt-0.5">
             Penentuan Supervisor &amp; Manager untuk distribusi incentive mengikuti hierarki di{' '}
             <strong>Admin Panel → User Management → Mapping Atasan</strong> (grup <strong>PTS</strong>).
             Pastikan grup PTS sudah dipetakan ke Supervisor (jabatan Supervisor) dan Manager (jabatan Manager).
@@ -181,7 +181,7 @@ function AllowBiayaList({
             <div
               key={u.id}
               className={`flex items-center justify-between p-3 rounded-xl border transition-colors ${
-                u.allow_incentive_input ? 'bg-indigo-50 border-indigo-200' : 'bg-gray-50 border-gray-200'
+                u.allow_incentive_input ? 'bg-rose-50 border-rose-200' : 'bg-gray-50 border-gray-200'
               }`}
             >
               <div>
@@ -191,7 +191,7 @@ function AllowBiayaList({
               <button
                 onClick={() => toggle(u.id!, !!u.allow_incentive_input)}
                 className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
-                  u.allow_incentive_input ? 'bg-indigo-500' : 'bg-gray-300'
+                  u.allow_incentive_input ? 'bg-rose-500' : 'bg-gray-300'
                 }`}
               >
                 <span

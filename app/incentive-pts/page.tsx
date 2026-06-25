@@ -224,7 +224,7 @@ export default function IncentivePTSPage() {
   if (!appReady) return (
     <div className="flex items-center justify-center" style={{ minHeight: '100vh', backgroundImage: "url('/IVP_Background.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="flex flex-col items-center gap-3 bg-white/90 rounded-2xl px-8 py-6 shadow-xl">
-        <div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#6366f1' }} />
+        <div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#f43f5e' }} />
         <p className="text-slate-500 text-sm font-semibold">Memuat Incentive PTS...</p>
       </div>
     </div>
@@ -271,16 +271,16 @@ export default function IncentivePTSPage() {
 
       {/* Header */}
       <header className="flex-shrink-0 z-50"
-        style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderBottom: '3px solid #6366f1', boxShadow: '0 2px 12px rgba(99,102,241,0.10)' }}>
+        style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderBottom: '3px solid #f43f5e', boxShadow: '0 2px 12px rgba(99,102,241,0.10)' }}>
         <div className="w-full px-4 py-3 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg flex-shrink-0">💰</div>
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center text-white text-lg flex-shrink-0">💰</div>
           <div className="flex-1 min-w-0">
             <h1 className="text-base font-bold text-gray-800">Incentive PTS</h1>
             <p className="text-[11px] text-gray-400">IndoVisual Professional Tools</p>
           </div>
           <div className="hidden sm:flex items-center gap-4 text-right">
             <div><p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Total Pool</p><p className="text-sm font-black text-emerald-600">{formatRupiah(totalPool)}</p></div>
-            <div><p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Projects</p><p className="text-sm font-black text-indigo-600">{projects.length}</p></div>
+            <div><p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Projects</p><p className="text-sm font-black text-rose-600">{projects.length}</p></div>
             <div><p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Pending Nominal</p><p className="text-sm font-black text-amber-600">{pendingNominal}</p></div>
             <div><p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Pending Tranche</p><p className="text-sm font-black text-rose-600">{pendingTranche}</p></div>
           </div>
@@ -300,7 +300,7 @@ export default function IncentivePTSPage() {
             .filter(t => t.show)
             .map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
-                className={`px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-all ${tab === t.id ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                className={`px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-all ${tab === t.id ? 'border-rose-500 text-rose-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
                 {t.label}
               </button>
             ))}
@@ -311,7 +311,7 @@ export default function IncentivePTSPage() {
       <div className="flex-1 overflow-y-auto p-4">
         {loading && (
           <div className="flex justify-center py-16">
-            <div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#6366f1' }} />
+            <div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#f43f5e' }} />
           </div>
         )}
 
@@ -322,10 +322,10 @@ export default function IncentivePTSPage() {
               <div className="flex flex-wrap gap-2 items-center justify-between">
                 <input value={searchProject} onChange={e => setSearchProject(e.target.value)}
                   placeholder="🔍 Cari project atau handler..."
-                  className="flex-1 min-w-[180px] max-w-sm px-4 py-2 rounded-lg text-sm outline-none bg-gray-50 border border-gray-200 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-indigo-400" />
+                  className="flex-1 min-w-[180px] max-w-sm px-4 py-2 rounded-lg text-sm outline-none bg-gray-50 border border-gray-200 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-rose-400" />
                 <div className="flex items-center gap-2 flex-wrap">
                   {canInputNominal(currentUser) && (
-                    <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200">✏️ Kamu bisa input nominal</span>
+                    <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200">✏️ Kamu bisa input nominal</span>
                   )}
                   {canInputNominal(currentUser) && (
                     <button onClick={handleExportSummary} disabled={exporting}
@@ -367,17 +367,17 @@ export default function IncentivePTSPage() {
                       <p className="text-gray-400 text-xs mt-1">Data muncul dari Reminder Schedule kategori Konfigurasi / Training yang sudah Completed</p>
                     </td></tr>
                   ) : filteredProjects.map((p, idx) => {
-                    const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-indigo-50/30';
+                    const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-rose-50/30';
                     const cellCls = `border border-gray-200 px-3 py-2.5 ${rowBg}`;
                     const hasNominal = (p.incentive_value || 0) > 0;
                     const projTranches = tranches.filter(t => t.project_id === p.id);
                     const handlerSplit = calcHandlerSplit(p);
                     return (
-                      <tr key={p.id} className="hover:bg-indigo-50/60 transition-colors group">
+                      <tr key={p.id} className="hover:bg-rose-50/60 transition-colors group">
                         <td className={`${cellCls} text-xs text-gray-400 text-center`}>{idx + 1}</td>
                         <td className={`${cellCls} max-w-[210px]`}>
                           <p className="font-semibold text-gray-800 leading-snug truncate max-w-[195px]" title={p.project_name}>{p.project_name}</p>
-                          {p.product && <p className="text-[11px] text-indigo-500 mt-0.5 truncate max-w-[195px]" title={p.product}>📦 {p.product}</p>}
+                          {p.product && <p className="text-[11px] text-rose-500 mt-0.5 truncate max-w-[195px]" title={p.product}>📦 {p.product}</p>}
                           {p.address && <p className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[195px]" title={p.address}>📍 {p.address}</p>}
                         </td>
                         <td className={cellCls}>
@@ -417,7 +417,7 @@ export default function IncentivePTSPage() {
                           <td className={`${cellCls} text-right`}>
                             {handlerSplit ? (
                               <div>
-                                <p className="text-sm font-black text-indigo-700">{formatRupiah(handlerSplit.amt)}</p>
+                                <p className="text-sm font-black text-rose-700">{formatRupiah(handlerSplit.amt)}</p>
                                 <p className="text-[10px] text-gray-400">{handlerSplit.pct.toFixed(0)}% pool</p>
                               </div>
                             ) : <span className="text-xs text-gray-300">—</span>}
@@ -444,7 +444,7 @@ export default function IncentivePTSPage() {
                             {canInputNominal(currentUser) && (
                               <button onClick={() => { setNominalProject(p); setNominalValue(String(p.incentive_value || '')); }}
                                 title="Input Nominal"
-                                className="inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all bg-white border-slate-200 text-indigo-500 hover:bg-indigo-50 hover:border-indigo-300 hover:shadow-sm">
+                                className="inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all bg-white border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-300 hover:shadow-sm">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                               </button>
                             )}
@@ -466,7 +466,7 @@ export default function IncentivePTSPage() {
                     <tr style={{ background: 'rgba(99,102,241,0.06)' }}>
                       <td colSpan={6} className="px-3 py-2.5 border border-gray-200 text-xs font-bold text-gray-600 text-right">TOTAL</td>
                       <td className="px-3 py-2.5 border border-gray-200 text-right text-sm font-black text-emerald-700">{formatRupiah(totalPool)}</td>
-                      <td className="px-3 py-2.5 border border-gray-200 text-right text-sm font-black text-indigo-700">
+                      <td className="px-3 py-2.5 border border-gray-200 text-right text-sm font-black text-rose-700">
                         {formatRupiah(filteredProjects.reduce((s, p) => s + (calcHandlerSplit(p)?.amt || 0), 0))}
                       </td>
                       <td colSpan={2} className="border border-gray-200" />
@@ -485,7 +485,7 @@ export default function IncentivePTSPage() {
               <div className="flex gap-2 items-center">
                 <label className="text-xs font-bold text-gray-500">Tahun:</label>
                 <select value={filterYear} onChange={e => setFilterYear(Number(e.target.value))}
-                  className="px-3 py-2 rounded-lg text-sm border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                  className="px-3 py-2 rounded-lg text-sm border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-rose-400">
                   {uniqueYears.map(y => <option key={y} value={y}>{y}</option>)}
                   {uniqueYears.length === 0 && <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>}
                 </select>
@@ -493,7 +493,7 @@ export default function IncentivePTSPage() {
               <div className="flex gap-2">
                 {isAdmin(currentUser) && (
                   <button onClick={() => { setBatchYear(filterYear); setBatchConfirm(true); }}
-                    className="px-4 py-2 rounded-xl text-sm font-bold text-white hover:opacity-90" style={{ background: 'linear-gradient(135deg,#4f46e5,#7c3aed)' }}>
+                    className="px-4 py-2 rounded-xl text-sm font-bold text-white hover:opacity-90" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
                     🚀 Process Batch {filterYear}
                   </button>
                 )}
@@ -521,9 +521,9 @@ export default function IncentivePTSPage() {
                       </td></tr>
                     ) : filteredTranches.map((t, idx) => {
                       const st = TRANCHE_STATUS[t.status] || TRANCHE_STATUS.pending;
-                      const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-indigo-50/30';
+                      const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-rose-50/30';
                       return (
-                        <tr key={t.id} className={`hover:bg-indigo-50/60 transition-colors ${rowBg}`}>
+                        <tr key={t.id} className={`hover:bg-rose-50/60 transition-colors ${rowBg}`}>
                           <td className="px-3 py-2.5 border border-gray-200">
                             <p className="font-bold text-gray-800">{t.project?.project_name || '—'}</p>
                             <p className="text-[10px] text-gray-400">{t.project?.category}</p>
@@ -597,7 +597,7 @@ export default function IncentivePTSPage() {
                     <p className="text-xs text-gray-400">{u.username as string} · {u.role as string}{u.team_type ? ` · ${u.team_type}` : ''}</p>
                   </div>
                   <button onClick={() => handleToggleAllowInput(u.id as string, !!u.allow_incentive_input)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${u.allow_incentive_input ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-indigo-300'}`}>
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${u.allow_incentive_input ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-rose-300'}`}>
                     {u.allow_incentive_input ? '✅ Diizinkan' : 'Izinkan'}
                   </button>
                 </div>
@@ -614,9 +614,9 @@ export default function IncentivePTSPage() {
       {nominalProject && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4" onClick={e => { if (e.target === e.currentTarget) setNominalProject(null); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" style={{ border: '1.5px solid rgba(99,102,241,0.3)' }}>
-            <div className="px-5 py-4" style={{ background: 'linear-gradient(135deg,#4f46e5,#7c3aed)' }}>
+            <div className="px-5 py-4" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
               <h3 className="text-base font-bold text-white">💰 Input Nominal Incentive</h3>
-              <p className="text-xs text-indigo-200 mt-0.5 truncate">{nominalProject.project_name}</p>
+              <p className="text-xs text-rose-200 mt-0.5 truncate">{nominalProject.project_name}</p>
             </div>
             <div className="p-5 space-y-4">
               {/* BAST — auto from reminder */}
@@ -650,15 +650,15 @@ export default function IncentivePTSPage() {
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">Rp</span>
                   <input type="number" min={0} value={nominalValue} onChange={e => setNominalValue(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-indigo-400"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-rose-400"
                     placeholder="Contoh: 15000000" autoFocus />
                 </div>
                 {nominalValue && Number(nominalValue) > 0 && (
-                  <div className="mt-2 p-3 rounded-xl bg-indigo-50 border border-indigo-100 space-y-1">
-                    <p className="text-xs font-bold text-indigo-600">{formatRupiah(Number(nominalValue))}</p>
+                  <div className="mt-2 p-3 rounded-xl bg-rose-50 border border-rose-100 space-y-1">
+                    <p className="text-xs font-bold text-rose-600">{formatRupiah(Number(nominalValue))}</p>
                     {nominalProject.mode_penyelesaian && (() => {
                       const split = calcHandlerSplit({ ...nominalProject, incentive_value: Number(nominalValue) });
-                      return split ? <p className="text-[11px] text-gray-500">Bagian handler: <strong className="text-indigo-700">{formatRupiah(split.amt)}</strong> ({formatPct(split.pct)})</p> : null;
+                      return split ? <p className="text-[11px] text-gray-500">Bagian handler: <strong className="text-rose-700">{formatRupiah(split.amt)}</strong> ({formatPct(split.pct)})</p> : null;
                     })()}
                   </div>
                 )}
@@ -667,7 +667,7 @@ export default function IncentivePTSPage() {
             <div className="flex gap-3 px-5 pb-5">
               <button onClick={() => { setNominalProject(null); setNominalValue(''); }} className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-gray-500 border border-gray-200 hover:bg-gray-50">Batal</button>
               <button onClick={handleSaveNominal} disabled={savingNominal}
-                className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-50" style={{ background: 'linear-gradient(135deg,#4f46e5,#7c3aed)' }}>
+                className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-50" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
                 {savingNominal && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                 Simpan
               </button>
@@ -680,11 +680,11 @@ export default function IncentivePTSPage() {
       {detailProject && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setDetailProject(null); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-4 overflow-hidden border border-gray-200">
-            <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#4f46e5,#7c3aed)' }}>
+            <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-bold text-white">{detailProject.project_name}</h2>
-                  <p className="text-xs text-indigo-200 mt-0.5">{detailProject.assign_name} · {detailProject.category}</p>
+                  <p className="text-xs text-rose-200 mt-0.5">{detailProject.assign_name} · {detailProject.category}</p>
                 </div>
                 <button onClick={() => setDetailProject(null)} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -892,7 +892,7 @@ export default function IncentivePTSPage() {
             <div className="flex gap-3">
               <button onClick={() => { setShowGenerateModal(false); setGenerateProject(null); }} className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-gray-500 border border-gray-200 hover:bg-gray-50">Batal</button>
               <button onClick={handleGenerateTranches} disabled={generating}
-                className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-50" style={{ background: 'linear-gradient(135deg,#4f46e5,#7c3aed)' }}>
+                className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-50" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
                 {generating && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                 Generate
               </button>
@@ -910,7 +910,7 @@ export default function IncentivePTSPage() {
             {(() => {
               const cnt = tranches.filter(t => t.payment_year === batchYear && t.status === 'pending').length;
               return cnt > 0
-                ? <p className="text-sm font-bold text-indigo-600 mb-3">📋 {cnt} tranche siap diproses</p>
+                ? <p className="text-sm font-bold text-rose-600 mb-3">📋 {cnt} tranche siap diproses</p>
                 : <p className="text-sm font-bold text-amber-600 mb-3">⚠️ Tidak ada tranche pending untuk tahun {batchYear}. Pastikan tranche sudah di-generate terlebih dahulu.</p>;
             })()}
             <div className="px-4 py-3 rounded-xl mb-4 bg-red-50 border border-red-200">

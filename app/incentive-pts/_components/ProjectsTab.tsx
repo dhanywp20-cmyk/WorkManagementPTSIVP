@@ -79,14 +79,14 @@ export function ProjectsTab({
               </tr>
             ) : (
               filteredProjects.map((proj, idx) => {
-                const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-indigo-50/30';
+                const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-rose-50/30';
                 const cellCls = `border border-gray-200 px-3 py-2.5 ${rowBg}`;
                 return (
-                  <tr key={proj.id} className="hover:bg-indigo-50/60 transition-colors group">
+                  <tr key={proj.id} className="hover:bg-rose-50/60 transition-colors group">
                     <td className={`${cellCls} text-xs text-gray-400 font-medium text-center`}>{idx + 1}</td>
                     <td className={cellCls}>
                       <p className="font-semibold text-gray-800 text-sm leading-snug">{proj.project_name}</p>
-                      <p className="text-[11px] text-indigo-500 mt-0.5 truncate max-w-[220px]">
+                      <p className="text-[11px] text-rose-500 mt-0.5 truncate max-w-[220px]">
                         📦 {proj.product ?? <span className="text-gray-300">—</span>}
                       </p>
                       {proj.address && (
@@ -126,7 +126,7 @@ export function ProjectsTab({
                     </td>
                     <td className={cellCls}>
                       {proj.cos_project_no ? (
-                        <span className="text-sm font-mono font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                        <span className="text-sm font-mono font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
                           {proj.cos_project_no}
                         </span>
                       ) : (
@@ -135,7 +135,7 @@ export function ProjectsTab({
                     </td>
                     <td className={`${cellCls} text-right`}>
                       {proj.biaya_cadangan > 0 ? (
-                        <p className="font-bold text-indigo-600 text-sm">{fmtRp(proj.biaya_cadangan)}</p>
+                        <p className="font-bold text-rose-600 text-sm">{fmtRp(proj.biaya_cadangan)}</p>
                       ) : (
                         <span className="text-gray-300 text-xs">Belum diinput</span>
                       )}
@@ -168,7 +168,7 @@ export function ProjectsTab({
             Menampilkan {filteredProjects.length} dari {totalProjects} project
           </span>
           <span className="text-xs text-gray-400">
-            Total: <strong className="text-indigo-600">{fmtRp(totalBiaya)}</strong>
+            Total: <strong className="text-rose-600">{fmtRp(totalBiaya)}</strong>
           </span>
         </div>
       )}

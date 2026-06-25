@@ -168,7 +168,7 @@ export function RekapTab({ projects, disbursements, isTeamPTS, isAdmin, currentU
                   {/* Quarter badge */}
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
-                    style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}
+                    style={{ background: 'linear-gradient(135deg,#f43f5e,#8b5cf6)' }}
                   >
                     {g.key.split('-')[1]}
                   </div>
@@ -184,7 +184,7 @@ export function RekapTab({ projects, disbursements, isTeamPTS, isAdmin, currentU
                   {/* Totals */}
                   <div className="text-right hidden sm:block">
                     <p className="text-xs text-gray-400">Total Biaya</p>
-                    <p className="text-sm font-bold text-indigo-600">{fmtRp(g.totalBiaya)}</p>
+                    <p className="text-sm font-bold text-rose-600">{fmtRp(g.totalBiaya)}</p>
                   </div>
                   <div className="text-right hidden sm:block">
                     <p className="text-xs text-gray-400">Total Incentive</p>
@@ -204,7 +204,7 @@ export function RekapTab({ projects, disbursements, isTeamPTS, isAdmin, currentU
               <div className="sm:hidden px-5 pb-3 flex gap-4">
                 <div>
                   <p className="text-[10px] text-gray-400">Total Biaya</p>
-                  <p className="text-sm font-bold text-indigo-600">{fmtRp(g.totalBiaya)}</p>
+                  <p className="text-sm font-bold text-rose-600">{fmtRp(g.totalBiaya)}</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-gray-400">Total Incentive</p>
@@ -223,20 +223,20 @@ export function RekapTab({ projects, disbursements, isTeamPTS, isAdmin, currentU
                         const pct = g.totalIncentive > 0 ? (person.totalRp / g.totalIncentive) * 100 : 0;
                         return (
                           <div key={person.name} className="flex items-center gap-3">
-                            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
+                            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-rose-400 to-purple-500 flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
                               {pi + 1}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-2 mb-1">
                                 <span className="text-sm font-semibold text-gray-700 truncate">{person.name}</span>
-                                <span className="font-bold text-indigo-600 text-sm whitespace-nowrap">{fmtRp(person.totalRp)}</span>
+                                <span className="font-bold text-rose-600 text-sm whitespace-nowrap">{fmtRp(person.totalRp)}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 {/* Progress bar */}
                                 <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                                   <div
                                     className="h-full rounded-full"
-                                    style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#6366f1,#8b5cf6)' }}
+                                    style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#f43f5e,#8b5cf6)' }}
                                   />
                                 </div>
                                 <span className="text-[10px] text-gray-400 whitespace-nowrap flex gap-1">
@@ -269,7 +269,7 @@ export function RekapTab({ projects, disbursements, isTeamPTS, isAdmin, currentU
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             {proj.biaya_cadangan > 0 ? (
-                              <span className="text-xs font-semibold text-indigo-600">{fmtRp(proj.biaya_cadangan)}</span>
+                              <span className="text-xs font-semibold text-rose-600">{fmtRp(proj.biaya_cadangan)}</span>
                             ) : (
                               <span className="text-xs text-gray-400">Belum diinput</span>
                             )}

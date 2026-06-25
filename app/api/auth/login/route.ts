@@ -33,6 +33,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Username dan password wajib diisi.' }, { status: 400 });
     }
 
+    // ── Lockout brute-force ───────────────────────────────────────────────
+    // Kunci per-username (threshold ketat) supaya 1 akun yang dibrute-force
+    // diblok, tapi threshold IP dibuat longgar karena 1 kantor biasanya
+    // berbagi 1 IP publik (NAT) — jangan sampai 1 IP mengunci semua orang.
+    const windowStart = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const [byUser, byIp] = await Promise.all([
+      supabase.from('login_attempts').select('*', { count: 'exact', head: true })
+        .eq('success', false).eq('username', username).gte('attempted_at', windowStart),
+      (ip && ip !== 'unknown')
+        ? supabase.from('login_attempts').select('*', { count: 'exact', head: true })
+            .eq('success', false).eq('ip_address', ip).gte('attempted_at', windowStart)
+        : Promise.resolve({ count: 0 } as { count: number | null }),
+    ]);
+    if ((byUser.count ?? 0) >= 5 || (byIp.count ?? 0) >= 30) {
+      return NextResponse.json(
+        { error: 'Terlalu banyak percobaan login gagal. Coba lagi dalam 15 menit.' },
+        { status: 429 },
+      );
+    }
+
     // ── Ambil user ────────────────────────────────────────────────────────
     const { data: user, error: userErr } = await supabase
       .from('users')

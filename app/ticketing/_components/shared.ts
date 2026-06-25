@@ -1,24 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
-// ── WA via direct fetch ke Edge Function (sama seperti reminder-schedule) ─────
-export async function sendWANotif(body: Record<string, unknown>): Promise<void> {
-  try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    const res = await fetch(`${supabaseUrl}/functions/v1/swift-responder`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${anonKey}`,
-        "apikey": anonKey,
-      },
-      body: JSON.stringify(body),
-    });
-    await res.json();
-  } catch {
-    // silent — WA notif failure should not break main flow
-  }
-}
+// WA notif terpusat di lib/wa.ts — re-export agar call-site lama tetap jalan.
+export { sendWANotif } from '@/lib/wa';
 
 // ── Hierarki jabatan (bawah → atas) ──────────────────────────────────────────
 export const JABATAN_TIER: Record<string, number> = {

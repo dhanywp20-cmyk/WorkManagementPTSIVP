@@ -44,7 +44,7 @@ const BADGE_MAP: Record<string, string> = {
   gray:   'bg-gray-100 text-gray-600 border border-gray-200',
   red:    'bg-red-100 text-red-700 border border-red-200',
   purple: 'bg-purple-100 text-purple-700 border border-purple-200',
-  indigo: 'bg-indigo-100 text-indigo-700 border border-indigo-200',
+  indigo: 'bg-rose-100 text-rose-700 border border-rose-200',
 };
 
 export function Badge({

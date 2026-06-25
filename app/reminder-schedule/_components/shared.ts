@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { sendWA } from '@/lib/wa';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -170,28 +171,12 @@ export async function getFonnteToken(): Promise<string | null> {
   return null;
 }
 
-// ── WA via direct fetch ke Edge Function (custom auth, tanpa Supabase session) ─
+// WA terpusat di lib/wa.ts — wrapper menjaga signature lama (target, message, _meta).
 export async function sendFonnteWA(
   target: string,
   message: string,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _meta?: Record<string, unknown>
 ): Promise<{ ok: boolean; reason?: string }> {
-  try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    const res = await fetch(`${supabaseUrl}/functions/v1/swift-responder`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${anonKey}`,
-        'apikey': anonKey,
-      },
-      body: JSON.stringify({ type: 'reminder_wa', target, message }),
-    });
-    const data = await res.json();
-    return { ok: data?.ok === true, reason: data?.reason };
-  } catch {
-    return { ok: false, reason: 'network error' };
-  }
+  return sendWA(target, message);
 }
