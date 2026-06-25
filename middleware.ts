@@ -14,6 +14,7 @@ const PUBLIC_EXACT = [
   '/api/auth/verify-otp',
   '/api/auth/hash',
   '/api/auth/session',
+  '/api/auth/set-credential', // registrasi publik: set password user baru (first-time only)
 ];
 
 // Cron jobs are called by Vercel scheduler with CRON_SECRET, not a user session

@@ -288,12 +288,6 @@ export default function Dashboard() {
     try {
       const { data: existing } = await supabase.from('users').select('id').eq('username', username.trim().toLowerCase()).maybeSingle();
       if (existing) { setRegisterErr('Username / email sudah terdaftar. Gunakan username lain.'); setRegisterLoading(false); return; }
-      const hashRes = await fetch('/api/auth/hash', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
-      const { hash: pwdHash } = await hashRes.json();
       const { data: newUser, error } = await supabase.from('users').insert([{
         full_name: full_name.trim(),
         username: username.trim().toLowerCase(),
@@ -305,13 +299,18 @@ export default function Dashboard() {
         allowed_menus: [],
       }]).select('id').single();
       if (error) throw error;
-      // Simpan password hash ke user_credentials (terpisah dari users)
+      // Simpan password via server route (hash + insert ke user_credentials di server,
+      // supaya browser tak perlu menulis ke tabel kredensial).
       if (newUser?.id) {
-        await supabase.from('user_credentials').insert({
-          user_id: newUser.id,
-          password_hash: pwdHash,
-          algorithm: 'bcrypt',
+        const credRes = await fetch('/api/auth/set-credential', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: newUser.id, password }),
         });
+        if (!credRes.ok) {
+          const j = await credRes.json().catch(() => ({}));
+          throw new Error(j.error || 'Gagal menyimpan password.');
+        }
       }
       setRegisterSuccess(true);
       // Notify all admins of new pending user

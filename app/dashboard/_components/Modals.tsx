@@ -2671,19 +2671,14 @@ export function AccountSettingsInline() {
     }
 
     setSaving(true);
-    // Hash password dulu sebelum simpan ke user_credentials
-    let pwdHash = '';
-    if (newUser.password) {
-      const hashRes = await fetch('/api/auth/hash', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: newUser.password }),
-      });
-      if (hashRes.ok) { const hd = await hashRes.json(); pwdHash = hd.hash ?? ''; }
-    }
     const insertPayload: Record<string, unknown> = { username: newUser.username, full_name: newUser.full_name, role, team_type, allowed_menus: newUser.allowed_menus, jabatan: newUser.jabatan || null, phone_number: newUser.phone_number || null, sales_division: (newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') ? (newUser.sales_division || null) : null };
     const { data: createdUser, error } = await supabase.from('users').insert([insertPayload]).select('id').single();
-    if (!error && createdUser?.id && pwdHash) {
-      await supabase.from('user_credentials').insert({ user_id: createdUser.id, password_hash: pwdHash, algorithm: 'bcrypt' });
+    // Simpan password via server route (hash + insert ke user_credentials di server).
+    if (!error && createdUser?.id && newUser.password) {
+      await fetch('/api/auth/set-credential', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: createdUser.id, password: newUser.password }),
+      });
     }
     setSaving(false);
     if (error) { notify('error', 'Gagal menambah akun: ' + error.message); return; }
