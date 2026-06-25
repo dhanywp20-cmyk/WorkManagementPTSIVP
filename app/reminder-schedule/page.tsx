@@ -14,7 +14,7 @@ import {
   PRIORITY_CONFIG, STATUS_CONFIG, CATEGORIES, CATEGORY_CONFIG,
   REPEAT_OPTIONS, SALES_DIVISIONS, PIE_COLORS,
   formatDate, formatDatetime, isDueToday,
-  getFonnteToken, sendFonnteWA,
+  sendFonnteWA,
 } from './_components/shared';
 import { PriorityBadge, StatusBadge, CategoryBadge } from './_components/Badges';
 import {

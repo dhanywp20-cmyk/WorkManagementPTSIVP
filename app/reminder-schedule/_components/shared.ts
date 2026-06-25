@@ -149,27 +149,9 @@ export function isDueToday(due_date: string) {
   return due_date === new Date().toISOString().split('T')[0];
 }
 
-// ─── Fonnte WA via Supabase Edge Function ────────────────────────────────────
-let _fonnteToken: string | null = null;
-export async function getFonnteToken(): Promise<string | null> {
-  if (_fonnteToken) return _fonnteToken;
-  try {
-    const { data } = await supabase
-      .from('app_settings')
-      .select('value')
-      .eq('key', 'fonnte_token')
-      .single();
-    if (data?.value) {
-      // value di JSONB bisa berupa string dengan kutip: '"token"' → strip kutip
-      const raw = data.value;
-      _fonnteToken = typeof raw === 'string' ? raw.replace(/^"|"$/g, '') : String(raw);
-      return _fonnteToken;
-    }
-  } catch { /* fallback ke env */ }
-  const envToken = process.env.NEXT_PUBLIC_FONNTE_TOKEN;
-  if (envToken) { _fonnteToken = envToken; return _fonnteToken; }
-  return null;
-}
+// Token Fonnte TIDAK lagi diambil di sisi klien — dulu getFonnteToken() menarik
+// token rahasia ke browser via app_settings (anon). Pengiriman WA sekarang lewat
+// Edge Function swift-responder yang memegang token-nya sendiri di server.
 
 // WA terpusat di lib/wa.ts — wrapper menjaga signature lama (target, message, _meta).
 export async function sendFonnteWA(

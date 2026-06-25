@@ -90,13 +90,18 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Ambil Fonnte token dari app_settings, fallback ke env var
-    const { data: tokenRow } = await supabase
-      .from('app_settings')
-      .select('value')
-      .eq('key', 'fonnte_token')
-      .maybeSingle();
-    const fonnteToken = tokenRow?.value || process.env.NEXT_PUBLIC_FONNTE_TOKEN || '';
+    // Token Fonnte: utamakan env server-only FONNTE_TOKEN (tidak terekspos ke
+    // browser). Fallback ke app_settings / NEXT_PUBLIC_ hanya untuk transisi —
+    // sebaiknya hapus baris app_settings.fonnte_token & set FONNTE_TOKEN saja.
+    let fonnteToken = process.env.FONNTE_TOKEN || '';
+    if (!fonnteToken) {
+      const { data: tokenRow } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'fonnte_token')
+        .maybeSingle();
+      fonnteToken = (tokenRow?.value as string) || process.env.NEXT_PUBLIC_FONNTE_TOKEN || '';
+    }
 
     if (!fonnteToken) {
       return NextResponse.json({ error: 'Fonnte token belum dikonfigurasi.' }, { status: 500 });
