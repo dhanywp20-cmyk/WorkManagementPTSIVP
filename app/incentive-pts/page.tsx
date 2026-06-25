@@ -12,6 +12,7 @@ import {
   ROLE_LABELS, TRANCHE_STATUS,
 } from './_components/calc';
 import { exportPengajuanIncentive, exportSummaryIncentive } from './_components/exportPengajuan';
+import { adminSetIncentiveInput } from '@/lib/admin-users';
 
 void insertSplits; void validateSplitTotal;
 
@@ -215,7 +216,7 @@ export default function IncentivePTSPage() {
   }
 
   async function handleToggleAllowInput(userId: string, current: boolean) {
-    const { error } = await supabase.from('users').update({ allow_incentive_input: !current }).eq('id', userId);
+    const { error } = await adminSetIncentiveInput(userId, !current);
     if (error) { notify('error', error.message); return; }
     setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, allow_incentive_input: !current } : u));
     notify('success', !current ? 'Akses diberikan' : 'Akses dicabut');

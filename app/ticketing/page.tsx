@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase, supabaseServices } from "@/lib/supabase";
 import { setSession, clearSession, getSession } from "@/lib/auth";
+import { adminCreateUser } from "@/lib/admin-users";
 import { notifyTicketAssigned, createNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
 
@@ -1252,7 +1253,7 @@ function TicketingSystemInner() {
     if (newUser.role === "guest") finalTeamType = "Guest";
     else if (newUser.role === "admin") finalTeamType = "Team PTS IVP";
     try {
-      const { error: userError } = await supabase.from("users").insert([{ username: lowerUsername, password: newUser.password, full_name: newUser.full_name, role: newUser.role, team_type: finalTeamType }]);
+      const { error: userError } = await adminCreateUser({ username: lowerUsername, password: newUser.password, full_name: newUser.full_name, role: newUser.role, team_type: finalTeamType });
       if (userError) throw userError;
       // team_members table tidak digunakan — data handler dari tabel users langsung
       setNewUser({ username: "", password: "", full_name: "", team_member: "", role: "team", team_type: "Team PTS IVP" });

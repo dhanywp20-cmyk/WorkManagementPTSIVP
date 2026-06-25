@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { setSession, getSession } from '@/lib/auth';
+import { adminCreateUser, adminUpdateUser } from '@/lib/admin-users';
 import { logAudit } from '@/lib/audit';
 import { createNotification } from '@/lib/notifications';
 import {
@@ -147,7 +148,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
       phone_number: newUser.phone_number || null,
       sales_division: (newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') ? (newUser.sales_division || null) : null,
     };
-    const { error } = await supabase.from('users').insert([insertPayload]);
+    const { error } = await adminCreateUser(insertPayload);
     setSaving(false);
     if (error) { notify('error', 'Gagal menambah akun: ' + error.message); return; }
     notify('success', 'Akun berhasil ditambahkan!');
@@ -199,7 +200,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
       const { hash: pwdHash } = await hashRes.json();
       if (pwdHash) updatePayload.password = pwdHash;
     }
-    const { error } = await supabase.from('users').update(updatePayload).eq('id', editingUser.id);
+    const { error } = await adminUpdateUser(editingUser.id, updatePayload);
     if (error) { setSaving(false); notify('error', 'Gagal menyimpan: ' + error.message); return; }
     const propErr = await propagateUserRename(editingUser, editOrig);
     setSaving(false);
@@ -2629,7 +2630,7 @@ export function AccountSettingsInline() {
     else if (sd === 'PTS MLDS') { role = 'team'; team_type = 'Team PTS MLDS'; }
     else if (sd.startsWith('Marketing:')) { role = 'guest'; team_type = 'Marketing'; sales_division = sd.replace('Marketing:', '') || null; }
     else { role = 'guest'; team_type = 'Guest'; sales_division = sd || null; }
-    const { error } = await supabase.from('users').update({ role, team_type, sales_division, allowed_menus: approveMenus }).eq('id', approvingUser.id);
+    const { error } = await adminUpdateUser(approvingUser.id, { role, team_type, sales_division, allowed_menus: approveMenus });
     setSaving(false);
     if (error) { notify('error', 'Gagal approve: ' + error.message); return; }
     notify('success', `Akun ${approvingUser.full_name} berhasil disetujui!`);
@@ -2672,12 +2673,12 @@ export function AccountSettingsInline() {
 
     setSaving(true);
     const insertPayload: Record<string, unknown> = { username: newUser.username, full_name: newUser.full_name, role, team_type, allowed_menus: newUser.allowed_menus, jabatan: newUser.jabatan || null, phone_number: newUser.phone_number || null, sales_division: (newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') ? (newUser.sales_division || null) : null };
-    const { data: createdUser, error } = await supabase.from('users').insert([insertPayload]).select('id').single();
+    const { id: createdId, error } = await adminCreateUser(insertPayload);
     // Simpan password via server route (hash + insert ke user_credentials di server).
-    if (!error && createdUser?.id && newUser.password) {
+    if (!error && createdId && newUser.password) {
       await fetch('/api/auth/set-credential', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: createdUser.id, password: newUser.password }),
+        body: JSON.stringify({ userId: createdId, password: newUser.password }),
       });
     }
     setSaving(false);
@@ -2704,7 +2705,7 @@ export function AccountSettingsInline() {
       else if (editDivisi === 'Marketing') { role = 'guest'; team_type = 'Marketing'; }
     }
     const updatePayload: Record<string, unknown> = { username: editingUser.username, full_name: editingUser.full_name, role, team_type, allowed_menus: editingUser.allowed_menus ?? ALL_MENU_KEYS, jabatan: editingUser.jabatan ?? null, phone_number: editingUser.phone_number ?? null, sales_division: (editDivisi === 'Sales' || editDivisi === 'Marketing') ? (editingUser.sales_division ?? null) : null };
-    const { error } = await supabase.from('users').update(updatePayload).eq('id', editingUser.id);
+    const { error } = await adminUpdateUser(editingUser.id, updatePayload);
     if (error) { setSaving(false); notify('error', 'Gagal menyimpan: ' + error.message); return; }
     const propErr = await propagateUserRename(editingUser, editOrig);
     setSaving(false);

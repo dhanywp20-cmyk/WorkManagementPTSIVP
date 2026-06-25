@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { adminSetIncentiveInput } from '@/lib/admin-users';
 import { IncentiveSetting, User } from './types';
 import { inputCls, btnPrimary, fmtDate } from './shared';
 
@@ -137,10 +138,7 @@ function AllowBiayaList({
   }, []);
 
   const toggle = async (userId: string, current: boolean) => {
-    const { error } = await supabase
-      .from('users')
-      .update({ allow_incentive_input: !current })
-      .eq('id', userId);
+    const { error } = await adminSetIncentiveInput(userId, !current);
     if (error) { notify('error', 'Gagal update'); return; }
     setUsers((prev) =>
       prev.map((u) => (u.id === userId ? { ...u, allow_incentive_input: !current } : u))
