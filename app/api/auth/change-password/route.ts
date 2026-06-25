@@ -1,19 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
+import { getAdminClient } from '@/lib/supabase-admin';
+import { getSessionUser, isAdminRole } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = getAdminClient();
   try {
     const { userId, currentPassword, newPassword } = await request.json();
 
     if (!userId || !newPassword || newPassword.length < 8) {
       return NextResponse.json({ error: 'Password minimal 8 karakter.' }, { status: 400 });
+    }
+
+    // ── Otorisasi: cegah account-takeover (IDOR) ──────────────────────────
+    // userId datang dari body. Tanpa ikatan ke session, user login mana pun
+    // bisa mengubah password user lain (apalagi karena currentPassword opsional).
+    // Aturan: hanya boleh ubah password DIRI SENDIRI, kecuali admin, atau bila
+    // currentPassword yang benar disertakan (diverifikasi di bawah).
+    const caller = await getSessionUser(request);
+    if (!caller) {
+      return NextResponse.json({ error: 'Sesi tidak valid. Login ulang.' }, { status: 401 });
+    }
+    const isSelf = caller.id === userId;
+    if (!isSelf && !isAdminRole(caller.role) && !currentPassword) {
+      return NextResponse.json({ error: 'Tidak berwenang mengubah password user lain.' }, { status: 403 });
     }
 
     if (!/[A-Z]/.test(newPassword)) {
