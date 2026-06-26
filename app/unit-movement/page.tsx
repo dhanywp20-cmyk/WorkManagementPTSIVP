@@ -91,7 +91,7 @@ function UnitMovementPageInner() {
   };
 
   const isAdmin   = ['admin','superadmin'].includes(currentUser?.role?.toLowerCase()??'');
-  const canAddLog = isAdmin || ['team','team_pts'].includes(currentUser?.role?.toLowerCase()??'');
+  const canAddLog = isAdmin || ['team','team_pts','marketing','guest'].includes(currentUser?.role?.toLowerCase()??'');
 
   const availableYears = useMemo(()=>{
     const yrs=new Set<string>(); logs.forEach(l=>{ if(l.tanggal) yrs.add(l.tanggal.substring(0,4)); });
