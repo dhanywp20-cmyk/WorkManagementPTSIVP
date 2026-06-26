@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import {
   IncentiveProjectRow, IncentiveTranche, IncentiveSplit, LateTicketLink,
-  fetchIncentiveProjects, fetchTranches, fetchSplits, fetchSupportFromTickets, fetchLateTickets,
+  fetchIncentiveProjects, fetchTranches, fetchVisibleSplits, fetchSupportFromTickets, fetchLateTickets,
   insertTranches, insertSplits, processYearlyBatch,
   calculateIncentiveSplits, validateSplitTotal, generateTranches, findUpline, resolveUserId, OrgUser,
   formatRupiah, formatPct,
@@ -91,7 +91,7 @@ export default function IncentivePTSPage() {
   async function loadAll() {
     setLoading(true);
     const [projRes, trancheRes, splitRes, lateRes] = await Promise.all([
-      fetchIncentiveProjects(), fetchTranches(), fetchSplits(), fetchLateTickets(),
+      fetchIncentiveProjects(), fetchTranches(), fetchVisibleSplits(), fetchLateTickets(),
     ]);
     if (projRes.data) setProjects(projRes.data);
     if (trancheRes.data) setTranches(trancheRes.data);
@@ -125,7 +125,7 @@ export default function IncentivePTSPage() {
   async function openProjectDetail(p: IncentiveProjectRow) {
     setDetailProject(p);
     const [splitsRes, tranchesRes, supportsRes] = await Promise.all([
-      fetchSplits(p.id),
+      fetchVisibleSplits(p.id),
       supabase.from('incentive_tranches').select('*').eq('project_id', p.id).order('tranche_number'),
       fetchSupportFromTickets(p.project_name),
     ]);

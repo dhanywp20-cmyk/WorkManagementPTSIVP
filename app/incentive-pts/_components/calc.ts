@@ -283,6 +283,25 @@ export async function fetchSplits(projectId?: string) {
   return { data: (data || []) as IncentiveSplit[], error };
 }
 
+/**
+ * Baca splits lewat server route dengan filter privasi (admin/allow_incentive_input
+ * lihat semua; selain itu hanya jatahnya sendiri). Dipakai UI menggantikan
+ * fetchSplits setelah RLS incentive_splits dikunci dari anon.
+ */
+export async function fetchVisibleSplits(projectId?: string): Promise<{ data: IncentiveSplit[]; error: unknown }> {
+  try {
+    const url = projectId
+      ? `/api/incentive/splits?projectId=${encodeURIComponent(projectId)}`
+      : '/api/incentive/splits';
+    const res = await fetch(url);
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return { data: [], error: { message: json.error || 'Gagal memuat data incentive' } };
+    return { data: (json.data || []) as IncentiveSplit[], error: null };
+  } catch (e) {
+    return { data: [], error: e };
+  }
+}
+
 export async function fetchSupportFromTickets(projectName: string): Promise<{ data: { user_id: string; user_name: string }[]; error: unknown }> {
   const { data, error } = await supabase
     .from('reminders')
