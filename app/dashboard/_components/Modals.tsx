@@ -130,16 +130,8 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     }
 
     setSaving(true);
-    const hashRes = await fetch('/api/auth/hash', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: newUser.password }),
-    });
-    const { hash: pwdHash, error: hashErr } = await hashRes.json();
-    if (hashErr) { notify('error', 'Gagal proses password.'); setSaving(false); return; }
     const insertPayload: Record<string, unknown> = {
       username: newUser.username,
-      password: pwdHash,
       full_name: newUser.full_name,
       role,
       team_type,
@@ -148,7 +140,16 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
       phone_number: newUser.phone_number || null,
       sales_division: (newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') ? (newUser.sales_division || null) : null,
     };
-    const { error } = await adminCreateUser(insertPayload);
+    const { id: newId, error } = await adminCreateUser(insertPayload);
+    // Password disimpan ke user_credentials via server route (yang dibaca login),
+    // bukan kolom legacy users.password.
+    if (!error && newId && newUser.password) {
+      const credRes = await fetch('/api/auth/set-credential', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: newId, password: newUser.password }),
+      });
+      if (!credRes.ok) { const j = await credRes.json().catch(() => ({})); setSaving(false); notify('error', 'Akun dibuat tapi gagal set password: ' + (j.error || '')); return; }
+    }
     setSaving(false);
     if (error) { notify('error', 'Gagal menambah akun: ' + error.message); return; }
     notify('success', 'Akun berhasil ditambahkan!');

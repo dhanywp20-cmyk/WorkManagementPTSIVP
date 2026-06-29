@@ -1245,8 +1245,16 @@ function TicketingSystemInner() {
     if (newUser.role === "guest") finalTeamType = "Guest";
     else if (newUser.role === "admin") finalTeamType = "Team PTS IVP";
     try {
-      const { error: userError } = await adminCreateUser({ username: lowerUsername, password: newUser.password, full_name: newUser.full_name, role: newUser.role, team_type: finalTeamType });
+      const { id: newId, error: userError } = await adminCreateUser({ username: lowerUsername, full_name: newUser.full_name, role: newUser.role, team_type: finalTeamType });
       if (userError) throw userError;
+      // Password ke user_credentials via server route (dibaca login), bukan kolom legacy.
+      if (newId && newUser.password) {
+        const credRes = await fetch('/api/auth/set-credential', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: newId, password: newUser.password }),
+        });
+        if (!credRes.ok) { const j = await credRes.json().catch(() => ({})); throw new Error(j.error || 'Gagal set password'); }
+      }
       // team_members table tidak digunakan — data handler dari tabel users langsung
       setNewUser({ username: "", password: "", full_name: "", team_member: "", role: "team", team_type: "Team PTS IVP" });
       await fetchData();
