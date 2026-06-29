@@ -259,13 +259,17 @@ export function generateTranches(
 export const INCENTIVE_CATEGORIES = ['Konfigurasi', 'Konfigurasi & Training', 'Training'] as const;
 
 export async function fetchIncentiveProjects() {
-  const { data, error } = await supabase
-    .from('reminders')
-    .select('*')
-    .in('category', ['Konfigurasi', 'Konfigurasi & Training', 'Training'])
-    .eq('status', 'done')
-    .order('due_date', { ascending: false });
-  return { data: (data || []) as IncentiveProjectRow[], error };
+  // Lewat server route: nominal (incentive_value) ditempel dari tabel terkunci
+  // incentive_amounts dengan filter privasi (admin/allow_incentive_input → asli,
+  // lainnya → 0). Mengganti baca langsung reminders.incentive_value.
+  try {
+    const res = await fetch('/api/incentive/projects');
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return { data: [] as IncentiveProjectRow[], error: { message: json.error || 'Gagal memuat proyek incentive' } };
+    return { data: (json.data || []) as IncentiveProjectRow[], error: null };
+  } catch (e) {
+    return { data: [] as IncentiveProjectRow[], error: e };
+  }
 }
 
 export async function fetchTranches(filters?: { payment_year?: number; status?: string }) {
@@ -370,12 +374,18 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
   type PtsMap = { staff_user_id: string; supervisor_user_id: string; supervisor: { id: string; full_name: string } };
   const { data: ptsTeamData } = await supabase.from('pts_team_mappings').select('staff_user_id, supervisor_user_id, supervisor:users!supervisor_user_id(id, full_name)');
 
+  // Nominal (incentive_value) tidak lagi di reminders — ambil dari route privileged
+  // (admin yang jalankan batch → dapat nominal asli) lalu suntik ke tiap project.
+  const { data: projForAmt } = await fetchIncentiveProjects();
+  const amountMap = new Map<string, number>((projForAmt || []).map(p => [p.id, p.incentive_value || 0]));
+
   let processed = 0;
   const errors: string[] = [];
 
   for (const tranche of dueTranches) {
     const project = tranche.project as unknown as IncentiveProjectRow;
     if (!project) { errors.push(`Tranche ${tranche.id}: project not found`); continue; }
+    project.incentive_value = amountMap.get(project.id) ?? project.incentive_value ?? 0;
     if (!project.mode_penyelesaian) { errors.push(`Project "${project.project_name}": mode_penyelesaian kosong`); continue; }
 
     // Manager & Supervisor dari pohon atasan PIC (Struktur Organisasi)

@@ -139,8 +139,12 @@ export default function IncentivePTSPage() {
     if (!nominalProject) return;
     if (!nominalValue || Number(nominalValue) <= 0) { notify('error', 'Nominal incentive harus > 0'); return; }
     setSavingNominal(true);
-    const { error } = await supabase.from('reminders').update({ incentive_value: Number(nominalValue), updated_at: new Date().toISOString() }).eq('id', nominalProject.id);
-    if (error) { notify('error', 'Gagal: ' + error.message); setSavingNominal(false); return; }
+    // Nominal disimpan ke tabel terkunci incentive_amounts via server route.
+    const res = await fetch('/api/incentive/set-nominal', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reminderId: nominalProject.id, amount: Number(nominalValue) }),
+    });
+    if (!res.ok) { const j = await res.json().catch(() => ({})); notify('error', 'Gagal: ' + (j.error || 'gagal simpan')); setSavingNominal(false); return; }
     notify('success', `Nominal ${formatRupiah(Number(nominalValue))} berhasil disimpan!`);
     setSavingNominal(false); setNominalProject(null); setNominalValue('');
     loadAll();
