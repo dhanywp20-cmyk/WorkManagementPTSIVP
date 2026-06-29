@@ -79,8 +79,6 @@ function TicketingSystemInner() {
   const [loading, setLoading] = useState(true);
   const [ticketsLoading, setTicketsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string|null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [silentUpdating, setSilentUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showLoadingPopup, setShowLoadingPopup] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
@@ -604,13 +602,7 @@ function TicketingSystemInner() {
       if (membersData.data) setTeamMembers(membersData.data);
       if (usersData.data) setUsers(usersData.data);
       if (!silent) { setLoading(false); setTicketsLoading(false); }
-      else {
-        setLoading(false);
-        setLastUpdated(new Date());
-        // Flash subtle indicator
-        setSilentUpdating(true);
-        setTimeout(() => setSilentUpdating(false), 1200);
-      }
+      else { setLoading(false); }
       // Fetch warranty/project reference data (fire-and-forget, non-blocking)
       fetchProjectReminders();
     } catch (err: any) {
@@ -2145,16 +2137,6 @@ function TicketingSystemInner() {
               <div className="flex items-center gap-3">
                 <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Ticket List</span>
                 <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{ticketsLoading ? "..." : filteredTickets.length}</span>
-                {/* Live indicator — muncul saat ada silent update dari server */}
-                <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 transition-opacity duration-500" style={{ opacity: silentUpdating ? 1 : 0 }}>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
-                  Updated
-                </span>
-                {lastUpdated && !silentUpdating && (
-                  <span className="text-[10px] text-gray-400 hidden sm:inline">
-                    {lastUpdated.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                  </span>
-                )}
               </div>
               <div className="flex items-center gap-2 mt-2 sm:mt-0">
                 {canAccessAccountSettings && (
