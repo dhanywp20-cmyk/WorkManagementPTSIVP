@@ -3144,11 +3144,16 @@ export function UserManagementInline() {
   const [divSupMaps, setDivSupMaps] = useState<{ id: string; sales_division: string; supervisor_id: string }[]>([]);
   const [divIvpMaps, setDivIvpMaps] = useState<{ id: string; sales_division: string; ivp_id: string }[]>([]);
   const [userSupMaps, setUserSupMaps] = useState<{ id: string; user_id: string; supervisor_id: string }[]>([]);
+  const [prodSupMaps, setProdSupMaps] = useState<{ id: string; product_type: string; supervisor_id: string }[]>([]);
+  const [prodType, setProdType] = useState('');
+  const [prodSupId, setProdSupId] = useState('');
+  const [managerUserId, setManagerUserId] = useState('');
+  const [savingMgr, setSavingMgr] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [saving, setSaving] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; msg: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<'org' | 'atasan' | 'ivp' | 'user_cc'>('org');
+  const [activeTab, setActiveTab] = useState<'org' | 'atasan' | 'ivp' | 'product' | 'user_cc'>('org');
   const [orgFilter, setOrgFilter] = useState<'all' | 'Sales' | 'Marketing' | 'PTS'>('all');
   const [orgSelectedId, setOrgSelectedId] = useState('');
   const [orgSearch, setOrgSearch] = useState('');
@@ -3166,7 +3171,7 @@ export function UserManagementInline() {
 
   const fetchAll = async () => {
     setLoadingData(true);
-    const [usersRes, divSupRes, divIvpRes, userSupRes, atasanRes] = await Promise.all([
+    const [usersRes, divSupRes, divIvpRes, userSupRes, atasanRes, prodRes, mgrRes] = await Promise.all([
       supabase.from('users').select('id, username, full_name, role, team_type, sales_division, phone_number, jabatan').order('full_name'),
       supabase.from('division_supervisor_mappings').select('id,sales_division,supervisor_id').order('sales_division'),
       supabase.from('division_ivp_mappings').select('id,sales_division,ivp_id').order('sales_division'),
@@ -3174,6 +3179,9 @@ export function UserManagementInline() {
       // Query terpisah & tahan-error: jika kolom atasan_id belum ada (migration belum jalan),
       // ini hanya error sendiri tanpa mematahkan load user utama.
       supabase.from('users').select('id, atasan_id'),
+      // Routing pipeline (Fase 1) — tahan-error bila tabel/setting belum ada.
+      supabase.from('product_supervisor_map').select('id,product_type,supervisor_id').order('product_type'),
+      supabase.from('app_settings').select('value').eq('key', 'manager_user_id').maybeSingle(),
     ]);
     if (usersRes.data) {
       const atasanMap = new Map<string, string | null>((atasanRes.data ?? []).map((r: { id: string; atasan_id: string | null }) => [r.id, r.atasan_id]));
@@ -3182,6 +3190,8 @@ export function UserManagementInline() {
     if (divSupRes.data) setDivSupMaps(divSupRes.data);
     if (divIvpRes.data) setDivIvpMaps(divIvpRes.data);
     if (userSupRes.data) setUserSupMaps(userSupRes.data);
+    if (prodRes.data) setProdSupMaps(prodRes.data);
+    if (mgrRes.data?.value) setManagerUserId(String(mgrRes.data.value).replace(/^"|"$/g, ''));
     setLoadingData(false);
   };
 
@@ -3285,6 +3295,30 @@ export function UserManagementInline() {
     PTS:       { bg: '#E1F5EE', color: '#085041' },
     Lainnya:   { bg: '#F1EFE8', color: '#444441' },
   };
+  // ── Routing pipeline: tipe produk → supervisor + akun Manager ──
+  const handleAddProdSup = async () => {
+    if (!prodType || !prodSupId) { notify('error', 'Pilih tipe produk & supervisor.'); return; }
+    setSaving(true);
+    const { error } = await supabase.from('product_supervisor_map').upsert({ product_type: prodType, supervisor_id: prodSupId }, { onConflict: 'product_type' });
+    if (error) notify('error', 'Gagal: ' + error.message);
+    else { notify('success', 'Routing tipe produk disimpan!'); setProdType(''); setProdSupId(''); await fetchAll(); }
+    setSaving(false);
+  };
+  const handleDeleteProdSup = (id: string) => {
+    setConfirmState({ message: 'Hapus routing tipe produk ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+      await supabase.from('product_supervisor_map').delete().eq('id', id);
+      notify('success', 'Dihapus.'); await fetchAll();
+    }});
+  };
+  const handleSaveManager = async () => {
+    if (!managerUserId) { notify('error', 'Pilih akun Manager.'); return; }
+    setSavingMgr(true);
+    const { error } = await supabase.from('app_settings').upsert({ key: 'manager_user_id', value: managerUserId }, { onConflict: 'key' });
+    if (error) notify('error', 'Gagal: ' + error.message);
+    else notify('success', 'Akun Manager disimpan!');
+    setSavingMgr(false);
+  };
+
   const orgWouldCycle = (userId: string, newAtasanId: string): boolean => {
     let cur: string | null | undefined = newAtasanId;
     let guard = 0;
@@ -3382,6 +3416,9 @@ export function UserManagementInline() {
         </button>
         <button onClick={() => setActiveTab('ivp')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'ivp' ? 'border-violet-500 text-violet-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           🔗 IVP Account ({Object.keys(ivpByUser).length} orang)
+        </button>
+        <button onClick={() => setActiveTab('product')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'product' ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+          🎯 Routing Tipe ({prodSupMaps.length})
         </button>
         <button onClick={() => setActiveTab('user_cc')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'user_cc' ? 'border-teal-500 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           🏷️ CC per User ({userSupMaps.length})
@@ -3610,6 +3647,62 @@ export function UserManagementInline() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'product' && (
+              <div className="p-5 space-y-5">
+                {/* Routing tipe produk → supervisor */}
+                <div className="p-4 rounded-xl border border-rose-200 bg-rose-50">
+                  <p className="text-xs font-bold text-rose-700 mb-1">🎯 Routing Tipe Produk → Supervisor</p>
+                  <p className="text-[11px] text-slate-500 mb-3">Request diarahkan otomatis ke supervisor sesuai tipe produk (mis. LED → Wahyu, LCD/Middleware → Yoga).</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Tipe Produk</label>
+                      <select value={prodType} onChange={e => setProdType(e.target.value)} className="w-full border border-rose-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 bg-white">
+                        <option value="">-- Pilih Tipe --</option>
+                        {['LED', 'LCD', 'Middleware'].map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Supervisor (PTS)</label>
+                      <select value={prodSupId} onChange={e => setProdSupId(e.target.value)} className="w-full border border-rose-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 bg-white">
+                        <option value="">-- Pilih Supervisor --</option>
+                        {allUsers.filter(u => (u.role || '').toLowerCase() === 'team' && u.jabatan === 'Supervisor').map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex items-end">
+                      <button onClick={handleAddProdSup} disabled={saving} className="w-full py-2 bg-rose-600 text-white rounded-lg text-sm font-bold hover:bg-rose-700 disabled:opacity-50 transition-all">{saving ? '...' : '💾 Simpan'}</button>
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    {prodSupMaps.length === 0 ? <p className="text-[11px] text-slate-400">Belum ada routing tipe produk.</p> : prodSupMaps.map(m => (
+                      <div key={m.id} className="flex items-center justify-between bg-white border border-rose-200 rounded-lg px-3 py-2">
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded">{m.product_type}</span>
+                          <span className="text-slate-400">→</span>
+                          <span className="font-semibold text-slate-700">{getUserById(m.supervisor_id)?.full_name ?? '—'}</span>
+                        </div>
+                        <button onClick={() => handleDeleteProdSup(m.id)} className="text-rose-300 hover:text-red-500 transition-colors" title="Hapus">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Akun Manager (gerbang approval) */}
+                <div className="p-4 rounded-xl border border-amber-200 bg-amber-50">
+                  <p className="text-xs font-bold text-amber-700 mb-1">👑 Akun Manager (gerbang approval)</p>
+                  <p className="text-[11px] text-slate-500 mb-3">Manager yang wajib approve sebelum request turun ke supervisor. Untuk sekarang boleh sama dengan Admin (Dhany); bisa dialihkan ke akun lain kapan saja.</p>
+                  <div className="flex gap-3">
+                    <select value={managerUserId} onChange={e => setManagerUserId(e.target.value)} className="flex-1 border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
+                      <option value="">-- Pilih Akun Manager --</option>
+                      {allUsers.filter(u => u.jabatan === 'Manager' || ['admin', 'superadmin'].includes((u.role || '').toLowerCase())).map(u => <option key={u.id} value={u.id}>{u.full_name}{u.jabatan ? ` (${u.jabatan})` : ''}</option>)}
+                    </select>
+                    <button onClick={handleSaveManager} disabled={savingMgr} className="px-5 py-2 bg-amber-600 text-white rounded-lg text-sm font-bold hover:bg-amber-700 disabled:opacity-50 transition-all">{savingMgr ? '...' : '💾 Simpan'}</button>
+                  </div>
                 </div>
               </div>
             )}
