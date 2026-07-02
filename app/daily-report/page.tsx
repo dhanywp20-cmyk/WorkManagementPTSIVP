@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { clearSession, getSession } from '@/lib/auth';
 
 import {
-  CATEGORIES, CATEGORY_CONFIG,
+  DAILY_REPORT_CATEGORIES, CATEGORY_CONFIG,
   formatDate,
   type TeamUser, type GuestUser,
 } from '@/app/reminder-schedule/_components/shared';
@@ -99,7 +99,7 @@ function PW({ children }: { children: React.ReactNode }) {
 function CatPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div className="grid grid-cols-2 gap-2">
-      {CATEGORIES.map(cat => {
+      {DAILY_REPORT_CATEGORIES.map(cat => {
         const c = CATEGORY_CONFIG[cat]; const sel = value === cat;
         return (
           <button key={cat} type="button" onClick={() => onChange(cat)}

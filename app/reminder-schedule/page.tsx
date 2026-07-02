@@ -866,7 +866,7 @@ function ReminderSchedulePageInner() {
       (r.pic_name ? `🙋 PIC: ${r.pic_name}\n` : '') +
       (r.pic_phone ? `📱 No. PIC: ${r.pic_phone}\n` : '') +
       (r.notes ? `📝 Catatan: ${r.notes}\n` : '') +
-      `\n_Pesan dari Reminder Schedule PTS IVP_`;
+      `\n_Pesan dari Request Schedule PTS IVP_`;
 
     const result = await sendFonnteWA(handlerData.phone_number, msg, { reminderType: 'manual', reminderId: r.id });
     setSendingWA(null);
@@ -886,7 +886,7 @@ function ReminderSchedulePageInner() {
       const titleStyle = { font:{name:'Arial',bold:true,sz:14,color:{rgb:'0E7490'}}, alignment:{horizontal:'left',vertical:'center'} };
       const COLS = 14;
       const data: any[][] = [
-        [{ v:'\uD83D\uDDD3\uFE0F REMINDER SCHEDULE \u2014 PTS IVP', t:'s', s:titleStyle }, ...Array(COLS-1).fill({v:'',t:'s',s:{}})],
+        [{ v:'\uD83D\uDDD3\uFE0F Request Schedule \u2014 PTS IVP', t:'s', s:titleStyle }, ...Array(COLS-1).fill({v:'',t:'s',s:{}})],
         [{ v:`Tanggal Export: ${exportDate} | Total: ${filteredReminders.length} data`, t:'s', s:{font:{name:'Arial',sz:10,color:{rgb:'6B7280'}}} }, ...Array(COLS-1).fill({v:'',t:'s',s:{}})],
         Array(COLS).fill({v:'',t:'s',s:{}}),
         ['No','Project','Product','Kategori','Sales','Divisi','Assign To','Status','Prioritas','Tanggal','Waktu','PIC','Telepon PIC','Catatan'].map(h=>({v:h,t:'s',s:hdr})),
@@ -909,7 +909,7 @@ function ReminderSchedulePageInner() {
       ws['!cols'] = [5,28,18,16,20,12,20,14,12,12,10,20,16,30].map(w=>({wch:w}));
       ws['!rows'] = [{hpt:28},{hpt:16},{hpt:6},{hpt:26}];
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, '\uD83D\uDDD3\uFE0F Reminder Schedule');
+      XLSX.utils.book_append_sheet(wb, ws, '\uD83D\uDDD3\uFE0F Request Schedule');
       XLSX.writeFile(wb, `ReminderSchedule_PTS_${new Date().toISOString().split('T')[0]}.xlsx`, { bookType:'xlsx', type:'binary', cellStyles:true });
       notify('success', 'Export Excel berhasil!');
     };
@@ -2063,7 +2063,7 @@ jangan lupa peralatan & Semangat💪🏼
         )}
 
         {/* ── HEADER ── */}
-        <PageHeader icon="🗓️" title="Reminder Schedule" color="#0891b2" colorLight="#0e7490">
+        <PageHeader icon="🗓️" title="Request Schedule" color="#0891b2" colorLight="#0e7490">
           <button onClick={() => setShowBellPopup(true)}
             className="relative p-2 rounded-xl transition-all hover:bg-cyan-50 border-2 border-transparent hover:border-cyan-200">
             <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

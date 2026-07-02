@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 
-export { CATEGORIES, CATEGORY_CONFIG, SALES_DIVISIONS, PIE_COLORS, formatDate, formatDatetime } from '@/app/reminder-schedule/_components/shared';
+export { CATEGORIES, DAILY_REPORT_CATEGORIES, CATEGORY_CONFIG, SALES_DIVISIONS, PIE_COLORS, formatDate, formatDatetime } from '@/app/reminder-schedule/_components/shared';
 export type { Priority, Status, RepeatType, TeamUser, GuestUser } from '@/app/reminder-schedule/_components/shared';
 
 export type EntrySource = 'reminder' | 'ticket' | 'manual';

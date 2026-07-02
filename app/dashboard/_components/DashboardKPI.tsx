@@ -920,10 +920,10 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               {/* ── ROW 2: Reminder + Unit Movement ── */}
               <div className="grid grid-cols-2 gap-3">
 
-                {/* REMINDER SCHEDULE */}
+                {/* Request Schedule */}
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">📅 Reminder Schedule</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">📅 Request Schedule</span>
                   </div>
                   {/* Stat row */}
                   <div className="grid grid-cols-4 gap-1 mb-2">

@@ -74,7 +74,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     'daily-report': { label: 'Daily Report', icon: '📈', gradient: 'from-emerald-600 to-emerald-500' },
     'database-pts': { label: 'Database PTS', icon: '💼', gradient: 'from-indigo-600 to-indigo-500' },
     'unit-movement': { label: 'Unit Movement Log', icon: '🚚', gradient: 'from-amber-600 to-amber-500' },
-    'reminder-schedule': { label: 'Reminder Schedule', icon: '🗓️', gradient: 'from-cyan-600 to-cyan-500' },
+    'reminder-schedule': { label: 'Request Schedule', icon: '🗓️', gradient: 'from-cyan-600 to-cyan-500' },
     'picket-showroom': { label: 'Piket Showroom', icon: '🏪', gradient: 'from-teal-600 to-teal-500' },
     'tech-note': { label: 'Tech Note R&D', icon: '📝', gradient: 'from-pink-600 to-rose-500' },
     'kpi-team': { label: 'KPI Team', icon: '📊', gradient: 'from-sky-600 to-sky-500' },
@@ -1975,7 +1975,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
       } else { setRequireNotifs([]); }
     } catch (e) { console.error('[notif] require fetch error:', e); }
 
-    // ── 3. Reminder Schedule ──
+    // ── 3. Request Schedule ──
     try {
       if (isAdmin) {
         // Admin: semua reminder aktif (tidak done/cancelled)
@@ -1994,7 +1994,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
           time: r.created_at,
           url: '/reminder-schedule',
           internalUrl: '/reminder-schedule',
-          menuTitle: 'Reminder Schedule',
+          menuTitle: 'Request Schedule',
         })));
       } else if (isPTS) {
         // Team PTS: jadwal aktif yang di-assign ke diri sendiri
@@ -2014,7 +2014,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
           time: r.created_at,
           url: '/reminder-schedule',
           internalUrl: '/reminder-schedule',
-          menuTitle: 'Reminder Schedule',
+          menuTitle: 'Request Schedule',
         })));
       } else { setReminderNotifs([]); }
     } catch (e) { console.error('[notif] reminder fetch error:', e); }
@@ -2592,7 +2592,7 @@ export function AccountSettingsInline() {
     'daily-report': { label: 'Daily Report', icon: '📈' },
     'database-pts': { label: 'Database PTS', icon: '💼' },
     'unit-movement': { label: 'Unit Movement Log', icon: '🚚' },
-    'reminder-schedule': { label: 'Reminder Schedule', icon: '🗓️' },
+    'reminder-schedule': { label: 'Request Schedule', icon: '🗓️' },
     'picket-showroom': { label: 'Piket Showroom', icon: '🏪' },
     'learning-center': { label: 'Learning Center', icon: '🎓' },
     'tech-note': { label: 'Tech Note R&D', icon: '📝' },

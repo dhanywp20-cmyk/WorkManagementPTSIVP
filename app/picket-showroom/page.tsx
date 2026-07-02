@@ -263,6 +263,15 @@ function PiketShowroomPageInner() {
     return acc;
   },{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
 
+  // Export Excel per-bulan (format sama dgn Export All) berdasarkan bulan terpilih di ringkasan.
+  const MONTH_NAMES=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  const exportMonth=()=>{
+    if(summaryMonth===null)return;
+    const monthRows=allRows.filter(r=>{const d=r.day_date||'';return !!d&&parseInt(d.slice(0,4),10)===summaryYear&&parseInt(d.slice(5,7),10)===summaryMonth;});
+    const ids=new Set(monthRows.map(r=>r.id));
+    const monthKg=kegiatanList.filter(k=>ids.has(k.piket_id));
+    exportToExcel(monthRows,monthKg,`${MONTH_NAMES[summaryMonth-1]}_${summaryYear}`);
+  };
 
   return(
     <div className="h-screen overflow-hidden flex flex-col relative" style={{backgroundImage:`url('/IVP_Background.png')`,backgroundSize:'cover',backgroundPosition:'center',backgroundAttachment:'fixed'}}>
@@ -285,8 +294,16 @@ function PiketShowroomPageInner() {
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
             style={{background:'linear-gradient(135deg,#059669,#047857)',boxShadow:'0 4px 14px rgba(5,150,105,0.3)'}}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            Export Report
+            Export Semua
           </button>
+          {summaryMonth!==null&&(
+            <button onClick={exportMonth} title="Export Excel hanya bulan terpilih"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
+              style={{background:'linear-gradient(135deg,#0d9488,#0f766e)',boxShadow:'0 4px 14px rgba(13,148,136,0.3)'}}>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              Export {MONTH_NAMES[summaryMonth-1]}
+            </button>
+          )}
           {isAdmin&&(
             <button onClick={()=>setShowSchedule(true)}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"

@@ -58,7 +58,7 @@ const ALL_STEPS: TourStep[] = [
   },
   {
     id: 'reminder-schedule', menuKey: 'reminder-schedule', icon: '🗓️',
-    title: 'Reminder Schedule',
+    title: 'Request Schedule',
     desc: 'Jadwal Demo, Meeting, Konfigurasi & Training. Sales request jadwal, tim PTS update status.',
     color: '#0f766e', accentBg: 'linear-gradient(135deg,#f0fdfa,#ccfbf1)',
     flow: [

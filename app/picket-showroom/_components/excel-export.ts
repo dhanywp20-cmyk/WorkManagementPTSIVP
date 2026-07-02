@@ -1,7 +1,7 @@
 import { loadXLSX } from '@/lib/xlsx-loader';
 import { PiketRow, KegiatanEntry } from './shared';
 
-export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[]) {
+export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], periodLabel?:string) {
   const runExport = (XLSX:any) => {
     const exportDate = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
     const sorted = [...allRows].sort((a,b)=>a.day_date.localeCompare(b.day_date));
@@ -85,8 +85,8 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[]) 
       const topProdukEx=prodArrEx[0]?.[0]||'-';
 
       const data:any[][] = [
-        [cell('📊 PIKET SHOWROOM — DASHBOARD REPORT',titleStyle),...row0(COLS-1,titleStyle)],
-        [cell(`Tanggal Export: ${exportDate}`,subTitleStyle),...row0(COLS-1)],
+        [cell(`📊 PIKET SHOWROOM — DASHBOARD REPORT${periodLabel?' · '+periodLabel:''}`,titleStyle),...row0(COLS-1,titleStyle)],
+        [cell(`Tanggal Export: ${exportDate}${periodLabel?' · Periode: '+periodLabel:''}`,subTitleStyle),...row0(COLS-1)],
         row0(COLS),
         // ── Ringkasan ──
         [ctr('RINGKASAN STATISTIK',secHdr),...row0(COLS-1,secHdr)],
@@ -406,7 +406,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[]) 
       XLSX.utils.book_append_sheet(wb,ws,'⚡ Beban Daya');
     }
 
-    const fileName=`Piket_Showroom_${new Date().toISOString().slice(0,10)}.xlsx`;
+    const fileName=`Piket_Showroom_${periodLabel?periodLabel.replace(/[^\w]+/g,'_'):new Date().toISOString().slice(0,10)}.xlsx`;
     XLSX.writeFile(wb,fileName,{bookType:'xlsx',type:'binary',cellStyles:true});
   };
 

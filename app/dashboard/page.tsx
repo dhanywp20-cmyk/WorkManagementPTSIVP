@@ -95,10 +95,10 @@ export default function Dashboard() {
       items: [{ name: 'Tech Note', url: '/tech-note', icon: '📝', internal: true, embed: true }]
     },
     {
-      title: 'Reminder Schedule', icon: '🗓️', key: 'reminder-schedule',
+      title: 'Request Schedule', icon: '🗓️', key: 'reminder-schedule',
       gradient: 'from-cyan-700 via-cyan-600 to-teal-500',
-      description: 'Jadwal & reminder pekerjaan team PTS',
-      items: [{ name: 'Reminder', url: '/reminder-schedule', icon: '⏰', internal: true, embed: true }]
+      description: 'Jadwal & request pekerjaan team PTS',
+      items: [{ name: 'Request Schedule', url: '/reminder-schedule', icon: '⏰', internal: true, embed: true }]
     },
     {
       title: 'Request Design Project', icon: '🏗️', key: 'request-design-project',
