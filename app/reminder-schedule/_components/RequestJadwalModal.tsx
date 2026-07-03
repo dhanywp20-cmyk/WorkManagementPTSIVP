@@ -1,12 +1,13 @@
 'use client';
 import { useState } from 'react';
-import { CATEGORY_CONFIG } from './shared';
+import { CATEGORY_CONFIG, PRODUCT_TYPES } from './shared';
 
 export interface JadwalRequest {
   project_name: string;
   description: string;
   address: string;
   category: string;
+  product_type: string;   // tipe produk (LED / LCD·Middleware / LED & LCD) — utk routing
   due_date: string;
   due_time: string;
   pic_name: string;
@@ -47,6 +48,7 @@ export function RequestJadwalModal({
     description: '',
     address: '',
     category: 'Demo Product',
+    product_type: '',
     due_date: new Date().toISOString().split('T')[0],
     due_time: '09:00',
     pic_name: '',
@@ -61,6 +63,7 @@ export function RequestJadwalModal({
   const handleSubmit = async () => {
     if (!form.project_name.trim()) { setFormErr('Nama project wajib diisi!'); return; }
     if (!form.address.trim()) { setFormErr('Lokasi project wajib diisi!'); return; }
+    if (!form.product_type) { setFormErr('Pilih tipe produk dulu (LED / LCD·Middleware / LED & LCD)!'); return; }
     if (!form.due_date) { setFormErr('Tanggal wajib diisi!'); return; }
     setFormErr('');
     setSubmitting(true);
@@ -209,6 +212,27 @@ export function RequestJadwalModal({
             </div>
           </div>
 
+          {/* Tipe Produk — WAJIB, untuk auto-routing ke supervisor */}
+          <div>
+            <label className="block text-xs font-bold mb-2 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+              Tipe Produk *
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {PRODUCT_TYPES.map(pt => {
+                const sel = form.product_type === pt;
+                return (
+                  <button key={pt} type="button" onClick={() => { f({ product_type: pt }); setFormErr(''); }}
+                    className="px-3 py-3 rounded-xl border-2 text-center text-sm font-bold transition-all"
+                    style={sel
+                      ? { borderColor: '#e11d48', background: 'rgba(225,29,72,0.1)', color: '#e11d48' }
+                      : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }}>
+                    {pt}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Product */}
           <div>
             <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
@@ -326,7 +350,7 @@ export function RequestJadwalModal({
           <div className="flex gap-3">
             <button
               onClick={handleSubmit}
-              disabled={submitting || !form.project_name.trim() || !form.address.trim() || !form.due_date}
+              disabled={submitting || !form.project_name.trim() || !form.address.trim() || !form.product_type || !form.due_date}
               className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', boxShadow: '0 4px 14px rgba(37,99,235,0.35)' }}
             >

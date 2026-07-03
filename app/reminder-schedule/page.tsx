@@ -1043,6 +1043,7 @@ function ReminderSchedulePageInner() {
       description: data.description,
       address: data.address,
       category: data.category,
+      product_type: data.product_type,
       due_date: data.due_date,
       due_time: data.due_time,
       sales_name: currentUser.full_name,
