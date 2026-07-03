@@ -46,6 +46,7 @@ export interface Reminder {
   pic_id?: string | null;
   incentive_value?: number;
   bast_date?: string | null;
+  product_type?: string; // tipe produk utk routing pipeline (dipilih saat request)
 }
 
 export interface TeamUser {
@@ -104,6 +105,10 @@ export const STATUS_CONFIG: Record<Status, { label: string; color: string; bg: s
 };
 
 export const CATEGORIES = ['Demo Product', 'Meeting & Survey', 'Konfigurasi', 'Konfigurasi & Training', 'Troubleshooting', 'Training', 'Maintenance', 'Standby Event', 'Internal'];
+
+// Tipe produk untuk routing pipeline (dipilih sales saat request). "LED & LCD"
+// = proyek punya keduanya. Satu sumber untuk form + mapping Admin Panel.
+export const PRODUCT_TYPES = ['LED', 'LCD/Middleware', 'LED & LCD'] as const;
 
 // Kategori khusus Daily Report (input manual) — superset dari CATEGORIES.
 export const DAILY_REPORT_CATEGORIES = [

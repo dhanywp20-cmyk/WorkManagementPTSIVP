@@ -6,6 +6,9 @@
 -- tinggal tambah baris di Admin Panel. Akun Manager disimpan di app_settings.
 -- ============================================================================
 
+-- Tipe produk dipilih sales saat buat request (LED / LCD/Middleware / LED & LCD).
+ALTER TABLE reminders ADD COLUMN IF NOT EXISTS product_type TEXT;
+
 CREATE TABLE IF NOT EXISTS product_supervisor_map (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_type  TEXT NOT NULL UNIQUE,          -- 'LED' | 'LCD' | 'Middleware'

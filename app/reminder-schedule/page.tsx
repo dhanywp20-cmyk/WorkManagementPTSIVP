@@ -135,6 +135,7 @@ function ReminderSchedulePageInner() {
     notes: '', product: '', warranty_years: null,
     requires_controller_automation: false, controller_automation_brand: null,
     pic_type: 'standard', pic_id: null, incentive_value: 0, bast_date: null,
+    product_type: '',
   };
   const [formData, setFormData] = useState(emptyForm);
   const fd = (patch: Partial<typeof emptyForm>) => setFormData(prev => ({ ...prev, ...patch }));

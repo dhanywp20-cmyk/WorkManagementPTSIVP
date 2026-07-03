@@ -5,6 +5,7 @@ import {
   Reminder, TeamUser, GuestUser, Priority, Status, RepeatType,
   CATEGORIES, CATEGORY_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG,
   REPEAT_OPTIONS, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES,
+  PRODUCT_TYPES,
 } from './shared';
 import { FormField, SectionHeader } from '@/components/shared';
 
@@ -30,11 +31,14 @@ interface Props {
 export function ReminderFormModal({ editingReminder, formData, setFormData, saving, teamUsers, guestUsers, bulkTarget, onBulkTargetChange, onClose, onSubmit }: Props) {
   const [guestSearch, setGuestSearch] = useState('');
   const [guestDropdownOpen, setGuestDropdownOpen] = useState(false);
+  const [err, setErr] = useState('');
   const guestDropdownRef = useRef<HTMLDivElement>(null);
 
   const fd = (patch: Partial<ReminderForm>) => { setFormData({ ...formData, ...patch }); };
 
   function handleSubmit() {
+    if (!formData.product_type) { setErr('Pilih tipe produk dulu (LED / LCD·Middleware / LED & LCD).'); return; }
+    setErr('');
     onSubmit();
   }
 
@@ -100,6 +104,25 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                     <span className="text-2xl">{c.icon}</span>
                     <span className="text-base font-bold leading-tight flex-1">{cat}</span>
                     {sel && <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Tipe Produk — WAJIB, untuk routing ke supervisor (LED→Wahyu, LCD/MW→Yoga) */}
+          <div>
+            <label className="block text-xs font-bold mb-2 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Tipe Produk *</label>
+            <div className="grid grid-cols-3 gap-2">
+              {PRODUCT_TYPES.map(pt => {
+                const sel = formData.product_type === pt;
+                return (
+                  <button key={pt} type="button" onClick={() => { fd({ product_type: pt }); setErr(''); }}
+                    className="px-3 py-3 rounded-xl border-2 text-center text-sm font-bold transition-all"
+                    style={sel
+                      ? { borderColor: '#e11d48', background: 'rgba(225,29,72,0.1)', color: '#e11d48' }
+                      : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }}>
+                    {pt}
                   </button>
                 );
               })}
@@ -415,6 +438,13 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             <textarea value={formData.notes} onChange={e => fd({ notes: e.target.value })}
               rows={2} className={`${inputCls} resize-none`} style={inputStyle} placeholder="Informasi tambahan untuk team..." />
           </FormField>
+
+          {err && (
+            <div className="rounded-xl px-4 py-3 text-sm font-semibold flex items-center gap-2"
+              style={{ background: 'rgba(225,29,72,0.08)', border: '1px solid rgba(225,29,72,0.3)', color: '#e11d48' }}>
+              <span>⚠️</span>{err}
+            </div>
+          )}
 
           <div className="flex gap-3 pt-2">
             <button onClick={onClose}

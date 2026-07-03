@@ -5,6 +5,7 @@ import { setSession, getSession } from '@/lib/auth';
 import { adminCreateUser, adminUpdateUser } from '@/lib/admin-users';
 import { logAudit } from '@/lib/audit';
 import { createNotification } from '@/lib/notifications';
+import { PRODUCT_TYPES } from '@/app/reminder-schedule/_components/shared';
 import {
   User, MenuItem, NotificationItem,
   SALES_DIVISIONS, JABATAN_LIST, JabatanType, JABATAN_CONFIG, JABATAN_CC_RULES,
@@ -3662,7 +3663,7 @@ export function UserManagementInline() {
                       <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Tipe Produk</label>
                       <select value={prodType} onChange={e => setProdType(e.target.value)} className="w-full border border-rose-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 bg-white">
                         <option value="">-- Pilih Tipe --</option>
-                        {['LED', 'LCD', 'Middleware'].map(t => <option key={t} value={t}>{t}</option>)}
+                        {PRODUCT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </div>
                     <div>
