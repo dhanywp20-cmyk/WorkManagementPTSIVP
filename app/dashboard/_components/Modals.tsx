@@ -2872,96 +2872,49 @@ export function AccountSettingsInline() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
-                {filteredUsers.length === 0 ? (
-                  <div className="col-span-2 text-center py-10 text-slate-400 text-sm">Tidak ada akun ditemukan</div>
-                ) : (() => {
-                  const getDivLabel = (u: typeof users[0]) => {
-                    if (u.role === 'superadmin' || u.role === 'admin') return '⚙️ Admin / Superadmin';
-                    if (u.role === 'team') return `👥 ${u.team_type ?? 'Team PTS IVP'}`;
-                    if (u.sales_division) return `🏢 ${u.sales_division}`;
-                    if (u.team_type === 'Marketing') return '📣 Marketing';
-                    return '👤 Lainnya';
-                  };
-                  const getSubLabel = (u: typeof users[0]) => u.team_type ?? u.role ?? '';
-                  const grouped: Record<string, Record<string, typeof users>> = {};
-                  filteredUsers.forEach(u => {
-                    const div = getDivLabel(u);
-                    const sub = getSubLabel(u);
-                    if (!grouped[div]) grouped[div] = {};
-                    if (!grouped[div][sub]) grouped[div][sub] = [];
-                    grouped[div][sub].push(u);
-                  });
-                  const divOrder = ['⚙️ Admin / Superadmin', '👥 Team PTS IVP', '👥 Team PTS UMP', '👥 Team PTS MLDS'];
-                  const sortedDivs = [
-                    ...divOrder.filter(d => grouped[d]),
-                    ...Object.keys(grouped).filter(d => !divOrder.includes(d)).sort(),
-                  ];
-                  const divColors: Record<string, { hdr: string; dot: string }> = {
-                    '⚙️ Admin / Superadmin': { hdr: 'bg-slate-100 border-slate-300 text-slate-700', dot: '#64748b' },
-                    '👥 Team PTS IVP':           { hdr: 'bg-rose-50 border-rose-200 text-rose-700',       dot: '#be123c' },
-                    '👥 Team PTS UMP':       { hdr: 'bg-orange-50 border-orange-200 text-orange-700', dot: '#c2410c' },
-                    '👥 Team PTS MLDS':      { hdr: 'bg-amber-50 border-amber-200 text-amber-700',    dot: '#b45309' },
-                    '📣 Marketing':          { hdr: 'bg-cyan-50 border-cyan-200 text-cyan-700',       dot: '#0891b2' },
-                    '👤 Lainnya':            { hdr: 'bg-slate-50 border-slate-200 text-slate-600',    dot: '#94a3b8' },
-                  };
-                  return sortedDivs.map(divLabel => {
-                    const subGroups = grouped[divLabel];
-                    const clr = divColors[divLabel] ?? { hdr: 'bg-violet-50 border-violet-200 text-violet-700', dot: '#7c3aed' };
-                    const totalInDiv = Object.values(subGroups).flat().length;
-                    return (
-                      <div key={divLabel} className="rounded-xl border overflow-hidden" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-                        <div className={`flex items-center justify-between px-4 py-2 border-b ${clr.hdr}`}>
-                          <span className="text-xs font-black tracking-widest uppercase">{divLabel}</span>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/70">{totalInDiv} akun</span>
-                        </div>
-                        {Object.entries(subGroups).map(([subLabel, subUsers]) => (
-                          <div key={subLabel}>
-                            {Object.keys(subGroups).length > 1 && (
-                              <div className="px-4 py-1.5 flex items-center gap-2" style={{ background: 'rgba(0,0,0,0.025)', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: clr.dot }} />
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{subLabel}</span>
-                                <span className="text-[10px] text-slate-400 ml-auto">{subUsers.length}</span>
-                              </div>
-                            )}
-                            <div className="grid grid-cols-2 gap-0">
-                              {subUsers.map((user, idx) => (
-                                <div key={user.id} className="flex items-center gap-3 p-3 bg-white hover:bg-slate-50 transition-all border-b border-slate-100"
-                                  style={{ borderRight: idx % 2 === 0 ? '1px solid #f1f5f9' : 'none' }}>
-                                  <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0"
-                                    style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#78350f' }}>
-                                    {user.full_name?.charAt(0)?.toUpperCase() ?? 'U'}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-bold text-slate-800 text-sm truncate">{user.full_name}</p>
-                                    <p className="text-xs text-slate-500">@{user.username}</p>
-                                    {user.phone_number && (
-                                      <p className="text-[10px] text-emerald-600 mt-0.5">📱 {user.phone_number}</p>
-                                    )}
-                                    <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                                      <span className="inline-block px-1.5 py-0.5 rounded-full text-[9px] font-bold tracking-widest uppercase bg-slate-200 text-slate-600">{user.role}</span>
-                                      {user.jabatan && <span className="inline-block px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🏷️ {user.jabatan}</span>}
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col gap-1 flex-shrink-0">
-                                    <button onClick={() => {
-                                      let d = '', p = '';
-                                      if (user.role === 'team') { d = 'PTS'; if (user.team_type === 'Team PTS IVP') p = 'PTS IVP'; else if (user.team_type === 'Team PTS UMP') p = 'PTS UMP'; else if (user.team_type === 'Team PTS MLDS') p = 'PTS MLDS'; }
-                                      else if (user.team_type === 'Guest') { d = 'Sales'; }
-                                      else if (user.team_type === 'Marketing') { d = 'Marketing'; }
-                                      setEditDivisi(d); setEditPtsType(p); setEditOrig({ username: user.username, full_name: user.full_name }); setEditingUser(user);
-                                    }} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all">Edit</button>
-                                    <button onClick={() => handleDeleteUser(user.id)} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-all">Hapus</button>
-                                  </div>
-                                </div>
-                              ))}
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="w-full text-sm" style={{ minWidth: 640 }}>
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-left">
+                      {['Nama', 'Username', 'Role', 'Divisi', 'No. Telepon'].map(h => (
+                        <th key={h} className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 whitespace-nowrap">{h}</th>
+                      ))}
+                      <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 text-right whitespace-nowrap">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.length === 0 ? (
+                      <tr><td colSpan={6} className="text-center py-10 text-slate-400 text-sm">Tidak ada akun ditemukan</td></tr>
+                    ) : filteredUsers.map((user, idx) => {
+                      const divisi = (user.role === 'superadmin' || user.role === 'admin')
+                        ? 'Admin / Superadmin'
+                        : user.role === 'team'
+                          ? (user.team_type ?? '—')
+                          : (user.sales_division || (user.team_type === 'Marketing' ? 'Marketing' : '—'));
+                      return (
+                        <tr key={user.id} className="border-b border-slate-100 hover:bg-rose-50/30 transition-colors" style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
+                          <td className="px-4 py-2.5 font-semibold text-slate-800 whitespace-nowrap">{user.full_name}</td>
+                          <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">@{user.username}</td>
+                          <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{user.role}</span></td>
+                          <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{divisi}</td>
+                          <td className="px-4 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-600">📱 {user.phone_number}</span> : <span className="text-slate-300">—</span>}</td>
+                          <td className="px-4 py-2.5">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button onClick={() => {
+                                let d = '', p = '';
+                                if (user.role === 'team') { d = 'PTS'; if (user.team_type === 'Team PTS IVP') p = 'PTS IVP'; else if (user.team_type === 'Team PTS UMP') p = 'PTS UMP'; else if (user.team_type === 'Team PTS MLDS') p = 'PTS MLDS'; }
+                                else if (user.team_type === 'Guest') { d = 'Sales'; }
+                                else if (user.team_type === 'Marketing') { d = 'Marketing'; }
+                                setEditDivisi(d); setEditPtsType(p); setEditOrig({ username: user.username, full_name: user.full_name }); setEditingUser(user);
+                              }} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all">Edit</button>
+                              <button onClick={() => handleDeleteUser(user.id)} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-all">Hapus</button>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  });
-                })()}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </>
