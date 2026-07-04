@@ -1079,14 +1079,20 @@ function ReminderSchedulePageInner() {
 
     // ── Fase 2 routing: cek apakah requester Sales Internal atau External ────
     // External → wajib direview Sales Internal (division_ivp_mappings) dulu,
-    // BARU Admin/Manager dapat notifikasi actionable. Internal (atau divisi
-    // tanpa mapping) → langsung ke Admin seperti alur lama (tidak berubah).
+    // BARU Admin/Manager dapat notifikasi actionable. Internal (atau Marketing,
+    // atau divisi tanpa mapping) → langsung ke Admin seperti alur lama — Sales
+    // Internal & Marketing sering request utk kebutuhan mereka sendiri (project
+    // direct ke user / kebutuhan internal), bukan lewat Sales External, jadi
+    // TIDAK boleh kena gerbang review. team_type==='Marketing' dicek terpisah
+    // dari is_internal_sales sebagai jaring pengaman kedua (independen dari
+    // flag, kalau-kalau ada akun Marketing yang belum sempat di-backfill).
     let routingStatus: 'internal_review' | 'admin_review' = 'admin_review';
     let internalSalesId: string | null = null;
     let internalHandlers: { phone_number: string | null; full_name: string }[] = [];
     try {
-      const { data: freshSelf } = await supabase.from('users').select('is_internal_sales').eq('id', currentUser.id).maybeSingle();
-      if (!freshSelf?.is_internal_sales && salesDivision) {
+      const { data: freshSelf } = await supabase.from('users').select('is_internal_sales, team_type').eq('id', currentUser.id).maybeSingle();
+      const isInternalOrMarketing = !!freshSelf?.is_internal_sales || freshSelf?.team_type === 'Marketing';
+      if (!isInternalOrMarketing && salesDivision) {
         const { data: ivpMaps } = await supabase.from('division_ivp_mappings').select('ivp_id').eq('sales_division', salesDivision);
         const ivpIds = (ivpMaps ?? []).map((m: { ivp_id: string }) => m.ivp_id);
         if (ivpIds.length > 0) {

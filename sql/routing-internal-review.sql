@@ -14,3 +14,15 @@ ALTER TABLE reminders ADD COLUMN IF NOT EXISTS internal_approved_by UUID REFEREN
 ALTER TABLE reminders ADD COLUMN IF NOT EXISTS internal_approved_at TIMESTAMPTZ;
 
 CREATE INDEX IF NOT EXISTS idx_reminders_internal_sales ON reminders(internal_sales_id) WHERE internal_sales_id IS NOT NULL;
+
+-- ── Backfill is_internal_sales untuk akun yang SUDAH ADA ────────────────────
+-- Kolom is_internal_sales baru (default FALSE utk semua). Tanpa backfill ini,
+-- akun IVP/MVI (Sales Internal) & Marketing yang sudah ada akan salah dianggap
+-- "External" sampai admin sempat centang manual satu-satu di Admin Panel.
+-- Marketing & Sales Internal (IVP/MVI) request untuk kebutuhan mereka SENDIRI
+-- (project direct ke user, bukan lewat Sales External) -- HARUS langsung ke
+-- Admin, TIDAK lewat gerbang review internal.
+UPDATE users SET is_internal_sales = TRUE
+WHERE role = 'guest'
+  AND (sales_division IN ('IVP', 'MVI') OR team_type = 'Marketing')
+  AND is_internal_sales IS DISTINCT FROM TRUE;

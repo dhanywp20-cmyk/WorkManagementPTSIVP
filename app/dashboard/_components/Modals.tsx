@@ -131,6 +131,10 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     }
 
     setSaving(true);
+    // Marketing & Sales divisi IVP/MVI = "Sales Internal" utk routing pipeline —
+    // request mereka sendiri (project direct ke user) tidak boleh kena gerbang
+    // review internal. Auto-set di sini supaya admin tidak perlu toggle manual.
+    const isInternalSales = newUser.divisi === 'Marketing' || (newUser.divisi === 'Sales' && ['IVP', 'MVI'].includes(newUser.sales_division));
     const insertPayload: Record<string, unknown> = {
       username: newUser.username,
       full_name: newUser.full_name,
@@ -140,6 +144,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
       jabatan: newUser.jabatan || null,
       phone_number: newUser.phone_number || null,
       sales_division: (newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') ? (newUser.sales_division || null) : null,
+      is_internal_sales: isInternalSales,
     };
     const { id: newId, error } = await adminCreateUser(insertPayload);
     // Password disimpan ke user_credentials via server route (yang dibaca login),
@@ -192,6 +197,9 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
       jabatan: editingUser.jabatan ?? null,
       phone_number: editingUser.phone_number ?? null,
       sales_division: (editDivisi === 'Sales' || editDivisi === 'Marketing') ? (editingUser.sales_division ?? null) : null,
+      // Ikut update is_internal_sales HANYA kalau admin ganti divisi (editDivisi
+      // terisi) — kalau cuma edit field lain, jangan sentuh nilai yang sudah ada.
+      ...(editDivisi ? { is_internal_sales: editDivisi === 'Marketing' || (editDivisi === 'Sales' && ['IVP', 'MVI'].includes(editingUser.sales_division ?? '')) } : {}),
     };
     if (editingUser.password) {
       const hashRes = await fetch('/api/auth/hash', {
@@ -2674,7 +2682,11 @@ export function AccountSettingsInline() {
     }
 
     setSaving(true);
-    const insertPayload: Record<string, unknown> = { username: newUser.username, full_name: newUser.full_name, role, team_type, allowed_menus: newUser.allowed_menus, jabatan: newUser.jabatan || null, phone_number: newUser.phone_number || null, sales_division: (newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') ? (newUser.sales_division || null) : null };
+    // Marketing & Sales divisi IVP/MVI = "Sales Internal" utk routing pipeline —
+    // request mereka sendiri (project direct ke user) tidak boleh kena gerbang
+    // review internal. Auto-set di sini supaya admin tidak perlu toggle manual.
+    const isInternalSales = newUser.divisi === 'Marketing' || (newUser.divisi === 'Sales' && ['IVP', 'MVI'].includes(newUser.sales_division));
+    const insertPayload: Record<string, unknown> = { username: newUser.username, full_name: newUser.full_name, role, team_type, allowed_menus: newUser.allowed_menus, jabatan: newUser.jabatan || null, phone_number: newUser.phone_number || null, sales_division: (newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') ? (newUser.sales_division || null) : null, is_internal_sales: isInternalSales };
     const { id: createdId, error } = await adminCreateUser(insertPayload);
     // Simpan password via server route (hash + insert ke user_credentials di server).
     if (!error && createdId && newUser.password) {
@@ -2706,7 +2718,9 @@ export function AccountSettingsInline() {
       } else if (editDivisi === 'Sales') { role = 'guest'; team_type = 'Guest'; }
       else if (editDivisi === 'Marketing') { role = 'guest'; team_type = 'Marketing'; }
     }
-    const updatePayload: Record<string, unknown> = { username: editingUser.username, full_name: editingUser.full_name, role, team_type, allowed_menus: editingUser.allowed_menus ?? ALL_MENU_KEYS, jabatan: editingUser.jabatan ?? null, phone_number: editingUser.phone_number ?? null, sales_division: (editDivisi === 'Sales' || editDivisi === 'Marketing') ? (editingUser.sales_division ?? null) : null };
+    const updatePayload: Record<string, unknown> = { username: editingUser.username, full_name: editingUser.full_name, role, team_type, allowed_menus: editingUser.allowed_menus ?? ALL_MENU_KEYS, jabatan: editingUser.jabatan ?? null, phone_number: editingUser.phone_number ?? null, sales_division: (editDivisi === 'Sales' || editDivisi === 'Marketing') ? (editingUser.sales_division ?? null) : null,
+      // Ikut update is_internal_sales HANYA kalau admin ganti divisi (editDivisi terisi).
+      ...(editDivisi ? { is_internal_sales: editDivisi === 'Marketing' || (editDivisi === 'Sales' && ['IVP', 'MVI'].includes(editingUser.sales_division ?? '')) } : {}) };
     const { error } = await adminUpdateUser(editingUser.id, updatePayload);
     if (error) { setSaving(false); notify('error', 'Gagal menyimpan: ' + error.message); return; }
     const propErr = await propagateUserRename(editingUser, editOrig);
@@ -3287,7 +3301,7 @@ export function UserManagementInline() {
     allUsers.filter(u => u.team_type === teamType && u.jabatan === 'Supervisor').map(u => u.full_name).join(', ') || '— (belum ada Supervisor di tim ini)';
   const handleToggleInternalSales = async (userId: string, current: boolean) => {
     setSavingInternal(userId);
-    const { error } = await supabase.from('users').update({ is_internal_sales: !current }).eq('id', userId);
+    const { error } = await adminUpdateUser(userId, { is_internal_sales: !current });
     if (error) notify('error', 'Gagal: ' + error.message);
     else { setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, is_internal_sales: !current } : u)); notify('success', !current ? 'Ditandai Internal.' : 'Ditandai External.'); }
     setSavingInternal(null);

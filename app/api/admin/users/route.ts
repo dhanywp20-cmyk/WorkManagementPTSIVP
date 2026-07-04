@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic';
 const ALLOWED_FIELDS = new Set([
   'username', 'full_name', 'role', 'team_type', 'sales_division',
   'jabatan', 'phone_number', 'allowed_menus', 'allow_incentive_input',
-  'atasan_id', 'kpi_enabled', 'password',
+  'atasan_id', 'kpi_enabled', 'password', 'is_internal_sales',
 ]);
 
 function pick(obj: Record<string, unknown>): Record<string, unknown> {
