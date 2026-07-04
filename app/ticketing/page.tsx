@@ -1125,7 +1125,10 @@ function TicketingSystemInner() {
                 "Silakan buka platform Servisindo untuk menerima dan assign ticket.",
               ].filter(Boolean).join("\n");
               for (const admin of svcAdmins) {
-                await sendWANotif({ type: "ticket_notif", target: admin.phone_number, message: waMsg });
+                // 'reminder_wa' = tipe generik (target+message) yg didukung edge
+                // function. Sebelumnya 'ticket_notif' TIDAK dikenali swift-responder
+                // -> jatuh ke "Unhandled type", WA ke admin Servisindo tak pernah kirim.
+                await sendWANotif({ type: "reminder_wa", target: admin.phone_number, message: waMsg });
               }
             }
           } catch { }
