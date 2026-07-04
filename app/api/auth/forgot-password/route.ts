@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
+import { sendWA } from '@/lib/wa';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,34 +18,6 @@ function hashOTP(otp: string): string {
 function maskPhone(phone: string): string {
   if (!phone || phone.length < 6) return '****';
   return phone.slice(0, 4) + '****' + phone.slice(-3);
-}
-
-// Panggil Fonnte langsung — tidak perlu swift-responder sebagai perantara
-async function sendFonnteWA(
-  target: string,
-  message: string,
-  token: string
-): Promise<{ ok: boolean; detail: string }> {
-  try {
-    const phone = target.replace(/\D/g, '').replace(/^0/, '62');
-    if (!phone || phone.length < 8) {
-      return { ok: false, detail: `Nomor tidak valid: "${target}"` };
-    }
-    const formData = new FormData();
-    formData.append('target', phone);
-    formData.append('message', message);
-    const res = await fetch('https://api.fonnte.com/send', {
-      method: 'POST',
-      headers: { Authorization: token },
-      body: formData,
-    });
-    const data = await res.json();
-    console.log('[forgot-password] Fonnte response:', JSON.stringify(data));
-    return { ok: data?.status === true, detail: JSON.stringify(data) };
-  } catch (e) {
-    console.error('[forgot-password] Fonnte error:', e);
-    return { ok: false, detail: String(e) };
-  }
 }
 
 export async function POST(request: NextRequest) {
@@ -90,23 +63,6 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Token Fonnte: utamakan env server-only FONNTE_TOKEN (tidak terekspos ke
-    // browser). Fallback ke app_settings / NEXT_PUBLIC_ hanya untuk transisi —
-    // sebaiknya hapus baris app_settings.fonnte_token & set FONNTE_TOKEN saja.
-    let fonnteToken = process.env.FONNTE_TOKEN || '';
-    if (!fonnteToken) {
-      const { data: tokenRow } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'fonnte_token')
-        .maybeSingle();
-      fonnteToken = (tokenRow?.value as string) || process.env.NEXT_PUBLIC_FONNTE_TOKEN || '';
-    }
-
-    if (!fonnteToken) {
-      return NextResponse.json({ error: 'Fonnte token belum dikonfigurasi.' }, { status: 500 });
-    }
-
     const normalizedUsername = user.username; // pakai nilai persis dari DB
 
     // Hapus OTP lama
@@ -147,7 +103,7 @@ export async function POST(request: NextRequest) {
       'Abaikan pesan ini jika kamu tidak meminta reset password.',
     ].join('\n');
 
-    const waResult = await sendFonnteWA(user.phone_number, waMsg, fonnteToken);
+    const waResult = await sendWA(user.phone_number, waMsg, 'forgot_password_otp');
 
     return NextResponse.json({
       success: true,

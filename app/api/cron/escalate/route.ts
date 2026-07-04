@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { sendWANotif } from '@/lib/wa';
 
 export const dynamic = 'force-dynamic';
 
@@ -88,16 +89,9 @@ async function runEscalation() {
       if (a.phone_number && !targets.includes(a.phone_number)) targets.push(a.phone_number);
     });
 
-    const waBase = process.env.NEXT_PUBLIC_WA_API_URL ?? '';
-    for (const phone of targets) {
-      try {
-        await fetch(`${waBase}/send`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ target: phone, message: waMsg }),
-        });
-      } catch { }
-    }
+    await Promise.allSettled(
+      targets.map(phone => sendWANotif({ type: 'reminder_wa', target: phone, message: waMsg }))
+    );
 
     await supabase
       .from('tickets')

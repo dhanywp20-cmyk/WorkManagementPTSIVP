@@ -467,13 +467,17 @@ function ReminderSchedulePageInner() {
       try {
         const reminder = reminders.find(r => r.id === id);
         if (reminder) {
+          // TIDAK filter team_type — assigned_to (username) sudah unik per user, dan
+          // handler bisa dari Team PTS IVP/UMP/MVI mana pun (routing pipeline multi-tim).
+          // Sebelumnya .eq('team_type','Team PTS IVP') bikin handlerUser selalu null
+          // (WA "selesai" tidak pernah terkirim) kalau handler-nya dari tim UMP/MVI.
           const { data: handlerUser } = await supabase
             .from('users').select('phone_number, full_name')
             .eq('username', reminder.assigned_to)
-            .eq('team_type', 'Team PTS IVP').single();
+            .maybeSingle();
           if (handlerUser?.phone_number) {
             const msg =
-              `✅ *JADWAL SELESAI — PTS IVP*\n\n` +
+              `✅ *JADWAL SELESAI*\n\n` +
               `Terima kasih *${handlerUser.full_name}*!\n` +
               `Jadwal *${reminder.project_name}* sudah *Selesai*.\n` +
               `📦 *Product: ${reminder.product ?? '-'}*\n` +
@@ -851,10 +855,10 @@ function ReminderSchedulePageInner() {
       const { data: handlerUser } = await supabase
         .from('users').select('phone_number, full_name')
         .eq('username', rescheduleTarget.assigned_to)
-        .eq('team_type', 'Team PTS IVP').single();
+        .maybeSingle();
       if (handlerUser?.phone_number) {
         const msg =
-          `📅 *JADWAL DIUBAH — PTS IVP*\n\n` +
+          `📅 *JADWAL DIUBAH*\n\n` +
           `Halo *${handlerUser.full_name}*, jadwal kamu telah di-reschedule:\n\n` +
           `*Project: ${rescheduleTarget.project_name}*\n` +
           `*Kategori: ${rescheduleTarget.category}*\n` +
@@ -881,13 +885,14 @@ function ReminderSchedulePageInner() {
     if (!r.assigned_to) { notify('error', 'Reminder belum di-assign ke handler.'); return; }
     setSendingWA(r.id);
 
-    // Ambil phone_number handler dari tabel users
+    // Ambil phone_number handler dari tabel users — TIDAK filter team_type,
+    // handler bisa dari Team PTS IVP/UMP/MVI mana pun (sebelumnya filter
+    // IVP-only bikin tombol ini selalu gagal utk handler tim UMP/MVI).
     const { data: handlerData, error: handlerErr } = await supabase
       .from('users')
       .select('phone_number, full_name')
       .eq('username', r.assigned_to)
-      .eq('team_type', 'Team PTS IVP')
-      .single();
+      .maybeSingle();
 
     if (handlerErr || !handlerData?.phone_number) {
       setSendingWA(null);
@@ -896,7 +901,7 @@ function ReminderSchedulePageInner() {
     }
 
     const msg =
-      `📋 *REMINDER JADWAL PTS IVP*\n\n` +
+      `📋 *REMINDER JADWAL*\n\n` +
       `Halo *${handlerData.full_name}*, ada jadwal yang perlu kamu kerjakan:\n\n` +
       `*Nama Project: ${r.project_name}*\n` +
       `*Deskripsi: ${r.description}*\n` +

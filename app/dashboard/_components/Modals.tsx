@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { setSession, getSession } from '@/lib/auth';
 import { adminCreateUser, adminUpdateUser } from '@/lib/admin-users';
 import { logAudit } from '@/lib/audit';
+import { sendWANotif } from '@/lib/wa';
 import { createNotification } from '@/lib/notifications';
 import { PRODUCT_TYPES } from '@/app/reminder-schedule/_components/shared';
 import {
@@ -33,6 +34,21 @@ async function propagateUserRename(
     p_new_name: edited.full_name ?? null,
   });
   return error ? error.message : null;
+}
+
+// WA selamat datang saat akun baru dibuat — dipakai kedua handleAddUser di
+// bawah (list lama & baru). Fire-and-forget lewat swift-responder (satu-satunya
+// jalur WA di platform ini), tidak boleh menggagalkan alur create-akun.
+function sendWelcomeWA(phone: string | null | undefined, fullName: string, username: string, password: string) {
+  if (!phone) return;
+  const msg =
+    `🎉 *Akun Baru — PTS Portal*\n\n` +
+    `Halo *${fullName}*, akun kamu sudah dibuat oleh Admin:\n\n` +
+    `👤 Username: ${username}\n` +
+    `🔑 Password: ${password}\n\n` +
+    `Silakan login & segera ganti password kamu.\n` +
+    `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+  sendWANotif({ type: 'reminder_wa', target: phone, message: msg }).catch(() => {});
 }
 
 interface AccountSettingsModalProps {
@@ -159,6 +175,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     setSaving(false);
     if (error) { notify('error', 'Gagal menambah akun: ' + error.message); return; }
     notify('success', 'Akun berhasil ditambahkan!');
+    sendWelcomeWA(newUser.phone_number, newUser.full_name, newUser.username, newUser.password);
     const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'create', module: 'user', target_name: newUser.full_name, notes: `Tambah akun: ${newUser.username}` });
     setNewUser({ username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: ALL_MENU_KEYS, divisi: '', pts_type: '' });
     setActiveTab('list');
@@ -2740,6 +2757,7 @@ export function AccountSettingsInline() {
     setSaving(false);
     if (error) { notify('error', 'Gagal menambah akun: ' + error.message); return; }
     notify('success', 'Akun berhasil ditambahkan!');
+    sendWelcomeWA(newUser.phone_number, newUser.full_name, newUser.username, newUser.password);
     const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'create', module: 'user', target_name: newUser.full_name, notes: `Tambah akun: ${newUser.username}` });
     setNewUser({ username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: ALL_MENU_KEYS, divisi: '', pts_type: '' });
     setActiveTab('list'); fetchUsers();
