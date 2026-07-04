@@ -2025,6 +2025,36 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
           internalUrl: '/reminder-schedule',
           menuTitle: 'Request Schedule',
         })));
+      } else if (roleLC === 'guest' || roleLC === 'sales') {
+        // Guest/Sales (termasuk Marketing & Sales Internal): reminder miliknya
+        // sendiri yang aktif + request yang MENUNGGU REVIEW dia (Sales Internal,
+        // Fase 2 routing pipeline) — sebelumnya role ini tidak dapat badge sama sekali.
+        const [{ data: ownReminders }, { data: awaitingReview }] = await Promise.all([
+          supabase.from('reminders')
+            .select('id, project_name, category, due_date, status, sales_name, created_at')
+            .eq('sales_name', currentUser.full_name).neq('status', 'done').neq('status', 'cancelled')
+            .order('due_date', { ascending: true }).limit(20),
+          supabase.from('reminders')
+            .select('id, project_name, category, due_date, status, sales_name, created_at')
+            .eq('internal_sales_id', currentUser.id).eq('routing_status', 'internal_review')
+            .order('created_at', { ascending: false }).limit(20),
+        ]);
+        const reviewIds = new Set((awaitingReview ?? []).map((r: any) => r.id));
+        const seen = new Set<string>();
+        const combined = [...(awaitingReview ?? []), ...(ownReminders ?? [])]
+          .filter((r: any) => { if (seen.has(r.id)) return false; seen.add(r.id); return true; });
+        setReminderNotifs(combined.map((r: any) => ({
+          id: r.id,
+          type: 'reminder' as const,
+          title: r.project_name,
+          subtitle: reviewIds.has(r.id)
+            ? `🔍 Perlu review kamu · ${r.category} · ${r.due_date}`
+            : `🗓️ ${r.category} · ${r.due_date}`,
+          time: r.created_at,
+          url: '/reminder-schedule',
+          internalUrl: '/reminder-schedule',
+          menuTitle: 'Request Schedule',
+        })));
       } else { setReminderNotifs([]); }
     } catch (e) { console.error('[notif] reminder fetch error:', e); }
 
