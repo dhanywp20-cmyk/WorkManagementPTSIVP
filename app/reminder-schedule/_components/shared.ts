@@ -52,6 +52,7 @@ export interface Reminder {
   internal_sales_id?: string | null;   // Sales Internal yang wajib review dulu (dari division_ivp_mappings)
   internal_approved_by?: string | null;
   internal_approved_at?: string | null;
+  rejection_reason?: string | null;    // alasan saat Sales Internal Tolak request
 }
 
 export interface TeamUser {

@@ -26,3 +26,8 @@ UPDATE users SET is_internal_sales = TRUE
 WHERE role = 'guest'
   AND (sales_division IN ('IVP', 'MVI') OR team_type = 'Marketing')
   AND is_internal_sales IS DISTINCT FROM TRUE;
+
+-- ── Tolak request saat tahap review Sales Internal ──────────────────────────
+-- Sales Internal bisa Tolak (bukan cuma Approve) request yang masuk ke dia,
+-- dengan alasan wajib diisi (pola sama dgn reject Request Design Project).
+ALTER TABLE reminders ADD COLUMN IF NOT EXISTS rejection_reason TEXT;

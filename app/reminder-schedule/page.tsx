@@ -122,6 +122,9 @@ function ReminderSchedulePageInner() {
   const [approveDate, setApproveDate] = useState('');
   const [approveTime, setApproveTime] = useState('');
   const [approveSaving, setApproveSaving] = useState(false);
+  const [internalRejectTarget, setInternalRejectTarget] = useState<Reminder | null>(null); // request yg mau di-Tolak Sales Internal
+  const [internalRejectReason, setInternalRejectReason] = useState('');
+  const [internalRejectSaving, setInternalRejectSaving] = useState(false);
 
   const notify = (type: 'success' | 'error', msg: string) => {
     setToast({ type, msg });
@@ -1245,6 +1248,39 @@ function ReminderSchedulePageInner() {
     setSaving(false);
   };
 
+  // ─── Handler: Sales Internal Tolak request (wajib isi alasan) ────────────
+  const handleInternalReject = (r: Reminder) => { setInternalRejectReason(''); setInternalRejectTarget(r); };
+
+  const handleInternalRejectConfirm = async () => {
+    const r = internalRejectTarget;
+    if (!r) return;
+    if (!internalRejectReason.trim()) { notify('error', 'Alasan penolakan wajib diisi!'); return; }
+    setInternalRejectSaving(true);
+    const { error } = await supabase.from('reminders').update({
+      status: 'cancelled',
+      rejection_reason: internalRejectReason.trim(),
+    }).eq('id', r.id);
+    if (error) { notify('error', 'Gagal menolak: ' + error.message); setInternalRejectSaving(false); return; }
+    notify('success', 'Request ditolak.');
+    logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'reject', module: 'reminder', target_id: r.id, target_name: r.project_name, notes: internalRejectReason.trim() }).catch(() => {});
+    setInternalRejectTarget(null);
+    fetchRemindersQuiet();
+
+    // WA ke Sales requester — kasih tau ditolak + alasannya.
+    try {
+      const { data: salesUser } = await supabase.from('users').select('phone_number, full_name').eq('full_name', r.sales_name).eq('role', 'guest').maybeSingle();
+      if (salesUser?.phone_number) {
+        const msg =
+          `❌ *REQUEST JADWAL DITOLAK*\n\n` +
+          `Halo *${salesUser.full_name}*, request kamu untuk *${r.project_name}* ditolak oleh *${currentUser?.full_name}* (Sales Internal).\n\n` +
+          `📝 *Alasan:* ${internalRejectReason.trim()}\n\n` +
+          `Silakan hubungi ${currentUser?.full_name} atau ajukan ulang jika diperlukan.`;
+        await sendFonnteWA(salesUser.phone_number, msg);
+      }
+    } catch { }
+    setInternalRejectSaving(false);
+  };
+
   // ─── Handler: Admin Approve & Assign request dari Sales ─────────────────
   const handleApproveAssign = async () => {
     if (!approveTarget || !approveAssignTo) return;
@@ -1455,6 +1491,40 @@ jangan lupa peralatan & Semangat💪🏼
             onClose={() => setShowRequestModal(false)}
             onSubmit={handleRequestJadwal}
           />
+        )}
+
+        {/* ── TOLAK MODAL (Sales Internal, tahap internal_review) ── */}
+        {internalRejectTarget && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4"
+            onClick={e => { if (e.target === e.currentTarget) setInternalRejectTarget(null); }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+              style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(220,38,38,0.35)' }}>
+              <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
+                <h3 className="text-lg font-bold text-white">❌ Tolak Request</h3>
+                <p className="text-red-100/90 text-xs mt-0.5 truncate">{internalRejectTarget.project_name}</p>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Alasan Penolakan *</label>
+                  <textarea value={internalRejectReason} onChange={e => setInternalRejectReason(e.target.value)}
+                    rows={3} placeholder="Tuliskan alasan penolakan..."
+                    className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all resize-none focus:ring-2 focus:ring-red-500/40"
+                    style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => setInternalRejectTarget(null)}
+                    className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
+                    style={{ background: 'rgba(255,255,255,0.95)', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>Batal</button>
+                  <button onClick={handleInternalRejectConfirm} disabled={internalRejectSaving}
+                    className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
+                    style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
+                    {internalRejectSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                    ❌ Ya, Tolak
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* ── APPROVE & ASSIGN MODAL (Admin only) ── */}
@@ -1820,9 +1890,14 @@ jangan lupa peralatan & Semangat💪🏼
                 {(isAdmin || currentUser?.role === 'team' || (currentUser?.id === detailReminder.internal_sales_id && detailReminder.routing_status === 'internal_review')) && (
                   <div className="flex gap-2 flex-wrap sticky top-0 z-20 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-gray-100">
                     {currentUser?.id === detailReminder.internal_sales_id && detailReminder.routing_status === 'internal_review' && (
-                      <button onClick={() => handleInternalApprove(detailReminder)}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
-                        style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white' }}>✅ Approve &amp; Teruskan ke Admin</button>
+                      <>
+                        <button onClick={() => handleInternalApprove(detailReminder)}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
+                          style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white' }}>✅ Approve &amp; Teruskan ke Admin</button>
+                        <button onClick={() => handleInternalReject(detailReminder)}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
+                          style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', color: 'white' }}>❌ Tolak</button>
+                      </>
                     )}
                     {isAdmin && !detailReminder.assigned_to && detailReminder.notes?.includes('[REQUEST SALES]') && detailReminder.routing_status !== 'internal_review' && (
                       <button onClick={() => { setApproveTarget(detailReminder); setApproveBatchSiblings(detailReminder.batch_id ? reminders.filter(gr => gr.id !== detailReminder.id && gr.batch_id === detailReminder.batch_id && !gr.assigned_to) : []); setApproveAssignTo(''); setApproveDate(detailReminder.due_date); setApproveTime(detailReminder.due_time); }}
@@ -1851,6 +1926,16 @@ jangan lupa peralatan & Semangat💪🏼
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
                         style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', color: 'white' }}>✏️ Edit</button>
                     )}
+                  </div>
+                )}
+
+                {detailReminder.status === 'cancelled' && detailReminder.rejection_reason && (
+                  <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)' }}>
+                    <span className="text-base flex-shrink-0">❌</span>
+                    <div>
+                      <p className="text-xs font-bold text-red-700">Request Ditolak</p>
+                      <p className="text-xs text-red-600 mt-0.5">{detailReminder.rejection_reason}</p>
+                    </div>
                   </div>
                 )}
 
@@ -1988,6 +2073,7 @@ jangan lupa peralatan & Semangat💪🏼
                   );
                 })()}
 
+                {(isAdmin || currentUser?.role === 'team') && (
                 <div>
                   <p className="text-[10px] font-bold tracking-widest uppercase mb-3" style={{ color: '#64748b' }}>Update Status</p>
                   {detailReminder.status === 'done' ? (
@@ -2094,6 +2180,7 @@ jangan lupa peralatan & Semangat💪🏼
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* Foto Bukti Selesai - tampil jika status done dan ada foto */}
                 {detailReminder.status === 'done' && detailReminder.completion_photo_url && (
@@ -2603,7 +2690,13 @@ jangan lupa peralatan & Semangat💪🏼
                                 <RescheduleIconBtn onClick={() => setRescheduleTarget(r)} title="Re-Schedule" />
                               )}
                               {currentUser?.id === r.internal_sales_id && r.routing_status === 'internal_review' && (
-                                <ApproveIconBtn onClick={() => handleInternalApprove(r)} title="Approve & Teruskan ke Admin" pulse />
+                                <>
+                                  <ApproveIconBtn onClick={() => handleInternalApprove(r)} title="Approve & Teruskan ke Admin" pulse />
+                                  <button onClick={() => handleInternalReject(r)} title="Tolak"
+                                    className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                                  </button>
+                                </>
                               )}
                               {isAdmin && !r.assigned_to && r.notes?.includes('[REQUEST SALES]') && r.routing_status !== 'internal_review' && (
                                 <ApproveIconBtn onClick={() => { setApproveTarget(r); setApproveBatchSiblings(group.filter(gr => gr.id !== r.id && gr.batch_id === r.batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(r.due_date); setApproveTime(r.due_time); }} title="Approve & Assign" pulse />
@@ -2835,7 +2928,13 @@ jangan lupa peralatan & Semangat💪🏼
                                     )}
                                     {/* Approve & Teruskan — Sales Internal yg di-mapping, wajib duluan sebelum Admin */}
                                     {currentUser?.id === group[0].internal_sales_id && group[0].routing_status === 'internal_review' && (
-                                      <ApproveIconBtn onClick={() => handleInternalApprove(group[0])} title="Approve & Teruskan ke Admin" pulse />
+                                      <>
+                                        <ApproveIconBtn onClick={() => handleInternalApprove(group[0])} title="Approve & Teruskan ke Admin" pulse />
+                                        <button onClick={() => handleInternalReject(group[0])} title="Tolak"
+                                          className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
+                                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                      </>
                                     )}
                                     {/* Approve & Assign — admin only, hanya utk request sales yg belum di-assign & sudah lolos review internal */}
                                     {isAdmin && !group[0].assigned_to && group[0].notes?.includes('[REQUEST SALES]') && group[0].routing_status !== 'internal_review' && (
