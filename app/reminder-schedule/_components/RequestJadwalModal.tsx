@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { CATEGORY_CONFIG, PRODUCT_TYPES } from './shared';
+import { MultiDatePicker } from '@/components/shared';
 
 export interface JadwalRequest {
   project_name: string;
@@ -9,6 +10,7 @@ export interface JadwalRequest {
   category: string;
   product_type: string;   // tipe produk (LED / LCD·Middleware / LED & LCD) — utk routing
   due_date: string;
+  extra_dates: string[];   // hari tambahan — request sekali untuk beberapa hari sekaligus
   due_time: string;
   pic_name: string;
   pic_phone: string;
@@ -50,6 +52,7 @@ export function RequestJadwalModal({
     category: 'Demo Product',
     product_type: '',
     due_date: new Date().toISOString().split('T')[0],
+    extra_dates: [],
     due_time: '09:00',
     pic_name: '',
     pic_phone: '',
@@ -275,6 +278,14 @@ export function RequestJadwalModal({
             </div>
           </div>
 
+          {/* Tambah Hari Lain — request sekali untuk beberapa hari sekaligus */}
+          <div>
+            <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+              Tambah Hari Lain (Opsional)
+            </label>
+            <MultiDatePicker dates={form.extra_dates} onChange={dates => f({ extra_dates: dates })} accentColor="#2563eb" />
+          </div>
+
           {/* PIC */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -356,7 +367,10 @@ export function RequestJadwalModal({
             >
               {submitting
                 ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Mengirim...</>
-                : <>📩 Kirim Request Jadwal</>
+                : (() => {
+                    const dateCount = new Set([form.due_date, ...form.extra_dates].filter(Boolean)).size || 1;
+                    return dateCount > 1 ? <>📩 Kirim Request ({dateCount} Hari)</> : <>📩 Kirim Request Jadwal</>;
+                  })()
               }
             </button>
           </div>

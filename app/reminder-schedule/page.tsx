@@ -78,6 +78,7 @@ function ReminderSchedulePageInner() {
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [bulkConfirm, setBulkConfirm] = useState(false);
   const [bulkTarget, setBulkTarget] = useState<'none' | 'ivp' | 'mlds' | 'ump'>('none');
+  const [extraDates, setExtraDates] = useState<string[]>([]); // hari tambahan (multi-tanggal sekali submit)
   // Kalender-only selection — tidak mempengaruhi filter list/chart/summary
   const [calOnlyDay, setCalOnlyDay]         = useState<string | null>(null);
   const [sendingWA, setSendingWA]           = useState<string | null>(null);
@@ -302,6 +303,15 @@ function ReminderSchedulePageInner() {
       return;
     }
 
+    // Multi-tanggal: request 1 kali untuk beberapa hari sekaligus (mis. tanggal 1, 2, 3).
+    // Saat editing 1 reminder yang sudah ada, extraDates diabaikan (edit tetap 1 baris).
+    const allDates: string[] = editingReminder
+      ? [formData.due_date]
+      : Array.from(new Set([formData.due_date, ...extraDates].filter(Boolean))).sort();
+    const jadwalLine = allDates.length > 1
+      ? `🕐 *Jadwal (${allDates.length} hari):* ${allDates.map(d => formatDate(d)).join(', ')}${formData.due_time ? ' · ' + formData.due_time : ''}`
+      : `🕐 Jadwal: *${formatDate(formData.due_date)}${formData.due_time ? ' · ' + formData.due_time : ''}*`;
+
     // ── BULK ASSIGN ──────────────────────────────────────────────────────────
     if (bulkTarget !== 'none') {
       const teamTypeMap: Record<string, string> = { ivp: 'Team PTS IVP', mlds: 'Team PTS MLDS', ump: 'Team PTS UMP' };
@@ -309,15 +319,16 @@ function ReminderSchedulePageInner() {
       const targets = teamUsers.filter(u => u.team_type === teamTypeMap[bulkTarget]);
       if (targets.length === 0) { notify('error', 'Tidak ada anggota team yang ditemukan!'); return; }
       setSaving(true);
-      const payloads = targets.map(u => ({
+      const payloads = targets.flatMap(u => allDates.map(d => ({
         ...formData,
+        due_date: d,
         assigned_to: u.username,
         assign_name: u.full_name,
         created_by: currentUser?.username ?? 'system',
-      }));
+      })));
       const { error: bulkErr } = await supabase.from('reminders').insert(payloads);
       if (bulkErr) { notify('error', 'Gagal menyimpan: ' + bulkErr.message); setSaving(false); return; }
-      notify('success', `${targets.length} reminder dibuat untuk Tim ${bulkLabelMap[bulkTarget]}!`);
+      notify('success', `${payloads.length} reminder dibuat untuk Tim ${bulkLabelMap[bulkTarget]}${allDates.length > 1 ? ` (${allDates.length} hari)` : ''}!`);
       for (const u of targets) {
         if (u.phone_number) {
           const msg =
@@ -329,7 +340,7 @@ function ReminderSchedulePageInner() {
             `🏷️ Kategori: ${formData.category}\n` +
             `📍 Lokasi: ${formData.address || '-'}\n` +
             `👤 Sales: ${formData.sales_name}${formData.sales_division ? ' - ' + formData.sales_division : ''}\n` +
-            `🕐 Jadwal: *${formatDate(formData.due_date)}${formData.due_time ? ' · ' + formData.due_time : ''}*\n` +
+            `${jadwalLine}\n` +
             (formData.pic_name  ? `🙋 PIC: ${formData.pic_name}${formData.pic_phone ? ' - ' + formData.pic_phone : ''}\n\n` : '') +
             (formData.notes     ? `📝 Catatan: ${formData.notes}\n\n` : '') +
             `-\n` +
@@ -344,18 +355,28 @@ function ReminderSchedulePageInner() {
       setEditingReminder(null);
       setFormData(emptyForm);
       setBulkTarget('none');
+      setExtraDates([]);
       fetchRemindersQuiet();
       return;
     }
     // ── SINGLE ASSIGN ────────────────────────────────────────────────────────
 
     const assignee = teamUsers.find(u => u.username === formData.assigned_to);
-    const payload = { ...formData, assign_name: assignee?.full_name ?? formData.assigned_to, created_by: currentUser?.username ?? 'system', ...(editingReminder ? { updated_at: new Date().toISOString() } : {}) };
 
     setSaving(true);
-    const { error } = editingReminder
-      ? await supabase.from('reminders').update(payload).eq('id', editingReminder.id)
-      : await supabase.from('reminders').insert([payload]);
+    let error: { message: string } | null = null;
+    if (editingReminder) {
+      const payload = { ...formData, assign_name: assignee?.full_name ?? formData.assigned_to, created_by: currentUser?.username ?? 'system', updated_at: new Date().toISOString() };
+      ({ error } = await supabase.from('reminders').update(payload).eq('id', editingReminder.id));
+    } else {
+      const payloads = allDates.map(d => ({
+        ...formData,
+        due_date: d,
+        assign_name: assignee?.full_name ?? formData.assigned_to,
+        created_by: currentUser?.username ?? 'system',
+      }));
+      ({ error } = await supabase.from('reminders').insert(payloads));
+    }
 
     if (error) {
       notify('error', 'Gagal menyimpan: ' + error.message);
@@ -363,12 +384,11 @@ function ReminderSchedulePageInner() {
       return;
     }
 
-    notify('success', editingReminder ? 'Reminder diperbarui!' : 'Reminder ditambahkan!');
+    notify('success', editingReminder ? 'Reminder diperbarui!' : (allDates.length > 1 ? `${allDates.length} reminder dibuat!` : 'Reminder ditambahkan!'));
 
     // ── Kirim WA notifikasi ke assignee saat reminder BARU dibuat ────────────
     if (!editingReminder && assignee?.phone_number) {
       const assigneeName = assignee.full_name ?? formData.assigned_to;
-      const createdBy = currentUser?.username ?? 'system';
       const msg =
         `🗓️ *JADWAL BARU — PTS IVP*\n\n` +
         `Halo *${assigneeName}*, kamu mendapat jadwal baru:\n\n` +
@@ -378,7 +398,7 @@ function ReminderSchedulePageInner() {
         `🏷️ Kategori: ${formData.category}\n` +
         `📍 Lokasi: ${formData.address || '-'}\n` +
         `👤 Sales: ${formData.sales_name}${formData.sales_division ? ' - ' + formData.sales_division : ''}\n` +
-        `🕐 Jadwal: *${formatDate(formData.due_date)}${formData.due_time ? ' · ' + formData.due_time : ''}*\n` +
+        `${jadwalLine}\n` +
         (formData.pic_name  ? `🙋 PIC: ${formData.pic_name}${formData.pic_phone ? ' - ' + formData.pic_phone : ''}\n\n`    : '') +
         (formData.notes     ? `📝 Catatan: ${formData.notes}\n\n`    : '') +
         `-\n` +
@@ -395,6 +415,7 @@ function ReminderSchedulePageInner() {
     setView('list');
     setEditingReminder(null);
     setFormData(emptyForm);
+    setExtraDates([]);
     fetchRemindersQuiet();
   };
 
@@ -1036,24 +1057,32 @@ function ReminderSchedulePageInner() {
       } catch { /* gunakan nilai kosong jika gagal */ }
     }
 
+    // Multi-tanggal: request 1 kali untuk beberapa hari sekaligus (mis. tanggal 1, 2, 3)
+    // → 1 baris reminder per tanggal, semua status pending menunggu assign Admin.
+    const allDates = Array.from(new Set([data.due_date, ...data.extra_dates].filter(Boolean))).sort();
+    const usulanLine = allDates.length > 1
+      ? `🕐 *Usulan (${allDates.length} hari):* ${allDates.map(d => formatDate(d)).join(', ')}${data.due_time ? ' · ' + data.due_time : ''}`
+      : `🕐 Usulan: *${formatDate(data.due_date)}${data.due_time ? ' · ' + data.due_time : ''}*`;
+
     // Insert ke tabel reminders dengan status pending & assigned_to kosong
     // Admin nantinya assign ke team dari list yang ada
-    const payload = {
+    const notesVal = data.notes
+      ? `[REQUEST SALES] ${data.notes}`
+      : '[REQUEST SALES] Menunggu assignment dari Admin';
+    const payloads = allDates.map(d => ({
       project_name: data.project_name,
       description: data.description,
       address: data.address,
       category: data.category,
       product_type: data.product_type,
-      due_date: data.due_date,
+      due_date: d,
       due_time: data.due_time,
       sales_name: currentUser.full_name,
       sales_division: salesDivision,
       pic_name: data.pic_name,
       pic_phone: data.pic_phone,
       product: data.product,
-      notes: data.notes
-        ? `[REQUEST SALES] ${data.notes}`
-        : '[REQUEST SALES] Menunggu assignment dari Admin',
+      notes: notesVal,
       priority: 'medium' as const,
       status: 'pending' as const,
       repeat: 'none' as const,
@@ -1061,15 +1090,15 @@ function ReminderSchedulePageInner() {
       assigned_to: '',
       assign_name: '',
       created_by: currentUser.username,
-    };
+    }));
 
-    const { error } = await supabase.from('reminders').insert([payload]);
+    const { error } = await supabase.from('reminders').insert(payloads);
     if (error) {
       notify('error', 'Gagal mengirim request: ' + error.message);
       return;
     }
 
-    notify('success', 'Request jadwal berhasil dikirim! Menunggu approval Admin.');
+    notify('success', allDates.length > 1 ? `${allDates.length} request jadwal berhasil dikirim! Menunggu approval Admin.` : 'Request jadwal berhasil dikirim! Menunggu approval Admin.');
     setShowRequestModal(false);
     fetchRemindersQuiet();
 
@@ -1087,7 +1116,7 @@ function ReminderSchedulePageInner() {
           `🏷️ Kategori: ${data.category}\n` +
           `📦 Product: ${data.product || '-'}\n` +
           `📍 Lokasi: ${data.address}\n` +
-          `🕐 Usulan: *${formatDate(data.due_date)}${data.due_time ? ' · ' + data.due_time : ''}*\n` +
+          `${usulanLine}\n` +
           (data.description ? `📝 Deskripsi: ${data.description}\n` : '') +
           (data.pic_name ? `🙋 PIC: ${data.pic_name}${data.pic_phone ? ' - ' + data.pic_phone : ''}\n` : '') +
           `\nSilakan review & assign ke Team PTS IVP:\n` +
@@ -1475,7 +1504,9 @@ jangan lupa peralatan & Semangat💪🏼
           guestUsers={guestUsers}
           bulkTarget={bulkTarget}
           onBulkTargetChange={setBulkTarget}
-          onClose={() => { setShowFormModal(false); setEditingReminder(null); setFormData(emptyForm); setBulkTarget('none'); }}
+          extraDates={extraDates}
+          onExtraDatesChange={setExtraDates}
+          onClose={() => { setShowFormModal(false); setEditingReminder(null); setFormData(emptyForm); setBulkTarget('none'); setExtraDates([]); }}
           onSubmit={handleSave}
         />
       )}
@@ -2080,7 +2111,7 @@ jangan lupa peralatan & Semangat💪🏼
           </button>
 
           {canAddReminder && view === 'list' && (
-            <button onClick={() => { setEditingReminder(null); setFormData(emptyForm); setShowFormModal(true); }}
+            <button onClick={() => { setEditingReminder(null); setFormData(emptyForm); setExtraDates([]); setShowFormModal(true); }}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90"
               style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', boxShadow: '0 4px 14px rgba(8,145,178,0.4)' }}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>

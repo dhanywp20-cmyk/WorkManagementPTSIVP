@@ -7,7 +7,7 @@ import {
   REPEAT_OPTIONS, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES,
   PRODUCT_TYPES,
 } from './shared';
-import { FormField, SectionHeader } from '@/components/shared';
+import { FormField, SectionHeader, MultiDatePicker } from '@/components/shared';
 
 export type ReminderForm = Omit<Reminder, 'id' | 'created_at' | 'created_by' | 'wa_sent_h1'>;
 export type BulkTarget = 'none' | 'ivp' | 'mlds' | 'ump';
@@ -24,11 +24,13 @@ interface Props {
   guestUsers: GuestUser[];
   bulkTarget: BulkTarget;
   onBulkTargetChange: (t: BulkTarget) => void;
+  extraDates: string[];
+  onExtraDatesChange: (dates: string[]) => void;
   onClose: () => void;
   onSubmit: () => void;
 }
 
-export function ReminderFormModal({ editingReminder, formData, setFormData, saving, teamUsers, guestUsers, bulkTarget, onBulkTargetChange, onClose, onSubmit }: Props) {
+export function ReminderFormModal({ editingReminder, formData, setFormData, saving, teamUsers, guestUsers, bulkTarget, onBulkTargetChange, extraDates, onExtraDatesChange, onClose, onSubmit }: Props) {
   const [guestSearch, setGuestSearch] = useState('');
   const [guestDropdownOpen, setGuestDropdownOpen] = useState(false);
   const [err, setErr] = useState('');
@@ -257,6 +259,12 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             </FormField>
           </div>
 
+          {!editingReminder && (
+            <FormField label="Tambah Hari Lain (Opsional)">
+              <MultiDatePicker dates={extraDates} onChange={onExtraDatesChange} accentColor="#0891b2" />
+            </FormField>
+          )}
+
           {editingReminder && (
             <FormField label="Status">
               <select value={formData.status} onChange={e => fd({ status: e.target.value as Status })}
@@ -456,12 +464,13 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
               className="flex-1 text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02]"
               style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', boxShadow: '0 4px 14px rgba(8,145,178,0.35)' }}>
               {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              {editingReminder
-                ? 'Simpan Perubahan'
-                : bulkTarget !== 'none'
-                  ? `➕ Buat ${teamUsers.filter(u => u.team_type === BULK_TEAM_TYPE[bulkTarget]).length} Reminder`
-                  : '➕ Tambah Reminder'
-              }
+              {(() => {
+                if (editingReminder) return 'Simpan Perubahan';
+                const dateCount = new Set([formData.due_date, ...extraDates].filter(Boolean)).size || 1;
+                const targetCount = bulkTarget !== 'none' ? teamUsers.filter(u => u.team_type === BULK_TEAM_TYPE[bulkTarget]).length : 1;
+                const total = dateCount * targetCount;
+                return total > 1 ? `➕ Buat ${total} Reminder (${dateCount} hari${targetCount > 1 ? ` × ${targetCount} orang` : ''})` : '➕ Tambah Reminder';
+              })()}
             </button>
           </div>
         </div>
