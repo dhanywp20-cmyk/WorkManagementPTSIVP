@@ -48,7 +48,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
   const isAdmin  = ['admin','superadmin'].includes(currentUser.role?.toLowerCase() ?? '');
   const isPTSsup = currentUser.role === 'team' &&
-    ['Team PTS IVP','Team PTS UMP','Team PTS MLDS'].includes(currentUser.team_type ?? '') &&
+    ['Team PTS IVP','Team PTS UMP','Team PTS MVI'].includes(currentUser.team_type ?? '') &&
     currentUser.jabatan === 'Supervisor';
   const isSalesSup = ['guest','sales'].includes(currentUser.role?.toLowerCase() ?? '') &&
     ['Supervisor','Manager','Deputy General Manager','General Manager','Direktur'].includes(currentUser.jabatan ?? '');
@@ -242,8 +242,8 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     // ── 4. Piket Showroom ──
     try {
       const { data: pkData } = await supabase.from('piket_schedules')
-        .select('id, day_date, day_of_week, pic_ivp_name, pic_ump_name, pic_mlds_name')
-        .or(`pic_ivp_name.ilike.%${q}%,pic_ump_name.ilike.%${q}%,pic_mlds_name.ilike.%${q}%,day_date.ilike.%${q}%`)
+        .select('id, day_date, day_of_week, pic_ivp_name, pic_ump_name, pic_mvi_name')
+        .or(`pic_ivp_name.ilike.%${q}%,pic_ump_name.ilike.%${q}%,pic_mvi_name.ilike.%${q}%,day_date.ilike.%${q}%`)
         .order('day_date', { ascending: false }).limit(10);
       let pikets = (pkData ?? []) as any[];
 
@@ -252,7 +252,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
         pikets = pikets.filter((p: any) => {
           if (myTeam === 'Team PTS IVP') return (p.pic_ivp_name ?? '').toLowerCase().includes(ql);
           if (myTeam === 'Team PTS UMP') return (p.pic_ump_name ?? '').toLowerCase().includes(ql);
-          if (myTeam === 'Team PTS MLDS') return (p.pic_mlds_name ?? '').toLowerCase().includes(ql);
+          if (myTeam === 'Team PTS MVI') return (p.pic_mvi_name ?? '').toLowerCase().includes(ql);
           return true;
         });
       } else if (isSalesSup) {
@@ -262,7 +262,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       pikets.forEach((p: any) => res.push({
         id: `piket-${p.id}`, type: 'piket', icon: '🏪',
         title: `Piket ${p.day_of_week ?? ''} ${p.day_date ?? ''}`,
-        sub: [p.pic_ivp_name, p.pic_ump_name, p.pic_mlds_name].filter(Boolean).join(' · ') || '-',
+        sub: [p.pic_ivp_name, p.pic_ump_name, p.pic_mvi_name].filter(Boolean).join(' · ') || '-',
         meta: p.day_date ?? '-',
         url: '/picket-showroom',
       }));

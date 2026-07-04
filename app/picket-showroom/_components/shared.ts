@@ -16,7 +16,7 @@ export const DAY_COLOR: Record<DayOfWeek,{accent:string;light:string;grad:string
 export const TEAM_LABEL: Record<string,{dot:string;text:string}> = {
   'PTS IVP':  {dot:'#dc2626',text:'#991b1b'},
   'PTS UMP':  {dot:'#2563eb',text:'#1e40af'},
-  'PTS MLDS': {dot:'#7c3aed',text:'#6d28d9'},
+  'PTS MVI': {dot:'#7c3aed',text:'#6d28d9'},
 };
 
 export const KEBUTUHAN_LIST = [
@@ -54,7 +54,7 @@ export interface PiketRow {
   id:string; week_start:string; day_of_week:DayOfWeek; day_date:string;
   pic_ivp_id:string|null; pic_ivp_name:string|null;
   pic_ump_id:string|null; pic_ump_name:string|null;
-  pic_mlds_id:string|null; pic_mlds_name:string|null;
+  pic_mvi_id:string|null; pic_mvi_name:string|null;
   tamu_instansi:string|null; kebutuhan:string[];
   created_at:string; updated_at:string;
   edited_by_name?:string|null;
@@ -152,8 +152,8 @@ function buildDayMaps(wk: string, dbRows: PiketRow[]): { nameMap: DayNameMap; ui
   dbRows.forEach(r => {
     if (r.week_start !== wk || !r.day_of_week) return;
     const day  = r.day_of_week;
-    const name = r.pic_ivp_name || r.pic_ump_name || r.pic_mlds_name || '';
-    const uid  = r.pic_ivp_id  || r.pic_ump_id  || r.pic_mlds_id  || '';
+    const name = r.pic_ivp_name || r.pic_ump_name || r.pic_mvi_name || '';
+    const uid  = r.pic_ivp_id  || r.pic_ump_id  || r.pic_mvi_id  || '';
     if (name) nameMap[day] = name;
     if (uid)  uidMap[day]  = uid;
   });

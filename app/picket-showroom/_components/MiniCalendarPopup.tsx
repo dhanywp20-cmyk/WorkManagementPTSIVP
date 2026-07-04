@@ -35,13 +35,13 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
     const picPool = gridSaved.map(r => ({
       pic_ivp_id: r.pic_ivp_id, pic_ivp_name: r.pic_ivp_name,
       pic_ump_id: r.pic_ump_id, pic_ump_name: r.pic_ump_name,
-      pic_mlds_id: r.pic_mlds_id, pic_mlds_name: r.pic_mlds_name,
+      pic_mvi_id: r.pic_mvi_id, pic_mvi_name: r.pic_mvi_name,
     }));
     let poolIdx = 0;
     const newMap: Record<string, PiketRow[]> = { ...rowMap };
     for (const row of gridSaved) {
       if (holidaySet.has(row.day_date)) {
-        newMap[row.day_date] = [{ ...row, pic_ivp_id: null, pic_ivp_name: null, pic_ump_id: null, pic_ump_name: null, pic_mlds_id: null, pic_mlds_name: null }];
+        newMap[row.day_date] = [{ ...row, pic_ivp_id: null, pic_ivp_name: null, pic_ump_id: null, pic_ump_name: null, pic_mvi_id: null, pic_mvi_name: null }];
       } else {
         const pic = picPool[Math.min(poolIdx++, picPool.length - 1)];
         newMap[row.day_date] = [{ ...row, ...pic }];
@@ -87,7 +87,7 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
 
             // Names to display from actual DB rows
             const dbPics=hasDB
-              ? dayRows.flatMap(r=>[r.pic_ivp_name,r.pic_ump_name,r.pic_mlds_name].filter(Boolean) as string[])
+              ? dayRows.flatMap(r=>[r.pic_ivp_name,r.pic_ump_name,r.pic_mvi_name].filter(Boolean) as string[])
               : [];
             const dc=hasDB ? DAY_COLOR[dayRows[0].day_of_week] : null;
 

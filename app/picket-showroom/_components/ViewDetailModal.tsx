@@ -11,7 +11,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
   const picList=([
     [row.pic_ivp_name,'PTS IVP'],
     [row.pic_ump_name,'PTS UMP'],
-    [row.pic_mlds_name,'PTS MLDS'],
+    [row.pic_mvi_name,'PTS MVI'],
   ] as [string|null,string][]).filter(([n])=>!!n);
 
   const handleEditClick = () => {

@@ -20,7 +20,7 @@ interface KPIData {
     overdueCount: number;
   };
   piket: {
-    todayIVP: string | null; todayUMP: string | null; todayMlds: string | null;
+    todayIVP: string | null; todayUMP: string | null; todayMvi: string | null;
     weekFilled: number; weekTotal: number; kegiatanToday: number;
   };
   units: { totalLogs: number; keluarThisMonth: number; masukThisMonth: number };
@@ -277,7 +277,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     (async () => {
       const role   = currentUser.role?.toLowerCase() ?? '';
       const jabatan = currentUser.jabatan ?? '';
-      const PTS_TYPES = ['Team PTS IVP','Team PTS UMP','Team PTS MLDS'];
+      const PTS_TYPES = ['Team PTS IVP','Team PTS UMP','Team PTS MVI'];
 
       if (['admin','superadmin'].includes(role)) {
         setScope({ kind: 'admin' }); setScopeReady(true); return;
@@ -329,8 +329,8 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           scopeTickets(supabase.from('tickets').select('id,status,assign_name,sales_division,date,created_at')),
           supabase.from('activity_logs').select('id,ticket_id,new_status,created_at,handler_name').order('created_at',{ascending:false}).limit(500),
           scopeReminders(supabase.from('reminders').select('id,status,category,due_date')),
-          supabase.from('piket_schedules').select('day_of_week,pic_ivp_name,pic_ump_name,pic_mlds_name,day_date').eq('day_of_week', dayOfWeek()),
-          supabase.from('piket_schedules').select('id,day_date,pic_ivp_name,pic_ump_name,pic_mlds_name').gte('day_date', getMonday()).lte('day_date', todayStr()),
+          supabase.from('piket_schedules').select('day_of_week,pic_ivp_name,pic_ump_name,pic_mvi_name,day_date').eq('day_of_week', dayOfWeek()),
+          supabase.from('piket_schedules').select('id,day_date,pic_ivp_name,pic_ump_name,pic_mvi_name').gte('day_date', getMonday()).lte('day_date', todayStr()),
           supabase.from('piket_tamu_detail').select('id,created_at').gte('created_at', today),
           supabase.from('movement_logs').select('id,status_barang,tanggal,nama_pts').gte('tanggal', monthStart()),
           scope.kind === 'admin'
@@ -395,7 +395,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const dueSoon     = reminders.filter((r:any)=>r.status==='pending'&&r.due_date>=today&&r.due_date<=oneWeekStr).length;
       const overdueCount= reminders.filter((r:any)=>r.status==='pending'&&r.due_date<today).length;
 
-      const weekFilled = piketWeek.filter((p:any)=>p.pic_ivp_name||p.pic_ump_name||p.pic_mlds_name).length;
+      const weekFilled = piketWeek.filter((p:any)=>p.pic_ivp_name||p.pic_ump_name||p.pic_mvi_name).length;
       // weekTotal = jumlah hari kerja (Senin-Jumat) dari awal minggu ini s.d. hari ini
       const todayD = new Date(); todayD.setHours(0,0,0,0);
       const monD = new Date(todayD); const dow = monD.getDay();
@@ -418,7 +418,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       setKpi({
         tickets:{ total:tickets.length,open,solved,waitingApproval,byHandler,byStatus,byDivision,resolvedToday,avgResolutionDays },
         reminders:{ total:reminders.length,pending:reminders.filter((r:any)=>r.status==='pending').length,done:reminders.filter((r:any)=>r.status==='done').length,dueSoon,byCategory,overdueCount },
-        piket:{ todayIVP:piketToday?.pic_ivp_name??null,todayUMP:piketToday?.pic_ump_name??null,todayMlds:piketToday?.pic_mlds_name??null,weekFilled,weekTotal:weekWorkDays,kegiatanToday:kegiatan.length },
+        piket:{ todayIVP:piketToday?.pic_ivp_name??null,todayUMP:piketToday?.pic_ump_name??null,todayMvi:piketToday?.pic_mvi_name??null,weekFilled,weekTotal:weekWorkDays,kegiatanToday:kegiatan.length },
         units:{ totalLogs:movements.length,keluarThisMonth:movements.filter((m:any)=>m.status_barang==='Keluar').length,masukThisMonth:movements.filter((m:any)=>m.status_barang==='Masuk').length },
         users:{ total:users.length,byRole:Object.entries(roleMap).map(([role,count])=>({role,count})) },
         learning:{ totalSessions:lcSubmitted, completedSessions:lcPassed, totalParticipants:lcParticipants, avgScore:lcAvgScore },
@@ -505,7 +505,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       if (scope.kind === 'pts_sup') {
         membersQ = membersQ.eq('role', 'team').eq('team_type', scope.ptsTeamType ?? '');
       } else if (scope.kind === 'admin') {
-        membersQ = membersQ.in('team_type', ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MLDS']).eq('role', 'team');
+        membersQ = membersQ.in('team_type', ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MVI']).eq('role', 'team');
       } else {
         setKpiTeam(prev => ({ ...prev, loading: false }));
         return;
@@ -545,7 +545,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           .gte('started_at', yearStart)
           .lte('started_at', yearEnd + 'T23:59:59'),
         supabase.from('piket_schedules')
-          .select('pic_ivp_name,pic_ump_name,pic_mlds_name,day_date')
+          .select('pic_ivp_name,pic_ump_name,pic_mvi_name,day_date')
           .gte('day_date', yearStart)
           .lte('day_date', yearEnd),
         // Form Review: rating bintang 1/2 per assign_name
@@ -598,7 +598,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
         // Piket: count days where this member is assigned
         const tt = m.team_type as string;
-        const picCol = tt === 'Team PTS IVP' ? 'pic_ivp_name' : tt === 'Team PTS UMP' ? 'pic_ump_name' : 'pic_mlds_name';
+        const picCol = tt === 'Team PTS IVP' ? 'pic_ivp_name' : tt === 'Team PTS UMP' ? 'pic_ump_name' : 'pic_mvi_name';
         const piketFilled = piketSchedules.filter((p: any) => p[picCol] === name).length;
 
         // Ticket response time: avg jam dari ticket created → first activity_log per ticket
@@ -693,7 +693,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
   // ── Piket card highlight per team ─────────────────────────────────────────
   const isPTSIVP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS IVP';
   const isPTSUMP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS UMP';
-  const isPTSMLDS = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS MLDS';
+  const isPTSMVI = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS MVI';
 
   const TAB_CONFIG = [
     {key:'kpi',icon:'📊',label:'KPI Live'},
@@ -843,7 +843,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     {[
                       {team:'IVP',  person:kpi?.piket.todayIVP,  c:'#ef4444', bg:'#fef2f2'},
                       {team:'UMP',  person:kpi?.piket.todayUMP,  c:'#f59e0b', bg:'#fffbeb'},
-                      {team:'MLDS', person:kpi?.piket.todayMlds, c:'#3b82f6', bg:'#eff6ff'},
+                      {team:'MVI', person:kpi?.piket.todayMvi, c:'#3b82f6', bg:'#eff6ff'},
                     ].map(p=>(
                       <div key={p.team} className="flex items-center gap-1.5">
                         <span className="text-[8px] font-black px-1.5 py-0.5 rounded-md flex-shrink-0"
@@ -1110,7 +1110,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
             <div className="space-y-4">
               {/* Header + filter */}
               <div className="flex flex-wrap items-center gap-3">
-                <SectionPill icon="👥">KPI Team {scope.kind==='pts_sup'?scope.ptsTeamType:'PTS IVP & MLDS'}</SectionPill>
+                <SectionPill icon="👥">KPI Team {scope.kind==='pts_sup'?scope.ptsTeamType:'PTS IVP & MVI'}</SectionPill>
                 <div className="ml-auto flex items-center gap-2 flex-wrap">
                   {/* Filter Periode */}
                   <div className="flex items-center rounded-lg border border-slate-200 overflow-hidden bg-white">
@@ -1387,7 +1387,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       wsSummary['!cols'] = [{wch:5},{wch:28},{wch:14},{wch:20},{wch:9},{wch:14},{wch:12},{wch:13},{wch:15},{wch:10},{wch:12},{wch:14}];
                       XLSX_MOD.utils.book_append_sheet(wb, wsSummary, 'Rekap Tim');
 
-                      // ── Sheet 2: Detail per tim (IVP vs MLDS) ──
+                      // ── Sheet 2: Detail per tim (IVP vs MVI) ──
                       const teams: Record<string, typeof allMembers[0][]> = {};
                       allMembers.forEach(m => {
                         const k = m.team_type;
@@ -1456,7 +1456,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               {/* ── Team PTS IVP ── */}
               {!kpiTeam.loading && (() => {
                 const ivpMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS IVP');
-                const mldsMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS MLDS');
+                const mviMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS MVI');
                 const umpMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS UMP');
                 const calcKPI = (member: KPITeamMember) => {
                   // Ticketing 20%: jika tidak ada ticket sama sekali → 0 (belum ada data), bukan 100%
@@ -1565,8 +1565,8 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     {ivpMembers.length>0 && (scope.kind==='admin'||scope.ptsTeamType==='Team PTS IVP') && (
                       <TeamRow members={ivpMembers} label="Team PTS IVP" color="#ef4444" abbr="IVP"/>
                     )}
-                    {mldsMembers.length>0 && (scope.kind==='admin'||scope.ptsTeamType==='Team PTS MLDS') && (
-                      <TeamRow members={mldsMembers} label="Team PTS MLDS" color="#3b82f6" abbr="MLD"/>
+                    {mviMembers.length>0 && (scope.kind==='admin'||scope.ptsTeamType==='Team PTS MVI') && (
+                      <TeamRow members={mviMembers} label="Team PTS MVI" color="#3b82f6" abbr="MVI"/>
                     )}
                   </div>
                 );
