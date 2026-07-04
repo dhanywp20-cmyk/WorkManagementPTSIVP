@@ -16,6 +16,9 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { User } from '../shared';
 import { hasMenu, canAccessAnalytics, canSeeTeamMonitoring, isAdminRole, isTeamMember } from './permissions';
+import {
+  getMonday, getDayDate, toKey, DAYS_OF_WEEK, getRollingNameForDate, type PiketRow,
+} from '@/app/picket-showroom/_components/shared';
 
 // ── Kontrak widget ────────────────────────────────────────────────────────────
 
@@ -168,33 +171,47 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
   return (
     <WidgetCard title="Team Monitoring Hari Ini" icon="🧭" accent="#0891b2"
       onSeeAll={() => openMenu('daily-report')} seeAllLabel="Daily Report">
-      <StatPills items={[
-        { label: 'Total Team', value: total, color: '#0891b2' },
-        { label: 'Sudah Report', value: sudah, color: '#16a34a' },
-        { label: 'Belum Report', value: belum, color: belum > 0 ? '#ea580c' : '#94a3b8' },
-      ]} />
-      <div className="flex items-center gap-2 mb-2">
-        <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
-          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct >= 80 ? '#16a34a' : pct >= 50 ? '#f59e0b' : '#ea580c' }} />
-        </div>
-        <span className="text-[11px] font-bold text-slate-600">{pct}%</span>
-      </div>
-      {belumList.length === 0 ? (
-        <div className="text-[11px] font-semibold text-green-600 text-center py-2">🎉 Semua tim sudah update hari ini!</div>
+      {total === 0 ? (
+        <EmptyState text="Belum ada anggota Team PTS terdaftar." />
       ) : (
-        <div className="overflow-y-auto max-h-[180px] pr-1">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Belum Daily Report</div>
-          {belumList.map(r => (
-            <button key={r.id} onClick={() => openMenu('daily-report')}
-              className="w-full flex items-center gap-2 py-1.5 border-b border-slate-100 last:border-0 hover:bg-slate-50 rounded-lg px-1 transition-colors text-left">
-              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: r.active > 0 ? '#dc2626' : '#f59e0b' }} />
-              <span className="text-xs font-semibold text-slate-700 truncate flex-1">{r.name}</span>
-              {r.active > 0 && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
-                  style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}>{r.active} jadwal aktif</span>
-              )}
-            </button>
-          ))}
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4">
+          {/* Kiri: ringkasan angka + progress */}
+          <div>
+            <StatPills items={[
+              { label: 'Total Team', value: total, color: '#0891b2' },
+              { label: 'Sudah', value: sudah, color: '#16a34a' },
+              { label: 'Belum', value: belum, color: belum > 0 ? '#ea580c' : '#94a3b8' },
+            ]} />
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct >= 80 ? '#16a34a' : pct >= 50 ? '#f59e0b' : '#ea580c' }} />
+              </div>
+              <span className="text-[11px] font-bold text-slate-600">{pct}% update</span>
+            </div>
+          </div>
+          {/* Kanan: daftar yang belum daily report (multi-kolom) */}
+          <div>
+            {belumList.length === 0 ? (
+              <div className="text-xs font-semibold text-green-600 flex items-center h-full min-h-[60px]">🎉 Semua tim sudah update Daily Report hari ini!</div>
+            ) : (
+              <>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Belum Daily Report ({belumList.length})</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-3 gap-y-0.5">
+                  {belumList.map(r => (
+                    <button key={r.id} onClick={() => openMenu('daily-report')}
+                      className="flex items-center gap-2 py-1.5 px-1.5 hover:bg-slate-50 rounded-lg transition-colors text-left">
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: r.active > 0 ? '#dc2626' : '#f59e0b' }} />
+                      <span className="text-xs font-semibold text-slate-700 truncate flex-1">{r.name}</span>
+                      {r.active > 0 && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                          style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}>{r.active} aktif</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
     </WidgetCard>
@@ -406,35 +423,67 @@ const LearningWidget: React.FC<WidgetProps> = ({ openMenu }) => (
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// WIDGET: Quick Action — shortcut ke semua menu yang dimiliki (selalu muncul).
+// WIDGET: Piket Showroom — siapa PIC piket hari ini + minggu ini.
+// Muncul utk SEMUA role (info penting bersama: Sales/Marketing perlu tahu PIC).
+// Nama PIC dihitung dgn getRollingNameForDate — SAMA persis dgn halaman Piket.
 // ═══════════════════════════════════════════════════════════════════════════════
-const QUICK_ACTIONS: { key: string; label: string; icon: string; accent: string }[] = [
-  { key: 'reminder-schedule', label: 'Request Schedule', icon: '🗓️', accent: '#0891b2' },
-  { key: 'request-design-project', label: 'Request Design', icon: '🏗️', accent: '#7c3aed' },
-  { key: 'ticket-troubleshooting', label: 'Ticket', icon: '🎫', accent: '#e11d48' },
-  { key: 'form-bast', label: 'Form Review', icon: '⭐', accent: '#64748b' },
-  { key: 'daily-report', label: 'Daily Report', icon: '📈', accent: '#16a34a' },
-  { key: 'picket-showroom', label: 'Piket Showroom', icon: '🏪', accent: '#0d9488' },
-  { key: 'learning-center', label: 'Learning', icon: '🎓', accent: '#4338ca' },
-  { key: 'unit-movement', label: 'Unit Movement', icon: '🚚', accent: '#d97706' },
-  { key: 'incentive-pts', label: 'Incentive', icon: '💰', accent: '#9333ea' },
-  { key: 'kpi-team', label: 'KPI Team', icon: '📊', accent: '#0284c7' },
-  { key: 'tech-note', label: 'Tech Note', icon: '📝', accent: '#db2777' },
-];
+interface PicketDay { day: string; dateKey: string; name: string; isToday: boolean; team: string; }
 
-const QuickActionWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
-  const actions = QUICK_ACTIONS.filter(a => hasMenu(user, a.key));
-  if (actions.length === 0) return null;
+const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
+  const [loading, setLoading] = useState(true);
+  const [days, setDays] = useState<PicketDay[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const [rowsRes, holRes, usersRes] = await Promise.all([
+          supabase.from('piket_schedules').select('id,day_date,week_start,day_of_week,pic_ivp_id,pic_ivp_name,pic_ump_id,pic_ump_name,pic_mvi_id,pic_mvi_name'),
+          supabase.from('picket_holidays').select('date'),
+          supabase.from('users').select('full_name, team_type').in('team_type', ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MVI']),
+        ]);
+        const allRows = (rowsRes.data ?? []) as unknown as PiketRow[];
+        const holidays = (holRes.data ?? []).map((h: any) => h.date as string);
+        const teamByName: Record<string, string> = {};
+        (usersRes.data ?? []).forEach((u: any) => { if (u.full_name) teamByName[u.full_name] = u.team_type ?? ''; });
+        const monday = getMonday(new Date());
+        const todayKey = toKey(new Date());
+        const list: PicketDay[] = DAYS_OF_WEEK.map((day) => {
+          const date = getDayDate(monday, day);
+          const name = getRollingNameForDate(date, allRows, holidays);
+          return { day, dateKey: toKey(date), name, isToday: toKey(date) === todayKey, team: name ? (teamByName[name] ?? '') : '' };
+        });
+        if (alive) setDays(list);
+      } catch { /* silent */ }
+      if (alive) setLoading(false);
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  if (loading) return <WidgetCard title="Piket Showroom" icon="🏪" accent="#0d9488"><Loading /></WidgetCard>;
+  const today = days.find(d => d.isToday);
+
   return (
-    <WidgetCard title="Quick Action" icon="⚡" accent="#c8861d">
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {actions.map(a => (
-          <button key={a.key} onClick={() => openMenu(a.key)}
-            className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl transition-all hover:scale-[1.03]"
-            style={{ background: `${a.accent}0d`, border: `1px solid ${a.accent}22` }}>
-            <span className="text-xl">{a.icon}</span>
-            <span className="text-[10px] font-bold text-slate-600 text-center leading-tight">{a.label}</span>
-          </button>
+    <WidgetCard title="Piket Showroom" icon="🏪" accent="#0d9488" onSeeAll={() => openMenu('picket-showroom')}>
+      <div className="rounded-xl p-3 mb-3 text-center" style={{ background: 'rgba(13,148,136,0.1)' }}>
+        <div className="text-[10px] font-bold text-teal-600 uppercase tracking-wide">PIC Piket Hari Ini</div>
+        {today && today.name ? (
+          <>
+            <div className="text-base font-black text-slate-800 mt-0.5">{today.name}</div>
+            {today.team && <div className="text-[10px] text-slate-500">{today.team.replace('Team ', '')}</div>}
+          </>
+        ) : (
+          <div className="text-xs font-semibold text-slate-400 mt-1">Tidak ada piket (libur / akhir pekan)</div>
+        )}
+      </div>
+      <div>
+        {days.map(d => (
+          <div key={d.day} className="flex items-center gap-2 py-1.5 px-1 border-b border-slate-100 last:border-0"
+            style={d.isToday ? { background: 'rgba(13,148,136,0.06)', borderRadius: 8 } : undefined}>
+            <span className="text-[11px] font-bold w-12 flex-shrink-0" style={{ color: d.isToday ? '#0d9488' : '#94a3b8' }}>{d.day}</span>
+            <span className="text-xs font-semibold text-slate-700 truncate flex-1">{d.name || <span className="text-slate-300">— kosong</span>}</span>
+            {d.isToday && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: '#0d9488', color: 'white' }}>Hari ini</span>}
+          </div>
         ))}
       </div>
     </WidgetCard>
@@ -445,11 +494,14 @@ const QuickActionWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
 // WIDGET REGISTRY — metadata deklaratif. Compose di PermissionAwareDashboard.
 // ═══════════════════════════════════════════════════════════════════════════════
 export const WIDGETS: WidgetDef[] = [
-  { id: 'analytics',       permission: canAccessAnalytics,   priority: 1, size: 'full', Component: AnalyticsWidget },
-  { id: 'team-monitoring', permission: canSeeTeamMonitoring, priority: 2, size: 'lg',   Component: TeamMonitoringWidget },
+  // Team Monitoring paling atas utk Admin/Team (full width) — jawab "mana report tim".
+  { id: 'team-monitoring', permission: canSeeTeamMonitoring, priority: 1, size: 'full', Component: TeamMonitoringWidget },
+  // Analytics penuh (hero) di bawahnya — hanya Admin/Team (canAccessAnalytics).
+  { id: 'analytics',       permission: canAccessAnalytics,   priority: 2, size: 'full', Component: AnalyticsWidget },
   { id: 'request-schedule',permission: (u) => hasMenu(u, 'reminder-schedule'),      priority: 3, size: 'md', Component: RequestScheduleWidget },
   { id: 'ticket',          permission: (u) => hasMenu(u, 'ticket-troubleshooting'), priority: 4, size: 'md', Component: TicketWidget },
   { id: 'project',         permission: (u) => hasMenu(u, 'request-design-project'), priority: 5, size: 'md', Component: ProjectWidget },
+  // Piket Showroom: SEMUA role (Sales/Marketing perlu tahu PIC piket hari ini).
+  { id: 'showroom',        permission: () => true,                                   priority: 6, size: 'md', Component: ShowroomWidget },
   { id: 'learning',        permission: (u) => hasMenu(u, 'learning-center'),        priority: 7, size: 'sm', Component: LearningWidget },
-  { id: 'quick-action',    permission: () => true,                                   priority: 9, size: 'full', Component: QuickActionWidget },
 ];
