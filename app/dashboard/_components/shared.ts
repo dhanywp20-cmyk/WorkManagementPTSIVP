@@ -12,6 +12,7 @@ export interface User {
   allowed_menus?: string[];
   kpi_enabled?: boolean;  // true = masuk roster KPI, false = dikecualikan
   created_at?: string;    // used to calculate days pending for Pending Approval users
+  is_internal_sales?: boolean; // Guest/Sales internal (IVP/MVI) vs external — untuk routing pipeline
 }
 
 export interface MenuItem {
