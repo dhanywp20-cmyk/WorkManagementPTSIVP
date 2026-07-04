@@ -253,11 +253,13 @@ function ReminderSchedulePageInner() {
       return (data as Reminder[]) ?? [];
     }
     // Guest: ambil schedule yg atas nama dia (dibuat admin) + yg dia request sendiri (created_by)
-    const [bySales, byCreator] = await Promise.all([
+    // + request Sales External yang menunggu REVIEW dia (Sales Internal, Fase 2 routing).
+    const [bySales, byCreator, awaitingMyReview] = await Promise.all([
       supabase.from('reminders').select('*').eq('sales_name', activeUser.full_name).order('created_at', { ascending: false }),
       supabase.from('reminders').select('*').eq('created_by', activeUser.username).order('created_at', { ascending: false }),
+      supabase.from('reminders').select('*').eq('internal_sales_id', activeUser.id).eq('routing_status', 'internal_review').order('created_at', { ascending: false }),
     ]);
-    const combined = [...(bySales.data ?? []), ...(byCreator.data ?? [])];
+    const combined = [...(bySales.data ?? []), ...(byCreator.data ?? []), ...(awaitingMyReview.data ?? [])];
     // Deduplicate by id, sort by created_at desc
     const seen = new Set<string>();
     return (combined as Reminder[])
@@ -1075,6 +1077,29 @@ function ReminderSchedulePageInner() {
       ? `🕐 *Usulan (${allDates.length} hari):* ${allDates.map(d => formatDate(d)).join(', ')}${data.due_time ? ' · ' + data.due_time : ''}`
       : `🕐 Usulan: *${formatDate(data.due_date)}${data.due_time ? ' · ' + data.due_time : ''}*`;
 
+    // ── Fase 2 routing: cek apakah requester Sales Internal atau External ────
+    // External → wajib direview Sales Internal (division_ivp_mappings) dulu,
+    // BARU Admin/Manager dapat notifikasi actionable. Internal (atau divisi
+    // tanpa mapping) → langsung ke Admin seperti alur lama (tidak berubah).
+    let routingStatus: 'internal_review' | 'admin_review' = 'admin_review';
+    let internalSalesId: string | null = null;
+    let internalHandlers: { phone_number: string | null; full_name: string }[] = [];
+    try {
+      const { data: freshSelf } = await supabase.from('users').select('is_internal_sales').eq('id', currentUser.id).maybeSingle();
+      if (!freshSelf?.is_internal_sales && salesDivision) {
+        const { data: ivpMaps } = await supabase.from('division_ivp_mappings').select('ivp_id').eq('sales_division', salesDivision);
+        const ivpIds = (ivpMaps ?? []).map((m: { ivp_id: string }) => m.ivp_id);
+        if (ivpIds.length > 0) {
+          const { data: handlers } = await supabase.from('users').select('id, full_name, phone_number').in('id', ivpIds);
+          if (handlers && handlers.length > 0) {
+            routingStatus = 'internal_review';
+            internalSalesId = handlers[0].id;
+            internalHandlers = handlers.map((h: { full_name: string; phone_number: string | null }) => ({ phone_number: h.phone_number, full_name: h.full_name }));
+          }
+        }
+      }
+    } catch { /* fallback ke admin_review kalau gagal cek */ }
+
     // Insert ke tabel reminders dengan status pending & assigned_to kosong
     // Admin nantinya assign ke team dari list yang ada
     const notesVal = data.notes
@@ -1105,6 +1130,8 @@ function ReminderSchedulePageInner() {
       assigned_to: '',
       assign_name: '',
       created_by: currentUser.username,
+      routing_status: routingStatus,
+      internal_sales_id: internalSalesId,
     }));
 
     const { error } = await supabase.from('reminders').insert(payloads);
@@ -1113,36 +1140,103 @@ function ReminderSchedulePageInner() {
       return;
     }
 
-    notify('success', allDates.length > 1 ? `${allDates.length} request jadwal berhasil dikirim! Menunggu approval Admin.` : 'Request jadwal berhasil dikirim! Menunggu approval Admin.');
+    notify('success', routingStatus === 'internal_review'
+      ? `Request dikirim! Menunggu review ${internalHandlers[0]?.full_name ?? 'Sales Internal'} terlebih dahulu.`
+      : (allDates.length > 1 ? `${allDates.length} request jadwal berhasil dikirim! Menunggu approval Admin.` : 'Request jadwal berhasil dikirim! Menunggu approval Admin.'));
     setShowRequestModal(false);
     fetchRemindersQuiet();
 
-    // Kirim WA notifikasi ke semua admin
+    // ── Kirim WA sesuai tahap routing ────────────────────────────────────────
     try {
       const { data: admins } = await supabase
         .from('users')
         .select('phone_number, full_name')
         .eq('role', 'admin');
-      if (admins && admins.length > 0) {
-        const msg =
-          `📩 *REQUEST JADWAL BARU — PTS IVP*\n\n` +
-          `Sales *${currentUser.full_name}* mengajukan request jadwal:\n\n` +
+
+      if (routingStatus === 'internal_review') {
+        // 1) WA WAJIB ke Sales Internal — dia yang harus review dulu.
+        const internalMsg =
+          `📩 *REQUEST JADWAL BARU — PERLU REVIEW KAMU*\n\n` +
+          `Sales External *${currentUser.full_name}* (${salesDivision}) mengajukan request jadwal:\n\n` +
           `📋 *Project: ${data.project_name}*\n` +
           `🏷️ Kategori: ${data.category}\n` +
           `📦 Product: ${data.product || '-'}\n` +
           `📍 Lokasi: ${data.address}\n` +
           `${usulanLine}\n` +
           (data.description ? `📝 Deskripsi: ${data.description}\n` : '') +
-          (data.pic_name ? `🙋 PIC: ${data.pic_name}${data.pic_phone ? ' - ' + data.pic_phone : ''}\n` : '') +
-          `\nSilakan review & assign ke Team PTS IVP:\n` +
+          `\nSilakan review & teruskan ke Admin:\n` +
           `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
-        for (const admin of admins) {
-          if (admin.phone_number) {
-            await sendFonnteWA(admin.phone_number, msg);
+        for (const h of internalHandlers) {
+          if (h.phone_number) await sendFonnteWA(h.phone_number, internalMsg);
+        }
+        // 2) WA ke Admin — PENGINGAT saja (belum bisa diproses, menunggu Sales Internal).
+        if (admins && admins.length > 0) {
+          const adminHeadsUp =
+            `ℹ️ *ADA REQUEST JADWAL BARU (pengingat)*\n\n` +
+            `Sales External *${currentUser.full_name}* mengajukan request untuk *${data.project_name}*.\n` +
+            `Sedang menunggu review dari Sales Internal *${internalHandlers[0]?.full_name ?? '-'}* sebelum bisa diproses Admin.`;
+          for (const admin of admins) {
+            if (admin.phone_number) await sendFonnteWA(admin.phone_number, adminHeadsUp);
+          }
+        }
+      } else {
+        // Alur lama: langsung actionable ke Admin (requester internal / tanpa mapping).
+        if (admins && admins.length > 0) {
+          const msg =
+            `📩 *REQUEST JADWAL BARU — PTS IVP*\n\n` +
+            `Sales *${currentUser.full_name}* mengajukan request jadwal:\n\n` +
+            `📋 *Project: ${data.project_name}*\n` +
+            `🏷️ Kategori: ${data.category}\n` +
+            `📦 Product: ${data.product || '-'}\n` +
+            `📍 Lokasi: ${data.address}\n` +
+            `${usulanLine}\n` +
+            (data.description ? `📝 Deskripsi: ${data.description}\n` : '') +
+            (data.pic_name ? `🙋 PIC: ${data.pic_name}${data.pic_phone ? ' - ' + data.pic_phone : ''}\n` : '') +
+            `\nSilakan review & assign ke Team PTS IVP:\n` +
+            `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+          for (const admin of admins) {
+            if (admin.phone_number) await sendFonnteWA(admin.phone_number, msg);
           }
         }
       }
     } catch { }
+  };
+
+  // ─── Handler: Sales Internal approve & teruskan ke Admin/Manager ─────────
+  const handleInternalApprove = async (r: Reminder) => {
+    setSaving(true);
+    const { error } = await supabase.from('reminders').update({
+      routing_status: 'admin_review',
+      internal_approved_by: currentUser?.id ?? null,
+      internal_approved_at: new Date().toISOString(),
+    }).eq('id', r.id);
+    if (error) { notify('error', 'Gagal approve: ' + error.message); setSaving(false); return; }
+    notify('success', 'Request diteruskan ke Admin/Manager!');
+    logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'approve', module: 'reminder', target_id: r.id, target_name: r.project_name, notes: 'Internal review approved' }).catch(() => {});
+    fetchRemindersQuiet();
+
+    // WA ke Manager (app_settings.manager_user_id) — actionable. Fallback ke semua admin.
+    try {
+      const { data: mgrSetting } = await supabase.from('app_settings').select('value').eq('key', 'manager_user_id').maybeSingle();
+      const managerId = mgrSetting?.value ? String(mgrSetting.value).replace(/^"|"$/g, '') : '';
+      const targets: { phone_number: string | null; full_name: string }[] = [];
+      if (managerId) {
+        const { data: mgr } = await supabase.from('users').select('phone_number, full_name').eq('id', managerId).maybeSingle();
+        if (mgr) targets.push(mgr);
+      }
+      if (targets.length === 0) {
+        const { data: admins } = await supabase.from('users').select('phone_number, full_name').eq('role', 'admin');
+        targets.push(...(admins ?? []));
+      }
+      const msg =
+        `✅ *REQUEST LOLOS REVIEW SALES INTERNAL*\n\n` +
+        `Request dari *${r.sales_name}* untuk *${r.project_name}* sudah di-review oleh *${currentUser?.full_name}* — silakan diproses/di-assign.\n` +
+        `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+      for (const t of targets) {
+        if (t.phone_number) await sendFonnteWA(t.phone_number, msg);
+      }
+    } catch { }
+    setSaving(false);
   };
 
   // ─── Handler: Admin Approve & Assign request dari Sales ─────────────────
@@ -1717,14 +1811,19 @@ jangan lupa peralatan & Semangat💪🏼
 
               <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
                 {/* Action bar — sticky di atas, menempel header detail */}
-                {(isAdmin || currentUser?.role === 'team') && (
+                {(isAdmin || currentUser?.role === 'team' || (currentUser?.id === detailReminder.internal_sales_id && detailReminder.routing_status === 'internal_review')) && (
                   <div className="flex gap-2 flex-wrap sticky top-0 z-20 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-gray-100">
-                    {isAdmin && !detailReminder.assigned_to && detailReminder.notes?.includes('[REQUEST SALES]') && (
+                    {currentUser?.id === detailReminder.internal_sales_id && detailReminder.routing_status === 'internal_review' && (
+                      <button onClick={() => handleInternalApprove(detailReminder)}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
+                        style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white' }}>✅ Approve &amp; Teruskan ke Admin</button>
+                    )}
+                    {isAdmin && !detailReminder.assigned_to && detailReminder.notes?.includes('[REQUEST SALES]') && detailReminder.routing_status !== 'internal_review' && (
                       <button onClick={() => { setApproveTarget(detailReminder); setApproveBatchSiblings(detailReminder.batch_id ? reminders.filter(gr => gr.id !== detailReminder.id && gr.batch_id === detailReminder.batch_id && !gr.assigned_to) : []); setApproveAssignTo(''); setApproveDate(detailReminder.due_date); setApproveTime(detailReminder.due_time); }}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
                         style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: 'white' }}>✅ Approve &amp; Assign</button>
                     )}
-                    {detailReminder.status !== 'done' && (
+                    {(isAdmin || currentUser?.role === 'team') && detailReminder.status !== 'done' && (
                       <button onClick={() => { setRescheduleTarget(detailReminder); }}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
                         style={{ background: 'linear-gradient(135deg,#d97706,#b45309)', color: 'white' }}>📅 Re-Schedule</button>
@@ -2497,7 +2596,10 @@ jangan lupa peralatan & Semangat💪🏼
                               {(isAdmin || currentUser?.role === 'team') && r.status !== 'done' && (
                                 <RescheduleIconBtn onClick={() => setRescheduleTarget(r)} title="Re-Schedule" />
                               )}
-                              {isAdmin && !r.assigned_to && r.notes?.includes('[REQUEST SALES]') && (
+                              {currentUser?.id === r.internal_sales_id && r.routing_status === 'internal_review' && (
+                                <ApproveIconBtn onClick={() => handleInternalApprove(r)} title="Approve & Teruskan ke Admin" pulse />
+                              )}
+                              {isAdmin && !r.assigned_to && r.notes?.includes('[REQUEST SALES]') && r.routing_status !== 'internal_review' && (
                                 <ApproveIconBtn onClick={() => { setApproveTarget(r); setApproveBatchSiblings(group.filter(gr => gr.id !== r.id && gr.batch_id === r.batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(r.due_date); setApproveTime(r.due_time); }} title="Approve & Assign" pulse />
                               )}
                               {isAdmin && (
@@ -2660,10 +2762,13 @@ jangan lupa peralatan & Semangat💪🏼
                                     );
                                   })()}
                                   {!group[0].assigned_to && group[0].notes?.includes('[REQUEST SALES]') && (
-                                    <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 text-[9px] font-bold text-white"
-                                      style={{ background: '#2563eb' }}>
-                                      📩 Req. Sales
-                                    </span>
+                                    group[0].routing_status === 'internal_review'
+                                      ? <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 text-[9px] font-bold text-white" style={{ background: '#f59e0b' }} title="Menunggu review Sales Internal sebelum Admin bisa proses">
+                                          🔍 Review: {guestUsers.find(g => g.id === group[0].internal_sales_id)?.full_name ?? '—'}
+                                        </span>
+                                      : <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 text-[9px] font-bold text-white" style={{ background: '#2563eb' }}>
+                                          📩 Req. Sales
+                                        </span>
                                   )}
                                 </td>
                                 {/* Garansi */}
@@ -2722,8 +2827,12 @@ jangan lupa peralatan & Semangat💪🏼
                                     {(isAdmin || currentUser?.role === 'team') && group[0].status !== 'done' && (
                                       <RescheduleIconBtn onClick={() => setRescheduleTarget(group[0])} title="Re-Schedule" />
                                     )}
-                                    {/* Approve & Assign — admin only, hanya utk request sales yg belum di-assign */}
-                                    {isAdmin && !group[0].assigned_to && group[0].notes?.includes('[REQUEST SALES]') && (
+                                    {/* Approve & Teruskan — Sales Internal yg di-mapping, wajib duluan sebelum Admin */}
+                                    {currentUser?.id === group[0].internal_sales_id && group[0].routing_status === 'internal_review' && (
+                                      <ApproveIconBtn onClick={() => handleInternalApprove(group[0])} title="Approve & Teruskan ke Admin" pulse />
+                                    )}
+                                    {/* Approve & Assign — admin only, hanya utk request sales yg belum di-assign & sudah lolos review internal */}
+                                    {isAdmin && !group[0].assigned_to && group[0].notes?.includes('[REQUEST SALES]') && group[0].routing_status !== 'internal_review' && (
                                       <ApproveIconBtn onClick={() => { setApproveTarget(group[0]); setApproveBatchSiblings(group.filter(gr => gr.id !== group[0].id && gr.batch_id === group[0].batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(group[0].due_date); setApproveTime(group[0].due_time); }} title="Approve & Assign" pulse />
                                     )}
                                     {/* Hapus — admin only */}

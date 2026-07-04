@@ -48,6 +48,10 @@ export interface Reminder {
   bast_date?: string | null;
   product_type?: string; // tipe produk utk routing pipeline (dipilih saat request)
   batch_id?: string | null; // grup reminder yang dibuat sekaligus dari 1 submission multi-tanggal
+  routing_status?: string | null;      // 'internal_review' | 'admin_review' | null (lama)
+  internal_sales_id?: string | null;   // Sales Internal yang wajib review dulu (dari division_ivp_mappings)
+  internal_approved_by?: string | null;
+  internal_approved_at?: string | null;
 }
 
 export interface TeamUser {
