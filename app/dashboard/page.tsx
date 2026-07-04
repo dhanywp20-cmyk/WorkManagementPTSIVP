@@ -19,6 +19,7 @@ import {
   AccountSettingsInline, UserManagementInline, BrandPicSettingInline,
 } from './_components/Modals';
 import GlobalSearch from './_components/GlobalSearch';
+import PermissionAwareDashboard from './_components/widgets/PermissionAwareDashboard';
 import OnboardingTour, { JelajahiButton } from './_components/OnboardingTour';
 import { notifyNewUserRegistration } from '@/lib/notifications';
 import SessionExpiryBanner from '@/app/_components/SessionExpiryBanner';
@@ -193,38 +194,10 @@ export default function Dashboard() {
       setCurrentUser(data);
       setIsLoggedIn(true);
       setSession(data);
-      // Auto-route: langsung ke sidebar, tab pertama sesuai role
-      const role = data.role?.toLowerCase() ?? '';
-      const isAdminOrSup = ['admin','superadmin'].includes(role) ||
-        (role === 'team' && data.jabatan === 'Supervisor') ||
-        (['guest','sales'].includes(role) && ['Supervisor','Manager','Deputy General Manager','General Manager','Direktur'].includes(data.jabatan ?? '') && (data.allowed_menus ?? []).includes('dashboard'));
-      const hasTeamDash = role === 'team' && (data.allowed_menus ?? []).includes('dashboard');
-      if (isAdminOrSup || hasTeamDash) {
-        // Admin/supervisor/team with dashboard: langsung tampilkan sidebar + dashboard panel
-        setTimeout(() => { setShowSidebar(true); setShowDashboardPanel(true); }, 50);
-      } else {
-        // Sales/guest/team tanpa dashboard: navigate directly to visual first menu (category order)
-        const allowedL = data.allowed_menus ?? [];
-        const firstKeyL = [
-          ...LEARNING_KEYS.filter(k => allowedL.includes(k)),
-          ...PROJECT_KEYS.filter(k => allowedL.includes(k)),
-          ...INTERNAL_DAILY_KEYS.filter(k => allowedL.includes(k)),
-        ][0] ?? null;
-        const firstMenuL = firstKeyL ? allMenuItems.find(m => m.key === firstKeyL) : null;
-        const firstItemL = firstMenuL?.items?.[0];
-        const firstTitleL = firstMenuL?.title ?? '';
-        setTimeout(() => {
-          autoNavigatedRef.current = true; // prevent useEffect from double-navigating
-          setShowSidebar(true);
-          if (firstItemL?.internal) {
-            setIframeLoading(true); setInternalUrl(firstItemL.url);
-            setIframeTitle(`${firstTitleL} - ${firstItemL.name}`); setShowTicketing(true);
-          } else if (firstItemL?.embed && !firstItemL?.external) {
-            setIframeLoading(true); setIframeUrl(firstItemL.url);
-            setIframeTitle(`${firstTitleL} - ${firstItemL.name}`);
-          }
-        }, 50);
-      }
+      // Permission-Aware Dashboard = homepage utk SEMUA role. Semua mendarat di
+      // dashboard home (widget adaptif); tidak lagi auto-lompat ke menu pertama.
+      autoNavigatedRef.current = true; // matikan auto-navigate useEffect
+      setTimeout(() => { setShowSidebar(true); setShowDashboardPanel(true); }, 50);
     } catch { setLoginErr('Login gagal. Coba lagi.'); } finally { setLoginLoading(false); }
   };
 
@@ -386,6 +359,13 @@ export default function Dashboard() {
     }, 150);
   };
 
+  // Buka menu berdasarkan key (dipakai widget dashboard: Quick Action, "Lihat semua").
+  const openMenuByKey = (key: string) => {
+    const menu = allMenuItems.find(m => m.key === key);
+    const item = menu?.items?.[0];
+    if (menu && item) handleMenuClick(item, menu.title);
+  };
+
   const handleNotifNavigate = (navInternalUrl: string, title: string) => {
     setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setIframeTitle(''); setShowDashboardPanel(false);
     setTimeout(() => {
@@ -468,35 +448,10 @@ export default function Dashboard() {
           setCurrentUser(data);
           setSession(data);
         }
-        // Auto-route langsung ke sidebar sesuai role
-        const role = userData.role?.toLowerCase() ?? '';
-        const isAdminOrSup2 = ['admin','superadmin'].includes(role) ||
-          (role === 'team' && userData.jabatan === 'Supervisor') ||
-          (['guest','sales'].includes(role) && ['Supervisor','Manager','Deputy General Manager','General Manager','Direktur'].includes(userData.jabatan ?? '') && (userData.allowed_menus ?? []).includes('dashboard'));
-        const hasTeamDash2 = role === 'team' && (userData.allowed_menus ?? []).includes('dashboard');
-        if (isAdminOrSup2 || hasTeamDash2) {
-          setShowSidebar(true); setShowDashboardPanel(true);
-        } else {
-          // Navigate directly to visual first menu on page load — uses same category order as sidebar
-          const allowedU = userData.allowed_menus ?? [];
-          const firstKeyU = [
-            ...LEARNING_KEYS.filter(k => allowedU.includes(k)),
-            ...PROJECT_KEYS.filter(k => allowedU.includes(k)),
-            ...INTERNAL_DAILY_KEYS.filter(k => allowedU.includes(k)),
-          ][0] ?? null;
-          const firstMenuU = firstKeyU ? allMenuItems.find(m => m.key === firstKeyU) : null;
-          const firstItemU = firstMenuU?.items?.[0];
-          const firstTitleU = firstMenuU?.title ?? '';
-          autoNavigatedRef.current = true; // prevent useEffect from overriding this navigation
-          setShowSidebar(true);
-          if (firstItemU?.internal) {
-            setIframeLoading(true); setInternalUrl(firstItemU.url);
-            setIframeTitle(`${firstTitleU} - ${firstItemU.name}`); setShowTicketing(true);
-          } else if (firstItemU?.embed && !firstItemU?.external) {
-            setIframeLoading(true); setIframeUrl(firstItemU.url);
-            setIframeTitle(`${firstTitleU} - ${firstItemU.name}`);
-          }
-        }
+        // Permission-Aware Dashboard = homepage utk SEMUA role. Semua mendarat di
+        // dashboard home saat reload; tidak lagi auto-lompat ke menu pertama.
+        autoNavigatedRef.current = true; // matikan auto-navigate useEffect
+        setShowSidebar(true); setShowDashboardPanel(true);
       } catch { /* ignore */ }
       setLoading(false);
     };
@@ -1200,16 +1155,14 @@ export default function Dashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                   </svg>
                 </button>
-                {canAccessKPI && (
-                  <button
-                    onClick={() => { setShowDashboardPanel(true); setShowTicketing(false); setIframeUrl(null); setIframeLoading(true); }}
-                    title="Dashboard"
-                    className="w-full h-9 rounded-lg flex items-center justify-center text-base transition-all"
-                    style={showDashboardPanel
-                      ? { background: 'rgba(200,134,29,0.15)', border: '1px solid rgba(200,134,29,0.35)', color: '#92600a' }
-                      : { background: 'transparent', border: '1px solid transparent', color: '#64748b' }}
-                  >📊</button>
-                )}
+                <button
+                  onClick={() => { setShowDashboardPanel(true); setShowTicketing(false); setIframeUrl(null); }}
+                  title="Dashboard"
+                  className="w-full h-9 rounded-lg flex items-center justify-center text-base transition-all"
+                  style={showDashboardPanel
+                    ? { background: 'rgba(200,134,29,0.15)', border: '1px solid rgba(200,134,29,0.35)', color: '#92600a' }
+                    : { background: 'transparent', border: '1px solid transparent', color: '#64748b' }}
+                >🏠</button>
                 {visibleMenuItems.map((menu) => (
                   <div key={menu.key}>
                     {menu.items.map((item, itemIndex) => {
@@ -1239,24 +1192,22 @@ export default function Dashboard() {
               /* Expanded: full nav */
               <div className="space-y-4">
 
-                {/* ── Dashboard item (untuk admin/supervisor) ── */}
-                {canAccessKPI && (
-                  <div>
-                    <button
-                      onClick={() => { setShowDashboardPanel(true); setShowTicketing(false); setIframeUrl(null); setIframeLoading(true); }}
-                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
-                      style={showDashboardPanel
-                        ? { background: 'rgba(200,134,29,0.12)', border: '1px solid rgba(200,134,29,0.30)', color: '#92600a' }
-                        : { background: 'transparent', border: '1px solid transparent', color: '#475569' }}
-                      onMouseEnter={e => { if (!showDashboardPanel) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.04)'; } }}
-                      onMouseLeave={e => { if (!showDashboardPanel) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; } }}
-                    >
-                      <span className="w-5 h-5 text-sm flex items-center justify-center flex-shrink-0">📊</span>
-                      <span className="text-sm font-semibold truncate">Dashboard</span>
-                      {showDashboardPanel && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />}
-                    </button>
-                  </div>
-                )}
+                {/* ── Dashboard/Home item (untuk SEMUA role — homepage adaptif) ── */}
+                <div>
+                  <button
+                    onClick={() => { setShowDashboardPanel(true); setShowTicketing(false); setIframeUrl(null); }}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
+                    style={showDashboardPanel
+                      ? { background: 'rgba(200,134,29,0.12)', border: '1px solid rgba(200,134,29,0.30)', color: '#92600a' }
+                      : { background: 'transparent', border: '1px solid transparent', color: '#475569' }}
+                    onMouseEnter={e => { if (!showDashboardPanel) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.04)'; } }}
+                    onMouseLeave={e => { if (!showDashboardPanel) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; } }}
+                  >
+                    <span className="w-5 h-5 text-sm flex items-center justify-center flex-shrink-0">🏠</span>
+                    <span className="text-sm font-semibold truncate">Dashboard</span>
+                    {showDashboardPanel && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />}
+                  </button>
+                </div>
 
                 {/* Learning Center section */}
                 {visibleMenuItems.filter(m => LEARNING_KEYS.includes(m.key)).length > 0 && (
@@ -1555,24 +1506,15 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
-            {showDashboardPanel && canAccessKPI && currentUser ? (
-              /* ── Analytics Dashboard — iframe ke /analytics-dashboard ── */
-              <div className="w-full h-full overflow-hidden relative">
-                {iframeLoading && (
-                  <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="w-10 h-10 rounded-full border-[3px] border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.25)', borderTopColor: '#e2a84b' }} />
-                      <p className="text-slate-500 text-sm font-semibold tracking-wide">Memuat Dashboard...</p>
-                    </div>
-                  </div>
-                )}
-                <iframe
-                  key="analytics-dashboard"
-                  src="/analytics-dashboard"
-                  className="w-full h-full border-0"
-                  title="Analytics Dashboard"
-                  onLoad={() => setIframeLoading(false)}
-                />
+            {showDashboardPanel && currentUser ? (
+              /* ── Permission-Aware Dashboard — widget adaptif per permission.
+                 Analytics penuh & Team Monitoring muncul sbg widget utk yg berhak
+                 (canAccessAnalytics); role lain dapat widget ringkasan sesuai menu. ── */
+              <div className="w-full h-full overflow-hidden relative"
+                style={{ backgroundImage: 'url(/IVP_Background.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                <div className="w-full h-full bg-slate-50/70 backdrop-blur-[2px]">
+                  <PermissionAwareDashboard currentUser={currentUser} openMenu={openMenuByKey} />
+                </div>
               </div>
             ) : showTicketing ? (
               <div className="w-full h-full overflow-auto relative">
