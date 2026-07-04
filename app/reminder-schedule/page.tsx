@@ -77,7 +77,7 @@ function ReminderSchedulePageInner() {
   const [selectMode, setSelectMode] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [bulkConfirm, setBulkConfirm] = useState(false);
-  const [bulkTarget, setBulkTarget] = useState<'none' | 'ivp' | 'mlds' | 'ump'>('none');
+  const [bulkTarget, setBulkTarget] = useState<'none' | 'ivp' | 'mvi' | 'ump'>('none');
   // Kalender-only selection — tidak mempengaruhi filter list/chart/summary
   const [calOnlyDay, setCalOnlyDay]         = useState<string | null>(null);
   const [sendingWA, setSendingWA]           = useState<string | null>(null);
@@ -209,7 +209,7 @@ function ReminderSchedulePageInner() {
 
   const fetchTeamUsers = async () => {
     const { data } = await supabase.from('users').select('id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus').order('full_name');
-    if (data) setTeamUsers(data.filter((u: TeamUser) => (u.team_type === 'Team PTS IVP' || u.team_type === 'Team PTS MLDS' || u.team_type === 'Team PTS UMP') && u.role !== 'admin' && u.role !== 'superadmin'));
+    if (data) setTeamUsers(data.filter((u: TeamUser) => (u.team_type === 'Team PTS IVP' || u.team_type === 'Team PTS MVI' || u.team_type === 'Team PTS UMP') && u.role !== 'admin' && u.role !== 'superadmin'));
   };
 
   const fetchGuestUsers = async () => {
@@ -303,8 +303,8 @@ function ReminderSchedulePageInner() {
 
     // ── BULK ASSIGN ──────────────────────────────────────────────────────────
     if (bulkTarget !== 'none') {
-      const teamTypeMap: Record<string, string> = { ivp: 'Team PTS IVP', mlds: 'Team PTS MLDS', ump: 'Team PTS UMP' };
-      const bulkLabelMap: Record<string, string> = { ivp: 'PTS IVP', mlds: 'PTS MLDS', ump: 'PTS UMP' };
+      const teamTypeMap: Record<string, string> = { ivp: 'Team PTS IVP', mvi: 'Team PTS MVI', ump: 'Team PTS UMP' };
+      const bulkLabelMap: Record<string, string> = { ivp: 'PTS IVP', mvi: 'PTS MVI', ump: 'PTS UMP' };
       const targets = teamUsers.filter(u => u.team_type === teamTypeMap[bulkTarget]);
       if (targets.length === 0) { notify('error', 'Tidak ada anggota team yang ditemukan!'); return; }
       setSaving(true);

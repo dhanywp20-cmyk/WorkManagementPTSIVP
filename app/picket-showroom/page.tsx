@@ -65,8 +65,8 @@ function PiketShowroomPageInner() {
     try {
       const[wRes,aRes,uRes,kgRes,plRes]=await Promise.all([
         supabase.from('piket_schedules').select('*').in('week_start',[wk,wk2]).order('day_date'),
-        supabase.from('piket_schedules').select('id,day_date,week_start,day_of_week,pic_ivp_name,pic_ump_name,pic_mlds_name'),
-        supabase.from('users').select('id,full_name,username,team_type,role').in('team_type',['Team PTS IVP','Team PTS UMP','Team PTS MLDS']).order('full_name'),
+        supabase.from('piket_schedules').select('id,day_date,week_start,day_of_week,pic_ivp_name,pic_ump_name,pic_mvi_name'),
+        supabase.from('users').select('id,full_name,username,team_type,role').in('team_type',['Team PTS IVP','Team PTS UMP','Team PTS MVI']).order('full_name'),
         supabase.from('piket_tamu_detail').select('*').order('created_at'),
         supabase.from('piket_produk_lain').select('kegiatan_id,nama,watt'), // optional — tabel mungkin belum ada
       ]);
@@ -122,7 +122,7 @@ function PiketShowroomPageInner() {
         const name = isPast ? null : getRollingNameForDate(date, allRows, holidays);
         const u = name ? ptUsers.find(x=>x.full_name===name) : undefined;
         const tt = u?.team_type||'';
-        const isIVP=tt==='Team PTS IVP', isUMP=tt==='Team PTS UMP', isMlds=tt==='Team PTS MLDS';
+        const isIVP=tt==='Team PTS IVP', isUMP=tt==='Team PTS UMP', isMvi=tt==='Team PTS MVI';
         virtual.push({
           id: `virtual-${wkKey}-${day}`,
           week_start: wkKey,
@@ -132,8 +132,8 @@ function PiketShowroomPageInner() {
           pic_ivp_name: isIVP?(name||null):null,
           pic_ump_id: isUMP?(u?.id||null):null,
           pic_ump_name: isUMP?(name||null):null,
-          pic_mlds_id: isMlds?(u?.id||null):null,
-          pic_mlds_name: isMlds?(name||null):null,
+          pic_mvi_id: isMvi?(u?.id||null):null,
+          pic_mvi_name: isMvi?(name||null):null,
           tamu_instansi: null, kebutuhan: [],
           created_at: '', updated_at: '',
         });
@@ -152,8 +152,8 @@ function PiketShowroomPageInner() {
       pic_ivp_name: row.pic_ivp_name,
       pic_ump_id: row.pic_ump_id,
       pic_ump_name: row.pic_ump_name,
-      pic_mlds_id: row.pic_mlds_id,
-      pic_mlds_name: row.pic_mlds_name,
+      pic_mvi_id: row.pic_mvi_id,
+      pic_mvi_name: row.pic_mvi_name,
       tamu_instansi: null, kebutuhan: [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -206,12 +206,12 @@ function PiketShowroomPageInner() {
     const picPool = savedSorted.map(r => ({
       pic_ivp_id: r.pic_ivp_id, pic_ivp_name: r.pic_ivp_name,
       pic_ump_id: r.pic_ump_id, pic_ump_name: r.pic_ump_name,
-      pic_mlds_id: r.pic_mlds_id, pic_mlds_name: r.pic_mlds_name,
+      pic_mvi_id: r.pic_mvi_id, pic_mvi_name: r.pic_mvi_name,
     }));
     let poolIdx = 0;
     const remapped = new Map(savedSorted.map(row => {
       if (holidaySet.has(row.day_date)) {
-        return [row.id, { ...row, pic_ivp_id: null, pic_ivp_name: null, pic_ump_id: null, pic_ump_name: null, pic_mlds_id: null, pic_mlds_name: null }];
+        return [row.id, { ...row, pic_ivp_id: null, pic_ivp_name: null, pic_ump_id: null, pic_ump_name: null, pic_mvi_id: null, pic_mvi_name: null }];
       }
       const pic = picPool[Math.min(poolIdx++, picPool.length - 1)];
       return [row.id, { ...row, ...pic }];
@@ -231,7 +231,7 @@ function PiketShowroomPageInner() {
     if(filterKegiatan&&!rowKg.some(k=>k.jenis_kegiatan===filterKegiatan))return false;
     if(search){
       const q=search.toLowerCase();
-      const mp=!!(row.pic_ivp_name?.toLowerCase().includes(q)||row.pic_ump_name?.toLowerCase().includes(q)||row.pic_mlds_name?.toLowerCase().includes(q)||row.day_of_week.toLowerCase().includes(q));
+      const mp=!!(row.pic_ivp_name?.toLowerCase().includes(q)||row.pic_ump_name?.toLowerCase().includes(q)||row.pic_mvi_name?.toLowerCase().includes(q)||row.day_of_week.toLowerCase().includes(q));
       const mk=rowKg.some(k=>k.tamu_instansi?.toLowerCase().includes(q)||k.nama_sales?.toLowerCase().includes(q)||k.kebutuhan?.some(x=>x.toLowerCase().includes(q))||k.keterangan?.toLowerCase().includes(q)||k.jenis_kegiatan?.toLowerCase().includes(q));
       return mp||mk;
     }
@@ -398,7 +398,7 @@ function PiketShowroomPageInner() {
               const todayName=DAYS_OF_WEEK[todayDow-1];
               const todayDc=isWeekday&&todayName?DAY_COLOR[todayName]:null;
               const todayInView=displayRows.find(r=>r.day_date===toKey(now));
-              const todayPIC=todayInView?[todayInView.pic_ivp_name,todayInView.pic_ump_name,todayInView.pic_mlds_name].filter(Boolean).join(' / ')||'Belum ada PIC':null;
+              const todayPIC=todayInView?[todayInView.pic_ivp_name,todayInView.pic_ump_name,todayInView.pic_mvi_name].filter(Boolean).join(' / ')||'Belum ada PIC':null;
               if(!isWeekday)return null;
               return(
                 <div className="mx-4 mb-3 mt-1 flex items-center gap-3 px-4 py-2.5 rounded-xl" style={{background:`${todayDc?.accent||'#dc2626'}10`,border:`1px solid ${todayDc?.accent||'#dc2626'}30`}}>
@@ -473,7 +473,7 @@ function PiketShowroomPageInner() {
                               {/* PIC — tambah keterangan tim */}
                               <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #cbd5e1',verticalAlign:'middle'}}>
                                 <div className="space-y-1.5">
-                                  {([['pic_ivp_name','PTS IVP'],['pic_ump_name','PTS UMP'],['pic_mlds_name','PTS MLDS']] as [keyof PiketRow,string][]).map(([f,team])=>{
+                                  {([['pic_ivp_name','PTS IVP'],['pic_ump_name','PTS UMP'],['pic_mvi_name','PTS MVI']] as [keyof PiketRow,string][]).map(([f,team])=>{
                                     const name=row[f] as string|null;if(!name)return null;
                                     const tc=TEAM_LABEL[team];
                                     return(
@@ -486,7 +486,7 @@ function PiketShowroomPageInner() {
                                       </div>
                                     );
                                   })}
-                                  {![row.pic_ivp_name,row.pic_ump_name,row.pic_mlds_name].some(Boolean)&&<span className="text-gray-300 text-xs">—</span>}
+                                  {![row.pic_ivp_name,row.pic_ump_name,row.pic_mvi_name].some(Boolean)&&<span className="text-gray-300 text-xs">—</span>}
                                 </div>
                               </td>
                             </>
@@ -507,7 +507,7 @@ function PiketShowroomPageInner() {
                                     {/* Cari PTS team dari ptUsers */}
                                     {(()=>{
                                       const u=ptUsers.find(x=>x.full_name===(kg as any).team_rnd);
-                                      const teamLabel=u?.team_type==='Team PTS IVP'?'PTS IVP':u?.team_type==='Team PTS UMP'?'PTS UMP':u?.team_type==='Team PTS MLDS'?'PTS MLDS':'';
+                                      const teamLabel=u?.team_type==='Team PTS IVP'?'PTS IVP':u?.team_type==='Team PTS UMP'?'PTS UMP':u?.team_type==='Team PTS MVI'?'PTS MVI':'';
                                       const tc=teamLabel?TEAM_LABEL[teamLabel]:null;
                                       return tc?<span className="text-[8px] font-black px-1 py-0.5 rounded text-white" style={{background:tc.dot}}>{teamLabel}</span>:null;
                                     })()}

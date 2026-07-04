@@ -9,10 +9,10 @@ import {
 import { FormField, SectionHeader } from '@/components/shared';
 
 export type ReminderForm = Omit<Reminder, 'id' | 'created_at' | 'created_by' | 'wa_sent_h1'>;
-export type BulkTarget = 'none' | 'ivp' | 'mlds' | 'ump';
+export type BulkTarget = 'none' | 'ivp' | 'mvi' | 'ump';
 
-const BULK_TEAM_TYPE: Record<string, string> = { ivp: 'Team PTS IVP', mlds: 'Team PTS MLDS', ump: 'Team PTS UMP' };
-const BULK_LABEL: Record<string, string> = { ivp: 'PTS IVP', mlds: 'PTS MLDS', ump: 'PTS UMP' };
+const BULK_TEAM_TYPE: Record<string, string> = { ivp: 'Team PTS IVP', mvi: 'Team PTS MVI', ump: 'Team PTS UMP' };
+const BULK_LABEL: Record<string, string> = { ivp: 'PTS IVP', mvi: 'PTS MVI', ump: 'PTS UMP' };
 
 interface Props {
   editingReminder: Reminder | null;
@@ -114,7 +114,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                 {([
                   { key: 'none', label: '👤 Per Orang' },
                   { key: 'ivp',  label: '👥 Semua PTS IVP' },
-                  { key: 'mlds', label: '👥 Semua PTS MLDS' },
+                  { key: 'mvi', label: '👥 Semua PTS MVI' },
                   { key: 'ump',  label: '👥 Semua PTS UMP' },
                 ] as { key: BulkTarget; label: string }[]).map(opt => (
                   <button key={opt.key} type="button"
@@ -137,9 +137,9 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                     {teamUsers.filter(u => u.team_type === 'Team PTS IVP').map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
                   </optgroup>
                 )}
-                {teamUsers.filter(u => u.team_type === 'Team PTS MLDS').length > 0 && (
-                  <optgroup label="PTS MLDS">
-                    {teamUsers.filter(u => u.team_type === 'Team PTS MLDS').map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
+                {teamUsers.filter(u => u.team_type === 'Team PTS MVI').length > 0 && (
+                  <optgroup label="PTS MVI">
+                    {teamUsers.filter(u => u.team_type === 'Team PTS MVI').map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
                   </optgroup>
                 )}
                 {teamUsers.filter(u => u.team_type === 'Team PTS UMP').length > 0 && (

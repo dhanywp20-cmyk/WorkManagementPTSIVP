@@ -109,7 +109,7 @@ const ALL_STEPS: TourStep[] = [
   {
     id: 'picket-showroom', menuKey: 'picket-showroom', icon: '🏪',
     title: 'Piket Showroom',
-    desc: 'Jadwal piket showroom tim PTS IVP, UMP & MLDS. Data piket masuk ke laporan KPI bulanan.',
+    desc: 'Jadwal piket showroom tim PTS IVP, UMP & MVI. Data piket masuk ke laporan KPI bulanan.',
     color: '#0f766e', accentBg: 'linear-gradient(135deg,#f0fdfa,#ccfbf1)',
     flow: [
       { icon: '📅', label: 'Lihat Jadwal', state: 'normal' },

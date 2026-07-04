@@ -23,7 +23,7 @@ interface KPIData {
     overdueCount: number;
   };
   piket: {
-    todayIVP: string | null; todayUMP: string | null; todayMlds: string | null;
+    todayIVP: string | null; todayUMP: string | null; todayMvi: string | null;
     weekFilled: number; weekTotal: number; kegiatanToday: number;
   };
   units: { totalLogs: number; keluarThisMonth: number; masukThisMonth: number };
@@ -96,7 +96,7 @@ interface KPIPeriodSnapshot {
   period: '6m' | '1y';
   start_month: number;        // 1-12 (bulan mulai)
   end_month: number;          // 1-12 (bulan akhir, otomatis)
-  team_type: string;          // scope: "all" | "Team PTS IVP" | "Team PTS MLDS"
+  team_type: string;          // scope: "all" | "Team PTS IVP" | "Team PTS MVI"
   created_at: string;
   created_by: string;
   members_json: {
@@ -160,7 +160,7 @@ function getMonday() {
 
 // Same holiday-cascade logic used by piket-showroom page:
 // When a holiday occurs, subsequent days shift their PIC one slot earlier from the pool.
-type PiketPic = { pic_ivp_name: string|null; pic_ump_name: string|null; pic_mlds_name: string|null };
+type PiketPic = { pic_ivp_name: string|null; pic_ump_name: string|null; pic_mvi_name: string|null };
 function computeCascadedPiketToday(
   weekRows: (PiketPic & { day_date: string })[],
   holidays: string[],
@@ -172,12 +172,12 @@ function computeCascadedPiketToday(
   const picPool: PiketPic[] = sorted.map(r => ({
     pic_ivp_name: r.pic_ivp_name ?? null,
     pic_ump_name: r.pic_ump_name ?? null,
-    pic_mlds_name: r.pic_mlds_name ?? null,
+    pic_mvi_name: r.pic_mvi_name ?? null,
   }));
   let poolIdx = 0;
   for (const row of sorted) {
     if (holidaySet.has(row.day_date)) {
-      if (row.day_date === todayDate) return { pic_ivp_name: null, pic_ump_name: null, pic_mlds_name: null };
+      if (row.day_date === todayDate) return { pic_ivp_name: null, pic_ump_name: null, pic_mvi_name: null };
     } else {
       const pic = picPool[Math.min(poolIdx, picPool.length - 1)];
       poolIdx++;
@@ -392,7 +392,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
     (async () => {
       const role   = currentUser.role?.toLowerCase() ?? '';
       const jabatan = currentUser.jabatan ?? '';
-      const PTS_TYPES = ['Team PTS IVP','Team PTS UMP','Team PTS MLDS'];
+      const PTS_TYPES = ['Team PTS IVP','Team PTS UMP','Team PTS MVI'];
 
       if (['admin','superadmin'].includes(role)) {
         setScope({ kind: 'admin' }); setScopeReady(true); return;
@@ -451,7 +451,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
           supabase.from('activity_logs').select('id,ticket_id,new_status,created_at,handler_name').order('created_at',{ascending:false}).limit(500),
           scopeReminders(supabase.from('reminders').select('id,status,category,due_date,product')),
           supabase.from('picket_holidays').select('date'),
-          supabase.from('piket_schedules').select('id,day_date,pic_ivp_name,pic_ump_name,pic_mlds_name').gte('day_date', getMonday()).lte('day_date', todayStr()).order('day_date'),
+          supabase.from('piket_schedules').select('id,day_date,pic_ivp_name,pic_ump_name,pic_mvi_name').gte('day_date', getMonday()).lte('day_date', todayStr()).order('day_date'),
           supabase.from('piket_tamu_detail').select('id,created_at').gte('created_at', today),
           supabase.from('movement_logs').select('id,status_barang,tanggal,nama_pts').gte('tanggal', monthStart()),
           scope.kind === 'admin'
@@ -540,7 +540,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
         byCategory: Object.entries(catMap).map(([cat,count])=>({cat,count})).sort((a,b)=>b.count-a.count),
       })).sort((a,b)=>b.byCategory.reduce((s,c)=>s+c.count,0)-a.byCategory.reduce((s,c)=>s+c.count,0));
 
-      const weekFilled = piketWeek.filter((p:any)=>p.pic_ivp_name||p.pic_ump_name||p.pic_mlds_name).length;
+      const weekFilled = piketWeek.filter((p:any)=>p.pic_ivp_name||p.pic_ump_name||p.pic_mvi_name).length;
       // weekTotal = jumlah hari kerja (Senin-Jumat) dari awal minggu ini s.d. hari ini
       // weekTotal selalu 5 (Senin-Jumat), bukan hanya sampai hari ini
       const weekWorkDays = 5;
@@ -558,7 +558,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
       setKpi({
         tickets:{ total:tickets.length,open,solved,waitingApproval,byHandler,byStatus,byDivision,byProduct,resolvedToday,avgResolutionDays,monthlyTickets },
         reminders:{ total:reminders.length,pending:reminders.filter((r:any)=>r.status==='pending').length,done:reminders.filter((r:any)=>r.status==='done').length,dueSoon,byCategory,byProduct:remindersByProduct,overdueCount },
-        piket:{ todayIVP:piketToday?.pic_ivp_name??null,todayUMP:piketToday?.pic_ump_name??null,todayMlds:piketToday?.pic_mlds_name??null,weekFilled,weekTotal:weekWorkDays,kegiatanToday:kegiatan.length },
+        piket:{ todayIVP:piketToday?.pic_ivp_name??null,todayUMP:piketToday?.pic_ump_name??null,todayMvi:piketToday?.pic_mvi_name??null,weekFilled,weekTotal:weekWorkDays,kegiatanToday:kegiatan.length },
         units:{ totalLogs:movements.length,keluarThisMonth:movements.filter((m:any)=>m.status_barang==='Keluar').length,masukThisMonth:movements.filter((m:any)=>m.status_barang==='Masuk').length },
         users:{ total:users.length,byRole:Object.entries(roleMap).map(([role,count])=>({role,count})) },
         learning:{ totalSessions:lcSubmitted, completedSessions:lcPassed, totalParticipants:lcParticipants, avgScore:lcAvgScore },
@@ -658,7 +658,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
   // ── Piket card highlight per team ─────────────────────────────────────────
   const isPTSIVP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS IVP';
   const isPTSUMP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS UMP';
-  const isPTSMLDS = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS MLDS';
+  const isPTSMVI = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS MVI';
 
   const scopeTitle = scope.kind==='admin' ? 'Dashboard'
     : scope.kind==='pts_sup' ? `Summary ${scope.ptsTeamType}`
@@ -763,7 +763,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                     {[
                       {team:'IVP',  person:kpi?.piket.todayIVP,  c:'#ef4444', bg:'#fef2f2'},
                       {team:'UMP',  person:kpi?.piket.todayUMP,  c:'#f59e0b', bg:'#fffbeb'},
-                      {team:'MLDS', person:kpi?.piket.todayMlds, c:'#3b82f6', bg:'#eff6ff'},
+                      {team:'MVI', person:kpi?.piket.todayMvi, c:'#3b82f6', bg:'#eff6ff'},
                     ].map(p=>(
                       <div key={p.team} className="flex items-center gap-1.5">
                         <span className="text-sm font-black px-1.5 py-0.5 rounded-md flex-shrink-0"

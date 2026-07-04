@@ -121,7 +121,7 @@ export default function Dashboard() {
     {
       title: 'Piket Showroom', icon: '🏪', key: 'picket-showroom',
       gradient: 'from-teal-700 via-teal-600 to-cyan-500',
-      description: 'Jadwal piket showroom Team PTS IVP, UMP & MLDS',
+      description: 'Jadwal piket showroom Team PTS IVP, UMP & MVI',
       items: [{ name: 'Piket Showroom', url: '/picket-showroom', icon: '📅', internal: true, embed: true }]
     },
     {
@@ -507,7 +507,7 @@ export default function Dashboard() {
 
   // KPI: admin + PTS supervisor + sales supervisor (harus ada allowed_menus dashboard) + team member with dashboard permission
   const isPTSSupervisor = currentUser?.role === 'team'
-    && ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MLDS'].includes(currentUser?.team_type ?? '')
+    && ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MVI'].includes(currentUser?.team_type ?? '')
     && currentUser?.jabatan === 'Supervisor';
   const isSalesSupervisor = ['guest', 'sales'].includes(currentUser?.role?.toLowerCase() ?? '')
     && ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'].includes(currentUser?.jabatan ?? '')
@@ -787,7 +787,7 @@ export default function Dashboard() {
                               <option value="">-- Pilih Tipe PTS --</option>
                               <option value="PTS IVP">PTS IVP</option>
                               <option value="PTS UMP">PTS UMP</option>
-                              <option value="PTS MLDS">PTS MLDS</option>
+                              <option value="PTS MVI">PTS MVI</option>
                             </select>
                           </div>
                         )}

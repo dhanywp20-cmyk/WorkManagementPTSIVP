@@ -24,10 +24,10 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
       const{data}=await supabase.from('piket_schedules').select('*').in('week_start',[wk1,wk2]);
       const na=initW2();
       if(data&&data.length>0){
-        (data as PiketRow[]).forEach(s=>{if(na[s.week_start])na[s.week_start][s.day_of_week]=s.pic_ivp_id||s.pic_ump_id||s.pic_mlds_id||'';});
+        (data as PiketRow[]).forEach(s=>{if(na[s.week_start])na[s.week_start][s.day_of_week]=s.pic_ivp_id||s.pic_ump_id||s.pic_mvi_id||'';});
       }
       // Pre-fill hari kosong dari rolling — pola berulang selamanya sampai admin ubah
-      const{data:allData}=await supabase.from('piket_schedules').select('week_start,day_of_week,pic_ivp_id,pic_ump_id,pic_mlds_id');
+      const{data:allData}=await supabase.from('piket_schedules').select('week_start,day_of_week,pic_ivp_id,pic_ump_id,pic_mvi_id');
       if(allData&&allData.length>0){
         const allRows=allData as PiketRow[];
         [[wk1,weekStart],[wk2,week2Start]].forEach(([wk,ws])=>{
@@ -76,7 +76,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
           const tt=u.team_type||'';
           const isIVP=tt==='Team PTS IVP';
           const isUMP=tt==='Team PTS UMP';
-          const isMlds=tt==='Team PTS MLDS';
+          const isMvi=tt==='Team PTS MVI';
 
           const existing=existingMap.get(`${wk}__${day}`);
 
@@ -88,8 +88,8 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
             pic_ivp_name:isIVP?u.full_name||null:null,
             pic_ump_id:isUMP?uid:null,
             pic_ump_name:isUMP?u.full_name||null:null,
-            pic_mlds_id:isMlds?uid:null,
-            pic_mlds_name:isMlds?u.full_name||null:null,
+            pic_mvi_id:isMvi?uid:null,
+            pic_mvi_name:isMvi?u.full_name||null:null,
             // FIX #3: Pertahankan created_at asli jika row sudah exist, baru set jika insert baru
             created_at:existing?.created_at||new Date().toISOString(),
             updated_at:new Date().toISOString(),
@@ -151,7 +151,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
                       const date=getDayDate(ws,day);
                       const u=users.find(x=>x.id===assign[wk]?.[day]);
                       const tt=u?.team_type||'';
-                      const teamKey=tt==='Team PTS IVP'?'PTS IVP':tt==='Team PTS UMP'?'PTS UMP':tt==='Team PTS MLDS'?'PTS MLDS':'';
+                      const teamKey=tt==='Team PTS IVP'?'PTS IVP':tt==='Team PTS UMP'?'PTS UMP':tt==='Team PTS MVI'?'PTS MVI':'';
                       const tc=teamKey?TEAM_LABEL[teamKey]:null;
                       return(
                         <div key={wk} className="relative">
@@ -167,8 +167,8 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
                               <optgroup label="Team PTS UMP">
                                 {users.filter(u=>u.team_type==='Team PTS UMP').map(u=><option key={u.id} value={u.id}>{u.full_name}</option>)}
                               </optgroup>
-                              <optgroup label="Team PTS MLDS">
-                                {users.filter(u=>u.team_type==='Team PTS MLDS').map(u=><option key={u.id} value={u.id}>{u.full_name}</option>)}
+                              <optgroup label="Team PTS MVI">
+                                {users.filter(u=>u.team_type==='Team PTS MVI').map(u=><option key={u.id} value={u.id}>{u.full_name}</option>)}
                               </optgroup>
                             </select>
                           </div>

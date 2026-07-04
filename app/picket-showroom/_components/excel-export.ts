@@ -38,7 +38,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
 
     // PIC team color
     const picStyle=(team:string,base:any={})=>{
-      const colors:Record<string,{bg:string;fg:string}> = {'PTS IVP':{bg:'FEE2E2',fg:'991B1B'},'PTS UMP':{bg:'DBEAFE',fg:'1E3A5F'},'PTS MLDS':{bg:'EDE9FE',fg:'6D28D9'}};
+      const colors:Record<string,{bg:string;fg:string}> = {'PTS IVP':{bg:'FEE2E2',fg:'991B1B'},'PTS UMP':{bg:'DBEAFE',fg:'1E3A5F'},'PTS MVI':{bg:'EDE9FE',fg:'6D28D9'}};
       const c=colors[team]||{bg:'F3F4F6',fg:'374151'};
       return{...base,...cellStyle,font:{name:'Arial',sz:9,bold:true,color:{rgb:c.fg}},fill:{fgColor:{rgb:c.bg},patternType:'solid'}};
     };
@@ -161,7 +161,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
       // ── Statistik PIC ──
       const picMap:Record<string,number>={};
       sorted.forEach(r=>{
-        const names=[r.pic_ivp_name,r.pic_ump_name,r.pic_mlds_name].filter(Boolean) as string[];
+        const names=[r.pic_ivp_name,r.pic_ump_name,r.pic_mvi_name].filter(Boolean) as string[];
         names.forEach(n=>{picMap[n]=(picMap[n]||0)+1;});
       });
       const picArr = Object.entries(picMap).sort(([,a],[,b])=>b-a);
@@ -220,9 +220,9 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
         const toR=kgs.length>0?kgs:[null];
         const dateObj=new Date(piket.day_date+'T00:00:00');
         const dateStr=dateObj.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
-        const picNames=[piket.pic_ivp_name,piket.pic_ump_name,piket.pic_mlds_name].filter(Boolean).join(' / ')||'-';
-        const picTeams=[piket.pic_ivp_name?'PTS IVP':'',piket.pic_ump_name?'PTS UMP':'',piket.pic_mlds_name?'PTS MLDS':''].filter(Boolean).join(' / ')||'-';
-        const teamKey=piket.pic_ivp_name?'PTS IVP':piket.pic_ump_name?'PTS UMP':'PTS MLDS';
+        const picNames=[piket.pic_ivp_name,piket.pic_ump_name,piket.pic_mvi_name].filter(Boolean).join(' / ')||'-';
+        const picTeams=[piket.pic_ivp_name?'PTS IVP':'',piket.pic_ump_name?'PTS UMP':'',piket.pic_mvi_name?'PTS MVI':''].filter(Boolean).join(' / ')||'-';
+        const teamKey=piket.pic_ivp_name?'PTS IVP':piket.pic_ump_name?'PTS UMP':'PTS MVI';
         toR.forEach((kg,ki)=>{
           const rs = rowIdx%2===0?cellStyle:altStyle;
           const ctrStyle = {...rs,alignment:{horizontal:'center',vertical:'center'}};
@@ -275,7 +275,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
         const rs=i%2===0?cellStyle:altStyle;
         const ctrStyle={...rs,alignment:{horizontal:'center',vertical:'center'}};
         const dateStr=new Date(piket.day_date+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
-        const picNames=[piket.pic_ivp_name,piket.pic_ump_name,piket.pic_mlds_name].filter(Boolean).join(' / ')||'-';
+        const picNames=[piket.pic_ivp_name,piket.pic_ump_name,piket.pic_mvi_name].filter(Boolean).join(' / ')||'-';
         data.push([
           ctr(i+1,ctrStyle),
           cell(dateStr,rs),
@@ -316,7 +316,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
         const rs=i%2===0?cellStyle:altStyle;
         const ctrStyle={...rs,alignment:{horizontal:'center',vertical:'center'}};
         const dateStr=new Date(piket.day_date+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
-        const picNames=[piket.pic_ivp_name,piket.pic_ump_name,piket.pic_mlds_name].filter(Boolean).join(' / ')||'-';
+        const picNames=[piket.pic_ivp_name,piket.pic_ump_name,piket.pic_mvi_name].filter(Boolean).join(' / ')||'-';
         data.push([
           ctr(i+1,ctrStyle),
           cell(dateStr,rs),
@@ -368,7 +368,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
         const rs=i%2===0?cellStyle:altStyle;
         const ctrStyle={...rs,alignment:{horizontal:'center',vertical:'center'}};
         const dateStr=new Date(r.piket.day_date+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
-        const picNames=[r.piket.pic_ivp_name,r.piket.pic_ump_name,r.piket.pic_mlds_name].filter(Boolean).join(' / ')||'-';
+        const picNames=[r.piket.pic_ivp_name,r.piket.pic_ump_name,r.piket.pic_mvi_name].filter(Boolean).join(' / ')||'-';
         const dur=hoursBetween(r.kg.jam_mulai,r.kg.jam_selesai);
         const wh=Math.round(r.watt*dur);
         totalWatt+=r.watt; totalWh+=wh;

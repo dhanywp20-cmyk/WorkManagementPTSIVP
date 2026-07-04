@@ -120,7 +120,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
       role = 'team';
       if (newUser.pts_type === 'PTS IVP') team_type = 'Team PTS IVP';
       else if (newUser.pts_type === 'PTS UMP') team_type = 'Team PTS UMP';
-      else if (newUser.pts_type === 'PTS MLDS') team_type = 'Team PTS MLDS';
+      else if (newUser.pts_type === 'PTS MVI') team_type = 'Team PTS MVI';
     } else if (newUser.divisi === 'Sales') {
       role = 'guest';
       team_type = 'Guest';
@@ -171,7 +171,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
         role = 'team';
         if (editPtsType === 'PTS IVP') team_type = 'Team PTS IVP';
         else if (editPtsType === 'PTS UMP') team_type = 'Team PTS UMP';
-        else if (editPtsType === 'PTS MLDS') team_type = 'Team PTS MLDS';
+        else if (editPtsType === 'PTS MVI') team_type = 'Team PTS MVI';
         else team_type = null;
       } else if (editDivisi === 'Sales') {
         role = 'guest';
@@ -360,7 +360,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                               <option value="">-- Pilih Tipe PTS --</option>
                               <option value="PTS IVP">PTS IVP → Team PTS IVP</option>
                               <option value="PTS UMP">PTS UMP → Team PTS UMP</option>
-                              <option value="PTS MLDS">PTS MLDS → Team PTS MLDS</option>
+                              <option value="PTS MVI">PTS MVI → Team PTS MVI</option>
                             </select>
                           </div>
                         )}
@@ -431,7 +431,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                                 d = 'PTS';
                                 if (user.team_type === 'Team PTS IVP') p = 'PTS IVP';
                                 else if (user.team_type === 'Team PTS UMP') p = 'PTS UMP';
-                                else if (user.team_type === 'Team PTS MLDS') p = 'PTS MLDS';
+                                else if (user.team_type === 'Team PTS MVI') p = 'PTS MVI';
                               } else if (user.team_type === 'Guest') { d = 'Sales'; }
                               else if (user.team_type === 'Marketing') { d = 'Marketing'; }
                               setEditDivisi(d);
@@ -489,7 +489,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                       <option value="">-- Pilih Tipe PTS --</option>
                       <option value="PTS IVP">PTS IVP → Team PTS IVP</option>
                       <option value="PTS UMP">PTS UMP → Team PTS UMP</option>
-                      <option value="PTS MLDS">PTS MLDS → Team PTS MLDS</option>
+                      <option value="PTS MVI">PTS MVI → Team PTS MVI</option>
                     </select>
                   </div>
                 )}
@@ -1786,8 +1786,8 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
   const isTeamServices = roleLC === 'team' && teamType === 'Team Services';
   const isTeamPTS = roleLC === 'team' && teamType === 'Team PTS IVP';
   const isTeamPTS_UMP = roleLC === 'team' && teamType === 'Team PTS UMP';
-  const isTeamPTS_MLDS = roleLC === 'team' && teamType === 'Team PTS MLDS';
-  const isTeamPTS_SubGroup = isTeamPTS_UMP || isTeamPTS_MLDS;
+  const isTeamPTS_MVI = roleLC === 'team' && teamType === 'Team PTS MVI';
+  const isTeamPTS_SubGroup = isTeamPTS_UMP || isTeamPTS_MVI;
   const isPTS  = ['admin', 'superadmin'].includes(roleLC) || isTeamPTS;
   const isAdmin = ['admin', 'superadmin'].includes(roleLC);
 
@@ -2375,7 +2375,7 @@ export function KpiRosterInline() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null); // userId sedang disimpan
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
-  const [filterTeam, setFilterTeam] = useState<'all' | 'Team PTS IVP' | 'Team PTS MLDS'>('all');
+  const [filterTeam, setFilterTeam] = useState<'all' | 'Team PTS IVP' | 'Team PTS MVI'>('all');
 
   const notify = (type: 'success' | 'error', msg: string) => {
     setNotification({ type, msg });
@@ -2388,7 +2388,7 @@ export function KpiRosterInline() {
       .from('users')
       .select('id,full_name,jabatan,team_type,role,kpi_enabled')
       .eq('role', 'team')
-      .in('team_type', ['Team PTS IVP', 'Team PTS MLDS'])
+      .in('team_type', ['Team PTS IVP', 'Team PTS MVI'])
       .order('team_type')
       .order('full_name');
     if (!error && data) setUsers(data as User[]);
@@ -2412,7 +2412,7 @@ export function KpiRosterInline() {
 
   const filtered = users.filter(u => filterTeam === 'all' || u.team_type === filterTeam);
   const ivpUsers = filtered.filter(u => u.team_type === 'Team PTS IVP');
-  const mldsUsers = filtered.filter(u => u.team_type === 'Team PTS MLDS');
+  const mviUsers = filtered.filter(u => u.team_type === 'Team PTS MVI');
   const activeCount = users.filter(u => u.kpi_enabled !== false).length;
 
   const TeamSection = ({ members, label, color, bg, border }: {
@@ -2498,7 +2498,7 @@ export function KpiRosterInline() {
           <div className="text-2xl">🎯</div>
           <div className="flex-1">
             <p className="text-sm font-bold text-sky-800">KPI Roster</p>
-            <p className="text-xs text-sky-600">Hanya anggota yang <strong>diaktifkan</strong> di sini yang akan muncul & dinilai di Dashboard KPI (berlaku untuk IVP & MLDS).</p>
+            <p className="text-xs text-sky-600">Hanya anggota yang <strong>diaktifkan</strong> di sini yang akan muncul & dinilai di Dashboard KPI (berlaku untuk IVP & MVI).</p>
           </div>
           {!loading && (
             <div className="text-right flex-shrink-0">
@@ -2510,19 +2510,19 @@ export function KpiRosterInline() {
 
         {/* Filter tim */}
         <div className="flex gap-1.5">
-          {(['all', 'Team PTS IVP', 'Team PTS MLDS'] as const).map(t => (
+          {(['all', 'Team PTS IVP', 'Team PTS MVI'] as const).map(t => (
             <button key={t}
               onClick={() => setFilterTeam(t)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
                 filterTeam === t
                   ? t === 'Team PTS IVP'
                     ? 'bg-teal-600 text-white border-teal-600'
-                    : t === 'Team PTS MLDS'
+                    : t === 'Team PTS MVI'
                     ? 'bg-blue-600 text-white border-blue-600'
                     : 'bg-sky-700 text-white border-sky-700'
                   : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
               }`}>
-              {t === 'all' ? '🌐 Semua Tim' : t === 'Team PTS IVP' ? '🟢 IVP' : '🔵 MLDS'}
+              {t === 'all' ? '🌐 Semua Tim' : t === 'Team PTS IVP' ? '🟢 IVP' : '🔵 MVI'}
             </button>
           ))}
         </div>
@@ -2545,10 +2545,10 @@ export function KpiRosterInline() {
                 border="#99f6e4"
               />
             )}
-            {(filterTeam === 'all' || filterTeam === 'Team PTS MLDS') && (
+            {(filterTeam === 'all' || filterTeam === 'Team PTS MVI') && (
               <TeamSection
-                members={mldsUsers}
-                label="Team PTS MLDS"
+                members={mviUsers}
+                label="Team PTS MVI"
                 color="#2563eb"
                 bg="#eff6ff"
                 border="#bfdbfe"
@@ -2628,7 +2628,7 @@ export function AccountSettingsInline() {
     let role = 'guest'; let team_type: string | null = null; let sales_division: string | null = null;
     if (sd === 'PTS IVP') { role = 'team'; team_type = 'Team PTS IVP'; }
     else if (sd === 'PTS UMP') { role = 'team'; team_type = 'Team PTS UMP'; }
-    else if (sd === 'PTS MLDS') { role = 'team'; team_type = 'Team PTS MLDS'; }
+    else if (sd === 'PTS MVI') { role = 'team'; team_type = 'Team PTS MVI'; }
     else if (sd.startsWith('Marketing:')) { role = 'guest'; team_type = 'Marketing'; sales_division = sd.replace('Marketing:', '') || null; }
     else { role = 'guest'; team_type = 'Guest'; sales_division = sd || null; }
     const { error } = await adminUpdateUser(approvingUser.id, { role, team_type, sales_division, allowed_menus: approveMenus });
@@ -2665,7 +2665,7 @@ export function AccountSettingsInline() {
       role = 'team';
       if (newUser.pts_type === 'PTS IVP') team_type = 'Team PTS IVP';
       else if (newUser.pts_type === 'PTS UMP') team_type = 'Team PTS UMP';
-      else if (newUser.pts_type === 'PTS MLDS') team_type = 'Team PTS MLDS';
+      else if (newUser.pts_type === 'PTS MVI') team_type = 'Team PTS MVI';
     } else if (newUser.divisi === 'Sales') {
       role = 'guest'; team_type = 'Guest';
     } else if (newUser.divisi === 'Marketing') {
@@ -2700,7 +2700,7 @@ export function AccountSettingsInline() {
         role = 'team';
         if (editPtsType === 'PTS IVP') team_type = 'Team PTS IVP';
         else if (editPtsType === 'PTS UMP') team_type = 'Team PTS UMP';
-        else if (editPtsType === 'PTS MLDS') team_type = 'Team PTS MLDS';
+        else if (editPtsType === 'PTS MVI') team_type = 'Team PTS MVI';
         else team_type = null;
       } else if (editDivisi === 'Sales') { role = 'guest'; team_type = 'Guest'; }
       else if (editDivisi === 'Marketing') { role = 'guest'; team_type = 'Marketing'; }
@@ -2835,7 +2835,7 @@ export function AccountSettingsInline() {
                         <option value="">-- Pilih Tipe PTS --</option>
                         <option value="PTS IVP">PTS IVP → Team PTS IVP</option>
                         <option value="PTS UMP">PTS UMP → Team PTS UMP</option>
-                        <option value="PTS MLDS">PTS MLDS → Team PTS MLDS</option>
+                        <option value="PTS MVI">PTS MVI → Team PTS MVI</option>
                       </select>
                     </div>
                   )}
@@ -2891,7 +2891,7 @@ export function AccountSettingsInline() {
                     if (!grouped[div][sub]) grouped[div][sub] = [];
                     grouped[div][sub].push(u);
                   });
-                  const divOrder = ['⚙️ Admin / Superadmin', '👥 Team PTS IVP', '👥 Team PTS UMP', '👥 Team PTS MLDS'];
+                  const divOrder = ['⚙️ Admin / Superadmin', '👥 Team PTS IVP', '👥 Team PTS UMP', '👥 Team PTS MVI'];
                   const sortedDivs = [
                     ...divOrder.filter(d => grouped[d]),
                     ...Object.keys(grouped).filter(d => !divOrder.includes(d)).sort(),
@@ -2900,7 +2900,7 @@ export function AccountSettingsInline() {
                     '⚙️ Admin / Superadmin': { hdr: 'bg-slate-100 border-slate-300 text-slate-700', dot: '#64748b' },
                     '👥 Team PTS IVP':           { hdr: 'bg-rose-50 border-rose-200 text-rose-700',       dot: '#be123c' },
                     '👥 Team PTS UMP':       { hdr: 'bg-orange-50 border-orange-200 text-orange-700', dot: '#c2410c' },
-                    '👥 Team PTS MLDS':      { hdr: 'bg-amber-50 border-amber-200 text-amber-700',    dot: '#b45309' },
+                    '👥 Team PTS MVI':      { hdr: 'bg-amber-50 border-amber-200 text-amber-700',    dot: '#b45309' },
                     '📣 Marketing':          { hdr: 'bg-cyan-50 border-cyan-200 text-cyan-700',       dot: '#0891b2' },
                     '👤 Lainnya':            { hdr: 'bg-slate-50 border-slate-200 text-slate-600',    dot: '#94a3b8' },
                   };
@@ -2945,7 +2945,7 @@ export function AccountSettingsInline() {
                                   <div className="flex flex-col gap-1 flex-shrink-0">
                                     <button onClick={() => {
                                       let d = '', p = '';
-                                      if (user.role === 'team') { d = 'PTS'; if (user.team_type === 'Team PTS IVP') p = 'PTS IVP'; else if (user.team_type === 'Team PTS UMP') p = 'PTS UMP'; else if (user.team_type === 'Team PTS MLDS') p = 'PTS MLDS'; }
+                                      if (user.role === 'team') { d = 'PTS'; if (user.team_type === 'Team PTS IVP') p = 'PTS IVP'; else if (user.team_type === 'Team PTS UMP') p = 'PTS UMP'; else if (user.team_type === 'Team PTS MVI') p = 'PTS MVI'; }
                                       else if (user.team_type === 'Guest') { d = 'Sales'; }
                                       else if (user.team_type === 'Marketing') { d = 'Marketing'; }
                                       setEditDivisi(d); setEditPtsType(p); setEditOrig({ username: user.username, full_name: user.full_name }); setEditingUser(user);
@@ -2999,7 +2999,7 @@ export function AccountSettingsInline() {
                     <option value="">-- Pilih Tipe PTS --</option>
                     <option value="PTS IVP">PTS IVP → Team PTS IVP</option>
                     <option value="PTS UMP">PTS UMP → Team PTS UMP</option>
-                    <option value="PTS MLDS">PTS MLDS → Team PTS MLDS</option>
+                    <option value="PTS MVI">PTS MVI → Team PTS MVI</option>
                   </select>
                 </div>
               )}

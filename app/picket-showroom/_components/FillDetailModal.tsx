@@ -29,7 +29,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
       setLoadingE(true);
       const[detailRes,usersRes,plRes]=await Promise.all([
         supabase.from('piket_tamu_detail').select('*').eq('piket_id',row.id).order('created_at'),
-        supabase.from('users').select('id,full_name,team_type,role').in('team_type',['Team PTS IVP','Team PTS UMP','Team PTS MLDS']).order('full_name'),
+        supabase.from('users').select('id,full_name,team_type,role').in('team_type',['Team PTS IVP','Team PTS UMP','Team PTS MVI']).order('full_name'),
         supabase.from('piket_produk_lain').select('kegiatan_id,nama,watt').eq('piket_id',row.id),
       ]);
       const plByKg:Record<string,ProdukLain[]>={};
@@ -62,7 +62,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
   const getPTSTeamLabel=(name:string)=>{
     const u=ptUsers.find(x=>x.full_name===name);
     const tt=u?.team_type||'';
-    return tt==='Team PTS IVP'?'PTS IVP':tt==='Team PTS UMP'?'PTS UMP':tt==='Team PTS MLDS'?'PTS MLDS':'';
+    return tt==='Team PTS IVP'?'PTS IVP':tt==='Team PTS UMP'?'PTS UMP':tt==='Team PTS MVI'?'PTS MVI':'';
   };
 
   const handleSave=async()=>{
@@ -120,7 +120,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
             <p className="text-[9px] font-bold uppercase tracking-widest text-white/50 mb-0.5">Hari Piket</p>
             <h2 className="text-lg font-bold text-white">✍️ Detail Piket — {row.day_of_week}</h2>
             <p className="text-[9px] font-bold uppercase tracking-widest text-white/50 mt-1.5 mb-0.5">Tanggal · PIC</p>
-            <p className="text-white/70 text-xs">{new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})} · {[row.pic_ivp_name,row.pic_ump_name,row.pic_mlds_name].filter(Boolean).join(' / ')||'Belum ada PIC'}</p>
+            <p className="text-white/70 text-xs">{new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})} · {[row.pic_ivp_name,row.pic_ump_name,row.pic_mvi_name].filter(Boolean).join(' / ')||'Belum ada PIC'}</p>
           </div>
           <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
         </div>
@@ -274,8 +274,8 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                             <optgroup label="Team PTS UMP">
                               {ptUsers.filter(u=>u.team_type==='Team PTS UMP').map(u=><option key={u.id} value={u.full_name}>{u.full_name}</option>)}
                             </optgroup>
-                            <optgroup label="Team PTS MLDS">
-                              {ptUsers.filter(u=>u.team_type==='Team PTS MLDS').map(u=><option key={u.id} value={u.full_name}>{u.full_name}</option>)}
+                            <optgroup label="Team PTS MVI">
+                              {ptUsers.filter(u=>u.team_type==='Team PTS MVI').map(u=><option key={u.id} value={u.full_name}>{u.full_name}</option>)}
                             </optgroup>
                           </select>
                           {entry.team_rnd&&(()=>{

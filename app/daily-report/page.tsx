@@ -805,7 +805,7 @@ export default function DailyReportPage() {
   // ── MAIN LIST VIEW ────────────────────────────────────────────────────────────
   return (
     <PW>
-      <PageHeader icon="📋" title="Daily Report" subtitle="PTS IVP & MLDS" color="#059669" colorLight="#047857">
+      <PageHeader icon="📋" title="Daily Report" subtitle="PTS IVP & MVI" color="#059669" colorLight="#047857">
         <button onClick={openNewForm}
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-sm text-white hover:scale-[1.02] transition-all"
           style={{ background: 'linear-gradient(135deg,#059669,#047857)', boxShadow: '0 4px 14px rgba(5,150,105,0.4)' }}>
