@@ -1898,7 +1898,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         setRequireNotifs((data ?? []).map(toRequireNotif));
 
       } else if (roleLC === 'guest' || roleLC === 'sales') {
-        const isIVPUser2 = currentUser.sales_division === 'IVP';
+        const isIVPUser2 = currentUser.sales_division === 'IVP' || currentUser.sales_division === 'MVI';
         const BRAND_DIVS = ['MLDS', 'UMP', 'OSS'];
         const isBrandPICNotif = BRAND_DIVS.includes(currentUser.sales_division || '');
         const selfJabatanN = (currentUser as any).jabatan as string | undefined;

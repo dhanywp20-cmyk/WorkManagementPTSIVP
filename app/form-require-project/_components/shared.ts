@@ -66,6 +66,10 @@ export interface ProjectRequest {
   brand_middleware_pic_id?: string;
   brand_middleware_pic_name?: string;
   rejection_reason?: string;
+  routing_status?: string | null;      // 'internal_review' | 'admin_review' | null (lama)
+  internal_sales_id?: string | null;   // Sales Internal yang wajib review dulu (division_ivp_mappings)
+  internal_approved_by?: string | null;
+  internal_approved_at?: string | null;
 }
 
 export interface RoomDetail {

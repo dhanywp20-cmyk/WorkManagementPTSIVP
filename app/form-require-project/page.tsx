@@ -131,8 +131,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const isTeamPTS = role === 'team_pts' || role === 'team';
   const isSuperAdmin = role === 'superadmin';
   const isAdmin = role === 'admin';
-  // Guest IVP = role guest dengan sales_division IVP (bisa lihat semua request)
-  const isIVPGuest = role === 'guest' && currentUser.sales_division === 'IVP';
+  // Guest IVP = role guest dengan sales_division IVP/MVI (Sales Internal, bisa lihat
+  // semua request divisi yang dia handle via division_ivp_mappings)
+  const isIVPGuest = role === 'guest' && (currentUser.sales_division === 'IVP' || currentUser.sales_division === 'MVI');
   // Guest non-IVP = role guest bukan IVP (hanya lihat request miliknya)
   const isNonIVPGuest = role === 'guest' && currentUser.sales_division !== 'IVP';
   // Bisa ubah status in_progress: hanya PTS yang di-assign ke request tsb
@@ -504,6 +505,33 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     if (!dueDateForm) { notify('error', 'Target Selesai wajib diisi!'); return; }
     setSubmitting(true);
     try {
+      // ── Routing: Sales External wajib direview Sales Internal (division_ivp_mappings)
+      // dulu, BARU Admin dapat notifikasi actionable. Sales Internal/Marketing yang
+      // request utk kebutuhan sendiri (project direct ke user) TIDAK kena gerbang ini
+      // — sama seperti Request Schedule. Admin/PTS yang submit langsung (isPTS) juga
+      // skip gerbang (dia sudah tahu/putuskan sendiri).
+      let routingStatus: 'internal_review' | 'admin_review' = 'admin_review';
+      let internalSalesId: string | null = null;
+      let internalHandlers: { phone_number: string | null; full_name: string }[] = [];
+      if (!isPTS) {
+        try {
+          const { data: freshSelf } = await supabase.from('users').select('is_internal_sales, team_type').eq('id', currentUser.id).maybeSingle();
+          const isInternalOrMarketing = !!freshSelf?.is_internal_sales || freshSelf?.team_type === 'Marketing';
+          const salesDivision = (currentUser.sales_division || form.sales_division || '').trim();
+          if (!isInternalOrMarketing && salesDivision) {
+            const { data: ivpMaps } = await supabase.from('division_ivp_mappings').select('ivp_id').eq('sales_division', salesDivision);
+            const ivpIds = (ivpMaps ?? []).map((m: { ivp_id: string }) => m.ivp_id);
+            if (ivpIds.length > 0) {
+              const { data: handlers } = await supabase.from('users').select('id, full_name, phone_number').in('id', ivpIds);
+              if (handlers && handlers.length > 0) {
+                routingStatus = 'internal_review';
+                internalSalesId = handlers[0].id;
+                internalHandlers = handlers.map((h: { full_name: string; phone_number: string | null }) => ({ phone_number: h.phone_number, full_name: h.full_name }));
+              }
+            }
+          }
+        } catch { /* fallback ke admin_review kalau gagal cek */ }
+      }
       const payload = {
         project_name: form.project_name.trim(), room_name: form.room_name.trim(),
         project_location: form.project_location.trim(),
@@ -525,6 +553,8 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         requester_id: currentUser.id, requester_name: currentUser.full_name, status: 'pending' as const,
         due_date: dueDateForm || null,
         rooms: rooms.length > 0 ? rooms : [],
+        routing_status: routingStatus,
+        internal_sales_id: internalSalesId,
       };
       const { data, error } = await supabase.from('project_requests').insert([payload]).select().single();
       if (error) { notify('error', 'Gagal submit form: ' + error.message); setSubmitting(false); return; }
@@ -566,7 +596,27 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
           .not('phone_number', 'is', null)
           .neq('phone_number', '');
         const adminPhonesWA = (adminUsersWA || []).map((u: any) => u.phone_number).filter(Boolean);
-        if (adminUsersWA && adminUsersWA.length > 0) {
+        if (adminUsersWA && adminUsersWA.length > 0 && routingStatus === 'internal_review') {
+          // Sales External: WA WAJIB ke Sales Internal dulu (actionable), Admin cuma pengingat.
+          const internalMsg =
+            `📩 *REQUEST DESIGN BARU - PERLU REVIEW KAMU*\n\n` +
+            `Sales External *${currentUser.full_name}* (${currentUser.sales_division || '-'}) mengajukan request design:\n\n` +
+            `📋 Project: ${form.project_name.trim()}\n` +
+            `🛋️ Ruangan: ${form.room_name.trim() || '-'}\n\n` +
+            `Silakan review & teruskan ke Admin:\n` +
+            `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+          await Promise.allSettled(
+            internalHandlers.filter(h => h.phone_number).map(h => sendWANotif({ type: 'reminder_wa', target: h.phone_number as string, message: internalMsg }))
+          );
+          const adminHeadsUp =
+            `ℹ️ *ADA REQUEST DESIGN BARU (pengingat)*\n\n` +
+            `Sales External *${currentUser.full_name}* mengajukan request untuk *${form.project_name.trim()}*.\n` +
+            `Sedang menunggu review dari Sales Internal *${internalHandlers[0]?.full_name ?? '-'}* sebelum bisa diproses Admin.`;
+          await Promise.allSettled(
+            (adminUsersWA as any[]).map((a: any) => sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: adminHeadsUp }))
+          );
+        }
+        if (adminUsersWA && adminUsersWA.length > 0 && routingStatus !== 'internal_review') {
           const approvalWaMsg = [
             '🏗️ *Request Design Project \u2014 Request Baru*',
             '\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501',
@@ -583,6 +633,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
               sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: approvalWaMsg })
             )
           );
+        }
+        // CC/upload/brand-PIC di bawah ini berlaku utk KEDUA jalur routing (internal_review & admin_review).
+        if (adminUsersWA && adminUsersWA.length > 0) {
           // ── CC ke atasan + IVP berdasarkan divisi requester ──
           try {
             const ccDiv = currentUser?.sales_division ?? '';
@@ -677,7 +730,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
           } catch { }
         }
       }
-      notify('success', '✅ Form berhasil dikirim! ⏳ Menunggu approval dari Superadmin.');
+      notify('success', routingStatus === 'internal_review'
+        ? `✅ Form berhasil dikirim! ⏳ Menunggu review ${internalHandlers[0]?.full_name ?? 'Sales Internal'} terlebih dahulu.`
+        : '✅ Form berhasil dikirim! ⏳ Menunggu approval dari Superadmin.');
       setForm(initialForm); setDueDateForm(''); setSurveyPhotos([]); setSurveyPhotosPreviews([]); setBoqFormFile(null);
       setRooms([]); setRoomPhotoMap({}); setBoqRoomMap({});
       setShowNewFormModal(false);
@@ -711,6 +766,29 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const handleApprove = async (req: ProjectRequest) => {
     // Hanya admin/superadmin yang bisa approve, selalu via AssignPTSModal untuk pilih PTS handler
     setAssignModal({ open: true, req });
+  };
+
+  // ─── Handler: Sales Internal approve & teruskan ke Admin ─────────────────
+  const handleInternalApproveProject = async (req: ProjectRequest) => {
+    const { error } = await supabase.from('project_requests').update({
+      routing_status: 'admin_review',
+      internal_approved_by: currentUser.id,
+      internal_approved_at: new Date().toISOString(),
+    }).eq('id', req.id);
+    if (error) { notify('error', 'Gagal approve: ' + error.message); return; }
+    notify('success', 'Request diteruskan ke Admin!');
+    logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'approve', module: 'project', target_id: req.id, target_name: req.project_name, notes: 'Internal review approved' }).catch(() => {});
+    fetchRequests();
+    if (selectedRequest?.id === req.id) setSelectedRequest({ ...req, routing_status: 'admin_review' });
+    // WA ke Admin — actionable, sudah lolos review Sales Internal.
+    try {
+      const { data: admins } = await supabase.from('users').select('phone_number, full_name').in('role', ['admin', 'superadmin']).not('phone_number', 'is', null).neq('phone_number', '');
+      const msg =
+        `✅ *REQUEST DESIGN LOLOS REVIEW SALES INTERNAL*\n\n` +
+        `Request dari *${req.sales_name}* untuk *${req.project_name}* sudah di-review oleh *${currentUser.full_name}* — silakan diproses/di-assign.\n` +
+        `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+      await Promise.allSettled((admins ?? []).filter((a: any) => a.phone_number).map((a: any) => sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: msg })));
+    } catch { }
   };
 
   const handleReject = (req: ProjectRequest) => { setRejectNote(''); setRejectModal({ open: true, req }); };
@@ -1801,7 +1879,11 @@ Hubungi Admin untuk info lebih lanjut.
                         <td className="px-3 py-3 border-r border-gray-100 align-middle">
                           <div className="flex flex-col gap-1 items-start">
                             <span className={`px-2 py-0.5 text-xs font-bold border whitespace-nowrap ${sc.color} ${sc.bg} ${sc.border}`}>{sc.label}</span>
-                            {req.status === 'pending' && isPTS && !isTeamPTS && <p className="text-[9px] font-bold text-red-500 animate-pulse">🔔 Perlu Approval</p>}
+                            {req.routing_status === 'internal_review' ? (
+                              <p className="text-[9px] font-bold text-amber-600">🔍 Menunggu Review Internal</p>
+                            ) : (
+                              req.status === 'pending' && isPTS && !isTeamPTS && <p className="text-[9px] font-bold text-red-500 animate-pulse">🔔 Perlu Approval</p>
+                            )}
                           </div>
                         </td>
                         <td className="px-3 py-3 border-r border-gray-100 align-middle">
@@ -1833,8 +1915,21 @@ Hubungi Admin untuk info lebih lanjut.
                         </td>
                         <td className="px-2 py-3 align-middle text-center" onClick={e => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-1">
-                            {/* Approve/Reject: admin/superadmin saja */}
-                            {(isAdmin || isSuperAdmin) && req.status === 'pending' && (
+                            {/* Sales Internal: wajib review dulu sebelum Admin bisa approve */}
+                            {currentUser.id === req.internal_sales_id && req.routing_status === 'internal_review' && (
+                              <>
+                                <button onClick={() => handleInternalApproveProject(req)} title="Approve & Teruskan ke Admin"
+                                  className="w-7 h-7 bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white border border-amber-200 rounded-lg flex items-center justify-center transition-all">
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                                </button>
+                                <button onClick={() => handleReject(req)} title="Tolak"
+                                  className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                              </>
+                            )}
+                            {/* Approve/Reject: admin/superadmin saja, terkunci selama masih internal_review */}
+                            {(isAdmin || isSuperAdmin) && req.status === 'pending' && req.routing_status !== 'internal_review' && (
                               <>
                                 <button onClick={() => handleApprove(req)} title="Approve"
                                   className="w-7 h-7 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 rounded-lg flex items-center justify-center transition-all">
@@ -2124,8 +2219,23 @@ Hubungi Admin untuk info lebih lanjut.
                 </p>
               </div>
               <div className="flex gap-2 flex-shrink-0 flex-wrap">
-                {/* Approve/Tolak: hanya admin/superadmin */}
-                {(isAdmin || isSuperAdmin) && detailIsPending && (
+                {/* Sales Internal: wajib review dulu sebelum Admin bisa approve */}
+                {currentUser.id === selectedRequest.internal_sales_id && selectedRequest.routing_status === 'internal_review' && (
+                  <>
+                    <button onClick={() => handleInternalApproveProject(selectedRequest)}
+                      className="bg-amber-500 hover:bg-amber-400 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                      Approve & Teruskan ke Admin
+                    </button>
+                    <button onClick={() => handleReject(selectedRequest)}
+                      className="bg-white/20 hover:bg-red-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-white/30 flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                      Tolak
+                    </button>
+                  </>
+                )}
+                {/* Approve/Tolak: hanya admin/superadmin, terkunci selama masih internal_review */}
+                {(isAdmin || isSuperAdmin) && detailIsPending && selectedRequest.routing_status !== 'internal_review' && (
                   <>
                     <button onClick={() => { setAssignModal({ open: true, req: selectedRequest }); }}
                       className="bg-emerald-500 hover:bg-emerald-400 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">

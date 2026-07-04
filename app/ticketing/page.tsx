@@ -410,9 +410,12 @@ function TicketingSystemInner() {
         const { data: byUsername } = await supabase.from("tickets").select("*, activity_logs(*)").eq("sales_name", selfUsername).order("created_at", { ascending: false });
         (byUsername ?? []).forEach(addOwn);
 
-        const isIVP = selfDiv === "IVP";
+        // Sales Internal (IVP/MVI): lihat ticket dari semua divisi yang dia handle
+        // (division_ivp_mappings) — ini yang mewujudkan "CC ke list ticket" utk
+        // Troubleshooting (fast-track, tanpa gerbang approval, tapi tetap visible).
+        const isIVP = selfDiv === "IVP" || selfDiv === "MVI";
         if (isIVP) {
-          // IVP guest: lihat ticket dari semua divisi yang dia handle
+          // IVP/MVI guest: lihat ticket dari semua divisi yang dia handle
           const { data: ivpDivMaps } = await supabase.from("division_ivp_mappings").select("sales_division").eq("ivp_id", resolvedUser.id);
           const handledDivisions = (ivpDivMaps ?? []).map((m: any) => m.sales_division as string);
           let ivpTickets: Ticket[] = [...ownBase];
