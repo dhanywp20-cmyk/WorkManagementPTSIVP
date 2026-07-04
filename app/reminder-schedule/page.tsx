@@ -13,7 +13,7 @@ import {
   REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES,
   PRIORITY_CONFIG, STATUS_CONFIG, CATEGORIES, CATEGORY_CONFIG,
   REPEAT_OPTIONS, SALES_DIVISIONS, PIE_COLORS,
-  formatDate, formatDatetime, isDueToday,
+  formatDate, formatDatetime, isDueToday, newBatchId,
   sendFonnteWA,
 } from './_components/shared';
 import { PriorityBadge, StatusBadge, CategoryBadge } from './_components/Badges';
@@ -117,6 +117,7 @@ function ReminderSchedulePageInner() {
 
   // ─── Approve & Assign State (admin only) ─────────────────────────────────
   const [approveTarget, setApproveTarget] = useState<Reminder | null>(null);
+  const [approveBatchSiblings, setApproveBatchSiblings] = useState<Reminder[]>([]); // tanggal lain di batch yang sama, ikut di-approve bareng
   const [approveAssignTo, setApproveAssignTo] = useState('');
   const [approveDate, setApproveDate] = useState('');
   const [approveTime, setApproveTime] = useState('');
@@ -308,6 +309,9 @@ function ReminderSchedulePageInner() {
     const allDates: string[] = editingReminder
       ? [formData.due_date]
       : Array.from(new Set([formData.due_date, ...extraDates].filter(Boolean))).sort();
+    // Grup semua baris dari 1 submission multi-tanggal — supaya Schedule List
+    // menampilkannya sbg 1 baris (bukan N baris identik per tanggal).
+    const batchId = (!editingReminder && allDates.length > 1) ? newBatchId() : null;
     const jadwalLine = allDates.length > 1
       ? `🕐 *Jadwal (${allDates.length} hari):* ${allDates.map(d => formatDate(d)).join(', ')}${formData.due_time ? ' · ' + formData.due_time : ''}`
       : `🕐 Jadwal: *${formatDate(formData.due_date)}${formData.due_time ? ' · ' + formData.due_time : ''}*`;
@@ -322,6 +326,7 @@ function ReminderSchedulePageInner() {
       const payloads = targets.flatMap(u => allDates.map(d => ({
         ...formData,
         due_date: d,
+        batch_id: batchId,
         assigned_to: u.username,
         assign_name: u.full_name,
         created_by: currentUser?.username ?? 'system',
@@ -372,6 +377,7 @@ function ReminderSchedulePageInner() {
       const payloads = allDates.map(d => ({
         ...formData,
         due_date: d,
+        batch_id: batchId,
         assign_name: assignee?.full_name ?? formData.assigned_to,
         created_by: currentUser?.username ?? 'system',
       }));
@@ -479,19 +485,21 @@ function ReminderSchedulePageInner() {
               // Fallback ke guestUsers state jika DB tidak return
               const resolvedGuest = guestFromDb ?? guestUsers.find(g => g.full_name === salesName) ?? null;
 
-              // Cek apakah sudah ada form_review untuk reminder ini
-              const { data: existingReview } = await supabase
-                .from('form_reviews')
-                .select('id')
-                .eq('reminder_id', reminder.id)
-                .eq('sales_name', salesName)
-                .maybeSingle();
+              // Cek apakah sudah ada form_review untuk reminder ini — kalau reminder ini
+              // bagian dari batch multi-tanggal, cek per BATCH (bukan per tanggal) supaya
+              // menyelesaikan tanggal ke-2/3 dst di batch yang sama tidak bikin review dobel.
+              let existingQuery = supabase.from('form_reviews').select('id').eq('sales_name', salesName);
+              existingQuery = reminder.batch_id
+                ? existingQuery.eq('batch_id', reminder.batch_id)
+                : existingQuery.eq('reminder_id', reminder.id);
+              const { data: existingReview } = await existingQuery.maybeSingle();
 
               if (!existingReview) {
                 const reviewCategory = reminder.category === 'Demo Product' ? 'Demo Product' : 'BAST';
                 const productValue = reminder.product?.trim() || '';
                 const { error: reviewErr } = await supabase.from('form_reviews').insert([{
                   reminder_id: reminder.id,
+                  batch_id: reminder.batch_id ?? null,
                   project_name: reminder.project_name,
                   address: reminder.address || '',
                   sales_name: salesName,
@@ -718,13 +726,12 @@ function ReminderSchedulePageInner() {
         return;
       }
 
-      // Cek apakah form_review sudah ada
-      const { data: existingReview } = await supabase
-        .from('form_reviews')
-        .select('id, guest_username')
-        .eq('reminder_id', r.id)
-        .eq('sales_name', salesName)
-        .maybeSingle();
+      // Cek apakah form_review sudah ada — batch-aware (lihat catatan di handleStatusChange)
+      let existingQueryResend = supabase.from('form_reviews').select('id, guest_username').eq('sales_name', salesName);
+      existingQueryResend = r.batch_id
+        ? existingQueryResend.eq('batch_id', r.batch_id)
+        : existingQueryResend.eq('reminder_id', r.id);
+      const { data: existingReview } = await existingQueryResend.maybeSingle();
 
       if (existingReview) {
         // Patch guest_username jika masih kosong (data lama)
@@ -740,6 +747,7 @@ function ReminderSchedulePageInner() {
         const productValue = r.product?.trim() || '';
         const { error: reviewErr } = await supabase.from('form_reviews').insert([{
           reminder_id: r.id,
+          batch_id: r.batch_id ?? null,
           project_name: r.project_name,
           address: r.address || '',
           sales_name: salesName,
@@ -969,11 +977,14 @@ function ReminderSchedulePageInner() {
     return (b.created_at || '').localeCompare(a.created_at || '');
   });
 
-  // Group same-event reminders (same project/category/date/time) into one display row
+  // Group same-event reminders into one display row:
+  // - reminder dengan batch_id sama (1 submission multi-tanggal) selalu digabung,
+  //   berapa pun tanggalnya — supaya list tidak penuh oleh baris identik per hari.
+  // - selain itu, tetap group by project/category/date/time (bulk-assign 1 hari).
   const groupedReminders = (() => {
     const map = new Map<string, typeof filteredReminders>();
     for (const r of filteredReminders) {
-      const key = `${(r.project_name || r.title || '').trim()}|${r.category}|${r.due_date}|${r.due_time || ''}`;
+      const key = r.batch_id ? `batch:${r.batch_id}` : `${(r.project_name || r.title || '').trim()}|${r.category}|${r.due_date}|${r.due_time || ''}`;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(r);
     }
@@ -1069,6 +1080,9 @@ function ReminderSchedulePageInner() {
     const notesVal = data.notes
       ? `[REQUEST SALES] ${data.notes}`
       : '[REQUEST SALES] Menunggu assignment dari Admin';
+    // Grup semua tanggal dari 1 submission — supaya Schedule List menampilkannya
+    // sbg 1 baris (bukan N baris identik per tanggal).
+    const batchId = allDates.length > 1 ? newBatchId() : null;
     const payloads = allDates.map(d => ({
       project_name: data.project_name,
       description: data.description,
@@ -1076,6 +1090,7 @@ function ReminderSchedulePageInner() {
       category: data.category,
       product_type: data.product_type,
       due_date: d,
+      batch_id: batchId,
       due_time: data.due_time,
       sales_name: currentUser.full_name,
       sales_division: salesDivision,
@@ -1137,7 +1152,11 @@ function ReminderSchedulePageInner() {
     if (!assignee) return;
     setApproveSaving(true);
 
-    // Update reminder: assign ke team, clear REQUEST SALES note prefix
+    // Update reminder: assign ke team, clear REQUEST SALES note prefix.
+    // Kalau ini bagian dari batch multi-tanggal (request Sales beberapa hari
+    // sekaligus), semua tanggal lain di batch ikut di-approve & di-assign ke
+    // handler yang sama — tiap tanggal tetap pakai due_date-nya sendiri
+    // (hanya due_date milik approveTarget yang bisa di-override via field Tanggal).
     const cleanNotes = (approveTarget.notes ?? '').replace('[REQUEST SALES] ', '').replace('[REQUEST SALES]', '').trim();
     const { error } = await supabase.from('reminders').update({
       assigned_to: assignee.username,
@@ -1153,7 +1172,27 @@ function ReminderSchedulePageInner() {
       return;
     }
 
-    notify('success', `Request disetujui & di-assign ke ${assignee.full_name}!`);
+    if (approveBatchSiblings.length > 0) {
+      const siblingResults: { error: { message: string } | null }[] = await Promise.all(approveBatchSiblings.map(sib => {
+        const sibNotes = (sib.notes ?? '').replace('[REQUEST SALES] ', '').replace('[REQUEST SALES]', '').trim();
+        const patch: Record<string, unknown> = {
+          assigned_to: assignee.username,
+          assign_name: assignee.full_name,
+          notes: sibNotes || undefined,
+        };
+        if (approveTime) patch.due_time = approveTime;
+        return supabase.from('reminders').update(patch).eq('id', sib.id);
+      }));
+      const siblingErr = siblingResults.find(res => res.error)?.error ?? null;
+      if (siblingErr) notify('error', 'Sebagian tanggal di batch gagal ter-assign: ' + siblingErr.message);
+    }
+
+    const allApprovedDates = Array.from(new Set([approveDate || approveTarget.due_date, ...approveBatchSiblings.map(s => s.due_date)])).sort();
+    const jadwalLineApprove = allApprovedDates.length > 1
+      ? `🕐 *Jadwal (${allApprovedDates.length} hari):* ${allApprovedDates.map(d => formatDate(d)).join(', ')}${approveTime ? ' · ' + approveTime : ''}`
+      : `🕐 Jadwal: *${formatDate(approveDate || approveTarget.due_date)}${(approveTime || approveTarget.due_time) ? ' · ' + (approveTime || approveTarget.due_time) : ''}*`;
+
+    notify('success', `Request disetujui & di-assign ke ${assignee.full_name}${allApprovedDates.length > 1 ? ` (${allApprovedDates.length} hari)` : ''}!`);
 
     // WA ke team yang di-assign
     if (assignee.phone_number) {
@@ -1174,7 +1213,7 @@ function ReminderSchedulePageInner() {
 ` +
         `👤 Sales: ${approveTarget.sales_name}${approveTarget.sales_division ? ' - ' + approveTarget.sales_division : ''}
 ` +
-        `🕐 Jadwal: *${formatDate(approveDate || approveTarget.due_date)}${(approveTime || approveTarget.due_time) ? ' · ' + (approveTime || approveTarget.due_time) : ''}*
+        `${jadwalLineApprove}
 ` +
         (approveTarget.pic_name ? `🙋 PIC: ${approveTarget.pic_name}${approveTarget.pic_phone ? ' - ' + approveTarget.pic_phone : ''}
 ` : '') +
@@ -1211,7 +1250,7 @@ jangan lupa peralatan & Semangat💪🏼
 ` +
           `👷 *${assignee.full_name}*
 ` +
-          `🕐 Jadwal: *${formatDate(approveDate || approveTarget.due_date)}${(approveTime || approveTarget.due_time) ? ' · ' + (approveTime || approveTarget.due_time) : ''}*
+          `${jadwalLineApprove}
 
 ` +
           `Terima kasih! 🙏
@@ -1252,6 +1291,7 @@ jangan lupa peralatan & Semangat💪🏼
     }).catch(() => {});
 
     setApproveTarget(null);
+    setApproveBatchSiblings([]);
     setApproveAssignTo('');
     setApproveDate('');
     setApproveTime('');
@@ -1320,7 +1360,7 @@ jangan lupa peralatan & Semangat💪🏼
         {/* ── APPROVE & ASSIGN MODAL (Admin only) ── */}
         {approveTarget && isAdmin && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4"
-            onClick={e => { if (e.target === e.currentTarget) { setApproveTarget(null); setApproveAssignTo(''); } }}>
+            onClick={e => { if (e.target === e.currentTarget) { setApproveTarget(null); setApproveBatchSiblings([]); setApproveAssignTo(''); } }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
               style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(34,197,94,0.4)' }}>
               {/* Header */}
@@ -1330,7 +1370,7 @@ jangan lupa peralatan & Semangat💪🏼
                   <h3 className="text-lg font-bold text-white">✅ Approve & Assign Request</h3>
                   <p className="text-green-200/80 text-xs mt-0.5 truncate max-w-[300px]">{approveTarget.project_name}</p>
                 </div>
-                <button onClick={() => { setApproveTarget(null); setApproveAssignTo(''); }}
+                <button onClick={() => { setApproveTarget(null); setApproveBatchSiblings([]); setApproveAssignTo(''); }}
                   className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1346,6 +1386,18 @@ jangan lupa peralatan & Semangat💪🏼
                   <p className="text-xs text-slate-500">📍 {approveTarget.address || '-'} · 🏷️ {approveTarget.category}</p>
                   <p className="text-xs text-slate-500">📅 Usulan: {formatDate(approveTarget.due_date)} {approveTarget.due_time}</p>
                 </div>
+
+                {approveBatchSiblings.length > 0 && (
+                  <div className="rounded-xl p-3 flex items-start gap-2"
+                    style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
+                    <span className="text-base flex-shrink-0">🗓️</span>
+                    <p className="text-xs text-indigo-700 leading-relaxed">
+                      Request ini bagian dari <strong>{approveBatchSiblings.length + 1} hari</strong> yang diminta sekaligus
+                      ({[approveTarget.due_date, ...approveBatchSiblings.map(s => s.due_date)].sort().map(formatDate).join(', ')}).
+                      Semua tanggal akan ikut disetujui &amp; di-assign ke handler yang sama.
+                    </p>
+                  </div>
+                )}
 
                 {/* Assign to Team */}
                 <div>
@@ -1397,7 +1449,7 @@ jangan lupa peralatan & Semangat💪🏼
 
                 {/* Buttons */}
                 <div className="flex gap-3 pt-1">
-                  <button onClick={() => { setApproveTarget(null); setApproveAssignTo(''); setApproveDate(''); setApproveTime(''); }}
+                  <button onClick={() => { setApproveTarget(null); setApproveBatchSiblings([]); setApproveAssignTo(''); setApproveDate(''); setApproveTime(''); }}
                     className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
                     style={{ background: '#f8fafc', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>
                     Batal
@@ -1668,7 +1720,7 @@ jangan lupa peralatan & Semangat💪🏼
                 {(isAdmin || currentUser?.role === 'team') && (
                   <div className="flex gap-2 flex-wrap sticky top-0 z-20 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-gray-100">
                     {isAdmin && !detailReminder.assigned_to && detailReminder.notes?.includes('[REQUEST SALES]') && (
-                      <button onClick={() => { setApproveTarget(detailReminder); setApproveAssignTo(''); setApproveDate(detailReminder.due_date); setApproveTime(detailReminder.due_time); }}
+                      <button onClick={() => { setApproveTarget(detailReminder); setApproveBatchSiblings(detailReminder.batch_id ? reminders.filter(gr => gr.id !== detailReminder.id && gr.batch_id === detailReminder.batch_id && !gr.assigned_to) : []); setApproveAssignTo(''); setApproveDate(detailReminder.due_date); setApproveTime(detailReminder.due_time); }}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
                         style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: 'white' }}>✅ Approve &amp; Assign</button>
                     )}
@@ -2384,6 +2436,9 @@ jangan lupa peralatan & Semangat💪🏼
                         const r = group[0];
                         const today = isDueToday(r.due_date);
                         const dueDate = new Date(r.due_date + 'T00:00:00');
+                        const uniqueDates = Array.from(new Set(group.map(gr => gr.due_date))).sort();
+                        const uniqueAssignNames = Array.from(new Set(group.map(gr => gr.assign_name).filter(Boolean)));
+                        const fmtShort = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
                         return (
                           <div key={r.id}
                             className={`px-4 py-3.5 ${today ? 'bg-red-50/50 border-l-4 border-l-red-400' : 'border-l-4 border-l-transparent'}`}>
@@ -2397,11 +2452,19 @@ jangan lupa peralatan & Semangat💪🏼
                                 </div>
                               </div>
                               <div className="shrink-0 flex flex-col items-end gap-1">
-                                <div className="inline-flex flex-col items-center px-2 py-1 rounded-lg text-center"
-                                  style={{ background: today ? 'rgba(220,38,38,0.12)' : 'rgba(99,102,241,0.08)', border: today ? '1px solid rgba(220,38,38,0.35)' : '1px solid rgba(99,102,241,0.2)' }}>
-                                  <span className="text-base font-black leading-none" style={{ color: today ? '#dc2626' : '#4f46e5' }}>{dueDate.getDate()}</span>
-                                  <span className="text-[8px] font-bold uppercase" style={{ color: today ? '#dc2626' : '#6366f1' }}>{dueDate.toLocaleDateString('id-ID',{month:'short',year:'2-digit'})}</span>
-                                </div>
+                                {uniqueDates.length > 1 ? (
+                                  <div className="inline-flex flex-col items-center px-2 py-1 rounded-lg text-center" title={uniqueDates.map(fmtShort).join(', ')}
+                                    style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                                    <span className="text-sm font-black leading-none" style={{ color: '#4f46e5' }}>🗓️ {uniqueDates.length}h</span>
+                                    <span className="text-[8px] font-bold uppercase" style={{ color: '#6366f1' }}>{fmtShort(uniqueDates[0])}–{fmtShort(uniqueDates[uniqueDates.length - 1])}</span>
+                                  </div>
+                                ) : (
+                                  <div className="inline-flex flex-col items-center px-2 py-1 rounded-lg text-center"
+                                    style={{ background: today ? 'rgba(220,38,38,0.12)' : 'rgba(99,102,241,0.08)', border: today ? '1px solid rgba(220,38,38,0.35)' : '1px solid rgba(99,102,241,0.2)' }}>
+                                    <span className="text-base font-black leading-none" style={{ color: today ? '#dc2626' : '#4f46e5' }}>{dueDate.getDate()}</span>
+                                    <span className="text-[8px] font-bold uppercase" style={{ color: today ? '#dc2626' : '#6366f1' }}>{dueDate.toLocaleDateString('id-ID',{month:'short',year:'2-digit'})}</span>
+                                  </div>
+                                )}
                                 {(() => {
                                   const counts: Record<string,number> = {};
                                   for (const gr of group) counts[gr.status] = (counts[gr.status]||0)+1;
@@ -2414,18 +2477,18 @@ jangan lupa peralatan & Semangat💪🏼
                             <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2 text-xs">
                               {r.sales_name && <div className="truncate"><span className="text-gray-400">Sales: </span><span className="text-gray-700 font-medium">{r.sales_name}</span></div>}
                               <div className="flex flex-wrap gap-0.5">
-                                {group.slice(0, 4).map(gr => (
-                                  <span key={gr.id} title={gr.assign_name || ''}
+                                {uniqueAssignNames.slice(0, 4).map(name => (
+                                  <span key={name} title={name}
                                     className="w-5 h-5 rounded-full inline-flex items-center justify-center text-[8px] font-bold text-white flex-shrink-0"
                                     style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
-                                    {gr.assign_name?.charAt(0)?.toUpperCase() || '?'}
+                                    {name?.charAt(0)?.toUpperCase() || '?'}
                                   </span>
                                 ))}
-                                {group.length > 4 && (
-                                  <span className="w-5 h-5 rounded-full inline-flex items-center justify-center text-[7px] font-bold bg-gray-100 text-gray-600 flex-shrink-0">+{group.length - 4}</span>
+                                {uniqueAssignNames.length > 4 && (
+                                  <span className="w-5 h-5 rounded-full inline-flex items-center justify-center text-[7px] font-bold bg-gray-100 text-gray-600 flex-shrink-0">+{uniqueAssignNames.length - 4}</span>
                                 )}
-                                {group.length === 1 && <span className="text-[10px] text-gray-700 font-medium ml-0.5">{group[0].assign_name}</span>}
-                                {group.length > 1 && <span className="text-[9px] text-gray-400 ml-0.5">({group.length} orang)</span>}
+                                {uniqueAssignNames.length === 1 && <span className="text-[10px] text-gray-700 font-medium ml-0.5">{uniqueAssignNames[0]}</span>}
+                                {uniqueAssignNames.length > 1 && <span className="text-[9px] text-gray-400 ml-0.5">({uniqueAssignNames.length} orang)</span>}
                               </div>
                               {r.notes && !r.notes.includes('[REQUEST SALES]') && <div className="col-span-2 truncate text-gray-400">{r.notes.substring(0,60)}{r.notes.length>60?'…':''}</div>}
                             </div>
@@ -2435,7 +2498,7 @@ jangan lupa peralatan & Semangat💪🏼
                                 <RescheduleIconBtn onClick={() => setRescheduleTarget(r)} title="Re-Schedule" />
                               )}
                               {isAdmin && !r.assigned_to && r.notes?.includes('[REQUEST SALES]') && (
-                                <ApproveIconBtn onClick={() => { setApproveTarget(r); setApproveAssignTo(''); setApproveDate(r.due_date); setApproveTime(r.due_time); }} title="Approve & Assign" pulse />
+                                <ApproveIconBtn onClick={() => { setApproveTarget(r); setApproveBatchSiblings(group.filter(gr => gr.id !== r.id && gr.batch_id === r.batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(r.due_date); setApproveTime(r.due_time); }} title="Approve & Assign" pulse />
                               )}
                               {isAdmin && (
                                 <DeleteIconBtn onClick={() => openDeleteModal(r)} title="Hapus" />
@@ -2488,6 +2551,9 @@ jangan lupa peralatan & Semangat💪🏼
                           {groupedReminders.map((group, idx) => {
                             const r = group[0];
                             const today = isDueToday(r.due_date);
+                            const uniqueDates = Array.from(new Set(group.map(gr => gr.due_date))).sort();
+                            const uniqueAssignNames = Array.from(new Set(group.map(gr => gr.assign_name).filter(Boolean)));
+                            const fmtShort = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
                             return (
                               <tr key={r.id}
                                 className={`border-b border-gray-200 hover:bg-red-50/30 transition-colors cursor-pointer ${today ? 'bg-red-50/15 border-l-4 border-l-red-400' : 'border-l-4 border-l-transparent'}`}
@@ -2554,20 +2620,20 @@ jangan lupa peralatan & Semangat💪🏼
                                 {/* Handler */}
                                 <td className="px-3 py-3 border-r border-gray-200 align-middle" style={{ width: '110px', maxWidth: '110px', overflow: 'hidden' }}>
                                   <div className="flex flex-nowrap gap-0.5">
-                                    {group.slice(0, 3).map(gr => (
-                                      <div key={gr.id} title={gr.assign_name || ''}
+                                    {uniqueAssignNames.slice(0, 3).map(name => (
+                                      <div key={name} title={name}
                                         className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
                                         style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
-                                        {gr.assign_name?.charAt(0)?.toUpperCase() || '?'}
+                                        {name?.charAt(0)?.toUpperCase() || '?'}
                                       </div>
                                     ))}
-                                    {group.length > 3 && (
-                                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold bg-gray-100 text-gray-600 flex-shrink-0">+{group.length - 3}</div>
+                                    {uniqueAssignNames.length > 3 && (
+                                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold bg-gray-100 text-gray-600 flex-shrink-0">+{uniqueAssignNames.length - 3}</div>
                                     )}
                                   </div>
-                                  {group.length === 1
-                                    ? <span className="text-[10px] font-bold text-gray-800 block mt-0.5 truncate">{group[0].assign_name}</span>
-                                    : <span className="text-[9px] text-gray-400 mt-0.5 block">{group.length} orang</span>
+                                  {uniqueAssignNames.length === 1
+                                    ? <span className="text-[10px] font-bold text-gray-800 block mt-0.5 truncate">{uniqueAssignNames[0]}</span>
+                                    : <span className="text-[9px] text-gray-400 mt-0.5 block">{uniqueAssignNames.length} orang</span>
                                   }
                                 </td>
                                 {/* Status */}
@@ -2622,19 +2688,30 @@ jangan lupa peralatan & Semangat💪🏼
                                 </td>
                                 {/* Tanggal */}
                                 <td className="px-2 py-1 border-r border-gray-200 align-middle">
-                                  <div className="inline-flex flex-col items-center px-2 py-1 rounded-lg text-center"
-                                    style={{
-                                      background: today ? 'rgba(220,38,38,0.12)' : 'rgba(99,102,241,0.08)',
-                                      border: today ? '1px solid rgba(220,38,38,0.35)' : '1px solid rgba(99,102,241,0.2)',
-                                    }}>
-                                    <span className="text-base font-black leading-none" style={{ color: today ? '#dc2626' : '#4f46e5' }}>
-                                      {new Date(r.due_date + 'T00:00:00').getDate()}
-                                    </span>
-                                    <span className="text-[8px] font-bold uppercase leading-tight" style={{ color: today ? '#dc2626' : '#6366f1' }}>
-                                      {new Date(r.due_date + 'T00:00:00').toLocaleDateString('id-ID', { month: 'short', year: '2-digit' })}
-                                    </span>
-                                    {r.due_time && <span className="text-[8px] text-gray-400 leading-tight">{r.due_time}</span>}
-                                  </div>
+                                  {uniqueDates.length > 1 ? (
+                                    <div className="inline-flex flex-col items-center px-2 py-1 rounded-lg text-center" title={uniqueDates.map(fmtShort).join(', ')}
+                                      style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                                      <span className="text-sm font-black leading-none" style={{ color: '#4f46e5' }}>🗓️ {uniqueDates.length}h</span>
+                                      <span className="text-[8px] font-bold uppercase leading-tight" style={{ color: '#6366f1' }}>
+                                        {fmtShort(uniqueDates[0])}–{fmtShort(uniqueDates[uniqueDates.length - 1])}
+                                      </span>
+                                      {r.due_time && <span className="text-[8px] text-gray-400 leading-tight">{r.due_time}</span>}
+                                    </div>
+                                  ) : (
+                                    <div className="inline-flex flex-col items-center px-2 py-1 rounded-lg text-center"
+                                      style={{
+                                        background: today ? 'rgba(220,38,38,0.12)' : 'rgba(99,102,241,0.08)',
+                                        border: today ? '1px solid rgba(220,38,38,0.35)' : '1px solid rgba(99,102,241,0.2)',
+                                      }}>
+                                      <span className="text-base font-black leading-none" style={{ color: today ? '#dc2626' : '#4f46e5' }}>
+                                        {new Date(r.due_date + 'T00:00:00').getDate()}
+                                      </span>
+                                      <span className="text-[8px] font-bold uppercase leading-tight" style={{ color: today ? '#dc2626' : '#6366f1' }}>
+                                        {new Date(r.due_date + 'T00:00:00').toLocaleDateString('id-ID', { month: 'short', year: '2-digit' })}
+                                      </span>
+                                      {r.due_time && <span className="text-[8px] text-gray-400 leading-tight">{r.due_time}</span>}
+                                    </div>
+                                  )}
                                 </td>
                                 {/* ACT */}
                                 <td className="px-3 py-1 align-middle text-center" onClick={e => e.stopPropagation()}>
@@ -2647,7 +2724,7 @@ jangan lupa peralatan & Semangat💪🏼
                                     )}
                                     {/* Approve & Assign — admin only, hanya utk request sales yg belum di-assign */}
                                     {isAdmin && !group[0].assigned_to && group[0].notes?.includes('[REQUEST SALES]') && (
-                                      <ApproveIconBtn onClick={() => { setApproveTarget(group[0]); setApproveAssignTo(''); setApproveDate(group[0].due_date); setApproveTime(group[0].due_time); }} title="Approve & Assign" pulse />
+                                      <ApproveIconBtn onClick={() => { setApproveTarget(group[0]); setApproveBatchSiblings(group.filter(gr => gr.id !== group[0].id && gr.batch_id === group[0].batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(group[0].due_date); setApproveTime(group[0].due_time); }} title="Approve & Assign" pulse />
                                     )}
                                     {/* Hapus — admin only */}
                                     {isAdmin && (

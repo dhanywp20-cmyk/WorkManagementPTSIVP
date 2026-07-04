@@ -47,6 +47,7 @@ export interface Reminder {
   incentive_value?: number;
   bast_date?: string | null;
   product_type?: string; // tipe produk utk routing pipeline (dipilih saat request)
+  batch_id?: string | null; // grup reminder yang dibuat sekaligus dari 1 submission multi-tanggal
 }
 
 export interface TeamUser {
@@ -152,6 +153,13 @@ export const PIE_COLORS = ['#7c3aed','#0ea5e9','#10b981','#e11d48','#f59e0b','#6
 export function formatDate(dateStr: string) {
   if (!dateStr) return '';
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// ID grup untuk reminder yang dibuat sekaligus dari 1 submission multi-tanggal.
+export function newBatchId(): string {
+  return (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : `batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 export function formatDatetime(createdAt: string) {
