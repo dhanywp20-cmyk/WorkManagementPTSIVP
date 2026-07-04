@@ -48,11 +48,12 @@ export interface Reminder {
   bast_date?: string | null;
   product_type?: string; // tipe produk utk routing pipeline (dipilih saat request)
   batch_id?: string | null; // grup reminder yang dibuat sekaligus dari 1 submission multi-tanggal
-  routing_status?: string | null;      // 'internal_review' | 'admin_review' | null (lama)
+  routing_status?: string | null;      // 'internal_review' | 'admin_review' | 'supervisor_assign' | null (lama)
   internal_sales_id?: string | null;   // Sales Internal yang wajib review dulu (dari division_ivp_mappings)
   internal_approved_by?: string | null;
   internal_approved_at?: string | null;
   rejection_reason?: string | null;    // alasan saat Sales Internal Tolak request
+  assigned_supervisor_id?: string | null; // Supervisor tim yang wajib assign ke anggota/diri sendiri (dari product_team_map)
 }
 
 export interface TeamUser {
@@ -165,6 +166,32 @@ export function newBatchId(): string {
   return (typeof crypto !== 'undefined' && crypto.randomUUID)
     ? crypto.randomUUID()
     : `batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+export interface SupervisorCandidate {
+  id: string;
+  full_name: string;
+  phone_number: string | null;
+  team_type: string;
+}
+
+/**
+ * Cari Supervisor tim yang menangani tipe produk tertentu — TIDAK hardcode
+ * nama orang. Baca product_team_map (Fase 1: product_type → team_types[])
+ * lalu cari user ber-jabatan Supervisor di tim itu (Struktur Organisasi).
+ * "LED & LCD" bisa punya >1 tim → kembalikan semua supervisor yang cocok
+ * (dipakai utk WA notify-all; yang assign duluan yang eksekusi).
+ */
+export async function resolveSupervisorsForProductType(productType: string | null | undefined): Promise<SupervisorCandidate[]> {
+  if (!productType) return [];
+  const { data: map } = await supabase.from('product_team_map').select('team_types').eq('product_type', productType).maybeSingle();
+  const teamTypes: string[] = (map?.team_types as string[] | null) ?? [];
+  if (teamTypes.length === 0) return [];
+  const { data: sups } = await supabase.from('users')
+    .select('id, full_name, phone_number, team_type')
+    .in('team_type', teamTypes)
+    .eq('jabatan', 'Supervisor');
+  return (sups ?? []) as SupervisorCandidate[];
 }
 
 export function formatDatetime(createdAt: string) {

@@ -14,7 +14,7 @@ import {
   PRIORITY_CONFIG, STATUS_CONFIG, CATEGORIES, CATEGORY_CONFIG,
   REPEAT_OPTIONS, SALES_DIVISIONS, PIE_COLORS,
   formatDate, formatDatetime, isDueToday, newBatchId,
-  sendFonnteWA,
+  sendFonnteWA, resolveSupervisorsForProductType, type SupervisorCandidate,
 } from './_components/shared';
 import { PriorityBadge, StatusBadge, CategoryBadge } from './_components/Badges';
 import {
@@ -125,6 +125,14 @@ function ReminderSchedulePageInner() {
   const [internalRejectTarget, setInternalRejectTarget] = useState<Reminder | null>(null); // request yg mau di-Tolak Sales Internal
   const [internalRejectReason, setInternalRejectReason] = useState('');
   const [internalRejectSaving, setInternalRejectSaving] = useState(false);
+  // Admin/Manager approve → route ke Supervisor tim (by tipe produk, product_team_map)
+  const [approveSupervisors, setApproveSupervisors] = useState<SupervisorCandidate[]>([]);
+  const [approveRouteSaving, setApproveRouteSaving] = useState(false);
+  // Supervisor assign ke anggota tim ATAU diri sendiri (tim penuh — keputusan manual)
+  const [supervisorAssignTarget, setSupervisorAssignTarget] = useState<Reminder | null>(null);
+  const [supervisorAssignBatchSiblings, setSupervisorAssignBatchSiblings] = useState<Reminder[]>([]);
+  const [supervisorAssignTo, setSupervisorAssignTo] = useState(''); // username anggota, atau 'SELF'
+  const [supervisorAssignSaving, setSupervisorAssignSaving] = useState(false);
 
   const notify = (type: 'success' | 'error', msg: string) => {
     setToast({ type, msg });
@@ -1049,6 +1057,12 @@ function ReminderSchedulePageInner() {
     checkPendingReviews();
   }, [isGuest, currentUser?.full_name]);
 
+  // ─── Cari Supervisor tim sesuai tipe produk saat modal Approve dibuka ──────
+  useEffect(() => {
+    if (!approveTarget) { setApproveSupervisors([]); return; }
+    resolveSupervisorsForProductType(approveTarget.product_type).then(setApproveSupervisors);
+  }, [approveTarget]);
+
   // ─── Handler: Guest Request Jadwal ────────────────────────────────────────
   const handleRequestJadwal = async (data: JadwalRequest) => {
     if (!currentUser) return;
@@ -1281,10 +1295,82 @@ function ReminderSchedulePageInner() {
     setInternalRejectSaving(false);
   };
 
+  // ─── Handler: Admin/Manager approve → route ke Supervisor tim (by tipe produk) ──
+  // Jalur UTAMA (bukan assign manual langsung). Supervisor tim yang cocok dgn
+  // product_type (product_team_map, Fase 1) yang WA dan harus assign lanjut ke
+  // anggota timnya / diri sendiri. "LED & LCD" bisa kena >1 tim -> semua di-WA,
+  // yang assign duluan yang eksekusi (1 tim, sesuai keputusan desain).
+  const handleApproveRoute = async () => {
+    if (!approveTarget || approveSupervisors.length === 0) return;
+    setApproveRouteSaving(true);
+
+    const cleanNotes = (approveTarget.notes ?? '').replace('[REQUEST SALES] ', '').replace('[REQUEST SALES]', '').trim();
+    const primarySupervisor = approveSupervisors[0];
+    const { error } = await supabase.from('reminders').update({
+      routing_status: 'supervisor_assign',
+      assigned_supervisor_id: primarySupervisor.id,
+      due_date: approveDate || approveTarget.due_date,
+      due_time: approveTime || approveTarget.due_time,
+      notes: cleanNotes || undefined,
+    }).eq('id', approveTarget.id);
+
+    if (error) { notify('error', 'Gagal route ke supervisor: ' + error.message); setApproveRouteSaving(false); return; }
+
+    if (approveBatchSiblings.length > 0) {
+      const siblingResults: { error: { message: string } | null }[] = await Promise.all(approveBatchSiblings.map(sib => {
+        const sibNotes = (sib.notes ?? '').replace('[REQUEST SALES] ', '').replace('[REQUEST SALES]', '').trim();
+        const patch: Record<string, unknown> = { routing_status: 'supervisor_assign', assigned_supervisor_id: primarySupervisor.id, notes: sibNotes || undefined };
+        if (approveTime) patch.due_time = approveTime;
+        return supabase.from('reminders').update(patch).eq('id', sib.id);
+      }));
+      const siblingErr = siblingResults.find(res => res.error)?.error ?? null;
+      if (siblingErr) notify('error', 'Sebagian tanggal di batch gagal ter-route: ' + siblingErr.message);
+    }
+
+    const allApprovedDates = Array.from(new Set([approveDate || approveTarget.due_date, ...approveBatchSiblings.map(s => s.due_date)])).sort();
+    const jadwalLineRoute = allApprovedDates.length > 1
+      ? `🕐 *Jadwal (${allApprovedDates.length} hari):* ${allApprovedDates.map(d => formatDate(d)).join(', ')}${approveTime ? ' · ' + approveTime : ''}`
+      : `🕐 Jadwal: *${formatDate(approveDate || approveTarget.due_date)}${(approveTime || approveTarget.due_time) ? ' · ' + (approveTime || approveTarget.due_time) : ''}*`;
+
+    const teamLabel = Array.from(new Set(approveSupervisors.map(s => s.team_type))).join(' & ');
+    notify('success', `Request diarahkan ke ${teamLabel} (Supervisor: ${approveSupervisors.map(s => s.full_name).join(', ')})!`);
+    logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'approve', module: 'reminder', target_id: approveTarget.id, target_name: approveTarget.project_name, notes: `Routed to supervisor: ${approveSupervisors.map(s => s.full_name).join(', ')}` }).catch(() => {});
+
+    // WA ke SEMUA supervisor yang cocok — actionable, wajib assign lanjut.
+    const supMsg =
+      `🎯 *REQUEST PERLU DI-ASSIGN — ${teamLabel}*\n\n` +
+      `Request dari Sales *${approveTarget.sales_name}* sudah disetujui Admin/Manager, silakan assign ke anggota tim kamu atau kerjakan sendiri:\n\n` +
+      `📋 *Project: ${approveTarget.project_name}*\n` +
+      `🏷️ Kategori: ${approveTarget.category}\n` +
+      `📦 Product: ${approveTarget.product || '-'}\n` +
+      `📍 Lokasi: ${approveTarget.address || '-'}\n` +
+      `${jadwalLineRoute}\n\n` +
+      `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+    for (const sup of approveSupervisors) {
+      if (sup.phone_number) await sendFonnteWA(sup.phone_number, supMsg);
+    }
+
+    // WA ke sales requester — kasih tau statusnya diteruskan ke tim.
+    try {
+      const { data: salesUser } = await supabase.from('users').select('phone_number, full_name').eq('full_name', approveTarget.sales_name).eq('role', 'guest').maybeSingle();
+      if (salesUser?.phone_number) {
+        const msg = `✅ *REQUEST DISETUJUI — SEDANG DIARAHKAN KE TIM*\n\nHalo *${salesUser.full_name}*! Request kamu untuk *${approveTarget.project_name}* sudah disetujui dan sedang diarahkan ke tim *${teamLabel}*. Kamu akan diberi tahu begitu ada yang di-assign menangani.`;
+        await sendFonnteWA(salesUser.phone_number, msg);
+      }
+    } catch { }
+
+    setApproveTarget(null); setApproveBatchSiblings([]); setApproveSupervisors([]); setApproveDate(''); setApproveTime('');
+    setApproveRouteSaving(false);
+    fetchRemindersQuiet();
+  };
+
   // ─── Handler: Admin Approve & Assign request dari Sales ─────────────────
   const handleApproveAssign = async () => {
     if (!approveTarget || !approveAssignTo) return;
-    const assignee = teamUsers.find(u => u.username === approveAssignTo);
+    // 'SELF_MANAGER' = Admin/Manager kerjakan sendiri (mis. Supervisor & tim
+    // sama-sama penuh). Akun admin sengaja dikecualikan dari teamUsers, jadi
+    // resolve langsung dari currentUser supaya tetap bisa dipilih.
+    const assignee = approveAssignTo === 'SELF_MANAGER' ? currentUser : teamUsers.find(u => u.username === approveAssignTo);
     if (!assignee) return;
     setApproveSaving(true);
 
@@ -1436,6 +1522,74 @@ jangan lupa peralatan & Semangat💪🏼
     fetchRemindersQuiet();
   };
 
+  // ─── Handler: Supervisor assign ke anggota tim ATAU diri sendiri ──────────
+  // Tim penuh/sibuk = keputusan manual Supervisor (tidak ada hitungan kapasitas
+  // otomatis) — dia yang menilai, tinggal pilih "Saya kerjakan sendiri".
+  const openSupervisorAssign = (r: Reminder, group: Reminder[]) => {
+    setSupervisorAssignTarget(r);
+    setSupervisorAssignBatchSiblings(group.filter(gr => gr.id !== r.id && gr.batch_id === r.batch_id && !gr.assigned_to));
+    setSupervisorAssignTo('');
+  };
+
+  const handleSupervisorAssignConfirm = async () => {
+    const r = supervisorAssignTarget;
+    if (!r || !supervisorAssignTo || !currentUser) return;
+    const isSelf = supervisorAssignTo === 'SELF';
+    const assignee = isSelf ? currentUser : teamUsers.find(u => u.username === supervisorAssignTo);
+    if (!assignee) return;
+    setSupervisorAssignSaving(true);
+
+    const { error } = await supabase.from('reminders').update({
+      assigned_to: assignee.username,
+      assign_name: assignee.full_name,
+      routing_status: null,
+    }).eq('id', r.id);
+    if (error) { notify('error', 'Gagal assign: ' + error.message); setSupervisorAssignSaving(false); return; }
+
+    if (supervisorAssignBatchSiblings.length > 0) {
+      const siblingResults: { error: { message: string } | null }[] = await Promise.all(supervisorAssignBatchSiblings.map(sib =>
+        supabase.from('reminders').update({ assigned_to: assignee.username, assign_name: assignee.full_name, routing_status: null }).eq('id', sib.id)
+      ));
+      const siblingErr = siblingResults.find(res => res.error)?.error ?? null;
+      if (siblingErr) notify('error', 'Sebagian tanggal di batch gagal ter-assign: ' + siblingErr.message);
+    }
+
+    const allDates = Array.from(new Set([r.due_date, ...supervisorAssignBatchSiblings.map(s => s.due_date)])).sort();
+    const jadwalLine = allDates.length > 1
+      ? `🕐 *Jadwal (${allDates.length} hari):* ${allDates.map(d => formatDate(d)).join(', ')}${r.due_time ? ' · ' + r.due_time : ''}`
+      : `🕐 Jadwal: *${formatDate(r.due_date)}${r.due_time ? ' · ' + r.due_time : ''}*`;
+
+    notify('success', isSelf ? 'Kamu jadi PIC proyek ini!' : `Berhasil di-assign ke ${assignee.full_name}!`);
+    logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'assign', module: 'reminder', target_id: r.id, target_name: r.project_name, new_value: assignee.full_name }).catch(() => {});
+    setSupervisorAssignTarget(null); setSupervisorAssignBatchSiblings([]); setSupervisorAssignTo('');
+    fetchRemindersQuiet();
+
+    // WA ke assignee (kalau bukan Supervisor sendiri yg baru saja klik tombolnya)
+    if (!isSelf && assignee.phone_number) {
+      const msg =
+        `🗓️ *JADWAL BARU — PTS IVP*\n\n` +
+        `Halo *${assignee.full_name}*, kamu di-assign Supervisor *${currentUser.full_name}* untuk jadwal:\n\n` +
+        `*Nama Project: ${r.project_name}*\n` +
+        `🏷️ Kategori: ${r.category}\n` +
+        `📦 Product: ${r.product || '-'}\n` +
+        `📍 Lokasi: ${r.address || '-'}\n` +
+        `${jadwalLine}\n\n` +
+        `jangan lupa peralatan & Semangat💪🏼\n` +
+        `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+      await sendFonnteWA(assignee.phone_number, msg);
+    }
+
+    // WA ke sales requester — kasih tau siapa yg akan menangani.
+    try {
+      const { data: salesUser } = await supabase.from('users').select('phone_number, full_name').eq('full_name', r.sales_name).eq('role', 'guest').maybeSingle();
+      if (salesUser?.phone_number) {
+        const msg = `✅ *JADWAL DI-ASSIGN — PTS IVP*\n\nHalo *${salesUser.full_name}*! Request kamu untuk *${r.project_name}* akan ditangani oleh *${assignee.full_name}*.\n${jadwalLine}`;
+        await sendFonnteWA(salesUser.phone_number, msg);
+      }
+    } catch { }
+    setSupervisorAssignSaving(false);
+  };
+
   const myActiveReminders = reminders.filter(r =>
     currentUser && r.assigned_to === currentUser.username && r.status !== 'done' && r.status !== 'cancelled'
   );
@@ -1569,10 +1723,29 @@ jangan lupa peralatan & Semangat💪🏼
                   </div>
                 )}
 
-                {/* Assign to Team */}
+                {/* Route ke Supervisor — jalur UTAMA, sesuai tipe produk */}
+                {approveSupervisors.length > 0 && (
+                  <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.08)', border: '1.5px solid rgba(245,158,11,0.3)' }}>
+                    <p className="text-xs font-bold text-amber-700 mb-1">🎯 Route ke Supervisor (Rekomendasi)</p>
+                    <p className="text-[11px] text-amber-600 mb-3">
+                      Tipe produk <strong>{approveTarget.product_type || '-'}</strong> → Tim{' '}
+                      <strong>{Array.from(new Set(approveSupervisors.map(s => s.team_type))).join(' & ')}</strong>.
+                      Supervisor <strong>{approveSupervisors.map(s => s.full_name).join(', ')}</strong> akan di-WA untuk assign ke anggota tim atau kerjakan sendiri.
+                    </p>
+                    <button onClick={handleApproveRoute} disabled={approveRouteSaving}
+                      className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
+                      style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
+                      {approveRouteSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                      🎯 Approve & Route ke Supervisor
+                    </button>
+                  </div>
+                )}
+
+                {/* Assign to Team — manual/fallback (dipakai jika tipe produk belum ter-mapping,
+                    atau admin ingin assign langsung tanpa lewat Supervisor) */}
                 <div>
                   <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
-                    Assign ke Team PTS *
+                    {approveSupervisors.length > 0 ? 'Atau Assign Langsung Manual' : 'Assign ke Team PTS *'}
                   </label>
                   <select
                     value={approveAssignTo}
@@ -1580,6 +1753,7 @@ jangan lupa peralatan & Semangat💪🏼
                     className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-green-500/40"
                     style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
                     <option value="">-- Pilih Anggota Team PTS --</option>
+                    <option value="SELF_MANAGER">🙋 Saya (Manager) kerjakan sendiri — Supervisor &amp; tim penuh</option>
                     {teamUsers.map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
                   </select>
                 </div>
@@ -1631,7 +1805,80 @@ jangan lupa peralatan & Semangat💪🏼
                     style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', boxShadow: '0 4px 14px rgba(22,163,74,0.35)' }}>
                     {approveSaving
                       ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>
-                      : <>✅ Approve &amp; Assign</>
+                      : approveSupervisors.length > 0 ? <>✅ Assign Langsung (lewati Supervisor)</> : <>✅ Approve &amp; Assign</>
+                    }
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── SUPERVISOR ASSIGN MODAL ── */}
+        {supervisorAssignTarget && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4"
+            onClick={e => { if (e.target === e.currentTarget) { setSupervisorAssignTarget(null); setSupervisorAssignBatchSiblings([]); setSupervisorAssignTo(''); } }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+              style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(245,158,11,0.4)' }}>
+              <div className="px-6 py-5 flex items-center justify-between" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
+                <div>
+                  <h3 className="text-lg font-bold text-white">🎯 Assign Tim</h3>
+                  <p className="text-amber-100/90 text-xs mt-0.5 truncate max-w-[300px]">{supervisorAssignTarget.project_name}</p>
+                </div>
+                <button onClick={() => { setSupervisorAssignTarget(null); setSupervisorAssignBatchSiblings([]); setSupervisorAssignTo(''); }}
+                  className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="rounded-xl p-3 space-y-1" style={{ background: 'rgba(59,130,246,0.07)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Request dari Sales</p>
+                  <p className="text-sm font-bold text-slate-800">{supervisorAssignTarget.sales_name}{supervisorAssignTarget.sales_division ? ` · ${supervisorAssignTarget.sales_division}` : ''}</p>
+                  <p className="text-xs text-slate-500">📍 {supervisorAssignTarget.address || '-'} · 🏷️ {supervisorAssignTarget.category}</p>
+                  <p className="text-xs text-slate-500">📅 Jadwal: {formatDate(supervisorAssignTarget.due_date)} {supervisorAssignTarget.due_time}</p>
+                </div>
+
+                {supervisorAssignBatchSiblings.length > 0 && (
+                  <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
+                    <span className="text-base flex-shrink-0">🗓️</span>
+                    <p className="text-xs text-indigo-700 leading-relaxed">
+                      Bagian dari <strong>{supervisorAssignBatchSiblings.length + 1} hari</strong> yang diminta sekaligus — semua tanggal akan ikut di-assign ke orang yang sama.
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Assign ke *</label>
+                  <select value={supervisorAssignTo} onChange={e => setSupervisorAssignTo(e.target.value)}
+                    className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-amber-500/40"
+                    style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
+                    <option value="">-- Pilih --</option>
+                    <option value="SELF">🙋 Saya kerjakan sendiri (tim penuh/sibuk)</option>
+                    <optgroup label="Anggota Tim">
+                      {teamUsers.filter(u => u.team_type === currentUser?.team_type && u.username !== currentUser?.username).map(u => (
+                        <option key={u.id} value={u.username}>{u.full_name}</option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+
+                <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)' }}>
+                  <span className="text-base flex-shrink-0">💬</span>
+                  <p className="text-[11px] text-green-700 leading-relaxed">
+                    WA notifikasi otomatis dikirim ke yang di-assign (kecuali kamu sendiri) dan ke Sales yang request.
+                  </p>
+                </div>
+
+                <div className="flex gap-3 pt-1">
+                  <button onClick={() => { setSupervisorAssignTarget(null); setSupervisorAssignBatchSiblings([]); setSupervisorAssignTo(''); }}
+                    className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
+                    style={{ background: '#f8fafc', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>Batal</button>
+                  <button onClick={handleSupervisorAssignConfirm} disabled={supervisorAssignSaving || !supervisorAssignTo}
+                    className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', boxShadow: '0 4px 14px rgba(245,158,11,0.35)' }}>
+                    {supervisorAssignSaving
+                      ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>
+                      : <>🎯 Assign</>
                     }
                   </button>
                 </div>
@@ -1903,6 +2150,11 @@ jangan lupa peralatan & Semangat💪🏼
                       <button onClick={() => { setApproveTarget(detailReminder); setApproveBatchSiblings(detailReminder.batch_id ? reminders.filter(gr => gr.id !== detailReminder.id && gr.batch_id === detailReminder.batch_id && !gr.assigned_to) : []); setApproveAssignTo(''); setApproveDate(detailReminder.due_date); setApproveTime(detailReminder.due_time); }}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
                         style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: 'white' }}>✅ Approve &amp; Assign</button>
+                    )}
+                    {currentUser?.id === detailReminder.assigned_supervisor_id && detailReminder.routing_status === 'supervisor_assign' && (
+                      <button onClick={() => openSupervisorAssign(detailReminder, [detailReminder, ...reminders.filter(gr => gr.id !== detailReminder.id && gr.batch_id === detailReminder.batch_id)])}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
+                        style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white' }}>🎯 Assign Tim</button>
                     )}
                     {(isAdmin || currentUser?.role === 'team') && detailReminder.status !== 'done' && (
                       <button onClick={() => { setRescheduleTarget(detailReminder); }}
@@ -2701,6 +2953,9 @@ jangan lupa peralatan & Semangat💪🏼
                               {isAdmin && !r.assigned_to && r.notes?.includes('[REQUEST SALES]') && r.routing_status !== 'internal_review' && (
                                 <ApproveIconBtn onClick={() => { setApproveTarget(r); setApproveBatchSiblings(group.filter(gr => gr.id !== r.id && gr.batch_id === r.batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(r.due_date); setApproveTime(r.due_time); }} title="Approve & Assign" pulse />
                               )}
+                              {currentUser?.id === r.assigned_supervisor_id && r.routing_status === 'supervisor_assign' && (
+                                <ApproveIconBtn onClick={() => openSupervisorAssign(r, group)} title="Assign Tim" pulse />
+                              )}
                               {isAdmin && (
                                 <DeleteIconBtn onClick={() => openDeleteModal(r)} title="Hapus" />
                               )}
@@ -2939,6 +3194,10 @@ jangan lupa peralatan & Semangat💪🏼
                                     {/* Approve & Assign — admin only, hanya utk request sales yg belum di-assign & sudah lolos review internal */}
                                     {isAdmin && !group[0].assigned_to && group[0].notes?.includes('[REQUEST SALES]') && group[0].routing_status !== 'internal_review' && (
                                       <ApproveIconBtn onClick={() => { setApproveTarget(group[0]); setApproveBatchSiblings(group.filter(gr => gr.id !== group[0].id && gr.batch_id === group[0].batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(group[0].due_date); setApproveTime(group[0].due_time); }} title="Approve & Assign" pulse />
+                                    )}
+                                    {/* Assign Tim — Supervisor yg di-route, wajib assign anggota/diri sendiri */}
+                                    {currentUser?.id === group[0].assigned_supervisor_id && group[0].routing_status === 'supervisor_assign' && (
+                                      <ApproveIconBtn onClick={() => openSupervisorAssign(group[0], group)} title="Assign Tim" pulse />
                                     )}
                                     {/* Hapus — admin only */}
                                     {isAdmin && (

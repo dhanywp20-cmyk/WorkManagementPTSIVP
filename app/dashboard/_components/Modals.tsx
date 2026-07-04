@@ -2005,21 +2005,32 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
           internalUrl: '/reminder-schedule',
           menuTitle: 'Request Schedule',
         })));
-      } else if (isPTS) {
-        // Team PTS: jadwal aktif yang di-assign ke diri sendiri
-        const { data } = await supabase
-          .from('reminders')
-          .select('id, project_name, category, due_date, status, assigned_to, created_at')
-          .neq('status', 'done')
-          .neq('status', 'cancelled')
-          .eq('assigned_to', currentUser.username)
-          .order('due_date', { ascending: true })
-          .limit(20);
-        setReminderNotifs((data ?? []).map((r: any) => ({
+      } else if (roleLC === 'team') {
+        // Team PTS (IVP/UMP/MVI, termasuk Supervisor): jadwal aktif yang di-assign
+        // ke diri sendiri + request yang MENUNGGU DI-ASSIGN dia sbg Supervisor
+        // (assigned_supervisor_id + routing_status='supervisor_assign', Fase 3 routing).
+        const [{ data: assignedToMe }, { data: needsMyAssign }] = await Promise.all([
+          supabase.from('reminders')
+            .select('id, project_name, category, due_date, status, assigned_to, created_at')
+            .neq('status', 'done').neq('status', 'cancelled')
+            .eq('assigned_to', currentUser.username)
+            .order('due_date', { ascending: true }).limit(20),
+          supabase.from('reminders')
+            .select('id, project_name, category, due_date, status, assigned_to, created_at')
+            .eq('assigned_supervisor_id', currentUser.id).eq('routing_status', 'supervisor_assign')
+            .order('created_at', { ascending: false }).limit(20),
+        ]);
+        const needsAssignIds = new Set((needsMyAssign ?? []).map((r: any) => r.id));
+        const seenTeam = new Set<string>();
+        const combinedTeam = [...(needsMyAssign ?? []), ...(assignedToMe ?? [])]
+          .filter((r: any) => { if (seenTeam.has(r.id)) return false; seenTeam.add(r.id); return true; });
+        setReminderNotifs(combinedTeam.map((r: any) => ({
           id: r.id,
           type: 'reminder' as const,
           title: r.project_name,
-          subtitle: `🗓️ ${r.category} · ${r.due_date}`,
+          subtitle: needsAssignIds.has(r.id)
+            ? `🎯 Perlu di-assign · ${r.category} · ${r.due_date}`
+            : `🗓️ ${r.category} · ${r.due_date}`,
           time: r.created_at,
           url: '/reminder-schedule',
           internalUrl: '/reminder-schedule',
@@ -2174,8 +2185,9 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         {!isTeamPTS_SubGroup && (isAdmin || roleLC === 'team' || roleLC === 'team_pts' || roleLC === 'guest' || roleLC === 'sales') && (
           <NotifBell icon="🏗️" label="Require" count={requireNotifs.length} color="#7e22ce" bgColor="rgba(233,213,255,0.6)" borderColor="#c4b5fd" dotColor="#9333ea" items={requireNotifs} onItemClick={handleClick} />
         )}
-        {/* Reminder */}
-        {!isTeamPTS_SubGroup && (isAdmin || isPTS) && (
+        {/* Reminder — semua Team PTS (IVP/UMP/MVI), bukan cuma IVP, supaya Supervisor
+            tim mana pun tetap dapat badge "perlu di-assign" (routing pipeline). */}
+        {(isAdmin || roleLC === 'team' || roleLC === 'guest' || roleLC === 'sales') && (
           <NotifBell icon="🗓️" label="Reminder" count={reminderNotifs.length} color="#0e7490" bgColor="rgba(207,250,254,0.6)" borderColor="#67e8f9" dotColor="#0891b2" items={reminderNotifs} onItemClick={handleClick} />
         )}
         {/* Review */}
