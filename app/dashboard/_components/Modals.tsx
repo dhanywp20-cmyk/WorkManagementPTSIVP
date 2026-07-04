@@ -2287,7 +2287,7 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
 
   return (
     <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/60 backdrop-blur-sm pt-16 px-4 pb-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex overflow-hidden border border-slate-200">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-7xl h-[90vh] flex overflow-hidden border border-slate-200">
 
         {/* ── LEFT SIDEBAR ── */}
         <div className="w-56 flex-shrink-0 flex flex-col border-r border-slate-100" style={{ background: 'linear-gradient(160deg, #1e293b 0%, #0f172a 100%)' }}>
@@ -2873,13 +2873,13 @@ export function AccountSettingsInline() {
               </div>
             ) : (
               <div className="overflow-x-auto rounded-xl border border-slate-200">
-                <table className="w-full text-sm" style={{ minWidth: 640 }}>
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200 text-left">
                       {['Nama', 'Username', 'Role', 'Divisi', 'No. Telepon'].map(h => (
                         <th key={h} className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 whitespace-nowrap">{h}</th>
                       ))}
-                      <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 text-right whitespace-nowrap">Aksi</th>
+                      <th className="sticky right-0 bg-slate-50 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 text-right whitespace-nowrap">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2891,14 +2891,15 @@ export function AccountSettingsInline() {
                         : user.role === 'team'
                           ? (user.team_type ?? '—')
                           : (user.sales_division || (user.team_type === 'Marketing' ? 'Marketing' : '—'));
+                      const rowBg = idx % 2 === 0 ? 'white' : '#fafafa';
                       return (
-                        <tr key={user.id} className="border-b border-slate-100 hover:bg-rose-50/30 transition-colors" style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
+                        <tr key={user.id} className="border-b border-slate-100 hover:bg-rose-50/30 transition-colors" style={{ background: rowBg }}>
                           <td className="px-4 py-2.5 font-semibold text-slate-800 whitespace-nowrap">{user.full_name}</td>
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">@{user.username}</td>
                           <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{user.role}</span></td>
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{divisi}</td>
                           <td className="px-4 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-600">📱 {user.phone_number}</span> : <span className="text-slate-300">—</span>}</td>
-                          <td className="px-4 py-2.5">
+                          <td className="sticky right-0 px-4 py-2.5" style={{ background: rowBg }}>
                             <div className="flex items-center justify-end gap-1.5">
                               <button onClick={() => {
                                 let d = '', p = '';
