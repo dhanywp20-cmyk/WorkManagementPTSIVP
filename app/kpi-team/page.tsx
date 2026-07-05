@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import * as XLSX from 'xlsx-js-style';
 import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
-import { PageHeader } from '@/components/shared';
+import { PageHeader, MobileListCard, MobileCardBadge } from '@/components/shared';
 import { notifyKPIAlert } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 
@@ -1399,7 +1399,37 @@ export default function KPITeamPage() {
             />
           </div>
 
-          <div className="overflow-x-auto">
+          {/* ── MOBILE: kartu ringkas KPI per anggota (tap utk detail) ── */}
+          <div className="md:hidden divide-y divide-gray-100">
+            {!loading && sortedMembers.length === 0 && (
+              <div className="px-4 py-10 text-center text-sm text-gray-400">Tidak ada data untuk periode &amp; filter ini.</div>
+            )}
+            {!loading && sortedMembers.map((m) => {
+              const solveRate = m.ticketsHandled > 0 ? Math.round((m.ticketsSolved / m.ticketsHandled) * 100) : 0;
+              const remRate = m.remindersAssigned > 0 ? Math.round((m.remindersDone / m.remindersAssigned) * 100) : 0;
+              const teamCol = TEAM_COLORS[m.team_type] ?? '#64748b';
+              return (
+                <MobileListCard
+                  key={m.id}
+                  title={m.name}
+                  onClick={() => setDrillMember(m)}
+                  meta={<div className="truncate">{m.team_type.replace('Team ', '')} · {m.jabatan}</div>}
+                  badges={<MobileCardBadge style={{ background: `${teamCol}1a`, color: teamCol }}>{m.ticketsHandled} tiket</MobileCardBadge>}
+                  fields={[
+                    { label: 'Solve', value: `${solveRate}%` },
+                    { label: 'Avg', value: m.avgResolutionDays === 0 ? '—' : `${m.avgResolutionDays}h` },
+                    { label: 'Reminder', value: `${remRate}%` },
+                    { label: 'LC', value: m.lcAvgScore === 0 ? '—' : m.lcAvgScore },
+                    { label: 'Piket', value: `${m.piketFilled} hari` },
+                    { label: 'Overdue', value: m.ticketsOverdue, hide: m.ticketsOverdue === 0, valueClass: 'text-red-500 font-bold' },
+                  ]}
+                />
+              );
+            })}
+          </div>
+
+          {/* ── DESKTOP: tabel KPI penuh (TIDAK diubah) ── */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-[11px]">
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>

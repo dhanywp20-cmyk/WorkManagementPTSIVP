@@ -421,7 +421,48 @@ function PiketShowroomPageInner() {
             ):loading?(
               <div className="flex justify-center py-16"><div className="flex flex-col items-center gap-3"><div className="w-8 h-8 rounded-full border-2 border-t-red-600 border-red-200 animate-spin"/><p className="text-sm text-slate-500">Memuat jadwal...</p></div></div>
             ):(
-              <div className="overflow-x-auto animate-zoom-in">
+              <>
+              {/* ── MOBILE: list PIC per hari (kalender penuh hanya di web/desktop) ── */}
+              <div className="md:hidden divide-y divide-gray-100">
+                {displayRows.length===0?(
+                  <div className="px-4 py-10 text-center text-sm text-gray-400">Belum ada jadwal.</div>
+                ):displayRows.map((row)=>{
+                  const dc=DAY_COLOR[row.day_of_week];
+                  const todayRow=row.day_date===toKey(new Date());
+                  const isHoliday=holidays.includes(row.day_date);
+                  const pics=([['pic_ivp_name','PTS IVP'],['pic_ump_name','PTS UMP'],['pic_mvi_name','PTS MVI']] as [keyof PiketRow,string][])
+                    .map(([f,team])=>({team,name:row[f] as string|null})).filter(p=>p.name);
+                  return (
+                    <div key={row.id} className={`px-4 py-3 flex items-start gap-3 ${todayRow?'bg-green-50/60':''}`}>
+                      <div className="flex flex-col items-center w-11 flex-shrink-0" style={{color:dc.accent}}>
+                        <span className="text-lg font-black leading-none">{new Date(row.day_date+'T00:00:00').getDate()}</span>
+                        <span className="text-[10px] font-bold">{row.day_of_week}</span>
+                        {todayRow&&<span className="text-[7px] font-bold px-1 py-0.5 rounded text-white mt-0.5" style={{background:dc.accent}}>HARI INI</span>}
+                      </div>
+                      <div className="flex-1 min-w-0 pt-0.5">
+                        {isHoliday?(
+                          <span className="text-[11px] font-black px-2 py-0.5 rounded-full text-white" style={{background:'#dc2626'}}>🎌 LIBUR</span>
+                        ):pics.length===0?(
+                          <span className="text-xs text-gray-400 italic">Belum ada PIC</span>
+                        ):(
+                          <div className="space-y-1">
+                            {pics.map(p=>(
+                              <div key={p.team} className="flex items-center gap-1.5">
+                                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white flex-shrink-0" style={{background:TEAM_LABEL[p.team]?.dot??'#64748b'}}>{p.name!.charAt(0).toUpperCase()}</div>
+                                <span className="text-[13px] font-semibold text-slate-800 truncate">{p.name}</span>
+                                <span className="text-[9px] text-slate-400 flex-shrink-0">{p.team.replace('PTS ','')}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* ── DESKTOP: kalender/tabel penuh (TIDAK diubah) ── */}
+              <div className="hidden md:block overflow-x-auto animate-zoom-in">
                 {/* ── TABLE ── */}
                 <table className="w-full text-sm border-collapse" style={{minWidth:'1050px'}}>
                   <colgroup>
@@ -605,6 +646,7 @@ function PiketShowroomPageInner() {
                   <span className="text-[10px] text-gray-400">{rows.length} total · {kegiatanList.filter(k=>displayRows.some(r=>r.id===k.piket_id)).length} kegiatan</span>
                 </div>
               </div>
+              </>
             )}
           </div>
         </div>
