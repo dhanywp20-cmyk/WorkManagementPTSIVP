@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { setSession, clearSession, getSession } from '@/lib/auth';
 import { notifyProjectStatusChange } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
-import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, type ConfirmState } from '@/components/shared';
+import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState } from '@/components/shared';
 import {
   User, ProjectRequest, RoomDetail, BrandPicMapping,
   ProjectMessage, ProjectAttachment,
@@ -380,6 +380,46 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     bytes < 1024 ? bytes + ' B' : bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(1) + ' MB';
   const formatDate = (dt: string) => new Date(dt).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const formatDueDate = (dt: string) => new Date(dt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  // Tombol aksi per-baris — dipakai di tabel desktop DAN kartu mobile (anti-duplikat).
+  const renderRequestActions = (req: ProjectRequest) => (
+    <>
+      {currentUser.id === req.internal_sales_id && req.routing_status === 'internal_review' && (
+        <>
+          <button onClick={() => handleInternalApproveProject(req)} title="Approve & Teruskan ke Admin"
+            className="w-7 h-7 bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white border border-amber-200 rounded-lg flex items-center justify-center transition-all">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+          </button>
+          <button onClick={() => handleReject(req)} title="Tolak"
+            className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </>
+      )}
+      {(isAdmin || isSuperAdmin) && req.status === 'pending' && req.routing_status !== 'internal_review' && (
+        <>
+          <button onClick={() => handleApprove(req)} title="Approve"
+            className="w-7 h-7 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 rounded-lg flex items-center justify-center transition-all">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+          </button>
+          <button onClick={() => handleReject(req)} title="Tolak"
+            className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </>
+      )}
+      {isTeamPTS && req.status === 'approved' && req.assign_name === currentUser.full_name && (
+        <button onClick={() => handleStatusUpdate(req, 'in_progress')} title="Mulai In Progress"
+          className="w-7 h-7 bg-blue-50 hover:bg-blue-500 text-blue-600 hover:text-white border border-blue-200 rounded-lg flex items-center justify-center transition-all">
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </button>
+      )}
+      <ViewIconBtn onClick={() => handleOpenDetail(req)} label="Detail" />
+      {(isSuperAdmin || isAdmin) && (
+        <DeleteIconBtn onClick={() => { setDeleteModal({ open: true, req }); setDeleteConfirmText(''); }} label="Hapus" />
+      )}
+    </>
+  );
   const getDueStatus = (due: string | undefined, status: string) => {
     if (!due || status === 'completed' || status === 'rejected') return null;
     const now = new Date();
@@ -1793,7 +1833,43 @@ Hubungi Admin untuk info lebih lanjut.
               {!isPTS && <button onClick={() => setShowNewFormModal(true)} className="mt-4 bg-teal-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-teal-700 transition-all shadow-md">+ Buat Request Pertama</button>}
             </div>
           ) : (
-            <div className="overflow-x-auto animate-zoom-in">
+            <>
+            {/* ── MOBILE: kartu (pola Ticket Troubleshooting) ── */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {filteredRequests.length === 0 && (
+                <div className="px-4 py-10 text-center text-sm text-gray-400">Belum ada request.</div>
+              )}
+              {filteredRequests.map((req) => {
+                const sc = statusConfig[req.status] || statusConfig.pending;
+                const solution = Array.isArray(req.solution_product) ? req.solution_product.join(', ') : (req.solution_product || '');
+                return (
+                  <MobileListCard
+                    key={req.id}
+                    title={req.project_name}
+                    onClick={() => handleOpenDetail(req)}
+                    meta={<>
+                      {req.project_location && <div className="truncate">📍 {req.project_location}</div>}
+                      <div className="truncate">{req.requester_name} · {formatDate(req.created_at)}</div>
+                    </>}
+                    badges={<>
+                      <MobileCardBadge className={`border ${sc.color} ${sc.bg} ${sc.border}`}>{sc.label}</MobileCardBadge>
+                      {req.routing_status === 'internal_review' && <span className="text-[9px] font-bold text-amber-600 whitespace-nowrap">🔍 Review Internal</span>}
+                    </>}
+                    fields={[
+                      { label: 'Solution', value: solution || '—', span2: true },
+                      { label: 'Ruangan', value: req.room_name, hide: !req.room_name },
+                      { label: 'Sales', value: <>{req.sales_name || '—'}{req.sales_division ? <span className="text-purple-600 font-semibold"> · {req.sales_division}</span> : null}</> },
+                      { label: 'Handler', value: req.assign_name || '—' },
+                      { label: 'Target', value: req.due_date ? formatDueDate(req.due_date) : '—' },
+                    ]}
+                    actions={renderRequestActions(req)}
+                  />
+                );
+              })}
+            </div>
+
+            {/* ── DESKTOP: tabel ── */}
+            <div className="hidden md:block overflow-x-auto animate-zoom-in">
               <table className="w-full border-collapse table-fixed table-zebra" style={{ background: 'transparent', minWidth: '900px' }}>
                 <colgroup>
                   <col style={{ width: '56px' }} />
@@ -1915,43 +1991,7 @@ Hubungi Admin untuk info lebih lanjut.
                         </td>
                         <td className="px-2 py-3 align-middle text-center" onClick={e => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-1">
-                            {/* Sales Internal: wajib review dulu sebelum Admin bisa approve */}
-                            {currentUser.id === req.internal_sales_id && req.routing_status === 'internal_review' && (
-                              <>
-                                <button onClick={() => handleInternalApproveProject(req)} title="Approve & Teruskan ke Admin"
-                                  className="w-7 h-7 bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white border border-amber-200 rounded-lg flex items-center justify-center transition-all">
-                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                                </button>
-                                <button onClick={() => handleReject(req)} title="Tolak"
-                                  className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
-                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
-                                </button>
-                              </>
-                            )}
-                            {/* Approve/Reject: admin/superadmin saja, terkunci selama masih internal_review */}
-                            {(isAdmin || isSuperAdmin) && req.status === 'pending' && req.routing_status !== 'internal_review' && (
-                              <>
-                                <button onClick={() => handleApprove(req)} title="Approve"
-                                  className="w-7 h-7 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 rounded-lg flex items-center justify-center transition-all">
-                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                                </button>
-                                <button onClick={() => handleReject(req)} title="Tolak"
-                                  className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
-                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
-                                </button>
-                              </>
-                            )}
-                            {/* Start In Progress: hanya PTS yang di-assign */}
-                            {isTeamPTS && req.status === 'approved' && req.assign_name === currentUser.full_name && (
-                              <button onClick={() => handleStatusUpdate(req, 'in_progress')} title="Mulai In Progress"
-                                className="w-7 h-7 bg-blue-50 hover:bg-blue-500 text-blue-600 hover:text-white border border-blue-200 rounded-lg flex items-center justify-center transition-all">
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                              </button>
-                            )}
-                            <ViewIconBtn onClick={() => handleOpenDetail(req)} label="Detail" />
-                            {(isSuperAdmin || isAdmin) && (
-                              <DeleteIconBtn onClick={() => { setDeleteModal({ open: true, req }); setDeleteConfirmText(''); }} label="Hapus" />
-                            )}
+                            {renderRequestActions(req)}
                           </div>
                         </td>
                       </tr>
@@ -1964,6 +2004,7 @@ Hubungi Admin untuk info lebih lanjut.
                 <span className="text-xs text-gray-400">{filteredRequests.length > 0 ? `1–${filteredRequests.length}` : '0'} of {requests.length}</span>
               </div>
             </div>
+            </>
           )}
         </div>
       </div>
