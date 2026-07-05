@@ -2727,8 +2727,8 @@ jangan lupa peralatan & Semangat💪🏼
               </div>
 
               {/* Active filter chips */}
-              {/* Main area: list + calendar */}
-              <div className="flex gap-4 items-start">
+              {/* Main area: list + calendar (di HP stack; kalender hanya di desktop) */}
+              <div className="flex flex-col lg:flex-row gap-4 items-start">
 
                 {/* ── TICKET LIST ── */}
                 <div className="flex-1 min-w-0 rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.6)', backdropFilter: 'blur(12px)' }}>
@@ -3224,15 +3224,19 @@ jangan lupa peralatan & Semangat💪🏼
                   )}
                 </div>
 
-                {/* ── MINI CALENDAR SIDEBAR — hanya tampil untuk admin & team, disembunyikan untuk guest/sales ── */}
+                {/* ── MINI CALENDAR SIDEBAR — admin & team saja, disembunyikan utk guest/sales.
+                     Di HP juga DISEMBUNYIKAN (hidden lg:block) — sebelumnya kalender
+                     mendominasi layar & daftar terhimpit hilang. Hanya muncul di desktop. ── */}
                 {!isGuest && (
-                  <MiniCalendar
-                    reminders={reminders}
-                    calendarMonth={calendarMonth}
-                    setCalendarMonth={setCalendarMonth}
-                    selectedCalDay={calOnlyDay}
-                    setSelectedCalDay={setCalOnlyDay}
-                  />
+                  <div className="hidden lg:block flex-shrink-0">
+                    <MiniCalendar
+                      reminders={reminders}
+                      calendarMonth={calendarMonth}
+                      setCalendarMonth={setCalendarMonth}
+                      selectedCalDay={calOnlyDay}
+                      setSelectedCalDay={setCalOnlyDay}
+                    />
+                  </div>
                 )}
               </div>
             </>
