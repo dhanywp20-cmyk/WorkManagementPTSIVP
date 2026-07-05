@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { setSession, clearSession, getSession } from '@/lib/auth';
 import { notifyProjectStatusChange } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
-import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, type ConfirmState } from '@/components/shared';
+import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, type ConfirmState } from '@/components/shared';
 import {
   User, ProjectRequest, RoomDetail, BrandPicMapping,
   ProjectMessage, ProjectAttachment,
@@ -2974,18 +2974,12 @@ Hubungi Admin untuk info lebih lanjut.
                   {isPTS && (
                     <div>
                       <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Sales / Account</label>
-                      <div className="flex gap-2 items-center">
-                        <select value={editFormData.sales_name} onChange={e => {
-                            const sel = salesGuestUsers.find(u => u.full_name === e.target.value);
-                            setEditFormData(p => ({ ...p, sales_name: e.target.value, sales_division: sel?.sales_division || p.sales_division }));
-                          }}
-                          className="flex-1 border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-amber-400 outline-none bg-white appearance-none cursor-pointer">
-                          <option value="">— Pilih Sales —</option>
-                          {salesGuestUsers.map(u => (
-                            <option key={u.id} value={u.full_name}>{u.full_name}{u.sales_division ? ` (${u.sales_division})` : ''}</option>
-                          ))}
-                        </select>
-                      </div>
+                      <SalesPicker
+                        value={editFormData.sales_name}
+                        users={salesGuestUsers}
+                        onChange={(name, div) => setEditFormData(p => ({ ...p, sales_name: name, sales_division: div || p.sales_division }))}
+                        triggerClassName="border-2 border-gray-200 rounded-xl px-3 py-2.5 bg-white"
+                      />
                     </div>
                   )}
                 </div>

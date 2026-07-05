@@ -373,7 +373,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                               >
                                 <div>
                                   <p className="text-sm font-semibold text-slate-800">{u.full_name}</p>
-                                  <p className="text-xs text-violet-500">{u.username}{u.sales_division ? ` · ${u.sales_division}` : ''}</p>
+                                  {u.sales_division && <p className="text-xs text-violet-500">{u.sales_division}</p>}
                                 </div>
                                 {formData.sales_name === u.full_name && <span className="text-violet-600 text-sm">✓</span>}
                               </div>
