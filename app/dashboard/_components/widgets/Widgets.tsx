@@ -15,11 +15,11 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { User } from '../shared';
-import { hasMenu, canAccessAnalytics, canSeeTeamMonitoring, isAdminRole, isTeamMember } from './permissions';
+import { hasMenu, canAccessAnalytics, canSeeTeamMonitoring } from './permissions';
 import {
   getMonday, getDayDate, toKey, DAYS_OF_WEEK, getRollingNameForDate, type PiketRow,
 } from '@/app/picket-showroom/_components/shared';
-import DashboardKPI from '@/app/kpi-team/_components/DashboardKPI';
+import { AnalyticsPlatform } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 
 // ── Kontrak widget ────────────────────────────────────────────────────────────
 
@@ -104,19 +104,14 @@ function Loading() {
   );
 }
 
-// ── Lightweight row types ────────────────────────────────────────────────────
-
-interface RemRow { id: string; project_name: string; category: string; due_date: string; status: string; assigned_to?: string; sales_name?: string; notes?: string; routing_status?: string | null; internal_sales_id?: string | null; assigned_supervisor_id?: string | null; }
-interface TkRow { id: string; project_name: string; issue_case: string; status: string; created_at: string; assign_name?: string; created_by?: string; sales_name?: string; }
-interface PrRow { id: string; project_name: string; status: string; created_at: string; requester_id?: string; assign_name?: string; ivp_assignee?: string; routing_status?: string | null; internal_sales_id?: string | null; }
-
 // ═══════════════════════════════════════════════════════════════════════════════
-// WIDGET: Analytics (native) — render DashboardKPI LANGSUNG, BUKAN iframe.
-// Tema analytics penuh utk Admin/Team, digabung ke dashboard utama. Menggantikan
-// iframe & widget ringkasan personal (yg disembunyikan utk role ini → anti-duplikat).
+// WIDGET: Analytics (native) — render AnalyticsPlatform LANGSUNG (BUKAN iframe),
+// lengkap dgn tab Analytics / Command Center / Audit Log. Tema analytics penuh utk
+// Admin/Team, digabung ke dashboard. Widget ringkasan personal disembunyikan utk
+// role ini (`!canAccessAnalytics`) → anti-duplikat.
 // ═══════════════════════════════════════════════════════════════════════════════
 const AnalyticsNativeWidget: React.FC<WidgetProps> = ({ user }) => (
-  <DashboardKPI currentUser={user} />
+  <AnalyticsPlatform embedded injectedUser={user} />
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -210,189 +205,141 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// WIDGET: Request Schedule Saya (menu reminder-schedule).
+// WIDGET: Analytics Saya (Sales/Marketing) — tema analytics, DATA MILIK SENDIRI.
+// Menggabung 4 platform: Request Schedule, Request Design Project, Form Review BAST,
+// Ticket Troubleshooting. Tiap panel hanya muncul kalau user punya menunya.
 // ═══════════════════════════════════════════════════════════════════════════════
-const RequestScheduleWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
-  const [loading, setLoading] = useState(true);
-  const [items, setItems] = useState<RemRow[]>([]);
-  const [reviewCount, setReviewCount] = useState(0);
+interface SalesAnalytics {
+  schedule: { total: number; active: number; done: number; byCat: { name: string; count: number }[] };
+  project: { total: number; pending: number; progress: number; done: number };
+  review: { total: number; demo: number; bast: number };
+  ticket: { total: number; open: number; solved: number };
+}
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const sel = 'id, project_name, category, due_date, status, assigned_to, sales_name, notes, routing_status, internal_sales_id, assigned_supervisor_id';
-        let data: RemRow[] = [];
-        if (isAdminRole(user)) {
-          const res = await supabase.from('reminders').select(sel).neq('status', 'cancelled').order('due_date', { ascending: true }).limit(300);
-          data = (res.data ?? []) as RemRow[];
-        } else if (isTeamMember(user)) {
-          const res = await supabase.from('reminders').select(sel).eq('assigned_to', user.username).neq('status', 'cancelled').order('due_date', { ascending: true }).limit(200);
-          data = (res.data ?? []) as RemRow[];
-        } else {
-          const res = await supabase.from('reminders').select(sel).eq('sales_name', user.full_name).order('due_date', { ascending: false }).limit(200);
-          data = (res.data ?? []) as RemRow[];
-          // Sales Internal reviewer: request yang menunggu review dia
-          const rev = await supabase.from('reminders').select('id', { count: 'exact', head: true })
-            .eq('internal_sales_id', user.id).eq('routing_status', 'internal_review');
-          if (alive) setReviewCount(rev.count ?? 0);
-        }
-        if (alive) setItems(data);
-      } catch { /* silent */ }
-      if (alive) setLoading(false);
-    })();
-    return () => { alive = false; };
-  }, [user]);
-
-  if (loading) return <WidgetCard title="Request Schedule Saya" icon="🗓️" accent="#0891b2"><Loading /></WidgetCard>;
-
-  const today = todayStr();
-  const active = items.filter(r => r.status !== 'done' && r.status !== 'cancelled');
-  const todayCount = active.filter(r => r.due_date === today).length;
-  const doneCount = items.filter(r => r.status === 'done').length;
-  const upcoming = active.slice(0, 3);
-
+function AnalyticStat({ gradient, icon, label, value, subs }: {
+  gradient: string; icon: string; label: string; value: number;
+  subs: { label: string; value: number }[];
+}) {
   return (
-    <WidgetCard title="Request Schedule Saya" icon="🗓️" accent="#0891b2"
-      onSeeAll={() => openMenu('reminder-schedule')}>
-      <StatPills items={[
-        { label: 'Aktif', value: active.length, color: '#0891b2' },
-        { label: 'Hari Ini', value: todayCount, color: '#f59e0b' },
-        { label: 'Selesai', value: doneCount, color: '#16a34a' },
-      ]} />
-      {reviewCount > 0 && (
-        <button onClick={() => openMenu('reminder-schedule')}
-          className="w-full mb-2 flex items-center gap-2 px-2.5 py-2 rounded-xl text-left transition-all hover:scale-[1.01]"
-          style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}>
-          <span className="text-base">🔍</span>
-          <span className="text-[11px] font-bold text-amber-700 flex-1">{reviewCount} request menunggu review kamu</span>
-        </button>
-      )}
-      {upcoming.length === 0 ? <EmptyState text="Belum ada jadwal aktif." /> : (
-        <div>{upcoming.map(r => (
-          <MiniRow key={r.id} title={r.project_name} sub={`${r.category} · ${r.due_date}`}
-            tone={r.due_date === today ? '#f59e0b' : '#0891b2'} />
-        ))}</div>
-      )}
-    </WidgetCard>
+    <div className="rounded-2xl p-4 relative overflow-hidden" style={{ background: gradient, boxShadow: '0 6px 20px rgba(0,0,0,0.16)' }}>
+      <div className="text-xl mb-1.5 opacity-80 select-none">{icon}</div>
+      <div className="text-3xl font-black text-white tabular-nums leading-none">{value}</div>
+      <div className="text-xs font-bold text-white/90 mt-1 leading-tight">{label}</div>
+      <div className="flex gap-3 mt-2.5">
+        {subs.map((s, i) => (
+          <div key={i}>
+            <div className="text-sm font-black text-white tabular-nums leading-none">{s.value}</div>
+            <div className="text-[9px] text-white/70 mt-0.5">{s.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
-};
+}
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// WIDGET: Ticket Saya (menu ticket-troubleshooting).
-// ═══════════════════════════════════════════════════════════════════════════════
-const TicketWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
+const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
   const [loading, setLoading] = useState(true);
-  const [items, setItems] = useState<TkRow[]>([]);
+  const [data, setData] = useState<SalesAnalytics | null>(null);
+  const showSchedule = hasMenu(user, 'reminder-schedule');
+  const showProject  = hasMenu(user, 'request-design-project');
+  const showReview   = hasMenu(user, 'form-bast');
+  const showTicket   = hasMenu(user, 'ticket-troubleshooting');
 
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        const sel = 'id, project_name, issue_case, status, created_at, assign_name, created_by, sales_name';
-        let data: TkRow[] = [];
-        if (isAdminRole(user)) {
-          const res = await supabase.from('tickets').select(sel).neq('status', 'Solved').order('created_at', { ascending: false }).limit(100);
-          data = (res.data ?? []) as TkRow[];
-        } else if (isTeamMember(user)) {
-          const res = await supabase.from('tickets').select(sel).eq('assign_name', user.full_name).neq('status', 'Solved').order('created_at', { ascending: false }).limit(60);
-          data = (res.data ?? []) as TkRow[];
-        } else {
-          const res = await supabase.from('tickets').select(sel).eq('created_by', user.username).order('created_at', { ascending: false }).limit(60);
-          data = (res.data ?? []) as TkRow[];
-        }
-        if (alive) setItems(data);
+        const [remRes, prRes, rvRes, tkRes] = await Promise.all([
+          showSchedule ? supabase.from('reminders').select('status,category').eq('sales_name', user.full_name) : Promise.resolve({ data: [] }),
+          showProject  ? supabase.from('project_requests').select('status').eq('requester_id', user.id) : Promise.resolve({ data: [] }),
+          showReview   ? supabase.from('form_reviews').select('review_category').or(`guest_username.eq.${user.username},sales_name.eq.${user.full_name}`) : Promise.resolve({ data: [] }),
+          showTicket   ? supabase.from('tickets').select('status').eq('created_by', user.username) : Promise.resolve({ data: [] }),
+        ]);
+        const rem = (remRes.data ?? []) as { status: string; category: string }[];
+        const pr  = (prRes.data ?? []) as { status: string }[];
+        const rv  = (rvRes.data ?? []) as { review_category: string }[];
+        const tk  = (tkRes.data ?? []) as { status: string }[];
+        const catMap: Record<string, number> = {};
+        rem.forEach(r => { if (r.category) catMap[r.category] = (catMap[r.category] ?? 0) + 1; });
+        const byCat = Object.entries(catMap).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 4);
+        if (alive) setData({
+          schedule: {
+            total: rem.length,
+            active: rem.filter(r => r.status !== 'done' && r.status !== 'cancelled').length,
+            done: rem.filter(r => r.status === 'done').length,
+            byCat,
+          },
+          project: {
+            total: pr.length,
+            pending: pr.filter(p => p.status === 'pending').length,
+            progress: pr.filter(p => p.status === 'in_progress' || p.status === 'approved').length,
+            done: pr.filter(p => p.status === 'completed').length,
+          },
+          review: {
+            total: rv.length,
+            demo: rv.filter(r => (r.review_category ?? '').toLowerCase().includes('demo')).length,
+            bast: rv.filter(r => (r.review_category ?? '').toLowerCase().includes('bast')).length,
+          },
+          ticket: {
+            total: tk.length,
+            open: tk.filter(t => t.status !== 'Solved').length,
+            solved: tk.filter(t => t.status === 'Solved').length,
+          },
+        });
       } catch { /* silent */ }
       if (alive) setLoading(false);
     })();
     return () => { alive = false; };
-  }, [user]);
-
-  if (loading) return <WidgetCard title="Ticket Saya" icon="🎫" accent="#e11d48"><Loading /></WidgetCard>;
-
-  const open = items.filter(t => t.status !== 'Solved');
-  const waiting = items.filter(t => (t.status ?? '').toLowerCase().includes('waiting')).length;
-  const solved = items.filter(t => t.status === 'Solved').length;
+  }, [user, showSchedule, showProject, showReview, showTicket]);
 
   return (
-    <WidgetCard title={isAdminRole(user) ? 'Ticket Aktif' : 'Ticket Saya'} icon="🎫" accent="#e11d48"
-      onSeeAll={() => openMenu('ticket-troubleshooting')}>
-      <StatPills items={[
-        { label: 'Aktif', value: open.length, color: '#e11d48' },
-        { label: 'Menunggu', value: waiting, color: '#f59e0b' },
-        { label: 'Solved', value: solved, color: '#16a34a' },
-      ]} />
-      {open.length === 0 ? <EmptyState text="Tidak ada ticket aktif." /> : (
-        <div>{open.slice(0, 3).map(t => (
-          <MiniRow key={t.id} title={t.project_name} sub={`${t.status} · ${t.issue_case}`} tone="#e11d48" />
-        ))}</div>
-      )}
-    </WidgetCard>
-  );
-};
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// WIDGET: Project Saya (menu request-design-project).
-// ═══════════════════════════════════════════════════════════════════════════════
-const ProjectWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
-  const [loading, setLoading] = useState(true);
-  const [items, setItems] = useState<PrRow[]>([]);
-  const [reviewCount, setReviewCount] = useState(0);
-
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const sel = 'id, project_name, status, created_at, requester_id, assign_name, ivp_assignee, routing_status, internal_sales_id';
-        let data: PrRow[] = [];
-        if (isAdminRole(user)) {
-          const res = await supabase.from('project_requests').select(sel).order('created_at', { ascending: false }).limit(100);
-          data = (res.data ?? []) as PrRow[];
-        } else if (isTeamMember(user)) {
-          const res = await supabase.from('project_requests').select(sel).eq('assign_name', user.full_name).order('created_at', { ascending: false }).limit(60);
-          data = (res.data ?? []) as PrRow[];
-        } else {
-          const res = await supabase.from('project_requests').select(sel)
-            .or(`requester_id.eq.${user.id},ivp_assignee.eq.${user.full_name}`)
-            .order('created_at', { ascending: false }).limit(80);
-          data = (res.data ?? []) as PrRow[];
-          const rev = await supabase.from('project_requests').select('id', { count: 'exact', head: true })
-            .eq('internal_sales_id', user.id).eq('routing_status', 'internal_review');
-          if (alive) setReviewCount(rev.count ?? 0);
-        }
-        if (alive) setItems(data);
-      } catch { /* silent */ }
-      if (alive) setLoading(false);
-    })();
-    return () => { alive = false; };
-  }, [user]);
-
-  if (loading) return <WidgetCard title="Project Saya" icon="🏗️" accent="#7c3aed"><Loading /></WidgetCard>;
-
-  const pending = items.filter(p => p.status === 'pending');
-  const inProgress = items.filter(p => p.status === 'in_progress' || p.status === 'approved');
-  const done = items.filter(p => p.status === 'completed');
-
-  return (
-    <WidgetCard title="Project Saya" icon="🏗️" accent="#7c3aed"
-      onSeeAll={() => openMenu('request-design-project')}>
-      <StatPills items={[
-        { label: 'Pending', value: pending.length, color: '#f59e0b' },
-        { label: 'Proses', value: inProgress.length, color: '#7c3aed' },
-        { label: 'Selesai', value: done.length, color: '#16a34a' },
-      ]} />
-      {reviewCount > 0 && (
-        <button onClick={() => openMenu('request-design-project')}
-          className="w-full mb-2 flex items-center gap-2 px-2.5 py-2 rounded-xl text-left transition-all hover:scale-[1.01]"
-          style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}>
-          <span className="text-base">🔍</span>
-          <span className="text-[11px] font-bold text-amber-700 flex-1">{reviewCount} request design menunggu review kamu</span>
-        </button>
-      )}
-      {items.length === 0 ? <EmptyState text="Belum ada project." /> : (
-        <div>{items.slice(0, 3).map(p => (
-          <MiniRow key={p.id} title={p.project_name} sub={p.status} tone="#7c3aed" />
-        ))}</div>
+    <WidgetCard title="Analytics Saya" icon="📊" accent="#c8861d">
+      {loading || !data ? <Loading /> : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+            {showSchedule && (
+              <AnalyticStat gradient="linear-gradient(135deg,#0891b2,#0e7490)" icon="🗓️" label="Request Schedule" value={data.schedule.total}
+                subs={[{ label: 'Aktif', value: data.schedule.active }, { label: 'Selesai', value: data.schedule.done }]} />
+            )}
+            {showProject && (
+              <AnalyticStat gradient="linear-gradient(135deg,#7c3aed,#5b21b6)" icon="🏗️" label="Design Project" value={data.project.total}
+                subs={[{ label: 'Pending', value: data.project.pending }, { label: 'Proses', value: data.project.progress }, { label: 'Selesai', value: data.project.done }]} />
+            )}
+            {showReview && (
+              <AnalyticStat gradient="linear-gradient(135deg,#64748b,#475569)" icon="⭐" label="Form Review/BAST" value={data.review.total}
+                subs={[{ label: 'Demo', value: data.review.demo }, { label: 'BAST', value: data.review.bast }]} />
+            )}
+            {showTicket && (
+              <AnalyticStat gradient="linear-gradient(135deg,#e11d48,#9f1239)" icon="🎫" label="Ticket" value={data.ticket.total}
+                subs={[{ label: 'Aktif', value: data.ticket.open }, { label: 'Solved', value: data.ticket.solved }]} />
+            )}
+          </div>
+          {/* Breakdown kategori Request Schedule */}
+          {showSchedule && data.schedule.byCat.length > 0 && (
+            <div className="mt-3">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Request Schedule per Kategori</div>
+              <div className="space-y-1.5">
+                {data.schedule.byCat.map(c => {
+                  const pct = data.schedule.total > 0 ? Math.round((c.count / data.schedule.total) * 100) : 0;
+                  return (
+                    <div key={c.name} className="flex items-center gap-2">
+                      <span className="text-[11px] font-semibold text-slate-600 w-32 truncate">{c.name}</span>
+                      <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: '#0891b2' }} />
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-500 w-6 text-right">{c.count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          <div className="flex gap-2 mt-3 flex-wrap">
+            {showSchedule && <button onClick={() => openMenu('reminder-schedule')} className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(8,145,178,0.1)', color: '#0891b2' }}>🗓️ Request Schedule →</button>}
+            {showProject && <button onClick={() => openMenu('request-design-project')} className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(124,58,237,0.1)', color: '#7c3aed' }}>🏗️ Design Project →</button>}
+            {showTicket && <button onClick={() => openMenu('ticket-troubleshooting')} className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(225,29,72,0.1)', color: '#e11d48' }}>🎫 Ticket →</button>}
+          </div>
+        </>
       )}
     </WidgetCard>
   );
@@ -491,11 +438,10 @@ export const WIDGETS: WidgetDef[] = [
   // Sudah memuat Ticket/Reminder/Piket/Unit/Pengguna/Learning → widget di bawah
   // DISEMBUNYIKAN utk role ini (`!canAccessAnalytics`) supaya TIDAK duplikat data.
   { id: 'analytics',       permission: canAccessAnalytics,   priority: 2, size: 'full', Component: AnalyticsNativeWidget },
-  // Widget ringkasan personal — HANYA utk role tanpa analytics (Sales/Marketing/dll).
-  { id: 'request-schedule',permission: (u) => hasMenu(u, 'reminder-schedule')      && !canAccessAnalytics(u), priority: 3, size: 'md', Component: RequestScheduleWidget },
-  { id: 'ticket',          permission: (u) => hasMenu(u, 'ticket-troubleshooting') && !canAccessAnalytics(u), priority: 4, size: 'md', Component: TicketWidget },
-  { id: 'project',         permission: (u) => hasMenu(u, 'request-design-project') && !canAccessAnalytics(u), priority: 5, size: 'md', Component: ProjectWidget },
-  // Piket Showroom: role tanpa analytics (Admin/Team sudah lihat piket di dalam DashboardKPI).
+  // Analytics Saya (Sales/Marketing) — tema analytics, DATA SENDIRI, 4 platform.
+  // Hanya utk role TANPA analytics global & punya minimal 1 dari 4 menu terkait.
+  { id: 'sales-analytics', permission: (u) => !canAccessAnalytics(u) && (hasMenu(u, 'reminder-schedule') || hasMenu(u, 'request-design-project') || hasMenu(u, 'form-bast') || hasMenu(u, 'ticket-troubleshooting')), priority: 3, size: 'full', Component: SalesAnalyticsWidget },
+  // Piket Showroom: role tanpa analytics (Admin/Team sudah lihat piket di dalam analytics).
   { id: 'showroom',        permission: (u) => !canAccessAnalytics(u),               priority: 6, size: 'md', Component: ShowroomWidget },
   { id: 'learning',        permission: (u) => hasMenu(u, 'learning-center')        && !canAccessAnalytics(u), priority: 7, size: 'sm', Component: LearningWidget },
 ];
