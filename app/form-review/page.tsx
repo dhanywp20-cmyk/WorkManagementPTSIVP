@@ -14,6 +14,7 @@ import {
   FormField, SectionHeader, StarRating, LoadingScreen, MiniPieChart,
   ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup,
   ConfirmDialog, type ConfirmState, ErrorState,
+  MobileListCard, MobileCardBadge,
 } from '@/components/shared';
 
 // ─── Main Component ────────────────────────────────────────────────────────────
@@ -1174,7 +1175,42 @@ export default function FormReviewPage() {
                 <p className="text-sm text-gray-400 mt-1">Form review muncul otomatis dari Reminder Schedule yang Solved</p>
               </div>
             ) : (
-              <div className="overflow-x-auto animate-zoom-in">
+              <>
+              {/* ── MOBILE: kartu (pola Ticket Troubleshooting) ── */}
+              <div className="md:hidden divide-y divide-gray-100">
+                {tableReviews.map((r) => {
+                  const isDemo = r.review_category === 'Demo Product';
+                  const hasReview = isDemo ? !!r.grade_product_knowledge : !!(r.grade_training_customer && r.grade_product_knowledge_bast);
+                  const grade1 = isDemo ? r.grade_product_knowledge : r.grade_training_customer;
+                  return (
+                    <MobileListCard
+                      key={r.id}
+                      title={r.project_name || '—'}
+                      onClick={() => setDetailReview(r)}
+                      meta={<>
+                        {r.address && <div className="truncate">📍 {r.address}</div>}
+                        <div className="truncate">{r.reminder_category || '—'} · {r.created_at ? formatDatetime(r.created_at) : '—'}</div>
+                      </>}
+                      badges={<MobileCardBadge style={hasReview ? { background: '#d1fae5', color: '#065f46', border: '1px solid #10b981' } : { background: '#fef3c7', color: '#92400e', border: '1px solid #f59e0b' }}>{hasReview ? '✅ Terisi' : '⏳ Belum'}</MobileCardBadge>}
+                      fields={[
+                        { label: 'Sales', value: <>{r.sales_name || '—'}{r.sales_division ? <span className="text-purple-600 font-semibold"> · {r.sales_division}</span> : null}</> },
+                        { label: 'Handler', value: r.assign_name || '—' },
+                        { label: 'Product', value: (isDemo ? r.product_demo : r.product_bast) || '—', span2: true },
+                        { label: isDemo ? 'Grade' : 'Training', value: grade1 ? <StarRating value={grade1} disabled /> : '—' },
+                        { label: 'Prod. Knowledge', value: r.grade_product_knowledge_bast ? <StarRating value={r.grade_product_knowledge_bast} disabled /> : '—', hide: isDemo },
+                      ]}
+                      actions={<>
+                        <ViewIconBtn onClick={() => setDetailReview(r)} label="Detail" />
+                        {(isAdmin || isGuest) && <EditIconBtn onClick={() => openEdit(r)} label="Edit" />}
+                        {isAdmin && <DeleteIconBtn onClick={() => openDeleteModal(r)} label="Hapus" />}
+                      </>}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* ── DESKTOP: tabel ── */}
+              <div className="hidden md:block overflow-x-auto animate-zoom-in">
                 <table className="w-full border-collapse table-zebra" style={{ tableLayout: 'fixed', background: 'transparent', minWidth: '920px' }}>
                   <colgroup>
                     <col style={{ width: '3%' }} />   {/* No */}
@@ -1298,6 +1334,7 @@ export default function FormReviewPage() {
                   <span className="text-[10px] text-gray-400">{tableReviews.length} of {reviews.length} total</span>
                 </div>
               </div>
+              </>
             )}
           </div>
         </div>

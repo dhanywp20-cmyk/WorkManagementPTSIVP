@@ -2648,7 +2648,7 @@ jangan lupa peralatan & Semangat💪🏼
           )}
         </PageHeader>
 
-        <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
+        <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-2.5 py-3 space-y-3 sm:px-5 sm:py-5 sm:space-y-4">
           {view === 'list' && (
             <>
               {/* ── Stat cards (clickable filter) ── */}

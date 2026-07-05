@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ErrorState } from '@/components/shared';
+import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ErrorState, MobileListCard, MobileCardBadge } from '@/components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { User, MovementLog, EVENTS, COLORS, splitTypeLines, fmtDate } from './_components/shared';
 import { logAudit } from '@/lib/audit';
@@ -397,7 +397,38 @@ function UnitMovementPageInner() {
             </div>
           </div>
 
-          <div className="overflow-x-auto animate-zoom-in">
+          {/* ── MOBILE: kartu (pola Ticket Troubleshooting) ── */}
+          <div className="md:hidden divide-y divide-gray-100">
+            {filteredLogs.length === 0 && (
+              <div className="px-4 py-10 text-center text-sm text-gray-400">Belum ada log pergerakan.</div>
+            )}
+            {filteredLogs.map((log) => {
+              const isMasuk = log.status_barang === 'Masuk';
+              const typeLines = splitTypeLines(log.type_barang);
+              return (
+                <MobileListCard
+                  key={log.id}
+                  title={log.project_name || '-'}
+                  onClick={() => setViewLog(log)}
+                  meta={<div className="truncate">{fmtDate(log.tanggal)}{log.event ? ` · ${log.event}` : ''}</div>}
+                  badges={<MobileCardBadge style={isMasuk ? { background: '#d1fae5', color: '#065f46' } : { background: '#fee2e2', color: '#991b1b' }}>{isMasuk ? '📥' : '📤'} {log.status_barang}</MobileCardBadge>}
+                  fields={[
+                    { label: 'PTS', value: log.nama_pts || '-' },
+                    { label: 'Pihak Luar', value: log.nama_luar || '-' },
+                    { label: 'Type', value: typeLines.length > 0 ? typeLines.join(', ') : '-', span2: true },
+                    { label: 'SN', value: log.serial_number, span2: true, hide: !log.serial_number, valueClass: 'text-gray-600 font-mono text-[11px]' },
+                  ]}
+                  actions={<>
+                    <ViewIconBtn onClick={() => setViewLog(log)} label="Lihat" />
+                    {isAdmin && <><EditIconBtn onClick={() => setEditLog(log)} /><DeleteIconBtn onClick={() => setDeleteConfirm(log)} /></>}
+                  </>}
+                />
+              );
+            })}
+          </div>
+
+          {/* ── DESKTOP: tabel ── */}
+          <div className="hidden md:block overflow-x-auto animate-zoom-in">
             <table className="w-full text-sm table-zebra" style={{minWidth:1100}}>
               <thead>
                 <tr style={{background:'#f8fafc',borderBottom:'1px solid #e2e8f0'}}>
