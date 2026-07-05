@@ -93,7 +93,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
           {/* Category picker */}
           <div>
             <label className="block text-xs font-bold mb-2 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Kategori *</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {CATEGORIES.map(cat => {
                 const c = CATEGORY_CONFIG[cat];
                 const sel = formData.category === cat;
@@ -115,7 +115,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
           {/* Tipe Produk — WAJIB, untuk routing ke supervisor (LED→Wahyu, LCD/MW→Yoga) */}
           <div>
             <label className="block text-xs font-bold mb-2 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Tipe Produk *</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {PRODUCT_TYPES.map(pt => {
                 const sel = formData.product_type === pt;
                 return (
@@ -204,7 +204,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                 <p className="text-sm font-bold text-sky-700">Masa Garansi (Warranty)</p>
               </div>
               <p className="text-xs text-sky-600 mb-3">Tanggal BAST (field Tanggal di atas) akan digunakan sebagai titik mulai garansi. Pilih durasi warranty project ini.</p>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {([null, 1, 2, 3] as const).map(val => {
                   const isSelected = formData.warranty_years === val;
                   const labels: Record<string, string> = { null: 'Tidak Ada', '1': '1 Tahun', '2': '2 Tahun', '3': '3 Tahun' };
@@ -242,7 +242,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
               diisi Handler saat klik "Completed" (lihat modal Mode Penyelesaian),
               karena project baru masuk Incentive setelah statusnya Completed. */}
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <FormField label="Tanggal *">
               <input type="date" value={formData.due_date} onChange={e => fd({ due_date: e.target.value })}
                 className={inputCls} style={inputStyle} />
@@ -259,10 +259,14 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             </FormField>
           </div>
 
+          {/* Mini calendar multi-select — disembunyikan di HP (tampilan bertumpuk),
+             hanya muncul di layar sm: ke atas. */}
           {!editingReminder && (
-            <FormField label="Tambah Hari Lain (Opsional)">
-              <MultiDatePicker dates={extraDates} onChange={onExtraDatesChange} accentColor="#0891b2" />
-            </FormField>
+            <div className="hidden sm:block">
+              <FormField label="Tambah Hari Lain (Opsional)">
+                <MultiDatePicker dates={extraDates} onChange={onExtraDatesChange} accentColor="#0891b2" />
+              </FormField>
+            </div>
           )}
 
           {editingReminder && (
@@ -407,7 +411,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
           <SectionHeader icon="🎯" title="PIC Project (Opsional)" />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Nama PIC">
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2">🙋</span>

@@ -183,7 +183,7 @@ export function RequestJadwalModal({
             <label className="block text-xs font-bold mb-2 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Kategori *
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {ALLOWED_CATEGORIES.map(cat => {
                 const c = CATEGORY_CONFIG[cat] ?? {
                   icon: '📁', color: '#94a3b8', bg: 'rgba(148,163,184,0.15)',
@@ -220,7 +220,7 @@ export function RequestJadwalModal({
             <label className="block text-xs font-bold mb-2 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Tipe Produk *
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {PRODUCT_TYPES.map(pt => {
                 const sel = form.product_type === pt;
                 return (
@@ -253,7 +253,7 @@ export function RequestJadwalModal({
           </div>
 
           {/* Tanggal & Waktu */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 Tanggal Usulan *
@@ -278,8 +278,10 @@ export function RequestJadwalModal({
             </div>
           </div>
 
-          {/* Tambah Hari Lain — request sekali untuk beberapa hari sekaligus */}
-          <div>
+          {/* Tambah Hari Lain — mini calendar multi-select. Disembunyikan di HP
+             (layar sempit → tampilan bertumpuk); hanya muncul di layar sm: ke atas.
+             Di HP user cukup submit 1 tanggal (Tanggal Usulan di atas). */}
+          <div className="hidden sm:block">
             <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Tambah Hari Lain (Opsional)
             </label>
@@ -287,7 +289,7 @@ export function RequestJadwalModal({
           </div>
 
           {/* PIC */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 Nama PIC Project
