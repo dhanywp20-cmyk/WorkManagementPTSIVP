@@ -249,11 +249,13 @@ const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
     let alive = true;
     (async () => {
       try {
+        // Scope "data sendiri": cocokkan lewat created_by (username) ATAU nama sales
+        // (full_name) — menangkap request/tiket yg dia buat maupun yg atas namanya.
         const [remRes, prRes, rvRes, tkRes] = await Promise.all([
-          showSchedule ? supabase.from('reminders').select('status,category').eq('sales_name', user.full_name) : Promise.resolve({ data: [] }),
-          showProject  ? supabase.from('project_requests').select('status').eq('requester_id', user.id) : Promise.resolve({ data: [] }),
+          showSchedule ? supabase.from('reminders').select('status,category').or(`sales_name.eq.${user.full_name},created_by.eq.${user.username}`) : Promise.resolve({ data: [] }),
+          showProject  ? supabase.from('project_requests').select('status').or(`requester_id.eq.${user.id},ivp_assignee.eq.${user.full_name}`) : Promise.resolve({ data: [] }),
           showReview   ? supabase.from('form_reviews').select('review_category').or(`guest_username.eq.${user.username},sales_name.eq.${user.full_name}`) : Promise.resolve({ data: [] }),
-          showTicket   ? supabase.from('tickets').select('status').eq('created_by', user.username) : Promise.resolve({ data: [] }),
+          showTicket   ? supabase.from('tickets').select('status').or(`created_by.eq.${user.username},sales_name.eq.${user.full_name}`) : Promise.resolve({ data: [] }),
         ]);
         const rem = (remRes.data ?? []) as { status: string; category: string }[];
         const pr  = (prRes.data ?? []) as { status: string }[];

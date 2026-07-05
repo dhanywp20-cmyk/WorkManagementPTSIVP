@@ -191,10 +191,8 @@ export function AnalyticsPlatform({ embedded = false, injectedUser }: { embedded
     const u = getSession<User>();
     if (!u) { const tgt = window.top !== window ? window.top : window; if (tgt) tgt.location.href = '/dashboard'; return; }
     const r = (u.role ?? '').toLowerCase();
-    const ok = ['admin','superadmin'].includes(r)
-      || (r === 'team' && u.jabatan === 'Supervisor')
-      || (['guest','sales'].includes(r) && ['Supervisor','Manager','Deputy General Manager','General Manager','Direktur'].includes(u.jabatan ?? ''))
-      || (r === 'team' && (u.allowed_menus ?? []).includes('dashboard'));
+    // HANYA Admin & Team. Command Center & Audit Log dilarang utk sales/marketing/guest.
+    const ok = ['admin','superadmin'].includes(r) || r === 'team';
     setUser(u); setAuth(ok ? 'ok' : 'denied');
     return startSessionWatcher();
   }, [injectedUser]);

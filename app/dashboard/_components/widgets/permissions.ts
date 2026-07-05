@@ -25,24 +25,15 @@ export function hasMenu(u: User, key: string): boolean {
 }
 
 /**
- * Siapa yang berhak melihat Analytics penuh + Team Monitoring.
- * Port 1:1 dari `canAccessKPI` di dashboard/page.tsx supaya tidak ada regresi
- * soal siapa yang dapat Analytics: admin, Supervisor PTS, Supervisor Sales
- * (yang punya menu dashboard), dan Team yang diberi menu dashboard.
+ * Analytics Platform penuh (DashboardKPI + Command Center + Audit Log) = HANYA
+ * Admin & Team. Sesuai instruksi: Command Center & Audit Log DILARANG utk selain
+ * admin/team. Supervisor Sales/Marketing TIDAK termasuk — mereka role "lain" yang
+ * dapat dashboard ringkas (Analytics Saya, data sendiri). DashboardKPI juga tidak
+ * meng-scope data untuk guest/sales (hasilnya kosong), jadi memang tak cocok utk mereka.
  */
 export function canAccessAnalytics(u: User): boolean {
   if (isAdminRole(u)) return true;
-  const role = (u.role ?? '').toLowerCase();
-  const jab = u.jabatan ?? '';
-  const allowed = u.allowed_menus ?? [];
-  const isPTSSupervisor = role === 'team'
-    && ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MVI'].includes(u.team_type ?? '')
-    && jab === 'Supervisor';
-  const isSalesSupervisor = ['guest', 'sales'].includes(role)
-    && ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'].includes(jab)
-    && allowed.includes('dashboard');
-  const hasTeamDash = role === 'team' && allowed.includes('dashboard');
-  return isPTSSupervisor || isSalesSupervisor || hasTeamDash;
+  return (u.role ?? '').toLowerCase() === 'team';
 }
 
 /**
