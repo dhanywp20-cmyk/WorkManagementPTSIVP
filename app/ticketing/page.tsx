@@ -150,6 +150,7 @@ function TicketingSystemInner() {
     onsite_schedule_date: "",
     onsite_schedule_hour: "08",
     onsite_schedule_minute: "00",
+    extend_days: "",   // Pending Action: perpanjang deadline overdue (jumlah hari)
   });
 
   const [newUser, setNewUser] = useState({
@@ -174,6 +175,7 @@ function TicketingSystemInner() {
     Call: "bg-sky-50 text-sky-600 border-sky-200",
     Onsite: "bg-purple-50 text-purple-600 border-purple-200",
     "In Progress": "bg-blue-50 text-blue-600 border-blue-200",
+    "Pending Action": "bg-orange-50 text-orange-700 border-orange-200",
     Solved: "bg-emerald-50 text-emerald-600 border-emerald-200",
     Overdue: "bg-red-50 text-red-600 border-red-200",
     Warranty: "bg-green-50 text-green-700 border-green-300",
@@ -1000,12 +1002,15 @@ function TicketingSystemInner() {
     const SERVICES_SIMPLE = ["Warranty", "Out Of Warranty", "Waiting PO from Sales", "Submit RMA", "Waiting sparepart"];
     const isSimpleStatus = newActivity.new_status === "Call" || newActivity.new_status === "Onsite";
     const isSvcSimple = teamMembers.find((m) => (m.username || "").toLowerCase() === (currentUser?.username || "").toLowerCase())?.team_type === "Team Services" && SERVICES_SIMPLE.includes(newActivity.new_status);
-    if (!isSimpleStatus && !isSvcSimple && !newActivity.notes) { notify("error", "Notes must be filled!"); return; }
+    // "In Progress" boleh tanpa notes/action/foto (ganti status saja). "Pending
+    // Action" TETAP wajib notes (alasan kendala).
+    const noteOptional = isSimpleStatus || isSvcSimple || newActivity.new_status === "In Progress";
+    if (!noteOptional && !newActivity.notes) { notify("error", "Notes must be filled!"); return; }
     if (!selectedTicket) { notify("error", "No ticket selected!"); return; }
     const member = teamMembers.find((m) => (m.username || "").toLowerCase() === (currentUser?.username || "").toLowerCase());
     const teamType = member?.team_type || "Team PTS IVP";
     const isServicesTeam = teamType === "Team Services";
-    const validStatusesPTS = ["Waiting Approval", "Pending", "Call", "Onsite", "In Progress", "Solved"];
+    const validStatusesPTS = ["Waiting Approval", "Pending", "Call", "Onsite", "In Progress", "Pending Action", "Solved"];
     if (isServicesTeam) {
       if (!(SERVICES_STATUSES as readonly string[]).includes(newActivity.new_status)) { notify("error", "Status tidak valid untuk Team Services!"); return; }
     } else {
@@ -1168,6 +1173,26 @@ function TicketingSystemInner() {
         const { error: updateError } = await supabase.from("tickets").update(updateData).eq("id", selectedTicket.id);
         if (updateError) throw new Error(`Failed to update ticket: ${updateError.message}`);
 
+        // ── PENDING ACTION: perpanjang deadline Overdue sesuai hari yg dipilih ──
+        // Kendala bisa dari sisi user → team boleh menggeser deadline supaya
+        // ticket tidak dihitung overdue. Pakai tabel overdue_settings yg sudah ada
+        // (due_date absolut = sekarang + N hari).
+        if (newActivity.new_status === "Pending Action") {
+          const extDays = parseInt(newActivity.extend_days || "0", 10);
+          if (extDays > 0) {
+            try {
+              const newDeadline = new Date(Date.now() + extDays * 86400000).toISOString();
+              const existing = getOverdueSetting(selectedTicket.id);
+              if (existing) {
+                await supabase.from("overdue_settings").update({ due_date: newDeadline, due_hours: null, set_by: currentUser?.username || "" }).eq("id", existing.id);
+              } else {
+                await supabase.from("overdue_settings").insert([{ ticket_id: selectedTicket.id, due_date: newDeadline, due_hours: null, set_by: currentUser?.username || "" }]);
+              }
+              await fetchOverdueSettings();
+            } catch { /* jangan gagalkan update status kalau perpanjangan gagal */ }
+          }
+        }
+
         // ── AUTO-CREATE REMINDER saat status Onsite ──────────────────────────
         // Jika team update status ke Onsite, otomatis buat reminder di tabel
         // reminders sebagai kategori Troubleshooting.
@@ -1219,6 +1244,21 @@ function TicketingSystemInner() {
         }
         // ────────────────────────────────────────────────────────────────────
       }
+      // ── Refresh OPTIMIS: update selectedTicket + list saat itu juga supaya
+      // status baru langsung terlihat tanpa perlu refresh manual (fix keluhan). ──
+      const optimisticLog = { ...activityData, id: `tmp-${Date.now()}`, created_at: new Date().toISOString() } as any;
+      setSelectedTicket(prev => prev && prev.id === selectedTicket.id ? {
+        ...prev,
+        status: isServicesTeam ? prev.status : effectiveStatus,
+        services_status: isServicesTeam ? effectiveStatus : prev.services_status,
+        sn_unit: newActivity.sn_unit || prev.sn_unit,
+        activity_logs: [optimisticLog, ...(prev.activity_logs || [])],
+      } : prev);
+      setTickets(prev => prev.map(t => t.id === selectedTicket.id ? {
+        ...t,
+        status: isServicesTeam ? t.status : effectiveStatus,
+        services_status: isServicesTeam ? effectiveStatus : t.services_status,
+      } : t));
       setNewActivity({
         handler_name: newActivity.handler_name,
         action_taken: "",
@@ -1233,6 +1273,7 @@ function TicketingSystemInner() {
         onsite_schedule_date: "",
         onsite_schedule_hour: "08",
         onsite_schedule_minute: "00",
+        extend_days: "",
       });
       await fetchData();
       setLoadingMessage("✅ Status updated successfully!");
@@ -2927,7 +2968,7 @@ function TicketingSystemInner() {
                       ) : (
                         <div className="flex flex-col gap-1.5">
                           {(() => {
-                            const flow = ["Pending","Call","Onsite","In Progress","Solved"] as const;
+                            const flow = ["Pending","Call","Onsite","In Progress","Pending Action","Solved"] as const;
                             const curStatus = selectedTicket.status;
                             const curIdx = flow.indexOf(curStatus as any);
                             const styleMap: Record<string,{icon:string;sel:string;unsel:string}> = {
@@ -2935,12 +2976,15 @@ function TicketingSystemInner() {
                               Call:         { icon:'📞', sel:'bg-cyan-600 text-white border-cyan-600',      unsel:'bg-white text-cyan-700 border-cyan-200 hover:bg-cyan-50' },
                               Onsite:       { icon:'🚗', sel:'bg-purple-600 text-white border-purple-600',  unsel:'bg-white text-purple-700 border-purple-200 hover:bg-purple-50' },
                               'In Progress':{ icon:'🔵', sel:'bg-blue-600 text-white border-blue-600',      unsel:'bg-white text-blue-700 border-blue-200 hover:bg-blue-50' },
+                              'Pending Action':{ icon:'⏸️', sel:'bg-orange-600 text-white border-orange-600', unsel:'bg-white text-orange-700 border-orange-200 hover:bg-orange-50' },
                               Solved:       { icon:'✅', sel:'bg-emerald-500 text-white border-emerald-500',unsel:'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50' },
                             };
                             return flow.map((step, idx) => {
                               const stepIdx = flow.indexOf(step);
-                              const locked = stepIdx < curIdx;
-                              const skipLocked = step === 'Solved' && curIdx < 2;
+                              // Boleh mundur ke "In Progress" dari "Pending Action" (kendala selesai, lanjut kerja).
+                              const locked = stepIdx < curIdx && !(curStatus === "Pending Action" && step === "In Progress");
+                              // Solved hanya dari Onsite+; Pending Action hanya dari In Progress+.
+                              const skipLocked = (step === 'Solved' && curIdx < 2) || (step === 'Pending Action' && curIdx < 3);
                               const disabled = locked || skipLocked;
                               const st = styleMap[step];
                               const isSelected = newActivity.new_status === step;
@@ -3010,12 +3054,28 @@ function TicketingSystemInner() {
                             style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
                         </div>
                         <div>
-                          <label className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">📝 Notes *</label>
+                          <label className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">
+                            📝 Notes {newActivity.new_status === "In Progress" ? <span className="text-gray-300 normal-case">(opsional)</span> : "*"}
+                          </label>
                           <textarea value={newActivity.notes} onChange={e => setNewActivity({ ...newActivity, notes: e.target.value })}
-                            placeholder="Detail penanganan..." rows={3}
+                            placeholder={newActivity.new_status === "Pending Action" ? "Kendala apa? (mis. menunggu konfirmasi user, akses lokasi belum tersedia)" : "Detail penanganan..."} rows={3}
                             className="w-full rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-red-500/40 resize-none"
                             style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
                         </div>
+                        {/* Pending Action: perpanjang deadline overdue (kendala bisa dari sisi user) */}
+                        {newActivity.new_status === "Pending Action" && (
+                          <div className="rounded-lg p-2.5" style={{ background: 'rgba(234,88,12,0.06)', border: '1px solid rgba(234,88,12,0.25)' }}>
+                            <label className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-orange-700">⏱️ Perpanjang Overdue</label>
+                            <div className="flex items-center gap-2">
+                              <input type="number" min={0} value={newActivity.extend_days}
+                                onChange={e => setNewActivity({ ...newActivity, extend_days: e.target.value })}
+                                placeholder="0" className="w-20 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-orange-500/40"
+                                style={{ background: 'white', border: '1px solid rgba(0,0,0,0.12)' }} />
+                              <span className="text-[11px] font-semibold text-orange-700">hari dari sekarang</span>
+                            </div>
+                            <p className="text-[9px] text-orange-500 mt-1">Deadline overdue digeser sesuai hari yang dipilih. Kosong/0 = deadline tidak diubah.</p>
+                          </div>
+                        )}
                       </>
                     )}
 
@@ -3046,7 +3106,7 @@ function TicketingSystemInner() {
                     </div>
 
                     <button onClick={addActivity}
-                      disabled={uploading || (!newActivity.notes && !["Pending","Call","Onsite","Warranty","Out Of Warranty","Waiting PO from Sales","Submit RMA","Waiting sparepart","Process Repair"].includes(newActivity.new_status))}
+                      disabled={uploading || (!newActivity.notes && !["Pending","Call","Onsite","In Progress","Warranty","Out Of Warranty","Waiting PO from Sales","Submit RMA","Waiting sparepart","Process Repair"].includes(newActivity.new_status))}
                       className="w-full text-white py-2.5 rounded-xl font-bold transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                       style={{ background: "linear-gradient(135deg,#dc2626,#b91c1c)", boxShadow: "0 4px 14px rgba(220,38,38,0.35)" }}>
                       {uploading ? "⏳ Menyimpan..." : "💾 Simpan Activity"}
