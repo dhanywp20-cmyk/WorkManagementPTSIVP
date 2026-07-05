@@ -24,7 +24,8 @@ import {
 
 export interface WidgetProps {
   user: User;
-  openMenu: (key: string) => void; // buka menu by key (reuse handleMenuClick di page)
+  openMenu: (key: string) => void;            // buka menu by key (reuse handleMenuClick di page)
+  openUrl: (url: string, title: string) => void; // buka halaman internal full-screen (mis. Analytics)
 }
 
 export type WidgetSize = 'sm' | 'md' | 'lg' | 'full';
@@ -109,24 +110,20 @@ interface TkRow { id: string; project_name: string; issue_case: string; status: 
 interface PrRow { id: string; project_name: string; status: string; created_at: string; requester_id?: string; assign_name?: string; ivp_assignee?: string; routing_status?: string | null; internal_sales_id?: string | null; }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// WIDGET: Analytics (hero) — embed halaman /analytics-dashboard existing.
+// WIDGET: Analytics Platform (launcher) — buka halaman penuh, TIDAK di-embed.
+// Menghindari "aplikasi nested" + duplikasi data dgn widget ringkasan di bawah.
 // ═══════════════════════════════════════════════════════════════════════════════
-const AnalyticsWidget: React.FC<WidgetProps> = () => {
-  const [loading, setLoading] = useState(true);
-  return (
-    <div className="rounded-2xl bg-white/95 shadow-lg border border-black/5 overflow-hidden relative"
-      style={{ height: 'min(72vh, 780px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-      {loading && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm gap-3">
-          <div className="w-10 h-10 rounded-full border-[3px] border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.25)', borderTopColor: '#e2a84b' }} />
-          <p className="text-slate-500 text-sm font-semibold">Memuat Analytics Dashboard...</p>
-        </div>
-      )}
-      <iframe src="/analytics-dashboard" title="Analytics Dashboard"
-        className="w-full h-full border-0" onLoad={() => setLoading(false)} />
+const AnalyticsLauncherWidget: React.FC<WidgetProps> = ({ openUrl }) => (
+  <WidgetCard title="Analytics Platform" icon="📊" accent="#c8861d">
+    <div className="flex flex-col items-center justify-center h-full text-center gap-2 py-2">
+      <div className="text-3xl">📊</div>
+      <p className="text-[11px] text-slate-500 leading-snug px-2">Analitik lengkap, Command Center &amp; Audit Log.</p>
+      <button onClick={() => openUrl('/analytics-dashboard', 'Analytics Platform')}
+        className="mt-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-[1.03]"
+        style={{ background: 'linear-gradient(135deg,#c8861d,#e2a84b)' }}>Buka Analytics →</button>
     </div>
-  );
-};
+  </WidgetCard>
+);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // WIDGET: Team Monitoring Hari Ini (Team/Admin).
@@ -496,12 +493,12 @@ const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
 export const WIDGETS: WidgetDef[] = [
   // Team Monitoring paling atas utk Admin/Team (full width) — jawab "mana report tim".
   { id: 'team-monitoring', permission: canSeeTeamMonitoring, priority: 1, size: 'full', Component: TeamMonitoringWidget },
-  // Analytics penuh (hero) di bawahnya — hanya Admin/Team (canAccessAnalytics).
-  { id: 'analytics',       permission: canAccessAnalytics,   priority: 2, size: 'full', Component: AnalyticsWidget },
   { id: 'request-schedule',permission: (u) => hasMenu(u, 'reminder-schedule'),      priority: 3, size: 'md', Component: RequestScheduleWidget },
   { id: 'ticket',          permission: (u) => hasMenu(u, 'ticket-troubleshooting'), priority: 4, size: 'md', Component: TicketWidget },
   { id: 'project',         permission: (u) => hasMenu(u, 'request-design-project'), priority: 5, size: 'md', Component: ProjectWidget },
   // Piket Showroom: SEMUA role (Sales/Marketing perlu tahu PIC piket hari ini).
   { id: 'showroom',        permission: () => true,                                   priority: 6, size: 'md', Component: ShowroomWidget },
   { id: 'learning',        permission: (u) => hasMenu(u, 'learning-center'),        priority: 7, size: 'sm', Component: LearningWidget },
+  // Analytics Platform = launcher (buka full-screen), bukan embed. Hanya Admin/Team.
+  { id: 'analytics',       permission: canAccessAnalytics,   priority: 8, size: 'sm', Component: AnalyticsLauncherWidget },
 ];

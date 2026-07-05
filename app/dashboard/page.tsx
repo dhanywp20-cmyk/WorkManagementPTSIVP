@@ -1508,13 +1508,11 @@ export default function Dashboard() {
             )}
             {showDashboardPanel && currentUser ? (
               /* ── Permission-Aware Dashboard — widget adaptif per permission.
-                 Analytics penuh & Team Monitoring muncul sbg widget utk yg berhak
-                 (canAccessAnalytics); role lain dapat widget ringkasan sesuai menu. ── */
+                 Background transparan (IVP bg tembus); hanya card yg opaque.
+                 Analytics = launcher full-screen (bukan embed) utk yg berhak. ── */
               <div className="w-full h-full overflow-hidden relative"
                 style={{ backgroundImage: 'url(/IVP_Background.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
-                <div className="w-full h-full bg-slate-50/70 backdrop-blur-[2px]">
-                  <PermissionAwareDashboard currentUser={currentUser} openMenu={openMenuByKey} />
-                </div>
+                <PermissionAwareDashboard currentUser={currentUser} openMenu={openMenuByKey} openUrl={handleNotifNavigate} />
               </div>
             ) : showTicketing ? (
               <div className="w-full h-full overflow-auto relative">
