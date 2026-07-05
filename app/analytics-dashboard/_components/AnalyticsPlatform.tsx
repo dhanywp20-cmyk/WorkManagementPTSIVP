@@ -371,15 +371,16 @@ export function AnalyticsPlatform({ embedded = false, injectedUser }: { embedded
       style={embedded ? undefined : { height: '100dvh', backgroundImage: 'url(/IVP_Background.png)' }}>
 
       {embedded && (
-        /* Embedded (di dashboard): tab bar ramping saja — banner besar disembunyikan
-           supaya tidak terlihat seperti aplikasi/modal nested. */
-        <div className="flex items-center gap-2 flex-wrap mb-3">
+        /* Embedded (di dashboard): tab bar ramping di dalam panel putih supaya tab
+           non-aktif tetap kontras di atas background transparan. */
+        <div className="flex items-center gap-2 flex-wrap mb-3 p-2 rounded-2xl"
+          style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)', boxShadow: '0 2px 12px rgba(0,0,0,0.1)', border: '1px solid rgba(0,0,0,0.06)' }}>
           <TabBtn label="Analytics"      icon="📊" active={tab==='kpi'}     onClick={() => setTab('kpi')} />
           <TabBtn label="Command Center" icon="🏠" active={tab==='command'} onClick={() => setTab('command')} badge={totalAlerts || undefined} />
           <TabBtn label="Audit Log"      icon="📋" active={tab==='audit'}   onClick={() => setTab('audit')} badge={auditRows.length > 0 ? auditRows.length : undefined} />
           <button onClick={() => { loadStats(); if (tab === 'audit') loadAudit(); }} title="Refresh"
             className="ml-auto w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110"
-            style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(0,0,0,0.08)' }}>
+            style={{ background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)' }}>
             <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           </button>
         </div>
