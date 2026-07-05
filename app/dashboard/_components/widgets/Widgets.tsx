@@ -19,6 +19,7 @@ import { hasMenu, canAccessAnalytics, canSeeTeamMonitoring, isAdminRole, isTeamM
 import {
   getMonday, getDayDate, toKey, DAYS_OF_WEEK, getRollingNameForDate, type PiketRow,
 } from '@/app/picket-showroom/_components/shared';
+import DashboardKPI from '@/app/kpi-team/_components/DashboardKPI';
 
 // ── Kontrak widget ────────────────────────────────────────────────────────────
 
@@ -110,19 +111,12 @@ interface TkRow { id: string; project_name: string; issue_case: string; status: 
 interface PrRow { id: string; project_name: string; status: string; created_at: string; requester_id?: string; assign_name?: string; ivp_assignee?: string; routing_status?: string | null; internal_sales_id?: string | null; }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// WIDGET: Analytics Platform (launcher) — buka halaman penuh, TIDAK di-embed.
-// Menghindari "aplikasi nested" + duplikasi data dgn widget ringkasan di bawah.
+// WIDGET: Analytics (native) — render DashboardKPI LANGSUNG, BUKAN iframe.
+// Tema analytics penuh utk Admin/Team, digabung ke dashboard utama. Menggantikan
+// iframe & widget ringkasan personal (yg disembunyikan utk role ini → anti-duplikat).
 // ═══════════════════════════════════════════════════════════════════════════════
-const AnalyticsLauncherWidget: React.FC<WidgetProps> = ({ openUrl }) => (
-  <WidgetCard title="Analytics Platform" icon="📊" accent="#c8861d">
-    <div className="flex flex-col items-center justify-center h-full text-center gap-2 py-2">
-      <div className="text-3xl">📊</div>
-      <p className="text-[11px] text-slate-500 leading-snug px-2">Analitik lengkap, Command Center &amp; Audit Log.</p>
-      <button onClick={() => openUrl('/analytics-dashboard', 'Analytics Platform')}
-        className="mt-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-[1.03]"
-        style={{ background: 'linear-gradient(135deg,#c8861d,#e2a84b)' }}>Buka Analytics →</button>
-    </div>
-  </WidgetCard>
+const AnalyticsNativeWidget: React.FC<WidgetProps> = ({ user }) => (
+  <DashboardKPI currentUser={user} />
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -493,12 +487,15 @@ const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
 export const WIDGETS: WidgetDef[] = [
   // Team Monitoring paling atas utk Admin/Team (full width) — jawab "mana report tim".
   { id: 'team-monitoring', permission: canSeeTeamMonitoring, priority: 1, size: 'full', Component: TeamMonitoringWidget },
-  { id: 'request-schedule',permission: (u) => hasMenu(u, 'reminder-schedule'),      priority: 3, size: 'md', Component: RequestScheduleWidget },
-  { id: 'ticket',          permission: (u) => hasMenu(u, 'ticket-troubleshooting'), priority: 4, size: 'md', Component: TicketWidget },
-  { id: 'project',         permission: (u) => hasMenu(u, 'request-design-project'), priority: 5, size: 'md', Component: ProjectWidget },
-  // Piket Showroom: SEMUA role (Sales/Marketing perlu tahu PIC piket hari ini).
-  { id: 'showroom',        permission: () => true,                                   priority: 6, size: 'md', Component: ShowroomWidget },
-  { id: 'learning',        permission: (u) => hasMenu(u, 'learning-center'),        priority: 7, size: 'sm', Component: LearningWidget },
-  // Analytics Platform = launcher (buka full-screen), bukan embed. Hanya Admin/Team.
-  { id: 'analytics',       permission: canAccessAnalytics,   priority: 8, size: 'sm', Component: AnalyticsLauncherWidget },
+  // Analytics native (DashboardKPI, tanpa iframe) — tema analytics penuh utk Admin/Team.
+  // Sudah memuat Ticket/Reminder/Piket/Unit/Pengguna/Learning → widget di bawah
+  // DISEMBUNYIKAN utk role ini (`!canAccessAnalytics`) supaya TIDAK duplikat data.
+  { id: 'analytics',       permission: canAccessAnalytics,   priority: 2, size: 'full', Component: AnalyticsNativeWidget },
+  // Widget ringkasan personal — HANYA utk role tanpa analytics (Sales/Marketing/dll).
+  { id: 'request-schedule',permission: (u) => hasMenu(u, 'reminder-schedule')      && !canAccessAnalytics(u), priority: 3, size: 'md', Component: RequestScheduleWidget },
+  { id: 'ticket',          permission: (u) => hasMenu(u, 'ticket-troubleshooting') && !canAccessAnalytics(u), priority: 4, size: 'md', Component: TicketWidget },
+  { id: 'project',         permission: (u) => hasMenu(u, 'request-design-project') && !canAccessAnalytics(u), priority: 5, size: 'md', Component: ProjectWidget },
+  // Piket Showroom: role tanpa analytics (Admin/Team sudah lihat piket di dalam DashboardKPI).
+  { id: 'showroom',        permission: (u) => !canAccessAnalytics(u),               priority: 6, size: 'md', Component: ShowroomWidget },
+  { id: 'learning',        permission: (u) => hasMenu(u, 'learning-center')        && !canAccessAnalytics(u), priority: 7, size: 'sm', Component: LearningWidget },
 ];
