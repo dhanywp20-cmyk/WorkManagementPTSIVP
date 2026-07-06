@@ -40,6 +40,7 @@ function ReminderSchedulePageInner() {
   const [myReminders, setMyReminders]       = useState<Reminder[]>([]);
   const [currentUser, setCurrentUser]       = useState<TeamUser | null>(null);
   const [teamUsers, setTeamUsers]           = useState<TeamUser[]>([]);
+  const [managerUserId, setManagerUserId]   = useState('');  // app_settings.manager_user_id (Manager PTS yg boleh approve & assign)
   const [guestUsers, setGuestUsers]         = useState<GuestUser[]>([]);
   const [reminders, setReminders]           = useState<Reminder[]>([]);
   const [listLoading, setListLoading]       = useState(false);
@@ -217,6 +218,13 @@ function ReminderSchedulePageInner() {
     return () => clearInterval(interval);
   }, []);
 
+  // Load Manager PTS (app_settings.manager_user_id) — dia berhak approve & assign
+  // di tahap admin_review walau role-nya 'team' (Manager, bukan admin).
+  useEffect(() => {
+    supabase.from('app_settings').select('value').eq('key', 'manager_user_id').maybeSingle()
+      .then((res: { data: { value: unknown } | null }) => { const v = res.data?.value; if (v) setManagerUserId(String(v).replace(/^"|"$/g, '')); });
+  }, []);
+
   // ─── H-1 WA auto-send ────────────────────────────────────────────────────
   // Ditangani oleh Supabase Edge Function: daily-reminder (pg_cron)
   // Berjalan otomatis setiap hari tanpa perlu buka halaman
@@ -265,12 +273,15 @@ function ReminderSchedulePageInner() {
     }
     // Guest: ambil schedule yg atas nama dia (dibuat admin) + yg dia request sendiri (created_by)
     // + request Sales External yang menunggu REVIEW dia (Sales Internal, Fase 2 routing).
-    const [bySales, byCreator, awaitingMyReview] = await Promise.all([
+    const [bySales, byCreator, awaitingMyReview, approvedByMe] = await Promise.all([
       supabase.from('reminders').select('*').eq('sales_name', activeUser.full_name).order('created_at', { ascending: false }),
       supabase.from('reminders').select('*').eq('created_by', activeUser.username).order('created_at', { ascending: false }),
       supabase.from('reminders').select('*').eq('internal_sales_id', activeUser.id).eq('routing_status', 'internal_review').order('created_at', { ascending: false }),
+      // Item yg SUDAH dia approve sbg Sales Internal — tetap tampil supaya bisa
+      // dilacak (sebelumnya hilang begitu routing_status pindah ke admin_review).
+      supabase.from('reminders').select('*').eq('internal_approved_by', activeUser.id).order('created_at', { ascending: false }),
     ]);
-    const combined = [...(bySales.data ?? []), ...(byCreator.data ?? []), ...(awaitingMyReview.data ?? [])];
+    const combined = [...(bySales.data ?? []), ...(byCreator.data ?? []), ...(awaitingMyReview.data ?? []), ...(approvedByMe.data ?? [])];
     // Deduplicate by id, sort by created_at desc
     const seen = new Set<string>();
     return (combined as Reminder[])
@@ -1043,6 +1054,9 @@ function ReminderSchedulePageInner() {
   })();
 
   const isAdmin = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
+  // Manager PTS (mis. Dhany, role 'team') berhak approve & assign di tahap admin_review.
+  const isManager = !!currentUser?.id && !!managerUserId && currentUser.id === managerUserId;
+  const canApproveAssign = isAdmin || isManager;
   const canAddReminder = currentUser?.role === 'admin' || currentUser?.role === 'team';
   const isGuest = currentUser?.role === 'guest' || currentUser?.role === 'sales';
 
@@ -2157,7 +2171,7 @@ jangan lupa peralatan & Semangat💪🏼
                           style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', color: 'white' }}>❌ Tolak</button>
                       </>
                     )}
-                    {isAdmin && !detailReminder.assigned_to && detailReminder.notes?.includes('[REQUEST SALES]') && detailReminder.routing_status !== 'internal_review' && (
+                    {canApproveAssign && !detailReminder.assigned_to && detailReminder.notes?.includes('[REQUEST SALES]') && detailReminder.routing_status !== 'internal_review' && (
                       <button onClick={() => { setApproveTarget(detailReminder); setApproveBatchSiblings(detailReminder.batch_id ? reminders.filter(gr => gr.id !== detailReminder.id && gr.batch_id === detailReminder.batch_id && !gr.assigned_to) : []); setApproveAssignTo(''); setApproveDate(detailReminder.due_date); setApproveTime(detailReminder.due_time); }}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
                         style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: 'white' }}>✅ Approve &amp; Assign</button>
@@ -2961,7 +2975,7 @@ jangan lupa peralatan & Semangat💪🏼
                                   </button>
                                 </>
                               )}
-                              {isAdmin && !r.assigned_to && r.notes?.includes('[REQUEST SALES]') && r.routing_status !== 'internal_review' && (
+                              {canApproveAssign && !r.assigned_to && r.notes?.includes('[REQUEST SALES]') && r.routing_status !== 'internal_review' && (
                                 <ApproveIconBtn onClick={() => { setApproveTarget(r); setApproveBatchSiblings(group.filter(gr => gr.id !== r.id && gr.batch_id === r.batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(r.due_date); setApproveTime(r.due_time); }} title="Approve & Assign" pulse />
                               )}
                               {currentUser?.id === r.assigned_supervisor_id && r.routing_status === 'supervisor_assign' && (
@@ -3203,7 +3217,7 @@ jangan lupa peralatan & Semangat💪🏼
                                       </>
                                     )}
                                     {/* Approve & Assign — admin only, hanya utk request sales yg belum di-assign & sudah lolos review internal */}
-                                    {isAdmin && !group[0].assigned_to && group[0].notes?.includes('[REQUEST SALES]') && group[0].routing_status !== 'internal_review' && (
+                                    {canApproveAssign && !group[0].assigned_to && group[0].notes?.includes('[REQUEST SALES]') && group[0].routing_status !== 'internal_review' && (
                                       <ApproveIconBtn onClick={() => { setApproveTarget(group[0]); setApproveBatchSiblings(group.filter(gr => gr.id !== group[0].id && gr.batch_id === group[0].batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(group[0].due_date); setApproveTime(group[0].due_time); }} title="Approve & Assign" pulse />
                                     )}
                                     {/* Assign Tim — Supervisor yg di-route, wajib assign anggota/diri sendiri */}
