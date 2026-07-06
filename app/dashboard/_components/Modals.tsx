@@ -150,7 +150,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     // Marketing & Sales divisi IVP/MVI = "Sales Internal" utk routing pipeline —
     // request mereka sendiri (project direct ke user) tidak boleh kena gerbang
     // review internal. Auto-set di sini supaya admin tidak perlu toggle manual.
-    const isInternalSales = newUser.divisi === 'Marketing' || (newUser.divisi === 'Sales' && ['IVP', 'MVI'].includes(newUser.sales_division));
+    const isInternalSales = newUser.divisi === 'Marketing' || (newUser.divisi === 'Sales' && ['IVP', 'MVI', 'MLDS'].includes(newUser.sales_division));
     const insertPayload: Record<string, unknown> = {
       username: newUser.username,
       full_name: newUser.full_name,
@@ -216,7 +216,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
       sales_division: (editDivisi === 'Sales' || editDivisi === 'Marketing') ? (editingUser.sales_division ?? null) : null,
       // Ikut update is_internal_sales HANYA kalau admin ganti divisi (editDivisi
       // terisi) — kalau cuma edit field lain, jangan sentuh nilai yang sudah ada.
-      ...(editDivisi ? { is_internal_sales: editDivisi === 'Marketing' || (editDivisi === 'Sales' && ['IVP', 'MVI'].includes(editingUser.sales_division ?? '')) } : {}),
+      ...(editDivisi ? { is_internal_sales: editDivisi === 'Marketing' || (editDivisi === 'Sales' && ['IVP', 'MVI', 'MLDS'].includes(editingUser.sales_division ?? '')) } : {}),
     };
     if (editingUser.password) {
       const hashRes = await fetch('/api/auth/hash', {
@@ -889,13 +889,13 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                 </div>
               )}
 
-              {/* IVP Account */}
+              {/* IVP & MVI Account */}
               {ivpList.length > 0 && (
                 <div className="rounded-xl overflow-hidden border border-violet-200">
                   <div className="px-4 py-2.5 bg-violet-50 border-b border-violet-200 flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                       <span>🔗</span>
-                      <span className="font-bold text-violet-800 text-xs">IVP Account</span>
+                      <span className="font-bold text-violet-800 text-xs">IVP & MVI Account</span>
                     </div>
                     <span className="text-[10px] font-bold text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded-full border border-violet-200">{ivpList.length}</span>
                   </div>
@@ -1048,7 +1048,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
   const supervisorCandidates = allUsers.filter(u =>
     u.role?.toLowerCase() === 'guest' && u.jabatan && ATASAN_JABATAN.includes(u.jabatan as JabatanType)
   );
-  const ivpUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.sales_division === 'IVP');
+  const ivpUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && ['IVP', 'MVI', 'MLDS'].includes(u.sales_division ?? ''));
   const nonIvpDivisions = SALES_DIVISIONS.filter(d => d !== 'IVP');
 
   // Users eligible for CC mapping (non-IVP guest with jabatan set)
@@ -1118,7 +1118,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
   };
 
   const handleAddIvp = async () => {
-    if (!ivpDiv || !ivpUserId) { notify('error', 'Pilih divisi dan IVP Account.'); return; }
+    if (!ivpDiv || !ivpUserId) { notify('error', 'Pilih divisi dan IVP & MVI Account.'); return; }
     const existing = divIvpMaps.find(m => m.sales_division === ivpDiv && m.ivp_id === ivpUserId);
     if (existing) { notify('info', 'Mapping ini sudah ada.'); return; }
     setSaving(true);
@@ -1180,7 +1180,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
             </div>
             <div>
               <h2 className="text-lg font-bold text-white tracking-tight">User Management</h2>
-              <p className="text-white/60 text-xs">Mapping Atasan, IVP Account &amp; CC per User</p>
+              <p className="text-white/60 text-xs">Mapping Atasan, IVP & MVI Account &amp; CC per User</p>
             </div>
           </div>
           <button onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all">
@@ -1202,7 +1202,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
           </button>
           <button onClick={() => setActiveTab('ivp')}
             className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${activeTab === 'ivp' ? 'border-violet-500 text-violet-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-            🔗 IVP Account ({Object.keys(ivpByDiv).length} divisi)
+            🔗 IVP & MVI Account ({Object.keys(ivpByDiv).length} divisi)
           </button>
           <button onClick={() => setActiveTab('user_cc')}
             className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${activeTab === 'user_cc' ? 'border-teal-500 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
@@ -1379,9 +1379,9 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
           {activeTab === 'ivp' && (
             <>
               <div className="p-5 border-b border-slate-100 bg-violet-50/60 space-y-3 flex-shrink-0">
-                <p className="text-xs font-bold text-violet-800 uppercase tracking-widest">🔗 Tambah Mapping IVP Account</p>
+                <p className="text-xs font-bold text-violet-800 uppercase tracking-widest">🔗 Tambah Mapping IVP & MVI Account</p>
                 <p className="text-[11px] text-violet-700 leading-relaxed">
-                  Mapping divisi external ke IVP Account yang handle-nya. IVP Account hanya bisa melihat ticket dari divisi yang di-map.
+                  Mapping divisi external ke IVP & MVI Account yang handle-nya. IVP & MVI Account hanya bisa melihat ticket dari divisi yang di-map.
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -1393,13 +1393,13 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">IVP Account (sales_division=IVP)</label>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">IVP & MVI Account (Sales Internal: IVP/MVI/MLDS)</label>
                     {ivpUsers.length === 0 ? (
-                      <div className="text-[11px] text-rose-600 p-2 bg-rose-50 rounded-lg border border-rose-200">⚠️ Tidak ada user IVP.</div>
+                      <div className="text-[11px] text-rose-600 p-2 bg-rose-50 rounded-lg border border-rose-200">⚠️ Tidak ada akun Sales Internal.</div>
                     ) : (
                       <select value={ivpUserId} onChange={e => setIvpUserId(e.target.value)}
                         className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 bg-white">
-                        <option value="">— Pilih IVP —</option>
+                        <option value="">— Pilih Sales Internal —</option>
                         {ivpUsers.map(u => (
                           <option key={u.id} value={u.id}>{u.full_name}{!u.phone_number ? ' ⚠️' : ''}</option>
                         ))}
@@ -2407,7 +2407,7 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
               <h2 className="font-bold text-slate-800 text-base leading-tight">{activeNav.label}</h2>
               <p className="text-slate-500 text-xs">
                 {activeSection === 'settings' && 'Kelola akun user & hak akses menu'}
-                {activeSection === 'userManagement' && 'Mapping Atasan, IVP Account & CC per User'}
+                {activeSection === 'userManagement' && 'Mapping Atasan, IVP & MVI Account & CC per User'}
                 {activeSection === 'picBrand' && 'Mapping Brand PIC per divisi & produk'}
                 {activeSection === 'kpiRoster' && 'Pilih anggota tim yang masuk dalam penilaian KPI'}
               </p>
@@ -2744,7 +2744,7 @@ export function AccountSettingsInline() {
     // Marketing & Sales divisi IVP/MVI = "Sales Internal" utk routing pipeline —
     // request mereka sendiri (project direct ke user) tidak boleh kena gerbang
     // review internal. Auto-set di sini supaya admin tidak perlu toggle manual.
-    const isInternalSales = newUser.divisi === 'Marketing' || (newUser.divisi === 'Sales' && ['IVP', 'MVI'].includes(newUser.sales_division));
+    const isInternalSales = newUser.divisi === 'Marketing' || (newUser.divisi === 'Sales' && ['IVP', 'MVI', 'MLDS'].includes(newUser.sales_division));
     const insertPayload: Record<string, unknown> = { username: newUser.username, full_name: newUser.full_name, role, team_type, allowed_menus: newUser.allowed_menus, jabatan: newUser.jabatan || null, phone_number: newUser.phone_number || null, sales_division: (newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') ? (newUser.sales_division || null) : null, is_internal_sales: isInternalSales };
     const { id: createdId, error } = await adminCreateUser(insertPayload);
     // Simpan password via server route (hash + insert ke user_credentials di server).
@@ -2780,7 +2780,7 @@ export function AccountSettingsInline() {
     }
     const updatePayload: Record<string, unknown> = { username: editingUser.username, full_name: editingUser.full_name, role, team_type, allowed_menus: editingUser.allowed_menus ?? ALL_MENU_KEYS, jabatan: editingUser.jabatan ?? null, phone_number: editingUser.phone_number ?? null, sales_division: (editDivisi === 'Sales' || editDivisi === 'Marketing') ? (editingUser.sales_division ?? null) : null,
       // Ikut update is_internal_sales HANYA kalau admin ganti divisi (editDivisi terisi).
-      ...(editDivisi ? { is_internal_sales: editDivisi === 'Marketing' || (editDivisi === 'Sales' && ['IVP', 'MVI'].includes(editingUser.sales_division ?? '')) } : {}) };
+      ...(editDivisi ? { is_internal_sales: editDivisi === 'Marketing' || (editDivisi === 'Sales' && ['IVP', 'MVI', 'MLDS'].includes(editingUser.sales_division ?? '')) } : {}) };
     const { error } = await adminUpdateUser(editingUser.id, updatePayload);
     if (error) { setSaving(false); notify('error', 'Gagal menyimpan: ' + error.message); return; }
     const propErr = await propagateUserRename(editingUser, editOrig);
@@ -3233,7 +3233,7 @@ export function UserManagementInline() {
   const ATASAN_JABATAN: JabatanType[] = ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'];
   // Kandidat atasan: guest (Sales) ATAU team (PTS) dengan jabatan struktural
   const supervisorCandidates = allUsers.filter(u => ['guest', 'team'].includes(u.role?.toLowerCase() ?? '') && u.jabatan && ATASAN_JABATAN.includes(u.jabatan as JabatanType));
-  const ivpUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.sales_division === 'IVP');
+  const ivpUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && ['IVP', 'MVI', 'MLDS'].includes(u.sales_division ?? ''));
   const mviUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.sales_division === 'MVI');
   const salesHandleUsers = [...ivpUsers, ...mviUsers];
   const nonIvpDivisions = SALES_DIVISIONS.filter(d => d !== 'IVP' && d !== 'MVI');
@@ -3289,7 +3289,7 @@ export function UserManagementInline() {
   };
 
   const handleAddIvp = async () => {
-    if (!ivpDiv || !ivpUserId) { notify('error', 'Pilih divisi dan IVP Account.'); return; }
+    if (!ivpDiv || !ivpUserId) { notify('error', 'Pilih divisi dan IVP & MVI Account.'); return; }
     const existing = divIvpMaps.find(m => m.sales_division === ivpDiv && m.ivp_id === ivpUserId);
     if (existing) { notify('info', 'Mapping ini sudah ada.'); return; }
     setSaving(true);
@@ -3463,7 +3463,7 @@ export function UserManagementInline() {
           👨‍💼 Mapping Atasan ({Object.keys(atasanByDiv).length} divisi)
         </button>
         <button onClick={() => setActiveTab('ivp')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'ivp' ? 'border-violet-500 text-violet-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          🔗 IVP Account ({Object.keys(ivpByUser).length} orang)
+          🔗 IVP & MVI Account ({Object.keys(ivpByUser).length} orang)
         </button>
         <button onClick={() => setActiveTab('product')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'product' ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           🎯 Routing Tipe ({prodTeamMaps.length})

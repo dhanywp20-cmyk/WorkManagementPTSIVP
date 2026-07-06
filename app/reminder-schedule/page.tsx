@@ -1111,22 +1111,28 @@ function ReminderSchedulePageInner() {
     let routingStatus: 'internal_review' | 'admin_review' = 'admin_review';
     let internalSalesId: string | null = null;
     let internalHandlers: { phone_number: string | null; full_name: string }[] = [];
-    try {
-      const { data: freshSelf } = await supabase.from('users').select('is_internal_sales, team_type').eq('id', currentUser.id).maybeSingle();
-      const isInternalOrMarketing = !!freshSelf?.is_internal_sales || freshSelf?.team_type === 'Marketing';
-      if (!isInternalOrMarketing && salesDivision) {
-        const { data: ivpMaps } = await supabase.from('division_ivp_mappings').select('ivp_id').eq('sales_division', salesDivision);
-        const ivpIds = (ivpMaps ?? []).map((m: { ivp_id: string }) => m.ivp_id);
-        if (ivpIds.length > 0) {
-          const { data: handlers } = await supabase.from('users').select('id, full_name, phone_number').in('id', ivpIds);
-          if (handlers && handlers.length > 0) {
-            routingStatus = 'internal_review';
-            internalSalesId = handlers[0].id;
-            internalHandlers = handlers.map((h: { full_name: string; phone_number: string | null }) => ({ phone_number: h.phone_number, full_name: h.full_name }));
-          }
+    // Sales External (bukan internal/marketing): WAJIB ada PIC Sales Internal utk
+    // divisinya. Kalau divisi external belum di-mapping → BLOK submit (jangan lolos
+    // diam-diam ke Admin). freshSelf di-cek lebih dulu supaya bisa memblokir sebelum insert.
+    const { data: freshSelf } = await supabase.from('users').select('is_internal_sales, team_type').eq('id', currentUser.id).maybeSingle();
+    const isInternalOrMarketing = !!freshSelf?.is_internal_sales || freshSelf?.team_type === 'Marketing';
+    if (!isInternalOrMarketing && salesDivision) {
+      const { data: ivpMaps } = await supabase.from('division_ivp_mappings').select('ivp_id').eq('sales_division', salesDivision);
+      const ivpIds = (ivpMaps ?? []).map((m: { ivp_id: string }) => m.ivp_id);
+      if (ivpIds.length > 0) {
+        const { data: handlers } = await supabase.from('users').select('id, full_name, phone_number').in('id', ivpIds);
+        if (handlers && handlers.length > 0) {
+          routingStatus = 'internal_review';
+          internalSalesId = handlers[0].id;
+          internalHandlers = handlers.map((h: { full_name: string; phone_number: string | null }) => ({ phone_number: h.phone_number, full_name: h.full_name }));
         }
       }
-    } catch { /* fallback ke admin_review kalau gagal cek */ }
+      // Tidak ada PIC utk divisi external ini → blok submit dgn error jelas.
+      if (internalSalesId === null) {
+        notify('error', `Divisi ${salesDivision} belum memiliki PIC Sales Internal. Hubungi Admin untuk mapping divisi ini sebelum request.`);
+        return;
+      }
+    }
 
     // Insert ke tabel reminders dengan status pending & assigned_to kosong
     // Admin nantinya assign ke team dari list yang ada
