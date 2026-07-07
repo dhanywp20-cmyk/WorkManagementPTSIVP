@@ -41,6 +41,7 @@ function ReminderSchedulePageInner() {
   const [currentUser, setCurrentUser]       = useState<TeamUser | null>(null);
   const [teamUsers, setTeamUsers]           = useState<TeamUser[]>([]);
   const [managerUserId, setManagerUserId]   = useState('');  // app_settings.manager_user_id (Manager PTS yg boleh approve & assign)
+  const [myJabatan, setMyJabatan]           = useState('');  // jabatan akun login (utk deteksi Manager tanpa perlu set manager_user_id)
   const [guestUsers, setGuestUsers]         = useState<GuestUser[]>([]);
   const [reminders, setReminders]           = useState<Reminder[]>([]);
   const [listLoading, setListLoading]       = useState(false);
@@ -224,6 +225,14 @@ function ReminderSchedulePageInner() {
     supabase.from('app_settings').select('value').eq('key', 'manager_user_id').maybeSingle()
       .then((res: { data: { value: unknown } | null }) => { const v = res.data?.value; if (v) setManagerUserId(String(v).replace(/^"|"$/g, '')); });
   }, []);
+
+  // Ambil jabatan akun login — Manager (jabatan='Manager') otomatis boleh approve
+  // & assign, tanpa admin harus set manager_user_id manual dulu.
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    supabase.from('users').select('jabatan').eq('id', currentUser.id).maybeSingle()
+      .then((res: { data: { jabatan: string | null } | null }) => setMyJabatan(res.data?.jabatan ?? ''));
+  }, [currentUser?.id]);
 
   // ─── H-1 WA auto-send ────────────────────────────────────────────────────
   // Ditangani oleh Supabase Edge Function: daily-reminder (pg_cron)
@@ -1055,7 +1064,11 @@ function ReminderSchedulePageInner() {
 
   const isAdmin = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
   // Manager PTS (mis. Dhany, role 'team') berhak approve & assign di tahap admin_review.
-  const isManager = !!currentUser?.id && !!managerUserId && currentUser.id === managerUserId;
+  // Terdeteksi dari jabatan='Manager' ATAU app_settings.manager_user_id (override).
+  const isManager = !!currentUser?.id && (
+    (!!managerUserId && currentUser.id === managerUserId) ||
+    (currentUser.role === 'team' && myJabatan === 'Manager')
+  );
   const canApproveAssign = isAdmin || isManager;
   const canAddReminder = currentUser?.role === 'admin' || currentUser?.role === 'team';
   const isGuest = currentUser?.role === 'guest' || currentUser?.role === 'sales';
@@ -2350,7 +2363,20 @@ jangan lupa peralatan & Semangat💪🏼
                   );
                 })()}
 
-                {(isAdmin || currentUser?.role === 'team') && (
+                {/* Update Status BARU BISA setelah request selesai di-approve & di-assign
+                   ke pengerjaan (assigned_to terisi). Selama masih di alur approval
+                   (internal_review / admin_review / supervisor_assign, assigned_to kosong)
+                   → belum bisa update status. */}
+                {(isAdmin || currentUser?.role === 'team') && !detailReminder.assigned_to && detailReminder.notes?.includes('[REQUEST SALES]') && detailReminder.status !== 'done' && (
+                  <div className="rounded-xl px-4 py-3 flex items-center gap-2 mb-1" style={{ background: 'rgba(148,163,184,0.1)', border: '1.5px solid rgba(148,163,184,0.3)' }}>
+                    <span className="text-lg">🔒</span>
+                    <div>
+                      <p className="text-xs font-bold text-slate-600">Belum bisa update status</p>
+                      <p className="text-[11px] text-slate-500">Menunggu approval & assignment selesai (Sales Internal → Manager → Supervisor → Team).</p>
+                    </div>
+                  </div>
+                )}
+                {(isAdmin || currentUser?.role === 'team') && detailReminder.assigned_to && (
                 <div>
                   <p className="text-[10px] font-bold tracking-widest uppercase mb-3" style={{ color: '#64748b' }}>Update Status</p>
                   {detailReminder.status === 'done' ? (
