@@ -125,6 +125,8 @@ function ReminderSchedulePageInner() {
   const [approveTime, setApproveTime] = useState('');
   const [approveSaving, setApproveSaving] = useState(false);
   const [internalRejectTarget, setInternalRejectTarget] = useState<Reminder | null>(null); // request yg mau di-Tolak Sales Internal
+  const [internalApproveTarget, setInternalApproveTarget] = useState<Reminder | null>(null); // konfirmasi Approve Sales Internal (detail dulu, jangan instan)
+  const [internalApproveSaving, setInternalApproveSaving] = useState(false);
   const [internalRejectReason, setInternalRejectReason] = useState('');
   const [internalRejectSaving, setInternalRejectSaving] = useState(false);
   // Admin/Manager approve → route ke Supervisor tim (by tipe produk, product_team_map)
@@ -1266,12 +1268,15 @@ function ReminderSchedulePageInner() {
   // ─── Handler: Sales Internal approve & teruskan ke Admin/Manager ─────────
   const handleInternalApprove = async (r: Reminder) => {
     setSaving(true);
+    setInternalApproveSaving(true);
     const { error } = await supabase.from('reminders').update({
       routing_status: 'admin_review',
       internal_approved_by: currentUser?.id ?? null,
       internal_approved_at: new Date().toISOString(),
     }).eq('id', r.id);
-    if (error) { notify('error', 'Gagal approve: ' + error.message); setSaving(false); return; }
+    if (error) { notify('error', 'Gagal approve: ' + error.message); setSaving(false); setInternalApproveSaving(false); return; }
+    setInternalApproveSaving(false);
+    setInternalApproveTarget(null);
     notify('success', 'Request diteruskan ke Admin/Manager!');
     logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'approve', module: 'reminder', target_id: r.id, target_name: r.project_name, notes: 'Internal review approved' }).catch(() => {});
     fetchRemindersQuiet();
@@ -1719,8 +1724,43 @@ jangan lupa peralatan & Semangat💪🏼
           </div>
         )}
 
+        {/* ── KONFIRMASI APPROVE Sales Internal (detail dulu, jangan instan) ── */}
+        {internalApproveTarget && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4"
+            onClick={e => { if (e.target === e.currentTarget) setInternalApproveTarget(null); }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+              style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(245,158,11,0.4)' }}>
+              <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
+                <h3 className="text-lg font-bold text-white">✅ Approve Request?</h3>
+                <p className="text-amber-100/90 text-xs mt-0.5">Teruskan ke Admin/Manager untuk di-assign</p>
+              </div>
+              <div className="p-6 space-y-3">
+                <div className="rounded-xl p-3 space-y-1.5 text-sm" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
+                  <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Project</span><span className="font-bold text-slate-800 text-right">{internalApproveTarget.project_name}</span></div>
+                  <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Sales</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.sales_name}{internalApproveTarget.sales_division ? ` · ${internalApproveTarget.sales_division}` : ''}</span></div>
+                  <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Kategori</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.category}</span></div>
+                  {internalApproveTarget.product && <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Product</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.product}</span></div>}
+                  <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Lokasi</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.address || '-'}</span></div>
+                  <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Tanggal</span><span className="font-semibold text-slate-700 text-right">{formatDate(internalApproveTarget.due_date)}{internalApproveTarget.due_time ? ` · ${internalApproveTarget.due_time}` : ''}</span></div>
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => setInternalApproveTarget(null)}
+                    className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
+                    style={{ background: 'rgba(255,255,255,0.95)', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>Batal</button>
+                  <button onClick={() => handleInternalApprove(internalApproveTarget)} disabled={internalApproveSaving}
+                    className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
+                    style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
+                    {internalApproveSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                    ✅ Ya, Approve &amp; Teruskan
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── APPROVE & ASSIGN MODAL (Admin only) ── */}
-        {approveTarget && isAdmin && (
+        {approveTarget && canApproveAssign && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4"
             onClick={e => { if (e.target === e.currentTarget) { setApproveTarget(null); setApproveBatchSiblings([]); setApproveAssignTo(''); } }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
@@ -2176,7 +2216,7 @@ jangan lupa peralatan & Semangat💪🏼
                   <div className="flex gap-2 flex-wrap sticky top-0 z-20 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-gray-100">
                     {currentUser?.id === detailReminder.internal_sales_id && detailReminder.routing_status === 'internal_review' && (
                       <>
-                        <button onClick={() => handleInternalApprove(detailReminder)}
+                        <button onClick={() => setInternalApproveTarget(detailReminder)}
                           className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
                           style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white' }}>✅ Approve &amp; Teruskan ke Admin</button>
                         <button onClick={() => handleInternalReject(detailReminder)}
@@ -2994,7 +3034,7 @@ jangan lupa peralatan & Semangat💪🏼
                               )}
                               {currentUser?.id === r.internal_sales_id && r.routing_status === 'internal_review' && (
                                 <>
-                                  <ApproveIconBtn onClick={() => handleInternalApprove(r)} title="Approve & Teruskan ke Admin" pulse />
+                                  <ApproveIconBtn onClick={() => setInternalApproveTarget(r)} title="Approve & Teruskan ke Admin" pulse />
                                   <button onClick={() => handleInternalReject(r)} title="Tolak"
                                     className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
                                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -3235,7 +3275,7 @@ jangan lupa peralatan & Semangat💪🏼
                                     {/* Approve & Teruskan — Sales Internal yg di-mapping, wajib duluan sebelum Admin */}
                                     {currentUser?.id === group[0].internal_sales_id && group[0].routing_status === 'internal_review' && (
                                       <>
-                                        <ApproveIconBtn onClick={() => handleInternalApprove(group[0])} title="Approve & Teruskan ke Admin" pulse />
+                                        <ApproveIconBtn onClick={() => setInternalApproveTarget(group[0])} title="Approve & Teruskan ke Admin" pulse />
                                         <button onClick={() => handleInternalReject(group[0])} title="Tolak"
                                           className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
                                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
