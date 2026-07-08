@@ -162,10 +162,20 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   };
 
   // Guest/Sales users list for dropdown
-  const [salesGuestUsers, setSalesGuestUsers] = useState<{id:string;full_name:string;username:string;sales_division?:string}[]>([]);
+  const [salesGuestUsers, setSalesGuestUsers] = useState<{id:string;full_name:string;username:string;sales_division?:string;is_internal_sales?:boolean}[]>([]);
+  const [myIsInternalSales, setMyIsInternalSales] = useState(false); // creator = Sales Internal → boleh isi SBU (atas nama Sales External)
   useEffect(() => {
-    supabase.from('users').select('id, full_name, username, sales_division').eq('role', 'guest').then(({ data }: { data: {id:string;full_name:string;username:string;sales_division?:string}[] | null }) => {
+    supabase.from('users').select('id, full_name, username, sales_division, is_internal_sales').eq('role', 'guest').then(({ data }: { data: {id:string;full_name:string;username:string;sales_division?:string;is_internal_sales?:boolean}[] | null }) => {
       if (data) setSalesGuestUsers(data);
+    });
+    supabase.from('users').select('is_internal_sales').eq('id', currentUser.id).maybeSingle().then(({ data }: { data: { is_internal_sales: boolean | null } | null }) => {
+      const internal = !!data?.is_internal_sales;
+      setMyIsInternalSales(internal);
+      // Sales Internal: kosongkan prefill sales_name supaya field SBU mulai kosong
+      // (kalau tidak dipilih, submit fallback ke akun sendiri).
+      if (internal && (currentUser.role?.toLowerCase().trim() === 'guest')) {
+        setForm(prev => ({ ...prev, sales_name: '', sales_division: '' }));
+      }
     });
     supabase.from('brand_pic_mappings').select('id,brand_type,brand_name,pic_user_id,pic_user_name').order('brand_name').then(({ data }: { data: BrandPicMapping[] | null }) => {
       if (data) setBrandPicMappings(data);
@@ -261,7 +271,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       const selfJabatanPTS = (currentUser as any).jabatan as string | undefined;
       const isManagerPTS = isTeamPTS && selfJabatanPTS === 'Manager';
       if (isTeamPTS && !isManagerPTS) {
-        filtered = filtered.filter(r => !!r.assign_name);
+        // Tampil kalau sudah di-assign ke handler (assign_name) ATAU kalau
+        // request di-route ke user ini sbg Supervisor utk di-assign lanjut.
+        filtered = filtered.filter(r => !!r.assign_name || r.assigned_supervisor_id === currentUser.id);
       }
       setRequests(filtered);
       const assigned = [...new Set(filtered.map(r => r.assign_name).filter(Boolean) as string[])].sort();
@@ -584,9 +596,15 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       const payload = {
         project_name: form.project_name.trim(), room_name: form.room_name.trim(),
         project_location: form.project_location.trim(),
-        // Guest: always use account's sales_name & sales_division (not form which may be empty)
-        sales_name: (!isPTS ? (currentUser.full_name || form.sales_name).trim() : form.sales_name.trim()),
-        sales_division: (!isPTS ? (currentUser.sales_division || form.sales_division || '').trim() : (form.sales_division?.trim() || '')),
+        // Guest biasa: pakai nama & divisi akun sendiri. TAPI Sales Internal yang
+        // pilih SBU (Sales External) → atasnamakan External tsb (form.sales_name).
+        // requester_id/name tetap akun Sales Internal (jejak pembuat).
+        sales_name: (!isPTS
+          ? ((myIsInternalSales && form.sales_name.trim()) ? form.sales_name.trim() : (currentUser.full_name || form.sales_name).trim())
+          : form.sales_name.trim()),
+        sales_division: (!isPTS
+          ? ((myIsInternalSales && form.sales_name.trim()) ? (form.sales_division?.trim() || '') : (currentUser.sales_division || form.sales_division || '').trim())
+          : (form.sales_division?.trim() || '')),
         kebutuhan: form.kebutuhan, kebutuhan_other: form.kebutuhan_other.trim(),
         solution_product: form.solution_product, solution_other: form.solution_other.trim(),
         layout_signage: form.layout_signage, jaringan_cms: form.jaringan_cms,
@@ -1510,6 +1528,7 @@ Hubungi Admin untuk info lebih lanjut.
           setForm={setForm}
           initialForm={initialForm}
           salesGuestUsers={salesGuestUsers}
+          isInternalSalesGuest={role === 'guest' && myIsInternalSales}
           rooms={rooms} setRooms={setRooms}
           brandPicMappings={brandPicMappings}
           roomPhotoMap={roomPhotoMap} setRoomPhotoMap={setRoomPhotoMap}
@@ -1531,10 +1550,14 @@ Hubungi Admin untuk info lebih lanjut.
       {assignModal.open && assignModal.req && (
         <AssignPTSModal
           req={assignModal.req}
+          // Opsi "Route ke Supervisor" hanya saat approve awal (belum di-route).
+          // Kalau Supervisor yg buka utk assign final (routing_status='supervisor_assign'),
+          // opsi route disembunyikan — dia langsung pilih Tim PTS.
+          allowSupervisorRoute={assignModal.req.routing_status !== 'supervisor_assign'}
           onClose={() => setAssignModal({ open: false, req: null })}
           onAssigned={() => {
             setAssignModal({ open: false, req: null });
-            notify('success', `Request diapprove & di-assign ke Tim PTS!`);
+            notify('success', `Request diproses!`);
             fetchRequests();
             if (selectedRequest?.id === assignModal.req?.id) {
               setSelectedRequest(prev => prev ? { ...prev, status: 'approved' } : null);
@@ -2298,6 +2321,13 @@ Hubungi Admin untuk info lebih lanjut.
                       Tolak
                     </button>
                   </>
+                )}
+                {/* Supervisor yang di-route: wajib assign lanjut ke Tim PTS (atau sendiri) */}
+                {selectedRequest?.routing_status === 'supervisor_assign' && selectedRequest?.assigned_supervisor_id === currentUser.id && (
+                  <button onClick={() => { setAssignModal({ open: true, req: selectedRequest }); }}
+                    className="bg-amber-500 hover:bg-amber-400 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+                    🎯 Assign ke Tim
+                  </button>
                 )}
                 {/* Info untuk PTS yang di-assign: tombol mulai in_progress */}
                 {isTeamPTS && selectedRequest?.status === 'approved' && selectedRequest?.assign_name === currentUser.full_name && (

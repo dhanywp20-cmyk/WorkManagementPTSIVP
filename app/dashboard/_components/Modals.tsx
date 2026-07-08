@@ -1906,13 +1906,26 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
       } else if (isPTS && !isAdmin) {
         // Team PTS: request yang di-assign ke mereka (cek dua nama: dari team_members DAN full_name login)
         // Ini fix utama: assign_name bisa pakai nama team_members ATAU currentUser.full_name
+        // + request yang di-route ke user ini sbg Supervisor (perlu di-assign lanjut).
         const namesToCheck = [...new Set([assignedName, currentUser.full_name].filter(Boolean))];
-        const { data } = await excludeDone(
+        const [{ data: assignedData }, { data: supRouted }] = await Promise.all([
+          excludeDone(
+            supabase.from('project_requests')
+              .select('id, project_name, status, sales_name, assign_name, created_at')
+              .in('assign_name', namesToCheck)
+          ).order('created_at', { ascending: false }).limit(30),
           supabase.from('project_requests')
-            .select('id, project_name, status, sales_name, assign_name, created_at')
-            .in('assign_name', namesToCheck)
-        ).order('created_at', { ascending: false }).limit(30);
-        setRequireNotifs((data ?? []).map(toRequireNotif));
+            .select('id, project_name, status, sales_name, assign_name, created_at, routing_status, assigned_supervisor_id')
+            .eq('assigned_supervisor_id', currentUser.id).eq('routing_status', 'supervisor_assign')
+            .order('created_at', { ascending: false }).limit(30),
+        ]);
+        const supIds = new Set((supRouted ?? []).map((r: any) => r.id));
+        const seenReq = new Set<string>();
+        const combinedReq = [...(supRouted ?? []), ...(assignedData ?? [])]
+          .filter((r: any) => { if (seenReq.has(r.id)) return false; seenReq.add(r.id); return true; });
+        setRequireNotifs(combinedReq.map((r: any) => supIds.has(r.id)
+          ? { id: r.id, type: 'require' as const, title: r.project_name, subtitle: `🎯 Perlu di-assign ke tim · ${r.sales_name}`, time: r.created_at, url: '/form-require-project', internalUrl: '/form-require-project', menuTitle: 'Request Design Project' }
+          : toRequireNotif(r)));
 
       } else if (roleLC === 'guest' || roleLC === 'sales') {
         const isIVPUser2 = currentUser.sales_division === 'IVP' || currentUser.sales_division === 'MVI';
