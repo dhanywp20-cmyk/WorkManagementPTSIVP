@@ -44,11 +44,16 @@ interface Props {
   currentUser: User | null;
   users: User[];
   teamPTSMembers: TeamMember[];
+  supervisorMembers?: TeamMember[];
   onSubmit: () => void;
 }
 
-export function NewTicketModal({ onClose, form, setForm, uploading, currentUser, users, teamPTSMembers, onSubmit }: Props) {
+export function NewTicketModal({ onClose, form, setForm, uploading, currentUser, users, teamPTSMembers, supervisorMembers = [], onSubmit }: Props) {
   const set = (patch: Partial<NewTicketForm>) => setForm({ ...form, ...patch });
+
+  // Admin/superadmin ATAU Manager PTS boleh tentukan penanganan langsung saat create.
+  const canAssignDirect = currentUser?.role === 'admin' || currentUser?.role === 'superadmin'
+    || (currentUser?.role === 'team' && (currentUser as any)?.jabatan === 'Manager');
 
   // Creator = Sales Internal (guest) → boleh isi SBU (buat ticket atas nama Sales External).
   const isInternalSalesGuest = currentUser?.role === 'guest' && !!users.find(u => u.id === currentUser.id)?.is_internal_sales;
@@ -383,31 +388,37 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
             </div>
           )}
 
-          {/* Admin/Superadmin: Assign To handler */}
-          {(currentUser?.role === "admin" || currentUser?.role === "superadmin") && (
+          {/* Admin/Superadmin/Manager: tentukan penanganan langsung */}
+          {canAssignDirect && (
             <div>
               <div className="flex items-center gap-2 pb-2 border-b pt-2 mb-3" style={{ borderColor: "rgba(0,0,0,0.1)" }}>
                 <span className="text-lg">👷</span>
-                <span className="text-sm font-bold tracking-wide text-slate-700">Assign Handler</span>
+                <span className="text-sm font-bold tracking-wide text-slate-700">Penanganan</span>
               </div>
-              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Assign To *</label>
+              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Assign ke *</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2">👨‍💼</span>
                 <select value={form.assign_name} onChange={e => set({ assign_name: e.target.value })}
                   className="w-full rounded-xl pl-9 pr-4 py-3 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-red-500/40 appearance-none cursor-pointer"
                   style={{ background: "rgba(255,255,255,0.90)", border: "1px solid rgba(0,0,0,0.12)" }}>
-                  <option value="">— Pilih Handler —</option>
-                  <optgroup label="Team PTS IVP">
+                  <option value="">— Pilih penanganan —</option>
+                  <option value="SELF">🙋 Saya kerjakan sendiri</option>
+                  <optgroup label="👷 Assign langsung ke Team PTS">
                     {teamPTSMembers.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
                   </optgroup>
+                  {supervisorMembers.length > 0 && (
+                    <optgroup label="🎯 Route ke Supervisor">
+                      {supervisorMembers.map(m => <option key={`sup-${m.id}`} value={`SUP::${m.id}::${m.name}`}>{m.name} (Supervisor)</option>)}
+                    </optgroup>
+                  )}
                 </select>
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs">▾</span>
               </div>
             </div>
           )}
 
-          {/* Non-admin approval notice */}
-          {currentUser?.role !== "admin" && currentUser?.role !== "superadmin" && (
+          {/* Approval notice — hanya utk yg TIDAK bisa assign langsung (guest / team biasa) */}
+          {!canAssignDirect && (
             <div className="rounded-xl p-4 flex items-start gap-3"
               style={{ background: "rgba(245,158,11,0.1)", border: "1.5px solid rgba(245,158,11,0.3)" }}>
               <span className="text-2xl">⏳</span>
