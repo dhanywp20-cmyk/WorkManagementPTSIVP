@@ -2203,7 +2203,11 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
     if (item.internalUrl) onNavigate(item.internalUrl, item.menuTitle);
   };
 
-  const totalCount = ticketNotifs.length + requireNotifs.length + reminderNotifs.length + reviewNotifs.length + personalNotifs.length;
+  // Total = jumlah chip yg terlihat (Ticket + Require + Reminder + Review) SAJA.
+  // personalNotifs (tabel notifications) dulu ikut dihitung tapi tak punya chip →
+  // total tak cocok dgn angka chip. Sebagian personalNotifs juga duplikat dari
+  // badge kategori (mis. badge Manager/Supervisor). Dikeluarkan dari total.
+  const totalCount = ticketNotifs.length + requireNotifs.length + reminderNotifs.length + reviewNotifs.length;
 
   // Personal bell is shown to ALL users regardless of team type
   // Other bells still respect team-type gating

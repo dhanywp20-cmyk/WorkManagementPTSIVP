@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { setSession, clearSession, getSession, startSessionWatcher } from '@/lib/auth';
 import { isAdmin as checkIsAdmin } from '@/lib/constants';
+import { isAssignablePTSTeam } from '@/lib/teams';
 import { notifyReminderApproved, createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 
@@ -247,7 +248,8 @@ function ReminderSchedulePageInner() {
 
   const fetchTeamUsers = async () => {
     const { data } = await supabase.from('users').select('id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan').order('full_name');
-    if (data) setTeamUsers(data.filter((u: TeamUser) => (u.team_type === 'Team PTS IVP' || u.team_type === 'Team PTS MVI' || u.team_type === 'Team PTS UMP') && u.role !== 'admin' && u.role !== 'superadmin'));
+    // Hanya team assignable (IVP/MVI — UMP dikecualikan, lihat lib/teams.ts). Ubah di satu tempat itu utk tambah/kurangi team.
+    if (data) setTeamUsers(data.filter((u: TeamUser) => isAssignablePTSTeam(u.team_type) && u.role !== 'admin' && u.role !== 'superadmin'));
   };
 
   const fetchGuestUsers = async () => {
@@ -1335,7 +1337,9 @@ function ReminderSchedulePageInner() {
     logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'approve', module: 'reminder', target_id: r.id, target_name: r.project_name, notes: 'Internal review approved' }).catch(() => {});
     fetchRemindersQuiet();
 
-    // WA + badge ke Manager (app_settings.manager_user_id) — actionable. Fallback ke semua admin.
+    // Badge in-app ke Manager (app_settings.manager_user_id) — actionable. Fallback ke semua admin.
+    // CATATAN: WA "REQUEST LOLOS REVIEW" DIHAPUS atas permintaan user — cukup badge di
+    // tahap ini; WA hanya dikirim di hasil akhir (saat sudah di-assign ke pengerjaan).
     try {
       const managerTarget = await fetchManagerTarget();
       const targets: { id: string; phone_number: string | null; full_name: string }[] = [];
@@ -1344,12 +1348,7 @@ function ReminderSchedulePageInner() {
         const { data: admins } = await supabase.from('users').select('id, phone_number, full_name').eq('role', 'admin');
         targets.push(...(admins ?? []));
       }
-      const msg =
-        `✅ *REQUEST LOLOS REVIEW SALES INTERNAL*\n\n` +
-        `Request dari *${r.sales_name}* untuk *${r.project_name}* sudah di-review oleh *${currentUser?.full_name}* — silakan diproses/di-assign.\n` +
-        `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
       for (const t of targets) {
-        if (t.phone_number) await sendFonnteWA(t.phone_number, msg);
         createNotification({
           user_id: t.id,
           type: 'reminder',

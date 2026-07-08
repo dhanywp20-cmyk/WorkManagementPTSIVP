@@ -42,7 +42,7 @@ const inputStyle = {
 };
 
 // Kategori yang diizinkan untuk Guest request
-const ALLOWED_CATEGORIES = ['Demo Product', 'Meeting & Survey', 'Konfigurasi', 'Konfigurasi & Training', 'Training'];
+const ALLOWED_CATEGORIES = ['Demo Product', 'Meeting & Survey', 'Konfigurasi', 'Konfigurasi & Training', 'Training', 'Maintenance'];
 
 export function RequestJadwalModal({
   salesName,

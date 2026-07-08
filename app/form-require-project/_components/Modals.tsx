@@ -10,6 +10,7 @@ import {
   PIE_COLORS,
 } from './shared';
 import { SalesPicker } from '@/components/shared';
+import { isAssignablePTSTeam } from '@/lib/teams';
 
 export function AssignPTSModal({
   req, onClose, onAssigned, currentUser, allowSupervisorRoute = false,
@@ -34,11 +35,11 @@ export function AssignPTSModal({
   const isExternal = !!(req.sales_division && req.sales_division.trim() && req.sales_division.trim().toUpperCase() !== 'IVP');
 
   useEffect(() => {
-    // Fetch Team PTS
+    // Fetch Team PTS (hanya team assignable = IVP/MVI, UMP dikecualikan — lib/teams.ts)
     supabase.from('users')
       .select('id, full_name, role, team_type, phone_number, sales_division')
       .in('role', ['team_pts', 'team'])
-      .then(({ data }: { data: User[] | null }) => { if (data) setTeamMembers(data); });
+      .then(({ data }: { data: User[] | null }) => { if (data) setTeamMembers(data.filter(u => isAssignablePTSTeam(u.team_type))); });
     // Fetch IVP Sales internal (guest dengan sales_division = IVP)
     supabase.from('users')
       .select('id, full_name, role, phone_number, sales_division')
@@ -50,7 +51,7 @@ export function AssignPTSModal({
       supabase.from('users')
         .select('id, full_name, team_type, phone_number')
         .eq('jabatan', 'Supervisor')
-        .then(({ data }: { data: { id: string; full_name: string; team_type?: string; phone_number?: string }[] | null }) => { if (data) setSupervisors(data); });
+        .then(({ data }: { data: { id: string; full_name: string; team_type?: string; phone_number?: string }[] | null }) => { if (data) setSupervisors(data.filter(s => isAssignablePTSTeam(s.team_type))); });
     }
   }, [allowSupervisorRoute]);
 

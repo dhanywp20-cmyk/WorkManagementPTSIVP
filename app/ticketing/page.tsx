@@ -7,6 +7,7 @@ import { setSession, clearSession, getSession } from "@/lib/auth";
 import { adminCreateUser } from "@/lib/admin-users";
 import { notifyTicketAssigned, createNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
+import { isAssignablePTSTeam } from "@/lib/teams";
 
 import {
   sendWANotif, fetchWACCTargets,
@@ -694,15 +695,26 @@ function TicketingSystemInner() {
       // ── Kirim WA notifikasi ke semua admin & superadmin jika butuh approval ──
       // Hanya role guest dan team yang butuh approval → trigger WA ke admin
       if (!isElevated) {
-        setLoadingMessage("Mengirim notifikasi WA ke admin...");
+        setLoadingMessage("Mengirim notifikasi WA ke admin & manager...");
         try {
           const { data: adminUsers } = await supabase
             .from("users")
-            .select("phone_number, full_name")
+            .select("id, phone_number, full_name")
             .in("role", ["admin", "superadmin"])
             .not("phone_number", "is", null)
             .neq("phone_number", "");
-          if (adminUsers && adminUsers.length > 0) {
+          // Manager (app_settings.manager_user_id) — role='team' jabatan Manager TIDAK
+          // ke-cover query role admin di atas, jadi ditambah terpisah supaya ikut di-notif.
+          const approvers: { id: string; phone_number: string; full_name: string }[] = [...((adminUsers as any[]) ?? [])];
+          try {
+            const { data: mgrSetting } = await supabase.from("app_settings").select("value").eq("key", "manager_user_id").maybeSingle();
+            const managerId = mgrSetting?.value ? String(mgrSetting.value).replace(/^"|"$/g, "") : "";
+            if (managerId && !approvers.find(a => a.id === managerId)) {
+              const { data: mgr } = await supabase.from("users").select("id, phone_number, full_name").eq("id", managerId).maybeSingle();
+              if (mgr) approvers.push(mgr as any);
+            }
+          } catch { }
+          if (approvers.length > 0) {
             const waMsg = [
               "🔔 *Request Ticket Baru \u2014 Menunggu Approval*",
               "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501",
@@ -715,10 +727,14 @@ function TicketingSystemInner() {
               "🔗 https://team-ticketing.vercel.app/dashboard",
             ].join("\n");
             await Promise.allSettled(
-              (adminUsers as any[]).map((a: any) =>
+              approvers.filter(a => a.phone_number).map((a) =>
                 sendWANotif({ type: "reminder_wa", target: a.phone_number, message: waMsg })
               )
             );
+            // Badge in-app ke Admin & Manager
+            if (insertedTicket?.id) {
+              approvers.forEach(a => { if (a.id) void createNotification({ user_id: a.id, type: 'ticket', title: '🔔 Ticket baru menunggu approval', body: `${newTicket.project_name} — ${newTicket.issue_case}`, action_url: '/ticketing', ref_id: insertedTicket.id, created_by: currentUser?.full_name || '' }); });
+            }
           }
         } catch { }
         // ── CC ke atasan + IVP berdasarkan divisi user yang submit ──
@@ -1904,13 +1920,12 @@ function TicketingSystemInner() {
     return Array.from(new Set(names)).sort();
   }, [tickets]);
 
-  // team_type nyata = "Team PTS IVP"/"Team PTS MVI"/"Team PTS UMP" (bukan literal
-  // "Team PTS") — startsWith supaya semua varian PTS ikut, bukan cuma IVP.
-  // Manager dikecualikan — bukan handler teknis biasa yg di-assign tiket.
-  const teamPTSMembers = useMemo(() => teamMembers.filter((m) => m.team_type?.startsWith("Team PTS") && m.jabatan !== "Manager"), [teamMembers]);
+  // Team yg boleh di-assign tiket = ASSIGNABLE_PTS_TEAMS (IVP/MVI — UMP dikecualikan,
+  // lihat lib/teams.ts). Manager dikecualikan — bukan handler teknis biasa.
+  const teamPTSMembers = useMemo(() => teamMembers.filter((m) => isAssignablePTSTeam(m.team_type) && m.jabatan !== "Manager"), [teamMembers]);
   const teamServicesMembers = useMemo(() => teamMembers.filter((m) => m.team_type === "Team Services" && m.jabatan !== "Manager"), [teamMembers]);
   // Supervisor PTS — utk opsi "Route ke Supervisor" saat approve (tahap supervisor_assign).
-  const supervisorMembers = useMemo(() => teamMembers.filter((m) => m.team_type?.startsWith("Team PTS") && m.jabatan === "Supervisor"), [teamMembers]);
+  const supervisorMembers = useMemo(() => teamMembers.filter((m) => isAssignablePTSTeam(m.team_type) && m.jabatan === "Supervisor"), [teamMembers]);
 
   useEffect(() => {
     const user = getSession();
