@@ -20,6 +20,7 @@ import {
   getMonday, getDayDate, toKey, DAYS_OF_WEEK, getRollingNameForDate, type PiketRow,
 } from '@/app/picket-showroom/_components/shared';
 import { AnalyticsPlatform } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
+import { ASSIGNABLE_PTS_TEAMS } from '@/lib/teams';
 
 // ── Kontrak widget ────────────────────────────────────────────────────────────
 
@@ -128,7 +129,7 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
         const today = todayStr();
         const [{ data: team }, { data: reports }, { data: rems }] = await Promise.all([
           supabase.from('users').select('id, username, full_name, team_type').eq('role', 'team')
-            .in('team_type', ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MVI']),
+            .in('team_type', [...ASSIGNABLE_PTS_TEAMS]),  // IVP & MVI saja (UMP hanya utk Piket Showroom)
           supabase.from('daily_reports').select('user_id').eq('report_date', today),
           supabase.from('reminders').select('assigned_to').eq('due_date', today).neq('status', 'done').neq('status', 'cancelled'),
         ]);
