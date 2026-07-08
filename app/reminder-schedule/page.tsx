@@ -1754,7 +1754,10 @@ jangan lupa peralatan & Semangat💪🏼
             salesName={currentUser.full_name}
             salesUsername={currentUser.username}
             salesDivision={currentUser.sales_division ?? ''}
-            isInternalSales={myIsInternalSales}
+            // Tampilkan pilih Sales External (SBU) utk Sales Internal ATAU Marketing —
+            // sama dgn siapa yg boleh lewati gerbang review (isInternalOrMarketing).
+            // Kalau tidak dipilih = request atas nama diri sendiri (tanpa CC External).
+            isInternalSales={myIsInternalSales || currentUser.team_type === 'Marketing'}
             externalSalesUsers={guestUsers
               .filter(g => !g.is_internal_sales && g.id !== currentUser.id)
               .map(g => ({ id: g.id, full_name: g.full_name, sales_division: g.sales_division ?? null }))}

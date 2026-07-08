@@ -661,9 +661,10 @@ export default function Dashboard() {
           <p className="text-white/55 text-xs">© 2026 IndoVisual Professional Tools</p>
         </div>
 
-        {/* ── RIGHT: panel form — overlay gelap tipis di atas bg penuh, form dlm kartu frosted ── */}
+        {/* ── RIGHT: panel form — overlay PUTIH transparan di atas bg penuh (biar tidak
+            contrast), form dlm kartu frosted ── */}
         <div className="flex-1 flex items-center justify-center p-4 sm:p-8"
-          style={{ background: 'rgba(15,23,42,0.14)' }}>
+          style={{ background: 'rgba(255,255,255,0.55)' }}>
           <div className={`w-full ${showRegister ? 'max-w-2xl' : 'max-w-md'} bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 sm:p-8`}>
             <div className="mb-8">
               {/* Logo kecil — hanya mobile (di desktop logo ada di panel kiri) */}
