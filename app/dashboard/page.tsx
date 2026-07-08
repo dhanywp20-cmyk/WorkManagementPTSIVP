@@ -637,10 +637,12 @@ export default function Dashboard() {
   // ── LOGIN / REGISTER SCREEN ──
   if (!isLoggedIn) {
     return (
-      <div className="flex" style={{ minHeight: '100dvh' }}>
-        {/* ── LEFT: panel branding (desktop) — pakai IVP_Background biar nice ── */}
+      // SATU background penuh utk seluruh halaman (tidak dipotong per panel) —
+      // tiap panel hanya overlay transparan di atas gambar yang sama.
+      <div className="flex bg-cover bg-center bg-fixed" style={{ minHeight: '100dvh', backgroundImage: 'url(/IVP_Background.png)' }}>
+        {/* ── LEFT: panel branding (desktop) — overlay merah transparan, gambar tembus dari bg penuh ── */}
         <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 text-white overflow-hidden"
-          style={{ backgroundImage: 'linear-gradient(135deg, rgba(190,18,60,0.92), rgba(136,19,55,0.9)), url(/IVP_Background.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+          style={{ background: 'linear-gradient(135deg, rgba(190,18,60,0.82), rgba(136,19,55,0.86))' }}>
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center backdrop-blur">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
@@ -649,9 +651,9 @@ export default function Dashboard() {
           </div>
           <div className="max-w-md">
             <h1 className="text-4xl font-black leading-tight mb-4">Portal Manajemen<br />Kerja Tim PTS</h1>
-            <p className="text-white/85 text-base leading-relaxed mb-8">Request schedule, ticket troubleshooting, design project, incentive &amp; KPI — dalam satu platform yang rapi.</p>
+            <p className="text-white/85 text-base leading-relaxed mb-8">Request schedule, ticket troubleshooting, design project &amp; piket showroom — dalam satu platform yang rapi.</p>
             <div className="flex flex-wrap gap-2.5">
-              {[['🗓️', 'Request Schedule'], ['🎫', 'Ticket Troubleshooting'], ['🏗️', 'Design Project'], ['📊', 'Incentive & KPI']].map(([ic, l]) => (
+              {[['🗓️', 'Request Schedule'], ['🎫', 'Ticket Troubleshooting'], ['🏗️', 'Design Project'], ['🏪', 'Piket Showroom']].map(([ic, l]) => (
                 <span key={l} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/12 backdrop-blur text-sm font-semibold border border-white/15">{ic} {l}</span>
               ))}
             </div>
@@ -659,10 +661,10 @@ export default function Dashboard() {
           <p className="text-white/55 text-xs">© 2026 IndoVisual Professional Tools</p>
         </div>
 
-        {/* ── RIGHT: panel form (login / register). Di mobile pakai IVP_Background samar. ── */}
-        <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-cover bg-center"
-          style={{ backgroundImage: 'linear-gradient(rgba(248,250,252,0.94),rgba(248,250,252,0.97)), url(/IVP_Background.png)' }}>
-          <div className={`w-full ${showRegister ? 'max-w-2xl' : 'max-w-md'}`}>
+        {/* ── RIGHT: panel form — overlay gelap tipis di atas bg penuh, form dlm kartu frosted ── */}
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-8"
+          style={{ background: 'rgba(15,23,42,0.14)' }}>
+          <div className={`w-full ${showRegister ? 'max-w-2xl' : 'max-w-md'} bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 sm:p-8`}>
             <div className="mb-8">
               {/* Logo kecil — hanya mobile (di desktop logo ada di panel kiri) */}
               <div className="flex lg:hidden items-center gap-2.5 mb-6">
