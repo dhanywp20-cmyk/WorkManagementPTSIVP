@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { setSession, clearSession, getSession, startSessionWatcher } from '@/lib/auth';
 import { isAdmin as checkIsAdmin } from '@/lib/constants';
-import { notifyReminderApproved } from '@/lib/notifications';
+import { notifyReminderApproved, createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 
 import {
@@ -15,6 +15,7 @@ import {
   REPEAT_OPTIONS, SALES_DIVISIONS, PIE_COLORS,
   formatDate, formatDatetime, isDueToday, newBatchId,
   sendFonnteWA, resolveSupervisorsForProductType, type SupervisorCandidate,
+  DEFAULT_REQUEST_NOTE, cleanRequestNotes, fetchManagerTarget,
 } from './_components/shared';
 import { PriorityBadge, StatusBadge, CategoryBadge } from './_components/Badges';
 import {
@@ -241,7 +242,7 @@ function ReminderSchedulePageInner() {
   // Berjalan otomatis setiap hari tanpa perlu buka halaman
 
   const fetchTeamUsers = async () => {
-    const { data } = await supabase.from('users').select('id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus').order('full_name');
+    const { data } = await supabase.from('users').select('id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan').order('full_name');
     if (data) setTeamUsers(data.filter((u: TeamUser) => (u.team_type === 'Team PTS IVP' || u.team_type === 'Team PTS MVI' || u.team_type === 'Team PTS UMP') && u.role !== 'admin' && u.role !== 'superadmin'));
   };
 
@@ -1139,7 +1140,7 @@ function ReminderSchedulePageInner() {
     // flag, kalau-kalau ada akun Marketing yang belum sempat di-backfill).
     let routingStatus: 'internal_review' | 'admin_review' = 'admin_review';
     let internalSalesId: string | null = null;
-    let internalHandlers: { phone_number: string | null; full_name: string }[] = [];
+    let internalHandlers: { id: string; phone_number: string | null; full_name: string }[] = [];
     // Sales External (bukan internal/marketing): WAJIB ada PIC Sales Internal utk
     // divisinya. Kalau divisi external belum di-mapping → BLOK submit (jangan lolos
     // diam-diam ke Admin). freshSelf di-cek lebih dulu supaya bisa memblokir sebelum insert.
@@ -1153,7 +1154,7 @@ function ReminderSchedulePageInner() {
         if (handlers && handlers.length > 0) {
           routingStatus = 'internal_review';
           internalSalesId = handlers[0].id;
-          internalHandlers = handlers.map((h: { full_name: string; phone_number: string | null }) => ({ phone_number: h.phone_number, full_name: h.full_name }));
+          internalHandlers = handlers.map((h: { id: string; full_name: string; phone_number: string | null }) => ({ id: h.id, phone_number: h.phone_number, full_name: h.full_name }));
         }
       }
       // Tidak ada PIC utk divisi external ini → blok submit dgn error jelas.
@@ -1167,7 +1168,7 @@ function ReminderSchedulePageInner() {
     // Admin nantinya assign ke team dari list yang ada
     const notesVal = data.notes
       ? `[REQUEST SALES] ${data.notes}`
-      : '[REQUEST SALES] Menunggu assignment dari Admin';
+      : `[REQUEST SALES] ${DEFAULT_REQUEST_NOTE}`;
     // Grup semua tanggal dari 1 submission — supaya Schedule List menampilkannya
     // sbg 1 baris (bukan N baris identik per tanggal).
     const batchId = allDates.length > 1 ? newBatchId() : null;
@@ -1231,6 +1232,14 @@ function ReminderSchedulePageInner() {
           `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
         for (const h of internalHandlers) {
           if (h.phone_number) await sendFonnteWA(h.phone_number, internalMsg);
+          createNotification({
+            user_id: h.id,
+            type: 'reminder',
+            title: `📩 Request jadwal perlu review kamu`,
+            body: `${currentUser.full_name} (${salesDivision}) — ${data.project_name}`,
+            action_url: '/reminder-schedule',
+            created_by: currentUser.full_name,
+          }).catch(() => {});
         }
         // 2) WA ke Admin — PENGINGAT saja (belum bisa diproses, menunggu Sales Internal).
         if (admins && admins.length > 0) {
@@ -1243,8 +1252,9 @@ function ReminderSchedulePageInner() {
           }
         }
       } else {
-        // Alur lama: langsung actionable ke Admin (requester internal / tanpa mapping).
-        if (admins && admins.length > 0) {
+        // Alur lama: langsung actionable ke Admin/Manager (requester internal / tanpa mapping).
+        const managerTarget = await fetchManagerTarget();
+        if ((admins && admins.length > 0) || managerTarget) {
           const msg =
             `📩 *REQUEST JADWAL BARU — PTS IVP*\n\n` +
             `Sales *${currentUser.full_name}* mengajukan request jadwal:\n\n` +
@@ -1257,9 +1267,29 @@ function ReminderSchedulePageInner() {
             (data.pic_name ? `🙋 PIC: ${data.pic_name}${data.pic_phone ? ' - ' + data.pic_phone : ''}\n` : '') +
             `\nSilakan review & assign ke Team PTS IVP:\n` +
             `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
-          for (const admin of admins) {
+          for (const admin of (admins ?? [])) {
             if (admin.phone_number) await sendFonnteWA(admin.phone_number, msg);
           }
+          // Manager (role='team') tidak ke-cover query role='admin' di atas — WA & badge terpisah.
+          if (managerTarget?.phone_number) await sendFonnteWA(managerTarget.phone_number, msg);
+        }
+        // Badge notifikasi in-app — supaya tidak perlu buka tabel utk tahu ada yg perlu approval.
+        createNotificationForAdmins({
+          type: 'reminder',
+          title: `📩 Request jadwal baru menunggu approval`,
+          body: `${currentUser.full_name} — ${data.project_name}`,
+          action_url: '/reminder-schedule',
+          created_by: currentUser.full_name,
+        }).catch(() => {});
+        if (managerTarget) {
+          createNotification({
+            user_id: managerTarget.id,
+            type: 'reminder',
+            title: `📩 Request jadwal baru menunggu approval kamu`,
+            body: `${currentUser.full_name} — ${data.project_name}`,
+            action_url: '/reminder-schedule',
+            created_by: currentUser.full_name,
+          }).catch(() => {});
         }
       }
     } catch { }
@@ -1281,17 +1311,13 @@ function ReminderSchedulePageInner() {
     logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'approve', module: 'reminder', target_id: r.id, target_name: r.project_name, notes: 'Internal review approved' }).catch(() => {});
     fetchRemindersQuiet();
 
-    // WA ke Manager (app_settings.manager_user_id) — actionable. Fallback ke semua admin.
+    // WA + badge ke Manager (app_settings.manager_user_id) — actionable. Fallback ke semua admin.
     try {
-      const { data: mgrSetting } = await supabase.from('app_settings').select('value').eq('key', 'manager_user_id').maybeSingle();
-      const managerId = mgrSetting?.value ? String(mgrSetting.value).replace(/^"|"$/g, '') : '';
-      const targets: { phone_number: string | null; full_name: string }[] = [];
-      if (managerId) {
-        const { data: mgr } = await supabase.from('users').select('phone_number, full_name').eq('id', managerId).maybeSingle();
-        if (mgr) targets.push(mgr);
-      }
+      const managerTarget = await fetchManagerTarget();
+      const targets: { id: string; phone_number: string | null; full_name: string }[] = [];
+      if (managerTarget) targets.push(managerTarget);
       if (targets.length === 0) {
-        const { data: admins } = await supabase.from('users').select('phone_number, full_name').eq('role', 'admin');
+        const { data: admins } = await supabase.from('users').select('id, phone_number, full_name').eq('role', 'admin');
         targets.push(...(admins ?? []));
       }
       const msg =
@@ -1300,6 +1326,15 @@ function ReminderSchedulePageInner() {
         `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
       for (const t of targets) {
         if (t.phone_number) await sendFonnteWA(t.phone_number, msg);
+        createNotification({
+          user_id: t.id,
+          type: 'reminder',
+          title: `✅ Request lolos review — perlu approval kamu`,
+          body: `${r.sales_name} — ${r.project_name}`,
+          action_url: '/reminder-schedule',
+          ref_id: r.id,
+          created_by: currentUser?.full_name ?? '',
+        }).catch(() => {});
       }
     } catch { }
     setSaving(false);
@@ -1347,22 +1382,22 @@ function ReminderSchedulePageInner() {
     if (!approveTarget || approveSupervisors.length === 0) return;
     setApproveRouteSaving(true);
 
-    const cleanNotes = (approveTarget.notes ?? '').replace('[REQUEST SALES] ', '').replace('[REQUEST SALES]', '').trim();
+    const cleanNotes = cleanRequestNotes(approveTarget.notes);
     const primarySupervisor = approveSupervisors[0];
     const { error } = await supabase.from('reminders').update({
       routing_status: 'supervisor_assign',
       assigned_supervisor_id: primarySupervisor.id,
       due_date: approveDate || approveTarget.due_date,
       due_time: approveTime || approveTarget.due_time,
-      notes: cleanNotes || undefined,
+      notes: cleanNotes,
     }).eq('id', approveTarget.id);
 
     if (error) { notify('error', 'Gagal route ke supervisor: ' + error.message); setApproveRouteSaving(false); return; }
 
     if (approveBatchSiblings.length > 0) {
       const siblingResults: { error: { message: string } | null }[] = await Promise.all(approveBatchSiblings.map(sib => {
-        const sibNotes = (sib.notes ?? '').replace('[REQUEST SALES] ', '').replace('[REQUEST SALES]', '').trim();
-        const patch: Record<string, unknown> = { routing_status: 'supervisor_assign', assigned_supervisor_id: primarySupervisor.id, notes: sibNotes || undefined };
+        const sibNotes = cleanRequestNotes(sib.notes);
+        const patch: Record<string, unknown> = { routing_status: 'supervisor_assign', assigned_supervisor_id: primarySupervisor.id, notes: sibNotes };
         if (approveTime) patch.due_time = approveTime;
         return supabase.from('reminders').update(patch).eq('id', sib.id);
       }));
@@ -1391,6 +1426,15 @@ function ReminderSchedulePageInner() {
       `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
     for (const sup of approveSupervisors) {
       if (sup.phone_number) await sendFonnteWA(sup.phone_number, supMsg);
+      createNotification({
+        user_id: sup.id,
+        type: 'reminder',
+        title: `🎯 Request perlu kamu assign`,
+        body: `${approveTarget.sales_name} — ${approveTarget.project_name}`,
+        action_url: '/reminder-schedule',
+        ref_id: approveTarget.id,
+        created_by: currentUser?.full_name ?? '',
+      }).catch(() => {});
     }
 
     // WA ke sales requester — kasih tau statusnya diteruskan ke tim.
@@ -1422,13 +1466,14 @@ function ReminderSchedulePageInner() {
     // sekaligus), semua tanggal lain di batch ikut di-approve & di-assign ke
     // handler yang sama — tiap tanggal tetap pakai due_date-nya sendiri
     // (hanya due_date milik approveTarget yang bisa di-override via field Tanggal).
-    const cleanNotes = (approveTarget.notes ?? '').replace('[REQUEST SALES] ', '').replace('[REQUEST SALES]', '').trim();
+    const cleanNotes = cleanRequestNotes(approveTarget.notes);
     const { error } = await supabase.from('reminders').update({
       assigned_to: assignee.username,
       assign_name: assignee.full_name,
       due_date: approveDate || approveTarget.due_date,
       due_time: approveTime || approveTarget.due_time,
-      notes: cleanNotes || undefined,
+      notes: cleanNotes,
+      routing_status: null,
     }).eq('id', approveTarget.id);
 
     if (error) {
@@ -1439,11 +1484,12 @@ function ReminderSchedulePageInner() {
 
     if (approveBatchSiblings.length > 0) {
       const siblingResults: { error: { message: string } | null }[] = await Promise.all(approveBatchSiblings.map(sib => {
-        const sibNotes = (sib.notes ?? '').replace('[REQUEST SALES] ', '').replace('[REQUEST SALES]', '').trim();
+        const sibNotes = cleanRequestNotes(sib.notes);
         const patch: Record<string, unknown> = {
           assigned_to: assignee.username,
           assign_name: assignee.full_name,
-          notes: sibNotes || undefined,
+          notes: sibNotes,
+          routing_status: null,
         };
         if (approveTime) patch.due_time = approveTime;
         return supabase.from('reminders').update(patch).eq('id', sib.id);
@@ -1832,7 +1878,7 @@ jangan lupa peralatan & Semangat💪🏼
                     style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
                     <option value="">-- Pilih Anggota Team PTS --</option>
                     <option value="SELF_MANAGER">🙋 Saya (Manager) kerjakan sendiri — Supervisor &amp; tim penuh</option>
-                    {teamUsers.map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
+                    {teamUsers.filter(u => u.jabatan !== 'Manager').map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
                   </select>
                 </div>
 
@@ -1933,7 +1979,8 @@ jangan lupa peralatan & Semangat💪🏼
                     <option value="">-- Pilih --</option>
                     <option value="SELF">🙋 Saya kerjakan sendiri (tim penuh/sibuk)</option>
                     <optgroup label="Anggota Tim">
-                      {teamUsers.filter(u => u.team_type === currentUser?.team_type && u.username !== currentUser?.username).map(u => (
+                      {/* Manager dikecualikan — bukan anggota tim biasa yang di-assign tugas oleh Supervisor */}
+                      {teamUsers.filter(u => u.team_type === currentUser?.team_type && u.username !== currentUser?.username && u.jabatan !== 'Manager').map(u => (
                         <option key={u.id} value={u.username}>{u.full_name}</option>
                       ))}
                     </optgroup>
@@ -2162,11 +2209,11 @@ jangan lupa peralatan & Semangat💪🏼
 
         {/* ── DETAIL POPUP ── */}
         {detailReminder && (
-          <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-[100] p-4 overflow-y-auto"
+          <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-[100] p-4"
             onClick={e => { if (e.target === e.currentTarget) { setDetailReminder(null); setShowModeModal(false); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); } }}>
             <div className="flex items-start gap-3 w-full justify-center" style={{ maxWidth: showModeModal ? '1140px' : '672px', transition: 'max-width 0.25s ease' }}>
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full flex-1 min-w-0 overflow-hidden flex flex-col"
-              style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: 'calc(100vh - 2rem)' }}>
+              style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: 'calc(100dvh - 2rem)' }}>
               <div className="px-6 py-5 flex-shrink-0 relative" style={{
                 background: (() => { const c = CATEGORY_CONFIG[detailReminder.category]; const base = c ? `linear-gradient(135deg,${c.accent}dd,${c.accent}88)` : 'linear-gradient(135deg,#1d4ed8,#1e40af)'; return `linear-gradient(rgba(0,0,0,0.3),rgba(0,0,0,0.15)),${base}`; })()
               }}>
@@ -2334,10 +2381,12 @@ jangan lupa peralatan & Semangat💪🏼
                   </div>
                 </div>
 
-                {detailReminder.notes && (
+                {/* Placeholder default "Menunggu assignment dari Admin" disaring — bukan catatan
+                    asli, jangan ditampilkan lagi (termasuk data lama yg belum sempat dibersihkan). */}
+                {cleanRequestNotes(detailReminder.notes) && (
                   <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.25)' }}>
                     <p className="text-[10px] font-bold tracking-widest uppercase mb-1" style={{ color: '#f59e0b' }}>📝 Catatan</p>
-                    <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line">{detailReminder.notes}</p>
+                    <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line">{cleanRequestNotes(detailReminder.notes)}</p>
                   </div>
                 )}
 

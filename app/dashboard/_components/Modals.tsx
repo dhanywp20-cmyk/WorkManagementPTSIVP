@@ -2007,7 +2007,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         // Admin: semua reminder aktif (tidak done/cancelled)
         const { data } = await supabase
           .from('reminders')
-          .select('id, project_name, category, due_date, status, assigned_to, sales_name, sales_division, created_at')
+          .select('id, project_name, category, due_date, status, assigned_to, sales_name, sales_division, routing_status, created_at')
           .neq('status', 'done')
           .neq('status', 'cancelled')
           .order('due_date', { ascending: true })
@@ -2016,17 +2016,25 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
           id: r.id,
           type: 'reminder' as const,
           title: r.project_name,
-          subtitle: `🗓️ ${r.category} · ${r.due_date}${r.sales_name ? ' · ' + r.sales_name : ''}`,
+          subtitle: (r.routing_status === 'admin_review' && !r.assigned_to)
+            ? `✅ Perlu approval kamu · ${r.category} · ${r.due_date}`
+            : `🗓️ ${r.category} · ${r.due_date}${r.sales_name ? ' · ' + r.sales_name : ''}`,
           time: r.created_at,
           url: '/reminder-schedule',
           internalUrl: '/reminder-schedule',
           menuTitle: 'Request Schedule',
         })));
       } else if (roleLC === 'team') {
-        // Team PTS (IVP/UMP/MVI, termasuk Supervisor): jadwal aktif yang di-assign
-        // ke diri sendiri + request yang MENUNGGU DI-ASSIGN dia sbg Supervisor
-        // (assigned_supervisor_id + routing_status='supervisor_assign', Fase 3 routing).
-        const [{ data: assignedToMe }, { data: needsMyAssign }] = await Promise.all([
+        // Team PTS (IVP/UMP/MVI, termasuk Supervisor & Manager): jadwal aktif yang
+        // di-assign ke diri sendiri + request yang MENUNGGU DI-ASSIGN dia sbg
+        // Supervisor (assigned_supervisor_id + routing_status='supervisor_assign')
+        // + kalau dia Manager (jabatan='Manager'), request yang MENUNGGU APPROVAL
+        // dia (routing_status='admin_review') — sebelumnya Manager (role='team',
+        // bukan role='admin') sama sekali tidak dapat badge utk item yg perlu
+        // di-approve, harus buka tabel manual.
+        const selfJabatanTeam = (currentUser as any).jabatan as string | undefined;
+        const isManagerTeam = selfJabatanTeam === 'Manager';
+        const [{ data: assignedToMe }, { data: needsMyAssign }, { data: needsMyApproval }] = await Promise.all([
           supabase.from('reminders')
             .select('id, project_name, category, due_date, status, assigned_to, created_at')
             .neq('status', 'done').neq('status', 'cancelled')
@@ -2036,16 +2044,28 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
             .select('id, project_name, category, due_date, status, assigned_to, created_at')
             .eq('assigned_supervisor_id', currentUser.id).eq('routing_status', 'supervisor_assign')
             .order('created_at', { ascending: false }).limit(20),
+          isManagerTeam
+            ? supabase.from('reminders')
+                .select('id, project_name, category, due_date, status, assigned_to, created_at')
+                .eq('routing_status', 'admin_review')
+                .order('created_at', { ascending: false }).limit(20)
+            : Promise.resolve({ data: [] as any[] }),
         ]);
+        // routing_status='admin_review' bisa jadi stale (belum di-clear) meski
+        // assigned_to sudah terisi — saring client-side, jangan andalkan filter DB.
+        const needsMyApprovalFiltered = (needsMyApproval ?? []).filter((r: any) => !r.assigned_to);
         const needsAssignIds = new Set((needsMyAssign ?? []).map((r: any) => r.id));
+        const needsApprovalIds = new Set(needsMyApprovalFiltered.map((r: any) => r.id));
         const seenTeam = new Set<string>();
-        const combinedTeam = [...(needsMyAssign ?? []), ...(assignedToMe ?? [])]
+        const combinedTeam = [...needsMyApprovalFiltered, ...(needsMyAssign ?? []), ...(assignedToMe ?? [])]
           .filter((r: any) => { if (seenTeam.has(r.id)) return false; seenTeam.add(r.id); return true; });
         setReminderNotifs(combinedTeam.map((r: any) => ({
           id: r.id,
           type: 'reminder' as const,
           title: r.project_name,
-          subtitle: needsAssignIds.has(r.id)
+          subtitle: needsApprovalIds.has(r.id)
+            ? `✅ Perlu approval kamu · ${r.category} · ${r.due_date}`
+            : needsAssignIds.has(r.id)
             ? `🎯 Perlu di-assign · ${r.category} · ${r.due_date}`
             : `🗓️ ${r.category} · ${r.due_date}`,
           time: r.created_at,

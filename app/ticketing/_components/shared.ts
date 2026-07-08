@@ -126,6 +126,7 @@ export interface TeamMember {
   photo_url: string;
   role: string;
   team_type: string;
+  jabatan?: string | null;
 }
 
 export interface ActivityLog {

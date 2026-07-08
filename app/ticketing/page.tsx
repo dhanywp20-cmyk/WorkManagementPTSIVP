@@ -350,7 +350,7 @@ function TicketingSystemInner() {
       if (!silent) setTicketsLoading(true);
       const [membersData, usersData] = await Promise.all([
         // team_members tidak ada — ambil dari users dengan role team
-        supabase.from("users").select("id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus").in("role", ["team", "team_pts"]).order("full_name"),
+        supabase.from("users").select("id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan").in("role", ["team", "team_pts"]).order("full_name"),
         supabase.from("users").select("id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan"),
       ]);
       // Map users ke format TeamMember agar kompatibel dengan kode existing
@@ -363,6 +363,7 @@ function TicketingSystemInner() {
           role: u.role,
           team_type: u.team_type || "Team PTS IVP",
           phone_number: u.phone_number,
+          jabatan: u.jabatan,
         }));
       }
       const activeUser = userOverride !== undefined ? userOverride : currentUser;
@@ -1804,8 +1805,11 @@ function TicketingSystemInner() {
     return Array.from(new Set(names)).sort();
   }, [tickets]);
 
-  const teamPTSMembers = useMemo(() => teamMembers.filter((m) => m.team_type === "Team PTS IVP"), [teamMembers]);
-  const teamServicesMembers = useMemo(() => teamMembers.filter((m) => m.team_type === "Team Services"), [teamMembers]);
+  // team_type nyata = "Team PTS IVP"/"Team PTS MVI"/"Team PTS UMP" (bukan literal
+  // "Team PTS") — startsWith supaya semua varian PTS ikut, bukan cuma IVP.
+  // Manager dikecualikan — bukan handler teknis biasa yg di-assign tiket.
+  const teamPTSMembers = useMemo(() => teamMembers.filter((m) => m.team_type?.startsWith("Team PTS") && m.jabatan !== "Manager"), [teamMembers]);
+  const teamServicesMembers = useMemo(() => teamMembers.filter((m) => m.team_type === "Team Services" && m.jabatan !== "Manager"), [teamMembers]);
 
   useEffect(() => {
     const user = getSession();
@@ -2126,8 +2130,8 @@ function TicketingSystemInner() {
                   icon="🥧"
                 />
                 <HandlerDonutCard
-                  data={stats.handlerData.filter((h: any) => h.team === `Team ${selectedHandlerTeam}`).map((h: any, i: number) => ({ name: h.name, value: h.tickets, color: ["#7c3aed","#0ea5e9","#10b981","#e11d48","#f59e0b","#6366f1"][i%6] }))}
-                  total={stats.handlerData.filter((h: any) => h.team === `Team ${selectedHandlerTeam}`).reduce((s:number,h:any) => s+h.tickets, 0)}
+                  data={stats.handlerData.filter((h: any) => h.team.startsWith(`Team ${selectedHandlerTeam}`)).map((h: any, i: number) => ({ name: h.name, value: h.tickets, color: ["#7c3aed","#0ea5e9","#10b981","#e11d48","#f59e0b","#6366f1"][i%6] }))}
+                  total={stats.handlerData.filter((h: any) => h.team.startsWith(`Team ${selectedHandlerTeam}`)).reduce((s:number,h:any) => s+h.tickets, 0)}
                   teamToggle={selectedHandlerTeam}
                   onToggle={(t: "PTS" | "Services") => setSelectedHandlerTeam(t)}
                   onSliceClick={() => {}}
@@ -2178,7 +2182,7 @@ function TicketingSystemInner() {
               {/* ── Donut Charts ── */}
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 animate-zoom-in anim-d160">
                 <StatusDonutCard data={stats.statusData} total={stats.statusData.reduce((s, d) => s + d.value, 0)} onSliceClick={(name: string) => { const mapped = name === "Solved (Overdue)" ? "Solved Overdue" : name; setFilterStatus((prev) => prev === mapped ? "All" : mapped); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }} title="Status Distribution" icon="🥧" />
-                <HandlerDonutCard data={stats.handlerData.filter((h: any) => h.team === `Team ${selectedHandlerTeam}`).map((h: any, i: number) => ({ name: h.name, value: h.tickets, color: ["#7c3aed", "#0ea5e9", "#10b981", "#e11d48", "#f59e0b", "#6366f1", "#14b8a6", "#f97316", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"][i % 12] }))} total={stats.handlerData.filter((h: any) => h.team === `Team ${selectedHandlerTeam}`).reduce((s, h) => s + h.tickets, 0)} teamToggle={selectedHandlerTeam} onToggle={(t: "PTS" | "Services") => setSelectedHandlerTeam(t)} onSliceClick={(name: string) => { setHandlerFilter((prev: string | null) => prev === name ? null : name); setFilterStatus("All"); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }} activeHandler={handlerFilter} title="Team Handlers" icon="👥" />
+                <HandlerDonutCard data={stats.handlerData.filter((h: any) => h.team.startsWith(`Team ${selectedHandlerTeam}`)).map((h: any, i: number) => ({ name: h.name, value: h.tickets, color: ["#7c3aed", "#0ea5e9", "#10b981", "#e11d48", "#f59e0b", "#6366f1", "#14b8a6", "#f97316", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"][i % 12] }))} total={stats.handlerData.filter((h: any) => h.team.startsWith(`Team ${selectedHandlerTeam}`)).reduce((s, h) => s + h.tickets, 0)} teamToggle={selectedHandlerTeam} onToggle={(t: "PTS" | "Services") => setSelectedHandlerTeam(t)} onSliceClick={(name: string) => { setHandlerFilter((prev: string | null) => prev === name ? null : name); setFilterStatus("All"); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }} activeHandler={handlerFilter} title="Team Handlers" icon="👥" />
                 <SalesDivisionDonutCard data={salesDivisionStats.data} total={salesDivisionStats.total} onSliceClick={(division: string) => { setSalesDivisionFilter((prev: string | null) => prev === division ? null : division); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }} activeDivision={salesDivisionFilter} />
                 <ProductDonutCard data={productStats.data} total={productStats.total} onSliceClick={(prod: string) => { setProductFilter((prev) => prev === prod ? null : prod); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }} activeProduct={productFilter} />
               </div>
@@ -2265,7 +2269,7 @@ function TicketingSystemInner() {
                       className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
                     >
                       <option value="">All Handlers</option>
-                      {teamMembers.filter(m => m.team_type === `Team ${selectedHandlerTeam}`).map((m) => (
+                      {teamMembers.filter(m => m.team_type?.startsWith(`Team ${selectedHandlerTeam}`)).map((m) => (
                         <option key={m.id} value={m.name}>{m.name}</option>
                       ))}
                     </select>
@@ -3211,10 +3215,10 @@ function TicketingSystemInner() {
                           style={{ border: "2px solid rgba(245,158,11,0.3)", background: "white" }}
                           value={approvalTicket?.id === ticket.id ? approvalAssignee : ""}
                           onChange={(e) => { setApprovalTicket(ticket); setApprovalAssignee(e.target.value); }}>
-                          <option value="">Pilih anggota Team PTS IVP</option>
+                          <option value="">Pilih anggota Team PTS</option>
                           {teamPTSMembers.map((m) => (<option key={m.id} value={m.name}>{m.name}</option>))}
                         </select>
-                        <button onClick={async () => { if (!approvalAssignee || approvalTicket?.id !== ticket.id) { notify("error", "Pilih anggota Team PTS IVP terlebih dahulu!"); return; } await approveTicket(); }} disabled={uploading || !(approvalTicket?.id === ticket.id && approvalAssignee)} className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-bold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm">✅ Approve</button>
+                        <button onClick={async () => { if (!approvalAssignee || approvalTicket?.id !== ticket.id) { notify("error", "Pilih anggota Team PTS terlebih dahulu!"); return; } await approveTicket(); }} disabled={uploading || !(approvalTicket?.id === ticket.id && approvalAssignee)} className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-bold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm">✅ Approve</button>
                         <button onClick={() => rejectTicket(ticket)} disabled={uploading} className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg font-bold hover:from-red-600 hover:to-red-700 transition-all disabled:opacity-40 text-sm">❌ Reject</button>
                       </div>
                     </div>

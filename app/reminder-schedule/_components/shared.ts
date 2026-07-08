@@ -1,6 +1,17 @@
 import { supabase } from '@/lib/supabase';
 import { sendWA } from '@/lib/wa';
 
+// Placeholder default saat Sales request tanpa isi notes — BUKAN catatan asli,
+// jangan ditampilkan/disimpan lagi begitu request sudah di-assign ke pengerjaan.
+export const DEFAULT_REQUEST_NOTE = 'Menunggu assignment dari Admin';
+
+// Bersihkan prefix "[REQUEST SALES]" dari notes; kalau isinya cuma placeholder
+// default (bukan catatan asli dari user), kembalikan string kosong.
+export function cleanRequestNotes(notes: string | null | undefined): string {
+  const stripped = (notes ?? '').replace('[REQUEST SALES] ', '').replace('[REQUEST SALES]', '').trim();
+  return stripped === DEFAULT_REQUEST_NOTE ? '' : stripped;
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type Priority = 'low' | 'medium' | 'high' | 'urgent';
@@ -65,6 +76,7 @@ export interface TeamUser {
   sales_division?: string;
   phone_number?: string;
   allowed_menus?: string[];
+  jabatan?: string | null;
 }
 
 export interface GuestUser {
@@ -192,6 +204,19 @@ export async function resolveSupervisorsForProductType(productType: string | nul
     .in('team_type', teamTypes)
     .eq('jabatan', 'Supervisor');
   return (sups ?? []) as SupervisorCandidate[];
+}
+
+/**
+ * Cari akun Manager yg terdaftar via app_settings.manager_user_id — dipakai
+ * utk WA & in-app notification actionable (approval/assign) supaya Manager
+ * (bukan cuma role='admin') ikut ke-notify.
+ */
+export async function fetchManagerTarget(): Promise<{ id: string; full_name: string; phone_number: string | null } | null> {
+  const { data: mgrSetting } = await supabase.from('app_settings').select('value').eq('key', 'manager_user_id').maybeSingle();
+  const managerId = mgrSetting?.value ? String(mgrSetting.value).replace(/^"|"$/g, '') : '';
+  if (!managerId) return null;
+  const { data: mgr } = await supabase.from('users').select('id, full_name, phone_number').eq('id', managerId).maybeSingle();
+  return (mgr as { id: string; full_name: string; phone_number: string | null } | null) ?? null;
 }
 
 export function formatDatetime(createdAt: string) {
