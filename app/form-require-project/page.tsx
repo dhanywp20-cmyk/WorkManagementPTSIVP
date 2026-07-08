@@ -254,6 +254,15 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
           if (isBrandPic) filtered.push(r as ProjectRequest);
         });
       }
+      // Visibility (catatan spec): anggota tim PTS biasa (bukan admin, bukan
+      // Manager) HANYA boleh lihat request yg SUDAH di-assign ke handler
+      // (assign_name terisi). Request yg masih pending approval / belum di-assign
+      // disembunyikan. Admin/superadmin & Manager tetap lihat semua.
+      const selfJabatanPTS = (currentUser as any).jabatan as string | undefined;
+      const isManagerPTS = isTeamPTS && selfJabatanPTS === 'Manager';
+      if (isTeamPTS && !isManagerPTS) {
+        filtered = filtered.filter(r => !!r.assign_name);
+      }
       setRequests(filtered);
       const assigned = [...new Set(filtered.map(r => r.assign_name).filter(Boolean) as string[])].sort();
       setPtsMembersList(assigned);
