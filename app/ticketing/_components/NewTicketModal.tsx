@@ -50,6 +50,11 @@ interface Props {
 export function NewTicketModal({ onClose, form, setForm, uploading, currentUser, users, teamPTSMembers, onSubmit }: Props) {
   const set = (patch: Partial<NewTicketForm>) => setForm({ ...form, ...patch });
 
+  // Creator = Sales Internal (guest) → boleh isi SBU (buat ticket atas nama Sales External).
+  const isInternalSalesGuest = currentUser?.role === 'guest' && !!users.find(u => u.id === currentUser.id)?.is_internal_sales;
+  const externalSalesUsers = users.filter(u => u.role === 'guest' && !u.is_internal_sales && u.id !== currentUser?.id)
+    .map(u => ({ id: u.id, full_name: u.full_name, sales_division: u.sales_division ?? null }));
+
   const [projectType, setProjectType] = useState<'new' | 'existing'>('new');
   const [reminderQuery, setReminderQuery] = useState('');
   const [reminderResults, setReminderResults] = useState<ReminderRef[]>([]);
@@ -334,6 +339,31 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
               className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none"
               style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
           </div>
+
+          {/* SBU — Sales Internal (guest) buat ticket ATAS NAMA Sales External.
+             Opsional; kalau kosong, ticket atas nama Sales Internal sendiri. */}
+          {isInternalSalesGuest && (
+            <div>
+              <div className="flex items-center gap-2 pb-2 border-b pt-2 mb-3" style={{ borderColor: "rgba(0,0,0,0.1)" }}>
+                <span className="text-lg">🏢</span>
+                <span className="text-sm font-bold tracking-wide text-slate-700">SBU (Sales External)</span>
+              </div>
+              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
+                SBU <span className="normal-case text-gray-400 font-medium tracking-normal">(opsional — atas nama Sales External)</span>
+              </label>
+              <SalesPicker
+                value={form.sales_name}
+                users={externalSalesUsers}
+                onChange={(name, div) => set({ sales_name: name, sales_division: div })}
+                placeholder="— Pilih Sales External (opsional) —"
+                triggerClassName="rounded-xl px-4 py-3 cursor-pointer"
+                triggerStyle={{ background: "rgba(255,255,255,0.90)", border: "1px solid rgba(0,0,0,0.12)" }}
+              />
+              {form.sales_name && (
+                <p className="text-[11px] text-red-500 mt-1">Ticket diatasnamakan <strong>{form.sales_name}</strong>{form.sales_division ? ` · ${form.sales_division}` : ''}.</p>
+              )}
+            </div>
+          )}
 
           {/* Sales — hidden for guest (auto-inserted), shown for admin/team */}
           {currentUser?.role !== "guest" && (

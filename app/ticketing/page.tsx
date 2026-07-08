@@ -351,7 +351,7 @@ function TicketingSystemInner() {
       const [membersData, usersData] = await Promise.all([
         // team_members tidak ada — ambil dari users dengan role team
         supabase.from("users").select("id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan").in("role", ["team", "team_pts"]).order("full_name"),
-        supabase.from("users").select("id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan"),
+        supabase.from("users").select("id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan, is_internal_sales"),
       ]);
       // Map users ke format TeamMember agar kompatibel dengan kode existing
       if (membersData.data) {
@@ -587,6 +587,19 @@ function TicketingSystemInner() {
       } else {
         const { data: ticketsData } = await supabase.from("tickets").select("*, activity_logs(*)").order("created_at", { ascending: false });
         let mergedTickets: Ticket[] = ticketsData || [];
+        // Visibility (catatan spec): anggota tim biasa (bukan admin/superadmin,
+        // bukan Manager) TIDAK lihat ticket yg masih pending approval / belum
+        // di-assign. Yg di-route ke Supervisor hanya tampil ke Supervisor ybs.
+        // Admin & Manager tetap lihat semua.
+        const roleLc2 = (activeUser?.role ?? "").toLowerCase();
+        const isAdminUser2 = roleLc2 === "admin" || roleLc2 === "superadmin";
+        const isManagerUser2 = roleLc2 === "team" && (activeUser as any)?.jabatan === "Manager";
+        if (!isAdminUser2 && !isManagerUser2) {
+          mergedTickets = mergedTickets.filter((t) =>
+            t.status !== "Waiting Approval" &&
+            !(t.routing_status === "supervisor_assign" && t.assigned_supervisor_id !== activeUser?.id)
+          );
+        }
         try {
           const { data: svcLogs } = await supabaseServices.from("activity_logs").select("id,ticket_id,handler_name,handler_username,action_taken,notes,file_url,file_name,photo_url,photo_name,new_status,team_type,assigned_to_services,created_at").order("created_at", { ascending: false });
           if (svcLogs && svcLogs.length > 0) {
@@ -647,12 +660,16 @@ function TicketingSystemInner() {
       // Ticket dari guest/team → Waiting Approval; dari admin/superadmin → langsung sesuai status pilihan
       const ticketStatus = isElevated ? newTicket.status : "Waiting Approval";
       const ticketAssignedTo = isElevated ? newTicket.assign_name : "";
+      // SBU: Sales Internal (guest) yg pilih Sales External → ticket diatasnamakan
+      // External tsb. created_by tetap Sales Internal (jejak pembuat).
+      const meInternalSales = !!users.find((u) => u.id === currentUser?.id)?.is_internal_sales;
+      const guestSBU = currentUser?.role === "guest" && meInternalSales && !!newTicket.sales_name?.trim();
       const ticketData = {
         project_name: newTicket.project_name,
         address: newTicket.address || null,
         customer_phone: newTicket.customer_phone || null,
-        sales_name: currentUser?.role === "guest" ? (currentUser.full_name || newTicket.sales_name || null) : (newTicket.sales_name || null),
-        sales_division: currentUser?.role === "guest" ? (currentUser.sales_division || newTicket.sales_division || null) : (newTicket.sales_division || null),
+        sales_name: guestSBU ? newTicket.sales_name.trim() : (currentUser?.role === "guest" ? (currentUser.full_name || newTicket.sales_name || null) : (newTicket.sales_name || null)),
+        sales_division: guestSBU ? (newTicket.sales_division?.trim() || null) : (currentUser?.role === "guest" ? (currentUser.sales_division || newTicket.sales_division || null) : (newTicket.sales_division || null)),
         sn_unit: newTicket.sn_unit || null,
         product: newTicket.product || null,
         issue_case: newTicket.issue_case,

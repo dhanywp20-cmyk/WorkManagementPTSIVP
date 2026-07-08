@@ -117,6 +117,8 @@ export interface User {
   sales_division?: string;
   phone_number?: string;
   allowed_menus?: string[];
+  jabatan?: string | null;
+  is_internal_sales?: boolean;
 }
 
 export interface TeamMember {
@@ -171,6 +173,10 @@ export interface Ticket {
   reminder_id?: string | null | undefined;
   priority?: 'Low' | 'Medium' | 'High' | 'Critical';
   escalation_notified_at?: string | null;
+  // Routing: tahap Supervisor (Admin approve → SPV assign) + CC Sales Internal.
+  routing_status?: string | null;          // 'supervisor_assign' | null
+  assigned_supervisor_id?: string | null;  // Supervisor yg wajib assign lanjut ke tim
+  internal_sales_id?: string | null;       // Sales Internal yg di-CC (informational, bukan gate)
 }
 
 export interface OverdueSetting {
