@@ -185,7 +185,7 @@ export default function Dashboard() {
         body: JSON.stringify({ username: loginForm.username, password: loginForm.password }),
       });
       const result = await res.json();
-      if (!res.ok || !result.user) { setLoginErr(result.error || 'Username atau password salah!'); return; }
+      if (!res.ok || !result.user) { setLoginErr(result.error || 'Email atau password salah!'); return; }
       const data = result.user;
       if (data.team_type === 'Pending Approval') {
         setLoginErr('Akun kamu masih menunggu persetujuan admin. Kamu akan dihubungi setelah akun diaktifkan.');
@@ -242,7 +242,10 @@ export default function Dashboard() {
   const handleRegister = async () => {
     const { full_name, username, password, confirm_password, divisi, pts_type, sales_division } = registerForm;
     if (!full_name.trim()) { setRegisterErr('Nama lengkap wajib diisi!'); return; }
-    if (!username.trim()) { setRegisterErr('Email / username wajib diisi!'); return; }
+    if (!username.trim()) { setRegisterErr('Email wajib diisi!'); return; }
+    // Registrasi baru WAJIB email valid (disimpan di kolom username). Akun lama
+    // yang terlanjur pakai username non-email tidak terpengaruh.
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username.trim())) { setRegisterErr('Masukkan alamat email yang valid (contoh: nama@perusahaan.com).'); return; }
     if (!password || password.length < 8) { setRegisterErr('Password minimal 8 karakter!'); return; }
     if (!/[A-Z]/.test(password)) { setRegisterErr('Password harus mengandung minimal 1 huruf kapital!'); return; }
     if (!/[0-9]/.test(password)) { setRegisterErr('Password harus mengandung minimal 1 angka!'); return; }
@@ -260,7 +263,7 @@ export default function Dashboard() {
     setRegisterLoading(true);
     try {
       const { data: existing } = await supabase.from('users').select('id').eq('username', username.trim().toLowerCase()).maybeSingle();
-      if (existing) { setRegisterErr('Username / email sudah terdaftar. Gunakan username lain.'); setRegisterLoading(false); return; }
+      if (existing) { setRegisterErr('Email sudah terdaftar. Gunakan email lain.'); setRegisterLoading(false); return; }
       const { data: newUser, error } = await supabase.from('users').insert([{
         full_name: full_name.trim(),
         username: username.trim().toLowerCase(),
@@ -634,29 +637,51 @@ export default function Dashboard() {
   // ── LOGIN / REGISTER SCREEN ──
   if (!isLoggedIn) {
     return (
-      <div className="flex items-center justify-center bg-cover bg-center bg-fixed p-4" style={{ backgroundImage: 'url(/IVP_Background.png)', minHeight: '100dvh' }}>
-        <div className={`w-full rounded-3xl shadow-2xl overflow-hidden transition-all ${showRegister ? 'max-w-2xl' : 'max-w-md'}`} style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(20px)' }}>
-          <div className="p-6 md:p-8">
-            <div className="flex flex-col items-center mb-8">
-              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg ${showRegister ? 'bg-gradient-to-br from-indigo-600 to-indigo-700' : 'bg-gradient-to-br from-rose-600 to-rose-700'}`}>
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {showRegister
-                    ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                    : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  }
-                </svg>
+      <div className="flex" style={{ minHeight: '100dvh' }}>
+        {/* ── LEFT: panel branding (desktop) — pakai IVP_Background biar nice ── */}
+        <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 text-white overflow-hidden"
+          style={{ backgroundImage: 'linear-gradient(135deg, rgba(190,18,60,0.92), rgba(136,19,55,0.9)), url(/IVP_Background.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center backdrop-blur">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+            </div>
+            <span className="text-lg font-bold tracking-tight">Work Management <span className="font-normal text-white/75">· PTS Portal</span></span>
+          </div>
+          <div className="max-w-md">
+            <h1 className="text-4xl font-black leading-tight mb-4">Portal Manajemen<br />Kerja Tim PTS</h1>
+            <p className="text-white/85 text-base leading-relaxed mb-8">Request schedule, ticket troubleshooting, design project, incentive &amp; KPI — dalam satu platform yang rapi.</p>
+            <div className="flex flex-wrap gap-2.5">
+              {[['🗓️', 'Request Schedule'], ['🎫', 'Ticket Troubleshooting'], ['🏗️', 'Design Project'], ['📊', 'Incentive & KPI']].map(([ic, l]) => (
+                <span key={l} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/12 backdrop-blur text-sm font-semibold border border-white/15">{ic} {l}</span>
+              ))}
+            </div>
+          </div>
+          <p className="text-white/55 text-xs">© 2026 IndoVisual Professional Tools</p>
+        </div>
+
+        {/* ── RIGHT: panel form (login / register). Di mobile pakai IVP_Background samar. ── */}
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-cover bg-center"
+          style={{ backgroundImage: 'linear-gradient(rgba(248,250,252,0.94),rgba(248,250,252,0.97)), url(/IVP_Background.png)' }}>
+          <div className={`w-full ${showRegister ? 'max-w-2xl' : 'max-w-md'}`}>
+            <div className="mb-8">
+              {/* Logo kecil — hanya mobile (di desktop logo ada di panel kiri) */}
+              <div className="flex lg:hidden items-center gap-2.5 mb-6">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-rose-600 to-rose-700 flex items-center justify-center shadow-lg">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                </div>
+                <span className="text-lg font-bold text-slate-800">Work Management <span className="text-slate-400 font-normal">· PTS Portal</span></span>
               </div>
-              <h1 className="text-2xl font-bold text-slate-800 mb-1 tracking-tight">Work Management</h1>
-              <p className="text-slate-500 text-sm font-medium">Support System — IndoVisual</p>
+              <h2 className="text-3xl font-bold text-slate-800 tracking-tight">{showRegister ? 'Buat Akun Baru' : 'Selamat Datang'}</h2>
+              <p className="text-slate-500 text-sm mt-1.5">{showRegister ? 'Lengkapi data untuk mendaftar. Akun akan diverifikasi admin.' : 'Masuk ke akun Anda untuk melanjutkan'}</p>
             </div>
 
             {!showRegister && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold mb-2 text-slate-600 tracking-widest uppercase">Username</label>
+                  <label className="block text-xs font-bold mb-2 text-slate-600 tracking-widest uppercase">Email</label>
                   <input type="text" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
                     className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 transition-all bg-white text-slate-800 font-medium text-sm outline-none"
-                    placeholder="Enter your username" onKeyDown={(e) => e.key === 'Enter' && handleLogin()} />
+                    placeholder="email@perusahaan.com" onKeyDown={(e) => e.key === 'Enter' && handleLogin()} />
                 </div>
                 <div>
                   <label className="block text-xs font-bold mb-2 text-slate-600 tracking-widest uppercase">Password</label>
@@ -707,9 +732,9 @@ export default function Dashboard() {
                             className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="Nama lengkap" />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Username / Email *</label>
-                          <input type="text" value={registerForm.username} onChange={e => setRegisterForm({ ...registerForm, username: e.target.value })}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="username atau email" />
+                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Email *</label>
+                          <input type="email" value={registerForm.username} onChange={e => setRegisterForm({ ...registerForm, username: e.target.value })}
+                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="email@perusahaan.com" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Password *</label>
@@ -804,9 +829,9 @@ export default function Dashboard() {
               )}
               {forgotStep === 'request' ? (
                 <div className="space-y-3">
-                  <p className="text-xs text-slate-500">Masukkan username kamu. Kode OTP akan dikirim ke nomor WhatsApp yang terdaftar.</p>
+                  <p className="text-xs text-slate-500">Masukkan email (atau username lama) kamu. Kode OTP akan dikirim ke nomor WhatsApp yang terdaftar.</p>
                   <input type="text" value={forgotUsername} onChange={e => setForgotUsername(e.target.value)}
-                    placeholder="Username" onKeyDown={e => e.key === 'Enter' && handleForgotRequest()}
+                    placeholder="Email / Username" onKeyDown={e => e.key === 'Enter' && handleForgotRequest()}
                     className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none" />
                   <button onClick={handleForgotRequest} disabled={forgotLoading}
                     className="w-full bg-rose-600 text-white py-2.5 rounded-xl font-bold text-sm hover:bg-rose-700 disabled:opacity-60 transition-all">
