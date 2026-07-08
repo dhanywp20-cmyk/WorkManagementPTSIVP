@@ -86,6 +86,7 @@ export interface GuestUser {
   role: string;
   phone_number?: string;
   sales_division?: string;
+  is_internal_sales?: boolean;
 }
 
 // Kategori yang men-trigger auto form_review ke Guest

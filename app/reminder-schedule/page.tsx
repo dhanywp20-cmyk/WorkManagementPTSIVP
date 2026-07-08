@@ -43,6 +43,7 @@ function ReminderSchedulePageInner() {
   const [teamUsers, setTeamUsers]           = useState<TeamUser[]>([]);
   const [managerUserId, setManagerUserId]   = useState('');  // app_settings.manager_user_id (Manager PTS yg boleh approve & assign)
   const [myJabatan, setMyJabatan]           = useState('');  // jabatan akun login (utk deteksi Manager tanpa perlu set manager_user_id)
+  const [myIsInternalSales, setMyIsInternalSales] = useState(false); // creator = Sales Internal → boleh isi SBU (buat atas nama Sales External)
   const [guestUsers, setGuestUsers]         = useState<GuestUser[]>([]);
   const [reminders, setReminders]           = useState<Reminder[]>([]);
   const [listLoading, setListLoading]       = useState(false);
@@ -233,8 +234,11 @@ function ReminderSchedulePageInner() {
   // & assign, tanpa admin harus set manager_user_id manual dulu.
   useEffect(() => {
     if (!currentUser?.id) return;
-    supabase.from('users').select('jabatan').eq('id', currentUser.id).maybeSingle()
-      .then((res: { data: { jabatan: string | null } | null }) => setMyJabatan(res.data?.jabatan ?? ''));
+    supabase.from('users').select('jabatan, is_internal_sales').eq('id', currentUser.id).maybeSingle()
+      .then((res: { data: { jabatan: string | null; is_internal_sales: boolean | null } | null }) => {
+        setMyJabatan(res.data?.jabatan ?? '');
+        setMyIsInternalSales(!!res.data?.is_internal_sales);
+      });
   }, [currentUser?.id]);
 
   // ─── H-1 WA auto-send ────────────────────────────────────────────────────
@@ -249,7 +253,7 @@ function ReminderSchedulePageInner() {
   const fetchGuestUsers = async () => {
     const { data } = await supabase
       .from('users')
-      .select('id, username, full_name, role, phone_number, sales_division')
+      .select('id, username, full_name, role, phone_number, sales_division, is_internal_sales')
       .eq('role', 'guest')
       .order('full_name');
     if (data) setGuestUsers(data as GuestUser[]);
@@ -278,10 +282,22 @@ function ReminderSchedulePageInner() {
   // Helper: fetch reminders dengan filter guest — ambil yg sales_name = full_name ATAU created_by = username
   const fetchRemindersForUser = async (activeUser: TeamUser | null): Promise<Reminder[]> => {
     if (!activeUser || activeUser.role !== 'guest') {
-      // Admin & team: ambil semua
       const { data, error } = await supabase.from('reminders').select('*').order('created_at', { ascending: false }).limit(500);
       if (error) throw new Error(error.message);
-      return (data as Reminder[]) ?? [];
+      const all = (data as Reminder[]) ?? [];
+      if (!activeUser) return all;
+      // Admin & Manager: lihat SEMUA (termasuk yg masih proses approval / belum di-assign).
+      const roleLc = (activeUser.role ?? '').toLowerCase();
+      const isAdminUser = roleLc === 'admin' || roleLc === 'superadmin';
+      const isManagerUser = roleLc === 'team' && (activeUser.jabatan === 'Manager' || (!!managerUserId && activeUser.id === managerUserId));
+      if (isAdminUser || isManagerUser) return all;
+      // Anggota tim biasa: HANYA item yg sudah di-assign (ke siapa pun) ATAU yg
+      // di-route ke dirinya sbg Supervisor utk di-assign. Item yg masih pending
+      // approval / belum di-assign TIDAK boleh muncul di list mereka (catatan spec).
+      return all.filter(r =>
+        !!r.assigned_to ||
+        (!!r.assigned_supervisor_id && r.assigned_supervisor_id === activeUser.id)
+      );
     }
     // Guest: ambil schedule yg atas nama dia (dibuat admin) + yg dia request sendiri (created_by)
     // + request Sales External yang menunggu REVIEW dia (Sales Internal, Fase 2 routing).
@@ -1164,6 +1180,14 @@ function ReminderSchedulePageInner() {
       }
     }
 
+    // SBU: kalau creator Sales Internal memilih Sales External di dropdown SBU,
+    // schedule diatasnamakan Sales External tsb (nama + divisi). created_by tetap
+    // username Sales Internal (jejak siapa yang membuat). Routing TIDAK berubah —
+    // tetap admin_review karena pembuat = Sales Internal (spec kondisi 2).
+    const sbuName = data.sbu_name?.trim();
+    const effectiveSalesName = sbuName || currentUser.full_name;
+    if (sbuName && data.sbu_division?.trim()) salesDivision = data.sbu_division.trim();
+
     // Insert ke tabel reminders dengan status pending & assigned_to kosong
     // Admin nantinya assign ke team dari list yang ada
     const notesVal = data.notes
@@ -1181,7 +1205,7 @@ function ReminderSchedulePageInner() {
       due_date: d,
       batch_id: batchId,
       due_time: data.due_time,
-      sales_name: currentUser.full_name,
+      sales_name: effectiveSalesName,
       sales_division: salesDivision,
       pic_name: data.pic_name,
       pic_phone: data.pic_phone,
@@ -1731,6 +1755,10 @@ jangan lupa peralatan & Semangat💪🏼
             salesName={currentUser.full_name}
             salesUsername={currentUser.username}
             salesDivision={currentUser.sales_division ?? ''}
+            isInternalSales={myIsInternalSales}
+            externalSalesUsers={guestUsers
+              .filter(g => !g.is_internal_sales && g.id !== currentUser.id)
+              .map(g => ({ id: g.id, full_name: g.full_name, sales_division: g.sales_division ?? null }))}
             onClose={() => setShowRequestModal(false)}
             onSubmit={handleRequestJadwal}
           />
