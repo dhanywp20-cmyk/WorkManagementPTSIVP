@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { CATEGORY_CONFIG, PRODUCT_TYPES } from './shared';
 import { MultiDatePicker } from '@/components/shared';
+import { SalesPicker, type SalesPickerUser } from '@/components/shared/SalesPicker';
 
 export interface JadwalRequest {
   project_name: string;
@@ -17,12 +18,18 @@ export interface JadwalRequest {
   product: string;
   notes: string;
   sales_division?: string; // dikirim dari modal agar tidak bergantung hanya pada localStorage
+  // SBU — hanya diisi kalau creator = Sales Internal & membuat atas nama Sales
+  // External tertentu. Kalau terisi → request diatasnamakan External tsb.
+  sbu_name?: string;
+  sbu_division?: string;
 }
 
 interface RequestJadwalModalProps {
   salesName: string;       // full_name dari currentUser (guest)
   salesUsername: string;   // username dari currentUser
   salesDivision?: string;  // sales_division dari currentUser (opsional, pre-fill)
+  isInternalSales?: boolean;          // creator adalah Sales Internal → tampilkan SBU
+  externalSalesUsers?: SalesPickerUser[]; // daftar Sales External utk dropdown SBU
   onClose: () => void;
   onSubmit: (data: JadwalRequest) => Promise<void>;
 }
@@ -35,11 +42,13 @@ const inputStyle = {
 };
 
 // Kategori yang diizinkan untuk Guest request
-const ALLOWED_CATEGORIES = ['Demo Product', 'Meeting & Survey', 'Konfigurasi', 'Konfigurasi & Training', 'Training'];
+const ALLOWED_CATEGORIES = ['Demo Product', 'Meeting & Survey', 'Konfigurasi', 'Konfigurasi & Training', 'Training', 'Maintenance'];
 
 export function RequestJadwalModal({
   salesName,
   salesDivision = '',
+  isInternalSales = false,
+  externalSalesUsers = [],
   onClose,
   onSubmit,
 }: RequestJadwalModalProps) {
@@ -59,6 +68,8 @@ export function RequestJadwalModal({
     product: '',
     notes: '',
     sales_division: salesDivision,
+    sbu_name: '',
+    sbu_division: '',
   });
 
   const f = (patch: Partial<JadwalRequest>) => setForm(prev => ({ ...prev, ...patch }));
@@ -134,6 +145,31 @@ export function RequestJadwalModal({
               </span>
             </div>
           </div>
+
+          {/* SBU — hanya Sales Internal. Opsional: buat schedule ATAS NAMA Sales
+             External tertentu (mis. bantu request untuk SBU-nya). Kalau dipilih,
+             schedule diatasnamakan Sales External tsb (nama & divisi). */}
+          {isInternalSales && (
+            <div>
+              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                SBU <span className="normal-case text-slate-400 font-medium tracking-normal">(opsional — buat atas nama Sales External)</span>
+              </label>
+              <SalesPicker
+                value={form.sbu_name ?? ''}
+                users={externalSalesUsers}
+                onChange={(name, division) => f({ sbu_name: name, sbu_division: division })}
+                placeholder="— Pilih Sales External (opsional) —"
+                triggerClassName="rounded-xl px-4 py-3"
+                triggerStyle={inputStyle}
+                dropdownZIndex={130}
+              />
+              {form.sbu_name && (
+                <p className="text-[11px] text-blue-500 mt-1">
+                  Schedule ini akan diatasnamakan <strong>{form.sbu_name}</strong>{form.sbu_division ? ` · ${form.sbu_division}` : ''}.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Nama Project */}
           <div>

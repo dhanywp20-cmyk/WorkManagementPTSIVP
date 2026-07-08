@@ -140,7 +140,6 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                   { key: 'none', label: '👤 Per Orang' },
                   { key: 'ivp',  label: '👥 Semua PTS IVP' },
                   { key: 'mvi', label: '👥 Semua PTS MVI' },
-                  { key: 'ump',  label: '👥 Semua PTS UMP' },
                 ] as { key: BulkTarget; label: string }[]).map(opt => (
                   <button key={opt.key} type="button"
                     onClick={() => { onBulkTargetChange(opt.key); if (opt.key !== 'none') fd({ assigned_to: '' }); }}
@@ -157,19 +156,15 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
               <select value={formData.assigned_to} onChange={e => fd({ assigned_to: e.target.value })}
                 className={inputCls} style={inputStyle}>
                 <option value="">-- Pilih Anggota Team --</option>
-                {teamUsers.filter(u => u.team_type === 'Team PTS IVP').length > 0 && (
+                {/* Manager dikecualikan di semua grup — bukan anggota tim biasa yg di-assign tugas */}
+                {teamUsers.filter(u => u.team_type === 'Team PTS IVP' && u.jabatan !== 'Manager').length > 0 && (
                   <optgroup label="PTS IVP">
-                    {teamUsers.filter(u => u.team_type === 'Team PTS IVP').map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
+                    {teamUsers.filter(u => u.team_type === 'Team PTS IVP' && u.jabatan !== 'Manager').map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
                   </optgroup>
                 )}
-                {teamUsers.filter(u => u.team_type === 'Team PTS MVI').length > 0 && (
+                {teamUsers.filter(u => u.team_type === 'Team PTS MVI' && u.jabatan !== 'Manager').length > 0 && (
                   <optgroup label="PTS MVI">
-                    {teamUsers.filter(u => u.team_type === 'Team PTS MVI').map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
-                  </optgroup>
-                )}
-                {teamUsers.filter(u => u.team_type === 'Team PTS UMP').length > 0 && (
-                  <optgroup label="PTS UMP">
-                    {teamUsers.filter(u => u.team_type === 'Team PTS UMP').map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
+                    {teamUsers.filter(u => u.team_type === 'Team PTS MVI' && u.jabatan !== 'Manager').map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
                   </optgroup>
                 )}
               </select>
