@@ -10,16 +10,24 @@ import {
   PIE_COLORS,
 } from './shared';
 import { SalesPicker } from '@/components/shared';
+import { isAssignablePTSTeam } from '@/lib/teams';
 
 export function AssignPTSModal({
-  req, onClose, onAssigned, currentUser,
+  req, onClose, onAssigned, currentUser, allowSupervisorRoute = false,
 }: {
   req: ProjectRequest; onClose: () => void; onAssigned: () => void; currentUser: User;
+  // true = dibuka oleh Admin/Manager saat approve → boleh pilih "Route ke Supervisor".
+  // false = dibuka oleh Supervisor utk assign final ke Tim PTS (tanpa opsi route).
+  allowSupervisorRoute?: boolean;
 }) {
   const [teamMembers, setTeamMembers] = useState<User[]>([]);
   const [ivpUsers, setIvpUsers] = useState<User[]>([]);
+  const [supervisors, setSupervisors] = useState<{ id: string; full_name: string; team_type?: string; phone_number?: string }[]>([]);
   const [selectedPTS, setSelectedPTS] = useState(req.assign_name || '');
   const [selectedIVP, setSelectedIVP] = useState(req.ivp_assignee || '');
+  const [selectedSupervisorId, setSelectedSupervisorId] = useState('');
+  // mode: 'direct' = assign langsung ke Tim PTS; 'supervisor' = route ke Supervisor
+  const [mode, setMode] = useState<'direct' | 'supervisor'>('direct');
   const [saving, setSaving] = useState(false);
   const [formErr, setFormErr] = useState('');
 
@@ -27,20 +35,67 @@ export function AssignPTSModal({
   const isExternal = !!(req.sales_division && req.sales_division.trim() && req.sales_division.trim().toUpperCase() !== 'IVP');
 
   useEffect(() => {
-    // Fetch Team PTS
+    // Fetch Team PTS (hanya team assignable = IVP/MVI, UMP dikecualikan — lib/teams.ts)
     supabase.from('users')
       .select('id, full_name, role, team_type, phone_number, sales_division')
       .in('role', ['team_pts', 'team'])
-      .then(({ data }: { data: User[] | null }) => { if (data) setTeamMembers(data); });
+      .then(({ data }: { data: User[] | null }) => { if (data) setTeamMembers(data.filter(u => isAssignablePTSTeam(u.team_type))); });
     // Fetch IVP Sales internal (guest dengan sales_division = IVP)
     supabase.from('users')
       .select('id, full_name, role, phone_number, sales_division')
       .eq('role', 'guest')
       .eq('sales_division', 'IVP')
       .then(({ data }: { data: User[] | null }) => { if (data) setIvpUsers(data); });
-  }, []);
+    // Fetch Supervisor (jabatan='Supervisor') — utk opsi Route ke Supervisor
+    if (allowSupervisorRoute) {
+      supabase.from('users')
+        .select('id, full_name, team_type, phone_number')
+        .eq('jabatan', 'Supervisor')
+        .then(({ data }: { data: { id: string; full_name: string; team_type?: string; phone_number?: string }[] | null }) => { if (data) setSupervisors(data.filter(s => isAssignablePTSTeam(s.team_type))); });
+    }
+  }, [allowSupervisorRoute]);
+
+  // ── Route ke Supervisor: request lanjut ke Supervisor utk di-assign ke tim ──
+  const handleRouteToSupervisor = async () => {
+    if (!selectedSupervisorId) { setFormErr('Pilih Supervisor tujuan terlebih dahulu.'); return; }
+    if (isExternal && !selectedIVP) { setFormErr('Request dari divisi external wajib assign IVP Sales internal.'); return; }
+    setFormErr('');
+    setSaving(true);
+    const sup = supervisors.find(s => s.id === selectedSupervisorId);
+    const updatePayload: Record<string, unknown> = {
+      status: 'approved',
+      approved_by: currentUser.full_name,
+      approved_at: new Date().toISOString(),
+      routing_status: 'supervisor_assign',
+      assigned_supervisor_id: selectedSupervisorId,
+      assign_name: null,   // belum di-assign ke handler — Supervisor yg lanjut
+    };
+    if (isExternal) updatePayload.ivp_assignee = selectedIVP;
+    const { error } = await supabase.from('project_requests').update(updatePayload).eq('id', req.id);
+    if (error) { setFormErr('Gagal route: ' + error.message); setSaving(false); return; }
+    await supabase.from('project_messages').insert([{
+      request_id: req.id, sender_id: currentUser.id, sender_name: 'System', sender_role: 'system',
+      message: `✅ Request diapprove oleh ${currentUser.full_name} & diteruskan ke Supervisor ${sup?.full_name ?? '-'} untuk di-assign ke tim.`,
+    }]);
+    if (sup?.phone_number) {
+      const lines = [
+        '🎯 *Request Design — Perlu Di-assign ke Tim*',
+        '━━━━━━━━━━━━━━━━━━',
+        `📋 Project  : ${req.project_name}`,
+        `🏢 Sales    : ${req.sales_name || '-'} (${req.sales_division || '-'})`,
+        `👤 Requester: ${req.requester_name}`,
+        '━━━━━━━━━━━━━━━━━━',
+        'Sudah diapprove Admin/Manager — silakan assign ke anggota tim kamu atau kerjakan sendiri.',
+        '🔗 https://work-management-ptsivp.vercel.app/dashboard',
+      ].join('\n');
+      await sendWANotif({ type: 'reminder_wa', target: sup.phone_number, message: lines });
+    }
+    setSaving(false);
+    onAssigned();
+  };
 
   const handleSave = async () => {
+    if (mode === 'supervisor') { await handleRouteToSupervisor(); return; }
     if (!selectedPTS) { setFormErr('Pilih Tim PTS handler terlebih dahulu.'); return; }
     if (isExternal && !selectedIVP) { setFormErr('Request dari divisi external wajib assign IVP Sales internal.'); return; }
     setFormErr('');
@@ -51,6 +106,9 @@ export function AssignPTSModal({
       status: 'approved',
       approved_by: currentUser.full_name,
       approved_at: new Date().toISOString(),
+      // Assign final ke handler → bersihkan penanda tahap Supervisor (kalau tadinya di-route).
+      routing_status: null,
+      assigned_supervisor_id: null,
     };
     if (isExternal) updatePayload.ivp_assignee = selectedIVP;
 
@@ -141,36 +199,91 @@ export function AssignPTSModal({
           </div>
         )}
 
+        {/* Toggle: assign langsung ke Tim PTS ATAU route ke Supervisor (hanya
+            saat dibuka Admin/Manager di tahap approve). */}
+        {allowSupervisorRoute && (
+          <div className="px-6 pt-4">
+            <div className="grid grid-cols-2 gap-2 p-1 rounded-xl" style={{ background: 'rgba(0,0,0,0.04)' }}>
+              <button type="button" onClick={() => { setMode('direct'); setFormErr(''); }}
+                className={`py-2 rounded-lg text-xs font-bold transition-all ${mode === 'direct' ? 'bg-white text-teal-700 shadow' : 'text-gray-500'}`}>
+                👷 Assign langsung ke Tim PTS
+              </button>
+              <button type="button" onClick={() => { setMode('supervisor'); setFormErr(''); }}
+                className={`py-2 rounded-lg text-xs font-bold transition-all ${mode === 'supervisor' ? 'bg-white text-amber-700 shadow' : 'text-gray-500'}`}>
+                🎯 Route ke Supervisor
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className={`p-6 ${isExternal ? 'grid grid-cols-2 gap-6' : ''}`}>
 
-          {/* Kolom kiri: Tim PTS */}
+          {/* Kolom kiri: Tim PTS (mode direct) ATAU Supervisor (mode supervisor) */}
           <div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
-              👷 Tim PTS Handler <span className="text-red-500">*</span>
-            </p>
-            {teamMembers.length === 0 ? (
-              <div className="text-center py-8 text-gray-400 text-sm">
-                <div className="text-4xl mb-2">👥</div>
-                <p>Tidak ada Team PTS tersedia</p>
-              </div>
+            {mode === 'supervisor' ? (
+              <>
+                <p className="text-xs font-bold text-amber-600 uppercase tracking-widest mb-1">
+                  🎯 Route ke Supervisor <span className="text-red-500">*</span>
+                </p>
+                <p className="text-[11px] text-gray-500 mb-3">
+                  Supervisor yang dipilih akan meng-assign ke anggota tim-nya (atau kerjakan sendiri).
+                </p>
+                {supervisors.length === 0 ? (
+                  <div className="text-center py-8 text-gray-400 text-sm">
+                    <div className="text-4xl mb-2">🎯</div>
+                    <p>Tidak ada Supervisor terdaftar</p>
+                    <p className="text-xs mt-1">(User jabatan = Supervisor di Struktur Organisasi)</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {supervisors.map(s => (
+                      <button key={s.id} type="button" onClick={() => setSelectedSupervisorId(s.id)}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all
+                          ${selectedSupervisorId === s.id ? 'border-amber-500 bg-amber-50' : 'border-gray-200 hover:border-amber-300 bg-white'}`}>
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0
+                          ${selectedSupervisorId === s.id ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                          {s.full_name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-bold truncate ${selectedSupervisorId === s.id ? 'text-amber-700' : 'text-gray-700'}`}>{s.full_name}</p>
+                          <p className="text-xs text-gray-400">{s.team_type || 'Supervisor'}</p>
+                        </div>
+                        {selectedSupervisorId === s.id && <span className="text-amber-600 font-bold flex-shrink-0">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             ) : (
-              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                {teamMembers.map(m => (
-                  <button key={m.id} type="button" onClick={() => setSelectedPTS(m.full_name)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all
-                      ${selectedPTS === m.full_name ? 'border-teal-500 bg-teal-50' : 'border-gray-200 hover:border-teal-300 bg-white'}`}>
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0
-                      ${selectedPTS === m.full_name ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
-                      {m.full_name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-bold truncate ${selectedPTS === m.full_name ? 'text-teal-700' : 'text-gray-700'}`}>{m.full_name}</p>
-                      <p className="text-xs text-gray-400">{m.team_type || m.role}</p>
-                    </div>
-                    {selectedPTS === m.full_name && <span className="text-teal-600 font-bold flex-shrink-0">✓</span>}
-                  </button>
-                ))}
-              </div>
+              <>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
+                  👷 Tim PTS Handler <span className="text-red-500">*</span>
+                </p>
+                {teamMembers.length === 0 ? (
+                  <div className="text-center py-8 text-gray-400 text-sm">
+                    <div className="text-4xl mb-2">👥</div>
+                    <p>Tidak ada Team PTS tersedia</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {teamMembers.map(m => (
+                      <button key={m.id} type="button" onClick={() => setSelectedPTS(m.full_name)}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all
+                          ${selectedPTS === m.full_name ? 'border-teal-500 bg-teal-50' : 'border-gray-200 hover:border-teal-300 bg-white'}`}>
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0
+                          ${selectedPTS === m.full_name ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                          {m.full_name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-bold truncate ${selectedPTS === m.full_name ? 'text-teal-700' : 'text-gray-700'}`}>{m.full_name}</p>
+                          <p className="text-xs text-gray-400">{m.team_type || m.role}</p>
+                        </div>
+                        {selectedPTS === m.full_name && <span className="text-teal-600 font-bold flex-shrink-0">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -219,11 +332,11 @@ export function AssignPTSModal({
           )}
           <div className="flex gap-3">
             <button onClick={onClose} className="flex-1 border-2 border-gray-300 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50 transition-all">Batal</button>
-            <button onClick={handleSave} disabled={!selectedPTS || saving}
-              className="flex-[2] bg-gradient-to-r from-teal-600 to-teal-800 text-white py-3 rounded-xl font-bold shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+            <button onClick={handleSave} disabled={saving || (mode === 'supervisor' ? !selectedSupervisorId : !selectedPTS)}
+              className={`flex-[2] text-white py-3 rounded-xl font-bold shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${mode === 'supervisor' ? 'bg-gradient-to-r from-amber-500 to-amber-700' : 'bg-gradient-to-r from-teal-600 to-teal-800'}`}>
               {saving
                 ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Menyimpan...</>
-                : <>✅ Approve & Assign</>}
+                : mode === 'supervisor' ? <>🎯 Approve &amp; Route ke Supervisor</> : <>✅ Approve &amp; Assign</>}
             </button>
           </div>
         </div>
@@ -582,7 +695,8 @@ export interface NewFormModalProps {
   submitting: boolean;
   onClose: () => void;
   onSubmit: () => void;
-  salesGuestUsers: {id:string;full_name:string;username:string;sales_division?:string}[];
+  salesGuestUsers: {id:string;full_name:string;username:string;sales_division?:string;is_internal_sales?:boolean}[];
+  isInternalSalesGuest?: boolean; // creator = Sales Internal (guest) → tampilkan field SBU
   rooms: RoomDetail[];
   setRooms: React.Dispatch<React.SetStateAction<RoomDetail[]>>;
   brandPicMappings: BrandPicMapping[];
@@ -597,7 +711,7 @@ export function NewFormModal({
   surveyPhotos, setSurveyPhotos, surveyPhotosPreviews, setSurveyPhotosPreviews,
   boqFormFile, setBoqFormFile,
   submitting, onClose, onSubmit,
-  salesGuestUsers, rooms, setRooms, brandPicMappings, roomPhotoMap, setRoomPhotoMap,
+  salesGuestUsers, isInternalSalesGuest = false, rooms, setRooms, brandPicMappings, roomPhotoMap, setRoomPhotoMap,
   boqRoomMap, setBoqRoomMap,
 }: NewFormModalProps) {
   const surveyPhotoRef = useRef<HTMLInputElement>(null);
@@ -696,6 +810,25 @@ export function NewFormModal({
                     onChange={(name, div) => setForm(prev => ({ ...prev, sales_name: name, sales_division: div }))}
                     triggerClassName="border-2 border-gray-200 rounded-xl px-3 py-2.5 bg-white cursor-pointer hover:border-teal-400 transition-all"
                   />
+                </div>
+              )}
+              {/* SBU — Sales Internal buat request ATAS NAMA Sales External tertentu.
+                 Opsional; kalau kosong, request atas nama Sales Internal sendiri. */}
+              {isInternalSalesGuest && (
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
+                    SBU <span className="normal-case text-gray-400 font-medium tracking-normal">(opsional — atas nama Sales External)</span>
+                  </label>
+                  <SalesPicker
+                    value={form.sales_name}
+                    users={salesGuestUsers.filter(u => !u.is_internal_sales && u.id !== currentUser.id)}
+                    onChange={(name, div) => setForm(prev => ({ ...prev, sales_name: name, sales_division: div }))}
+                    placeholder="— Pilih Sales External (opsional) —"
+                    triggerClassName="border-2 border-gray-200 rounded-xl px-3 py-2.5 bg-white cursor-pointer hover:border-teal-400 transition-all"
+                  />
+                  {form.sales_name && (
+                    <p className="text-[11px] text-teal-600 mt-1">Request diatasnamakan <strong>{form.sales_name}</strong>{form.sales_division ? ` · ${form.sales_division}` : ''}.</p>
+                  )}
                 </div>
               )}
               <div>

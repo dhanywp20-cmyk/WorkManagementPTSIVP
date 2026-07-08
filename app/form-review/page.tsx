@@ -592,10 +592,10 @@ export default function FormReviewPage() {
 
         {/* ── DETAIL MODAL ── */}
         {detailReview && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4 overflow-y-auto"
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4"
             onClick={e => { if (e.target === e.currentTarget) setDetailReview(null); }}>
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 overflow-hidden flex flex-col"
-              style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '96vh' }}>
+              style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '96dvh' }}>
 
               {/* Header */}
               <div className="px-6 py-5 flex-shrink-0 relative"
