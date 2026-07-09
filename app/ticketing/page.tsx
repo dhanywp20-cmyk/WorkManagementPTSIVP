@@ -8,6 +8,7 @@ import { adminCreateUser } from "@/lib/admin-users";
 import { notifyTicketAssigned, createNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
 import { isAssignablePTSTeam } from "@/lib/teams";
+import { resolveBrandInternals, type Brand } from "@/lib/brand-routing";
 
 import {
   sendWANotif, fetchWACCTargets,
@@ -20,7 +21,7 @@ import {
   StatusDonutCard, SalesDivisionDonutCard, HandlerDonutCard,
   ProductDonutCard, InfoLine,
 } from "./_components/DonutCards";
-import { NewTicketModal } from "./_components/NewTicketModal";
+import { NewTicketModal, type NewTicketForm } from "./_components/NewTicketModal";
 import {
   ViewIconBtn, DeleteIconBtn,
   FlowchartIconBtn, PrintIconBtn, ApproveIconBtn, ReopenIconBtn, OverdueIconBtn,
@@ -123,7 +124,7 @@ function TicketingSystemInner() {
     return `${y}-${m}-${d}`;
   };
 
-  const [newTicket, setNewTicket] = useState({
+  const [newTicket, setNewTicket] = useState<NewTicketForm>({
     project_name: "",
     address: "",
     customer_phone: "",
@@ -139,6 +140,7 @@ function TicketingSystemInner() {
     current_team: "Team PTS IVP",
     photo: null as File | null,
     reminder_id: null as string | null,
+    brand: undefined as Brand | undefined,
   });
 
   const [newActivity, setNewActivity] = useState({
@@ -423,15 +425,27 @@ function TicketingSystemInner() {
         // Troubleshooting (fast-track, tanpa gerbang approval, tapi tetap visible).
         const isIVP = selfDiv === "IVP" || selfDiv === "MVI";
         if (isIVP) {
-          // IVP/MVI guest: lihat ticket dari semua divisi yang dia handle
-          const { data: ivpDivMaps } = await supabase.from("division_ivp_mappings").select("sales_division").eq("ivp_id", resolvedUser.id);
-          const handledDivisions = (ivpDivMaps ?? []).map((m: any) => m.sales_division as string);
+          // IVP/MVI guest: lihat ticket divisi yg dia handle, TAPI hanya utk BRAND yg dia
+          // pegang (division_ivp_mappings.brand_type). Ticket lama tanpa brand / brand BOTH /
+          // guest dgn mapping legacy (brand_type null) → tetap tampil (backward compat).
+          const { data: ivpDivMaps } = await supabase.from("division_ivp_mappings").select("sales_division, brand_type").eq("ivp_id", resolvedUser.id);
+          const myBrandMaps = (ivpDivMaps ?? []) as { sales_division: string; brand_type: string | null }[];
+          const handledDivisions = Array.from(new Set(myBrandMaps.map(m => m.sales_division)));
           let ivpTickets: Ticket[] = [...ownBase];
           const addIVP = (t: Ticket) => { if (!ivpTickets.find(x => x.id === t.id)) ivpTickets.push(t); };
           if (handledDivisions.length > 0) {
             const { data: divTickets } = await supabase.from("tickets").select("*, activity_logs(*)").in("sales_division", handledDivisions).order("created_at", { ascending: false });
-            (divTickets ?? []).forEach(addIVP);
+            (divTickets ?? []).forEach((t: Ticket) => {
+              const tBrand = (t.brand ?? null) as string | null;
+              const myBrands = myBrandMaps.filter(m => m.sales_division === t.sales_division).map(m => m.brand_type);
+              const match = !tBrand || tBrand === "BOTH" || myBrands.includes(tBrand) || myBrands.includes(null);
+              if (match) addIVP(t);
+            });
           }
+          // Ticket yg secara eksplisit di-CC ke guest ini (internal_sales_id / _2) — brand match.
+          const { data: byInternalId } = await supabase.from("tickets").select("*, activity_logs(*)")
+            .or(`internal_sales_id.eq.${resolvedUser.id},internal_sales_id_2.eq.${resolvedUser.id}`).order("created_at", { ascending: false });
+          (byInternalId ?? []).forEach(addIVP);
           // Sort akhir berdasarkan created_at descending
           ivpTickets.sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
           setTickets(ivpTickets);
@@ -677,6 +691,20 @@ function TicketingSystemInner() {
       // External tsb. created_by tetap Sales Internal (jejak pembuat).
       const meInternalSales = !!users.find((u) => u.id === currentUser?.id)?.is_internal_sales;
       const guestSBU = currentUser?.role === "guest" && meInternalSales && !!newTicket.sales_name?.trim();
+      // Brand: Sales External pilih brand → resolve Sales Internal utk CC + visibility
+      // (ticket = CC saja, tanpa gerbang approval). Kalau brand tak ter-mapping, ticket
+      // tetap dibuat (fast-track) — cuma tanpa CC brand.
+      const ticketBrand: Brand | null = (currentUser?.role === "guest" && !meInternalSales) ? ((newTicket.brand as Brand | undefined) ?? null) : null;
+      let brandInternalId: string | null = null;
+      let brandInternalId2: string | null = null;
+      const effDivForBrand = (currentUser?.sales_division || newTicket.sales_division || "").trim();
+      if (ticketBrand && effDivForBrand) {
+        try {
+          const rb = await resolveBrandInternals(effDivForBrand, ticketBrand);
+          brandInternalId = (rb.mvi ?? rb.ivp)?.id ?? null;
+          if (ticketBrand === "BOTH" && rb.mvi && rb.ivp && rb.mvi.id !== rb.ivp.id) brandInternalId2 = rb.ivp.id;
+        } catch { /* brand mapping opsional utk ticket */ }
+      }
       const ticketData: Record<string, unknown> = {
         project_name: newTicket.project_name,
         address: newTicket.address || null,
@@ -696,6 +724,9 @@ function TicketingSystemInner() {
         photo_url: photoUrl || null,
         photo_name: photoName || null,
         reminder_id: (newTicket as any).reminder_id || null,
+        brand: ticketBrand,
+        internal_sales_id: brandInternalId,
+        internal_sales_id_2: brandInternalId2,
       };
       // Route ke Supervisor → tandai supervisor_assign (SPV yg lanjut assign ke tim).
       if (isRoute && routeSup) {
@@ -823,7 +854,7 @@ function TicketingSystemInner() {
       }
 
       setNewTicket({
-        project_name: "", address: "", customer_phone: "", sales_name: "", sales_division: "", sn_unit: "", product: "", issue_case: "", description: "", assign_name: "", date: getJakartaDateString(), status: "Pending", current_team: "Team PTS IVP", photo: null, reminder_id: null
+        project_name: "", address: "", customer_phone: "", sales_name: "", sales_division: "", sn_unit: "", product: "", issue_case: "", description: "", assign_name: "", date: getJakartaDateString(), status: "Pending", current_team: "Team PTS IVP", photo: null, reminder_id: null, brand: undefined
       });
       setShowNewTicket(false);
       await fetchData();
