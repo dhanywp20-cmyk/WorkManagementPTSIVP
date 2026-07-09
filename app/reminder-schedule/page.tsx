@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { setSession, clearSession, getSession, startSessionWatcher } from '@/lib/auth';
 import { isAdmin as checkIsAdmin } from '@/lib/constants';
 import { isAssignablePTSTeam } from '@/lib/teams';
+import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { notifyReminderApproved, createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 
@@ -303,15 +304,17 @@ function ReminderSchedulePageInner() {
     }
     // Guest: ambil schedule yg atas nama dia (dibuat admin) + yg dia request sendiri (created_by)
     // + request Sales External yang menunggu REVIEW dia (Sales Internal, Fase 2 routing).
-    const [bySales, byCreator, awaitingMyReview, approvedByMe] = await Promise.all([
+    const [bySales, byCreator, awaitingMyReview, awaitingMyReview2, approvedByMe] = await Promise.all([
       supabase.from('reminders').select('*').eq('sales_name', activeUser.full_name).order('created_at', { ascending: false }),
       supabase.from('reminders').select('*').eq('created_by', activeUser.username).order('created_at', { ascending: false }),
       supabase.from('reminders').select('*').eq('internal_sales_id', activeUser.id).eq('routing_status', 'internal_review').order('created_at', { ascending: false }),
+      // Reviewer KEDUA (brand IVP saat "Kedua Brand") — juga perlu lihat & approve.
+      supabase.from('reminders').select('*').eq('internal_sales_id_2', activeUser.id).eq('routing_status', 'internal_review').order('created_at', { ascending: false }),
       // Item yg SUDAH dia approve sbg Sales Internal — tetap tampil supaya bisa
       // dilacak (sebelumnya hilang begitu routing_status pindah ke admin_review).
       supabase.from('reminders').select('*').eq('internal_approved_by', activeUser.id).order('created_at', { ascending: false }),
     ]);
-    const combined = [...(bySales.data ?? []), ...(byCreator.data ?? []), ...(awaitingMyReview.data ?? []), ...(approvedByMe.data ?? [])];
+    const combined = [...(bySales.data ?? []), ...(byCreator.data ?? []), ...(awaitingMyReview.data ?? []), ...(awaitingMyReview2.data ?? []), ...(approvedByMe.data ?? [])];
     // Deduplicate by id, sort by created_at desc
     const seen = new Set<string>();
     return (combined as Reminder[])
@@ -1091,6 +1094,16 @@ function ReminderSchedulePageInner() {
     (currentUser.role === 'team' && myJabatan === 'Manager')
   );
   const canApproveAssign = isAdmin || isManager;
+  // Sales Internal reviewer (utama atau kedua utk brand BOTH) di tahap internal_review.
+  const isMyReviewStage = (r: Reminder) => r.routing_status === 'internal_review' &&
+    (currentUser?.id === r.internal_sales_id || currentUser?.id === r.internal_sales_id_2);
+  // Boleh approve kalau bagian-nya belum di-approve (reviewer utama vs kedua terpisah).
+  const canInternalApprove = (r: Reminder) => {
+    if (r.routing_status !== 'internal_review') return false;
+    if (currentUser?.id === r.internal_sales_id && !r.internal_approved_at) return true;
+    if (currentUser?.id === r.internal_sales_id_2 && !r.internal_approved_at_2) return true;
+    return false;
+  };
   const canAddReminder = currentUser?.role === 'admin' || currentUser?.role === 'team';
   const isGuest = currentUser?.role === 'guest' || currentUser?.role === 'sales';
 
@@ -1158,25 +1171,29 @@ function ReminderSchedulePageInner() {
     // flag, kalau-kalau ada akun Marketing yang belum sempat di-backfill).
     let routingStatus: 'internal_review' | 'admin_review' = 'admin_review';
     let internalSalesId: string | null = null;
+    let internalSalesId2: string | null = null;   // reviewer kedua (IVP) saat brand BOTH
     let internalHandlers: { id: string; phone_number: string | null; full_name: string }[] = [];
-    // Sales External (bukan internal/marketing): WAJIB ada PIC Sales Internal utk
-    // divisinya. Kalau divisi external belum di-mapping → BLOK submit (jangan lolos
-    // diam-diam ke Admin). freshSelf di-cek lebih dulu supaya bisa memblokir sebelum insert.
+    const chosenBrand: Brand | null = (data.brand as Brand | undefined) ?? null;
+    // Sales External (bukan internal/marketing): WAJIB pilih brand + ada PIC Sales
+    // Internal utk brand itu. BOTH → 2 reviewer (wajib keduanya approve). Kalau brand
+    // belum di-mapping → BLOK submit. freshSelf dicek dulu supaya bisa blokir sebelum insert.
     const { data: freshSelf } = await supabase.from('users').select('is_internal_sales, team_type').eq('id', currentUser.id).maybeSingle();
     const isInternalOrMarketing = !!freshSelf?.is_internal_sales || freshSelf?.team_type === 'Marketing';
     if (!isInternalOrMarketing && salesDivision) {
-      const { data: ivpMaps } = await supabase.from('division_ivp_mappings').select('ivp_id').eq('sales_division', salesDivision);
-      const ivpIds = (ivpMaps ?? []).map((m: { ivp_id: string }) => m.ivp_id);
-      if (ivpIds.length > 0) {
-        const { data: handlers } = await supabase.from('users').select('id, full_name, phone_number').in('id', ivpIds);
-        if (handlers && handlers.length > 0) {
-          routingStatus = 'internal_review';
-          internalSalesId = handlers[0].id;
-          internalHandlers = handlers.map((h: { id: string; full_name: string; phone_number: string | null }) => ({ id: h.id, phone_number: h.phone_number, full_name: h.full_name }));
-        }
+      const brand: Brand = chosenBrand ?? 'MVI';
+      const res = await resolveBrandInternals(salesDivision, brand);
+      if (res.missing.length > 0) {
+        notify('error', `Divisi ${salesDivision} belum punya PIC Sales Internal untuk brand: ${res.missing.join(' & ')}. Hubungi Admin untuk mapping dulu.`);
+        return;
       }
-      // Tidak ada PIC utk divisi external ini → blok submit dgn error jelas.
-      if (internalSalesId === null) {
+      routingStatus = 'internal_review';
+      const primary = res.mvi ?? res.ivp;          // reviewer utama (MVI kalau ada, else IVP)
+      internalSalesId = primary?.id ?? null;
+      if (brand === 'BOTH' && res.mvi && res.ivp && res.mvi.id !== res.ivp.id) internalSalesId2 = res.ivp.id;
+      const uniq = new Map<string, { id: string; phone_number: string | null; full_name: string }>();
+      [res.mvi, res.ivp].forEach(h => { if (h && !uniq.has(h.id)) uniq.set(h.id, { id: h.id, phone_number: h.phone_number, full_name: h.full_name }); });
+      internalHandlers = Array.from(uniq.values());
+      if (!internalSalesId) {
         notify('error', `Divisi ${salesDivision} belum memiliki PIC Sales Internal. Hubungi Admin untuk mapping divisi ini sebelum request.`);
         return;
       }
@@ -1222,6 +1239,8 @@ function ReminderSchedulePageInner() {
       created_by: currentUser.username,
       routing_status: routingStatus,
       internal_sales_id: internalSalesId,
+      internal_sales_id_2: internalSalesId2,
+      brand: chosenBrand,
     }));
 
     const { error } = await supabase.from('reminders').insert(payloads);
@@ -1325,14 +1344,28 @@ function ReminderSchedulePageInner() {
   const handleInternalApprove = async (r: Reminder) => {
     setSaving(true);
     setInternalApproveSaving(true);
-    const { error } = await supabase.from('reminders').update({
-      routing_status: 'admin_review',
-      internal_approved_by: currentUser?.id ?? null,
-      internal_approved_at: new Date().toISOString(),
-    }).eq('id', r.id);
+    const now = new Date().toISOString();
+    // Brand BOTH = 2 reviewer (MVI + IVP), WAJIB keduanya approve baru lanjut ke Admin.
+    const isSecondReviewer = !!r.internal_sales_id_2 && r.internal_sales_id_2 === currentUser?.id;
+    const patch: Record<string, unknown> = {};
+    if (isSecondReviewer) patch.internal_approved_at_2 = now;
+    else { patch.internal_approved_by = currentUser?.id ?? null; patch.internal_approved_at = now; }
+    // Sudah lengkap kalau: bukan BOTH (1 reviewer), ATAU kedua approve sudah terisi.
+    const needBoth = !!r.internal_sales_id_2;
+    const otherDone = isSecondReviewer ? !!r.internal_approved_at : !!r.internal_approved_at_2;
+    const allApproved = !needBoth || otherDone;
+    if (allApproved) patch.routing_status = 'admin_review';
+    const { error } = await supabase.from('reminders').update(patch).eq('id', r.id);
     if (error) { notify('error', 'Gagal approve: ' + error.message); setSaving(false); setInternalApproveSaving(false); return; }
     setInternalApproveSaving(false);
     setInternalApproveTarget(null);
+    if (!allApproved) {
+      notify('success', 'Approve kamu tersimpan. Menunggu approve Sales Internal brand satunya (Kedua Brand).');
+      logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'approve', module: 'reminder', target_id: r.id, target_name: r.project_name, notes: 'Internal review approved (menunggu reviewer kedua)' }).catch(() => {});
+      fetchRemindersQuiet();
+      setSaving(false);
+      return;
+    }
     notify('success', 'Request diteruskan ke Admin/Manager!');
     logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'approve', module: 'reminder', target_id: r.id, target_name: r.project_name, notes: 'Internal review approved' }).catch(() => {});
     fetchRemindersQuiet();
@@ -2289,9 +2322,9 @@ jangan lupa peralatan & Semangat💪🏼
 
               <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
                 {/* Action bar — sticky di atas, menempel header detail */}
-                {(isAdmin || currentUser?.role === 'team' || (currentUser?.id === detailReminder.internal_sales_id && detailReminder.routing_status === 'internal_review')) && (
+                {(isAdmin || currentUser?.role === 'team' || isMyReviewStage(detailReminder)) && (
                   <div className="flex gap-2 flex-wrap sticky top-0 z-20 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-gray-100">
-                    {currentUser?.id === detailReminder.internal_sales_id && detailReminder.routing_status === 'internal_review' && (
+                    {canInternalApprove(detailReminder) && (
                       <>
                         <button onClick={() => setInternalApproveTarget(detailReminder)}
                           className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
@@ -3111,7 +3144,7 @@ jangan lupa peralatan & Semangat💪🏼
                               {(isAdmin || currentUser?.role === 'team') && r.status !== 'done' && (
                                 <RescheduleIconBtn onClick={() => setRescheduleTarget(r)} title="Re-Schedule" />
                               )}
-                              {currentUser?.id === r.internal_sales_id && r.routing_status === 'internal_review' && (
+                              {canInternalApprove(r) && (
                                 <>
                                   <ApproveIconBtn onClick={() => setInternalApproveTarget(r)} title="Approve & Teruskan ke Admin" pulse />
                                   <button onClick={() => handleInternalReject(r)} title="Tolak"
@@ -3352,7 +3385,7 @@ jangan lupa peralatan & Semangat💪🏼
                                       <RescheduleIconBtn onClick={() => setRescheduleTarget(group[0])} title="Re-Schedule" />
                                     )}
                                     {/* Approve & Teruskan — Sales Internal yg di-mapping, wajib duluan sebelum Admin */}
-                                    {currentUser?.id === group[0].internal_sales_id && group[0].routing_status === 'internal_review' && (
+                                    {canInternalApprove(group[0]) && (
                                       <>
                                         <ApproveIconBtn onClick={() => setInternalApproveTarget(group[0])} title="Approve & Teruskan ke Admin" pulse />
                                         <button onClick={() => handleInternalReject(group[0])} title="Tolak"

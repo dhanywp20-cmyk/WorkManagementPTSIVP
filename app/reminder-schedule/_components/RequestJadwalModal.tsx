@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { CATEGORY_CONFIG, PRODUCT_TYPES } from './shared';
 import { MultiDatePicker } from '@/components/shared';
 import { SalesPicker, type SalesPickerUser } from '@/components/shared/SalesPicker';
+import { BRAND_OPTIONS, type Brand } from '@/lib/brand-routing';
 
 export interface JadwalRequest {
   project_name: string;
@@ -18,6 +19,7 @@ export interface JadwalRequest {
   product: string;
   notes: string;
   sales_division?: string; // dikirim dari modal agar tidak bergantung hanya pada localStorage
+  brand?: Brand;           // Sales External pilih brand (MVI/IVP/BOTH) → routing ke Sales Internal
   // SBU — hanya diisi kalau creator = Sales Internal & membuat atas nama Sales
   // External tertentu. Kalau terisi → request diatasnamakan External tsb.
   sbu_name?: string;
@@ -68,6 +70,7 @@ export function RequestJadwalModal({
     product: '',
     notes: '',
     sales_division: salesDivision,
+    brand: undefined,
     sbu_name: '',
     sbu_division: '',
   });
@@ -77,6 +80,8 @@ export function RequestJadwalModal({
   const handleSubmit = async () => {
     if (!form.project_name.trim()) { setFormErr('Nama project wajib diisi!'); return; }
     if (!form.address.trim()) { setFormErr('Lokasi project wajib diisi!'); return; }
+    // Sales External wajib pilih Brand (menentukan Sales Internal mana yg handle/approve).
+    if (!isInternalSales && !form.brand) { setFormErr('Pilih Brand dulu (MVI / IVP / Kedua Brand)!'); return; }
     if (!form.product_type) { setFormErr('Pilih tipe produk dulu (LED / LCD·Middleware / LED & LCD)!'); return; }
     if (!form.due_date) { setFormErr('Tanggal wajib diisi!'); return; }
     setFormErr('');
@@ -168,6 +173,30 @@ export function RequestJadwalModal({
                   Schedule ini akan diatasnamakan <strong>{form.sbu_name}</strong>{form.sbu_division ? ` · ${form.sbu_division}` : ''}.
                 </p>
               )}
+            </div>
+          )}
+
+          {/* Brand — WAJIB utk Sales External. Menentukan Sales Internal (House/Global)
+             yang meng-handle & meng-approve request ini. */}
+          {!isInternalSales && (
+            <div>
+              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                Brand * <span className="normal-case text-slate-400 font-medium tracking-normal">(Sales Internal yang handle)</span>
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {BRAND_OPTIONS.map(opt => {
+                  const sel = form.brand === opt.value;
+                  return (
+                    <button key={opt.value} type="button" onClick={() => { f({ brand: opt.value }); setFormErr(''); }}
+                      className="px-3 py-3 rounded-xl border-2 text-center text-sm font-bold transition-all leading-tight"
+                      style={sel
+                        ? { borderColor: '#2563eb', background: 'rgba(37,99,235,0.1)', color: '#1d4ed8' }
+                        : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }}>
+                      {opt.value === 'MVI' ? '🏠 ' : opt.value === 'IVP' ? '🌐 ' : '🏠🌐 '}{opt.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -399,7 +428,7 @@ export function RequestJadwalModal({
           <div className="flex gap-3">
             <button
               onClick={handleSubmit}
-              disabled={submitting || !form.project_name.trim() || !form.address.trim() || !form.product_type || !form.due_date}
+              disabled={submitting || !form.project_name.trim() || !form.address.trim() || (!isInternalSales && !form.brand) || !form.product_type || !form.due_date}
               className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', boxShadow: '0 4px 14px rgba(37,99,235,0.35)' }}
             >

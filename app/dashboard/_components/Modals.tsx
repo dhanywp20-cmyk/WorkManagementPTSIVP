@@ -1004,7 +1004,7 @@ interface UserManagementModalProps {
 export function UserManagementModal({ onClose }: UserManagementModalProps) {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [divSupMaps, setDivSupMaps] = useState<{ id: string; sales_division: string; supervisor_id: string }[]>([]);
-  const [divIvpMaps, setDivIvpMaps] = useState<{ id: string; sales_division: string; ivp_id: string }[]>([]);
+  const [divIvpMaps, setDivIvpMaps] = useState<{ id: string; sales_division: string; ivp_id: string; brand_type?: string | null }[]>([]);
   const [userSupMaps, setUserSupMaps] = useState<{ id: string; user_id: string; supervisor_id: string }[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -1015,6 +1015,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
   const [atasanSupId, setAtasanSupId] = useState('');
   const [ivpDiv, setIvpDiv] = useState('');
   const [ivpUserId, setIvpUserId] = useState('');
+  const [ivpBrand, setIvpBrand] = useState<'MVI' | 'IVP'>('MVI'); // brand mapping: House (MVI) / Global (IVP)
   // User CC: selected user, then checklist of supervisor IDs to CC
   const [selectedCCUserId, setSelectedCCUserId] = useState('');
   const [ccChecked, setCcChecked] = useState<Set<string>>(new Set());
@@ -1032,7 +1033,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
     const [usersRes, divSupRes, divIvpRes, userSupRes] = await Promise.all([
       supabase.from('users').select('id, username, full_name, role, team_type, sales_division, phone_number, jabatan').order('full_name'),
       supabase.from('division_supervisor_mappings').select('id,sales_division,supervisor_id').order('sales_division'),
-      supabase.from('division_ivp_mappings').select('id,sales_division,ivp_id').order('sales_division'),
+      supabase.from('division_ivp_mappings').select('id,sales_division,ivp_id,brand_type').order('sales_division'),
       supabase.from('user_supervisor_mappings').select('id,user_id,supervisor_id'),
     ]);
     if (usersRes.data) setAllUsers(usersRes.data);
@@ -1119,12 +1120,13 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
 
   const handleAddIvp = async () => {
     if (!ivpDiv || !ivpUserId) { notify('error', 'Pilih divisi dan IVP & MVI Account.'); return; }
-    const existing = divIvpMaps.find(m => m.sales_division === ivpDiv && m.ivp_id === ivpUserId);
-    if (existing) { notify('info', 'Mapping ini sudah ada.'); return; }
+    // 1 divisi bisa punya mapping per brand (MVI / IVP). Cegah duplikat brand yg sama utk divisi.
+    const dupBrand = divIvpMaps.find(m => m.sales_division === ivpDiv && (m.brand_type ?? 'MVI') === ivpBrand);
+    if (dupBrand) { notify('info', `Divisi ${ivpDiv} sudah punya Sales Internal utk brand ${ivpBrand}. Hapus dulu kalau mau ganti.`); return; }
     setSaving(true);
-    const { error } = await supabase.from('division_ivp_mappings').insert([{ sales_division: ivpDiv, ivp_id: ivpUserId }]);
+    const { error } = await supabase.from('division_ivp_mappings').insert([{ sales_division: ivpDiv, ivp_id: ivpUserId, brand_type: ivpBrand }]);
     if (error) notify('error', 'Gagal: ' + error.message);
-    else { notify('success', 'IVP mapping ditambahkan!'); setIvpDiv(''); setIvpUserId(''); await fetchAll(); }
+    else { notify('success', `Mapping ${ivpBrand} ditambahkan!`); setIvpDiv(''); setIvpUserId(''); await fetchAll(); }
     setSaving(false);
   };
 
@@ -1381,8 +1383,21 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
               <div className="p-5 border-b border-slate-100 bg-violet-50/60 space-y-3 flex-shrink-0">
                 <p className="text-xs font-bold text-violet-800 uppercase tracking-widest">🔗 Tambah Mapping IVP & MVI Account</p>
                 <p className="text-[11px] text-violet-700 leading-relaxed">
-                  Mapping divisi external ke IVP & MVI Account yang handle-nya. IVP & MVI Account hanya bisa melihat ticket dari divisi yang di-map.
+                  Mapping divisi external ke IVP & MVI Account yang handle-nya, <strong>per brand</strong>.
+                  1 divisi bisa punya 2 handler: MVI (House Brand) &amp; IVP (Global Brand). Sales External
+                  pilih brand saat request → CC/approval ke handler brand itu.
                 </p>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Brand yang di-handle akun ini *</label>
+                  <div className="flex gap-2">
+                    {(['MVI', 'IVP'] as const).map(b => (
+                      <button key={b} type="button" onClick={() => setIvpBrand(b)}
+                        className={`flex-1 py-2 rounded-lg text-xs font-bold border-2 transition-all ${ivpBrand === b ? 'border-violet-500 bg-violet-100 text-violet-800' : 'border-slate-200 bg-white text-slate-500 hover:border-violet-300'}`}>
+                        {b === 'MVI' ? '🏠 MVI (House Brand)' : '🌐 IVP (Global Brand)'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sales Division (External)</label>
@@ -1432,9 +1447,11 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                             const ivp = getUserById(m.ivp_id);
                             return (
                               <div key={m.id} className="flex items-center gap-3 px-4 py-3">
-                                <div className="w-8 h-8 rounded-lg bg-violet-100 border border-violet-200 flex items-center justify-center text-lg flex-shrink-0">🔗</div>
+                                <div className="w-8 h-8 rounded-lg bg-violet-100 border border-violet-200 flex items-center justify-center text-lg flex-shrink-0">{(m.brand_type ?? '') === 'IVP' ? '🌐' : '🏠'}</div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-bold text-sm text-violet-800">{ivp?.full_name ?? m.ivp_id}</p>
+                                  <p className="font-bold text-sm text-violet-800 flex items-center gap-1.5">{ivp?.full_name ?? m.ivp_id}
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border" style={(m.brand_type ?? '') === 'IVP' ? { background: '#dbeafe', color: '#1e40af', borderColor: '#93c5fd' } : { background: '#fef3c7', color: '#92400e', borderColor: '#fcd34d' }}>{(m.brand_type ?? 'MVI') === 'IVP' ? 'IVP · Global' : 'MVI · House'}</span>
+                                  </p>
                                   <div className="flex items-center gap-2 mt-0.5">
                                     <p className="text-[10px] text-slate-400">@{ivp?.username}</p>
                                     {ivp?.phone_number
@@ -3222,7 +3239,7 @@ export function AccountSettingsInline() {
 export function UserManagementInline() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [divSupMaps, setDivSupMaps] = useState<{ id: string; sales_division: string; supervisor_id: string }[]>([]);
-  const [divIvpMaps, setDivIvpMaps] = useState<{ id: string; sales_division: string; ivp_id: string }[]>([]);
+  const [divIvpMaps, setDivIvpMaps] = useState<{ id: string; sales_division: string; ivp_id: string; brand_type?: string | null }[]>([]);
   const [userSupMaps, setUserSupMaps] = useState<{ id: string; user_id: string; supervisor_id: string }[]>([]);
   const [prodTeamMaps, setProdTeamMaps] = useState<{ id: string; product_type: string; team_types: string[] }[]>([]);
   const [prodType, setProdType] = useState('');
@@ -3243,6 +3260,7 @@ export function UserManagementInline() {
   const [atasanSupId, setAtasanSupId] = useState('');
   const [ivpDiv, setIvpDiv] = useState('');
   const [ivpUserId, setIvpUserId] = useState('');
+  const [ivpBrand, setIvpBrand] = useState<'MVI' | 'IVP'>('MVI'); // brand mapping: House (MVI) / Global (IVP)
   const [selectedCCUserId, setSelectedCCUserId] = useState('');
   const [ccChecked, setCcChecked] = useState<Set<string>>(new Set());
   const [ccSaving, setCcSaving] = useState(false);
@@ -3256,7 +3274,7 @@ export function UserManagementInline() {
     const [usersRes, divSupRes, divIvpRes, userSupRes, atasanRes, prodRes, mgrRes, internalRes] = await Promise.all([
       supabase.from('users').select('id, username, full_name, role, team_type, sales_division, phone_number, jabatan').order('full_name'),
       supabase.from('division_supervisor_mappings').select('id,sales_division,supervisor_id').order('sales_division'),
-      supabase.from('division_ivp_mappings').select('id,sales_division,ivp_id').order('sales_division'),
+      supabase.from('division_ivp_mappings').select('id,sales_division,ivp_id,brand_type').order('sales_division'),
       supabase.from('user_supervisor_mappings').select('id,user_id,supervisor_id'),
       // Query terpisah & tahan-error: jika kolom atasan_id belum ada (migration belum jalan),
       // ini hanya error sendiri tanpa mematahkan load user utama.
@@ -3341,12 +3359,13 @@ export function UserManagementInline() {
 
   const handleAddIvp = async () => {
     if (!ivpDiv || !ivpUserId) { notify('error', 'Pilih divisi dan IVP & MVI Account.'); return; }
-    const existing = divIvpMaps.find(m => m.sales_division === ivpDiv && m.ivp_id === ivpUserId);
-    if (existing) { notify('info', 'Mapping ini sudah ada.'); return; }
+    // 1 divisi bisa punya mapping per brand (MVI / IVP). Cegah duplikat brand yg sama utk divisi.
+    const dupBrand = divIvpMaps.find(m => m.sales_division === ivpDiv && (m.brand_type ?? 'MVI') === ivpBrand);
+    if (dupBrand) { notify('info', `Divisi ${ivpDiv} sudah punya Sales Internal utk brand ${ivpBrand}. Hapus dulu kalau mau ganti.`); return; }
     setSaving(true);
-    const { error } = await supabase.from('division_ivp_mappings').insert([{ sales_division: ivpDiv, ivp_id: ivpUserId }]);
+    const { error } = await supabase.from('division_ivp_mappings').insert([{ sales_division: ivpDiv, ivp_id: ivpUserId, brand_type: ivpBrand }]);
     if (error) notify('error', 'Gagal: ' + error.message);
-    else { notify('success', 'IVP mapping ditambahkan!'); setIvpDiv(''); setIvpUserId(''); await fetchAll(); }
+    else { notify('success', `Mapping ${ivpBrand} ditambahkan!`); setIvpDiv(''); setIvpUserId(''); await fetchAll(); }
     setSaving(false);
   };
 
@@ -3684,7 +3703,18 @@ export function UserManagementInline() {
               <div className="p-5 space-y-5">
                 {/* Add form */}
                 <div className="p-4 rounded-xl border border-violet-200 bg-violet-50">
-                  <p className="text-xs font-bold text-violet-700 mb-3">➕ Tambah Sales Handle (IVP / MVI) ke Divisi</p>
+                  <p className="text-xs font-bold text-violet-700 mb-2">➕ Tambah Sales Handle (IVP / MVI) ke Divisi — <strong>per brand</strong></p>
+                  <div className="mb-3">
+                    <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Brand yang di-handle *</label>
+                    <div className="flex gap-2">
+                      {(['MVI', 'IVP'] as const).map(b => (
+                        <button key={b} type="button" onClick={() => setIvpBrand(b)}
+                          className={`flex-1 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${ivpBrand === b ? 'border-violet-500 bg-violet-100 text-violet-800' : 'border-slate-200 bg-white text-slate-500 hover:border-violet-300'}`}>
+                          {b === 'MVI' ? '🏠 MVI (House Brand)' : '🌐 IVP (Global Brand)'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Divisi Sales</label>
@@ -3738,6 +3768,7 @@ export function UserManagementInline() {
                         {maps.map(m => (
                           <div key={m.id} className="flex items-center gap-1 bg-violet-50 border border-violet-200 rounded-lg px-2 py-0.5 group">
                             <span className="text-[10px] font-semibold text-violet-800">{m.sales_division}</span>
+                            <span className="text-[8px] font-bold px-1 rounded" style={(m.brand_type ?? '') === 'IVP' ? { background: '#dbeafe', color: '#1e40af' } : { background: '#fef3c7', color: '#92400e' }}>{(m.brand_type ?? 'MVI') === 'IVP' ? 'IVP' : 'MVI'}</span>
                             <button onClick={() => handleDeleteIvp(m.id)} className="text-violet-300 hover:text-red-500 transition-colors ml-0.5" title={`Hapus ${m.sales_division}`}>
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
