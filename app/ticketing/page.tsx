@@ -916,7 +916,10 @@ function TicketingSystemInner() {
         notify("success", `Ticket diteruskan ke Supervisor ${supName} untuk di-assign`);
         return;
       }
-      const { error } = await supabase.from("tickets").update({ status: "Pending", assign_name: approvalAssignee, routing_status: null, assigned_supervisor_id: null }).eq("id", approvalTicket.id);
+      // Assign langsung (bukan route). Kolom routing TIDAK ditulis di sini supaya
+      // tetap jalan walau migrasi supervisor belum di-run (ticket "Waiting Approval"
+      // yg di-approve langsung tak pernah punya routing_status).
+      const { error } = await supabase.from("tickets").update({ status: "Pending", assign_name: approvalAssignee }).eq("id", approvalTicket.id);
       if (error) throw error;
       if (approvalTicket.created_by) {
         const creatorUser = users.find((u) => u.username === approvalTicket.created_by);

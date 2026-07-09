@@ -1879,10 +1879,14 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
           setTicketNotifs((data ?? []).map((t: any) => ({ id: t.id, type: 'ticket' as const, title: t.project_name, subtitle: `Svc: ${t.services_status} · ${t.issue_case}`, time: t.created_at, url: '/ticketing', internalUrl: '/ticketing', menuTitle: 'Ticket Troubleshooting' })));
         } else {
           // Ticket yg di-assign ke user + ticket yg di-route ke dia sbg Supervisor.
-          const [{ data: assignedT }, { data: supRoutedT }] = await Promise.all([
-            supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at').in('assign_name', namesToCheck).neq('status', 'Solved').order('created_at', { ascending: false }).limit(30),
-            supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at, routing_status, assigned_supervisor_id').eq('assigned_supervisor_id', currentUser.id).eq('routing_status', 'supervisor_assign').neq('status', 'Solved').order('created_at', { ascending: false }).limit(30),
-          ]);
+          const { data: assignedT } = await supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at').in('assign_name', namesToCheck).neq('status', 'Solved').order('created_at', { ascending: false }).limit(30);
+          // Query supervisor-routed dipisah + di-try supaya kalau kolom routing belum
+          // ada (migrasi belum di-run) badge ticket lain tetap tampil, tidak kosong.
+          let supRoutedT: any[] = [];
+          try {
+            const { data } = await supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at, routing_status, assigned_supervisor_id').eq('assigned_supervisor_id', currentUser.id).eq('routing_status', 'supervisor_assign').neq('status', 'Solved').order('created_at', { ascending: false }).limit(30);
+            supRoutedT = data ?? [];
+          } catch { supRoutedT = []; }
           const supTIds = new Set((supRoutedT ?? []).map((t: any) => t.id));
           const seenT = new Set<string>();
           const combinedT = [...(supRoutedT ?? []), ...(assignedT ?? [])].filter((t: any) => { if (seenT.has(t.id)) return false; seenT.add(t.id); return true; });
@@ -1914,17 +1918,21 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         // Ini fix utama: assign_name bisa pakai nama team_members ATAU currentUser.full_name
         // + request yang di-route ke user ini sbg Supervisor (perlu di-assign lanjut).
         const namesToCheck = [...new Set([assignedName, currentUser.full_name].filter(Boolean))];
-        const [{ data: assignedData }, { data: supRouted }] = await Promise.all([
-          excludeDone(
-            supabase.from('project_requests')
-              .select('id, project_name, status, sales_name, assign_name, created_at')
-              .in('assign_name', namesToCheck)
-          ).order('created_at', { ascending: false }).limit(30),
+        const { data: assignedData } = await excludeDone(
           supabase.from('project_requests')
+            .select('id, project_name, status, sales_name, assign_name, created_at')
+            .in('assign_name', namesToCheck)
+        ).order('created_at', { ascending: false }).limit(30);
+        // Query supervisor-routed dipisah supaya kalau kolom assigned_supervisor_id
+        // belum ada (migrasi belum di-run) badge require lain tetap tampil.
+        let supRouted: any[] = [];
+        try {
+          const { data } = await supabase.from('project_requests')
             .select('id, project_name, status, sales_name, assign_name, created_at, routing_status, assigned_supervisor_id')
             .eq('assigned_supervisor_id', currentUser.id).eq('routing_status', 'supervisor_assign')
-            .order('created_at', { ascending: false }).limit(30),
-        ]);
+            .order('created_at', { ascending: false }).limit(30);
+          supRouted = data ?? [];
+        } catch { supRouted = []; }
         const supIds = new Set((supRouted ?? []).map((r: any) => r.id));
         const seenReq = new Set<string>();
         const combinedReq = [...(supRouted ?? []), ...(assignedData ?? [])]
