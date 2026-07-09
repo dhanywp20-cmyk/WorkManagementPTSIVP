@@ -11,6 +11,7 @@ import {
 } from './shared';
 import { SalesPicker } from '@/components/shared';
 import { isAssignablePTSTeam } from '@/lib/teams';
+import { BRAND_OPTIONS } from '@/lib/brand-routing';
 
 export function AssignPTSModal({
   req, onClose, onAssigned, currentUser, allowSupervisorRoute = false,
@@ -681,6 +682,7 @@ export type InitialFormType = {
   brand_display: string; brand_display_pic_id: string; brand_display_pic_name: string;
   brand_middleware: string; brand_middleware_pic_id: string; brand_middleware_pic_name: string;
   source_laptop_qty: string; source_pc_qty: string;
+  brand?: string; // Marketing Brand: 'MVI' | 'IVP' | 'BOTH' — Sales External pilih (routing Sales Internal)
 };
 
 export interface NewFormModalProps {
@@ -778,7 +780,7 @@ export function NewFormModal({
         {/* Header */}
         <div className="bg-gradient-to-r from-teal-600 to-teal-800 px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">📋 Form Equipment Request — IVP</h2>
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">📋 Form Equipment Request — IVP &amp; MVI</h2>
             <p className="text-teal-100 text-xs mt-0.5">Requester: <span className="font-bold">{currentUser.full_name}</span></p>
           </div>
           <button onClick={onClose} className="bg-white/20 hover:bg-white/30 text-white w-9 h-9 rounded-xl flex items-center justify-center font-bold transition-all text-lg">✕</button>
@@ -833,6 +835,26 @@ export function NewFormModal({
                   {form.sales_name && (
                     <p className="text-[11px] text-teal-600 mt-1">Request diatasnamakan <strong>{form.sales_name}</strong>{form.sales_division ? ` · ${form.sales_division}` : ''}.</p>
                   )}
+                </div>
+              )}
+              {/* Marketing Brand — WAJIB utk Sales External. Menentukan Sales Internal (House/Global) yg review/approve. */}
+              {currentUser?.role === 'guest' && !isInternalSalesGuest && (
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Marketing Brand * <span className="normal-case text-gray-400 font-medium tracking-normal">(Sales Internal yang handle)</span></label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {BRAND_OPTIONS.map(opt => {
+                      const sel = form.brand === opt.value;
+                      return (
+                        <button key={opt.value} type="button" onClick={() => setForm(prev => ({ ...prev, brand: opt.value }))}
+                          className="px-3 py-2.5 rounded-xl border-2 text-center text-sm font-bold transition-all leading-tight"
+                          style={sel
+                            ? { borderColor: '#0d9488', background: 'rgba(13,148,136,0.08)', color: '#0f766e' }
+                            : { borderColor: 'rgba(0,0,0,0.1)', background: 'white', color: '#64748b' }}>
+                          {opt.value === 'MVI' ? '🏠 ' : opt.value === 'IVP' ? '🌐 ' : '🏠🌐 '}{opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
               <div>

@@ -67,9 +67,12 @@ export interface ProjectRequest {
   brand_middleware_pic_name?: string;
   rejection_reason?: string;
   routing_status?: string | null;      // 'internal_review' | 'admin_review' | 'supervisor_assign' | null
-  internal_sales_id?: string | null;   // Sales Internal yang wajib review dulu (division_ivp_mappings)
+  internal_sales_id?: string | null;   // Sales Internal reviewer utama / MVI saat brand BOTH
   internal_approved_by?: string | null;
   internal_approved_at?: string | null;
+  brand?: string | null;               // 'MVI' | 'IVP' | 'BOTH' — Marketing Brand pilihan Sales External
+  internal_sales_id_2?: string | null; // reviewer kedua (IVP) saat brand BOTH
+  internal_approved_at_2?: string | null; // approve reviewer kedua
   assigned_supervisor_id?: string | null; // Supervisor yg wajib assign lanjut ke tim (tahap supervisor_assign)
 }
 
