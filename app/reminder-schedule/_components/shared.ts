@@ -60,9 +60,12 @@ export interface Reminder {
   product_type?: string; // tipe produk utk routing pipeline (dipilih saat request)
   batch_id?: string | null; // grup reminder yang dibuat sekaligus dari 1 submission multi-tanggal
   routing_status?: string | null;      // 'internal_review' | 'admin_review' | 'supervisor_assign' | null (lama)
-  internal_sales_id?: string | null;   // Sales Internal yang wajib review dulu (dari division_ivp_mappings)
+  internal_sales_id?: string | null;   // Sales Internal reviewer utama / reviewer MVI saat brand BOTH
   internal_approved_by?: string | null;
-  internal_approved_at?: string | null;
+  internal_approved_at?: string | null; // approve reviewer utama (internal_sales_id)
+  brand?: string | null;               // 'MVI' | 'IVP' | 'BOTH' — brand yg dipilih Sales External
+  internal_sales_id_2?: string | null; // Sales Internal reviewer IVP saat brand BOTH
+  internal_approved_at_2?: string | null; // approve reviewer kedua (internal_sales_id_2)
   rejection_reason?: string | null;    // alasan saat Sales Internal Tolak request
   assigned_supervisor_id?: string | null; // Supervisor tim yang wajib assign ke anggota/diri sendiri (dari product_team_map)
 }

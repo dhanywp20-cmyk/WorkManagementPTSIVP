@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User, TeamMember } from './shared';
 import { SalesPicker } from '@/components/shared';
+import { BRAND_OPTIONS, type Brand } from '@/lib/brand-routing';
 
 export interface NewTicketForm {
   project_name: string;
@@ -21,6 +22,7 @@ export interface NewTicketForm {
   current_team: string;
   photo: File | null;
   reminder_id: string | null;
+  brand?: Brand;   // Sales External pilih brand (MVI/IVP/BOTH) → CC ke Sales Internal brand itu
 }
 
 interface ReminderRef {
@@ -57,6 +59,8 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
 
   // Creator = Sales Internal (guest) → boleh isi SBU (buat ticket atas nama Sales External).
   const isInternalSalesGuest = currentUser?.role === 'guest' && !!users.find(u => u.id === currentUser.id)?.is_internal_sales;
+  // Sales External (guest bukan internal) → WAJIB pilih Brand (menentukan Sales Internal yg di-CC).
+  const isExternalGuest = currentUser?.role === 'guest' && !isInternalSalesGuest;
   const externalSalesUsers = users.filter(u => u.role === 'guest' && !u.is_internal_sales && u.id !== currentUser?.id)
     .map(u => ({ id: u.id, full_name: u.full_name, sales_division: u.sales_division ?? null }));
 
@@ -142,6 +146,29 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
             <span className="text-lg">🎫</span>
             <span className="text-sm font-bold tracking-wide text-slate-700">Informasi Ticket</span>
           </div>
+
+          {/* Brand — WAJIB utk Sales External. Menentukan Sales Internal (House/Global) yg di-CC. */}
+          {isExternalGuest && (
+            <div>
+              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
+                Brand * <span className="normal-case text-slate-400 font-medium tracking-normal">(Sales Internal yang di-CC)</span>
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {BRAND_OPTIONS.map(opt => {
+                  const sel = form.brand === opt.value;
+                  return (
+                    <button key={opt.value} type="button" onClick={() => set({ brand: opt.value })}
+                      className="px-3 py-2.5 rounded-xl border-2 text-center text-sm font-bold transition-all leading-tight"
+                      style={sel
+                        ? { borderColor: "#dc2626", background: "rgba(220,38,38,0.08)", color: "#b91c1c" }
+                        : { borderColor: "rgba(0,0,0,0.1)", background: "rgba(255,255,255,0.6)", color: "#64748b" }}>
+                      {opt.value === 'MVI' ? '🏠 ' : opt.value === 'IVP' ? '🌐 ' : '🏠🌐 '}{opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Project Type Toggle */}
           <div>
@@ -467,11 +494,11 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
               style={{ background: "rgba(255,255,255,0.95)", color: "#64748b", border: "1px solid rgba(0,0,0,0.12)" }}>
               Batal
             </button>
-            <button onClick={onSubmit} disabled={uploading}
+            <button onClick={() => { if (isExternalGuest && !form.brand) return; onSubmit(); }} disabled={uploading || (isExternalGuest && !form.brand)}
               className="flex-1 text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
               style={{ background: "linear-gradient(135deg,#dc2626,#b91c1c)", boxShadow: "0 4px 14px rgba(220,38,38,0.35)" }}>
               {uploading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              {uploading ? "⏳ Menyimpan..." : "💾 Save Ticket"}
+              {uploading ? "⏳ Menyimpan..." : (isExternalGuest && !form.brand) ? "⚠️ Pilih Brand dulu" : "💾 Save Ticket"}
             </button>
           </div>
         </div>

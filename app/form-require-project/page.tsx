@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { setSession, clearSession, getSession } from '@/lib/auth';
 import { notifyProjectStatusChange } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
+import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState } from '@/components/shared';
 import {
   User, ProjectRequest, RoomDetail, BrandPicMapping,
@@ -139,6 +140,14 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   // Bisa ubah status in_progress: hanya PTS yang di-assign ke request tsb
   const canSetInProgress = (req: ProjectRequest) =>
     isPTS && (isAdmin || isSuperAdmin || req.assign_name === currentUser.full_name);
+  // Sales Internal reviewer (utama atau kedua utk brand BOTH) — boleh approve kalau
+  // bagian-nya belum di-approve.
+  const canInternalApproveProject = (req: ProjectRequest) => {
+    if (req.routing_status !== 'internal_review') return false;
+    if (currentUser.id === req.internal_sales_id && !req.internal_approved_at) return true;
+    if (currentUser.id === req.internal_sales_id_2 && !req.internal_approved_at_2) return true;
+    return false;
+  };
 
   const initialForm: InitialFormType = {
     project_name: '', room_name: '', project_location: '',
@@ -205,6 +214,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     } else if (isIVPGuest) {
       const { data: ivpDivMaps } = await supabase.from('division_ivp_mappings').select('sales_division').eq('ivp_id', currentUser.id);
       const handledDivisions = (ivpDivMaps ?? []).map((m: any) => m.sales_division as string);
+      // Reviewer (internal_sales_id / _2) sudah ter-cover divFilter di bawah karena
+      // reviewer selalu di-mapping ke divisi ybs. (Tidak menaruh internal_sales_id_2 di
+      // .or() supaya query tak error kalau kolomnya belum ada / migrasi belum di-run.)
       if (handledDivisions.length > 0) {
         const divFilter = handledDivisions.map((d: string) => `sales_division.eq.${d}`).join(',');
         query = query.or(`requester_id.eq.${currentUser.id},ivp_assignee.eq.${currentUser.full_name},${divFilter}`);
@@ -405,7 +417,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   // Tombol aksi per-baris — dipakai di tabel desktop DAN kartu mobile (anti-duplikat).
   const renderRequestActions = (req: ProjectRequest) => (
     <>
-      {currentUser.id === req.internal_sales_id && req.routing_status === 'internal_review' && (
+      {canInternalApproveProject(req) && (
         <>
           <button onClick={() => handleInternalApproveProject(req)} title="Approve & Teruskan ke Admin"
             className="w-7 h-7 bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white border border-amber-200 rounded-lg flex items-center justify-center transition-all">
@@ -573,25 +585,30 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       // skip gerbang (dia sudah tahu/putuskan sendiri).
       let routingStatus: 'internal_review' | 'admin_review' = 'admin_review';
       let internalSalesId: string | null = null;
-      let internalHandlers: { phone_number: string | null; full_name: string }[] = [];
+      let internalSalesId2: string | null = null;   // reviewer kedua (IVP) saat brand BOTH
+      const chosenBrand: Brand | null = (form.brand as Brand | undefined) ?? null;
       if (!isPTS) {
-        try {
-          const { data: freshSelf } = await supabase.from('users').select('is_internal_sales, team_type').eq('id', currentUser.id).maybeSingle();
-          const isInternalOrMarketing = !!freshSelf?.is_internal_sales || freshSelf?.team_type === 'Marketing';
-          const salesDivision = (currentUser.sales_division || form.sales_division || '').trim();
-          if (!isInternalOrMarketing && salesDivision) {
-            const { data: ivpMaps } = await supabase.from('division_ivp_mappings').select('ivp_id').eq('sales_division', salesDivision);
-            const ivpIds = (ivpMaps ?? []).map((m: { ivp_id: string }) => m.ivp_id);
-            if (ivpIds.length > 0) {
-              const { data: handlers } = await supabase.from('users').select('id, full_name, phone_number').in('id', ivpIds);
-              if (handlers && handlers.length > 0) {
-                routingStatus = 'internal_review';
-                internalSalesId = handlers[0].id;
-                internalHandlers = handlers.map((h: { full_name: string; phone_number: string | null }) => ({ phone_number: h.phone_number, full_name: h.full_name }));
-              }
-            }
-          }
-        } catch { /* fallback ke admin_review kalau gagal cek */ }
+        const { data: freshSelf } = await supabase.from('users').select('is_internal_sales, team_type').eq('id', currentUser.id).maybeSingle();
+        const isInternalOrMarketing = !!freshSelf?.is_internal_sales || freshSelf?.team_type === 'Marketing';
+        const salesDivision = (currentUser.sales_division || form.sales_division || '').trim();
+        if (!isInternalOrMarketing && salesDivision) {
+          // Sales External: WAJIB pilih Marketing Brand + ada PIC Sales Internal utk brand itu.
+          if (!chosenBrand) { notify('error', 'Pilih Marketing Brand dulu (MVI / IVP / Kedua Brand)!'); setSubmitting(false); return; }
+          const rb = await resolveBrandInternals(salesDivision, chosenBrand);
+          if (rb.missing.length > 0) { notify('error', `Divisi ${salesDivision} belum punya PIC Sales Internal untuk brand: ${rb.missing.join(' & ')}. Hubungi Admin untuk mapping dulu.`); setSubmitting(false); return; }
+          routingStatus = 'internal_review';
+          const primary = rb.mvi ?? rb.ivp;
+          internalSalesId = primary?.id ?? null;
+          if (chosenBrand === 'BOTH' && rb.mvi && rb.ivp && rb.mvi.id !== rb.ivp.id) internalSalesId2 = rb.ivp.id;
+        }
+      }
+      const internalHandlers: { phone_number: string | null; full_name: string }[] = [];
+      if (routingStatus === 'internal_review') {
+        const ids = [internalSalesId, internalSalesId2].filter(Boolean) as string[];
+        if (ids.length) {
+          const { data: hs } = await supabase.from('users').select('full_name, phone_number').in('id', ids);
+          (hs ?? []).forEach((h: any) => internalHandlers.push({ phone_number: h.phone_number, full_name: h.full_name }));
+        }
       }
       const payload = {
         project_name: form.project_name.trim(), room_name: form.room_name.trim(),
@@ -622,6 +639,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         rooms: rooms.length > 0 ? rooms : [],
         routing_status: routingStatus,
         internal_sales_id: internalSalesId,
+        // Kolom brand hanya ditulis kalau ada brand (Sales External) — supaya submit
+        // internal/admin tetap jalan walau sql/brand-multi-internal.sql belum di-run.
+        ...(chosenBrand ? { internal_sales_id_2: internalSalesId2, brand: chosenBrand } : {}),
       };
       const { data, error } = await supabase.from('project_requests').insert([payload]).select().single();
       if (error) { notify('error', 'Gagal submit form: ' + error.message); setSubmitting(false); return; }
@@ -837,12 +857,25 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
   // ─── Handler: Sales Internal approve & teruskan ke Admin ─────────────────
   const handleInternalApproveProject = async (req: ProjectRequest) => {
-    const { error } = await supabase.from('project_requests').update({
-      routing_status: 'admin_review',
-      internal_approved_by: currentUser.id,
-      internal_approved_at: new Date().toISOString(),
-    }).eq('id', req.id);
+    const now = new Date().toISOString();
+    // Brand BOTH = 2 reviewer (MVI + IVP), WAJIB keduanya approve baru lanjut ke Admin.
+    const isSecondReviewer = !!req.internal_sales_id_2 && req.internal_sales_id_2 === currentUser.id;
+    const patch: Record<string, unknown> = {};
+    if (isSecondReviewer) patch.internal_approved_at_2 = now;
+    else { patch.internal_approved_by = currentUser.id; patch.internal_approved_at = now; }
+    const needBoth = !!req.internal_sales_id_2;
+    const otherDone = isSecondReviewer ? !!req.internal_approved_at : !!req.internal_approved_at_2;
+    const allApproved = !needBoth || otherDone;
+    if (allApproved) patch.routing_status = 'admin_review';
+    const { error } = await supabase.from('project_requests').update(patch).eq('id', req.id);
     if (error) { notify('error', 'Gagal approve: ' + error.message); return; }
+    if (!allApproved) {
+      notify('success', 'Approve kamu tersimpan. Menunggu approve Sales Internal brand satunya (Kedua Brand).');
+      logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'approve', module: 'project', target_id: req.id, target_name: req.project_name, notes: 'Internal review approved (menunggu reviewer kedua)' }).catch(() => {});
+      fetchRequests();
+      if (selectedRequest?.id === req.id) setSelectedRequest({ ...req, ...patch });
+      return;
+    }
     notify('success', 'Request diteruskan ke Admin!');
     logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'approve', module: 'project', target_id: req.id, target_name: req.project_name, notes: 'Internal review approved' }).catch(() => {});
     fetchRequests();
@@ -2293,7 +2326,7 @@ Hubungi Admin untuk info lebih lanjut.
               </div>
               <div className="flex gap-2 flex-shrink-0 flex-wrap">
                 {/* Sales Internal: wajib review dulu sebelum Admin bisa approve */}
-                {currentUser.id === selectedRequest.internal_sales_id && selectedRequest.routing_status === 'internal_review' && (
+                {canInternalApproveProject(selectedRequest) && (
                   <>
                     <button onClick={() => handleInternalApproveProject(selectedRequest)}
                       className="bg-amber-500 hover:bg-amber-400 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">

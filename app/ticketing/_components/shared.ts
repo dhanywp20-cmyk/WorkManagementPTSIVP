@@ -177,6 +177,8 @@ export interface Ticket {
   routing_status?: string | null;          // 'supervisor_assign' | null
   assigned_supervisor_id?: string | null;  // Supervisor yg wajib assign lanjut ke tim
   internal_sales_id?: string | null;       // Sales Internal yg di-CC (informational, bukan gate)
+  internal_sales_id_2?: string | null;     // Sales Internal kedua (brand IVP saat BOTH)
+  brand?: string | null;                   // 'MVI' | 'IVP' | 'BOTH' — brand yg dipilih Sales External
 }
 
 export interface OverdueSetting {
