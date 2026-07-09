@@ -106,11 +106,15 @@ export function AssignPTSModal({
       status: 'approved',
       approved_by: currentUser.full_name,
       approved_at: new Date().toISOString(),
-      // Assign final ke handler → bersihkan penanda tahap Supervisor (kalau tadinya di-route).
-      routing_status: null,
-      assigned_supervisor_id: null,
     };
     if (isExternal) updatePayload.ivp_assignee = selectedIVP;
+    // Hanya bersihkan penanda tahap Supervisor kalau request ini MEMANG tadinya di-route
+    // (kolom pasti sudah ada). Assign langsung biasa TIDAK menyentuh kolom routing supaya
+    // tetap jalan walau migrasi supervisor belum di-run.
+    if (req.routing_status === 'supervisor_assign') {
+      updatePayload.routing_status = null;
+      updatePayload.assigned_supervisor_id = null;
+    }
 
     const { error } = await supabase.from('project_requests').update(updatePayload).eq('id', req.id);
     if (!error) {
