@@ -724,10 +724,14 @@ function TicketingSystemInner() {
         photo_url: photoUrl || null,
         photo_name: photoName || null,
         reminder_id: (newTicket as any).reminder_id || null,
-        brand: ticketBrand,
-        internal_sales_id: brandInternalId,
-        internal_sales_id_2: brandInternalId2,
       };
+      // Kolom brand hanya ditulis kalau Sales External pilih brand — supaya create
+      // ticket lain tetap jalan walau sql/brand-multi-internal.sql belum di-run.
+      if (ticketBrand) {
+        ticketData.brand = ticketBrand;
+        ticketData.internal_sales_id = brandInternalId;
+        ticketData.internal_sales_id_2 = brandInternalId2;
+      }
       // Route ke Supervisor → tandai supervisor_assign (SPV yg lanjut assign ke tim).
       if (isRoute && routeSup) {
         ticketData.routing_status = "supervisor_assign";

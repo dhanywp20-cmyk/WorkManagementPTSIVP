@@ -1239,8 +1239,9 @@ function ReminderSchedulePageInner() {
       created_by: currentUser.username,
       routing_status: routingStatus,
       internal_sales_id: internalSalesId,
-      internal_sales_id_2: internalSalesId2,
-      brand: chosenBrand,
+      // Kolom brand hanya ditulis kalau ada brand (Sales External) — supaya create
+      // request internal/admin tetap jalan walau sql/brand-multi-internal.sql belum di-run.
+      ...(chosenBrand ? { internal_sales_id_2: internalSalesId2, brand: chosenBrand } : {}),
     }));
 
     const { error } = await supabase.from('reminders').insert(payloads);

@@ -214,13 +214,14 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     } else if (isIVPGuest) {
       const { data: ivpDivMaps } = await supabase.from('division_ivp_mappings').select('sales_division').eq('ivp_id', currentUser.id);
       const handledDivisions = (ivpDivMaps ?? []).map((m: any) => m.sales_division as string);
-      // + request yg di-route ke user ini sbg reviewer (brand): internal_sales_id / _2.
-      const reviewerFilter = `internal_sales_id.eq.${currentUser.id},internal_sales_id_2.eq.${currentUser.id}`;
+      // Reviewer (internal_sales_id / _2) sudah ter-cover divFilter di bawah karena
+      // reviewer selalu di-mapping ke divisi ybs. (Tidak menaruh internal_sales_id_2 di
+      // .or() supaya query tak error kalau kolomnya belum ada / migrasi belum di-run.)
       if (handledDivisions.length > 0) {
         const divFilter = handledDivisions.map((d: string) => `sales_division.eq.${d}`).join(',');
-        query = query.or(`requester_id.eq.${currentUser.id},ivp_assignee.eq.${currentUser.full_name},${reviewerFilter},${divFilter}`);
+        query = query.or(`requester_id.eq.${currentUser.id},ivp_assignee.eq.${currentUser.full_name},${divFilter}`);
       } else {
-        query = query.or(`requester_id.eq.${currentUser.id},ivp_assignee.eq.${currentUser.full_name},${reviewerFilter}`);
+        query = query.or(`requester_id.eq.${currentUser.id},ivp_assignee.eq.${currentUser.full_name}`);
       }
     } else {
       // non-IVP guest: cek jabatan tier untuk supervisor visibility + brand PIC
@@ -638,8 +639,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         rooms: rooms.length > 0 ? rooms : [],
         routing_status: routingStatus,
         internal_sales_id: internalSalesId,
-        internal_sales_id_2: internalSalesId2,
-        brand: chosenBrand,
+        // Kolom brand hanya ditulis kalau ada brand (Sales External) — supaya submit
+        // internal/admin tetap jalan walau sql/brand-multi-internal.sql belum di-run.
+        ...(chosenBrand ? { internal_sales_id_2: internalSalesId2, brand: chosenBrand } : {}),
       };
       const { data, error } = await supabase.from('project_requests').insert([payload]).select().single();
       if (error) { notify('error', 'Gagal submit form: ' + error.message); setSubmitting(false); return; }
