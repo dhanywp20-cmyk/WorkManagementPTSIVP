@@ -9,6 +9,7 @@ import { isAssignablePTSTeam } from '@/lib/teams';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { notifyReminderApproved, createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
+import { compressImage } from '@/lib/image-compress';
 
 import {
   Priority, Status, RepeatType, Reminder, TeamUser, GuestUser,
@@ -621,11 +622,12 @@ function ReminderSchedulePageInner() {
     setUpdatingStatus(true);
     let photoUrl: string | undefined;
     if (statusPhoto) {
-      const ext = statusPhoto.name.split('.').pop();
+      const compressed = await compressImage(statusPhoto);
+      const ext = compressed.name.split('.').pop();
       const fileName = `completion_${detailReminder.id}_${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from('reminder-photos')
-        .upload(fileName, statusPhoto, { upsert: true });
+        .upload(fileName, compressed, { upsert: true, cacheControl: '31536000' });
       if (upErr) {
         notify('error', 'Gagal upload foto: ' + upErr.message);
         setUpdatingStatus(false);
