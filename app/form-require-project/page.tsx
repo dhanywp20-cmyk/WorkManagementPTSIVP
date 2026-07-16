@@ -7,6 +7,7 @@ import { setSession, clearSession, getSession } from '@/lib/auth';
 import { notifyProjectStatusChange } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
+import { compressImage } from '@/lib/image-compress';
 import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState } from '@/components/shared';
 import {
   User, ProjectRequest, RoomDetail, BrandPicMapping,
@@ -173,6 +174,10 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   // Guest/Sales users list for dropdown
   const [salesGuestUsers, setSalesGuestUsers] = useState<{id:string;full_name:string;username:string;sales_division?:string;is_internal_sales?:boolean}[]>([]);
   const [myIsInternalSales, setMyIsInternalSales] = useState(false); // creator = Sales Internal → boleh isi SBU (atas nama Sales External)
+  // Cache nama Sales Internal (CC) hasil resolve dari internal_sales_id / internal_sales_id_2 —
+  // kolom lama `ivp_assignee` (nama string langsung) sudah tidak diisi lagi sejak brand-multi-internal
+  // (sql/brand-multi-internal.sql), request baru pakai internal_sales_id(_2) yang berupa UUID.
+  const [internalSalesNames, setInternalSalesNames] = useState<Record<string, string>>({});
   useEffect(() => {
     supabase.from('users').select('id, full_name, username, sales_division, is_internal_sales').eq('role', 'guest').then(({ data }: { data: {id:string;full_name:string;username:string;sales_division?:string;is_internal_sales?:boolean}[] | null }) => {
       if (data) setSalesGuestUsers(data);
@@ -652,13 +657,14 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         }]);
         if (surveyPhotos.length > 0) {
           for (const photo of surveyPhotos) {
-            const filePath = `project-files/${data.id}/survey-${Date.now()}-${photo.name}`;
-            const { error: storageErr } = await supabase.storage.from('project-files').upload(filePath, photo, { cacheControl: '3600', upsert: false });
+            const compressedPhoto = await compressImage(photo);
+            const filePath = `project-files/${data.id}/survey-${Date.now()}-${compressedPhoto.name}`;
+            const { error: storageErr } = await supabase.storage.from('project-files').upload(filePath, compressedPhoto, { cacheControl: '31536000', upsert: false });
             if (!storageErr) {
               const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
               await supabase.from('project_attachments').insert([{
                 request_id: data.id, message_id: null, file_name: photo.name,
-                file_url: urlData.publicUrl, file_type: photo.type, file_size: photo.size,
+                file_url: urlData.publicUrl, file_type: compressedPhoto.type, file_size: compressedPhoto.size,
                 uploaded_by: currentUser.full_name,
               }]);
             }
@@ -749,13 +755,14 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
               const rIdx = rooms.findIndex(r => r.id === roomId);
               const label = rIdx >= 0 ? `room${rIdx+2}` : roomId.slice(0,6);
               for (const photo of photos) {
-                const filePath = `project-files/${data.id}/survey-${label}-${Date.now()}-${photo.name}`;
-                const { error: sErr } = await supabase.storage.from('project-files').upload(filePath, photo, { cacheControl:'3600', upsert:false });
+                const compressedPhoto = await compressImage(photo);
+                const filePath = `project-files/${data.id}/survey-${label}-${Date.now()}-${compressedPhoto.name}`;
+                const { error: sErr } = await supabase.storage.from('project-files').upload(filePath, compressedPhoto, { cacheControl:'31536000', upsert:false });
                 if (!sErr) {
                   const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
                   await supabase.from('project_attachments').insert([{
                     request_id: data.id, message_id: null, file_name: `[${label}] ${photo.name}`,
-                    file_url: urlData.publicUrl, file_type: photo.type, file_size: photo.size, uploaded_by: currentUser.full_name,
+                    file_url: urlData.publicUrl, file_type: compressedPhoto.type, file_size: compressedPhoto.size, uploaded_by: currentUser.full_name,
                   }]);
                 }
               }
@@ -1050,11 +1057,12 @@ Hubungi Admin untuk info lebih lanjut.
   const handleFileUpload = async (file: File) => {
     if (!selectedRequest) return;
     setUploadingFile(true);
-    const filePath = `project-files/${selectedRequest.id}/${Date.now()}-${file.name}`;
-    const { error: storageError } = await supabase.storage.from('project-files').upload(filePath, file, { cacheControl: '3600', upsert: false });
+    const toUpload = await compressImage(file);
+    const filePath = `project-files/${selectedRequest.id}/${Date.now()}-${toUpload.name}`;
+    const { error: storageError } = await supabase.storage.from('project-files').upload(filePath, toUpload, { cacheControl: '31536000', upsert: false });
     if (storageError) { notify('error', 'Upload gagal: ' + storageError.message); setUploadingFile(false); return; }
     const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
-    await supabase.from('project_attachments').insert([{ request_id: selectedRequest.id, message_id: null, file_name: file.name, file_url: urlData.publicUrl, file_type: file.type, file_size: file.size, uploaded_by: currentUser.full_name, attachment_category: 'general' }]);
+    await supabase.from('project_attachments').insert([{ request_id: selectedRequest.id, message_id: null, file_name: file.name, file_url: urlData.publicUrl, file_type: toUpload.type, file_size: toUpload.size, uploaded_by: currentUser.full_name, attachment_category: 'general' }]);
     setUploadingFile(false);
     notify('success', `File "${file.name}" berhasil diupload!`);
     fetchAttachments(selectedRequest.id);
@@ -1067,11 +1075,12 @@ Hubungi Admin untuk info lebih lanjut.
     const existing = attachments.filter(a => a.attachment_category === category);
     const revisionNum = existing.length + 1;
     const label = category === 'sld' ? 'SLD' : category === 'boq' ? 'BOQ' : 'Design 3D';
-    const filePath = `project-files/${selectedRequest.id}/${category}-rev${revisionNum}-${Date.now()}-${file.name}`;
-    const { error: storageError } = await supabase.storage.from('project-files').upload(filePath, file, { cacheControl: '3600', upsert: false });
+    const toUpload = await compressImage(file);
+    const filePath = `project-files/${selectedRequest.id}/${category}-rev${revisionNum}-${Date.now()}-${toUpload.name}`;
+    const { error: storageError } = await supabase.storage.from('project-files').upload(filePath, toUpload, { cacheControl: '31536000', upsert: false });
     if (storageError) { notify('error', `Upload ${label} gagal: ` + storageError.message); setUploadingCategory(null); return; }
     const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
-    await supabase.from('project_attachments').insert([{ request_id: selectedRequest.id, message_id: null, file_name: file.name, file_url: urlData.publicUrl, file_type: file.type, file_size: file.size, uploaded_by: currentUser.full_name, attachment_category: category, revision_version: revisionNum }]);
+    await supabase.from('project_attachments').insert([{ request_id: selectedRequest.id, message_id: null, file_name: file.name, file_url: urlData.publicUrl, file_type: toUpload.type, file_size: toUpload.size, uploaded_by: currentUser.full_name, attachment_category: category, revision_version: revisionNum }]);
     setUploadingCategory(null);
     notify('success', `${label} Rev-${revisionNum} berhasil diupload!`);
     fetchAttachments(selectedRequest.id);
@@ -1089,10 +1098,40 @@ Hubungi Admin untuk info lebih lanjut.
     setChatRoomFilter('all');
     await fetchMessages(req.id);
     await fetchAttachments(req.id);
+    // Resolve nama CC (internal_sales_id / internal_sales_id_2) kalau belum ada di cache.
+    const ccIds = [req.internal_sales_id, req.internal_sales_id_2].filter(
+      (id): id is string => !!id && !internalSalesNames[id]
+    );
+    if (ccIds.length > 0) {
+      const { data: ccUsers } = await supabase.from('users').select('id, full_name').in('id', ccIds);
+      if (ccUsers?.length) {
+        setInternalSalesNames(prev => {
+          const next = { ...prev };
+          ccUsers.forEach((u: any) => { next[u.id] = u.full_name; });
+          return next;
+        });
+      }
+    }
     const stored = JSON.parse(localStorage.getItem('pts_last_seen') || '{}');
     stored[req.id] = Date.now();
     localStorage.setItem('pts_last_seen', JSON.stringify(stored));
     setUnreadMsgMap(prev => { const n = { ...prev }; delete n[req.id]; return n; });
+  };
+
+  // Label CC Sales Internal siap-tampil, misal "Budi (MVI) & Sari (IVP)". Fallback ke
+  // kolom lama `ivp_assignee` (nama string langsung) untuk request lama sebelum migrasi brand.
+  const getCCLabel = (req: ProjectRequest): string => {
+    const parts: string[] = [];
+    if (req.internal_sales_id) {
+      const name = internalSalesNames[req.internal_sales_id];
+      if (name) parts.push(req.brand === 'BOTH' ? `${name} (MVI)` : name);
+    }
+    if (req.internal_sales_id_2) {
+      const name = internalSalesNames[req.internal_sales_id_2];
+      if (name) parts.push(`${name} (IVP)`);
+    }
+    if (parts.length > 0) return parts.join(' & ');
+    return req.ivp_assignee || '';
   };
 
   const handleCloseDetail = () => {
@@ -1195,7 +1234,7 @@ Hubungi Admin untuk info lebih lanjut.
           <div><span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;background:${statusColor}22;color:${statusColor};border:1.5px solid ${statusColor}66">${selectedRequest.status.replace('_',' ').toUpperCase()}</span></div>
         </div>
         ${infoBox('PTS Handler (Assign)', selectedRequest.assign_name || '—')}
-        ${selectedRequest.ivp_assignee ? infoBox('IVP Sales (CC)', selectedRequest.ivp_assignee) : ''}
+        ${getCCLabel(selectedRequest) ? infoBox('Sales Internal (CC)', getCCLabel(selectedRequest)) : ''}
         ${infoBox('Approved By', selectedRequest.approved_by || '—')}
       </div>
       <div>
@@ -1428,6 +1467,7 @@ Hubungi Admin untuk info lebih lanjut.
     <div class="field"><label>Divisi Sales</label><p>${selectedRequest.sales_division || '—'}</p></div>
     <div class="field"><label>Requester</label><p>${selectedRequest.requester_name}</p></div>
     ${selectedRequest.assign_name ? `<div class="field"><label>PTS Handler</label><p>${selectedRequest.assign_name}</p></div>` : ''}
+    ${getCCLabel(selectedRequest) ? `<div class="field"><label>Sales Internal (CC)</label><p>${getCCLabel(selectedRequest)}</p></div>` : ''}
     ${selectedRequest.due_date ? `<div class="field"><label>Target Selesai</label><p>${formatDueDate(selectedRequest.due_date)}</p></div>` : ''}
     ${selectedRequest.approved_by ? `<div class="field"><label>Approved By</label><p>${selectedRequest.approved_by}</p></div>` : ''}
   </div>
@@ -2619,6 +2659,12 @@ Hubungi Admin untuk info lebih lanjut.
                           <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">PTS Handler</label>
                             <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">🔧 {selectedRequest.assign_name}</p>
+                          </div>
+                        )}
+                        {getCCLabel(selectedRequest) && (
+                          <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Sales Internal (CC)</label>
+                            <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">📣 {getCCLabel(selectedRequest)}</p>
                           </div>
                         )}
                         {selectedRequest.due_date && (
