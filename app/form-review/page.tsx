@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { clearSession, getSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
+import { compressImage } from '@/lib/image-compress';
 import {
   ReviewCategory, ReviewForm, Reminder, GuestUser,
   PIE_COLORS, REVIEW_TRIGGER_CATEGORIES,
@@ -217,11 +218,12 @@ export default function FormReviewPage() {
 
     let fotoUrl = reviewFormData.foto_dokumentasi_url;
     if (fotoFile) {
-      const ext = fotoFile.name.split('.').pop();
+      const compressed = await compressImage(fotoFile);
+      const ext = compressed.name.split('.').pop();
       const fileName = `review_foto_${editingReview.id}_${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from('review-photos')
-        .upload(fileName, fotoFile, { upsert: true });
+        .upload(fileName, compressed, { upsert: true, cacheControl: '31536000' });
       if (upErr) {
         notify('error', 'Gagal upload foto: ' + upErr.message);
         setSaving(false);
