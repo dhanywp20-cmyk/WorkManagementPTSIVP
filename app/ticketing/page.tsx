@@ -9,6 +9,7 @@ import { notifyTicketAssigned, createNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
 import { isAssignablePTSTeam } from "@/lib/teams";
 import { resolveBrandInternals, type Brand } from "@/lib/brand-routing";
+import { compressImage } from "@/lib/image-compress";
 
 import {
   sendWANotif, fetchWACCTargets,
@@ -667,9 +668,10 @@ function TicketingSystemInner() {
         if (newTicket.photo.size > MAX_IMG_MB * 1024 * 1024) { notify("error", `Ukuran foto maksimal ${MAX_IMG_MB}MB.`); setUploading(false); setShowLoadingPopup(false); return; }
         setLoadingMessage("Uploading photo...");
         try {
-          const ext = newTicket.photo.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+          const compressed = await compressImage(newTicket.photo);
+          const ext = compressed.name.split('.').pop()?.toLowerCase() ?? 'jpg';
           const fileName = `${Date.now()}.${ext}`;
-          const { error } = await supabase.storage.from("ticket-photos").upload(`photos/${fileName}`, newTicket.photo);
+          const { error } = await supabase.storage.from("ticket-photos").upload(`photos/${fileName}`, compressed, { cacheControl: '31536000' });
           if (error) throw error;
           const { data } = supabase.storage.from("ticket-photos").getPublicUrl(`photos/${fileName}`);
           photoUrl = data.publicUrl;
@@ -1217,9 +1219,10 @@ function TicketingSystemInner() {
       }
       const uploadFileToBucket = async (file: File, folder: string, useServicesDb: boolean = false) => {
         const client = useServicesDb ? supabaseServices : supabase;
-        const ext = file.name.split('.').pop()?.toLowerCase() ?? 'bin';
+        const toUpload = file.type.startsWith('image/') ? await compressImage(file) : file;
+        const ext = toUpload.name.split('.').pop()?.toLowerCase() ?? 'bin';
         const filePath = `${folder}/${Date.now()}.${ext}`;
-        const { error } = await client.storage.from("ticket-photos").upload(filePath, file);
+        const { error } = await client.storage.from("ticket-photos").upload(filePath, toUpload, { cacheControl: '31536000' });
         if (error) throw error;
         const { data } = client.storage.from("ticket-photos").getPublicUrl(filePath);
         return { url: data.publicUrl, name: file.name };
