@@ -93,7 +93,7 @@ export interface GuestUser {
 }
 
 // Kategori yang men-trigger auto form_review ke Guest
-export const REVIEW_TRIGGER_CATEGORIES = ['Demo Product', 'Konfigurasi & Training', 'Training'] as const;
+export const REVIEW_TRIGGER_CATEGORIES = ['Konfigurasi', 'Demo Product', 'Konfigurasi & Training', 'Training'] as const;
 
 // Kategori yang wajib memilih Onsite/Remote saat status → Completed
 export const INCENTIVE_TRIGGER_CATEGORIES = ['Konfigurasi', 'Konfigurasi & Training', 'Training'] as const;
