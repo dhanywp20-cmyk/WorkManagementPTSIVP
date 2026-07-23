@@ -22,10 +22,8 @@ export function AssignPTSModal({
   allowSupervisorRoute?: boolean;
 }) {
   const [teamMembers, setTeamMembers] = useState<User[]>([]);
-  const [ivpUsers, setIvpUsers] = useState<User[]>([]);
   const [supervisors, setSupervisors] = useState<{ id: string; full_name: string; team_type?: string; phone_number?: string }[]>([]);
   const [selectedPTS, setSelectedPTS] = useState(req.assign_name || '');
-  const [selectedIVP, setSelectedIVP] = useState(req.ivp_assignee || '');
   const [selectedSupervisorId, setSelectedSupervisorId] = useState('');
   // mode: 'direct' = assign langsung ke Tim PTS; 'supervisor' = route ke Supervisor
   const [mode, setMode] = useState<'direct' | 'supervisor'>('direct');
@@ -41,12 +39,6 @@ export function AssignPTSModal({
       .select('id, full_name, role, team_type, phone_number, sales_division')
       .in('role', ['team_pts', 'team'])
       .then(({ data }: { data: User[] | null }) => { if (data) setTeamMembers(data.filter(u => isAssignablePTSTeam(u.team_type))); });
-    // Fetch IVP Sales internal (guest dengan sales_division = IVP)
-    supabase.from('users')
-      .select('id, full_name, role, phone_number, sales_division')
-      .eq('role', 'guest')
-      .eq('sales_division', 'IVP')
-      .then(({ data }: { data: User[] | null }) => { if (data) setIvpUsers(data); });
     // Fetch Supervisor (jabatan='Supervisor') — utk opsi Route ke Supervisor
     if (allowSupervisorRoute) {
       supabase.from('users')
@@ -59,7 +51,6 @@ export function AssignPTSModal({
   // ── Route ke Supervisor: request lanjut ke Supervisor utk di-assign ke tim ──
   const handleRouteToSupervisor = async () => {
     if (!selectedSupervisorId) { setFormErr('Pilih Supervisor tujuan terlebih dahulu.'); return; }
-    if (isExternal && !selectedIVP) { setFormErr('Request dari divisi external wajib assign IVP Sales internal.'); return; }
     setFormErr('');
     setSaving(true);
     const sup = supervisors.find(s => s.id === selectedSupervisorId);
@@ -71,7 +62,6 @@ export function AssignPTSModal({
       assigned_supervisor_id: selectedSupervisorId,
       assign_name: null,   // belum di-assign ke handler — Supervisor yg lanjut
     };
-    if (isExternal) updatePayload.ivp_assignee = selectedIVP;
     const { error } = await supabase.from('project_requests').update(updatePayload).eq('id', req.id);
     if (error) { setFormErr('Gagal route: ' + error.message); setSaving(false); return; }
     await supabase.from('project_messages').insert([{
@@ -98,7 +88,6 @@ export function AssignPTSModal({
   const handleSave = async () => {
     if (mode === 'supervisor') { await handleRouteToSupervisor(); return; }
     if (!selectedPTS) { setFormErr('Pilih Tim PTS handler terlebih dahulu.'); return; }
-    if (isExternal && !selectedIVP) { setFormErr('Request dari divisi external wajib assign IVP Sales internal.'); return; }
     setFormErr('');
     setSaving(true);
 
@@ -108,7 +97,6 @@ export function AssignPTSModal({
       approved_by: currentUser.full_name,
       approved_at: new Date().toISOString(),
     };
-    if (isExternal) updatePayload.ivp_assignee = selectedIVP;
     // Hanya bersihkan penanda tahap Supervisor kalau request ini MEMANG tadinya di-route
     // (kolom pasti sudah ada). Assign langsung biasa TIDAK menyentuh kolom routing supaya
     // tetap jalan walau migrasi supervisor belum di-run.
@@ -119,16 +107,17 @@ export function AssignPTSModal({
 
     const { error } = await supabase.from('project_requests').update(updatePayload).eq('id', req.id);
     if (!error) {
-      const ivpNote = isExternal && selectedIVP ? ` IVP Sales yang di-assign: ${selectedIVP}.` : '';
       await supabase.from('project_messages').insert([{
         request_id: req.id,
         sender_id: currentUser.id,
         sender_name: 'System',
         sender_role: 'system',
-        message: `✅ Request diapprove oleh ${currentUser.full_name}. Assigned ke Tim PTS: ${selectedPTS}.${ivpNote}`,
+        message: `✅ Request diapprove oleh ${currentUser.full_name}. Assigned ke Tim PTS: ${selectedPTS}.`,
       }]);
 
-      // WA notif ke PTS
+      // WA notif ke PTS. (IVP Sales internal reviewer sudah dinotif via WA saat
+      // request dibuat — lihat resolveBrandInternals/internalHandlers di page.tsx —
+      // jadi tidak perlu dikirim ulang di sini.)
       const ptsMember = teamMembers.find(m => m.full_name === selectedPTS);
       if (ptsMember?.phone_number) {
         const lines = [
@@ -138,32 +127,13 @@ export function AssignPTSModal({
           `🛋️ Ruangan  : ${req.room_name || '-'}`,
           `🏢 Sales    : ${req.sales_name || '-'} (${req.sales_division || '-'})`,
           `👤 Requester: ${req.requester_name}`,
-          isExternal && selectedIVP ? `🔗 IVP CC   : ${selectedIVP}` : '',
           '━━━━━━━━━━━━━━━━━━',
           'Segera proses dan update status ya! 💪',
           '🔗 https://work-management-ptsivp.vercel.app/dashboard',
-        ].filter(Boolean).join('\n');
+        ].join('\n');
         await sendWANotif({ type: 'reminder_wa', target: ptsMember.phone_number, message: lines });
       }
 
-      // WA notif ke IVP yang di-assign
-      if (isExternal && selectedIVP) {
-        const ivpUser = ivpUsers.find(u => u.full_name === selectedIVP);
-        if (ivpUser?.phone_number) {
-          const lines = [
-            '🔗 *request design — Kamu Di-assign sebagai IVP Sales*',
-            '━━━━━━━━━━━━━━━━━━',
-            `📋 Project      : ${req.project_name}`,
-			`🛋️ Ruangan		 : ${req.room_name || '-'}`,
-            `🏢 Sales Ext.   : ${req.sales_name} (${req.sales_division})`,
-            `👷 Tim PTS      : ${selectedPTS}`,
-            '━━━━━━━━━━━━━━━━━━',
-            'Akses portal untuk melihat detail dan ikut chat.',
-            '🔗 https://work-management-ptsivp.vercel.app/dashboard',
-          ].join('\n');
-          await sendWANotif({ type: 'reminder_wa', target: ivpUser.phone_number, message: lines });
-        }
-      }
       onAssigned();
     } else {
       setFormErr('Gagal approve: ' + error.message);
@@ -172,9 +142,9 @@ export function AssignPTSModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4">
       <div className="bg-white/90 rounded-2xl shadow-2xl w-full border-2 border-teal-500 overflow-hidden"
-        style={{ maxWidth: isExternal ? 680 : 460 }}>
+        style={{ maxWidth: 460 }}>
 
         {/* Header */}
         <div className="bg-gradient-to-r from-teal-600 to-teal-800 px-6 py-4 flex items-center justify-between">
@@ -197,8 +167,8 @@ export function AssignPTSModal({
             <div>
               <p className="text-sm font-bold text-indigo-700">Request dari Divisi External: {req.sales_division}</p>
               <p className="text-xs text-indigo-600 mt-0.5">
-                Pilih <strong>Tim PTS</strong> yang akan menangani, dan pilih <strong>IVP Sales internal</strong> yang akan di-cc
-                untuk memantau dan berpartisipasi dalam project ini.
+                Pilih <strong>Tim PTS</strong> yang akan menangani. IVP Sales internal yang handle divisi ini sudah otomatis
+                ter-mapping sejak request dibuat — tidak perlu dipilih ulang di sini.
               </p>
             </div>
           </div>
@@ -221,9 +191,9 @@ export function AssignPTSModal({
           </div>
         )}
 
-        <div className={`p-6 ${isExternal ? 'grid grid-cols-2 gap-6' : ''}`}>
+        <div className="p-6">
 
-          {/* Kolom kiri: Tim PTS (mode direct) ATAU Supervisor (mode supervisor) */}
+          {/* Tim PTS (mode direct) ATAU Supervisor (mode supervisor) */}
           <div>
             {mode === 'supervisor' ? (
               <>
@@ -291,43 +261,6 @@ export function AssignPTSModal({
               </>
             )}
           </div>
-
-          {/* Kolom kanan: IVP Sales — hanya untuk external */}
-          {isExternal && (
-            <div>
-              <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-1">
-                🔗 IVP Sales Internal <span className="text-red-500">*</span>
-              </p>
-              <p className="text-[11px] text-gray-500 mb-3">
-                Admin memilih <strong>satu akun IVP</strong> yang akan bisa melihat request ini dan ikut chat.
-              </p>
-              {ivpUsers.length === 0 ? (
-                <div className="text-center py-8 text-gray-400 text-sm">
-                  <div className="text-4xl mb-2">🏢</div>
-                  <p>Tidak ada akun IVP Sales terdaftar</p>
-                  <p className="text-xs mt-1">(Akun guest dengan sales_division = IVP)</p>
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                  {ivpUsers.map(u => (
-                    <button key={u.id} type="button" onClick={() => setSelectedIVP(u.full_name)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all
-                        ${selectedIVP === u.full_name ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300 bg-white'}`}>
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0
-                        ${selectedIVP === u.full_name ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
-                        {u.full_name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-bold truncate ${selectedIVP === u.full_name ? 'text-indigo-700' : 'text-gray-700'}`}>{u.full_name}</p>
-                        <p className="text-xs text-indigo-400">IVP Sales Internal</p>
-                      </div>
-                      {selectedIVP === u.full_name && <span className="text-indigo-600 font-bold flex-shrink-0">✓</span>}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Footer */}
