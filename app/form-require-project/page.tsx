@@ -557,7 +557,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   );
 
   const NotifToast = () => notification ? (
-    <div className={`fixed top-4 right-4 z-[100] px-5 py-4 rounded-2xl shadow-2xl text-sm font-bold flex items-center gap-3 border-2 max-w-sm animate-scale-in ${
+    <div className={`fixed top-4 right-4 z-[10000] px-5 py-4 rounded-2xl shadow-2xl text-sm font-bold flex items-center gap-3 border-2 max-w-sm animate-scale-in ${
       notification.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-400' :
       notification.type === 'error' ? 'bg-red-50 text-red-800 border-red-400' :
         'bg-blue-50 text-blue-800 border-blue-400'}`}>
