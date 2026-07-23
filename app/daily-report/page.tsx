@@ -985,12 +985,12 @@ export default function DailyReportPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1200px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1200px', tableLayout: 'fixed' }}>
                   <colgroup>
                     <col style={{ width: '44px' }} />
-                    <col />
-                    <col style={{ width: '140px' }} />
-                    <col style={{ width: '180px' }} />
+                    <col style={{ width: '230px' }} />
+                    <col style={{ width: '170px' }} />
+                    <col style={{ width: '190px' }} />
                     <col style={{ width: '130px' }} />
                     <col style={{ width: '150px' }} />
                     <col style={{ width: '100px' }} />
@@ -1020,8 +1020,8 @@ export default function DailyReportPage() {
                         onClick={() => setModalRow(row)}>
                         <td style={{ ...TD, textAlign: 'center' as const, color: '#94a3b8', fontSize: '12px' }}>{i + 1}</td>
                         <td style={TD}>
-                          <p className="font-semibold text-slate-800 text-sm leading-tight">{row.project_name}</p>
-                          {row.address && <p className="text-[11px] text-slate-400 mt-0.5">📍 {row.address}</p>}
+                          <p className="font-semibold text-slate-800 text-sm leading-tight truncate" title={row.project_name}>{row.project_name}</p>
+                          {row.address && <p className="text-[11px] text-slate-400 mt-0.5 truncate" title={row.address}>📍 {row.address}</p>}
                         </td>
                         <td style={TD}>
                           {row.product
