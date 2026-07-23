@@ -814,7 +814,7 @@ export default function DailyReportPage() {
         </button>
       </PageHeader>
 
-      <div className="flex-1 overflow-y-auto max-w-7xl mx-auto px-5 py-5 space-y-5 pb-12 w-full">
+      <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto px-5 py-5 space-y-5 pb-12 w-full">
 
         {/* ── Stat cards besar (identik reminder-schedule) ── */}
         <div className="grid grid-cols-4 gap-4">
