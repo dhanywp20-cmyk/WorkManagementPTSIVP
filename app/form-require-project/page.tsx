@@ -419,6 +419,19 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const formatDate = (dt: string) => new Date(dt).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const formatDueDate = (dt: string) => new Date(dt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
+  // ── Room-scoped attachments ──────────────────────────────────────────────
+  // project_attachments belum punya kolom room_index tersendiri di DB. Tapi upload
+  // foto/BOQ utk ruangan tambahan (saat create) SUDAH ditandai dengan prefix nama file
+  // "[roomN] ..." (lihat submit handler: label = `room${rIdx+2}`). detailRoomIdx di modal
+  // detail: 0 = Ruangan 1 (utama, TANPA prefix), 1+ = rooms[idx-1] (dengan prefix [room{idx+1}]).
+  // Kita pakai konvensi yang SUDAH ADA ini, bukan bikin skema baru, supaya file lama tetap
+  // konsisten dan tidak perlu migrasi DB.
+  const getFileRoomIdx = (fileName: string): number => {
+    const m = fileName.match(/^\[room(\d+)\]\s*/i);
+    return m ? Math.max(0, parseInt(m[1], 10) - 1) : 0;
+  };
+  const displayFileName = (fileName: string) => fileName.replace(/^\[room\d+\]\s*/i, '');
+
   // Tombol aksi per-baris — dipakai di tabel desktop DAN kartu mobile (anti-duplikat).
   const renderRequestActions = (req: ProjectRequest) => (
     <>
@@ -1058,11 +1071,15 @@ Hubungi Admin untuk info lebih lanjut.
     if (!selectedRequest) return;
     setUploadingFile(true);
     const toUpload = await compressImage(file);
-    const filePath = `project-files/${selectedRequest.id}/${Date.now()}-${toUpload.name}`;
+    // EGRESS/UX FIX: tag file dengan prefix [roomN] kalau lagi di tab ruangan tambahan
+    // (detailRoomIdx > 0), supaya konsisten dengan konvensi upload saat create dan
+    // muncul di section attachment ruangan yang benar (bukan ketuker semua jadi 1).
+    const taggedName = detailRoomIdx > 0 ? `[room${detailRoomIdx + 1}] ${file.name}` : file.name;
+    const filePath = `project-files/${selectedRequest.id}/${Date.now()}-${taggedName}`;
     const { error: storageError } = await supabase.storage.from('project-files').upload(filePath, toUpload, { cacheControl: '31536000', upsert: false });
     if (storageError) { notify('error', 'Upload gagal: ' + storageError.message); setUploadingFile(false); return; }
     const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
-    await supabase.from('project_attachments').insert([{ request_id: selectedRequest.id, message_id: null, file_name: file.name, file_url: urlData.publicUrl, file_type: toUpload.type, file_size: toUpload.size, uploaded_by: currentUser.full_name, attachment_category: 'general' }]);
+    await supabase.from('project_attachments').insert([{ request_id: selectedRequest.id, message_id: null, file_name: taggedName, file_url: urlData.publicUrl, file_type: toUpload.type, file_size: toUpload.size, uploaded_by: currentUser.full_name, attachment_category: 'general' }]);
     setUploadingFile(false);
     notify('success', `File "${file.name}" berhasil diupload!`);
     fetchAttachments(selectedRequest.id);
@@ -1072,15 +1089,16 @@ Hubungi Admin untuk info lebih lanjut.
   const handleCategoryUpload = async (file: File, category: 'sld' | 'boq' | 'design3d') => {
     if (!selectedRequest) return;
     setUploadingCategory(category);
-    const existing = attachments.filter(a => a.attachment_category === category);
+    const existing = attachments.filter(a => a.attachment_category === category && getFileRoomIdx(a.file_name) === detailRoomIdx);
     const revisionNum = existing.length + 1;
     const label = category === 'sld' ? 'SLD' : category === 'boq' ? 'BOQ' : 'Design 3D';
     const toUpload = await compressImage(file);
-    const filePath = `project-files/${selectedRequest.id}/${category}-rev${revisionNum}-${Date.now()}-${toUpload.name}`;
+    const taggedName = detailRoomIdx > 0 ? `[room${detailRoomIdx + 1}] ${file.name}` : file.name;
+    const filePath = `project-files/${selectedRequest.id}/${category}-rev${revisionNum}-${Date.now()}-${taggedName}`;
     const { error: storageError } = await supabase.storage.from('project-files').upload(filePath, toUpload, { cacheControl: '31536000', upsert: false });
     if (storageError) { notify('error', `Upload ${label} gagal: ` + storageError.message); setUploadingCategory(null); return; }
     const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
-    await supabase.from('project_attachments').insert([{ request_id: selectedRequest.id, message_id: null, file_name: file.name, file_url: urlData.publicUrl, file_type: toUpload.type, file_size: toUpload.size, uploaded_by: currentUser.full_name, attachment_category: category, revision_version: revisionNum }]);
+    await supabase.from('project_attachments').insert([{ request_id: selectedRequest.id, message_id: null, file_name: taggedName, file_url: urlData.publicUrl, file_type: toUpload.type, file_size: toUpload.size, uploaded_by: currentUser.full_name, attachment_category: category, revision_version: revisionNum }]);
     setUploadingCategory(null);
     notify('success', `${label} Rev-${revisionNum} berhasil diupload!`);
     fetchAttachments(selectedRequest.id);
@@ -2800,10 +2818,16 @@ Hubungi Admin untuk info lebih lanjut.
 
                   {/* Attachments Panel — prominent */}
                   <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
+                    {(() => {
+                      // Scope file ke room tab yang lagi aktif — pakai konvensi prefix
+                      // "[roomN]" yang sudah ada di nama file (lihat getFileRoomIdx).
+                      const roomAttachments = attachments.filter(a => getFileRoomIdx(a.file_name) === detailRoomIdx);
+                      return (<>
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
                         <span className="w-7 h-7 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">📎</span>
                         Dokumen & File Attachment
+                        {detailRoomIdx > 0 && <span className="text-[10px] font-bold text-teal-500 normal-case bg-teal-50 px-2 py-0.5 rounded-full">{(selectedRequest.rooms||[])[detailRoomIdx - 1]?.room_name || `Ruangan ${detailRoomIdx + 1}`}</span>}
                       </h3>
                       <button onClick={() => fileInputRef.current?.click()} disabled={uploadingFile}
                         className="text-xs bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 disabled:opacity-60">
@@ -2841,25 +2865,25 @@ Hubungi Admin untuk info lebih lanjut.
                       {(['all', 'sld', 'boq', 'design3d'] as const).map(tab => (
                         <button key={tab} onClick={() => setActiveAttachTab(tab)}
                           className={`flex-1 py-2 text-xs font-bold uppercase transition-all ${activeAttachTab === tab ? 'text-white bg-teal-600' : 'text-gray-500 hover:bg-gray-50'}`}>
-                          {tab === 'all' ? `Semua (${attachments.length})` : tab === 'design3d' ? `3D (${attachments.filter(a => a.attachment_category === 'design3d').length})` : `${tab.toUpperCase()} (${attachments.filter(a => a.attachment_category === tab).length})`}
+                          {tab === 'all' ? `Semua (${roomAttachments.length})` : tab === 'design3d' ? `3D (${roomAttachments.filter(a => a.attachment_category === 'design3d').length})` : `${tab.toUpperCase()} (${roomAttachments.filter(a => a.attachment_category === tab).length})`}
                         </button>
                       ))}
                     </div>
 
                     {/* File grid */}
-                    {(activeAttachTab === 'all' ? attachments : attachments.filter(a => a.attachment_category === activeAttachTab)).length === 0 ? (
+                    {(activeAttachTab === 'all' ? roomAttachments : roomAttachments.filter(a => a.attachment_category === activeAttachTab)).length === 0 ? (
                       <div className="text-center py-8 text-gray-400">
                         <div className="text-3xl mb-2">📂</div>
-                        <p className="text-xs font-medium">Belum ada file diupload</p>
+                        <p className="text-xs font-medium">Belum ada file diupload {detailRoomIdx > 0 ? `untuk ${(selectedRequest.rooms||[])[detailRoomIdx - 1]?.room_name || `Ruangan ${detailRoomIdx + 1}`}` : ''}</p>
                       </div>
                     ) : (
                       <div className="space-y-3">
                         {/* For structured categories: show LATEST prominently, history collapsed */}
                         {(['sld','boq','design3d'] as const).filter(cat =>
                           (activeAttachTab === 'all' || activeAttachTab === cat) &&
-                          attachments.some(a => a.attachment_category === cat)
+                          roomAttachments.some(a => a.attachment_category === cat)
                         ).map(cat => {
-                          const catFiles = [...attachments.filter(a => a.attachment_category === cat)]
+                          const catFiles = [...roomAttachments.filter(a => a.attachment_category === cat)]
                             .sort((a, b) => (b.revision_version || 0) - (a.revision_version || 0));
                           const latest = catFiles[0];
                           const history = catFiles.slice(1);
@@ -2879,7 +2903,7 @@ Hubungi Admin untuk info lebih lanjut.
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
-                                    <p className="text-xs font-bold text-gray-800 truncate">{latest.file_name}</p>
+                                    <p className="text-xs font-bold text-gray-800 truncate">{displayFileName(latest.file_name)}</p>
                                     <span className={`text-[9px] font-black px-2 py-0.5 rounded-full bg-${catColor}-500 text-white whitespace-nowrap`}>
                                       {latest.revision_version ? `Rev ${latest.revision_version}` : 'Latest'} ★
                                     </span>
@@ -2896,7 +2920,7 @@ Hubungi Admin untuk info lebih lanjut.
                                     {att.file_type?.includes('pdf') ? '📄' : att.file_type?.startsWith('image') ? '🖼️' : '📊'}
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-[10px] font-semibold text-gray-500 truncate">{att.file_name}</p>
+                                    <p className="text-[10px] font-semibold text-gray-500 truncate">{displayFileName(att.file_name)}</p>
                                     <p className="text-[9px] text-gray-400">{att.revision_version ? `Rev ${att.revision_version}` : ''} · {new Date(att.uploaded_at).toLocaleDateString('id-ID')}</p>
                                   </div>
                                   <svg className="w-3 h-3 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
@@ -2906,16 +2930,16 @@ Hubungi Admin untuk info lebih lanjut.
                           );
                         })}
                         {/* General files */}
-                        {attachments.filter(a => a.attachment_category === 'general' || !a.attachment_category).length > 0 && (
+                        {roomAttachments.filter(a => a.attachment_category === 'general' || !a.attachment_category).length > 0 && (
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            {attachments.filter(a => a.attachment_category === 'general' || !a.attachment_category).map(att => (
+                            {roomAttachments.filter(a => a.attachment_category === 'general' || !a.attachment_category).map(att => (
                               <a key={att.id} href={att.file_url} target="_blank" rel="noopener noreferrer"
                                 className="group flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 hover:border-teal-300 hover:bg-teal-50 transition-all cursor-pointer">
                                 <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-lg bg-gray-50">
                                   {att.file_type?.startsWith('image') ? '🖼️' : att.file_type?.includes('pdf') ? '📄' : '📎'}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-[10px] font-bold text-gray-700 truncate group-hover:text-teal-700">{att.file_name}</p>
+                                  <p className="text-[10px] font-bold text-gray-700 truncate group-hover:text-teal-700">{displayFileName(att.file_name)}</p>
                                   <p className="text-[9px] text-gray-400">{formatFileSize(att.file_size)}</p>
                                 </div>
                               </a>
@@ -2924,6 +2948,8 @@ Hubungi Admin untuk info lebih lanjut.
                         )}
                       </div>
                     )}
+                      </>);
+                    })()}
                   </div>
 
                   {/* Admin controls */}
