@@ -377,6 +377,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     const reqId = selectedRequest.id;
     activeRequestIdRef.current = reqId;
     const channelName = `detail_chat:${reqId}_${Date.now()}`;
+    // EGRESS FIX: debounce fetchAttachments — upload beberapa file sekaligus
+    // (mis. 6 file) sebelumnya = 6x refetch attachment terpisah.
+    let attachDebounce: ReturnType<typeof setTimeout> | null = null;
     const channel = supabase.channel(channelName)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'project_messages', filter: `request_id=eq.${reqId}` },
         (payload) => {
@@ -391,19 +394,29 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
           localStorage.setItem('pts_last_seen', JSON.stringify(stored));
         })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'project_attachments', filter: `request_id=eq.${reqId}` },
-        () => { if (activeRequestIdRef.current !== reqId) return; fetchAttachments(reqId); })
+        () => {
+          if (activeRequestIdRef.current !== reqId) return;
+          if (attachDebounce) clearTimeout(attachDebounce);
+          attachDebounce = setTimeout(() => fetchAttachments(reqId), 800);
+        })
       .subscribe();
 
+    // EGRESS FIX: polling fallback dinaikkan dari 3 DETIK → 60 detik. Realtime
+    // di atas sudah append pesan baru langsung ke state (tanpa refetch), jadi
+    // polling 3 detik ini sepenuhnya redundant — full refetch pesan tiap 3
+    // detik selama modal detail terbuka adalah kontributor egress yang berat.
+    // Sekarang murni jaring pengaman kalau koneksi Realtime putus.
     const pollInterval = setInterval(async () => {
       if (activeRequestIdRef.current !== reqId) return;
       const { data } = await supabase.from('project_messages').select('id,request_id,sender_id,sender_name,sender_role,message,created_at').eq('request_id', reqId).order('created_at', { ascending: true });
       if (data && activeRequestIdRef.current === reqId) {
         setMessages(prev => { if (data.length === prev.length) return prev; return data as ProjectMessage[]; });
       }
-    }, 3000);
+    }, 60000);
 
     return () => {
       activeRequestIdRef.current = null;
+      if (attachDebounce) clearTimeout(attachDebounce);
       clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
@@ -2361,7 +2374,7 @@ Hubungi Admin untuk info lebih lanjut.
       {showDetailModal && selectedRequest && detailSc && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9990] p-0"
           onClick={e => { if (e.target === e.currentTarget) handleCloseDetail(); }}>
-          <div className="bg-white/90 w-full h-full animate-slide-up flex flex-col overflow-hidden"
+          <div className="bg-white w-full h-full animate-slide-up flex flex-col overflow-hidden"
             style={{ border: 'none' }}>
 
             {/* Detail Modal Header */}
@@ -2525,28 +2538,17 @@ Hubungi Admin untuk info lebih lanjut.
 
               {/* LEFT: Detail Info + Attachments */}
               <div className={`${detailMobileTab === 'info' ? 'flex flex-col' : 'hidden'} sm:flex sm:flex-col flex-[3] min-w-0 border-r border-gray-200 overflow-y-auto bg-gray-50`}>
-                <div className="p-5 space-y-5">
-
-                  {/* Assigned PTS — "in_progress" nudge */}
-                  {isTeamPTS && selectedRequest.status === 'approved' && selectedRequest.assign_name === currentUser.full_name && (
-                    <div className="rounded-xl px-4 py-3 flex items-center gap-3"
-                      style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.25)' }}>
-                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                      </svg>
-                      <div>
-                        <p className="text-sm font-bold text-blue-700">Request ini di-assign ke kamu</p>
-                        <p className="text-xs text-blue-600 mt-0.5">Klik <strong>Mulai In Progress</strong> di atas untuk memulai pengerjaan. Setelah in progress, kamu dapat update status dan berkomunikasi via chat.</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Room Tab Navigator — tampil jika ada lebih dari 1 ruangan */}
-                  {(() => {
-                    const detailRooms = selectedRequest.rooms || [];
-                    const totalDetailRooms = 1 + detailRooms.length;
-                    if (totalDetailRooms <= 1) return null;
-                    return (
+                {/* Room Tab Navigator — STICKY di atas scroll area, supaya bisa pindah
+                    section tanpa perlu scroll balik ke atas dulu. Ditaruh DI LUAR
+                    "p-5 space-y-5" (bukan ikut scroll bareng konten) tapi tetap di
+                    dalam container overflow-y-auto yang sama, supaya sticky-nya nempel
+                    relatif terhadap scroll area ini (bukan seluruh modal). */}
+                {(() => {
+                  const detailRooms = selectedRequest.rooms || [];
+                  const totalDetailRooms = 1 + detailRooms.length;
+                  if (totalDetailRooms <= 1) return null;
+                  return (
+                    <div className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm px-5 pt-4 pb-3 border-b border-gray-200 shadow-sm">
                       <div className="flex items-center bg-teal-50 border border-teal-200 rounded-2xl px-2 py-1.5 gap-1 overflow-x-auto">
                         <button type="button" onClick={() => setDetailRoomIdx(i => Math.max(0, i-1))} disabled={detailRoomIdx === 0}
                           className="p-1.5 rounded-lg text-teal-600 hover:bg-teal-100 disabled:opacity-30 transition-all flex-shrink-0">
@@ -2567,8 +2569,24 @@ Hubungi Admin untuk info lebih lanjut.
                         </button>
                         <span className="text-[10px] text-teal-600 font-bold ml-auto mr-1">{detailRoomIdx+1}/{totalDetailRooms}</span>
                       </div>
-                    );
-                  })()}
+                    </div>
+                  );
+                })()}
+                <div className="p-5 space-y-5">
+
+                  {/* Assigned PTS — "in_progress" nudge */}
+                  {isTeamPTS && selectedRequest.status === 'approved' && selectedRequest.assign_name === currentUser.full_name && (
+                    <div className="rounded-xl px-4 py-3 flex items-center gap-3"
+                      style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.25)' }}>
+                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                      </svg>
+                      <div>
+                        <p className="text-sm font-bold text-blue-700">Request ini di-assign ke kamu</p>
+                        <p className="text-xs text-blue-600 mt-0.5">Klik <strong>Mulai In Progress</strong> di atas untuk memulai pengerjaan. Setelah in progress, kamu dapat update status dan berkomunikasi via chat.</p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Compute active room data for display */}
                   {(() => {
