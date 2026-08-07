@@ -133,25 +133,37 @@ export function AdminDashboard({ user }: { user: User }) {
       setStats({ materials: mat.count ?? 0, activeTeam: uniqueTeam, sessions: ses.count ?? 0, attempts: att.count ?? 0 });
 
       // ── Round 2: analytics data in parallel ────────────────────────────────
-      const [recentRes, allAttRes, qListRes, aListRes] = await Promise.all([
+      const [recentRes, allAttRes, qListRes, aListRes, usersRes] = await Promise.all([
         supabase.from('lc_quiz_attempts')
           .select('*, users(full_name), lc_quiz_sessions(session_name, passing_grade)')
           .eq('is_submitted', true).order('submitted_at', { ascending: false }).limit(50),
-        // '*' DISENGAJA, jangan diganti daftar kolom eksplisit.
-        // PostgREST menolak SELURUH query bila satu kolom belum ada di skema.
-        // Menyebut grading_status secara eksplisit membuat tabel Top Performers
-        // kosong total selama migrasi essay belum dijalankan — tanpa pesan error
-        // apa pun. Dengan '*', kolomnya terbaca kalau ada dan undefined kalau
-        // belum, sehingga halaman tetap jalan di kedua kondisi.
-        supabase.from('lc_quiz_attempts')
-          .select('*, users(full_name, jabatan, sales_division, team_type, role)')
-          .eq('is_submitted', true),
+        // Dua hal yang DISENGAJA di query ini:
+        //
+        // 1. '*' — bukan daftar kolom eksplisit. PostgREST menolak SELURUH
+        //    query bila satu kolom belum ada di skema, jadi menyebut
+        //    grading_status membuat tabel kosong total sebelum migrasi essay
+        //    dijalankan, tanpa pesan error apa pun.
+        //
+        // 2. TANPA embed users(...). Data user diambil terpisah lalu digabung
+        //    di JS. Embed bergantung pada relasi FK yang terbaca PostgREST;
+        //    kalau embed gagal, a.users bernilai null sehingga role ikut null
+        //    dan SELURUH tab (PTS/Sales/Marketing) kosong — tanpa error.
+        //    Query terpisah juga lebih hemat: data user tidak diulang di
+        //    setiap baris attempt.
+        supabase.from('lc_quiz_attempts').select('*').eq('is_submitted', true),
         supabase.from('lc_questions').select('id, batch_name'),
         supabase.from('lc_answers').select('question_id, is_correct'),
+        supabase.from('users').select('id, full_name, jabatan, sales_division, team_type, role'),
       ]);
       setRecentAttempts(recentRes.data ?? []);
 
-      const allAtt = (allAttRes.data ?? []).filter((a: any) => a.grading_status !== 'pending_review'); // skor essay yg belum dinilai manual jangan masuk statistik
+      // Peta user dipakai menggantikan embed users(...) — lihat catatan query di atas.
+      const userMap: Record<string, any> = {};
+      (usersRes.data ?? []).forEach((u: any) => { userMap[u.id] = u; });
+
+      const allAtt = (allAttRes.data ?? [])
+        .filter((a: any) => a.grading_status !== 'pending_review') // essay belum dinilai jangan masuk statistik
+        .map((a: any) => ({ ...a, users: userMap[a.user_id] ?? null }));
 
       // ── Overview mini pies ─────────────────────────────────────────────────
       const participants = new Set(allAtt.map((a: any) => a.user_id)).size;
