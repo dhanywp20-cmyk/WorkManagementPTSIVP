@@ -79,7 +79,7 @@ export async function GET(
   if (locationIds.length > 0) {
     const { data, error } = await supabase
       .from('progress_components')
-      .select('id,location_id,label,state,photo_url,sort_order,created_at')
+      .select('id,location_id,label,state,photo_url,photo_thumb_url,sort_order,created_at')
       .in('location_id', locationIds)
       .order('sort_order');
     if (error) {

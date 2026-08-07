@@ -152,7 +152,11 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
                             {c.photo_url && (
                               <a href={c.photo_url} target="_blank" rel="noopener noreferrer"
                                 title="Lihat foto evidence" className="flex-shrink-0">
-                                <img src={c.photo_url} alt={`Evidence ${c.label}`}
+                                {/* Render THUMB, bukan foto penuh — kotak 28px tidak
+                                    perlu berkas ratusan KB. lazy: foto di kartu yang
+                                    belum terlihat tidak ikut diunduh. */}
+                                <img src={c.photo_thumb_url ?? c.photo_url} alt={`Evidence ${c.label}`}
+                                  loading="lazy" decoding="async" width={28} height={28}
                                   className="w-7 h-7 rounded object-cover border border-gray-200 hover:opacity-80 transition-opacity" />
                               </a>
                             )}

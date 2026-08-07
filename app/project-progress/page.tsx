@@ -651,7 +651,7 @@ export default function ProjectProgressPage() {
  * dipisahkan antara INSERT dan UPDATE.
  */
 
-type DraftComponent = { id: string; label: string; state: ComponentState; photo_url: string | null };
+type DraftComponent = { id: string; label: string; state: ComponentState; photo_url: string | null; photo_thumb_url: string | null };
 type DraftLocation = {
   id: string; name: string; pic: string | null; status: ProjectStatus;
   note: string | null; note_flag: boolean; components: DraftComponent[];
@@ -672,7 +672,7 @@ function buildDraft(detail: ProjectDetail): { locations: DraftLocation[]; issues
         id: l.id, name: l.name, pic: l.pic, status: l.status,
         note: l.note, note_flag: l.note_flag,
         components: componentsOf(detail.components, l.id)
-          .map(c => ({ id: c.id, label: c.label, state: c.state, photo_url: c.photo_url ?? null })),
+          .map(c => ({ id: c.id, label: c.label, state: c.state, photo_url: c.photo_url ?? null, photo_thumb_url: c.photo_thumb_url ?? null })),
       })),
     issues: [...detail.issues]
       .sort((a, b) => a.sort_order - b.sort_order)
@@ -752,7 +752,7 @@ function DetailEditor({ detail, teamUsers, mode, editableIds, onSaved, onDirtyCh
   const addComp = (locId: string) => {
     touch();
     setLocations(prev => prev.map(l => l.id !== locId ? l : {
-      ...l, components: [...l.components, { id: tempId(), label: '', state: 'pending', photo_url: null }],
+      ...l, components: [...l.components, { id: tempId(), label: '', state: 'pending', photo_url: null, photo_thumb_url: null }],
     }));
   };
   const removeComp = (locId: string, compId: string) => {
@@ -773,14 +773,35 @@ function DetailEditor({ detail, teamUsers, mode, editableIds, onSaved, onDirtyCh
   const uploadPhoto = async (locId: string, compId: string, file: File) => {
     setUploadingComp(compId);
     try {
-      const compressed = await compressImage(file);
-      const safe = compressed.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const path = `project-progress/${detail.project.id}/${Date.now()}-${safe}`;
-      const { error } = await supabase.storage.from('project-files')
-        .upload(path, compressed, { cacheControl: '31536000', upsert: false });
-      if (error) { notify('error', 'Upload foto gagal: ' + error.message); return; }
-      const { data } = supabase.storage.from('project-files').getPublicUrl(path);
-      patchComp(locId, compId, { photo_url: data.publicUrl });
+      // DUA berkas sekaligus, demi menekan egress Supabase paket gratis:
+      //  - thumb 320px q0.6 (~15-30KB) → yang dirender di daftar komponen
+      //  - full  1280px q0.7 (~120-250KB) → hanya diunduh saat thumbnail diklik
+      // Foto evidence tidak perlu kualitas cetak, jadi 1280 sudah lebih dari
+      // cukup untuk dibaca layar penuh.
+      const [full, thumb] = await Promise.all([
+        compressImage(file, { maxDim: 1280, quality: 0.7 }),
+        compressImage(file, { maxDim: 320, quality: 0.6 }),
+      ]);
+      const safe = full.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const stamp = Date.now();
+      const base = `project-progress/${detail.project.id}/${stamp}`;
+
+      const [fullRes, thumbRes] = await Promise.all([
+        supabase.storage.from('project-files')
+          .upload(`${base}-${safe}`, full, { cacheControl: '31536000', upsert: false }),
+        supabase.storage.from('project-files')
+          .upload(`${base}-thumb-${safe}`, thumb, { cacheControl: '31536000', upsert: false }),
+      ]);
+      if (fullRes.error) { notify('error', 'Upload foto gagal: ' + fullRes.error.message); return; }
+
+      const fullUrl = supabase.storage.from('project-files').getPublicUrl(`${base}-${safe}`).data.publicUrl;
+      // Thumbnail gagal bukan alasan membatalkan upload — jatuh balik ke foto
+      // penuh supaya fitur tetap jalan, hanya kurang hemat.
+      const thumbUrl = thumbRes.error
+        ? fullUrl
+        : supabase.storage.from('project-files').getPublicUrl(`${base}-thumb-${safe}`).data.publicUrl;
+
+      patchComp(locId, compId, { photo_url: fullUrl, photo_thumb_url: thumbUrl });
     } finally {
       setUploadingComp(null);
     }
@@ -854,7 +875,7 @@ function DetailEditor({ detail, teamUsers, mode, editableIds, onSaved, onDirtyCh
           const { error } = await supabase.from('progress_components').insert(
             newComps.map((c, ci) => ({
               location_id: realLocId, label: c.label.trim(), state: c.state,
-              photo_url: c.photo_url,
+              photo_url: c.photo_url, photo_thumb_url: c.photo_thumb_url,
               sort_order: l.components.indexOf(c) >= 0 ? l.components.indexOf(c) : ci,
             })),
           );
@@ -863,7 +884,7 @@ function DetailEditor({ detail, teamUsers, mode, editableIds, onSaved, onDirtyCh
         for (const c of l.components) {
           if (isNew(c.id) || !c.label.trim()) continue;
           const { error } = await supabase.from('progress_components')
-            .update({ label: c.label.trim(), state: c.state, photo_url: c.photo_url, sort_order: l.components.indexOf(c) })
+            .update({ label: c.label.trim(), state: c.state, photo_url: c.photo_url, photo_thumb_url: c.photo_thumb_url, sort_order: l.components.indexOf(c) })
             .eq('id', c.id);
           if (error) throw error;
         }
@@ -1025,9 +1046,11 @@ function DetailEditor({ detail, teamUsers, mode, editableIds, onSaved, onDirtyCh
                     {c.photo_url ? (
                       <span className="flex items-center gap-1 flex-shrink-0">
                         <a href={c.photo_url} target="_blank" rel="noopener noreferrer" title="Lihat foto">
-                          <img src={c.photo_url} alt="" className="w-6 h-6 rounded object-cover border border-gray-200" />
+                          <img src={c.photo_thumb_url ?? c.photo_url} alt=""
+                            loading="lazy" decoding="async" width={24} height={24}
+                            className="w-6 h-6 rounded object-cover border border-gray-200" />
                         </a>
-                        <button onClick={() => patchComp(loc.id, c.id, { photo_url: null })}
+                        <button onClick={() => patchComp(loc.id, c.id, { photo_url: null, photo_thumb_url: null })}
                           title="Hapus foto" className="text-gray-300 hover:text-rose-500 text-[10px] font-bold">✕</button>
                       </span>
                     ) : (

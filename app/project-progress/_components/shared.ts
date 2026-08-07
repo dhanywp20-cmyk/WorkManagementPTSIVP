@@ -48,8 +48,14 @@ export interface ProgressComponent {
   location_id: string;
   label: string;
   state: ComponentState;
-  /** Foto bukti opsional — terpasang (Done) atau kendala (Stuck). */
+  /** Foto bukti opsional — terpasang (Done) atau kendala (Stuck). Ukuran penuh. */
   photo_url: string | null;
+  /**
+   * Versi kecil (~320px) untuk dirender di daftar komponen. Selalu pakai ini
+   * untuk <img>; photo_url hanya dibuka saat thumbnail diklik. Tanpa ini,
+   * menggambar kotak 28px berarti mengunduh foto utuh dan menghabiskan egress.
+   */
+  photo_thumb_url: string | null;
   sort_order: number;
   created_at: string;
 }
