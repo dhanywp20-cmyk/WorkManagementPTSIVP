@@ -84,6 +84,7 @@ export const ALL_MENU_KEYS = [
   'request-design-project',
   'ticket-troubleshooting',
   'incentive-pts',
+  'project-progress',
   'daily-report',
   'database-pts',
   'unit-movement',
@@ -93,6 +94,20 @@ export const ALL_MENU_KEYS = [
   'tech-note',
 ];
 
+/**
+ * Menu yang TIDAK ikut diberikan otomatis saat user baru dibuat.
+ * Admin/superadmin tetap melihatnya (mereka bypass allowed_menus), tapi anggota
+ * team baru harus diberi akses manual lewat Admin Panel.
+ */
+export const RESTRICTED_MENU_KEYS = ['project-progress'];
+
+/**
+ * Default allowed_menus untuk user BARU. Sengaja dipisah dari ALL_MENU_KEYS:
+ * ALL_MENU_KEYS = daftar lengkap untuk selector di Admin Panel,
+ * DEFAULT_MENU_KEYS = yang benar-benar dicentang saat user dibuat.
+ */
+export const DEFAULT_MENU_KEYS = ALL_MENU_KEYS.filter(k => !RESTRICTED_MENU_KEYS.includes(k));
+
 export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = {
   'dashboard':              { label: 'Analytics Dashboard (KPI)', icon: '📊' },
   'kpi-team':               { label: 'KPI Team', icon: '📊' },
@@ -101,6 +116,7 @@ export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = 
   'request-design-project': { label: 'Request Design Project', icon: '🏗️' },
   'ticket-troubleshooting': { label: 'Ticket Troubleshooting', icon: '🎫' },
   'incentive-pts':          { label: 'Incentive Team PTS IVP', icon: '💰' },
+  'project-progress':       { label: 'Project Progress', icon: '📊' },
   'daily-report':           { label: 'Daily Report', icon: '📈' },
   'database-pts':           { label: 'Database PTS', icon: '💼' },
   'unit-movement':          { label: 'Unit Movement Log', icon: '🚚' },

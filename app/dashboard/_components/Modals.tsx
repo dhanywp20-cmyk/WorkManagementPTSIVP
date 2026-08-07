@@ -10,7 +10,7 @@ import { PRODUCT_TYPES } from '@/app/reminder-schedule/_components/shared';
 import {
   User, MenuItem, NotificationItem,
   SALES_DIVISIONS, JABATAN_LIST, JabatanType, JABATAN_CONFIG, JABATAN_CC_RULES,
-  ALL_MENU_KEYS, ALL_MENU_LABELS, ROLE_BADGE,
+  ALL_MENU_KEYS, DEFAULT_MENU_KEYS, ALL_MENU_LABELS, ROLE_BADGE,
   NotifBellProps, AdminPanelModalProps,
   DISPLAY_BRANDS_DB, MIDDLEWARE_BRANDS_DB, BrandPicMappingDB,
 } from './shared';
@@ -75,7 +75,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     phone_number: '',
     sales_division: '',
     jabatan: '',
-    allowed_menus: ALL_MENU_KEYS,
+    allowed_menus: DEFAULT_MENU_KEYS,
     divisi: '',
     pts_type: '',
   });
@@ -177,7 +177,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     notify('success', 'Akun berhasil ditambahkan!');
     sendWelcomeWA(newUser.phone_number, newUser.full_name, newUser.username, newUser.password);
     const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'create', module: 'user', target_name: newUser.full_name, notes: `Tambah akun: ${newUser.username}` });
-    setNewUser({ username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: ALL_MENU_KEYS, divisi: '', pts_type: '' });
+    setNewUser({ username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: DEFAULT_MENU_KEYS, divisi: '', pts_type: '' });
     setActiveTab('list');
     fetchUsers();
   };
@@ -2711,13 +2711,13 @@ export function AccountSettingsInline() {
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [newUser, setNewUser] = useState({
-    username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: ALL_MENU_KEYS, divisi: '', pts_type: '',
+    username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: DEFAULT_MENU_KEYS, divisi: '', pts_type: '',
   });
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [approvingUser, setApprovingUser] = useState<User | null>(null);
-  const [approveMenus, setApproveMenus] = useState<string[]>(ALL_MENU_KEYS);
+  const [approveMenus, setApproveMenus] = useState<string[]>(DEFAULT_MENU_KEYS);
 
   const menuLabels: Record<string, { label: string; icon: string }> = {
     'dashboard': { label: 'Analytics Dashboard (KPI)', icon: '📊' },
@@ -2775,7 +2775,7 @@ export function AccountSettingsInline() {
     const admin = getSession<User>();
     logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'approve', module: 'user', target_id: approvingUser.id, target_name: approvingUser.full_name, new_value: role }).catch(() => {});
     void createNotification({ user_id: approvingUser.id, type: 'user', title: '✅ Akun kamu telah disetujui', body: `Selamat! Akun ${approvingUser.full_name} sudah aktif. Silakan login.`, action_url: '/dashboard', created_by: admin?.full_name ?? '' });
-    setApprovingUser(null); setApproveMenus(ALL_MENU_KEYS); fetchUsers();
+    setApprovingUser(null); setApproveMenus(DEFAULT_MENU_KEYS); fetchUsers();
   };
 
   const handleRejectUser = (userId: string, name: string) => {
@@ -2827,7 +2827,7 @@ export function AccountSettingsInline() {
     notify('success', 'Akun berhasil ditambahkan!');
     sendWelcomeWA(newUser.phone_number, newUser.full_name, newUser.username, newUser.password);
     const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'create', module: 'user', target_name: newUser.full_name, notes: `Tambah akun: ${newUser.username}` });
-    setNewUser({ username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: ALL_MENU_KEYS, divisi: '', pts_type: '' });
+    setNewUser({ username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: DEFAULT_MENU_KEYS, divisi: '', pts_type: '' });
     setActiveTab('list'); fetchUsers();
   };
 
@@ -3139,7 +3139,7 @@ export function AccountSettingsInline() {
               <div className="space-y-4 p-4 rounded-xl bg-amber-50 border border-amber-200">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-slate-800">✅ Review Pendaftaran: {approvingUser.full_name}</h3>
-                  <button onClick={() => { setApprovingUser(null); setApproveMenus(ALL_MENU_KEYS); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+                  <button onClick={() => { setApprovingUser(null); setApproveMenus(DEFAULT_MENU_KEYS); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm bg-white p-3 rounded-lg border border-slate-200">
                   <div><span className="text-xs text-slate-500 uppercase font-bold">Nama</span><p className="font-semibold text-slate-800">{approvingUser.full_name}</p></div>
@@ -3219,7 +3219,7 @@ export function AccountSettingsInline() {
                       </div>
                     </div>
                     <div className="flex flex-col gap-1 flex-shrink-0">
-                      <button onClick={() => { setApprovingUser(user); setApproveMenus(ALL_MENU_KEYS); }}
+                      <button onClick={() => { setApprovingUser(user); setApproveMenus(DEFAULT_MENU_KEYS); }}
                         className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-all">Review</button>
                       <button onClick={() => handleRejectUser(user.id, user.full_name)}
                         className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-all">Tolak</button>

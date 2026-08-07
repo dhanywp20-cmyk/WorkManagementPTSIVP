@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Static assets + auth API endpoints that don't require a session
-const PUBLIC_PREFIXES = ['/_next/', '/favicon', '/IVP_Background'];
+// Static assets + auth API endpoints that don't require a session.
+// /project-progress/share/ = link View-Only yang sengaja dibagikan ke user luar;
+// datanya dibaca lewat /api/project-progress/share/ (service_role, read-only).
+const PUBLIC_PREFIXES = [
+  '/_next/', '/favicon', '/IVP_Background',
+  '/project-progress/share/',
+  '/api/project-progress/share/',
+];
 
 // Exact public paths (pages + API routes that handle their own auth or need no auth)
 const PUBLIC_EXACT = [
