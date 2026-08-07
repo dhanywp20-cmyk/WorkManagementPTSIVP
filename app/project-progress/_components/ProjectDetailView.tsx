@@ -72,7 +72,7 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
 
       {/* ── Status per lokasi ── */}
       <div className="flex flex-col gap-3">
-        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Status Per Lokasi</p>
+        <SectionLabel>Status Per Lokasi</SectionLabel>
         {sortedLoc.length === 0 ? (
           <div className="rounded-2xl p-8 text-center text-sm text-gray-400 font-medium"
             style={{ background: 'rgba(255,255,255,0.9)', border: '1px dashed #cbd5e1' }}>
@@ -163,7 +163,7 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
 
       {/* ── Rekap isu terbuka ── */}
       <div className="flex flex-col gap-3">
-        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Rekap Isu Terbuka</p>
+        <SectionLabel>Rekap Isu Terbuka</SectionLabel>
         <div className="rounded-2xl overflow-hidden"
           style={{ background: 'rgba(255,255,255,0.96)', border: '1px solid rgba(255,255,255,0.8)' }}>
           {issues.length === 0 ? (
@@ -205,9 +205,25 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
       </div>
 
       {project.description && (
-        <p className="text-[11px] text-gray-500 font-medium leading-relaxed">{project.description}</p>
+        <p className="text-[11px] text-gray-600 font-medium leading-relaxed rounded-xl px-4 py-3"
+          style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)' }}>
+          {project.description}
+        </p>
       )}
     </div>
+  );
+}
+
+/**
+ * Label seksi selalu diberi latar sendiri. Tanpa ini, teks abu-abu jatuh
+ * langsung di atas foto latar dan praktis tidak terbaca.
+ */
+export function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="self-start px-3 py-1.5 rounded-lg text-xs font-bold text-gray-600 uppercase tracking-widest"
+      style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)', backdropFilter: 'blur(10px)' }}>
+      {children}
+    </span>
   );
 }
 

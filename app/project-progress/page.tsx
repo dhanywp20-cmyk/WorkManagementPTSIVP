@@ -9,7 +9,7 @@ import {
   ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup,
   MobileListCard, MobileCardBadge,
 } from '@/components/shared';
-import { ProjectDetailView } from './_components/ProjectDetailView';
+import { ProjectDetailView, SectionLabel } from './_components/ProjectDetailView';
 import { exportProjectToExcel } from './_components/excel-export';
 import {
   THEME, ProgressProject, ProgressLocation, ProgressComponent, ProgressIssue,
@@ -435,8 +435,12 @@ export default function ProjectProgressPage() {
       {detail && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 z-[9990]"
           onClick={e => { if (e.target === e.currentTarget) closeDetail(); }}>
-          <div className="bg-white w-full h-full flex flex-col overflow-hidden">
-            <div className="px-5 py-3.5 flex items-center justify-between gap-3 flex-shrink-0"
+          <div className="w-full h-full flex flex-col overflow-hidden relative" style={{
+            backgroundImage: `url('/IVP_Background.png')`,
+            backgroundSize: 'cover', backgroundPosition: 'center',
+          }}>
+            <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.10)' }} />
+            <div className="px-5 py-3.5 flex items-center justify-between gap-3 flex-shrink-0 relative z-10"
               style={{ background: THEME.gradient }}>
               <div className="min-w-0">
                 <p className="text-white font-black text-base truncate">{detail.project.name}</p>
@@ -466,9 +470,12 @@ export default function ProjectProgressPage() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 bg-gray-50">
+            <div className="flex-1 overflow-y-auto p-5 relative z-10">
               {detailLoading ? (
-                <p className="text-center text-sm font-bold text-gray-400 py-16">Memuat detail…</p>
+                <div className="rounded-2xl py-12 text-center"
+                  style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)' }}>
+                  <p className="text-sm font-bold text-gray-500">Memuat detail…</p>
+                </div>
               ) : editMode && canEdit ? (
                 <DetailEditor
                   // key: paksa draft dibangun ulang HANYA saat ganti proyek /
@@ -821,7 +828,7 @@ function DetailEditor({ detail, teamUsers, onSaved, onDirtyChange, notify, setCo
 
       {/* ── Lokasi ── */}
       <div className="flex items-center justify-between">
-        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Lokasi ({locations.length})</p>
+        <SectionLabel>Lokasi ({locations.length})</SectionLabel>
         <button onClick={addLoc} className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white"
           style={{ background: THEME.gradient }}>+ Tambah Lokasi</button>
       </div>
@@ -926,7 +933,7 @@ function DetailEditor({ detail, teamUsers, onSaved, onDirtyChange, notify, setCo
 
       {/* ── Isu ── */}
       <div className="flex items-center justify-between">
-        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Rekap Isu ({issues.length})</p>
+        <SectionLabel>Rekap Isu ({issues.length})</SectionLabel>
         <button onClick={addIssue} className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white"
           style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>+ Tambah Isu</button>
       </div>

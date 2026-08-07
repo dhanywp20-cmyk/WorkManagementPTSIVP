@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+/**
+ * Progres berubah terus, dan link ini sering dibuka ulang oleh orang yang sama.
+ * Tanpa header ini, browser bisa menyajikan salinan lama — proyek terlihat
+ * masih kosong padahal lokasinya sudah ditambahkan.
+ */
+const NO_STORE = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+  'Pragma': 'no-cache',
+} as const;
 
 /**
  * GET /api/project-progress/share/<token>
@@ -26,7 +37,7 @@ export async function GET(
   // Token dibuat 32 hex char (lihat newShareToken). Tolak lebih awal supaya
   // string aneh tidak sampai ke query.
   if (!token || !/^[a-f0-9]{16,64}$/i.test(token)) {
-    return NextResponse.json({ error: 'Link tidak valid.' }, { status: 404 });
+    return NextResponse.json({ error: 'Link tidak valid.' }, { status: 404, headers: NO_STORE });
   }
 
   const supabase = getAdminClient();
@@ -38,7 +49,7 @@ export async function GET(
     .maybeSingle();
 
   if (pErr || !project || !project.share_enabled) {
-    return NextResponse.json({ error: 'Link tidak ditemukan atau sudah dinonaktifkan.' }, { status: 404 });
+    return NextResponse.json({ error: 'Link tidak ditemukan atau sudah dinonaktifkan.' }, { status: 404, headers: NO_STORE });
   }
 
   const [locRes, issueRes] = await Promise.all([
@@ -50,6 +61,15 @@ export async function GET(
       .eq('project_id', project.id).order('sort_order'),
   ]);
 
+  // Kegagalan query JANGAN ditelan jadi array kosong — halaman publik akan
+  // tampak "proyek kosong" padahal datanya ada, dan penyebabnya tak terlihat.
+  if (locRes.error || issueRes.error) {
+    return NextResponse.json(
+      { error: 'Gagal memuat data proyek.', detail: locRes.error?.message ?? issueRes.error?.message },
+      { status: 500, headers: NO_STORE },
+    );
+  }
+
   const locations = locRes.data ?? [];
   const locationIds = locations.map((l: { id: string }) => l.id);
 
@@ -57,11 +77,17 @@ export async function GET(
   // menghasilkan query yang tidak perlu.
   let componentsData: unknown[] = [];
   if (locationIds.length > 0) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('progress_components')
       .select('id,location_id,label,state,sort_order,created_at')
       .in('location_id', locationIds)
       .order('sort_order');
+    if (error) {
+      return NextResponse.json(
+        { error: 'Gagal memuat komponen.', detail: error.message },
+        { status: 500, headers: NO_STORE },
+      );
+    }
     componentsData = data ?? [];
   }
 
@@ -75,5 +101,5 @@ export async function GET(
     locations,
     components: componentsData,
     issues: issueRes.data ?? [],
-  });
+  }, { headers: NO_STORE });
 }

@@ -19,10 +19,15 @@ export default function SharedProjectPage({ params }: { params: { token: string 
     let alive = true;
     (async () => {
       try {
-        const res = await fetch(`/api/project-progress/share/${params.token}`);
+        // no-store: progres berubah terus, salinan lama bikin proyek terlihat
+        // masih kosong padahal lokasinya sudah ditambahkan.
+        const res = await fetch(`/api/project-progress/share/${params.token}`, { cache: 'no-store' });
         const json = await res.json();
         if (!alive) return;
-        if (!res.ok) { setErr(json.error || 'Link tidak ditemukan.'); return; }
+        if (!res.ok) {
+          setErr([json.error, json.detail].filter(Boolean).join(' — ') || 'Link tidak ditemukan.');
+          return;
+        }
         setDetail(json as ProjectDetail);
       } catch {
         if (alive) setErr('Gagal memuat data. Periksa koneksi internet.');
@@ -115,7 +120,8 @@ export default function SharedProjectPage({ params }: { params: { token: string 
 
               <ProjectDetailView detail={detail} />
 
-              <p className="text-center text-[10px] text-gray-400 font-semibold py-4">
+              <p className="self-center rounded-full px-4 py-2 text-[10px] text-gray-500 font-semibold my-2"
+                style={{ background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(255,255,255,0.8)' }}>
                 Work Management PTS IVP · Halaman ini hanya menampilkan data, tidak dapat diubah.
               </p>
             </div>
