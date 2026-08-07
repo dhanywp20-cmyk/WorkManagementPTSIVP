@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase, User, QuizSession, fmtDate, ScoreBadge, SearchInput, BtnView } from './shared';
+import { supabase, User, QuizSession, fmtDate, ScoreBadge, SearchInput, BtnView, GradingStatusBadge } from './shared';
 import { UserAnswerReview } from './TeamPage';
 
 export function ReportPage({ currentUser }: { currentUser: User }) {
@@ -49,7 +49,7 @@ export function ReportPage({ currentUser }: { currentUser: User }) {
           <select value={selectedSession} onChange={e => setSelectedSession(e.target.value)}
             className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 bg-white min-w-[320px]">
             <option value="">-- Pilih Sesi --</option>
-            {sessions.map(s => <option key={s.id} value={s.id}>{s.session_name}</option>)}
+            {sessions.map(s => <option key={s.id} value={s.id}>{s.session_type === 'essay' ? '📝 ' : ''}{s.session_name}</option>)}
           </select>
         </div>
         </div>
@@ -59,19 +59,27 @@ export function ReportPage({ currentUser }: { currentUser: User }) {
 
         {data.length > 0 && (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {[
+            {(() => {
+              const graded = data.filter((a: any) => a.grading_status !== 'pending_review');
+              const pendingCount = data.length - graded.length;
+              const cards = [
                 { label: 'Peserta', value: data.length },
-                { label: 'Rata-rata', value: (data.reduce((s: number, a: any) => s+(a.score??0),0)/data.length).toFixed(1) },
-                { label: 'Lulus', value: data.filter((a: any) => a.passed).length },
-                { label: 'Pass Rate', value: `${Math.round(data.filter((a: any) => a.passed).length/data.length*100)}%` },
-              ].map(c => (
-                <div key={c.label} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm text-center">
-                  <div className="text-2xl font-black text-slate-800">{c.value}</div>
-                  <div className="text-xs text-slate-500 font-medium mt-1">{c.label}</div>
+                { label: 'Rata-rata', value: graded.length ? (graded.reduce((s: number, a: any) => s+(a.score??0),0)/graded.length).toFixed(1) : '—' },
+                { label: 'Lulus', value: graded.filter((a: any) => a.passed).length },
+                { label: 'Pass Rate', value: graded.length ? `${Math.round(graded.filter((a: any) => a.passed).length/graded.length*100)}%` : '—' },
+              ];
+              if (session?.session_type === 'essay') cards.push({ label: '⏳ Menunggu Dinilai', value: pendingCount });
+              return (
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                  {cards.map(c => (
+                    <div key={c.label} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm text-center">
+                      <div className="text-2xl font-black text-slate-800">{c.value}</div>
+                      <div className="text-xs text-slate-500 font-medium mt-1">{c.label}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              );
+            })()}
 
             <div className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto"
               style={{ background: '#ffffff' }}>
@@ -101,17 +109,26 @@ export function ReportPage({ currentUser }: { currentUser: User }) {
                       </td>
                       <td className="px-5 py-3.5 font-semibold text-slate-800">{a.users?.full_name}</td>
                       <td className="px-5 py-3.5 text-center text-slate-600">{a.total_correct}/{a.total_questions}</td>
-                      <td className="px-5 py-3.5 text-center"><ScoreBadge score={a.score} passing={session?.passing_grade ?? 70} /></td>
                       <td className="px-5 py-3.5 text-center">
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${a.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
-                          {a.passed ? 'LULUS' : 'TIDAK LULUS'}
-                        </span>
+                        {a.grading_status === 'pending_review'
+                          ? <span className="text-xs text-amber-500 font-bold">⏳ —</span>
+                          : <ScoreBadge score={a.score} passing={session?.passing_grade ?? 70} />}
+                      </td>
+                      <td className="px-5 py-3.5 text-center">
+                        <GradingStatusBadge attempt={a} />
                       </td>
                       <td className="px-5 py-3.5 text-center text-slate-500 text-xs">{a.time_taken_sec ? `${Math.floor(a.time_taken_sec/60)}m ${a.time_taken_sec%60}s` : '—'}</td>
                       <td className="px-5 py-3.5 text-center text-slate-400 text-xs">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</td>
                       <td className="px-5 py-3.5 text-center">
                         {a.users && (
-                          <BtnView onClick={() => setViewingUser({ user: a.users as User, attemptId: a.id })}>Jawaban</BtnView>
+                          a.grading_status === 'pending_review' ? (
+                            <button onClick={() => setViewingUser({ user: a.users as User, attemptId: a.id })}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold rounded-lg border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all">
+                              ⏳ Nilai Sekarang
+                            </button>
+                          ) : (
+                            <BtnView onClick={() => setViewingUser({ user: a.users as User, attemptId: a.id })}>Jawaban</BtnView>
+                          )
                         )}
                       </td>
                     </tr>

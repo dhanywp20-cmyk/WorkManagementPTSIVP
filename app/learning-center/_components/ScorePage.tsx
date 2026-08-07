@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { supabase, User, fmtDate, ScoreBadge, SearchInput } from './shared';
+import { supabase, User, fmtDate, ScoreBadge, SearchInput, GradingStatusBadge } from './shared';
 import { UserAnswerReview } from './TeamPage';
 
 // ─── Donut Chart ──────────────────────────────────────────────────────────────
@@ -64,7 +64,7 @@ export function ScorePage({ user }: { user: User }) {
           .eq('user_id', user.id).eq('is_submitted', true)
           .order('submitted_at', { ascending: false }),
         supabase.from('lc_quiz_attempts')
-          .select('user_id, score, passed, users(full_name, role)')
+          .select('user_id, score, passed, grading_status, users(full_name, role)')
           .eq('is_submitted', true),
       ]);
       setAttempts(myRes.data ?? []);
@@ -73,6 +73,7 @@ export function ScorePage({ user }: { user: User }) {
         const myRole = user.role?.toLowerCase() ?? '';
         const byUser: Record<string, { name: string; scores: number[]; passed: number }> = {};
         allRes.data.forEach((a: any) => {
+          if (a.grading_status === 'pending_review') return; // belum dinilai, jangan masuk statistik
           // Filter: only show users of the same role as the current user
           // (always include self regardless of role)
           const theirRole = (a.users?.role ?? '').toLowerCase();
@@ -92,12 +93,13 @@ export function ScorePage({ user }: { user: User }) {
   }, [user.id]);
 
   // ── computed ────────────────────────────────────────────────────────────────
-  const total      = attempts.length;
-  const avg        = total ? attempts.reduce((s: number, a: any) => s + (a.score ?? 0), 0) / total : 0;
-  const passed     = attempts.filter((a: any) => a.passed).length;
-  const scoreGood  = attempts.filter((a: any) => (a.score ?? 0) >= 80).length;
-  const scoreMid   = attempts.filter((a: any) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length;
-  const scoreLow   = attempts.filter((a: any) => (a.score ?? 0) < 60).length;
+  const gradedAttempts = attempts.filter((a: any) => a.grading_status !== 'pending_review');
+  const total      = gradedAttempts.length;
+  const avg        = total ? gradedAttempts.reduce((s: number, a: any) => s + (a.score ?? 0), 0) / total : 0;
+  const passed     = gradedAttempts.filter((a: any) => a.passed).length;
+  const scoreGood  = gradedAttempts.filter((a: any) => (a.score ?? 0) >= 80).length;
+  const scoreMid   = gradedAttempts.filter((a: any) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length;
+  const scoreLow   = gradedAttempts.filter((a: any) => (a.score ?? 0) < 60).length;
   const passPct    = total > 0 ? Math.round(passed / total * 100) : 0;
   const myRank     = rankings.findIndex(r => r.uid === user.id) + 1; // 1-based, 0 = not found
   const rankPct    = rankings.length > 0 && myRank > 0
@@ -250,22 +252,20 @@ export function ScorePage({ user }: { user: User }) {
             <SectionHeader>🕐 Aktivitas Terbaru Saya</SectionHeader>
             <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100 overflow-hidden">
               {attempts.slice(0, 5).map((a: any) => {
+                const pending = a.grading_status === 'pending_review';
                 const score   = a.score ?? 0;
                 const passing = a.lc_quiz_sessions?.passing_grade ?? 70;
                 return (
                   <div key={a.id} className="flex items-center gap-4 px-6 py-3.5">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black flex-shrink-0
-                      ${score >= passing ? (score >= 80 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700') : 'bg-rose-100 text-rose-600'}`}>
-                      {score.toFixed(0)}
+                      ${pending ? 'bg-amber-100 text-amber-700' : score >= passing ? (score >= 80 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700') : 'bg-rose-100 text-rose-600'}`}>
+                      {pending ? '⏳' : score.toFixed(0)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-slate-800 truncate">{a.lc_quiz_sessions?.session_name ?? '—'}</p>
                       <p className="text-xs text-slate-400 truncate">{a.lc_quiz_sessions?.materi_name ?? ''}</p>
                     </div>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0
-                      ${a.passed ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
-                      {a.passed ? 'LULUS' : 'TIDAK LULUS'}
-                    </span>
+                    <GradingStatusBadge attempt={a} />
                     <span className="text-xs text-slate-400 flex-shrink-0">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
                   </div>
                 );
@@ -301,9 +301,7 @@ export function ScorePage({ user }: { user: User }) {
                     <td className="px-5 py-3.5 text-center"><ScoreBadge score={a.score} passing={a.lc_quiz_sessions?.passing_grade ?? 70} /></td>
                     <td className="px-5 py-3.5 text-center text-slate-600">{a.total_correct}/{a.total_questions}</td>
                     <td className="px-5 py-3.5 text-center">
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${a.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
-                        {a.passed ? 'LULUS' : 'TIDAK LULUS'}
-                      </span>
+                      <GradingStatusBadge attempt={a} />
                     </td>
                     <td className="px-5 py-3.5 text-center text-slate-400 text-xs">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</td>
                     <td className="px-5 py-3.5 text-center">

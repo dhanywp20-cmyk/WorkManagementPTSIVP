@@ -11,7 +11,8 @@ function QuizPlayer({ session, user, attempt, onDone }: {
   const [savedAnswers, setSavedAnswers] = useState<Record<string, string>>({});
   const [current, setCurrent] = useState(0);
   const [submitted, setSubmitted] = useState(false);
-  const [result, setResult] = useState<{ score: number; correct: number; passed: boolean } | null>(null);
+  const [result, setResult] = useState<{ score: number; correct: number; passed: boolean; pendingReview?: boolean } | null>(null);
+  const isEssay = session.session_type === 'essay';
   const [timeLeft, setTimeLeft] = useState<number | null>(session.timer_minutes ? session.timer_minutes * 60 : null);
   const [tabSwitches, setTabSwitches] = useState(0);
   const tabSwitchesRef = useRef(0);
@@ -66,6 +67,19 @@ function QuizPlayer({ session, user, attempt, onDone }: {
   const handleAnswer = async (questionId: string, answer: string) => {
     setAnswers(p => ({ ...p, [questionId]: answer }));
     const existing = savedAnswers[questionId];
+    if (isEssay) {
+      if (existing !== undefined) {
+        await supabase.from('lc_answers').update({ essay_text: answer, answered_at: new Date().toISOString() })
+          .eq('attempt_id', attempt.id).eq('question_id', questionId);
+      } else {
+        await supabase.from('lc_answers').insert([{
+          attempt_id: attempt.id, user_id: user.id, quiz_session_id: session.id,
+          question_id: questionId, answer: '', essay_text: answer, is_correct: false,
+        }]);
+        setSavedAnswers(p => ({ ...p, [questionId]: answer }));
+      }
+      return;
+    }
     if (existing) {
       await supabase.from('lc_answers').update({ answer, answered_at: new Date().toISOString() })
         .eq('attempt_id', attempt.id).eq('question_id', questionId);
@@ -90,6 +104,18 @@ function QuizPlayer({ session, user, attempt, onDone }: {
       return;
     }
     const timeTaken = Math.round((Date.now() - startTime.current) / 1000);
+
+    if (isEssay) {
+      // Essay: tidak dinilai otomatis. Status jadi 'pending_review' sampai admin nilai manual di ReportPage.
+      await supabase.from('lc_quiz_attempts').update({
+        submitted_at: new Date().toISOString(), score: null, total_correct: 0,
+        total_questions: questions.length, passed: null, is_submitted: true, time_taken_sec: timeTaken,
+        tab_switches: tabSwitchesRef.current, grading_status: 'pending_review',
+      }).eq('id', attempt.id);
+      setResult({ score: 0, correct: 0, passed: false, pendingReview: true }); setSubmitted(true);
+      return;
+    }
+
     let correct = 0;
     questions.forEach(q => { if ((answers[q.id] ?? savedAnswers[q.id]) === q.correct_answer) correct++; });
     const score = questions.length ? (correct / questions.length) * 100 : 0;
@@ -103,7 +129,7 @@ function QuizPlayer({ session, user, attempt, onDone }: {
     await supabase.from('lc_quiz_attempts').update({
       submitted_at: new Date().toISOString(), score, total_correct: correct,
       total_questions: questions.length, passed, is_submitted: true, time_taken_sec: timeTaken,
-      tab_switches: tabSwitchesRef.current,
+      tab_switches: tabSwitchesRef.current, grading_status: 'auto',
     }).eq('id', attempt.id);
     setResult({ score, correct, passed }); setSubmitted(true);
   };
@@ -166,6 +192,22 @@ function QuizPlayer({ session, user, attempt, onDone }: {
     return (
       <div className="flex items-center justify-center h-full p-8" style={{ background: '#f1f5f9' }}>
         <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl p-10 max-w-md w-full text-center">
+          {result.pendingReview ? (
+            <>
+              <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center text-3xl bg-amber-100">⏳</div>
+              <h2 className="text-2xl font-black text-slate-800 mb-1">Jawaban Terkirim</h2>
+              <p className="text-slate-500 text-sm mb-6">{session.session_name}</p>
+              <p className="text-sm text-slate-600 leading-relaxed mb-8">
+                Ini adalah quiz essay. Jawabanmu sudah tersimpan dan akan dinilai manual oleh admin.
+                Skor akan muncul di halaman Riwayat &amp; Nilai Saya setelah admin selesai menilai.
+              </p>
+              <button onClick={onDone}
+                className="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow transition-all text-sm">
+                Selesai
+              </button>
+            </>
+          ) : (
+          <>
           <div className={`w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center text-3xl ${result.passed ? 'bg-emerald-100' : 'bg-rose-100'}`}>
             {result.passed ? '🎉' : '😔'}
           </div>
@@ -187,6 +229,8 @@ function QuizPlayer({ session, user, attempt, onDone }: {
               Selesai
             </button>
           </div>
+          </>
+          )}
         </div>
       </div>
     );
@@ -237,7 +281,17 @@ function QuizPlayer({ session, user, attempt, onDone }: {
               <p className="text-base font-semibold text-slate-800 leading-relaxed">{q.question}</p>
             </div>
             <div className="space-y-3">
-              {(['A','B','C','D'] as const).map(opt => {
+              {isEssay ? (
+                <textarea
+                  key={q.id}
+                  defaultValue={answers[q.id] ?? savedAnswers[q.id] ?? ''}
+                  onChange={e => setAnswers(p => ({ ...p, [q.id]: e.target.value }))}
+                  onBlur={e => handleAnswer(q.id, e.target.value)}
+                  rows={8}
+                  className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-slate-500 resize-y"
+                  placeholder="Tulis jawaban essay kamu di sini..."
+                />
+              ) : (['A','B','C','D'] as const).map(opt => {
                 const val = (q as any)[`option_${opt.toLowerCase()}`];
                 const selected = (answers[q.id] ?? savedAnswers[q.id]) === opt;
                 return (
@@ -308,6 +362,7 @@ export function MyQuizPage({ user }: { user: User }) {
   const [sessions, setSessions] = useState<QuizSession[]>([]);
   const [activeAttempts, setActiveAttempts]     = useState<Record<string, QuizAttempt>>({});
   const [submittedSessionIds, setSubmittedIds]  = useState<Set<string>>(new Set());
+  const [pendingReviewIds, setPendingReviewIds] = useState<Set<string>>(new Set());
   const [playingSession, setPlayingSession] = useState<QuizSession | null>(null);
   const [search, setSearch] = useState('');
   const [dialog, setDialog] = useState<DialogState>(null);
@@ -332,10 +387,11 @@ export function MyQuizPage({ user }: { user: User }) {
     // Fetch submitted attempts — used to disable button when allow_retake=false
     const { data: submitted } = await supabase
       .from('lc_quiz_attempts')
-      .select('quiz_session_id')
+      .select('quiz_session_id, grading_status')
       .eq('user_id', user.id)
       .eq('is_submitted', true);
     setSubmittedIds(new Set((submitted ?? []).map((r: any) => r.quiz_session_id)));
+    setPendingReviewIds(new Set((submitted ?? []).filter((r: any) => r.grading_status === 'pending_review').map((r: any) => r.quiz_session_id)));
   }, [user.id]);
   useEffect(() => { load(); }, [load]);
 
@@ -402,7 +458,7 @@ export function MyQuizPage({ user }: { user: User }) {
               style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)', opacity: alreadyDone ? 0.75 : 1 }}>
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-2xl flex-shrink-0">🎯</div>
               <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-slate-800 text-lg">{s.session_name}</h4>
+                <h4 className="font-bold text-slate-800 text-lg">{s.session_name}{s.session_type === 'essay' && <span className="ml-2 align-middle text-xs px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">📝 Essay</span>}</h4>
                 <p className="text-sm text-slate-500 mt-1">{s.materi_name}</p>
                 <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-500">
                   <span>📝 {s.question_count} soal</span>
@@ -415,7 +471,12 @@ export function MyQuizPage({ user }: { user: User }) {
                     <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">⏳ Sedang Berlangsung</span>
                   </div>
                 )}
-                {alreadyDone && (
+                {pendingReviewIds.has(s.id) && (
+                  <div className="mt-2">
+                    <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">⏳ Menunggu Penilaian Admin</span>
+                  </div>
+                )}
+                {alreadyDone && !pendingReviewIds.has(s.id) && (
                   <div className="mt-2">
                     <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold">✅ Sudah Dikerjakan</span>
                   </div>

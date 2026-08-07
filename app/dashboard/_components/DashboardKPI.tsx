@@ -337,7 +337,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
             ? supabase.from('users').select('id,role,team_type')
             : Promise.resolve({ data: [] }),
           scope.kind === 'admin'
-            ? supabase.from('lc_quiz_attempts').select('id,user_id,score,passed,is_submitted').eq('is_submitted', true)
+            ? supabase.from('lc_quiz_attempts').select('id,user_id,score,passed,is_submitted,grading_status').eq('is_submitted', true).neq('grading_status', 'pending_review')
             : Promise.resolve({ data: [] }),
         ]);
 
@@ -539,9 +539,10 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           .gte('created_at', yearStart)
           .lte('created_at', yearEnd + 'T23:59:59'),
         supabase.from('lc_quiz_attempts')
-          .select('id,user_id,score,passed,is_submitted')
+          .select('id,user_id,score,passed,is_submitted,grading_status')
           .in('user_id', memberIds)
           .eq('is_submitted', true)
+          .neq('grading_status', 'pending_review')
           .gte('started_at', yearStart)
           .lte('started_at', yearEnd + 'T23:59:59'),
         supabase.from('piket_schedules')

@@ -18,6 +18,7 @@ export function SessionsPage({ user }: { user: User }) {
     target_user_ids: [] as string[],
     target_divisions: [] as string[],
     open_at: '', close_at: '',
+    session_type: 'abcd' as 'abcd' | 'essay',
   });
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
@@ -44,7 +45,7 @@ export function SessionsPage({ user }: { user: User }) {
     const [{ data: s }, { data: m }, { data: q }, { data: u }] = await Promise.all([
       supabase.from('lc_quiz_sessions').select('*').order('created_at', { ascending: false }),
       supabase.from('lc_materials').select('*').order('materi_name'),
-      supabase.from('lc_questions').select('id, material_id, difficulty, batch_name'),
+      supabase.from('lc_questions').select('id, material_id, difficulty, batch_name, question_type'),
       supabase.from('users').select('id, full_name, username, role, jabatan, sales_division').order('full_name'),
     ]);
     setSessions((s as QuizSession[]) ?? []);
@@ -102,11 +103,14 @@ export function SessionsPage({ user }: { user: User }) {
     const mat = materials.find(m => m.id === form.material_id);
     const pool = questions.filter(q =>
       q.material_id === form.material_id &&
-      (!form.batch_filter || (q as any).batch_name === form.batch_filter)
+      (!form.batch_filter || (q as any).batch_name === form.batch_filter) &&
+      // Sesi essay hanya boleh berisi soal essay, sesi ABCD hanya boleh berisi soal ABCD
+      ((q as any).question_type ?? 'abcd') === form.session_type
     );
     if (pool.length < form.question_count) {
       const batchInfo = form.batch_filter ? ` di grup "${form.batch_filter}"` : '';
-      setDialog({ type: 'error', message: `Hanya ada ${pool.length} soal${batchInfo}. Kurangi jumlah soal atau generate lebih banyak.` }); return;
+      const typeLabel = form.session_type === 'essay' ? 'soal essay' : 'soal ABCD';
+      setDialog({ type: 'error', message: `Hanya ada ${pool.length} ${typeLabel}${batchInfo}. Kurangi jumlah soal atau tambah soal ${typeLabel} dulu.` }); return;
     }
     const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, form.question_count);
     let resolvedTargetIds: string[] | null = null;
@@ -132,11 +136,12 @@ export function SessionsPage({ user }: { user: User }) {
       open_at: form.open_at ? new Date(form.open_at).toISOString() : null,
       close_at: form.close_at ? new Date(form.close_at).toISOString() : null,
       scheduled_at: form.open_at ? new Date(form.open_at).toISOString() : null,
+      session_type: form.session_type,
     }]);
     setSaving(false);
     if (error) { setDialog({ type: 'error', message: 'Error: ' + error.message }); return; }
     setShowForm(false);
-    setForm({ session_name: '', material_id: '', batch_filter: '', question_count: 10, timer_minutes: 30, passing_grade: 70, allow_retake: true, target_mode: 'all', target_roles: [], target_user_ids: [], target_divisions: [], open_at: '', close_at: '' });
+    setForm({ session_name: '', material_id: '', batch_filter: '', question_count: 10, timer_minutes: 30, passing_grade: 70, allow_retake: true, target_mode: 'all', target_roles: [], target_user_ids: [], target_divisions: [], open_at: '', close_at: '', session_type: 'abcd' });
     load();
     setDialog({ type: 'success', message: 'Sesi quiz berhasil dibuat!' });
   };
@@ -165,6 +170,7 @@ export function SessionsPage({ user }: { user: User }) {
           is_active       : true,
           created_by      : user.id,
           target_user_ids : session.target_user_ids ?? null,
+          session_type    : session.session_type ?? 'abcd',
         }]);
         if (error) {
           setDialog({ type: 'error', title: 'Gagal', message: 'Gagal menduplikasi sesi: ' + error.message });
@@ -232,6 +238,7 @@ export function SessionsPage({ user }: { user: User }) {
       open_at         : reassignForm.open_at  ? new Date(reassignForm.open_at).toISOString()  : null,
       close_at        : reassignForm.close_at ? new Date(reassignForm.close_at).toISOString() : null,
       scheduled_at    : reassignForm.open_at  ? new Date(reassignForm.open_at).toISOString()  : null,
+      session_type    : reassignSource.session_type ?? 'abcd',
     }]);
     setReassigning(false);
     if (error) { setDialog({ type: 'error', message: 'Error: ' + error.message }); return; }
@@ -311,6 +318,17 @@ export function SessionsPage({ user }: { user: User }) {
         {showForm && (
           <div className="rounded-2xl border border-emerald-100 shadow-lg p-6" style={{ background: '#ffffff' }}>
             <h3 className="font-bold text-slate-800 mb-5">📋 Form Sesi Quiz Baru</h3>
+            <div className="flex items-center gap-2 mb-5">
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-widest mr-1">Tipe Sesi</span>
+              {(['abcd', 'essay'] as const).map(t => (
+                <button key={t} type="button"
+                  onClick={() => setForm(p => ({ ...p, session_type: t, material_id: '', batch_filter: '' }))}
+                  className={`px-3.5 py-1.5 text-xs font-bold rounded-lg border transition-all ${form.session_type === t ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-emerald-50'}`}>
+                  {t === 'abcd' ? '🔤 Pilihan Ganda (ABCD)' : '📝 Essay'}
+                </button>
+              ))}
+              <span className="text-[11px] text-slate-400 ml-1">Sesi essay hanya bisa berisi soal essay, tidak dicampur ABCD.</span>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Sesi *</label>
@@ -325,11 +343,11 @@ export function SessionsPage({ user }: { user: User }) {
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
                   <option value="">-- Pilih Materi --</option>
                   {materials.map(m => {
-                    const total = questions.filter(q => q.material_id === m.id).length;
-                    const batches = [...new Set(questions.filter(q => q.material_id === m.id && (q as any).batch_name).map(q => (q as any).batch_name))];
+                    const total = questions.filter(q => q.material_id === m.id && ((q as any).question_type ?? 'abcd') === form.session_type).length;
+                    const batches = [...new Set(questions.filter(q => q.material_id === m.id && (q as any).batch_name && ((q as any).question_type ?? 'abcd') === form.session_type).map(q => (q as any).batch_name))];
                     return (
-                      <option key={m.id} value={m.id}>
-                        {m.materi_name} ({total} soal{batches.length > 0 ? `, ${batches.length} grup` : ''})
+                      <option key={m.id} value={m.id} disabled={total === 0}>
+                        {m.materi_name} ({total} soal {form.session_type === 'essay' ? 'essay' : 'ABCD'}{batches.length > 0 ? `, ${batches.length} grup` : ''})
                       </option>
                     );
                   })}
@@ -339,7 +357,7 @@ export function SessionsPage({ user }: { user: User }) {
               {(() => {
                 if (!form.material_id) return null;
                 const batches = [...new Set(
-                  questions.filter(q => q.material_id === form.material_id && (q as any).batch_name)
+                  questions.filter(q => q.material_id === form.material_id && (q as any).batch_name && ((q as any).question_type ?? 'abcd') === form.session_type)
                     .map(q => (q as any).batch_name as string)
                 )].sort();
                 if (batches.length === 0) return null;
@@ -354,9 +372,9 @@ export function SessionsPage({ user }: { user: User }) {
                       onChange={e => setForm(p => ({ ...p, batch_filter: e.target.value }))}
                       className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white"
                     >
-                      <option value="">-- Semua Grup ({questions.filter(q => q.material_id === form.material_id).length} soal dicampur) --</option>
+                      <option value="">-- Semua Grup ({questions.filter(q => q.material_id === form.material_id && ((q as any).question_type ?? 'abcd') === form.session_type).length} soal dicampur) --</option>
                       {batches.map(b => {
-                        const count = questions.filter(q => q.material_id === form.material_id && (q as any).batch_name === b).length;
+                        const count = questions.filter(q => q.material_id === form.material_id && (q as any).batch_name === b && ((q as any).question_type ?? 'abcd') === form.session_type).length;
                         return <option key={b} value={b}>📌 {b} ({count} soal)</option>;
                       })}
                     </select>
@@ -561,6 +579,9 @@ export function SessionsPage({ user }: { user: User }) {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="font-bold text-slate-800">{s.session_name}</h4>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${status.cls}`}>{status.label}</span>
+                      {s.session_type === 'essay' && (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-bold border bg-indigo-100 text-indigo-700 border-indigo-200">📝 Essay</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       {s.materi_name.includes(' — ') ? (

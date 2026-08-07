@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, User, Question, QuizAttempt, DIFF_COLOR, fmtDate, ScoreBadge, SearchInput, BtnView } from './shared';
+import { supabase, User, Question, QuizAttempt, DIFF_COLOR, fmtDate, ScoreBadge, SearchInput, BtnView, GradingStatusBadge, AppDialog, DialogState } from './shared';
+import { getSession } from '@/lib/auth';
 
 function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: () => void; isAdminView: boolean }) {
   const [attempts, setAttempts] = useState<any[]>([]);
@@ -9,6 +10,9 @@ function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: (
   const [answerDetails, setAnswerDetails] = useState<any[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [manualScores, setManualScores] = useState<Record<string, string>>({});
+  const [savingGrade, setSavingGrade] = useState(false);
+  const [dialog, setDialog] = useState<DialogState>(null);
 
   useEffect(() => {
     supabase.from('lc_quiz_attempts')
@@ -31,7 +35,35 @@ function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: (
     const orderedQs = questionIds.map((id: string) => (qs ?? []).find((q: any) => q.id === id)).filter(Boolean) as Question[];
     setQuestions(orderedQs);
     setAnswerDetails(ans ?? []);
+    const scoreMap: Record<string, string> = {};
+    (ans ?? []).forEach((a: any) => { if (a.manual_score !== null && a.manual_score !== undefined) scoreMap[a.question_id] = String(a.manual_score); });
+    setManualScores(scoreMap);
     setLoadingDetail(false);
+  };
+
+  const handleSaveManualGrade = async () => {
+    if (!selectedAttempt) return;
+    const missing = questions.some(q => manualScores[q.id] === undefined || manualScores[q.id] === '');
+    if (missing) { setDialog({ type: 'error', message: 'Isi nilai untuk semua soal essay terlebih dahulu (0-100).' }); return; }
+    setSavingGrade(true);
+    const grader = getSession<User>();
+    await Promise.all(questions.map(q =>
+      supabase.from('lc_answers').update({ manual_score: Number(manualScores[q.id]) })
+        .eq('attempt_id', selectedAttempt.id).eq('question_id', q.id)
+    ));
+    const finalScore = questions.length
+      ? questions.reduce((s, q) => s + (Number(manualScores[q.id]) || 0), 0) / questions.length
+      : 0;
+    const passingGrade = selectedAttempt.lc_quiz_sessions?.passing_grade ?? 70;
+    const passed = finalScore >= passingGrade;
+    const totalCorrect = questions.filter(q => (Number(manualScores[q.id]) || 0) >= passingGrade).length;
+    await supabase.from('lc_quiz_attempts').update({
+      score: finalScore, passed, total_correct: totalCorrect, total_questions: questions.length,
+      grading_status: 'graded', graded_by: grader?.id ?? null, graded_at: new Date().toISOString(),
+    }).eq('id', selectedAttempt.id);
+    setSavingGrade(false);
+    setSelectedAttempt((p: any) => p && ({ ...p, score: finalScore, passed, grading_status: 'graded' }));
+    setDialog({ type: 'success', message: 'Nilai essay berhasil disimpan!' });
   };
 
   const getAnswerFor = (questionId: string) => answerDetails.find(a => a.question_id === questionId);
@@ -51,9 +83,9 @@ function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: (
         <div className="p-8">
           <div className="grid grid-cols-4 gap-4 mb-8">
             {[
-              { label: 'Skor', value: selectedAttempt.score?.toFixed(0) ?? '—', color: (selectedAttempt.score ?? 0) >= (selectedAttempt.lc_quiz_sessions?.passing_grade ?? 70) ? 'from-emerald-500 to-emerald-600' : 'from-rose-500 to-rose-600' },
+              { label: 'Skor', value: selectedAttempt.grading_status === 'pending_review' ? '⏳' : (selectedAttempt.score?.toFixed(0) ?? '—'), color: selectedAttempt.grading_status === 'pending_review' ? 'from-amber-500 to-amber-600' : (selectedAttempt.score ?? 0) >= (selectedAttempt.lc_quiz_sessions?.passing_grade ?? 70) ? 'from-emerald-500 to-emerald-600' : 'from-rose-500 to-rose-600' },
               { label: 'Benar', value: `${selectedAttempt.total_correct}/${selectedAttempt.total_questions}`, color: 'from-blue-500 to-blue-600' },
-              { label: 'Status', value: selectedAttempt.passed ? 'LULUS' : 'TIDAK LULUS', color: selectedAttempt.passed ? 'from-emerald-500 to-emerald-600' : 'from-rose-500 to-rose-600' },
+              { label: 'Status', value: selectedAttempt.grading_status === 'pending_review' ? 'MENUNGGU' : (selectedAttempt.passed ? 'LULUS' : 'TIDAK LULUS'), color: selectedAttempt.grading_status === 'pending_review' ? 'from-amber-500 to-amber-600' : selectedAttempt.passed ? 'from-emerald-500 to-emerald-600' : 'from-rose-500 to-rose-600' },
               { label: 'Waktu', value: selectedAttempt.time_taken_sec ? `${Math.floor(selectedAttempt.time_taken_sec/60)}m ${selectedAttempt.time_taken_sec%60}s` : '—', color: 'from-indigo-500 to-indigo-600' },
             ].map(c => (
               <div key={c.label} className={`bg-gradient-to-br ${c.color} rounded-2xl p-4 text-white shadow-lg text-center`}>
@@ -68,6 +100,47 @@ function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: (
             <div className="space-y-4">
               {questions.map((q, idx) => {
                 const ans = getAnswerFor(q.id);
+                if (q.question_type === 'essay') {
+                  return (
+                    <div key={q.id} className="rounded-2xl border-2 border-indigo-200 bg-indigo-50/40 p-5">
+                      <div className="flex items-start gap-3 mb-3">
+                        <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 text-white bg-indigo-500">📝</span>
+                        <div className="flex-1">
+                          <p className="text-xs font-bold text-slate-500 mb-1">Soal {idx+1} · Essay · <span className={`${DIFF_COLOR[q.difficulty].split(' ')[1]}`}>{q.difficulty}</span></p>
+                          <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
+                        </div>
+                      </div>
+                      <div className="ml-10 space-y-3">
+                        <div className="bg-white rounded-xl border border-slate-200 p-3">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Jawaban Peserta</p>
+                          <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{ans?.essay_text?.trim() || <span className="italic text-slate-400">Tidak dijawab</span>}</p>
+                        </div>
+                        {q.model_answer && (
+                          <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-3">
+                            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">Kunci Referensi (untuk admin)</p>
+                            <p className="text-sm text-emerald-800 whitespace-pre-wrap leading-relaxed">{q.model_answer}</p>
+                          </div>
+                        )}
+                        {isAdminView ? (
+                          <div className="flex items-center gap-2">
+                            <label className="text-xs font-bold text-slate-600">Nilai (0-100):</label>
+                            <input type="number" min={0} max={100}
+                              value={manualScores[q.id] ?? ''}
+                              onChange={e => setManualScores(p => ({ ...p, [q.id]: e.target.value }))}
+                              className="w-24 border border-slate-300 rounded-lg px-3 py-1.5 text-sm font-bold outline-none focus:border-indigo-400" />
+                          </div>
+                        ) : (
+                          manualScores[q.id] !== undefined && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-slate-600">Nilai:</span>
+                              <span className="text-sm font-black text-indigo-700">{manualScores[q.id]}</span>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
                 const userAnswer = ans?.answer ?? null;
                 const isCorrect = userAnswer === q.correct_answer;
                 const notAnswered = !userAnswer;
@@ -105,9 +178,18 @@ function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: (
                   </div>
                 );
               })}
+              {isAdminView && questions.some(q => q.question_type === 'essay') && (
+                <div className="sticky bottom-4 flex justify-end">
+                  <button onClick={handleSaveManualGrade} disabled={savingGrade}
+                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-lg transition-all disabled:opacity-60 flex items-center gap-2">
+                    {savingGrade ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Menyimpan...</> : '💾 Simpan Nilai Essay'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
+        {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
       </div>
     );
   }
@@ -136,23 +218,21 @@ function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: (
         {attempts.map(a => (
           <div key={a.id} className="rounded-2xl border border-slate-200 shadow-sm p-5 flex items-center gap-5"
             style={{ background: '#ffffff' }}>
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white flex-shrink-0 ${a.passed ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-rose-400 to-rose-600'}`}>
-              {a.score?.toFixed(0) ?? '—'}
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white flex-shrink-0 ${a.grading_status === 'pending_review' ? 'bg-gradient-to-br from-amber-400 to-amber-600' : a.passed ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-rose-400 to-rose-600'}`}>
+              {a.grading_status === 'pending_review' ? '⏳' : (a.score?.toFixed(0) ?? '—')}
             </div>
             <div className="flex-1 min-w-0">
               <h4 className="font-bold text-slate-800">{a.lc_quiz_sessions?.session_name ?? '-'}</h4>
               <p className="text-sm text-slate-500">{a.lc_quiz_sessions?.materi_name ?? '-'}</p>
               <div className="flex gap-3 mt-1 text-xs text-slate-400">
-                <span>✅ {a.total_correct}/{a.total_questions} benar</span>
+                {a.grading_status === 'pending_review' ? <span>📝 {a.total_questions} soal essay dikirim</span> : <span>✅ {a.total_correct}/{a.total_questions} benar</span>}
                 <span>🎯 Passing: {a.lc_quiz_sessions?.passing_grade ?? 70}%</span>
                 {a.time_taken_sec && <span>⏱️ {Math.floor(a.time_taken_sec/60)}m {a.time_taken_sec%60}s</span>}
                 <span>📅 {a.submitted_at ? fmtDate(a.submitted_at) : ''}</span>
               </div>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
-              <span className={`text-xs font-bold px-2 py-1 rounded-full border ${a.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
-                {a.passed ? '✅ LULUS' : '❌ TIDAK LULUS'}
-              </span>
+              <GradingStatusBadge attempt={a} />
               <BtnView onClick={() => handleViewDetail(a)}>Detail Jawaban</BtnView>
             </div>
           </div>
@@ -222,8 +302,10 @@ export function TeamPage() {
               )}
               {filtered.map(u => {
                 const ua = attempts.filter((a: any) => a.user_id === u.id);
-                const avg = ua.length ? ua.reduce((s: number, a: any) => s + (a.score ?? 0), 0) / ua.length : null;
-                const passed = ua.filter((a: any) => a.passed).length;
+                const gradedUa = ua.filter((a: any) => (a as any).grading_status !== 'pending_review');
+                const pendingCount = ua.length - gradedUa.length;
+                const avg = gradedUa.length ? gradedUa.reduce((s: number, a: any) => s + (a.score ?? 0), 0) / gradedUa.length : null;
+                const passed = gradedUa.filter((a: any) => a.passed).length;
                 return (
                   <tr key={u.id} className="stagger-item hover:bg-slate-50 transition-colors">
                     <td className="px-5 py-3.5">
@@ -240,12 +322,15 @@ export function TeamPage() {
                     <td className="px-5 py-3.5">
                       <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">{u.role}</span>
                     </td>
-                    <td className="px-5 py-3.5 text-center font-bold text-slate-700">{ua.length}</td>
+                    <td className="px-5 py-3.5 text-center font-bold text-slate-700">
+                      {ua.length}
+                      {pendingCount > 0 && <span className="ml-1.5 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">⏳ {pendingCount}</span>}
+                    </td>
                     <td className="px-5 py-3.5 text-center">
                       {avg !== null ? <span className={`font-bold ${avg >= 70 ? 'text-emerald-600' : 'text-rose-600'}`}>{avg.toFixed(1)}</span> : <span className="text-slate-300">—</span>}
                     </td>
                     <td className="px-5 py-3.5 text-center">
-                      {ua.length ? <span className="text-xs font-bold text-indigo-600">{Math.round(passed/ua.length*100)}%</span> : <span className="text-slate-300">—</span>}
+                      {gradedUa.length ? <span className="text-xs font-bold text-indigo-600">{Math.round(passed/gradedUa.length*100)}%</span> : <span className="text-slate-300">—</span>}
                     </td>
                     <td className="px-5 py-3.5 text-center">
                       {ua.length > 0 && (

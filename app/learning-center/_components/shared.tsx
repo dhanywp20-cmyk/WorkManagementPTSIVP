@@ -40,6 +40,9 @@ export interface Question {
   difficulty: 'easy' | 'medium' | 'hard';
   batch_name?: string | null;
   created_at: string;
+  // ── Essay addition (non-breaking; defaults to 'abcd' for all existing rows) ──
+  question_type?: 'abcd' | 'essay';
+  model_answer?: string | null; // kunci/referensi jawaban essay, untuk bantu admin menilai manual
 }
 
 export interface QuizSession {
@@ -59,6 +62,8 @@ export interface QuizSession {
   target_user_ids: string[] | null;
   open_at: string | null;
   close_at: string | null;
+  // ── Essay addition ──
+  session_type?: 'abcd' | 'essay';
 }
 
 export interface QuizAttempt {
@@ -73,6 +78,10 @@ export interface QuizAttempt {
   passed: boolean | null;
   time_taken_sec: number | null;
   is_submitted: boolean;
+  // ── Essay addition: attempt tetap is_submitted=true, tapi belum final sampai admin nilai ──
+  grading_status?: 'auto' | 'pending_review' | 'graded';
+  graded_by?: string | null;
+  graded_at?: string | null;
 }
 
 export interface AnswerRecord {
@@ -81,6 +90,9 @@ export interface AnswerRecord {
   question_id: string;
   answer: string;
   is_correct: boolean;
+  // ── Essay addition ──
+  essay_text?: string | null;
+  manual_score?: number | null; // 0-100 per soal, diisi admin saat penilaian manual
 }
 
 export type AdminView = 'dashboard' | 'materi' | 'questions' | 'sessions' | 'team' | 'report';
@@ -110,6 +122,22 @@ export function ScoreBadge({ score, passing }: { score: number | null; passing: 
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border ${pass ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
       {pass ? '✅' : '❌'} {score.toFixed(0)}
+    </span>
+  );
+}
+
+// ─── Essay grading status badge (dipakai di HistoryPage, ScorePage, ReportPage) ─
+export function GradingStatusBadge({ attempt }: { attempt: { grading_status?: string | null; passed: boolean | null } }) {
+  if (attempt.grading_status === 'pending_review') {
+    return (
+      <span className="text-xs font-bold px-2 py-1 rounded-full border bg-amber-100 text-amber-700 border-amber-200">
+        ⏳ Menunggu Penilaian
+      </span>
+    );
+  }
+  return (
+    <span className={`text-xs font-bold px-2 py-1 rounded-full border ${attempt.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
+      {attempt.passed ? '✅ LULUS' : '❌ TIDAK LULUS'}
     </span>
   );
 }

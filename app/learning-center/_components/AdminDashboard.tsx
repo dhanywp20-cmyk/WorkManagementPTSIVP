@@ -108,6 +108,8 @@ export function AdminDashboard({ user }: { user: User }) {
   const [searchPerformer, setSearchPerformer] = useState('');
 
   const [divisionStats, setDivisionStats] = useState<any[]>([]);
+  const [nationalAvg, setNationalAvg] = useState<number | null>(null);
+  const [performerDivisionFilter, setPerformerDivisionFilter] = useState<string>('');
   const [batchPerf, setBatchPerf] = useState<any[]>([]);
 
   const [selectedUser, setSelectedUser] = useState<{ uid: string; name: string } | null>(null);
@@ -136,14 +138,14 @@ export function AdminDashboard({ user }: { user: User }) {
           .select('*, users(full_name), lc_quiz_sessions(session_name, passing_grade)')
           .eq('is_submitted', true).order('submitted_at', { ascending: false }).limit(50),
         supabase.from('lc_quiz_attempts')
-          .select('user_id, score, passed, tab_switches, time_taken_sec, total_questions, users(full_name, jabatan, sales_division, team_type, role)')
+          .select('user_id, score, passed, tab_switches, time_taken_sec, total_questions, grading_status, users(full_name, jabatan, sales_division, team_type, role)')
           .eq('is_submitted', true),
         supabase.from('lc_questions').select('id, batch_name'),
         supabase.from('lc_answers').select('question_id, is_correct'),
       ]);
       setRecentAttempts(recentRes.data ?? []);
 
-      const allAtt = allAttRes.data ?? [];
+      const allAtt = (allAttRes.data ?? []).filter((a: any) => a.grading_status !== 'pending_review'); // skor essay yg belum dinilai manual jangan masuk statistik
 
       // ── Overview mini pies ─────────────────────────────────────────────────
       const participants = new Set(allAtt.map((a: any) => a.user_id)).size;
@@ -224,6 +226,10 @@ export function AdminDashboard({ user }: { user: User }) {
         passed: v.passed,
       })).sort((a, b) => b.avg - a.avg));
 
+      // ── Nasional (semua divisi/jabatan digabung) — pembanding gap tiap kelompok ──
+      const allScoresNational = allAtt.map((a: any) => a.score ?? 0);
+      setNationalAvg(allScoresNational.length ? allScoresNational.reduce((s: number, n: number) => s + n, 0) / allScoresNational.length : null);
+
       // ── Batch/topic performance ────────────────────────────────────────────
       if (qListRes.data && aListRes.data) {
         const qBatch: Record<string, string> = {};
@@ -297,9 +303,9 @@ export function AdminDashboard({ user }: { user: User }) {
     (a.users?.full_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (a.lc_quiz_sessions?.session_name ?? '').toLowerCase().includes(search.toLowerCase())
   );
-  const filteredPerformers = searchPerformer
-    ? topUsers.filter(u => u.name.toLowerCase().includes(searchPerformer.toLowerCase()))
-    : topUsers;
+  const filteredPerformers = topUsers
+    .filter(u => !performerDivisionFilter || u.salesDivision === performerDivisionFilter)
+    .filter(u => !searchPerformer || u.name.toLowerCase().includes(searchPerformer.toLowerCase()));
 
   const cards = [
     { label: 'Total Materi', value: stats.materials, icon: '📚', color: 'from-blue-500/90 to-blue-600/90' },
@@ -371,13 +377,35 @@ export function AdminDashboard({ user }: { user: User }) {
 
           {/* Right: Top Performers */}
           <div className="min-w-0">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
               <SectionHeader>🏆 Top Performers</SectionHeader>
               <div className="flex items-center gap-2 flex-wrap">
                 <TeamSwitch active={activeTeam} onChange={setActiveTeam} />
+                {divisionStats.length > 0 && (
+                  <select value={performerDivisionFilter} onChange={e => setPerformerDivisionFilter(e.target.value)}
+                    className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-400 bg-white font-semibold text-slate-600">
+                    <option value="">🏢 Semua Divisi</option>
+                    {divisionStats.filter(d => d.source === 'division').map(d => <option key={d.name} value={d.name}>{d.name}</option>)}
+                  </select>
+                )}
                 <SearchInput value={searchPerformer} onChange={setSearchPerformer} placeholder="Cari nama..." />
               </div>
             </div>
+            {nationalAvg !== null && (
+              <p className="text-[11px] text-slate-400 mb-3">
+                🌏 Rata-rata Nasional (semua divisi): <span className="font-bold text-slate-600">{nationalAvg.toFixed(1)}</span>
+                {performerDivisionFilter && (() => {
+                  const d = divisionStats.find(d => d.name === performerDivisionFilter);
+                  if (!d) return null;
+                  const gap = d.avg - nationalAvg;
+                  return (
+                    <span className={`ml-2 font-bold ${gap >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      · {performerDivisionFilter}: {d.avg.toFixed(1)} ({gap >= 0 ? '▲' : '▼'} {Math.abs(gap).toFixed(1)} vs nasional)
+                    </span>
+                  );
+                })()}
+              </p>
+            )}
             <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
               <table className="w-full text-sm table-zebra" style={{ minWidth: '480px' }}>
                 <thead className="border-b border-slate-200 bg-slate-50">
@@ -574,6 +602,7 @@ export function AdminDashboard({ user }: { user: User }) {
                     <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Sales Division / Jabatan</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Attempt</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Avg Score</th>
+                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">vs Nasional</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Pass Rate</th>
                   </tr>
                 </thead>
@@ -608,6 +637,16 @@ export function AdminDashboard({ user }: { user: User }) {
                             {d.avg.toFixed(0)}
                           </span>
                         </div>
+                      </td>
+                      <td className="px-5 py-3.5 text-center">
+                        {nationalAvg !== null ? (() => {
+                          const gap = d.avg - nationalAvg;
+                          return (
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${gap >= 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
+                              {gap >= 0 ? '▲' : '▼'} {Math.abs(gap).toFixed(1)}
+                            </span>
+                          );
+                        })() : <span className="text-slate-300 text-xs">—</span>}
                       </td>
                       <td className="px-5 py-3.5 text-center">
                         <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${

@@ -40,9 +40,12 @@ export function QuestionsPage({ user }: { user: User }) {
     question: '', option_a: '', option_b: '', option_c: '', option_d: '',
     correct_answer: 'A', difficulty: 'medium' as 'easy' | 'medium' | 'hard',
     material_id: '', batch_name: '',
+    question_type: 'abcd' as 'abcd' | 'essay', model_answer: '',
   });
   const [genCount, setGenCount] = useState(10);
   const [genDiff, setGenDiff] = useState<'easy' | 'medium' | 'hard' | 'mixed'>('mixed');
+  // Tipe soal untuk panel Generate AI — soal essay tidak dicampur dengan ABCD dalam satu batch generate
+  const [genType, setGenType] = useState<'abcd' | 'essay'>('abcd');
   const [batchName, setBatchName] = useState('');
   const [genExtraPrompt, setGenExtraPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
@@ -161,7 +164,9 @@ export function QuestionsPage({ user }: { user: User }) {
       const extraInstruction = genExtraPrompt.trim()
         ? `\n\nFOKUS TOPIK KHUSUS: ${genExtraPrompt.trim()}\nPastikan seluruh soal yang dibuat berfokus pada topik tersebut dari materi ini.`
         : '';
-      const prompt = `Kamu adalah instruktur training profesional. ${pdfFile ? 'Berdasarkan dokumen PDF yang dilampirkan' : 'Berdasarkan materi berikut'}, buat tepat ${genCount} soal pilihan ganda (A, B, C, D) dalam Bahasa Indonesia.\n${diffInstruction}${extraInstruction}\n${!pdfFile && mat?.content_text ? `\nMATERI:\n${mat.content_text.slice(0, 30000)}` : ''}\n\nOUTPUT RULE: Balas HANYA dengan JSON array murni. Tidak boleh ada teks, penjelasan, atau markdown di luar array. Mulai langsung dengan [ dan akhiri dengan ].\n[\n  {\n    "question": "Pertanyaan lengkap?",\n    "option_a": "Jawaban A",\n    "option_b": "Jawaban B",\n    "option_c": "Jawaban C",\n    "option_d": "Jawaban D",\n    "correct_answer": "A",\n    "difficulty": "easy"\n  }\n]`;
+      const prompt = genType === 'essay'
+        ? `Kamu adalah instruktur training profesional. ${pdfFile ? 'Berdasarkan dokumen PDF yang dilampirkan' : 'Berdasarkan materi berikut'}, buat tepat ${genCount} soal essay (uraian, bukan pilihan ganda) dalam Bahasa Indonesia yang menuntut jawaban penjelasan/analisis, bukan sekadar satu kata.\n${diffInstruction}${extraInstruction}\n${!pdfFile && mat?.content_text ? `\nMATERI:\n${mat.content_text.slice(0, 30000)}` : ''}\n\nOUTPUT RULE: Balas HANYA dengan JSON array murni. Tidak boleh ada teks, penjelasan, atau markdown di luar array. Mulai langsung dengan [ dan akhiri dengan ].\n[\n  {\n    "question": "Pertanyaan essay lengkap?",\n    "model_answer": "Contoh/kunci jawaban ideal sebagai referensi penilaian manual admin",\n    "difficulty": "easy"\n  }\n]`
+        : `Kamu adalah instruktur training profesional. ${pdfFile ? 'Berdasarkan dokumen PDF yang dilampirkan' : 'Berdasarkan materi berikut'}, buat tepat ${genCount} soal pilihan ganda (A, B, C, D) dalam Bahasa Indonesia.\n${diffInstruction}${extraInstruction}\n${!pdfFile && mat?.content_text ? `\nMATERI:\n${mat.content_text.slice(0, 30000)}` : ''}\n\nOUTPUT RULE: Balas HANYA dengan JSON array murni. Tidak boleh ada teks, penjelasan, atau markdown di luar array. Mulai langsung dengan [ dan akhiri dengan ].\n[\n  {\n    "question": "Pertanyaan lengkap?",\n    "option_a": "Jawaban A",\n    "option_b": "Jawaban B",\n    "option_c": "Jawaban C",\n    "option_d": "Jawaban D",\n    "correct_answer": "A",\n    "difficulty": "easy"\n  }\n]`;
       setGenStatus(pdfFile ? '📄 Mengirim PDF ke Gemini...' : '🧠 Generating soal...');
       const text = await generateWithGemini(prompt, pdfFile ?? null);
       setGenStatus('⚙️ Memproses hasil...');
@@ -200,14 +205,22 @@ export function QuestionsPage({ user }: { user: User }) {
       }
 
       const parsed: any[] = JSON.parse(jsonMatch[0]);
-      const rows = parsed.map(q => ({
-        material_id: selectedMat, materi_name: mat?.materi_name ?? '',
-        batch_name: batchName.trim() || null,
-        question: q.question, option_a: q.option_a, option_b: q.option_b,
-        option_c: q.option_c, option_d: q.option_d,
-        correct_answer: (q.correct_answer ?? 'A').toUpperCase(),
-        difficulty: q.difficulty ?? 'medium', created_by: user.id,
-      }));
+      const rows = genType === 'essay'
+        ? parsed.map(q => ({
+            material_id: selectedMat, materi_name: mat?.materi_name ?? '',
+            batch_name: batchName.trim() || null,
+            question: q.question, option_a: '', option_b: '', option_c: '', option_d: '',
+            correct_answer: null, question_type: 'essay', model_answer: q.model_answer ?? '',
+            difficulty: q.difficulty ?? 'medium', created_by: user.id,
+          }))
+        : parsed.map(q => ({
+            material_id: selectedMat, materi_name: mat?.materi_name ?? '',
+            batch_name: batchName.trim() || null,
+            question: q.question, option_a: q.option_a, option_b: q.option_b,
+            option_c: q.option_c, option_d: q.option_d,
+            correct_answer: (q.correct_answer ?? 'A').toUpperCase(), question_type: 'abcd',
+            difficulty: q.difficulty ?? 'medium', created_by: user.id,
+          }));
       setGenStatus('💾 Menyimpan soal ke database...');
       const { error } = await supabase.from('lc_questions').insert(rows);
       if (error) throw error;
@@ -267,6 +280,7 @@ export function QuestionsPage({ user }: { user: User }) {
       question: editQ.question, option_a: editQ.option_a, option_b: editQ.option_b,
       option_c: editQ.option_c, option_d: editQ.option_d,
       correct_answer: editQ.correct_answer, difficulty: editQ.difficulty,
+      model_answer: editQ.model_answer,
     }).eq('id', editQ.id);
     setEditQ(null); load();
   };
@@ -274,16 +288,21 @@ export function QuestionsPage({ user }: { user: User }) {
   const handleAddManual = async () => {
     if (!newQ.material_id) { setDialog({ type: 'error', message: 'Pilih materi terlebih dahulu!' }); return; }
     if (!newQ.question.trim()) { setDialog({ type: 'error', message: 'Pertanyaan wajib diisi!' }); return; }
-    if (!newQ.option_a.trim() || !newQ.option_b.trim() || !newQ.option_c.trim() || !newQ.option_d.trim()) {
+    if (newQ.question_type !== 'essay' && (!newQ.option_a.trim() || !newQ.option_b.trim() || !newQ.option_c.trim() || !newQ.option_d.trim())) {
       setDialog({ type: 'error', message: 'Semua pilihan jawaban (A, B, C, D) wajib diisi!' }); return;
     }
     const mat = materials.find(m => m.id === newQ.material_id);
+    const payload = newQ.question_type === 'essay'
+      ? { question: newQ.question, material_id: newQ.material_id, batch_name: newQ.batch_name,
+          difficulty: newQ.difficulty, question_type: 'essay', model_answer: newQ.model_answer,
+          option_a: '', option_b: '', option_c: '', option_d: '', correct_answer: null }
+      : { ...newQ, question_type: 'abcd' };
     const { error } = await supabase.from('lc_questions').insert([{
-      ...newQ, materi_name: mat?.materi_name ?? '', created_by: user.id,
+      ...payload, materi_name: mat?.materi_name ?? '', created_by: user.id,
     }]);
     if (error) { setDialog({ type: 'error', message: 'Error: ' + error.message }); return; }
     setShowAddManual(false);
-    setNewQ({ question: '', option_a: '', option_b: '', option_c: '', option_d: '', correct_answer: 'A', difficulty: 'medium', material_id: '', batch_name: '' });
+    setNewQ({ question: '', option_a: '', option_b: '', option_c: '', option_d: '', correct_answer: 'A', difficulty: 'medium', material_id: '', batch_name: '', question_type: 'abcd', model_answer: '' });
     load();
     setDialog({ type: 'success', message: 'Soal berhasil ditambahkan!' });
   };
@@ -369,6 +388,15 @@ export function QuestionsPage({ user }: { user: User }) {
         <span>ℹ️</span>
         <span className="text-violet-700">Gemini 2.5 Flash free tier: <strong>10 req/menit</strong>, ~<strong>50 req/hari</strong>. Jika error limit, tunggu 1 menit atau coba besok.</span>
       </div>
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-xs font-bold text-slate-600 uppercase tracking-widest mr-1">Tipe Soal</span>
+        {(['abcd', 'essay'] as const).map(t => (
+          <button key={t} type="button" onClick={() => setGenType(t)}
+            className={`px-3.5 py-1.5 text-xs font-bold rounded-lg border transition-all ${genType === t ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-violet-50'}`}>
+            {t === 'abcd' ? '🔤 Pilihan Ganda (ABCD)' : '📝 Essay'}
+          </button>
+        ))}
+      </div>
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="col-span-2">
           <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
@@ -452,7 +480,18 @@ export function QuestionsPage({ user }: { user: User }) {
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
       <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ background: '#ffffff' }}>
         <h3 className="font-bold text-slate-800 mb-1 text-base">➕ Tambah Soal Manual</h3>
-        <p className="text-xs text-slate-400 mb-4">Isi semua field, klik tombol "✓ Benar" untuk menandai jawaban yang benar.</p>
+        <p className="text-xs text-slate-400 mb-4">
+          {newQ.question_type === 'essay' ? 'Isi pertanyaan essay dan (opsional) kunci jawaban referensi untuk membantu penilaian manual nanti.' : 'Isi semua field, klik tombol "✓ Benar" untuk menandai jawaban yang benar.'}
+        </p>
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-xs font-bold text-slate-600 uppercase tracking-widest mr-1">Tipe Soal</span>
+          {(['abcd', 'essay'] as const).map(t => (
+            <button key={t} type="button" onClick={() => setNewQ(p => ({ ...p, question_type: t }))}
+              className={`px-3.5 py-1.5 text-xs font-bold rounded-lg border transition-all ${newQ.question_type === t ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-emerald-50'}`}>
+              {t === 'abcd' ? '🔤 Pilihan Ganda (ABCD)' : '📝 Essay'}
+            </button>
+          ))}
+        </div>
         <div className="space-y-3">
           <div>
             <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
@@ -470,7 +509,17 @@ export function QuestionsPage({ user }: { user: User }) {
               rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 resize-none"
               placeholder="Tulis pertanyaan di sini..." />
           </div>
-          {(['a', 'b', 'c', 'd'] as const).map(opt => (
+          {newQ.question_type === 'essay' ? (
+            <div>
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                Kunci / Referensi Jawaban
+                <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional — hanya untuk bantu admin menilai, tidak dilihat peserta</span>
+              </label>
+              <textarea value={newQ.model_answer} onChange={e => setNewQ(p => ({ ...p, model_answer: e.target.value }))}
+                rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 resize-none"
+                placeholder="Contoh jawaban ideal / poin-poin kunci penilaian..." />
+            </div>
+          ) : (['a', 'b', 'c', 'd'] as const).map(opt => (
             <div key={opt} className="flex items-center gap-2">
               <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 ${newQ.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{opt.toUpperCase()}</span>
               <input value={(newQ as any)[`option_${opt}`]} onChange={e => setNewQ(p => ({ ...p, [`option_${opt}`]: e.target.value }))}
@@ -901,7 +950,15 @@ export function QuestionsPage({ user }: { user: User }) {
               <div className="space-y-3">
                 <textarea value={editQ.question} onChange={e => setEditQ(p => p && ({ ...p, question: e.target.value }))}
                   rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 resize-none" placeholder="Pertanyaan" />
-                {(['a','b','c','d'] as const).map(opt => (
+                {editQ.question_type === 'essay' ? (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                      Kunci / Referensi Jawaban <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case">Optional</span>
+                    </label>
+                    <textarea value={editQ.model_answer ?? ''} onChange={e => setEditQ(p => p && ({ ...p, model_answer: e.target.value }))}
+                      rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 resize-none" placeholder="Contoh jawaban ideal..." />
+                  </div>
+                ) : (['a','b','c','d'] as const).map(opt => (
                   <div key={opt} className="flex items-center gap-2">
                     <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 ${editQ.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{opt.toUpperCase()}</span>
                     <input value={(editQ as any)[`option_${opt}`]} onChange={e => setEditQ(p => p && ({ ...p, [`option_${opt}`]: e.target.value }))}
@@ -1085,7 +1142,19 @@ export function QuestionsPage({ user }: { user: User }) {
                                     }}>{idx + 1}</div>
                                   </div>
                                   <div style={{ flex: 1, padding: '14px 18px' }}>
+                                    {q.question_type === 'essay' && (
+                                      <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 mb-1.5">📝 ESSAY</span>
+                                    )}
                                     <p style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', lineHeight: 1.6, marginBottom: 10 }}>{q.question}</p>
+                                    {q.question_type === 'essay' ? (
+                                      q.model_answer ? (
+                                        <div className="px-2.5 py-2 rounded-lg border border-indigo-100 bg-indigo-50/60 text-xs text-indigo-800 mb-2.5">
+                                          <span className="font-bold">Kunci referensi: </span>{q.model_answer}
+                                        </div>
+                                      ) : (
+                                        <p className="text-xs text-slate-400 italic mb-2.5">Tidak ada kunci referensi — dinilai manual sepenuhnya oleh admin.</p>
+                                      )
+                                    ) : (
                                     <div className="grid grid-cols-2 gap-1.5 mb-2.5">
                                       {(['a', 'b', 'c', 'd'] as const).map(opt => {
                                         const isCorrect = q.correct_answer === opt.toUpperCase();
@@ -1097,6 +1166,7 @@ export function QuestionsPage({ user }: { user: User }) {
                                         );
                                       })}
                                     </div>
+                                    )}
                                     <div className="flex items-center justify-between">
                                       <span style={{
                                         fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20,

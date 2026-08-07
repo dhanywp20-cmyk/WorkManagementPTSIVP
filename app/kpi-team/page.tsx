@@ -796,7 +796,7 @@ export default function KPITeamPage() {
         .order('created_at', { ascending: true }),
       supabase.from('reminders').select('id,assign_name,status,due_date')
         .in('assign_name', mNames).gte('created_at', start).lte('created_at', endFull),
-      supabase.from('lc_quiz_attempts').select('id,user_id,score,passed,is_submitted,started_at')
+      supabase.from('lc_quiz_attempts').select('id,user_id,score,passed,is_submitted,started_at,grading_status')
         .in('user_id', mIds).eq('is_submitted', true)
         .gte('started_at', start).lte('started_at', endFull),
       supabase.from('piket_schedules').select('pic_ivp_name,pic_ump_name,pic_mvi_name,day_date')
@@ -837,7 +837,10 @@ export default function KPITeamPage() {
       const remDone = myRem.filter((r: any) => r.status === 'done').length;
 
       // LC
-      const myLC     = lcAttempts.filter((a: any) => a.user_id === uid);
+      // Essay yang belum dinilai dikecualikan: skornya belum ada, jadi kalau
+      // ikut dihitung, penyebut lcAttempts membesar dan skor KPI bergeser oleh
+      // pekerjaan yang belum selesai dinilai.
+      const myLC     = lcAttempts.filter((a: any) => a.user_id === uid && a.grading_status !== 'pending_review');
       const lcScoreArr = myLC.filter((a: any) => a.score != null).map((a: any) => a.score as number);
       const lcScores = lcScoreArr;
       const lcAvg    = lcScoreArr.length ? Math.round(lcScoreArr.reduce((a: number, b: number) => a + b, 0) / lcScoreArr.length) : 0;

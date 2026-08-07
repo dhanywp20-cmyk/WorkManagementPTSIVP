@@ -458,7 +458,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
             ? supabase.from('users').select('id,role,team_type')
             : Promise.resolve({ data: [] }),
           scope.kind === 'admin'
-            ? supabase.from('lc_quiz_attempts').select('id,user_id,score,passed,is_submitted').eq('is_submitted', true)
+            ? supabase.from('lc_quiz_attempts').select('id,user_id,score,passed,is_submitted,grading_status').eq('is_submitted', true).neq('grading_status', 'pending_review')
             : Promise.resolve({ data: [] }),
         ]);
 

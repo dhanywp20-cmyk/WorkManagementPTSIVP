@@ -90,6 +90,8 @@ export function AnalyticsPage() {
   const [allTopUsers, setAllTopUsers] = useState<any[]>([]);
   const [sessionStats, setSessionStats] = useState<any[]>([]);
   const [divisionStats, setDivisionStats] = useState<any[]>([]);
+  const [nationalAvg, setNationalAvg] = useState<number | null>(null);
+  const [divisionFilter, setDivisionFilter] = useState<string>('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeTeam, setActiveTeam] = useState<TeamFilter>('PTS');
@@ -103,13 +105,14 @@ export function AnalyticsPage() {
     const load = async () => {
       const { data: a } = await supabase
         .from('lc_quiz_attempts')
-        .select('user_id, score, passed, started_at, submitted_at, tab_switches, users(full_name, sales_division, team_type, role)')
+        .select('user_id, score, passed, started_at, submitted_at, tab_switches, grading_status, users(full_name, sales_division, team_type, role)')
         .eq('is_submitted', true);
 
       if (a) {
+        const graded = a.filter((att: any) => att.grading_status !== 'pending_review'); // skor essay yg belum dinilai jangan masuk rata-rata
         // ── Per user ──
         const byUser: Record<string, { name: string; division: string | null; teamType: string | null; role: string | null; salesDivision: string | null; scores: number[]; passed: number; flags: number }> = {};
-        a.forEach((att: any) => {
+        graded.forEach((att: any) => {
           if (!byUser[att.user_id]) byUser[att.user_id] = {
             name: att.users?.full_name ?? '-',
             division: att.users?.sales_division ?? null,
@@ -133,7 +136,7 @@ export function AnalyticsPage() {
 
         // ── Per Sales Division ──
         const byDiv: Record<string, { scores: number[]; passed: number; userIds: Set<string> }> = {};
-        a.forEach((att: any) => {
+        graded.forEach((att: any) => {
           const div: string = att.users?.sales_division ?? '(Tidak ada divisi)';
           if (!byDiv[div]) byDiv[div] = { scores: [], passed: 0, userIds: new Set() };
           byDiv[div].scores.push(att.score ?? 0);
@@ -150,6 +153,10 @@ export function AnalyticsPage() {
           scoreMid:  v.scores.filter(s => s >= 60 && s < 80).length,
           scoreLow:  v.scores.filter(s => s < 60).length,
         })).sort((a, b) => b.avg - a.avg));
+
+        // ── Nasional (semua divisi digabung) — dipakai sebagai pembanding ──
+        const allScores = graded.map((att: any) => att.score ?? 0);
+        setNationalAvg(allScores.length ? allScores.reduce((s: number, n: number) => s + n, 0) / allScores.length : null);
       }
 
       const { data: ss } = await supabase.from('lc_quiz_sessions').select('id, session_name');
@@ -204,9 +211,9 @@ export function AnalyticsPage() {
       .then(({ data }: { data: any[] | null }) => { setUserAttempts(data ?? []); setLoadingUser(false); });
   }, [selectedUser]);
 
-  const filteredUsers = search
-    ? topUsers.filter(u => u.name.toLowerCase().includes(search.toLowerCase()))
-    : topUsers;
+  const filteredUsers = topUsers
+    .filter(u => !divisionFilter || u.salesDivision === divisionFilter)
+    .filter(u => !search || u.name.toLowerCase().includes(search.toLowerCase()));
 
 
   return (
@@ -303,10 +310,28 @@ export function AnalyticsPage() {
 
         {/* ── Top Performers — Team ─────────────────────────────────────── */}
         <section>
-          <h3 className="text-[10px] font-bold uppercase tracking-widest mb-1 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
-            🏆 Top Performers — {TEAM_FILTER_CONFIG[activeTeam].label}
-          </h3>
-          <p className="text-xs text-slate-400 mb-4 ml-1">Klik nama untuk melihat detail nilai & aktivitas per quiz</p>
+          <div className="flex items-center justify-between flex-wrap gap-3 mb-1">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
+              🏆 Top Performers — {TEAM_FILTER_CONFIG[activeTeam].label}
+            </h3>
+            <div className="flex items-center gap-2">
+              {nationalAvg !== null && (
+                <span className="text-[11px] font-bold text-slate-500 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
+                  🌏 Rata-rata Nasional (semua divisi): <span className="text-slate-800">{nationalAvg.toFixed(1)}</span>
+                </span>
+              )}
+              {divisionStats.length > 0 && (
+                <select value={divisionFilter} onChange={e => setDivisionFilter(e.target.value)}
+                  className="text-xs border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:border-indigo-400 bg-white font-semibold text-slate-600">
+                  <option value="">🏢 Semua Divisi</option>
+                  {divisionStats.map(d => <option key={d.div} value={d.div}>{d.div}</option>)}
+                </select>
+              )}
+            </div>
+          </div>
+          <p className="text-xs text-slate-400 mb-4 ml-1">
+            Klik nama untuk melihat detail nilai & aktivitas per quiz{divisionFilter && <> · Menampilkan divisi <strong>{divisionFilter}</strong></>}
+          </p>
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
             <table className="w-full text-sm table-zebra">
               <thead className="border-b border-slate-200 bg-slate-50">
@@ -363,7 +388,7 @@ export function AnalyticsPage() {
                 {filteredUsers.length === 0 && (
                   <tr>
                     <td colSpan={6} className="text-center py-12 text-slate-400 text-sm">
-                      {loading ? 'Memuat data...' : search ? 'Tidak ada hasil' : `Belum ada data untuk ${TEAM_FILTER_CONFIG[activeTeam].label}`}
+                      {loading ? 'Memuat data...' : (search || divisionFilter) ? 'Tidak ada hasil' : `Belum ada data untuk ${TEAM_FILTER_CONFIG[activeTeam].label}`}
                     </td>
                   </tr>
                 )}
@@ -386,6 +411,7 @@ export function AnalyticsPage() {
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">User</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Quiz</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Avg Score</th>
+                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">vs Nasional</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Lulus</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Pass Rate</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Distribusi Nilai</th>
@@ -420,6 +446,17 @@ export function AnalyticsPage() {
                               label={d.avg.toFixed(0)}
                             />
                           </div>
+                        </td>
+                        <td className="px-5 py-3.5 text-center">
+                          {nationalAvg !== null ? (() => {
+                            const gap = d.avg - nationalAvg;
+                            const up = gap >= 0;
+                            return (
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${up ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
+                                {up ? '▲' : '▼'} {Math.abs(gap).toFixed(1)}
+                              </span>
+                            );
+                          })() : <span className="text-slate-300 text-xs">—</span>}
                         </td>
                         <td className="px-5 py-3.5 text-center">
                           <span className="text-sm font-bold text-emerald-600">{d.passed}</span>
