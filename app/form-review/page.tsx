@@ -570,7 +570,7 @@ export default function FormReviewPage() {
                     📸 Upload Foto Dokumentasi
                   </button>
                   {(fotoPreview || reviewFormData.foto_dokumentasi_url) && (
-                    <img src={fotoPreview || reviewFormData.foto_dokumentasi_url} alt="Foto" className="mt-3 rounded-xl w-full max-h-48 object-cover" />
+                    <img src={fotoPreview || reviewFormData.foto_dokumentasi_url} alt="Foto" loading="lazy" decoding="async" className="mt-3 rounded-xl w-full max-h-48 object-cover" />
                   )}
                 </div>
 
@@ -754,6 +754,8 @@ export default function FormReviewPage() {
                     <img
                       src={detailReview.foto_dokumentasi_url}
                       alt="Foto Dokumentasi"
+                      loading="lazy"
+                      decoding="async"
                       className="w-full max-h-56 object-cover cursor-pointer hover:opacity-90 transition-opacity"
                       onClick={() => window.open(detailReview.foto_dokumentasi_url!, '_blank')}
                     />

@@ -711,7 +711,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         }
         if (boqFormFile && data?.id) {
           const filePath = `project-files/${data.id}/boq-initial-${Date.now()}-${toStorageSafeName(boqFormFile.name)}`;
-          const { error: boqErr } = await supabase.storage.from('project-files').upload(filePath, boqFormFile, { cacheControl: '3600', upsert: false });
+          const { error: boqErr } = await supabase.storage.from('project-files').upload(filePath, boqFormFile, { cacheControl: '31536000', upsert: false });
           if (!boqErr) {
             const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
             await supabase.from('project_attachments').insert([{
@@ -815,7 +815,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
               const rIdx = rooms.findIndex(r => r.id === roomId);
               const label = rIdx >= 0 ? `room${rIdx+2}` : roomId.slice(0,6);
               const filePath = `project-files/${data.id}/boq-${label}-${Date.now()}-${toStorageSafeName(boqFile.name)}`;
-              const { error: bErr } = await supabase.storage.from('project-files').upload(filePath, boqFile, { cacheControl:'3600', upsert:false });
+              const { error: bErr } = await supabase.storage.from('project-files').upload(filePath, boqFile, { cacheControl:'31536000', upsert:false });
               if (!bErr) {
                 const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
                 const existingBOQ = await supabase.from('project_attachments').select('revision_version').eq('request_id', data.id).eq('attachment_category','boq').order('revision_version',{ascending:false}).limit(1);

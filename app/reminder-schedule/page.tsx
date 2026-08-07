@@ -2651,6 +2651,8 @@ jangan lupa peralatan & Semangat💪🏼
                       <img
                         src={detailReminder.completion_photo_url}
                         alt="Foto bukti selesai"
+                        loading="lazy"
+                        decoding="async"
                         className="w-full rounded-xl object-cover cursor-pointer hover:opacity-90 transition-opacity"
                         style={{ maxHeight: 220 }}
                         onClick={() => window.open(detailReminder.completion_photo_url, '_blank')}

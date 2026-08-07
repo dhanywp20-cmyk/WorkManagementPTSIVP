@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { compressImage } from '@/lib/image-compress';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,9 +48,16 @@ export function fmtDate(d: string, long = false) {
 export async function uploadFiles(files: File[], folder: string): Promise<string[]> {
   const urls: string[] = [];
   for (const file of files) {
-    const ext  = file.name.split('.').pop() ?? 'bin';
+    // Foto dari HP biasanya 3-8MB. Sebelumnya diunggah MENTAH, sehingga boros
+    // storage dan egress Supabase. compressImage meneruskan file non-gambar
+    // (PDF, dll) apa adanya, jadi aman untuk semua jenis lampiran.
+    const toUpload = await compressImage(file);
+    const ext  = toUpload.name.split('.').pop() ?? 'bin';
     const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await supabase.storage.from('movement-files').upload(path, file, { cacheControl:'3600', upsert:false });
+    // Nama berkas di-generate (bukan nama asli) sehingga isinya tidak pernah
+    // berubah → aman di-cache lama. '3600' membuat browser mengunduh ulang
+    // tiap jam tanpa alasan.
+    const { error } = await supabase.storage.from('movement-files').upload(path, toUpload, { cacheControl:'31536000', upsert:false });
     if (error) throw new Error(`Upload ${file.name}: ${error.message}`);
     const { data } = supabase.storage.from('movement-files').getPublicUrl(path);
     urls.push(data.publicUrl);
