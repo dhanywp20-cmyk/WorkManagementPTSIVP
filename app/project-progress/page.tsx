@@ -14,10 +14,11 @@ import { exportProjectToExcel } from './_components/excel-export';
 import {
   THEME, ProgressProject, ProgressLocation, ProgressComponent, ProgressIssue,
   ProjectDetail, ProjectStatus, ComponentState, Severity,
-  STATUS_CONFIG, SEVERITY_CONFIG, COMPONENT_STATE_CONFIG,
-  averageProgress, componentsOf, formatDatetime,
+  STATUS_CONFIG, SEVERITY_CONFIG, COMPONENT_STATE_CONFIG, COMPONENT_STATES,
+  averageProgress, componentsOf, formatDatetime, computeProgress, stateBreakdown,
   newShareToken, shareUrl, canEditProjectProgress,
 } from './_components/shared';
+import { isAssignablePTSTeam } from '@/lib/teams';
 
 export default function ProjectProgressPage() {
   const currentUser = useCurrentUser();
@@ -42,6 +43,12 @@ export default function ProjectProgressPage() {
 
   // Modal share
   const [shareFor, setShareFor] = useState<ProgressProject | null>(null);
+
+  // Daftar PIC untuk dropdown lokasi — Team PTS assignable (lihat lib/teams.ts)
+  const [teamUsers, setTeamUsers] = useState<{ id: string; full_name: string }[]>([]);
+  // Perubahan editor yang belum disimpan — dipakai untuk mencegah modal
+  // tertutup tanpa sengaja dan menghilangkan pekerjaan.
+  const [editorDirty, setEditorDirty] = useState(false);
 
   const notify = (type: 'success' | 'error', msg: string) => {
     setToast({ type, msg });
@@ -78,6 +85,21 @@ export default function ProjectProgressPage() {
   }, []);
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
+
+  // Daftar PIC: hanya Team PTS yang assignable, tanpa admin/superadmin —
+  // pola yang sama dengan dropdown handler di Request Schedule.
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from('users')
+        .select('id, full_name, role, team_type').order('full_name');
+      if (!data) return;
+      setTeamUsers(
+        (data as { id: string; full_name: string; role: string; team_type?: string }[])
+          .filter(u => isAssignablePTSTeam(u.team_type) && u.role !== 'admin' && u.role !== 'superadmin')
+          .map(u => ({ id: u.id, full_name: u.full_name })),
+      );
+    })();
+  }, []);
 
   // ── Buka detail ───────────────────────────────────────────────────────────
   const openDetail = async (project: ProgressProject) => {
@@ -125,6 +147,35 @@ export default function ProjectProgressPage() {
     const wasEdit = editMode;
     await openDetail(project);
     setEditMode(wasEdit);
+  };
+
+  /** Tutup modal detail — konfirmasi dulu bila ada perubahan belum tersimpan. */
+  const closeDetail = () => {
+    if (!editorDirty) { setDetail(null); setEditMode(false); return; }
+    setConfirmState({
+      message: 'Tutup tanpa menyimpan?',
+      description: 'Ada perubahan yang belum disimpan. Kalau ditutup sekarang, perubahan itu hilang.',
+      confirmLabel: 'Tutup & buang perubahan',
+      danger: true,
+      onConfirm: () => {
+        setConfirmState(null);
+        setEditorDirty(false);
+        setEditMode(false);
+        setDetail(null);
+      },
+    });
+  };
+
+  /** Keluar dari mode edit — juga dijaga bila masih ada perubahan. */
+  const exitEditMode = () => {
+    if (!editorDirty) { setEditMode(false); return; }
+    setConfirmState({
+      message: 'Keluar dari mode edit?',
+      description: 'Ada perubahan yang belum disimpan dan akan hilang.',
+      confirmLabel: 'Keluar & buang perubahan',
+      danger: true,
+      onConfirm: () => { setConfirmState(null); setEditorDirty(false); setEditMode(false); },
+    });
   };
 
   // ── CRUD proyek ───────────────────────────────────────────────────────────
@@ -383,7 +434,7 @@ export default function ProjectProgressPage() {
       {/* ══ MODAL DETAIL ══ */}
       {detail && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 z-[9990]"
-          onClick={e => { if (e.target === e.currentTarget) setDetail(null); }}>
+          onClick={e => { if (e.target === e.currentTarget) closeDetail(); }}>
           <div className="bg-white w-full h-full flex flex-col overflow-hidden">
             <div className="px-5 py-3.5 flex items-center justify-between gap-3 flex-shrink-0"
               style={{ background: THEME.gradient }}>
@@ -396,12 +447,12 @@ export default function ProjectProgressPage() {
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit && (
-                  <button onClick={() => setEditMode(m => !m)}
+                  <button onClick={() => editMode ? exitEditMode() : setEditMode(true)}
                     className="px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all"
                     style={editMode
                       ? { background: '#fff', color: THEME.colorLight }
                       : { background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)' }}>
-                    {editMode ? '✓ Selesai Edit' : '✏️ Edit'}
+                    {editMode ? (editorDirty ? '● Keluar Edit' : '✓ Selesai Edit') : '✏️ Edit'}
                   </button>
                 )}
                 <button onClick={() => exportProjectToExcel(detail)}
@@ -409,7 +460,7 @@ export default function ProjectProgressPage() {
                   style={{ background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)' }}>
                   ⬇ Excel
                 </button>
-                <button onClick={() => setDetail(null)}
+                <button onClick={closeDetail}
                   className="w-8 h-8 rounded-lg text-white font-bold flex items-center justify-center transition-all"
                   style={{ background: 'rgba(255,255,255,0.2)' }}>✕</button>
               </div>
@@ -419,8 +470,14 @@ export default function ProjectProgressPage() {
               {detailLoading ? (
                 <p className="text-center text-sm font-bold text-gray-400 py-16">Memuat detail…</p>
               ) : editMode && canEdit ? (
-                <DetailEditor detail={detail} onChanged={reloadDetail} notify={notify}
-                  setConfirmState={setConfirmState} />
+                <DetailEditor
+                  // key: paksa draft dibangun ulang HANYA saat ganti proyek /
+                  // setelah simpan — bukan tiap render, supaya tidak berkedip.
+                  key={`${detail.project.id}-${detail.locations.length}-${detail.components.length}-${detail.issues.length}`}
+                  detail={detail} teamUsers={teamUsers}
+                  onSaved={() => { setEditorDirty(false); reloadDetail(); fetchProjects(); }}
+                  onDirtyChange={setEditorDirty}
+                  notify={notify} setConfirmState={setConfirmState} />
               ) : (
                 <ProjectDetailView detail={detail} />
               )}
@@ -536,98 +593,265 @@ export default function ProjectProgressPage() {
 
 // ─── Editor detail (lokasi / komponen / isu) ─────────────────────────────────
 
-function DetailEditor({ detail, onChanged, notify, setConfirmState }: {
+/**
+ * Editor memakai DRAFT LOKAL. Semua perubahan hanya mengubah state di memori;
+ * tidak ada penulisan ke database sampai tombol "Simpan Perubahan" ditekan.
+ *
+ * Ini sengaja: versi sebelumnya menyimpan tiap kali field kehilangan fokus lalu
+ * memuat ulang seluruh detail, sehingga komponen ter-mount ulang dan tampilan
+ * berkedip di tengah pengetikan.
+ *
+ * Baris baru diberi id sementara berawalan "new-" supaya saat simpan bisa
+ * dipisahkan antara INSERT dan UPDATE.
+ */
+
+type DraftComponent = { id: string; label: string; state: ComponentState };
+type DraftLocation = {
+  id: string; name: string; pic: string | null; status: ProjectStatus;
+  note: string | null; note_flag: boolean; components: DraftComponent[];
+};
+type DraftIssue = {
+  id: string; location_label: string | null; issue: string;
+  severity: Severity; note: string | null;
+};
+
+const tempId = () => `new-${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+const isNew = (id: string) => id.startsWith('new-');
+
+function buildDraft(detail: ProjectDetail): { locations: DraftLocation[]; issues: DraftIssue[] } {
+  return {
+    locations: [...detail.locations]
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(l => ({
+        id: l.id, name: l.name, pic: l.pic, status: l.status,
+        note: l.note, note_flag: l.note_flag,
+        components: componentsOf(detail.components, l.id)
+          .map(c => ({ id: c.id, label: c.label, state: c.state })),
+      })),
+    issues: [...detail.issues]
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(i => ({
+        id: i.id, location_label: i.location_label, issue: i.issue,
+        severity: i.severity, note: i.note,
+      })),
+  };
+}
+
+function DetailEditor({ detail, teamUsers, onSaved, onDirtyChange, notify, setConfirmState }: {
   detail: ProjectDetail;
-  onChanged: () => void;
+  teamUsers: { id: string; full_name: string }[];
+  onSaved: () => void;
+  onDirtyChange: (d: boolean) => void;
   notify: (t: 'success' | 'error', m: string) => void;
   setConfirmState: (s: ConfirmState | null) => void;
 }) {
-  const [busy, setBusy] = useState(false);
-  const locations = [...detail.locations].sort((a, b) => a.sort_order - b.sort_order);
+  const [locations, setLocations] = useState<DraftLocation[]>(() => buildDraft(detail).locations);
+  const [issues, setIssues] = useState<DraftIssue[]>(() => buildDraft(detail).issues);
+  const [removedLoc, setRemovedLoc] = useState<string[]>([]);
+  const [removedComp, setRemovedComp] = useState<string[]>([]);
+  const [removedIssue, setRemovedIssue] = useState<string[]>([]);
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const run = async (fn: () => Promise<{ error: { message: string } | null }>, okMsg?: string) => {
-    setBusy(true);
-    const { error } = await fn();
-    setBusy(false);
-    if (error) { notify('error', 'Gagal: ' + error.message); return; }
-    if (okMsg) notify('success', okMsg);
-    onChanged();
+  const touch = () => { if (!dirty) { setDirty(true); onDirtyChange(true); } };
+
+  // ── Mutasi draft (murni lokal) ──────────────────────────────────────────
+  const patchLoc = (id: string, patch: Partial<DraftLocation>) => {
+    touch();
+    setLocations(prev => prev.map(l => l.id === id ? { ...l, ...patch } : l));
+  };
+  const addLoc = () => {
+    touch();
+    setLocations(prev => [...prev, {
+      id: tempId(), name: '', pic: null, status: 'in_progress',
+      note: null, note_flag: false, components: [],
+    }]);
+  };
+  const removeLoc = (loc: DraftLocation) => {
+    const doRemove = () => {
+      touch();
+      if (!isNew(loc.id)) setRemovedLoc(prev => [...prev, loc.id]);
+      setLocations(prev => prev.filter(l => l.id !== loc.id));
+      setConfirmState(null);
+    };
+    if (isNew(loc.id) && !loc.name && loc.components.length === 0) { doRemove(); return; }
+    setConfirmState({
+      message: 'Hapus Lokasi?',
+      description: `"${loc.name || 'Lokasi baru'}" beserta komponennya akan dihapus saat disimpan.`,
+      confirmLabel: 'Hapus', danger: true,
+      onConfirm: doRemove,
+    });
   };
 
-  const addLocation = () => run(async () =>
-    await supabase.from('progress_locations').insert([{
-      project_id: detail.project.id, name: 'Lokasi Baru', status: 'in_progress',
-      progress: 0, sort_order: locations.length,
-    }]), 'Lokasi ditambahkan.');
+  const patchComp = (locId: string, compId: string, patch: Partial<DraftComponent>) => {
+    touch();
+    setLocations(prev => prev.map(l => l.id !== locId ? l : {
+      ...l, components: l.components.map(c => c.id === compId ? { ...c, ...patch } : c),
+    }));
+  };
+  const addComp = (locId: string) => {
+    touch();
+    setLocations(prev => prev.map(l => l.id !== locId ? l : {
+      ...l, components: [...l.components, { id: tempId(), label: '', state: 'pending' }],
+    }));
+  };
+  const removeComp = (locId: string, compId: string) => {
+    touch();
+    if (!isNew(compId)) setRemovedComp(prev => [...prev, compId]);
+    setLocations(prev => prev.map(l => l.id !== locId ? l : {
+      ...l, components: l.components.filter(c => c.id !== compId),
+    }));
+  };
 
-  const updateLocation = (id: string, patch: Partial<ProgressLocation>) => run(async () =>
-    await supabase.from('progress_locations').update(patch).eq('id', id));
+  const patchIssue = (id: string, patch: Partial<DraftIssue>) => {
+    touch();
+    setIssues(prev => prev.map(i => i.id === id ? { ...i, ...patch } : i));
+  };
+  const addIssue = () => {
+    touch();
+    setIssues(prev => [...prev, {
+      id: tempId(), location_label: null, issue: '', severity: 'sedang', note: null,
+    }]);
+  };
+  const removeIssue = (id: string) => {
+    touch();
+    if (!isNew(id)) setRemovedIssue(prev => [...prev, id]);
+    setIssues(prev => prev.filter(i => i.id !== id));
+  };
 
-  const deleteLocation = (loc: ProgressLocation) => setConfirmState({
-    message: 'Hapus Lokasi?',
-    description: `"${loc.name}" beserta komponennya akan dihapus.`,
-    confirmLabel: 'Hapus', danger: true,
-    onConfirm: async () => {
-      setConfirmState(null);
-      await run(async () => await supabase.from('progress_locations').delete().eq('id', loc.id), 'Lokasi dihapus.');
-    },
-  });
+  // ── Simpan seluruh draft ────────────────────────────────────────────────
+  const save = async () => {
+    if (locations.some(l => !l.name.trim())) {
+      notify('error', 'Ada lokasi tanpa nama. Isi dulu sebelum menyimpan.');
+      return;
+    }
+    setSaving(true);
+    try {
+      // 1) Hapus dulu, supaya baris yang dihapus tidak ikut divalidasi ulang.
+      if (removedComp.length)  await supabase.from('progress_components').delete().in('id', removedComp);
+      if (removedIssue.length) await supabase.from('progress_issues').delete().in('id', removedIssue);
+      if (removedLoc.length)   await supabase.from('progress_locations').delete().in('id', removedLoc);
 
-  const addComponent = (locId: string, count: number) => run(async () =>
-    await supabase.from('progress_components').insert([{
-      location_id: locId, label: 'Komponen baru', state: 'done', sort_order: count,
-    }]), 'Komponen ditambahkan.');
+      // 2) Lokasi — progress DIHITUNG dari komponennya, tidak diisi manual.
+      for (let i = 0; i < locations.length; i++) {
+        const l = locations[i];
+        const payload = {
+          name: l.name.trim(),
+          pic: l.pic?.trim() || null,
+          status: l.status,
+          note: l.note?.trim() || null,
+          note_flag: l.note_flag,
+          progress: computeProgress(l.components),
+          sort_order: i,
+        };
 
-  const updateComponent = (id: string, patch: Partial<ProgressComponent>) => run(async () =>
-    await supabase.from('progress_components').update(patch).eq('id', id));
+        let realLocId = l.id;
+        if (isNew(l.id)) {
+          const { data, error } = await supabase.from('progress_locations')
+            .insert([{ ...payload, project_id: detail.project.id }]).select('id').single();
+          if (error) throw error;
+          realLocId = (data as { id: string }).id;
+        } else {
+          const { error } = await supabase.from('progress_locations').update(payload).eq('id', l.id);
+          if (error) throw error;
+        }
 
-  const deleteComponent = (id: string) => run(async () =>
-    await supabase.from('progress_components').delete().eq('id', id), 'Komponen dihapus.');
+        // 3) Komponen milik lokasi ini
+        const newComps = l.components.filter(c => isNew(c.id) && c.label.trim());
+        if (newComps.length) {
+          const { error } = await supabase.from('progress_components').insert(
+            newComps.map((c, ci) => ({
+              location_id: realLocId, label: c.label.trim(), state: c.state,
+              sort_order: l.components.indexOf(c) >= 0 ? l.components.indexOf(c) : ci,
+            })),
+          );
+          if (error) throw error;
+        }
+        for (const c of l.components) {
+          if (isNew(c.id) || !c.label.trim()) continue;
+          const { error } = await supabase.from('progress_components')
+            .update({ label: c.label.trim(), state: c.state, sort_order: l.components.indexOf(c) })
+            .eq('id', c.id);
+          if (error) throw error;
+        }
+      }
 
-  const addIssue = () => run(async () =>
-    await supabase.from('progress_issues').insert([{
-      project_id: detail.project.id, issue: 'Isu baru', severity: 'sedang',
-      sort_order: detail.issues.length,
-    }]), 'Isu ditambahkan.');
+      // 4) Isu
+      const newIssues = issues.filter(i => isNew(i.id) && i.issue.trim());
+      if (newIssues.length) {
+        const { error } = await supabase.from('progress_issues').insert(
+          newIssues.map(i => ({
+            project_id: detail.project.id,
+            location_label: i.location_label?.trim() || null,
+            issue: i.issue.trim(), severity: i.severity,
+            note: i.note?.trim() || null, sort_order: issues.indexOf(i),
+          })),
+        );
+        if (error) throw error;
+      }
+      for (const i of issues) {
+        if (isNew(i.id) || !i.issue.trim()) continue;
+        const { error } = await supabase.from('progress_issues').update({
+          location_label: i.location_label?.trim() || null,
+          issue: i.issue.trim(), severity: i.severity,
+          note: i.note?.trim() || null, sort_order: issues.indexOf(i),
+        }).eq('id', i.id);
+        if (error) throw error;
+      }
 
-  const updateIssue = (id: string, patch: Partial<ProgressIssue>) => run(async () =>
-    await supabase.from('progress_issues').update(patch).eq('id', id));
-
-  const deleteIssue = (id: string) => run(async () =>
-    await supabase.from('progress_issues').delete().eq('id', id), 'Isu dihapus.');
+      setRemovedLoc([]); setRemovedComp([]); setRemovedIssue([]);
+      setDirty(false); onDirtyChange(false);
+      notify('success', 'Perubahan tersimpan.');
+      onSaved();
+    } catch (e) {
+      notify('error', 'Gagal menyimpan: ' + ((e as { message?: string }).message ?? 'kesalahan tidak diketahui'));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <div className={`flex flex-col gap-5 ${busy ? 'opacity-60 pointer-events-none' : ''}`}>
+    <div className="flex flex-col gap-5 pb-24">
       <div className="rounded-xl px-4 py-3 text-[11px] font-semibold"
         style={{ background: '#ecfeff', border: '1px solid #a5f3fc', color: '#0e7490' }}>
-        Mode edit aktif — perubahan langsung tersimpan. Klik “Selesai Edit” untuk kembali ke tampilan biasa.
+        Mode edit — perubahan <b>belum tersimpan</b> sampai kamu menekan tombol
+        “Simpan Perubahan” di bawah. Progres tiap lokasi dihitung otomatis dari
+        status komponennya.
       </div>
 
       {/* ── Lokasi ── */}
       <div className="flex items-center justify-between">
         <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Lokasi ({locations.length})</p>
-        <button onClick={addLocation} className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white"
+        <button onClick={addLoc} className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white"
           style={{ background: THEME.gradient }}>+ Tambah Lokasi</button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {locations.map(loc => {
-          const comps = componentsOf(detail.components, loc.id);
+          const pct = computeProgress(loc.components);
+          const bd = stateBreakdown(loc.components);
           return (
             <div key={loc.id} className="rounded-2xl p-4 flex flex-col gap-3 bg-white border border-gray-200">
               <div className="flex items-start gap-2">
-                <input defaultValue={loc.name} onBlur={e => { if (e.target.value !== loc.name) updateLocation(loc.id, { name: e.target.value }); }}
+                <input value={loc.name} placeholder="Nama lokasi"
+                  onChange={e => patchLoc(loc.id, { name: e.target.value })}
                   className="flex-1 px-2.5 py-1.5 rounded-lg text-sm font-black text-gray-800 border-2 border-gray-200 focus:border-cyan-500 outline-none" />
-                <button onClick={() => deleteLocation(loc)}
+                <button onClick={() => removeLoc(loc)}
                   className="w-8 h-8 rounded-lg text-rose-500 hover:bg-rose-50 font-bold flex-shrink-0">✕</button>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                <input defaultValue={loc.pic ?? ''} placeholder="PIC"
-                  onBlur={e => { if (e.target.value !== (loc.pic ?? '')) updateLocation(loc.id, { pic: e.target.value || null }); }}
-                  className={inputSm} />
-                <select defaultValue={loc.status}
-                  onChange={e => updateLocation(loc.id, { status: e.target.value as ProjectStatus })}
+                {/* PIC diambil dari daftar Team PTS — bukan ketikan bebas */}
+                <select value={loc.pic ?? ''} onChange={e => patchLoc(loc.id, { pic: e.target.value || null })}
+                  className={inputSm}>
+                  <option value="">— Pilih PIC —</option>
+                  {teamUsers.map(u => <option key={u.id} value={u.full_name}>{u.full_name}</option>)}
+                  {/* Nilai lama yang bukan anggota team tetap ditampilkan agar tidak hilang diam-diam */}
+                  {loc.pic && !teamUsers.some(u => u.full_name === loc.pic) && (
+                    <option value={loc.pic}>{loc.pic} (di luar daftar)</option>
+                  )}
+                </select>
+                <select value={loc.status} onChange={e => patchLoc(loc.id, { status: e.target.value as ProjectStatus })}
                   className={inputSm}>
                   {(['in_progress', 'done', 'blocked'] as ProjectStatus[]).map(s => (
                     <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
@@ -635,46 +859,63 @@ function DetailEditor({ detail, onChanged, notify, setConfirmState }: {
                 </select>
               </div>
 
-              <div className="flex items-center gap-2">
-                <input type="range" min={0} max={100} defaultValue={loc.progress}
-                  onMouseUp={e => updateLocation(loc.id, { progress: Number((e.target as HTMLInputElement).value) })}
-                  onTouchEnd={e => updateLocation(loc.id, { progress: Number((e.target as HTMLInputElement).value) })}
-                  className="flex-1 accent-cyan-600" />
-                <input type="number" min={0} max={100} defaultValue={loc.progress}
-                  onBlur={e => {
-                    const v = Math.max(0, Math.min(100, Number(e.target.value) || 0));
-                    if (v !== loc.progress) updateLocation(loc.id, { progress: v });
-                  }}
-                  className="w-16 px-2 py-1.5 rounded-lg text-xs font-bold text-center border-2 border-gray-200 focus:border-cyan-500 outline-none" />
+              {/* Progres otomatis — tidak bisa diketik */}
+              <div className="rounded-xl p-2.5 bg-gray-50 border border-gray-200 flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+                    Progres otomatis
+                  </span>
+                  <span className="text-sm font-black" style={{ color: THEME.color }}>{pct}%</span>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden bg-gray-200 flex">
+                  {bd.filter(b => b.count > 0).map(b => (
+                    <div key={b.state} style={{ width: `${b.percent}%`, background: b.color }} />
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-x-2.5 gap-y-1">
+                  {bd.map(b => (
+                    <span key={b.state} className="flex items-center gap-1 text-[10px] font-bold"
+                      style={{ color: b.count > 0 ? b.color : '#cbd5e1' }}>
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: b.count > 0 ? b.color : '#e2e8f0' }} />
+                      {b.label} {b.percent}% <span className="font-semibold text-gray-400">({b.count})</span>
+                    </span>
+                  ))}
+                </div>
+                {loc.components.length === 0 && (
+                  <p className="text-[10px] text-gray-400 font-semibold">
+                    Belum ada komponen — progres 0%.
+                  </p>
+                )}
               </div>
 
               {/* Komponen */}
               <div className="flex flex-col gap-1.5">
-                {comps.map(c => (
+                {loc.components.map(c => (
                   <div key={c.id} className="flex items-center gap-1.5">
-                    <select defaultValue={c.state} onChange={e => updateComponent(c.id, { state: e.target.value as ComponentState })}
-                      className="px-1.5 py-1 rounded-md text-[10px] font-bold border border-gray-200 outline-none"
+                    <select value={c.state} onChange={e => patchComp(loc.id, c.id, { state: e.target.value as ComponentState })}
+                      className="px-1.5 py-1 rounded-md text-[10px] font-bold border border-gray-200 outline-none flex-shrink-0"
                       style={{ color: COMPONENT_STATE_CONFIG[c.state]?.dot }}>
-                      <option value="done">● Selesai</option>
-                      <option value="warning">● Perhatian</option>
-                      <option value="blocked">● Blocker</option>
+                      {COMPONENT_STATES.map(st => (
+                        <option key={st} value={st}>● {COMPONENT_STATE_CONFIG[st].label}</option>
+                      ))}
                     </select>
-                    <input defaultValue={c.label}
-                      onBlur={e => { if (e.target.value !== c.label) updateComponent(c.id, { label: e.target.value }); }}
+                    <input value={c.label} placeholder="Nama komponen"
+                      onChange={e => patchComp(loc.id, c.id, { label: e.target.value })}
                       className="flex-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-gray-200 focus:border-cyan-500 outline-none" />
-                    <button onClick={() => deleteComponent(c.id)} className="text-gray-300 hover:text-rose-500 font-bold px-1">✕</button>
+                    <button onClick={() => removeComp(loc.id, c.id)}
+                      className="text-gray-300 hover:text-rose-500 font-bold px-1 flex-shrink-0">✕</button>
                   </div>
                 ))}
-                <button onClick={() => addComponent(loc.id, comps.length)}
+                <button onClick={() => addComp(loc.id)}
                   className="text-[11px] font-bold text-cyan-700 hover:text-cyan-900 self-start">+ Tambah komponen</button>
               </div>
 
-              <textarea defaultValue={loc.note ?? ''} rows={2} placeholder="Catatan lokasi…"
-                onBlur={e => { if (e.target.value !== (loc.note ?? '')) updateLocation(loc.id, { note: e.target.value || null }); }}
+              <textarea value={loc.note ?? ''} rows={2} placeholder="Catatan lokasi…"
+                onChange={e => patchLoc(loc.id, { note: e.target.value })}
                 className={inputSm} />
               <label className="flex items-center gap-2 text-[11px] font-bold text-gray-500 cursor-pointer">
-                <input type="checkbox" defaultChecked={loc.note_flag}
-                  onChange={e => updateLocation(loc.id, { note_flag: e.target.checked })}
+                <input type="checkbox" checked={loc.note_flag}
+                  onChange={e => patchLoc(loc.id, { note_flag: e.target.checked })}
                   className="accent-rose-500" />
                 Tandai sebagai catatan penting
               </label>
@@ -685,33 +926,46 @@ function DetailEditor({ detail, onChanged, notify, setConfirmState }: {
 
       {/* ── Isu ── */}
       <div className="flex items-center justify-between">
-        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Rekap Isu ({detail.issues.length})</p>
+        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Rekap Isu ({issues.length})</p>
         <button onClick={addIssue} className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white"
           style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>+ Tambah Isu</button>
       </div>
 
       <div className="flex flex-col gap-2">
-        {[...detail.issues].sort((a, b) => a.sort_order - b.sort_order).map(is => (
+        {issues.map(is => (
           <div key={is.id} className="rounded-xl p-3 bg-white border border-gray-200 grid grid-cols-1 md:grid-cols-12 gap-2 items-center">
-            <input defaultValue={is.location_label ?? ''} placeholder="Lokasi"
-              onBlur={e => { if (e.target.value !== (is.location_label ?? '')) updateIssue(is.id, { location_label: e.target.value || null }); }}
+            <input value={is.location_label ?? ''} placeholder="Lokasi"
+              onChange={e => patchIssue(is.id, { location_label: e.target.value })}
               className={`${inputSm} md:col-span-2`} />
-            <input defaultValue={is.issue} placeholder="Isu"
-              onBlur={e => { if (e.target.value !== is.issue) updateIssue(is.id, { issue: e.target.value }); }}
+            <input value={is.issue} placeholder="Isu"
+              onChange={e => patchIssue(is.id, { issue: e.target.value })}
               className={`${inputSm} md:col-span-3`} />
-            <select defaultValue={is.severity} onChange={e => updateIssue(is.id, { severity: e.target.value as Severity })}
+            <select value={is.severity} onChange={e => patchIssue(is.id, { severity: e.target.value as Severity })}
               className={`${inputSm} md:col-span-2`}>
               {(['tinggi', 'sedang', 'rendah'] as Severity[]).map(s => (
                 <option key={s} value={s}>{SEVERITY_CONFIG[s].label}</option>
               ))}
             </select>
-            <input defaultValue={is.note ?? ''} placeholder="Keterangan"
-              onBlur={e => { if (e.target.value !== (is.note ?? '')) updateIssue(is.id, { note: e.target.value || null }); }}
+            <input value={is.note ?? ''} placeholder="Keterangan"
+              onChange={e => patchIssue(is.id, { note: e.target.value })}
               className={`${inputSm} md:col-span-4`} />
-            <button onClick={() => deleteIssue(is.id)}
+            <button onClick={() => removeIssue(is.id)}
               className="md:col-span-1 text-rose-500 hover:bg-rose-50 rounded-lg py-1.5 font-bold">✕</button>
           </div>
         ))}
+      </div>
+
+      {/* ── Bar simpan (menempel di bawah area scroll) ── */}
+      <div className="sticky bottom-0 -mx-5 px-5 py-3 flex items-center justify-between gap-3 border-t border-gray-200"
+        style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)' }}>
+        <span className="text-[11px] font-bold" style={{ color: dirty ? '#b45309' : '#94a3b8' }}>
+          {dirty ? '● Ada perubahan belum tersimpan' : '○ Belum ada perubahan'}
+        </span>
+        <button onClick={save} disabled={saving || !dirty}
+          className="px-6 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40 transition-all"
+          style={{ background: THEME.gradient }}>
+          {saving ? 'Menyimpan…' : '💾 Simpan Perubahan'}
+        </button>
       </div>
     </div>
   );

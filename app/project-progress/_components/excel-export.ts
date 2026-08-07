@@ -1,7 +1,7 @@
 import { loadXLSX } from '@/lib/xlsx-loader';
 import {
-  ProjectDetail, STATUS_CONFIG, SEVERITY_CONFIG,
-  averageProgress, componentsOf,
+  ProjectDetail, STATUS_CONFIG, SEVERITY_CONFIG, COMPONENT_STATE_CONFIG,
+  averageProgress, componentsOf, stateBreakdown,
 } from './shared';
 
 /**
@@ -78,21 +78,27 @@ export function exportProjectToExcel(detail: ProjectDetail) {
       const data: any[][] = [];
       data.push([{ v: 'STATUS PER LOKASI', s: titleStyle }, ...row0(5, titleStyle)]);
       data.push(row0(6, subStyle));
-      data.push(['No', 'Lokasi', 'PIC', 'Status', 'Progres', 'Komponen & Catatan'].map(h => cell(h, hdrStyle)));
+      data.push(['No', 'Lokasi', 'PIC', 'Status', 'Progres & Rekap', 'Komponen & Catatan'].map(h => cell(h, hdrStyle)));
 
       sortedLoc.forEach((loc, i) => {
         const st = i % 2 === 1 ? altStyle : cellStyle;
         const comps = componentsOf(components, loc.id);
+        // Sertakan status tiap komponen — progres lokasi diturunkan dari sini,
+        // jadi angka di kolom Progres bisa ditelusuri dari daftar ini.
         const compText = comps.length
-          ? comps.map(c => `• ${c.label}`).join('\n')
+          ? comps.map(c => `• ${c.label} — ${COMPONENT_STATE_CONFIG[c.state]?.label ?? c.state}`).join('\n')
           : '—';
+        const bd = stateBreakdown(comps)
+          .filter(b => b.count > 0)
+          .map(b => `${b.label} ${b.percent}% (${b.count})`)
+          .join(' · ');
         const noteText = loc.note ? `\n\nCatatan: ${loc.note}` : '';
         data.push([
           cell(i + 1, st),
           cell(loc.name, st),
           cell(loc.pic ?? '—', st),
           cell(statusLabel(loc.status), st),
-          cell(`${loc.progress}%`, st),
+          cell(bd ? `${loc.progress}%\n${bd}` : `${loc.progress}%`, st),
           cell(compText + noteText, st),
         ]);
       });
@@ -102,7 +108,7 @@ export function exportProjectToExcel(detail: ProjectDetail) {
       }
 
       const ws = XLSX.utils.aoa_to_sheet(data);
-      ws['!cols'] = [{ wch: 5 }, { wch: 26 }, { wch: 18 }, { wch: 16 }, { wch: 10 }, { wch: 52 }];
+      ws['!cols'] = [{ wch: 5 }, { wch: 26 }, { wch: 18 }, { wch: 16 }, { wch: 24 }, { wch: 52 }];
       ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:5} }];
       XLSX.utils.book_append_sheet(wb, ws, 'Status Lokasi');
     }

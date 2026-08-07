@@ -4,6 +4,7 @@ import { MiniPieChart } from '@/components/shared';
 import {
   ProjectDetail, STATUS_CONFIG, COMPONENT_STATE_CONFIG, SEVERITY_CONFIG,
   STATUS_PIE_COLOR, THEME, averageProgress, componentsOf, ProjectStatus,
+  computeProgress, stateBreakdown,
 } from './shared';
 
 /**
@@ -97,24 +98,46 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
                     </span>
                   </div>
 
+                  {/* Progres dihitung dari komposisi status komponen, bukan input manual */}
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-semibold text-gray-500">Progres komponen</span>
-                      <span className="text-[11px] font-black" style={{ color: THEME.color }}>{loc.progress}%</span>
+                      <span className="text-[10px] font-semibold text-gray-500">
+                        Progres komponen <span className="text-gray-400">({comps.length})</span>
+                      </span>
+                      <span className="text-[11px] font-black" style={{ color: THEME.color }}>
+                        {computeProgress(comps)}%
+                      </span>
                     </div>
-                    <div className="h-2 rounded-full overflow-hidden bg-gray-200">
-                      <div className="h-full rounded-full" style={{ width: `${loc.progress}%`, background: THEME.gradient }} />
+                    {/* Bar tersegmen: proporsi tiap status terlihat langsung */}
+                    <div className="h-2 rounded-full overflow-hidden bg-gray-200 flex">
+                      {stateBreakdown(comps).filter(b => b.count > 0).map(b => (
+                        <div key={b.state} style={{ width: `${b.percent}%`, background: b.color }}
+                          title={`${b.label}: ${b.count} (${b.percent}%)`} />
+                      ))}
                     </div>
+                    {comps.length > 0 && (
+                      <div className="flex flex-wrap gap-x-2.5 gap-y-1 pt-0.5">
+                        {stateBreakdown(comps).map(b => (
+                          <span key={b.state} className="flex items-center gap-1 text-[10px] font-bold"
+                            style={{ color: b.count > 0 ? b.color : '#cbd5e1' }}>
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ background: b.count > 0 ? b.color : '#e2e8f0' }} />
+                            {b.label} {b.percent}%
+                            <span className="font-semibold text-gray-400">({b.count})</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {comps.length > 0 && (
                     <div className="flex flex-col gap-1.5">
                       {comps.map(c => {
-                        const sc = COMPONENT_STATE_CONFIG[c.state] ?? COMPONENT_STATE_CONFIG.done;
+                        const sc = COMPONENT_STATE_CONFIG[c.state] ?? COMPONENT_STATE_CONFIG.pending;
                         return (
                           <div key={c.id} className="flex items-start gap-2">
                             <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: sc.dot }} />
-                            <span className="text-[11px] font-semibold leading-snug" style={{ color: sc.text }}>{c.label}</span>
+                            <span className="text-[11px] font-semibold leading-snug flex-1" style={{ color: sc.text }}>{c.label}</span>
+                            <span className="text-[9px] font-bold flex-shrink-0 mt-0.5" style={{ color: sc.dot }}>{sc.label}</span>
                           </div>
                         );
                       })}

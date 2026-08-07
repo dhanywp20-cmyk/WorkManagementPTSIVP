@@ -10,7 +10,11 @@ export const THEME = {
 } as const;
 
 export type ProjectStatus = 'in_progress' | 'done' | 'blocked';
-export type ComponentState = 'done' | 'warning' | 'blocked';
+/**
+ * Status komponen. Progres lokasi DIHITUNG dari komposisi status ini
+ * (lihat computeProgress) — bukan diisi manual.
+ */
+export type ComponentState = 'done' | 'progress' | 'pending' | 'stuck';
 export type Severity = 'tinggi' | 'sedang' | 'rendah';
 
 export interface ProgressProject {
@@ -75,11 +79,20 @@ export const STATUS_CONFIG: Record<ProjectStatus, { label: string; color: string
   blocked:     { label: 'Terhambat',    color: '#9f1239', bg: '#ffe4e6', border: '#f43f5e', icon: '⛔' },
 };
 
-export const COMPONENT_STATE_CONFIG: Record<ComponentState, { dot: string; text: string }> = {
-  done:    { dot: '#10b981', text: '#334155' },
-  warning: { dot: '#f59e0b', text: '#b45309' },
-  blocked: { dot: '#f43f5e', text: '#be123c' },
+/**
+ * Bobot tiap status untuk perhitungan progres.
+ * Selesai = penuh, Proses = setengah, Pending & Stuck = belum berkontribusi.
+ */
+export const COMPONENT_STATE_CONFIG: Record<ComponentState, {
+  label: string; dot: string; text: string; weight: number;
+}> = {
+  done:     { label: 'Selesai', dot: '#10b981', text: '#334155', weight: 1 },
+  progress: { label: 'Proses',  dot: '#0ea5e9', text: '#0369a1', weight: 0.5 },
+  pending:  { label: 'Pending', dot: '#f59e0b', text: '#b45309', weight: 0 },
+  stuck:    { label: 'Stuck',   dot: '#f43f5e', text: '#be123c', weight: 0 },
 };
+
+export const COMPONENT_STATES = ['done', 'progress', 'pending', 'stuck'] as const;
 
 export const SEVERITY_CONFIG: Record<Severity, { label: string; color: string; bg: string; border: string }> = {
   tinggi: { label: 'Tinggi', color: '#9f1239', bg: '#ffe4e6', border: '#fda4af' },
@@ -95,6 +108,43 @@ export const STATUS_PIE_COLOR: Record<ProjectStatus, string> = {
 };
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
+
+/**
+ * Progres sebuah lokasi — DIHITUNG dari komposisi status komponennya, bukan
+ * diisi manual. Selesai dihitung penuh, Proses setengah, Pending & Stuck nol.
+ * Lokasi tanpa komponen = 0% (belum ada yang bisa diukur).
+ */
+export function computeProgress(components: { state: ComponentState }[]): number {
+  if (components.length === 0) return 0;
+  const earned = components.reduce(
+    (s, c) => s + (COMPONENT_STATE_CONFIG[c.state]?.weight ?? 0), 0,
+  );
+  return Math.round((earned / components.length) * 100);
+}
+
+export interface StateBreakdown {
+  state: ComponentState;
+  label: string;
+  color: string;
+  count: number;
+  percent: number;
+}
+
+/** Rekap jumlah & persentase komponen per status — untuk ditampilkan di kartu lokasi. */
+export function stateBreakdown(components: { state: ComponentState }[]): StateBreakdown[] {
+  const total = components.length;
+  return COMPONENT_STATES.map(st => {
+    const count = components.filter(c => c.state === st).length;
+    const cfg = COMPONENT_STATE_CONFIG[st];
+    return {
+      state: st,
+      label: cfg.label,
+      color: cfg.dot,
+      count,
+      percent: total === 0 ? 0 : Math.round((count / total) * 100),
+    };
+  });
+}
 
 /**
  * Rata-rata progres seluruh lokasi. Dibulatkan ke bilangan bulat agar cocok
