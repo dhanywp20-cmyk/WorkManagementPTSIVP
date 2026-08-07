@@ -48,6 +48,8 @@ export interface ProgressComponent {
   location_id: string;
   label: string;
   state: ComponentState;
+  /** Foto bukti opsional — terpasang (Done) atau kendala (Stuck). */
+  photo_url: string | null;
   sort_order: number;
   created_at: string;
 }
@@ -219,6 +221,46 @@ export function problemComponentBreakdown(
   return head;
 }
 
+/** Ringkasan agregat 1 proyek untuk halaman listing. */
+export interface ProjectAgg { total: number; avg: number; issues: number }
+
+/** Distribusi status seluruh proyek — pie halaman utama. */
+export function projectStatusBreakdown(projects: ProgressProject[]): PieSlice[] {
+  return (['done', 'in_progress', 'blocked'] as ProjectStatus[])
+    .map(s => ({
+      label: STATUS_CONFIG[s].label,
+      value: projects.filter(p => p.status === s).length,
+      color: STATUS_PIE_COLOR[s],
+    }))
+    .filter(d => d.value > 0);
+}
+
+/**
+ * Progres tiap proyek — nilainya persentase, jadi pemakai wajib mengisi
+ * centerValue sendiri (jumlah persentase tidak bermakna).
+ */
+export function projectProgressBreakdown(
+  projects: ProgressProject[], agg: Record<string, ProjectAgg>, limit = 8,
+): PieSlice[] {
+  return projects
+    .map(p => ({ label: p.name, value: agg[p.id]?.avg ?? 0 }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, limit)
+    .map((r, i) => ({ ...r, color: PIE_PALETTE[i % PIE_PALETTE.length] }));
+}
+
+/** Sebaran isu terbuka per proyek — menunjukkan proyek mana yang paling bermasalah. */
+export function projectIssueBreakdown(
+  projects: ProgressProject[], agg: Record<string, ProjectAgg>, limit = 8,
+): PieSlice[] {
+  return projects
+    .map(p => ({ label: p.name, value: agg[p.id]?.issues ?? 0 }))
+    .filter(r => r.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, limit)
+    .map((r, i) => ({ ...r, color: PIE_PALETTE[i % PIE_PALETTE.length] }));
+}
+
 /** Lokasi yang butuh perhatian = berstatus blocked. */
 export function needsAttention(locations: ProgressLocation[]): ProgressLocation[] {
   return locations.filter(l => l.status === 'blocked');
@@ -266,9 +308,44 @@ export function shareUrl(token: string): string {
 }
 
 /**
- * Hak edit Project Progress: hanya Team admin & superadmin.
- * Role lain (team biasa, guest/sales) hanya bisa melihat.
+ * Hak edit PENUH Project Progress: buat/hapus proyek & lokasi, sunting rekap
+ * isu. Hanya admin & superadmin.
  */
 export function canEditProjectProgress(role: string | null | undefined): boolean {
   return ['admin', 'superadmin'].includes((role ?? '').toLowerCase());
+}
+
+/** Apakah user ini di-tag sebagai PIC lokasi tersebut. */
+export function isPicOfLocation(
+  location: { pic: string | null }, fullName: string | null | undefined,
+): boolean {
+  const me = (fullName ?? '').trim().toLowerCase();
+  if (!me) return false;
+  return (location.pic ?? '').trim().toLowerCase() === me;
+}
+
+/**
+ * Lokasi yang boleh disunting user ini.
+ * - Admin/superadmin: semua lokasi.
+ * - Anggota team: hanya lokasi yang men-tag namanya sebagai PIC, dan hanya
+ *   bagian PROGRES-nya (status komponen, catatan, foto) — lihat EditorMode.
+ */
+export function editableLocationIds(
+  locations: ProgressLocation[], role: string | null | undefined, fullName: string | null | undefined,
+): Set<string> {
+  if (canEditProjectProgress(role)) return new Set(locations.map(l => l.id));
+  return new Set(locations.filter(l => isPicOfLocation(l, fullName)).map(l => l.id));
+}
+
+/**
+ * 'full' = admin/superadmin, 'pic' = anggota team yang jadi PIC minimal 1
+ * lokasi, null = hanya boleh melihat.
+ */
+export type EditorMode = 'full' | 'pic';
+
+export function resolveEditorMode(
+  locations: ProgressLocation[], role: string | null | undefined, fullName: string | null | undefined,
+): EditorMode | null {
+  if (canEditProjectProgress(role)) return 'full';
+  return locations.some(l => isPicOfLocation(l, fullName)) ? 'pic' : null;
 }

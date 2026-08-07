@@ -7,7 +7,7 @@ import {
   PageHeader, LoadingScreen, Toast, type Notif,
   ConfirmDialog, type ConfirmState, EmptyState,
   ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup,
-  MobileListCard, MobileCardBadge,
+  MobileListCard, MobileCardBadge, MiniPieChart,
 } from '@/components/shared';
 import { ProjectDetailView, SectionLabel } from './_components/ProjectDetailView';
 import { exportProjectToExcel } from './_components/excel-export';
@@ -17,8 +17,11 @@ import {
   STATUS_CONFIG, SEVERITY_CONFIG, COMPONENT_STATE_CONFIG, COMPONENT_STATES,
   averageProgress, componentsOf, formatDatetime, computeProgress, stateBreakdown,
   newShareToken, shareUrl, canEditProjectProgress,
+  projectStatusBreakdown, projectProgressBreakdown, projectIssueBreakdown,
+  resolveEditorMode, editableLocationIds, type EditorMode,
 } from './_components/shared';
 import { isAssignablePTSTeam } from '@/lib/teams';
+import { compressImage } from '@/lib/image-compress';
 
 export default function ProjectProgressPage() {
   const currentUser = useCurrentUser();
@@ -254,6 +257,26 @@ export default function ProjectProgressPage() {
   };
 
   // ── Filter ────────────────────────────────────────────────────────────────
+  /**
+   * Hak sunting untuk proyek yang sedang dibuka:
+   * 'full' untuk admin/superadmin, 'pic' untuk anggota team yang di-tag PIC
+   * minimal satu lokasi, null = hanya lihat.
+   */
+  const detailMode: EditorMode | null = useMemo(
+    () => detail ? resolveEditorMode(detail.locations, currentUser?.role, currentUser?.full_name) : null,
+    [detail, currentUser],
+  );
+  const detailEditableIds = useMemo(
+    () => detail ? editableLocationIds(detail.locations, currentUser?.role, currentUser?.full_name) : new Set<string>(),
+    [detail, currentUser],
+  );
+
+  /** Rata-rata progres seluruh project — angka tengah pie "Progres per Project". */
+  const overallAvg = useMemo(() => {
+    const vals = projects.map(p => locCount[p.id]?.avg ?? 0);
+    return vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : 0;
+  }, [projects, locCount]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return projects.filter(p => {
@@ -290,6 +313,21 @@ export default function ProjectProgressPage() {
 
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-5 flex flex-col gap-4">
+
+            {/* ── Ringkasan semua project ── */}
+            {projects.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                <MiniPieChart data={projectStatusBreakdown(projects)}
+                  title="Distribusi Status Project" icon="📁" />
+                {/* Nilai = persentase, jadi total slice tidak bermakna → pusat
+                    diisi rata-rata seluruh project. */}
+                <MiniPieChart data={projectProgressBreakdown(projects, locCount)}
+                  title="Progres per Project" icon="📊"
+                  centerValue={`${overallAvg}%`} centerLabel="RATA-RATA" valueSuffix="%" />
+                <MiniPieChart data={projectIssueBreakdown(projects, locCount)}
+                  title="Isu Terbuka per Project" icon="⚠️" />
+              </div>
+            )}
 
             {/* ── Filter bar ── */}
             <div className="flex flex-wrap items-center gap-2">
@@ -450,7 +488,7 @@ export default function ProjectProgressPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit && (
+                {detailMode && (
                   <button onClick={() => editMode ? exitEditMode() : setEditMode(true)}
                     className="px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all"
                     style={editMode
@@ -476,12 +514,13 @@ export default function ProjectProgressPage() {
                   style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)' }}>
                   <p className="text-sm font-bold text-gray-500">Memuat detail…</p>
                 </div>
-              ) : editMode && canEdit ? (
+              ) : editMode && detailMode ? (
                 <DetailEditor
                   // key: paksa draft dibangun ulang HANYA saat ganti proyek /
                   // setelah simpan — bukan tiap render, supaya tidak berkedip.
                   key={`${detail.project.id}-${detail.locations.length}-${detail.components.length}-${detail.issues.length}`}
                   detail={detail} teamUsers={teamUsers}
+                  mode={detailMode ?? 'pic'} editableIds={detailEditableIds}
                   onSaved={() => { setEditorDirty(false); reloadDetail(); fetchProjects(); }}
                   onDirtyChange={setEditorDirty}
                   notify={notify} setConfirmState={setConfirmState} />
@@ -612,7 +651,7 @@ export default function ProjectProgressPage() {
  * dipisahkan antara INSERT dan UPDATE.
  */
 
-type DraftComponent = { id: string; label: string; state: ComponentState };
+type DraftComponent = { id: string; label: string; state: ComponentState; photo_url: string | null };
 type DraftLocation = {
   id: string; name: string; pic: string | null; status: ProjectStatus;
   note: string | null; note_flag: boolean; components: DraftComponent[];
@@ -633,7 +672,7 @@ function buildDraft(detail: ProjectDetail): { locations: DraftLocation[]; issues
         id: l.id, name: l.name, pic: l.pic, status: l.status,
         note: l.note, note_flag: l.note_flag,
         components: componentsOf(detail.components, l.id)
-          .map(c => ({ id: c.id, label: c.label, state: c.state })),
+          .map(c => ({ id: c.id, label: c.label, state: c.state, photo_url: c.photo_url ?? null })),
       })),
     issues: [...detail.issues]
       .sort((a, b) => a.sort_order - b.sort_order)
@@ -644,16 +683,30 @@ function buildDraft(detail: ProjectDetail): { locations: DraftLocation[]; issues
   };
 }
 
-function DetailEditor({ detail, teamUsers, onSaved, onDirtyChange, notify, setConfirmState }: {
+function DetailEditor({ detail, teamUsers, mode, editableIds, onSaved, onDirtyChange, notify, setConfirmState }: {
   detail: ProjectDetail;
   teamUsers: { id: string; full_name: string }[];
+  /**
+   * 'full' = admin/superadmin: seluruh struktur proyek.
+   * 'pic'  = anggota team yang di-tag PIC: HANYA progres lokasinya sendiri —
+   *          status komponen, foto evidence, dan catatan. Tidak boleh menambah/
+   *          menghapus lokasi & komponen, mengubah PIC/status lokasi, atau
+   *          menyunting rekap isu.
+   */
+  mode: EditorMode;
+  editableIds: Set<string>;
   onSaved: () => void;
   onDirtyChange: (d: boolean) => void;
   notify: (t: 'success' | 'error', m: string) => void;
   setConfirmState: (s: ConfirmState | null) => void;
 }) {
-  const [locations, setLocations] = useState<DraftLocation[]>(() => buildDraft(detail).locations);
-  const [issues, setIssues] = useState<DraftIssue[]>(() => buildDraft(detail).issues);
+  const isFull = mode === 'full';
+  const [locations, setLocations] = useState<DraftLocation[]>(
+    () => buildDraft(detail).locations.filter(l => isFull || editableIds.has(l.id)),
+  );
+  const [issues, setIssues] = useState<DraftIssue[]>(
+    () => isFull ? buildDraft(detail).issues : [],
+  );
   const [removedLoc, setRemovedLoc] = useState<string[]>([]);
   const [removedComp, setRemovedComp] = useState<string[]>([]);
   const [removedIssue, setRemovedIssue] = useState<string[]>([]);
@@ -699,7 +752,7 @@ function DetailEditor({ detail, teamUsers, onSaved, onDirtyChange, notify, setCo
   const addComp = (locId: string) => {
     touch();
     setLocations(prev => prev.map(l => l.id !== locId ? l : {
-      ...l, components: [...l.components, { id: tempId(), label: '', state: 'pending' }],
+      ...l, components: [...l.components, { id: tempId(), label: '', state: 'pending', photo_url: null }],
     }));
   };
   const removeComp = (locId: string, compId: string) => {
@@ -708,6 +761,29 @@ function DetailEditor({ detail, teamUsers, onSaved, onDirtyChange, notify, setCo
     setLocations(prev => prev.map(l => l.id !== locId ? l : {
       ...l, components: l.components.filter(c => c.id !== compId),
     }));
+  };
+
+  /**
+   * Foto evidence per komponen. File diunggah ke Storage saat dipilih, tapi
+   * TAUTANNYA baru masuk database saat "Simpan Perubahan" ditekan — konsisten
+   * dengan janji "tidak ada autosave".
+   * Nama file disanitasi: Supabase Storage menolak key bertanda kurung/spasi.
+   */
+  const [uploadingComp, setUploadingComp] = useState<string | null>(null);
+  const uploadPhoto = async (locId: string, compId: string, file: File) => {
+    setUploadingComp(compId);
+    try {
+      const compressed = await compressImage(file);
+      const safe = compressed.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `project-progress/${detail.project.id}/${Date.now()}-${safe}`;
+      const { error } = await supabase.storage.from('project-files')
+        .upload(path, compressed, { cacheControl: '31536000', upsert: false });
+      if (error) { notify('error', 'Upload foto gagal: ' + error.message); return; }
+      const { data } = supabase.storage.from('project-files').getPublicUrl(path);
+      patchComp(locId, compId, { photo_url: data.publicUrl });
+    } finally {
+      setUploadingComp(null);
+    }
   };
 
   const patchIssue = (id: string, patch: Partial<DraftIssue>) => {
@@ -742,15 +818,24 @@ function DetailEditor({ detail, teamUsers, onSaved, onDirtyChange, notify, setCo
       // 2) Lokasi — progress DIHITUNG dari komponennya, tidak diisi manual.
       for (let i = 0; i < locations.length; i++) {
         const l = locations[i];
-        const payload = {
-          name: l.name.trim(),
-          pic: l.pic?.trim() || null,
-          status: l.status,
-          note: l.note?.trim() || null,
-          note_flag: l.note_flag,
-          progress: computeProgress(l.components),
-          sort_order: i,
-        };
+        // Mode 'pic' hanya boleh mengubah progres/catatan. sort_order SENGAJA
+        // tidak ditulis: draft mode ini cuma memuat sebagian lokasi, sehingga
+        // index i bukan urutan sebenarnya dan akan mengacak urutan lokasi lain.
+        const payload = isFull
+          ? {
+              name: l.name.trim(),
+              pic: l.pic?.trim() || null,
+              status: l.status,
+              note: l.note?.trim() || null,
+              note_flag: l.note_flag,
+              progress: computeProgress(l.components),
+              sort_order: i,
+            }
+          : {
+              note: l.note?.trim() || null,
+              note_flag: l.note_flag,
+              progress: computeProgress(l.components),
+            };
 
         let realLocId = l.id;
         if (isNew(l.id)) {
@@ -769,6 +854,7 @@ function DetailEditor({ detail, teamUsers, onSaved, onDirtyChange, notify, setCo
           const { error } = await supabase.from('progress_components').insert(
             newComps.map((c, ci) => ({
               location_id: realLocId, label: c.label.trim(), state: c.state,
+              photo_url: c.photo_url,
               sort_order: l.components.indexOf(c) >= 0 ? l.components.indexOf(c) : ci,
             })),
           );
@@ -777,7 +863,7 @@ function DetailEditor({ detail, teamUsers, onSaved, onDirtyChange, notify, setCo
         for (const c of l.components) {
           if (isNew(c.id) || !c.label.trim()) continue;
           const { error } = await supabase.from('progress_components')
-            .update({ label: c.label.trim(), state: c.state, sort_order: l.components.indexOf(c) })
+            .update({ label: c.label.trim(), state: c.state, photo_url: c.photo_url, sort_order: l.components.indexOf(c) })
             .eq('id', c.id);
           if (error) throw error;
         }
@@ -821,16 +907,25 @@ function DetailEditor({ detail, teamUsers, onSaved, onDirtyChange, notify, setCo
     <div className="flex flex-col gap-5 pb-24">
       <div className="rounded-xl px-4 py-3 text-[11px] font-semibold"
         style={{ background: '#ecfeff', border: '1px solid #a5f3fc', color: '#0e7490' }}>
-        Mode edit — perubahan <b>belum tersimpan</b> sampai kamu menekan tombol
-        “Simpan Perubahan” di bawah. Progres tiap lokasi dihitung otomatis dari
-        status komponennya.
+        {isFull ? (
+          <>Mode edit — perubahan <b>belum tersimpan</b> sampai kamu menekan tombol
+          “Simpan Perubahan” di bawah. Progres tiap lokasi dihitung otomatis dari
+          status komponennya.</>
+        ) : (
+          <>Kamu di-tag sebagai <b>PIC</b> pada lokasi di bawah, jadi hanya bisa
+          memperbarui <b>progres</b>: status komponen, foto evidence, dan catatan.
+          Struktur proyek & rekap isu diatur admin. Perubahan <b>belum tersimpan</b>
+          sampai tombol “Simpan Perubahan” ditekan.</>
+        )}
       </div>
 
       {/* ── Lokasi ── */}
       <div className="flex items-center justify-between">
-        <SectionLabel>Lokasi ({locations.length})</SectionLabel>
-        <button onClick={addLoc} className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white"
-          style={{ background: THEME.gradient }}>+ Tambah Lokasi</button>
+        <SectionLabel>{isFull ? `Lokasi (${locations.length})` : `Lokasi Saya (${locations.length})`}</SectionLabel>
+        {isFull && (
+          <button onClick={addLoc} className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white"
+            style={{ background: THEME.gradient }}>+ Tambah Lokasi</button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -840,14 +935,25 @@ function DetailEditor({ detail, teamUsers, onSaved, onDirtyChange, notify, setCo
           return (
             <div key={loc.id} className="rounded-2xl p-4 flex flex-col gap-3 bg-white border border-gray-200">
               <div className="flex items-start gap-2">
-                <input value={loc.name} placeholder="Nama lokasi"
-                  onChange={e => patchLoc(loc.id, { name: e.target.value })}
-                  className="flex-1 px-2.5 py-1.5 rounded-lg text-sm font-black text-gray-800 border-2 border-gray-200 focus:border-cyan-500 outline-none" />
-                <button onClick={() => removeLoc(loc)}
-                  className="w-8 h-8 rounded-lg text-rose-500 hover:bg-rose-50 font-bold flex-shrink-0">✕</button>
+                {isFull ? (
+                  <>
+                    <input value={loc.name} placeholder="Nama lokasi"
+                      onChange={e => patchLoc(loc.id, { name: e.target.value })}
+                      className="flex-1 px-2.5 py-1.5 rounded-lg text-sm font-black text-gray-800 border-2 border-gray-200 focus:border-cyan-500 outline-none" />
+                    <button onClick={() => removeLoc(loc)}
+                      className="w-8 h-8 rounded-lg text-rose-500 hover:bg-rose-50 font-bold flex-shrink-0">✕</button>
+                  </>
+                ) : (
+                  <p className="flex-1 text-sm font-black text-gray-800">{loc.name}</p>
+                )}
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              {!isFull && (
+                <p className="text-[11px] font-semibold text-gray-500">
+                  PIC: {loc.pic ?? '—'} · Status: {STATUS_CONFIG[loc.status].label}
+                </p>
+              )}
+              <div className={`grid grid-cols-2 gap-2 ${isFull ? '' : 'hidden'}`}>
                 {/* PIC diambil dari daftar Team PTS — bukan ketikan bebas */}
                 <select value={loc.pic ?? ''} onChange={e => patchLoc(loc.id, { pic: e.target.value || null })}
                   className={inputSm}>
@@ -906,15 +1012,48 @@ function DetailEditor({ detail, teamUsers, onSaved, onDirtyChange, notify, setCo
                         <option key={st} value={st}>● {COMPONENT_STATE_CONFIG[st].label}</option>
                       ))}
                     </select>
-                    <input value={c.label} placeholder="Nama komponen"
-                      onChange={e => patchComp(loc.id, c.id, { label: e.target.value })}
-                      className="flex-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-gray-200 focus:border-cyan-500 outline-none" />
-                    <button onClick={() => removeComp(loc.id, c.id)}
-                      className="text-gray-300 hover:text-rose-500 font-bold px-1 flex-shrink-0">✕</button>
+                    {isFull ? (
+                      <input value={c.label} placeholder="Nama komponen"
+                        onChange={e => patchComp(loc.id, c.id, { label: e.target.value })}
+                        className="flex-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-gray-200 focus:border-cyan-500 outline-none" />
+                    ) : (
+                      // PIC hanya mengubah progres — nama komponen dikunci.
+                      <span className="flex-1 px-2 py-1 text-[11px] font-semibold text-gray-700 truncate">{c.label}</span>
+                    )}
+
+                    {/* Foto evidence opsional */}
+                    {c.photo_url ? (
+                      <span className="flex items-center gap-1 flex-shrink-0">
+                        <a href={c.photo_url} target="_blank" rel="noopener noreferrer" title="Lihat foto">
+                          <img src={c.photo_url} alt="" className="w-6 h-6 rounded object-cover border border-gray-200" />
+                        </a>
+                        <button onClick={() => patchComp(loc.id, c.id, { photo_url: null })}
+                          title="Hapus foto" className="text-gray-300 hover:text-rose-500 text-[10px] font-bold">✕</button>
+                      </span>
+                    ) : (
+                      <label title="Tambah foto evidence (opsional)"
+                        className="flex-shrink-0 cursor-pointer text-[13px] px-1 opacity-50 hover:opacity-100 transition-opacity">
+                        {uploadingComp === c.id ? '⏳' : '📷'}
+                        <input type="file" accept="image/*" className="hidden"
+                          disabled={uploadingComp === c.id}
+                          onChange={e => {
+                            const f = e.target.files?.[0];
+                            if (f) uploadPhoto(loc.id, c.id, f);
+                            e.target.value = '';
+                          }} />
+                      </label>
+                    )}
+
+                    {isFull && (
+                      <button onClick={() => removeComp(loc.id, c.id)}
+                        className="text-gray-300 hover:text-rose-500 font-bold px-1 flex-shrink-0">✕</button>
+                    )}
                   </div>
                 ))}
-                <button onClick={() => addComp(loc.id)}
-                  className="text-[11px] font-bold text-cyan-700 hover:text-cyan-900 self-start">+ Tambah komponen</button>
+                {isFull && (
+                  <button onClick={() => addComp(loc.id)}
+                    className="text-[11px] font-bold text-cyan-700 hover:text-cyan-900 self-start">+ Tambah komponen</button>
+                )}
               </div>
 
               <textarea value={loc.note ?? ''} rows={2} placeholder="Catatan lokasi…"
@@ -931,15 +1070,17 @@ function DetailEditor({ detail, teamUsers, onSaved, onDirtyChange, notify, setCo
         })}
       </div>
 
-      {/* ── Isu ── */}
+      {/* ── Isu — hanya admin/superadmin ── */}
+      {isFull && (
       <div className="flex items-center justify-between">
         <SectionLabel>Rekap Isu ({issues.length})</SectionLabel>
         <button onClick={addIssue} className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white"
           style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>+ Tambah Isu</button>
       </div>
+      )}
 
       <div className="flex flex-col gap-2">
-        {issues.map(is => (
+        {isFull && issues.map(is => (
           <div key={is.id} className="rounded-xl p-3 bg-white border border-gray-200 grid grid-cols-1 md:grid-cols-12 gap-2 items-center">
             <input value={is.location_label ?? ''} placeholder="Lokasi"
               onChange={e => patchIssue(is.id, { location_label: e.target.value })}

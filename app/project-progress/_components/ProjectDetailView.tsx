@@ -56,6 +56,21 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
         />
       </div>
 
+      {/* ── Progres keseluruhan ── */}
+      <div className="rounded-2xl p-5 flex flex-col justify-center gap-3"
+        style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)' }}>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+            Progres Keseluruhan — Semua Lokasi
+          </p>
+          <span className="text-2xl font-black" style={{ color: THEME.color }}>{avg}%</span>
+        </div>
+        <div className="h-3 rounded-full overflow-hidden bg-gray-200">
+          <div className="h-full rounded-full transition-all"
+            style={{ width: `${avg}%`, background: THEME.gradient }} />
+        </div>
+      </div>
+
       {/* ── Tiga pie: status lokasi, beban PIC, komponen bermasalah ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
         <MiniPieChart data={pieData} title="Distribusi Status Lokasi" icon="📍" />
@@ -133,6 +148,14 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
                           <div key={c.id} className="flex items-start gap-2">
                             <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: sc.dot }} />
                             <span className="text-[11px] font-semibold leading-snug flex-1" style={{ color: sc.text }}>{c.label}</span>
+                            {/* Foto evidence opsional — klik untuk buka ukuran penuh */}
+                            {c.photo_url && (
+                              <a href={c.photo_url} target="_blank" rel="noopener noreferrer"
+                                title="Lihat foto evidence" className="flex-shrink-0">
+                                <img src={c.photo_url} alt={`Evidence ${c.label}`}
+                                  className="w-7 h-7 rounded object-cover border border-gray-200 hover:opacity-80 transition-opacity" />
+                              </a>
+                            )}
                             <span className="text-[9px] font-bold flex-shrink-0 mt-0.5" style={{ color: sc.dot }}>{sc.label}</span>
                           </div>
                         );
