@@ -5,16 +5,16 @@
 --  SEMUANYA HANYA MEMBACA. Tidak ada satu pun perintah yang menghapus atau
 --  mengubah data. Aman dijalankan kapan saja, berkali-kali.
 --
---  Latar belakang: Unit Movement dulu mengunggah foto MENTAH tanpa kompresi
---  (sudah diperbaiki), jadi berkas lama di bucket 'movement-files' bisa
---  berukuran 3-8MB per foto. Query di bawah membantu menemukannya supaya kamu
---  bisa memutuskan mana yang layak dihapus.
+--  Latar belakang: sebagian foto lama diunggah MENTAH sebelum kompresi aktif,
+--  sehingga bisa berukuran 3-6MB per berkas. Query di bawah membantu
+--  menemukannya supaya kamu bisa memutuskan mana yang layak dihapus.
 --
 --  Bucket yang dipakai aplikasi ini:
+--    reminder-photos  — Request Schedule (foto bukti selesai)
+--    ticket-photos    — Ticket Troubleshooting (foto tiket & activity log)
 --    project-files    — Request Design Project & Project Progress
 --    movement-files   — Unit Movement
 --    review-photos    — Form Review
---    reminder-photos  — Request Schedule
 --
 --  Cara pakai: buka Supabase SQL Editor, jalankan satu blok pada satu waktu.
 -- ============================================================================
@@ -89,6 +89,12 @@ FROM besar;
 --    movement-files  → movement_logs.foto_surat_url / foto_barang_url
 --    review-photos   → form_reviews.foto_dokumentasi_url
 --    reminder-photos → reminders.completion_photo_url
+--    ticket-photos   → tickets.photo_url / file_url,
+--                      activity_logs.photo_url / file_url
+--
+--  Bucket yang TIDAK ada di pemetaan sengaja dilewati (ELSE false) supaya tidak
+--  ada berkas yang salah ditandai yatim. Konsekuensinya bucket baru jadi tak
+--  terlihat — jalankan query 6 untuk memeriksanya.
 --
 --  Catatan: pencocokan memakai LIKE pada URL. PERIKSA hasilnya dulu sebelum
 --  menghapus apa pun — jangan langsung percaya begitu saja.
@@ -115,9 +121,38 @@ WHERE
       NOT EXISTS (SELECT 1 FROM form_reviews f WHERE f.foto_dokumentasi_url LIKE '%' || o.name)
     WHEN 'reminder-photos' THEN
       NOT EXISTS (SELECT 1 FROM reminders r WHERE r.completion_photo_url LIKE '%' || o.name)
+    WHEN 'ticket-photos' THEN
+      NOT EXISTS (
+        SELECT 1 FROM tickets t
+        WHERE t.photo_url LIKE '%' || o.name OR t.file_url LIKE '%' || o.name
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM activity_logs l
+        WHERE l.photo_url LIKE '%' || o.name OR l.file_url LIKE '%' || o.name
+      )
     ELSE false
   END
 ORDER BY (o.metadata->>'size')::bigint DESC;
+
+
+-- ── 6. BUCKET YANG BELUM DIPETAKAN DI QUERY 5 ───────────────────────────────
+--  Pengaman. Query 5 melewati bucket yang tidak dikenalnya, jadi bucket baru
+--  bisa luput tanpa disadari — persis yang terjadi pada 'ticket-photos' (118
+--  berkas, 35MB) yang sempat terlewat karena pemakaiannya di kode memakai
+--  kutip ganda sementara penyisiran memakai kutip tunggal.
+--
+--  Kalau query ini mengembalikan baris, tambahkan bucket itu ke CASE query 5
+--  sebelum menyimpulkan tidak ada berkas yatim.
+SELECT
+  bucket_id                                          AS bucket_belum_dipetakan,
+  COUNT(*)                                           AS jumlah_berkas,
+  pg_size_pretty(SUM((metadata->>'size')::bigint))   AS total_ukuran
+FROM storage.objects
+WHERE bucket_id NOT IN (
+  'project-files', 'movement-files', 'review-photos', 'reminder-photos', 'ticket-photos'
+)
+GROUP BY bucket_id
+ORDER BY SUM((metadata->>'size')::bigint) DESC;
 
 
 -- ============================================================================
