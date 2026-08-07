@@ -405,19 +405,25 @@ export function AdminDashboard({ user }: { user: User }) {
                 {/* Pembagian per Sales Division hanya relevan untuk tab Sales.
                     Di tab PTS/Marketing anggota dikelompokkan per jabatan, jadi
                     filter divisi di situ hanya akan mengosongkan tabel. */}
-                {activeTeam === 'Sales' && divisionStats.length > 0 && (
-                  <select value={performerDivisionFilter} onChange={e => setPerformerDivisionFilter(e.target.value)}
-                    className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-400 bg-white font-semibold text-slate-600">
-                    <option value="">🏢 Semua Divisi</option>
-                    {divisionStats.filter(d => d.source === 'division').map(d => <option key={d.name} value={d.name}>{d.name}</option>)}
-                  </select>
-                )}
+                {/* Dropdown hanya berlaku untuk Sales, tapi tempatnya tetap
+                    dipesan (invisible) di tab lain supaya baris header tidak
+                    berubah tinggi/urutan saat berpindah tab. */}
+                <select value={performerDivisionFilter} onChange={e => setPerformerDivisionFilter(e.target.value)}
+                  disabled={activeTeam !== 'Sales'}
+                  aria-hidden={activeTeam !== 'Sales'}
+                  className={`text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-400 bg-white font-semibold text-slate-600 ${activeTeam === 'Sales' && divisionStats.length > 0 ? '' : 'invisible pointer-events-none'}`}>
+                  <option value="">🏢 Semua Divisi</option>
+                  {divisionStats.filter(d => d.source === 'division').map(d => <option key={d.name} value={d.name}>{d.name}</option>)}
+                </select>
                 <SearchInput value={searchPerformer} onChange={setSearchPerformer} placeholder="Cari nama..." />
               </div>
             </div>
             {nationalAvg !== null && (
-              <p className="text-[11px] text-slate-400 mb-3">
-                🌏 Rata-rata Nasional (semua divisi): <span className="font-bold text-slate-600">{nationalAvg.toFixed(1)}</span>
+              /* Latar sendiri: tanpa ini teks abu-abu jatuh langsung di atas foto
+                 background halaman dan praktis tidak terbaca. */
+              <p className="inline-flex flex-wrap items-center gap-1 text-[11px] text-slate-600 mb-3 px-3 py-1.5 rounded-lg"
+                style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)' }}>
+                🌏 Rata-rata Nasional (semua divisi): <span className="font-bold text-slate-800">{nationalAvg.toFixed(1)}</span>
                 {activeTeam === 'Sales' && performerDivisionFilter && (() => {
                   const d = divisionStats.find(d => d.name === performerDivisionFilter);
                   if (!d) return null;
