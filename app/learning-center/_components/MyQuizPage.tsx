@@ -387,7 +387,7 @@ export function MyQuizPage({ user }: { user: User }) {
     // Fetch submitted attempts — used to disable button when allow_retake=false
     const { data: submitted } = await supabase
       .from('lc_quiz_attempts')
-      .select('quiz_session_id, grading_status')
+      .select('quiz_session_id')  // grading_status tidak dipakai di sini; jangan disebut agar tidak gagal sebelum migrasi
       .eq('user_id', user.id)
       .eq('is_submitted', true);
     setSubmittedIds(new Set((submitted ?? []).map((r: any) => r.quiz_session_id)));

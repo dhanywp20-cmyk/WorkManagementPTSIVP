@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { supabase, User, fmtDate, ScoreBadge, SearchInput } from './shared';
+import { supabase, User, fmtDate, ScoreBadge, SearchInput , selectWithGradingStatus } from './shared';
 
 // ─── Donut Chart ──────────────────────────────────────────────────────────────
 function DonutChart({ segments, size = 68, strokeWidth = 10, label = '' }: {
@@ -133,19 +133,23 @@ export function AdminDashboard({ user }: { user: User }) {
       setStats({ materials: mat.count ?? 0, activeTeam: uniqueTeam, sessions: ses.count ?? 0, attempts: att.count ?? 0 });
 
       // ── Round 2: analytics data in parallel ────────────────────────────────
-      const [recentRes, allAttRes, qListRes, aListRes] = await Promise.all([
+      const [recentRes, allAttRows, qListRes, aListRes] = await Promise.all([
         supabase.from('lc_quiz_attempts')
           .select('*, users(full_name), lc_quiz_sessions(session_name, passing_grade)')
           .eq('is_submitted', true).order('submitted_at', { ascending: false }).limit(50),
-        supabase.from('lc_quiz_attempts')
-          .select('user_id, score, passed, tab_switches, time_taken_sec, total_questions, grading_status, users(full_name, jabatan, sales_division, team_type, role)')
-          .eq('is_submitted', true),
+        // Lewat helper: kalau migrasi essay belum jalan, kolom grading_status
+        // belum ada dan query lengkap akan ditolak PostgREST — tabel Top
+        // Performers jadi kosong total. Helper mengulang tanpa kolom itu.
+        selectWithGradingStatus(
+          cols => supabase.from('lc_quiz_attempts').select(cols).eq('is_submitted', true),
+          'user_id, score, passed, tab_switches, time_taken_sec, total_questions, grading_status, users(full_name, jabatan, sales_division, team_type, role)',
+        ),
         supabase.from('lc_questions').select('id, batch_name'),
         supabase.from('lc_answers').select('question_id, is_correct'),
       ]);
       setRecentAttempts(recentRes.data ?? []);
 
-      const allAtt = (allAttRes.data ?? []).filter((a: any) => a.grading_status !== 'pending_review'); // skor essay yg belum dinilai manual jangan masuk statistik
+      const allAtt = allAttRows.filter((a: any) => a.grading_status !== 'pending_review'); // skor essay yg belum dinilai manual jangan masuk statistik
 
       // ── Overview mini pies ─────────────────────────────────────────────────
       const participants = new Set(allAtt.map((a: any) => a.user_id)).size;
@@ -283,6 +287,9 @@ export function AdminDashboard({ user }: { user: User }) {
   useEffect(() => {
     if (allTopUsers.length > 0) {
       setTopUsers(allTopUsers.filter(u => matchesTeamFilter(u, activeTeam)).slice(0, 20));
+    // Pindah dari Sales ke tab lain: buang sisa pilihan divisi, kalau tidak
+    // tabel PTS/Marketing ikut tersaring habis oleh divisi yang tidak berlaku.
+    if (activeTeam !== 'Sales' && performerDivisionFilter) setPerformerDivisionFilter('');
       setSearchPerformer('');
     }
   }, [activeTeam, allTopUsers]);
@@ -304,7 +311,7 @@ export function AdminDashboard({ user }: { user: User }) {
     (a.lc_quiz_sessions?.session_name ?? '').toLowerCase().includes(search.toLowerCase())
   );
   const filteredPerformers = topUsers
-    .filter(u => !performerDivisionFilter || u.salesDivision === performerDivisionFilter)
+    .filter(u => activeTeam !== 'Sales' || !performerDivisionFilter || u.salesDivision === performerDivisionFilter)
     .filter(u => !searchPerformer || u.name.toLowerCase().includes(searchPerformer.toLowerCase()));
 
   const cards = [
@@ -381,7 +388,10 @@ export function AdminDashboard({ user }: { user: User }) {
               <SectionHeader>🏆 Top Performers</SectionHeader>
               <div className="flex items-center gap-2 flex-wrap">
                 <TeamSwitch active={activeTeam} onChange={setActiveTeam} />
-                {divisionStats.length > 0 && (
+                {/* Pembagian per Sales Division hanya relevan untuk tab Sales.
+                    Di tab PTS/Marketing anggota dikelompokkan per jabatan, jadi
+                    filter divisi di situ hanya akan mengosongkan tabel. */}
+                {activeTeam === 'Sales' && divisionStats.length > 0 && (
                   <select value={performerDivisionFilter} onChange={e => setPerformerDivisionFilter(e.target.value)}
                     className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-400 bg-white font-semibold text-slate-600">
                     <option value="">🏢 Semua Divisi</option>
@@ -394,7 +404,7 @@ export function AdminDashboard({ user }: { user: User }) {
             {nationalAvg !== null && (
               <p className="text-[11px] text-slate-400 mb-3">
                 🌏 Rata-rata Nasional (semua divisi): <span className="font-bold text-slate-600">{nationalAvg.toFixed(1)}</span>
-                {performerDivisionFilter && (() => {
+                {activeTeam === 'Sales' && performerDivisionFilter && (() => {
                   const d = divisionStats.find(d => d.name === performerDivisionFilter);
                   if (!d) return null;
                   const gap = d.avg - nationalAvg;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase, SearchInput } from './shared';
+import { supabase, SearchInput , selectWithGradingStatus } from './shared';
 
 function DonutChart({ segments, size = 72, strokeWidth = 11, label = '' }: {
   segments: { value: number; color: string }[];
@@ -103,12 +103,12 @@ export function AnalyticsPage() {
 
   useEffect(() => {
     const load = async () => {
-      const { data: a } = await supabase
-        .from('lc_quiz_attempts')
-        .select('user_id, score, passed, started_at, submitted_at, tab_switches, grading_status, users(full_name, sales_division, team_type, role)')
-        .eq('is_submitted', true);
+      const a = await selectWithGradingStatus(
+        cols => supabase.from('lc_quiz_attempts').select(cols).eq('is_submitted', true),
+        'user_id, score, passed, started_at, submitted_at, tab_switches, grading_status, users(full_name, sales_division, team_type, role)',
+      );
 
-      if (a) {
+      if (a.length) {
         const graded = a.filter((att: any) => att.grading_status !== 'pending_review'); // skor essay yg belum dinilai jangan masuk rata-rata
         // ── Per user ──
         const byUser: Record<string, { name: string; division: string | null; teamType: string | null; role: string | null; salesDivision: string | null; scores: number[]; passed: number; flags: number }> = {};

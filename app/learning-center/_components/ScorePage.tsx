@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { supabase, User, fmtDate, ScoreBadge, SearchInput, GradingStatusBadge } from './shared';
+import { supabase, User, fmtDate, ScoreBadge, SearchInput, GradingStatusBadge , selectWithGradingStatus } from './shared';
 import { UserAnswerReview } from './TeamPage';
 
 // ─── Donut Chart ──────────────────────────────────────────────────────────────
@@ -63,16 +63,17 @@ export function ScorePage({ user }: { user: User }) {
           .select('*, lc_quiz_sessions(session_name, passing_grade, materi_name, question_ids)')
           .eq('user_id', user.id).eq('is_submitted', true)
           .order('submitted_at', { ascending: false }),
-        supabase.from('lc_quiz_attempts')
-          .select('user_id, score, passed, grading_status, users(full_name, role)')
-          .eq('is_submitted', true),
+        selectWithGradingStatus(
+          cols => supabase.from('lc_quiz_attempts').select(cols).eq('is_submitted', true),
+          'user_id, score, passed, grading_status, users(full_name, role)',
+        ),
       ]);
       setAttempts(myRes.data ?? []);
 
-      if (allRes.data) {
+      if (allRes.length) {
         const myRole = user.role?.toLowerCase() ?? '';
         const byUser: Record<string, { name: string; scores: number[]; passed: number }> = {};
-        allRes.data.forEach((a: any) => {
+        allRes.forEach((a: any) => {
           if (a.grading_status === 'pending_review') return; // belum dinilai, jangan masuk statistik
           // Filter: only show users of the same role as the current user
           // (always include self regardless of role)
