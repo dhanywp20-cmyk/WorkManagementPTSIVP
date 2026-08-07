@@ -155,6 +155,56 @@ GROUP BY bucket_id
 ORDER BY SUM((metadata->>'size')::bigint) DESC;
 
 
+-- ── 7. RINGKASAN BERKAS YATIM PER BUCKET ────────────────────────────────────
+--  Berapa yang bisa direbut kembali dengan aman. Memakai kriteria yang SAMA
+--  dengan query 5, hanya dijumlahkan.
+--
+--  Kenapa yatim menumpuk: aplikasi hampir tidak pernah menghapus berkas dari
+--  Storage. Di seluruh kode hanya ADA SATU panggilan .remove(), yaitu saat
+--  bulk-delete Request Design Project. Selain itu — menghapus reminder,
+--  menghapus tiket, atau mengganti foto — barisnya hilang dari database tapi
+--  berkasnya tetap tinggal selamanya.
+WITH yatim AS (
+  SELECT o.bucket_id, (o.metadata->>'size')::bigint AS ukuran
+  FROM storage.objects o
+  WHERE
+    CASE o.bucket_id
+      WHEN 'project-files' THEN
+        NOT EXISTS (SELECT 1 FROM project_attachments a WHERE a.file_url LIKE '%' || o.name)
+        AND NOT EXISTS (
+          SELECT 1 FROM progress_components c
+          WHERE c.photo_url LIKE '%' || o.name OR c.photo_thumb_url LIKE '%' || o.name
+        )
+      WHEN 'movement-files' THEN
+        NOT EXISTS (
+          SELECT 1 FROM movement_logs m
+          WHERE m.foto_surat_url LIKE '%' || o.name OR m.foto_barang_url LIKE '%' || o.name
+        )
+      WHEN 'review-photos' THEN
+        NOT EXISTS (SELECT 1 FROM form_reviews f WHERE f.foto_dokumentasi_url LIKE '%' || o.name)
+      WHEN 'reminder-photos' THEN
+        NOT EXISTS (SELECT 1 FROM reminders r WHERE r.completion_photo_url LIKE '%' || o.name)
+      WHEN 'ticket-photos' THEN
+        NOT EXISTS (
+          SELECT 1 FROM tickets t
+          WHERE t.photo_url LIKE '%' || o.name OR t.file_url LIKE '%' || o.name
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM activity_logs l
+          WHERE l.photo_url LIKE '%' || o.name OR l.file_url LIKE '%' || o.name
+        )
+      ELSE false
+    END
+)
+SELECT
+  bucket_id                            AS bucket,
+  COUNT(*)                             AS berkas_yatim,
+  pg_size_pretty(SUM(ukuran))          AS bisa_direbut
+FROM yatim
+GROUP BY bucket_id
+ORDER BY SUM(ukuran) DESC;
+
+
 -- ============================================================================
 --  CARA MENGHAPUS — JANGAN lewat SQL
 -- ============================================================================
