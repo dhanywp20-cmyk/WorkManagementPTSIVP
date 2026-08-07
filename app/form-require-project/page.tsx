@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
+import { Z } from '@/lib/z-index';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { setSession, clearSession, getSession } from '@/lib/auth';
 import { notifyProjectStatusChange } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
-import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, type ConfirmState } from '@/components/shared';
+import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
+import { compressImage } from '@/lib/image-compress';
+import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState } from '@/components/shared';
 import {
   User, ProjectRequest, RoomDetail, BrandPicMapping,
   ProjectMessage, ProjectAttachment,
@@ -131,13 +134,22 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const isTeamPTS = role === 'team_pts' || role === 'team';
   const isSuperAdmin = role === 'superadmin';
   const isAdmin = role === 'admin';
-  // Guest IVP = role guest dengan sales_division IVP (bisa lihat semua request)
-  const isIVPGuest = role === 'guest' && currentUser.sales_division === 'IVP';
+  // Guest IVP = role guest dengan sales_division IVP/MVI (Sales Internal, bisa lihat
+  // semua request divisi yang dia handle via division_ivp_mappings)
+  const isIVPGuest = role === 'guest' && (currentUser.sales_division === 'IVP' || currentUser.sales_division === 'MVI');
   // Guest non-IVP = role guest bukan IVP (hanya lihat request miliknya)
   const isNonIVPGuest = role === 'guest' && currentUser.sales_division !== 'IVP';
   // Bisa ubah status in_progress: hanya PTS yang di-assign ke request tsb
   const canSetInProgress = (req: ProjectRequest) =>
     isPTS && (isAdmin || isSuperAdmin || req.assign_name === currentUser.full_name);
+  // Sales Internal reviewer (utama atau kedua utk brand BOTH) — boleh approve kalau
+  // bagian-nya belum di-approve.
+  const canInternalApproveProject = (req: ProjectRequest) => {
+    if (req.routing_status !== 'internal_review') return false;
+    if (currentUser.id === req.internal_sales_id && !req.internal_approved_at) return true;
+    if (currentUser.id === req.internal_sales_id_2 && !req.internal_approved_at_2) return true;
+    return false;
+  };
 
   const initialForm: InitialFormType = {
     project_name: '', room_name: '', project_location: '',
@@ -161,10 +173,24 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   };
 
   // Guest/Sales users list for dropdown
-  const [salesGuestUsers, setSalesGuestUsers] = useState<{id:string;full_name:string;username:string;sales_division?:string}[]>([]);
+  const [salesGuestUsers, setSalesGuestUsers] = useState<{id:string;full_name:string;username:string;sales_division?:string;is_internal_sales?:boolean}[]>([]);
+  const [myIsInternalSales, setMyIsInternalSales] = useState(false); // creator = Sales Internal → boleh isi SBU (atas nama Sales External)
+  // Cache nama Sales Internal (CC) hasil resolve dari internal_sales_id / internal_sales_id_2 —
+  // kolom lama `ivp_assignee` (nama string langsung) sudah tidak diisi lagi sejak brand-multi-internal
+  // (sql/brand-multi-internal.sql), request baru pakai internal_sales_id(_2) yang berupa UUID.
+  const [internalSalesNames, setInternalSalesNames] = useState<Record<string, string>>({});
   useEffect(() => {
-    supabase.from('users').select('id, full_name, username, sales_division').eq('role', 'guest').then(({ data }: { data: {id:string;full_name:string;username:string;sales_division?:string}[] | null }) => {
+    supabase.from('users').select('id, full_name, username, sales_division, is_internal_sales').eq('role', 'guest').then(({ data }: { data: {id:string;full_name:string;username:string;sales_division?:string;is_internal_sales?:boolean}[] | null }) => {
       if (data) setSalesGuestUsers(data);
+    });
+    supabase.from('users').select('is_internal_sales').eq('id', currentUser.id).maybeSingle().then(({ data }: { data: { is_internal_sales: boolean | null } | null }) => {
+      const internal = !!data?.is_internal_sales;
+      setMyIsInternalSales(internal);
+      // Sales Internal: kosongkan prefill sales_name supaya field SBU mulai kosong
+      // (kalau tidak dipilih, submit fallback ke akun sendiri).
+      if (internal && (currentUser.role?.toLowerCase().trim() === 'guest')) {
+        setForm(prev => ({ ...prev, sales_name: '', sales_division: '' }));
+      }
     });
     supabase.from('brand_pic_mappings').select('id,brand_type,brand_name,pic_user_id,pic_user_name').order('brand_name').then(({ data }: { data: BrandPicMapping[] | null }) => {
       if (data) setBrandPicMappings(data);
@@ -194,6 +220,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     } else if (isIVPGuest) {
       const { data: ivpDivMaps } = await supabase.from('division_ivp_mappings').select('sales_division').eq('ivp_id', currentUser.id);
       const handledDivisions = (ivpDivMaps ?? []).map((m: any) => m.sales_division as string);
+      // Reviewer (internal_sales_id / _2) sudah ter-cover divFilter di bawah karena
+      // reviewer selalu di-mapping ke divisi ybs. (Tidak menaruh internal_sales_id_2 di
+      // .or() supaya query tak error kalau kolomnya belum ada / migrasi belum di-run.)
       if (handledDivisions.length > 0) {
         const divFilter = handledDivisions.map((d: string) => `sales_division.eq.${d}`).join(',');
         query = query.or(`requester_id.eq.${currentUser.id},ivp_assignee.eq.${currentUser.full_name},${divFilter}`);
@@ -252,6 +281,17 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
           );
           if (isBrandPic) filtered.push(r as ProjectRequest);
         });
+      }
+      // Visibility (catatan spec): anggota tim PTS biasa (bukan admin, bukan
+      // Manager) HANYA boleh lihat request yg SUDAH di-assign ke handler
+      // (assign_name terisi). Request yg masih pending approval / belum di-assign
+      // disembunyikan. Admin/superadmin & Manager tetap lihat semua.
+      const selfJabatanPTS = (currentUser as any).jabatan as string | undefined;
+      const isManagerPTS = isTeamPTS && selfJabatanPTS === 'Manager';
+      if (isTeamPTS && !isManagerPTS) {
+        // Tampil kalau sudah di-assign ke handler (assign_name) ATAU kalau
+        // request di-route ke user ini sbg Supervisor utk di-assign lanjut.
+        filtered = filtered.filter(r => !!r.assign_name || r.assigned_supervisor_id === currentUser.id);
       }
       setRequests(filtered);
       const assigned = [...new Set(filtered.map(r => r.assign_name).filter(Boolean) as string[])].sort();
@@ -338,6 +378,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     const reqId = selectedRequest.id;
     activeRequestIdRef.current = reqId;
     const channelName = `detail_chat:${reqId}_${Date.now()}`;
+    // EGRESS FIX: debounce fetchAttachments — upload beberapa file sekaligus
+    // (mis. 6 file) sebelumnya = 6x refetch attachment terpisah.
+    let attachDebounce: ReturnType<typeof setTimeout> | null = null;
     const channel = supabase.channel(channelName)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'project_messages', filter: `request_id=eq.${reqId}` },
         (payload) => {
@@ -352,19 +395,29 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
           localStorage.setItem('pts_last_seen', JSON.stringify(stored));
         })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'project_attachments', filter: `request_id=eq.${reqId}` },
-        () => { if (activeRequestIdRef.current !== reqId) return; fetchAttachments(reqId); })
+        () => {
+          if (activeRequestIdRef.current !== reqId) return;
+          if (attachDebounce) clearTimeout(attachDebounce);
+          attachDebounce = setTimeout(() => fetchAttachments(reqId), 800);
+        })
       .subscribe();
 
+    // EGRESS FIX: polling fallback dinaikkan dari 3 DETIK → 60 detik. Realtime
+    // di atas sudah append pesan baru langsung ke state (tanpa refetch), jadi
+    // polling 3 detik ini sepenuhnya redundant — full refetch pesan tiap 3
+    // detik selama modal detail terbuka adalah kontributor egress yang berat.
+    // Sekarang murni jaring pengaman kalau koneksi Realtime putus.
     const pollInterval = setInterval(async () => {
       if (activeRequestIdRef.current !== reqId) return;
       const { data } = await supabase.from('project_messages').select('id,request_id,sender_id,sender_name,sender_role,message,created_at').eq('request_id', reqId).order('created_at', { ascending: true });
       if (data && activeRequestIdRef.current === reqId) {
         setMessages(prev => { if (data.length === prev.length) return prev; return data as ProjectMessage[]; });
       }
-    }, 3000);
+    }, 60000);
 
     return () => {
       activeRequestIdRef.current = null;
+      if (attachDebounce) clearTimeout(attachDebounce);
       clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
@@ -379,6 +432,71 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     bytes < 1024 ? bytes + ' B' : bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(1) + ' MB';
   const formatDate = (dt: string) => new Date(dt).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const formatDueDate = (dt: string) => new Date(dt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  // ── Room-scoped attachments ──────────────────────────────────────────────
+  // project_attachments belum punya kolom room_index tersendiri di DB. Tapi upload
+  // foto/BOQ utk ruangan tambahan (saat create) SUDAH ditandai dengan prefix nama file
+  // "[roomN] ..." (lihat submit handler: label = `room${rIdx+2}`). detailRoomIdx di modal
+  // detail: 0 = Ruangan 1 (utama, TANPA prefix), 1+ = rooms[idx-1] (dengan prefix [room{idx+1}]).
+  // Kita pakai konvensi yang SUDAH ADA ini, bukan bikin skema baru, supaya file lama tetap
+  // konsisten dan tidak perlu migrasi DB.
+  const getFileRoomIdx = (fileName: string): number => {
+    const m = fileName.match(/^\[room(\d+)\]\s*/i);
+    return m ? Math.max(0, parseInt(m[1], 10) - 1) : 0;
+  };
+  const displayFileName = (fileName: string) => fileName.replace(/^\[room\d+\]\s*/i, '');
+
+  // BUG FIX: Supabase Storage menolak key yang mengandung karakter seperti "[", "]",
+  // dan spasi ganda tertentu ("Invalid key"). Prefix "[roomN] " di atas dipakai untuk
+  // penanda TAMPILAN/DB (file_name, getFileRoomIdx) dan sengaja TIDAK diubah — supaya
+  // parsing existing di atas tetap jalan persis sama. Untuk PATH PENYIMPANAN saja,
+  // kita pakai versi yang sudah disanitasi (aman dari karakter yang ditolak Supabase).
+  // Ini kenapa upload di Ruangan 1 selalu berhasil (tidak ada prefix "[room1] " karena
+  // detailRoomIdx===0) sementara Ruangan 2+ gagal — sekarang keduanya konsisten aman.
+  const toStorageSafeName = (name: string): string =>
+    name
+      .replace(/^\[room(\d+)\]\s*/i, 'room$1_')   // "[room2] " -> "room2_" (aman utk storage key)
+      .replace(/[^a-zA-Z0-9._-]/g, '_');           // spasi & karakter aneh lain -> underscore
+
+  // Tombol aksi per-baris — dipakai di tabel desktop DAN kartu mobile (anti-duplikat).
+  const renderRequestActions = (req: ProjectRequest) => (
+    <>
+      {canInternalApproveProject(req) && (
+        <>
+          <button onClick={() => handleInternalApproveProject(req)} title="Approve & Teruskan ke Admin"
+            className="w-7 h-7 bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white border border-amber-200 rounded-lg flex items-center justify-center transition-all">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+          </button>
+          <button onClick={() => handleReject(req)} title="Tolak"
+            className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </>
+      )}
+      {(isAdmin || isSuperAdmin) && req.status === 'pending' && req.routing_status !== 'internal_review' && (
+        <>
+          <button onClick={() => handleApprove(req)} title="Approve"
+            className="w-7 h-7 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 rounded-lg flex items-center justify-center transition-all">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+          </button>
+          <button onClick={() => handleReject(req)} title="Tolak"
+            className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </>
+      )}
+      {isTeamPTS && req.status === 'approved' && req.assign_name === currentUser.full_name && (
+        <button onClick={() => handleStatusUpdate(req, 'in_progress')} title="Mulai In Progress"
+          className="w-7 h-7 bg-blue-50 hover:bg-blue-500 text-blue-600 hover:text-white border border-blue-200 rounded-lg flex items-center justify-center transition-all">
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </button>
+      )}
+      <ViewIconBtn onClick={() => handleOpenDetail(req)} label="Detail" />
+      {(isSuperAdmin || isAdmin) && (
+        <DeleteIconBtn onClick={() => { setDeleteModal({ open: true, req }); setDeleteConfirmText(''); }} label="Hapus" />
+      )}
+    </>
+  );
   const getDueStatus = (due: string | undefined, status: string) => {
     if (!due || status === 'completed' || status === 'rejected') return null;
     const now = new Date();
@@ -478,7 +596,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   );
 
   const NotifToast = () => notification ? (
-    <div className={`fixed top-4 right-4 z-[100] px-5 py-4 rounded-2xl shadow-2xl text-sm font-bold flex items-center gap-3 border-2 max-w-sm animate-scale-in ${
+    <div style={{ zIndex: Z.toast }} className={`fixed top-4 right-4 px-5 py-4 rounded-2xl shadow-2xl text-sm font-bold flex items-center gap-3 border-2 max-w-sm animate-scale-in ${
       notification.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-400' :
       notification.type === 'error' ? 'bg-red-50 text-red-800 border-red-400' :
         'bg-blue-50 text-blue-800 border-blue-400'}`}>
@@ -504,12 +622,50 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     if (!dueDateForm) { notify('error', 'Target Selesai wajib diisi!'); return; }
     setSubmitting(true);
     try {
+      // ── Routing: Sales External wajib direview Sales Internal (division_ivp_mappings)
+      // dulu, BARU Admin dapat notifikasi actionable. Sales Internal/Marketing yang
+      // request utk kebutuhan sendiri (project direct ke user) TIDAK kena gerbang ini
+      // — sama seperti Request Schedule. Admin/PTS yang submit langsung (isPTS) juga
+      // skip gerbang (dia sudah tahu/putuskan sendiri).
+      let routingStatus: 'internal_review' | 'admin_review' = 'admin_review';
+      let internalSalesId: string | null = null;
+      let internalSalesId2: string | null = null;   // reviewer kedua (IVP) saat brand BOTH
+      const chosenBrand: Brand | null = (form.brand as Brand | undefined) ?? null;
+      if (!isPTS) {
+        const { data: freshSelf } = await supabase.from('users').select('is_internal_sales, team_type').eq('id', currentUser.id).maybeSingle();
+        const isInternalOrMarketing = !!freshSelf?.is_internal_sales || freshSelf?.team_type === 'Marketing';
+        const salesDivision = (currentUser.sales_division || form.sales_division || '').trim();
+        if (!isInternalOrMarketing && salesDivision) {
+          // Sales External: WAJIB pilih Marketing Brand + ada PIC Sales Internal utk brand itu.
+          if (!chosenBrand) { notify('error', 'Pilih Marketing Brand dulu (MVI / IVP / Kedua Brand)!'); setSubmitting(false); return; }
+          const rb = await resolveBrandInternals(salesDivision, chosenBrand);
+          if (rb.missing.length > 0) { notify('error', `Divisi ${salesDivision} belum punya PIC Sales Internal untuk brand: ${rb.missing.join(' & ')}. Hubungi Admin untuk mapping dulu.`); setSubmitting(false); return; }
+          routingStatus = 'internal_review';
+          const primary = rb.mvi ?? rb.ivp;
+          internalSalesId = primary?.id ?? null;
+          if (chosenBrand === 'BOTH' && rb.mvi && rb.ivp && rb.mvi.id !== rb.ivp.id) internalSalesId2 = rb.ivp.id;
+        }
+      }
+      const internalHandlers: { phone_number: string | null; full_name: string }[] = [];
+      if (routingStatus === 'internal_review') {
+        const ids = [internalSalesId, internalSalesId2].filter(Boolean) as string[];
+        if (ids.length) {
+          const { data: hs } = await supabase.from('users').select('full_name, phone_number').in('id', ids);
+          (hs ?? []).forEach((h: any) => internalHandlers.push({ phone_number: h.phone_number, full_name: h.full_name }));
+        }
+      }
       const payload = {
         project_name: form.project_name.trim(), room_name: form.room_name.trim(),
         project_location: form.project_location.trim(),
-        // Guest: always use account's sales_name & sales_division (not form which may be empty)
-        sales_name: (!isPTS ? (currentUser.full_name || form.sales_name).trim() : form.sales_name.trim()),
-        sales_division: (!isPTS ? (currentUser.sales_division || form.sales_division || '').trim() : (form.sales_division?.trim() || '')),
+        // Guest biasa: pakai nama & divisi akun sendiri. TAPI Sales Internal yang
+        // pilih SBU (Sales External) → atasnamakan External tsb (form.sales_name).
+        // requester_id/name tetap akun Sales Internal (jejak pembuat).
+        sales_name: (!isPTS
+          ? ((myIsInternalSales && form.sales_name.trim()) ? form.sales_name.trim() : (currentUser.full_name || form.sales_name).trim())
+          : form.sales_name.trim()),
+        sales_division: (!isPTS
+          ? ((myIsInternalSales && form.sales_name.trim()) ? (form.sales_division?.trim() || '') : (currentUser.sales_division || form.sales_division || '').trim())
+          : (form.sales_division?.trim() || '')),
         kebutuhan: form.kebutuhan, kebutuhan_other: form.kebutuhan_other.trim(),
         solution_product: form.solution_product, solution_other: form.solution_other.trim(),
         layout_signage: form.layout_signage, jaringan_cms: form.jaringan_cms,
@@ -525,6 +681,11 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         requester_id: currentUser.id, requester_name: currentUser.full_name, status: 'pending' as const,
         due_date: dueDateForm || null,
         rooms: rooms.length > 0 ? rooms : [],
+        routing_status: routingStatus,
+        internal_sales_id: internalSalesId,
+        // Kolom brand hanya ditulis kalau ada brand (Sales External) — supaya submit
+        // internal/admin tetap jalan walau sql/brand-multi-internal.sql belum di-run.
+        ...(chosenBrand ? { internal_sales_id_2: internalSalesId2, brand: chosenBrand } : {}),
       };
       const { data, error } = await supabase.from('project_requests').insert([payload]).select().single();
       if (error) { notify('error', 'Gagal submit form: ' + error.message); setSubmitting(false); return; }
@@ -535,20 +696,21 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         }]);
         if (surveyPhotos.length > 0) {
           for (const photo of surveyPhotos) {
-            const filePath = `project-files/${data.id}/survey-${Date.now()}-${photo.name}`;
-            const { error: storageErr } = await supabase.storage.from('project-files').upload(filePath, photo, { cacheControl: '3600', upsert: false });
+            const compressedPhoto = await compressImage(photo);
+            const filePath = `project-files/${data.id}/survey-${Date.now()}-${toStorageSafeName(compressedPhoto.name)}`;
+            const { error: storageErr } = await supabase.storage.from('project-files').upload(filePath, compressedPhoto, { cacheControl: '31536000', upsert: false });
             if (!storageErr) {
               const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
               await supabase.from('project_attachments').insert([{
                 request_id: data.id, message_id: null, file_name: photo.name,
-                file_url: urlData.publicUrl, file_type: photo.type, file_size: photo.size,
+                file_url: urlData.publicUrl, file_type: compressedPhoto.type, file_size: compressedPhoto.size,
                 uploaded_by: currentUser.full_name,
               }]);
             }
           }
         }
         if (boqFormFile && data?.id) {
-          const filePath = `project-files/${data.id}/boq-initial-${Date.now()}-${boqFormFile.name}`;
+          const filePath = `project-files/${data.id}/boq-initial-${Date.now()}-${toStorageSafeName(boqFormFile.name)}`;
           const { error: boqErr } = await supabase.storage.from('project-files').upload(filePath, boqFormFile, { cacheControl: '3600', upsert: false });
           if (!boqErr) {
             const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
@@ -566,7 +728,27 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
           .not('phone_number', 'is', null)
           .neq('phone_number', '');
         const adminPhonesWA = (adminUsersWA || []).map((u: any) => u.phone_number).filter(Boolean);
-        if (adminUsersWA && adminUsersWA.length > 0) {
+        if (adminUsersWA && adminUsersWA.length > 0 && routingStatus === 'internal_review') {
+          // Sales External: WA WAJIB ke Sales Internal dulu (actionable), Admin cuma pengingat.
+          const internalMsg =
+            `📩 *REQUEST DESIGN BARU - PERLU REVIEW KAMU*\n\n` +
+            `Sales External *${currentUser.full_name}* (${currentUser.sales_division || '-'}) mengajukan request design:\n\n` +
+            `📋 Project: ${form.project_name.trim()}\n` +
+            `🛋️ Ruangan: ${form.room_name.trim() || '-'}\n\n` +
+            `Silakan review & teruskan ke Admin:\n` +
+            `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+          await Promise.allSettled(
+            internalHandlers.filter(h => h.phone_number).map(h => sendWANotif({ type: 'reminder_wa', target: h.phone_number as string, message: internalMsg }))
+          );
+          const adminHeadsUp =
+            `ℹ️ *ADA REQUEST DESIGN BARU (pengingat)*\n\n` +
+            `Sales External *${currentUser.full_name}* mengajukan request untuk *${form.project_name.trim()}*.\n` +
+            `Sedang menunggu review dari Sales Internal *${internalHandlers[0]?.full_name ?? '-'}* sebelum bisa diproses Admin.`;
+          await Promise.allSettled(
+            (adminUsersWA as any[]).map((a: any) => sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: adminHeadsUp }))
+          );
+        }
+        if (adminUsersWA && adminUsersWA.length > 0 && routingStatus !== 'internal_review') {
           const approvalWaMsg = [
             '🏗️ *Request Design Project \u2014 Request Baru*',
             '\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501',
@@ -583,6 +765,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
               sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: approvalWaMsg })
             )
           );
+        }
+        // CC/upload/brand-PIC di bawah ini berlaku utk KEDUA jalur routing (internal_review & admin_review).
+        if (adminUsersWA && adminUsersWA.length > 0) {
           // ── CC ke atasan + IVP berdasarkan divisi requester ──
           try {
             const ccDiv = currentUser?.sales_division ?? '';
@@ -609,13 +794,14 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
               const rIdx = rooms.findIndex(r => r.id === roomId);
               const label = rIdx >= 0 ? `room${rIdx+2}` : roomId.slice(0,6);
               for (const photo of photos) {
-                const filePath = `project-files/${data.id}/survey-${label}-${Date.now()}-${photo.name}`;
-                const { error: sErr } = await supabase.storage.from('project-files').upload(filePath, photo, { cacheControl:'3600', upsert:false });
+                const compressedPhoto = await compressImage(photo);
+                const filePath = `project-files/${data.id}/survey-${label}-${Date.now()}-${toStorageSafeName(compressedPhoto.name)}`;
+                const { error: sErr } = await supabase.storage.from('project-files').upload(filePath, compressedPhoto, { cacheControl:'31536000', upsert:false });
                 if (!sErr) {
                   const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
                   await supabase.from('project_attachments').insert([{
                     request_id: data.id, message_id: null, file_name: `[${label}] ${photo.name}`,
-                    file_url: urlData.publicUrl, file_type: photo.type, file_size: photo.size, uploaded_by: currentUser.full_name,
+                    file_url: urlData.publicUrl, file_type: compressedPhoto.type, file_size: compressedPhoto.size, uploaded_by: currentUser.full_name,
                   }]);
                 }
               }
@@ -628,7 +814,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
               if (!boqFile) continue;
               const rIdx = rooms.findIndex(r => r.id === roomId);
               const label = rIdx >= 0 ? `room${rIdx+2}` : roomId.slice(0,6);
-              const filePath = `project-files/${data.id}/boq-${label}-${Date.now()}-${boqFile.name}`;
+              const filePath = `project-files/${data.id}/boq-${label}-${Date.now()}-${toStorageSafeName(boqFile.name)}`;
               const { error: bErr } = await supabase.storage.from('project-files').upload(filePath, boqFile, { cacheControl:'3600', upsert:false });
               if (!bErr) {
                 const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
@@ -677,7 +863,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
           } catch { }
         }
       }
-      notify('success', '✅ Form berhasil dikirim! ⏳ Menunggu approval dari Superadmin.');
+      notify('success', routingStatus === 'internal_review'
+        ? `✅ Form berhasil dikirim! ⏳ Menunggu review ${internalHandlers[0]?.full_name ?? 'Sales Internal'} terlebih dahulu.`
+        : '✅ Form berhasil dikirim! ⏳ Menunggu approval dari Superadmin.');
       setForm(initialForm); setDueDateForm(''); setSurveyPhotos([]); setSurveyPhotosPreviews([]); setBoqFormFile(null);
       setRooms([]); setRoomPhotoMap({}); setBoqRoomMap({});
       setShowNewFormModal(false);
@@ -711,6 +899,42 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const handleApprove = async (req: ProjectRequest) => {
     // Hanya admin/superadmin yang bisa approve, selalu via AssignPTSModal untuk pilih PTS handler
     setAssignModal({ open: true, req });
+  };
+
+  // ─── Handler: Sales Internal approve & teruskan ke Admin ─────────────────
+  const handleInternalApproveProject = async (req: ProjectRequest) => {
+    const now = new Date().toISOString();
+    // Brand BOTH = 2 reviewer (MVI + IVP), WAJIB keduanya approve baru lanjut ke Admin.
+    const isSecondReviewer = !!req.internal_sales_id_2 && req.internal_sales_id_2 === currentUser.id;
+    const patch: Record<string, unknown> = {};
+    if (isSecondReviewer) patch.internal_approved_at_2 = now;
+    else { patch.internal_approved_by = currentUser.id; patch.internal_approved_at = now; }
+    const needBoth = !!req.internal_sales_id_2;
+    const otherDone = isSecondReviewer ? !!req.internal_approved_at : !!req.internal_approved_at_2;
+    const allApproved = !needBoth || otherDone;
+    if (allApproved) patch.routing_status = 'admin_review';
+    const { error } = await supabase.from('project_requests').update(patch).eq('id', req.id);
+    if (error) { notify('error', 'Gagal approve: ' + error.message); return; }
+    if (!allApproved) {
+      notify('success', 'Approve kamu tersimpan. Menunggu approve Sales Internal brand satunya (Kedua Brand).');
+      logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'approve', module: 'project', target_id: req.id, target_name: req.project_name, notes: 'Internal review approved (menunggu reviewer kedua)' }).catch(() => {});
+      fetchRequests();
+      if (selectedRequest?.id === req.id) setSelectedRequest({ ...req, ...patch });
+      return;
+    }
+    notify('success', 'Request diteruskan ke Admin!');
+    logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'approve', module: 'project', target_id: req.id, target_name: req.project_name, notes: 'Internal review approved' }).catch(() => {});
+    fetchRequests();
+    if (selectedRequest?.id === req.id) setSelectedRequest({ ...req, routing_status: 'admin_review' });
+    // WA ke Admin — actionable, sudah lolos review Sales Internal.
+    try {
+      const { data: admins } = await supabase.from('users').select('phone_number, full_name').in('role', ['admin', 'superadmin']).not('phone_number', 'is', null).neq('phone_number', '');
+      const msg =
+        `✅ *REQUEST DESIGN LOLOS REVIEW SALES INTERNAL*\n\n` +
+        `Request dari *${req.sales_name}* untuk *${req.project_name}* sudah di-review oleh *${currentUser.full_name}* — silakan diproses/di-assign.\n` +
+        `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+      await Promise.allSettled((admins ?? []).filter((a: any) => a.phone_number).map((a: any) => sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: msg })));
+    } catch { }
   };
 
   const handleReject = (req: ProjectRequest) => { setRejectNote(''); setRejectModal({ open: true, req }); };
@@ -872,11 +1096,16 @@ Hubungi Admin untuk info lebih lanjut.
   const handleFileUpload = async (file: File) => {
     if (!selectedRequest) return;
     setUploadingFile(true);
-    const filePath = `project-files/${selectedRequest.id}/${Date.now()}-${file.name}`;
-    const { error: storageError } = await supabase.storage.from('project-files').upload(filePath, file, { cacheControl: '3600', upsert: false });
+    const toUpload = await compressImage(file);
+    // EGRESS/UX FIX: tag file dengan prefix [roomN] kalau lagi di tab ruangan tambahan
+    // (detailRoomIdx > 0), supaya konsisten dengan konvensi upload saat create dan
+    // muncul di section attachment ruangan yang benar (bukan ketuker semua jadi 1).
+    const taggedName = detailRoomIdx > 0 ? `[room${detailRoomIdx + 1}] ${file.name}` : file.name;
+    const filePath = `project-files/${selectedRequest.id}/${Date.now()}-${toStorageSafeName(taggedName)}`;
+    const { error: storageError } = await supabase.storage.from('project-files').upload(filePath, toUpload, { cacheControl: '31536000', upsert: false });
     if (storageError) { notify('error', 'Upload gagal: ' + storageError.message); setUploadingFile(false); return; }
     const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
-    await supabase.from('project_attachments').insert([{ request_id: selectedRequest.id, message_id: null, file_name: file.name, file_url: urlData.publicUrl, file_type: file.type, file_size: file.size, uploaded_by: currentUser.full_name, attachment_category: 'general' }]);
+    await supabase.from('project_attachments').insert([{ request_id: selectedRequest.id, message_id: null, file_name: taggedName, file_url: urlData.publicUrl, file_type: toUpload.type, file_size: toUpload.size, uploaded_by: currentUser.full_name, attachment_category: 'general' }]);
     setUploadingFile(false);
     notify('success', `File "${file.name}" berhasil diupload!`);
     fetchAttachments(selectedRequest.id);
@@ -886,14 +1115,16 @@ Hubungi Admin untuk info lebih lanjut.
   const handleCategoryUpload = async (file: File, category: 'sld' | 'boq' | 'design3d') => {
     if (!selectedRequest) return;
     setUploadingCategory(category);
-    const existing = attachments.filter(a => a.attachment_category === category);
+    const existing = attachments.filter(a => a.attachment_category === category && getFileRoomIdx(a.file_name) === detailRoomIdx);
     const revisionNum = existing.length + 1;
     const label = category === 'sld' ? 'SLD' : category === 'boq' ? 'BOQ' : 'Design 3D';
-    const filePath = `project-files/${selectedRequest.id}/${category}-rev${revisionNum}-${Date.now()}-${file.name}`;
-    const { error: storageError } = await supabase.storage.from('project-files').upload(filePath, file, { cacheControl: '3600', upsert: false });
+    const toUpload = await compressImage(file);
+    const taggedName = detailRoomIdx > 0 ? `[room${detailRoomIdx + 1}] ${file.name}` : file.name;
+    const filePath = `project-files/${selectedRequest.id}/${category}-rev${revisionNum}-${Date.now()}-${toStorageSafeName(taggedName)}`;
+    const { error: storageError } = await supabase.storage.from('project-files').upload(filePath, toUpload, { cacheControl: '31536000', upsert: false });
     if (storageError) { notify('error', `Upload ${label} gagal: ` + storageError.message); setUploadingCategory(null); return; }
     const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
-    await supabase.from('project_attachments').insert([{ request_id: selectedRequest.id, message_id: null, file_name: file.name, file_url: urlData.publicUrl, file_type: file.type, file_size: file.size, uploaded_by: currentUser.full_name, attachment_category: category, revision_version: revisionNum }]);
+    await supabase.from('project_attachments').insert([{ request_id: selectedRequest.id, message_id: null, file_name: taggedName, file_url: urlData.publicUrl, file_type: toUpload.type, file_size: toUpload.size, uploaded_by: currentUser.full_name, attachment_category: category, revision_version: revisionNum }]);
     setUploadingCategory(null);
     notify('success', `${label} Rev-${revisionNum} berhasil diupload!`);
     fetchAttachments(selectedRequest.id);
@@ -911,10 +1142,40 @@ Hubungi Admin untuk info lebih lanjut.
     setChatRoomFilter('all');
     await fetchMessages(req.id);
     await fetchAttachments(req.id);
+    // Resolve nama CC (internal_sales_id / internal_sales_id_2) kalau belum ada di cache.
+    const ccIds = [req.internal_sales_id, req.internal_sales_id_2].filter(
+      (id): id is string => !!id && !internalSalesNames[id]
+    );
+    if (ccIds.length > 0) {
+      const { data: ccUsers } = await supabase.from('users').select('id, full_name').in('id', ccIds);
+      if (ccUsers?.length) {
+        setInternalSalesNames(prev => {
+          const next = { ...prev };
+          ccUsers.forEach((u: any) => { next[u.id] = u.full_name; });
+          return next;
+        });
+      }
+    }
     const stored = JSON.parse(localStorage.getItem('pts_last_seen') || '{}');
     stored[req.id] = Date.now();
     localStorage.setItem('pts_last_seen', JSON.stringify(stored));
     setUnreadMsgMap(prev => { const n = { ...prev }; delete n[req.id]; return n; });
+  };
+
+  // Label CC Sales Internal siap-tampil, misal "Budi (MVI) & Sari (IVP)". Fallback ke
+  // kolom lama `ivp_assignee` (nama string langsung) untuk request lama sebelum migrasi brand.
+  const getCCLabel = (req: ProjectRequest): string => {
+    const parts: string[] = [];
+    if (req.internal_sales_id) {
+      const name = internalSalesNames[req.internal_sales_id];
+      if (name) parts.push(req.brand === 'BOTH' ? `${name} (MVI)` : name);
+    }
+    if (req.internal_sales_id_2) {
+      const name = internalSalesNames[req.internal_sales_id_2];
+      if (name) parts.push(`${name} (IVP)`);
+    }
+    if (parts.length > 0) return parts.join(' & ');
+    return req.ivp_assignee || '';
   };
 
   const handleCloseDetail = () => {
@@ -1017,7 +1278,7 @@ Hubungi Admin untuk info lebih lanjut.
           <div><span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;background:${statusColor}22;color:${statusColor};border:1.5px solid ${statusColor}66">${selectedRequest.status.replace('_',' ').toUpperCase()}</span></div>
         </div>
         ${infoBox('PTS Handler (Assign)', selectedRequest.assign_name || '—')}
-        ${selectedRequest.ivp_assignee ? infoBox('IVP Sales (CC)', selectedRequest.ivp_assignee) : ''}
+        ${getCCLabel(selectedRequest) ? infoBox('Sales Internal (CC)', getCCLabel(selectedRequest)) : ''}
         ${infoBox('Approved By', selectedRequest.approved_by || '—')}
       </div>
       <div>
@@ -1250,6 +1511,7 @@ Hubungi Admin untuk info lebih lanjut.
     <div class="field"><label>Divisi Sales</label><p>${selectedRequest.sales_division || '—'}</p></div>
     <div class="field"><label>Requester</label><p>${selectedRequest.requester_name}</p></div>
     ${selectedRequest.assign_name ? `<div class="field"><label>PTS Handler</label><p>${selectedRequest.assign_name}</p></div>` : ''}
+    ${getCCLabel(selectedRequest) ? `<div class="field"><label>Sales Internal (CC)</label><p>${getCCLabel(selectedRequest)}</p></div>` : ''}
     ${selectedRequest.due_date ? `<div class="field"><label>Target Selesai</label><p>${formatDueDate(selectedRequest.due_date)}</p></div>` : ''}
     ${selectedRequest.approved_by ? `<div class="field"><label>Approved By</label><p>${selectedRequest.approved_by}</p></div>` : ''}
   </div>
@@ -1383,6 +1645,7 @@ Hubungi Admin untuk info lebih lanjut.
           setForm={setForm}
           initialForm={initialForm}
           salesGuestUsers={salesGuestUsers}
+          isInternalSalesGuest={role === 'guest' && myIsInternalSales}
           rooms={rooms} setRooms={setRooms}
           brandPicMappings={brandPicMappings}
           roomPhotoMap={roomPhotoMap} setRoomPhotoMap={setRoomPhotoMap}
@@ -1404,10 +1667,14 @@ Hubungi Admin untuk info lebih lanjut.
       {assignModal.open && assignModal.req && (
         <AssignPTSModal
           req={assignModal.req}
+          // Opsi "Route ke Supervisor" hanya saat approve awal (belum di-route).
+          // Kalau Supervisor yg buka utk assign final (routing_status='supervisor_assign'),
+          // opsi route disembunyikan — dia langsung pilih Tim PTS.
+          allowSupervisorRoute={assignModal.req.routing_status !== 'supervisor_assign'}
           onClose={() => setAssignModal({ open: false, req: null })}
           onAssigned={() => {
             setAssignModal({ open: false, req: null });
-            notify('success', `Request diapprove & di-assign ke Tim PTS!`);
+            notify('success', `Request diproses!`);
             fetchRequests();
             if (selectedRequest?.id === assignModal.req?.id) {
               setSelectedRequest(prev => prev ? { ...prev, status: 'approved' } : null);
@@ -1438,7 +1705,7 @@ Hubungi Admin untuk info lebih lanjut.
                 </span>
               </button>
               {bellDropdownOpen && (
-                <div className="absolute right-0 top-11 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] overflow-hidden animate-scale-in">
+                <div className="absolute right-0 top-11 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-scale-in" style={{ zIndex: Z.modal }}>
                   <div className="bg-gradient-to-r from-violet-500 to-violet-600 px-4 py-3 flex items-center justify-between">
                     <p className="text-white text-xs font-bold">🔔 Tiket Aktif ({activeTickets.length})</p>
                     <button onClick={() => setBellDropdownOpen(false)} className="text-white/70 hover:text-white text-xs font-bold">✕</button>
@@ -1715,7 +1982,43 @@ Hubungi Admin untuk info lebih lanjut.
               {!isPTS && <button onClick={() => setShowNewFormModal(true)} className="mt-4 bg-teal-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-teal-700 transition-all shadow-md">+ Buat Request Pertama</button>}
             </div>
           ) : (
-            <div className="overflow-x-auto animate-zoom-in">
+            <>
+            {/* ── MOBILE: kartu (pola Ticket Troubleshooting) ── */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {filteredRequests.length === 0 && (
+                <div className="px-4 py-10 text-center text-sm text-gray-400">Belum ada request.</div>
+              )}
+              {filteredRequests.map((req) => {
+                const sc = statusConfig[req.status] || statusConfig.pending;
+                const solution = Array.isArray(req.solution_product) ? req.solution_product.join(', ') : (req.solution_product || '');
+                return (
+                  <MobileListCard
+                    key={req.id}
+                    title={req.project_name}
+                    onClick={() => handleOpenDetail(req)}
+                    meta={<>
+                      {req.project_location && <div className="truncate">📍 {req.project_location}</div>}
+                      <div className="truncate">{req.requester_name} · {formatDate(req.created_at)}</div>
+                    </>}
+                    badges={<>
+                      <MobileCardBadge className={`border ${sc.color} ${sc.bg} ${sc.border}`}>{sc.label}</MobileCardBadge>
+                      {req.routing_status === 'internal_review' && <span className="text-[9px] font-bold text-amber-600 whitespace-nowrap">🔍 Review Internal</span>}
+                    </>}
+                    fields={[
+                      { label: 'Solution', value: solution || '—', span2: true },
+                      { label: 'Ruangan', value: req.room_name, hide: !req.room_name },
+                      { label: 'Sales', value: <>{req.sales_name || '—'}{req.sales_division ? <span className="text-purple-600 font-semibold"> · {req.sales_division}</span> : null}</> },
+                      { label: 'Handler', value: req.assign_name || '—' },
+                      { label: 'Target', value: req.due_date ? formatDueDate(req.due_date) : '—' },
+                    ]}
+                    actions={renderRequestActions(req)}
+                  />
+                );
+              })}
+            </div>
+
+            {/* ── DESKTOP: tabel ── */}
+            <div className="hidden md:block overflow-x-auto animate-zoom-in">
               <table className="w-full border-collapse table-fixed table-zebra" style={{ background: 'transparent', minWidth: '900px' }}>
                 <colgroup>
                   <col style={{ width: '56px' }} />
@@ -1801,7 +2104,11 @@ Hubungi Admin untuk info lebih lanjut.
                         <td className="px-3 py-3 border-r border-gray-100 align-middle">
                           <div className="flex flex-col gap-1 items-start">
                             <span className={`px-2 py-0.5 text-xs font-bold border whitespace-nowrap ${sc.color} ${sc.bg} ${sc.border}`}>{sc.label}</span>
-                            {req.status === 'pending' && isPTS && !isTeamPTS && <p className="text-[9px] font-bold text-red-500 animate-pulse">🔔 Perlu Approval</p>}
+                            {req.routing_status === 'internal_review' ? (
+                              <p className="text-[9px] font-bold text-amber-600">🔍 Menunggu Review Internal</p>
+                            ) : (
+                              req.status === 'pending' && isPTS && !isTeamPTS && <p className="text-[9px] font-bold text-red-500 animate-pulse">🔔 Perlu Approval</p>
+                            )}
                           </div>
                         </td>
                         <td className="px-3 py-3 border-r border-gray-100 align-middle">
@@ -1833,30 +2140,7 @@ Hubungi Admin untuk info lebih lanjut.
                         </td>
                         <td className="px-2 py-3 align-middle text-center" onClick={e => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-1">
-                            {/* Approve/Reject: admin/superadmin saja */}
-                            {(isAdmin || isSuperAdmin) && req.status === 'pending' && (
-                              <>
-                                <button onClick={() => handleApprove(req)} title="Approve"
-                                  className="w-7 h-7 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 rounded-lg flex items-center justify-center transition-all">
-                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                                </button>
-                                <button onClick={() => handleReject(req)} title="Tolak"
-                                  className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
-                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
-                                </button>
-                              </>
-                            )}
-                            {/* Start In Progress: hanya PTS yang di-assign */}
-                            {isTeamPTS && req.status === 'approved' && req.assign_name === currentUser.full_name && (
-                              <button onClick={() => handleStatusUpdate(req, 'in_progress')} title="Mulai In Progress"
-                                className="w-7 h-7 bg-blue-50 hover:bg-blue-500 text-blue-600 hover:text-white border border-blue-200 rounded-lg flex items-center justify-center transition-all">
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                              </button>
-                            )}
-                            <ViewIconBtn onClick={() => handleOpenDetail(req)} label="Detail" />
-                            {(isSuperAdmin || isAdmin) && (
-                              <DeleteIconBtn onClick={() => { setDeleteModal({ open: true, req }); setDeleteConfirmText(''); }} label="Hapus" />
-                            )}
+                            {renderRequestActions(req)}
                           </div>
                         </td>
                       </tr>
@@ -1869,13 +2153,14 @@ Hubungi Admin untuk info lebih lanjut.
                 <span className="text-xs text-gray-400">{filteredRequests.length > 0 ? `1–${filteredRequests.length}` : '0'} of {requests.length}</span>
               </div>
             </div>
+            </>
           )}
         </div>
       </div>
 
       {/* Bulk Delete Confirm Modal */}
       {bulkConfirm && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.modal }}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
             <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
               <span className="text-2xl">🗑️</span>
@@ -1901,9 +2186,9 @@ Hubungi Admin untuk info lebih lanjut.
         </div>
       )}
 
-      {/* Reject Modal — z-[9995] so it appears above the detail modal (z-[9990]) */}
+      {/* Reject Modal — muncul di atas detail modal (lihat lib/z-index.ts) */}
       {rejectModal.open && rejectModal.req && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9995] p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.modalNestedTop }}>
           <div className="bg-white/90 rounded-2xl shadow-2xl max-w-md w-full border-2 border-red-400 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-red-500 to-red-700 px-6 py-4">
               <h3 className="font-bold text-white text-lg">❌ Tolak Request</h3>
@@ -1922,9 +2207,9 @@ Hubungi Admin untuk info lebih lanjut.
         </div>
       )}
 
-      {/* Status Update Modal — z-[9995] so it appears above the detail modal (z-[9990]) */}
+      {/* Status Update Modal — muncul di atas detail modal (lihat lib/z-index.ts) */}
       {statusUpdateModal.open && statusUpdateModal.req && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9995] p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.modalNestedTop }}>
           <div className="bg-white/90 rounded-2xl shadow-2xl max-w-sm w-full border border-gray-200 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4 flex items-center justify-between">
               <div>
@@ -1985,9 +2270,9 @@ Hubungi Admin untuk info lebih lanjut.
         </div>
       )}
 
-      {/* Delete Confirmation Modal — z-[9995] so it appears above the detail modal (z-[9990]) */}
+      {/* Delete Confirmation Modal — muncul di atas detail modal (lihat lib/z-index.ts) */}
       {deleteModal.open && deleteModal.req && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9995] p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.modalNestedTop }}>
           <div className="bg-white/90 rounded-2xl shadow-2xl max-w-md w-full animate-scale-in overflow-hidden" style={{ border: '1.5px solid #e5e7eb' }}>
             {/* Header */}
             <div className="p-6 pb-4">
@@ -2053,7 +2338,7 @@ Hubungi Admin untuk info lebih lanjut.
         const activeTickets = requests.filter(r => r.status === 'pending' || r.status === 'in_progress');
         if (activeTickets.length === 0) return null;
         return (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9996] p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.modalBlocking }}>
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in border-2 border-amber-400">
               <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -2100,9 +2385,9 @@ Hubungi Admin untuk info lebih lanjut.
 
       {/* DETAIL MODAL */}
       {showDetailModal && selectedRequest && detailSc && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9990] p-0"
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0" style={{ zIndex: Z.modalNested }}
           onClick={e => { if (e.target === e.currentTarget) handleCloseDetail(); }}>
-          <div className="bg-white/90 w-full h-full animate-slide-up flex flex-col overflow-hidden"
+          <div className="bg-white w-full h-full animate-slide-up flex flex-col overflow-hidden"
             style={{ border: 'none' }}>
 
             {/* Detail Modal Header */}
@@ -2124,8 +2409,23 @@ Hubungi Admin untuk info lebih lanjut.
                 </p>
               </div>
               <div className="flex gap-2 flex-shrink-0 flex-wrap">
-                {/* Approve/Tolak: hanya admin/superadmin */}
-                {(isAdmin || isSuperAdmin) && detailIsPending && (
+                {/* Sales Internal: wajib review dulu sebelum Admin bisa approve */}
+                {canInternalApproveProject(selectedRequest) && (
+                  <>
+                    <button onClick={() => handleInternalApproveProject(selectedRequest)}
+                      className="bg-amber-500 hover:bg-amber-400 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                      Approve & Teruskan ke Admin
+                    </button>
+                    <button onClick={() => handleReject(selectedRequest)}
+                      className="bg-white/20 hover:bg-red-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-white/30 flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                      Tolak
+                    </button>
+                  </>
+                )}
+                {/* Approve/Tolak: hanya admin/superadmin, terkunci selama masih internal_review */}
+                {(isAdmin || isSuperAdmin) && detailIsPending && selectedRequest.routing_status !== 'internal_review' && (
                   <>
                     <button onClick={() => { setAssignModal({ open: true, req: selectedRequest }); }}
                       className="bg-emerald-500 hover:bg-emerald-400 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
@@ -2138,6 +2438,13 @@ Hubungi Admin untuk info lebih lanjut.
                       Tolak
                     </button>
                   </>
+                )}
+                {/* Supervisor yang di-route: wajib assign lanjut ke Tim PTS (atau sendiri) */}
+                {selectedRequest?.routing_status === 'supervisor_assign' && selectedRequest?.assigned_supervisor_id === currentUser.id && (
+                  <button onClick={() => { setAssignModal({ open: true, req: selectedRequest }); }}
+                    className="bg-amber-500 hover:bg-amber-400 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+                    🎯 Assign ke Tim
+                  </button>
                 )}
                 {/* Info untuk PTS yang di-assign: tombol mulai in_progress */}
                 {isTeamPTS && selectedRequest?.status === 'approved' && selectedRequest?.assign_name === currentUser.full_name && (
@@ -2244,28 +2551,17 @@ Hubungi Admin untuk info lebih lanjut.
 
               {/* LEFT: Detail Info + Attachments */}
               <div className={`${detailMobileTab === 'info' ? 'flex flex-col' : 'hidden'} sm:flex sm:flex-col flex-[3] min-w-0 border-r border-gray-200 overflow-y-auto bg-gray-50`}>
-                <div className="p-5 space-y-5">
-
-                  {/* Assigned PTS — "in_progress" nudge */}
-                  {isTeamPTS && selectedRequest.status === 'approved' && selectedRequest.assign_name === currentUser.full_name && (
-                    <div className="rounded-xl px-4 py-3 flex items-center gap-3"
-                      style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.25)' }}>
-                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                      </svg>
-                      <div>
-                        <p className="text-sm font-bold text-blue-700">Request ini di-assign ke kamu</p>
-                        <p className="text-xs text-blue-600 mt-0.5">Klik <strong>Mulai In Progress</strong> di atas untuk memulai pengerjaan. Setelah in progress, kamu dapat update status dan berkomunikasi via chat.</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Room Tab Navigator — tampil jika ada lebih dari 1 ruangan */}
-                  {(() => {
-                    const detailRooms = selectedRequest.rooms || [];
-                    const totalDetailRooms = 1 + detailRooms.length;
-                    if (totalDetailRooms <= 1) return null;
-                    return (
+                {/* Room Tab Navigator — STICKY di atas scroll area, supaya bisa pindah
+                    section tanpa perlu scroll balik ke atas dulu. Ditaruh DI LUAR
+                    "p-5 space-y-5" (bukan ikut scroll bareng konten) tapi tetap di
+                    dalam container overflow-y-auto yang sama, supaya sticky-nya nempel
+                    relatif terhadap scroll area ini (bukan seluruh modal). */}
+                {(() => {
+                  const detailRooms = selectedRequest.rooms || [];
+                  const totalDetailRooms = 1 + detailRooms.length;
+                  if (totalDetailRooms <= 1) return null;
+                  return (
+                    <div className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm px-5 pt-4 pb-3 border-b border-gray-200 shadow-sm">
                       <div className="flex items-center bg-teal-50 border border-teal-200 rounded-2xl px-2 py-1.5 gap-1 overflow-x-auto">
                         <button type="button" onClick={() => setDetailRoomIdx(i => Math.max(0, i-1))} disabled={detailRoomIdx === 0}
                           className="p-1.5 rounded-lg text-teal-600 hover:bg-teal-100 disabled:opacity-30 transition-all flex-shrink-0">
@@ -2286,8 +2582,24 @@ Hubungi Admin untuk info lebih lanjut.
                         </button>
                         <span className="text-[10px] text-teal-600 font-bold ml-auto mr-1">{detailRoomIdx+1}/{totalDetailRooms}</span>
                       </div>
-                    );
-                  })()}
+                    </div>
+                  );
+                })()}
+                <div className="p-5 space-y-5">
+
+                  {/* Assigned PTS — "in_progress" nudge */}
+                  {isTeamPTS && selectedRequest.status === 'approved' && selectedRequest.assign_name === currentUser.full_name && (
+                    <div className="rounded-xl px-4 py-3 flex items-center gap-3"
+                      style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.25)' }}>
+                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                      </svg>
+                      <div>
+                        <p className="text-sm font-bold text-blue-700">Request ini di-assign ke kamu</p>
+                        <p className="text-xs text-blue-600 mt-0.5">Klik <strong>Mulai In Progress</strong> di atas untuk memulai pengerjaan. Setelah in progress, kamu dapat update status dan berkomunikasi via chat.</p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Compute active room data for display */}
                   {(() => {
@@ -2396,6 +2708,12 @@ Hubungi Admin untuk info lebih lanjut.
                           <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">PTS Handler</label>
                             <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">🔧 {selectedRequest.assign_name}</p>
+                          </div>
+                        )}
+                        {getCCLabel(selectedRequest) && (
+                          <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Sales Internal (CC)</label>
+                            <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">📣 {getCCLabel(selectedRequest)}</p>
                           </div>
                         )}
                         {selectedRequest.due_date && (
@@ -2531,10 +2849,16 @@ Hubungi Admin untuk info lebih lanjut.
 
                   {/* Attachments Panel — prominent */}
                   <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
+                    {(() => {
+                      // Scope file ke room tab yang lagi aktif — pakai konvensi prefix
+                      // "[roomN]" yang sudah ada di nama file (lihat getFileRoomIdx).
+                      const roomAttachments = attachments.filter(a => getFileRoomIdx(a.file_name) === detailRoomIdx);
+                      return (<>
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
                         <span className="w-7 h-7 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">📎</span>
                         Dokumen & File Attachment
+                        {detailRoomIdx > 0 && <span className="text-[10px] font-bold text-teal-500 normal-case bg-teal-50 px-2 py-0.5 rounded-full">{(selectedRequest.rooms||[])[detailRoomIdx - 1]?.room_name || `Ruangan ${detailRoomIdx + 1}`}</span>}
                       </h3>
                       <button onClick={() => fileInputRef.current?.click()} disabled={uploadingFile}
                         className="text-xs bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 disabled:opacity-60">
@@ -2572,25 +2896,25 @@ Hubungi Admin untuk info lebih lanjut.
                       {(['all', 'sld', 'boq', 'design3d'] as const).map(tab => (
                         <button key={tab} onClick={() => setActiveAttachTab(tab)}
                           className={`flex-1 py-2 text-xs font-bold uppercase transition-all ${activeAttachTab === tab ? 'text-white bg-teal-600' : 'text-gray-500 hover:bg-gray-50'}`}>
-                          {tab === 'all' ? `Semua (${attachments.length})` : tab === 'design3d' ? `3D (${attachments.filter(a => a.attachment_category === 'design3d').length})` : `${tab.toUpperCase()} (${attachments.filter(a => a.attachment_category === tab).length})`}
+                          {tab === 'all' ? `Semua (${roomAttachments.length})` : tab === 'design3d' ? `3D (${roomAttachments.filter(a => a.attachment_category === 'design3d').length})` : `${tab.toUpperCase()} (${roomAttachments.filter(a => a.attachment_category === tab).length})`}
                         </button>
                       ))}
                     </div>
 
                     {/* File grid */}
-                    {(activeAttachTab === 'all' ? attachments : attachments.filter(a => a.attachment_category === activeAttachTab)).length === 0 ? (
+                    {(activeAttachTab === 'all' ? roomAttachments : roomAttachments.filter(a => a.attachment_category === activeAttachTab)).length === 0 ? (
                       <div className="text-center py-8 text-gray-400">
                         <div className="text-3xl mb-2">📂</div>
-                        <p className="text-xs font-medium">Belum ada file diupload</p>
+                        <p className="text-xs font-medium">Belum ada file diupload {detailRoomIdx > 0 ? `untuk ${(selectedRequest.rooms||[])[detailRoomIdx - 1]?.room_name || `Ruangan ${detailRoomIdx + 1}`}` : ''}</p>
                       </div>
                     ) : (
                       <div className="space-y-3">
                         {/* For structured categories: show LATEST prominently, history collapsed */}
                         {(['sld','boq','design3d'] as const).filter(cat =>
                           (activeAttachTab === 'all' || activeAttachTab === cat) &&
-                          attachments.some(a => a.attachment_category === cat)
+                          roomAttachments.some(a => a.attachment_category === cat)
                         ).map(cat => {
-                          const catFiles = [...attachments.filter(a => a.attachment_category === cat)]
+                          const catFiles = [...roomAttachments.filter(a => a.attachment_category === cat)]
                             .sort((a, b) => (b.revision_version || 0) - (a.revision_version || 0));
                           const latest = catFiles[0];
                           const history = catFiles.slice(1);
@@ -2610,7 +2934,7 @@ Hubungi Admin untuk info lebih lanjut.
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
-                                    <p className="text-xs font-bold text-gray-800 truncate">{latest.file_name}</p>
+                                    <p className="text-xs font-bold text-gray-800 truncate">{displayFileName(latest.file_name)}</p>
                                     <span className={`text-[9px] font-black px-2 py-0.5 rounded-full bg-${catColor}-500 text-white whitespace-nowrap`}>
                                       {latest.revision_version ? `Rev ${latest.revision_version}` : 'Latest'} ★
                                     </span>
@@ -2627,7 +2951,7 @@ Hubungi Admin untuk info lebih lanjut.
                                     {att.file_type?.includes('pdf') ? '📄' : att.file_type?.startsWith('image') ? '🖼️' : '📊'}
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-[10px] font-semibold text-gray-500 truncate">{att.file_name}</p>
+                                    <p className="text-[10px] font-semibold text-gray-500 truncate">{displayFileName(att.file_name)}</p>
                                     <p className="text-[9px] text-gray-400">{att.revision_version ? `Rev ${att.revision_version}` : ''} · {new Date(att.uploaded_at).toLocaleDateString('id-ID')}</p>
                                   </div>
                                   <svg className="w-3 h-3 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
@@ -2637,16 +2961,16 @@ Hubungi Admin untuk info lebih lanjut.
                           );
                         })}
                         {/* General files */}
-                        {attachments.filter(a => a.attachment_category === 'general' || !a.attachment_category).length > 0 && (
+                        {roomAttachments.filter(a => a.attachment_category === 'general' || !a.attachment_category).length > 0 && (
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            {attachments.filter(a => a.attachment_category === 'general' || !a.attachment_category).map(att => (
+                            {roomAttachments.filter(a => a.attachment_category === 'general' || !a.attachment_category).map(att => (
                               <a key={att.id} href={att.file_url} target="_blank" rel="noopener noreferrer"
                                 className="group flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 hover:border-teal-300 hover:bg-teal-50 transition-all cursor-pointer">
                                 <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-lg bg-gray-50">
                                   {att.file_type?.startsWith('image') ? '🖼️' : att.file_type?.includes('pdf') ? '📄' : '📎'}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-[10px] font-bold text-gray-700 truncate group-hover:text-teal-700">{att.file_name}</p>
+                                  <p className="text-[10px] font-bold text-gray-700 truncate group-hover:text-teal-700">{displayFileName(att.file_name)}</p>
                                   <p className="text-[9px] text-gray-400">{formatFileSize(att.file_size)}</p>
                                 </div>
                               </a>
@@ -2655,6 +2979,8 @@ Hubungi Admin untuk info lebih lanjut.
                         )}
                       </div>
                     )}
+                      </>);
+                    })()}
                   </div>
 
                   {/* Admin controls */}
@@ -2827,7 +3153,7 @@ Hubungi Admin untuk info lebih lanjut.
 
       {/* Edit Form Modal */}
       {editFormModal && selectedRequest && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9995] p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.modalNestedTop }}>
           <div className="bg-white/90 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col border-2 border-amber-400 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-amber-500 to-amber-700 px-6 py-4 flex items-center justify-between flex-shrink-0">
               <div>
@@ -2864,18 +3190,12 @@ Hubungi Admin untuk info lebih lanjut.
                   {isPTS && (
                     <div>
                       <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Sales / Account</label>
-                      <div className="flex gap-2 items-center">
-                        <select value={editFormData.sales_name} onChange={e => {
-                            const sel = salesGuestUsers.find(u => u.full_name === e.target.value);
-                            setEditFormData(p => ({ ...p, sales_name: e.target.value, sales_division: sel?.sales_division || p.sales_division }));
-                          }}
-                          className="flex-1 border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-amber-400 outline-none bg-white appearance-none cursor-pointer">
-                          <option value="">— Pilih Sales —</option>
-                          {salesGuestUsers.map(u => (
-                            <option key={u.id} value={u.full_name}>{u.full_name}{u.sales_division ? ` (${u.sales_division})` : ''}</option>
-                          ))}
-                        </select>
-                      </div>
+                      <SalesPicker
+                        value={editFormData.sales_name}
+                        users={salesGuestUsers}
+                        onChange={(name, div) => setEditFormData(p => ({ ...p, sales_name: name, sales_division: div || p.sales_division }))}
+                        triggerClassName="border-2 border-gray-200 rounded-xl px-3 py-2.5 bg-white"
+                      />
                     </div>
                   )}
                 </div>
