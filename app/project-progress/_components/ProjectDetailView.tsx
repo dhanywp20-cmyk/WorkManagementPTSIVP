@@ -74,7 +74,10 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
       {/* ── Tiga pie: status lokasi, beban PIC, komponen bermasalah ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
         <MiniPieChart data={pieData} title="Distribusi Status Lokasi" icon="📍" />
-        <MiniPieChart data={picSlices} title="Lokasi per PIC Team" icon="👷" />
+        {/* Nilai slice = persentase progres, jadi jumlahnya tidak bermakna —
+            pusat donat diisi rata-rata keseluruhan, bukan total. */}
+        <MiniPieChart data={picSlices} title="Progres per PIC Team" icon="👷"
+          centerValue={`${avg}%`} centerLabel="RATA-RATA" valueSuffix="%" />
         <MiniPieChart data={problemSlices} title="Komponen Stuck & Pending" icon="⚠️" />
       </div>
 

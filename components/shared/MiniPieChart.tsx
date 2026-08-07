@@ -13,11 +13,21 @@ import { useState } from 'react';
  */
 export function MiniPieChart({
   data, title, icon, activeFilter, onSliceClick,
+  centerValue, centerLabel, valueSuffix,
 }: {
   data: { label?: string; name?: string; value: number; color: string }[];
   title: string; icon: string;
   activeFilter?: string | null;
   onSliceClick?: (label: string) => void;
+  /**
+   * Angka besar di tengah donat. Default = jumlah seluruh nilai ("TOTAL").
+   * Diisi manual bila menjumlahkan slice TIDAK bermakna — mis. saat nilainya
+   * berupa persentase, di mana totalnya tidak berarti apa-apa.
+   */
+  centerValue?: string | number;
+  centerLabel?: string;
+  /** Akhiran nilai di legenda, mis. '%'. */
+  valueSuffix?: string;
 }) {
   const [hov, setHov] = useState<number | null>(null);
   // Normalize: terima data dengan label atau name
@@ -72,8 +82,8 @@ export function MiniPieChart({
                 onClick={() => onSliceClick && onSliceClick(s.label)} />
             )
           ))}
-          <text x="60" y="57" textAnchor="middle" fontSize="16" fontWeight="800" fill="#1e293b">{total}</text>
-          <text x="60" y="70" textAnchor="middle" fontSize="7" fill="#94a3b8" fontWeight="600">TOTAL</text>
+          <text x="60" y="57" textAnchor="middle" fontSize="16" fontWeight="800" fill="#1e293b">{centerValue ?? total}</text>
+          <text x="60" y="70" textAnchor="middle" fontSize="7" fill="#94a3b8" fontWeight="600">{centerLabel ?? 'TOTAL'}</text>
         </svg>
         <div className="flex flex-col gap-1.5 flex-1 min-w-0 max-h-[120px] overflow-y-auto">
           {slices.map((s) => {
@@ -89,7 +99,7 @@ export function MiniPieChart({
                 onClick={() => onSliceClick && onSliceClick(s.label)}>
                 <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color }} />
                 <span className="text-[10px] font-semibold text-gray-600 truncate flex-1">{s.label}</span>
-                <span className="text-[10px] font-bold flex-shrink-0" style={{ color: s.color }}>{s.value}</span>
+                <span className="text-[10px] font-bold flex-shrink-0" style={{ color: s.color }}>{s.value}{valueSuffix ?? ''}</span>
                 {isActive && <span className="text-[9px] font-bold text-purple-600 flex-shrink-0">✓</span>}
               </div>
             );

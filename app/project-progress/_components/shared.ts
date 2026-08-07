@@ -165,22 +165,33 @@ export const PIE_PALETTE = [
 export interface PieSlice { label: string; value: number; color: string }
 
 /**
- * Beban tiap PIC — berapa lokasi yang dia pegang, diurutkan dari terbanyak.
- * Lokasi tanpa PIC dikelompokkan sebagai "Belum ada PIC" supaya tidak hilang
- * diam-diam dari total.
+ * Progres tiap PIC — RATA-RATA progres seluruh lokasi yang dia pegang (bukan
+ * jumlah lokasinya), diurutkan dari yang tertinggi. PIC dengan beberapa lokasi
+ * dirata-ratakan supaya yang memegang banyak site tidak otomatis terlihat lebih
+ * besar.
+ *
+ * Catatan: nilainya persentase, jadi MENJUMLAHKAN slice tidak bermakna — pemakai
+ * komponen wajib mengisi centerValue sendiri (lihat ProjectDetailView).
+ * Lokasi tanpa PIC dikelompokkan "Belum ada PIC" agar tidak hilang diam-diam.
  */
 export function picBreakdown(locations: ProgressLocation[]): PieSlice[] {
-  const tally = new Map<string, number>();
+  const group = new Map<string, number[]>();
   for (const l of locations) {
     const key = l.pic?.trim() || 'Belum ada PIC';
-    tally.set(key, (tally.get(key) ?? 0) + 1);
+    if (!group.has(key)) group.set(key, []);
+    group.get(key)!.push(l.progress ?? 0);
   }
-  return [...tally.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([label, value], i) => ({
+  return [...group.entries()]
+    .map(([label, vals]) => ({
       label,
-      value,
-      color: label === 'Belum ada PIC' ? '#94a3b8' : PIE_PALETTE[i % PIE_PALETTE.length],
+      value: Math.round(vals.reduce((s, v) => s + v, 0) / vals.length),
+      count: vals.length,
+    }))
+    .sort((a, b) => b.value - a.value)
+    .map((r, i) => ({
+      label: r.count > 1 ? `${r.label} (${r.count} lokasi)` : r.label,
+      value: r.value,
+      color: r.label === 'Belum ada PIC' ? '#94a3b8' : PIE_PALETTE[i % PIE_PALETTE.length],
     }));
 }
 
