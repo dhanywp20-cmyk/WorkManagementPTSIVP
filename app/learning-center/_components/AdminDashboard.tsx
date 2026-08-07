@@ -398,45 +398,51 @@ export function AdminDashboard({ user }: { user: User }) {
 
           {/* Right: Top Performers */}
           <div className="min-w-0">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
-              <SectionHeader>🏆 Top Performers</SectionHeader>
-              <div className="flex items-center gap-2 flex-wrap">
-                <TeamSwitch active={activeTeam} onChange={setActiveTeam} />
-                {/* Pembagian per Sales Division hanya relevan untuk tab Sales.
-                    Di tab PTS/Marketing anggota dikelompokkan per jabatan, jadi
-                    filter divisi di situ hanya akan mengosongkan tabel. */}
-                {/* Dropdown hanya berlaku untuk Sales, tapi tempatnya tetap
-                    dipesan (invisible) di tab lain supaya baris header tidak
-                    berubah tinggi/urutan saat berpindah tab. */}
-                <select value={performerDivisionFilter} onChange={e => setPerformerDivisionFilter(e.target.value)}
-                  disabled={activeTeam !== 'Sales'}
-                  aria-hidden={activeTeam !== 'Sales'}
-                  className={`text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-400 bg-white font-semibold text-slate-600 ${activeTeam === 'Sales' && divisionStats.length > 0 ? '' : 'invisible pointer-events-none'}`}>
-                  <option value="">🏢 Semua Divisi</option>
-                  {divisionStats.filter(d => d.source === 'division').map(d => <option key={d.name} value={d.name}>{d.name}</option>)}
-                </select>
-                <SearchInput value={searchPerformer} onChange={setSearchPerformer} placeholder="Cari nama..." />
-              </div>
-            </div>
-            {nationalAvg !== null && (
-              /* Latar sendiri: tanpa ini teks abu-abu jatuh langsung di atas foto
-                 background halaman dan praktis tidak terbaca. */
-              <p className="inline-flex flex-wrap items-center gap-1 text-[11px] text-slate-600 mb-3 px-3 py-1.5 rounded-lg"
-                style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)' }}>
-                🌏 Rata-rata Nasional (semua divisi): <span className="font-bold text-slate-800">{nationalAvg.toFixed(1)}</span>
-                {activeTeam === 'Sales' && performerDivisionFilter && (() => {
-                  const d = divisionStats.find(d => d.name === performerDivisionFilter);
-                  if (!d) return null;
-                  const gap = d.avg - nationalAvg;
-                  return (
-                    <span className={`ml-2 font-bold ${gap >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                      · {performerDivisionFilter}: {d.avg.toFixed(1)} ({gap >= 0 ? '▲' : '▼'} {Math.abs(gap).toFixed(1)} vs nasional)
+            {/* Semua kontrol MENYATU di dalam kartu tabel: judul + rata-rata
+                nasional di kiri, tab/filter/pencarian di kanan. Sebelumnya
+                judul, pencarian, dan rata-rata nasional melayang sebagai blok
+                terpisah di atas kartu sehingga tampak tercerai-berai. */}
+            <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                {/* Kiri: judul + rata-rata nasional */}
+                <div className="flex items-center gap-3 flex-wrap min-w-0">
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-600 whitespace-nowrap">
+                    🏆 Top Performers
+                  </span>
+                  {nationalAvg !== null && (
+                    <span className="text-[11px] text-slate-500 whitespace-nowrap">
+                      🌏 Nasional: <span className="font-bold text-slate-800">{nationalAvg.toFixed(1)}</span>
+                      {activeTeam === 'Sales' && performerDivisionFilter && (() => {
+                        const d = divisionStats.find(d => d.name === performerDivisionFilter);
+                        if (!d) return null;
+                        const gap = d.avg - nationalAvg;
+                        return (
+                          <span className={`ml-1.5 font-bold ${gap >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            · {performerDivisionFilter} {d.avg.toFixed(1)} ({gap >= 0 ? '▲' : '▼'}{Math.abs(gap).toFixed(1)})
+                          </span>
+                        );
+                      })()}
                     </span>
-                  );
-                })()}
-              </p>
-            )}
-            <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+                  )}
+                </div>
+
+                {/* Kanan: tab, filter divisi, pencarian — satu baris */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <TeamSwitch active={activeTeam} onChange={setActiveTeam} />
+                  {/* Tempat dropdown tetap dipesan di tab non-Sales supaya tinggi
+                      header tidak berubah saat berpindah tab. */}
+                  <select value={performerDivisionFilter} onChange={e => setPerformerDivisionFilter(e.target.value)}
+                    disabled={activeTeam !== 'Sales'}
+                    aria-hidden={activeTeam !== 'Sales'}
+                    className={`text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-400 bg-white font-semibold text-slate-600 ${activeTeam === 'Sales' && divisionStats.length > 0 ? '' : 'invisible pointer-events-none'}`}>
+                    <option value="">🏢 Semua Divisi</option>
+                    {divisionStats.filter(d => d.source === 'division').map(d => <option key={d.name} value={d.name}>{d.name}</option>)}
+                  </select>
+                  <SearchInput value={searchPerformer} onChange={setSearchPerformer} placeholder="Cari nama..." />
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
               <table className="w-full text-sm table-zebra" style={{ minWidth: '480px' }}>
                 <thead className="border-b border-slate-200 bg-slate-50">
                   <tr>
@@ -500,6 +506,7 @@ export function AdminDashboard({ user }: { user: User }) {
                   )}
                 </tbody>
               </table>
+              </div>{/* tutup overflow-x-auto pembungkus tabel */}
               {/* Legend — inside card as footer */}
               <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 py-2.5 border-t border-slate-100 bg-slate-50/60">
                 <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
