@@ -6,7 +6,8 @@ import { useCurrentUser } from '@/lib/use-current-user';
 import {
   PageHeader, LoadingScreen, Toast, type Notif,
   ConfirmDialog, type ConfirmState, EmptyState,
-  ViewIconBtn, EditIconBtn, DeleteIconBtn,
+  ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup,
+  MobileListCard, MobileCardBadge,
 } from '@/components/shared';
 import { ProjectDetailView } from './_components/ProjectDetailView';
 import { exportProjectToExcel } from './_components/excel-export';
@@ -96,6 +97,22 @@ export default function ProjectProgressPage() {
     }
     setDetail({ project, locations, components, issues: (iRes.data ?? []) as ProgressIssue[] });
     setDetailLoading(false);
+  };
+
+  /** Tarik seluruh isi 1 proyek lalu kirim ke Excel — dipakai tabel & kartu mobile. */
+  const handleExport = async (p: ProgressProject) => {
+    const [lRes, iRes] = await Promise.all([
+      supabase.from('progress_locations').select('*').eq('project_id', p.id).order('sort_order'),
+      supabase.from('progress_issues').select('*').eq('project_id', p.id).order('sort_order'),
+    ]);
+    const locations = (lRes.data ?? []) as ProgressLocation[];
+    let comps: ProgressComponent[] = [];
+    if (locations.length > 0) {
+      const { data } = await supabase.from('progress_components')
+        .select('*').in('location_id', locations.map(l => l.id)).order('sort_order');
+      comps = (data ?? []) as ProgressComponent[];
+    }
+    exportProjectToExcel({ project: p, locations, components: comps, issues: (iRes.data ?? []) as ProgressIssue[] });
   };
 
   const reloadDetail = async () => {
@@ -248,74 +265,115 @@ export default function ProjectProgressPage() {
               <EmptyState icon="📊" title="Belum ada project"
                 description={canEdit ? 'Klik "Tambah Project" untuk membuat project progress pertama.' : 'Belum ada project yang bisa ditampilkan.'} />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                {filtered.map(p => {
-                  const cfg = STATUS_CONFIG[p.status] ?? STATUS_CONFIG.in_progress;
-                  const agg = locCount[p.id] ?? { total: 0, avg: 0, issues: 0 };
-                  return (
-                    <div key={p.id} className="rounded-2xl p-4 flex flex-col gap-3 transition-all hover:shadow-lg"
-                      style={{ background: 'rgba(255,255,255,0.96)', border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 2px 10px rgba(15,23,42,0.05)' }}>
+              <div className="rounded-2xl overflow-hidden"
+                style={{ background: 'rgba(255,255,255,0.96)', border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 2px 10px rgba(15,23,42,0.05)' }}>
 
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-black text-gray-800 leading-snug">{p.name}</p>
-                          {p.client && <p className="text-[11px] text-gray-500 font-semibold mt-0.5">{p.client}</p>}
-                        </div>
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold flex-shrink-0"
-                          style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
-                          {cfg.label}
-                        </span>
-                      </div>
+                {/* ── MOBILE: kartu daftar ── */}
+                <div className="md:hidden divide-y divide-gray-100">
+                  {filtered.map(p => {
+                    const cfg = STATUS_CONFIG[p.status] ?? STATUS_CONFIG.in_progress;
+                    const agg = locCount[p.id] ?? { total: 0, avg: 0, issues: 0 };
+                    return (
+                      <MobileListCard key={p.id}
+                        title={p.name}
+                        meta={<span>{formatDatetime(p.updated_at)}</span>}
+                        accent={cfg.border}
+                        badges={
+                          <MobileCardBadge style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
+                            {cfg.label}
+                          </MobileCardBadge>
+                        }
+                        fields={[
+                          { label: 'Client', value: p.client || '—' },
+                          { label: 'Lokasi', value: `${agg.total} lokasi` },
+                          { label: 'Isu', value: `${agg.issues} isu` },
+                          { label: 'Progres', value: `${agg.avg}%`, valueClass: 'font-black' },
+                        ]}
+                        actions={<RowActions p={p} canEdit={canEdit}
+                          onView={() => openDetail(p)} onExport={() => handleExport(p)}
+                          onShare={() => setShareFor(p)} onEdit={() => setProjectForm(p)}
+                          onDelete={() => deleteProject(p)} />}
+                      />
+                    );
+                  })}
+                </div>
 
-                      <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-semibold text-gray-500">
-                            {agg.total} lokasi · {agg.issues} isu
-                          </span>
-                          <span className="text-[11px] font-black" style={{ color: THEME.color }}>{agg.avg}%</span>
-                        </div>
-                        <div className="h-2 rounded-full overflow-hidden bg-gray-200">
-                          <div className="h-full rounded-full" style={{ width: `${agg.avg}%`, background: THEME.gradient }} />
-                        </div>
-                      </div>
+                {/* ── DESKTOP: tabel listing ── */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
+                    <colgroup>
+                      <col style={{ width: '4%' }} />
+                      <col style={{ width: '26%' }} />
+                      <col style={{ width: '18%' }} />
+                      <col style={{ width: '12%' }} />
+                      <col style={{ width: '10%' }} />
+                      <col style={{ width: '14%' }} />
+                      <col style={{ width: '16%' }} />
+                    </colgroup>
+                    <thead>
+                      <tr className="border-b-2 border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
+                        {['No', 'Nama Project', 'Client', 'Status', 'Lokasi', 'Progres'].map((h, i) => (
+                          <th key={h} className={`px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200 ${i === 0 ? 'text-center' : 'text-left'}`}>
+                            {h}
+                          </th>
+                        ))}
+                        <th className="px-1 py-2 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wide">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((p, idx) => {
+                        const cfg = STATUS_CONFIG[p.status] ?? STATUS_CONFIG.in_progress;
+                        const agg = locCount[p.id] ?? { total: 0, avg: 0, issues: 0 };
+                        return (
+                          <tr key={p.id}
+                            className="border-b border-gray-200 hover:bg-cyan-50/40 transition-colors cursor-pointer"
+                            onClick={() => openDetail(p)}>
+                            <td className="px-3 py-3 border-r border-gray-200 text-center align-middle">
+                              <span className="text-[11px] font-bold text-gray-500">{idx + 1}</span>
+                            </td>
+                            <td className="px-3 py-3 border-r border-gray-200 align-middle">
+                              <p className="text-xs font-bold text-gray-800 leading-snug break-words">{p.name}</p>
+                              <p className="text-[10px] text-gray-400 font-semibold mt-0.5">{formatDatetime(p.updated_at)}</p>
+                            </td>
+                            <td className="px-3 py-3 border-r border-gray-200 align-middle">
+                              <span className="text-[11px] font-semibold text-gray-600">{p.client || '—'}</span>
+                            </td>
+                            <td className="px-3 py-3 border-r border-gray-200 align-middle">
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap"
+                                style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
+                                {cfg.label}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3 border-r border-gray-200 align-middle">
+                              <span className="text-[11px] font-semibold text-gray-600">{agg.total} lokasi</span>
+                              {agg.issues > 0 && (
+                                <span className="block text-[10px] font-bold text-amber-600">{agg.issues} isu</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-3 border-r border-gray-200 align-middle">
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 h-1.5 rounded-full overflow-hidden bg-gray-200 min-w-[40px]">
+                                  <div className="h-full rounded-full" style={{ width: `${agg.avg}%`, background: THEME.gradient }} />
+                                </div>
+                                <span className="text-[11px] font-black flex-shrink-0" style={{ color: THEME.color }}>{agg.avg}%</span>
+                              </div>
+                            </td>
+                            <td className="px-1 py-3 align-middle" onClick={e => e.stopPropagation()}>
+                              <RowActions p={p} canEdit={canEdit}
+                                onView={() => openDetail(p)} onExport={() => handleExport(p)}
+                                onShare={() => setShareFor(p)} onEdit={() => setProjectForm(p)}
+                                onDelete={() => deleteProject(p)} />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
 
-                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-gray-100">
-                        <span className="text-[10px] text-gray-400 font-semibold">
-                          {formatDatetime(p.updated_at)}
-                        </span>
-                        <div className="flex items-center gap-1">
-                          <ViewIconBtn onClick={() => openDetail(p)} label="Lihat Detail" />
-                          <IconBtn label="Export Excel" color="#059669" onClick={async () => {
-                            const [lRes, iRes] = await Promise.all([
-                              supabase.from('progress_locations').select('*').eq('project_id', p.id).order('sort_order'),
-                              supabase.from('progress_issues').select('*').eq('project_id', p.id).order('sort_order'),
-                            ]);
-                            const locations = (lRes.data ?? []) as ProgressLocation[];
-                            let comps: ProgressComponent[] = [];
-                            if (locations.length > 0) {
-                              const { data } = await supabase.from('progress_components')
-                                .select('*').in('location_id', locations.map(l => l.id)).order('sort_order');
-                              comps = (data ?? []) as ProgressComponent[];
-                            }
-                            exportProjectToExcel({ project: p, locations, components: comps, issues: (iRes.data ?? []) as ProgressIssue[] });
-                          }}>
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
-                          </IconBtn>
-                          {canEdit && (
-                            <>
-                              <IconBtn label="Share View-Only" color={p.share_enabled ? '#0891b2' : '#94a3b8'}
-                                onClick={() => setShareFor(p)}>
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" /></svg>
-                              </IconBtn>
-                              <EditIconBtn onClick={() => setProjectForm(p)} label="Edit" />
-                              <DeleteIconBtn onClick={() => deleteProject(p)} label="Hapus" />
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-white/90">
+                  <span className="text-xs text-gray-400">{filtered.length} project</span>
+                </div>
               </div>
             )}
           </div>
@@ -663,6 +721,35 @@ function DetailEditor({ detail, onChanged, notify, setConfirmState }: {
 
 const inputCls = 'w-full px-3.5 py-2.5 rounded-xl text-sm font-medium border-2 border-gray-200 focus:border-cyan-500 outline-none bg-white';
 const inputSm  = 'w-full px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border-2 border-gray-200 focus:border-cyan-500 outline-none bg-white';
+
+/**
+ * Baris ikon aksi — dipakai DUA tempat (tabel desktop & kartu mobile) supaya
+ * tidak ada duplikasi tombol yang bisa lupa disinkronkan.
+ */
+function RowActions({ p, canEdit, onView, onExport, onShare, onEdit, onDelete }: {
+  p: ProgressProject; canEdit: boolean;
+  onView: () => void; onExport: () => void; onShare: () => void;
+  onEdit: () => void; onDelete: () => void;
+}) {
+  return (
+    <ActionGroup>
+      <ViewIconBtn onClick={onView} label="Lihat Detail" />
+      <IconBtn label="Export Excel" color="#059669" onClick={onExport}>
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
+      </IconBtn>
+      {canEdit && (
+        <>
+          <IconBtn label={p.share_enabled ? 'Share View-Only (aktif)' : 'Share View-Only'}
+            color={p.share_enabled ? '#0891b2' : '#94a3b8'} onClick={onShare}>
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" /></svg>
+          </IconBtn>
+          <EditIconBtn onClick={onEdit} label="Edit" />
+          <DeleteIconBtn onClick={onDelete} label="Hapus" />
+        </>
+      )}
+    </ActionGroup>
+  );
+}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
