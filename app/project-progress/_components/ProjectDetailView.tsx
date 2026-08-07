@@ -4,7 +4,7 @@ import { MiniPieChart } from '@/components/shared';
 import {
   ProjectDetail, STATUS_CONFIG, COMPONENT_STATE_CONFIG, SEVERITY_CONFIG,
   STATUS_PIE_COLOR, THEME, averageProgress, componentsOf, ProjectStatus,
-  computeProgress, stateBreakdown,
+  computeProgress, stateBreakdown, picBreakdown, problemComponentBreakdown,
 } from './shared';
 
 /**
@@ -29,6 +29,10 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
     }))
     .filter(d => d.value > 0);
 
+  // Beban tiap PIC & jenis komponen yang paling sering menahan progres.
+  const picSlices = picBreakdown(sortedLoc);
+  const problemSlices = problemComponentBreakdown(components);
+
   return (
     <div className="flex flex-col gap-5">
 
@@ -52,22 +56,26 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
         />
       </div>
 
-      {/* ── Progres keseluruhan + pie ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <div className="lg:col-span-2 rounded-2xl p-5 flex flex-col justify-center gap-3"
-          style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)' }}>
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-              Progres Keseluruhan — Semua Lokasi
-            </p>
-            <span className="text-2xl font-black" style={{ color: THEME.color }}>{avg}%</span>
-          </div>
-          <div className="h-3 rounded-full overflow-hidden bg-gray-200">
-            <div className="h-full rounded-full transition-all"
-              style={{ width: `${avg}%`, background: THEME.gradient }} />
-          </div>
+      {/* ── Progres keseluruhan ── */}
+      <div className="rounded-2xl p-5 flex flex-col justify-center gap-3"
+        style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)' }}>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+            Progres Keseluruhan — Semua Lokasi
+          </p>
+          <span className="text-2xl font-black" style={{ color: THEME.color }}>{avg}%</span>
         </div>
+        <div className="h-3 rounded-full overflow-hidden bg-gray-200">
+          <div className="h-full rounded-full transition-all"
+            style={{ width: `${avg}%`, background: THEME.gradient }} />
+        </div>
+      </div>
+
+      {/* ── Tiga pie: status lokasi, beban PIC, komponen bermasalah ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
         <MiniPieChart data={pieData} title="Distribusi Status Lokasi" icon="📍" />
+        <MiniPieChart data={picSlices} title="Lokasi per PIC Team" icon="👷" />
+        <MiniPieChart data={problemSlices} title="Komponen Stuck & Pending" icon="⚠️" />
       </div>
 
       {/* ── Status per lokasi ── */}

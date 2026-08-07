@@ -74,9 +74,9 @@ export interface ProjectDetail {
 // ─── Konfigurasi tampilan ────────────────────────────────────────────────────
 
 export const STATUS_CONFIG: Record<ProjectStatus, { label: string; color: string; bg: string; border: string; icon: string }> = {
-  in_progress: { label: 'Dalam Proses', color: '#92400e', bg: '#fef3c7', border: '#f59e0b', icon: '⏳' },
-  done:        { label: 'Selesai',      color: '#065f46', bg: '#d1fae5', border: '#10b981', icon: '✅' },
-  blocked:     { label: 'Terhambat',    color: '#9f1239', bg: '#ffe4e6', border: '#f43f5e', icon: '⛔' },
+  in_progress: { label: 'In Progress', color: '#92400e', bg: '#fef3c7', border: '#f59e0b', icon: '⏳' },
+  done:        { label: 'Done',         color: '#065f46', bg: '#d1fae5', border: '#10b981', icon: '✅' },
+  blocked:     { label: 'Blocked',      color: '#9f1239', bg: '#ffe4e6', border: '#f43f5e', icon: '⛔' },
 };
 
 /**
@@ -86,10 +86,10 @@ export const STATUS_CONFIG: Record<ProjectStatus, { label: string; color: string
 export const COMPONENT_STATE_CONFIG: Record<ComponentState, {
   label: string; dot: string; text: string; weight: number;
 }> = {
-  done:     { label: 'Selesai', dot: '#10b981', text: '#334155', weight: 1 },
-  progress: { label: 'Proses',  dot: '#0ea5e9', text: '#0369a1', weight: 0.5 },
-  pending:  { label: 'Pending', dot: '#f59e0b', text: '#b45309', weight: 0 },
-  stuck:    { label: 'Stuck',   dot: '#f43f5e', text: '#be123c', weight: 0 },
+  done:     { label: 'Done',        dot: '#10b981', text: '#334155', weight: 1 },
+  progress: { label: 'In Progress', dot: '#0ea5e9', text: '#0369a1', weight: 0.5 },
+  pending:  { label: 'Pending',     dot: '#f59e0b', text: '#b45309', weight: 0 },
+  stuck:    { label: 'Stuck',       dot: '#f43f5e', text: '#be123c', weight: 0 },
 };
 
 export const COMPONENT_STATES = ['done', 'progress', 'pending', 'stuck'] as const;
@@ -154,6 +154,58 @@ export function averageProgress(locations: ProgressLocation[]): number {
   if (locations.length === 0) return 0;
   const total = locations.reduce((s, l) => s + (l.progress ?? 0), 0);
   return Math.round(total / locations.length);
+}
+
+/** Palet slice untuk pie yang kategorinya dinamis (nama PIC / nama komponen). */
+export const PIE_PALETTE = [
+  '#0891b2', '#7c3aed', '#10b981', '#f59e0b', '#e11d48',
+  '#6366f1', '#14b8a6', '#f97316', '#ec4899', '#84cc16',
+];
+
+export interface PieSlice { label: string; value: number; color: string }
+
+/**
+ * Beban tiap PIC — berapa lokasi yang dia pegang, diurutkan dari terbanyak.
+ * Lokasi tanpa PIC dikelompokkan sebagai "Belum ada PIC" supaya tidak hilang
+ * diam-diam dari total.
+ */
+export function picBreakdown(locations: ProgressLocation[]): PieSlice[] {
+  const tally = new Map<string, number>();
+  for (const l of locations) {
+    const key = l.pic?.trim() || 'Belum ada PIC';
+    tally.set(key, (tally.get(key) ?? 0) + 1);
+  }
+  return [...tally.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, value], i) => ({
+      label,
+      value,
+      color: label === 'Belum ada PIC' ? '#94a3b8' : PIE_PALETTE[i % PIE_PALETTE.length],
+    }));
+}
+
+/**
+ * Komponen bermasalah — hanya yang Stuck atau Pending — dikelompokkan menurut
+ * NAMA komponen. Menjawab "jenis komponen apa yang paling sering menahan
+ * progres", karena nama yang sama berulang di banyak lokasi (mis. OCS Sensor).
+ * Dibatasi 8 teratas agar legenda pie tetap terbaca; sisanya digabung.
+ */
+export function problemComponentBreakdown(
+  components: ProgressComponent[], limit = 8,
+): PieSlice[] {
+  const tally = new Map<string, number>();
+  for (const c of components) {
+    if (c.state !== 'stuck' && c.state !== 'pending') continue;
+    const key = c.label.trim() || '(tanpa nama)';
+    tally.set(key, (tally.get(key) ?? 0) + 1);
+  }
+  const sorted = [...tally.entries()].sort((a, b) => b[1] - a[1]);
+  const head = sorted.slice(0, limit).map(([label, value], i) => ({
+    label, value, color: PIE_PALETTE[i % PIE_PALETTE.length],
+  }));
+  const restTotal = sorted.slice(limit).reduce((s, [, v]) => s + v, 0);
+  if (restTotal > 0) head.push({ label: `+${sorted.length - limit} lainnya`, value: restTotal, color: '#94a3b8' });
+  return head;
 }
 
 /** Lokasi yang butuh perhatian = berstatus blocked. */
