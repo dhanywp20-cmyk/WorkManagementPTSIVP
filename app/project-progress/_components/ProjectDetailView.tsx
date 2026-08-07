@@ -56,21 +56,6 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
         />
       </div>
 
-      {/* ── Progres keseluruhan ── */}
-      <div className="rounded-2xl p-5 flex flex-col justify-center gap-3"
-        style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)' }}>
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-            Progres Keseluruhan — Semua Lokasi
-          </p>
-          <span className="text-2xl font-black" style={{ color: THEME.color }}>{avg}%</span>
-        </div>
-        <div className="h-3 rounded-full overflow-hidden bg-gray-200">
-          <div className="h-full rounded-full transition-all"
-            style={{ width: `${avg}%`, background: THEME.gradient }} />
-        </div>
-      </div>
-
       {/* ── Tiga pie: status lokasi, beban PIC, komponen bermasalah ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
         <MiniPieChart data={pieData} title="Distribusi Status Lokasi" icon="📍" />
