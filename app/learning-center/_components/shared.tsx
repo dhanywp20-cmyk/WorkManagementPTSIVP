@@ -116,38 +116,6 @@ export const fmtDate = (d: string) =>
 export const fmtDateTime = (d: string) =>
   new Date(d).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-/**
- * Ambil data yang menyebut kolom `grading_status` secara eksplisit.
- *
- * Kenapa perlu: PostgREST menolak SELURUH query bila ada satu kolom yang belum
- * ada di skema. Jadi selama migrasi essay belum dijalankan, query seperti
- * `.select('user_id, score, grading_status')` gagal total dan tabelnya tampil
- * KOSONG tanpa pesan error apa pun — persis yang terjadi pada Top Performers.
- *
- * Helper ini mencoba query lengkap; khusus bila gagal karena kolomnya belum ada
- * (kode 42703 / undefined column), query diulang tanpa kolom itu supaya halaman
- * tetap tampil apa adanya. Baris tanpa grading_status otomatis dianggap bukan
- * 'pending_review', yang memang benar untuk seluruh data ABCD lama.
- *
- * Error selain kolom-tidak-ada TIDAK ditelan — dikembalikan array kosong seperti
- * perilaku sebelumnya, supaya masalah lain tidak tersamarkan.
- */
-export async function selectWithGradingStatus(
-  run: (columns: string) => PromiseLike<{ data: any[] | null; error: any }>,
-  columns: string,
-): Promise<any[]> {
-  const res = await run(columns);
-  if (!res.error) return res.data ?? [];
-
-  const msg = `${res.error?.code ?? ''} ${res.error?.message ?? ''}`.toLowerCase();
-  const kolomBelumAda = msg.includes('42703') || msg.includes('grading_status');
-  if (!kolomBelumAda) return [];
-
-  const tanpaKolom = columns.replace(/\s*,\s*grading_status/, '').replace(/grading_status\s*,\s*/, '');
-  const ulang = await run(tanpaKolom);
-  return ulang.data ?? [];
-}
-
 export function ScoreBadge({ score, passing }: { score: number | null; passing: number }) {
   if (score === null) return <span className="text-slate-400 text-xs">—</span>;
   const pass = score >= passing;

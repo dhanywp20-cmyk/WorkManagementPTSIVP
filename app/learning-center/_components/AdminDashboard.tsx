@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { supabase, User, fmtDate, ScoreBadge, SearchInput , selectWithGradingStatus } from './shared';
+import { supabase, User, fmtDate, ScoreBadge, SearchInput } from './shared';
 
 // ─── Donut Chart ──────────────────────────────────────────────────────────────
 function DonutChart({ segments, size = 68, strokeWidth = 10, label = '' }: {
@@ -133,23 +133,25 @@ export function AdminDashboard({ user }: { user: User }) {
       setStats({ materials: mat.count ?? 0, activeTeam: uniqueTeam, sessions: ses.count ?? 0, attempts: att.count ?? 0 });
 
       // ── Round 2: analytics data in parallel ────────────────────────────────
-      const [recentRes, allAttRows, qListRes, aListRes] = await Promise.all([
+      const [recentRes, allAttRes, qListRes, aListRes] = await Promise.all([
         supabase.from('lc_quiz_attempts')
           .select('*, users(full_name), lc_quiz_sessions(session_name, passing_grade)')
           .eq('is_submitted', true).order('submitted_at', { ascending: false }).limit(50),
-        // Lewat helper: kalau migrasi essay belum jalan, kolom grading_status
-        // belum ada dan query lengkap akan ditolak PostgREST — tabel Top
-        // Performers jadi kosong total. Helper mengulang tanpa kolom itu.
-        selectWithGradingStatus(
-          cols => supabase.from('lc_quiz_attempts').select(cols).eq('is_submitted', true),
-          'user_id, score, passed, tab_switches, time_taken_sec, total_questions, grading_status, users(full_name, jabatan, sales_division, team_type, role)',
-        ),
+        // '*' DISENGAJA, jangan diganti daftar kolom eksplisit.
+        // PostgREST menolak SELURUH query bila satu kolom belum ada di skema.
+        // Menyebut grading_status secara eksplisit membuat tabel Top Performers
+        // kosong total selama migrasi essay belum dijalankan — tanpa pesan error
+        // apa pun. Dengan '*', kolomnya terbaca kalau ada dan undefined kalau
+        // belum, sehingga halaman tetap jalan di kedua kondisi.
+        supabase.from('lc_quiz_attempts')
+          .select('*, users(full_name, jabatan, sales_division, team_type, role)')
+          .eq('is_submitted', true),
         supabase.from('lc_questions').select('id, batch_name'),
         supabase.from('lc_answers').select('question_id, is_correct'),
       ]);
       setRecentAttempts(recentRes.data ?? []);
 
-      const allAtt = allAttRows.filter((a: any) => a.grading_status !== 'pending_review'); // skor essay yg belum dinilai manual jangan masuk statistik
+      const allAtt = (allAttRes.data ?? []).filter((a: any) => a.grading_status !== 'pending_review'); // skor essay yg belum dinilai manual jangan masuk statistik
 
       // ── Overview mini pies ─────────────────────────────────────────────────
       const participants = new Set(allAtt.map((a: any) => a.user_id)).size;

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { supabase, User, fmtDate, ScoreBadge, SearchInput, GradingStatusBadge , selectWithGradingStatus } from './shared';
+import { supabase, User, fmtDate, ScoreBadge, SearchInput, GradingStatusBadge } from './shared';
 import { UserAnswerReview } from './TeamPage';
 
 // ─── Donut Chart ──────────────────────────────────────────────────────────────
@@ -63,17 +63,18 @@ export function ScorePage({ user }: { user: User }) {
           .select('*, lc_quiz_sessions(session_name, passing_grade, materi_name, question_ids)')
           .eq('user_id', user.id).eq('is_submitted', true)
           .order('submitted_at', { ascending: false }),
-        selectWithGradingStatus(
-          cols => supabase.from('lc_quiz_attempts').select(cols).eq('is_submitted', true),
-          'user_id, score, passed, grading_status, users(full_name, role)',
-        ),
+        // '*' disengaja — lihat catatan di AdminDashboard: menyebut
+        // grading_status eksplisit membuat query gagal total sebelum migrasi.
+        supabase.from('lc_quiz_attempts')
+          .select('*, users(full_name, role)')
+          .eq('is_submitted', true),
       ]);
       setAttempts(myRes.data ?? []);
 
-      if (allRes.length) {
+      if (allRes.data) {
         const myRole = user.role?.toLowerCase() ?? '';
         const byUser: Record<string, { name: string; scores: number[]; passed: number }> = {};
-        allRes.forEach((a: any) => {
+        allRes.data.forEach((a: any) => {
           if (a.grading_status === 'pending_review') return; // belum dinilai, jangan masuk statistik
           // Filter: only show users of the same role as the current user
           // (always include self regardless of role)
