@@ -42,9 +42,14 @@ export async function GET(
 
   const supabase = getAdminClient();
 
+  // PENTING: daftar kolom di bawah SENGAJA eksplisit, bukan '*', supaya
+  // share_token & created_by tidak pernah bocor ke halaman publik.
+  // Konsekuensinya: setiap kali menambah kolom baru yang perlu tampil di share,
+  // kolom itu WAJIB ditambahkan di sini juga — kalau tidak, datanya hilang
+  // diam-diam tanpa error (persis yang terjadi pada start_date/target_date).
   const { data: project, error: pErr } = await supabase
     .from('progress_projects')
-    .select('id,name,client,description,status,share_enabled,created_at,updated_at')
+    .select('id,name,client,description,status,share_enabled,start_date,target_date,created_at,updated_at')
     .eq('share_token', token)
     .maybeSingle();
 
@@ -54,7 +59,7 @@ export async function GET(
 
   const [locRes, issueRes] = await Promise.all([
     supabase.from('progress_locations')
-      .select('id,project_id,name,pic,status,progress,note,note_flag,sort_order,created_at')
+      .select('id,project_id,name,pic,status,progress,note,note_flag,start_date,target_date,sort_order,created_at')
       .eq('project_id', project.id).order('sort_order'),
     supabase.from('progress_issues')
       .select('id,project_id,location_label,issue,severity,note,sort_order,created_at')

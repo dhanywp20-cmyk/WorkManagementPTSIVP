@@ -250,6 +250,31 @@ export function overdueLocations(locations: ProgressLocation[]): ProgressLocatio
   return locations.filter(l => timelineInfo(l).state === 'overdue');
 }
 
+/** Warna & urutan tampil tiap status jadwal untuk pie chart. */
+export const TIMELINE_PIE: { state: TimelineState; label: string; color: string }[] = [
+  { state: 'done',        label: 'Selesai',           color: '#10b981' },
+  { state: 'on_track',    label: 'Sesuai Jadwal',     color: '#0ea5e9' },
+  { state: 'due_soon',    label: 'Segera Jatuh Tempo',color: '#f59e0b' },
+  { state: 'overdue',     label: 'Overtime',          color: '#f43f5e' },
+  { state: 'not_started', label: 'Belum Mulai',       color: '#a78bfa' },
+  { state: 'no_date',     label: 'Belum Dijadwalkan', color: '#94a3b8' },
+];
+
+/**
+ * Sebaran status jadwal seluruh lokasi — menjawab "berapa yang selesai tepat
+ * waktu dan berapa yang sudah lewat target" dalam satu pandang.
+ * Status yang tidak terpakai tidak ikut ditampilkan agar legenda tetap ringkas.
+ */
+export function timelineBreakdown(locations: ProgressLocation[]): PieSlice[] {
+  return TIMELINE_PIE
+    .map(cfg => ({
+      label: cfg.label,
+      value: locations.filter(l => timelineInfo(l).state === cfg.state).length,
+      color: cfg.color,
+    }))
+    .filter(d => d.value > 0);
+}
+
 /** Palet slice untuk pie yang kategorinya dinamis (nama PIC / nama komponen). */
 export const PIE_PALETTE = [
   '#0891b2', '#7c3aed', '#10b981', '#f59e0b', '#e11d48',

@@ -5,7 +5,7 @@ import {
   ProjectDetail, STATUS_CONFIG, COMPONENT_STATE_CONFIG, SEVERITY_CONFIG,
   STATUS_PIE_COLOR, THEME, averageProgress, componentsOf, ProjectStatus,
   computeProgress, stateBreakdown, picBreakdown, problemComponentBreakdown,
-  timelineInfo, overdueLocations, formatDate,
+  timelineInfo, overdueLocations, formatDate, timelineBreakdown,
 } from './shared';
 
 /**
@@ -34,6 +34,7 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
   const picSlices = picBreakdown(sortedLoc);
   const telat = overdueLocations(sortedLoc);
   const tl = timelineInfo(project);
+  const timelineSlices = timelineBreakdown(sortedLoc);
   const problemSlices = problemComponentBreakdown(components);
 
   return (
@@ -59,65 +60,75 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
         />
       </div>
 
-      {/* ── Progres keseluruhan ── */}
-      <div className="rounded-2xl p-5 flex flex-col justify-center gap-3"
-        style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)' }}>
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-            Progres Keseluruhan — Semua Lokasi
-          </p>
-          <span className="text-2xl font-black" style={{ color: THEME.color }}>{avg}%</span>
-        </div>
-        <div className="h-3 rounded-full overflow-hidden bg-gray-200">
-          <div className="h-full rounded-full transition-all"
-            style={{ width: `${avg}%`, background: THEME.gradient }} />
-        </div>
+      {/* ── Timeline proyek ──
+          Bar "Progres Keseluruhan" dihapus: angkanya sudah tampil di kartu
+          statistik "Rata-rata Progres", jadi bar itu hanya mengulang informasi
+          yang sama. Yang benar-benar menambah informasi adalah perbandingan
+          WAKTU terpakai vs PEKERJAAN selesai — itu yang ditampilkan di sini. */}
+      {(project.start_date || project.target_date) && (
+        <div className="rounded-2xl p-5 flex flex-col gap-3"
+          style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)' }}>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+              Timeline Proyek
+            </p>
+            <span className="px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap"
+              style={{ background: tl.bg, color: tl.color }}>
+              {tl.label}
+            </span>
+          </div>
 
-        {/* ── Timeline proyek ── */}
-        {(project.start_date || project.target_date) && (
-          <div className="flex flex-col gap-2 pt-2 mt-1 border-t border-gray-100">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <span className="text-[11px] font-semibold text-gray-500">
-                🗓️ {project.start_date ? formatDate(project.start_date) : '—'}
-                <span className="mx-1.5 text-gray-300">→</span>
-                {project.target_date ? formatDate(project.target_date) : '—'}
-                {tl.daysElapsed !== null && (
-                  <span className="ml-2 text-gray-400">· berjalan {tl.daysElapsed} hari</span>
-                )}
-              </span>
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap"
-                style={{ background: tl.bg, color: tl.color }}>
-                {tl.label}
-              </span>
-            </div>
-            {/* Bar waktu — berapa jauh hari ini dari mulai menuju target.
-                Dibedakan dari bar progres di atas: yang ini soal WAKTU, bukan pekerjaan.
-                Kalau bar waktu jauh mendahului bar progres, artinya pekerjaan tertinggal. */}
-            {tl.elapsedPercent !== null && (
+          <span className="text-[11px] font-semibold text-gray-500">
+            🗓️ {project.start_date ? formatDate(project.start_date) : '—'}
+            <span className="mx-1.5 text-gray-300">→</span>
+            {project.target_date ? formatDate(project.target_date) : '—'}
+            {tl.daysElapsed !== null && (
+              <span className="ml-2 text-gray-400">· berjalan {tl.daysElapsed} hari</span>
+            )}
+          </span>
+
+          {/* Dua bar sengaja ditumpuk: WAKTU vs PEKERJAAN. Kalau bar waktu
+              mendahului bar pekerjaan, artinya tertinggal dari jadwal. */}
+          {tl.elapsedPercent !== null && (
+            <div className="flex flex-col gap-2">
               <div className="flex flex-col gap-1">
-                <div className="h-1.5 rounded-full overflow-hidden bg-gray-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Waktu Terpakai</span>
+                  <span className="text-[10px] font-black" style={{ color: tl.color }}>{tl.elapsedPercent}%</span>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden bg-gray-200">
                   <div className="h-full rounded-full transition-all"
                     style={{ width: `${tl.elapsedPercent}%`, background: tl.color }} />
                 </div>
+              </div>
+              <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-bold text-gray-400">WAKTU TERPAKAI {tl.elapsedPercent}%</span>
-                  <span className="text-[9px] font-bold" style={{ color: avg >= tl.elapsedPercent ? '#059669' : '#b45309' }}>
-                    PEKERJAAN {avg}% · {avg >= tl.elapsedPercent ? 'sesuai jadwal' : 'tertinggal'}
-                  </span>
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Pekerjaan Selesai</span>
+                  <span className="text-[10px] font-black" style={{ color: THEME.color }}>{avg}%</span>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden bg-gray-200">
+                  <div className="h-full rounded-full transition-all"
+                    style={{ width: `${avg}%`, background: THEME.gradient }} />
                 </div>
               </div>
-            )}
-          </div>
-        )}
-      </div>
+              <p className="text-[10px] font-bold" style={{ color: avg >= tl.elapsedPercent ? '#059669' : '#b45309' }}>
+                {avg >= tl.elapsedPercent
+                  ? `✓ Sesuai jadwal — pekerjaan ${avg - tl.elapsedPercent}% di depan waktu terpakai`
+                  : `⚠ Tertinggal ${tl.elapsedPercent - avg}% dari jadwal`}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* ── Tiga pie: status lokasi, beban PIC, komponen bermasalah ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      {/* ── Empat pie: status lokasi, jadwal, beban PIC, komponen bermasalah ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
         <MiniPieChart data={pieData} title="Distribusi Status Lokasi" icon="📍" />
         {/* Nilai slice = persentase progres, jadi jumlahnya tidak bermakna —
             pusat donat diisi rata-rata keseluruhan, bukan total. */}
         <MiniPieChart data={picSlices} title="Progres per PIC Team" icon="👷"
           centerValue={`${avg}%`} centerLabel="RATA-RATA" valueSuffix="%" />
+        <MiniPieChart data={timelineSlices} title="Status Jadwal Lokasi" icon="🗓️" />
         <MiniPieChart data={problemSlices} title="Komponen Stuck & Pending" icon="⚠️" />
       </div>
 
