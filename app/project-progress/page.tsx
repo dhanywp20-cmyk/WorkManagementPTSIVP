@@ -19,7 +19,7 @@ import {
   newShareToken, shareUrl, canEditProjectProgress,
   projectStatusBreakdown, projectProgressBreakdown, projectIssueBreakdown,
   resolveEditorMode, editableLocationIds, type EditorMode,
-  timelineInfo, formatDate,
+  timelineInfo, formatDate, resolveVisibility,
 } from './_components/shared';
 import { isAssignablePTSTeam } from '@/lib/teams';
 import { compressImage } from '@/lib/image-compress';
@@ -61,11 +61,41 @@ export default function ProjectProgressPage() {
 
   // ── Load daftar proyek + ringkasan agregat ────────────────────────────────
   const fetchProjects = useCallback(async () => {
+    if (!currentUser) return;
     setLoading(true);
+
+    // ── Isolasi antar-Sales ────────────────────────────────────────────────
+    // Daftar proyek bersifat rahasia antar-sales. Penyaringan dilakukan DI
+    // QUERY, bukan saat render — kalau hanya disaring saat render, data proyek
+    // sales lain tetap terkirim ke browser dan terbaca lewat DevTools.
+    // Konsekuensinya pencarian pun otomatis aman: kotak Cari hanya menyaring
+    // data yang memang sudah menjadi haknya.
+    const vis = resolveVisibility(currentUser.role, currentUser.full_name);
+
+    let allowedIds: string[] | null = null; // null = tanpa batas (admin/team)
+    if (vis.scope === 'own_sales') {
+      if (!vis.salesName) { setProjects([]); setLocCount({}); setLoading(false); return; }
+      const [ownLocRes, ownProjRes] = await Promise.all([
+        // Lokasi yang mencatat namanya — proyeknya ikut terlihat.
+        supabase.from('progress_locations').select('project_id').eq('sales_name', vis.salesName),
+        // Proyek yang mencatat namanya (mis. hasil auto-create dari reminder).
+        supabase.from('progress_projects').select('id').eq('sales_name', vis.salesName),
+      ]);
+      allowedIds = [...new Set([
+        ...(ownLocRes.data ?? []).map((l: { project_id: string }) => l.project_id),
+        ...(ownProjRes.data ?? []).map((p: { id: string }) => p.id),
+      ])];
+      if (allowedIds.length === 0) { setProjects([]); setLocCount({}); setLoading(false); return; }
+    }
+
+    const pQuery = supabase.from('progress_projects').select('*').order('created_at', { ascending: false });
+    const lQuery = supabase.from('progress_locations').select('project_id,progress');
+    const iQuery = supabase.from('progress_issues').select('project_id');
+
     const [pRes, lRes, iRes] = await Promise.all([
-      supabase.from('progress_projects').select('*').order('created_at', { ascending: false }),
-      supabase.from('progress_locations').select('project_id,progress'),
-      supabase.from('progress_issues').select('project_id'),
+      allowedIds ? pQuery.in('id', allowedIds) : pQuery,
+      allowedIds ? lQuery.in('project_id', allowedIds) : lQuery,
+      allowedIds ? iQuery.in('project_id', allowedIds) : iQuery,
     ]);
     const list = (pRes.data ?? []) as ProgressProject[];
     setProjects(list);
@@ -86,7 +116,7 @@ export default function ProjectProgressPage() {
     }
     setLocCount(agg);
     setLoading(false);
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
@@ -285,7 +315,9 @@ export default function ProjectProgressPage() {
     return projects.filter(p => {
       if (statusFilter !== 'all' && p.status !== statusFilter) return false;
       if (!q) return true;
-      return p.name.toLowerCase().includes(q) || (p.client ?? '').toLowerCase().includes(q);
+      return p.name.toLowerCase().includes(q)
+        || (p.client ?? '').toLowerCase().includes(q)
+        || (p.sales_name ?? '').toLowerCase().includes(q);
     });
   }, [projects, search, statusFilter]);
 
@@ -377,6 +409,7 @@ export default function ProjectProgressPage() {
                         }
                         fields={[
                           { label: 'Client', value: p.client || '—' },
+                          { label: 'Sales', value: p.sales_name || '—' },
                           { label: 'Lokasi', value: `${agg.total} lokasi` },
                           { label: 'Isu', value: `${agg.issues} isu` },
                           { label: 'Progres', value: `${agg.avg}%`, valueClass: 'font-black' },
@@ -395,18 +428,19 @@ export default function ProjectProgressPage() {
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
                     <colgroup>
-                      <col style={{ width: '4%' }} />
-                      <col style={{ width: '22%' }} />
+                      <col style={{ width: '3%' }} />
+                      <col style={{ width: '19%' }} />
+                      <col style={{ width: '11%' }} />
                       <col style={{ width: '14%' }} />
-                      <col style={{ width: '10%' }} />
-                      <col style={{ width: '16%' }} />
                       <col style={{ width: '9%' }} />
+                      <col style={{ width: '14%' }} />
+                      <col style={{ width: '8%' }} />
+                      <col style={{ width: '10%' }} />
                       <col style={{ width: '12%' }} />
-                      <col style={{ width: '13%' }} />
                     </colgroup>
                     <thead>
                       <tr className="border-b-2 border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
-                        {['No', 'Nama Project', 'Client', 'Status', 'Timeline', 'Lokasi', 'Progres'].map((h, i) => (
+                        {['No', 'Nama Project', 'Client', 'Sales', 'Status', 'Timeline', 'Lokasi', 'Progres'].map((h, i) => (
                           <th key={h} className={`px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200 ${i === 0 ? 'text-center' : 'text-left'}`}>
                             {h}
                           </th>
@@ -426,11 +460,28 @@ export default function ProjectProgressPage() {
                               <span className="text-[11px] font-bold text-gray-500">{idx + 1}</span>
                             </td>
                             <td className="px-3 py-3 border-r border-gray-200 align-middle">
-                              <p className="text-xs font-bold text-gray-800 leading-snug break-words">{p.name}</p>
+                              <p className="text-xs font-bold text-gray-800 leading-snug break-words">
+                                {p.name}
+                                {p.origin === 'auto_reminder' && (
+                                  <span className="ml-1.5 px-1.5 py-0.5 rounded text-[8px] font-bold align-middle"
+                                    style={{ background: '#ecfeff', color: '#0e7490', border: '1px solid #a5f3fc' }}
+                                    title="Dibuat otomatis dari Reminder Schedule">AUTO</span>
+                                )}
+                              </p>
                               <p className="text-[10px] text-gray-400 font-semibold mt-0.5">{formatDatetime(p.updated_at)}</p>
                             </td>
                             <td className="px-3 py-3 border-r border-gray-200 align-middle">
                               <span className="text-[11px] font-semibold text-gray-600">{p.client || '—'}</span>
+                            </td>
+                            <td className="px-3 py-3 border-r border-gray-200 align-middle">
+                              {p.sales_name ? (
+                                <>
+                                  <p className="text-[11px] font-semibold text-gray-700 truncate">{p.sales_name}</p>
+                                  {p.sales_division && (
+                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wide">{p.sales_division}</p>
+                                  )}
+                                </>
+                              ) : <span className="text-[11px] text-gray-300">—</span>}
                             </td>
                             <td className="px-3 py-3 border-r border-gray-200 align-middle">
                               <span className="px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap"

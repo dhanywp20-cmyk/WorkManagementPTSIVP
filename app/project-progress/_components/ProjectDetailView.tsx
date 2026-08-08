@@ -153,6 +153,12 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
                     <div className="min-w-0">
                       <p className="text-sm font-black text-gray-800 truncate">{loc.name}</p>
                       {loc.pic && <p className="text-[11px] text-gray-500 font-medium">PIC: {loc.pic}</p>}
+                      {loc.sales_name && (
+                        <p className="text-[11px] text-gray-500 font-medium">
+                          Sales: {loc.sales_name}
+                          {loc.sales_division && <span className="text-gray-400"> · {loc.sales_division}</span>}
+                        </p>
+                      )}
                       {(loc.start_date || loc.target_date) && (() => {
                         const lt = timelineInfo(loc);
                         return (

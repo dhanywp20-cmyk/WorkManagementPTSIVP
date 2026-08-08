@@ -16,6 +16,8 @@ export type ProjectStatus = 'in_progress' | 'done' | 'blocked';
  */
 export type ComponentState = 'done' | 'progress' | 'pending' | 'stuck';
 export type Severity = 'tinggi' | 'sedang' | 'rendah';
+/** Asal entri: dibuat orang lewat UI, atau otomatis dari Reminder Schedule. */
+export type ProgressOrigin = 'manual' | 'auto_reminder';
 
 export interface ProgressProject {
   id: string;
@@ -28,6 +30,11 @@ export interface ProgressProject {
   /** Jadwal proyek. Nullable — proyek lama tetap jalan tanpa tanggal. */
   start_date: string | null;
   target_date: string | null;
+  /** Snapshot dari reminder saat proyek dibuat otomatis; bisa disunting admin. */
+  sales_name: string | null;
+  sales_division: string | null;
+  origin: ProgressOrigin;
+  source_reminder_id: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -45,6 +52,15 @@ export interface ProgressLocation {
   /** Jadwal per lokasi — tiap site bisa mulai & selesai di waktu berbeda. */
   start_date: string | null;
   target_date: string | null;
+  /**
+   * Snapshot Sales dari reminder yang melahirkan lokasi ini. Sengaja disimpan
+   * per lokasi: satu proyek bisa berisi lokasi dari beberapa sales berbeda.
+   */
+  sales_name: string | null;
+  sales_division: string | null;
+  origin: ProgressOrigin;
+  /** Reminder asal. Tetap NULL untuk entri manual. */
+  source_reminder_id: string | null;
   sort_order: number;
   created_at: string;
 }
@@ -432,6 +448,46 @@ export function canEditProjectProgress(role: string | null | undefined): boolean
   return ['admin', 'superadmin'].includes((role ?? '').toLowerCase());
 }
 
+/**
+ * Cakupan data yang boleh DITERIMA seorang user.
+ *
+ * 'all'       → admin, superadmin, dan team PTS internal.
+ * 'own_sales' → role sales/guest: HANYA proyek yang mencatat namanya.
+ *
+ * Penting: pembatasan ini WAJIB diterapkan di level query (lihat
+ * fetchProjects), bukan sekadar menyembunyikan baris saat render. Menyaring di
+ * render berarti data sales lain tetap terkirim ke browser dan bisa dibaca dari
+ * DevTools — padahal daftar proyek bersifat rahasia antar-sales.
+ */
+export type Visibility =
+  | { scope: 'all' }
+  | { scope: 'own_sales'; salesName: string };
+
+export function resolveVisibility(
+  role: string | null | undefined, fullName: string | null | undefined,
+): Visibility {
+  const r = (role ?? '').toLowerCase();
+  if (['admin', 'superadmin', 'team'].includes(r)) return { scope: 'all' };
+  return { scope: 'own_sales', salesName: (fullName ?? '').trim() };
+}
+
+/**
+ * Apakah user ini adalah Sales yang tercatat pada lokasi tersebut.
+ *
+ * Sebelumnya role `sales` sepenuhnya read-only di Project Progress. Karena Item
+ * Komponen kini sengaja dikosongkan saat auto-insert dan harus diisi menyusul,
+ * Sales diberi akses tulis TERBATAS: hanya komponen, dan hanya pada lokasi yang
+ * mencatat namanya. Jadwal, status lokasi, PIC, struktur proyek, dan rekap isu
+ * tetap milik admin.
+ */
+export function isSalesOfLocation(
+  location: { sales_name: string | null }, fullName: string | null | undefined,
+): boolean {
+  const me = (fullName ?? '').trim().toLowerCase();
+  if (!me) return false;
+  return (location.sales_name ?? '').trim().toLowerCase() === me;
+}
+
 /** Apakah user ini di-tag sebagai PIC lokasi tersebut. */
 export function isPicOfLocation(
   location: { pic: string | null }, fullName: string | null | undefined,
@@ -451,12 +507,20 @@ export function editableLocationIds(
   locations: ProgressLocation[], role: string | null | undefined, fullName: string | null | undefined,
 ): Set<string> {
   if (canEditProjectProgress(role)) return new Set(locations.map(l => l.id));
-  return new Set(locations.filter(l => isPicOfLocation(l, fullName)).map(l => l.id));
+  // PIC (team) maupun Sales yang tercatat sama-sama boleh menyentuh lokasinya.
+  return new Set(
+    locations
+      .filter(l => isPicOfLocation(l, fullName) || isSalesOfLocation(l, fullName))
+      .map(l => l.id),
+  );
 }
 
 /**
- * 'full' = admin/superadmin, 'pic' = anggota team yang jadi PIC minimal 1
- * lokasi, null = hanya boleh melihat.
+ * 'full' = admin/superadmin (seluruh struktur proyek).
+ * 'pic'  = anggota team yang jadi PIC ATAU Sales yang tercatat pada minimal 1
+ *          lokasi — keduanya hanya boleh memperbarui progres lokasinya sendiri
+ *          (status komponen, item komponen, foto, catatan).
+ * null   = hanya boleh melihat.
  */
 export type EditorMode = 'full' | 'pic';
 
@@ -464,5 +528,8 @@ export function resolveEditorMode(
   locations: ProgressLocation[], role: string | null | undefined, fullName: string | null | undefined,
 ): EditorMode | null {
   if (canEditProjectProgress(role)) return 'full';
-  return locations.some(l => isPicOfLocation(l, fullName)) ? 'pic' : null;
+  const punyaLokasi = locations.some(
+    l => isPicOfLocation(l, fullName) || isSalesOfLocation(l, fullName),
+  );
+  return punyaLokasi ? 'pic' : null;
 }

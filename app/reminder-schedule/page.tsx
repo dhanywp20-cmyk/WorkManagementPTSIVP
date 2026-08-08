@@ -9,6 +9,7 @@ import { isAssignablePTSTeam } from '@/lib/teams';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { notifyReminderApproved, createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
+import { syncRemindersToProjectProgress, type ReminderSnapshot } from '@/lib/project-progress-sync';
 import { compressImage } from '@/lib/image-compress';
 
 import {
@@ -142,6 +143,30 @@ function ReminderSchedulePageInner() {
   const [supervisorAssignBatchSiblings, setSupervisorAssignBatchSiblings] = useState<Reminder[]>([]);
   const [supervisorAssignTo, setSupervisorAssignTo] = useState(''); // username anggota, atau 'SELF'
   const [supervisorAssignSaving, setSupervisorAssignSaving] = useState(false);
+
+  /**
+   * Buat draft Project Progress dari reminder yang BARU dibuat.
+   *
+   * Hanya untuk reminder baru — TIDAK ADA backfill untuk reminder/proyek lama,
+   * karena progres lampau tidak terekam dan draft kosong justru menyesatkan.
+   *
+   * Sengaja tidak ditunggu (void) dan tidak pernah melempar error: membuat
+   * reminder adalah aksi utama user, integrasi ini pelengkap. Kegagalannya
+   * hanya diberitahukan sebagai info, bukan menggagalkan penyimpanan reminder.
+   */
+  const syncNewRemindersToProgress = async (rows: ReminderSnapshot[]) => {
+    if (rows.length === 0) return;
+    const hasil = await syncRemindersToProjectProgress(rows, {
+      id: currentUser?.id,
+      full_name: currentUser?.full_name,
+    });
+    if (hasil.created > 0) {
+      notify('success', `${hasil.created} draft dibuat di Project Progress. Item komponen diisi menyusul di sana.`);
+    }
+    if (hasil.errors.length > 0) {
+      console.warn('[project-progress-sync]', hasil.errors);
+    }
+  };
 
   const notify = (type: 'success' | 'error', msg: string) => {
     setToast({ type, msg });
@@ -389,8 +414,11 @@ function ReminderSchedulePageInner() {
         assign_name: u.full_name,
         created_by: currentUser?.username ?? 'system',
       })));
-      const { error: bulkErr } = await supabase.from('reminders').insert(payloads);
+      // .select() supaya id reminder yang baru dibuat bisa ditautkan ke draft
+      // Project Progress. Tanpa id, penautan & pencegahan duplikat mustahil.
+      const { data: bulkRows, error: bulkErr } = await supabase.from('reminders').insert(payloads).select('id, project_name, address, sales_name, sales_division, assign_name, due_date, category');
       if (bulkErr) { notify('error', 'Gagal menyimpan: ' + bulkErr.message); setSaving(false); return; }
+      void syncNewRemindersToProgress((bulkRows ?? []) as ReminderSnapshot[]);
       notify('success', `${payloads.length} reminder dibuat untuk Tim ${bulkLabelMap[bulkTarget]}${allDates.length > 1 ? ` (${allDates.length} hari)` : ''}!`);
       for (const u of targets) {
         if (u.phone_number) {
@@ -439,7 +467,9 @@ function ReminderSchedulePageInner() {
         assign_name: assignee?.full_name ?? formData.assigned_to,
         created_by: currentUser?.username ?? 'system',
       }));
-      ({ error } = await supabase.from('reminders').insert(payloads));
+      const insRes = await supabase.from('reminders').insert(payloads).select('id, project_name, address, sales_name, sales_division, assign_name, due_date, category');
+      error = insRes.error;
+      if (!insRes.error) void syncNewRemindersToProgress((insRes.data ?? []) as ReminderSnapshot[]);
     }
 
     if (error) {
