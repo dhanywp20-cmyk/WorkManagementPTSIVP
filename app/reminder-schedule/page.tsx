@@ -9,7 +9,7 @@ import { isAssignablePTSTeam } from '@/lib/teams';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { notifyReminderApproved, createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
-import { syncRemindersToProjectProgress, type ReminderSnapshot } from '@/lib/project-progress-sync';
+import { syncRemindersToProjectProgress, triggersProjectProgress, type ReminderSnapshot } from '@/lib/project-progress-sync';
 import { compressImage } from '@/lib/image-compress';
 
 import {
@@ -168,6 +168,20 @@ function ReminderSchedulePageInner() {
     }
   };
 
+
+  /**
+   * Timeline khusus Project Progress. Dikirim hanya bila kategorinya memang
+   * pemicu; kalau user sempat memilih Konfigurasi lalu berganti kategori,
+   * tanggal yang terlanjur terisi tidak ikut tersimpan.
+   */
+  const progressTimelinePayload = () =>
+    triggersProjectProgress(formData.category)
+      ? {
+          progress_start_date:  formData.progress_start_date  || null,
+          progress_target_date: formData.progress_target_date || null,
+        }
+      : { progress_start_date: null, progress_target_date: null };
+
   const notify = (type: 'success' | 'error', msg: string) => {
     setToast({ type, msg });
     setTimeout(() => setToast(null), 3500);
@@ -179,6 +193,7 @@ function ReminderSchedulePageInner() {
     due_time: '09:00', priority: 'medium', status: 'pending',
     repeat: 'none', category: 'Demo Product',
     sales_name: '', sales_division: '', address: '', pic_name: '', pic_phone: '',
+    progress_start_date: '', progress_target_date: '',
     notes: '', product: '', warranty_years: null,
     requires_controller_automation: false, controller_automation_brand: null,
     pic_type: 'standard', pic_id: null, incentive_value: 0, bast_date: null,
@@ -409,14 +424,16 @@ function ReminderSchedulePageInner() {
       const payloads = targets.flatMap(u => allDates.map(d => ({
         ...formData,
         due_date: d,
+        ...progressTimelinePayload(),
         batch_id: batchId,
         assigned_to: u.username,
         assign_name: u.full_name,
         created_by: currentUser?.username ?? 'system',
+        ...progressTimelinePayload(),
       })));
       // .select() supaya id reminder yang baru dibuat bisa ditautkan ke draft
       // Project Progress. Tanpa id, penautan & pencegahan duplikat mustahil.
-      const { data: bulkRows, error: bulkErr } = await supabase.from('reminders').insert(payloads).select('id, project_name, address, sales_name, sales_division, assign_name, due_date, category');
+      const { data: bulkRows, error: bulkErr } = await supabase.from('reminders').insert(payloads).select('id, project_name, address, sales_name, sales_division, assign_name, due_date, category, progress_start_date, progress_target_date');
       if (bulkErr) { notify('error', 'Gagal menyimpan: ' + bulkErr.message); setSaving(false); return; }
       void syncNewRemindersToProgress((bulkRows ?? []) as ReminderSnapshot[]);
       notify('success', `${payloads.length} reminder dibuat untuk Tim ${bulkLabelMap[bulkTarget]}${allDates.length > 1 ? ` (${allDates.length} hari)` : ''}!`);
@@ -463,11 +480,12 @@ function ReminderSchedulePageInner() {
       const payloads = allDates.map(d => ({
         ...formData,
         due_date: d,
+        ...progressTimelinePayload(),
         batch_id: batchId,
         assign_name: assignee?.full_name ?? formData.assigned_to,
         created_by: currentUser?.username ?? 'system',
       }));
-      const insRes = await supabase.from('reminders').insert(payloads).select('id, project_name, address, sales_name, sales_division, assign_name, due_date, category');
+      const insRes = await supabase.from('reminders').insert(payloads).select('id, project_name, address, sales_name, sales_division, assign_name, due_date, category, progress_start_date, progress_target_date');
       error = insRes.error;
       if (!insRes.error) void syncNewRemindersToProgress((insRes.data ?? []) as ReminderSnapshot[]);
     }

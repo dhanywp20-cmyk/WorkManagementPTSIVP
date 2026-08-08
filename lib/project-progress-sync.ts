@@ -15,8 +15,14 @@ import { logAudit } from './audit';
  *   reminders.address         ("Lokasi Project*") → progress_locations.name
  *   reminders.sales_name      → sales_name  (proyek & lokasi)
  *   reminders.sales_division  → sales_division
- *   reminders.assign_name     → progress_locations.pic
- *   reminders.due_date        → progress_locations.target_date
+ *   reminders.assign_name          → progress_locations.pic
+ *   reminders.progress_start_date  → progress_locations.start_date
+ *   reminders.progress_target_date → progress_locations.target_date
+ *
+ * due_date TIDAK dipakai sebagai target selesai — itu tanggal kunjungan
+ * (sekaligus titik mulai garansi), bukan rentang pengerjaan. Timeline diisi
+ * terpisah di form Reminder; bila dikosongkan, draft lahir tanpa jadwal dan
+ * diisi menyusul di Project Progress.
  *
  * Item Komponen SENGAJA dikosongkan — tidak ada komponen yang dibuat di sini.
  */
@@ -37,6 +43,9 @@ export interface ReminderSnapshot {
   assign_name: string | null;
   due_date: string | null;
   category: string | null;
+  /** Timeline pengerjaan yang ditetapkan di form Reminder. Boleh kosong. */
+  progress_start_date: string | null;
+  progress_target_date: string | null;
 }
 
 export interface SyncActor {
@@ -139,7 +148,8 @@ export async function syncRemindersToProjectProgress(
         progress: 0,
         sales_name: r.sales_name || null,
         sales_division: r.sales_division || null,
-        target_date: r.due_date || null,
+        start_date: r.progress_start_date || null,
+        target_date: r.progress_target_date || null,
         origin: 'auto_reminder',
         source_reminder_id: r.id,
         sort_order: count ?? 0,

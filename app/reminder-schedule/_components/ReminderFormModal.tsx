@@ -233,6 +233,53 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             </div>
           )}
 
+          {/* ── Timeline Project Progress — khusus kategori Konfigurasi ──
+              Kategori ini otomatis membuat draft lokasi di Project Progress.
+              Tanggal di atas adalah jadwal KUNJUNGAN (sekaligus titik mulai
+              garansi), bukan rentang pengerjaan — jadi timeline pengerjaan
+              ditetapkan terpisah di sini supaya progres bisa dipantau. */}
+          {(formData.category === 'Konfigurasi' || formData.category === 'Konfigurasi & Training') && (
+            <div className="rounded-xl p-4" style={{ background: 'rgba(8,145,178,0.07)', border: '1.5px solid rgba(8,145,178,0.3)' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-lg">📊</span>
+                <p className="text-sm font-bold text-cyan-700">Timeline Project Progress</p>
+              </div>
+              <p className="text-xs text-cyan-600 mb-3">
+                Kategori ini otomatis membuat draft lokasi di <strong>Project Progress</strong>.
+                Tentukan rentang pengerjaannya di sini. Boleh dikosongkan — jadwalnya bisa diisi menyusul di Project Progress.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <FormField label="Mulai Pengerjaan">
+                  <input type="date" value={formData.progress_start_date ?? ''}
+                    onChange={e => fd({ progress_start_date: e.target.value })}
+                    className={inputCls} style={inputStyle} />
+                </FormField>
+                <FormField label="Target Selesai">
+                  <input type="date" value={formData.progress_target_date ?? ''}
+                    min={formData.progress_start_date || undefined}
+                    onChange={e => fd({ progress_target_date: e.target.value })}
+                    className={inputCls} style={inputStyle} />
+                </FormField>
+              </div>
+              {formData.progress_start_date && formData.progress_target_date && (
+                <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(8,145,178,0.1)', border: '1px solid rgba(8,145,178,0.2)' }}>
+                  <span className="text-sm">⏱️</span>
+                  <p className="text-xs text-cyan-700 font-semibold">
+                    Durasi pengerjaan:{' '}
+                    <strong>
+                      {(() => {
+                        const a = new Date(formData.progress_start_date + 'T00:00:00');
+                        const z = new Date(formData.progress_target_date + 'T00:00:00');
+                        const hari = Math.round((z.getTime() - a.getTime()) / 86400000);
+                        return hari < 0 ? 'target mendahului tanggal mulai' : `${hari + 1} hari`;
+                      })()}
+                    </strong>
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Catatan: Incentive, Controller Automation, Display, Middleware & Mode
               diisi Handler saat klik "Completed" (lihat modal Mode Penyelesaian),
               karena project baru masuk Incentive setelah statusnya Completed. */}

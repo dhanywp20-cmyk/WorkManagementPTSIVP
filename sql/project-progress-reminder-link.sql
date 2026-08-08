@@ -97,3 +97,21 @@ CREATE INDEX IF NOT EXISTS idx_progress_locations_origin
 --  komponen yang dibuat. Pengisiannya menyusul secara manual di Project
 --  Progress.
 -- ============================================================================
+
+
+-- ============================================================================
+--  Timeline Project Progress pada Reminder Schedule
+-- ============================================================================
+--  reminders.due_date adalah tanggal JADWAL KUNJUNGAN (juga titik mulai
+--  garansi) — bukan rentang pengerjaan proyek. Memakainya sebagai target
+--  selesai di Project Progress hanya tebakan.
+--
+--  Dua kolom di bawah membiarkan pembuat reminder menetapkan timeline
+--  sebenarnya saat memilih kategori Konfigurasi / Konfigurasi & Training,
+--  lalu disalin ke progress_locations.start_date / target_date.
+--
+--  Keduanya nullable: bila dikosongkan, draft dibuat tanpa jadwal dan admin
+--  mengisinya menyusul di Project Progress.
+ALTER TABLE reminders
+  ADD COLUMN IF NOT EXISTS progress_start_date  DATE NULL,
+  ADD COLUMN IF NOT EXISTS progress_target_date DATE NULL;

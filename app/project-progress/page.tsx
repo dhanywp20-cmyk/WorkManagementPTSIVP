@@ -50,6 +50,14 @@ export default function ProjectProgressPage() {
 
   // Daftar PIC untuk dropdown lokasi — Team PTS assignable (lihat lib/teams.ts)
   const [teamUsers, setTeamUsers] = useState<{ id: string; full_name: string }[]>([]);
+  /**
+   * Daftar Sales untuk dropdown — sumber yang SAMA dengan Reminder Schedule
+   * (users role='guest'), supaya nama yang tersimpan identik. Kecocokan nama
+   * inilah yang menentukan proyek mana yang terlihat oleh tiap sales, jadi
+   * mengetik bebas tidak boleh: satu huruf beda = proyeknya hilang dari daftar
+   * miliknya.
+   */
+  const [salesUsers, setSalesUsers] = useState<{ id: string; full_name: string; sales_division: string | null }[]>([]);
   // Perubahan editor yang belum disimpan — dipakai untuk mencegah modal
   // tertutup tanpa sengaja dan menghilangkan pekerjaan.
   const [editorDirty, setEditorDirty] = useState(false);
@@ -125,12 +133,18 @@ export default function ProjectProgressPage() {
   useEffect(() => {
     (async () => {
       const { data } = await supabase.from('users')
-        .select('id, full_name, role, team_type').order('full_name');
+        .select('id, full_name, role, team_type, sales_division').order('full_name');
       if (!data) return;
+      const rows = data as { id: string; full_name: string; role: string; team_type?: string; sales_division?: string | null }[];
       setTeamUsers(
-        (data as { id: string; full_name: string; role: string; team_type?: string }[])
+        rows
           .filter(u => isAssignablePTSTeam(u.team_type) && u.role !== 'admin' && u.role !== 'superadmin')
           .map(u => ({ id: u.id, full_name: u.full_name })),
+      );
+      // Sales = role 'guest', persis seperti dropdown Sales di Reminder Schedule.
+      setSalesUsers(
+        rows.filter(u => u.role === 'guest')
+          .map(u => ({ id: u.id, full_name: u.full_name, sales_division: u.sales_division ?? null })),
       );
     })();
   }, []);
@@ -223,6 +237,8 @@ export default function ProjectProgressPage() {
       status: projectForm.status ?? 'in_progress',
       start_date: projectForm.start_date || null,
       target_date: projectForm.target_date || null,
+      sales_name: projectForm.sales_name?.trim() || null,
+      sales_division: projectForm.sales_division?.trim() || null,
     };
     if (projectForm.id) {
       const { error } = await supabase.from('progress_projects').update(payload).eq('id', projectForm.id);
@@ -590,7 +606,7 @@ export default function ProjectProgressPage() {
                   // key: paksa draft dibangun ulang HANYA saat ganti proyek /
                   // setelah simpan — bukan tiap render, supaya tidak berkedip.
                   key={`${detail.project.id}-${detail.locations.length}-${detail.components.length}-${detail.issues.length}`}
-                  detail={detail} teamUsers={teamUsers}
+                  detail={detail} teamUsers={teamUsers} salesUsers={salesUsers}
                   mode={detailMode ?? 'pic'} editableIds={detailEditableIds}
                   onSaved={() => { setEditorDirty(false); reloadDetail(); fetchProjects(); }}
                   onDirtyChange={setEditorDirty}
@@ -620,6 +636,32 @@ export default function ProjectProgressPage() {
               <Field label="Client">
                 <input value={projectForm.client ?? ''} onChange={e => setProjectForm({ ...projectForm, client: e.target.value })}
                   placeholder="mis. BPKP" className={inputCls} />
+              </Field>
+              {/* Sales menentukan siapa yang boleh melihat proyek ini. Dipilih
+                  dari daftar, bukan diketik: satu huruf beda berarti proyeknya
+                  tidak muncul di daftar sales yang bersangkutan. */}
+              <Field label="Sales">
+                <select
+                  value={projectForm.sales_name ?? ''}
+                  onChange={e => {
+                    const dipilih = salesUsers.find(u => u.full_name === e.target.value);
+                    setProjectForm({
+                      ...projectForm,
+                      sales_name: e.target.value || null,
+                      sales_division: dipilih?.sales_division ?? null,
+                    });
+                  }}
+                  className={inputCls}>
+                  <option value="">— Tanpa Sales —</option>
+                  {salesUsers.map(u => (
+                    <option key={u.id} value={u.full_name}>
+                      {u.full_name}{u.sales_division ? ` · ${u.sales_division}` : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[10px] text-gray-400 font-medium">
+                  Hanya Sales ini yang dapat melihat proyek tersebut. Dikosongkan = hanya admin &amp; team.
+                </p>
               </Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Tanggal Mulai">
@@ -740,6 +782,7 @@ type DraftLocation = {
   id: string; name: string; pic: string | null; status: ProjectStatus;
   note: string | null; note_flag: boolean;
   start_date: string | null; target_date: string | null;
+  sales_name: string | null; sales_division: string | null;
   components: DraftComponent[];
 };
 type DraftIssue = {
@@ -758,6 +801,7 @@ function buildDraft(detail: ProjectDetail): { locations: DraftLocation[]; issues
         id: l.id, name: l.name, pic: l.pic, status: l.status,
         note: l.note, note_flag: l.note_flag,
         start_date: l.start_date, target_date: l.target_date,
+        sales_name: l.sales_name, sales_division: l.sales_division,
         components: componentsOf(detail.components, l.id)
           .map(c => ({ id: c.id, label: c.label, state: c.state, photo_url: c.photo_url ?? null, photo_thumb_url: c.photo_thumb_url ?? null })),
       })),
@@ -770,9 +814,10 @@ function buildDraft(detail: ProjectDetail): { locations: DraftLocation[]; issues
   };
 }
 
-function DetailEditor({ detail, teamUsers, mode, editableIds, onSaved, onDirtyChange, notify, setConfirmState }: {
+function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, onSaved, onDirtyChange, notify, setConfirmState }: {
   detail: ProjectDetail;
   teamUsers: { id: string; full_name: string }[];
+  salesUsers: { id: string; full_name: string; sales_division: string | null }[];
   /**
    * 'full' = admin/superadmin: seluruh struktur proyek.
    * 'pic'  = anggota team yang di-tag PIC: HANYA progres lokasinya sendiri —
@@ -811,7 +856,8 @@ function DetailEditor({ detail, teamUsers, mode, editableIds, onSaved, onDirtyCh
     touch();
     setLocations(prev => [...prev, {
       id: tempId(), name: '', pic: null, status: 'in_progress',
-      note: null, note_flag: false, start_date: null, target_date: null, components: [],
+      note: null, note_flag: false, start_date: null, target_date: null,
+      sales_name: null, sales_division: null, components: [],
     }]);
   };
   const removeLoc = (loc: DraftLocation) => {
@@ -938,6 +984,8 @@ function DetailEditor({ detail, teamUsers, mode, editableIds, onSaved, onDirtyCh
               note_flag: l.note_flag,
               start_date: l.start_date || null,
               target_date: l.target_date || null,
+              sales_name: l.sales_name || null,
+              sales_division: l.sales_division || null,
               progress: computeProgress(l.components),
               sort_order: i,
             }
@@ -1059,9 +1107,36 @@ function DetailEditor({ detail, teamUsers, mode, editableIds, onSaved, onDirtyCh
               </div>
 
               {!isFull && (
-                <p className="text-[11px] font-semibold text-gray-500">
-                  PIC: {loc.pic ?? '—'} · Status: {STATUS_CONFIG[loc.status].label}
-                </p>
+                <>
+                  <p className="text-[11px] font-semibold text-gray-500">
+                    PIC: {loc.pic ?? '—'} · Status: {STATUS_CONFIG[loc.status].label}
+                  </p>
+                  {loc.sales_name && (
+                    <p className="text-[11px] font-semibold text-gray-500">
+                      Sales: {loc.sales_name}{loc.sales_division ? ` · ${loc.sales_division}` : ''}
+                    </p>
+                  )}
+                </>
+              )}
+              {/* Sales per lokasi — satu proyek bisa berisi lokasi milik sales
+                  berbeda, dan nilai inilah yang menentukan siapa boleh melihat. */}
+              {isFull && (
+                <select value={loc.sales_name ?? ''}
+                  onChange={e => {
+                    const dipilih = salesUsers.find(u => u.full_name === e.target.value);
+                    patchLoc(loc.id, {
+                      sales_name: e.target.value || null,
+                      sales_division: dipilih?.sales_division ?? null,
+                    });
+                  }}
+                  className={inputSm}>
+                  <option value="">— Sales lokasi ini —</option>
+                  {salesUsers.map(u => (
+                    <option key={u.id} value={u.full_name}>
+                      {u.full_name}{u.sales_division ? ` · ${u.sales_division}` : ''}
+                    </option>
+                  ))}
+                </select>
               )}
               <div className={`grid grid-cols-2 gap-2 ${isFull ? '' : 'hidden'}`}>
                 {/* PIC diambil dari daftar Team PTS — bukan ketikan bebas */}
