@@ -19,6 +19,7 @@ import {
   newShareToken, shareUrl, canEditProjectProgress,
   projectStatusBreakdown, projectProgressBreakdown, projectIssueBreakdown,
   resolveEditorMode, editableLocationIds, type EditorMode,
+  timelineInfo, formatDate,
 } from './_components/shared';
 import { isAssignablePTSTeam } from '@/lib/teams';
 import { compressImage } from '@/lib/image-compress';
@@ -190,6 +191,8 @@ export default function ProjectProgressPage() {
       client: projectForm.client?.trim() || null,
       description: projectForm.description?.trim() || null,
       status: projectForm.status ?? 'in_progress',
+      start_date: projectForm.start_date || null,
+      target_date: projectForm.target_date || null,
     };
     if (projectForm.id) {
       const { error } = await supabase.from('progress_projects').update(payload).eq('id', projectForm.id);
@@ -377,6 +380,7 @@ export default function ProjectProgressPage() {
                           { label: 'Lokasi', value: `${agg.total} lokasi` },
                           { label: 'Isu', value: `${agg.issues} isu` },
                           { label: 'Progres', value: `${agg.avg}%`, valueClass: 'font-black' },
+                          { label: 'Timeline', value: timelineInfo(p).label, span2: true },
                         ]}
                         actions={<RowActions p={p} canEdit={canEdit}
                           onView={() => openDetail(p)} onExport={() => handleExport(p)}
@@ -392,16 +396,17 @@ export default function ProjectProgressPage() {
                   <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
                     <colgroup>
                       <col style={{ width: '4%' }} />
-                      <col style={{ width: '26%' }} />
-                      <col style={{ width: '18%' }} />
-                      <col style={{ width: '12%' }} />
-                      <col style={{ width: '10%' }} />
+                      <col style={{ width: '22%' }} />
                       <col style={{ width: '14%' }} />
+                      <col style={{ width: '10%' }} />
                       <col style={{ width: '16%' }} />
+                      <col style={{ width: '9%' }} />
+                      <col style={{ width: '12%' }} />
+                      <col style={{ width: '13%' }} />
                     </colgroup>
                     <thead>
                       <tr className="border-b-2 border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
-                        {['No', 'Nama Project', 'Client', 'Status', 'Lokasi', 'Progres'].map((h, i) => (
+                        {['No', 'Nama Project', 'Client', 'Status', 'Timeline', 'Lokasi', 'Progres'].map((h, i) => (
                           <th key={h} className={`px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200 ${i === 0 ? 'text-center' : 'text-left'}`}>
                             {h}
                           </th>
@@ -432,6 +437,21 @@ export default function ProjectProgressPage() {
                                 style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
                                 {cfg.label}
                               </span>
+                            </td>
+                            <td className="px-3 py-3 border-r border-gray-200 align-middle">
+                              {(() => {
+                                const t = timelineInfo(p);
+                                if (t.state === 'no_date') return <span className="text-[10px] text-gray-300 font-semibold">—</span>;
+                                return (
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold self-start whitespace-nowrap"
+                                      style={{ background: t.bg, color: t.color }}>{t.label}</span>
+                                    <span className="text-[9px] text-gray-400 font-semibold">
+                                      {p.target_date ? `Target ${formatDate(p.target_date)}` : 'Tanpa target'}
+                                    </span>
+                                  </div>
+                                );
+                              })()}
                             </td>
                             <td className="px-3 py-3 border-r border-gray-200 align-middle">
                               <span className="text-[11px] font-semibold text-gray-600">{agg.total} lokasi</span>
@@ -550,6 +570,19 @@ export default function ProjectProgressPage() {
                 <input value={projectForm.client ?? ''} onChange={e => setProjectForm({ ...projectForm, client: e.target.value })}
                   placeholder="mis. BPKP" className={inputCls} />
               </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Tanggal Mulai">
+                  <input type="date" value={projectForm.start_date ?? ''}
+                    onChange={e => setProjectForm({ ...projectForm, start_date: e.target.value || null })}
+                    className={inputCls} />
+                </Field>
+                <Field label="Target Selesai">
+                  <input type="date" value={projectForm.target_date ?? ''}
+                    min={projectForm.start_date ?? undefined}
+                    onChange={e => setProjectForm({ ...projectForm, target_date: e.target.value || null })}
+                    className={inputCls} />
+                </Field>
+              </div>
               <Field label="Status">
                 <select value={projectForm.status ?? 'in_progress'}
                   onChange={e => setProjectForm({ ...projectForm, status: e.target.value as ProjectStatus })}
@@ -654,7 +687,9 @@ export default function ProjectProgressPage() {
 type DraftComponent = { id: string; label: string; state: ComponentState; photo_url: string | null; photo_thumb_url: string | null };
 type DraftLocation = {
   id: string; name: string; pic: string | null; status: ProjectStatus;
-  note: string | null; note_flag: boolean; components: DraftComponent[];
+  note: string | null; note_flag: boolean;
+  start_date: string | null; target_date: string | null;
+  components: DraftComponent[];
 };
 type DraftIssue = {
   id: string; location_label: string | null; issue: string;
@@ -671,6 +706,7 @@ function buildDraft(detail: ProjectDetail): { locations: DraftLocation[]; issues
       .map(l => ({
         id: l.id, name: l.name, pic: l.pic, status: l.status,
         note: l.note, note_flag: l.note_flag,
+        start_date: l.start_date, target_date: l.target_date,
         components: componentsOf(detail.components, l.id)
           .map(c => ({ id: c.id, label: c.label, state: c.state, photo_url: c.photo_url ?? null, photo_thumb_url: c.photo_thumb_url ?? null })),
       })),
@@ -724,7 +760,7 @@ function DetailEditor({ detail, teamUsers, mode, editableIds, onSaved, onDirtyCh
     touch();
     setLocations(prev => [...prev, {
       id: tempId(), name: '', pic: null, status: 'in_progress',
-      note: null, note_flag: false, components: [],
+      note: null, note_flag: false, start_date: null, target_date: null, components: [],
     }]);
   };
   const removeLoc = (loc: DraftLocation) => {
@@ -849,6 +885,8 @@ function DetailEditor({ detail, teamUsers, mode, editableIds, onSaved, onDirtyCh
               status: l.status,
               note: l.note?.trim() || null,
               note_flag: l.note_flag,
+              start_date: l.start_date || null,
+              target_date: l.target_date || null,
               progress: computeProgress(l.components),
               sort_order: i,
             }
@@ -992,6 +1030,34 @@ function DetailEditor({ detail, teamUsers, mode, editableIds, onSaved, onDirtyCh
                   ))}
                 </select>
               </div>
+
+              {/* Jadwal lokasi — hanya admin. PIC memperbarui progres, bukan jadwal. */}
+              {isFull && (
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Mulai</span>
+                    <input type="date" value={loc.start_date ?? ''}
+                      onChange={e => patchLoc(loc.id, { start_date: e.target.value || null })}
+                      className={inputSm} />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Target</span>
+                    <input type="date" value={loc.target_date ?? ''}
+                      min={loc.start_date ?? undefined}
+                      onChange={e => patchLoc(loc.id, { target_date: e.target.value || null })}
+                      className={inputSm} />
+                  </label>
+                </div>
+              )}
+              {!isFull && (loc.start_date || loc.target_date) && (() => {
+                const lt = timelineInfo(loc);
+                return (
+                  <p className="text-[10px] font-semibold" style={{ color: lt.color }}>
+                    🗓️ {loc.start_date ? formatDate(loc.start_date) : '—'} → {loc.target_date ? formatDate(loc.target_date) : '—'}
+                    <span className="ml-1.5 px-1.5 py-0.5 rounded" style={{ background: lt.bg }}>{lt.label}</span>
+                  </p>
+                );
+              })()}
 
               {/* Progres otomatis — tidak bisa diketik */}
               <div className="rounded-xl p-2.5 bg-gray-50 border border-gray-200 flex flex-col gap-1.5">

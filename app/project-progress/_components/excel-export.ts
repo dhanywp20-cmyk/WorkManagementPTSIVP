@@ -1,7 +1,7 @@
 import { loadXLSX } from '@/lib/xlsx-loader';
 import {
   ProjectDetail, STATUS_CONFIG, SEVERITY_CONFIG, COMPONENT_STATE_CONFIG,
-  averageProgress, componentsOf, stateBreakdown,
+  averageProgress, componentsOf, stateBreakdown, timelineInfo, formatDate,
 } from './shared';
 
 /**
@@ -58,6 +58,9 @@ export function exportProjectToExcel(detail: ProjectDetail) {
         ['Rata-rata Progres', `${avg}%`],
         ['Isu Terbuka',    issues.length],
         ['Butuh Perhatian', `${blocked} lokasi`],
+        ['Tanggal Mulai',  project.start_date ? formatDate(project.start_date) : '—'],
+        ['Target Selesai', project.target_date ? formatDate(project.target_date) : '—'],
+        ['Status Jadwal',  timelineInfo(project).label],
       ];
       for (const [k, v] of info) {
         data.push([cell(k, labelStyle), cell(v), empty(), empty()]);
@@ -76,9 +79,9 @@ export function exportProjectToExcel(detail: ProjectDetail) {
     // ── Sheet 2: Status Lokasi ──────────────────────────────────────────────
     {
       const data: any[][] = [];
-      data.push([{ v: 'STATUS PER LOKASI', s: titleStyle }, ...row0(5, titleStyle)]);
-      data.push(row0(6, subStyle));
-      data.push(['No', 'Lokasi', 'PIC', 'Status', 'Progres & Rekap', 'Komponen & Catatan'].map(h => cell(h, hdrStyle)));
+      data.push([{ v: 'STATUS PER LOKASI', s: titleStyle }, ...row0(6, titleStyle)]);
+      data.push(row0(7, subStyle));
+      data.push(['No', 'Lokasi', 'PIC', 'Status', 'Jadwal & Status Waktu', 'Progres & Rekap', 'Komponen & Catatan'].map(h => cell(h, hdrStyle)));
 
       sortedLoc.forEach((loc, i) => {
         const st = i % 2 === 1 ? altStyle : cellStyle;
@@ -93,23 +96,28 @@ export function exportProjectToExcel(detail: ProjectDetail) {
           .map(b => `${b.label} ${b.percent}% (${b.count})`)
           .join(' · ');
         const noteText = loc.note ? `\n\nCatatan: ${loc.note}` : '';
+        const lt = timelineInfo(loc);
+        const jadwal = (loc.start_date || loc.target_date)
+          ? `${loc.start_date ? formatDate(loc.start_date) : '—'} → ${loc.target_date ? formatDate(loc.target_date) : '—'}\n${lt.label}`
+          : '—';
         data.push([
           cell(i + 1, st),
           cell(loc.name, st),
           cell(loc.pic ?? '—', st),
           cell(statusLabel(loc.status), st),
+          cell(jadwal, st),
           cell(bd ? `${loc.progress}%\n${bd}` : `${loc.progress}%`, st),
           cell(compText + noteText, st),
         ]);
       });
 
       if (sortedLoc.length === 0) {
-        data.push([cell('Belum ada lokasi', cellStyle), ...row0(5)]);
+        data.push([cell('Belum ada lokasi', cellStyle), ...row0(6)]);
       }
 
       const ws = XLSX.utils.aoa_to_sheet(data);
-      ws['!cols'] = [{ wch: 5 }, { wch: 26 }, { wch: 18 }, { wch: 16 }, { wch: 24 }, { wch: 52 }];
-      ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:5} }];
+      ws['!cols'] = [{ wch: 5 }, { wch: 26 }, { wch: 18 }, { wch: 16 }, { wch: 26 }, { wch: 24 }, { wch: 52 }];
+      ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:6} }];
       XLSX.utils.book_append_sheet(wb, ws, 'Status Lokasi');
     }
 

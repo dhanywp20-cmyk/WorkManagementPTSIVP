@@ -25,6 +25,9 @@ export interface ProgressProject {
   status: ProjectStatus;
   share_token: string | null;
   share_enabled: boolean;
+  /** Jadwal proyek. Nullable — proyek lama tetap jalan tanpa tanggal. */
+  start_date: string | null;
+  target_date: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -39,6 +42,9 @@ export interface ProgressLocation {
   progress: number;
   note: string | null;
   note_flag: boolean;
+  /** Jadwal per lokasi — tiap site bisa mulai & selesai di waktu berbeda. */
+  start_date: string | null;
+  target_date: string | null;
   sort_order: number;
   created_at: string;
 }
@@ -162,6 +168,86 @@ export function averageProgress(locations: ProgressLocation[]): number {
   if (locations.length === 0) return 0;
   const total = locations.reduce((s, l) => s + (l.progress ?? 0), 0);
   return Math.round(total / locations.length);
+}
+
+// ─── Timeline & overtime ─────────────────────────────────────────────────────
+
+export type TimelineState =
+  | 'no_date'    // belum dijadwalkan
+  | 'not_started'// tanggal mulai masih di depan
+  | 'on_track'   // berjalan, target belum lewat
+  | 'due_soon'   // target <= 3 hari lagi
+  | 'overdue'    // target sudah lewat & belum selesai
+  | 'done';      // sudah selesai
+
+export interface TimelineInfo {
+  state: TimelineState;
+  label: string;
+  color: string;
+  bg: string;
+  /** Sisa hari ke target. Negatif = sudah lewat sekian hari. Null bila tak ada target. */
+  daysLeft: number | null;
+  /** Berapa hari berjalan sejak mulai. Null bila belum mulai / tak ada tanggal. */
+  daysElapsed: number | null;
+  /** Posisi hari ini pada rentang mulai→target, 0-100. Null bila rentang tak lengkap. */
+  elapsedPercent: number | null;
+}
+
+/** Tanggal lokal hari ini sebagai YYYY-MM-DD — hindari pergeseran zona waktu dari toISOString(). */
+export function todayStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Selisih hari kalender antara dua tanggal YYYY-MM-DD (b - a). */
+function diffDays(a: string, b: string): number {
+  const [ay, am, ad] = a.split('-').map(Number);
+  const [by, bm, bd] = b.split('-').map(Number);
+  // Date.UTC menghindari efek DST yang bisa membuat selisih meleset 1 hari.
+  return Math.round((Date.UTC(by, bm - 1, bd) - Date.UTC(ay, am - 1, ad)) / 86400000);
+}
+
+/**
+ * Status jadwal sebuah proyek/lokasi. Dihitung saat tampil, bukan disimpan —
+ * status "overtime" berubah sendiri seiring hari berjalan, jadi menyimpannya
+ * di kolom akan selalu basi kecuali ada job harian.
+ *
+ * `status === 'done'` menang atas segalanya: pekerjaan yang sudah selesai tidak
+ * pantas ditandai terlambat walau tanggal targetnya sudah lewat.
+ */
+export function timelineInfo(
+  item: { start_date: string | null; target_date: string | null; status: ProjectStatus },
+  today: string = todayStr(),
+): TimelineInfo {
+  const { start_date: start, target_date: target, status } = item;
+
+  const daysLeft    = target ? diffDays(today, target) : null;
+  const daysElapsed = start && diffDays(start, today) >= 0 ? diffDays(start, today) : null;
+
+  let elapsedPercent: number | null = null;
+  if (start && target) {
+    const span = diffDays(start, target);
+    elapsedPercent = span <= 0
+      ? 100
+      : Math.max(0, Math.min(100, Math.round((diffDays(start, today) / span) * 100)));
+  }
+
+  const base = { daysLeft, daysElapsed, elapsedPercent };
+
+  if (status === 'done')  return { ...base, state: 'done',        label: 'Selesai',        color: '#065f46', bg: '#d1fae5' };
+  if (!start && !target)  return { ...base, state: 'no_date',     label: 'Belum dijadwalkan', color: '#64748b', bg: '#f1f5f9' };
+  if (start && diffDays(today, start) > 0)
+                          return { ...base, state: 'not_started', label: `Mulai ${diffDays(today, start)} hari lagi`, color: '#475569', bg: '#f1f5f9' };
+  if (daysLeft === null)  return { ...base, state: 'on_track',    label: 'Berjalan',       color: '#0369a1', bg: '#e0f2fe' };
+  if (daysLeft < 0)       return { ...base, state: 'overdue',     label: `Overtime ${Math.abs(daysLeft)} hari`, color: '#9f1239', bg: '#ffe4e6' };
+  if (daysLeft === 0)     return { ...base, state: 'due_soon',    label: 'Jatuh tempo hari ini', color: '#b45309', bg: '#fef3c7' };
+  if (daysLeft <= 3)      return { ...base, state: 'due_soon',    label: `${daysLeft} hari lagi`, color: '#b45309', bg: '#fef3c7' };
+  return { ...base, state: 'on_track', label: `${daysLeft} hari lagi`, color: '#0369a1', bg: '#e0f2fe' };
+}
+
+/** Lokasi yang sudah lewat target dan belum selesai. */
+export function overdueLocations(locations: ProgressLocation[]): ProgressLocation[] {
+  return locations.filter(l => timelineInfo(l).state === 'overdue');
 }
 
 /** Palet slice untuk pie yang kategorinya dinamis (nama PIC / nama komponen). */

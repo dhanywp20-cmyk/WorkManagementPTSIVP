@@ -5,6 +5,7 @@ import {
   ProjectDetail, STATUS_CONFIG, COMPONENT_STATE_CONFIG, SEVERITY_CONFIG,
   STATUS_PIE_COLOR, THEME, averageProgress, componentsOf, ProjectStatus,
   computeProgress, stateBreakdown, picBreakdown, problemComponentBreakdown,
+  timelineInfo, overdueLocations, formatDate,
 } from './shared';
 
 /**
@@ -31,6 +32,8 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
 
   // Beban tiap PIC & jenis komponen yang paling sering menahan progres.
   const picSlices = picBreakdown(sortedLoc);
+  const telat = overdueLocations(sortedLoc);
+  const tl = timelineInfo(project);
   const problemSlices = problemComponentBreakdown(components);
 
   return (
@@ -51,8 +54,8 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
           sub="Lihat rekap isu di bawah"
         />
         <StatCard
-          label="Butuh Perhatian" value={String(blocked.length)} unit="site" accent="#f43f5e"
-          sub={blocked.map(l => l.name).join(', ') || 'Tidak ada'}
+          label="Overtime" value={String(telat.length)} unit="site" accent="#f43f5e"
+          sub={telat.length ? telat.map(l => l.name).join(', ') : 'Tidak ada yang lewat target'}
         />
       </div>
 
@@ -69,6 +72,43 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
           <div className="h-full rounded-full transition-all"
             style={{ width: `${avg}%`, background: THEME.gradient }} />
         </div>
+
+        {/* ── Timeline proyek ── */}
+        {(project.start_date || project.target_date) && (
+          <div className="flex flex-col gap-2 pt-2 mt-1 border-t border-gray-100">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="text-[11px] font-semibold text-gray-500">
+                🗓️ {project.start_date ? formatDate(project.start_date) : '—'}
+                <span className="mx-1.5 text-gray-300">→</span>
+                {project.target_date ? formatDate(project.target_date) : '—'}
+                {tl.daysElapsed !== null && (
+                  <span className="ml-2 text-gray-400">· berjalan {tl.daysElapsed} hari</span>
+                )}
+              </span>
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap"
+                style={{ background: tl.bg, color: tl.color }}>
+                {tl.label}
+              </span>
+            </div>
+            {/* Bar waktu — berapa jauh hari ini dari mulai menuju target.
+                Dibedakan dari bar progres di atas: yang ini soal WAKTU, bukan pekerjaan.
+                Kalau bar waktu jauh mendahului bar progres, artinya pekerjaan tertinggal. */}
+            {tl.elapsedPercent !== null && (
+              <div className="flex flex-col gap-1">
+                <div className="h-1.5 rounded-full overflow-hidden bg-gray-200">
+                  <div className="h-full rounded-full transition-all"
+                    style={{ width: `${tl.elapsedPercent}%`, background: tl.color }} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-bold text-gray-400">WAKTU TERPAKAI {tl.elapsedPercent}%</span>
+                  <span className="text-[9px] font-bold" style={{ color: avg >= tl.elapsedPercent ? '#059669' : '#b45309' }}>
+                    PEKERJAAN {avg}% · {avg >= tl.elapsedPercent ? 'sesuai jadwal' : 'tertinggal'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Tiga pie: status lokasi, beban PIC, komponen bermasalah ── */}
@@ -102,6 +142,15 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
                     <div className="min-w-0">
                       <p className="text-sm font-black text-gray-800 truncate">{loc.name}</p>
                       {loc.pic && <p className="text-[11px] text-gray-500 font-medium">PIC: {loc.pic}</p>}
+                      {(loc.start_date || loc.target_date) && (() => {
+                        const lt = timelineInfo(loc);
+                        return (
+                          <p className="text-[10px] font-semibold mt-0.5" style={{ color: lt.color }}>
+                            🗓️ {loc.start_date ? formatDate(loc.start_date) : '—'} → {loc.target_date ? formatDate(loc.target_date) : '—'}
+                            <span className="ml-1.5 px-1.5 py-0.5 rounded" style={{ background: lt.bg }}>{lt.label}</span>
+                          </p>
+                        );
+                      })()}
                     </div>
                     <span className="px-2.5 py-1 rounded-full text-[10px] font-bold flex-shrink-0"
                       style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
