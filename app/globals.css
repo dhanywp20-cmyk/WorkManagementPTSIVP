@@ -160,9 +160,14 @@ html {
    terjadi, latar gelap modal berhenti di tengah layar dan kartunya ikut pendek,
    berapa pun tinggi yang disetel di dalamnya.
 
-   Dua baris di bawah melepaskan overlay dari ketergantungan itu: ukurannya
-   diambil langsung dari viewport (100vw / 100dvh), bukan dari kotak leluhur.
-   dvh dipakai supaya bilah alamat browser HP tidak memotong bagian bawah.
+   Baris di bawah melepaskan overlay dari ketergantungan itu: tingginya diambil
+   langsung dari viewport, bukan dari kotak leluhur. dvh — bukan vh — supaya
+   bilah alamat browser HP tidak memotong bagian bawah.
+
+   Lebar SENGAJA tidak disetel. Percobaan sebelumnya memakai width:100vw, dan
+   itu keliru: 100vw menghitung lebar batang gulir sebagai bagian dari layar,
+   sehingga overlay jadi lebih lebar dari ruang yang ada dan memunculkan gulir
+   mendatar. `inset-0` sudah memberi lebar yang benar dengan sendirinya.
 
    Sasarannya sempit — hanya elemen fixed inset-0 yang memang latar gelap modal
    (punya kelas bg-black/…), sehingga overlay lain tidak ikut terpengaruh. */
@@ -172,7 +177,6 @@ html {
    kartu modal di dalamnya. Overlay hiasan tidak memusatkan apa pun, jadi tidak
    ikut tersasar. */
 .fixed.inset-0.justify-center {
-  width:  100vw;
   height: 100dvh;
   max-height: 100dvh;
 }
@@ -180,7 +184,6 @@ html {
 /* Overlay hiasan / penangkap klik yang sengaja tak berisi apa-apa dikecualikan,
    supaya tidak ikut dipaksa setinggi layar. */
 .fixed.inset-0.pointer-events-none {
-  width:  auto;
   height: auto;
   max-height: none;
 }

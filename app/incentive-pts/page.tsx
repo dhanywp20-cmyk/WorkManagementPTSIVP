@@ -731,7 +731,7 @@ export default function IncentivePTSPage() {
       {/* ─── MODAL: Project Detail ─── */}
       {detailProject && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setDetailProject(null); }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-4 overflow-hidden border border-gray-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden border border-gray-200">
             <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
               <div className="flex items-center justify-between">
                 <div>
@@ -743,7 +743,7 @@ export default function IncentivePTSPage() {
                 </button>
               </div>
             </div>
-            <div className="p-6 max-h-[65vh] overflow-y-auto space-y-5">
+            <div className="p-6 flex-1 min-h-0 overflow-y-auto space-y-5">
               <div className={`grid ${canInputNominal(currentUser) ? 'grid-cols-3' : 'grid-cols-2'} gap-3`}>
                 {canInputNominal(currentUser) && (
                   <div className="rounded-xl p-3 text-center bg-emerald-50 border border-emerald-100">

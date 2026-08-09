@@ -111,7 +111,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
 
   return(
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4 overflow-y-auto">
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4" style={{animation:'scale-in 0.25s ease-out',border:'1.5px solid rgba(220,38,38,0.25)'}}>
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden" style={{animation:'scale-in 0.25s ease-out',border:'1.5px solid rgba(220,38,38,0.25)'}}>
         <div className="px-6 py-5 rounded-t-2xl" style={{background:'linear-gradient(135deg,#dc2626,#991b1b)'}}>
           <div className="flex items-center justify-between">
             <div>
@@ -125,7 +125,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
         </div>
         {toast&&<div className={`mx-5 mt-3 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 ${toast.type==='success'?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200'}`}>{toast.type==='success'?'✅':'❌'} {toast.msg}</div>}
 
-        <div className="p-5 max-h-[58vh] overflow-y-auto space-y-4">
+        <div className="p-5 flex-1 min-h-0 overflow-y-auto space-y-4">
           {loading?<div className="flex justify-center py-10"><div className="w-6 h-6 rounded-full border-2 border-t-red-600 border-red-200 animate-spin"/></div>:(
             <>
               {/* Column headers */}
@@ -181,7 +181,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
             </>
           )}
         </div>
-        <div className="px-5 pb-5 flex gap-3">
+        <div className="px-5 pb-5 pt-3 flex gap-3 flex-shrink-0">
           <button onClick={onClose} className="flex-1 py-3 rounded-xl font-semibold text-sm" style={{background:'rgba(255,255,255,0.95)',color:'#64748b',border:'1px solid rgba(0,0,0,0.12)'}}>Batal</button>
           <button onClick={handleSave} disabled={saving||loading} className="flex-1 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-60" style={{background:'linear-gradient(135deg,#dc2626,#b91c1c)',boxShadow:'0 4px 14px rgba(220,38,38,0.35)'}}>
             {saving&&<div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>}💾 Simpan 2 Minggu

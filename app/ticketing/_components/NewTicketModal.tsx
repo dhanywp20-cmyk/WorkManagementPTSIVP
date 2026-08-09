@@ -121,11 +121,11 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4 overflow-y-auto"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 overflow-hidden"
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
         style={{ animation: "scale-in 0.25s ease-out", border: "1.5px solid rgba(220,38,38,0.25)" }}>
 
         {/* Header */}
-        <div className="px-8 py-6 rounded-t-2xl"
+        <div className="px-8 py-6 rounded-t-2xl flex-shrink-0"
           style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
           <div className="flex items-center justify-between">
             <div>
@@ -140,7 +140,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           </div>
         </div>
 
-        <div className="p-8 space-y-5 max-h-[75vh] overflow-y-auto">
+        <div className="p-8 space-y-5 flex-1 min-h-0 overflow-y-auto">
           {/* Section: Informasi Ticket */}
           <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "rgba(0,0,0,0.1)" }}>
             <span className="text-lg">🎫</span>

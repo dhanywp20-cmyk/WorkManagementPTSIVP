@@ -2371,9 +2371,9 @@ jangan lupa peralatan & Semangat💪🏼
         {/* ── NOTIFICATION POPUP ── */}
         {showNotificationPopup && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
-            <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden border-4 border-yellow-400"
+            <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-full overflow-hidden flex flex-col border-4 border-yellow-400"
               style={{ animation: 'scale-in 0.3s ease-out' }}>
-              <div className="p-5 border-b-2 border-yellow-300" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
+              <div className="p-5 border-b-2 border-yellow-300 flex-shrink-0" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <span className="text-3xl animate-bounce">🔔</span>
@@ -2385,7 +2385,7 @@ jangan lupa peralatan & Semangat💪🏼
                   <button onClick={() => setShowNotificationPopup(false)} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold">✕</button>
                 </div>
               </div>
-              <div className="max-h-[calc(80vh-140px)] overflow-y-auto p-4 space-y-2">
+              <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2">
                 {myReminders.map(r => (
                   <div key={r.id} onClick={() => { setDetailReminder(r); setShowNotificationPopup(false); }}
                     className="rounded-xl p-3 border-2 cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all"
@@ -2407,7 +2407,7 @@ jangan lupa peralatan & Semangat💪🏼
                   </div>
                 ))}
               </div>
-              <div className="p-4 border-t-2 border-gray-200 bg-gray-50">
+              <div className="p-4 border-t-2 border-gray-200 bg-gray-50 flex-shrink-0">
                 <button onClick={() => setShowNotificationPopup(false)}
                   className="w-full bg-gradient-to-r from-red-600 to-red-800 text-white py-3 rounded-xl font-bold transition-all">
                   ✕ Tutup
@@ -2420,9 +2420,9 @@ jangan lupa peralatan & Semangat💪🏼
         {/* ── BELL POPUP ── */}
         {showBellPopup && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
-            <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden border-4 border-yellow-400"
+            <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-full overflow-hidden flex flex-col border-4 border-yellow-400"
               style={{ animation: 'scale-in 0.3s ease-out' }}>
-              <div className="p-5 border-b-2 border-yellow-300" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
+              <div className="p-5 border-b-2 border-yellow-300 flex-shrink-0" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <span className="text-3xl">🔔</span>
@@ -2434,7 +2434,7 @@ jangan lupa peralatan & Semangat💪🏼
                   <button onClick={() => setShowBellPopup(false)} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold">✕</button>
                 </div>
               </div>
-              <div className="max-h-[calc(80vh-140px)] overflow-y-auto p-4 space-y-2">
+              <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2">
                 {myActiveReminders.length === 0 ? (
                   <div className="text-center py-10 text-gray-500">
                     <div className="text-5xl mb-3">✅</div>
@@ -2460,7 +2460,7 @@ jangan lupa peralatan & Semangat💪🏼
                   </div>
                 ))}
               </div>
-              <div className="p-4 border-t-2 border-gray-200 bg-gray-50">
+              <div className="p-4 border-t-2 border-gray-200 bg-gray-50 flex-shrink-0">
                 <button onClick={() => setShowBellPopup(false)}
                   className="w-full bg-gradient-to-r from-red-600 to-red-800 text-white py-3 rounded-xl font-bold transition-all">
                   ✕ Tutup

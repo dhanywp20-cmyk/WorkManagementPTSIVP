@@ -109,12 +109,12 @@ export function RequestJadwalModal({
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-4 overflow-hidden"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
         style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(59,130,246,0.35)' }}
       >
         {/* Header */}
         <div
-          className="px-8 py-6 rounded-t-2xl flex items-center justify-between"
+          className="px-8 py-6 rounded-t-2xl flex items-center justify-between flex-shrink-0"
           style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}
         >
           <div>
@@ -133,7 +133,7 @@ export function RequestJadwalModal({
           </button>
         </div>
 
-        <div className="p-8 space-y-5 max-h-[75vh] overflow-y-auto">
+        <div className="p-8 space-y-5 flex-1 min-h-0 overflow-y-auto">
 
           {/* Info requester */}
           <div

@@ -211,7 +211,7 @@ function Modal({ open, onClose, title, width=560, children }:{
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background:'rgba(0,0,0,0.45)', backdropFilter:'blur(4px)' }} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:width, maxHeight:'90vh',
+      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:width, maxHeight:'100%',
         overflowY:'auto', borderRadius:20, border:'1px solid rgba(0,0,0,0.08)',
         background:'#fff', boxShadow:'0 24px 64px rgba(0,0,0,0.18)' }}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">

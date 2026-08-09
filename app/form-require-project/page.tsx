@@ -3163,7 +3163,7 @@ Hubungi Admin untuk info lebih lanjut.
       {/* Edit Form Modal */}
       {editFormModal && selectedRequest && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.modalNestedTop }}>
-          <div className="bg-white/90 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col border-2 border-amber-400 animate-scale-in overflow-hidden">
+          <div className="bg-white/90 rounded-3xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col border-2 border-amber-400 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-amber-500 to-amber-700 px-6 py-4 flex items-center justify-between flex-shrink-0">
               <div>
                 <h2 className="text-lg font-bold text-white">✏️ Edit Kebutuhan Project</h2>

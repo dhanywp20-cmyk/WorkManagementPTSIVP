@@ -490,7 +490,7 @@ function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: (
       style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col"
-        style={{ maxHeight: '90vh' }}>
+        style={{ maxHeight: '100%' }}>
 
         {/* Header */}
         <div className="px-5 py-4 flex items-center gap-3 flex-shrink-0 relative"
@@ -1836,7 +1836,7 @@ export default function KPITeamPage() {
           <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
             style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
             onClick={e => { if (e.target === e.currentTarget) setSelectedKPIMember(null); }}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-y-auto" style={{ maxHeight: '90vh', scrollbarWidth: 'thin' }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-y-auto" style={{ maxHeight: '100%', scrollbarWidth: 'thin' }}>
 
               {/* Modal header */}
               <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 sticky top-0 bg-white z-10 rounded-t-2xl">
@@ -2043,7 +2043,7 @@ export default function KPITeamPage() {
           <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
             style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
             onClick={e => { if (e.target === e.currentTarget) setSelectedSnapMember(null); }}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-y-auto" style={{ maxHeight: '85vh' }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-y-auto" style={{ maxHeight: '100%' }}>
               <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 sticky top-0 bg-white z-10 rounded-t-2xl">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-base text-white flex-shrink-0"
                   style={{ background: `linear-gradient(135deg,${tc},${tc}cc)` }}>{m.name.charAt(0)}</div>
