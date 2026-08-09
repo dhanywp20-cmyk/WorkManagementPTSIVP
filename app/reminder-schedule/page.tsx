@@ -2666,37 +2666,7 @@ jangan lupa peralatan & Semangat💪🏼
                   </div>
                 )}
 
-                {/* Alur request Sales — hanya untuk yang memang lewat routing.
-                    Reminder yang dibuat langsung admin tidak punya tahapan ini,
-                    jadi diagramnya tidak ditampilkan supaya tidak mengarang
-                    tahap yang tak pernah terjadi. */}
-                {(detailReminder.notes ?? '').includes('[REQUEST SALES]') || detailReminder.routing_status ? (() => {
-                  const r = detailReminder as { routing_status?: string | null; assigned_to?: string | null; status?: string };
-                  const sudahAssign = !!(r.assigned_to && r.assigned_to.trim() !== '');
-                  const selesai     = r.status === 'done';
-                  const batal       = r.status === 'cancelled';
-                  //  0 diajukan · 1 Sales Internal · 2 Admin assign · 3 dikerjakan · 4 selesai
-                  const aktif = selesai      ? 5
-                    : sudahAssign            ? 3
-                    : r.routing_status === 'admin_review'    ? 2
-                    : r.routing_status === 'supervisor_assign' ? 2
-                    : r.routing_status === 'internal_review' ? 1
-                    : 2;
-                  return (
-                    <FlowSteps
-                      judul="Alur Request"
-                      aktif={aktif}
-                      dibatalkan={batal}
-                      steps={[
-                        { label: 'Diajukan',  pelaku: detailReminder.sales_name || 'Sales' },
-                        { label: 'Diteruskan', pelaku: 'Sales Internal' },
-                        { label: 'Di-assign', pelaku: 'Admin' },
-                        { label: 'Dikerjakan', pelaku: detailReminder.assign_name || 'Team PTS' },
-                        { label: 'Selesai',   pelaku: 'BAST' },
-                      ]}
-                    />
-                  );
-                })() : null}
+
 
                 {/* ── Timeline Project Progress — kategori pemicu saja ──
                     Sejajar dengan blok Masa Garansi di bawahnya: keduanya
@@ -2958,6 +2928,11 @@ jangan lupa peralatan & Semangat💪🏼
                     className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
+                  {/* Alur ditaruh di panel ini, di bawah riwayat: keduanya
+                      menjawab pertanyaan yang sama — sudah sampai mana perkara
+                      ini. Riwayat menceritakan yang SUDAH terjadi, alur
+                      menunjukkan yang MASIH tersisa. Dipisah ke dua tempat
+                      justru memaksa mata bolak-balik. */}
                   {/* Baris pembuatan diturunkan dari reminder-nya sendiri.
                       logAudit baru mencatat 'create' sejak perbaikan terakhir,
                       jadi tanpa ini seluruh reminder LAMA tampak tidak punya
@@ -2974,6 +2949,38 @@ jangan lupa peralatan & Semangat💪🏼
                         ? `Request diajukan Sales${detailReminder.sales_division ? ` (${detailReminder.sales_division})` : ''} — kategori ${detailReminder.category}`
                         : `Dibuat — kategori ${detailReminder.category}`,
                     }} />
+
+                {/* Alur request Sales — hanya untuk yang memang lewat routing.
+                      Reminder yang dibuat langsung admin tidak punya tahapan ini,
+                      jadi diagramnya tidak ditampilkan supaya tidak mengarang
+                      tahap yang tak pernah terjadi. */}
+                  {(detailReminder.notes ?? '').includes('[REQUEST SALES]') || detailReminder.routing_status ? (() => {
+                    const r = detailReminder as { routing_status?: string | null; assigned_to?: string | null; status?: string };
+                    const sudahAssign = !!(r.assigned_to && r.assigned_to.trim() !== '');
+                    const selesai     = r.status === 'done';
+                    const batal       = r.status === 'cancelled';
+                    //  0 diajukan · 1 Sales Internal · 2 Admin assign · 3 dikerjakan · 4 selesai
+                    const aktif = selesai      ? 5
+                      : sudahAssign            ? 3
+                      : r.routing_status === 'admin_review'    ? 2
+                      : r.routing_status === 'supervisor_assign' ? 2
+                      : r.routing_status === 'internal_review' ? 1
+                      : 2;
+                    return (
+                      <FlowSteps
+                        judul="Alur Request"
+                        aktif={aktif}
+                        dibatalkan={batal}
+                        steps={[
+                          { label: 'Diajukan',  pelaku: detailReminder.sales_name || 'Sales' },
+                          { label: 'Diteruskan', pelaku: 'Sales Internal' },
+                          { label: 'Di-assign', pelaku: 'Admin' },
+                          { label: 'Dikerjakan', pelaku: detailReminder.assign_name || 'Team PTS' },
+                          { label: 'Selesai',   pelaku: 'BAST' },
+                        ]}
+                      />
+                    );
+                  })() : null}
                 </div>
               </div>
             )}
