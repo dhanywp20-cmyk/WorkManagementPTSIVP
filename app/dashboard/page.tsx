@@ -1132,7 +1132,7 @@ export default function Dashboard() {
       )}
       {renderHeader()}
 
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 min-h-0 overflow-hidden relative">
         {/* Mobile sidebar backdrop */}
         {sidebarMobileOpen && (
           <div
@@ -1551,8 +1551,20 @@ export default function Dashboard() {
         </div>
 
         {/* MAIN CONTENT */}
-        <div className="flex-1 flex flex-col overflow-y-auto">
-          <div className="flex-1 overflow-hidden relative">
+        {/* Area modul dikunci PERSIS setinggi layar.
+            Sebelumnya di sini ada overflow-y-auto, sehingga area ini bisa
+            tumbuh melebihi layar dan iframe di dalamnya ikut lebih tinggi dari
+            yang terlihat. Akibatnya setiap modal di SEMUA modul meleset:
+            position:fixed di dalam iframe mengacu ke viewport iframe — kalau
+            viewport itu lebih tinggi dari area terlihat, latar gelap modal
+            berhenti di tengah layar dan isinya tidak pernah pas.
+
+            Modul di dalam iframe sudah punya scroll sendiri (h-screen +
+            overflow-hidden), jadi lapisan ini tidak boleh ikut men-scroll.
+            min-h-0 wajib: tanpa itu flex-1 menolak menyusut di bawah tinggi
+            kontennya dan penguncian ini tidak berlaku. */}
+        <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+          <div className="flex-1 min-h-0 overflow-hidden relative">
             {/* ── Loading Bar (muncul saat menu diklik, hilang setelah iframe loaded) ── */}
             {iframeLoading && (
               <div className="absolute top-0 left-0 right-0 z-50 pointer-events-none">
