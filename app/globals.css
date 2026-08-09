@@ -187,3 +187,25 @@ html {
   height: auto;
   max-height: none;
 }
+
+/* ── Jaring pengaman: kartu modal tidak boleh melewati layar ───────────────
+   Menggantikan suntikan CSS yang dulu dipasang app/layout.tsx (lihat catatan
+   panjang di berkas itu). Yang lama memakai 85vh + !important dan hanya aktif
+   di dalam iframe, sehingga memaksa SETIAP modal berhenti di 85% tinggi layar
+   dan tidak bisa dilawan dari komponen mana pun.
+
+   Dua perbedaan yang membuat aturan ini aman:
+
+   1. :where() — kekhususannya NOL. Kelas apa pun di komponen (max-h-full,
+      max-h-96, overflow-hidden) maupun style inline otomatis menang. Jadi ini
+      benar-benar cadangan terakhir, bukan pemaksa.
+
+   2. 100dvh, bukan 85vh. Ia hanya menahan modal yang memang MELEBIHI layar,
+      dan tidak pernah menyisakan ruang kosong pada modal yang sudah pas.
+
+   overflow-y ikut disetel karena batas tinggi tanpa gulir hanya memindahkan
+   masalah: isinya terpotong dan tidak bisa dijangkau. */
+:where(.fixed.inset-0:not(.pointer-events-none)) > :where(*) {
+  max-height: 100dvh;
+  overflow-y: auto;
+}
