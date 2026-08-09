@@ -5,7 +5,8 @@ import { createPortal } from 'react-dom';
 import * as XLSX from 'xlsx-js-style';
 import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
-import { PageHeader, MobileListCard, MobileCardBadge } from '@/components/shared';
+import { PageHeader, MobileListCard, MobileCardBadge, MiniSpark, MonthBarChart, DonutChart, TrendBadge
+} from '@/components/shared';
 import { notifyKPIAlert } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 
@@ -434,18 +435,6 @@ function exportKPIExcel(
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function TrendBadge({ delta, lowerIsBetter = false }: { delta: number; lowerIsBetter?: boolean }) {
-  const abs = Math.abs(delta);
-  if (abs < 0.05) return <span className="text-[10px] text-slate-400 font-medium">— 0%</span>;
-  const isGood = lowerIsBetter ? delta < 0 : delta > 0;
-  const arrow = delta > 0 ? '▲' : '▼';
-  const color = isGood ? '#10b981' : '#ef4444';
-  return (
-    <span className="text-[10px] font-bold flex-shrink-0" style={{ color }}>
-      {arrow} {abs.toFixed(1)}%
-    </span>
-  );
-}
 
 function ProgressBar({ value, max, showPct = true, h = 6 }: { value: number; max: number; showPct?: boolean; h?: number }) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
@@ -464,73 +453,8 @@ function ProgressBar({ value, max, showPct = true, h = 6 }: { value: number; max
   );
 }
 
-function MiniSpark({ values, color = KPI_COLOR }: { values: number[]; color?: string }) {
-  const max = Math.max(...values, 1);
-  const w = 56, h = 18;
-  const bw = Math.max(2, Math.floor(w / values.length) - 1);
-  return (
-    <svg width={w} height={h} className="flex-shrink-0">
-      {values.map((v, i) => {
-        const bh = Math.max(2, (v / max) * h);
-        return <rect key={i} x={i * (bw + 1)} y={h - bh} width={bw} height={bh} rx={1}
-          fill={color} opacity={0.35 + (i / values.length) * 0.65} />;
-      })}
-    </svg>
-  );
-}
 
-function DonutChart({ segments, size = 56, label }: {
-  segments: { value: number; color: string }[]; size?: number; label?: string;
-}) {
-  const sw = 8, r = (size - sw) / 2, circ = 2 * Math.PI * r;
-  const total = segments.reduce((s, x) => s + x.value, 0);
-  if (!total) return (
-    <div style={{ width: size, height: size }} className="flex items-center justify-center flex-shrink-0">
-      <span className="text-[9px] text-slate-300">—</span>
-    </div>
-  );
-  let cum = 0;
-  return (
-    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#f1f5f9" strokeWidth={sw} />
-        {segments.map((seg, i) => {
-          const dash = (seg.value / total) * circ;
-          const offset = -(cum / total) * circ;
-          cum += seg.value;
-          return <circle key={i} cx={size/2} cy={size/2} r={r} fill="none" stroke={seg.color}
-            strokeWidth={sw} strokeDasharray={`${dash} ${circ - dash}`} strokeDashoffset={offset} />;
-        })}
-      </svg>
-      {label && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-[10px] font-black text-slate-700">{label}</span>
-        </div>
-      )}
-    </div>
-  );
-}
 
-function MonthBarChart({ values, color }: { values: number[]; color: string }) {
-  const max = Math.max(...values, 1);
-  const currentMonth = new Date().getMonth();
-  return (
-    <div className="flex items-end gap-0.5 h-[72px]">
-      {values.map((v, i) => {
-        const bh = Math.max(3, (v / max) * 72);
-        const isNow = i === currentMonth;
-        return (
-          <div key={i} className="flex-1 flex flex-col items-center justify-end gap-0.5">
-            {v > 0 && <span className="text-[7px] font-bold text-slate-500 leading-none">{v}</span>}
-            <div className="w-full rounded-t-sm transition-all duration-500"
-              style={{ height: bh, background: isNow ? color : `${color}55` }} />
-            <span className="text-[7px] text-slate-400 leading-none">{MONTHS[i]}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 function SummaryCard({ icon, label, value, sub, color, trend, lowerIsBetter }: {
   icon: string; label: string; value: string | number; sub?: string;

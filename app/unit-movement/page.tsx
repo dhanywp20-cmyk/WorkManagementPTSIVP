@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ErrorState, MobileListCard, MobileCardBadge } from '@/components/shared';
+import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ErrorState, MobileListCard, MobileCardBadge, ListEmptyState
+} from '@/components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { User, MovementLog, EVENTS, COLORS, splitTypeLines, fmtDate } from './_components/shared';
 import { logAudit } from '@/lib/audit';
@@ -400,7 +401,13 @@ function UnitMovementPageInner() {
           {/* ── MOBILE: kartu (pola Ticket Troubleshooting) ── */}
           <div className="md:hidden divide-y divide-gray-100">
             {filteredLogs.length === 0 && (
-              <div className="px-4 py-10 text-center text-sm text-gray-400">Belum ada log pergerakan.</div>
+              <ListEmptyState
+                adaFilterAktif={filterStatus !== 'All' || filterEvent !== 'All' || filterPTS !== 'All' || filterYear !== 'All'}
+                onReset={() => { setFilterStatus('All'); setFilterEvent('All'); setFilterPTS('All'); setFilterYear('All'); }}
+                icon="📦"
+                judulKosong="Belum ada log pergerakan"
+                deskripsiKosong="Perpindahan unit yang tercatat akan muncul di sini."
+              />
             )}
             {filteredLogs.map((log) => {
               const isMasuk = log.status_barang === 'Masuk';

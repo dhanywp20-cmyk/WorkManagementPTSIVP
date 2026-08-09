@@ -5,7 +5,8 @@ import { User } from './shared';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ResultType = 'ticket' | 'reminder' | 'project' | 'piket' | 'unit' | 'user';
+type ResultType = 'ticket' | 'reminder' | 'project' | 'piket' | 'unit' | 'user'
+  | 'progress' | 'technote' | 'daily' | 'review' | 'materi';
 
 interface SearchResult {
   id: string;
@@ -26,9 +27,17 @@ const TYPE_CONFIG: Record<ResultType, { label: string; color: string; bg: string
   piket:    { label: 'Piket Showroom', color: '#0f766e', bg: 'rgba(204,251,241,0.5)' },
   unit:     { label: 'Unit Movement',  color: '#92400e', bg: 'rgba(254,243,199,0.5)' },
   user:     { label: 'User',           color: '#374151', bg: 'rgba(243,244,246,0.8)' },
+  progress: { label: 'Project Progress', color: '#0e7490', bg: 'rgba(207,250,254,0.5)' },
+  technote: { label: 'Tech Note',      color: '#3730a3', bg: 'rgba(224,231,255,0.6)' },
+  daily:    { label: 'Daily Report',   color: '#065f46', bg: 'rgba(209,250,229,0.5)' },
+  review:   { label: 'Form Review',    color: '#b45309', bg: 'rgba(254,243,199,0.5)' },
+  materi:   { label: 'Learning Center', color: '#1d4ed8', bg: 'rgba(219,234,254,0.6)' },
 };
 
-const ALL_TYPES: ResultType[] = ['ticket','reminder','project','piket','unit','user'];
+const ALL_TYPES: ResultType[] = [
+  'ticket','reminder','project','progress','review','daily',
+  'piket','unit','technote','materi','user',
+];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -46,12 +55,55 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
   const listRef   = useRef<HTMLDivElement>(null);
   const debounce  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  /**
+   * ── Cakupan pencarian ────────────────────────────────────────────────────
+   *
+   * BUG yang ditutup di sini: sebelumnya penyaringan hanya punya cabang untuk
+   * PTS Supervisor dan Sales Supervisor. Sales BIASA — role guest tanpa jabatan
+   * supervisor, yang jumlahnya paling banyak — tidak masuk cabang mana pun,
+   * sehingga LOLOS DARI SELURUH PENYARINGAN dan bisa melihat tiket, jadwal,
+   * serta project milik sales lain lewat kotak pencarian.
+   *
+   * Aturan sekarang:
+   *   admin · superadmin · team  → seluruh data, tanpa batas
+   *   sales supervisor           → divisi & bawahannya
+   *   sales biasa                → HANYA yang mencatat namanya
+   *
+   * Penyaringan sales biasa dilakukan DI QUERY (lihat batasiMilikSendiri),
+   * bukan setelah data tiba. Menyaring setelah tiba berarti data sales lain
+   * sudah sampai di browser dan terbaca lewat DevTools — untuk daftar
+   * pelanggan dan nilai project, itu kebocoran yang sesungguhnya.
+   */
   const isAdmin  = ['admin','superadmin'].includes(currentUser.role?.toLowerCase() ?? '');
+  /** Orang dalam PTS: admin, superadmin, dan seluruh role team. */
+  const tanpaBatas = isAdmin || currentUser.role?.toLowerCase() === 'team';
   const isPTSsup = currentUser.role === 'team' &&
     ['Team PTS IVP','Team PTS UMP','Team PTS MVI'].includes(currentUser.team_type ?? '') &&
     currentUser.jabatan === 'Supervisor';
   const isSalesSup = ['guest','sales'].includes(currentUser.role?.toLowerCase() ?? '') &&
     ['Supervisor','Manager','Deputy General Manager','General Manager','Direktur'].includes(currentUser.jabatan ?? '');
+
+  /** Sales biasa = guest/sales yang BUKAN supervisor. Inilah yang dulu terlewat. */
+  const isSalesBiasa = ['guest','sales'].includes(currentUser.role?.toLowerCase() ?? '') && !isSalesSup;
+
+  /**
+   * Tempelkan batas "hanya milik saya" ke sebuah query.
+   *
+   * Nilai dikutip ganda karena nama bisa memuat koma — tanpa kutip, PostgREST
+   * akan membacanya sebagai pemisah kondisi dan batasannya jadi melar.
+   * Tanda kutip di dalam nama dibuang, bukan di-escape, supaya tidak ada celah
+   * penyisipan sintaks filter.
+   */
+  const batasiMilikSendiri = <T,>(query: T, kolom: string[]): T => {
+    const nama = (currentUser.full_name ?? '').replace(/"/g, '');
+    const user = (currentUser.username ?? '').replace(/"/g, '');
+    const syarat = kolom
+      .map(k => (k === 'created_by' ? `${k}.eq."${user}"` : `${k}.eq."${nama}"`))
+      .join(',');
+    // .or() kedua di-AND-kan dengan .or() pencarian teks oleh PostgREST,
+    // jadi hasilnya: (cocok kata kunci) DAN (milik saya).
+    return (query as { or: (f: string) => T }).or(syarat);
+  };
 
   // ── Open/close via keyboard ──
   useEffect(() => {
@@ -156,12 +208,16 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
         .or(`project_name.ilike.%${q}%,issue_case.ilike.%${q}%,assign_name.ilike.%${q}%,sales_name.ilike.%${q}%,sn_unit.ilike.%${q}%`)
         .order('created_at', { ascending: false }).limit(20);
 
+      // Sales biasa: dibatasi DI QUERY — tiket sales lain tidak pernah dikirim
+      // ke browser, bukan sekadar disembunyikan setelah tiba.
+      if (isSalesBiasa) q2 = batasiMilikSendiri(q2, ['sales_name', 'created_by']);
+
       const { data: tData } = await q2;
       let tickets = (tData ?? []) as any[];
 
       // Scope filter
-      if (isPTSsup && ptsMemberNames.length) {
-        tickets = tickets.filter((t: any) => ptsMemberNames.some(n => n === t.assign_name));
+      if (tanpaBatas) {
+        // admin, superadmin, team — tanpa batas, sesuai aturan cakupan di atas.
       } else if (isSalesSup) {
         tickets = tickets.filter((t: any) =>
           salesDivisions.includes(t.sales_division) ||
@@ -182,14 +238,16 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
     // ── 2. Reminders ──
     try {
-      const { data: rData } = await supabase.from('reminders')
+      let qr = supabase.from('reminders')
         .select('id, project_name, category, due_date, assign_name, sales_name, sales_division, status')
         .or(`project_name.ilike.%${q}%,category.ilike.%${q}%,assign_name.ilike.%${q}%,sales_name.ilike.%${q}%,address.ilike.%${q}%`)
         .order('created_at', { ascending: false }).limit(20);
+      if (isSalesBiasa) qr = batasiMilikSendiri(qr, ['sales_name', 'created_by']);
+      const { data: rData } = await qr;
       let reminders = (rData ?? []) as any[];
 
-      if (isPTSsup && ptsMemberNames.length) {
-        reminders = reminders.filter((r: any) => ptsMemberNames.some(n => n === r.assign_name));
+      if (tanpaBatas) {
+        // tanpa batas
       } else if (isSalesSup) {
         reminders = reminders.filter((r: any) =>
           salesDivisions.includes(r.sales_division) ||
@@ -210,10 +268,12 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
     // ── 3. Form Require Project ──
     try {
-      const { data: pData } = await supabase.from('project_requests')
+      let qp = supabase.from('project_requests')
         .select('id, project_name, status, sales_name, sales_division, created_at, requester_id')
         .or(`project_name.ilike.%${q}%,sales_name.ilike.%${q}%`)
         .order('created_at', { ascending: false }).limit(15);
+      if (isSalesBiasa) qp = batasiMilikSendiri(qp, ['sales_name']);
+      const { data: pData } = await qp;
       let projects = (pData ?? []) as any[];
 
       if (isSalesSup) {
@@ -224,8 +284,8 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
         projects = projects.filter((p: any) =>
           salesDivisions.includes(p.sales_division) || subIds.includes(p.requester_id)
         );
-      } else if (isPTSsup) {
-        projects = []; // PTS tidak lihat form require
+      } else if (currentUser.role?.toLowerCase() === 'team' && !isAdmin) {
+        projects = []; // Team PTS tidak berkepentingan dengan Form Require Project
       }
 
       projects.forEach((p: any) => res.push({
@@ -247,7 +307,9 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
         .order('day_date', { ascending: false }).limit(10);
       let pikets = (pkData ?? []) as any[];
 
-      if (isPTSsup) {
+      if (isSalesBiasa || isSalesSup) {
+        pikets = []; // Piket showroom bukan wilayah Sales
+      } else if (isPTSsup) {
         const myTeam = currentUser.team_type;
         pikets = pikets.filter((p: any) => {
           if (myTeam === 'Team PTS IVP') return (p.pic_ivp_name ?? '').toLowerCase().includes(ql);
@@ -255,8 +317,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
           if (myTeam === 'Team PTS MVI') return (p.pic_mvi_name ?? '').toLowerCase().includes(ql);
           return true;
         });
-      } else if (isSalesSup) {
-        pikets = []; // Sales tidak akses piket
       }
 
       pikets.forEach((p: any) => res.push({
@@ -270,7 +330,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
     // ── 5. Unit Movement ──
     try {
-      if (isAdmin || isPTSsup) {
+      if (tanpaBatas) {
         const { data: uData } = await supabase.from('movement_logs')
           .select('id, project_name, event, status_barang, nama_pts, tanggal, serial_number')
           .or(`project_name.ilike.%${q}%,event.ilike.%${q}%,nama_pts.ilike.%${q}%,serial_number.ilike.%${q}%`)
@@ -292,6 +352,106 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
         }));
       }
     } catch (e) { console.error('[search] units:', e); }
+
+    // ── 7. Project Progress ──
+    //  RLS di progress_* sudah menegakkan isolasi Sales di level basis data,
+    //  jadi query ini otomatis hanya mengembalikan proyek yang memang haknya —
+    //  tanpa perlu penyaringan tambahan di sini. Batas untuk sales biasa tetap
+    //  dipasang sebagai lapis kedua, kalau-kalau RLS dimatikan sewaktu-waktu.
+    try {
+      let qpp = supabase.from('progress_projects')
+        .select('id, name, client, status, sales_name')
+        .or(`name.ilike.%${q}%,client.ilike.%${q}%,sales_name.ilike.%${q}%`)
+        .order('created_at', { ascending: false }).limit(10);
+      if (isSalesBiasa) qpp = batasiMilikSendiri(qpp, ['sales_name']);
+      const { data } = await qpp;
+      (data ?? []).forEach((p: any) => res.push({
+        id: `progress-${p.id}`, type: 'progress', icon: '📊',
+        title: p.name ?? '-',
+        sub: p.client ?? 'Tanpa client',
+        meta: p.sales_name ?? '-',
+        badge: p.status,
+        badgeColor: p.status === 'done' ? '#10b981' : p.status === 'blocked' ? '#f43f5e' : '#f59e0b',
+        url: '/project-progress',
+      }));
+    } catch (e) { console.error('[search] project progress:', e); }
+
+    // ── 8. Tech Note ──
+    //  Catatan teknis adalah pengetahuan bersama tim PTS — tidak dibatasi per
+    //  orang, tapi Sales memang tidak berkepentingan dengannya.
+    try {
+      if (tanpaBatas) {
+        const { data } = await supabase.from('tech_notes')
+          .select('id, title, description, product, author_name, status')
+          .or(`title.ilike.%${q}%,description.ilike.%${q}%,product.ilike.%${q}%,author_name.ilike.%${q}%`)
+          .order('submitted_at', { ascending: false }).limit(10);
+        (data ?? []).forEach((t: any) => res.push({
+          id: `technote-${t.id}`, type: 'technote', icon: '📝',
+          title: t.title ?? '-',
+          sub: t.product ?? '-',
+          meta: t.author_name ?? '-',
+          badge: t.status,
+          badgeColor: t.status === 'approved' ? '#10b981' : t.status === 'rejected' ? '#ef4444' : '#f59e0b',
+          url: '/tech-note',
+        }));
+      }
+    } catch (e) { console.error('[search] tech note:', e); }
+
+    // ── 9. Daily Report ──
+    try {
+      let qd = supabase.from('daily_reports')
+        .select('id, report_date, user_name, sales_division, reminder_notes')
+        .or(`user_name.ilike.%${q}%,reminder_notes.ilike.%${q}%,sales_division.ilike.%${q}%`)
+        .order('report_date', { ascending: false }).limit(10);
+      if (isSalesBiasa) qd = batasiMilikSendiri(qd, ['user_name']);
+      const { data } = await qd;
+      (data ?? []).forEach((d: any) => res.push({
+        id: `daily-${d.id}`, type: 'daily', icon: '📋',
+        title: `Laporan ${d.user_name ?? '-'}`,
+        sub: d.reminder_notes || 'Tanpa catatan',
+        meta: d.report_date ?? '-',
+        url: '/daily-report',
+      }));
+    } catch (e) { console.error('[search] daily report:', e); }
+
+    // ── 10. Form Review ──
+    try {
+      let qf = supabase.from('form_reviews')
+        .select('id, project_name, address, sales_name, sales_division, assign_name')
+        .or(`project_name.ilike.%${q}%,address.ilike.%${q}%,sales_name.ilike.%${q}%,assign_name.ilike.%${q}%`)
+        .order('created_at', { ascending: false }).limit(10);
+      if (isSalesBiasa) qf = batasiMilikSendiri(qf, ['sales_name']);
+      const { data } = await qf;
+      let reviews = (data ?? []) as any[];
+      if (isSalesSup) {
+        reviews = reviews.filter((r: any) =>
+          salesDivisions.includes(r.sales_division) || salesSubNames.some(n => n === r.sales_name));
+      }
+      reviews.forEach((r: any) => res.push({
+        id: `review-${r.id}`, type: 'review', icon: '⭐',
+        title: r.project_name ?? '-',
+        sub: r.address ?? '-',
+        meta: r.sales_name ?? '-',
+        url: '/form-review',
+      }));
+    } catch (e) { console.error('[search] form review:', e); }
+
+    // ── 11. Materi Learning Center ──
+    //  Materi pelatihan terbuka untuk semua yang login — tidak ada isi rahasia
+    //  antar-orang di sini, jadi tidak perlu dibatasi.
+    try {
+      const { data } = await supabase.from('lc_materials')
+        .select('id, materi_name')
+        .ilike('materi_name', `%${q}%`)
+        .order('materi_name').limit(8);
+      (data ?? []).forEach((m: any) => res.push({
+        id: `materi-${m.id}`, type: 'materi', icon: '🎓',
+        title: m.materi_name ?? '-',
+        sub: 'Materi Learning Center',
+        meta: '',
+        url: '/learning-center',
+      }));
+    } catch (e) { console.error('[search] materi:', e); }
 
     // ── 6. Users (admin only) ──
     try {

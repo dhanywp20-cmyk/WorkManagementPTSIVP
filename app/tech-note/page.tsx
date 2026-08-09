@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { ListEmptyState } from '@/components/shared';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/app/dashboard/_components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
@@ -493,10 +494,14 @@ export default function TechNotePage() {
 
             {/* Cards */}
             {loading ? <Spinner /> : filtered.length === 0 ? (
-              <div className="text-center py-20 rounded-2xl shadow-sm" style={{ background: 'rgba(255,255,255,0.90)' }}>
-                <div className="text-5xl mb-3">📭</div>
-                <div className="font-bold text-base text-slate-500">Tidak ada Tech Note ditemukan</div>
-                <div className="text-sm mt-1 text-slate-400">Coba ubah filter atau upload Tech Note baru</div>
+              <div className="rounded-2xl shadow-sm" style={{ background: 'rgba(255,255,255,0.90)' }}>
+                <ListEmptyState
+                  adaFilterAktif={search.trim() !== '' || filterStatus !== 'all' || tab !== 'all' || selectedFolder !== null}
+                  onReset={() => { setSearch(''); setFilterStatus('all'); setTab('all'); setSelectedFolder(null); }}
+                  icon="📝"
+                  judulKosong={`Belum ada Tech Note di ${year}`}
+                  deskripsiKosong="Catatan teknis yang diunggah tim akan muncul di sini."
+                />
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

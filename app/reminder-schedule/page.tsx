@@ -26,7 +26,7 @@ import {
   FormField, SectionHeader, SectionHeaderSmall, InfoRow,
   LoadingScreen, MiniPieChart, PageHeader,
   ViewIconBtn, RescheduleIconBtn, ApproveIconBtn, DeleteIconBtn, ActionGroup,
-  ConfirmDialog, type ConfirmState, ErrorState,
+  ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState
 } from '@/components/shared';
 import { MiniCalendar } from './_components/MiniCalendar';
 import { RescheduleModal } from './_components/RescheduleModal';
@@ -3244,11 +3244,23 @@ jangan lupa peralatan & Semangat💪🏼
                       ))}
                     </div>
                   ) : filteredReminders.length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="text-5xl mb-3">📭</div>
-                      <p className="text-gray-600 font-semibold text-sm">Tidak ada reminder ditemukan</p>
-                      <p className="text-xs text-gray-400 mt-1">Coba ubah filter atau tambahkan reminder baru</p>
-                    </div>
+                    <ListEmptyState
+                      adaFilterAktif={
+                        filterStatus !== 'all' || filterYear !== 'all' || filterCategory !== 'all'
+                        || productFilter !== null
+                        || [searchProject, searchSales, searchDivisionSales, searchTeamHandler, searchProduct]
+                             .some(v => v.trim() !== '')
+                      }
+                      onReset={() => {
+                        setFilterStatus('all'); setFilterYear('all'); setFilterCategory('all');
+                        setProductFilter(null);
+                        setSearchProject(''); setSearchSales(''); setSearchDivisionSales('');
+                        setSearchTeamHandler(''); setSearchProduct('');
+                      }}
+                      icon="🗓️"
+                      judulKosong="Belum ada reminder"
+                      deskripsiKosong="Jadwal yang dibuat atau di-request akan muncul di sini."
+                    />
                   ) : (
                     <>
                     {/* ── MOBILE: Card view ── */}

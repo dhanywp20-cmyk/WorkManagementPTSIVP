@@ -1,3 +1,4 @@
+import { MiniSpark } from '@/components/shared';
 'use client';
 import React, { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
@@ -724,20 +725,6 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
     );
   }
 
-  // ── MiniSpark: tiny SVG bar spark ──
-  function MiniSpark({ values, color='#3b82f6', height=20, width=56 }: { values:number[]; color?:string; height?:number; width?:number }) {
-    const bw = Math.floor(width/values.length)-1;
-    const max = Math.max(...values,1);
-    return (
-      <svg width={width} height={height} className="flex-shrink-0">
-        {values.map((v,i)=>{
-          const bh = Math.max(2,(v/max)*height);
-          return <rect key={i} x={i*(bw+1)} y={height-bh} width={bw} height={bh} rx={1}
-            fill={color} opacity={0.5+(i/values.length)*0.5}/>;
-        })}
-      </svg>
-    );
-  }
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
