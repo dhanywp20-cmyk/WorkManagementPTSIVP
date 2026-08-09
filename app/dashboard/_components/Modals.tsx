@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { OrgChartTab } from './OrgChartTab';
 import { supabase } from '@/lib/supabase';
 import { setSession, getSession } from '@/lib/auth';
 import { adminCreateUser, adminUpdateUser } from '@/lib/admin-users';
@@ -2390,9 +2391,9 @@ export function BrandPicSettingContent() {
 // ─── AdminPanelModal (unified: Settings + User Management + PIC Brand) ───────
 
 export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
-  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster'>(initialTab);
+  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'orgChart'>(initialTab);
 
-  const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster'; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
+  const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'orgChart'; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
     {
       key: 'settings',
       label: 'Account Settings',
@@ -2416,6 +2417,12 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
       label: 'KPI Roster',
       icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
       color: '#0369a1', activeBg: 'rgba(3,105,161,0.1)', activeBorder: 'rgba(3,105,161,0.4)', activeText: '#0369a1',
+    },
+    {
+      key: 'orgChart',
+      label: 'Struktur Atasan',
+      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v4m0 0H8a2 2 0 00-2 2v2m6-4h4a2 2 0 012 2v2M4 16h4v4H4v-4zm12 0h4v4h-4v-4zM10 16h4v4h-4v-4z" /></svg>,
+      color: '#7c3aed', activeBg: 'rgba(124,58,237,0.1)', activeBorder: 'rgba(124,58,237,0.4)', activeText: '#7c3aed',
     },
   ];
 
@@ -2479,6 +2486,7 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
                 {activeSection === 'userManagement' && 'Mapping Atasan, IVP & MVI Account & CC per User'}
                 {activeSection === 'picBrand' && 'Mapping Brand PIC per divisi & produk'}
                 {activeSection === 'kpiRoster' && 'Pilih anggota tim yang masuk dalam penilaian KPI'}
+                {activeSection === 'orgChart' && 'Pohon atasan-bawahan, beserta akun yatim & rantai melingkar'}
               </p>
             </div>
             <button onClick={onClose}
@@ -2497,6 +2505,7 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
             {activeSection === 'userManagement' && <UserManagementInline />}
             {activeSection === 'picBrand' && <BrandPicSettingInline />}
             {activeSection === 'kpiRoster' && <KpiRosterInline />}
+            {activeSection === 'orgChart' && <OrgChartTab />}
           </div>
         </div>
       </div>

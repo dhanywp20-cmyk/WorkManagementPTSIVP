@@ -26,7 +26,7 @@ import {
   FormField, SectionHeader, SectionHeaderSmall, InfoRow,
   LoadingScreen, MiniPieChart, PageHeader,
   ViewIconBtn, RescheduleIconBtn, ApproveIconBtn, DeleteIconBtn, ActionGroup,
-  ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState
+  ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState, AuditTrailPanel, FlowSteps
 } from '@/components/shared';
 import { MiniCalendar } from './_components/MiniCalendar';
 import { RescheduleModal } from './_components/RescheduleModal';
@@ -2594,6 +2594,40 @@ jangan lupa peralatan & Semangat💪🏼
                     <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line">{cleanRequestNotes(detailReminder.notes)}</p>
                   </div>
                 )}
+
+                {/* Alur request Sales — hanya untuk yang memang lewat routing.
+                    Reminder yang dibuat langsung admin tidak punya tahapan ini,
+                    jadi diagramnya tidak ditampilkan supaya tidak mengarang
+                    tahap yang tak pernah terjadi. */}
+                {(detailReminder.notes ?? '').includes('[REQUEST SALES]') || detailReminder.routing_status ? (() => {
+                  const r = detailReminder as { routing_status?: string | null; assigned_to?: string | null; status?: string };
+                  const sudahAssign = !!(r.assigned_to && r.assigned_to.trim() !== '');
+                  const selesai     = r.status === 'done';
+                  const batal       = r.status === 'cancelled';
+                  //  0 diajukan · 1 Sales Internal · 2 Admin assign · 3 dikerjakan · 4 selesai
+                  const aktif = selesai      ? 5
+                    : sudahAssign            ? 3
+                    : r.routing_status === 'admin_review'    ? 2
+                    : r.routing_status === 'supervisor_assign' ? 2
+                    : r.routing_status === 'internal_review' ? 1
+                    : 2;
+                  return (
+                    <FlowSteps
+                      judul="Alur Request"
+                      aktif={aktif}
+                      dibatalkan={batal}
+                      steps={[
+                        { label: 'Diajukan',  pelaku: detailReminder.sales_name || 'Sales' },
+                        { label: 'Diteruskan', pelaku: 'Sales Internal' },
+                        { label: 'Di-assign', pelaku: 'Admin' },
+                        { label: 'Dikerjakan', pelaku: detailReminder.assign_name || 'Team PTS' },
+                        { label: 'Selesai',   pelaku: 'BAST' },
+                      ]}
+                    />
+                  );
+                })() : null}
+
+                <AuditTrailPanel targetId={detailReminder.id} modul="reminder" />
 
                 {/* ── Timeline Project Progress — kategori pemicu saja ──
                     Sejajar dengan blok Masa Garansi di bawahnya: keduanya

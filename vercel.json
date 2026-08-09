@@ -5,6 +5,10 @@
     {
       "path": "/api/cron/escalate",
       "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/digest",
+      "schedule": "0 23 * * *"
     }
   ]
 }

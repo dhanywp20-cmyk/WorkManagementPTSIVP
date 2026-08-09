@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
-import { ListEmptyState } from '@/components/shared';
+import { ListEmptyState, AuditTrailPanel
+} from '@/components/shared';
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase, supabaseServices } from "@/lib/supabase";
 import { setSession, clearSession, getSession } from "@/lib/auth";
@@ -3581,6 +3582,9 @@ function TicketingSystemInner() {
                 <div className="flex justify-between items-center"><div className="flex items-center gap-3"><span className="text-2xl">🔄</span><div><h3 className="text-lg font-bold text-white">Activity Summary</h3><p className="text-sm text-blue-100 font-medium">{summaryTicket.project_name}</p><p className="text-xs text-blue-200">{summaryTicket.issue_case}</p></div></div><button onClick={() => { setShowActivitySummary(false); setSummaryTicket(null); }} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold transition-all text-lg">✕</button></div>
               </div>
               <div className="flex-1 overflow-y-auto p-5">
+                <div className="mb-4">
+                  <AuditTrailPanel targetId={summaryTicket.id} modul="ticket" />
+                </div>
                 <div className="flex flex-wrap gap-2 mb-5 p-3 rounded-xl text-xs" style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)" }}>
                   <span className="flex items-center gap-1"><span className="text-gray-500">👤 Handler:</span><span className="font-bold">{summaryTicket.assign_name || "-"}</span></span><span className="text-gray-300">|</span>
                   <span className="flex items-center gap-1"><span className="text-gray-500">📅 Dibuat:</span><span className="font-bold">{summaryTicket.created_at ? formatDateTime(summaryTicket.created_at) : "-"}</span></span><span className="text-gray-300">|</span>

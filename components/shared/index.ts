@@ -19,5 +19,11 @@ export { PageHeader } from './PageHeader';
 export { SalesPicker, type SalesPickerUser } from './SalesPicker';
 export { ConfirmDialog, type ConfirmState } from './ConfirmDialog';
 export { LoadingSpinner, EmptyState, ListEmptyState, ErrorState } from './EmptyState';
+// Riwayat perubahan sebuah record. logAudit() dipanggil dari 14 berkas tapi
+// sampai komponen ini ada hanya satu layar yang pernah membacanya kembali.
+export { AuditTrailPanel } from './AuditTrailPanel';
+// Diagram tahapan untuk alur bertahap. Alur Request Schedule sebelumnya hanya
+// hidup di kolom routing_status — tidak pernah tergambar di layar mana pun.
+export { FlowSteps, type FlowStep } from './FlowSteps';
 export { MultiDatePicker } from './MultiDatePicker';
 export { MobileListCard, MobileCardBadge, type MobileCardField } from './MobileListCard';
