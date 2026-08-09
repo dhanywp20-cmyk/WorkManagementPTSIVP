@@ -54,7 +54,7 @@ function waktuRelatif(iso: string): string {
 
 export function AuditTrailPanel({
   targetId, modul, judul = 'Riwayat Perubahan', batas = 20,
-  selaluTerbuka = false, sembunyikanBilaKosong = true, awal = null,
+  selaluTerbuka = false, sembunyikanBilaKosong = true, awal = null, turunan = [],
 }: {
   /** Record yang riwayatnya ditampilkan. Panel diam bila kosong. */
   targetId: string | null | undefined;
@@ -87,6 +87,15 @@ export function AuditTrailPanel({
    * audit_trail ternyata sudah memuat baris create-nya sendiri.
    */
   awal?: { oleh: string | null; waktu: string | null; keterangan?: string } | null;
+  /**
+   * Peristiwa lain yang DITURUNKAN dari record, untuk record lama yang
+   * terjadi sebelum logAudit mencatat peristiwa itu.
+   *
+   * Tiap entri hanya disisipkan bila audit_trail belum memuat aksi yang sama —
+   * jadi begitu pencatatan sungguhan masuk, turunan ini menyingkir sendiri dan
+   * tidak pernah menggandakan.
+   */
+  turunan?: { aksi: string; oleh: string | null; waktu: string | null; keterangan?: string }[];
 }) {
   const [entri, setEntri] = useState<AuditEntry[]>([]);
   const [memuat, setMemuat] = useState(true);
@@ -117,19 +126,28 @@ export function AuditTrailPanel({
    * audit_trail belum memuat 'create' sendiri — kalau tidak, record baru akan
    * menampilkan dua baris pembuatan yang sama.
    */
-  const sudahAdaCreate = entri.some(e => e.action === 'create');
-  const semua: AuditEntry[] = (!awal?.waktu || sudahAdaCreate)
-    ? entri
-    : [...entri, {
-        id: '__awal__',
-        user_name: awal.oleh,
-        action: 'create',
-        target_name: null,
-        old_value: null,
-        new_value: null,
-        notes: awal.keterangan ?? null,
-        created_at: awal.waktu,
-      }];
+  const aksiTercatat = new Set(entri.map(e => e.action));
+
+  const tambahan: AuditEntry[] = [];
+  for (const t of turunan) {
+    if (!t.waktu || aksiTercatat.has(t.aksi)) continue;
+    tambahan.push({
+      id: `__turunan_${t.aksi}__`, user_name: t.oleh, action: t.aksi,
+      target_name: null, old_value: null, new_value: null,
+      notes: t.keterangan ?? null, created_at: t.waktu,
+    });
+  }
+  if (awal?.waktu && !aksiTercatat.has('create')) {
+    tambahan.push({
+      id: '__awal__', user_name: awal.oleh, action: 'create',
+      target_name: null, old_value: null, new_value: null,
+      notes: awal.keterangan ?? null, created_at: awal.waktu,
+    });
+  }
+
+  // Terbaru di atas — sama seperti urutan dari basis data.
+  const semua: AuditEntry[] = [...entri, ...tambahan]
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
 
   if (!memuat && semua.length === 0 && sembunyikanBilaKosong) return null;
 

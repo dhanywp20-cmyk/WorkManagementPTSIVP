@@ -2945,25 +2945,39 @@ jangan lupa peralatan & Semangat💪🏼
                     awal={{
                       oleh: detailReminder.sales_name || detailReminder.created_by || null,
                       waktu: detailReminder.created_at ?? null,
-                      keterangan: (detailReminder.notes ?? '').includes('[REQUEST SALES]')
-                        ? `Request diajukan Sales${detailReminder.sales_division ? ` (${detailReminder.sales_division})` : ''} — kategori ${detailReminder.category}`
-                        : `Dibuat — kategori ${detailReminder.category}`,
-                    }} />
+                      keterangan: `Diajukan${detailReminder.sales_division ? ` — ${detailReminder.sales_division}` : ''} · kategori ${detailReminder.category}`,
+                    }}
+                    /* Peristiwa lain yang terjadi SEBELUM logAudit mencatatnya.
+                       Waktunya memakai updated_at — itu satu-satunya jejak waktu
+                       yang tersimpan, jadi disebut apa adanya sebagai perkiraan
+                       alih-alih dikarang persis. Begitu pencatatan sungguhan
+                       masuk, baris turunan ini menyingkir sendiri. */
+                    turunan={[
+                      ...(detailReminder.assign_name?.trim()
+                        ? [{ aksi: 'assign', oleh: detailReminder.assign_name,
+                             waktu: detailReminder.updated_at ?? detailReminder.created_at ?? null,
+                             keterangan: `Dikerjakan ${detailReminder.assign_name} — dari data jadwal` }]
+                        : []),
+                      ...(detailReminder.status === 'done'
+                        ? [{ aksi: 'status_change', oleh: detailReminder.assign_name || null,
+                             waktu: detailReminder.updated_at ?? null,
+                             keterangan: 'Ditandai selesai — dari data jadwal' }]
+                        : []),
+                    ]} />
 
                 {/* Alur request Sales — hanya untuk yang memang lewat routing.
                       Reminder yang dibuat langsung admin tidak punya tahapan ini,
                       jadi diagramnya tidak ditampilkan supaya tidak mengarang
                       tahap yang tak pernah terjadi. */}
-                  {(detailReminder.notes ?? '').includes('[REQUEST SALES]') || detailReminder.routing_status ? (() => {
-                    const r = detailReminder as { routing_status?: string | null; assigned_to?: string | null; status?: string };
-                    const sudahAssign = !!(r.assigned_to && r.assigned_to.trim() !== '');
+                  {(() => {
+                    const r = detailReminder as { routing_status?: string | null; assigned_to?: string | null; assign_name?: string | null; status?: string };
+                    const sudahAssign = !!((r.assigned_to && r.assigned_to.trim() !== '') || (r.assign_name && r.assign_name.trim() !== ''));
                     const selesai     = r.status === 'done';
                     const batal       = r.status === 'cancelled';
                     //  0 diajukan · 1 Sales Internal · 2 Admin assign · 3 dikerjakan · 4 selesai
+                    //  5 = seluruh tahap tuntas (indeks di luar daftar)
                     const aktif = selesai      ? 5
                       : sudahAssign            ? 3
-                      : r.routing_status === 'admin_review'    ? 2
-                      : r.routing_status === 'supervisor_assign' ? 2
                       : r.routing_status === 'internal_review' ? 1
                       : 2;
                     return (
@@ -2980,7 +2994,7 @@ jangan lupa peralatan & Semangat💪🏼
                         ]}
                       />
                     );
-                  })() : null}
+                  })()}
                 </div>
               </div>
             )}
