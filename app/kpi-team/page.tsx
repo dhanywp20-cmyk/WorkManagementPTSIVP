@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import * as XLSX from 'xlsx-js-style';
 import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
-import { PageHeader, MobileListCard, MobileCardBadge, MiniSpark, MonthBarChart, DonutChart, TrendBadge
+import { PageHeader, MobileListCard, MobileCardBadge, MiniSpark, MonthBarChart, DonutChart, TrendBadge, ListEmptyState
 } from '@/components/shared';
 import { notifyKPIAlert } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
@@ -1329,7 +1329,13 @@ export default function KPITeamPage() {
           {/* ── MOBILE: kartu ringkas KPI per anggota (tap utk detail) ── */}
           <div className="md:hidden divide-y divide-gray-100">
             {!loading && sortedMembers.length === 0 && (
-              <div className="px-4 py-10 text-center text-sm text-gray-400">Tidak ada data untuk periode &amp; filter ini.</div>
+              <ListEmptyState
+                adaFilterAktif={filterTeam !== 'all' || searchQ.trim() !== ''}
+                onReset={() => { setFilterTeam('all'); setSearchQ(''); }}
+                icon="📈"
+                judulKosong={`Belum ada data KPI untuk ${period}`}
+                deskripsiKosong="Angka terkumpul dari tiket & jadwal yang dikerjakan pada periode ini."
+              />
             )}
             {!loading && sortedMembers.map((m) => {
               const solveRate = m.ticketsHandled > 0 ? Math.round((m.ticketsSolved / m.ticketsHandled) * 100) : 0;

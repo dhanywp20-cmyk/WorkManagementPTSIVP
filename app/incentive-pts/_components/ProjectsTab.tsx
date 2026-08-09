@@ -2,6 +2,7 @@
 // ─── Incentive PTS — Tab: Projects ───────────────────────────────────────────
 
 import { IncentiveProject } from './types';
+import { EmptyState } from '@/components/shared';
 import { Badge, fmtRp, fmtDate, fmtPeriode } from './shared';
 import { ViewIconBtn, EditIconBtn, ActionGroup } from '@/components/shared/ActionIcons';
 
@@ -69,12 +70,12 @@ export function ProjectsTab({
           <tbody>
             {filteredProjects.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-16 text-center border border-gray-200">
-                  <p className="text-4xl mb-3">📭</p>
-                  <p className="text-gray-500 font-medium">Belum ada project incentive</p>
-                  <p className="text-gray-400 text-xs mt-1">
-                    Data otomatis muncul dari Reminder Schedule kategori Training / Konfigurasi &amp; Training yang sudah selesai
-                  </p>
+                <td colSpan={9} className="p-0 border border-gray-200">
+                  <EmptyState
+                    icon="💰"
+                    title="Belum ada project incentive"
+                    description="Data muncul otomatis dari Reminder Schedule kategori Training / Konfigurasi & Training yang sudah selesai."
+                  />
                 </td>
               </tr>
             ) : (

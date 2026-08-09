@@ -9,7 +9,8 @@ import { notifyProjectStatusChange } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { compressImage } from '@/lib/image-compress';
-import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState } from '@/components/shared';
+import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState, ListEmptyState
+} from '@/components/shared';
 import {
   User, ProjectRequest, RoomDetail, BrandPicMapping,
   ProjectMessage, ProjectAttachment,
@@ -1973,14 +1974,22 @@ Hubungi Admin untuk info lebih lanjut.
               </div>
             </div>
           ) : filteredRequests.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">📭</div>
-              <p className="text-gray-600 font-medium">{searchQuery || searchSales || filterStatus !== 'all' ? 'Tidak ada request yang sesuai filter.'
-                    : isIVPGuest
-                      ? 'Belum ada request yang di-assign ke akun kamu. Admin akan menghubungkan request dari sales external ke akun IVP kamu saat ada project baru.'
-                      : 'Belum ada request.'}</p>
-              {!isPTS && <button onClick={() => setShowNewFormModal(true)} className="mt-4 bg-teal-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-teal-700 transition-all shadow-md">+ Buat Request Pertama</button>}
-            </div>
+            <ListEmptyState
+              adaFilterAktif={
+                searchQuery.trim() !== '' || searchSales.trim() !== '' ||
+                filterStatus !== 'all' || filterYear !== 'all' || filterMonth !== 'all'
+              }
+              onReset={() => {
+                setSearchQuery(''); setSearchSales('');
+                setFilterStatus('all'); setFilterYear('all'); setFilterMonth('all');
+              }}
+              icon="🏗️"
+              judulKosong={isIVPGuest ? 'Belum ada request untuk akun kamu' : 'Belum ada request'}
+              deskripsiKosong={isIVPGuest
+                ? 'Admin akan menghubungkan request dari sales external ke akun IVP kamu saat ada project baru.'
+                : 'Request project yang diajukan akan muncul di sini.'}
+              aksiKosong={!isPTS ? { label: '+ Buat Request Pertama', onClick: () => setShowNewFormModal(true) } : undefined}
+            />
           ) : (
             <>
             {/* ── MOBILE: kartu (pola Ticket Troubleshooting) ── */}

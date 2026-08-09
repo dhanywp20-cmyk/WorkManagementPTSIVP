@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { ListEmptyState } from '@/components/shared';
 import { supabase, User, Question, QuizAttempt, DIFF_COLOR, fmtDate, ScoreBadge, SearchInput, BtnView, GradingStatusBadge, AppDialog, DialogState } from './shared';
 import { getSession } from '@/lib/auth';
 
@@ -298,7 +299,15 @@ export function TeamPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filtered.length === 0 && (
-                <tr><td colSpan={6} className="text-center py-10 text-slate-400">{search ? 'Tidak ada anggota yang cocok' : 'Belum ada data'}</td></tr>
+                <tr><td colSpan={6} className="p-0">
+                  <ListEmptyState
+                    adaFilterAktif={search.trim() !== ''}
+                    onReset={() => setSearch('')}
+                    icon="👥"
+                    judulKosong="Belum ada data anggota"
+                    deskripsiKosong="Nilai quiz anggota tim akan muncul di sini setelah mereka mengerjakan."
+                  />
+                </td></tr>
               )}
               {filtered.map(u => {
                 const ua = attempts.filter((a: any) => a.user_id === u.id);

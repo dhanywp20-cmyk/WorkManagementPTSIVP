@@ -11,7 +11,8 @@ import {
   JENIS_KEGIATAN_LIST, KEGIATAN_COLORS, PIE_COLORS,
   getMonday, addDays, toKey, getDayDate, getRollingNameForDate,
 } from './_components/shared';
-import { MiniPieChart, PageHeader, ConfirmDialog, type ConfirmState, ErrorState } from '@/components/shared';
+import { MiniPieChart, PageHeader, ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState
+} from '@/components/shared';
 import { TamuSummaryCards } from './_components/TamuSummaryCards';
 import { MiniCalendarPopup } from './_components/MiniCalendarPopup';
 import { FillDetailModal } from './_components/FillDetailModal';
@@ -478,10 +479,17 @@ function PiketShowroomPageInner() {
                   </thead>
                   <tbody>
                     {displayRows.length===0?(
-                      <tr><td colSpan={11} className="text-center py-16 text-gray-400">
-                        <div className="text-4xl mb-3">📋</div>
-                        <p className="font-semibold">{rows.length===0?'Belum ada jadwal':'Tidak ada hasil filter'}</p>
-                        {rows.length===0&&isAdmin&&<p className="text-xs mt-1">Klik "Atur Jadwal" untuk menambahkan jadwal piket</p>}
+                      <tr><td colSpan={11} className="p-0">
+                        <ListEmptyState
+                          adaFilterAktif={rows.length > 0}
+                          onReset={() => {
+                            setSearch(''); setFilterDay(''); setFilterTamu(false);
+                            setFilterKebutuhan(null); setFilterInstansi(null); setFilterDivision(null);
+                          }}
+                          icon="🏪"
+                          judulKosong="Belum ada jadwal piket"
+                          deskripsiKosong={isAdmin ? 'Klik "Atur Jadwal" untuk menambahkan jadwal piket.' : undefined}
+                        />
                       </td></tr>
                     ):displayRows.map((row,idx)=>{
                       const dc=DAY_COLOR[row.day_of_week];

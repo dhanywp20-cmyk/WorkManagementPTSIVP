@@ -24,7 +24,7 @@ import {
 import { logAudit } from '@/lib/audit';
 
 import {
-  FormField, SectionHeaderSmall, LoadingScreen,
+  FormField, SectionHeaderSmall, LoadingScreen, ListEmptyState
 } from '@/components/shared';
 import { MiniPieChart, PageHeader } from '@/components/shared';
 
@@ -978,11 +978,19 @@ export default function DailyReportPage() {
               <span className="text-sm">Memuat aktivitas dari semua platform...</span>
             </div>
           ) : filteredRows.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="text-5xl mb-3">📋</div>
-              <p className="font-semibold text-slate-500">Belum ada aktivitas</p>
-              <p className="text-sm text-slate-400 mt-1">Data reminder &amp; ticket akan muncul otomatis di sini</p>
-            </div>
+            <ListEmptyState
+              adaFilterAktif={
+                filterDate !== '' || filterUser !== '' || filterStatus !== '' ||
+                filterSource !== '' || searchProject.trim() !== '' || filterCategory !== null
+              }
+              onReset={() => {
+                setFilterDate(''); setFilterUser(''); setFilterStatus('');
+                setFilterSource(''); setSearchProject(''); setFilterCategory(null);
+              }}
+              icon="📋"
+              judulKosong="Belum ada aktivitas"
+              deskripsiKosong="Data reminder & ticket akan muncul otomatis di sini."
+            />
           ) : (
             <div className="overflow-x-auto">
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1200px', tableLayout: 'fixed' }}>

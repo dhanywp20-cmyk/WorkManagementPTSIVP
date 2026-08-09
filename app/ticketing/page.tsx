@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
+import { ListEmptyState } from '@/components/shared';
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase, supabaseServices } from "@/lib/supabase";
 import { setSession, clearSession, getSession } from "@/lib/auth";
@@ -2565,7 +2566,13 @@ function TicketingSystemInner() {
                 <div className="flex items-center justify-center gap-3 py-4 text-gray-500"><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div><span className="text-sm font-medium">Memuat daftar ticket...</span></div>
               </div>
             ) : filteredTickets.length === 0 ? (
-              <div className="text-center py-12"><div className="text-6xl mb-4">📭</div><p className="text-gray-600 font-medium">{searchProject || filterStatus !== "All" ? "No tickets match the search." : "No tickets yet. Create your first ticket!"}</p></div>
+              <ListEmptyState
+                adaFilterAktif={searchProject.trim() !== '' || searchSalesName.trim() !== '' || filterStatus !== 'All' || filterYear !== 'all'}
+                onReset={() => { setSearchProject(''); setSearchSalesName(''); setFilterStatus('All'); setFilterYear('all'); }}
+                icon="🎫"
+                judulKosong="Belum ada tiket"
+                deskripsiKosong="Tiket kendala yang dilaporkan akan muncul di sini."
+              />
             ) : (
               <>
               {/* ── MOBILE: Card view (hidden on md+) ── */}

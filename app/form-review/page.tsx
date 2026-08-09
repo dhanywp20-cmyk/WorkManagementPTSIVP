@@ -15,7 +15,7 @@ import {
   FormField, SectionHeader, StarRating, LoadingScreen, MiniPieChart,
   ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup,
   ConfirmDialog, type ConfirmState, ErrorState,
-  MobileListCard, MobileCardBadge,
+  MobileListCard, MobileCardBadge, ListEmptyState
 } from '@/components/shared';
 
 // ─── Main Component ────────────────────────────────────────────────────────────
@@ -1173,11 +1173,19 @@ export default function FormReviewPage() {
             ) : fetchError ? (
               <ErrorState message={fetchError} onRetry={() => { setFetchError(null); fetchReviews(); }} />
             ) : tableReviews.length === 0 ? (
-              <div className="text-center py-16">
-                <p className="text-5xl mb-3">📭</p>
-                <p className="font-bold text-gray-600">Tidak ada data {switchTab}</p>
-                <p className="text-sm text-gray-400 mt-1">Form review muncul otomatis dari Reminder Schedule yang Solved</p>
-              </div>
+              <ListEmptyState
+                adaFilterAktif={
+                  filterCategory !== 'all' || filterReviewCat !== 'all' ||
+                  [searchProject, searchHandler, searchSalesName].some(v => v.trim() !== '')
+                }
+                onReset={() => {
+                  setFilterCategory('all'); setFilterReviewCat('all');
+                  setSearchProject(''); setSearchHandler(''); setSearchSalesName('');
+                }}
+                icon="⭐"
+                judulKosong={`Belum ada data ${switchTab}`}
+                deskripsiKosong="Form review muncul otomatis dari Reminder Schedule yang sudah Solved."
+              />
             ) : (
               <>
               {/* ── MOBILE: kartu (pola Ticket Troubleshooting) ── */}
