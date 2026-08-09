@@ -49,6 +49,11 @@ LANGUAGE sql STABLE AS $$
     COALESCE(current_setting('request.jwt.claims', true)::json ->> 'user_role', '');
 $$;
 
+--  Tanpa GRANT, fungsi ADA tapi tidak boleh dipanggil dari aplikasi — dan
+--  PostgREST membalas 404, persis seperti kalau fungsinya belum dibuat. Gagal
+--  yang menyesatkan, jadi hak aksesnya disebut eksplisit.
+GRANT EXECUTE ON FUNCTION debug_jwt_claims() TO anon, authenticated;
+
 
 -- ─── 1. Pembaca klaim ───────────────────────────────────────────────────────
 --  current_setting(..., true) mengembalikan NULL bila setelan tidak ada,
@@ -76,6 +81,12 @@ RETURNS text
 LANGUAGE sql STABLE AS $$
   SELECT jwt_claim('full_name');
 $$;
+
+--  Ketiga fungsi ini dipanggil DARI DALAM policy, yang dievaluasi sebagai role
+--  pemanggil. Tanpa hak eksekusi, seluruh policy gagal dan tabelnya tampak
+--  kosong bagi semua orang — termasuk admin.
+GRANT EXECUTE ON FUNCTION jwt_claim(text), is_progress_admin(), jwt_full_name()
+  TO anon, authenticated;
 
 
 -- ─── 2. Nyalakan RLS ────────────────────────────────────────────────────────
