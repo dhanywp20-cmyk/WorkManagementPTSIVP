@@ -70,15 +70,20 @@ export function FlowSteps({
         </p>
       )}
 
-      {/* Baris tahapan — bisa digeser di layar sempit tanpa membuat
-          seluruh halaman ikut bergeser. */}
-      <div className="overflow-x-auto -mx-1 px-1">
-        <div className="flex items-start" style={{ minWidth: `${steps.length * 5.5}rem` }}>
+      {/* Seluruh tahapan HARUS muat tanpa digeser.
+          Sebelumnya ada minWidth 5.5rem per tahap; di dalam panel selebar
+          max-w-sm itu memaksa scroll ke kanan, dan tahap terakhir — justru
+          yang paling ingin dilihat, "Selesai" — tersembunyi di luar layar.
+          Diagram alur yang perlu digeser dulu kehilangan gunanya.
+
+          Kini tiap tahap berbagi lebar sama rata dan labelnya boleh melipat. */}
+      <div>
+        <div className="flex items-start">
           {steps.map((s, i) => {
             const k = keadaan(i);
             const w = WARNA[k];
             return (
-              <div key={i} className="flex-1 flex flex-col items-center relative">
+              <div key={i} className="flex-1 min-w-0 flex flex-col items-center relative">
 
                 {/* Garis penghubung ke tahap sebelumnya. Digambar di belakang
                     bulatan, dan warnanya mengikuti tahap KIRI supaya jalur yang
@@ -103,12 +108,12 @@ export function FlowSteps({
                   {k === 'sekarang' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
                 </span>
 
-                <p className="text-[10px] font-bold text-center mt-1.5 leading-tight px-0.5"
+                <p className="text-[9px] font-bold text-center mt-1.5 leading-tight px-0.5 w-full break-words"
                   style={{ color: w.teks }}>
                   {s.label}
                 </p>
                 {s.pelaku && (
-                  <p className="text-[9px] text-center leading-tight text-slate-400 px-0.5">
+                  <p className="text-[8px] text-center leading-tight text-slate-400 px-0.5 w-full break-words">
                     {s.pelaku}
                   </p>
                 )}

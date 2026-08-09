@@ -150,3 +150,37 @@ html {
   from { opacity: 0; transform: translateY(-12px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* ── Overlay modal: selalu setinggi layar sebenarnya ───────────────────────
+   Berlaku untuk SELURUH modul, bukan per modul.
+
+   `fixed inset-0` mengukur diri terhadap containing block terdekat. Biasanya
+   itu viewport — tapi cukup satu leluhur ber-transform, filter, backdrop-filter,
+   atau will-change untuk mengubahnya jadi kotak leluhur tersebut. Ketika itu
+   terjadi, latar gelap modal berhenti di tengah layar dan kartunya ikut pendek,
+   berapa pun tinggi yang disetel di dalamnya.
+
+   Dua baris di bawah melepaskan overlay dari ketergantungan itu: ukurannya
+   diambil langsung dari viewport (100vw / 100dvh), bukan dari kotak leluhur.
+   dvh dipakai supaya bilah alamat browser HP tidak memotong bagian bawah.
+
+   Sasarannya sempit — hanya elemen fixed inset-0 yang memang latar gelap modal
+   (punya kelas bg-black/…), sehingga overlay lain tidak ikut terpengaruh. */
+[class*="bg-black/"].fixed.inset-0,
+/* Sebagian overlay memasang latar lewat inline style, bukan kelas bg-black.
+   justify-center dipakai sebagai penanda: itu ciri backdrop yang memusatkan
+   kartu modal di dalamnya. Overlay hiasan tidak memusatkan apa pun, jadi tidak
+   ikut tersasar. */
+.fixed.inset-0.justify-center {
+  width:  100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+}
+
+/* Overlay hiasan / penangkap klik yang sengaja tak berisi apa-apa dikecualikan,
+   supaya tidak ikut dipaksa setinggi layar. */
+.fixed.inset-0.pointer-events-none {
+  width:  auto;
+  height: auto;
+  max-height: none;
+}
