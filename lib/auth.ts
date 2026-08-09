@@ -1,3 +1,4 @@
+import { setDbToken } from './supabase';
 /**
  * lib/auth.ts — Helper auth terpusat
  *
@@ -35,6 +36,9 @@ export function clearSession(): void {
   sessionStorage.removeItem(SS_USER);
   sessionStorage.removeItem(SS_TIME);
   // Fire-and-forget: invalidate cookie di server
+  // Token PostgREST ikut dibuang — kalau tertinggal, tab yang sama masih
+  // memegang identitas user sebelumnya.
+  setDbToken(null);
   fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
 }
 
@@ -70,10 +74,13 @@ export async function verifySessionFromCookie<T = Record<string, unknown>>(): Pr
   try {
     const res = await fetch('/api/auth/session', { credentials: 'include' });
     if (!res.ok) return null;
-    const { user } = await res.json();
+    const { user, db_token } = await res.json();
     if (user) {
       // Re-populate sessionStorage dari cookie yang valid
       setSession(user);
+      // Pasang ulang token PostgREST — tanpa ini, query setelah refresh
+      // halaman berangkat tanpa identitas.
+      setDbToken(db_token ?? null);
     }
     return user ?? null;
   } catch {

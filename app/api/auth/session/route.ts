@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
+import { issueDbToken } from '@/lib/db-token';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,5 +43,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ user: null }, { status: 401 });
   }
 
-  return NextResponse.json({ user });
+  // Token diterbitkan ulang tiap kali sesi dipulihkan (refresh halaman),
+  // supaya umurnya selalu mengikuti sesi yang masih sah.
+  return NextResponse.json({ user, db_token: issueDbToken(user) });
 }

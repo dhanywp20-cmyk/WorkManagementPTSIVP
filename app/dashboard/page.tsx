@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase, setDbToken } from '@/lib/supabase';
 import { setSession, clearSession, getSession, startSessionWatcher } from '@/lib/auth';
 import { isAdmin as checkIsAdmin, SESSION_DURATION_MS } from '@/lib/constants';
 import {
@@ -200,6 +200,9 @@ export default function Dashboard() {
       setCurrentUser(data);
       setIsLoggedIn(true);
       setSession(data);
+      // Pasang token PostgREST supaya seluruh query berikutnya membawa
+      // identitas user — inilah yang membuat policy RLS bisa menyaring.
+      setDbToken(result.db_token ?? null);
       // Permission-Aware Dashboard = homepage utk SEMUA role. Semua mendarat di
       // dashboard home (widget adaptif); tidak lagi auto-lompat ke menu pertama.
       autoNavigatedRef.current = true; // matikan auto-navigate useEffect

@@ -13,6 +13,13 @@ export interface SessionUser {
   id: string;
   username: string;
   role: string;
+  /**
+   * Diperlukan untuk menerbitkan token PostgREST: policy RLS mencocokkan
+   * kepemilikan lewat klaim full_name, karena kolom sales_name & pic menyimpan
+   * full name — bukan username.
+   */
+  full_name: string | null;
+  sales_division: string | null;
 }
 
 export async function getSessionUser(request: NextRequest): Promise<SessionUser | null> {
@@ -33,7 +40,7 @@ export async function getSessionUser(request: NextRequest): Promise<SessionUser 
 
   const { data: user } = await supabase
     .from('users')
-    .select('id, username, role')
+    .select('id, username, role, full_name, sales_division')
     .eq('id', session.user_id)
     .single();
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
+import { issueDbToken } from '@/lib/db-token';
 
 export const dynamic = 'force-dynamic';
 
@@ -116,7 +117,10 @@ export async function POST(request: NextRequest) {
       expires_at: expiresAt,
     });
 
-    const response = NextResponse.json({ user });
+    // Token PostgREST — memberi basis data cara mengenali user ini, sehingga
+    // policy RLS bisa menyaring berdasarkan identitas alih-alih USING (true).
+    // Bernilai null bila SUPABASE_JWT_SECRET belum diset; login tetap berhasil.
+    const response = NextResponse.json({ user, db_token: issueDbToken(user) });
     response.cookies.set('ivp_session', sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
