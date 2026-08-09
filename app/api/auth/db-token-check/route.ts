@@ -32,11 +32,39 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Hanya admin yang boleh menjalankan pemeriksaan ini.' }, { status: 403 });
   }
 
+  /**
+   * Kesiapan environment. Yang dilaporkan hanya ADA / TIDAK ADA — nilainya
+   * tidak pernah ikut, supaya endpoint ini tidak berubah jadi jalan membaca
+   * rahasia lewat browser.
+   */
+  const env = {
+    SUPABASE_JWT_SECRET: {
+      ada: !!process.env.SUPABASE_JWT_SECRET,
+      untuk: 'Menerbitkan token PostgREST. Tanpa ini, RLS Project Progress tidak punya identitas untuk disaring.',
+    },
+    SUPABASE_SERVICE_ROLE_KEY: {
+      ada: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      untuk: 'Dipakai route server & cron digest. Tanpa ini, digest berjalan sebagai anon dan — karena RLS aktif — hanya melihat nol lokasi, jadi pesannya selalu kosong.',
+    },
+    CRON_SECRET: {
+      ada: !!process.env.CRON_SECRET,
+      untuk: 'Menjaga /api/cron/*. Tanpa ini, cron escalate dan digest menolak semua panggilan dengan 401.',
+    },
+    GEMINI_API_KEY: {
+      ada: !!process.env.GEMINI_API_KEY,
+      untuk: 'Fitur AI. Opsional.',
+    },
+  };
+  const envKurang = Object.entries(env)
+    .filter(([k, v]) => !v.ada && k !== 'GEMINI_API_KEY')
+    .map(([k]) => k);
+
   if (!process.env.SUPABASE_JWT_SECRET) {
     return NextResponse.json({
       siap: false,
       tahap: 'secret',
       pesan: 'SUPABASE_JWT_SECRET belum terbaca aplikasi. Pastikan sudah diset DAN aplikasi sudah di-deploy ulang — perubahan environment variable tidak berlaku sampai deploy berikutnya.',
+      env, envKurang,
     });
   }
 
@@ -97,8 +125,11 @@ export async function GET(request: NextRequest) {
 
   if (status === 200) {
     return NextResponse.json({
-      siap: true, status,
-      pesan: 'Rahasia benar dan klaim sampai ke basis data. Aman melanjutkan ke sql/rls-project-progress.sql.',
+      siap: envKurang.length === 0, status,
+      pesan: envKurang.length === 0
+        ? 'Rahasia benar, klaim sampai ke basis data, dan seluruh environment variable wajib sudah terpasang.'
+        : `Token sudah bekerja, tapi masih ada environment variable yang belum terpasang: ${envKurang.join(', ')}.`,
+      env, envKurang,
       klaim_diterima_database: body,
       klaim_yang_dikirim: {
         username:  caller.username,
