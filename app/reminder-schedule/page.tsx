@@ -1940,6 +1940,23 @@ jangan lupa peralatan & Semangat💪🏼
                   {internalApproveTarget.product && <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Product</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.product}</span></div>}
                   <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Lokasi</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.address || '-'}</span></div>
                   <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Tanggal</span><span className="font-semibold text-slate-700 text-right">{formatDate(internalApproveTarget.due_date)}{internalApproveTarget.due_time ? ` · ${internalApproveTarget.due_time}` : ''}</span></div>
+                  {/* Usulan timeline dari Sales — ditampilkan supaya Sales Internal
+                      tahu rentang yang diajukan sebelum meneruskan ke Admin.
+                      Tidak bisa disunting di sini: penetapannya milik Admin saat
+                      assign, karena di titik itulah draft Project Progress lahir. */}
+                  {triggersProjectProgress(internalApproveTarget.category) && (() => {
+                    const t = internalApproveTarget as { progress_start_date?: string | null; progress_target_date?: string | null };
+                    return (
+                      <div className="flex justify-between gap-3">
+                        <span className="text-slate-400 text-xs">Timeline Pengerjaan</span>
+                        <span className="font-semibold text-right" style={{ color: t.progress_start_date || t.progress_target_date ? '#0e7490' : '#94a3b8' }}>
+                          {t.progress_start_date || t.progress_target_date
+                            ? `${t.progress_start_date ? formatDate(t.progress_start_date) : '—'} → ${t.progress_target_date ? formatDate(t.progress_target_date) : '—'}`
+                            : 'Belum diusulkan'}
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div className="flex gap-3">
                   <button onClick={() => setInternalApproveTarget(null)}
@@ -2577,6 +2594,36 @@ jangan lupa peralatan & Semangat💪🏼
                     <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line">{cleanRequestNotes(detailReminder.notes)}</p>
                   </div>
                 )}
+
+                {/* ── Timeline Project Progress — kategori pemicu saja ──
+                    Sejajar dengan blok Masa Garansi di bawahnya: keduanya
+                    informasi jadwal yang melekat pada kategori Konfigurasi. */}
+                {triggersProjectProgress(detailReminder.category) && (() => {
+                  const t = detailReminder as { progress_start_date?: string | null; progress_target_date?: string | null };
+                  const ada = t.progress_start_date || t.progress_target_date;
+                  return (
+                    <div className="rounded-xl p-4 flex items-center gap-3"
+                      style={ada
+                        ? { background: 'rgba(8,145,178,0.07)', border: '1px solid rgba(8,145,178,0.25)' }
+                        : { background: 'rgba(100,116,139,0.07)', border: '1px solid rgba(100,116,139,0.2)' }}>
+                      <span className="text-xl">📊</span>
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wide" style={{ color: ada ? '#0e7490' : '#64748b' }}>
+                          Timeline Project Progress
+                        </p>
+                        {ada ? (
+                          <p className="text-sm font-semibold text-slate-700">
+                            {t.progress_start_date ? formatDate(t.progress_start_date) : '—'}
+                            <span className="mx-1.5 text-slate-300">→</span>
+                            {t.progress_target_date ? formatDate(t.progress_target_date) : '—'}
+                          </p>
+                        ) : (
+                          <p className="text-sm text-slate-400 italic">Belum ditetapkan</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* ── Warranty Status — hanya untuk Konfigurasi & Konfigurasi & Training ── */}
                 {(detailReminder.category === 'Konfigurasi' || detailReminder.category === 'Konfigurasi & Training') && (() => {

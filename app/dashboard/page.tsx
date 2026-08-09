@@ -76,7 +76,19 @@ export default function Dashboard() {
 
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [adminPanelTab, setAdminPanelTab] = useState<'settings' | 'userManagement' | 'picBrand'>('settings');
-  const [pendingCount, setPendingCount] = useState(0);
+  /**
+   * Dua antrean yang menunggu tindakan admin, sengaja DIPISAH karena
+   * diselesaikan di tempat yang berbeda:
+   *   pendingUsers    → Admin Panel → User Management
+   *   pendingRequests → Request Schedule (BUKAN Admin Panel)
+   *
+   * Sebelumnya keduanya dijumlahkan jadi satu badge di ikon Admin Panel, jadi
+   * request jadwal baru memunculkan angka merah di tempat yang tidak memuat
+   * request itu sama sekali — mengklik badge membuka panel yang tidak ada
+   * kaitannya.
+   */
+  const [pendingUsers, setPendingUsers] = useState(0);
+  const [pendingRequests, setPendingRequests] = useState(0);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [iframeLoading, setIframeLoading] = useState(false);
 
@@ -498,9 +510,8 @@ export default function Dashboard() {
           .eq('status', 'pending')
           .ilike('notes', '%[REQUEST SALES]%'),
       ]).then(([userRes, reminderRes]) => {
-        const userPending = (userRes as any).count ?? 0;
-        const requestPending = (reminderRes as any).count ?? 0;
-        setPendingCount(userPending + requestPending);
+        setPendingUsers((userRes as any).count ?? 0);
+        setPendingRequests((reminderRes as any).count ?? 0);
       });
     };
 
@@ -1210,7 +1221,7 @@ export default function Dashboard() {
                           key={itemIndex}
                           onClick={() => { setShowDashboardPanel(false); handleMenuClick(item, menu.title); }}
                           title={`${menu.title} — ${item.name}`}
-                          className="w-full h-9 rounded-lg flex items-center justify-center text-base transition-all"
+                          className="relative w-full h-9 rounded-lg flex items-center justify-center text-base transition-all"
                           style={
                             isActive
                               ? { background: 'rgba(200,134,29,0.15)', border: '1px solid rgba(200,134,29,0.35)', color: '#92600a' }
@@ -1220,6 +1231,13 @@ export default function Dashboard() {
                           onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
                         >
                           {MENU_ICONS[menu.key] ?? <span>{menu.icon}</span>}
+                          {/* Antrean request jadwal muncul DI SINI — di menu yang
+                              benar-benar memuatnya, bukan di ikon Admin Panel. */}
+                          {menu.key === 'reminder-schedule' && isAdmin && pendingRequests > 0 && (
+                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                              {pendingRequests}
+                            </span>
+                          )}
                         </button>
                       );
                     })}
@@ -1387,6 +1405,13 @@ export default function Dashboard() {
                                 {MENU_ICONS[menu.key] ?? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth={2} /></svg>}
                               </span>
                               <span className="flex-1 truncate text-sm font-medium">{item.name}</span>
+                          {/* Antrean request jadwal muncul DI SINI — di menu yang
+                              benar-benar memuatnya, bukan di ikon Admin Panel. */}
+                              {menu.key === 'reminder-schedule' && isAdmin && pendingRequests > 0 && (
+                                <span className="text-[10px] font-black bg-red-500 text-white rounded-full px-1.5 py-0.5 leading-none flex-shrink-0">
+                                  {pendingRequests}
+                                </span>
+                              )}
                               {item.external && !item.embed && (
                                 <svg className="w-3 h-3 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -1429,7 +1454,7 @@ export default function Dashboard() {
                     onClick={() => { setAdminPanelTab('settings'); setShowAdminPanel(true); }}
                     className="relative w-9 h-9 rounded-lg flex items-center justify-center transition-all"
                     style={{ color: '#94a3b8' }}
-                    title="Admin Panel"
+                    title={pendingUsers > 0 ? `Admin Panel — ${pendingUsers} user menunggu persetujuan` : 'Admin Panel'}
                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#4338ca'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(99,102,241,0.1)'; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
                   >
@@ -1437,8 +1462,8 @@ export default function Dashboard() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    {pendingCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{pendingCount}</span>
+                    {pendingUsers > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{pendingUsers}</span>
                     )}
                   </button>
                 )}
@@ -1500,8 +1525,8 @@ export default function Dashboard() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     <span>Admin Panel</span>
-                    {pendingCount > 0 && (
-                      <span className="ml-auto text-[10px] font-black bg-red-500 text-white rounded-full px-1.5 py-0.5 leading-none">{pendingCount}</span>
+                    {pendingUsers > 0 && (
+                      <span className="ml-auto text-[10px] font-black bg-red-500 text-white rounded-full px-1.5 py-0.5 leading-none">{pendingUsers}</span>
                     )}
                   </button>
                 )}
