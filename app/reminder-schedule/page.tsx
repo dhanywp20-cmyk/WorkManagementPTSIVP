@@ -478,6 +478,8 @@ function ReminderSchedulePageInner() {
 
     setSaving(true);
     let error: { message: string } | null = null;
+    /** Baris yang benar-benar tersimpan — dipakai mencatat riwayat pembuatan. */
+    let barisBaru: { id: string; project_name: string | null }[] = [];
     if (editingReminder) {
       const payload = { ...formData, assign_name: assignee?.full_name ?? formData.assigned_to, created_by: currentUser?.username ?? 'system', updated_at: new Date().toISOString() };
       ({ error } = await supabase.from('reminders').update(payload).eq('id', editingReminder.id));
@@ -492,6 +494,7 @@ function ReminderSchedulePageInner() {
       }));
       const insRes = await supabase.from('reminders').insert(payloads).select('id, project_name, address, sales_name, sales_division, assign_name, due_date, category, progress_start_date, progress_target_date');
       error = insRes.error;
+      barisBaru = (insRes.data ?? []) as { id: string; project_name: string | null }[];
       if (!insRes.error) void syncNewRemindersToProgress((insRes.data ?? []) as ReminderSnapshot[]);
     }
 
@@ -501,6 +504,23 @@ function ReminderSchedulePageInner() {
       return;
     }
 
+    if (editingReminder) {
+      logAudit({
+        user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
+        action: 'update', module: 'reminder',
+        target_id: editingReminder.id, target_name: formData.project_name,
+        notes: 'Detail reminder disunting',
+      }).catch(() => {});
+    } else {
+      for (const row of barisBaru) {
+        logAudit({
+          user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
+          action: 'create', module: 'reminder',
+          target_id: row.id, target_name: row.project_name ?? formData.project_name,
+          notes: `Dibuat langsung oleh admin — kategori ${formData.category}`,
+        }).catch(() => {});
+      }
+    }
     notify('success', editingReminder ? 'Reminder diperbarui!' : (allDates.length > 1 ? `${allDates.length} reminder dibuat!` : 'Reminder ditambahkan!'));
 
     // ── Kirim WA notifikasi ke assignee saat reminder BARU dibuat ────────────
@@ -540,6 +560,12 @@ function ReminderSchedulePageInner() {
     if (!deleteTarget) return;
     const { error } = await supabase.from('reminders').delete().eq('id', deleteTarget.id);
     if (error) { notify('error', 'Gagal menghapus.'); return; }
+    logAudit({
+      user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
+      action: 'delete', module: 'reminder',
+      target_id: deleteTarget.id, target_name: deleteTarget.project_name,
+      notes: `Dihapus — jadwal ${formatDate(deleteTarget.due_date)}, status ${deleteTarget.status}`,
+    }).catch(() => {});
     notify('success', 'Reminder dihapus.');
     setDetailReminder(null);
     setShowDeleteModal(false);
@@ -559,6 +585,14 @@ function ReminderSchedulePageInner() {
     if (photoUrl) updatePayload['completion_photo_url'] = photoUrl;
     const { error } = await supabase.from('reminders').update(updatePayload).eq('id', id);
     if (error) { notify('error', 'Gagal update status.'); return; }
+    const sebelum = reminders.find(r => r.id === id);
+    logAudit({
+      user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
+      action: 'status_change', module: 'reminder',
+      target_id: id, target_name: sebelum?.project_name ?? '',
+      old_value: sebelum?.status, new_value: status,
+      notes: photoUrl ? 'Disertai foto penyelesaian' : undefined,
+    }).catch(() => {});
     notify('success', 'Status diperbarui!');
     // ── WA ke handler saat status Done ───────────────────────────────────
     if (status === 'done') {
@@ -948,6 +982,14 @@ function ReminderSchedulePageInner() {
       notify('error', `Gagal re-schedule: ${error.message}`);
       return;
     }
+    logAudit({
+      user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
+      action: 'update', module: 'reminder',
+      target_id: rescheduleTarget!.id, target_name: rescheduleTarget!.project_name,
+      old_value: `${formatDate(rescheduleTarget!.due_date)} ${rescheduleTarget!.due_time ?? ''}`.trim(),
+      new_value: `${formatDate(newDate)} ${newTime}`.trim(),
+      notes: reason ? `Re-schedule: ${reason}` : 'Re-schedule',
+    }).catch(() => {});
     notify('success', `Jadwal berhasil dipindah ke ${formatDate(newDate)}!`);
     // ── WA ke handler tentang reschedule ──────────────────────────────────
     try {
@@ -1309,10 +1351,23 @@ function ReminderSchedulePageInner() {
       ...(chosenBrand ? { internal_sales_id_2: internalSalesId2, brand: chosenBrand } : {}),
     }));
 
-    const { error } = await supabase.from('reminders').insert(payloads);
+    const { data: dibuat, error } = await supabase.from('reminders')
+      .insert(payloads).select('id, project_name');
     if (error) {
       notify('error', 'Gagal mengirim request: ' + error.message);
       return;
+    }
+    const d0 = payloads[0]?.due_date as string;
+
+    // Pangkal riwayat: tanpa ini, jejak sebuah request baru dimulai dari
+    // "disetujui" — pembacanya tidak pernah tahu siapa yang mengajukan & kapan.
+    for (const row of (dibuat ?? []) as { id: string; project_name: string | null }[]) {
+      logAudit({
+        user_id: currentUser.id, user_name: effectiveSalesName || currentUser.full_name,
+        action: 'create', module: 'reminder',
+        target_id: row.id, target_name: row.project_name ?? data.project_name,
+        notes: `Request diajukan Sales${salesDivision ? ` (${salesDivision})` : ''} — kategori ${data.category}, usulan ${formatDate(d0)}`,
+      }).catch(() => {});
     }
 
     notify('success', routingStatus === 'internal_review'
@@ -2416,9 +2471,9 @@ jangan lupa peralatan & Semangat💪🏼
 
         {/* ── DETAIL POPUP ── */}
         {detailReminder && (
-          <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-[100] p-4"
+          <div className="fixed inset-0 bg-black/60 flex justify-center z-[100] p-4"
             onClick={e => { if (e.target === e.currentTarget) { setDetailReminder(null); setShowModeModal(false); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); } }}>
-            <div className="flex items-start gap-3 w-full justify-center h-full"
+            <div className="flex items-start gap-3 w-full justify-center min-h-0"
               style={{ maxWidth: showModeModal ? '1140px' : showRiwayat ? '1060px' : '672px', transition: 'max-width 0.25s ease' }}>
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full flex-1 min-w-0 overflow-hidden flex flex-col"
               style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '100%' }}>
