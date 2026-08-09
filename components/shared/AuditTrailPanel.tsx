@@ -54,7 +54,7 @@ function waktuRelatif(iso: string): string {
 
 export function AuditTrailPanel({
   targetId, modul, judul = 'Riwayat Perubahan', batas = 20,
-  selaluTerbuka = false, sembunyikanBilaKosong = true,
+  selaluTerbuka = false, sembunyikanBilaKosong = true, awal = null,
 }: {
   /** Record yang riwayatnya ditampilkan. Panel diam bila kosong. */
   targetId: string | null | undefined;
@@ -74,6 +74,19 @@ export function AuditTrailPanel({
    * mengatakan "belum ada riwayat".
    */
   sembunyikanBilaKosong?: boolean;
+  /**
+   * Baris pembuatan yang DITURUNKAN dari record itu sendiri, bukan dari
+   * audit_trail.
+   *
+   * logAudit baru mencatat pembuatan sejak perbaikan terakhir, sehingga record
+   * lama tidak punya baris "dibuat" dan riwayatnya seolah dimulai dari tengah.
+   * Padahal datanya sudah tersimpan sejak awal di kolom created_at &
+   * created_by/sales_name — tinggal ditampilkan.
+   *
+   * Ditempatkan paling bawah (paling tua) dan tidak digandakan bila
+   * audit_trail ternyata sudah memuat baris create-nya sendiri.
+   */
+  awal?: { oleh: string | null; waktu: string | null; keterangan?: string } | null;
 }) {
   const [entri, setEntri] = useState<AuditEntry[]>([]);
   const [memuat, setMemuat] = useState(true);
@@ -99,9 +112,28 @@ export function AuditTrailPanel({
 
   if (!targetId) return null;
 
-  if (!memuat && entri.length === 0 && sembunyikanBilaKosong) return null;
+  /**
+   * Gabungan yang benar-benar ditampilkan. Baris awal hanya disisipkan bila
+   * audit_trail belum memuat 'create' sendiri — kalau tidak, record baru akan
+   * menampilkan dua baris pembuatan yang sama.
+   */
+  const sudahAdaCreate = entri.some(e => e.action === 'create');
+  const semua: AuditEntry[] = (!awal?.waktu || sudahAdaCreate)
+    ? entri
+    : [...entri, {
+        id: '__awal__',
+        user_name: awal.oleh,
+        action: 'create',
+        target_name: null,
+        old_value: null,
+        new_value: null,
+        notes: awal.keterangan ?? null,
+        created_at: awal.waktu,
+      }];
 
-  if (!memuat && entri.length === 0) {
+  if (!memuat && semua.length === 0 && sembunyikanBilaKosong) return null;
+
+  if (!memuat && semua.length === 0) {
     return (
       <div className="px-4 py-10 text-center">
         <p className="text-3xl mb-2">🕘</p>
@@ -127,7 +159,7 @@ export function AuditTrailPanel({
           <span className="text-sm">🕘</span>
           <span className="text-xs font-bold uppercase tracking-wide text-slate-600 flex-1">{judul}</span>
           <span className="text-[10px] font-bold text-slate-400 tabular-nums">
-            {memuat ? '…' : entri.length}
+            {memuat ? '…' : semua.length}
           </span>
           <span className="text-slate-400 text-xs transition-transform"
             style={{ transform: terbuka ? 'rotate(90deg)' : 'none' }}>▶</span>
@@ -138,7 +170,7 @@ export function AuditTrailPanel({
         <div className={selaluTerbuka ? "px-4 py-3 flex flex-col gap-0" : "px-4 pb-3 flex flex-col gap-0"}>
           {memuat ? (
             <p className="text-xs text-slate-400 py-2">Memuat riwayat…</p>
-          ) : entri.map((e, i) => {
+          ) : semua.map((e, i) => {
             const cfg = AKSI[e.action] ?? { label: e.action, warna: '#94a3b8' };
             const adaPerubahanNilai = e.old_value || e.new_value;
             return (
@@ -147,7 +179,7 @@ export function AuditTrailPanel({
                 {/* Garis waktu: titik + batang penghubung */}
                 <div className="flex flex-col items-center pt-1 flex-shrink-0">
                   <span className="w-2 h-2 rounded-full" style={{ background: cfg.warna }} />
-                  {i < entri.length - 1 && (
+                  {i < semua.length - 1 && (
                     <span className="w-px flex-1 mt-1" style={{ background: 'rgba(100,116,139,0.2)' }} />
                   )}
                 </div>

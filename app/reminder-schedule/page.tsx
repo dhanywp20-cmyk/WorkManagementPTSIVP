@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { setSession, clearSession, getSession, startSessionWatcher } from '@/lib/auth';
@@ -2470,7 +2471,14 @@ jangan lupa peralatan & Semangat💪🏼
         )}
 
         {/* ── DETAIL POPUP ── */}
-        {detailReminder && (
+        {/* Dicabut ke document.body lewat portal.
+            position:fixed diukur terhadap leluhur terdekat yang membentuk
+            containing block — cukup satu leluhur ber-transform, filter, atau
+            backdrop-filter untuk memerangkap modal di dalam kotaknya, sehingga
+            latar gelapnya berhenti di tengah layar alih-alih menutup penuh.
+            Dengan portal, modal berada langsung di bawah <body> dan tidak
+            mungkin terperangkap oleh pembungkus mana pun. */}
+        {detailReminder && typeof document !== 'undefined' && createPortal(
           <div className="fixed inset-0 bg-black/60 flex justify-center z-[100] p-4"
             onClick={e => { if (e.target === e.currentTarget) { setDetailReminder(null); setShowModeModal(false); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); } }}>
             <div className="flex gap-3 w-full justify-center min-h-0"
@@ -2941,8 +2949,8 @@ jangan lupa peralatan & Semangat💪🏼
                 Penyelesaian punya prioritas: ia bagian dari alur menyelesaikan
                 pekerjaan, sedangkan riwayat hanya rujukan. */}
             {showRiwayat && !showModeModal && (
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex-shrink-0 overflow-hidden flex flex-col"
-                style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', height: '100%' }}>
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex-shrink-0 self-start overflow-hidden flex flex-col"
+                style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '100%' }}>
                 <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: 'linear-gradient(135deg,#475569,#334155)' }}>
                   <h3 className="text-white font-bold text-base">🕘 Riwayat Perubahan</h3>
                   <p className="text-slate-300 text-[11px] mt-0.5 truncate">{detailReminder.project_name}</p>
@@ -2950,8 +2958,22 @@ jangan lupa peralatan & Semangat💪🏼
                     className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
+                  {/* Baris pembuatan diturunkan dari reminder-nya sendiri.
+                      logAudit baru mencatat 'create' sejak perbaikan terakhir,
+                      jadi tanpa ini seluruh reminder LAMA tampak tidak punya
+                      pangkal — padahal created_at & sales_name-nya tersimpan
+                      sejak awal. Untuk request Sales dipakai nama sales-nya
+                      (dialah yang mengajukan), bukan created_by yang bisa saja
+                      Sales Internal yang menginput. */}
                   <AuditTrailPanel targetId={detailReminder.id} modul="reminder"
-                    selaluTerbuka sembunyikanBilaKosong={false} />
+                    selaluTerbuka sembunyikanBilaKosong={false}
+                    awal={{
+                      oleh: detailReminder.sales_name || detailReminder.created_by || null,
+                      waktu: detailReminder.created_at ?? null,
+                      keterangan: (detailReminder.notes ?? '').includes('[REQUEST SALES]')
+                        ? `Request diajukan Sales${detailReminder.sales_division ? ` (${detailReminder.sales_division})` : ''} — kategori ${detailReminder.category}`
+                        : `Dibuat — kategori ${detailReminder.category}`,
+                    }} />
                 </div>
               </div>
             )}
@@ -3081,7 +3103,7 @@ jangan lupa peralatan & Semangat💪🏼
             )}
             </div>
           </div>
-        )}
+        , document.body)}
 
         {/* ── HEADER ── */}
         <PageHeader icon="🗓️" title="Request Schedule" color="#0891b2" colorLight="#0e7490">
