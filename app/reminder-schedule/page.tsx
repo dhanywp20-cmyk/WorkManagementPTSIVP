@@ -129,6 +129,9 @@ function ReminderSchedulePageInner() {
   const [approveAssignTo, setApproveAssignTo] = useState('');
   const [approveDate, setApproveDate] = useState('');
   const [approveTime, setApproveTime] = useState('');
+  // Timeline pengerjaan saat approve — terisi dari usulan Sales, boleh diubah.
+  const [approveStart,  setApproveStart]  = useState('');
+  const [approveTarget2, setApproveTarget2] = useState('');
   const [approveSaving, setApproveSaving] = useState(false);
   const [internalRejectTarget, setInternalRejectTarget] = useState<Reminder | null>(null); // request yg mau di-Tolak Sales Internal
   const [internalApproveTarget, setInternalApproveTarget] = useState<Reminder | null>(null); // konfirmasi Approve Sales Internal (detail dulu, jangan instan)
@@ -1176,6 +1179,10 @@ function ReminderSchedulePageInner() {
   // ─── Cari Supervisor tim sesuai tipe produk saat modal Approve dibuka ──────
   useEffect(() => {
     if (!approveTarget) { setApproveSupervisors([]); return; }
+    // Isi dari usulan Sales supaya admin tinggal menyetujui atau membetulkan.
+    const t = approveTarget as { progress_start_date?: string | null; progress_target_date?: string | null };
+    setApproveStart(t.progress_start_date ?? '');
+    setApproveTarget2(t.progress_target_date ?? '');
     resolveSupervisorsForProductType(approveTarget.product_type).then(setApproveSupervisors);
   }, [approveTarget]);
 
@@ -1272,6 +1279,12 @@ function ReminderSchedulePageInner() {
       category: data.category,
       product_type: data.product_type,
       due_date: d,
+      // Usulan rentang pengerjaan dari Sales. Hanya bermakna untuk kategori
+      // pemicu; disimpan sekarang, dipakai nanti saat request di-assign.
+      ...(triggersProjectProgress(data.category) ? {
+        progress_start_date:  data.progress_start_date  || null,
+        progress_target_date: data.progress_target_date || null,
+      } : {}),
       batch_id: batchId,
       due_time: data.due_time,
       sales_name: effectiveSalesName,
@@ -1581,6 +1594,10 @@ function ReminderSchedulePageInner() {
       due_time: approveTime || approveTarget.due_time,
       notes: cleanNotes,
       routing_status: null,
+      ...(triggersProjectProgress(approveTarget.category) ? {
+        progress_start_date:  approveStart   || null,
+        progress_target_date: approveTarget2 || null,
+      } : {}),
     }).eq('id', approveTarget.id);
 
     if (error) {
@@ -1588,6 +1605,27 @@ function ReminderSchedulePageInner() {
       setApproveSaving(false);
       return;
     }
+
+    // ── Draft Project Progress dibuat DI SINI, bukan saat request diajukan ──
+    // Request Sales berstatus pending sampai di-assign; kalau draft dibuat sejak
+    // pengajuan, request yang ditolak akan meninggalkan lokasi kosong yang harus
+    // dibersihkan manual. Saat assign, pekerjaannya sudah pasti berjalan.
+    //
+    // Sengaja HANYA approveTarget, bukan sibling-nya: satu batch multi-tanggal
+    // adalah lokasi yang SAMA dikunjungi beberapa hari, bukan beberapa lokasi.
+    // Menyertakan sibling akan melahirkan lokasi kembar sebanyak jumlah hari.
+    void syncNewRemindersToProgress([{
+      id:                   approveTarget.id,
+      project_name:         approveTarget.project_name,
+      address:              approveTarget.address,
+      sales_name:           approveTarget.sales_name,
+      sales_division:       approveTarget.sales_division,
+      assign_name:          assignee.full_name,
+      due_date:             approveDate || approveTarget.due_date,
+      category:             approveTarget.category,
+      progress_start_date:  approveStart   || null,
+      progress_target_date: approveTarget2 || null,
+    }]);
 
     if (approveBatchSiblings.length > 0) {
       const siblingResults: { error: { message: string } | null }[] = await Promise.all(approveBatchSiblings.map(sib => {
@@ -2019,6 +2057,42 @@ jangan lupa peralatan & Semangat💪🏼
                       style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
                   </div>
                 </div>
+
+                {/* Timeline Project Progress — hanya kategori pemicu.
+                    Terisi dari usulan Sales; admin boleh membetulkan sebelum
+                    draft lokasi dibuat. */}
+                {triggersProjectProgress(approveTarget.category) && (
+                  <div className="rounded-xl p-3" style={{ background: 'rgba(8,145,178,0.07)', border: '1px solid rgba(8,145,178,0.25)' }}>
+                    <p className="text-xs font-bold mb-2" style={{ color: '#0e7490' }}>
+                      📊 Timeline Project Progress
+                    </p>
+                    <p className="text-[11px] mb-2.5" style={{ color: '#0891b2' }}>
+                      {approveStart || approveTarget2
+                        ? 'Diusulkan Sales — ubah bila perlu.'
+                        : 'Sales tidak mengusulkan timeline. Isi di sini, atau lengkapi menyusul di Project Progress.'}
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                          Mulai Pengerjaan
+                        </label>
+                        <input type="date" value={approveStart}
+                          onChange={e => setApproveStart(e.target.value)}
+                          className="w-full rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-800"
+                          style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                          Target Selesai
+                        </label>
+                        <input type="date" value={approveTarget2} min={approveStart || undefined}
+                          onChange={e => setApproveTarget2(e.target.value)}
+                          className="w-full rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-800"
+                          style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Info WA */}
                 <div className="rounded-xl p-3 flex items-start gap-2"

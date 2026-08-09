@@ -12,6 +12,14 @@ export interface JadwalRequest {
   category: string;
   product_type: string;   // tipe produk (LED / LCD·Middleware / LED & LCD) — utk routing
   due_date: string;
+  /**
+   * Usulan rentang pengerjaan untuk Project Progress. Hanya diisi bila
+   * kategorinya Konfigurasi / Konfigurasi & Training. Sifatnya USULAN — admin
+   * masih bisa mengubahnya saat approve, dan draft baru lahir setelah request
+   * di-assign ke tim.
+   */
+  progress_start_date: string;
+  progress_target_date: string;
   extra_dates: string[];   // hari tambahan — request sekali untuk beberapa hari sekaligus
   due_time: string;
   pic_name: string;
@@ -63,6 +71,8 @@ export function RequestJadwalModal({
     category: 'Demo Product',
     product_type: '',
     due_date: new Date().toISOString().split('T')[0],
+    progress_start_date: '',
+    progress_target_date: '',
     extra_dates: [],
     due_time: '09:00',
     pic_name: '',
@@ -342,6 +352,42 @@ export function RequestJadwalModal({
               />
             </div>
           </div>
+
+          {/* ── Usulan Timeline Project Progress ──
+              Muncul hanya untuk kategori yang otomatis membuat draft di Project
+              Progress. Tanggal Usulan di atas adalah jadwal KUNJUNGAN; yang ini
+              rentang PENGERJAAN — dua hal berbeda, jadi ditanyakan terpisah. */}
+          {(form.category === 'Konfigurasi' || form.category === 'Konfigurasi & Training') && (
+            <div className="rounded-xl p-4" style={{ background: 'rgba(8,145,178,0.07)', border: '1.5px solid rgba(8,145,178,0.3)' }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">📊</span>
+                <p className="text-sm font-bold" style={{ color: '#0e7490' }}>Usulan Timeline Pengerjaan</p>
+              </div>
+              <p className="text-xs mb-3" style={{ color: '#0891b2' }}>
+                Perkiraan rentang pengerjaan di lokasi, untuk dipantau di Project Progress.
+                Boleh dikosongkan — Admin dapat menetapkannya saat menyetujui request.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                    Mulai Pengerjaan
+                  </label>
+                  <input type="date" value={form.progress_start_date}
+                    onChange={e => f({ progress_start_date: e.target.value })}
+                    className={inputCls} style={inputStyle} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                    Target Selesai
+                  </label>
+                  <input type="date" value={form.progress_target_date}
+                    min={form.progress_start_date || undefined}
+                    onChange={e => f({ progress_target_date: e.target.value })}
+                    className={inputCls} style={inputStyle} />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Tambah Hari Lain — mini calendar multi-select. Disembunyikan di HP
              (layar sempit → tampilan bertumpuk); hanya muncul di layar sm: ke atas.
