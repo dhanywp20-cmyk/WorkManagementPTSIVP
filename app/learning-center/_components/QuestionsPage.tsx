@@ -479,7 +479,7 @@ export function QuestionsPage({ user }: { user: User }) {
   const addManualModalJSX = showAddManual ? (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
       <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ background: '#ffffff' }}>
-        <h3 className="font-bold text-slate-800 mb-1 text-base">➕ Tambah Soal Manual</h3>
+        <h3 className="font-bold text-slate-800 mb-1 text-base sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-slate-100">➕ Tambah Soal Manual</h3>
         <p className="text-xs text-slate-400 mb-4">
           {newQ.question_type === 'essay' ? 'Isi pertanyaan essay dan (opsional) kunci jawaban referensi untuk membantu penilaian manual nanti.' : 'Isi semua field, klik tombol "✓ Benar" untuk menandai jawaban yang benar.'}
         </p>
@@ -946,7 +946,7 @@ export function QuestionsPage({ user }: { user: User }) {
         {editQ && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
             <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ background: '#ffffff' }}>
-              <h3 className="font-bold text-slate-800 mb-4">✏️ Edit Soal</h3>
+              <h3 className="font-bold text-slate-800 mb-4 sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-slate-100">✏️ Edit Soal</h3>
               <div className="space-y-3">
                 <textarea value={editQ.question} onChange={e => setEditQ(p => p && ({ ...p, question: e.target.value }))}
                   rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 resize-none" placeholder="Pertanyaan" />

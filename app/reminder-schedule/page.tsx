@@ -2418,11 +2418,11 @@ jangan lupa peralatan & Semangat💪🏼
         {detailReminder && (
           <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-[100] p-4"
             onClick={e => { if (e.target === e.currentTarget) { setDetailReminder(null); setShowModeModal(false); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); } }}>
-            <div className="flex items-start gap-3 w-full justify-center"
+            <div className="flex items-start gap-3 w-full justify-center h-full"
               style={{ maxWidth: showModeModal ? '1140px' : showRiwayat ? '1060px' : '672px', transition: 'max-width 0.25s ease' }}>
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full flex-1 min-w-0 overflow-hidden flex flex-col"
-              style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: 'calc(100dvh - 2rem)' }}>
-              <div className="px-6 py-5 flex-shrink-0 relative" style={{
+              style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '100%' }}>
+              <div className="px-6 py-5 flex-shrink-0 sticky top-0 z-30 relative" style={{
                 background: (() => { const c = CATEGORY_CONFIG[detailReminder.category]; const base = c ? `linear-gradient(135deg,${c.accent}dd,${c.accent}88)` : 'linear-gradient(135deg,#1d4ed8,#1e40af)'; return `linear-gradient(rgba(0,0,0,0.3),rgba(0,0,0,0.15)),${base}`; })()
               }}>
                 <button onClick={() => setShowRiwayat(v => !v)}
@@ -2887,7 +2887,7 @@ jangan lupa peralatan & Semangat💪🏼
                 pekerjaan, sedangkan riwayat hanya rujukan. */}
             {showRiwayat && !showModeModal && (
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex-shrink-0 overflow-hidden flex flex-col"
-                style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: 'calc(100dvh - 2rem)' }}>
+                style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '100%' }}>
                 <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: 'linear-gradient(135deg,#475569,#334155)' }}>
                   <h3 className="text-white font-bold text-base">🕘 Riwayat Perubahan</h3>
                   <p className="text-slate-300 text-[11px] mt-0.5 truncate">{detailReminder.project_name}</p>
@@ -2903,7 +2903,7 @@ jangan lupa peralatan & Semangat💪🏼
 
             {showModeModal && (
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex-shrink-0 overflow-hidden flex flex-col"
-                style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: 'calc(100vh - 2rem)' }}>
+                style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '100%' }}>
                 <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}>
                   <h3 className="text-white font-bold text-base">📍 Mode Penyelesaian</h3>
                   <p className="text-emerald-100 text-[11px] mt-0.5">Lengkapi data sebelum status jadi Completed</p>
@@ -3420,17 +3420,22 @@ jangan lupa peralatan & Semangat💪🏼
                     {/* ── DESKTOP: Table view ── */}
                     <div className="hidden md:block overflow-x-auto">
                       <table className="w-full border-collapse" style={{ tableLayout: 'fixed', background: 'transparent' }}>
+                        {/* Sembilan kolom, dijumlahkan TEPAT 100%.
+                            Sebelumnya ada 10 <col> untuk 9 kolom (sisa kolom
+                            Garansi yang dibuang) dan totalnya hanya 75% —
+                            browser membagikan sisa 25% sesuka hati, sehingga
+                            Action melebar berisi ruang kosong sementara Handler
+                            terpotong. */}
                         <colgroup>
-                          <col style={{ width: '3%' }} />
-                          <col style={{ width: '13%' }} />
-                          <col style={{ width: '12%' }} />
-                          <col style={{ width: '10%' }} />
-                          <col style={{ width: '8%' }} />
-                          <col style={{ width: '6%' }} />
-                          <col style={{ width: '8%' }} />
-                          <col style={{ width: '5%' }} />
-                          <col style={{ width: '5%' }} />
-						  <col style={{ width: '5%' }} />
+                          <col style={{ width: '4%'  }} />{/* No / pilih   */}
+                          <col style={{ width: '18%' }} />{/* Project      */}
+                          <col style={{ width: '14%' }} />{/* Product      */}
+                          <col style={{ width: '12%' }} />{/* Kegiatan     */}
+                          <col style={{ width: '13%' }} />{/* Sales        */}
+                          <col style={{ width: '15%' }} />{/* Handler — nama lengkap sering panjang */}
+                          <col style={{ width: '9%'  }} />{/* Status       */}
+                          <col style={{ width: '8%'  }} />{/* Tanggal      */}
+                          <col style={{ width: '7%'  }} />{/* Action       */}
                         </colgroup>
                         <thead>
                           <tr className="border-b-2 border-gray-100" style={{ background: "rgba(255,255,255,0.97)" }}>
@@ -3522,7 +3527,11 @@ jangan lupa peralatan & Semangat💪🏼
                                   {r.sales_division && <div className="text-[10px] text-purple-600 font-semibold truncate mt-0.5">{r.sales_division}</div>}
                                 </td>
                                 {/* Handler */}
-                                <td className="px-3 py-3 border-r border-gray-200 align-middle" style={{ width: '110px', maxWidth: '110px', overflow: 'hidden' }}>
+                                {/* Lebar sengaja TIDAK dipatok di sini — biar
+                                    mengikuti <colgroup>. Patokan 110px yang lama
+                                    menimpa lebar kolom, sehingga nama handler
+                                    selalu terpotong berapa pun lebar tabelnya. */}
+                                <td className="px-3 py-3 border-r border-gray-200 align-middle overflow-hidden">
                                   <div className="flex flex-nowrap gap-0.5">
                                     {uniqueAssignNames.slice(0, 3).map(name => (
                                       <div key={name} title={name}
