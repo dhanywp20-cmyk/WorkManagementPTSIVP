@@ -54,6 +54,7 @@ function waktuRelatif(iso: string): string {
 
 export function AuditTrailPanel({
   targetId, modul, judul = 'Riwayat Perubahan', batas = 20,
+  selaluTerbuka = false, sembunyikanBilaKosong = true,
 }: {
   /** Record yang riwayatnya ditampilkan. Panel diam bila kosong. */
   targetId: string | null | undefined;
@@ -61,10 +62,22 @@ export function AuditTrailPanel({
   modul?: string;
   judul?: string;
   batas?: number;
+  /**
+   * Dipakai saat panel berdiri sendiri di samping detail: tidak perlu diklik
+   * dulu, dan kepalanya tidak jadi tombol.
+   */
+  selaluTerbuka?: boolean;
+  /**
+   * Di dalam modal detail, panel kosong hanya menambah kebisingan — jadi
+   * disembunyikan. Tapi sebagai panel samping ia SUDAH dibuka sengaja oleh
+   * user, sehingga menghilang begitu saja justru membingungkan: lebih baik
+   * mengatakan "belum ada riwayat".
+   */
+  sembunyikanBilaKosong?: boolean;
 }) {
   const [entri, setEntri] = useState<AuditEntry[]>([]);
   const [memuat, setMemuat] = useState(true);
-  const [terbuka, setTerbuka] = useState(false);
+  const [terbuka, setTerbuka] = useState(selaluTerbuka);
 
   useEffect(() => {
     if (!targetId) { setEntri([]); setMemuat(false); return; }
@@ -86,32 +99,43 @@ export function AuditTrailPanel({
 
   if (!targetId) return null;
 
-  // Diam sepenuhnya bila belum ada riwayat — panel kosong di setiap modal
-  // detail hanya menambah kebisingan tanpa memberi informasi.
-  if (!memuat && entri.length === 0) return null;
+  if (!memuat && entri.length === 0 && sembunyikanBilaKosong) return null;
+
+  if (!memuat && entri.length === 0) {
+    return (
+      <div className="px-4 py-10 text-center">
+        <p className="text-3xl mb-2">🕘</p>
+        <p className="text-xs font-semibold text-slate-500">Belum ada riwayat</p>
+        <p className="text-[11px] text-slate-400 mt-1">
+          Perubahan pada data ini akan tercatat di sini.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="rounded-xl overflow-hidden"
-      style={{ background: 'rgba(100,116,139,0.05)', border: '1px solid rgba(100,116,139,0.18)' }}>
+    <div className={selaluTerbuka ? '' : 'rounded-xl overflow-hidden'}
+      style={selaluTerbuka ? undefined
+        : { background: 'rgba(100,116,139,0.05)', border: '1px solid rgba(100,116,139,0.18)' }}>
 
-      <button
-        type="button"
-        onClick={() => setTerbuka(o => !o)}
-        aria-expanded={terbuka}
-        className="w-full flex items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-black/[0.03]">
-        <span className="text-sm">🕘</span>
-        <span className="text-xs font-bold uppercase tracking-wide text-slate-600 flex-1">
-          {judul}
-        </span>
-        <span className="text-[10px] font-bold text-slate-400 tabular-nums">
-          {memuat ? '…' : entri.length}
-        </span>
-        <span className="text-slate-400 text-xs transition-transform"
-          style={{ transform: terbuka ? 'rotate(90deg)' : 'none' }}>▶</span>
-      </button>
+      {!selaluTerbuka && (
+        <button
+          type="button"
+          onClick={() => setTerbuka(o => !o)}
+          aria-expanded={terbuka}
+          className="w-full flex items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-black/[0.03]">
+          <span className="text-sm">🕘</span>
+          <span className="text-xs font-bold uppercase tracking-wide text-slate-600 flex-1">{judul}</span>
+          <span className="text-[10px] font-bold text-slate-400 tabular-nums">
+            {memuat ? '…' : entri.length}
+          </span>
+          <span className="text-slate-400 text-xs transition-transform"
+            style={{ transform: terbuka ? 'rotate(90deg)' : 'none' }}>▶</span>
+        </button>
+      )}
 
       {terbuka && (
-        <div className="px-4 pb-3 flex flex-col gap-0">
+        <div className={selaluTerbuka ? "px-4 py-3 flex flex-col gap-0" : "px-4 pb-3 flex flex-col gap-0"}>
           {memuat ? (
             <p className="text-xs text-slate-400 py-2">Memuat riwayat…</p>
           ) : entri.map((e, i) => {

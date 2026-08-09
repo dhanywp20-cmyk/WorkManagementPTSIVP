@@ -75,7 +75,7 @@ export default function Dashboard() {
   const [sidebarMobileOpen, setSidebarMobileOpen] = useState(false);
 
   const [showAdminPanel, setShowAdminPanel] = useState(false);
-  const [adminPanelTab, setAdminPanelTab] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'orgChart'>('settings');
+  const [adminPanelTab, setAdminPanelTab] = useState<'settings' | 'userManagement' | 'picBrand'>('settings');
   /**
    * Dua antrean yang menunggu tindakan admin, sengaja DIPISAH karena
    * diselesaikan di tempat yang berbeda:

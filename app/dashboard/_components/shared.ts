@@ -162,6 +162,6 @@ export interface NotifBellProps {
 
 // Admin Panel props
 export interface AdminPanelModalProps {
-  initialTab: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'orgChart';
+  initialTab: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster';
   onClose: () => void;
 }

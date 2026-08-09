@@ -129,6 +129,8 @@ function ReminderSchedulePageInner() {
   const [approveAssignTo, setApproveAssignTo] = useState('');
   const [approveDate, setApproveDate] = useState('');
   const [approveTime, setApproveTime] = useState('');
+  /** Panel riwayat di samping modal detail. Default terbuka supaya langsung terlihat. */
+  const [showRiwayat, setShowRiwayat] = useState(true);
   // Timeline pengerjaan saat approve — terisi dari usulan Sales, boleh diubah.
   const [approveStart,  setApproveStart]  = useState('');
   const [approveTarget2, setApproveTarget2] = useState('');
@@ -2416,12 +2418,18 @@ jangan lupa peralatan & Semangat💪🏼
         {detailReminder && (
           <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-[100] p-4"
             onClick={e => { if (e.target === e.currentTarget) { setDetailReminder(null); setShowModeModal(false); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); } }}>
-            <div className="flex items-start gap-3 w-full justify-center" style={{ maxWidth: showModeModal ? '1140px' : '672px', transition: 'max-width 0.25s ease' }}>
+            <div className="flex items-start gap-3 w-full justify-center"
+              style={{ maxWidth: showModeModal ? '1140px' : showRiwayat ? '1060px' : '672px', transition: 'max-width 0.25s ease' }}>
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full flex-1 min-w-0 overflow-hidden flex flex-col"
               style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: 'calc(100dvh - 2rem)' }}>
               <div className="px-6 py-5 flex-shrink-0 relative" style={{
                 background: (() => { const c = CATEGORY_CONFIG[detailReminder.category]; const base = c ? `linear-gradient(135deg,${c.accent}dd,${c.accent}88)` : 'linear-gradient(135deg,#1d4ed8,#1e40af)'; return `linear-gradient(rgba(0,0,0,0.3),rgba(0,0,0,0.15)),${base}`; })()
               }}>
+                <button onClick={() => setShowRiwayat(v => !v)}
+                  title={showRiwayat ? 'Sembunyikan riwayat perubahan' : 'Tampilkan riwayat perubahan'}
+                  className="absolute top-4 right-14 h-7 px-2.5 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center gap-1 text-[11px] font-bold">
+                  🕘 <span className="hidden sm:inline">Riwayat</span>
+                </button>
                 <div className="flex flex-wrap gap-2 mb-3">
                   <PriorityBadge priority={detailReminder.priority} onHeader />
                   <StatusBadge status={detailReminder.status} onHeader />
@@ -2626,8 +2634,6 @@ jangan lupa peralatan & Semangat💪🏼
                     />
                   );
                 })() : null}
-
-                <AuditTrailPanel targetId={detailReminder.id} modul="reminder" />
 
                 {/* ── Timeline Project Progress — kategori pemicu saja ──
                     Sejajar dengan blok Masa Garansi di bawahnya: keduanya
@@ -2875,6 +2881,26 @@ jangan lupa peralatan & Semangat💪🏼
             </div>
 
             {/* RIGHT: panel Mode Penyelesaian (muncul saat klik Completed) — seperti detail Ticketing */}
+            {/* Riwayat sebagai panel samping — terbaca berdampingan dengan
+                detailnya, bukan tersembunyi di balik tombol di dalam. Mode
+                Penyelesaian punya prioritas: ia bagian dari alur menyelesaikan
+                pekerjaan, sedangkan riwayat hanya rujukan. */}
+            {showRiwayat && !showModeModal && (
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex-shrink-0 overflow-hidden flex flex-col"
+                style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: 'calc(100dvh - 2rem)' }}>
+                <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: 'linear-gradient(135deg,#475569,#334155)' }}>
+                  <h3 className="text-white font-bold text-base">🕘 Riwayat Perubahan</h3>
+                  <p className="text-slate-300 text-[11px] mt-0.5 truncate">{detailReminder.project_name}</p>
+                  <button onClick={() => setShowRiwayat(false)}
+                    className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  <AuditTrailPanel targetId={detailReminder.id} modul="reminder"
+                    selaluTerbuka sembunyikanBilaKosong={false} />
+                </div>
+              </div>
+            )}
+
             {showModeModal && (
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex-shrink-0 overflow-hidden flex flex-col"
                 style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: 'calc(100vh - 2rem)' }}>
@@ -3421,7 +3447,6 @@ jangan lupa peralatan & Semangat💪🏼
                             <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Sales</th>
                             <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Handler</th>
                             <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Status</th>
-                            <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Garansi</th>
                             <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Tanggal</th>
                             <th className="px-1 py-2 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wide">Action</th>
                           </tr>
@@ -3547,26 +3572,6 @@ jangan lupa peralatan & Semangat💪🏼
                                           📩 Req. Sales
                                         </span>
                                   )}
-                                </td>
-                                {/* Garansi */}
-                                <td className="px-3 py-3 border-r border-gray-200 align-middle">
-                                  {(r.category === 'Konfigurasi' || r.category === 'Konfigurasi & Training') && (r as any).warranty_years ? (() => {
-                                    const wy = (r as any).warranty_years as number;
-                                    const expiry = new Date(r.due_date + 'T00:00:00');
-                                    expiry.setFullYear(expiry.getFullYear() + wy);
-                                    const now = new Date(); now.setHours(0,0,0,0);
-                                    const isIn = now <= expiry;
-                                    const diffDays = Math.ceil((expiry.getTime() - now.getTime()) / 86400000);
-                                    return (
-                                      <div>
-                                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold"
-                                          style={isIn ? { background: 'rgba(14,165,233,0.15)', color: '#0369a1' } : { background: 'rgba(239,68,68,0.12)', color: '#dc2626' }}>
-                                          {isIn ? '🛡️' : '⚠️'} {isIn ? 'In' : 'Out'}
-                                        </span>
-                                        <div className="text-[9px] text-gray-400 mt-0.5">{wy}Y · {isIn ? `sisa ${diffDays}h` : `lewat ${Math.abs(diffDays)}h`}</div>
-                                      </div>
-                                    );
-                                  })() : <span className="text-gray-300 text-xs">—</span>}
                                 </td>
                                 {/* Tanggal */}
                                 <td className="px-2 py-1 border-r border-gray-200 align-middle">

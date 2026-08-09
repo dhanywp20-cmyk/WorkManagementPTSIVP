@@ -1,6 +1,5 @@
 'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { OrgChartTab } from './OrgChartTab';
 import { supabase } from '@/lib/supabase';
 import { setSession, getSession } from '@/lib/auth';
 import { adminCreateUser, adminUpdateUser } from '@/lib/admin-users';
@@ -2391,9 +2390,9 @@ export function BrandPicSettingContent() {
 // ─── AdminPanelModal (unified: Settings + User Management + PIC Brand) ───────
 
 export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
-  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'orgChart'>(initialTab);
+  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster'>(initialTab);
 
-  const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'orgChart'; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
+  const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster'; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
     {
       key: 'settings',
       label: 'Account Settings',
@@ -2417,12 +2416,6 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
       label: 'KPI Roster',
       icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
       color: '#0369a1', activeBg: 'rgba(3,105,161,0.1)', activeBorder: 'rgba(3,105,161,0.4)', activeText: '#0369a1',
-    },
-    {
-      key: 'orgChart',
-      label: 'Struktur Atasan',
-      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v4m0 0H8a2 2 0 00-2 2v2m6-4h4a2 2 0 012 2v2M4 16h4v4H4v-4zm12 0h4v4h-4v-4zM10 16h4v4h-4v-4z" /></svg>,
-      color: '#7c3aed', activeBg: 'rgba(124,58,237,0.1)', activeBorder: 'rgba(124,58,237,0.4)', activeText: '#7c3aed',
     },
   ];
 
@@ -2486,7 +2479,6 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
                 {activeSection === 'userManagement' && 'Mapping Atasan, IVP & MVI Account & CC per User'}
                 {activeSection === 'picBrand' && 'Mapping Brand PIC per divisi & produk'}
                 {activeSection === 'kpiRoster' && 'Pilih anggota tim yang masuk dalam penilaian KPI'}
-                {activeSection === 'orgChart' && 'Pohon atasan-bawahan, beserta akun yatim & rantai melingkar'}
               </p>
             </div>
             <button onClick={onClose}
@@ -2505,7 +2497,6 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
             {activeSection === 'userManagement' && <UserManagementInline />}
             {activeSection === 'picBrand' && <BrandPicSettingInline />}
             {activeSection === 'kpiRoster' && <KpiRosterInline />}
-            {activeSection === 'orgChart' && <OrgChartTab />}
           </div>
         </div>
       </div>
@@ -3568,12 +3559,56 @@ export function UserManagementInline() {
                 (orgChildren[u.id] || []).forEach(k => walk(k, depth + 1));
               };
               (orgChildren['__root__'] || []).forEach(r => walk(r, 0));
+
+              /**
+               * Siapa yang TIDAK muncul di pohon sama sekali.
+               *
+               * Penelusuran berangkat dari __root__, yaitu orang tanpa atasan.
+               * Rantai yang melingkar (A atasan B, B atasan A) tidak pernah
+               * tersambung ke akar mana pun, jadi anggotanya lenyap dari layar
+               * tanpa pesan apa pun — bukan membeku, tapi justru lebih sulit
+               * disadari. Yang hilang begini juga tidak masuk rekap siapa pun.
+               *
+               * Dihitung tanpa filter pencarian, supaya peringatannya tidak
+               * ikut menghilang saat daftar sedang disaring.
+               */
+              const tampilSemua = new Set<string>();
+              const walkAll = (u: User) => {
+                if (tampilSemua.has(u.id)) return;      // penjaga siklus
+                tampilSemua.add(u.id);
+                (orgChildren[u.id] || []).forEach(walkAll);
+              };
+              (orgChildren['__root__'] || []).forEach(walkAll);
+              const tidakTampil = allUsers.filter(u => !tampilSemua.has(u.id));
+
               return (
                 <div className="p-5 space-y-4">
                   <div className="px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200">
                     <p className="text-xs font-bold text-emerald-800 mb-1">🏛️ Struktur Organisasi — satu tempat untuk semua divisi</p>
                     <p className="text-[11px] text-emerald-600 leading-relaxed">Atur atasan langsung setiap orang (Sales, Marketing, PTS) dalam satu pohon Direktur → Staff. Satu atasan bisa membawahi banyak orang. Klik nama untuk mengubah atasannya.</p>
                   </div>
+
+                  {/* Peringatan: akun yang tidak muncul di pohon mana pun. */}
+                  {tidakTampil.length > 0 && (
+                    <div className="px-4 py-3 rounded-xl" style={{ background: '#fffbeb', border: '1px solid #fcd34d' }}>
+                      <p className="text-xs font-bold text-amber-800 mb-1">
+                        ⚠ {tidakTampil.length} akun tidak muncul di pohon ini
+                      </p>
+                      <p className="text-[11px] text-amber-700 leading-relaxed mb-2">
+                        Penyebabnya salah satu dari dua: <strong>belum punya atasan</strong>, atau
+                        <strong> rantai atasannya melingkar</strong> (A atasan B, B atasan A) sehingga
+                        tidak pernah tersambung ke puncak. Keduanya membuat orang tersebut tidak masuk
+                        rekap dan routing siapa pun. Klik namanya di daftar bawah untuk menetapkan atasan.
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {tidakTampil.map(u => (
+                          <span key={u.id} className="text-[10px] px-2 py-0.5 rounded-full bg-white text-amber-800 border border-amber-300">
+                            {u.full_name}{u.jabatan ? ` · ${u.jabatan}` : ''}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex items-center gap-2 flex-wrap">
                     {(['all', 'Sales', 'Marketing', 'PTS'] as const).map(f => (
