@@ -215,3 +215,70 @@ export function formatDateTime(dateString: string) {
   const seconds = String(jakartaTime.getUTCSeconds()).padStart(2, "0");
   return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
 }
+
+// ── Penanganan tiket dari sudut pandang Team PTS IVP ─────────────────────────
+/**
+ * Satu tiket bisa berpindah tangan ke Team Services, dan itu dulu membuat tiga
+ * hal salah tampil — di layar View Ticket maupun di laporan cetak:
+ *
+ *   1. Baris "Team" memakai current_team. Padahal current_team menyatakan tiket
+ *      sedang ADA DI MANA, bukan siapa yang mengerjakannya. Akibatnya handler
+ *      PTS tercetak seolah anggota Team Services.
+ *   2. Status "Solved" berdiri sendiri tanpa keterangan, padahal pekerjaannya
+ *      diteruskan pihak lain — pembacanya mengira selesai sepenuhnya di PTS.
+ *   3. Lembar tanda tangan hanya bertuliskan "Tanda Tangan", tidak menyebut
+ *      siapa yang bertanggung jawab.
+ *
+ * Aturannya ditaruh di sini, satu tempat, supaya layar dan cetakan tidak
+ * pernah menjawab berbeda untuk tiket yang sama.
+ */
+export const TEAM_PTS = "Team PTS IVP";
+export const TEAM_SERVICES = "Team Services";
+
+export interface RingkasPenanganan {
+  /** Nama orang Team PTS yang terakhir memegang tiket — yang menandatangani. */
+  handlerPTS: string;
+  /** Team si penanda tangan. Selalu Team PTS IVP, apa pun isi current_team. */
+  teamHandler: string;
+  /** Tiket ini pernah dilimpahkan ke Team Services. */
+  keServices: boolean;
+  /** Imbuhan keterangan, kosong bila tidak pernah dilimpahkan. */
+  catatanServices: string;
+  /** Status PTS beserta keterangan pelimpahannya, siap ditampilkan. */
+  statusLengkap: string;
+}
+
+export function ringkasPenanganan(t: {
+  assign_name?: string | null;
+  status?: string | null;
+  current_team?: string | null;
+  services_status?: string | null;
+  activity_logs?: { handler_name?: string | null; team_type?: string | null;
+                    assigned_to_services?: boolean; created_at?: string }[];
+}): RingkasPenanganan {
+  const logs = t.activity_logs ?? [];
+
+  // assign_name memang sengaja TIDAK diubah saat pelimpahan (lihat
+  // handleAddActivity: "assign_name TETAP handler PTS terakhir"), jadi ia sudah
+  // berisi orang yang tepat. Activity log dipakai sebagai cadangan untuk tiket
+  // lama yang assign_name-nya terlanjur kosong.
+  const logPTS = logs
+    .filter(l => (l.team_type || TEAM_PTS) !== TEAM_SERVICES && String(l.handler_name || '').trim())
+    .sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime())[0];
+
+  const handlerPTS = String(t.assign_name || '').trim() || String(logPTS?.handler_name || '').trim();
+
+  const keServices = t.current_team === TEAM_SERVICES
+    || !!t.services_status
+    || logs.some(l => l.assigned_to_services);
+
+  const catatanServices = keServices ? ` — dengan catatan: di-assign ke ${TEAM_SERVICES}` : '';
+
+  return {
+    handlerPTS,
+    teamHandler: TEAM_PTS,
+    keServices,
+    catatanServices,
+    statusLengkap: `${t.status ?? '-'}${catatanServices}`,
+  };
+}

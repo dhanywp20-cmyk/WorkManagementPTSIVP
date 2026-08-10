@@ -18,7 +18,7 @@ import {
   JABATAN_TIER, JABATAN_CC_RULES,
   SERVICES_STATUSES, ServicesStatus,
   User, TeamMember, ActivityLog, Ticket, OverdueSetting,
-  SALES_DIVISIONS, formatDateTime,
+  SALES_DIVISIONS, formatDateTime, ringkasPenanganan,
 } from "./_components/shared";
 import {
   StatusDonutCard, SalesDivisionDonutCard, HandlerDonutCard,
@@ -1520,6 +1520,11 @@ function TicketingSystemInner() {
     const printDate = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
 
     const statusLabel = ticket.status;
+
+    // Aturan handler/team/catatan pelimpahan hidup di satu tempat supaya layar
+    // View Ticket dan laporan cetak tidak pernah menjawab berbeda.
+    const { handlerPTS, teamHandler, catatanServices } = ringkasPenanganan(ticket);
+
     const statusColor = ticket.status === "Solved" ? "#059669"
       : ticket.status === "In Progress" ? "#2563eb"
       : ticket.status === "Pending" ? "#d97706"
@@ -1542,12 +1547,7 @@ function TicketingSystemInner() {
       .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
       .map((log: any, idx: number) => {
         const ts = formatDateTime(log.created_at);
-        const teamBg = log.team_type === "Team Services" ? "#fef3c7" : "#eff6ff";
         const teamColor = log.team_type === "Team Services" ? "#92400e" : "#1d4ed8";
-        const statusBg = log.new_status === "Solved" ? "#d1fae5"
-          : log.new_status === "In Progress" ? "#dbeafe"
-          : log.new_status === "Pending" ? "#fef3c7"
-          : "#f1f5f9";
         const statusCol = log.new_status === "Solved" ? "#065f46"
           : log.new_status === "In Progress" ? "#1d4ed8"
           : log.new_status === "Pending" ? "#92400e"
@@ -1555,11 +1555,11 @@ function TicketingSystemInner() {
         return `<tr style="background:${idx % 2 === 0 ? "#fff" : "#f8fafc"}">
           <td style="padding:10px 12px;border:1px solid #e2e8f0;width:120px;white-space:nowrap;vertical-align:top">
             <div style="font-size:11px;color:#64748b">${ts}</div>
-            <div style="margin-top:3px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;display:inline-block;background:${teamBg};color:${teamColor}">${log.team_type || "PTS"}</div>
+            <div style="margin-top:3px;font-size:10px;font-weight:700;color:${teamColor}">${log.team_type || "Team PTS IVP"}</div>
           </td>
           <td style="padding:10px 12px;border:1px solid #e2e8f0;width:130px;vertical-align:top">
             <div style="font-weight:700;font-size:12px;color:#1e293b">${log.handler_name || "-"}</div>
-            <div style="margin-top:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;display:inline-block;background:${statusBg};color:${statusCol}">${log.new_status}</div>
+            <div style="margin-top:4px;font-size:10px;font-weight:700;color:${statusCol}">${log.new_status}</div>
             ${log.assigned_to_services ? `<div style="margin-top:4px;font-size:10px;font-weight:700;color:#dc2626">🔄 → Team Services</div>` : ""}
           </td>
           <td style="padding:10px 12px;border:1px solid #e2e8f0;vertical-align:top">
@@ -1582,8 +1582,10 @@ function TicketingSystemInner() {
   .header-left h1 { font-size: 17px; font-weight: 800; margin-bottom: 3px; }
   .header-left p { font-size: 11px; opacity: 0.85; }
   .header-right { text-align: right; font-size: 11px; opacity: 0.85; line-height: 1.8; }
-  .status-pill { display: inline-block; padding: 3px 14px; border-radius: 20px; font-size: 11px; font-weight: 700;
-    background: rgba(255,255,255,0.92); border: 1px solid rgba(255,255,255,0.5); color: white; margin-top: 6px; }
+  /* Dulu di sini ada .status-pill: latar rgba(255,255,255,0.92) dengan tulisan
+     putih — praktis putih di atas putih, jadi teksnya tidak pernah terbaca.
+     Latar bulat itu dibuang seluruhnya di laporan ini; statusnya cukup teks. */
+  .status-line { font-size: 11px; font-weight: 700; margin-top: 6px; opacity: 1; }
   .section { border: 1.5px solid #e2e8f0; border-radius: 10px; margin-bottom: 16px; overflow: hidden; page-break-inside: avoid; }
   .section-title { background: #f1f5f9; padding: 8px 14px; font-size: 11px; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.07em; color: #475569; border-bottom: 1px solid #e2e8f0; }
@@ -1597,10 +1599,11 @@ function TicketingSystemInner() {
   .info-value { font-size: 12px; font-weight: 600; color: #1e293b; line-height: 1.5; }
   table.log { width: 100%; border-collapse: collapse; }
   .footer { margin-top: 20px; padding-top: 12px; border-top: 1.5px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 10px; color: #94a3b8; }
-  .sign-grid { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; page-break-inside: avoid; }
+  .sign-grid { margin-top: 40px; display: grid; grid-template-columns: 250px; page-break-inside: avoid; }
   .sign-box { border-top: 1.5px solid #334155; padding-top: 8px; text-align: center; }
   .sign-label { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; }
-  .sign-space { margin-top: 32px; font-size: 11px; color: #94a3b8; }
+  .sign-space { height: 58px; }
+  .sign-name { font-size: 12px; font-weight: 700; color: #1e293b; border-top: 1px solid #cbd5e1; padding-top: 6px; }
   @media print {
     .page { padding: 16px 20px; }
     .section, .log-section { page-break-inside: avoid; }
@@ -1615,12 +1618,13 @@ function TicketingSystemInner() {
     <div class="header-left">
       <h1>🎫 Report Troubleshooting — IVP</h1>
       <p>Ticket ID: ${ticket.id?.substring(0,8).toUpperCase()}</p>
-      <div class="status-pill">PTS: ${statusLabel}${ticket.services_status ? " &nbsp;|&nbsp; Svc: " + ticket.services_status : ""}</div>
+      <div class="status-line">PTS: ${statusLabel}${ticket.services_status ? " &nbsp;·&nbsp; Services: " + ticket.services_status : ""}</div>
     </div>
     <div class="header-right">
       <div><b>Dicetak:</b> ${printDate}</div>
-      <div><b>Handler:</b> ${ticket.assign_name || "—"}</div>
-      <div><b>Team:</b> ${ticket.current_team || "Team PTS IVP"}</div>
+      <div><b>Handler:</b> ${handlerPTS || "—"}</div>
+      <div><b>Team:</b> ${teamHandler}</div>
+      <div><b>Status:</b> ${statusLabel}${catatanServices}</div>
       <div><b>Dibuat:</b> ${formatDateTime(ticket.created_at)}</div>
     </div>
   </div>
@@ -1653,10 +1657,10 @@ function TicketingSystemInner() {
       </div>
       <div>
         <div class="info-box"><div class="info-label">Status Team PTS IVP</div>
-          <div><span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;background:${statusColor}22;color:${statusColor};border:1.5px solid ${statusColor}66">${ticket.status}</span></div>
+          <div class="info-value" style="color:${statusColor}">${ticket.status}${catatanServices}</div>
         </div>
         ${ticket.services_status ? `<div class="info-box"><div class="info-label">Status Team Services</div>
-          <div><span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;background:#fef3c722;color:#92400e;border:1.5px solid #f59e0b66">${ticket.services_status}</span></div>
+          <div class="info-value" style="color:#b45309">${ticket.services_status}</div>
         </div>` : ""}
         <div class="info-box"><div class="info-label">Tanggal Dibuat</div><div class="info-value">${formatDateTime(ticket.created_at)}</div></div>
         <div class="info-box"><div class="info-label">Created By</div><div class="info-value">${ticket.created_by || "—"}</div></div>
@@ -1692,14 +1696,16 @@ function TicketingSystemInner() {
   <!-- FOOTER -->
   <div class="footer">
     <div>🎫 IndoVisual Professional Tools — Ticket Troubleshooting System</div>
-    <div>Dicetak: ${printDate} | Status: ${ticket.status}</div>
+    <div>Dicetak: ${printDate} | Status: ${ticket.status}${catatanServices}</div>
   </div>
 
   <!-- TANDA TANGAN -->
   <div class="sign-grid">
-    ${["Handler / PTS"].map(r =>
-      `<div class="sign-box"><div class="sign-label">${r}</div><div class="sign-space">Tanda Tangan</div></div>`
-    ).join("")}
+    <div class="sign-box">
+      <div class="sign-label">Handler / ${teamHandler}</div>
+      <div class="sign-space"></div>
+      <div class="sign-name">${handlerPTS || "( ............................ )"}</div>
+    </div>
   </div>
 
 </div></body></html>`;
@@ -2968,10 +2974,14 @@ function TicketingSystemInner() {
                 style={{ animation: "scale-in 0.25s ease-out", border: "1px solid rgba(0,0,0,0.1)", maxHeight: "94vh" }}>
                 {/* Header */}
                 <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)" }}>
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: 'rgba(255,255,255,0.22)', border: '1px solid rgba(255,255,255,0.4)', color: 'white' }}>🎫 Tim: {selectedTicket.current_team}</span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: selectedTicket.status === "Solved" ? "#059669" : selectedTicket.status === "In Progress" ? "#2563eb" : selectedTicket.status === "Onsite" ? "#7c3aed" : selectedTicket.status === "Call" ? "#0891b2" : "#d97706" }}>Status: {selectedTicket.status}</span>
-                    {selectedTicket.services_status && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: '#7c3aed' }}>Svc Status: {selectedTicket.services_status}</span>}
+                  {/* Latar bulat dibuang: di atas kepala merah ini lencana
+                      putih-transparan membuat tulisannya nyaris tak terbaca.
+                      Teks putih polos di atas merah jauh lebih terbaca, dan
+                      ruangnya cukup untuk menyebut keterangan pelimpahan. */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-[10px] font-bold text-white/90">
+                    <span>🎫 Tim: {ringkasPenanganan(selectedTicket).teamHandler}</span>
+                    <span>Status: {ringkasPenanganan(selectedTicket).statusLengkap}</span>
+                    {selectedTicket.services_status && <span>Services: {selectedTicket.services_status}</span>}
                   </div>
                   <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-1 mb-0.5">Nama Project</p>
                   <h2 className="text-lg font-bold text-white leading-tight">{selectedTicket.project_name}</h2>
@@ -3037,7 +3047,8 @@ function TicketingSystemInner() {
                   <div className="px-4 py-3 border-b border-gray-100">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
                       <div>
-                        <InfoLine label="Handler" value={selectedTicket.assign_name} />
+                        <InfoLine label="Handler" value={ringkasPenanganan(selectedTicket).handlerPTS || '-'} />
+                        <InfoLine label="Team" value={ringkasPenanganan(selectedTicket).teamHandler} />
                         <InfoLine label="Issue" value={selectedTicket.issue_case} />
                         {selectedTicket.product && <InfoLine label="Product" value={selectedTicket.product} />}
                         {selectedTicket.sn_unit && <InfoLine label="SN Unit" value={selectedTicket.sn_unit} />}
@@ -3066,10 +3077,8 @@ function TicketingSystemInner() {
                           <span className="text-2xl">{w.isIn ? "🛡️" : "⚠️"}</span>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold"
-                                style={w.isIn
-                                  ? { background: "rgba(14,165,233,0.18)", color: "#0369a1" }
-                                  : { background: "rgba(239,68,68,0.15)", color: "#dc2626" }}>
+                              <span className="text-xs font-bold"
+                                style={{ color: w.isIn ? "#0369a1" : "#dc2626" }}>
                                 {w.isIn ? "✅ In Warranty" : "❌ Out of Warranty"}
                               </span>
                               <span className="text-xs font-bold" style={{ color: w.isIn ? "#0369a1" : "#dc2626" }}>
@@ -3105,10 +3114,10 @@ function TicketingSystemInner() {
                             <div className="flex items-center justify-between mb-1">
                               <div className="flex items-center gap-1.5">
                                 <span className="text-xs font-bold text-gray-800">{log.handler_name}</span>
-                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 font-semibold">{log.team_type}</span>
+                                <span className="text-[9px] text-purple-700 font-semibold">{log.team_type}</span>
                               </div>
                               <div className="flex items-center gap-1.5">
-                                <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold border ${statusColors[log.new_status] || 'bg-gray-100 text-gray-600 border-gray-300'}`}>{log.new_status}</span>
+                                <span className={`text-[9px] font-bold ${(statusColors[log.new_status] || 'text-gray-600').split(' ').filter(c => c.startsWith('text-')).join(' ')}`}>{log.new_status}</span>
                                 <span className="text-[9px] text-gray-400">{formatDateTime(log.created_at)}</span>
                               </div>
                             </div>
