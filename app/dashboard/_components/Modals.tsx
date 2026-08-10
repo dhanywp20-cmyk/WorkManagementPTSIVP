@@ -16,24 +16,53 @@ import {
 } from './shared';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 
-// Sebar perubahan nama/username user ke semua snapshot di tabel terkait
-// (via SQL function propagate_user_rename). Return pesan error atau null.
+/**
+ * Sebar perubahan nama/username user ke semua snapshot di tabel terkait,
+ * lewat SQL function propagate_user_rename.
+ *
+ * Tiga hasil yang mungkin, dan ketiganya berbeda artinya bagi admin:
+ *   ok       — semua tabel ikut terbarui
+ *   sebagian — sebagian tabel gagal, sisanya berhasil (fungsi SQL-nya kini
+ *              menangkap galat per tabel dan meneruskan ke tabel berikutnya,
+ *              jadi keadaan ini nyata dan perlu disebut apa adanya)
+ *   gagal    — panggilan RPC-nya sendiri yang gagal, tidak ada yang tersebar
+ *
+ * Akun sendiri SUDAH tersimpan sebelum fungsi ini dipanggil; apa pun hasilnya
+ * di sini tidak membatalkan penyimpanan itu.
+ */
+type HasilSebar = { taraf: 'ok' | 'sebagian' | 'gagal'; pesan: string };
+
 async function propagateUserRename(
   edited: { id?: string; username?: string; full_name?: string },
   orig: { username?: string; full_name?: string } | null,
-): Promise<string | null> {
-  if (!orig || !edited.id) return null;
+): Promise<HasilSebar> {
+  const beres: HasilSebar = { taraf: 'ok', pesan: '' };
+  if (!orig || !edited.id) return beres;
   const nameChanged = (orig.full_name ?? '') !== (edited.full_name ?? '');
   const userChanged = (orig.username ?? '') !== (edited.username ?? '');
-  if (!nameChanged && !userChanged) return null;
-  const { error } = await supabase.rpc('propagate_user_rename', {
+  if (!nameChanged && !userChanged) return beres;
+
+  const { data, error } = await supabase.rpc('propagate_user_rename', {
     p_user_id: edited.id,
     p_old_username: orig.username ?? null,
     p_new_username: edited.username ?? null,
     p_old_name: orig.full_name ?? null,
     p_new_name: edited.full_name ?? null,
   });
-  return error ? error.message : null;
+  if (error) return { taraf: 'gagal', pesan: error.message };
+
+  const gagal = (data as { _gagal?: { kolom: string }[] } | null)?._gagal;
+  if (gagal && gagal.length > 0) {
+    return { taraf: 'sebagian', pesan: gagal.map(g => g.kolom).join(', ') };
+  }
+  return beres;
+}
+
+/** Kalimat yang ditampilkan ke admin untuk tiap hasil penyebaran. */
+function pesanSebar(h: HasilSebar): string {
+  if (h.taraf === 'ok')       return 'Akun diperbarui & nama tersebar ke data terkait.';
+  if (h.taraf === 'sebagian') return `Akun diperbarui. Nama tersebar, kecuali di: ${h.pesan}.`;
+  return `Akun tersimpan, tapi sebar nama ke data terkait gagal: ${h.pesan}`;
 }
 
 // WA selamat datang saat akun baru dibuat — dipakai kedua handleAddUser di
@@ -230,9 +259,9 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     }
     const { error } = await adminUpdateUser(editingUser.id, updatePayload);
     if (error) { setSaving(false); notify('error', 'Gagal menyimpan: ' + error.message); return; }
-    const propErr = await propagateUserRename(editingUser, editOrig);
+    const sebar = await propagateUserRename(editingUser, editOrig);
     setSaving(false);
-    notify(propErr ? 'error' : 'success', propErr ? ('Akun tersimpan, tapi sebar nama ke data terkait gagal: ' + propErr) : 'Akun diperbarui & nama tersebar ke data terkait.');
+    notify(sebar.taraf === 'ok' ? 'success' : 'error', pesanSebar(sebar));
     const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'update', module: 'user', target_id: editingUser.id, target_name: editingUser.full_name });
     setEditingUser(null);
     setEditDivisi('');
@@ -2853,9 +2882,9 @@ export function AccountSettingsInline() {
       ...(editDivisi ? { is_internal_sales: editDivisi === 'Marketing' || (editDivisi === 'Sales' && ['IVP', 'MVI', 'MLDS'].includes(editingUser.sales_division ?? '')) } : {}) };
     const { error } = await adminUpdateUser(editingUser.id, updatePayload);
     if (error) { setSaving(false); notify('error', 'Gagal menyimpan: ' + error.message); return; }
-    const propErr = await propagateUserRename(editingUser, editOrig);
+    const sebar = await propagateUserRename(editingUser, editOrig);
     setSaving(false);
-    notify(propErr ? 'error' : 'success', propErr ? ('Akun tersimpan, tapi sebar nama ke data terkait gagal: ' + propErr) : 'Akun diperbarui & nama tersebar ke data terkait.');
+    notify(sebar.taraf === 'ok' ? 'success' : 'error', pesanSebar(sebar));
     const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'update', module: 'user', target_id: editingUser.id, target_name: editingUser.full_name });
     setEditingUser(null); setEditDivisi(''); setEditPtsType(''); fetchUsers();
   };
