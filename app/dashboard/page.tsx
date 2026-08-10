@@ -405,6 +405,15 @@ export default function Dashboard() {
   const handleLogout = () => {
     autoNavigatedRef.current = false; // reset so next login re-navigates correctly
     setIsLoggedIn(false); setCurrentUser(null);
+    /* Wajib: tanpa ini `masukBerhasil` tetap true selamanya, dan begitu
+       halaman login dirender ulang setelah logout, kelas .lc-hisap terpasang
+       lagi dari awal. Animasinya `forwards`, jadi ia langsung menutup
+       (opacity 0, skala 0,035) halaman yang baru saja muncul — persis layar
+       putih kosong yang dilaporkan. sudahMasukRef juga direset supaya login
+       BERIKUTNYA bisa memicu urutan keluar lagi, bukan cuma yang pertama. */
+    setMasukBerhasil(false);
+    setDasborMuncul(false);
+    sudahMasukRef.current = false;
     clearSession();
     setShowSidebar(false); setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing');
     setShowAdminPanel(false); setShowUserProfile(false);

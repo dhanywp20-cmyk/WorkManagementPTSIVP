@@ -292,11 +292,11 @@ html:not(.lc-js) .lc-kartu-masuk {
 
 /* ── Login berhasil: halaman dihisap masuk, dashboard keluar dari koper ──
    Keduanya sengaja animasi CSS murni, bukan digerakkan JavaScript per bingkai.
-   Sebabnya keselamatan: transform yang tertinggal pada akar dashboard akan
-   menjadikannya containing block bagi seluruh modal `fixed inset-0` di
-   platform ini — persis akar bug modal yang dulu sudah dicabut. Dengan animasi
-   CSS tanpa fill di ujung, begitu selesai TIDAK ada transform yang tersisa,
-   bahkan bila kelasnya lupa dilepas. */
+   Sebabnya keselamatan: transform/clip-path yang tertinggal pada akar
+   dashboard akan menjadikannya containing block bagi seluruh modal
+   `fixed inset-0` di platform ini — persis akar bug modal yang dulu sudah
+   dicabut. Dengan animasi CSS tanpa fill di ujung, begitu selesai TIDAK ada
+   transform atau clip-path yang tersisa, bahkan bila kelasnya lupa dilepas. */
 .lc-hisap {
   animation: lcHisap 700ms cubic-bezier(.55, .06, .68, .19) forwards;
   transform-origin: var(--lc-mulut-x) var(--lc-mulut-y);
@@ -307,13 +307,35 @@ html:not(.lc-js) .lc-kartu-masuk {
   100% { transform: scale(.035) rotate(-9deg); opacity: 0; }
 }
 
+/* Dashboard tumbuh keluar dari mulut koper.
+   BUKAN transform: scale — itu percobaan pertama, dan hasilnya salah. Men-
+   scale kotak SELUAS SATU LAYAR dari titik di pinggir tidak terbaca sebagai
+   "tumbuh dari sebuah titik": yang terlihat mata adalah tepi-tepi kotak
+   berlari masuk dari arah titik itu, persis seperti "muncul dari kanan" —
+   bukan "keluar dari koper yang terbuka".
+   clip-path lingkaran yang melebar dari radius 0 di titik yang sama adalah
+   teknik yang benar untuk "terungkap dari satu titik": isi dashboard sudah
+   ada di tempatnya sejak bingkai pertama, hanya jendela bundar di sekitar
+   mulut koper yang membesar untuk menyingkapkannya — seperti cahaya yang
+   meluas dari lubang koper, bukan kotak yang melayang masuk. */
 .lc-dasbor-muncul {
-  animation: lcDasborMuncul 560ms cubic-bezier(.22, 1, .36, 1) backwards;
-  transform-origin: var(--lc-mulut-x) var(--lc-mulut-y);
+  /* BUKAN cubic-bezier(.22,1,.36,1) — kurva itu dipakai di tempat lain untuk
+     elemen kecil (kartu bergeser 14px) dan sangat "melesat di awal": diukur,
+     radius lingkaran ini sudah mencapai 52% diagonal layar dalam 21 milidetik
+     pertama. Mata tidak sempat melihatnya membesar — yang terlihat cuma
+     "tiba-tiba semua muncul", masih terbaca sebagai pop, bukan terungkap.
+     cubic-bezier(.4,0,.2,1) adalah kurva "standard easing" Material Design —
+     kurva yang sama dipakai Android untuk circular reveal transition, pola
+     yang persis ini. Naiknya lebih rata, jadi lingkarannya benar-benar
+     terlihat melebar selama animasi berjalan. */
+  animation: lcDasborMuncul 720ms cubic-bezier(.4, 0, .2, 1) backwards;
 }
 @keyframes lcDasborMuncul {
-  from { transform: scale(.05) rotate(5deg); opacity: 0; }
-  to   { transform: scale(1) rotate(0deg); opacity: 1; }
+  from { clip-path: circle(0 at var(--lc-mulut-x) var(--lc-mulut-y)); }
+  /* 150vmax: lebih besar dari jarak sudut manapun ke titik manapun di layar
+     (jarak terjauh yang mungkin ≈ 141vmax), jadi lingkarannya menutup seluruh
+     layar sampai ke ujung sekalipun mulut kopernya dekat sebuah sudut. */
+  to   { clip-path: circle(150vmax at var(--lc-mulut-x) var(--lc-mulut-y)); }
 }
 
 /* Bingkai beku koper: potret bingkai terakhir kanvas, dipasang saat halaman
@@ -341,6 +363,6 @@ html:not(.lc-js) .lc-kartu-masuk {
   .lc-tukar-keluar,
   .lc-tukar-masuk,
   .lc-hisap,
-  .lc-dasbor-muncul { animation: none; }
+  .lc-dasbor-muncul { animation: none; clip-path: none; }
   .lc-koper-beku { display: none; }
 }
