@@ -12,6 +12,11 @@
  *           sementara kartunya bertukar isi.
  *   ulang   pengguna kembali ke form masuk: seluruh adegan diputar lagi dari
  *           nol, seperti pertama kali membuka halaman.
+ *   keluar  login berhasil: SELURUH halaman login dihisap masuk ke koper,
+ *           kopernya mengatup lalu membuka lagi, dan dashboard tumbuh keluar
+ *           dari sana. Gerak halaman dan dashboard-nya sendiri dijalankan CSS
+ *           (lihat app/globals.css); yang dikerjakan komponen ini hanya
+ *           mengabarkan letak mulut koper dan mengurus kopernya.
  *
  * ── Kartu login tidak boleh pernah hilang ────────────────────────────────
  * Komponen ini menggerakkan kartu lewat gaya sebaris (inline style), dan itu
@@ -45,11 +50,18 @@ const WAKTU = {
   kartuJedaLebar: 0.05,
   /** Lama koper berputar saat pindah ke form pendaftaran. */
   putar: 0.8,
+  /** Titik pada jam adegan tempat urutan "login berhasil" dimulai. */
+  keluarMulai: 6.90,
+  /** Seluruh urutan keluar selesai: halaman sudah terhisap, koper sudah
+   *  mengatup dan membuka lagi, siap melepas dashboard. */
+  keluarHabis: 8.10,
+  /** Lama potret koper beku memudar setelah dashboard tampil. */
+  bekuPudar: 700,
   /** Batas aman: lewat ini kartu dipaksa utuh, apa pun yang terjadi. */
   batas: 12_000,
 };
 
-type Fase = 'masuk' | 'diam' | 'putar';
+type Fase = 'masuk' | 'diam' | 'putar' | 'keluar';
 
 /** Sedikit melewati ukuran penuh lalu mapan. */
 function balik(u: number): number {
@@ -62,7 +74,19 @@ function gerakDikurangi(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-export function KoperEntrance({ modeDaftar }: { modeDaftar: boolean }) {
+export function KoperEntrance({
+  modeDaftar,
+  keluar = false,
+  onKeluarSelesai,
+}: {
+  modeDaftar: boolean;
+  keluar?: boolean;
+  /** Dipanggil sekali saat tutup koper selesai mengatup. Halaman memakai ini
+   *  untuk berpindah ke dashboard, alih-alih menebak dengan angka tetap —
+   *  animasinya bisa mulai terlambat sepersekian detik (menunggu three.js,
+   *  bingkai pertama), dan dengan angka tetap ujungnya terpotong. */
+  onKeluarSelesai?: () => void;
+}) {
   const kanvasRef = useRef<HTMLCanvasElement | null>(null);
   const adeganRef = useRef<Adegan | null>(null);
   const faseRef = useRef<Fase>('masuk');
@@ -72,7 +96,12 @@ export function KoperEntrance({ modeDaftar }: { modeDaftar: boolean }) {
 
   /* Dipakai efek kedua untuk memicu putaran / pengulangan tanpa membangun
      ulang seluruh adegan. */
-  const perintahRef = useRef<((apa: 'putar' | 'ulang') => void) | null>(null);
+  const perintahRef = useRef<((apa: 'putar' | 'ulang' | 'keluar') => void) | null>(null);
+  const keluarRef = useRef(keluar);
+  /* Disimpan di ref supaya gelung gambar selalu memanggil versi terbaru tanpa
+     perlu disusun ulang tiap render. */
+  const selesaiRef = useRef(onKeluarSelesai);
+  selesaiRef.current = onKeluarSelesai;
 
   useEffect(() => {
     if (gerakDikurangi()) return;
@@ -94,18 +123,54 @@ export function KoperEntrance({ modeDaftar }: { modeDaftar: boolean }) {
       k.style.transformOrigin = '';
     };
 
-    /** Titik tumbuh kartu = mulut koper, dihitung dari ukuran TATA LETAK.
-     *  getBoundingClientRect tidak dipakai karena kartunya sedang diskalakan;
-     *  rect selalu melaporkan kotak yang sudah tertransformasi, sehingga titik
-     *  tumbuhnya ikut mengecil dan hasilnya melenceng makin jauh tiap bingkai. */
+    /** Titik tumbuh kartu = mulut koper, relatif terhadap KOTAK KARTU SENDIRI
+     *  (begitulah CSS transform-origin bekerja bila ditulis dalam piksel).
+     *
+     *  Dua sumber posisi, dan alasan masing-masing:
+     *  - kanvas.getBoundingClientRect() untuk posisi koper — AMAN dipakai,
+     *    kanvasnya sendiri tidak pernah di-scale.
+     *  - k.offsetParent (panel kanan, position:relative) + k.offsetLeft/Top
+     *    untuk posisi kartu TANPA transform — offsetLeft/Top TIDAK terpengaruh
+     *    transform CSS, beda dengan getBoundingClientRect() yang akan
+     *    melaporkan kotak yang SUDAH mengecil begitu kartunya mulai
+     *    di-scale, membuat titik tumbuhnya melenceng makin jauh tiap bingkai.
+     *
+     *  Sebelumnya rumus ini memakai `kanvas.parentElement.offsetLeft`
+     *  (lapisan koper) yang dicampur langsung dengan `k.offsetLeft` (kartu) —
+     *  itu keliru begitu lapisan kopernya menjadi `position: fixed` (untuk
+     *  fitur "seluruh halaman dihisap"): offsetLeft elemen fixed dihitung
+     *  relatif ke VIEWPORT, sedang offsetLeft kartu dihitung relatif ke PANEL
+     *  KANAN — dua kerangka acuan yang berbeda. Selisihnya persis sebesar
+     *  posisi panel (±720px di layar 1440px), dan itulah sebabnya kartu
+     *  terlihat "muncul dari pojok kanan": titik tumbuhnya terlempar jauh ke
+     *  luar kotak kartu sendiri. Memakai getBoundingClientRect() untuk kedua
+     *  elemen yang TIDAK di-scale (kanvas & panel) menghindari pencampuran
+     *  kerangka acuan ini sama sekali. */
     const tautkanTitikTumbuh = (k: HTMLElement, adegan: Adegan) => {
-      const lapisan = kanvas.parentElement;
-      if (!lapisan || !k.offsetWidth || !lapisan.offsetWidth) return;
-      const x = lapisan.offsetLeft + (adegan.mulut.x / 100) * lapisan.offsetWidth - k.offsetLeft;
+      const indukKartu = k.offsetParent as HTMLElement | null;
+      if (!indukKartu || !k.offsetWidth) return;
+      const kr = kanvas.getBoundingClientRect();
+      if (!kr.width) return;
+      const mulutX = kr.left + (adegan.mulut.x / 100) * kr.width;
       // Sedikit lebih ke dalam badan koper, bukan tepat di bibirnya: hanya
       // dengan begitu tepi bawah kartu benar-benar tertutup dinding koper.
-      const y = lapisan.offsetTop + (adegan.mulut.y / 100 + 0.045) * lapisan.offsetHeight - k.offsetTop;
-      k.style.transformOrigin = `${x.toFixed(1)}px ${y.toFixed(1)}px`;
+      const mulutY = kr.top + (adegan.mulut.y / 100 + 0.045) * kr.height;
+      const pr = indukKartu.getBoundingClientRect();
+      const kartuX = pr.left + k.offsetLeft;   // posisi kartu TANPA transform
+      const kartuY = pr.top + k.offsetTop;
+      k.style.transformOrigin = `${(mulutX - kartuX).toFixed(1)}px ${(mulutY - kartuY).toFixed(1)}px`;
+    };
+
+    /* Mengabarkan letak mulut koper dalam piksel layar. Dipakai CSS sebagai
+       titik tumbuh animasi hisap dan animasi dashboard muncul. Ditulis sebagai
+       custom property supaya CSS tetap punya nilai cadangan yang masuk akal
+       kalau ini tidak pernah berjalan. */
+    const kabarkanMulut = (adegan: Adegan) => {
+      const r = kanvas.getBoundingClientRect();
+      if (!r.width) return;
+      const akar = document.documentElement;
+      akar.style.setProperty('--lc-mulut-x', `${(r.left + (adegan.mulut.x / 100) * r.width).toFixed(1)}px`);
+      akar.style.setProperty('--lc-mulut-y', `${(r.top + (adegan.mulut.y / 100) * r.height).toFixed(1)}px`);
     };
 
     const gambarKartu = (t: number, adegan: Adegan) => {
@@ -139,9 +204,41 @@ export function KoperEntrance({ modeDaftar }: { modeDaftar: boolean }) {
          mematikan jaring pengamannya. */
       document.documentElement.classList.add('lc-js');
 
+      /* Menyalin bingkai terakhir kanvas menjadi gambar diam yang menempel di
+         layar. Halaman login sebentar lagi dibongkar bersama kanvasnya, padahal
+         kopernya masih perlu terlihat selagi dashboard tumbuh keluar darinya.
+         Kopernya memang sudah berhenti bergerak di titik ini, jadi potret dan
+         render langsung tidak bisa dibedakan. */
+      const bekukanKoper = () => {
+        try {
+          const r = kanvas.getBoundingClientRect();
+          const gambar = new Image();
+          gambar.src = kanvas.toDataURL('image/png');
+          gambar.className = 'lc-koper-beku';
+          gambar.alt = '';
+          gambar.style.left = `${r.left}px`;
+          gambar.style.top = `${r.top}px`;
+          gambar.style.width = `${r.width}px`;
+          gambar.style.height = `${r.height}px`;
+          document.body.appendChild(gambar);
+          // Menunggu satu putaran supaya transisi opacity punya keadaan awal.
+          window.setTimeout(() => { gambar.style.opacity = '0'; }, 260);
+          window.setTimeout(() => gambar.remove(), 260 + WAKTU.bekuPudar + 60);
+        } catch {
+          /* toDataURL bisa gagal (konteks hilang). Tidak apa-apa: yang hilang
+             hanya kopernya selama dashboard tumbuh, bukan dashboard-nya. */
+        }
+      };
+
       perintahRef.current = (apa) => {
         if (apa === 'putar') { faseRef.current = 'putar'; putarRef.current = 0; }
-        else { faseRef.current = 'masuk'; waktuRef.current = 0; putarRef.current = 0; adegan.setPutar(0); }
+        else if (apa === 'keluar') {
+          bebaskanKartu();
+          adegan.setPutar(0);
+          faseRef.current = 'keluar';
+          waktuRef.current = WAKTU.keluarMulai;
+          keluarSejak = performance.now();
+        } else { faseRef.current = 'masuk'; waktuRef.current = 0; putarRef.current = 0; adegan.setPutar(0); }
         batasWaktu = performance.now() + WAKTU.batas;
       };
 
@@ -156,12 +253,15 @@ export function KoperEntrance({ modeDaftar }: { modeDaftar: boolean }) {
           waktuRef.current = WAKTU.adegan;
           adegan.setWaktu(WAKTU.adegan);
           faseRef.current = 'diam';
+          bebaskanKartu();
+        } else if (faseRef.current !== 'keluar') {
+          bebaskanKartu();
         }
-        bebaskanKartu();
       };
       document.addEventListener('visibilitychange', saatTersembunyi);
 
       let sebelum = 0;
+      let keluarSejak = 0;
       batasWaktu = performance.now() + WAKTU.batas;
 
       const langkah = (ms: number) => {
@@ -181,8 +281,28 @@ export function KoperEntrance({ modeDaftar }: { modeDaftar: boolean }) {
         if (faseRef.current === 'masuk') {
           waktuRef.current = Math.min(WAKTU.adegan, waktuRef.current + d);
           adegan.setWaktu(waktuRef.current);
+          kabarkanMulut(adegan);
           gambarKartu(waktuRef.current, adegan);
           if (waktuRef.current >= WAKTU.adegan) { faseRef.current = 'diam'; bebaskanKartu(); }
+        } else if (faseRef.current === 'keluar') {
+          /* Jamnya diambil dari waktu dinding, BUKAN ditumpuk dari selisih
+             antar bingkai. Sebabnya urutan ini berjalan berbarengan dengan
+             animasi CSS yang memakai waktu dinding: kalau bingkainya berat dan
+             jam adegan tertinggal, tutup kopernya baru mengatup setelah
+             halamannya sudah lama terhisap habis. */
+          waktuRef.current = Math.min(
+            WAKTU.keluarHabis,
+            WAKTU.keluarMulai + (ms - keluarSejak) / 1000,
+          );
+          adegan.setWaktu(waktuRef.current);
+          kabarkanMulut(adegan);
+          if (waktuRef.current >= WAKTU.keluarHabis) {
+            faseRef.current = 'diam';
+            bekukanKoper();
+            const beres = selesaiRef.current;
+            selesaiRef.current = undefined;   // sekali saja
+            beres?.();
+          }
         } else if (faseRef.current === 'putar') {
           putarRef.current = Math.min(WAKTU.putar, putarRef.current + d);
           const u = putarRef.current / WAKTU.putar;
@@ -209,13 +329,22 @@ export function KoperEntrance({ modeDaftar }: { modeDaftar: boolean }) {
     };
   }, []);
 
-  /* Menanggapi perpindahan masuk ⇄ daftar. */
+  /* Menanggapi perpindahan masuk ⇄ daftar. Diabaikan bila urutan keluar sudah
+     berjalan — pada titik itu halaman login sedang ditinggalkan. */
   useEffect(() => {
+    if (keluarRef.current) return;
     if (modeRef.current === modeDaftar) return;
     const keDaftar = modeDaftar;
     modeRef.current = modeDaftar;
     perintahRef.current?.(keDaftar ? 'putar' : 'ulang');
   }, [modeDaftar]);
+
+  /* Login berhasil. Sekali dipicu, tidak bisa dibatalkan. */
+  useEffect(() => {
+    if (!keluar || keluarRef.current) return;
+    keluarRef.current = true;
+    perintahRef.current?.('keluar');
+  }, [keluar]);
 
   if (gerakDikurangi()) return null;
 

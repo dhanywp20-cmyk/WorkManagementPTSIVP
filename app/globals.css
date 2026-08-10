@@ -219,13 +219,32 @@ html {
    Lapisan ini hanya hidup di panel putih sebelah kanan. Panel merah, foto
    latar, tata letak, logo, tipografi, tombol, dan isian form tidak disentuh. */
 
+/* Lapisan koper SENGAJA fixed dan berada DI LUAR isi halaman login.
+   Alasannya bukan gaya: saat login berhasil, seluruh isi halaman dihisap masuk
+   ke koper lewat transform. Kalau lapisan kopernya ikut di dalam isi itu, ia
+   akan menghisap dirinya sendiri dan kopernya ikut mengecil.
+
+   Ukurannya dipatok ke separuh kanan layar — sama persis dengan panel putih —
+   supaya susunan adegannya tidak berubah sedikit pun dari sebelumnya. */
 .lc-anim {
-  position: absolute;
-  inset: 0;
-  z-index: 10;          /* DI ATAS kartu, supaya kartu bisa muncul dari balik koper */
+  position: fixed;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  z-index: 40;          /* DI ATAS kartu dan di atas dashboard yang baru muncul */
   pointer-events: none; /* wajib: kartu login harus tetap bisa diklik */
   overflow: hidden;
 }
+@media (max-width: 1023px) {
+  /* Di bawah lg tidak ada panel merah; form memakai seluruh lebar. */
+  .lc-anim { left: 0; width: 100%; }
+}
+
+/* Titik mulut koper dalam piksel layar, diisi lapisan koper tiap bingkai.
+   Nilai cadangan = tengah layar, supaya animasi hisap dan muncul tetap masuk
+   akal seandainya lapisan kopernya tidak pernah berjalan. */
+:root { --lc-mulut-x: 50vw; --lc-mulut-y: 62vh; }
 .lc-anim-kanvas {
   position: absolute;
   inset: 0;
@@ -271,6 +290,65 @@ html:not(.lc-js) .lc-kartu-masuk {
   from { opacity: 0; transform: scale(.92) translateY(10px); }
 }
 
+/* ── Login berhasil: halaman dihisap masuk, dashboard keluar dari koper ──
+   Keduanya sengaja animasi CSS murni, bukan digerakkan JavaScript per bingkai.
+   Sebabnya keselamatan: transform/clip-path yang tertinggal pada akar
+   dashboard akan menjadikannya containing block bagi seluruh modal
+   `fixed inset-0` di platform ini — persis akar bug modal yang dulu sudah
+   dicabut. Dengan animasi CSS tanpa fill di ujung, begitu selesai TIDAK ada
+   transform atau clip-path yang tersisa, bahkan bila kelasnya lupa dilepas. */
+.lc-hisap {
+  animation: lcHisap 700ms cubic-bezier(.55, .06, .68, .19) forwards;
+  transform-origin: var(--lc-mulut-x) var(--lc-mulut-y);
+}
+@keyframes lcHisap {
+  0%   { transform: scale(1) rotate(0deg); opacity: 1; }
+  62%  { opacity: 1; }
+  100% { transform: scale(.035) rotate(-9deg); opacity: 0; }
+}
+
+/* Dashboard tumbuh keluar dari mulut koper.
+   BUKAN transform: scale — itu percobaan pertama, dan hasilnya salah. Men-
+   scale kotak SELUAS SATU LAYAR dari titik di pinggir tidak terbaca sebagai
+   "tumbuh dari sebuah titik": yang terlihat mata adalah tepi-tepi kotak
+   berlari masuk dari arah titik itu, persis seperti "muncul dari kanan" —
+   bukan "keluar dari koper yang terbuka".
+   clip-path lingkaran yang melebar dari radius 0 di titik yang sama adalah
+   teknik yang benar untuk "terungkap dari satu titik": isi dashboard sudah
+   ada di tempatnya sejak bingkai pertama, hanya jendela bundar di sekitar
+   mulut koper yang membesar untuk menyingkapkannya — seperti cahaya yang
+   meluas dari lubang koper, bukan kotak yang melayang masuk. */
+.lc-dasbor-muncul {
+  /* BUKAN cubic-bezier(.22,1,.36,1) — kurva itu dipakai di tempat lain untuk
+     elemen kecil (kartu bergeser 14px) dan sangat "melesat di awal": diukur,
+     radius lingkaran ini sudah mencapai 52% diagonal layar dalam 21 milidetik
+     pertama. Mata tidak sempat melihatnya membesar — yang terlihat cuma
+     "tiba-tiba semua muncul", masih terbaca sebagai pop, bukan terungkap.
+     cubic-bezier(.4,0,.2,1) adalah kurva "standard easing" Material Design —
+     kurva yang sama dipakai Android untuk circular reveal transition, pola
+     yang persis ini. Naiknya lebih rata, jadi lingkarannya benar-benar
+     terlihat melebar selama animasi berjalan. */
+  animation: lcDasborMuncul 720ms cubic-bezier(.4, 0, .2, 1) backwards;
+}
+@keyframes lcDasborMuncul {
+  from { clip-path: circle(0 at var(--lc-mulut-x) var(--lc-mulut-y)); }
+  /* 150vmax: lebih besar dari jarak sudut manapun ke titik manapun di layar
+     (jarak terjauh yang mungkin ≈ 141vmax), jadi lingkarannya menutup seluruh
+     layar sampai ke ujung sekalipun mulut kopernya dekat sebuah sudut. */
+  to   { clip-path: circle(150vmax at var(--lc-mulut-x) var(--lc-mulut-y)); }
+}
+
+/* Bingkai beku koper: potret bingkai terakhir kanvas, dipasang saat halaman
+   login dibongkar supaya kopernya tetap terlihat selagi dashboard tumbuh
+   keluar darinya. Kopernya memang sudah diam di titik itu, jadi potret dan
+   render langsung tidak bisa dibedakan. */
+.lc-koper-beku {
+  position: fixed;
+  z-index: 40;
+  pointer-events: none;
+  transition: opacity 700ms ease-out;
+}
+
 /* ── Hormati setelan perangkat ──
    Gerak dikurangi: lapisan koper tidak dipasang sama sekali (komponennya
    berhenti sebelum mengunduh three.js), dan kartu langsung ada di tempatnya. */
@@ -283,5 +361,8 @@ html:not(.lc-js) .lc-kartu-masuk {
      dikurangi. Persis itu yang terjadi sebelum baris ini diperbaiki. */
   html:not(.lc-js) .lc-kartu-masuk,
   .lc-tukar-keluar,
-  .lc-tukar-masuk { animation: none; }
+  .lc-tukar-masuk,
+  .lc-hisap,
+  .lc-dasbor-muncul { animation: none; clip-path: none; }
+  .lc-koper-beku { display: none; }
 }
