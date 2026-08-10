@@ -39,10 +39,12 @@ export const WAKTU = {
      berselisih. Diukur dari saat dipicu: kartu mulai kembali +0,25 dtk, tutup
      koper menutup +0,60, mengatup rapat +0,78. */
   keluarMulai: 6.90,
-  kartuMasuk: 7.00,
-  kartuMasukSelesai: 7.35,
-  tutupMulai: 7.35, tutupSelesai: 7.53,
-  habis: 7.68,
+  /* Halaman login dihisap masuk 0,70 dtk (animasi CSS), baru kopernya
+     mengatup. Setelah itu ia membuka lagi untuk melepas dashboard — koper
+     menelan halaman lama lalu mengeluarkan yang baru. */
+  tutupMulai: 7.60, tutupSelesai: 7.74,
+  bukaLagiMulai: 7.80, bukaLagiSelesai: 8.02,
+  habis: 8.12,
 };
 
 /* ── Lintasan ──────────────────────────────────────────────────────────── */
@@ -290,7 +292,17 @@ function teksturCahaya(kuat = 1) {
 export function buatAdegan(canvas: HTMLCanvasElement, opsi: OpsiAdegan = {}) {
   const kecil = !!opsi.kecil;
   pakaiPalet(opsi.palet || 'merah');
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
+  /* preserveDrawingBuffer WAJIB di sini, bukan pilihan gaya:
+     1. tanpa itu canvas.toDataURL() mengembalikan gambar kosong, padahal
+        bingkai terakhir koper perlu dipotret untuk ditinggalkan di layar
+        selagi dashboard tumbuh keluar darinya;
+     2. tanpa itu pula isi kanvas boleh dibuang browser begitu kita berhenti
+        menggambar tiap bingkai, sehingga kopernya bisa lenyap sendiri saat
+        adegan sedang diam. */
+  const renderer = new THREE.WebGLRenderer({
+    canvas, alpha: true, antialias: true,
+    powerPreference: 'high-performance', preserveDrawingBuffer: true,
+  });
   renderer.setClearAlpha(0);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -438,7 +450,7 @@ export function buatAdegan(canvas: HTMLCanvasElement, opsi: OpsiAdegan = {}) {
     gSentak.rotation.z = sentak;
     gGuling.rotation.x = guling;
     // Sentakan kecil badan koper saat daun tutup membentur.
-    const sentakTutup = -0.010 * Math.sin(bagi(t, WAKTU.tutupSelesai - 0.03, WAKTU.tutupSelesai + 0.16) * Math.PI)
+    const sentakTutup = -0.012 * Math.sin(bagi(t, WAKTU.tutupSelesai - 0.03, WAKTU.tutupSelesai + 0.16) * Math.PI)
                         * (1 - bagi(t, WAKTU.tutupSelesai, WAKTU.tutupSelesai + 0.16));
     gKoper.position.y = H / 2 + 1.54 * RJ + turun + pantul + sentakTutup;
     gKoper.scale.set(1, gepeng, 1);
@@ -469,16 +481,20 @@ export function buatAdegan(canvas: HTMLCanvasElement, opsi: OpsiAdegan = {}) {
      memantul balik sedikit — tutup koper kaku tidak pernah berhenti mati di
      sentuhan pertama. */
     const tutup = keluar3(bagi(t, WAKTU.tutupMulai, WAKTU.tutupSelesai));
-    const pantulTutup = Math.sin(bagi(t, WAKTU.tutupSelesai - 0.02, WAKTU.tutupSelesai + 0.20) * Math.PI)
-                        * 0.11 * (1 - bagi(t, WAKTU.tutupSelesai, WAKTU.tutupSelesai + 0.20));
-    koper.engsel.rotation.x = (2.38 * buka + lewat) * (1 - tutup) + pantulTutup;
+    const bukaLagi = keluar3(bagi(t, WAKTU.bukaLagiMulai, WAKTU.bukaLagiSelesai));
+    /* tutup menutup daunnya, bukaLagi mengembalikannya. Ditulis sebagai
+       perkalian, bukan dua cabang, supaya tidak ada bingkai di mana keduanya
+       aktif dan sudutnya melompat. */
+    const pantulTutup = Math.sin(bagi(t, WAKTU.tutupSelesai - 0.02, WAKTU.tutupSelesai + 0.16) * Math.PI)
+                        * 0.09 * (1 - bagi(t, WAKTU.tutupSelesai, WAKTU.tutupSelesai + 0.16));
+    koper.engsel.rotation.x = (2.38 * buka + lewat) * (1 - tutup * (1 - bukaLagi)) + pantulTutup;
 
     /* Cahaya yang naik dari dalam koper. */
     const mulutDunia = new THREE.Vector3(0, 0.04, 0.02);
     gKoper.localToWorld(mulutDunia);
     const uu = bagi(t, WAKTU.ungkapMulai, WAKTU.ungkapSelesai);
     const redup = (1 - 0.45 * bagi(t, WAKTU.kartu - 0.1, WAKTU.kartu + 0.7))
-                  * (1 - bagi(t, WAKTU.keluarMulai, WAKTU.kartuMasuk + 0.1));
+                  * (1 - bagi(t, WAKTU.keluarMulai, WAKTU.keluarMulai + 0.25));
     const naik = keluar5(uu);
     cahaya.position.set(mulutDunia.x + 0.01, 0.085 + naik * 0.10, mulutDunia.z + 0.02);
     cahaya.scale.setScalar(0.11 + naik * 0.20);

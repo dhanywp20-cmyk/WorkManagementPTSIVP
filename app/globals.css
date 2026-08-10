@@ -219,13 +219,32 @@ html {
    Lapisan ini hanya hidup di panel putih sebelah kanan. Panel merah, foto
    latar, tata letak, logo, tipografi, tombol, dan isian form tidak disentuh. */
 
+/* Lapisan koper SENGAJA fixed dan berada DI LUAR isi halaman login.
+   Alasannya bukan gaya: saat login berhasil, seluruh isi halaman dihisap masuk
+   ke koper lewat transform. Kalau lapisan kopernya ikut di dalam isi itu, ia
+   akan menghisap dirinya sendiri dan kopernya ikut mengecil.
+
+   Ukurannya dipatok ke separuh kanan layar — sama persis dengan panel putih —
+   supaya susunan adegannya tidak berubah sedikit pun dari sebelumnya. */
 .lc-anim {
-  position: absolute;
-  inset: 0;
-  z-index: 10;          /* DI ATAS kartu, supaya kartu bisa muncul dari balik koper */
+  position: fixed;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  z-index: 40;          /* DI ATAS kartu dan di atas dashboard yang baru muncul */
   pointer-events: none; /* wajib: kartu login harus tetap bisa diklik */
   overflow: hidden;
 }
+@media (max-width: 1023px) {
+  /* Di bawah lg tidak ada panel merah; form memakai seluruh lebar. */
+  .lc-anim { left: 0; width: 100%; }
+}
+
+/* Titik mulut koper dalam piksel layar, diisi lapisan koper tiap bingkai.
+   Nilai cadangan = tengah layar, supaya animasi hisap dan muncul tetap masuk
+   akal seandainya lapisan kopernya tidak pernah berjalan. */
+:root { --lc-mulut-x: 50vw; --lc-mulut-y: 62vh; }
 .lc-anim-kanvas {
   position: absolute;
   inset: 0;
@@ -271,6 +290,43 @@ html:not(.lc-js) .lc-kartu-masuk {
   from { opacity: 0; transform: scale(.92) translateY(10px); }
 }
 
+/* ── Login berhasil: halaman dihisap masuk, dashboard keluar dari koper ──
+   Keduanya sengaja animasi CSS murni, bukan digerakkan JavaScript per bingkai.
+   Sebabnya keselamatan: transform yang tertinggal pada akar dashboard akan
+   menjadikannya containing block bagi seluruh modal `fixed inset-0` di
+   platform ini — persis akar bug modal yang dulu sudah dicabut. Dengan animasi
+   CSS tanpa fill di ujung, begitu selesai TIDAK ada transform yang tersisa,
+   bahkan bila kelasnya lupa dilepas. */
+.lc-hisap {
+  animation: lcHisap 700ms cubic-bezier(.55, .06, .68, .19) forwards;
+  transform-origin: var(--lc-mulut-x) var(--lc-mulut-y);
+}
+@keyframes lcHisap {
+  0%   { transform: scale(1) rotate(0deg); opacity: 1; }
+  62%  { opacity: 1; }
+  100% { transform: scale(.035) rotate(-9deg); opacity: 0; }
+}
+
+.lc-dasbor-muncul {
+  animation: lcDasborMuncul 560ms cubic-bezier(.22, 1, .36, 1) backwards;
+  transform-origin: var(--lc-mulut-x) var(--lc-mulut-y);
+}
+@keyframes lcDasborMuncul {
+  from { transform: scale(.05) rotate(5deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* Bingkai beku koper: potret bingkai terakhir kanvas, dipasang saat halaman
+   login dibongkar supaya kopernya tetap terlihat selagi dashboard tumbuh
+   keluar darinya. Kopernya memang sudah diam di titik itu, jadi potret dan
+   render langsung tidak bisa dibedakan. */
+.lc-koper-beku {
+  position: fixed;
+  z-index: 40;
+  pointer-events: none;
+  transition: opacity 700ms ease-out;
+}
+
 /* ── Hormati setelan perangkat ──
    Gerak dikurangi: lapisan koper tidak dipasang sama sekali (komponennya
    berhenti sebelum mengunduh three.js), dan kartu langsung ada di tempatnya. */
@@ -283,5 +339,8 @@ html:not(.lc-js) .lc-kartu-masuk {
      dikurangi. Persis itu yang terjadi sebelum baris ini diperbaiki. */
   html:not(.lc-js) .lc-kartu-masuk,
   .lc-tukar-keluar,
-  .lc-tukar-masuk { animation: none; }
+  .lc-tukar-masuk,
+  .lc-hisap,
+  .lc-dasbor-muncul { animation: none; }
+  .lc-koper-beku { display: none; }
 }

@@ -12,8 +12,11 @@
  *           sementara kartunya bertukar isi.
  *   ulang   pengguna kembali ke form masuk: seluruh adegan diputar lagi dari
  *           nol, seperti pertama kali membuka halaman.
- *   keluar  login berhasil: kartu menyusut kembali ke mulut koper lewat jalur
- *           yang sama persis dengan waktu ia keluar, lalu tutup koper mengatup.
+ *   keluar  login berhasil: SELURUH halaman login dihisap masuk ke koper,
+ *           kopernya mengatup lalu membuka lagi, dan dashboard tumbuh keluar
+ *           dari sana. Gerak halaman dan dashboard-nya sendiri dijalankan CSS
+ *           (lihat app/globals.css); yang dikerjakan komponen ini hanya
+ *           mengabarkan letak mulut koper dan mengurus kopernya.
  *
  * ── Kartu login tidak boleh pernah hilang ────────────────────────────────
  * Komponen ini menggerakkan kartu lewat gaya sebaris (inline style), dan itu
@@ -49,17 +52,11 @@ const WAKTU = {
   putar: 0.8,
   /** Titik pada jam adegan tempat urutan "login berhasil" dimulai. */
   keluarMulai: 6.90,
-  /** Kartu mulai menyusut kembali ke koper. Jedanya dari awal urutan sengaja
-   *  pendek: tanda centang sudah tampil dalam ~25 ms lewat React, jadi menahan
-   *  animasi seperempat detik hanya menambah waktu tunggu tanpa menambah
-   *  informasi apa pun. */
-  keluarKartu: 7.00,
-  /** Lama kartu menyusut. */
-  keluarKartuLama: 0.35,
-  /** Seluruh urutan keluar selesai. Sengaja dipotong sedikit sebelum pantulan
-   *  engsel benar-benar mereda: derajat terakhirnya nyaris tak terlihat, dan
-   *  menunggunya hanya menambah waktu tunggu orang yang mau bekerja. */
-  keluarHabis: 7.66,
+  /** Seluruh urutan keluar selesai: halaman sudah terhisap, koper sudah
+   *  mengatup dan membuka lagi, siap melepas dashboard. */
+  keluarHabis: 8.10,
+  /** Lama potret koper beku memudar setelah dashboard tampil. */
+  bekuPudar: 700,
   /** Batas aman: lewat ini kartu dipaksa utuh, apa pun yang terjadi. */
   batas: 12_000,
 };
@@ -140,19 +137,16 @@ export function KoperEntrance({
       k.style.transformOrigin = `${x.toFixed(1)}px ${y.toFixed(1)}px`;
     };
 
-    /* Kartu menyusut kembali ke mulut koper. Titik tumbuhnya sengaja TIDAK
-       dihitung ulang: ia sudah tertaut ke mulut koper saat kartu keluar tadi,
-       dan memakai titik yang sama membuat jalur pergi dan pulangnya benar-benar
-       satu garis. Kurvanya ease-IN — kebalikan dari waktu keluar yang melambat
-       di ujung, sehingga terbaca seperti ditarik masuk, bukan mengempis. */
-    const gambarKartuKeluar = (t: number) => {
-      const k = kartu();
-      if (!k) return;
-      const u = Math.min(1, Math.max(0, (t - WAKTU.keluarKartu) / WAKTU.keluarKartuLama));
-      const e = u * u * u;
-      const s = 1 - 0.90 * e;
-      k.style.opacity = String(1 - Math.max(0, (u - 0.72) / 0.28));
-      k.style.transform = `scale(${s.toFixed(4)})`;
+    /* Mengabarkan letak mulut koper dalam piksel layar. Dipakai CSS sebagai
+       titik tumbuh animasi hisap dan animasi dashboard muncul. Ditulis sebagai
+       custom property supaya CSS tetap punya nilai cadangan yang masuk akal
+       kalau ini tidak pernah berjalan. */
+    const kabarkanMulut = (adegan: Adegan) => {
+      const r = kanvas.getBoundingClientRect();
+      if (!r.width) return;
+      const akar = document.documentElement;
+      akar.style.setProperty('--lc-mulut-x', `${(r.left + (adegan.mulut.x / 100) * r.width).toFixed(1)}px`);
+      akar.style.setProperty('--lc-mulut-y', `${(r.top + (adegan.mulut.y / 100) * r.height).toFixed(1)}px`);
     };
 
     const gambarKartu = (t: number, adegan: Adegan) => {
@@ -186,14 +180,40 @@ export function KoperEntrance({
          mematikan jaring pengamannya. */
       document.documentElement.classList.add('lc-js');
 
+      /* Menyalin bingkai terakhir kanvas menjadi gambar diam yang menempel di
+         layar. Halaman login sebentar lagi dibongkar bersama kanvasnya, padahal
+         kopernya masih perlu terlihat selagi dashboard tumbuh keluar darinya.
+         Kopernya memang sudah berhenti bergerak di titik ini, jadi potret dan
+         render langsung tidak bisa dibedakan. */
+      const bekukanKoper = () => {
+        try {
+          const r = kanvas.getBoundingClientRect();
+          const gambar = new Image();
+          gambar.src = kanvas.toDataURL('image/png');
+          gambar.className = 'lc-koper-beku';
+          gambar.alt = '';
+          gambar.style.left = `${r.left}px`;
+          gambar.style.top = `${r.top}px`;
+          gambar.style.width = `${r.width}px`;
+          gambar.style.height = `${r.height}px`;
+          document.body.appendChild(gambar);
+          // Menunggu satu putaran supaya transisi opacity punya keadaan awal.
+          window.setTimeout(() => { gambar.style.opacity = '0'; }, 260);
+          window.setTimeout(() => gambar.remove(), 260 + WAKTU.bekuPudar + 60);
+        } catch {
+          /* toDataURL bisa gagal (konteks hilang). Tidak apa-apa: yang hilang
+             hanya kopernya selama dashboard tumbuh, bukan dashboard-nya. */
+        }
+      };
+
       perintahRef.current = (apa) => {
         if (apa === 'putar') { faseRef.current = 'putar'; putarRef.current = 0; }
         else if (apa === 'keluar') {
-          // Kartu harus utuh dulu sebelum menyusut, apa pun keadaan sebelumnya.
           bebaskanKartu();
           adegan.setPutar(0);
           faseRef.current = 'keluar';
           waktuRef.current = WAKTU.keluarMulai;
+          keluarSejak = performance.now();
         } else { faseRef.current = 'masuk'; waktuRef.current = 0; putarRef.current = 0; adegan.setPutar(0); }
         batasWaktu = performance.now() + WAKTU.batas;
       };
@@ -217,6 +237,7 @@ export function KoperEntrance({
       document.addEventListener('visibilitychange', saatTersembunyi);
 
       let sebelum = 0;
+      let keluarSejak = 0;
       batasWaktu = performance.now() + WAKTU.batas;
 
       const langkah = (ms: number) => {
@@ -236,14 +257,24 @@ export function KoperEntrance({
         if (faseRef.current === 'masuk') {
           waktuRef.current = Math.min(WAKTU.adegan, waktuRef.current + d);
           adegan.setWaktu(waktuRef.current);
+          kabarkanMulut(adegan);
           gambarKartu(waktuRef.current, adegan);
           if (waktuRef.current >= WAKTU.adegan) { faseRef.current = 'diam'; bebaskanKartu(); }
         } else if (faseRef.current === 'keluar') {
-          waktuRef.current = Math.min(WAKTU.keluarHabis, waktuRef.current + d);
+          /* Jamnya diambil dari waktu dinding, BUKAN ditumpuk dari selisih
+             antar bingkai. Sebabnya urutan ini berjalan berbarengan dengan
+             animasi CSS yang memakai waktu dinding: kalau bingkainya berat dan
+             jam adegan tertinggal, tutup kopernya baru mengatup setelah
+             halamannya sudah lama terhisap habis. */
+          waktuRef.current = Math.min(
+            WAKTU.keluarHabis,
+            WAKTU.keluarMulai + (ms - keluarSejak) / 1000,
+          );
           adegan.setWaktu(waktuRef.current);
-          gambarKartuKeluar(waktuRef.current);
+          kabarkanMulut(adegan);
           if (waktuRef.current >= WAKTU.keluarHabis) {
             faseRef.current = 'diam';
+            bekukanKoper();
             const beres = selesaiRef.current;
             selesaiRef.current = undefined;   // sekali saja
             beres?.();
