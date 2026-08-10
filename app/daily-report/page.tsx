@@ -24,7 +24,7 @@ import {
 import { logAudit } from '@/lib/audit';
 
 import {
-  FormField, SectionHeaderSmall, LoadingScreen, ListEmptyState
+  FormField, SectionHeaderSmall, LoadingScreen, ListEmptyState, Username
 } from '@/components/shared';
 import { MiniPieChart, PageHeader } from '@/components/shared';
 
@@ -738,7 +738,7 @@ export default function DailyReportPage() {
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Handler</p>
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
-                  <div><p className="text-xs font-bold text-slate-800">{row.handler_name}</p>{row.handler_username && <p className="text-[10px] text-slate-400">@{row.handler_username}</p>}</div>
+                  <div><p className="text-xs font-bold text-slate-800">{row.handler_name}</p>{row.handler_username && <p className="text-[10px] text-slate-400"><Username value={row.handler_username} /></p>}</div>
                 </div>
               </div>
               {/* Sales */}

@@ -27,7 +27,7 @@ import {
   FormField, SectionHeader, SectionHeaderSmall, InfoRow,
   LoadingScreen, MiniPieChart, PageHeader,
   ViewIconBtn, RescheduleIconBtn, ApproveIconBtn, DeleteIconBtn, ActionGroup,
-  ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState, AuditTrailPanel, FlowSteps
+  ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState, AuditTrailPanel, FlowSteps, Username
 } from '@/components/shared';
 import { MiniCalendar } from './_components/MiniCalendar';
 import { RescheduleModal } from './_components/RescheduleModal';
@@ -2604,7 +2604,7 @@ jangan lupa peralatan & Semangat💪🏼
                         </div>
                         <div>
                           <p className="text-sm font-bold text-slate-800">{detailReminder.assign_name}</p>
-                          <p className="text-xs" style={{ color: '#64748b' }}>@{detailReminder.assigned_to}</p>
+                          <p className="text-xs" style={{ color: '#64748b' }}><Username value={detailReminder.assigned_to} /></p>
                         </div>
                       </div>
                     </div>

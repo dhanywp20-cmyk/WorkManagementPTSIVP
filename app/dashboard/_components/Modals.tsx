@@ -14,7 +14,7 @@ import {
   NotifBellProps, AdminPanelModalProps,
   DISPLAY_BRANDS_DB, MIDDLEWARE_BRANDS_DB, BrandPicMappingDB,
 } from './shared';
-import { ConfirmDialog, type ConfirmState } from '@/components/shared';
+import { ConfirmDialog, type ConfirmState, Username } from '@/components/shared';
 
 /**
  * Sebar perubahan nama/username user ke semua snapshot di tabel terkait,
@@ -463,7 +463,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-slate-800 text-sm truncate">{user.full_name}</p>
-                            <p className="text-xs text-slate-500">@{user.username}</p>
+                            <p className="text-xs text-slate-500"><Username value={user.username} /></p>
                             {user.phone_number && (
                               <p className="text-xs text-slate-400 mt-0.5">📞 {user.phone_number}</p>
                             )}
@@ -766,7 +766,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-black text-slate-900 text-xl leading-tight truncate">{userData.full_name}</p>
-                <p className="text-slate-500 text-sm font-medium">@{userData.username}</p>
+                <p className="text-slate-500 text-sm font-medium"><Username value={userData.username} /></p>
                 {jabatanCfg ? (
                   <div className="inline-flex items-center gap-1.5 mt-1.5 px-2.5 py-1 rounded-full text-xs font-bold border"
                     style={{ background: jabatanCfg.bg, color: jabatanCfg.color, borderColor: jabatanCfg.border }}>
@@ -1384,7 +1384,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                       {jabatanBadge(sup)}
                                     </div>
                                     <div className="flex items-center gap-2 mt-0.5">
-                                      <p className="text-[10px] text-slate-400">@{sup?.username}</p>
+                                      <p className="text-[10px] text-slate-400"><Username value={sup?.username} /></p>
                                       {sup?.phone_number
                                         ? <span className="text-[10px] text-emerald-600">📱 {maskPhone(sup.phone_number)}</span>
                                         : <span className="text-[10px] text-rose-400">⚠️ No WA</span>}
@@ -1483,7 +1483,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border" style={(m.brand_type ?? '') === 'IVP' ? { background: '#dbeafe', color: '#1e40af', borderColor: '#93c5fd' } : { background: '#fef3c7', color: '#92400e', borderColor: '#fcd34d' }}>{(m.brand_type ?? 'MVI') === 'IVP' ? 'IVP · Global' : 'MVI · House'}</span>
                                   </p>
                                   <div className="flex items-center gap-2 mt-0.5">
-                                    <p className="text-[10px] text-slate-400">@{ivp?.username}</p>
+                                    <p className="text-[10px] text-slate-400"><Username value={ivp?.username} /></p>
                                     {ivp?.phone_number
                                       ? <span className="text-[10px] text-emerald-600">📱 {maskPhone(ivp.phone_number)}</span>
                                       : <span className="text-[10px] text-rose-400">⚠️ No WA</span>}
@@ -3068,7 +3068,7 @@ export function AccountSettingsInline() {
                       return (
                         <tr key={user.id} className="border-b border-slate-100 hover:bg-rose-50/30 transition-colors" style={{ background: rowBg }}>
                           <td className="px-4 py-2.5 font-semibold text-slate-800 whitespace-nowrap">{user.full_name}</td>
-                          <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">@{user.username}</td>
+                          <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap"><Username value={user.username} /></td>
                           <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{user.role}</span></td>
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{divisi}</td>
                           <td className="px-4 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-600">📱 {user.phone_number}</span> : <span className="text-slate-300">—</span>}</td>
@@ -3174,7 +3174,7 @@ export function AccountSettingsInline() {
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm bg-white p-3 rounded-lg border border-slate-200">
                   <div><span className="text-xs text-slate-500 uppercase font-bold">Nama</span><p className="font-semibold text-slate-800">{approvingUser.full_name}</p></div>
-                  <div><span className="text-xs text-slate-500 uppercase font-bold">Username</span><p className="font-semibold text-slate-800">@{approvingUser.username}</p></div>
+                  <div><span className="text-xs text-slate-500 uppercase font-bold">Username</span><p className="font-semibold text-slate-800"><Username value={approvingUser.username} /></p></div>
                   <div><span className="text-xs text-slate-500 uppercase font-bold">Divisi / Request</span>
                     <p className="font-semibold text-amber-700">{
                       approvingUser.sales_division?.startsWith('PTS') ? `PTS → ${approvingUser.sales_division}`
@@ -3240,7 +3240,7 @@ export function AccountSettingsInline() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-500">@{user.username}</p>
+                      <p className="text-xs text-slate-500"><Username value={user.username} /></p>
                       <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                         <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-200 text-amber-800">
                           {user.sales_division?.startsWith('PTS') ? `PTS • ${user.sales_division}` : user.sales_division?.startsWith('Marketing:') ? `Marketing • ${user.sales_division.replace('Marketing:', '')}` : `Sales • ${user.sales_division}`}

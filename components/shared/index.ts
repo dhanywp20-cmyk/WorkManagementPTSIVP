@@ -27,3 +27,6 @@ export { AuditTrailPanel } from './AuditTrailPanel';
 export { FlowSteps, type FlowStep } from './FlowSteps';
 export { MultiDatePicker } from './MultiDatePicker';
 export { MobileListCard, MobileCardBadge, type MobileCardField } from './MobileListCard';
+// Username kadang berupa nama pendek, kadang berupa email penuh. Awalan @ hanya
+// dipasang pada yang pertama — lihat catatan di Username.tsx.
+export { Username, formatUsername } from './Username';
