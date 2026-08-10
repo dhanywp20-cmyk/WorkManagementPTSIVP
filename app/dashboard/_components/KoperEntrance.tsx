@@ -123,18 +123,42 @@ export function KoperEntrance({
       k.style.transformOrigin = '';
     };
 
-    /** Titik tumbuh kartu = mulut koper, dihitung dari ukuran TATA LETAK.
-     *  getBoundingClientRect tidak dipakai karena kartunya sedang diskalakan;
-     *  rect selalu melaporkan kotak yang sudah tertransformasi, sehingga titik
-     *  tumbuhnya ikut mengecil dan hasilnya melenceng makin jauh tiap bingkai. */
+    /** Titik tumbuh kartu = mulut koper, relatif terhadap KOTAK KARTU SENDIRI
+     *  (begitulah CSS transform-origin bekerja bila ditulis dalam piksel).
+     *
+     *  Dua sumber posisi, dan alasan masing-masing:
+     *  - kanvas.getBoundingClientRect() untuk posisi koper — AMAN dipakai,
+     *    kanvasnya sendiri tidak pernah di-scale.
+     *  - k.offsetParent (panel kanan, position:relative) + k.offsetLeft/Top
+     *    untuk posisi kartu TANPA transform — offsetLeft/Top TIDAK terpengaruh
+     *    transform CSS, beda dengan getBoundingClientRect() yang akan
+     *    melaporkan kotak yang SUDAH mengecil begitu kartunya mulai
+     *    di-scale, membuat titik tumbuhnya melenceng makin jauh tiap bingkai.
+     *
+     *  Sebelumnya rumus ini memakai `kanvas.parentElement.offsetLeft`
+     *  (lapisan koper) yang dicampur langsung dengan `k.offsetLeft` (kartu) —
+     *  itu keliru begitu lapisan kopernya menjadi `position: fixed` (untuk
+     *  fitur "seluruh halaman dihisap"): offsetLeft elemen fixed dihitung
+     *  relatif ke VIEWPORT, sedang offsetLeft kartu dihitung relatif ke PANEL
+     *  KANAN — dua kerangka acuan yang berbeda. Selisihnya persis sebesar
+     *  posisi panel (±720px di layar 1440px), dan itulah sebabnya kartu
+     *  terlihat "muncul dari pojok kanan": titik tumbuhnya terlempar jauh ke
+     *  luar kotak kartu sendiri. Memakai getBoundingClientRect() untuk kedua
+     *  elemen yang TIDAK di-scale (kanvas & panel) menghindari pencampuran
+     *  kerangka acuan ini sama sekali. */
     const tautkanTitikTumbuh = (k: HTMLElement, adegan: Adegan) => {
-      const lapisan = kanvas.parentElement;
-      if (!lapisan || !k.offsetWidth || !lapisan.offsetWidth) return;
-      const x = lapisan.offsetLeft + (adegan.mulut.x / 100) * lapisan.offsetWidth - k.offsetLeft;
+      const indukKartu = k.offsetParent as HTMLElement | null;
+      if (!indukKartu || !k.offsetWidth) return;
+      const kr = kanvas.getBoundingClientRect();
+      if (!kr.width) return;
+      const mulutX = kr.left + (adegan.mulut.x / 100) * kr.width;
       // Sedikit lebih ke dalam badan koper, bukan tepat di bibirnya: hanya
       // dengan begitu tepi bawah kartu benar-benar tertutup dinding koper.
-      const y = lapisan.offsetTop + (adegan.mulut.y / 100 + 0.045) * lapisan.offsetHeight - k.offsetTop;
-      k.style.transformOrigin = `${x.toFixed(1)}px ${y.toFixed(1)}px`;
+      const mulutY = kr.top + (adegan.mulut.y / 100 + 0.045) * kr.height;
+      const pr = indukKartu.getBoundingClientRect();
+      const kartuX = pr.left + k.offsetLeft;   // posisi kartu TANPA transform
+      const kartuY = pr.top + k.offsetTop;
+      k.style.transformOrigin = `${(mulutX - kartuX).toFixed(1)}px ${(mulutY - kartuY).toFixed(1)}px`;
     };
 
     /* Mengabarkan letak mulut koper dalam piksel layar. Dipakai CSS sebagai
