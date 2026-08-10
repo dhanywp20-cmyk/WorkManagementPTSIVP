@@ -18,6 +18,7 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "recharts": "2.12.7",
+    "three": "^0.185.1",
     "xlsx": "^0.18.5",
     "xlsx-js-style": "^1.2.0"
   },
@@ -26,6 +27,7 @@
     "@types/node": "20.17.6",
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
+    "@types/three": "^0.185.4",
     "autoprefixer": "10.4.20",
     "postcss": "8.4.49",
     "tailwindcss": "3.4.17",

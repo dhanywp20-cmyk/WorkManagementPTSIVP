@@ -209,3 +209,79 @@ html {
   max-height: 100dvh;
   overflow-y: auto;
 }
+
+/* ── Animasi masuk halaman login ───────────────────────────────────────────
+   Dipakai app/dashboard/_components/KoperEntrance.tsx.
+
+   Tidak ada gerak koper di berkas ini — seluruhnya di dalam adegan 3D. CSS di
+   sini hanya mengurus penempatan lapisan dan keselamatan kartu login.
+
+   Lapisan ini hanya hidup di panel putih sebelah kanan. Panel merah, foto
+   latar, tata letak, logo, tipografi, tombol, dan isian form tidak disentuh. */
+
+.lc-anim {
+  position: absolute;
+  inset: 0;
+  z-index: 10;          /* DI ATAS kartu, supaya kartu bisa muncul dari balik koper */
+  pointer-events: none; /* wajib: kartu login harus tetap bisa diklik */
+  overflow: hidden;
+}
+.lc-anim-kanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  transition: opacity 220ms linear;
+}
+
+/* ── Kartu login ──
+   z-index 5, DI BAWAH lapisan koper. Itulah yang membuat kartu benar-benar
+   tertutup sebagian koper saat ia baru tumbuh keluar — bukan pura-pura.
+   Klik tetap aman karena lapisan koper memakai pointer-events: none. */
+.lc-kartu { position: relative; z-index: 5; }
+
+/* Jaring pengaman.
+   Selama JavaScript BELUM mengambil alih (three.js masih dimuat, WebGL tidak
+   tersedia, atau berkasnya gagal sama sekali), animasi inilah yang berlaku:
+   kartu tersembunyi lalu muncul sendiri pada detik 4,55. Jadi tidak ada
+   keadaan di mana form login hilang selamanya.
+
+   Begitu JS berjalan ia memasang kelas .lc-js pada <html>, dan aturan ini
+   berhenti berlaku — penting, karena animasi CSS mengalahkan gaya sebaris,
+   sehingga keduanya akan saling berebut kalau dibiarkan aktif bersamaan. */
+html:not(.lc-js) .lc-kartu-masuk {
+  animation: lcKartuAman 600ms cubic-bezier(.22, 1, .36, 1) 4.55s backwards;
+}
+@keyframes lcKartuAman {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Tukar form: masuk ⇄ daftar ──
+   Dua tahap terpisah supaya pergantian isi kartu terjadi saat kartu sedang
+   tidak terlihat. Satu animasi bolak-balik tidak bisa: React mengganti isinya
+   pada saat diklik, bukan di tengah animasi. */
+.lc-tukar-keluar { animation: lcTukarKeluar 240ms cubic-bezier(.4, 0, 1, 1) forwards; }
+@keyframes lcTukarKeluar {
+  to { opacity: 0; transform: scale(.92) translateY(10px); }
+}
+.lc-tukar-masuk { animation: lcTukarMasuk 440ms cubic-bezier(.22, 1, .36, 1) backwards; }
+@keyframes lcTukarMasuk {
+  from { opacity: 0; transform: scale(.92) translateY(10px); }
+}
+
+/* ── Hormati setelan perangkat ──
+   Gerak dikurangi: lapisan koper tidak dipasang sama sekali (komponennya
+   berhenti sebelum mengunduh three.js), dan kartu langsung ada di tempatnya. */
+@media (prefers-reduced-motion: reduce) {
+  .lc-anim { display: none; }
+  /* Bentuk pemilihnya HARUS sama persis dengan aturan jaring pengaman di atas
+     (html:not(.lc-js) …). Kalau di sini ditulis .lc-kartu-masuk saja,
+     kekhususannya lebih rendah dan aturan ini tidak pernah menang — akibatnya
+     kartu login justru tersembunyi 4,55 detik bagi orang yang meminta gerak
+     dikurangi. Persis itu yang terjadi sebelum baris ini diperbaiki. */
+  html:not(.lc-js) .lc-kartu-masuk,
+  .lc-tukar-keluar,
+  .lc-tukar-masuk { animation: none; }
+}

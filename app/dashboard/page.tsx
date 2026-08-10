@@ -12,6 +12,7 @@ import {
   NotifBellProps, AdminPanelModalProps,
   DISPLAY_BRANDS_DB, MIDDLEWARE_BRANDS_DB, BrandPicMappingDB,
 } from './_components/shared';
+import { KoperEntrance } from './_components/KoperEntrance';
 import {
   AccountSettingsModal, UserProfileModal, UserManagementModal,
   BrandPicSettingModal, NotifBell, NotificationBar,
@@ -36,6 +37,16 @@ export default function Dashboard() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [registerErr, setRegisterErr] = useState('');
   const [showRegister, setShowRegister] = useState(false);
+  /* Animasi kartu login saat berpindah masuk ⇄ daftar.
+     'masuk'       kartu tumbuh keluar dari koper (adegan penuh diputar ulang)
+     'tukarKeluar' kartu lama menyusut & memudar, isinya belum diganti
+     'tukarMasuk'  isi sudah berganti, kartu baru muncul sementara koper berputar */
+  const [animKartu, setAnimKartu] = useState<'masuk' | 'tukarKeluar' | 'tukarMasuk'>('masuk');
+  /* Naik tiap kali animasi kartu perlu diulang. Dipakai sebagai key React
+     supaya animasi CSS benar-benar dijalankan lagi, bukan diabaikan karena
+     elemennya dianggap sama. */
+  const [putaranAnim, setPutaranAnim] = useState(0);
+  const jedaTukarRef = useRef<number | null>(null);
   const [registerForm, setRegisterForm] = useState({
     full_name: '',
     username: '',
@@ -65,6 +76,33 @@ export default function Dashboard() {
   const [tourVisible, setTourVisible] = useState(false);
   const [tourHighlightKey, setTourHighlightKey] = useState<string | null>(null);
   const [showDashboardPanel, setShowDashboardPanel] = useState(false);
+
+  /* Perpindahan antara form masuk dan form daftar.
+     Ke DAFTAR  : kartu ditutup dulu 240 ms, baru isinya diganti — kalau tidak,
+                  isi baru terlihat menyusut keluar dan efek tukarnya rusak,
+                  karena React mengganti isi pada saat diklik, bukan di tengah
+                  animasi. Kopernya berputar di tempat.
+     Ke MASUK   : seluruh adegan koper diputar ulang dari nol, dan kartunya
+                  tumbuh lagi dari dalam koper. */
+  const pindahForm = useCallback((keDaftar: boolean) => {
+    if (jedaTukarRef.current) window.clearTimeout(jedaTukarRef.current);
+    if (keDaftar) {
+      setAnimKartu('tukarKeluar');
+      jedaTukarRef.current = window.setTimeout(() => {
+        setShowRegister(true);
+        setRegisterErr('');
+        setAnimKartu('tukarMasuk');
+        setPutaranAnim((n) => n + 1);
+      }, 240);
+    } else {
+      setShowRegister(false);
+      setRegisterErr('');
+      setRegisterSuccess(false);
+      setAnimKartu('masuk');
+      setPutaranAnim((n) => n + 1);
+    }
+  }, []);
+  useEffect(() => () => { if (jedaTukarRef.current) window.clearTimeout(jedaTukarRef.current); }, []);
 
   const [showSidebar, setShowSidebar] = useState(false);
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
@@ -684,9 +722,17 @@ export default function Dashboard() {
 
         {/* ── RIGHT: panel form — overlay PUTIH transparan di atas bg penuh (biar tidak
             contrast), form dlm kartu frosted ── */}
-        <div className="flex-1 flex items-center justify-center p-4 sm:p-8"
+        <div className="relative overflow-hidden flex-1 flex items-center justify-center p-4 sm:p-8"
           style={{ background: 'rgba(255,255,255,0.55)' }}>
-          <div className={`w-full ${showRegister ? 'max-w-2xl' : 'max-w-md'} bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 sm:p-8`}>
+          {/* Sisi kanan dari lapisan yang sama — sosoknya menyeberang ke sini. */}
+          <KoperEntrance modeDaftar={showRegister} />
+          <div
+            key={putaranAnim}
+            className={`lc-kartu ${
+              animKartu === 'masuk' ? 'lc-kartu-masuk'
+                : animKartu === 'tukarKeluar' ? 'lc-tukar-keluar' : 'lc-tukar-masuk'
+            } w-full ${showRegister ? 'max-w-2xl' : 'max-w-md'} bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 sm:p-8`}
+          >
             <div className="mb-8">
               {/* Logo kecil — hanya mobile (di desktop logo ada di panel kiri) */}
               <div className="flex lg:hidden items-center gap-2.5 mb-6">
@@ -729,7 +775,7 @@ export default function Dashboard() {
                   )}
                 </button>
                 <p className="text-center text-xs text-slate-400 pt-1">
-                  Belum punya akun? <button onClick={() => setShowRegister(true)} className="text-indigo-600 font-bold hover:underline">Daftar di sini</button>
+                  Belum punya akun? <button onClick={() => pindahForm(true)} className="text-indigo-600 font-bold hover:underline">Daftar di sini</button>
                   <span className="mx-2 text-slate-300">|</span>
                   <button onClick={() => { setShowForgot(true); setForgotStep('request'); setForgotMsg(null); }} className="text-rose-500 font-bold hover:underline">Lupa Password?</button>
                 </p>
@@ -743,7 +789,7 @@ export default function Dashboard() {
                     <div className="text-5xl mb-4">✅</div>
                     <h3 className="font-bold text-slate-800 text-lg mb-2">Pendaftaran Berhasil!</h3>
                     <p className="text-slate-500 text-sm mb-4">Akun kamu akan diverifikasi oleh admin. Kamu akan dihubungi setelah akun diaktifkan.</p>
-                    <button onClick={() => { setShowRegister(false); setRegisterSuccess(false); }} className="bg-rose-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-rose-700 transition-all">Kembali ke Login</button>
+                    <button onClick={() => pindahForm(false)} className="bg-rose-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-rose-700 transition-all">Kembali ke Login</button>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -830,7 +876,7 @@ export default function Dashboard() {
                       {registerLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                       📝 Daftar Akun
                     </button>
-                    <p className="text-center text-xs text-slate-400">Sudah punya akun? <button onClick={() => { setShowRegister(false); setRegisterErr(''); }} className="text-rose-600 font-bold hover:underline">Login</button></p>
+                    <p className="text-center text-xs text-slate-400">Sudah punya akun? <button onClick={() => pindahForm(false)} className="text-rose-600 font-bold hover:underline">Login</button></p>
                   </div>
                 )}
               </div>
