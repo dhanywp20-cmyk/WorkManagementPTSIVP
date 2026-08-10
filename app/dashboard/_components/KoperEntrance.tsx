@@ -12,6 +12,8 @@
  *           sementara kartunya bertukar isi.
  *   ulang   pengguna kembali ke form masuk: seluruh adegan diputar lagi dari
  *           nol, seperti pertama kali membuka halaman.
+ *   keluar  login berhasil: kartu menyusut kembali ke mulut koper lewat jalur
+ *           yang sama persis dengan waktu ia keluar, lalu tutup koper mengatup.
  *
  * ── Kartu login tidak boleh pernah hilang ────────────────────────────────
  * Komponen ini menggerakkan kartu lewat gaya sebaris (inline style), dan itu
@@ -45,11 +47,24 @@ const WAKTU = {
   kartuJedaLebar: 0.05,
   /** Lama koper berputar saat pindah ke form pendaftaran. */
   putar: 0.8,
+  /** Titik pada jam adegan tempat urutan "login berhasil" dimulai. */
+  keluarMulai: 6.90,
+  /** Kartu mulai menyusut kembali ke koper. Jedanya dari awal urutan sengaja
+   *  pendek: tanda centang sudah tampil dalam ~25 ms lewat React, jadi menahan
+   *  animasi seperempat detik hanya menambah waktu tunggu tanpa menambah
+   *  informasi apa pun. */
+  keluarKartu: 7.00,
+  /** Lama kartu menyusut. */
+  keluarKartuLama: 0.35,
+  /** Seluruh urutan keluar selesai. Sengaja dipotong sedikit sebelum pantulan
+   *  engsel benar-benar mereda: derajat terakhirnya nyaris tak terlihat, dan
+   *  menunggunya hanya menambah waktu tunggu orang yang mau bekerja. */
+  keluarHabis: 7.66,
   /** Batas aman: lewat ini kartu dipaksa utuh, apa pun yang terjadi. */
   batas: 12_000,
 };
 
-type Fase = 'masuk' | 'diam' | 'putar';
+type Fase = 'masuk' | 'diam' | 'putar' | 'keluar';
 
 /** Sedikit melewati ukuran penuh lalu mapan. */
 function balik(u: number): number {
@@ -62,7 +77,19 @@ function gerakDikurangi(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-export function KoperEntrance({ modeDaftar }: { modeDaftar: boolean }) {
+export function KoperEntrance({
+  modeDaftar,
+  keluar = false,
+  onKeluarSelesai,
+}: {
+  modeDaftar: boolean;
+  keluar?: boolean;
+  /** Dipanggil sekali saat tutup koper selesai mengatup. Halaman memakai ini
+   *  untuk berpindah ke dashboard, alih-alih menebak dengan angka tetap —
+   *  animasinya bisa mulai terlambat sepersekian detik (menunggu three.js,
+   *  bingkai pertama), dan dengan angka tetap ujungnya terpotong. */
+  onKeluarSelesai?: () => void;
+}) {
   const kanvasRef = useRef<HTMLCanvasElement | null>(null);
   const adeganRef = useRef<Adegan | null>(null);
   const faseRef = useRef<Fase>('masuk');
@@ -72,7 +99,12 @@ export function KoperEntrance({ modeDaftar }: { modeDaftar: boolean }) {
 
   /* Dipakai efek kedua untuk memicu putaran / pengulangan tanpa membangun
      ulang seluruh adegan. */
-  const perintahRef = useRef<((apa: 'putar' | 'ulang') => void) | null>(null);
+  const perintahRef = useRef<((apa: 'putar' | 'ulang' | 'keluar') => void) | null>(null);
+  const keluarRef = useRef(keluar);
+  /* Disimpan di ref supaya gelung gambar selalu memanggil versi terbaru tanpa
+     perlu disusun ulang tiap render. */
+  const selesaiRef = useRef(onKeluarSelesai);
+  selesaiRef.current = onKeluarSelesai;
 
   useEffect(() => {
     if (gerakDikurangi()) return;
@@ -108,6 +140,21 @@ export function KoperEntrance({ modeDaftar }: { modeDaftar: boolean }) {
       k.style.transformOrigin = `${x.toFixed(1)}px ${y.toFixed(1)}px`;
     };
 
+    /* Kartu menyusut kembali ke mulut koper. Titik tumbuhnya sengaja TIDAK
+       dihitung ulang: ia sudah tertaut ke mulut koper saat kartu keluar tadi,
+       dan memakai titik yang sama membuat jalur pergi dan pulangnya benar-benar
+       satu garis. Kurvanya ease-IN — kebalikan dari waktu keluar yang melambat
+       di ujung, sehingga terbaca seperti ditarik masuk, bukan mengempis. */
+    const gambarKartuKeluar = (t: number) => {
+      const k = kartu();
+      if (!k) return;
+      const u = Math.min(1, Math.max(0, (t - WAKTU.keluarKartu) / WAKTU.keluarKartuLama));
+      const e = u * u * u;
+      const s = 1 - 0.90 * e;
+      k.style.opacity = String(1 - Math.max(0, (u - 0.72) / 0.28));
+      k.style.transform = `scale(${s.toFixed(4)})`;
+    };
+
     const gambarKartu = (t: number, adegan: Adegan) => {
       const k = kartu();
       if (!k) return;
@@ -141,7 +188,13 @@ export function KoperEntrance({ modeDaftar }: { modeDaftar: boolean }) {
 
       perintahRef.current = (apa) => {
         if (apa === 'putar') { faseRef.current = 'putar'; putarRef.current = 0; }
-        else { faseRef.current = 'masuk'; waktuRef.current = 0; putarRef.current = 0; adegan.setPutar(0); }
+        else if (apa === 'keluar') {
+          // Kartu harus utuh dulu sebelum menyusut, apa pun keadaan sebelumnya.
+          bebaskanKartu();
+          adegan.setPutar(0);
+          faseRef.current = 'keluar';
+          waktuRef.current = WAKTU.keluarMulai;
+        } else { faseRef.current = 'masuk'; waktuRef.current = 0; putarRef.current = 0; adegan.setPutar(0); }
         batasWaktu = performance.now() + WAKTU.batas;
       };
 
@@ -156,8 +209,10 @@ export function KoperEntrance({ modeDaftar }: { modeDaftar: boolean }) {
           waktuRef.current = WAKTU.adegan;
           adegan.setWaktu(WAKTU.adegan);
           faseRef.current = 'diam';
+          bebaskanKartu();
+        } else if (faseRef.current !== 'keluar') {
+          bebaskanKartu();
         }
-        bebaskanKartu();
       };
       document.addEventListener('visibilitychange', saatTersembunyi);
 
@@ -183,6 +238,16 @@ export function KoperEntrance({ modeDaftar }: { modeDaftar: boolean }) {
           adegan.setWaktu(waktuRef.current);
           gambarKartu(waktuRef.current, adegan);
           if (waktuRef.current >= WAKTU.adegan) { faseRef.current = 'diam'; bebaskanKartu(); }
+        } else if (faseRef.current === 'keluar') {
+          waktuRef.current = Math.min(WAKTU.keluarHabis, waktuRef.current + d);
+          adegan.setWaktu(waktuRef.current);
+          gambarKartuKeluar(waktuRef.current);
+          if (waktuRef.current >= WAKTU.keluarHabis) {
+            faseRef.current = 'diam';
+            const beres = selesaiRef.current;
+            selesaiRef.current = undefined;   // sekali saja
+            beres?.();
+          }
         } else if (faseRef.current === 'putar') {
           putarRef.current = Math.min(WAKTU.putar, putarRef.current + d);
           const u = putarRef.current / WAKTU.putar;
@@ -209,13 +274,22 @@ export function KoperEntrance({ modeDaftar }: { modeDaftar: boolean }) {
     };
   }, []);
 
-  /* Menanggapi perpindahan masuk ⇄ daftar. */
+  /* Menanggapi perpindahan masuk ⇄ daftar. Diabaikan bila urutan keluar sudah
+     berjalan — pada titik itu halaman login sedang ditinggalkan. */
   useEffect(() => {
+    if (keluarRef.current) return;
     if (modeRef.current === modeDaftar) return;
     const keDaftar = modeDaftar;
     modeRef.current = modeDaftar;
     perintahRef.current?.(keDaftar ? 'putar' : 'ulang');
   }, [modeDaftar]);
+
+  /* Login berhasil. Sekali dipicu, tidak bisa dibatalkan. */
+  useEffect(() => {
+    if (!keluar || keluarRef.current) return;
+    keluarRef.current = true;
+    perintahRef.current?.('keluar');
+  }, [keluar]);
 
   if (gerakDikurangi()) return null;
 

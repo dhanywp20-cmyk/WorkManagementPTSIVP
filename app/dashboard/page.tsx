@@ -42,6 +42,21 @@ export default function Dashboard() {
      'tukarKeluar' kartu lama menyusut & memudar, isinya belum diganti
      'tukarMasuk'  isi sudah berganti, kartu baru muncul sementara koper berputar */
   const [animKartu, setAnimKartu] = useState<'masuk' | 'tukarKeluar' | 'tukarMasuk'>('masuk');
+  /* Login sudah lolos, tapi halaman login belum ditinggalkan: tombol berubah
+     jadi tanda centang dan koper menutup kembali. Lihat catatan di handleLogin
+     soal kenapa perpindahannya sengaja ditunda. */
+  const [masukBerhasil, setMasukBerhasil] = useState(false);
+  const sudahMasukRef = useRef(false);
+  /* Perpindahan ke dashboard. Aman dipanggil berkali-kali: hanya yang pertama
+     yang berlaku, sehingga pemberitahuan animasi dan jaring pengaman waktu
+     tidak mungkin saling bertabrakan. */
+  const masukKeDashboard = useCallback(() => {
+    if (sudahMasukRef.current) return;
+    sudahMasukRef.current = true;
+    setIsLoggedIn(true);
+    setShowSidebar(true);
+    setShowDashboardPanel(true);
+  }, []);
   /* Naik tiap kali animasi kartu perlu diulang. Dipakai sebagai key React
      supaya animasi CSS benar-benar dijalankan lagi, bukan diabaikan karena
      elemennya dianggap sama. */
@@ -248,7 +263,6 @@ export default function Dashboard() {
         return;
       }
       setCurrentUser(data);
-      setIsLoggedIn(true);
       setSession(data);
       // Pasang token PostgREST supaya seluruh query berikutnya membawa
       // identitas user — inilah yang membuat policy RLS bisa menyaring.
@@ -256,7 +270,31 @@ export default function Dashboard() {
       // Permission-Aware Dashboard = homepage utk SEMUA role. Semua mendarat di
       // dashboard home (widget adaptif); tidak lagi auto-lompat ke menu pertama.
       autoNavigatedRef.current = true; // matikan auto-navigate useEffect
-      setTimeout(() => { setShowSidebar(true); setShowDashboardPanel(true); }, 50);
+
+      /* Perpindahan ke dashboard SENGAJA ditunda sebentar supaya animasi
+         penutupnya sempat jalan: tombol jadi tanda centang, kartu kembali ke
+         dalam koper, tutup koper mengatup.
+
+         Jujur soal biayanya: ini MENAMBAH waktu, bukan menyembunyikan waktu
+         tunggu yang sudah ada — kerangka dashboard sebenarnya tampil hampir
+         seketika. Yang membuatnya masih pantas: hanya dibayar saat orang
+         benar-benar menekan tombol login, sedangkan membuka ulang halaman
+         dengan sesi yang masih hidup langsung masuk dashboard tanpa melewati
+         halaman login sama sekali.
+
+         setTimeout dipasang TANPA syarat apa pun. Animasi boleh gagal, WebGL
+         boleh tidak ada, three.js boleh tidak termuat — perpindahannya tetap
+         terjadi. Tidak ada keadaan di mana orang tertahan di halaman login
+         setelah passwordnya benar. */
+      setMasukBerhasil(true);
+      const pakaiAnimasi = typeof window !== 'undefined'
+        && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        && document.documentElement.classList.contains('lc-js');
+      /* Batas atas, BUKAN jadwal. Yang normalnya memicu perpindahan adalah
+         lapisan koper sendiri lewat onKeluarSelesai, karena hanya ia yang tahu
+         kapan tutupnya benar-benar mengatup. Angka di bawah cuma jaring
+         pengaman kalau pemberitahuan itu tidak pernah datang. */
+      window.setTimeout(masukKeDashboard, pakaiAnimasi ? 1600 : 260);
     } catch { setLoginErr('Login gagal. Coba lagi.'); } finally { setLoginLoading(false); }
   };
 
@@ -725,7 +763,7 @@ export default function Dashboard() {
         <div className="relative overflow-hidden flex-1 flex items-center justify-center p-4 sm:p-8"
           style={{ background: 'rgba(255,255,255,0.55)' }}>
           {/* Sisi kanan dari lapisan yang sama — sosoknya menyeberang ke sini. */}
-          <KoperEntrance modeDaftar={showRegister} />
+          <KoperEntrance modeDaftar={showRegister} keluar={masukBerhasil} onKeluarSelesai={masukKeDashboard} />
           <div
             key={putaranAnim}
             className={`lc-kartu ${
@@ -764,8 +802,15 @@ export default function Dashboard() {
                     {loginErr}
                   </div>
                 )}
-                <button onClick={handleLogin} disabled={loginLoading} className="w-full bg-gradient-to-r from-rose-600 to-rose-700 text-white py-3.5 rounded-xl hover:from-rose-700 hover:to-rose-800 font-bold shadow-lg transition-all tracking-wide text-sm mt-2 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                  {loginLoading ? (
+                <button onClick={handleLogin} disabled={loginLoading || masukBerhasil} className="w-full bg-gradient-to-r from-rose-600 to-rose-700 text-white py-3.5 rounded-xl hover:from-rose-700 hover:to-rose-800 font-bold shadow-lg transition-all tracking-wide text-sm mt-2 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                  {masukBerhasil ? (
+                    <>
+                      {/* Kepastian bahwa passwordnya benar — inilah yang orang
+                          tunggu, dan ia tampil seketika, tidak menunggu animasi. */}
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                      Berhasil masuk
+                    </>
+                  ) : loginLoading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       Memverifikasi...

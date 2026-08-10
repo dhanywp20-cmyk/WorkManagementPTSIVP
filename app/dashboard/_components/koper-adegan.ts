@@ -32,6 +32,17 @@ export const WAKTU = {
   bukaMulai: 3.70, bukaSelesai: 4.25,
   ungkapMulai: 3.95, ungkapSelesai: 4.60,
   jeda: 5.10, kartu: 5.30, selesai: 6.80,
+
+  /* ── Urutan keluar: login berhasil ──
+     Dipicu saat pengguna benar-benar berhasil masuk. Waktunya memakai jam yang
+     sama dengan adegan masuk supaya tidak ada dua sumber waktu yang bisa
+     berselisih. Diukur dari saat dipicu: kartu mulai kembali +0,25 dtk, tutup
+     koper menutup +0,60, mengatup rapat +0,78. */
+  keluarMulai: 6.90,
+  kartuMasuk: 7.00,
+  kartuMasukSelesai: 7.35,
+  tutupMulai: 7.35, tutupSelesai: 7.53,
+  habis: 7.68,
 };
 
 /* ── Lintasan ──────────────────────────────────────────────────────────── */
@@ -426,7 +437,10 @@ export function buatAdegan(canvas: HTMLCanvasElement, opsi: OpsiAdegan = {}) {
     }
     gSentak.rotation.z = sentak;
     gGuling.rotation.x = guling;
-    gKoper.position.y = H / 2 + 1.54 * RJ + turun + pantul;
+    // Sentakan kecil badan koper saat daun tutup membentur.
+    const sentakTutup = -0.010 * Math.sin(bagi(t, WAKTU.tutupSelesai - 0.03, WAKTU.tutupSelesai + 0.16) * Math.PI)
+                        * (1 - bagi(t, WAKTU.tutupSelesai, WAKTU.tutupSelesai + 0.16));
+    gKoper.position.y = H / 2 + 1.54 * RJ + turun + pantul + sentakTutup;
     gKoper.scale.set(1, gepeng, 1);
 
     /* Gagang jinjing = bandul pada engsel sumbu X.
@@ -451,13 +465,20 @@ export function buatAdegan(canvas: HTMLCanvasElement, opsi: OpsiAdegan = {}) {
     const lewat = Math.sin(bagi(t, WAKTU.bukaSelesai - 0.18, WAKTU.bukaSelesai + 0.22) * Math.PI) * 0.06;
     // Positif: setelah koper rebah, sumbu X lokal masih sejajar X dunia, dan
   // hanya arah positif yang mengayun tutup KE ATAS. Negatif menembus lantai.
-  koper.engsel.rotation.x = 2.38 * buka + lewat;
+  /* Menutup kembali saat login berhasil. Daunnya membentur badan lalu
+     memantul balik sedikit — tutup koper kaku tidak pernah berhenti mati di
+     sentuhan pertama. */
+    const tutup = keluar3(bagi(t, WAKTU.tutupMulai, WAKTU.tutupSelesai));
+    const pantulTutup = Math.sin(bagi(t, WAKTU.tutupSelesai - 0.02, WAKTU.tutupSelesai + 0.20) * Math.PI)
+                        * 0.11 * (1 - bagi(t, WAKTU.tutupSelesai, WAKTU.tutupSelesai + 0.20));
+    koper.engsel.rotation.x = (2.38 * buka + lewat) * (1 - tutup) + pantulTutup;
 
     /* Cahaya yang naik dari dalam koper. */
     const mulutDunia = new THREE.Vector3(0, 0.04, 0.02);
     gKoper.localToWorld(mulutDunia);
     const uu = bagi(t, WAKTU.ungkapMulai, WAKTU.ungkapSelesai);
-    const redup = 1 - 0.45 * bagi(t, WAKTU.kartu - 0.1, WAKTU.kartu + 0.7);
+    const redup = (1 - 0.45 * bagi(t, WAKTU.kartu - 0.1, WAKTU.kartu + 0.7))
+                  * (1 - bagi(t, WAKTU.keluarMulai, WAKTU.kartuMasuk + 0.1));
     const naik = keluar5(uu);
     cahaya.position.set(mulutDunia.x + 0.01, 0.085 + naik * 0.10, mulutDunia.z + 0.02);
     cahaya.scale.setScalar(0.11 + naik * 0.20);
