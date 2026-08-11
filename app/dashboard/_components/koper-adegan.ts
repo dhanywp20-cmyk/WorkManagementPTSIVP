@@ -18,11 +18,13 @@ export type OpsiAdegan = { kecil?: boolean; palet?: keyof typeof PALET };
 export type Adegan = ReturnType<typeof buatAdegan>;
 
 /* ── Ukuran koper (satuan dunia ≈ meter) ───────────────────────────────── */
-const W = 0.82;   // lebar, searah jalan — koper klasik memang mendatar
-const H = 0.60;   // tinggi badan koper
-const D = 0.26;   // tebal, ke arah kamera
-const T = 0.022;  // tebal cangkang
-const RJ = 0.027; // jari-jari kaki bulat di keempat sudut bawah
+/* Proporsi tegak (H > W) ala koper cabin hardshell modern — foto acuan,
+   bukan proporsi mendatar tas kerja lama. */
+const W = 0.62;   // lebar
+const H = 0.74;   // tinggi badan koper — lebih tinggi dari lebar
+const D = 0.34;   // tebal, ke arah kamera — cukup untuk sisi terlihat jelas
+const T = 0.026;  // tebal cangkang
+const RJ = 0.040; // jari-jari RODA (dulu kaki bulat kecil) di keempat sudut bawah
 
 /* Koper dirender lebih kecil dari geometrinya sendiri lewat SATU faktor skala
    di gKoper (bukan mengecilkan W/H/D/T/RJ satu-satu) — semua jarak jalan,
@@ -228,60 +230,72 @@ function buatKoper() {
   engsel.add(tutup);
   akar.add(engsel);
 
-  /* Bingkai belah aluminium: empat bilah di tepi, menonjol sedikit dari
-     cangkang supaya garis peraknya benar-benar terbaca dari samping. */
-  for (const [w, h, x, y] of [
-    [W + 0.016, 0.028, 0, H / 2 - 0.014], [W + 0.016, 0.028, 0, -H / 2 + 0.014],
-    [0.028, H - 0.030, -W / 2 + 0.014, 0], [0.028, H - 0.030, W / 2 - 0.014, 0],
-  ]) {
-    const bilah = kotak(w, h, 0.062, BAHAN.kulit, 0.008);
-    bilah.position.set(x, y, 0);
-    akar.add(bilah);
+  /* Rel jahitan di tepi kanan (+X, sisi yang menghadap kamera) — garis
+     sambungan cangkang keras modern, menggantikan bingkai aluminium empat
+     sisi ala tas kerja lama yang dipakai desain sebelumnya. */
+  const rel = kotak(0.018, H - 0.05, D + 0.014, BAHAN.kulit, 0.007);
+  rel.position.set(W / 2 - 0.004, 0, 0);
+  akar.add(rel);
+
+  /* Dua jepretan di tepi kanan yang sama, disusun vertikal — ciri koper
+     acuan (bukan dua kunci simetris di bibir atas seperti sebelumnya). */
+  for (const fy of [0.20, -0.10]) {
+    const jepret = kotak(0.052, 0.070, 0.050, BAHAN.logam, 0.010);
+    jepret.position.set(W / 2 + 0.008, H * fy, 0);
+    akar.add(jepret);
+    // Paku keling kecil di tengah tiap jepretan.
+    const paku = new THREE.Mesh(new THREE.SphereGeometry(0.007, 10, 8), BAHAN.logamGelap);
+    paku.position.set(W / 2 + 0.036, H * fy, 0);
+    akar.add(paku);
   }
 
-  /* Dua kunci jepret aluminium di bibir atas. */
-  for (const sx of [-1, 1]) {
-    const kunci = kotak(0.062, 0.034, 0.044, BAHAN.logam, 0.008);
-    kunci.position.set(sx * 0.20, H / 2 - 0.030, 0);
-    akar.add(kunci);
-  }
-
-  /* Kaki: empat bulatan pipih di sudut bawah. Koper acuan memakai kaki
-     seperti ini, bukan roda besar. Karena bentuknya bulat, putarannya tetap
-     diturunkan dari jarak tempuh — jadi tidak pernah terlihat menyeret. */
-  const kaki = [];
-  const gKaki = new THREE.SphereGeometry(RJ, 18, 12);
-  gKaki.scale(1, 0.82, 1);
+  /* Roda: empat gulungan pipih (ban + hub) di sudut bawah — menggantikan
+     kaki karet bulat kecil, ciri koper cabin ber-roda spinner ala acuan.
+     Sumbu ban SUDAH diputar ke arah Z saat geometri dibuat (rotateX di
+     bawah), jadi rotation.z tiap bingkai langsung berarti "menggelinding
+     maju" tanpa risiko pencampuran sumbu Euler. */
+  const roda: THREE.Group[] = [];
+  const gBan = new THREE.CylinderGeometry(RJ, RJ, 0.034, 20);
+  gBan.rotateX(Math.PI / 2);
+  const gHub = new THREE.CylinderGeometry(RJ * 0.40, RJ * 0.40, 0.007, 14);
+  gHub.rotateX(Math.PI / 2);
   for (const sx of [-1, 1]) {
     for (const sz of [-1, 1]) {
-      const k = new THREE.Mesh(gKaki, BAHAN.karet);
-      k.castShadow = true; k.receiveShadow = true;
-      k.position.set(sx * (W / 2 - 0.075), -H / 2 - RJ * 0.72, sz * (D / 2 - 0.055));
-      akar.add(k);
-      kaki.push(k);
+      const grup = new THREE.Group();
+      const ban = new THREE.Mesh(gBan, BAHAN.karet);
+      ban.castShadow = true; ban.receiveShadow = true;
+      grup.add(ban);
+      const hub = new THREE.Mesh(gHub, BAHAN.logamGelap);
+      hub.position.z = sz * 0.019;   // menonjol tipis di sisi luar ban
+      grup.add(hub);
+      grup.position.set(
+        sx * (W / 2 - RJ * 0.85), -H / 2 - RJ * 0.60, sz * (D / 2 - RJ * 0.5),
+      );
+      akar.add(grup);
+      roda.push(grup);
     }
   }
 
-  /* Gagang jinjing melengkung di sisi atas, digantung pada dua braket
+  /* Gagang jinjing — kapsul empuk ala foto acuan, digantung pada dua braket
      aluminium. Engselnya sejajar sumbu X — sama dengan sumbu koper terguling,
      jadi waktu koper rebah gagangnya ikut berayun seperti bandul sungguhan. */
   const gagang = new THREE.Group();
-  gagang.position.set(0, H / 2 + 0.012, 0);
-  const lengkung = new THREE.Mesh(
-    new THREE.TorusGeometry(0.088, 0.017, 12, 28, Math.PI),
+  gagang.position.set(0, H / 2 + 0.014, 0);
+  const pegangan = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.021, 0.135, 4, 12),
     BAHAN.gelap,
   );
-  lengkung.castShadow = true;
-  lengkung.scale.set(1, 0.78, 1);      // lebih landai, seperti gagang koper
-  gagang.add(lengkung);
+  pegangan.rotation.z = Math.PI / 2;   // kapsul berdiri (sumbu Y) → dibaringkan ke X
+  pegangan.castShadow = true;
+  gagang.add(pegangan);
   for (const sx of [-1, 1]) {
-    const braket = kotak(0.030, 0.026, 0.040, BAHAN.logam, 0.006);
-    braket.position.set(sx * 0.088, 0.004, 0);
+    const braket = kotak(0.028, 0.030, 0.044, BAHAN.logam, 0.007);
+    braket.position.set(sx * 0.086, 0.006, 0);
     gagang.add(braket);
   }
   akar.add(gagang);
 
-  return { akar, engsel, kaki, gagang };
+  return { akar, engsel, roda, gagang };
 }
 
 /* Tekstur cahaya lembut — dibuat di kanvas, tidak perlu berkas luar. */
@@ -441,7 +455,7 @@ export function buatAdegan(canvas: HTMLCanvasElement, opsi: OpsiAdegan = {}) {
     // mengecil KOPER_SKALA kali; tanpa pembagi ini kakinya akan berputar
     // seolah masih berjari-jari besar dan terlihat sedikit menyeret.
     const sudutKaki = -s / (RJ * KOPER_SKALA);
-    for (const k of koper.kaki) k.rotation.z = sudutKaki;
+    for (const r of koper.roda) r.rotation.z = sudutKaki;
 
     // Suspensi: sedikit tenggelam saat melaju, plus getar halus sebelum tabrak.
     const laju = kecepatan(t);
