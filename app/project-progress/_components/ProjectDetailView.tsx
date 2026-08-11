@@ -3,8 +3,8 @@
 import { MiniPieChart, AuditTrailPanel } from '@/components/shared';
 import {
   ProjectDetail, STATUS_CONFIG, COMPONENT_STATE_CONFIG, SEVERITY_CONFIG,
-  STATUS_PIE_COLOR, THEME, averageProgress, componentsOf, ProjectStatus,
-  computeProgress, stateBreakdown, picBreakdown, problemComponentBreakdown,
+  STATUS_PIE_COLOR, THEME, PALETTE, fontMono, averageProgress, componentsOf, ProjectStatus,
+  computeProgress, stateBreakdown, picBreakdown, problemComponentBreakdown, overdueLocations,
   timelineInfo, formatDate, timelineBreakdown,
 } from './shared';
 
@@ -38,20 +38,26 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
   const tl = timelineInfo(project);
   const timelineSlices = timelineBreakdown(sortedLoc);
   const problemSlices = problemComponentBreakdown(components);
+  const telat = overdueLocations(sortedLoc);
+  const bermasalah = components.filter(c => c.state === 'stuck' || c.state === 'pending').length;
+
+  // Ring progres keseluruhan — lingkar r=50 → keliling 2πr ≈ 314.16
+  const RING_C = 314.16;
+  const ringOffset = RING_C * (1 - avg / 100);
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
 
       {/* ── Timeline proyek ──
-          Bar "Progres Keseluruhan" dihapus: angkanya sudah tampil di kartu
-          statistik "Rata-rata Progres", jadi bar itu hanya mengulang informasi
-          yang sama. Yang benar-benar menambah informasi adalah perbandingan
-          WAKTU terpakai vs PEKERJAAN selesai — itu yang ditampilkan di sini. */}
+          Bar "Progres Keseluruhan" dihapus: angkanya sudah tampil di ring
+          progres di bawah, jadi bar itu hanya mengulang informasi yang sama.
+          Yang benar-benar menambah informasi adalah perbandingan WAKTU
+          terpakai vs PEKERJAAN selesai — itu yang ditampilkan di sini. */}
       {(project.start_date || project.target_date) && (
-        <div className="rounded-2xl p-5 flex flex-col gap-3"
-          style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)' }}>
+        <div className="rounded-md p-5 flex flex-col gap-3"
+          style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+            <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: PALETTE.inkFaint }}>
               Timeline Proyek
             </p>
             <span className="px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap"
@@ -60,12 +66,12 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
             </span>
           </div>
 
-          <span className="text-[11px] font-semibold text-gray-500">
-            🗓️ {project.start_date ? formatDate(project.start_date) : '—'}
-            <span className="mx-1.5 text-gray-300">→</span>
-            {project.target_date ? formatDate(project.target_date) : '—'}
+          <span className="text-[11px] font-semibold" style={{ color: PALETTE.inkSoft }}>
+            🗓️ <span style={fontMono}>{project.start_date ? formatDate(project.start_date) : '—'}</span>
+            <span className="mx-1.5" style={{ color: PALETTE.borderStrong }}>→</span>
+            <span style={fontMono}>{project.target_date ? formatDate(project.target_date) : '—'}</span>
             {tl.daysElapsed !== null && (
-              <span className="ml-2 text-gray-400">· berjalan {tl.daysElapsed} hari</span>
+              <span className="ml-2" style={{ color: PALETTE.inkFaint }}>· berjalan <span style={fontMono}>{tl.daysElapsed}</span> hari</span>
             )}
           </span>
 
@@ -75,25 +81,23 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
             <div className="flex flex-col gap-2">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Waktu Terpakai</span>
-                  <span className="text-[10px] font-black" style={{ color: tl.color }}>{tl.elapsedPercent}%</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wide" style={{ color: PALETTE.inkFaint }}>Waktu Terpakai</span>
+                  <span className="text-[10px] font-bold" style={{ ...fontMono, color: tl.color }}>{tl.elapsedPercent}%</span>
                 </div>
-                <div className="h-2 rounded-full overflow-hidden bg-gray-200">
-                  <div className="h-full rounded-full transition-all"
-                    style={{ width: `${tl.elapsedPercent}%`, background: tl.color }} />
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: PALETTE.surfaceSunken }}>
+                  <div className="h-full rounded-full transition-all" style={{ width: `${tl.elapsedPercent}%`, background: PALETTE.inkFaint, opacity: 0.4 }} />
                 </div>
               </div>
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Pekerjaan Selesai</span>
-                  <span className="text-[10px] font-black" style={{ color: THEME.color }}>{avg}%</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wide" style={{ color: PALETTE.inkFaint }}>Pekerjaan Selesai</span>
+                  <span className="text-[10px] font-bold" style={{ ...fontMono, color: THEME.color }}>{avg}%</span>
                 </div>
-                <div className="h-2 rounded-full overflow-hidden bg-gray-200">
-                  <div className="h-full rounded-full transition-all"
-                    style={{ width: `${avg}%`, background: THEME.gradient }} />
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: PALETTE.surfaceSunken }}>
+                  <div className="h-full rounded-full transition-all" style={{ width: `${avg}%`, background: THEME.color }} />
                 </div>
               </div>
-              <p className="text-[10px] font-bold" style={{ color: avg >= tl.elapsedPercent ? '#059669' : '#b45309' }}>
+              <p className="text-[10px] font-bold" style={{ color: avg >= tl.elapsedPercent ? PALETTE.good : PALETTE.warn }}>
                 {avg >= tl.elapsedPercent
                   ? `✓ Sesuai jadwal — pekerjaan ${avg - tl.elapsedPercent}% di depan waktu terpakai`
                   : `⚠ Tertinggal ${tl.elapsedPercent - avg}% dari jadwal`}
@@ -103,129 +107,137 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
         </div>
       )}
 
-      {/* ── Empat pie: status lokasi, jadwal, beban PIC, komponen bermasalah ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-        <MiniPieChart data={pieData} title="Distribusi Status Lokasi" icon="📍" />
-        {/* Nilai slice = persentase progres, jadi jumlahnya tidak bermakna —
-            pusat donat diisi rata-rata keseluruhan, bukan total. */}
-        <MiniPieChart data={picSlices} title="Progres per PIC Team" icon="👷"
-          centerValue={`${avg}%`} centerLabel="RATA-RATA" valueSuffix="%" />
-        <MiniPieChart data={timelineSlices} title="Status Jadwal Lokasi" icon="🗓️" />
-        <MiniPieChart data={problemSlices} title="Komponen Stuck & Pending" icon="⚠️" />
-      </div>
-
-      {/* ── Status per lokasi ── */}
-      <div className="flex flex-col gap-3">
-        <SectionLabel>Status Per Lokasi</SectionLabel>
-        {sortedLoc.length === 0 ? (
-          <div className="rounded-2xl p-8 text-center text-sm text-gray-400 font-medium"
-            style={{ background: 'rgba(255,255,255,0.9)', border: '1px dashed #cbd5e1' }}>
-            Belum ada lokasi pada proyek ini.
+      {/* ── Rail metrik (ring + angka kunci) + daftar lokasi ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-3 items-start">
+        <div className="flex flex-col gap-3 lg:sticky lg:top-3">
+          <div className="rounded-md p-4" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: PALETTE.inkFaint }}>
+              Progres Keseluruhan
+            </p>
+            <div className="flex flex-col items-center gap-0.5">
+              <svg width="112" height="112" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" fill="none" stroke={PALETTE.surfaceSunken} strokeWidth="10" />
+                <circle cx="60" cy="60" r="50" fill="none" stroke={THEME.color} strokeWidth="10"
+                  strokeLinecap="round" strokeDasharray={RING_C} strokeDashoffset={ringOffset}
+                  transform="rotate(-90 60 60)" />
+                <text x="60" y="56" textAnchor="middle" fontFamily="var(--font-plex-mono)" fontSize="24" fontWeight="600" fill={PALETTE.ink}>{avg}%</text>
+                <text x="60" y="72" textAnchor="middle" fontFamily="var(--font-plex-sans)" fontSize="9" fill={PALETTE.inkFaint}>{components.length} KOMPONEN</text>
+              </svg>
+            </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            {sortedLoc.map(loc => {
-              const cfg = STATUS_CONFIG[loc.status] ?? STATUS_CONFIG.in_progress;
-              const comps = componentsOf(components, loc.id);
-              return (
-                <div key={loc.id} className="rounded-2xl p-4 flex flex-col gap-3"
-                  style={{ background: 'rgba(255,255,255,0.96)', border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 2px 10px rgba(15,23,42,0.05)' }}>
+          <div className="rounded-md p-4 flex flex-col" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+            {[
+              { label: 'Total lokasi', value: `${sortedLoc.length} site` },
+              { label: 'Isu terbuka', value: String(issues.length), warn: issues.length > 0 },
+              { label: 'Komponen bermasalah', value: String(bermasalah), warn: bermasalah > 0 },
+              { label: 'Lewat target', value: `${telat.length} site`, bad: telat.length > 0 },
+            ].map((s, i, arr) => (
+              <div key={s.label} className="flex items-center justify-between gap-2 py-2"
+                style={{ borderBottom: i < arr.length - 1 ? `1px solid ${PALETTE.border}` : 'none' }}>
+                <span className="text-[11px] font-medium" style={{ color: PALETTE.inkSoft }}>{s.label}</span>
+                <span className="text-[13px] font-bold" style={{ ...fontMono, color: s.bad ? PALETTE.bad : s.warn ? PALETTE.warn : PALETTE.ink }}>{s.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
 
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-sm font-black text-gray-800 truncate">{loc.name}</p>
-                      {loc.pic && <p className="text-[11px] text-gray-500 font-medium">PIC: {loc.pic}</p>}
+        {/* ── Status per lokasi — baris data, bukan galeri kartu ── */}
+        <div className="flex flex-col gap-2.5">
+          {sortedLoc.length === 0 ? (
+            <div className="rounded-md p-8 text-center text-sm font-medium"
+              style={{ background: PALETTE.surface, border: `1px dashed ${PALETTE.borderStrong}`, color: PALETTE.inkFaint }}>
+              Belum ada lokasi pada proyek ini.
+            </div>
+          ) : sortedLoc.map(loc => {
+            const cfg = STATUS_CONFIG[loc.status] ?? STATUS_CONFIG.in_progress;
+            const comps = componentsOf(components, loc.id);
+            return (
+              <div key={loc.id} className="rounded-md overflow-hidden"
+                style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+
+                <div className="flex items-start justify-between gap-2 px-4 pt-3.5">
+                  <div className="min-w-0">
+                    <p className="text-[13.5px] font-bold" style={{ color: PALETTE.ink }}>{loc.name}</p>
+                    <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 mt-0.5 text-[11px]" style={{ color: PALETTE.inkFaint }}>
+                      {loc.pic && <span>PIC <b style={{ color: PALETTE.inkSoft, fontWeight: 600 }}>{loc.pic}</b></span>}
                       {loc.sales_name && (
-                        <p className="text-[11px] text-gray-500 font-medium">
-                          Sales: {loc.sales_name}
-                          {loc.sales_division && <span className="text-gray-400"> · {loc.sales_division}</span>}
-                        </p>
+                        <span>Sales <b style={{ color: PALETTE.inkSoft, fontWeight: 600 }}>{loc.sales_name}</b>{loc.sales_division ? ` · ${loc.sales_division}` : ''}</span>
                       )}
                       {(loc.start_date || loc.target_date) && (() => {
                         const lt = timelineInfo(loc);
                         return (
-                          <p className="text-[10px] font-semibold mt-0.5" style={{ color: lt.color }}>
-                            🗓️ {loc.start_date ? formatDate(loc.start_date) : '—'} → {loc.target_date ? formatDate(loc.target_date) : '—'}
-                            <span className="ml-1.5 px-1.5 py-0.5 rounded" style={{ background: lt.bg }}>{lt.label}</span>
-                          </p>
+                          <span style={{ color: lt.color, fontWeight: 600 }}>
+                            <span style={fontMono}>{loc.start_date ? formatDate(loc.start_date) : '—'} → {loc.target_date ? formatDate(loc.target_date) : '—'}</span>
+                            {' '}({lt.label})
+                          </span>
                         );
                       })()}
                     </div>
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold flex-shrink-0"
-                      style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
-                      {cfg.label}
-                    </span>
                   </div>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold flex-shrink-0"
+                    style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
+                    {cfg.label}
+                  </span>
+                </div>
 
-                  {/* Alur perubahan status LOKASI ini — kapan status berubah,
-                      bukan cuma status TERKINI di atas. */}
+                {/* Alur perubahan status LOKASI ini — kapan status berubah,
+                    bukan cuma status TERKINI di atas. */}
+                <div className="px-2.5">
                   <AuditTrailPanel
                     targetId={loc.id} modul="project-progress" data={detail.auditTrail ?? []}
                     kompak selaluTerbuka arah="horizontal"
                     awal={{ oleh: null, waktu: loc.created_at, keterangan: 'Lokasi dibuat' }}
                   />
+                </div>
 
+                <div className="px-4 pb-3.5 flex flex-col gap-2.5">
                   {/* Progres dihitung dari komposisi status komponen, bukan input manual */}
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-semibold text-gray-500">
-                        Progres komponen <span className="text-gray-400">({comps.length})</span>
+                      <span className="text-[10px] font-semibold" style={{ color: PALETTE.inkFaint }}>
+                        Progres komponen ({comps.length})
                       </span>
-                      <span className="text-[11px] font-black" style={{ color: THEME.color }}>
+                      <span className="text-[11px] font-bold" style={{ ...fontMono, color: THEME.color }}>
                         {computeProgress(comps)}%
                       </span>
                     </div>
-                    {/* Bar tersegmen: proporsi tiap status terlihat langsung */}
-                    <div className="h-2 rounded-full overflow-hidden bg-gray-200 flex">
+                    <div className="h-1.5 rounded-full overflow-hidden flex" style={{ background: PALETTE.surfaceSunken }}>
                       {stateBreakdown(comps).filter(b => b.count > 0).map(b => (
                         <div key={b.state} style={{ width: `${b.percent}%`, background: b.color }}
                           title={`${b.label}: ${b.count} (${b.percent}%)`} />
                       ))}
                     </div>
-                    {comps.length > 0 && (
-                      <div className="flex flex-wrap gap-x-2.5 gap-y-1 pt-0.5">
-                        {stateBreakdown(comps).map(b => (
-                          <span key={b.state} className="flex items-center gap-1 text-[10px] font-bold"
-                            style={{ color: b.count > 0 ? b.color : '#cbd5e1' }}>
-                            <span className="w-1.5 h-1.5 rounded-full" style={{ background: b.count > 0 ? b.color : '#e2e8f0' }} />
-                            {b.label} {b.percent}%
-                            <span className="font-semibold text-gray-400">({b.count})</span>
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
 
                   {comps.length > 0 && (
-                    <div className="flex flex-col gap-2">
-                      {comps.map(c => {
+                    <div className="rounded-sm overflow-hidden" style={{ border: `1px solid ${PALETTE.border}` }}>
+                      {comps.map((c, i) => {
                         const sc = COMPONENT_STATE_CONFIG[c.state] ?? COMPONENT_STATE_CONFIG.pending;
                         return (
-                          <div key={c.id} className="flex flex-col gap-0.5">
-                            <div className="flex items-start gap-2">
-                              <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: sc.dot }} />
-                              <span className="text-[11px] font-semibold leading-snug flex-1" style={{ color: sc.text }}>{c.label}</span>
-                              {/* Foto evidence opsional — klik untuk buka ukuran penuh */}
+                          <div key={c.id} style={{ borderTop: i > 0 ? `1px solid ${PALETTE.border}` : 'none', background: PALETTE.surface }}>
+                            <div className="flex items-center gap-2.5 px-2.5 py-2">
+                              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: sc.dot }} />
+                              <span className="text-[12px] font-medium flex-1 leading-snug" style={{ color: PALETTE.ink }}>{c.label}</span>
                               {c.photo_url && (
                                 <a href={c.photo_url} target="_blank" rel="noopener noreferrer"
                                   title="Lihat foto evidence" className="flex-shrink-0">
-                                  {/* Render THUMB, bukan foto penuh — kotak 28px tidak
-                                      perlu berkas ratusan KB. lazy: foto di kartu yang
-                                      belum terlihat tidak ikut diunduh. */}
                                   <img src={c.photo_thumb_url ?? c.photo_url} alt={`Evidence ${c.label}`}
-                                    loading="lazy" decoding="async" width={28} height={28}
-                                    className="w-7 h-7 rounded object-cover border border-gray-200 hover:opacity-80 transition-opacity" />
+                                    loading="lazy" decoding="async" width={24} height={24}
+                                    className="w-6 h-6 rounded-sm object-cover hover:opacity-80 transition-opacity"
+                                    style={{ border: `1px solid ${PALETTE.border}` }} />
                                 </a>
                               )}
-                              <span className="text-[9px] font-bold flex-shrink-0 mt-0.5" style={{ color: sc.dot }}>{sc.label}</span>
+                              <span className="text-[10px] font-bold flex-shrink-0" style={{ color: sc.dot }}>{sc.label}</span>
                             </div>
                             {/* Alur perubahan KOMPONEN ini — menempel langsung di
                                 bawah barisnya sendiri, sama seperti mode edit. */}
-                            <AuditTrailPanel
-                              targetId={c.id} modul="project-progress" data={detail.auditTrail ?? []}
-                              kompak selaluTerbuka arah="horizontal"
-                              awal={{ oleh: null, waktu: c.created_at, keterangan: 'Komponen ditambahkan' }}
-                            />
+                            <div className="pl-6 pr-2.5">
+                              <AuditTrailPanel
+                                targetId={c.id} modul="project-progress" data={detail.auditTrail ?? []}
+                                kompak selaluTerbuka arah="horizontal"
+                                awal={{ oleh: null, waktu: c.created_at, keterangan: 'Komponen ditambahkan' }}
+                              />
+                            </div>
                           </div>
                         );
                       })}
@@ -233,55 +245,68 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
                   )}
 
                   {loc.note && (
-                    <div className="rounded-xl px-3 py-2 text-[11px] font-medium leading-snug"
+                    <div className="rounded-sm px-3 py-2 text-[11px] font-medium leading-snug"
                       style={{
-                        background: loc.note_flag ? '#fff1f2' : '#f8fafc',
-                        borderLeft: `3px solid ${loc.note_flag ? '#f43f5e' : '#cbd5e1'}`,
-                        color: loc.note_flag ? '#9f1239' : '#475569',
+                        background: loc.note_flag ? PALETTE.badTint : PALETTE.surfaceSunken,
+                        borderLeft: `3px solid ${loc.note_flag ? PALETTE.bad : PALETTE.borderStrong}`,
+                        color: loc.note_flag ? PALETTE.bad : PALETTE.inkSoft,
                       }}>
                       {loc.note}
                     </div>
                   )}
                 </div>
-              );
-            })}
-          </div>
-        )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Analisis lanjutan — de-prioritized di bawah lipatan pertama,
+          bukan disamakan bobotnya dengan progres utama di atas. ── */}
+      <div className="flex flex-col gap-2.5">
+        <SectionLabel>Analisis</SectionLabel>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2.5">
+          <MiniPieChart data={pieData} title="Distribusi Status Lokasi" icon="📍" />
+          <MiniPieChart data={picSlices} title="Progres per PIC Team" icon="👷"
+            centerValue={`${avg}%`} centerLabel="RATA-RATA" valueSuffix="%" />
+          <MiniPieChart data={timelineSlices} title="Status Jadwal Lokasi" icon="🗓️" />
+          <MiniPieChart data={problemSlices} title="Komponen Stuck & Pending" icon="⚠️" />
+        </div>
       </div>
 
       {/* ── Rekap isu terbuka ── */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2.5">
         <SectionLabel>Rekap Isu Terbuka</SectionLabel>
-        <div className="rounded-2xl overflow-hidden"
-          style={{ background: 'rgba(255,255,255,0.96)', border: '1px solid rgba(255,255,255,0.8)' }}>
+        <div className="rounded-md overflow-hidden" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
           {issues.length === 0 ? (
-            <p className="p-8 text-center text-sm text-gray-400 font-medium">Tidak ada isu terbuka. 🎉</p>
+            <p className="p-8 text-center text-sm font-medium" style={{ color: PALETTE.inkFaint }}>Tidak ada isu terbuka. 🎉</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[640px]">
                 <thead>
-                  <tr style={{ background: '#f8fafc' }}>
+                  <tr style={{ background: PALETTE.surfaceSunken }}>
                     {['Lokasi', 'Isu', 'Severity', 'Keterangan'].map(h => (
-                      <th key={h} className="px-4 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200">
+                      <th key={h} className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest"
+                        style={{ color: PALETTE.inkFaint, borderBottom: `1px solid ${PALETTE.border}` }}>
                         {h}
                       </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {[...issues].sort((a, b) => a.sort_order - b.sort_order).map(is => {
+                  {[...issues].sort((a, b) => a.sort_order - b.sort_order).map((is, i, arr) => {
                     const sv = SEVERITY_CONFIG[is.severity] ?? SEVERITY_CONFIG.sedang;
                     return (
-                      <tr key={is.id} className="border-b border-gray-100 last:border-0">
-                        <td className="px-4 py-3 text-[11px] font-bold text-gray-700 align-top">{is.location_label ?? '—'}</td>
-                        <td className="px-4 py-3 text-[11px] font-semibold text-gray-600 align-top">{is.issue}</td>
+                      <tr key={is.id} style={{ borderBottom: i < arr.length - 1 ? `1px solid ${PALETTE.border}` : 'none' }}>
+                        <td className="px-4 py-3 text-[11px] font-bold align-top" style={{ color: PALETTE.ink }}>{is.location_label ?? '—'}</td>
+                        <td className="px-4 py-3 text-[11px] font-semibold align-top" style={{ color: PALETTE.inkSoft }}>{is.issue}</td>
                         <td className="px-4 py-3 align-top">
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap"
                             style={{ background: sv.bg, color: sv.color, border: `1px solid ${sv.border}` }}>
                             {sv.label}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-[11px] font-medium text-gray-500 align-top">{is.note ?? '—'}</td>
+                        <td className="px-4 py-3 text-[11px] font-medium align-top" style={{ color: PALETTE.inkFaint }}>{is.note ?? '—'}</td>
                       </tr>
                     );
                   })}
@@ -293,8 +318,8 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
       </div>
 
       {project.description && (
-        <p className="text-[11px] text-gray-600 font-medium leading-relaxed rounded-xl px-4 py-3"
-          style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)' }}>
+        <p className="text-[11px] font-medium leading-relaxed rounded-md px-4 py-3"
+          style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}`, color: PALETTE.inkSoft }}>
           {project.description}
         </p>
       )}
@@ -302,16 +327,12 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
   );
 }
 
-/**
- * Label seksi selalu diberi latar sendiri. Tanpa ini, teks abu-abu jatuh
- * langsung di atas foto latar dan praktis tidak terbaca.
- */
+/** Label seksi kecil, huruf kapital berjarak — penanda kelompok, bukan hiasan. */
 export function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span className="self-start px-3 py-1.5 rounded-lg text-xs font-bold text-gray-600 uppercase tracking-widest"
-      style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)', backdropFilter: 'blur(10px)' }}>
+    <span className="self-start px-3 py-1.5 rounded-sm text-xs font-bold uppercase tracking-widest"
+      style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}`, color: PALETTE.inkSoft }}>
       {children}
     </span>
   );
 }
-

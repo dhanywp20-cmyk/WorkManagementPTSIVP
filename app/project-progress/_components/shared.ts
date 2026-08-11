@@ -2,12 +2,43 @@
 // Tema mengikuti Request Schedule (#0891b2 / #0e7490) agar konsisten dengan
 // platform lain di Work Management.
 
+import type { CSSProperties } from 'react';
+
 export const THEME = {
   color: '#0891b2',
   colorLight: '#0e7490',
   gradient: 'linear-gradient(135deg,#0891b2,#0e7490)',
   shadow: 'rgba(8,145,178,0.4)',
 } as const;
+
+/**
+ * Palet "console" — kertas netral bertekstur satu warna, satu aksen (THEME
+ * di atas), dan warna status terpisah dari aksen. Menggantikan pola foto
+ * latar + kartu kaca-buram: itulah yang membuat layar sebelumnya terasa
+ * ramai dan tidak proporsional — foto ikut bersaing dengan data, dan setiap
+ * elemen (badge/tombol/header) memakai gradasi sekaligus sehingga tidak ada
+ * satu pun yang terasa "utama". Angka & tanggal dipakai bersama fontMono di
+ * bawah supaya kolomnya sejajar (font-variant-numeric: tabular-nums).
+ */
+export const PALETTE = {
+  paper: '#f3f6f7',
+  surface: '#ffffff',
+  surfaceSunken: '#eaeff1',
+  border: '#dde5e8',
+  borderStrong: '#c7d2d6',
+  ink: '#16232b',
+  inkSoft: '#56676f',
+  inkFaint: '#8697a0',
+  accentTint: '#e2f1f4',
+  good: '#166534', goodTint: '#e7f6ec', goodBorder: '#b7e4c7',
+  warn: '#92400e', warnTint: '#fdf1e2', warnBorder: '#f3d4a3',
+  bad: '#9f1239', badTint: '#fde8ee', badBorder: '#f3c1d1',
+} as const;
+
+/** Dipakai pada setiap angka/tanggal/persentase — lihat catatan PALETTE. */
+export const fontMono: CSSProperties = {
+  fontFamily: 'var(--font-plex-mono)', fontVariantNumeric: 'tabular-nums',
+};
 
 export type ProjectStatus = 'in_progress' | 'done' | 'blocked';
 /**

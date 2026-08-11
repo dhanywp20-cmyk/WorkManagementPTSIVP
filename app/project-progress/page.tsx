@@ -13,7 +13,7 @@ import {
 import { ProjectDetailView, SectionLabel } from './_components/ProjectDetailView';
 import { exportProjectToExcel } from './_components/excel-export';
 import {
-  THEME, ProgressProject, ProgressLocation, ProgressComponent, ProgressIssue,
+  THEME, PALETTE, fontMono, ProgressProject, ProgressLocation, ProgressComponent, ProgressIssue,
   ProjectDetail, ProjectStatus, ComponentState, Severity, ProgressAuditEntry,
   STATUS_CONFIG, SEVERITY_CONFIG, COMPONENT_STATE_CONFIG, COMPONENT_STATES,
   averageProgress, componentsOf, formatDatetime, computeProgress, stateBreakdown,
@@ -371,13 +371,9 @@ export default function ProjectProgressPage() {
   if (loading) return <LoadingScreen />;
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col relative" style={{
-      backgroundImage: `url('/IVP_Background.png')`,
-      backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
-    }}>
+    <div className="h-screen overflow-hidden flex flex-col" style={{ background: PALETTE.paper }}>
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.08)' }} />
-      <div className="relative z-10 flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 overflow-hidden">
 
         {toast && <Toast notif={toast} />}
 
@@ -415,16 +411,17 @@ export default function ProjectProgressPage() {
             <div className="flex flex-wrap items-center gap-2">
               <input value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Cari nama project atau client…"
-                className="flex-1 min-w-[220px] px-4 py-2.5 rounded-xl text-sm font-medium border-2 border-gray-200 focus:border-cyan-500 outline-none bg-white/95" />
+                className="flex-1 min-w-[220px] px-3.5 py-2.5 rounded-md text-sm font-medium outline-none"
+                style={{ border: `1px solid ${PALETTE.borderStrong}`, background: PALETTE.surface, color: PALETTE.ink }} />
               {(['all', 'in_progress', 'done', 'blocked'] as const).map(s => {
                 const active = statusFilter === s;
                 const label = s === 'all' ? 'Semua' : STATUS_CONFIG[s].label;
                 return (
                   <button key={s} onClick={() => setStatusFilter(s)}
-                    className="px-3.5 py-2 rounded-xl text-xs font-bold transition-all border-2"
+                    className="px-3.5 py-2 rounded-md text-xs font-bold transition-all"
                     style={active
-                      ? { background: THEME.gradient, color: '#fff', borderColor: 'transparent' }
-                      : { background: 'rgba(255,255,255,0.9)', color: '#64748b', borderColor: '#e2e8f0' }}>
+                      ? { background: PALETTE.ink, color: PALETTE.paper, border: '1px solid transparent' }
+                      : { background: PALETTE.surface, color: PALETTE.inkSoft, border: `1px solid ${PALETTE.borderStrong}` }}>
                     {label}
                   </button>
                 );
@@ -436,8 +433,8 @@ export default function ProjectProgressPage() {
               <EmptyState icon="📊" title="Belum ada project"
                 description={canEdit ? 'Klik "Tambah Project" untuk membuat project progress pertama.' : 'Belum ada project yang bisa ditampilkan.'} />
             ) : (
-              <div className="rounded-2xl overflow-hidden"
-                style={{ background: 'rgba(255,255,255,0.96)', border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 2px 10px rgba(15,23,42,0.05)' }}>
+              <div className="rounded-md overflow-hidden"
+                style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
 
                 {/* ── MOBILE: kartu daftar ── */}
                 <div className="md:hidden divide-y divide-gray-100">
@@ -486,7 +483,7 @@ export default function ProjectProgressPage() {
                       <col style={{ width: '12%' }} />
                     </colgroup>
                     <thead>
-                      <tr className="border-b-2 border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
+                      <tr style={{ background: PALETTE.surfaceSunken, borderBottom: `1px solid ${PALETTE.border}` }}>
                         {['No', 'Nama Project', 'Client', 'Sales', 'Status', 'Timeline', 'Lokasi', 'Progres'].map((h, i) => (
                           <th key={h} className={`px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200 ${i === 0 ? 'text-center' : 'text-left'}`}>
                             {h}
@@ -515,7 +512,7 @@ export default function ProjectProgressPage() {
                                     title="Dibuat otomatis dari Reminder Schedule">AUTO</span>
                                 )}
                               </p>
-                              <p className="text-[10px] text-gray-400 font-semibold mt-0.5">{formatDatetime(p.updated_at)}</p>
+                              <p className="text-[10px] text-gray-400 font-semibold mt-0.5" style={fontMono}>{formatDatetime(p.updated_at)}</p>
                             </td>
                             <td className="px-3 py-3 border-r border-gray-200 align-middle">
                               <span className="text-[11px] font-semibold text-gray-600">{p.client || '—'}</span>
@@ -544,7 +541,7 @@ export default function ProjectProgressPage() {
                                   <div className="flex flex-col gap-0.5">
                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold self-start whitespace-nowrap"
                                       style={{ background: t.bg, color: t.color }}>{t.label}</span>
-                                    <span className="text-[9px] text-gray-400 font-semibold">
+                                    <span className="text-[9px] text-gray-400 font-semibold" style={fontMono}>
                                       {p.target_date ? `Target ${formatDate(p.target_date)}` : 'Tanpa target'}
                                     </span>
                                   </div>
@@ -560,9 +557,9 @@ export default function ProjectProgressPage() {
                             <td className="px-3 py-3 border-r border-gray-200 align-middle">
                               <div className="flex items-center gap-2">
                                 <div className="flex-1 h-1.5 rounded-full overflow-hidden bg-gray-200 min-w-[40px]">
-                                  <div className="h-full rounded-full" style={{ width: `${agg.avg}%`, background: THEME.gradient }} />
+                                  <div className="h-full rounded-full" style={{ width: `${agg.avg}%`, background: THEME.color }} />
                                 </div>
-                                <span className="text-[11px] font-black flex-shrink-0" style={{ color: THEME.color }}>{agg.avg}%</span>
+                                <span className="text-[11px] font-bold flex-shrink-0" style={{ ...fontMono, color: THEME.color }}>{agg.avg}%</span>
                               </div>
                             </td>
                             <td className="px-1 py-3 align-middle" onClick={e => e.stopPropagation()}>
@@ -578,8 +575,8 @@ export default function ProjectProgressPage() {
                   </table>
                 </div>
 
-                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-white/90">
-                  <span className="text-xs text-gray-400">{filtered.length} project</span>
+                <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: `1px solid ${PALETTE.border}` }}>
+                  <span className="text-xs" style={{ color: PALETTE.inkFaint }}>{filtered.length} project</span>
                 </div>
               </div>
             )}
@@ -591,46 +588,42 @@ export default function ProjectProgressPage() {
       {detail && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 z-[9990]"
           onClick={e => { if (e.target === e.currentTarget) closeDetail(); }}>
-          <div className="w-full h-full flex flex-col overflow-hidden relative" style={{
-            backgroundImage: `url('/IVP_Background.png')`,
-            backgroundSize: 'cover', backgroundPosition: 'center',
-          }}>
-            <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.10)' }} />
-            <div className="px-5 py-3.5 flex items-center justify-between gap-3 flex-shrink-0 relative z-10"
-              style={{ background: THEME.gradient }}>
+          <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: PALETTE.paper }}>
+            <div className="px-5 py-3.5 flex items-center justify-between gap-3 flex-shrink-0"
+              style={{ background: PALETTE.surface, borderBottom: `1px solid ${PALETTE.border}` }}>
               <div className="min-w-0">
-                <p className="text-white font-black text-base truncate">{detail.project.name}</p>
-                <p className="text-white/80 text-[11px] font-semibold">
+                <p className="font-bold text-base truncate" style={{ color: PALETTE.ink }}>{detail.project.name}</p>
+                <p className="text-[11px] font-semibold" style={{ color: PALETTE.inkFaint }}>
                   {detail.project.client ? `${detail.project.client} · ` : ''}
-                  {detail.locations.length} lokasi · rata-rata {averageProgress(detail.locations)}%
+                  {detail.locations.length} lokasi · rata-rata <span style={fontMono}>{averageProgress(detail.locations)}%</span>
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {detailMode && (
                   <button onClick={() => editMode ? exitEditMode() : setEditMode(true)}
-                    className="px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all"
+                    className="px-3 py-1.5 rounded-md text-[11px] font-bold transition-all"
                     style={editMode
-                      ? { background: '#fff', color: THEME.colorLight }
-                      : { background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)' }}>
+                      ? { background: THEME.color, color: '#fff', border: '1px solid transparent' }
+                      : { background: PALETTE.surface, color: PALETTE.inkSoft, border: `1px solid ${PALETTE.borderStrong}` }}>
                     {editMode ? (editorDirty ? '● Keluar Edit' : '✓ Selesai Edit') : '✏️ Edit'}
                   </button>
                 )}
                 <button onClick={() => exportProjectToExcel(detail)}
-                  className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white transition-all"
-                  style={{ background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)' }}>
+                  className="px-3 py-1.5 rounded-md text-[11px] font-bold transition-all"
+                  style={{ background: PALETTE.surface, color: PALETTE.inkSoft, border: `1px solid ${PALETTE.borderStrong}` }}>
                   ⬇ Excel
                 </button>
                 <button onClick={closeDetail}
-                  className="w-8 h-8 rounded-lg text-white font-bold flex items-center justify-center transition-all"
-                  style={{ background: 'rgba(255,255,255,0.2)' }}>✕</button>
+                  className="w-8 h-8 rounded-md font-bold flex items-center justify-center transition-all"
+                  style={{ background: PALETTE.surface, color: PALETTE.inkSoft, border: `1px solid ${PALETTE.borderStrong}` }}>✕</button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 relative z-10">
+            <div className="flex-1 overflow-y-auto p-5">
               {detailLoading ? (
-                <div className="rounded-2xl py-12 text-center"
-                  style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)' }}>
-                  <p className="text-sm font-bold text-gray-500">Memuat detail…</p>
+                <div className="rounded-md py-12 text-center"
+                  style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+                  <p className="text-sm font-bold" style={{ color: PALETTE.inkFaint }}>Memuat detail…</p>
                 </div>
               ) : editMode && detailMode ? (
                 <DetailEditor
@@ -654,9 +647,9 @@ export default function ProjectProgressPage() {
       {/* ══ MODAL FORM PROYEK ══ */}
       {projectForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9995]">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
-            <div className="px-6 py-4" style={{ background: THEME.gradient }}>
-              <h3 className="text-white font-black text-base">
+          <div className="rounded-md shadow-2xl w-full max-w-lg overflow-hidden" style={{ background: PALETTE.surface }}>
+            <div className="px-6 py-4" style={{ borderBottom: `1px solid ${PALETTE.border}` }}>
+              <h3 className="font-bold text-base" style={{ color: PALETTE.ink }}>
                 {projectForm.id ? '✏️ Edit Project' : '➕ Tambah Project'}
               </h3>
             </div>
@@ -741,10 +734,10 @@ export default function ProjectProgressPage() {
       {/* ══ MODAL SHARE ══ */}
       {shareFor && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9995]">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
-            <div className="px-6 py-4 flex items-center justify-between" style={{ background: THEME.gradient }}>
-              <h3 className="text-white font-black text-base">🔗 Share View-Only</h3>
-              <button onClick={() => setShareFor(null)} className="text-white/80 hover:text-white font-bold">✕</button>
+          <div className="rounded-md shadow-2xl w-full max-w-lg overflow-hidden" style={{ background: PALETTE.surface }}>
+            <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${PALETTE.border}` }}>
+              <h3 className="font-bold text-base" style={{ color: PALETTE.ink }}>🔗 Share View-Only</h3>
+              <button onClick={() => setShareFor(null)} className="font-bold" style={{ color: PALETTE.inkFaint }}>✕</button>
             </div>
             <div className="p-6 flex flex-col gap-4">
               <p className="text-xs text-gray-500 font-medium leading-relaxed">
