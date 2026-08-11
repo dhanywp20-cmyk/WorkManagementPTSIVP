@@ -53,9 +53,12 @@ function waktuRelatif(iso: string): string {
   return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-/** Tanggal pendek tetap (bukan relatif) — dipakai alur mendatar, sebaris. */
+/** Tanggal + jam pendek tetap (bukan relatif) — dipakai alur mendatar, sebaris. */
 function tanggalPendek(iso: string): string {
-  return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+  const d = new Date(iso);
+  const tanggal = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+  const jam = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  return `${tanggal} ${jam}`;
 }
 
 /**

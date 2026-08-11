@@ -1261,20 +1261,6 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
                 </select>
               </div>
 
-              {/* Alur perubahan status LOKASI ini — timeline mini menempel
-                  langsung di bawah field-nya, bukan panel ringkasan terpisah. */}
-              {!isNew(loc.id) && (
-                <AuditTrailPanel
-                  key={`loc-status-${loc.id}-${riwayatVersi}`}
-                  targetId={loc.id} modul="project-progress" kompak selaluTerbuka arah="horizontal"
-                  awal={{
-                    oleh: origLocById.get(loc.id)?.sales_name || detail.project.sales_name || detail.project.created_by || null,
-                    waktu: origLocById.get(loc.id)?.created_at ?? null,
-                    keterangan: 'Lokasi dibuat',
-                  }}
-                />
-              )}
-
               {/* Jadwal lokasi — hanya admin. PIC memperbarui progres, bukan jadwal. */}
               {isFull && (
                 <div className="grid grid-cols-2 gap-2">
