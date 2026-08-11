@@ -107,7 +107,17 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
         </div>
       )}
 
+      {/* ── Empat pie: status lokasi, jadwal, beban PIC, komponen bermasalah ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2.5">
+        <MiniPieChart data={pieData} title="Distribusi Status Lokasi" icon="📍" />
+        <MiniPieChart data={picSlices} title="Progres per PIC Team" icon="👷"
+          centerValue={`${avg}%`} centerLabel="RATA-RATA" valueSuffix="%" />
+        <MiniPieChart data={timelineSlices} title="Status Jadwal Lokasi" icon="🗓️" />
+        <MiniPieChart data={problemSlices} title="Komponen Stuck & Pending" icon="⚠️" />
+      </div>
+
       {/* ── Rail metrik (ring + angka kunci) + daftar lokasi ── */}
+      <SectionLabel>Status Per Lokasi</SectionLabel>
       <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-3 items-start">
         <div className="flex flex-col gap-3 lg:sticky lg:top-3">
           <div className="rounded-md p-4" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
@@ -155,7 +165,7 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
               <div key={loc.id} className="rounded-md overflow-hidden"
                 style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
 
-                <div className="flex items-start justify-between gap-2 px-4 pt-3.5">
+                <div className="flex items-start justify-between gap-3 px-4 pt-3.5">
                   <div className="min-w-0">
                     <p className="text-[13.5px] font-bold" style={{ color: PALETTE.ink }}>{loc.name}</p>
                     <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 mt-0.5 text-[11px]" style={{ color: PALETTE.inkFaint }}>
@@ -174,20 +184,19 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
                       })()}
                     </div>
                   </div>
+                  {/* Alur perubahan status LOKASI ini — di KANAN, sebaris
+                      dengan nama/status, bukan menambah baris baru di bawah. */}
+                  <div className="flex-shrink-0 max-w-[260px] overflow-x-auto">
+                    <AuditTrailPanel
+                      targetId={loc.id} modul="project-progress" data={detail.auditTrail ?? []}
+                      kompak selaluTerbuka arah="horizontal"
+                      awal={{ oleh: null, waktu: loc.created_at, keterangan: 'Lokasi dibuat' }}
+                    />
+                  </div>
                   <span className="px-2.5 py-1 rounded-full text-[10px] font-bold flex-shrink-0"
                     style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
                     {cfg.label}
                   </span>
-                </div>
-
-                {/* Alur perubahan status LOKASI ini — kapan status berubah,
-                    bukan cuma status TERKINI di atas. */}
-                <div className="px-2.5">
-                  <AuditTrailPanel
-                    targetId={loc.id} modul="project-progress" data={detail.auditTrail ?? []}
-                    kompak selaluTerbuka arah="horizontal"
-                    awal={{ oleh: null, waktu: loc.created_at, keterangan: 'Lokasi dibuat' }}
-                  />
                 </div>
 
                 <div className="px-4 pb-3.5 flex flex-col gap-2.5">
@@ -217,7 +226,7 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
                           <div key={c.id} style={{ borderTop: i > 0 ? `1px solid ${PALETTE.border}` : 'none', background: PALETTE.surface }}>
                             <div className="flex items-center gap-2.5 px-2.5 py-2">
                               <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: sc.dot }} />
-                              <span className="text-[12px] font-medium flex-1 leading-snug" style={{ color: PALETTE.ink }}>{c.label}</span>
+                              <span className="text-[12px] font-medium flex-1 leading-snug min-w-0 truncate" style={{ color: PALETTE.ink }}>{c.label}</span>
                               {c.photo_url && (
                                 <a href={c.photo_url} target="_blank" rel="noopener noreferrer"
                                   title="Lihat foto evidence" className="flex-shrink-0">
@@ -227,16 +236,16 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
                                     style={{ border: `1px solid ${PALETTE.border}` }} />
                                 </a>
                               )}
+                              {/* Alur perubahan KOMPONEN ini — di KANAN baris,
+                                  bukan menambah baris baru di bawahnya. */}
+                              <div className="flex-shrink-0 max-w-[200px] overflow-x-auto">
+                                <AuditTrailPanel
+                                  targetId={c.id} modul="project-progress" data={detail.auditTrail ?? []}
+                                  kompak selaluTerbuka arah="horizontal"
+                                  awal={{ oleh: null, waktu: c.created_at, keterangan: 'Komponen ditambahkan' }}
+                                />
+                              </div>
                               <span className="text-[10px] font-bold flex-shrink-0" style={{ color: sc.dot }}>{sc.label}</span>
-                            </div>
-                            {/* Alur perubahan KOMPONEN ini — menempel langsung di
-                                bawah barisnya sendiri, sama seperti mode edit. */}
-                            <div className="pl-6 pr-2.5">
-                              <AuditTrailPanel
-                                targetId={c.id} modul="project-progress" data={detail.auditTrail ?? []}
-                                kompak selaluTerbuka arah="horizontal"
-                                awal={{ oleh: null, waktu: c.created_at, keterangan: 'Komponen ditambahkan' }}
-                              />
                             </div>
                           </div>
                         );
@@ -258,19 +267,6 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* ── Analisis lanjutan — de-prioritized di bawah lipatan pertama,
-          bukan disamakan bobotnya dengan progres utama di atas. ── */}
-      <div className="flex flex-col gap-2.5">
-        <SectionLabel>Analisis</SectionLabel>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2.5">
-          <MiniPieChart data={pieData} title="Distribusi Status Lokasi" icon="📍" />
-          <MiniPieChart data={picSlices} title="Progres per PIC Team" icon="👷"
-            centerValue={`${avg}%`} centerLabel="RATA-RATA" valueSuffix="%" />
-          <MiniPieChart data={timelineSlices} title="Status Jadwal Lokasi" icon="🗓️" />
-          <MiniPieChart data={problemSlices} title="Komponen Stuck & Pending" icon="⚠️" />
         </div>
       </div>
 
