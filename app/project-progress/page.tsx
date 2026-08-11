@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useCurrentUser } from '@/lib/use-current-user';
+import { useCurrentUser, type CurrentUser } from '@/lib/use-current-user';
+import { logAudit } from '@/lib/audit';
 import {
   PageHeader, LoadingScreen, Toast, type Notif,
   ConfirmDialog, type ConfirmState, EmptyState,
   ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup,
-  MobileListCard, MobileCardBadge, MiniPieChart,
+  MobileListCard, MobileCardBadge, MiniPieChart, AuditTrailPanel,
 } from '@/components/shared';
 import { ProjectDetailView, SectionLabel } from './_components/ProjectDetailView';
 import { exportProjectToExcel } from './_components/excel-export';
@@ -40,6 +41,19 @@ export default function ProjectProgressPage() {
   const [detail, setDetail] = useState<ProjectDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [showRiwayat, setShowRiwayat] = useState(false);
+  /**
+   * Dinaikkan tiap kali draft berhasil disimpan, dipakai sebagai `key` panel
+   * Riwayat supaya ia RE-MOUNT dan mengambil ulang datanya.
+   *
+   * Tanpa ini panel bisa basi: idsKey (dependency effect AuditTrailPanel)
+   * dibangun dari daftar id lokasi & komponen, dan status/state BERUBAH tidak
+   * mengubah daftar id itu sendiri — jadi effect-nya tidak pernah tahu ada
+   * baris audit_trail baru untuk id yang sama. Padahal pertanyaan yang justru
+   * paling sering muncul persis setelah menekan Simpan: "baris riwayat yang
+   * baru saja tercatat itu, mana?"
+   */
+  const [riwayatVersi, setRiwayatVersi] = useState(0);
 
   // Modal form proyek
   const [projectForm, setProjectForm] = useState<Partial<ProgressProject> | null>(null);
@@ -244,11 +258,30 @@ export default function ProjectProgressPage() {
       const { error } = await supabase.from('progress_projects').update(payload).eq('id', projectForm.id);
       if (error) { notify('error', 'Gagal menyimpan: ' + error.message); setSaving(false); return; }
       notify('success', 'Proyek diperbarui.');
+      // Status proyek dibandingkan dengan data SEBELUM edit (dari daftar yang
+      // sudah dimuat) — payload di atas selalu berisi status baru, jadi tidak
+      // bisa dipakai sendiri untuk tahu apakah nilainya benar-benar berubah.
+      const before = projects.find(p => p.id === projectForm.id);
+      if (before && before.status !== payload.status) {
+        logAudit({
+          user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
+          action: 'status_change', module: 'project-progress',
+          target_id: projectForm.id, target_name: payload.name,
+          old_value: STATUS_CONFIG[before.status]?.label ?? before.status,
+          new_value: STATUS_CONFIG[payload.status]?.label ?? payload.status,
+        }).catch(() => {});
+      }
     } else {
-      const { error } = await supabase.from('progress_projects')
-        .insert([{ ...payload, created_by: currentUser?.full_name ?? null }]);
+      const { data, error } = await supabase.from('progress_projects')
+        .insert([{ ...payload, created_by: currentUser?.full_name ?? null }])
+        .select('id').single();
       if (error) { notify('error', 'Gagal menyimpan: ' + error.message); setSaving(false); return; }
       notify('success', 'Proyek dibuat.');
+      logAudit({
+        user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
+        action: 'create', module: 'project-progress',
+        target_id: (data as { id: string }).id, target_name: payload.name,
+      }).catch(() => {});
     }
     setSaving(false);
     setProjectForm(null);
@@ -584,6 +617,14 @@ export default function ProjectProgressPage() {
                     {editMode ? (editorDirty ? '● Keluar Edit' : '✓ Selesai Edit') : '✏️ Edit'}
                   </button>
                 )}
+                <button onClick={() => setShowRiwayat(o => !o)}
+                  title={showRiwayat ? 'Sembunyikan riwayat perubahan' : 'Tampilkan riwayat perubahan'}
+                  className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white transition-all"
+                  style={showRiwayat
+                    ? { background: '#fff', color: THEME.colorLight }
+                    : { background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)' }}>
+                  🕘 Riwayat
+                </button>
                 <button onClick={() => exportProjectToExcel(detail)}
                   className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white transition-all"
                   style={{ background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)' }}>
@@ -595,24 +636,66 @@ export default function ProjectProgressPage() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 relative z-10">
-              {detailLoading ? (
-                <div className="rounded-2xl py-12 text-center"
-                  style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)' }}>
-                  <p className="text-sm font-bold text-gray-500">Memuat detail…</p>
+            <div className="flex-1 overflow-hidden p-5 relative z-10 flex gap-4 items-start">
+              <div className="flex-1 min-w-0 h-full overflow-y-auto">
+                {detailLoading ? (
+                  <div className="rounded-2xl py-12 text-center"
+                    style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)' }}>
+                    <p className="text-sm font-bold text-gray-500">Memuat detail…</p>
+                  </div>
+                ) : editMode && detailMode ? (
+                  <DetailEditor
+                    // key: paksa draft dibangun ulang HANYA saat ganti proyek /
+                    // setelah simpan — bukan tiap render, supaya tidak berkedip.
+                    key={`${detail.project.id}-${detail.locations.length}-${detail.components.length}-${detail.issues.length}`}
+                    detail={detail} teamUsers={teamUsers} salesUsers={salesUsers}
+                    mode={detailMode ?? 'pic'} editableIds={detailEditableIds}
+                    currentUser={currentUser}
+                    onSaved={() => { setEditorDirty(false); reloadDetail(); fetchProjects(); setRiwayatVersi(v => v + 1); }}
+                    onDirtyChange={setEditorDirty}
+                    notify={notify} setConfirmState={setConfirmState} />
+                ) : (
+                  <ProjectDetailView detail={detail} />
+                )}
+              </div>
+
+              {/* Riwayat digabung dari TIGA sumber id: proyek, seluruh lokasi,
+                  dan seluruh komponennya — supaya satu garis waktu menjawab
+                  "kapan status ini berubah" pada level mana pun, bukan hanya
+                  di proyek induknya. Panel ini yang menjawab bagian kedua dari
+                  timeline: bukan cuma jadwal yang DITETAPKAN di awal (start_date/
+                  target_date, sudah ada), tapi juga PERUBAHAN sungguhan yang
+                  terjadi sepanjang jalan. */}
+              {showRiwayat && !detailLoading && (
+                <div className="w-full max-w-sm flex-shrink-0 self-stretch rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+                  style={{ background: '#fff', border: '1px solid rgba(255,255,255,0.8)' }}>
+                  <div className="px-4 py-3 flex-shrink-0 flex items-center justify-between"
+                    style={{ background: 'linear-gradient(135deg,#475569,#334155)' }}>
+                    <div className="min-w-0">
+                      <h3 className="text-white font-bold text-sm">🕘 Riwayat Perubahan</h3>
+                      <p className="text-slate-300 text-[11px] mt-0.5 truncate">{detail.project.name}</p>
+                    </div>
+                    <button onClick={() => setShowRiwayat(false)}
+                      className="w-7 h-7 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">✕</button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto">
+                    <AuditTrailPanel
+                      key={riwayatVersi}
+                      targetId={[
+                        detail.project.id,
+                        ...detail.locations.map(l => l.id),
+                        ...detail.components.map(c => c.id),
+                      ]}
+                      modul="project-progress"
+                      selaluTerbuka sembunyikanBilaKosong={false}
+                      awal={{
+                        oleh: detail.project.sales_name || detail.project.created_by || null,
+                        waktu: detail.project.created_at ?? null,
+                        keterangan: 'Proyek dibuat',
+                      }}
+                    />
+                  </div>
                 </div>
-              ) : editMode && detailMode ? (
-                <DetailEditor
-                  // key: paksa draft dibangun ulang HANYA saat ganti proyek /
-                  // setelah simpan — bukan tiap render, supaya tidak berkedip.
-                  key={`${detail.project.id}-${detail.locations.length}-${detail.components.length}-${detail.issues.length}`}
-                  detail={detail} teamUsers={teamUsers} salesUsers={salesUsers}
-                  mode={detailMode ?? 'pic'} editableIds={detailEditableIds}
-                  onSaved={() => { setEditorDirty(false); reloadDetail(); fetchProjects(); }}
-                  onDirtyChange={setEditorDirty}
-                  notify={notify} setConfirmState={setConfirmState} />
-              ) : (
-                <ProjectDetailView detail={detail} />
               )}
             </div>
           </div>
@@ -814,7 +897,7 @@ function buildDraft(detail: ProjectDetail): { locations: DraftLocation[]; issues
   };
 }
 
-function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, onSaved, onDirtyChange, notify, setConfirmState }: {
+function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, currentUser, onSaved, onDirtyChange, notify, setConfirmState }: {
   detail: ProjectDetail;
   teamUsers: { id: string; full_name: string }[];
   salesUsers: { id: string; full_name: string; sales_division: string | null }[];
@@ -827,6 +910,8 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, onSave
    */
   mode: EditorMode;
   editableIds: Set<string>;
+  /** Dipakai untuk mencatat SIAPA di riwayat perubahan — lihat save(). */
+  currentUser: CurrentUser | null;
   onSaved: () => void;
   onDirtyChange: (d: boolean) => void;
   notify: (t: 'success' | 'error', m: string) => void;
@@ -963,8 +1048,37 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, onSave
       return;
     }
     setSaving(true);
+
+    /* Riwayat perubahan (audit_trail). Dua hal yang membuat pencatatan ini
+       tidak bisa ditempel begitu saja di setiap .update():
+       1. Ini penyimpanan diff, bukan autosave per field — satu tekan
+          "Simpan" bisa membawa banyak lokasi & komponen sekaligus, sebagian
+          benar-benar berubah, sebagian cuma ikut terkirim ulang. Tanpa
+          membandingkan ke data ASLI (before-save, dari `detail` yang dimuat
+          sebelum draft disunting), setiap simpan akan mencatat SEMUA baris
+          sebagai "berubah" walau isinya sama persis.
+       2. logAudit tidak boleh pernah menggagalkan simpan utama — makanya
+          setiap pemanggilan diberi .catch(() => {}) sendiri, konsisten
+          dengan cara modul lain (ticketing, dll) memakainya.
+       Sengaja HANYA status/state yang dibandingkan (bukan label/foto/catatan):
+       itulah yang diminta — "kapan status-nya berubah" — dan itulah satu-
+       satunya field yang benar-benar menentukan progres proyek. */
+    const oleh = { user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '' };
+    const origLoc = new Map(detail.locations.map(l => [l.id, l]));
+    const origComp = new Map(detail.components.map(c => [c.id, c]));
+
     try {
       // 1) Hapus dulu, supaya baris yang dihapus tidak ikut divalidasi ulang.
+      //    Dicatat SEBELUM dihapus — sesudahnya nama/labelnya sudah tidak
+      //    terjangkau lagi.
+      for (const id of removedComp) {
+        const c = origComp.get(id);
+        if (c) logAudit({ ...oleh, action: 'delete', module: 'project-progress', target_id: id, target_name: c.label }).catch(() => {});
+      }
+      for (const id of removedLoc) {
+        const l = origLoc.get(id);
+        if (l) logAudit({ ...oleh, action: 'delete', module: 'project-progress', target_id: id, target_name: l.name }).catch(() => {});
+      }
       if (removedComp.length)  await supabase.from('progress_components').delete().in('id', removedComp);
       if (removedIssue.length) await supabase.from('progress_issues').delete().in('id', removedIssue);
       if (removedLoc.length)   await supabase.from('progress_locations').delete().in('id', removedLoc);
@@ -1001,22 +1115,37 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, onSave
             .insert([{ ...payload, project_id: detail.project.id }]).select('id').single();
           if (error) throw error;
           realLocId = (data as { id: string }).id;
+          logAudit({ ...oleh, action: 'create', module: 'project-progress', target_id: realLocId, target_name: l.name }).catch(() => {});
         } else {
           const { error } = await supabase.from('progress_locations').update(payload).eq('id', l.id);
           if (error) throw error;
+          // status hanya ada di payload mode 'full' — mode 'pic' tidak pernah
+          // mengubahnya, jadi tidak ada yang perlu dibandingkan di sana.
+          const before = origLoc.get(l.id);
+          if (isFull && before && before.status !== l.status) {
+            logAudit({
+              ...oleh, action: 'status_change', module: 'project-progress',
+              target_id: l.id, target_name: l.name,
+              old_value: STATUS_CONFIG[before.status]?.label ?? before.status,
+              new_value: STATUS_CONFIG[l.status]?.label ?? l.status,
+            }).catch(() => {});
+          }
         }
 
         // 3) Komponen milik lokasi ini
         const newComps = l.components.filter(c => isNew(c.id) && c.label.trim());
         if (newComps.length) {
-          const { error } = await supabase.from('progress_components').insert(
+          const { data, error } = await supabase.from('progress_components').insert(
             newComps.map((c, ci) => ({
               location_id: realLocId, label: c.label.trim(), state: c.state,
               photo_url: c.photo_url, photo_thumb_url: c.photo_thumb_url,
               sort_order: l.components.indexOf(c) >= 0 ? l.components.indexOf(c) : ci,
             })),
-          );
+          ).select('id');
           if (error) throw error;
+          ((data ?? []) as { id: string }[]).forEach((row, idx) => {
+            logAudit({ ...oleh, action: 'create', module: 'project-progress', target_id: row.id, target_name: newComps[idx].label.trim(), notes: `Lokasi: ${l.name}` }).catch(() => {});
+          });
         }
         for (const c of l.components) {
           if (isNew(c.id) || !c.label.trim()) continue;
@@ -1024,6 +1153,15 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, onSave
             .update({ label: c.label.trim(), state: c.state, photo_url: c.photo_url, photo_thumb_url: c.photo_thumb_url, sort_order: l.components.indexOf(c) })
             .eq('id', c.id);
           if (error) throw error;
+          const before = origComp.get(c.id);
+          if (before && before.state !== c.state) {
+            logAudit({
+              ...oleh, action: 'status_change', module: 'project-progress',
+              target_id: c.id, target_name: c.label.trim(), notes: `Lokasi: ${l.name}`,
+              old_value: COMPONENT_STATE_CONFIG[before.state]?.label ?? before.state,
+              new_value: COMPONENT_STATE_CONFIG[c.state]?.label ?? c.state,
+            }).catch(() => {});
+          }
         }
       }
 
