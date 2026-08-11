@@ -371,9 +371,15 @@ export default function ProjectProgressPage() {
   if (loading) return <LoadingScreen />;
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col" style={{ background: PALETTE.paper }}>
+    <div className="h-screen overflow-hidden flex flex-col relative" style={{
+      backgroundImage: `url('/IVP_Background.png')`,
+      backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
+    }}>
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
-      <div className="flex flex-col flex-1 overflow-hidden">
+      {/* Tint TIPIS, bukan lapisan putih pekat — biar background IVP tetap
+          kelihatan, cuma teks & kartu di atasnya tetap terbaca. */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.08)' }} />
+      <div className="relative z-10 flex flex-col flex-1 overflow-hidden">
 
         {toast && <Toast notif={toast} />}
 
@@ -588,8 +594,12 @@ export default function ProjectProgressPage() {
       {detail && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 z-[9990]"
           onClick={e => { if (e.target === e.currentTarget) closeDetail(); }}>
-          <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: PALETTE.paper }}>
-            <div className="px-5 py-3.5 flex items-center justify-between gap-3 flex-shrink-0"
+          <div className="w-full h-full flex flex-col overflow-hidden relative" style={{
+            backgroundImage: `url('/IVP_Background.png')`,
+            backgroundSize: 'cover', backgroundPosition: 'center',
+          }}>
+            <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.10)' }} />
+            <div className="px-5 py-3.5 flex items-center justify-between gap-3 flex-shrink-0 relative z-10"
               style={{ background: PALETTE.surface, borderBottom: `1px solid ${PALETTE.border}` }}>
               <div className="min-w-0">
                 <p className="font-bold text-base truncate" style={{ color: PALETTE.ink }}>{detail.project.name}</p>
@@ -619,7 +629,7 @@ export default function ProjectProgressPage() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5">
+            <div className="flex-1 overflow-y-auto p-5 relative z-10">
               {detailLoading ? (
                 <div className="rounded-md py-12 text-center"
                   style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>

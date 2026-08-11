@@ -39,7 +39,14 @@ export default function SharedProjectPage({ params }: { params: { token: string 
   }, [params.token]);
 
   return (
-    <div className="min-h-screen" style={{ background: PALETTE.paper, fontFamily: 'var(--font-plex-sans)' }}>
+    <div className="min-h-screen relative" style={{
+      backgroundImage: `url('/IVP_Background.png')`,
+      backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
+      fontFamily: 'var(--font-plex-sans)',
+    }}>
+      {/* Tint TIPIS, bukan lapisan putih pekat — background IVP tetap kelihatan. */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.08)' }} />
+      <div className="relative z-10">
       {/* Header — versi statis (tanpa aksi) */}
       <header className="sticky top-0 z-50" style={{ background: PALETTE.surface, borderBottom: `1px solid ${PALETTE.border}` }}>
         <div className="max-w-[1200px] mx-auto px-6 py-3.5 flex items-center justify-between gap-4 flex-wrap">
@@ -117,6 +124,7 @@ export default function SharedProjectPage({ params }: { params: { token: string 
           </div>
         )}
       </main>
+      </div>
     </div>
   );
 }

@@ -151,8 +151,9 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
           </div>
         </div>
 
-        {/* ── Status per lokasi — baris data, bukan galeri kartu ── */}
-        <div className="flex flex-col gap-2.5">
+        {/* ── Status per lokasi — split 2 kolom begitu lokasinya lebih dari
+            1, supaya tidak jadi satu kolom panjang ke bawah. ── */}
+        <div className={sortedLoc.length > 1 ? 'grid grid-cols-1 xl:grid-cols-2 gap-2.5 items-start' : 'flex flex-col gap-2.5'}>
           {sortedLoc.length === 0 ? (
             <div className="rounded-md p-8 text-center text-sm font-medium"
               style={{ background: PALETTE.surface, border: `1px dashed ${PALETTE.borderStrong}`, color: PALETTE.inkFaint }}>
@@ -183,15 +184,6 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
                         );
                       })()}
                     </div>
-                  </div>
-                  {/* Alur perubahan status LOKASI ini — di KANAN, sebaris
-                      dengan nama/status, bukan menambah baris baru di bawah. */}
-                  <div className="flex-shrink-0 max-w-[260px] overflow-x-auto">
-                    <AuditTrailPanel
-                      targetId={loc.id} modul="project-progress" data={detail.auditTrail ?? []}
-                      kompak selaluTerbuka arah="horizontal"
-                      awal={{ oleh: null, waktu: loc.created_at, keterangan: 'Lokasi dibuat' }}
-                    />
                   </div>
                   <span className="px-2.5 py-1 rounded-full text-[10px] font-bold flex-shrink-0"
                     style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
@@ -226,7 +218,15 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
                           <div key={c.id} style={{ borderTop: i > 0 ? `1px solid ${PALETTE.border}` : 'none', background: PALETTE.surface }}>
                             <div className="flex items-center gap-2.5 px-2.5 py-2">
                               <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: sc.dot }} />
-                              <span className="text-[12px] font-medium flex-1 leading-snug min-w-0 truncate" style={{ color: PALETTE.ink }}>{c.label}</span>
+                              {/* Nama + notif status BERDAMPINGAN — status langsung
+                                  terbaca tanpa mata harus lompat ke ujung baris. Grup
+                                  ini (bukan nama sendirian) yang flex-1 + min-w-0,
+                                  supaya nama menciut/truncate dan badge tetap
+                                  menempel persis di sebelahnya, bukan terdorong jauh. */}
+                              <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                <span className="text-[12px] font-medium leading-snug min-w-0 truncate" style={{ color: PALETTE.ink }}>{c.label}</span>
+                                <span className="text-[10px] font-bold flex-shrink-0" style={{ color: sc.dot }}>{sc.label}</span>
+                              </div>
                               {c.photo_url && (
                                 <a href={c.photo_url} target="_blank" rel="noopener noreferrer"
                                   title="Lihat foto evidence" className="flex-shrink-0">
@@ -236,16 +236,15 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
                                     style={{ border: `1px solid ${PALETTE.border}` }} />
                                 </a>
                               )}
-                              {/* Alur perubahan KOMPONEN ini — di KANAN baris,
-                                  bukan menambah baris baru di bawahnya. */}
-                              <div className="flex-shrink-0 max-w-[200px] overflow-x-auto">
+                              {/* Alur perubahan KOMPONEN ini — didorong ml-auto ke
+                                  ujung kanan baris, terpisah dari notif status. */}
+                              <div className="flex-shrink-0 max-w-[200px] overflow-x-auto ml-auto">
                                 <AuditTrailPanel
                                   targetId={c.id} modul="project-progress" data={detail.auditTrail ?? []}
                                   kompak selaluTerbuka arah="horizontal"
                                   awal={{ oleh: null, waktu: c.created_at, keterangan: 'Komponen ditambahkan' }}
                                 />
                               </div>
-                              <span className="text-[10px] font-bold flex-shrink-0" style={{ color: sc.dot }}>{sc.label}</span>
                             </div>
                           </div>
                         );
