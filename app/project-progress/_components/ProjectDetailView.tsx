@@ -5,7 +5,7 @@ import {
   ProjectDetail, STATUS_CONFIG, COMPONENT_STATE_CONFIG, SEVERITY_CONFIG,
   STATUS_PIE_COLOR, THEME, averageProgress, componentsOf, ProjectStatus,
   computeProgress, stateBreakdown, picBreakdown, problemComponentBreakdown,
-  timelineInfo, overdueLocations, formatDate, timelineBreakdown,
+  timelineInfo, formatDate, timelineBreakdown,
 } from './shared';
 
 /**
@@ -19,7 +19,6 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
   const { project, locations, components, issues } = detail;
   const sortedLoc = [...locations].sort((a, b) => a.sort_order - b.sort_order);
   const avg = averageProgress(sortedLoc);
-  const blocked = sortedLoc.filter(l => l.status === 'blocked');
 
   // Distribusi status lokasi untuk pie chart
   const pieData = (['done', 'in_progress', 'blocked'] as ProjectStatus[])
@@ -32,33 +31,12 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
 
   // Beban tiap PIC & jenis komponen yang paling sering menahan progres.
   const picSlices = picBreakdown(sortedLoc);
-  const telat = overdueLocations(sortedLoc);
   const tl = timelineInfo(project);
   const timelineSlices = timelineBreakdown(sortedLoc);
   const problemSlices = problemComponentBreakdown(components);
 
   return (
     <div className="flex flex-col gap-5">
-
-      {/* ── Kartu statistik ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard
-          label="Total Lokasi" value={String(sortedLoc.length)} unit="site" accent={THEME.color}
-          sub={sortedLoc.map(l => l.name).join(', ') || '—'}
-        />
-        <StatCard
-          label="Rata-rata Progres" value={`${avg}%`} unit="selesai" accent="#10b981"
-          sub="Berdasarkan progres seluruh lokasi"
-        />
-        <StatCard
-          label="Isu Terbuka" value={String(issues.length)} unit="issue" accent="#f59e0b"
-          sub="Lihat rekap isu di bawah"
-        />
-        <StatCard
-          label="Overtime" value={String(telat.length)} unit="site" accent="#f43f5e"
-          sub={telat.length ? telat.map(l => l.name).join(', ') : 'Tidak ada yang lewat target'}
-        />
-      </div>
 
       {/* ── Timeline proyek ──
           Bar "Progres Keseluruhan" dihapus: angkanya sudah tampil di kartu
@@ -316,17 +294,3 @@ export function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function StatCard({ label, value, unit, sub, accent }: {
-  label: string; value: string; unit: string; sub: string; accent: string;
-}) {
-  return (
-    <div className="rounded-2xl p-4 flex flex-col gap-1"
-      style={{ background: 'rgba(255,255,255,0.95)', borderLeft: `4px solid ${accent}`, border: '1px solid rgba(255,255,255,0.8)', borderLeftWidth: 4, borderLeftColor: accent }}>
-      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{label}</p>
-      <p className="text-2xl font-black text-gray-800 leading-none">
-        {value} <span className="text-[11px] font-bold text-gray-400">{unit}</span>
-      </p>
-      <p className="text-[10px] text-gray-500 font-medium line-clamp-2 leading-snug">{sub}</p>
-    </div>
-  );
-}

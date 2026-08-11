@@ -1252,7 +1252,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
               {!isNew(loc.id) && (
                 <AuditTrailPanel
                   key={`loc-status-${loc.id}-${riwayatVersi}`}
-                  targetId={loc.id} modul="project-progress" kompak selaluTerbuka
+                  targetId={loc.id} modul="project-progress" kompak selaluTerbuka arah="horizontal"
                   awal={{
                     oleh: origLocById.get(loc.id)?.sales_name || detail.project.sales_name || detail.project.created_by || null,
                     waktu: origLocById.get(loc.id)?.created_at ?? null,
@@ -1375,7 +1375,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
                     {!isNew(c.id) && (
                       <AuditTrailPanel
                         key={`comp-${c.id}-${riwayatVersi}`}
-                        targetId={c.id} modul="project-progress" kompak selaluTerbuka
+                        targetId={c.id} modul="project-progress" kompak selaluTerbuka arah="horizontal"
                         awal={{
                           oleh: origLocById.get(loc.id)?.sales_name || detail.project.sales_name || detail.project.created_by || null,
                           waktu: origCompById.get(c.id)?.created_at ?? null,
