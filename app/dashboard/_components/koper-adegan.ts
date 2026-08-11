@@ -23,7 +23,15 @@ export type Adegan = ReturnType<typeof buatAdegan>;
 const W = 0.62;   // lebar
 const H = 0.74;   // tinggi badan koper — lebih tinggi dari lebar
 const D = 0.34;   // tebal, ke arah kamera — cukup untuk sisi terlihat jelas
-const T = 0.026;  // tebal cangkang
+/* Cangkang dibuat BERVOLUME (bukan kulit setipis kertas) — radius sudut
+   RoundedBoxGeometry tidak bisa melebihi separuh dimensi terkecil kotaknya,
+   dan kotak "dasar" di belahan() memakai T sebagai dimensi ketiganya. T tipis
+   (~0.02) artinya sudutnya TERKUNCI nyaris lancip berapa pun radius yang
+   diminta — itulah sebabnya percobaan sebelumnya terlihat seperti kotak,
+   bukan koper. T di sini jadi tebal cangkang SUNGGUHAN, bukan sekadar
+   dinding tipis, supaya sudut yang membulat besar (ala foto acuan) benar-
+   benar tercapai. */
+const T = 0.088;
 const RJ = 0.040; // jari-jari RODA (dulu kaki bulat kecil) di keempat sudut bawah
 
 /* Koper dirender lebih kecil dari geometrinya sendiri lewat SATU faktor skala
@@ -137,6 +145,15 @@ const BAHAN = {
   logamGelap: new THREE.MeshStandardMaterial({ color: 0x8d939b, roughness: 0.32, metalness: 0.9 }),
   karet: new THREE.MeshStandardMaterial({ color: 0x3a250f, roughness: 0.78, metalness: 0.04 }),
   lapisan: new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0.0 }),
+  /* Isi koper — kertas & map berkas. Warnanya TETAP di kedua palet (bukan
+     ikut cangkang): kertas ya warnanya kertas, apa pun warna kopernya. */
+  /* Sedikit emissive: celah antara badan & tutup jatuh dalam bayangan cahaya
+     kunci, dan tanpa ini kertas seputih apa pun jadi nyaris tak kelihatan —
+     terverifikasi lewat tangkapan layar (warna asli nyaris tak tampak di
+     celah, padahal geometrinya sudah di posisi yang benar). Bukan efek
+     menyala, hanya cukup supaya lembarannya terbaca sebagai kertas. */
+  kertas: new THREE.MeshStandardMaterial({ color: 0xf6f1e4, roughness: 0.88, metalness: 0.0, emissive: 0xdcd2ba, emissiveIntensity: 0.22 }),
+  map:    new THREE.MeshStandardMaterial({ color: 0xcda866, roughness: 0.8, metalness: 0.0, emissive: 0x8a6a3a, emissiveIntensity: 0.22 }),
 };
 
 /* Dua pilihan warna.
@@ -190,14 +207,18 @@ function belahan(arah: number) {
   const g = new THREE.Group();
   const dz = D / 2;
   const kulitLuar = arah > 0 ? BAHAN.cangkangTutup : BAHAN.cangkang;
-  const dasar = kotak(W, H, T, kulitLuar, 0.02);
+  // Radius diminta jauh lebih besar dari yang bisa dikabulkan (dikapit ke
+  // T/2.05 oleh kotak()) — sengaja begitu, supaya SELALU memakai radius
+  // maksimum yang tersedia dari ketebalan cangkang, bukan angka sembarang
+  // yang kebetulan pas untuk satu ukuran T tertentu.
+  const dasar = kotak(W, H, T, kulitLuar, 0.5);
   dasar.position.z = arah * (dz - T / 2);
   g.add(dasar);
 
-  const bibirTB = () => kotak(W, T, dz - T, kulitLuar, 0.008);
+  const bibirTB = () => kotak(W, T, dz - T, kulitLuar, 0.024);
   const atas = bibirTB(); atas.position.set(0, H / 2 - T / 2, arah * (dz - T) / 2); g.add(atas);
   const bawah = bibirTB(); bawah.position.set(0, -H / 2 + T / 2, arah * (dz - T) / 2); g.add(bawah);
-  const bibirLR = () => kotak(T, H - 2 * T, dz - T, kulitLuar, 0.008);
+  const bibirLR = () => kotak(T, H - 2 * T, dz - T, kulitLuar, 0.024);
   const kiri = bibirLR(); kiri.position.set(-W / 2 + T / 2, 0, arah * (dz - T) / 2); g.add(kiri);
   const kanan = bibirLR(); kanan.position.set(W / 2 - T / 2, 0, arah * (dz - T) / 2); g.add(kanan);
 
@@ -209,9 +230,17 @@ function belahan(arah: number) {
   // Jahitan kembar: dua alur tipis dekat tengah muka, ciri cangkang keras
   // mengilap ala foto acuan — menggantikan sabuk kulit sudut yang dipakai
   // desain sebelumnya (koper kulit klasik).
+  //
+  // Ketebalannya kecil dan SENGAJA diposisikan relatif ke permukaan LUAR
+  // dasar (arah*dz), menonjol keluar sedikit (JAHITAN_MENONJOL) — bukan
+  // dihitung dari setengah kedalamannya sendiri seperti percobaan
+  // sebelumnya, yang tanpa sadar menguburnya di DALAM volume dasar
+  // (tidak pernah kelihatan, tertutup permukaan dasar sendiri) begitu T
+  // membesar untuk keperluan sudut membulat di atas.
+  const JAHITAN_TEBAL = 0.020, JAHITAN_MENONJOL = 0.006;
   for (const sx of [-1, 1]) {
-    const jahitan = kotak(0.014, H - 0.05, dz - T + 0.012, BAHAN.cangkangGelap, 0.006);
-    jahitan.position.set(sx * 0.052, 0, arah * (dz - T + 0.012) / 2);
+    const jahitan = kotak(0.016, H - 0.06, JAHITAN_TEBAL, BAHAN.cangkangGelap, 0.007);
+    jahitan.position.set(sx * 0.058, 0, arah * (dz - JAHITAN_TEBAL / 2 + JAHITAN_MENONJOL));
     g.add(jahitan);
   }
   return g;
@@ -229,6 +258,35 @@ function buatKoper() {
   tutup.position.y = H / 2;
   engsel.add(tutup);
   akar.add(engsel);
+
+  /* Isi koper: setumpuk kertas + satu map berkas, menempel di BADAN (bukan
+     tutup) — begitu tutup terayun terbuka, isinya tetap diam di badan,
+     persis koper kerja sungguhan.
+     Posisi TIDAK ditaruh di tengah rongga: engsel ada di tepi BAWAH badan
+     (y=-H/2), jadi celah antara badan dan tutup yang benar-benar kelihatan
+     dari kamera hanya melebar dekat tepi ATAS (jauh dari engsel) — dekat
+     engsel celahnya nol berapa pun besar sudut buka. Tumpukan karena itu
+     digeser tinggi (dekat tepi atas, di bawah bibir T supaya tidak
+     menembus) dan didorong maju dekat permukaan depan badan (z≈0, tepi
+     rongga) alih-alih ke dasar rongga — diverifikasi lewat tangkapan layar
+     memakai warna cetus (hijau/sian) yang sengaja mencolok: posisi lama
+     (tengah rongga, dekat dasar) hampir seluruhnya tertutup dinding
+     samping badan sendiri, hanya secuil ujung yang kelihatan. */
+  const permukaanDalamBadan = -(D / 2 - T - 0.004);
+  const JML_KERTAS = 5;
+  const gKertas = new RoundedBoxGeometry(W * 0.46, H * 0.22, 0.005, 2, 0.006);
+  for (let i = 0; i < JML_KERTAS; i++) {
+    const mapBerkas = i === 2;   // satu lembar di tengah tumpukan jadi map
+    const lembar = new THREE.Mesh(gKertas, mapBerkas ? BAHAN.map : BAHAN.kertas);
+    lembar.castShadow = true; lembar.receiveShadow = true;
+    lembar.position.set(
+      (i % 2 === 0 ? 1 : -1) * 0.006 * i,
+      0.20 - i * 0.004,
+      permukaanDalamBadan + 0.068 + i * 0.007,
+    );
+    lembar.rotation.z = (i - (JML_KERTAS - 1) / 2) * 0.035;
+    akar.add(lembar);
+  }
 
   /* Rel jahitan di tepi kanan (+X, sisi yang menghadap kamera) — garis
      sambungan cangkang keras modern, menggantikan bingkai aluminium empat
