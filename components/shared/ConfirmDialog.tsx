@@ -18,7 +18,11 @@ export function ConfirmDialog({
   if (!state) return null;
   return (
     <div
-      className="fixed inset-0 z-[220] flex items-center justify-center"
+      // z tinggi WAJIB: dialog ini dipakai dari dalam modal full-screen
+      // (mis. detail Project Progress ada di z-[9990]) — di bawah itu
+      // konfirmasi ter-render tapi tertutup total, klik jatuh ke modal
+      // di belakangnya dan terasa seperti tombolnya tidak berfungsi.
+      className="fixed inset-0 z-[9996] flex items-center justify-center"
       style={{ background: 'rgba(0,0,0,0.45)' }}
       onClick={onCancel}
     >

@@ -12,12 +12,18 @@ import { logAudit } from './audit';
  *
  * Pemetaan field (dicek langsung dari skema, bukan asumsi):
  *   reminders.project_name    ("Nama Project*")   → progress_projects.name
- *   reminders.address         ("Lokasi Project*") → progress_locations.name
+ *   reminders.address         ("Lokasi Project*") → HANYA syarat pemicu, TIDAK disalin
  *   reminders.sales_name      → sales_name  (proyek & lokasi)
  *   reminders.sales_division  → sales_division
  *   reminders.assign_name          → progress_locations.pic
  *   reminders.progress_start_date  → progress_locations.start_date
  *   reminders.progress_target_date → progress_locations.target_date
+ *
+ * progress_locations.name SENGAJA dibiarkan kosong meski reminder.address
+ * terisi — "Lokasi Project" di form Reminder itu alamat kunjungan, belum
+ * tentu sama dengan nama lokasi kerja yang dipakai tim lapangan di Project
+ * Progress (mis. per lantai/gedung/area). Diisi manual di sana, judul
+ * project di atasnya tetap ikut nama project seperti biasa.
  *
  * due_date TIDAK dipakai sebagai target selesai — itu tanggal kunjungan
  * (sekaligus titik mulai garansi), bukan rentang pengerjaan. Timeline diisi
@@ -139,10 +145,12 @@ export async function syncRemindersToProjectProgress(
         .select('id', { count: 'exact', head: true })
         .eq('project_id', projectId);
 
-      // 3) Draft lokasi. Item Komponen sengaja TIDAK dibuat.
+      // 3) Draft lokasi. name SENGAJA dikosongkan — bukan namaLokasi (alamat
+      //    kunjungan dari Reminder) — supaya diisi manual di Project Progress.
+      //    Item Komponen sengaja TIDAK dibuat.
       const { error: errLokasi } = await supabase.from('progress_locations').insert([{
         project_id: projectId,
-        name: namaLokasi,
+        name: '',
         pic: r.assign_name || null,
         status: 'in_progress',
         progress: 0,
