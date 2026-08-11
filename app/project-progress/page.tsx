@@ -865,9 +865,11 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
   const [removedLoc, setRemovedLoc] = useState<string[]>([]);
   const [removedComp, setRemovedComp] = useState<string[]>([]);
   const [removedIssue, setRemovedIssue] = useState<string[]>([]);
-  // Draft lokasi tidak membawa created_at/sales_name — dipakai panel Riwayat
-  // per kartu (baris "Lokasi dibuat") lewat lookup ke data asli ini.
+  // Draft lokasi/komponen tidak membawa created_at/sales_name — dipakai
+  // timeline mini per field ("Lokasi dibuat" / "Komponen ditambahkan") lewat
+  // lookup ke data asli ini.
   const origLocById = useMemo(() => new Map(detail.locations.map(l => [l.id, l])), [detail.locations]);
+  const origCompById = useMemo(() => new Map(detail.components.map(c => [c.id, c])), [detail.components]);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   /**
@@ -1245,6 +1247,20 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
                 </select>
               </div>
 
+              {/* Alur perubahan status LOKASI ini — timeline mini menempel
+                  langsung di bawah field-nya, bukan panel ringkasan terpisah. */}
+              {!isNew(loc.id) && (
+                <AuditTrailPanel
+                  key={`loc-status-${loc.id}-${riwayatVersi}`}
+                  targetId={loc.id} modul="project-progress" kompak selaluTerbuka
+                  awal={{
+                    oleh: origLocById.get(loc.id)?.sales_name || detail.project.sales_name || detail.project.created_by || null,
+                    waktu: origLocById.get(loc.id)?.created_at ?? null,
+                    keterangan: 'Lokasi dibuat',
+                  }}
+                />
+              )}
+
               {/* Jadwal lokasi — hanya admin. PIC memperbarui progres, bukan jadwal. */}
               {isFull && (
                 <div className="grid grid-cols-2 gap-2">
@@ -1303,53 +1319,69 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
               </div>
 
               {/* Komponen */}
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-2">
                 {loc.components.map(c => (
-                  <div key={c.id} className="flex items-center gap-1.5">
-                    <select value={c.state} onChange={e => patchComp(loc.id, c.id, { state: e.target.value as ComponentState })}
-                      className="px-1.5 py-1 rounded-md text-[10px] font-bold border border-gray-200 outline-none flex-shrink-0"
-                      style={{ color: COMPONENT_STATE_CONFIG[c.state]?.dot }}>
-                      {COMPONENT_STATES.map(st => (
-                        <option key={st} value={st}>● {COMPONENT_STATE_CONFIG[st].label}</option>
-                      ))}
-                    </select>
-                    {isFull ? (
-                      <input value={c.label} placeholder="Nama komponen"
-                        onChange={e => patchComp(loc.id, c.id, { label: e.target.value })}
-                        className="flex-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-gray-200 focus:border-cyan-500 outline-none" />
-                    ) : (
-                      // PIC hanya mengubah progres — nama komponen dikunci.
-                      <span className="flex-1 px-2 py-1 text-[11px] font-semibold text-gray-700 truncate">{c.label}</span>
-                    )}
+                  <div key={c.id} className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <select value={c.state} onChange={e => patchComp(loc.id, c.id, { state: e.target.value as ComponentState })}
+                        className="px-1.5 py-1 rounded-md text-[10px] font-bold border border-gray-200 outline-none flex-shrink-0"
+                        style={{ color: COMPONENT_STATE_CONFIG[c.state]?.dot }}>
+                        {COMPONENT_STATES.map(st => (
+                          <option key={st} value={st}>● {COMPONENT_STATE_CONFIG[st].label}</option>
+                        ))}
+                      </select>
+                      {isFull ? (
+                        <input value={c.label} placeholder="Nama komponen"
+                          onChange={e => patchComp(loc.id, c.id, { label: e.target.value })}
+                          className="flex-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-gray-200 focus:border-cyan-500 outline-none" />
+                      ) : (
+                        // PIC hanya mengubah progres — nama komponen dikunci.
+                        <span className="flex-1 px-2 py-1 text-[11px] font-semibold text-gray-700 truncate">{c.label}</span>
+                      )}
 
-                    {/* Foto evidence opsional */}
-                    {c.photo_url ? (
-                      <span className="flex items-center gap-1 flex-shrink-0">
-                        <a href={c.photo_url} target="_blank" rel="noopener noreferrer" title="Lihat foto">
-                          <img src={c.photo_thumb_url ?? c.photo_url} alt=""
-                            loading="lazy" decoding="async" width={24} height={24}
-                            className="w-6 h-6 rounded object-cover border border-gray-200" />
-                        </a>
-                        <button onClick={() => patchComp(loc.id, c.id, { photo_url: null, photo_thumb_url: null })}
-                          title="Hapus foto" className="text-gray-300 hover:text-rose-500 text-[10px] font-bold">✕</button>
-                      </span>
-                    ) : (
-                      <label title="Tambah foto evidence (opsional)"
-                        className="flex-shrink-0 cursor-pointer text-[13px] px-1 opacity-50 hover:opacity-100 transition-opacity">
-                        {uploadingComp === c.id ? '⏳' : '📷'}
-                        <input type="file" accept="image/*" className="hidden"
-                          disabled={uploadingComp === c.id}
-                          onChange={e => {
-                            const f = e.target.files?.[0];
-                            if (f) uploadPhoto(loc.id, c.id, f);
-                            e.target.value = '';
-                          }} />
-                      </label>
-                    )}
+                      {/* Foto evidence opsional */}
+                      {c.photo_url ? (
+                        <span className="flex items-center gap-1 flex-shrink-0">
+                          <a href={c.photo_url} target="_blank" rel="noopener noreferrer" title="Lihat foto">
+                            <img src={c.photo_thumb_url ?? c.photo_url} alt=""
+                              loading="lazy" decoding="async" width={24} height={24}
+                              className="w-6 h-6 rounded object-cover border border-gray-200" />
+                          </a>
+                          <button onClick={() => patchComp(loc.id, c.id, { photo_url: null, photo_thumb_url: null })}
+                            title="Hapus foto" className="text-gray-300 hover:text-rose-500 text-[10px] font-bold">✕</button>
+                        </span>
+                      ) : (
+                        <label title="Tambah foto evidence (opsional)"
+                          className="flex-shrink-0 cursor-pointer text-[13px] px-1 opacity-50 hover:opacity-100 transition-opacity">
+                          {uploadingComp === c.id ? '⏳' : '📷'}
+                          <input type="file" accept="image/*" className="hidden"
+                            disabled={uploadingComp === c.id}
+                            onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) uploadPhoto(loc.id, c.id, f);
+                              e.target.value = '';
+                            }} />
+                        </label>
+                      )}
 
-                    {isFull && (
-                      <button onClick={() => removeComp(loc.id, c.id)}
-                        className="text-gray-300 hover:text-rose-500 font-bold px-1 flex-shrink-0">✕</button>
+                      {isFull && (
+                        <button onClick={() => removeComp(loc.id, c.id)}
+                          className="text-gray-300 hover:text-rose-500 font-bold px-1 flex-shrink-0">✕</button>
+                      )}
+                    </div>
+
+                    {/* Alur perubahan KOMPONEN ini — timeline mini menempel
+                        langsung di bawah barisnya sendiri. */}
+                    {!isNew(c.id) && (
+                      <AuditTrailPanel
+                        key={`comp-${c.id}-${riwayatVersi}`}
+                        targetId={c.id} modul="project-progress" kompak selaluTerbuka
+                        awal={{
+                          oleh: origLocById.get(loc.id)?.sales_name || detail.project.sales_name || detail.project.created_by || null,
+                          waktu: origCompById.get(c.id)?.created_at ?? null,
+                          keterangan: 'Komponen ditambahkan',
+                        }}
+                      />
                     )}
                   </div>
                 ))}
@@ -1368,24 +1400,6 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
                   className="accent-rose-500" />
                 Tandai sebagai catatan penting
               </label>
-
-              {/* Riwayat MILIK KARTU INI SAJA — status lokasi & state tiap
-                  komponennya, bukan digabung dengan lokasi lain. Lokasi baru
-                  (belum disimpan, id "new-…") belum punya baris audit_trail
-                  sama sekali, jadi panelnya otomatis diam (sembunyikanBilaKosong). */}
-              {!isNew(loc.id) && (
-                <AuditTrailPanel
-                  key={`${loc.id}-${riwayatVersi}`}
-                  targetId={[loc.id, ...loc.components.filter(c => !isNew(c.id)).map(c => c.id)]}
-                  modul="project-progress"
-                  judul="Riwayat Lokasi Ini"
-                  awal={{
-                    oleh: origLocById.get(loc.id)?.sales_name || detail.project.sales_name || detail.project.created_by || null,
-                    waktu: origLocById.get(loc.id)?.created_at ?? null,
-                    keterangan: 'Lokasi dibuat',
-                  }}
-                />
-              )}
             </div>
           );
         })}
