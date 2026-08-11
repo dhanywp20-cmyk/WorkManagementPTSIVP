@@ -41,19 +41,6 @@ export default function ProjectProgressPage() {
   const [detail, setDetail] = useState<ProjectDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  const [showRiwayat, setShowRiwayat] = useState(false);
-  /**
-   * Dinaikkan tiap kali draft berhasil disimpan, dipakai sebagai `key` panel
-   * Riwayat supaya ia RE-MOUNT dan mengambil ulang datanya.
-   *
-   * Tanpa ini panel bisa basi: idsKey (dependency effect AuditTrailPanel)
-   * dibangun dari daftar id lokasi & komponen, dan status/state BERUBAH tidak
-   * mengubah daftar id itu sendiri — jadi effect-nya tidak pernah tahu ada
-   * baris audit_trail baru untuk id yang sama. Padahal pertanyaan yang justru
-   * paling sering muncul persis setelah menekan Simpan: "baris riwayat yang
-   * baru saja tercatat itu, mana?"
-   */
-  const [riwayatVersi, setRiwayatVersi] = useState(0);
 
   // Modal form proyek
   const [projectForm, setProjectForm] = useState<Partial<ProgressProject> | null>(null);
@@ -617,14 +604,6 @@ export default function ProjectProgressPage() {
                     {editMode ? (editorDirty ? '● Keluar Edit' : '✓ Selesai Edit') : '✏️ Edit'}
                   </button>
                 )}
-                <button onClick={() => setShowRiwayat(o => !o)}
-                  title={showRiwayat ? 'Sembunyikan riwayat perubahan' : 'Tampilkan riwayat perubahan'}
-                  className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white transition-all"
-                  style={showRiwayat
-                    ? { background: '#fff', color: THEME.colorLight }
-                    : { background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)' }}>
-                  🕘 Riwayat
-                </button>
                 <button onClick={() => exportProjectToExcel(detail)}
                   className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white transition-all"
                   style={{ background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)' }}>
@@ -636,66 +615,25 @@ export default function ProjectProgressPage() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-hidden p-5 relative z-10 flex gap-4 items-start">
-              <div className="flex-1 min-w-0 h-full overflow-y-auto">
-                {detailLoading ? (
-                  <div className="rounded-2xl py-12 text-center"
-                    style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)' }}>
-                    <p className="text-sm font-bold text-gray-500">Memuat detail…</p>
-                  </div>
-                ) : editMode && detailMode ? (
-                  <DetailEditor
-                    // key: paksa draft dibangun ulang HANYA saat ganti proyek /
-                    // setelah simpan — bukan tiap render, supaya tidak berkedip.
-                    key={`${detail.project.id}-${detail.locations.length}-${detail.components.length}-${detail.issues.length}`}
-                    detail={detail} teamUsers={teamUsers} salesUsers={salesUsers}
-                    mode={detailMode ?? 'pic'} editableIds={detailEditableIds}
-                    currentUser={currentUser}
-                    onSaved={() => { setEditorDirty(false); reloadDetail(); fetchProjects(); setRiwayatVersi(v => v + 1); }}
-                    onDirtyChange={setEditorDirty}
-                    notify={notify} setConfirmState={setConfirmState} />
-                ) : (
-                  <ProjectDetailView detail={detail} />
-                )}
-              </div>
-
-              {/* Riwayat digabung dari TIGA sumber id: proyek, seluruh lokasi,
-                  dan seluruh komponennya — supaya satu garis waktu menjawab
-                  "kapan status ini berubah" pada level mana pun, bukan hanya
-                  di proyek induknya. Panel ini yang menjawab bagian kedua dari
-                  timeline: bukan cuma jadwal yang DITETAPKAN di awal (start_date/
-                  target_date, sudah ada), tapi juga PERUBAHAN sungguhan yang
-                  terjadi sepanjang jalan. */}
-              {showRiwayat && !detailLoading && (
-                <div className="w-full max-w-sm flex-shrink-0 self-stretch rounded-2xl shadow-2xl overflow-hidden flex flex-col"
-                  style={{ background: '#fff', border: '1px solid rgba(255,255,255,0.8)' }}>
-                  <div className="px-4 py-3 flex-shrink-0 flex items-center justify-between"
-                    style={{ background: 'linear-gradient(135deg,#475569,#334155)' }}>
-                    <div className="min-w-0">
-                      <h3 className="text-white font-bold text-sm">🕘 Riwayat Perubahan</h3>
-                      <p className="text-slate-300 text-[11px] mt-0.5 truncate">{detail.project.name}</p>
-                    </div>
-                    <button onClick={() => setShowRiwayat(false)}
-                      className="w-7 h-7 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">✕</button>
-                  </div>
-                  <div className="flex-1 overflow-y-auto">
-                    <AuditTrailPanel
-                      key={riwayatVersi}
-                      targetId={[
-                        detail.project.id,
-                        ...detail.locations.map(l => l.id),
-                        ...detail.components.map(c => c.id),
-                      ]}
-                      modul="project-progress"
-                      selaluTerbuka sembunyikanBilaKosong={false}
-                      awal={{
-                        oleh: detail.project.sales_name || detail.project.created_by || null,
-                        waktu: detail.project.created_at ?? null,
-                        keterangan: 'Proyek dibuat',
-                      }}
-                    />
-                  </div>
+            <div className="flex-1 overflow-y-auto p-5 relative z-10">
+              {detailLoading ? (
+                <div className="rounded-2xl py-12 text-center"
+                  style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)' }}>
+                  <p className="text-sm font-bold text-gray-500">Memuat detail…</p>
                 </div>
+              ) : editMode && detailMode ? (
+                <DetailEditor
+                  // key: paksa draft dibangun ulang HANYA saat ganti proyek /
+                  // setelah simpan — bukan tiap render, supaya tidak berkedip.
+                  key={`${detail.project.id}-${detail.locations.length}-${detail.components.length}-${detail.issues.length}`}
+                  detail={detail} teamUsers={teamUsers} salesUsers={salesUsers}
+                  mode={detailMode ?? 'pic'} editableIds={detailEditableIds}
+                  currentUser={currentUser}
+                  onSaved={() => { setEditorDirty(false); reloadDetail(); fetchProjects(); }}
+                  onDirtyChange={setEditorDirty}
+                  notify={notify} setConfirmState={setConfirmState} />
+              ) : (
+                <ProjectDetailView detail={detail} />
               )}
             </div>
           </div>
@@ -927,8 +865,19 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
   const [removedLoc, setRemovedLoc] = useState<string[]>([]);
   const [removedComp, setRemovedComp] = useState<string[]>([]);
   const [removedIssue, setRemovedIssue] = useState<string[]>([]);
+  // Draft lokasi tidak membawa created_at/sales_name — dipakai panel Riwayat
+  // per kartu (baris "Lokasi dibuat") lewat lookup ke data asli ini.
+  const origLocById = useMemo(() => new Map(detail.locations.map(l => [l.id, l])), [detail.locations]);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  /**
+   * Dinaikkan tiap kali draft berhasil disimpan, dipakai sebagai bagian `key`
+   * panel Riwayat per kartu lokasi supaya ia RE-MOUNT dan mengambil ulang
+   * datanya — status/state yang berubah tidak mengubah id lokasi/komponen itu
+   * sendiri, jadi effect di dalam AuditTrailPanel tidak akan tahu ada baris
+   * baru untuk id yang sama tanpa dipaksa remount begini.
+   */
+  const [riwayatVersi, setRiwayatVersi] = useState(0);
 
   const touch = () => { if (!dirty) { setDirty(true); onDirtyChange(true); } };
 
@@ -1190,6 +1139,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
 
       setRemovedLoc([]); setRemovedComp([]); setRemovedIssue([]);
       setDirty(false); onDirtyChange(false);
+      setRiwayatVersi(v => v + 1);
       notify('success', 'Perubahan tersimpan.');
       onSaved();
     } catch (e) {
@@ -1418,6 +1368,24 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
                   className="accent-rose-500" />
                 Tandai sebagai catatan penting
               </label>
+
+              {/* Riwayat MILIK KARTU INI SAJA — status lokasi & state tiap
+                  komponennya, bukan digabung dengan lokasi lain. Lokasi baru
+                  (belum disimpan, id "new-…") belum punya baris audit_trail
+                  sama sekali, jadi panelnya otomatis diam (sembunyikanBilaKosong). */}
+              {!isNew(loc.id) && (
+                <AuditTrailPanel
+                  key={`${loc.id}-${riwayatVersi}`}
+                  targetId={[loc.id, ...loc.components.filter(c => !isNew(c.id)).map(c => c.id)]}
+                  modul="project-progress"
+                  judul="Riwayat Lokasi Ini"
+                  awal={{
+                    oleh: origLocById.get(loc.id)?.sales_name || detail.project.sales_name || detail.project.created_by || null,
+                    waktu: origLocById.get(loc.id)?.created_at ?? null,
+                    keterangan: 'Lokasi dibuat',
+                  }}
+                />
+              )}
             </div>
           );
         })}
