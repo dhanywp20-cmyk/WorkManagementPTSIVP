@@ -115,7 +115,7 @@ export default function SharedProjectPage({ params }: { params: { token: string 
               </div>
             </div>
 
-            <ProjectDetailView detail={detail} />
+            <ProjectDetailView detail={detail} maxKolomLokasi={3} />
 
             <p className="self-center rounded-full px-4 py-2 text-[10px] font-semibold my-2"
               style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}`, color: PALETTE.inkFaint }}>

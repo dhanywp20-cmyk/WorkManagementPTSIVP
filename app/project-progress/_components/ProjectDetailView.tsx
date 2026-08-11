@@ -19,7 +19,16 @@ import {
  * AuditTrailPanel di bawah dipakai dengan prop `data`, bukan `targetId` saja
  * — itulah yang membuatnya tidak pernah fetch sendiri di halaman ini.
  */
-export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
+export function ProjectDetailView({ detail, maxKolomLokasi = 2 }: {
+  detail: ProjectDetail;
+  /**
+   * Batas atas kolom kartu lokasi — beda konteks, beda ruang yang wajar:
+   * modal in-app (2, ruangnya dibagi sidebar platform) vs halaman share
+   * publik (3, jendela browser penuh). Kolomnya sendiri tetap MENYUSUT di
+   * layar sempit (lihat gridTemplateColumns di bawah) — ini cuma batas ATAS.
+   */
+  maxKolomLokasi?: number;
+}) {
   const { project, locations, components, issues } = detail;
   const sortedLoc = [...locations].sort((a, b) => a.sort_order - b.sort_order);
   const avg = averageProgress(sortedLoc);
@@ -152,15 +161,14 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
         </div>
 
         {/* ── Status per lokasi — kolom menyesuaikan LEBAR WADAHNYA sendiri
-            (bukan breakpoint layar tetap), supaya otomatis benar di dua
-            konteks yang lebarnya beda jauh: modal in-app (sempit, dibatasi
-            sidebar platform) tetap ~2 kolom, sedangkan halaman share publik
-            (tanpa sidebar, jendela browser penuh) bisa sampai 4 kolom. Di
-            layar sempit/mobile otomatis turun ke 1 kolom. */}
+            (bukan breakpoint layar tetap), supaya otomatis benar di layar
+            sempit/mobile (turun ke 1 kolom) TANPA perlu tahu konteksnya.
+            Batas ATAS-nya (maxKolomLokasi) beda per pemanggil — lihat
+            komentar prop di atas. */}
         <div
           className={sortedLoc.length > 1 ? 'grid gap-2.5 items-start' : 'flex flex-col gap-2.5'}
           style={sortedLoc.length > 1
-            ? { gridTemplateColumns: 'repeat(auto-fit, minmax(340px, calc(25% - 8px)))' }
+            ? { gridTemplateColumns: `repeat(auto-fit, minmax(340px, calc(${Math.round(100 / maxKolomLokasi)}% - 8px)))` }
             : undefined}>
           {sortedLoc.length === 0 ? (
             <div className="rounded-md p-8 text-center text-sm font-medium"
@@ -222,8 +230,16 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
                     <div className="rounded-sm overflow-hidden" style={{ border: `1px solid ${PALETTE.border}` }}>
                       {comps.map((c, i) => {
                         const sc = COMPONENT_STATE_CONFIG[c.state] ?? COMPONENT_STATE_CONFIG.pending;
+                        // Stuck/pending disorot kuning penuh sebaris — supaya
+                        // komponen bermasalah langsung kelihatan sekilas mata
+                        // di tengah daftar panjang, bukan cuma lewat teks kecil.
+                        const bermasalah = c.state === 'stuck' || c.state === 'pending';
                         return (
-                          <div key={c.id} style={{ borderTop: i > 0 ? `1px solid ${PALETTE.border}` : 'none', background: PALETTE.surface }}>
+                          <div key={c.id} style={{
+                            borderTop: i > 0 ? `1px solid ${PALETTE.border}` : 'none',
+                            background: bermasalah ? PALETTE.highlight : PALETTE.surface,
+                            borderLeft: bermasalah ? `3px solid ${PALETTE.highlightBorder}` : '3px solid transparent',
+                          }}>
                             <div className="flex items-center gap-2.5 px-2.5 py-2">
                               <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: sc.dot }} />
                               {/* Nama + notif status BERDAMPINGAN — status langsung

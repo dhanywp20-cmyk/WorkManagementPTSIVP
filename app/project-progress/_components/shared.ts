@@ -33,6 +33,13 @@ export const PALETTE = {
   good: '#166534', goodTint: '#e7f6ec', goodBorder: '#b7e4c7',
   warn: '#92400e', warnTint: '#fdf1e2', warnBorder: '#f3d4a3',
   bad: '#9f1239', badTint: '#fde8ee', badBorder: '#f3c1d1',
+  /**
+   * Kuning sorot — SENGAJA beda dari warnTint (amber redup di atas, dipakai
+   * untuk teks/badge). Ini latar baris PENUH untuk komponen stuck/pending,
+   * jadi harus cukup kontras supaya baris bermasalah langsung kelihatan
+   * sekilas mata tanpa perlu membaca teks satu-satu.
+   */
+  highlight: '#fef9c3', highlightBorder: '#fde047',
 } as const;
 
 /** Dipakai pada setiap angka/tanggal/persentase — lihat catatan PALETTE. */

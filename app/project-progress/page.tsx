@@ -647,7 +647,7 @@ export default function ProjectProgressPage() {
                   onDirtyChange={setEditorDirty}
                   notify={notify} setConfirmState={setConfirmState} />
               ) : (
-                <ProjectDetailView detail={detail} />
+                <ProjectDetailView detail={detail} maxKolomLokasi={2} />
               )}
             </div>
           </div>
