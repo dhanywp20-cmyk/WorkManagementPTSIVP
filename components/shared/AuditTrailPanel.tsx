@@ -17,8 +17,9 @@ import { supabase } from '@/lib/supabase';
  * dan riwayatnya muncul di tempat pertanyaannya lahir.
  */
 
-interface AuditEntry {
+export interface AuditEntry {
   id: string;
+  target_id: string;
   user_name: string | null;
   action: string;
   target_name: string | null;
@@ -70,7 +71,7 @@ function labelLangkah(e: AuditEntry): string {
 export function AuditTrailPanel({
   targetId, modul, judul = 'Riwayat Perubahan', batas = 20,
   selaluTerbuka = false, sembunyikanBilaKosong = true, awal = null, turunan = [],
-  kompak = false, arah = 'vertikal',
+  kompak = false, arah = 'vertikal', data,
 }: {
   /**
    * Record yang riwayatnya ditampilkan. Panel diam bila kosong.
@@ -136,9 +137,19 @@ export function AuditTrailPanel({
    * memuat detail lengkap (nilai lama→baru, catatan, siapa).
    */
   arah?: 'vertikal' | 'horizontal';
+  /**
+   * Data siap-pakai — dipakai halaman yang TIDAK BOLEH menyentuh supabase
+   * langsung (mis. ProjectDetailView, karena juga dirender di halaman share
+   * publik tanpa session). Saat diisi, panel TIDAK PERNAH melakukan fetch
+   * sendiri — hanya menyaring `data` (yang sudah diambil pemanggilnya, lewat
+   * server route atau query lain) menurut `targetId`. Diasumsikan sudah
+   * difilter modul-nya oleh pemanggil.
+   */
+  data?: AuditEntry[];
 }) {
-  const [entri, setEntri] = useState<AuditEntry[]>([]);
-  const [memuat, setMemuat] = useState(true);
+  const modeStatis = data !== undefined;
+  const [entriFetch, setEntriFetch] = useState<AuditEntry[]>([]);
+  const [memuatFetch, setMemuatFetch] = useState(!modeStatis);
   const [terbuka, setTerbuka] = useState(selaluTerbuka);
 
   /* Kunci string yang stabil untuk dependency effect. targetId sebagai array
@@ -151,25 +162,35 @@ export function AuditTrailPanel({
     : (targetId ?? '');
 
   useEffect(() => {
+    if (modeStatis) return; // data sudah tersedia — tidak pernah fetch dari supabase.
     const ids = idsKey ? idsKey.split(' ') : [];
-    if (ids.length === 0) { setEntri([]); setMemuat(false); return; }
+    if (ids.length === 0) { setEntriFetch([]); setMemuatFetch(false); return; }
     let batal = false;
     (async () => {
-      setMemuat(true);
+      setMemuatFetch(true);
       let q = supabase
         .from('audit_trail')
-        .select('id, user_name, action, target_name, old_value, new_value, notes, created_at')
+        .select('id, target_id, user_name, action, target_name, old_value, new_value, notes, created_at')
         .order('created_at', { ascending: false })
         .limit(batas);
       q = ids.length === 1 ? q.eq('target_id', ids[0]) : q.in('target_id', ids);
       if (modul) q = q.eq('module', modul);
-      const { data } = await q;
-      if (!batal) { setEntri((data ?? []) as AuditEntry[]); setMemuat(false); }
+      const { data: hasil } = await q;
+      if (!batal) { setEntriFetch((hasil ?? []) as AuditEntry[]); setMemuatFetch(false); }
     })();
     return () => { batal = true; };
-  }, [idsKey, modul, batas]);
+  }, [modeStatis, idsKey, modul, batas]);
 
   if (!targetId || (Array.isArray(targetId) && targetId.length === 0)) return null;
+
+  const ids = idsKey ? idsKey.split(' ') : [];
+  const entri = modeStatis
+    ? (data ?? [])
+        .filter(e => ids.includes(e.target_id))
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))
+        .slice(0, batas)
+    : entriFetch;
+  const memuat = modeStatis ? false : memuatFetch;
 
   /**
    * Gabungan yang benar-benar ditampilkan. Baris awal hanya disisipkan bila
@@ -182,14 +203,14 @@ export function AuditTrailPanel({
   for (const t of turunan) {
     if (!t.waktu || aksiTercatat.has(t.aksi)) continue;
     tambahan.push({
-      id: `__turunan_${t.aksi}__`, user_name: t.oleh, action: t.aksi,
+      id: `__turunan_${t.aksi}__`, target_id: ids[0] ?? '', user_name: t.oleh, action: t.aksi,
       target_name: null, old_value: null, new_value: null,
       notes: t.keterangan ?? null, created_at: t.waktu,
     });
   }
   if (awal?.waktu && !aksiTercatat.has('create')) {
     tambahan.push({
-      id: '__awal__', user_name: awal.oleh, action: 'create',
+      id: '__awal__', target_id: ids[0] ?? '', user_name: awal.oleh, action: 'create',
       target_name: null, old_value: null, new_value: null,
       notes: awal.keterangan ?? null, created_at: awal.waktu,
     });

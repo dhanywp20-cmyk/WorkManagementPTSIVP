@@ -96,6 +96,23 @@ export async function GET(
     componentsData = data ?? [];
   }
 
+  // Riwayat status/state se-proyek — dipakai ProjectDetailView untuk
+  // menggambar alur mendatar "kapan status berubah". Diambil di server
+  // (service_role) persis seperti data lain di atas, supaya halaman publik
+  // tetap tidak pernah menyentuh supabase langsung.
+  const idsRiwayat = [project.id, ...locationIds, ...componentsData.map((c) => (c as { id: string }).id)];
+  let auditTrail: unknown[] = [];
+  if (idsRiwayat.length > 0) {
+    const { data, error } = await supabase
+      .from('audit_trail')
+      .select('id, target_id, user_name, action, target_name, old_value, new_value, notes, created_at')
+      .in('target_id', idsRiwayat).eq('module', 'project-progress')
+      .order('created_at', { ascending: false }).limit(500);
+    // Riwayat gagal dimuat bukan alasan menolak seluruh halaman — proyeknya
+    // tetap tampil, hanya alur mendatarnya kosong.
+    if (!error) auditTrail = data ?? [];
+  }
+
   return NextResponse.json({
     // share_token & created_by sengaja tidak dikirim ke halaman publik.
     project: {
@@ -106,5 +123,6 @@ export async function GET(
     locations,
     components: componentsData,
     issues: issueRes.data ?? [],
+    auditTrail,
   }, { headers: NO_STORE });
 }

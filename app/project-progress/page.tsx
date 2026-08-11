@@ -14,7 +14,7 @@ import { ProjectDetailView, SectionLabel } from './_components/ProjectDetailView
 import { exportProjectToExcel } from './_components/excel-export';
 import {
   THEME, ProgressProject, ProgressLocation, ProgressComponent, ProgressIssue,
-  ProjectDetail, ProjectStatus, ComponentState, Severity,
+  ProjectDetail, ProjectStatus, ComponentState, Severity, ProgressAuditEntry,
   STATUS_CONFIG, SEVERITY_CONFIG, COMPONENT_STATE_CONFIG, COMPONENT_STATES,
   averageProgress, componentsOf, formatDatetime, computeProgress, stateBreakdown,
   newShareToken, shareUrl, canEditProjectProgress,
@@ -166,7 +166,18 @@ export default function ProjectProgressPage() {
         .select('*').in('location_id', locations.map(l => l.id)).order('sort_order');
       components = (data ?? []) as ProgressComponent[];
     }
-    setDetail({ project, locations, components, issues: (iRes.data ?? []) as ProgressIssue[] });
+    // Riwayat status/state se-proyek — dipakai ProjectDetailView (tampilan
+    // "Lihat") untuk menggambar alur mendatar tanpa komponennya fetch sendiri.
+    const idsRiwayat = [project.id, ...locations.map(l => l.id), ...components.map(c => c.id)];
+    let auditTrail: ProgressAuditEntry[] = [];
+    if (idsRiwayat.length > 0) {
+      const { data } = await supabase.from('audit_trail')
+        .select('id, target_id, user_name, action, target_name, old_value, new_value, notes, created_at')
+        .in('target_id', idsRiwayat).eq('module', 'project-progress')
+        .order('created_at', { ascending: false }).limit(500);
+      auditTrail = (data ?? []) as ProgressAuditEntry[];
+    }
+    setDetail({ project, locations, components, issues: (iRes.data ?? []) as ProgressIssue[], auditTrail });
     setDetailLoading(false);
   };
 

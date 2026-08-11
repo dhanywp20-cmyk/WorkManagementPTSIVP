@@ -93,12 +93,36 @@ export interface ProgressIssue {
   created_at: string;
 }
 
+/**
+ * Satu baris riwayat perubahan (audit_trail). Bentuknya sama dengan AuditEntry
+ * di components/shared/AuditTrailPanel — didefinisikan ulang di sini supaya
+ * berkas tipe murni ini tidak perlu bergantung pada modul komponen UI.
+ */
+export interface ProgressAuditEntry {
+  id: string;
+  target_id: string;
+  user_name: string | null;
+  action: string;
+  target_name: string | null;
+  old_value: string | null;
+  new_value: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
 /** Bundel lengkap 1 proyek — dipakai modal detail & halaman share view-only. */
 export interface ProjectDetail {
   project: ProgressProject;
   locations: ProgressLocation[];
   components: ProgressComponent[];
   issues: ProgressIssue[];
+  /**
+   * Riwayat status lokasi & state komponen se-proyek — dipakai alur mendatar
+   * di ProjectDetailView (lewat prop `data` AuditTrailPanel, BUKAN fetch
+   * sendiri, karena komponen itu juga dirender di halaman share publik).
+   * Opsional: DetailEditor tidak mengisi ini, masih pakai fetch langsung.
+   */
+  auditTrail?: ProgressAuditEntry[];
 }
 
 // ─── Konfigurasi tampilan ────────────────────────────────────────────────────

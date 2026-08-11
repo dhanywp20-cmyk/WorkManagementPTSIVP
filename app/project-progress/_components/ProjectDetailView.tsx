@@ -1,6 +1,6 @@
 'use client';
 
-import { MiniPieChart } from '@/components/shared';
+import { MiniPieChart, AuditTrailPanel } from '@/components/shared';
 import {
   ProjectDetail, STATUS_CONFIG, COMPONENT_STATE_CONFIG, SEVERITY_CONFIG,
   STATUS_PIE_COLOR, THEME, averageProgress, componentsOf, ProjectStatus,
@@ -13,7 +13,11 @@ import {
  * Dipakai dua tempat:
  *   1. Modal detail di halaman Project Progress (in-app)
  *   2. Halaman share view-only publik
- * Karena dipakai publik, komponen ini tidak boleh menyentuh session/supabase.
+ * Karena dipakai publik, komponen ini tidak boleh melakukan query supabase
+ * ATAU membaca session sendiri — semua datanya, TERMASUK riwayat perubahan
+ * (detail.auditTrail), harus sudah diambilkan pemanggil dan lewat props.
+ * AuditTrailPanel di bawah dipakai dengan prop `data`, bukan `targetId` saja
+ * — itulah yang membuatnya tidak pernah fetch sendiri di halaman ini.
  */
 export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
   const { project, locations, components, issues } = detail;
@@ -153,6 +157,14 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
                     </span>
                   </div>
 
+                  {/* Alur perubahan status LOKASI ini — kapan status berubah,
+                      bukan cuma status TERKINI di atas. */}
+                  <AuditTrailPanel
+                    targetId={loc.id} modul="project-progress" data={detail.auditTrail ?? []}
+                    kompak selaluTerbuka arah="horizontal"
+                    awal={{ oleh: null, waktu: loc.created_at, keterangan: 'Lokasi dibuat' }}
+                  />
+
                   {/* Progres dihitung dari komposisi status komponen, bukan input manual */}
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
@@ -185,26 +197,35 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
                   </div>
 
                   {comps.length > 0 && (
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-2">
                       {comps.map(c => {
                         const sc = COMPONENT_STATE_CONFIG[c.state] ?? COMPONENT_STATE_CONFIG.pending;
                         return (
-                          <div key={c.id} className="flex items-start gap-2">
-                            <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: sc.dot }} />
-                            <span className="text-[11px] font-semibold leading-snug flex-1" style={{ color: sc.text }}>{c.label}</span>
-                            {/* Foto evidence opsional — klik untuk buka ukuran penuh */}
-                            {c.photo_url && (
-                              <a href={c.photo_url} target="_blank" rel="noopener noreferrer"
-                                title="Lihat foto evidence" className="flex-shrink-0">
-                                {/* Render THUMB, bukan foto penuh — kotak 28px tidak
-                                    perlu berkas ratusan KB. lazy: foto di kartu yang
-                                    belum terlihat tidak ikut diunduh. */}
-                                <img src={c.photo_thumb_url ?? c.photo_url} alt={`Evidence ${c.label}`}
-                                  loading="lazy" decoding="async" width={28} height={28}
-                                  className="w-7 h-7 rounded object-cover border border-gray-200 hover:opacity-80 transition-opacity" />
-                              </a>
-                            )}
-                            <span className="text-[9px] font-bold flex-shrink-0 mt-0.5" style={{ color: sc.dot }}>{sc.label}</span>
+                          <div key={c.id} className="flex flex-col gap-0.5">
+                            <div className="flex items-start gap-2">
+                              <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: sc.dot }} />
+                              <span className="text-[11px] font-semibold leading-snug flex-1" style={{ color: sc.text }}>{c.label}</span>
+                              {/* Foto evidence opsional — klik untuk buka ukuran penuh */}
+                              {c.photo_url && (
+                                <a href={c.photo_url} target="_blank" rel="noopener noreferrer"
+                                  title="Lihat foto evidence" className="flex-shrink-0">
+                                  {/* Render THUMB, bukan foto penuh — kotak 28px tidak
+                                      perlu berkas ratusan KB. lazy: foto di kartu yang
+                                      belum terlihat tidak ikut diunduh. */}
+                                  <img src={c.photo_thumb_url ?? c.photo_url} alt={`Evidence ${c.label}`}
+                                    loading="lazy" decoding="async" width={28} height={28}
+                                    className="w-7 h-7 rounded object-cover border border-gray-200 hover:opacity-80 transition-opacity" />
+                                </a>
+                              )}
+                              <span className="text-[9px] font-bold flex-shrink-0 mt-0.5" style={{ color: sc.dot }}>{sc.label}</span>
+                            </div>
+                            {/* Alur perubahan KOMPONEN ini — menempel langsung di
+                                bawah barisnya sendiri, sama seperti mode edit. */}
+                            <AuditTrailPanel
+                              targetId={c.id} modul="project-progress" data={detail.auditTrail ?? []}
+                              kompak selaluTerbuka arah="horizontal"
+                              awal={{ oleh: null, waktu: c.created_at, keterangan: 'Komponen ditambahkan' }}
+                            />
                           </div>
                         );
                       })}
