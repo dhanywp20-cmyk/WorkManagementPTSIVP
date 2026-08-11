@@ -151,9 +151,17 @@ export function ProjectDetailView({ detail }: { detail: ProjectDetail }) {
           </div>
         </div>
 
-        {/* ── Status per lokasi — split 2 kolom begitu lokasinya lebih dari
-            1, supaya tidak jadi satu kolom panjang ke bawah. ── */}
-        <div className={sortedLoc.length > 1 ? 'grid grid-cols-1 xl:grid-cols-2 gap-2.5 items-start' : 'flex flex-col gap-2.5'}>
+        {/* ── Status per lokasi — kolom menyesuaikan LEBAR WADAHNYA sendiri
+            (bukan breakpoint layar tetap), supaya otomatis benar di dua
+            konteks yang lebarnya beda jauh: modal in-app (sempit, dibatasi
+            sidebar platform) tetap ~2 kolom, sedangkan halaman share publik
+            (tanpa sidebar, jendela browser penuh) bisa sampai 4 kolom. Di
+            layar sempit/mobile otomatis turun ke 1 kolom. */}
+        <div
+          className={sortedLoc.length > 1 ? 'grid gap-2.5 items-start' : 'flex flex-col gap-2.5'}
+          style={sortedLoc.length > 1
+            ? { gridTemplateColumns: 'repeat(auto-fit, minmax(340px, calc(25% - 8px)))' }
+            : undefined}>
           {sortedLoc.length === 0 ? (
             <div className="rounded-md p-8 text-center text-sm font-medium"
               style={{ background: PALETTE.surface, border: `1px dashed ${PALETTE.borderStrong}`, color: PALETTE.inkFaint }}>

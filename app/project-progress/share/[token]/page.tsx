@@ -49,7 +49,7 @@ export default function SharedProjectPage({ params }: { params: { token: string 
       <div className="relative z-10">
       {/* Header — versi statis (tanpa aksi) */}
       <header className="sticky top-0 z-50" style={{ background: PALETTE.surface, borderBottom: `1px solid ${PALETTE.border}` }}>
-        <div className="max-w-[1200px] mx-auto px-6 py-3.5 flex items-center justify-between gap-4 flex-wrap">
+        <div className="max-w-[1800px] mx-auto px-6 py-3.5 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
               style={{ background: PALETTE.accentTint, color: THEME.color }}>
@@ -71,7 +71,7 @@ export default function SharedProjectPage({ params }: { params: { token: string 
         </div>
       </header>
 
-      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6">
+      <main className="max-w-[1800px] mx-auto px-4 sm:px-6 py-6">
         {loading && (
           <div className="rounded-md p-12 text-center" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
             <div className="inline-block w-8 h-8 rounded-full border-[3px] animate-spin"
