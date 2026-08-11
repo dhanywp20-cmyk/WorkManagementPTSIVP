@@ -24,6 +24,14 @@ const D = 0.26;   // tebal, ke arah kamera
 const T = 0.022;  // tebal cangkang
 const RJ = 0.027; // jari-jari kaki bulat di keempat sudut bawah
 
+/* Koper dirender lebih kecil dari geometrinya sendiri lewat SATU faktor skala
+   di gKoper (bukan mengecilkan W/H/D/T/RJ satu-satu) — semua jarak jalan,
+   penghalang, dan offset sabuk/gagang yang dihitung dari konstanta di atas
+   tetap konsisten satu sama lain; yang berubah cuma seberapa besar hasil
+   akhirnya tampak di layar. Posisi Y disesuaikan dengan faktor yang sama
+   supaya kaki tetap menapak lantai, bukan melayang. */
+const KOPER_SKALA = 0.76;
+
 /* ── Waktu (detik) ─────────────────────────────────────────────────────── */
 export const WAKTU = {
   mulai: 0.50, gulirSelesai: 2.40,
@@ -130,11 +138,11 @@ const BAHAN = {
 };
 
 /* Dua pilihan warna.
-   'tan'    — kulit cokelat karamel seperti koper acuan: matte, hampir tanpa
-              kilau logam. Bingkai belahnya aluminium, sabuk sudutnya cokelat
-              tua. Inilah yang dipakai secara bawaan.
-   'merah'  — varian yang mengambil keluarga warna panel kiri halaman login,
-              untuk dibandingkan. */
+   'merah' — cangkang keras marun tua mengilap, ciri koper hardshell modern
+             (foto acuan): jahitan kembar di tengah muka, bukan sabuk kulit
+             sudut. Dipakai secara bawaan — lihat pakaiPalet('merah') di bawah.
+   'tan'   — varian kulit cokelat karamel lama, dipertahankan sebagai pilihan
+             lain lewat opsi `palet` di buatAdegan(), tidak dipakai bawaan. */
 export const PALET = {
   tan: {
     cangkang:      { color: 0xa9682e, roughness: 0.62, metalness: 0.04 },
@@ -143,11 +151,14 @@ export const PALET = {
     kulit:         { color: 0xd8dde3, roughness: 0.26, metalness: 0.9 },
     lapisan:       { color: 0xe9e2d4 },
   },
+  /* Koper keras mengilap ala foto acuan: marun tua (bukan merah cerah),
+     roughness rendah supaya sorotan cahaya kunci membentuk highlight
+     sempit & tajam khas cangkang polikarbonat — bukan permukaan matte. */
   merah: {
-    cangkang:      { color: 0xa5143a, roughness: 0.36, metalness: 0.16 },
-    cangkangTutup: { color: 0x8d1130, roughness: 0.38, metalness: 0.16 },
-    cangkangGelap: { color: 0x6d0c24, roughness: 0.44, metalness: 0.14 },
-    kulit:         { color: 0xccd2d9, roughness: 0.26, metalness: 0.88 },
+    cangkang:      { color: 0x74101f, roughness: 0.20, metalness: 0.18 },
+    cangkangTutup: { color: 0x630c1a, roughness: 0.22, metalness: 0.18 },
+    cangkangGelap: { color: 0x470813, roughness: 0.28, metalness: 0.16 },
+    kulit:         { color: 0xd7dbe0, roughness: 0.22, metalness: 0.9 },
     lapisan:       { color: 0xe6e0d6 },
   },
 };
@@ -193,12 +204,13 @@ function belahan(arah: number) {
   lapis.castShadow = false;
   g.add(lapis);
 
-  // Sabuk sudut: dua bilah cokelat tua di kiri dan kanan muka, menonjol
-  // sedikit — ciri koper kulit klasik, bukan alur cangkang keras.
+  // Jahitan kembar: dua alur tipis dekat tengah muka, ciri cangkang keras
+  // mengilap ala foto acuan — menggantikan sabuk kulit sudut yang dipakai
+  // desain sebelumnya (koper kulit klasik).
   for (const sx of [-1, 1]) {
-    const sabuk = kotak(0.062, H + 0.006, dz - T + 0.016, BAHAN.cangkangGelap, 0.014);
-    sabuk.position.set(sx * (W / 2 - 0.095), 0, arah * (dz - T + 0.016) / 2);
-    g.add(sabuk);
+    const jahitan = kotak(0.014, H - 0.05, dz - T + 0.012, BAHAN.cangkangGelap, 0.006);
+    jahitan.position.set(sx * 0.052, 0, arah * (dz - T + 0.012) / 2);
+    g.add(jahitan);
   }
   return g;
 }
@@ -350,7 +362,10 @@ export function buatAdegan(canvas: HTMLCanvasElement, opsi: OpsiAdegan = {}) {
     new THREE.BoxGeometry(0.042, 0.024, 0.44),
     new THREE.MeshStandardMaterial({ color: 0x8b8f96, roughness: 0.7, metalness: 0.2, transparent: true, opacity: 0.26 }),
   );
-  penghalang.position.set(X_TABRAK + W / 2 + 0.02, 0.014, -0.05);
+  // Posisi disesuaikan KOPER_SKALA: tepi depan koper (visual) sekarang lebih
+  // dekat ke pusat jalannya karena badannya diperkecil — tanpa ini "tabrakan"
+  // akan terlihat terjadi di udara kosong, sebelum koper benar-benar sampai.
+  penghalang.position.set(X_TABRAK + KOPER_SKALA * (W / 2 + 0.02), KOPER_SKALA * 0.014, KOPER_SKALA * -0.05);
   penghalang.receiveShadow = true; penghalang.castShadow = true;
   scene.add(penghalang);
 
@@ -370,6 +385,12 @@ export function buatAdegan(canvas: HTMLCanvasElement, opsi: OpsiAdegan = {}) {
   gSentak.add(gGuling);
   gJalan.add(gSentak);
   scene.add(gJalan);
+  // Satu skala di simpul TERLUAR rig: seluruh anak (poros sentak/guling,
+  // badan koper, kaki, gagang) ikut mengecil proporsional lewat matriks
+  // dunia Three.js — tidak perlu menyentuh W/H/D/T/RJ atau geometri manapun
+  // satu-satu. gJalan.position.x (jalur jalan) tidak ikut terpengaruh: skala
+  // sebuah objek tidak pernah mengubah arti posisinya sendiri di ruang induk.
+  gJalan.scale.setScalar(KOPER_SKALA);
 
   /* Cahaya yang muncul dari dalam koper. */
   const cahaya = new THREE.Sprite(new THREE.SpriteMaterial({
@@ -415,7 +436,11 @@ export function buatAdegan(canvas: HTMLCanvasElement, opsi: OpsiAdegan = {}) {
     gJalan.position.x = x;
 
     // Kaki bulat: sudut = jarak / jari-jari. Tidak ada peluang selip.
-    const sudutKaki = -s / RJ;
+    // jarak (s) berada di ruang JALAN (tidak ikut skala gJalan — lihat catatan
+    // di atas), sedang jari-jari kaki yang benar-benar tampak di layar sudah
+    // mengecil KOPER_SKALA kali; tanpa pembagi ini kakinya akan berputar
+    // seolah masih berjari-jari besar dan terlihat sedikit menyeret.
+    const sudutKaki = -s / (RJ * KOPER_SKALA);
     for (const k of koper.kaki) k.rotation.z = sudutKaki;
 
     // Suspensi: sedikit tenggelam saat melaju, plus getar halus sebelum tabrak.
