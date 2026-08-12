@@ -6,6 +6,7 @@ import {
   STATUS_PIE_COLOR, THEME, PALETTE, fontMono, averageProgress, componentsOf, ProjectStatus,
   computeProgress, stateBreakdown, picBreakdown, problemComponentBreakdown, overdueLocations,
   timelineInfo, formatDate, timelineBreakdown,
+  projectHealth, locationHealth, scheduleProgress,
 } from './shared';
 
 /**
@@ -54,8 +55,45 @@ export function ProjectDetailView({ detail, maxKolomLokasi = 2 }: {
   const RING_C = 314.16;
   const ringOffset = RING_C * (1 - avg / 100);
 
+  const health = projectHealth(project, sortedLoc);
+  const schedule = scheduleProgress(sortedLoc);
+  const variance = schedule === null ? null : avg - schedule;
+  const selesaiCount = sortedLoc.filter(l => l.status === 'done').length;
+
   return (
     <div className="flex flex-col gap-4">
+
+      {/* ── Project Health + KPI ── */}
+      <div className="rounded-md p-4 flex flex-col gap-3" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: PALETTE.inkFaint }}>
+            Project Health
+          </p>
+          <span className="px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap"
+            style={{ background: health.bg, color: health.color, border: `1px solid ${health.border}` }}
+            title={health.reason}>
+            {health.label} — {health.reason}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          {[
+            { label: 'Physical', value: `${avg}%` },
+            { label: 'Schedule', value: schedule === null ? '—' : `${schedule}%` },
+            {
+              label: 'Variance', value: variance === null ? '—' : `${variance > 0 ? '+' : ''}${variance}%`,
+              color: variance === null ? undefined : variance < 0 ? PALETTE.bad : PALETTE.good,
+            },
+            { label: 'Isu Terbuka', value: String(issues.length), color: issues.length > 0 ? PALETTE.warn : undefined },
+            { label: 'Overtime', value: `${telat.length} site`, color: telat.length > 0 ? PALETTE.bad : undefined },
+            { label: 'Lokasi Selesai', value: `${selesaiCount}/${sortedLoc.length}` },
+          ].map(k => (
+            <div key={k.label} className="rounded-sm px-2.5 py-2" style={{ background: PALETTE.surfaceSunken }}>
+              <p className="text-[9px] font-bold uppercase tracking-wide" style={{ color: PALETTE.inkFaint }}>{k.label}</p>
+              <p className="text-[15px] font-bold" style={{ ...fontMono, color: k.color ?? PALETTE.ink }}>{k.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* ── Timeline proyek ──
           Bar "Progres Keseluruhan" dihapus: angkanya sudah tampil di ring
@@ -176,7 +214,7 @@ export function ProjectDetailView({ detail, maxKolomLokasi = 2 }: {
               Belum ada lokasi pada proyek ini.
             </div>
           ) : sortedLoc.map(loc => {
-            const cfg = STATUS_CONFIG[loc.status] ?? STATUS_CONFIG.in_progress;
+            const locHealth = locationHealth(loc);
             const comps = componentsOf(components, loc.id);
             return (
               <div key={loc.id} className="rounded-md overflow-hidden"
@@ -201,9 +239,9 @@ export function ProjectDetailView({ detail, maxKolomLokasi = 2 }: {
                       })()}
                     </div>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold flex-shrink-0"
-                    style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
-                    {cfg.label}
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold flex-shrink-0" title={locHealth.reason}
+                    style={{ background: locHealth.bg, color: locHealth.color, border: `1px solid ${locHealth.border}` }}>
+                    {locHealth.label}
                   </span>
                 </div>
 

@@ -21,6 +21,7 @@ import {
   projectStatusBreakdown, projectProgressBreakdown, projectIssueBreakdown,
   resolveEditorMode, editableLocationIds, type EditorMode,
   timelineInfo, formatDate, resolveVisibility,
+  projectHealth, type ProgressLocationLite,
 } from './_components/shared';
 import { isAssignablePTSTeam } from '@/lib/teams';
 import { compressImage } from '@/lib/image-compress';
@@ -30,7 +31,7 @@ export default function ProjectProgressPage() {
   const canEdit = canEditProjectProgress(currentUser?.role);
 
   const [projects, setProjects] = useState<ProgressProject[]>([]);
-  const [locCount, setLocCount] = useState<Record<string, { total: number; avg: number; issues: number }>>({});
+  const [locCount, setLocCount] = useState<Record<string, { total: number; avg: number; issues: number; locsLite: ProgressLocationLite[] }>>({});
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<Notif | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
@@ -98,7 +99,9 @@ export default function ProjectProgressPage() {
     }
 
     const pQuery = supabase.from('progress_projects').select('*').order('created_at', { ascending: false });
-    const lQuery = supabase.from('progress_locations').select('project_id,progress');
+    // status/start_date/target_date ditambahkan (bukan cuma progress) supaya
+    // Project Health bisa dihitung di listing tanpa query terpisah per proyek.
+    const lQuery = supabase.from('progress_locations').select('project_id,progress,status,start_date,target_date');
     const iQuery = supabase.from('progress_issues').select('project_id');
 
     const [pRes, lRes, iRes] = await Promise.all([
@@ -109,13 +112,15 @@ export default function ProjectProgressPage() {
     const list = (pRes.data ?? []) as ProgressProject[];
     setProjects(list);
 
-    const agg: Record<string, { total: number; avg: number; issues: number }> = {};
-    for (const p of list) agg[p.id] = { total: 0, avg: 0, issues: 0 };
+    const agg: Record<string, { total: number; avg: number; issues: number; locsLite: ProgressLocationLite[] }> = {};
+    for (const p of list) agg[p.id] = { total: 0, avg: 0, issues: 0, locsLite: [] };
     const sums: Record<string, number> = {};
-    for (const l of (lRes.data ?? []) as { project_id: string; progress: number }[]) {
+    type LiteRow = { project_id: string; progress: number; status: ProjectStatus; start_date: string | null; target_date: string | null };
+    for (const l of (lRes.data ?? []) as LiteRow[]) {
       if (!agg[l.project_id]) continue;
       agg[l.project_id].total += 1;
       sums[l.project_id] = (sums[l.project_id] ?? 0) + (l.progress ?? 0);
+      agg[l.project_id].locsLite.push({ status: l.status, progress: l.progress, start_date: l.start_date, target_date: l.target_date });
     }
     for (const id of Object.keys(agg)) {
       agg[id].avg = agg[id].total > 0 ? Math.round(sums[id] / agg[id].total) : 0;
@@ -446,16 +451,22 @@ export default function ProjectProgressPage() {
                 <div className="md:hidden divide-y divide-gray-100">
                   {filtered.map(p => {
                     const cfg = STATUS_CONFIG[p.status] ?? STATUS_CONFIG.in_progress;
-                    const agg = locCount[p.id] ?? { total: 0, avg: 0, issues: 0 };
+                    const agg = locCount[p.id] ?? { total: 0, avg: 0, issues: 0, locsLite: [] };
+                    const health = projectHealth(p, agg.locsLite);
                     return (
                       <MobileListCard key={p.id}
                         title={p.name}
                         meta={<span>{formatDatetime(p.updated_at)}</span>}
                         accent={cfg.border}
                         badges={
-                          <MobileCardBadge style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
-                            {cfg.label}
-                          </MobileCardBadge>
+                          <>
+                            <MobileCardBadge style={{ background: health.bg, color: health.color, border: `1px solid ${health.border}` }}>
+                              {health.label}
+                            </MobileCardBadge>
+                            <MobileCardBadge style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
+                              {cfg.label}
+                            </MobileCardBadge>
+                          </>
                         }
                         fields={[
                           { label: 'Client', value: p.client || '—' },
@@ -479,18 +490,19 @@ export default function ProjectProgressPage() {
                   <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
                     <colgroup>
                       <col style={{ width: '3%' }} />
-                      <col style={{ width: '19%' }} />
-                      <col style={{ width: '11%' }} />
-                      <col style={{ width: '14%' }} />
+                      <col style={{ width: '15%' }} />
                       <col style={{ width: '9%' }} />
-                      <col style={{ width: '14%' }} />
+                      <col style={{ width: '13%' }} />
                       <col style={{ width: '8%' }} />
-                      <col style={{ width: '10%' }} />
+                      <col style={{ width: '8%' }} />
                       <col style={{ width: '12%' }} />
+                      <col style={{ width: '8%' }} />
+                      <col style={{ width: '9%' }} />
+                      <col style={{ width: '11%' }} />
                     </colgroup>
                     <thead>
                       <tr style={{ background: PALETTE.surfaceSunken, borderBottom: `1px solid ${PALETTE.border}` }}>
-                        {['No', 'Nama Project', 'Client', 'Sales', 'Status', 'Timeline', 'Lokasi', 'Progres'].map((h, i) => (
+                        {['No', 'Nama Project', 'Client', 'Sales', 'Status', 'Health', 'Timeline', 'Lokasi', 'Progres'].map((h, i) => (
                           <th key={h} className={`px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200 ${i === 0 ? 'text-center' : 'text-left'}`}>
                             {h}
                           </th>
@@ -501,7 +513,8 @@ export default function ProjectProgressPage() {
                     <tbody>
                       {filtered.map((p, idx) => {
                         const cfg = STATUS_CONFIG[p.status] ?? STATUS_CONFIG.in_progress;
-                        const agg = locCount[p.id] ?? { total: 0, avg: 0, issues: 0 };
+                        const agg = locCount[p.id] ?? { total: 0, avg: 0, issues: 0, locsLite: [] };
+                        const health = projectHealth(p, agg.locsLite);
                         return (
                           <tr key={p.id}
                             className="border-b border-gray-200 hover:bg-cyan-50/40 transition-colors cursor-pointer"
@@ -537,6 +550,12 @@ export default function ProjectProgressPage() {
                               <span className="px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap"
                                 style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
                                 {cfg.label}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3 border-r border-gray-200 align-middle">
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap" title={health.reason}
+                                style={{ background: health.bg, color: health.color, border: `1px solid ${health.border}` }}>
+                                {health.label}
                               </span>
                             </td>
                             <td className="px-3 py-3 border-r border-gray-200 align-middle">

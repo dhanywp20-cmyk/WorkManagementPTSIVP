@@ -305,8 +305,12 @@ export function stateBreakdown(components: { state: ComponentState }[]): StateBr
 /**
  * Rata-rata progres seluruh lokasi. Dibulatkan ke bilangan bulat agar cocok
  * dengan angka yang ditampilkan di kartu ringkasan.
+ *
+ * Parameter sengaja struktural (bukan ProgressLocation[] penuh) — dipakai
+ * juga oleh halaman listing yang hanya menarik kolom `progress` per lokasi
+ * (lihat projectHealth di bawah).
  */
-export function averageProgress(locations: ProgressLocation[]): number {
+export function averageProgress(locations: { progress: number }[]): number {
   if (locations.length === 0) return 0;
   const total = locations.reduce((s, l) => s + (l.progress ?? 0), 0);
   return Math.round(total / locations.length);
@@ -387,9 +391,128 @@ export function timelineInfo(
   return { ...base, state: 'on_track', label: `${daysLeft} hari lagi`, color: '#0369a1', bg: '#e0f2fe' };
 }
 
-/** Lokasi yang sudah lewat target dan belum selesai. */
-export function overdueLocations(locations: ProgressLocation[]): ProgressLocation[] {
+/**
+ * Lokasi yang sudah lewat target dan belum selesai.
+ * Generik & struktural — jadi berlaku juga untuk lokasi "lite" dari query
+ * listing yang cuma menarik status/tanggal, bukan ProgressLocation penuh.
+ */
+export function overdueLocations<T extends { start_date: string | null; target_date: string | null; status: ProjectStatus }>(
+  locations: T[],
+): T[] {
   return locations.filter(l => timelineInfo(l).state === 'overdue');
+}
+
+// ─── Project Health & Location Health ────────────────────────────────────────
+
+export type HealthLevel = 'good' | 'at_risk' | 'critical';
+
+export interface HealthInfo {
+  level: HealthLevel;
+  label: string;
+  color: string;
+  bg: string;
+  border: string;
+  /** Alasan singkat kenapa level ini diberikan — ditampilkan di tooltip/subtext badge. */
+  reason: string;
+}
+
+export const HEALTH_CONFIG: Record<HealthLevel, { label: string; color: string; bg: string; border: string }> = {
+  good:     { label: 'Good',     color: PALETTE.good, bg: PALETTE.goodTint, border: PALETTE.goodBorder },
+  at_risk:  { label: 'At Risk',  color: PALETTE.warn, bg: PALETTE.warnTint, border: PALETTE.warnBorder },
+  critical: { label: 'Critical', color: PALETTE.bad,  bg: PALETTE.badTint,  border: PALETTE.badBorder },
+};
+
+/** Bentuk minimal lokasi yang dibutuhkan untuk hitung Health — dipakai juga oleh query listing yang ringkas. */
+export type ProgressLocationLite = { status: ProjectStatus; progress: number; start_date: string | null; target_date: string | null };
+
+/**
+ * Progres jadwal (0-100) = rata-rata "posisi hari ini pada rentang mulai→
+ * target" seluruh lokasi yang PUNYA kedua tanggal. Lokasi tanpa jadwal tidak
+ * ikut dihitung — bukan berarti 0%, tapi memang tidak bisa diukur.
+ * null bila TIDAK ADA lokasi yang punya jadwal lengkap sama sekali.
+ */
+export function scheduleProgress(locations: ProgressLocationLite[]): number | null {
+  const withDates = locations
+    .map(l => timelineInfo(l).elapsedPercent)
+    .filter((p): p is number => p !== null);
+  if (withDates.length === 0) return null;
+  return Math.round(withDates.reduce((s, p) => s + p, 0) / withDates.length);
+}
+
+/**
+ * Kesehatan proyek — GOOD / AT RISK / CRITICAL dengan alasan singkat.
+ * DIHITUNG saat tampil (seperti timelineInfo), bukan kolom tersimpan, supaya
+ * nilainya tidak pernah basi.
+ *
+ * Urutan pemeriksaan (yang lebih parah menang):
+ *   1. Proyek/lokasi Blocked                    → Critical
+ *   2. ≥2 lokasi overtime, atau tertinggal ≥25% dari jadwal → Critical
+ *   3. 1 lokasi overtime, atau tertinggal ≥10%   → At Risk
+ *   4. Ada lokasi jatuh tempo ≤3 hari lagi       → At Risk
+ *   5. Selain itu                                → Good
+ */
+export function projectHealth(
+  project: { status: ProjectStatus }, locations: ProgressLocationLite[],
+): HealthInfo {
+  if (project.status === 'blocked') {
+    return { ...HEALTH_CONFIG.critical, level: 'critical', reason: 'Proyek berstatus Blocked' };
+  }
+  if (project.status === 'done') {
+    return { ...HEALTH_CONFIG.good, level: 'good', reason: 'Proyek selesai' };
+  }
+
+  const blockedLoc = locations.filter(l => l.status === 'blocked').length;
+  if (blockedLoc > 0) {
+    return { ...HEALTH_CONFIG.critical, level: 'critical', reason: `${blockedLoc} lokasi Blocked` };
+  }
+
+  const physical = averageProgress(locations);
+  const schedule = scheduleProgress(locations);
+  const variance = schedule === null ? null : physical - schedule;
+  const overdue = overdueLocations(locations).length;
+
+  if (overdue >= 2 || (variance !== null && variance <= -25)) {
+    return {
+      ...HEALTH_CONFIG.critical, level: 'critical',
+      reason: overdue >= 2 ? `${overdue} lokasi overtime` : `Tertinggal ${Math.abs(variance!)}% dari jadwal`,
+    };
+  }
+  if (overdue === 1 || (variance !== null && variance <= -10)) {
+    return {
+      ...HEALTH_CONFIG.at_risk, level: 'at_risk',
+      reason: overdue === 1 ? '1 lokasi overtime' : `Tertinggal ${Math.abs(variance!)}% dari jadwal`,
+    };
+  }
+  const dueSoon = locations.filter(l => timelineInfo(l).state === 'due_soon').length;
+  if (dueSoon > 0) {
+    return { ...HEALTH_CONFIG.at_risk, level: 'at_risk', reason: `${dueSoon} lokasi jatuh tempo segera` };
+  }
+  return {
+    ...HEALTH_CONFIG.good, level: 'good',
+    reason: variance !== null ? 'Sesuai atau di depan jadwal' : 'Belum ada indikasi masalah',
+  };
+}
+
+/**
+ * Kesehatan 1 lokasi — gabungan status kerja (Blocked/Done/In Progress) dan
+ * status jadwal (overdue/due_soon) jadi SATU badge, menggantikan dua badge
+ * terpisah yang sebelumnya harus dibaca berdampingan.
+ */
+export function locationHealth(location: ProgressLocationLite): HealthInfo {
+  if (location.status === 'blocked') {
+    return { ...HEALTH_CONFIG.critical, level: 'critical', reason: 'Blocked' };
+  }
+  if (location.status === 'done') {
+    return { ...HEALTH_CONFIG.good, level: 'good', reason: 'Selesai' };
+  }
+  const tl = timelineInfo(location);
+  if (tl.state === 'overdue') {
+    return { ...HEALTH_CONFIG.critical, level: 'critical', reason: tl.label };
+  }
+  if (tl.state === 'due_soon') {
+    return { ...HEALTH_CONFIG.at_risk, level: 'at_risk', reason: tl.label };
+  }
+  return { ...HEALTH_CONFIG.good, level: 'good', reason: tl.label };
 }
 
 /** Warna & urutan tampil tiap status jadwal untuk pie chart. */
