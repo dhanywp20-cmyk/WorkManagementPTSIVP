@@ -52,11 +52,22 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Ambil user ────────────────────────────────────────────────────────
-    const { data: user, error: userErr } = await supabase
+    // access_level (toggle Full Access) opsional — kolom baru, belum tentu
+    // sudah ada di database (sql/user-full-access-toggle.sql belum dijalankan).
+    // Coba sertakan dulu; kalau gagal (kolom belum ada), jatuh balik TANPA
+    // kolom itu supaya login tidak pernah ikut gagal gara-gara ini.
+    let { data: user, error: userErr } = await supabase
       .from('users')
       .select('id, username, full_name, role, team_type, sales_division, jabatan, phone_number, allowed_menus, kpi_enabled, access_level')
       .eq('username', username)
       .single();
+    if (userErr) {
+      ({ data: user, error: userErr } = await supabase
+        .from('users')
+        .select('id, username, full_name, role, team_type, sales_division, jabatan, phone_number, allowed_menus, kpi_enabled')
+        .eq('username', username)
+        .single());
+    }
 
     if (userErr || !user) {
       await supabase.from('login_attempts').insert({ username, ip_address: ip, success: false });
