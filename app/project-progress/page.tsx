@@ -812,7 +812,7 @@ export default function ProjectProgressPage() {
  * dipisahkan antara INSERT dan UPDATE.
  */
 
-type DraftComponent = { id: string; label: string; state: ComponentState; photo_url: string | null; photo_thumb_url: string | null };
+type DraftComponent = { id: string; label: string; state: ComponentState; weight: number; photo_url: string | null; photo_thumb_url: string | null };
 type DraftLocation = {
   id: string; name: string; pic: string | null; status: ProjectStatus;
   note: string | null; note_flag: boolean;
@@ -838,7 +838,7 @@ function buildDraft(detail: ProjectDetail): { locations: DraftLocation[]; issues
         start_date: l.start_date, target_date: l.target_date,
         sales_name: l.sales_name, sales_division: l.sales_division,
         components: componentsOf(detail.components, l.id)
-          .map(c => ({ id: c.id, label: c.label, state: c.state, photo_url: c.photo_url ?? null, photo_thumb_url: c.photo_thumb_url ?? null })),
+          .map(c => ({ id: c.id, label: c.label, state: c.state, weight: c.weight ?? 1, photo_url: c.photo_url ?? null, photo_thumb_url: c.photo_thumb_url ?? null })),
       })),
     issues: [...detail.issues]
       .sort((a, b) => a.sort_order - b.sort_order)
@@ -935,7 +935,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
   const addComp = (locId: string) => {
     touch();
     setLocations(prev => prev.map(l => l.id !== locId ? l : {
-      ...l, components: [...l.components, { id: tempId(), label: '', state: 'pending', photo_url: null, photo_thumb_url: null }],
+      ...l, components: [...l.components, { id: tempId(), label: '', state: 'pending', weight: 1, photo_url: null, photo_thumb_url: null }],
     }));
   };
   const removeComp = (locId: string, compId: string) => {
@@ -1102,7 +1102,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
         if (newComps.length) {
           const { data, error } = await supabase.from('progress_components').insert(
             newComps.map((c, ci) => ({
-              location_id: realLocId, label: c.label.trim(), state: c.state,
+              location_id: realLocId, label: c.label.trim(), state: c.state, weight: c.weight,
               photo_url: c.photo_url, photo_thumb_url: c.photo_thumb_url,
               sort_order: l.components.indexOf(c) >= 0 ? l.components.indexOf(c) : ci,
             })),
@@ -1115,7 +1115,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
         for (const c of l.components) {
           if (isNew(c.id) || !c.label.trim()) continue;
           const { error } = await supabase.from('progress_components')
-            .update({ label: c.label.trim(), state: c.state, photo_url: c.photo_url, photo_thumb_url: c.photo_thumb_url, sort_order: l.components.indexOf(c) })
+            .update({ label: c.label.trim(), state: c.state, weight: c.weight, photo_url: c.photo_url, photo_thumb_url: c.photo_thumb_url, sort_order: l.components.indexOf(c) })
             .eq('id', c.id);
           if (error) throw error;
           const before = origComp.get(c.id);
@@ -1330,6 +1330,15 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
                           <option key={st} value={st}>● {COMPONENT_STATE_CONFIG[st].label}</option>
                         ))}
                       </select>
+                      {isFull && (
+                        <input type="number" min={0.1} step={0.1} value={c.weight}
+                          title="Bobot komponen ini dalam progres lokasi (default 1)"
+                          onChange={e => {
+                            const n = parseFloat(e.target.value);
+                            patchComp(loc.id, c.id, { weight: Number.isFinite(n) && n > 0 ? n : 1 });
+                          }}
+                          className="w-10 px-1 py-1 rounded-md text-[10px] font-bold border border-gray-200 outline-none flex-shrink-0 text-center" />
+                      )}
                       {isFull ? (
                         <input value={c.label} placeholder="Nama komponen"
                           onChange={e => patchComp(loc.id, c.id, { label: e.target.value })}

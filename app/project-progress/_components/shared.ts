@@ -53,7 +53,9 @@ export type ProjectStatus = 'in_progress' | 'done' | 'blocked';
  * (lihat computeProgress) — bukan diisi manual.
  */
 export type ComponentState = 'done' | 'progress' | 'pending' | 'stuck';
-export type Severity = 'tinggi' | 'sedang' | 'rendah';
+export type Severity = 'kritis' | 'tinggi' | 'sedang' | 'rendah';
+export type IssueStatus = 'open' | 'in_progress' | 'waiting_vendor' | 'waiting_client' | 'resolved' | 'closed';
+export type ActionStatus = 'open' | 'in_progress' | 'done';
 /** Asal entri: dibuat orang lewat UI, atau otomatis dari Reminder Schedule. */
 export type ProgressOrigin = 'manual' | 'auto_reminder';
 
@@ -116,6 +118,16 @@ export interface ProgressComponent {
    * menggambar kotak 28px berarti mengunduh foto utuh dan menghabiskan egress.
    */
   photo_thumb_url: string | null;
+  /**
+   * Bobot kepentingan komponen ini dalam progres lokasi — komponen yang lebih
+   * kritis (mis. "Server Utama") boleh diberi bobot lebih besar dari yang
+   * sekadar pelengkap (mis. "Kabel Patch"). DEFAULT 1 di DB, sehingga lokasi
+   * yang semua komponennya belum diberi bobot khusus menghasilkan progres
+   * IDENTIK dengan rata-rata biasa (lihat computeProgress).
+   */
+  weight: number;
+  /** System Category bebas teks (Video/Audio/Kamera/dst). Belum dipakai UI filter. */
+  category: string | null;
   sort_order: number;
   created_at: string;
 }
@@ -127,8 +139,32 @@ export interface ProgressIssue {
   issue: string;
   severity: Severity;
   note: string | null;
+  /** Penanggung jawab penyelesaian isu. */
+  pic: string | null;
+  status: IssueStatus;
+  due_date: string | null;
+  root_cause: string | null;
+  action_plan: string | null;
+  resolution: string | null;
+  resolved_at: string | null;
+  /** Penaut opsional ke lokasi/komponen spesifik — location_label tetap dipertahankan untuk isu lintas lokasi. */
+  location_id: string | null;
+  component_id: string | null;
   sort_order: number;
   created_at: string;
+}
+
+export interface ProgressAction {
+  id: string;
+  issue_id: string;
+  description: string;
+  pic: string | null;
+  target_date: string | null;
+  status: ActionStatus;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  completed_at: string | null;
 }
 
 /**
@@ -187,9 +223,25 @@ export const COMPONENT_STATE_CONFIG: Record<ComponentState, {
 export const COMPONENT_STATES = ['done', 'progress', 'pending', 'stuck'] as const;
 
 export const SEVERITY_CONFIG: Record<Severity, { label: string; color: string; bg: string; border: string }> = {
+  kritis: { label: 'Kritis', color: '#7f1d1d', bg: '#fee2e2', border: '#f87171' },
   tinggi: { label: 'Tinggi', color: '#9f1239', bg: '#ffe4e6', border: '#fda4af' },
   sedang: { label: 'Sedang', color: '#b45309', bg: '#fef3c7', border: '#fcd34d' },
   rendah: { label: 'Rendah', color: '#475569', bg: '#f1f5f9', border: '#cbd5e1' },
+};
+
+export const ISSUE_STATUS_CONFIG: Record<IssueStatus, { label: string; color: string; bg: string }> = {
+  open:            { label: 'Terbuka',          color: '#9f1239', bg: '#ffe4e6' },
+  in_progress:     { label: 'Diproses',         color: '#0369a1', bg: '#e0f2fe' },
+  waiting_vendor:  { label: 'Tunggu Vendor',    color: '#92400e', bg: '#fdf1e2' },
+  waiting_client:  { label: 'Tunggu Klien',     color: '#92400e', bg: '#fdf1e2' },
+  resolved:        { label: 'Terselesaikan',    color: '#065f46', bg: '#d1fae5' },
+  closed:          { label: 'Ditutup',          color: '#475569', bg: '#f1f5f9' },
+};
+
+export const ACTION_STATUS_CONFIG: Record<ActionStatus, { label: string; color: string; bg: string }> = {
+  open:        { label: 'Belum Mulai', color: '#92400e', bg: '#fdf1e2' },
+  in_progress: { label: 'Diproses',    color: '#0369a1', bg: '#e0f2fe' },
+  done:        { label: 'Selesai',     color: '#065f46', bg: '#d1fae5' },
 };
 
 /** Warna pie chart — sinkron dengan STATUS_CONFIG.border. */
@@ -203,15 +255,27 @@ export const STATUS_PIE_COLOR: Record<ProjectStatus, string> = {
 
 /**
  * Progres sebuah lokasi — DIHITUNG dari komposisi status komponennya, bukan
- * diisi manual. Selesai dihitung penuh, Proses setengah, Pending & Stuck nol.
+ * diisi manual. Selesai dihitung penuh, Proses setengah, Pending & Stuck nol —
+ * masing-masing dikalikan bobot kepentingan komponen (`weight`, DEFAULT 1 di
+ * DB) sebelum dirata-ratakan, sehingga komponen yang lebih kritis menyumbang
+ * lebih banyak ke persentase.
+ *
+ * `weight` opsional pada parameter: komponen tanpa bobot eksplisit dianggap 1,
+ * sehingga lokasi lama (sebelum kolom weight ada) menghasilkan angka IDENTIK
+ * dengan rata-rata biasa sebelumnya.
  * Lokasi tanpa komponen = 0% (belum ada yang bisa diukur).
  */
-export function computeProgress(components: { state: ComponentState }[]): number {
+export function computeProgress(components: { state: ComponentState; weight?: number }[]): number {
   if (components.length === 0) return 0;
-  const earned = components.reduce(
-    (s, c) => s + (COMPONENT_STATE_CONFIG[c.state]?.weight ?? 0), 0,
-  );
-  return Math.round((earned / components.length) * 100);
+  let earned = 0;
+  let totalWeight = 0;
+  for (const c of components) {
+    const w = c.weight ?? 1;
+    earned += (COMPONENT_STATE_CONFIG[c.state]?.weight ?? 0) * w;
+    totalWeight += w;
+  }
+  if (totalWeight <= 0) return 0;
+  return Math.round((earned / totalWeight) * 100);
 }
 
 export interface StateBreakdown {
