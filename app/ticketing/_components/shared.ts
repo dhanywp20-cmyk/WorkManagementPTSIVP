@@ -119,6 +119,7 @@ export interface User {
   allowed_menus?: string[];
   jabatan?: string | null;
   is_internal_sales?: boolean;
+  access_level?: string;
 }
 
 export interface TeamMember {

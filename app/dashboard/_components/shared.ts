@@ -13,6 +13,8 @@ export interface User {
   kpi_enabled?: boolean;  // true = masuk roster KPI, false = dikecualikan
   created_at?: string;    // used to calculate days pending for Pending Approval users
   is_internal_sales?: boolean; // Guest/Sales internal (IVP/MVI) vs external — untuk routing pipeline
+  /** 'full' | 'guest' — toggle akses setara admin di modul data. Lihat lib/constants.ts hasFullAccess(). */
+  access_level?: string;
 }
 
 export interface MenuItem {

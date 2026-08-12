@@ -13,6 +13,8 @@ export interface User {
   jabatan?: string | null;
   sales_division?: string | null;
   phone_number?: string | null;
+  team_type?: string | null;
+  access_level?: string | null;
 }
 
 export interface Material {

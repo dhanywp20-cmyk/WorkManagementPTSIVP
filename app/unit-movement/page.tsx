@@ -8,6 +8,7 @@ import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, Pag
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { User, MovementLog, EVENTS, COLORS, splitTypeLines, fmtDate } from './_components/shared';
 import { logAudit } from '@/lib/audit';
+import { hasFullAccess } from '@/lib/constants';
 import { ViewModal } from './_components/ViewModal';
 import { AddEditModal } from './_components/AddEditModal';
 
@@ -91,7 +92,9 @@ function UnitMovementPageInner() {
     notify('success','Log berhasil dihapus!'); fetchLogs();
   };
 
-  const isAdmin   = ['admin','superadmin'].includes(currentUser?.role?.toLowerCase()??'');
+  // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
+  // (lihat lib/constants.ts hasFullAccess).
+  const isAdmin   = hasFullAccess(currentUser);
   const canAddLog = isAdmin || ['team','team_pts','marketing','guest'].includes(currentUser?.role?.toLowerCase()??'');
 
   const availableYears = useMemo(()=>{

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { getSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
+import { hasFullAccess } from '@/lib/constants';
 import {
   PiketRow, KegiatanEntry, UserRow, DayOfWeek,
   DAYS_OF_WEEK, DAY_COLOR, TEAM_LABEL,
@@ -57,7 +58,10 @@ function PiketShowroomPageInner() {
   const wk=toKey(weekStart);
 
   useEffect(()=>{ const u=getSession(); if(u) setCurrentUser(u as unknown as UserRow); },[]);
-  const isAdmin=currentUser&&['admin','superadmin'].includes(currentUser.role?.toLowerCase()||'');
+  // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
+  // (lihat lib/constants.ts hasFullAccess) — mis. Manager PTS yang mengelola
+  // jadwal piket timnya sendiri.
+  const isAdmin=hasFullAccess(currentUser);
 
   const fetchData=useCallback(async()=>{
     setLoading(true);

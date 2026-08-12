@@ -9,12 +9,14 @@ import { PageHeader, MobileListCard, MobileCardBadge, MiniSpark, MonthBarChart, 
 } from '@/components/shared';
 import { notifyKPIAlert } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
+import { hasFullAccess } from '@/lib/constants';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface KPIUser {
   id: string; full_name: string; role: string;
   team_type?: string; jabatan?: string; allowed_menus?: string[];
+  access_level?: string;
 }
 
 interface KPIMember {
@@ -667,7 +669,10 @@ export default function KPITeamPage() {
       const role    = currentUser.role?.toLowerCase() ?? '';
       const jabatan = currentUser.jabatan ?? '';
       const PTS_TYPES = ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MVI'];
-      if (['admin', 'superadmin'].includes(role)) {
+      // Admin/superadmin ATAU akun Team PTS dengan toggle "Full Access" aktif
+      // (lihat lib/constants.ts hasFullAccess) — lihat seluruh tim, bukan cuma
+      // KPI-nya sendiri atau tim satu jenis PTS saja seperti Supervisor.
+      if (['admin', 'superadmin'].includes(role) || hasFullAccess(currentUser)) {
         setScope({ kind: 'admin' }); setScopeReady(true); return;
       }
       if (role === 'team' && PTS_TYPES.includes(currentUser.team_type ?? '') && jabatan === 'Supervisor') {

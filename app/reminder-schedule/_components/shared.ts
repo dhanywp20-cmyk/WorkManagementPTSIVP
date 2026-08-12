@@ -83,6 +83,7 @@ export interface TeamUser {
   phone_number?: string;
   allowed_menus?: string[];
   jabatan?: string | null;
+  access_level?: string;
 }
 
 export interface GuestUser {

@@ -54,6 +54,7 @@ export interface GuestUser {
   sales_division?: string;
   phone_number?: string;
   allowed_menus?: string[];
+  access_level?: string;
 }
 
 // ── Constants ────────────────────────────────────────────────────────────────

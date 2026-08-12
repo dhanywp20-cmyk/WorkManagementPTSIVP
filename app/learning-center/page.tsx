@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getSession, setSession } from '@/lib/auth';
+import { hasFullAccess } from '@/lib/constants';
 import { User, AdminView, TeamView } from './_components/shared';
 import { AdminDashboard } from './_components/AdminDashboard';
 import { MateriPage } from './_components/MateriPage';
@@ -23,7 +24,7 @@ export default function LearningCenterPage() {
       const parsed = getSession<User>();
       if (!parsed) { setLoading(false); return; }
       try {
-        const { data } = await supabase.from('users').select('id,full_name,username,role,jabatan,sales_division,phone_number,allowed_menus,team_type').eq('id', parsed.id).single();
+        const { data } = await supabase.from('users').select('id,full_name,username,role,jabatan,sales_division,phone_number,allowed_menus,team_type,access_level').eq('id', parsed.id).single();
         const user = data ?? parsed;
         setCurrentUser(user);
         if (data) setSession(user); // refresh session dengan data terbaru
@@ -65,7 +66,9 @@ export default function LearningCenterPage() {
 }
 
 function LearningCenter({ currentUser }: { currentUser: User }) {
-  const isAdmin = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
+  // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
+  // (lihat lib/constants.ts hasFullAccess).
+  const isAdmin = hasFullAccess(currentUser);
   const [adminView, setAdminView] = useState<AdminView>('dashboard');
   const [teamView, setTeamView] = useState<TeamView>('my-quiz');
   const [loading, setLoading] = useState(false);

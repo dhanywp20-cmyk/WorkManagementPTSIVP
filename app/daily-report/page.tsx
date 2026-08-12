@@ -22,6 +22,7 @@ import {
 } from './_components/shared';
 
 import { logAudit } from '@/lib/audit';
+import { hasFullAccess } from '@/lib/constants';
 
 import {
   FormField, SectionHeaderSmall, LoadingScreen, ListEmptyState, Username
@@ -210,7 +211,9 @@ export default function DailyReportPage() {
   const [toast, setToast]             = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const notify = (type: 'success' | 'error', msg: string) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3500); };
 
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
+  // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
+  // (lihat lib/constants.ts hasFullAccess).
+  const isAdmin = hasFullAccess(currentUser);
 
   // ── Init ──────────────────────────────────────────────────────────────────────
   useEffect(() => {

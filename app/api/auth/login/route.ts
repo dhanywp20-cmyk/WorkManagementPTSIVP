@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     // ── Ambil user ────────────────────────────────────────────────────────
     const { data: user, error: userErr } = await supabase
       .from('users')
-      .select('id, username, full_name, role, team_type, sales_division, jabatan, phone_number, allowed_menus, kpi_enabled')
+      .select('id, username, full_name, role, team_type, sales_division, jabatan, phone_number, allowed_menus, kpi_enabled, access_level')
       .eq('username', username)
       .single();
 

@@ -3,6 +3,7 @@ import { MiniSpark } from '@/components/shared';
 import React, { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
+import { hasFullAccess } from '@/lib/constants';
 import { User } from '@/app/dashboard/_components/shared';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -395,7 +396,9 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
       const jabatan = currentUser.jabatan ?? '';
       const PTS_TYPES = ['Team PTS IVP','Team PTS UMP','Team PTS MVI'];
 
-      if (['admin','superadmin'].includes(role)) {
+      // Admin/superadmin ATAU akun Team PTS dengan toggle "Full Access" aktif
+      // (lihat lib/constants.ts hasFullAccess).
+      if (['admin','superadmin'].includes(role) || hasFullAccess(currentUser)) {
         setScope({ kind: 'admin' }); setScopeReady(true); return;
       }
 

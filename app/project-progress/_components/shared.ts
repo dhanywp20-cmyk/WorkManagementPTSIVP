@@ -3,6 +3,7 @@
 // platform lain di Work Management.
 
 import type { CSSProperties } from 'react';
+import { hasFullAccess } from '@/lib/constants';
 
 export const THEME = {
   color: '#0891b2',
@@ -691,10 +692,18 @@ export function shareUrl(token: string): string {
 
 /**
  * Hak edit PENUH Project Progress: buat/hapus proyek & lokasi, sunting rekap
- * isu. Hanya admin & superadmin.
+ * isu. Admin & superadmin, ATAU akun Team PTS dengan toggle "Full Access"
+ * aktif (lihat lib/constants.ts hasFullAccess & sql/user-full-access-toggle.sql).
+ *
+ * teamType & accessLevel opsional — pemanggil lama yang cuma kirim role
+ * (mis. cek admin murni) tetap jalan seperti sebelumnya.
  */
-export function canEditProjectProgress(role: string | null | undefined): boolean {
-  return ['admin', 'superadmin'].includes((role ?? '').toLowerCase());
+export function canEditProjectProgress(
+  role: string | null | undefined,
+  teamType?: string | null,
+  accessLevel?: string | null,
+): boolean {
+  return hasFullAccess({ role, team_type: teamType, access_level: accessLevel });
 }
 
 /**
@@ -715,6 +724,9 @@ export type Visibility =
 export function resolveVisibility(
   role: string | null | undefined, fullName: string | null | undefined,
 ): Visibility {
+  // Catatan: role 'team' polos (bukan cuma admin/superadmin) SUDAH dapat
+  // scope 'all' sejak dulu — beda dengan canEditProjectProgress (yang butuh
+  // Full Access untuk EDIT). Di sini hanya soal visibilitas BACA data.
   const r = (role ?? '').toLowerCase();
   if (['admin', 'superadmin', 'team'].includes(r)) return { scope: 'all' };
   return { scope: 'own_sales', salesName: (fullName ?? '').trim() };
@@ -754,8 +766,9 @@ export function isPicOfLocation(
  */
 export function editableLocationIds(
   locations: ProgressLocation[], role: string | null | undefined, fullName: string | null | undefined,
+  teamType?: string | null, accessLevel?: string | null,
 ): Set<string> {
-  if (canEditProjectProgress(role)) return new Set(locations.map(l => l.id));
+  if (canEditProjectProgress(role, teamType, accessLevel)) return new Set(locations.map(l => l.id));
   // PIC (team) maupun Sales yang tercatat sama-sama boleh menyentuh lokasinya.
   return new Set(
     locations
@@ -775,8 +788,9 @@ export type EditorMode = 'full' | 'pic';
 
 export function resolveEditorMode(
   locations: ProgressLocation[], role: string | null | undefined, fullName: string | null | undefined,
+  teamType?: string | null, accessLevel?: string | null,
 ): EditorMode | null {
-  if (canEditProjectProgress(role)) return 'full';
+  if (canEditProjectProgress(role, teamType, accessLevel)) return 'full';
   const punyaLokasi = locations.some(
     l => isPicOfLocation(l, fullName) || isSalesOfLocation(l, fullName),
   );

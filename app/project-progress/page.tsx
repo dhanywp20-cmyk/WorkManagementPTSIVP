@@ -28,7 +28,7 @@ import { compressImage } from '@/lib/image-compress';
 
 export default function ProjectProgressPage() {
   const currentUser = useCurrentUser();
-  const canEdit = canEditProjectProgress(currentUser?.role);
+  const canEdit = canEditProjectProgress(currentUser?.role, currentUser?.team_type, currentUser?.access_level);
 
   const [projects, setProjects] = useState<ProgressProject[]>([]);
   const [locCount, setLocCount] = useState<Record<string, { total: number; avg: number; issues: number; locsLite: ProgressLocationLite[] }>>({});
@@ -348,11 +348,11 @@ export default function ProjectProgressPage() {
    * minimal satu lokasi, null = hanya lihat.
    */
   const detailMode: EditorMode | null = useMemo(
-    () => detail ? resolveEditorMode(detail.locations, currentUser?.role, currentUser?.full_name) : null,
+    () => detail ? resolveEditorMode(detail.locations, currentUser?.role, currentUser?.full_name, currentUser?.team_type, currentUser?.access_level) : null,
     [detail, currentUser],
   );
   const detailEditableIds = useMemo(
-    () => detail ? editableLocationIds(detail.locations, currentUser?.role, currentUser?.full_name) : new Set<string>(),
+    () => detail ? editableLocationIds(detail.locations, currentUser?.role, currentUser?.full_name, currentUser?.team_type, currentUser?.access_level) : new Set<string>(),
     [detail, currentUser],
   );
 

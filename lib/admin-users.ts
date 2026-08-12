@@ -39,3 +39,13 @@ export async function adminUpdateUser(userId: string, payload: Record<string, un
 export async function adminSetIncentiveInput(userId: string, value: boolean): Promise<Res> {
   return call({ action: 'setIncentiveInput', userId, value });
 }
+
+/**
+ * Toggle "Full Access" — akses setara admin di modul data (Piket Showroom,
+ * Learning Center, KPI Team, Form Review, Ticketing, Reminder Schedule, Daily
+ * Report, Unit Movement, Project Progress) untuk akun Team PTS tertentu.
+ * Lihat lib/constants.ts hasFullAccess() dan sql/user-full-access-toggle.sql.
+ */
+export async function adminSetAccessLevel(userId: string, value: 'full' | 'guest'): Promise<Res> {
+  return call({ action: 'setAccessLevel', userId, value });
+}

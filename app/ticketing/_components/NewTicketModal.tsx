@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { User, TeamMember } from './shared';
 import { SalesPicker } from '@/components/shared';
 import { BRAND_OPTIONS, type Brand } from '@/lib/brand-routing';
+import { hasFullAccess } from '@/lib/constants';
 
 export interface NewTicketForm {
   project_name: string;
@@ -55,7 +56,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
 
   // Admin/superadmin ATAU Manager PTS boleh tentukan penanganan langsung saat create.
   const canAssignDirect = currentUser?.role === 'admin' || currentUser?.role === 'superadmin'
-    || (currentUser?.role === 'team' && (currentUser as any)?.jabatan === 'Manager');
+    || hasFullAccess(currentUser);
 
   // Creator = Sales Internal (guest) → boleh isi SBU (buat ticket atas nama Sales External).
   const isInternalSalesGuest = currentUser?.role === 'guest' && !!users.find(u => u.id === currentUser.id)?.is_internal_sales;

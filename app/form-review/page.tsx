@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { clearSession, getSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import { compressImage } from '@/lib/image-compress';
+import { hasFullAccess } from '@/lib/constants';
 import {
   ReviewCategory, ReviewForm, Reminder, GuestUser,
   PIE_COLORS, REVIEW_TRIGGER_CATEGORIES,
@@ -90,7 +91,10 @@ export default function FormReviewPage() {
   const rfd = (patch: Partial<typeof emptyReviewForm>) =>
     setReviewFormData(prev => ({ ...prev, ...patch }));
 
-  const isAdmin = currentUser?.role === 'admin';
+  // hasFullAccess = admin/superadmin (bug lama: hilang cek 'superadmin' di sini
+  // secara terpisah, sudah ikut benar sekarang), ATAU akun Team PTS dengan
+  // toggle "Full Access" aktif (lihat lib/constants.ts hasFullAccess).
+  const isAdmin = hasFullAccess(currentUser);
   const isGuest = currentUser?.role === 'guest';
   const isTeam = currentUser?.role === 'team';
 
@@ -160,11 +164,12 @@ export default function FormReviewPage() {
         `guest_username.eq.${activeUser.username},sales_name.eq.${activeUser.full_name}`
       );
     }
-    // Team: hanya lihat form review yang di-handle oleh mereka (assigned_to = username)
-    else if (activeUser?.role === 'team') {
+    // Team: hanya lihat form review yang di-handle oleh mereka (assigned_to = username) —
+    // KECUALI akun dengan toggle "Full Access" aktif, yang lihat semua seperti admin.
+    else if (activeUser?.role === 'team' && !hasFullAccess(activeUser)) {
       query = query.eq('assigned_to', activeUser.username);
     }
-    // Admin: lihat semua
+    // Admin (atau Team ber-Full Access): lihat semua
 
     const { data, error } = await query;
     if (error) { setFetchError(error.message); return; }

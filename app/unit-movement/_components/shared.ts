@@ -6,7 +6,7 @@ import { compressImage } from '@/lib/image-compress';
 export interface User {
   id: string; username: string; password: string;
   full_name: string; role: string; team_type?: string;
-  sales_division?: string; allowed_menus?: string[];
+  sales_division?: string; allowed_menus?: string[]; access_level?: string;
 }
 
 export interface MovementLog {

@@ -10,6 +10,7 @@ import { adminCreateUser } from "@/lib/admin-users";
 import { notifyTicketAssigned, createNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
 import { isAssignablePTSTeam } from "@/lib/teams";
+import { hasFullAccess } from "@/lib/constants";
 import { resolveBrandInternals, type Brand } from "@/lib/brand-routing";
 import { compressImage } from "@/lib/image-compress";
 
@@ -623,7 +624,7 @@ function TicketingSystemInner() {
         // Admin & Manager tetap lihat semua.
         const roleLc2 = (activeUser?.role ?? "").toLowerCase();
         const isAdminUser2 = roleLc2 === "admin" || roleLc2 === "superadmin";
-        const isManagerUser2 = roleLc2 === "team" && (activeUser as any)?.jabatan === "Manager";
+        const isManagerUser2 = hasFullAccess(activeUser);
         if (!isAdminUser2 && !isManagerUser2) {
           mergedTickets = mergedTickets.filter((t) =>
             t.status !== "Waiting Approval" &&
@@ -2107,16 +2108,24 @@ function TicketingSystemInner() {
 
   const canCreateTicket = true;
   const canUpdateTicket = currentUser?.role !== "guest";
+  // canAccessAccountSettings TETAP admin/superadmin murni — khusus modal
+  // "Account Management" (buat akun, ganti password, daftar user), bukan
+  // untuk aksi tiket biasa.
   const canAccessAccountSettings = currentUser?.role === "admin" || currentUser?.role === "superadmin";
-  // Manager PTS (role 'team' jabatan 'Manager', mis. Dhany) — boleh approve & assign
-  // ticket (langsung ke team, route ke Supervisor, atau kerjakan sendiri) seperti admin.
-  const isManagerPTS = currentUser?.role === "team" && (currentUser as any)?.jabatan === "Manager";
+  // Akun Team PTS dengan toggle "Full Access" aktif (lihat lib/constants.ts
+  // hasFullAccess) — mis. Dhany (Manager PTS) — boleh approve & assign ticket
+  // (langsung ke team, route ke Supervisor, atau kerjakan sendiri) seperti admin.
+  const isManagerPTS = hasFullAccess(currentUser);
   const canApproveAssign = canAccessAccountSettings || isManagerPTS;
+  // Aksi kelola tiket sehari-hari (hapus, bulk-select, reminder cron, overdue
+  // setting) — BUKAN hak kelola akun. Dipisah dari canAccessAccountSettings
+  // supaya Full Access tidak otomatis dapat modal Account Management.
+  const canManageTickets = canApproveAssign;
 
   const pendingApprovalTickets = useMemo(() => {
-    if (currentUser?.role !== "admin" && currentUser?.role !== "superadmin") return [];
+    if (currentUser?.role !== "admin" && currentUser?.role !== "superadmin" && !isManagerPTS) return [];
     return tickets.filter((t) => t.status === "Waiting Approval");
-  }, [tickets, currentUser]);
+  }, [tickets, currentUser, isManagerPTS]);
 
   const pendingServicesApprovalTickets = useMemo(() => {
     if (currentUserTeamType !== "Team Services") return [];
@@ -2270,7 +2279,7 @@ function TicketingSystemInner() {
           )}
 
           {/* Reminder button */}
-          {canAccessAccountSettings && (
+          {canManageTickets && (
             <button onClick={() => { setShowReminderSchedule(true); setShowAccountSettings(false); setShowNewTicket(false); }} className="flex items-center gap-1.5 text-white text-sm font-bold px-3.5 py-2 rounded-xl transition-all hover:scale-105 hover:opacity-90" style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)", boxShadow: "0 2px 8px rgba(124,58,237,0.3)" }} title={`Reminder: ${getCronDisplay()}`}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -2403,7 +2412,7 @@ function TicketingSystemInner() {
                 <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{ticketsLoading ? "..." : filteredTickets.length}</span>
               </div>
               <div className="flex items-center gap-2 mt-2 sm:mt-0">
-                {canAccessAccountSettings && (
+                {canManageTickets && (
                   <button onClick={() => { setSelectMode(m => !m); setSelectedIds(new Set()); }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${selectMode ? 'bg-red-50 border-red-300 text-red-600' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
                     {selectMode ? '✕ Batal' : '☑ Select'}
@@ -2526,7 +2535,7 @@ function TicketingSystemInner() {
             </div>
 
             {/* Bulk delete bar — admin only, selectMode only */}
-            {selectMode && canAccessAccountSettings && selectedIds.size > 0 && (
+            {selectMode && canManageTickets && selectedIds.size > 0 && (
               <div className="px-6 py-2.5 flex items-center justify-between border-b border-gray-200" style={{ background: 'rgba(220,38,38,0.07)' }}>
                 <span className="text-sm font-bold text-red-700">{selectedIds.size} ticket dipilih</span>
                 <div className="flex items-center gap-2">
@@ -2638,10 +2647,10 @@ function TicketingSystemInner() {
                         {ticket.status === "Solved" && canUpdateTicket && (
                           <ReopenIconBtn onClick={() => { setReopenTargetTicket(ticket); setReopenAssignee(ticket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} />
                         )}
-                        {canAccessAccountSettings && (
+                        {canManageTickets && (
                           <DeleteIconBtn onClick={() => { setDeleteTargetTicket(ticket); setDeleteConfirmText(""); setShowDeleteModal(true); }} />
                         )}
-                        {canAccessAccountSettings && (
+                        {canManageTickets && (
                           <OverdueIconBtn onClick={() => { setOverdueTargetTicket(ticket); const existing = getOverdueSetting(ticket.id); setOverdueForm({ due_hours: existing?.due_hours ? String(existing.due_hours) : "48" }); setShowOverdueSetting(true); }} active={!!overdueSetting} />
                         )}
                       </div>
@@ -2681,7 +2690,7 @@ function TicketingSystemInner() {
                   <thead>
                     <tr className="border-b-2 border-gray-100" style={{ background: "rgba(248,248,248,0.97)" }}>
                       <th className="px-2 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">
-                        {selectMode && canAccessAccountSettings
+                        {selectMode && canManageTickets
                           ? <input type="checkbox"
                               checked={selectedIds.size === filteredTickets.length && filteredTickets.length > 0}
                               onChange={toggleSelectAll}
@@ -2710,7 +2719,7 @@ function TicketingSystemInner() {
                       return (
                         <tr key={ticket.id} className={`stagger-item border-b border-gray-100 hover:bg-gray-50/70 transition-colors ${isActiveOverdue ? "bg-red-50 border-l-4 border-l-red-400" : isSolvedOverdue ? "bg-purple-50/60 border-l-4 border-l-purple-300" : ""}`}>
                           <td className="px-2 py-3 border-r border-gray-100 align-middle text-center" onClick={e => e.stopPropagation()}>
-                            {selectMode && canAccessAccountSettings
+                            {selectMode && canManageTickets
                               ? <input type="checkbox" checked={selectedIds.has(ticket.id)}
                                   onChange={() => toggleSelectId(ticket.id)}
                                   className="w-4 h-4 rounded accent-red-600 cursor-pointer" />
@@ -2825,11 +2834,11 @@ function TicketingSystemInner() {
                                 <ReopenIconBtn onClick={() => { setReopenTargetTicket(ticket); setReopenAssignee(ticket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} />
                               )}
                               {/* Hapus — admin only */}
-                              {canAccessAccountSettings && (
+                              {canManageTickets && (
                                 <DeleteIconBtn onClick={() => { setDeleteTargetTicket(ticket); setDeleteConfirmText(""); setShowDeleteModal(true); }} />
                               )}
                               {/* Overdue Setting — admin only */}
-                              {canAccessAccountSettings && (
+                              {canManageTickets && (
                                 <OverdueIconBtn onClick={() => { setOverdueTargetTicket(ticket); const existing = getOverdueSetting(ticket.id); setOverdueForm({ due_hours: existing?.due_hours ? String(existing.due_hours) : "48" }); setShowOverdueSetting(true); }} active={!!overdueSetting} />
                               )}
                             </div>
@@ -3484,7 +3493,7 @@ function TicketingSystemInner() {
         )}
 
         {/* ── REMINDER SCHEDULE MODAL (Redesigned) ── */}
-        {showReminderSchedule && canAccessAccountSettings && (
+        {showReminderSchedule && canManageTickets && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(124,58,237,0.5)" }}>
               <div className="flex items-center justify-between mb-5"><div className="flex items-center gap-3"><span className="text-3xl">⏰</span><div><h3 className="text-lg font-bold text-gray-800">Jadwal WA Reminder</h3><p className="text-xs text-gray-500">Kirim reminder otomatis ke semua handler</p></div></div><button onClick={() => setShowReminderSchedule(false)} className="text-gray-400 hover:text-gray-600 text-xl font-bold">✕</button></div>
@@ -3570,7 +3579,7 @@ function TicketingSystemInner() {
         )}
 
         {/* ── OVERDUE SETTING MODAL (Redesigned) ── */}
-        {showOverdueSetting && overdueTargetTicket && canAccessAccountSettings && (
+        {showOverdueSetting && overdueTargetTicket && canManageTickets && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(245,158,11,0.5)" }}>
               <div className="flex items-center gap-3 mb-4"><span className="text-3xl">⏰</span><div><h3 className="text-lg font-bold text-gray-800">Overdue Setting</h3><p className="text-xs text-gray-500 font-medium">{overdueTargetTicket.project_name}</p><p className="text-xs text-gray-400">{overdueTargetTicket.issue_case}</p></div></div>

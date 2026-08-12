@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic';
 const ALLOWED_FIELDS = new Set([
   'username', 'full_name', 'role', 'team_type', 'sales_division',
   'jabatan', 'phone_number', 'allowed_menus', 'allow_incentive_input',
-  'atasan_id', 'kpi_enabled', 'password', 'is_internal_sales',
+  'atasan_id', 'kpi_enabled', 'password', 'is_internal_sales', 'access_level',
 ]);
 
 function pick(obj: Record<string, unknown>): Record<string, unknown> {
@@ -68,6 +68,15 @@ export async function POST(request: NextRequest) {
       const value = !!body.value;
       if (!userId) return NextResponse.json({ error: 'userId wajib.' }, { status: 400 });
       const { error } = await supabase.from('users').update({ allow_incentive_input: value }).eq('id', userId);
+      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === 'setAccessLevel') {
+      const userId = body.userId as string;
+      const value = body.value === 'full' ? 'full' : 'guest';
+      if (!userId) return NextResponse.json({ error: 'userId wajib.' }, { status: 400 });
+      const { error } = await supabase.from('users').update({ access_level: value }).eq('id', userId);
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
       return NextResponse.json({ success: true });
     }

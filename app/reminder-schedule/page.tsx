@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { setSession, clearSession, getSession, startSessionWatcher } from '@/lib/auth';
-import { isAdmin as checkIsAdmin } from '@/lib/constants';
+import { isAdmin as checkIsAdmin, hasFullAccess } from '@/lib/constants';
 import { isAssignablePTSTeam } from '@/lib/teams';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { notifyReminderApproved, createNotification, createNotificationForAdmins } from '@/lib/notifications';
@@ -339,7 +339,7 @@ function ReminderSchedulePageInner() {
       // Admin & Manager: lihat SEMUA (termasuk yg masih proses approval / belum di-assign).
       const roleLc = (activeUser.role ?? '').toLowerCase();
       const isAdminUser = roleLc === 'admin' || roleLc === 'superadmin';
-      const isManagerUser = roleLc === 'team' && (activeUser.jabatan === 'Manager' || (!!managerUserId && activeUser.id === managerUserId));
+      const isManagerUser = hasFullAccess(activeUser) || (roleLc === 'team' && !!managerUserId && activeUser.id === managerUserId);
       if (isAdminUser || isManagerUser) return all;
       // Anggota tim biasa: HANYA item yg sudah di-assign (ke siapa pun) ATAU yg
       // di-route ke dirinya sbg Supervisor utk di-assign. Item yg masih pending
@@ -1185,11 +1185,15 @@ function ReminderSchedulePageInner() {
   })();
 
   const isAdmin = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
-  // Manager PTS (mis. Dhany, role 'team') berhak approve & assign di tahap admin_review.
-  // Terdeteksi dari jabatan='Manager' ATAU app_settings.manager_user_id (override).
+  // Manager PTS (mis. Dhany, role 'team') berhak approve & assign di tahap
+  // admin_review — sama seperti admin. Terdeteksi dari salah satu:
+  //   1. Toggle "Full Access" aktif (lib/constants.ts hasFullAccess) — cara
+  //      yang disarankan sekarang, admin atur langsung per akun di Admin Panel.
+  //   2. app_settings.manager_user_id (override lama, dipertahankan agar tidak
+  //      merusak konfigurasi yang sudah ada).
   const isManager = !!currentUser?.id && (
-    (!!managerUserId && currentUser.id === managerUserId) ||
-    (currentUser.role === 'team' && myJabatan === 'Manager')
+    hasFullAccess(currentUser) ||
+    (!!managerUserId && currentUser.id === managerUserId)
   );
   const canApproveAssign = isAdmin || isManager;
   // Sales Internal reviewer (utama atau kedua utk brand BOTH) di tahap internal_review.
@@ -2568,13 +2572,13 @@ jangan lupa peralatan & Semangat💪🏼
                         style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', color: 'white' }}>
                         {resendingFormReview ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '⭐'} Resend Review</button>
                     )}
-                    {isAdmin && (
+                    {(isAdmin || isManager) && (
                       <button onClick={() => handleSendWA(detailReminder)} disabled={sendingWA === detailReminder.id}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02] disabled:opacity-60"
                         style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: 'white' }}>
                         {sendingWA === detailReminder.id ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '💬'} Kirim WA</button>
                     )}
-                    {isAdmin && (
+                    {(isAdmin || isManager) && (
                       <button onClick={() => openEdit(detailReminder)}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
                         style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', color: 'white' }}>✏️ Edit</button>
@@ -3333,7 +3337,7 @@ jangan lupa peralatan & Semangat💪🏼
                       <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{filteredReminders.length}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {(isAdmin || currentUser?.role === 'superadmin') && (
+                      {(isAdmin || isManager) && (
                         <button onClick={() => { setSelectMode(m => !m); setSelectedIds(new Set()); }}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${selectMode ? 'bg-red-50 border-red-300 text-red-600' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
                           {selectMode ? '✕ Batal' : '☑ Select'}
@@ -3420,7 +3424,7 @@ jangan lupa peralatan & Semangat💪🏼
                   </div>
 
                   {/* Bulk delete bar — admin only, selectMode only */}
-                  {selectMode && (isAdmin || currentUser?.role === 'superadmin') && selectedIds.size > 0 && (
+                  {selectMode && (isAdmin || isManager) && selectedIds.size > 0 && (
                     <div className="px-5 py-2.5 flex items-center justify-between border-b border-gray-200" style={{ background: 'rgba(220,38,38,0.07)' }}>
                       <span className="text-sm font-bold text-red-700">{selectedIds.size} jadwal dipilih</span>
                       <div className="flex items-center gap-2">
@@ -3566,7 +3570,7 @@ jangan lupa peralatan & Semangat💪🏼
                               {currentUser?.id === r.assigned_supervisor_id && r.routing_status === 'supervisor_assign' && (
                                 <ApproveIconBtn onClick={() => openSupervisorAssign(r, group)} title="Assign Tim" pulse />
                               )}
-                              {isAdmin && (
+                              {(isAdmin || isManager) && (
                                 <DeleteIconBtn onClick={() => openDeleteModal(r)} title="Hapus" />
                               )}
                             </div>
@@ -3601,7 +3605,7 @@ jangan lupa peralatan & Semangat💪🏼
                         <thead>
                           <tr className="border-b-2 border-gray-100" style={{ background: "rgba(255,255,255,0.97)" }}>
                             <th className="px-3 py-2.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">
-                      {selectMode && (isAdmin || currentUser?.role === 'superadmin')
+                      {selectMode && (isAdmin || isManager)
                         ? <input type="checkbox"
                             checked={selectedIds.size === filteredReminders.length && filteredReminders.length > 0}
                             onChange={toggleSelectAll} className="w-4 h-4 rounded accent-red-600 cursor-pointer" title="Pilih Semua" />
@@ -3630,7 +3634,7 @@ jangan lupa peralatan & Semangat💪🏼
                                 >
                                 {/* No */}
                                 <td className="px-3 py-3 border-r border-gray-200 align-middle text-center" onClick={e => e.stopPropagation()}>
-                            {selectMode && (isAdmin || currentUser?.role === 'superadmin')
+                            {selectMode && (isAdmin || isManager)
                               ? <input type="checkbox"
                                   checked={group.every(gr => selectedIds.has(gr.id))}
                                   onChange={() => {
@@ -3820,7 +3824,7 @@ jangan lupa peralatan & Semangat💪🏼
                                       <ApproveIconBtn onClick={() => openSupervisorAssign(group[0], group)} title="Assign Tim" pulse />
                                     )}
                                     {/* Hapus — admin only */}
-                                    {isAdmin && (
+                                    {(isAdmin || isManager) && (
                                       <DeleteIconBtn onClick={() => openDeleteModal(group[0])} title="Hapus" />
                                     )}
                                   </ActionGroup>

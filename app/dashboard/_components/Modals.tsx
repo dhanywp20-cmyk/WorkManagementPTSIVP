@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { setSession, getSession } from '@/lib/auth';
-import { adminCreateUser, adminUpdateUser } from '@/lib/admin-users';
+import { adminCreateUser, adminUpdateUser, adminSetAccessLevel } from '@/lib/admin-users';
 import { logAudit } from '@/lib/audit';
 import { sendWANotif } from '@/lib/wa';
 import { createNotification } from '@/lib/notifications';
@@ -2748,6 +2748,7 @@ export function AccountSettingsInline() {
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [approvingUser, setApprovingUser] = useState<User | null>(null);
   const [approveMenus, setApproveMenus] = useState<string[]>(DEFAULT_MENU_KEYS);
+  const [savingAccess, setSavingAccess] = useState<string | null>(null);
 
   const menuLabels: Record<string, { label: string; icon: string }> = {
     'dashboard': { label: 'Analytics Dashboard (KPI)', icon: '📊' },
@@ -2771,7 +2772,7 @@ export function AccountSettingsInline() {
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
-    const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type,created_at').order('full_name');
+    const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type,created_at,access_level').order('full_name');
     if (error) {
       // Fallback: try without extended columns (divisi/pts_type may not exist yet)
       const { data: fallback, error: err2 } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,created_at').order('full_name');
@@ -2897,6 +2898,26 @@ export function AccountSettingsInline() {
       const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'delete', module: 'user', target_id: userId });
       fetchUsers();
     }});
+  };
+
+  /**
+   * Toggle "Full Access" — akses setara admin di modul DATA (Piket Showroom,
+   * Learning Center, KPI Team, Form Review, Ticketing, Reminder Schedule,
+   * Daily Report, Unit Movement, Project Progress) untuk akun Team PTS ini.
+   * BUKAN hak kelola akun — itu tetap admin/superadmin saja. Lihat
+   * lib/constants.ts hasFullAccess().
+   */
+  const handleToggleAccessLevel = async (userId: string, current: string | undefined) => {
+    const next = current === 'full' ? 'guest' : 'full';
+    setSavingAccess(userId);
+    const { error } = await adminSetAccessLevel(userId, next);
+    if (error) { notify('error', 'Gagal: ' + error.message); setSavingAccess(null); return; }
+    const target = users.find(u => u.id === userId);
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, access_level: next } : u));
+    notify('success', next === 'full' ? 'Diberi Full Access.' : 'Dikembalikan ke Guest.');
+    const admin = getSession<User>();
+    void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'update', module: 'user', target_id: userId, target_name: target?.full_name, notes: `Akses: ${next === 'full' ? 'Full Access' : 'Guest'}` });
+    setSavingAccess(null);
   };
 
   function MenuPermissionSelector({ selected, target }: { selected: string[]; target: 'new' | 'edit' }) {
@@ -3049,7 +3070,7 @@ export function AccountSettingsInline() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200 text-left">
-                      {['Nama', 'Username', 'Role', 'Divisi', 'No. Telepon'].map(h => (
+                      {['Nama', 'Username', 'Role', 'Divisi', 'Akses', 'No. Telepon'].map(h => (
                         <th key={h} className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 whitespace-nowrap">{h}</th>
                       ))}
                       <th className="sticky right-0 bg-slate-50 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 text-right whitespace-nowrap">Aksi</th>
@@ -3057,7 +3078,7 @@ export function AccountSettingsInline() {
                   </thead>
                   <tbody>
                     {filteredUsers.length === 0 ? (
-                      <tr><td colSpan={6} className="text-center py-10 text-slate-400 text-sm">Tidak ada akun ditemukan</td></tr>
+                      <tr><td colSpan={7} className="text-center py-10 text-slate-400 text-sm">Tidak ada akun ditemukan</td></tr>
                     ) : filteredUsers.map((user, idx) => {
                       const divisi = (user.role === 'superadmin' || user.role === 'admin')
                         ? 'Admin / Superadmin'
@@ -3071,6 +3092,17 @@ export function AccountSettingsInline() {
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap"><Username value={user.username} /></td>
                           <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{user.role}</span></td>
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{divisi}</td>
+                          <td className="px-4 py-2.5 whitespace-nowrap">
+                            {user.role === 'team' ? (
+                              <button onClick={() => handleToggleAccessLevel(user.id, user.access_level)} disabled={savingAccess === user.id}
+                                title="Akses setara admin di modul data (Piket Showroom, KPI Team, dll) — bukan hak kelola akun"
+                                className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all disabled:opacity-50 ${
+                                  user.access_level === 'full' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
+                                }`}>
+                                {savingAccess === user.id ? '…' : user.access_level === 'full' ? '🔓 Full Access' : '🔒 Guest'}
+                              </button>
+                            ) : <span className="text-slate-300 text-xs">—</span>}
+                          </td>
                           <td className="px-4 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-600">📱 {user.phone_number}</span> : <span className="text-slate-300">—</span>}</td>
                           <td className="sticky right-0 px-4 py-2.5" style={{ background: rowBg }}>
                             <div className="flex items-center justify-end gap-1.5">

@@ -12,6 +12,8 @@ export interface CurrentUser {
   sales_division?: string;
   phone_number?: string;
   allowed_menus?: string[];
+  /** 'full' | 'guest' — lihat lib/constants.ts hasFullAccess(). Default DB: 'guest'. */
+  access_level?: string;
   [key: string]: unknown;
 }
 

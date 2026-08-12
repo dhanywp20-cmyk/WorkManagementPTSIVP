@@ -20,7 +20,7 @@ import { User as DashUser } from '@/app/dashboard/_components/shared';
 interface User {
   id: string; full_name: string; role: string;
   team_type?: string; jabatan?: string; allowed_menus?: string[];
-  username?: string; sales_division?: string;
+  username?: string; sales_division?: string; access_level?: string;
 }
 
 interface TicketRow   { id: string; project_name: string; assign_name: string; status: string; date: string; created_at: string; }
