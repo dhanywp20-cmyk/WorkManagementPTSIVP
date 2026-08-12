@@ -207,7 +207,7 @@ export default function Dashboard() {
       title: 'Database PTS', icon: '💼', key: 'database-pts',
       gradient: 'from-indigo-700 via-indigo-600 to-indigo-500',
       description: 'Central repository & documentation',
-      items: [{ name: 'Access Database', url: 'https://1drv.ms/f/c/25d404c0b5ee2b43/IgBDK-61wATUIIAlAgQAAAAAARPyRqbKPJAap5G_Ol5NmA8?e=fFU8wh', icon: '🗃️', embed: false, external: true }]
+      items: [{ name: 'Access Database', url: 'https://1drv.ms/f/c/25d404c0b5ee2b43/IgBDK-61wATUIIAlAgQAAAAAAZWW6TamAlBHUnCoirmplNs', icon: '🗃️', embed: false, external: true }]
     },
     {
       title: 'Unit Movement Log', icon: '🚚', key: 'unit-movement',
