@@ -2620,6 +2620,7 @@ jangan lupa peralatan & Semangat💪🏼
                   <SectionHeaderSmall icon="🏢" title="Informasi Project" />
                   <div className="mt-3 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(0,0,0,0.08)' }}>
                     {detailReminder.product && <InfoRow icon="📦" label="Product / Unit" value={detailReminder.product} />}
+                    {detailReminder.product_type && <InfoRow icon="🏷️" label="Tipe Produk" value={detailReminder.product_type} />}
                     <InfoRow icon="👤" label="Nama Sales & Divisi" value={[detailReminder.sales_name, detailReminder.sales_division].filter(Boolean).join(' / ')} />
                     {detailReminder.sales_name && (REVIEW_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category) && (
                       <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(124,58,237,0.04)' }}>
@@ -2755,6 +2756,68 @@ jangan lupa peralatan & Semangat💪🏼
                             {isInWarranty ? `${diffDays} hari` : `${Math.abs(diffDays)} hari`}
                           </p>
                         </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* ── Detail Pelaksanaan — diisi lewat modal "Mode Penyelesaian" saat
+                    kategori Konfigurasi/Konfigurasi & Training/Training di-update ke
+                    Completed. Sebelumnya data ini (mode_penyelesaian, BAST, tipe
+                    display, controller automation, middleware) tersimpan tapi tidak
+                    pernah ditampilkan di mana pun — di list HANYA nilai Onsite/Remote
+                    yang tampil (di bawah Kegiatan), detail lengkapnya di sini. ── */}
+                {(INCENTIVE_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category) && detailReminder.mode_penyelesaian && (() => {
+                  const brandLabel: Record<string, string> = { cue: 'Cue System', extron: 'Extron', wyrestorm: 'Wyrestorm' };
+                  const displayLabel: Record<string, string> = { led: 'LED', lcd: 'LCD', mix: 'Mix (LED + LCD)' };
+                  const isOnsite = detailReminder.mode_penyelesaian === 'onsite';
+                  return (
+                    <div className="rounded-xl p-4" style={isOnsite
+                      ? { background: 'rgba(16,185,129,0.07)', border: '1.5px solid rgba(16,185,129,0.3)' }
+                      : { background: 'rgba(59,130,246,0.07)', border: '1.5px solid rgba(59,130,246,0.3)' }}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-lg">{isOnsite ? '🏠' : '📡'}</span>
+                        <p className="text-xs font-bold uppercase tracking-wide" style={{ color: isOnsite ? '#047857' : '#1d4ed8' }}>
+                          Detail Pelaksanaan · {isOnsite ? 'ONSITE' : 'REMOTE'}
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        {detailReminder.bast_date && (
+                          <div>
+                            <p className="text-slate-400 mb-0.5">📅 Tanggal BAST</p>
+                            <p className="font-semibold text-slate-700">{formatDate(detailReminder.bast_date)}</p>
+                          </div>
+                        )}
+                        {detailReminder.display_type && (
+                          <div>
+                            <p className="text-slate-400 mb-0.5">🖥️ Tipe Display</p>
+                            <p className="font-semibold text-slate-700">{displayLabel[detailReminder.display_type] ?? detailReminder.display_type}</p>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-slate-400 mb-0.5">🎛️ Controller Automation</p>
+                          <p className="font-semibold text-slate-700">
+                            {detailReminder.requires_controller_automation
+                              ? (brandLabel[detailReminder.controller_automation_brand ?? ''] ?? 'Ya')
+                              : 'Tidak'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 mb-0.5">🔌 Middleware / System / Matrix</p>
+                          <p className="font-semibold text-slate-700">{detailReminder.requires_middleware ? 'Ya' : 'Tidak'}</p>
+                        </div>
+                        {!isOnsite && detailReminder.installer_name && (
+                          <div>
+                            <p className="text-slate-400 mb-0.5">🔧 Installer</p>
+                            <p className="font-semibold text-slate-700">{detailReminder.installer_name}</p>
+                          </div>
+                        )}
+                        {!isOnsite && detailReminder.installer_daerah && (
+                          <div>
+                            <p className="text-slate-400 mb-0.5">📍 Daerah Installer</p>
+                            <p className="font-semibold text-slate-700">{detailReminder.installer_daerah}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -3597,6 +3660,15 @@ jangan lupa peralatan & Semangat💪🏼
                                       {r.product}
                                     </button>
                                   ) : <span className="text-gray-300 text-xs">—</span>}
+                                  {/* Tipe Produk (LED / LCD·Middleware / LED & LCD) — dipilih Sales saat
+                                      request, dipakai utk routing tim tapi sebelumnya tidak pernah
+                                      ditampilkan di mana pun (list maupun detail). */}
+                                  {r.product_type && (
+                                    <div className="mt-1 text-[9px] font-bold px-1.5 py-0.5 rounded inline-block"
+                                      style={{ background: '#fef3c7', color: '#92400e' }}>
+                                      🏷️ {r.product_type}
+                                    </div>
+                                  )}
                                 </td>
                                 {/* Kegiatan */}
                                 <td className="px-3 py-3 border-r border-gray-200 align-middle">
@@ -3610,6 +3682,19 @@ jangan lupa peralatan & Semangat💪🏼
                                     </div>
                                   )}
                                   </div>
+                                  {/* Mode pelaksanaan (Onsite/Remote) — cuma diisi utk kategori
+                                      Konfigurasi/Konfigurasi & Training/Training saat status
+                                      di-update ke Completed. Di list HANYA nilai Onsite/Remote-nya
+                                      saja yg tampil; detail lengkapnya (BAST, tipe display,
+                                      controller automation, middleware) ada di halaman Detail. */}
+                                  {(INCENTIVE_TRIGGER_CATEGORIES as readonly string[]).includes(r.category) && r.mode_penyelesaian && (
+                                    <div className="mt-1 inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded"
+                                      style={r.mode_penyelesaian === 'onsite'
+                                        ? { background: '#d1fae5', color: '#047857' }
+                                        : { background: '#dbeafe', color: '#1d4ed8' }}>
+                                      {r.mode_penyelesaian === 'onsite' ? '🏠 ONSITE' : '📡 REMOTE'}
+                                    </div>
+                                  )}
                                   {r.category === 'Troubleshooting' && (
                                     <button
                                       onClick={e => { e.stopPropagation(); router.push('/ticketing'); }}
