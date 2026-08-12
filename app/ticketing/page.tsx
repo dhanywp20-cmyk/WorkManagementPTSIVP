@@ -336,6 +336,14 @@ function TicketingSystemInner() {
     const namesToCheck = [...new Set([assignedName, currentUser.full_name].filter(Boolean))]
       .map(n => n.toLowerCase().trim());
     return tickets.filter((t) => {
+      // Ticket yg di-route ke Supervisor ini (belum di-assign lanjut ke tim)
+      // TIDAK punya assign_name — id ada di assigned_supervisor_id, bukan
+      // nama, jadi harus dicek terpisah dari kecocokan nama di bawah. Tanpa
+      // ini, ticket yg baru di-route ke Supervisor cuma nongol di badge lonceng
+      // atas (dari tabel notifications terpisah) tapi tidak pernah masuk
+      // daftar popup "Ticket Notifications" ini.
+      const routedToMe = t.routing_status === "supervisor_assign" && t.assigned_supervisor_id === currentUser.id;
+      if (routedToMe) return true;
       if (!namesToCheck.includes((t.assign_name ?? "").toLowerCase().trim())) return false;
       const overdue = isTicketOverdue(t) && t.status !== "Solved";
       const isActive = t.status !== "Solved";
