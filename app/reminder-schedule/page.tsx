@@ -20,7 +20,7 @@ import {
   REPEAT_OPTIONS, SALES_DIVISIONS, PIE_COLORS,
   formatDate, formatDatetime, isDueToday, newBatchId,
   sendFonnteWA, resolveSupervisorsForProductType, type SupervisorCandidate,
-  DEFAULT_REQUEST_NOTE, cleanRequestNotes, fetchManagerTarget,
+  DEFAULT_REQUEST_NOTE, cleanRequestNotes, fetchManagerTargets,
 } from './_components/shared';
 import { PriorityBadge, StatusBadge, CategoryBadge } from './_components/Badges';
 import {
@@ -1424,8 +1424,8 @@ function ReminderSchedulePageInner() {
         }
       } else {
         // Alur lama: langsung actionable ke Admin/Manager (requester internal / tanpa mapping).
-        const managerTarget = await fetchManagerTarget();
-        if ((admins && admins.length > 0) || managerTarget) {
+        const managerTargets = await fetchManagerTargets();
+        if ((admins && admins.length > 0) || managerTargets.length > 0) {
           const msg =
             `📩 *REQUEST JADWAL BARU — PTS IVP*\n\n` +
             `Sales *${currentUser.full_name}* mengajukan request jadwal:\n\n` +
@@ -1441,10 +1441,16 @@ function ReminderSchedulePageInner() {
           for (const admin of (admins ?? [])) {
             if (admin.phone_number) await sendFonnteWA(admin.phone_number, msg);
           }
-          // Manager (role='team') tidak ke-cover query role='admin' di atas — WA & badge terpisah.
-          if (managerTarget?.phone_number) await sendFonnteWA(managerTarget.phone_number, msg);
+          // Manager (role='team') tidak ke-cover query role='admin' di atas — WA & badge terpisah,
+          // dikirim BERSAMAAN dengan admin (bukan menyusul), sesuai jadi PENTING sama.
+          for (const mgr of managerTargets) {
+            if (mgr.phone_number) await sendFonnteWA(mgr.phone_number, msg);
+          }
         }
         // Badge notifikasi in-app — supaya tidak perlu buka tabel utk tahu ada yg perlu approval.
+        // createNotificationForAdmins sudah ikut meng-cover akun Full Access (lib/notifications.ts),
+        // jadi di sini cukup tambahkan target dari app_settings.manager_user_id (kalau ada &
+        // belum ke-cover) supaya tidak dobel — lihat fetchManagerTargets.
         createNotificationForAdmins({
           type: 'reminder',
           title: `📩 Request jadwal baru menunggu approval`,
@@ -1452,9 +1458,9 @@ function ReminderSchedulePageInner() {
           action_url: '/reminder-schedule',
           created_by: currentUser.full_name,
         }).catch(() => {});
-        if (managerTarget) {
+        for (const mgr of managerTargets) {
           createNotification({
-            user_id: managerTarget.id,
+            user_id: mgr.id,
             type: 'reminder',
             title: `📩 Request jadwal baru menunggu approval kamu`,
             body: `${currentUser.full_name} — ${data.project_name}`,
@@ -1500,9 +1506,8 @@ function ReminderSchedulePageInner() {
     // CATATAN: WA "REQUEST LOLOS REVIEW" DIHAPUS atas permintaan user — cukup badge di
     // tahap ini; WA hanya dikirim di hasil akhir (saat sudah di-assign ke pengerjaan).
     try {
-      const managerTarget = await fetchManagerTarget();
-      const targets: { id: string; phone_number: string | null; full_name: string }[] = [];
-      if (managerTarget) targets.push(managerTarget);
+      const managerTargets = await fetchManagerTargets();
+      const targets: { id: string; phone_number: string | null; full_name: string }[] = [...managerTargets];
       if (targets.length === 0) {
         const { data: admins } = await supabase.from('users').select('id, phone_number, full_name').eq('role', 'admin');
         targets.push(...(admins ?? []));
@@ -2369,6 +2374,8 @@ jangan lupa peralatan & Semangat💪🏼
           onExtraDatesChange={setExtraDates}
           onClose={() => { setShowFormModal(false); setEditingReminder(null); setFormData(emptyForm); setBulkTarget('none'); setExtraDates([]); }}
           onSubmit={handleSave}
+          canAssignSelf={isAdmin || isManager}
+          selfUser={currentUser ? { username: currentUser.username, full_name: currentUser.full_name } : null}
         />
       )}
 

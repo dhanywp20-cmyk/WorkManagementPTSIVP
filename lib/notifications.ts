@@ -66,20 +66,25 @@ export async function createNotification(payload: NotifPayload): Promise<void> {
 }
 
 /**
- * Create notifications for all users with role admin or superadmin.
+ * Create notifications for all users with role admin/superadmin, PLUS akun
+ * Team PTS dengan toggle "Full Access" aktif (mis. Manager PTS — lihat
+ * lib/constants.ts hasFullAccess & sql/user-full-access-toggle.sql). Full
+ * Access dimaksudkan supaya notifikasi yang masuk ke admin juga masuk ke
+ * Manager pada saat yang sama, bukan menyusul terpisah.
  * Fails silently.
  */
 export async function createNotificationForAdmins(
   payload: Omit<NotifPayload, 'user_id'>
 ): Promise<void> {
   try {
-    const { data: admins } = await supabase
-      .from('users')
-      .select('id')
-      .in('role', ['admin', 'superadmin']);
-    if (!admins?.length) return;
+    const [{ data: admins }, { data: fullAccessTeam }] = await Promise.all([
+      supabase.from('users').select('id').in('role', ['admin', 'superadmin']),
+      supabase.from('users').select('id').eq('role', 'team').eq('access_level', 'full'),
+    ]);
+    const targets = [...(admins ?? []), ...(fullAccessTeam ?? [])] as { id: string }[];
+    if (!targets.length) return;
 
-    const rows = (admins as { id: string }[]).map(a => ({
+    const rows = targets.map(a => ({
       user_id:    a.id,
       type:       payload.type,
       title:      payload.title,

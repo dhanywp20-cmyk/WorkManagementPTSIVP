@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, setDbToken } from '@/lib/supabase';
 import { setSession, clearSession, getSession, startSessionWatcher } from '@/lib/auth';
-import { isAdmin as checkIsAdmin, SESSION_DURATION_MS } from '@/lib/constants';
+import { isAdmin as checkIsAdmin, hasFullAccess, SESSION_DURATION_MS } from '@/lib/constants';
 import {
   User, MenuItem, NotificationItem,
   SALES_DIVISIONS, JABATAN_LIST, JabatanType, JABATAN_CONFIG, JABATAN_CC_RULES,
@@ -563,9 +563,15 @@ export default function Dashboard() {
     load();
   }, []);
 
+  // isAdmin TETAP admin/superadmin murni — khusus tombol Admin Panel (kelola
+  // akun, bukan sekadar lihat data). Lihat lib/constants.ts hasFullAccess.
   const isAdmin = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
+  // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
+  // (mis. Manager PTS) — dipakai untuk hal yang BUKAN kelola akun: lihat
+  // badge pending, akses KPI penuh, dst.
+  const isFullAccess = isAdmin || hasFullAccess(currentUser);
 
-  // KPI: admin + PTS supervisor + sales supervisor (harus ada allowed_menus dashboard) + team member with dashboard permission
+  // KPI: admin/full-access + PTS supervisor + sales supervisor (harus ada allowed_menus dashboard) + team member with dashboard permission
   const isPTSSupervisor = currentUser?.role === 'team'
     && ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MVI'].includes(currentUser?.team_type ?? '')
     && currentUser?.jabatan === 'Supervisor';
@@ -574,10 +580,10 @@ export default function Dashboard() {
     && (currentUser?.allowed_menus ?? []).includes('dashboard');
   const hasTeamDashboardAccess = currentUser?.role === 'team'
     && (currentUser?.allowed_menus ?? []).includes('dashboard');
-  const canAccessKPI = isAdmin || isPTSSupervisor || isSalesSupervisor || hasTeamDashboardAccess;
+  const canAccessKPI = isFullAccess || isPTSSupervisor || isSalesSupervisor || hasTeamDashboardAccess;
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isFullAccess) return;
 
     const refreshPendingCount = () => {
       // Hitung (1) user pending approval + (2) request jadwal sales yang belum di-assign

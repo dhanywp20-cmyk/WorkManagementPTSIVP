@@ -28,9 +28,17 @@ interface Props {
   onExtraDatesChange: (dates: string[]) => void;
   onClose: () => void;
   onSubmit: () => void;
+  /**
+   * Admin, atau akun Team PTS dengan toggle "Full Access" aktif (mis. Manager
+   * PTS) — boleh assign reminder ke DIRINYA SENDIRI. Manager sengaja
+   * dikecualikan dari daftar "Pilih Anggota Team" biasa (lihat komentar di
+   * bawah), jadi opsi ini satu-satunya jalan menugaskan diri sendiri.
+   */
+  canAssignSelf?: boolean;
+  selfUser?: { username: string; full_name: string } | null;
 }
 
-export function ReminderFormModal({ editingReminder, formData, setFormData, saving, teamUsers, guestUsers, bulkTarget, onBulkTargetChange, extraDates, onExtraDatesChange, onClose, onSubmit }: Props) {
+export function ReminderFormModal({ editingReminder, formData, setFormData, saving, teamUsers, guestUsers, bulkTarget, onBulkTargetChange, extraDates, onExtraDatesChange, onClose, onSubmit, canAssignSelf, selfUser }: Props) {
   const [guestSearch, setGuestSearch] = useState('');
   const [guestDropdownOpen, setGuestDropdownOpen] = useState(false);
   const [err, setErr] = useState('');
@@ -156,6 +164,9 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
               <select value={formData.assigned_to} onChange={e => fd({ assigned_to: e.target.value })}
                 className={inputCls} style={inputStyle}>
                 <option value="">-- Pilih Anggota Team --</option>
+                {canAssignSelf && selfUser && (
+                  <option value={selfUser.username}>🙋 Saya kerjakan sendiri ({selfUser.full_name})</option>
+                )}
                 {/* Manager dikecualikan di semua grup — bukan anggota tim biasa yg di-assign tugas */}
                 {teamUsers.filter(u => u.team_type === 'Team PTS IVP' && u.jabatan !== 'Manager').length > 0 && (
                   <optgroup label="PTS IVP">

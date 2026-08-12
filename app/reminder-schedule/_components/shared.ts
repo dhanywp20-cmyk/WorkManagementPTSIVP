@@ -215,16 +215,28 @@ export async function resolveSupervisorsForProductType(productType: string | nul
 }
 
 /**
- * Cari akun Manager yg terdaftar via app_settings.manager_user_id — dipakai
- * utk WA & in-app notification actionable (approval/assign) supaya Manager
- * (bukan cuma role='admin') ikut ke-notify.
+ * Cari akun Manager yang berhak ke-notify actionable (WA & in-app) di luar
+ * role='admin' — gabungan DUA sumber, dedup by id:
+ *   1. app_settings.manager_user_id (override lama, satu akun spesifik)
+ *   2. SEMUA akun role='team' dengan toggle "Full Access" aktif (lihat
+ *      lib/constants.ts hasFullAccess & sql/user-full-access-toggle.sql) —
+ *      cara yang disarankan sekarang, bisa lebih dari satu akun.
  */
-export async function fetchManagerTarget(): Promise<{ id: string; full_name: string; phone_number: string | null } | null> {
-  const { data: mgrSetting } = await supabase.from('app_settings').select('value').eq('key', 'manager_user_id').maybeSingle();
+export async function fetchManagerTargets(): Promise<{ id: string; full_name: string; phone_number: string | null }[]> {
+  const [{ data: mgrSetting }, { data: fullAccessTeam }] = await Promise.all([
+    supabase.from('app_settings').select('value').eq('key', 'manager_user_id').maybeSingle(),
+    supabase.from('users').select('id, full_name, phone_number').eq('role', 'team').eq('access_level', 'full'),
+  ]);
+  const targets = new Map<string, { id: string; full_name: string; phone_number: string | null }>();
+  for (const u of (fullAccessTeam ?? []) as { id: string; full_name: string; phone_number: string | null }[]) {
+    targets.set(u.id, u);
+  }
   const managerId = mgrSetting?.value ? String(mgrSetting.value).replace(/^"|"$/g, '') : '';
-  if (!managerId) return null;
-  const { data: mgr } = await supabase.from('users').select('id, full_name, phone_number').eq('id', managerId).maybeSingle();
-  return (mgr as { id: string; full_name: string; phone_number: string | null } | null) ?? null;
+  if (managerId && !targets.has(managerId)) {
+    const { data: mgr } = await supabase.from('users').select('id, full_name, phone_number').eq('id', managerId).maybeSingle();
+    if (mgr) targets.set(mgr.id, mgr as { id: string; full_name: string; phone_number: string | null });
+  }
+  return [...targets.values()];
 }
 
 export function formatDatetime(createdAt: string) {

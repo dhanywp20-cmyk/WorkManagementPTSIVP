@@ -6,6 +6,7 @@ import { adminCreateUser, adminUpdateUser, adminSetAccessLevel } from '@/lib/adm
 import { logAudit } from '@/lib/audit';
 import { sendWANotif } from '@/lib/wa';
 import { createNotification } from '@/lib/notifications';
+import { hasFullAccess } from '@/lib/constants';
 import { PRODUCT_TYPES } from '@/app/reminder-schedule/_components/shared';
 import {
   User, MenuItem, NotificationItem,
@@ -1861,8 +1862,11 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
   const isTeamPTS_UMP = roleLC === 'team' && teamType === 'Team PTS UMP';
   const isTeamPTS_MVI = roleLC === 'team' && teamType === 'Team PTS MVI';
   const isTeamPTS_SubGroup = isTeamPTS_UMP || isTeamPTS_MVI;
-  const isPTS  = ['admin', 'superadmin'].includes(roleLC) || isTeamPTS;
-  const isAdmin = ['admin', 'superadmin'].includes(roleLC);
+  // isAdmin di sini dipakai sebagai "lihat SEMUA notifikasi" (bukan hak kelola
+  // akun) — jadi ikut diperluas ke akun Team PTS dengan toggle "Full Access"
+  // aktif (lihat lib/constants.ts hasFullAccess), mis. Manager PTS.
+  const isAdmin = ['admin', 'superadmin'].includes(roleLC) || hasFullAccess(currentUser);
+  const isPTS  = isAdmin || isTeamPTS;
 
   const fetchAll = useCallback(async () => {
     let assignedName: string = currentUser.full_name;
