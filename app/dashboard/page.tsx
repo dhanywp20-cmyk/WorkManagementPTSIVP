@@ -12,7 +12,6 @@ import {
   NotifBellProps, AdminPanelModalProps,
   DISPLAY_BRANDS_DB, MIDDLEWARE_BRANDS_DB, BrandPicMappingDB,
 } from './_components/shared';
-import { KoperEntrance } from './_components/KoperEntrance';
 import {
   AccountSettingsModal, UserProfileModal, UserManagementModal,
   BrandPicSettingModal, NotifBell, NotificationBar,
@@ -279,29 +278,19 @@ export default function Dashboard() {
       autoNavigatedRef.current = true; // matikan auto-navigate useEffect
 
       /* Perpindahan ke dashboard SENGAJA ditunda sebentar supaya animasi
-         penutupnya sempat jalan: tombol jadi tanda centang, kartu kembali ke
-         dalam koper, tutup koper mengatup.
+         penutupnya (lc-hisap, lihat globals.css) sempat jalan: tombol jadi
+         tanda centang, lalu halaman login memudar & mengecil.
 
          Jujur soal biayanya: ini MENAMBAH waktu, bukan menyembunyikan waktu
          tunggu yang sudah ada — kerangka dashboard sebenarnya tampil hampir
          seketika. Yang membuatnya masih pantas: hanya dibayar saat orang
          benar-benar menekan tombol login, sedangkan membuka ulang halaman
          dengan sesi yang masih hidup langsung masuk dashboard tanpa melewati
-         halaman login sama sekali.
-
-         setTimeout dipasang TANPA syarat apa pun. Animasi boleh gagal, WebGL
-         boleh tidak ada, three.js boleh tidak termuat — perpindahannya tetap
-         terjadi. Tidak ada keadaan di mana orang tertahan di halaman login
-         setelah passwordnya benar. */
+         halaman login sama sekali. */
       setMasukBerhasil(true);
       const pakaiAnimasi = typeof window !== 'undefined'
-        && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        && document.documentElement.classList.contains('lc-js');
-      /* Batas atas, BUKAN jadwal. Yang normalnya memicu perpindahan adalah
-         lapisan koper sendiri lewat onKeluarSelesai, karena hanya ia yang tahu
-         kapan tutupnya benar-benar mengatup. Angka di bawah cuma jaring
-         pengaman kalau pemberitahuan itu tidak pernah datang. */
-      window.setTimeout(masukKeDashboard, pakaiAnimasi ? 1900 : 260);
+        && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.setTimeout(masukKeDashboard, pakaiAnimasi ? 700 : 0);
     } catch { setLoginErr('Login gagal. Coba lagi.'); } finally { setLoginLoading(false); }
   };
 
@@ -1001,10 +990,6 @@ export default function Dashboard() {
           </div>
         )}
       </div>
-
-      {/* Di LUAR bungkus yang dihisap, dan tetap terpasang selagi dashboard
-          tumbuh keluar dari koper. */}
-      <KoperEntrance modeDaftar={showRegister} keluar={masukBerhasil} onKeluarSelesai={masukKeDashboard} />
       </>
     );
   }
