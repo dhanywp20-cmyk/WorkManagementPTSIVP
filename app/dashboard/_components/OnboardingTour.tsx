@@ -484,17 +484,44 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
 
 // ─── "Jelajahi Platform" floating button ─────────────────────────────────────
 
+/**
+ * Tombol melayang "Jelajahi Platform".
+ *
+ * Tombol ini menempel di pojok kanan-bawah SEMUA halaman, sehingga menutupi
+ * tombol aksi yang kebetulan berada di posisi sama (mis. "Simpan Nilai Essay"
+ * di Learning Center). Karena panduan hanya sesekali dipakai sementara tombol
+ * di bawahnya dipakai untuk bekerja, tombol ini yang mengalah: tampil penuh
+ * sebentar setelah halaman dibuka, lalu menyingkir ke tepi kanan dan menyisakan
+ * ikon kecil. Klik ikonnya untuk memunculkannya kembali.
+ */
 export function JelajahiButton({ onClick }: { onClick: () => void }) {
+  const [melebar, setMelebar] = useState(true);
+
+  // Menyingkir sendiri 5 detik setelah halaman dibuka/di-refresh. Timer di-set
+  // ulang tiap kali tombol dilebarkan lagi, supaya tidak menetap menutupi layar.
+  useEffect(() => {
+    if (!melebar) return;
+    const t = setTimeout(() => setMelebar(false), 5000);
+    return () => clearTimeout(t);
+  }, [melebar]);
+
   return (
-    <button onClick={onClick}
-      className="fixed bottom-6 right-6 z-[9990] flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold text-white shadow-xl transition-all hover:scale-105 active:scale-95"
+    <button
+      onClick={() => { if (melebar) onClick(); else setMelebar(true); }}
+      className={`fixed bottom-6 z-[9990] flex items-center gap-2 py-2.5 text-xs font-bold text-white shadow-xl active:scale-95 ${
+        melebar
+          ? 'right-6 px-4 rounded-2xl hover:scale-105'
+          : 'right-0 pl-3 pr-2 rounded-l-2xl opacity-60 hover:opacity-100'
+      }`}
       style={{
         background: 'linear-gradient(135deg,#be123c,#9f1239)',
         boxShadow: '0 4px 20px rgba(190,18,60,0.45)',
+        transition: 'right 0.35s ease, opacity 0.25s ease, padding 0.35s ease, border-radius 0.35s ease',
       }}
-      title="Buka kembali panduan platform">
+      title={melebar ? 'Buka kembali panduan platform' : 'Tampilkan tombol Jelajahi Platform'}
+      aria-label={melebar ? 'Buka panduan platform' : 'Tampilkan tombol panduan platform'}>
       <span style={{ fontSize: 16 }}>🗺️</span>
-      <span className="hidden sm:inline">Jelajahi Platform</span>
+      {melebar && <span className="hidden sm:inline whitespace-nowrap">Jelajahi Platform</span>}
     </button>
   );
 }

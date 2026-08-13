@@ -27,6 +27,9 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
   const [aiFeedback, setAiFeedback] = useState<Record<string, string>>({});
   const [aiGradingIds, setAiGradingIds] = useState<Set<string>>(new Set());
   const [aiError, setAiError] = useState<Record<string, string>>({});
+  /** Skor saran AI, disimpan terpisah dari manualScores supaya admin bisa melihat
+      angka asli dari AI walau ia sudah menimpanya dengan nilai sendiri. */
+  const [aiScores, setAiScores] = useState<Record<string, number>>({});
 
   useEffect(() => {
     supabase.from('lc_quiz_attempts')
@@ -47,7 +50,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
   const handleViewDetail = async (attempt: any) => {
     setSelectedAttempt(attempt);
     setLoadingDetail(true);
-    setAiFeedback({}); setAiGradingIds(new Set()); setAiError({});
+    setAiFeedback({}); setAiGradingIds(new Set()); setAiError({}); setAiScores({});
     const questionIds: string[] = attempt.lc_quiz_sessions?.question_ids ?? [];
     const [{ data: ans }, { data: qs }] = await Promise.all([
       supabase.from('lc_answers').select('*').eq('attempt_id', attempt.id),
@@ -60,17 +63,21 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
     setAnswerDetails(ans ?? []);
     const scoreMap: Record<string, string> = {};
     const feedbackMap: Record<string, string> = {};
+    const aiScoreMap: Record<string, number> = {};
     (ans ?? []).forEach((a: any) => {
-      if (a.manual_score !== null && a.manual_score !== undefined) scoreMap[a.question_id] = String(a.manual_score);
+      const adaManual = a.manual_score !== null && a.manual_score !== undefined;
+      const adaAi     = a.ai_score !== null && a.ai_score !== undefined;
       if (a.ai_feedback) feedbackMap[a.question_id] = a.ai_feedback;
-      // Belum ada manual_score TAPI sudah ada ai_score tersimpan (dari sesi
-      // sebelumnya) — pakai sebagai isian awal supaya tidak dinilai AI ulang.
-      else if (a.manual_score === null && a.ai_score !== null && a.ai_score !== undefined) {
-        scoreMap[a.question_id] = String(a.ai_score);
-      }
+      if (adaAi) aiScoreMap[a.question_id] = Number(a.ai_score);
+      // Nilai admin selalu menang. Kalau belum ada, skor AI yang tersimpan dari
+      // sesi sebelumnya dipakai sebagai isian awal — sekaligus menandakan soal
+      // ini tidak perlu dinilai AI ulang.
+      if (adaManual)      scoreMap[a.question_id] = String(a.manual_score);
+      else if (adaAi)     scoreMap[a.question_id] = String(a.ai_score);
     });
     setManualScores(scoreMap);
     setAiFeedback(feedbackMap);
+    setAiScores(aiScoreMap);
     setLoadingDetail(false);
 
     // Otomatis minta AI menilai essay yang BELUM pernah dinilai (manual maupun
@@ -94,6 +101,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
     try {
       const result = await gradeEssayWithAI(q.question, q.model_answer, studentText);
       setAiFeedback(p => ({ ...p, [q.id]: result.feedback }));
+      setAiScores(p => ({ ...p, [q.id]: result.score }));
       // Jangan timpa kalau admin sudah sempat mengetik nilai sendiri sambil menunggu AI.
       setManualScores(p => (p[q.id] !== undefined ? p : { ...p, [q.id]: String(result.score) }));
       void supabase.from('lc_answers')
@@ -166,8 +174,12 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
               {questions.map((q, idx) => {
                 const ans = getAnswerFor(q.id);
                 if (q.question_type === 'essay') {
+                  // Latar SOLID: halaman Learning Center memakai foto sebagai latar, dan
+                  // kartu semi-transparan (bg-indigo-50/40) membuat foto itu tembus ke
+                  // belakang teks soal — pertanyaan & jawaban jadi sulit dibaca justru
+                  // saat admin perlu membacanya untuk menilai.
                   return (
-                    <div key={q.id} className="rounded-2xl border-2 border-indigo-200 bg-indigo-50/40 p-5">
+                    <div key={q.id} className="rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-5 shadow-sm">
                       <div className="flex items-start gap-3 mb-3">
                         <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 text-white bg-indigo-500">📝</span>
                         <div className="flex-1">
@@ -196,12 +208,35 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                             )}
                             {aiFeedback[q.id] && (
                               <div className="bg-violet-50 rounded-xl border border-violet-200 p-3">
-                                <p className="text-[10px] font-bold text-violet-500 uppercase tracking-widest mb-1">🤖 Saran AI</p>
+                                <div className="flex items-center justify-between gap-2 mb-1">
+                                  <p className="text-[10px] font-bold text-violet-500 uppercase tracking-widest">🤖 Saran AI — jawaban peserta vs kunci referensi</p>
+                                  {aiScores[q.id] !== undefined && (
+                                    <span className="text-[11px] font-black text-violet-700 bg-violet-100 border border-violet-300 rounded-full px-2 py-0.5 whitespace-nowrap">
+                                      AI: {aiScores[q.id]}
+                                    </span>
+                                  )}
+                                </div>
                                 <p className="text-xs text-violet-800 leading-relaxed">{aiFeedback[q.id]}</p>
+                                {/* Terlihat jelas kalau admin memberi keringanan/koreksi — angka
+                                    AI tetap ditampilkan apa adanya di sebelah nilai akhir. */}
+                                {aiScores[q.id] !== undefined && manualScores[q.id] !== undefined
+                                  && manualScores[q.id] !== '' && Number(manualScores[q.id]) !== aiScores[q.id] && (
+                                  <p className="text-[11px] font-semibold text-amber-700 mt-1.5">
+                                    ✏️ Dikoreksi admin: {aiScores[q.id]} → {manualScores[q.id]}
+                                  </p>
+                                )}
                               </div>
                             )}
                             {aiError[q.id] && (
                               <p className="text-xs text-rose-500 italic">⚠️ {aiError[q.id]} — isi nilai manual di bawah.</p>
+                            )}
+                            {/* Tanpa keterangan ini, admin melihat kolom nilai kosong tanpa
+                                saran AI dan tidak tahu apakah AI-nya rusak atau memang tidak
+                                ada yang bisa dinilai. */}
+                            {!ans?.essay_text?.trim() && (
+                              <p className="text-xs text-slate-500 italic">
+                                🤖 Penilaian AI dilewati — peserta tidak menuliskan jawaban untuk soal ini. Isi nilai manual bila perlu.
+                              </p>
                             )}
                             <div className="flex items-center gap-3">
                               <label className="text-xs font-bold text-slate-600">Nilai (0-100):</label>
@@ -267,8 +302,10 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                   </div>
                 );
               })}
+              {/* pr-14 pada tombol simpan: memberi jarak dari tombol melayang "Jelajahi
+                  Platform" di tepi kanan-bawah, supaya tombol simpan tidak tertutup. */}
               {isAdminView && questions.some(q => q.question_type === 'essay') && (
-                <div className="sticky bottom-4 flex justify-end">
+                <div className="sticky bottom-4 flex justify-end pr-14">
                   <button onClick={handleSaveManualGrade} disabled={savingGrade}
                     className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-lg transition-all disabled:opacity-60 flex items-center gap-2">
                     {savingGrade ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Menyimpan...</> : '💾 Simpan Nilai Essay'}
