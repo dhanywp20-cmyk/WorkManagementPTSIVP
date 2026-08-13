@@ -1119,13 +1119,18 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
         // 3) Komponen milik lokasi ini
         const newComps = l.components.filter(c => isNew(c.id) && c.label.trim());
         if (newComps.length) {
-          const { data, error } = await supabase.from('progress_components').insert(
-            newComps.map((c, ci) => ({
-              location_id: realLocId, label: c.label.trim(), state: c.state, weight: c.weight,
-              photo_url: c.photo_url, photo_thumb_url: c.photo_thumb_url,
-              sort_order: l.components.indexOf(c) >= 0 ? l.components.indexOf(c) : ci,
-            })),
-          ).select('id');
+          const rows = newComps.map((c, ci) => ({
+            location_id: realLocId, label: c.label.trim(), state: c.state, weight: c.weight,
+            photo_url: c.photo_url, photo_thumb_url: c.photo_thumb_url,
+            sort_order: l.components.indexOf(c) >= 0 ? l.components.indexOf(c) : ci,
+          }));
+          let { data, error } = await supabase.from('progress_components').insert(rows).select('id');
+          if (error) {
+            // weight/category belum ada di DB (sql/project-progress-weighted-issues.sql
+            // belum dijalankan) — coba lagi tanpa kolom itu supaya simpan tetap jalan.
+            ({ data, error } = await supabase.from('progress_components')
+              .insert(rows.map(({ weight: _weight, ...rest }) => rest)).select('id'));
+          }
           if (error) throw error;
           ((data ?? []) as { id: string }[]).forEach((row, idx) => {
             logAudit({ ...oleh, action: 'create', module: 'project-progress', target_id: row.id, target_name: newComps[idx].label.trim(), notes: `Lokasi: ${l.name}` }).catch(() => {});
@@ -1133,9 +1138,13 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
         }
         for (const c of l.components) {
           if (isNew(c.id) || !c.label.trim()) continue;
-          const { error } = await supabase.from('progress_components')
-            .update({ label: c.label.trim(), state: c.state, weight: c.weight, photo_url: c.photo_url, photo_thumb_url: c.photo_thumb_url, sort_order: l.components.indexOf(c) })
-            .eq('id', c.id);
+          const compPayload = { label: c.label.trim(), state: c.state, weight: c.weight, photo_url: c.photo_url, photo_thumb_url: c.photo_thumb_url, sort_order: l.components.indexOf(c) };
+          let { error } = await supabase.from('progress_components').update(compPayload).eq('id', c.id);
+          if (error) {
+            // Sama seperti di atas — weight opsional, jangan sampai memblokir simpan progres.
+            const { weight: _weight, ...withoutWeight } = compPayload;
+            ({ error } = await supabase.from('progress_components').update(withoutWeight).eq('id', c.id));
+          }
           if (error) throw error;
           const before = origComp.get(c.id);
           if (before && before.state !== c.state) {
