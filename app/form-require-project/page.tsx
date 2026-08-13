@@ -9,7 +9,7 @@ import { notifyProjectStatusChange } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { compressImage } from '@/lib/image-compress';
-import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState, ListEmptyState, AuditTrailPanel
+import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState, ListEmptyState, AuditTrailPanel, FlowSteps
 } from '@/components/shared';
 import {
   User, ProjectRequest, RoomDetail, BrandPicMapping,
@@ -3055,6 +3055,47 @@ Hubungi Admin untuk info lebih lanjut.
                       </div>
                     </div>
                   )}
+
+                  {/* Alur request — menjawab "sudah sampai mana perkara ini",
+                      sejalan dengan Request Schedule. Riwayat di bawahnya
+                      menceritakan yang SUDAH terjadi; alur ini menunjukkan yang
+                      MASIH tersisa. */}
+                  <div className="mt-4">
+                    {(() => {
+                      const st = selectedRequest.status;
+                      const batal = st === 'rejected';
+                      // 0 Diajukan · 1 Diteruskan(Sales Internal) · 2 Di-assign(Admin)
+                      // 3 Dikerjakan(Team PTS) · 4 Selesai · 5 = seluruh tahap tuntas
+                      const aktif = st === 'completed' ? 5
+                        : (st === 'in_progress' || selectedRequest.assign_name) ? 3
+                        : selectedRequest.routing_status === 'internal_review' ? 1
+                        : 2;
+                      // Nama Sales Internal-nya, bukan label generik. Dua sumber,
+                      // sesuai bagaimana request masuk: reviewer hasil mapping brand
+                      // IVP/MVI (dua nama saat brand BOTH — keduanya wajib approve),
+                      // atau pembuatnya sendiri bila request memang dibuat oleh Sales
+                      // Internal (tahap ini langsung terlewati ke admin_review).
+                      const ccLabel = getCCLabel(selectedRequest);
+                      const pelakuInternal = ccLabel
+                        || (selectedRequest.requester_name && selectedRequest.sales_name !== selectedRequest.requester_name
+                          ? selectedRequest.requester_name : '')
+                        || 'Sales Internal';
+                      return (
+                        <FlowSteps
+                          judul="Alur Request"
+                          aktif={aktif}
+                          dibatalkan={batal}
+                          steps={[
+                            { label: 'Diajukan',   pelaku: selectedRequest.sales_name || selectedRequest.requester_name || 'Sales' },
+                            { label: 'Diteruskan', pelaku: pelakuInternal },
+                            { label: 'Di-assign',  pelaku: 'Admin' },
+                            { label: 'Dikerjakan', pelaku: selectedRequest.assign_name || 'Team PTS' },
+                            { label: 'Selesai',    pelaku: 'Completed' },
+                          ]}
+                        />
+                      );
+                    })()}
+                  </div>
 
                   {/* Riwayat perubahan — approve internal, approve admin, assign,
                       reject, ganti status. Baris pembuatan diturunkan dari request
