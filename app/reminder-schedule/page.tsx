@@ -1366,12 +1366,19 @@ function ReminderSchedulePageInner() {
 
     // Pangkal riwayat: tanpa ini, jejak sebuah request baru dimulai dari
     // "disetujui" — pembacanya tidak pernah tahu siapa yang mengajukan & kapan.
+    // user_name = PELAKU sebenarnya (yang menekan tombol), bukan atas nama siapa.
+    // Sebelumnya dipakai effectiveSalesName, sehingga saat Sales Internal
+    // mengajukan atas nama Sales External (SBU) riwayat mencatat Sales External
+    // sebagai pembuat — justru menghapus jejak siapa yang benar-benar menginput,
+    // yang merupakan inti dari audit trail. "Atas nama" pindah ke notes.
+    const atasNamaLain = effectiveSalesName && effectiveSalesName !== currentUser.full_name;
     for (const row of (dibuat ?? []) as { id: string; project_name: string | null }[]) {
       logAudit({
-        user_id: currentUser.id, user_name: effectiveSalesName || currentUser.full_name,
+        user_id: currentUser.id, user_name: currentUser.full_name,
         action: 'create', module: 'reminder',
         target_id: row.id, target_name: row.project_name ?? data.project_name,
-        notes: `Request diajukan Sales${salesDivision ? ` (${salesDivision})` : ''} — kategori ${data.category}, usulan ${formatDate(d0)}`,
+        notes: (atasNamaLain ? `Diinput atas nama Sales ${effectiveSalesName}` : 'Request diajukan Sales')
+          + `${salesDivision ? ` (${salesDivision})` : ''} — kategori ${data.category}, usulan ${formatDate(d0)}`,
       }).catch(() => {});
     }
 
@@ -3017,15 +3024,23 @@ jangan lupa peralatan & Semangat💪🏼
                   <AuditTrailPanel targetId={detailReminder.id} modul="reminder"
                     selaluTerbuka sembunyikanBilaKosong={false}
                     awal={{
-                      oleh: detailReminder.sales_name || detailReminder.created_by || null,
+                      // "oleh" = PELAKU (yang menginput), sama seperti baris audit
+                      // sungguhan — jadi created_by lebih diutamakan daripada
+                      // sales_name. Sales Internal kadang menginput request ATAS
+                      // NAMA Sales External (fitur SBU); memakai sales_name di sini
+                      // akan menghapus jejak siapa yang benar-benar mengirim.
+                      oleh: (detailReminder.created_by
+                        ? (guestUsers.find(g => g.username === detailReminder.created_by)?.full_name ?? detailReminder.created_by)
+                        : detailReminder.sales_name) || null,
                       waktu: detailReminder.created_at ?? null,
-                      // Sales Internal kadang menginput request ATAS NAMA Sales External
-                      // (fitur SBU) — created_by (username penginput) beda dari sales_name
-                      // (yg diajukan). Disebutkan eksplisit di sini supaya admin tidak
-                      // salah kira sales_name-lah yang mengetik/mengirim request-nya.
                       keterangan: `Diajukan${detailReminder.sales_division ? ` — ${detailReminder.sales_division}` : ''} · kategori ${detailReminder.category}`
-                        + (detailReminder.created_by && detailReminder.created_by !== detailReminder.sales_name
-                          ? ` · diinput oleh ${detailReminder.created_by}` : ''),
+                        + (() => {
+                          const namaPembuat = detailReminder.created_by
+                            ? (guestUsers.find(g => g.username === detailReminder.created_by)?.full_name ?? detailReminder.created_by)
+                            : null;
+                          return namaPembuat && detailReminder.sales_name && namaPembuat !== detailReminder.sales_name
+                            ? ` · atas nama Sales ${detailReminder.sales_name}` : '';
+                        })(),
                     }}
                     /* Peristiwa lain yang terjadi SEBELUM logAudit mencatatnya.
                        Waktunya memakai updated_at — itu satu-satunya jejak waktu
@@ -3067,7 +3082,25 @@ jangan lupa peralatan & Semangat💪🏼
                         dibatalkan={batal}
                         steps={[
                           { label: 'Diajukan',  pelaku: detailReminder.sales_name || 'Sales' },
-                          { label: 'Diteruskan', pelaku: 'Sales Internal' },
+                          // Sebut NAMA Sales Internal-nya, bukan label generik: siapa yang
+                          // meneruskan adalah bagian dari jejak yang dicari pembaca alur.
+                          // Dua sumber, sesuai bagaimana request itu masuk:
+                          //   1. reviewer hasil mapping brand IVP/MVI (internal_sales_id,
+                          //      + _id_2 saat brand BOTH → dua reviewer wajib approve)
+                          //   2. kalau request DIBUAT oleh Sales Internal sendiri, dialah
+                          //      yang meneruskan — tahap ini memang langsung terlewati
+                          //      (routing_status ke admin_review), jadi namanya diambil
+                          //      dari created_by.
+                          { label: 'Diteruskan', pelaku: (() => {
+                            const namaDari = (id?: string | null) => id ? guestUsers.find(g => g.id === id)?.full_name : undefined;
+                            const r1 = namaDari(detailReminder.internal_sales_id);
+                            const r2 = namaDari(detailReminder.internal_sales_id_2);
+                            if (r1 && r2) return `${r1} & ${r2}`;
+                            if (r1) return r1;
+                            const pembuat = guestUsers.find(g => g.username === detailReminder.created_by);
+                            if (pembuat?.is_internal_sales) return pembuat.full_name;
+                            return 'Sales Internal';
+                          })() },
                           { label: 'Di-assign', pelaku: 'Admin' },
                           { label: 'Dikerjakan', pelaku: detailReminder.assign_name || 'Team PTS' },
                           { label: 'Selesai',   pelaku: 'BAST' },
