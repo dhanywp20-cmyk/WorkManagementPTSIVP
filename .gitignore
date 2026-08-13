@@ -49,3 +49,7 @@ Thumbs.db
 .git-commit-msg.tmp
 
 .vercel
+
+# Artefak kompilasi Python (mis. dari skrip skill)
+__pycache__/
+*.pyc
