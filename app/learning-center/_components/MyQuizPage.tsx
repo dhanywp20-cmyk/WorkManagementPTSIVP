@@ -31,7 +31,11 @@ function QuizPlayer({ session, user, attempt, onDone }: {
     const loadAnswers = async () => {
       const { data } = await supabase.from('lc_answers').select('*').eq('attempt_id', attempt.id);
       const map: Record<string, string> = {};
-      (data ?? []).forEach((a: any) => { map[a.question_id] = a.answer; });
+      // Essay menyimpan teksnya di essay_text (answer selalu '' utk baris essay);
+      // ABCD menyimpan pilihannya di answer (essay_text selalu null). Membaca
+      // .answer saja utk KEDUANYA membuat quiz essay yang dilanjutkan ("Lanjutkan")
+      // selalu tampil kosong walau jawabannya sudah tersimpan sebelumnya.
+      (data ?? []).forEach((a: any) => { map[a.question_id] = a.essay_text || a.answer; });
       setSavedAnswers(map); setAnswers(map);
     };
     loadAnswers();
@@ -64,33 +68,42 @@ function QuizPlayer({ session, user, attempt, onDone }: {
     return () => document.removeEventListener('visibilitychange', onVisChange);
   }, [submitted]);
 
-  const handleAnswer = async (questionId: string, answer: string) => {
+  /** true kalau tersimpan, false kalau gagal (dan sudah ditampilkan ke user). */
+  const handleAnswer = async (questionId: string, answer: string): Promise<boolean> => {
     setAnswers(p => ({ ...p, [questionId]: answer }));
     const existing = savedAnswers[questionId];
+    let error: { message: string } | null = null;
     if (isEssay) {
       if (existing !== undefined) {
-        await supabase.from('lc_answers').update({ essay_text: answer, answered_at: new Date().toISOString() })
-          .eq('attempt_id', attempt.id).eq('question_id', questionId);
+        ({ error } = await supabase.from('lc_answers').update({ essay_text: answer, answered_at: new Date().toISOString() })
+          .eq('attempt_id', attempt.id).eq('question_id', questionId));
       } else {
-        await supabase.from('lc_answers').insert([{
+        ({ error } = await supabase.from('lc_answers').insert([{
           attempt_id: attempt.id, user_id: user.id, quiz_session_id: session.id,
           question_id: questionId, answer: '', essay_text: answer, is_correct: false,
-        }]);
-        setSavedAnswers(p => ({ ...p, [questionId]: answer }));
+        }]));
+        if (!error) setSavedAnswers(p => ({ ...p, [questionId]: answer }));
       }
-      return;
-    }
-    if (existing) {
-      await supabase.from('lc_answers').update({ answer, answered_at: new Date().toISOString() })
-        .eq('attempt_id', attempt.id).eq('question_id', questionId);
+    } else if (existing) {
+      ({ error } = await supabase.from('lc_answers').update({ answer, answered_at: new Date().toISOString() })
+        .eq('attempt_id', attempt.id).eq('question_id', questionId));
     } else {
       const q = questions.find(q => q.id === questionId);
-      await supabase.from('lc_answers').insert([{
+      ({ error } = await supabase.from('lc_answers').insert([{
         attempt_id: attempt.id, user_id: user.id, quiz_session_id: session.id,
         question_id: questionId, answer, is_correct: q?.correct_answer === answer,
-      }]);
-      setSavedAnswers(p => ({ ...p, [questionId]: answer }));
+      }]));
+      if (!error) setSavedAnswers(p => ({ ...p, [questionId]: answer }));
     }
+    // Tanpa ini, jawaban yang GAGAL tersimpan (RLS, jaringan putus, dst) tetap
+    // terlihat terisi di layar (state lokal `answers` sudah ter-update di atas)
+    // padahal server tidak pernah menerimanya — persis pola yang membuat admin
+    // melihat "Tidak dijawab" walau peserta yakin sudah menjawab.
+    if (error) {
+      setDialog({ type: 'error', title: 'Jawaban Gagal Tersimpan', message: `Jawaban belum tersimpan ke server (${error.message}). Coba ketik ulang atau periksa koneksi internet kamu sebelum lanjut.` });
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (autoSubmit = false) => {
@@ -106,12 +119,32 @@ function QuizPlayer({ session, user, attempt, onDone }: {
     const timeTaken = Math.round((Date.now() - startTime.current) / 1000);
 
     if (isEssay) {
+      // Flush SEMUA jawaban essay yang ada di state lokal dulu — kalau peserta
+      // mengetik lalu langsung klik Submit tanpa pindah fokus dulu, onBlur pada
+      // textarea belum sempat terpanggil dan teks itu belum pernah tersimpan ke
+      // server sama sekali. Tanpa flush ini submit tetap "berhasil" tapi
+      // jawaban terakhir hilang — persis kasus "sudah jawab tapi admin lihat
+      // Tidak dijawab".
+      const flushResults = await Promise.all(
+        questions.map(q => {
+          const text = answers[q.id] ?? savedAnswers[q.id] ?? '';
+          return handleAnswer(q.id, text);
+        }),
+      );
+      if (flushResults.some(ok => !ok)) {
+        // handleAnswer sudah menampilkan dialog error spesifik per soal yang gagal.
+        return;
+      }
       // Essay: tidak dinilai otomatis. Status jadi 'pending_review' sampai admin nilai manual di ReportPage.
-      await supabase.from('lc_quiz_attempts').update({
+      const { error } = await supabase.from('lc_quiz_attempts').update({
         submitted_at: new Date().toISOString(), score: null, total_correct: 0,
         total_questions: questions.length, passed: null, is_submitted: true, time_taken_sec: timeTaken,
         tab_switches: tabSwitchesRef.current, grading_status: 'pending_review',
       }).eq('id', attempt.id);
+      if (error) {
+        setDialog({ type: 'error', title: 'Submit Gagal', message: `Jawabanmu sudah tersimpan, tapi status submit gagal disimpan (${error.message}). Coba klik Submit sekali lagi.` });
+        return;
+      }
       setResult({ score: 0, correct: 0, passed: false, pendingReview: true }); setSubmitted(true);
       return;
     }
@@ -126,11 +159,15 @@ function QuizPlayer({ session, user, attempt, onDone }: {
       return supabase.from('lc_answers').update({ is_correct: ans === q.correct_answer })
         .eq('attempt_id', attempt.id).eq('question_id', q.id);
     }));
-    await supabase.from('lc_quiz_attempts').update({
+    const { error } = await supabase.from('lc_quiz_attempts').update({
       submitted_at: new Date().toISOString(), score, total_correct: correct,
       total_questions: questions.length, passed, is_submitted: true, time_taken_sec: timeTaken,
       tab_switches: tabSwitchesRef.current, grading_status: 'auto',
     }).eq('id', attempt.id);
+    if (error) {
+      setDialog({ type: 'error', title: 'Submit Gagal', message: `Gagal menyimpan hasil quiz (${error.message}). Coba klik Submit sekali lagi.` });
+      return;
+    }
     setResult({ score, correct, passed }); setSubmitted(true);
   };
 

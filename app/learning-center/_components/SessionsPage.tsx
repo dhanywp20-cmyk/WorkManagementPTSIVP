@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase, User, Material, Question, QuizSession, fmtDate, SearchInput, AppDialog, DialogState, BtnDelete } from './shared';
 import { logAudit } from '@/lib/audit';
 
-export function SessionsPage({ user }: { user: User }) {
+export function SessionsPage({ user, onViewResults }: { user: User; onViewResults?: (sessionId: string) => void }) {
   const [sessions, setSessions] = useState<QuizSession[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -645,6 +645,18 @@ export function SessionsPage({ user }: { user: User }) {
                     </div>
                   </div>
                   <div className="flex gap-2 flex-shrink-0 flex-wrap justify-end">
+                    {onViewResults && (
+                      <button
+                        onClick={() => onViewResults(s.id)}
+                        title="Lihat hasil & jawaban peserta yang sudah submit sesi ini"
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 flex items-center gap-1"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2a4 4 0 014-4h4m0 0l-3-3m3 3l-3 3M5 7h14M5 12h5m-5 5h9" />
+                        </svg>
+                        Lihat Hasil
+                      </button>
+                    )}
                     <button
                       onClick={() => openReassign(s)}
                       title="Assign soal yang sama ke tim / target berbeda"

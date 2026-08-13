@@ -94,7 +94,10 @@ export interface AnswerRecord {
   is_correct: boolean;
   // ── Essay addition ──
   essay_text?: string | null;
-  manual_score?: number | null; // 0-100 per soal, diisi admin saat penilaian manual
+  manual_score?: number | null; // 0-100 per soal — SKOR FINAL, diisi/dikoreksi admin
+  // ── AI grading addition — SARAN saja, tidak pernah jadi skor final sendiri ──
+  ai_score?: number | null;
+  ai_feedback?: string | null;
 }
 
 export type AdminView = 'dashboard' | 'materi' | 'questions' | 'sessions' | 'team' | 'report';
@@ -193,6 +196,50 @@ export async function generateWithGemini(prompt: string, pdfFile?: File | null):
   }
   const data = await res.json();
   return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+}
+
+/**
+ * Minta AI menilai SATU jawaban essay terhadap kunci referensi — dipakai
+ * TeamPage sebagai SARAN awal (bukan skor final) supaya admin sebisa mungkin
+ * tinggal konfirmasi, bukan menilai semuanya dari nol. Skor final tetap
+ * manual_score yang admin simpan sendiri (lihat lc_answers.ai_score vs
+ * manual_score di sql/learning-center-ai-grading.sql).
+ *
+ * Melempar Error kalau AI gagal/keluaran tidak bisa dibaca — pemanggil wajib
+ * menangkapnya dan tetap membiarkan admin menilai manual (AI tidak boleh
+ * memblokir alur penilaian sama sekali).
+ */
+export async function gradeEssayWithAI(
+  question: string, modelAnswer: string | null | undefined, studentAnswer: string,
+): Promise<{ score: number; feedback: string }> {
+  const prompt = `Kamu adalah asisten penilai kuis internal perusahaan. Nilai jawaban essay peserta berikut secara OBJEKTIF, dengan mempertimbangkan kesesuaian isi terhadap kunci referensi (bukan sekadar kemiripan kata demi kata — paham konsep yang sama tetap dinilai benar).
+
+SOAL:
+${question}
+
+${modelAnswer ? `KUNCI REFERENSI (acuan admin, bukan satu-satunya jawaban benar):\n${modelAnswer}\n` : '(Tidak ada kunci referensi — nilai berdasar kelayakan & kelengkapan jawaban secara umum.)\n'}
+JAWABAN PESERTA:
+${studentAnswer || '(kosong / tidak dijawab)'}
+
+Balas HANYA dengan JSON valid persis format ini, tanpa markdown, tanpa teks lain:
+{"score": <angka 0-100>, "feedback": "<1-2 kalimat alasan singkat dalam Bahasa Indonesia>"}`;
+
+  const raw = await generateWithGemini(prompt);
+  // Gemini kadang membungkus JSON dalam code fence ```json ... ``` walau
+  // sudah diminta "tanpa markdown" — dibersihkan dulu sebelum parse.
+  const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+  let parsed: { score?: unknown; feedback?: unknown };
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Keluaran AI tidak berupa JSON yang valid.');
+  }
+  const score = Number(parsed.score);
+  if (!Number.isFinite(score)) throw new Error('AI tidak mengembalikan skor yang valid.');
+  return {
+    score: Math.max(0, Math.min(100, Math.round(score))),
+    feedback: typeof parsed.feedback === 'string' ? parsed.feedback : '',
+  };
 }
 
 // ─── Folder Tree ──────────────────────────────────────────────────────────────

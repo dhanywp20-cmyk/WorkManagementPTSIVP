@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { ListEmptyState } from '@/components/shared';
-import { supabase, User, Question, QuizAttempt, DIFF_COLOR, fmtDate, ScoreBadge, SearchInput, BtnView, GradingStatusBadge, AppDialog, DialogState } from './shared';
+import { supabase, User, Question, QuizAttempt, DIFF_COLOR, fmtDate, ScoreBadge, SearchInput, BtnView, GradingStatusBadge, AppDialog, DialogState, gradeEssayWithAI } from './shared';
 import { getSession } from '@/lib/auth';
 
 function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: () => void; isAdminView: boolean }) {
@@ -14,6 +14,10 @@ function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: (
   const [manualScores, setManualScores] = useState<Record<string, string>>({});
   const [savingGrade, setSavingGrade] = useState(false);
   const [dialog, setDialog] = useState<DialogState>(null);
+  // ── Saran AI (bukan skor final — lihat gradeEssayWithAI di shared.tsx) ──
+  const [aiFeedback, setAiFeedback] = useState<Record<string, string>>({});
+  const [aiGradingIds, setAiGradingIds] = useState<Set<string>>(new Set());
+  const [aiError, setAiError] = useState<Record<string, string>>({});
 
   useEffect(() => {
     supabase.from('lc_quiz_attempts')
@@ -26,6 +30,7 @@ function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: (
   const handleViewDetail = async (attempt: any) => {
     setSelectedAttempt(attempt);
     setLoadingDetail(true);
+    setAiFeedback({}); setAiGradingIds(new Set()); setAiError({});
     const questionIds: string[] = attempt.lc_quiz_sessions?.question_ids ?? [];
     const [{ data: ans }, { data: qs }] = await Promise.all([
       supabase.from('lc_answers').select('*').eq('attempt_id', attempt.id),
@@ -37,9 +42,51 @@ function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: (
     setQuestions(orderedQs);
     setAnswerDetails(ans ?? []);
     const scoreMap: Record<string, string> = {};
-    (ans ?? []).forEach((a: any) => { if (a.manual_score !== null && a.manual_score !== undefined) scoreMap[a.question_id] = String(a.manual_score); });
+    const feedbackMap: Record<string, string> = {};
+    (ans ?? []).forEach((a: any) => {
+      if (a.manual_score !== null && a.manual_score !== undefined) scoreMap[a.question_id] = String(a.manual_score);
+      if (a.ai_feedback) feedbackMap[a.question_id] = a.ai_feedback;
+      // Belum ada manual_score TAPI sudah ada ai_score tersimpan (dari sesi
+      // sebelumnya) — pakai sebagai isian awal supaya tidak dinilai AI ulang.
+      else if (a.manual_score === null && a.ai_score !== null && a.ai_score !== undefined) {
+        scoreMap[a.question_id] = String(a.ai_score);
+      }
+    });
     setManualScores(scoreMap);
+    setAiFeedback(feedbackMap);
     setLoadingDetail(false);
+
+    // Otomatis minta AI menilai essay yang BELUM pernah dinilai (manual maupun
+    // AI) — supaya admin buka halaman ini dan skornya sudah terisi, tinggal
+    // konfirmasi atau koreksi. Essay tanpa jawaban (Tidak dijawab) dilewati.
+    if (isAdminView) {
+      for (const q of orderedQs) {
+        if (q.question_type !== 'essay') continue;
+        if (scoreMap[q.id] !== undefined || feedbackMap[q.id]) continue;
+        const a = (ans ?? []).find((x: any) => x.question_id === q.id);
+        const text = a?.essay_text?.trim();
+        if (text) runAiGrading(attempt.id, q, text);
+      }
+    }
+  };
+
+  /** Best-effort — kegagalan AI TIDAK PERNAH menghalangi penilaian manual. */
+  const runAiGrading = async (attemptId: string, q: Question, studentText: string) => {
+    setAiGradingIds(p => new Set(p).add(q.id));
+    setAiError(p => { const n = { ...p }; delete n[q.id]; return n; });
+    try {
+      const result = await gradeEssayWithAI(q.question, q.model_answer, studentText);
+      setAiFeedback(p => ({ ...p, [q.id]: result.feedback }));
+      // Jangan timpa kalau admin sudah sempat mengetik nilai sendiri sambil menunggu AI.
+      setManualScores(p => (p[q.id] !== undefined ? p : { ...p, [q.id]: String(result.score) }));
+      void supabase.from('lc_answers')
+        .update({ ai_score: result.score, ai_feedback: result.feedback })
+        .eq('attempt_id', attemptId).eq('question_id', q.id);
+    } catch (e) {
+      setAiError(p => ({ ...p, [q.id]: e instanceof Error ? e.message : 'AI gagal menilai.' }));
+    } finally {
+      setAiGradingIds(p => { const n = new Set(p); n.delete(q.id); return n; });
+    }
   };
 
   const handleSaveManualGrade = async () => {
@@ -123,12 +170,36 @@ function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: (
                           </div>
                         )}
                         {isAdminView ? (
-                          <div className="flex items-center gap-2">
-                            <label className="text-xs font-bold text-slate-600">Nilai (0-100):</label>
-                            <input type="number" min={0} max={100}
-                              value={manualScores[q.id] ?? ''}
-                              onChange={e => setManualScores(p => ({ ...p, [q.id]: e.target.value }))}
-                              className="w-24 border border-slate-300 rounded-lg px-3 py-1.5 text-sm font-bold outline-none focus:border-indigo-400" />
+                          <div className="space-y-2">
+                            {aiGradingIds.has(q.id) && (
+                              <div className="flex items-center gap-2 text-xs font-semibold text-violet-600">
+                                <span className="w-3.5 h-3.5 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin" />
+                                🤖 AI sedang menilai...
+                              </div>
+                            )}
+                            {aiFeedback[q.id] && (
+                              <div className="bg-violet-50 rounded-xl border border-violet-200 p-3">
+                                <p className="text-[10px] font-bold text-violet-500 uppercase tracking-widest mb-1">🤖 Saran AI</p>
+                                <p className="text-xs text-violet-800 leading-relaxed">{aiFeedback[q.id]}</p>
+                              </div>
+                            )}
+                            {aiError[q.id] && (
+                              <p className="text-xs text-rose-500 italic">⚠️ {aiError[q.id]} — isi nilai manual di bawah.</p>
+                            )}
+                            <div className="flex items-center gap-3">
+                              <label className="text-xs font-bold text-slate-600">Nilai (0-100):</label>
+                              <input type="number" min={0} max={100}
+                                value={manualScores[q.id] ?? ''}
+                                onChange={e => setManualScores(p => ({ ...p, [q.id]: e.target.value }))}
+                                className="w-24 border border-slate-300 rounded-lg px-3 py-1.5 text-sm font-bold outline-none focus:border-indigo-400" />
+                              {ans?.essay_text?.trim() && (
+                                <button type="button" disabled={aiGradingIds.has(q.id)}
+                                  onClick={() => runAiGrading(selectedAttempt.id, q, ans.essay_text.trim())}
+                                  className="text-[11px] font-bold text-violet-600 hover:text-violet-800 disabled:opacity-40 transition-colors">
+                                  🔄 {aiFeedback[q.id] || aiError[q.id] ? 'Nilai Ulang dengan AI' : 'Nilai dengan AI'}
+                                </button>
+                              )}
+                            </div>
                           </div>
                         ) : (
                           manualScores[q.id] !== undefined && (

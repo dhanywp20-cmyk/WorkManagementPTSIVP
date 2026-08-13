@@ -4,7 +4,12 @@ import { useState, useEffect } from 'react';
 import { supabase, User, QuizSession, fmtDate, ScoreBadge, SearchInput, BtnView, GradingStatusBadge } from './shared';
 import { UserAnswerReview } from './TeamPage';
 
-export function ReportPage({ currentUser }: { currentUser: User }) {
+export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }: {
+  currentUser: User;
+  /** Diisi lewat tombol "Lihat Hasil" di kartu Sesi Quiz — langsung buka sesi ini. */
+  initialSessionId?: string | null;
+  onSessionConsumed?: () => void;
+}) {
   const [data, setData] = useState<any[]>([]);
   const [sessions, setSessions] = useState<QuizSession[]>([]);
   const [selectedSession, setSelectedSession] = useState('');
@@ -15,6 +20,14 @@ export function ReportPage({ currentUser }: { currentUser: User }) {
     supabase.from('lc_quiz_sessions').select('*').order('created_at', { ascending: false })
       .then(({ data: s }: { data: QuizSession[] | null }) => setSessions(s ?? []));
   }, []);
+
+  useEffect(() => {
+    if (initialSessionId) {
+      setSelectedSession(initialSessionId);
+      onSessionConsumed?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSessionId]);
 
   useEffect(() => {
     if (!selectedSession) { setData([]); return; }
@@ -137,6 +150,17 @@ export function ReportPage({ currentUser }: { currentUser: User }) {
               </table>
             </div>
           </>
+        )}
+
+        {!selectedSession && (
+          <div className="flex justify-center py-16">
+            <div className="text-center px-10 py-8 rounded-2xl"
+              style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
+              <div className="text-5xl mb-3">👆</div>
+              <p className="font-semibold text-slate-700">Pilih sesi quiz di atas</p>
+              <p className="text-sm mt-1 text-slate-500">Hasil & jawaban peserta akan muncul setelah sesi dipilih.<br/>Tip: klik "Lihat Hasil" langsung dari kartu sesi di tab Sesi Quiz.</p>
+            </div>
+          </div>
         )}
 
         {selectedSession && data.length === 0 && (

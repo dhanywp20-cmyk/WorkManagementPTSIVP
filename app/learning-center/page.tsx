@@ -73,6 +73,10 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
   const [teamView, setTeamView] = useState<TeamView>('my-quiz');
   const [loading, setLoading] = useState(false);
   const [contentKey, setContentKey] = useState(0);
+  // Sesi yang mau langsung dibuka di tab Laporan — diisi lewat tombol "Lihat
+  // Hasil" di kartu Sesi Quiz, supaya admin tidak perlu cari sendiri sesinya
+  // lagi dari dropdown di Laporan.
+  const [reportSessionId, setReportSessionId] = useState<string | null>(null);
 
   const changeAdminView = (v: AdminView) => {
     if (v === adminView) return;
@@ -82,6 +86,11 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
       setLoading(false);
       setContentKey(k => k + 1);
     }, 160);
+  };
+
+  const viewSessionResults = (sessionId: string) => {
+    setReportSessionId(sessionId);
+    changeAdminView('report');
   };
 
   const changeTeamView = (v: TeamView) => {
@@ -126,9 +135,9 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
                   {adminView === 'dashboard'  && <AdminDashboard user={currentUser} />}
                   {adminView === 'materi'     && <MateriPage user={currentUser} isAdmin={true} />}
                   {adminView === 'questions'  && <QuestionsPage user={currentUser} />}
-                  {adminView === 'sessions'   && <SessionsPage user={currentUser} />}
+                  {adminView === 'sessions'   && <SessionsPage user={currentUser} onViewResults={viewSessionResults} />}
                   {adminView === 'team'       && <TeamPage />}
-                  {adminView === 'report'     && <ReportPage currentUser={currentUser} />}
+                  {adminView === 'report'     && <ReportPage currentUser={currentUser} initialSessionId={reportSessionId} onSessionConsumed={() => setReportSessionId(null)} />}
                 </>
               ) : (
                 <>
