@@ -9,7 +9,7 @@ import { notifyProjectStatusChange } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { compressImage } from '@/lib/image-compress';
-import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState, ListEmptyState
+import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState, ListEmptyState, AuditTrailPanel
 } from '@/components/shared';
 import {
   User, ProjectRequest, RoomDetail, BrandPicMapping,
@@ -691,6 +691,22 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       const { data, error } = await supabase.from('project_requests').insert([payload]).select().single();
       if (error) { notify('error', 'Gagal submit form: ' + error.message); setSubmitting(false); return; }
       if (data?.id) {
+        // Catat pembuatan ke audit trail. Sebelumnya HANYA approve/reject/
+        // status_change yang dicatat, sehingga riwayat request tidak punya
+        // pangkal. Saat Sales Internal mengajukan atas nama Sales External
+        // (SBU), keduanya disebut supaya jelas siapa penginput sebenarnya.
+        {
+          const atasNama = (payload.sales_name ?? '').trim();
+          const bedaPenginput = atasNama && atasNama !== currentUser.full_name;
+          logAudit({
+            user_id: currentUser.id, user_name: currentUser.full_name,
+            action: 'create', module: 'project',
+            target_id: data.id, target_name: payload.project_name,
+            notes: bedaPenginput
+              ? `Diinput ${currentUser.full_name} atas nama Sales ${atasNama}`
+              : `Kebutuhan: ${payload.kebutuhan || '-'}`,
+          }).catch(() => {});
+        }
         await supabase.from('project_messages').insert([{
           request_id: data.id, sender_id: currentUser.id, sender_name: 'System', sender_role: 'system',
           message: `📋 Request baru dari ${currentUser.full_name} telah masuk dan menunggu approval dari Superadmin.`,
@@ -2707,10 +2723,22 @@ Hubungi Admin untuk info lebih lanjut.
                             <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">{selectedRequest.sales_division}</p>
                           </div>
                         )}
+                        {/* "Sales / Account" di atas = ATAS NAMA siapa request diajukan;
+                            baris ini = siapa yang benar-benar mengisi & submit. Lewat SBU,
+                            Sales Internal bisa mengajukan atas nama Sales External, jadi
+                            kalau keduanya beda ditandai tegas supaya Sales yang namanya
+                            tercantum tidak dikira membuat request yang tak pernah ia buat. */}
                         {selectedRequest.requester_name && (
                           <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Requester</label>
-                            <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">{selectedRequest.requester_name}</p>
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
+                              {selectedRequest.sales_name && selectedRequest.sales_name !== selectedRequest.requester_name ? 'Diinput oleh' : 'Requester'}
+                            </label>
+                            <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                              {selectedRequest.requester_name}
+                              {selectedRequest.sales_name && selectedRequest.sales_name !== selectedRequest.requester_name && (
+                                <span className="text-xs font-normal text-gray-500"> — atas nama Sales {selectedRequest.sales_name}</span>
+                              )}
+                            </p>
                           </div>
                         )}
                         {selectedRequest.assign_name && (
@@ -3027,6 +3055,23 @@ Hubungi Admin untuk info lebih lanjut.
                       </div>
                     </div>
                   )}
+
+                  {/* Riwayat perubahan — approve internal, approve admin, assign,
+                      reject, ganti status. Baris pembuatan diturunkan dari request
+                      itu sendiri karena logAudit baru mencatat 'create' sejak
+                      perbaikan terakhir; tanpa itu request LAMA tampak tidak
+                      punya pangkal padahal requester_name & created_at-nya ada. */}
+                  <div className="mt-4">
+                    <AuditTrailPanel targetId={selectedRequest.id} modul="project"
+                      selaluTerbuka sembunyikanBilaKosong={false}
+                      awal={{
+                        oleh: selectedRequest.requester_name || null,
+                        waktu: selectedRequest.created_at ?? null,
+                        keterangan: `Request diajukan${selectedRequest.sales_division ? ` — ${selectedRequest.sales_division}` : ''}`
+                          + (selectedRequest.sales_name && selectedRequest.sales_name !== selectedRequest.requester_name
+                            ? ` · atas nama Sales ${selectedRequest.sales_name}` : ''),
+                      }} />
+                  </div>
                 </div>
               </div>
 

@@ -753,6 +753,24 @@ function TicketingSystemInner() {
       const { data: insertedTicket, error } = await supabase.from("tickets").insert([ticketData]).select("id").single();
       if (error) throw error;
 
+      // Catat pembuatan ke audit trail. Sebelumnya HANYA approve/assign yang
+      // dicatat, sehingga riwayat tiap ticket seolah tidak punya pangkal —
+      // tidak terlihat siapa yang benar-benar membuatnya. Saat Sales Internal
+      // mengajukan atas nama Sales External (SBU), keduanya disebut supaya
+      // jelas siapa penginput vs atas nama siapa.
+      if (insertedTicket?.id) {
+        const atasNama = (ticketData.sales_name as string | null) ?? "";
+        const bedaPenginput = atasNama && atasNama !== currentUser?.full_name;
+        logAudit({
+          user_id: currentUser?.id ?? "", user_name: currentUser?.full_name ?? "",
+          action: "create", module: "ticket",
+          target_id: insertedTicket.id, target_name: newTicket.project_name,
+          notes: bedaPenginput
+            ? `Diinput ${currentUser?.full_name} atas nama Sales ${atasNama}`
+            : `Issue: ${newTicket.issue_case}`,
+        }).catch(() => {});
+      }
+
       // ── Kirim WA notifikasi ke semua admin & superadmin jika butuh approval ──
       // Hanya role guest dan team yang butuh approval → trigger WA ke admin
       if (!isElevated) {
@@ -764,9 +782,17 @@ function TicketingSystemInner() {
             .in("role", ["admin", "superadmin"])
             .not("phone_number", "is", null)
             .neq("phone_number", "");
-          // Manager (app_settings.manager_user_id) — role='team' jabatan Manager TIDAK
-          // ke-cover query role admin di atas, jadi ditambah terpisah supaya ikut di-notif.
+          // Manager — role='team' TIDAK ke-cover query role admin di atas, jadi
+          // ditambah terpisah supaya notifikasi ke Manager datang BERSAMAAN
+          // dengan admin (bukan menyusul). Dua sumber, dedup by id:
+          //   1. akun Team PTS ber-toggle "Full Access" (cara yang disarankan)
+          //   2. app_settings.manager_user_id (override lama, tetap didukung)
           const approvers: { id: string; phone_number: string; full_name: string }[] = [...((adminUsers as any[]) ?? [])];
+          try {
+            const { data: fullAccess } = await supabase.from("users")
+              .select("id, phone_number, full_name").eq("role", "team").eq("access_level", "full");
+            ((fullAccess as any[]) ?? []).forEach(u => { if (!approvers.find(a => a.id === u.id)) approvers.push(u); });
+          } catch { }
           try {
             const { data: mgrSetting } = await supabase.from("app_settings").select("value").eq("key", "manager_user_id").maybeSingle();
             const managerId = mgrSetting?.value ? String(mgrSetting.value).replace(/^"|"$/g, "") : "";
@@ -3074,7 +3100,19 @@ function TicketingSystemInner() {
                       <div>
                         {selectedTicket.sales_name && <InfoLine label="Sales" value={`${selectedTicket.sales_name}${selectedTicket.sales_division ? ` (${selectedTicket.sales_division})` : ''}`} />}
                         <InfoLine label="Dibuat" value={selectedTicket.created_at ? formatDateTime(selectedTicket.created_at) : '-'} />
-                        {selectedTicket.created_by && <InfoLine label="Oleh" value={`${selectedTicket.created_by}`} />}
+                        {/* "Sales" di atas = ATAS NAMA siapa ticket diajukan; baris ini =
+                            siapa yang benar-benar mengetik & submit. Lewat SBU, Sales
+                            Internal bisa mengajukan atas nama Sales External, jadi kalau
+                            keduanya beda disebut tegas supaya Sales yang namanya tercantum
+                            tidak dikira membuat ticket yang tak pernah ia buat. */}
+                        {selectedTicket.created_by && (() => {
+                          const pembuat = users.find(u => u.username === selectedTicket.created_by);
+                          const namaPembuat = pembuat?.full_name || selectedTicket.created_by;
+                          const atasNama = selectedTicket.sales_name || "";
+                          const beda = atasNama && atasNama !== namaPembuat;
+                          return <InfoLine label={beda ? "Diinput oleh" : "Oleh"}
+                            value={beda ? `${namaPembuat} (${selectedTicket.created_by}) — atas nama Sales ${atasNama}` : `${namaPembuat} (${selectedTicket.created_by})`} />;
+                        })()}
                         {selectedTicket.description && <InfoLine label="Deskripsi" value={selectedTicket.description} />}
                       </div>
                     </div>
@@ -3609,7 +3647,24 @@ function TicketingSystemInner() {
               </div>
               <div className="flex-1 overflow-y-auto p-5">
                 <div className="mb-4">
-                  <AuditTrailPanel targetId={summaryTicket.id} modul="ticket" />
+                  {/* Baris pembuatan diturunkan dari ticket-nya sendiri: logAudit
+                      baru mencatat 'create' sejak perbaikan terakhir, jadi tanpa
+                      ini seluruh ticket LAMA tampak tidak punya pangkal — padahal
+                      created_by & created_at-nya tersimpan sejak awal. */}
+                  {(() => {
+                    const pembuat = users.find(u => u.username === summaryTicket.created_by);
+                    const namaPembuat = pembuat?.full_name || summaryTicket.created_by || null;
+                    const atasNama = summaryTicket.sales_name || "";
+                    return (
+                      <AuditTrailPanel targetId={summaryTicket.id} modul="ticket"
+                        awal={{
+                          oleh: namaPembuat,
+                          waktu: summaryTicket.created_at ?? null,
+                          keterangan: `Ticket dibuat · ${summaryTicket.issue_case}`
+                            + (atasNama && namaPembuat && atasNama !== namaPembuat ? ` · atas nama Sales ${atasNama}` : ''),
+                        }} />
+                    );
+                  })()}
                 </div>
                 <div className="flex flex-wrap gap-2 mb-5 p-3 rounded-xl text-xs" style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)" }}>
                   <span className="flex items-center gap-1"><span className="text-gray-500">👤 Handler:</span><span className="font-bold">{summaryTicket.assign_name || "-"}</span></span><span className="text-gray-300">|</span>
