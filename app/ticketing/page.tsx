@@ -2389,17 +2389,22 @@ function TicketingSystemInner() {
             <div className="mb-4 space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3 animate-slide-up anim-d80">
                 {[
-                  { label: "Total Tickets", value: stats.total, sub: "Seluruh tiket saya", gradient: "linear-gradient(135deg,#4f46e5,#6d28d9)", shadow: "rgba(79,70,229,0.35)" },
-                  { label: "Waiting Approval", value: tickets.filter((t) => t.status === "Waiting Approval").length, sub: "Menunggu persetujuan", gradient: "linear-gradient(135deg,#ea580c,#c2410c)", shadow: "rgba(234,88,12,0.35)" },
-                  { label: "Pending", value: stats.pending, sub: "Menunggu tindakan", gradient: "linear-gradient(135deg,#d97706,#b45309)", shadow: "rgba(217,119,6,0.35)" },
-                  { label: "In Progress", value: stats.processing, sub: "Sedang ditangani", gradient: "linear-gradient(135deg,#2563eb,#1d4ed8)", shadow: "rgba(37,99,235,0.35)" },
-                  { label: "Solved", value: stats.solved, sub: "Terselesaikan", gradient: "linear-gradient(135deg,#059669,#047857)", shadow: "rgba(5,150,105,0.35)" },
+                  { label: "Total Tickets", value: stats.total, sub: "Seluruh tiket saya", accent: "#4f46e5" },
+                  { label: "Waiting Approval", value: tickets.filter((t) => t.status === "Waiting Approval").length, sub: "Menunggu persetujuan", accent: "#c2410c" },
+                  { label: "Pending", value: stats.pending, sub: "Menunggu tindakan", accent: "#b45309" },
+                  { label: "In Progress", value: stats.processing, sub: "Sedang ditangani", accent: "#1d4ed8" },
+                  { label: "Solved", value: stats.solved, sub: "Terselesaikan", accent: "#047857" },
                 ].map((card, i) => (
-                  <div key={i} className="rounded-2xl p-4 relative overflow-hidden flex flex-col gap-2" style={{ background: card.gradient, boxShadow: `0 4px 16px ${card.shadow}` }}>
-                    <span className="text-3xl font-black text-white leading-none mt-3">{card.value}</span>
+                  /* Sengaja tetap <div>: kartu ringkasan ini memang tidak bisa diklik untuk
+                     peran ini. Tampilannya disamakan dengan varian admin agar bahasa visual
+                     satu halaman tetap konsisten. */
+                  <div key={i} className="rounded-xl px-4 py-3.5 relative overflow-hidden flex flex-col gap-1.5"
+                    style={{ background: "#ffffff", border: "1px solid rgba(15,23,42,0.10)", boxShadow: "0 1px 2px rgba(15,23,42,0.06)" }}>
+                    <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: card.accent, opacity: 0.55 }} />
+                    <span className="text-3xl font-black leading-none tabular-nums" style={{ color: "#0f172a" }}>{card.value}</span>
                     <div>
-                      <p className="text-sm font-bold text-white leading-tight">{card.label}</p>
-                      <p className="text-[10px] font-medium leading-tight" style={{ color: "rgba(255,255,255,0.75)" }}>{card.sub}</p>
+                      <p className="text-[13px] font-bold leading-tight" style={{ color: "#1e293b" }}>{card.label}</p>
+                      <p className="text-[10px] font-medium leading-tight text-slate-500">{card.sub}</p>
                     </div>
                   </div>
                 ))}
@@ -2446,22 +2451,40 @@ function TicketingSystemInner() {
               {/* ── Stat Cards (Redesigned like ReminderSchedule) ── */}
               <div className="grid grid-cols-2 md:grid-cols-6 gap-3 animate-slide-up anim-d80">
                 {[
-                  { label: "Total Tickets", value: stats.total, sub: "Seluruh tiket", gradient: "linear-gradient(135deg,#4f46e5,#6d28d9)", shadow: "rgba(79,70,229,0.35)", onClick: () => { setFilterStatus("All"); setHandlerFilter(null); }, active: filterStatus === "All" && !handlerFilter },
-                  { label: "Pending", value: stats.pending, sub: "Menunggu tindakan", gradient: "linear-gradient(135deg,#d97706,#b45309)", shadow: "rgba(217,119,6,0.35)", onClick: () => { setFilterStatus(filterStatus === "Pending" ? "All" : "Pending"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Pending" },
-                  { label: "In Progress", value: stats.processing, sub: "Sedang ditangani", gradient: "linear-gradient(135deg,#2563eb,#1d4ed8)", shadow: "rgba(37,99,235,0.35)", onClick: () => { setFilterStatus(filterStatus === "In Progress" ? "All" : "In Progress"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "In Progress" },
-                  { label: "Solved", value: stats.solved, sub: "Terselesaikan", gradient: "linear-gradient(135deg,#059669,#047857)", shadow: "rgba(5,150,105,0.35)", onClick: () => { setFilterStatus(filterStatus === "Solved" ? "All" : "Solved"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Solved" },
-                  { label: "Overdue", value: stats.overdue, sub: "Berpotensi denda", gradient: "linear-gradient(135deg,#dc2626,#b91c1c)", shadow: "rgba(220,38,38,0.35)", onClick: () => { setFilterStatus(filterStatus === "Overdue" ? "All" : "Overdue"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Overdue" },
-                  { label: "Solved Overdue", value: stats.solvedOverdue, sub: "Butuh verifikasi", gradient: "linear-gradient(135deg,#7c3aed,#6d28d9)", shadow: "rgba(124,58,237,0.35)", onClick: () => { setFilterStatus(filterStatus === "Solved Overdue" ? "All" : "Solved Overdue"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Solved Overdue" },
+                  { label: "Total Tickets", value: stats.total, sub: "Seluruh tiket", accent: "#4f46e5", tint: "rgba(79,70,229,0.06)", onClick: () => { setFilterStatus("All"); setHandlerFilter(null); }, active: filterStatus === "All" && !handlerFilter },
+                  { label: "Pending", value: stats.pending, sub: "Menunggu tindakan", accent: "#b45309", tint: "rgba(180,83,9,0.06)", onClick: () => { setFilterStatus(filterStatus === "Pending" ? "All" : "Pending"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Pending" },
+                  { label: "In Progress", value: stats.processing, sub: "Sedang ditangani", accent: "#1d4ed8", tint: "rgba(29,78,216,0.06)", onClick: () => { setFilterStatus(filterStatus === "In Progress" ? "All" : "In Progress"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "In Progress" },
+                  { label: "Solved", value: stats.solved, sub: "Terselesaikan", accent: "#047857", tint: "rgba(4,120,87,0.06)", onClick: () => { setFilterStatus(filterStatus === "Solved" ? "All" : "Solved"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Solved" },
+                  { label: "Overdue", value: stats.overdue, sub: "Berpotensi denda", accent: "#b91c1c", tint: "rgba(185,28,28,0.06)", onClick: () => { setFilterStatus(filterStatus === "Overdue" ? "All" : "Overdue"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Overdue" },
+                  { label: "Solved Overdue", value: stats.solvedOverdue, sub: "Butuh verifikasi", accent: "#6d28d9", tint: "rgba(109,40,217,0.06)", onClick: () => { setFilterStatus(filterStatus === "Solved Overdue" ? "All" : "Solved Overdue"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Solved Overdue" },
                 ].map((card, i) => (
-                  <div key={i} onClick={card.onClick} className="rounded-2xl p-4 relative overflow-hidden flex flex-col gap-2 cursor-pointer transition-all hover:scale-[1.03] select-none" style={{ background: card.gradient, boxShadow: card.active ? `0 6px 24px ${card.shadow}` : `0 4px 16px ${card.shadow}`, outline: card.active ? "3px solid white" : "none", transform: card.active ? "scale(1.04)" : undefined }}>
-                    {card.active && <div className="absolute inset-0 rounded-2xl border-4 border-white/50 pointer-events-none" />}
-                    {card.active && <span className="absolute top-1 left-2 text-white/80 text-[9px] font-bold uppercase tracking-widest">Filter Aktif ✓</span>}
-                    <span className="text-3xl font-black text-white leading-none mt-3">{card.value}</span>
-                    <div>
-                      <p className="text-sm font-bold text-white leading-tight">{card.label}</p>
-                      <p className="text-[10px] font-medium leading-tight" style={{ color: "rgba(255,255,255,0.75)" }}>{card.sub}</p>
+                  /* Kartu memakai <button>, bukan <div onClick>: ini kontrol filter, jadi
+                     harus bisa dicapai & ditekan lewat keyboard, dan punya cincin fokus.
+                     Permukaan dibuat putih dengan aksen warna tipis — enam gradien jenuh
+                     yang saling berebut perhatian membuat angka justru sulit dibandingkan;
+                     warna kini dipakai untuk MENANDAI kategori, bukan mengecat seluruh kartu.
+                     Hanya kartu yang sedang jadi filter yang ditonjolkan. */
+                  <button key={i} type="button" onClick={card.onClick} aria-pressed={card.active}
+                    title={`Filter: ${card.label}`}
+                    className="group text-left rounded-xl px-4 py-3.5 relative overflow-hidden flex flex-col gap-1.5 cursor-pointer select-none transition-all duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                    style={{
+                      background: card.active ? card.tint : "#ffffff",
+                      border: `1px solid ${card.active ? card.accent : "rgba(15,23,42,0.10)"}`,
+                      boxShadow: card.active ? `0 4px 16px ${card.tint}, 0 0 0 1px ${card.accent}` : "0 1px 2px rgba(15,23,42,0.06)",
+                    }}>
+                    {/* Pita aksen tipis — penanda kategori yang tetap terbaca tanpa mendominasi. */}
+                    <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: card.accent, opacity: card.active ? 1 : 0.55 }} />
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-3xl font-black leading-none tabular-nums" style={{ color: card.active ? card.accent : "#0f172a" }}>{card.value}</span>
+                      {card.active && (
+                        <span className="text-[9px] font-bold uppercase tracking-widest whitespace-nowrap" style={{ color: card.accent }}>Aktif</span>
+                      )}
                     </div>
-                  </div>
+                    <div>
+                      <p className="text-[13px] font-bold leading-tight" style={{ color: card.active ? card.accent : "#1e293b" }}>{card.label}</p>
+                      <p className="text-[10px] font-medium leading-tight text-slate-500">{card.sub}</p>
+                    </div>
+                  </button>
                 ))}
               </div>
 
@@ -2759,9 +2782,11 @@ function TicketingSystemInner() {
                     <col style={{ width: "7%" }} />   {/* Sales */}
                     <col style={{ width: "10%" }} />  {/* Action */}
                   </colgroup>
-                  <thead>
-                    <tr className="border-b-2 border-gray-100" style={{ background: "rgba(248,248,248,0.97)" }}>
-                      <th className="px-2 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">
+                  {/* Header menempel saat digulir: daftar tiket bisa panjang, dan tanpa ini
+                      pembaca kehilangan acuan kolom begitu baris pertama lewat layar. */}
+                  <thead className="sticky top-0 z-10">
+                    <tr className="border-b border-slate-200" style={{ background: "#f8fafc" }}>
+                      <th className="px-2 py-3 text-center text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                         {selectMode && canManageTickets
                           ? <input type="checkbox"
                               checked={selectedIds.size === filteredTickets.length && filteredTickets.length > 0}
@@ -2769,15 +2794,15 @@ function TicketingSystemInner() {
                               className="w-4 h-4 rounded accent-red-600 cursor-pointer" title="Pilih Semua" />
                           : 'No'}
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">Project / Lokasi</th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">Warranty</th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">Product</th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">SN Unit</th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">Issue</th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">Assigned</th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">Status</th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide border-r border-gray-100">Sales</th>
-                      <th className="px-2 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide">Action</th>
+                      <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Project / Lokasi</th>
+                      <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Warranty</th>
+                      <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Product</th>
+                      <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">SN Unit</th>
+                      <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Issue</th>
+                      <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Assigned</th>
+                      <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Status</th>
+                      <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Sales</th>
+                      <th className="px-2 py-3 text-center text-[11px] font-bold text-slate-600 uppercase tracking-wider">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2790,14 +2815,14 @@ function TicketingSystemInner() {
                       const isActiveOverdue = overdue && ticket.status !== "Solved";
                       return (
                         <tr key={ticket.id} className={`stagger-item border-b border-gray-100 hover:bg-gray-50/70 transition-colors ${isActiveOverdue ? "bg-red-50 border-l-4 border-l-red-400" : isSolvedOverdue ? "bg-purple-50/60 border-l-4 border-l-purple-300" : ""}`}>
-                          <td className="px-2 py-3 border-r border-gray-100 align-middle text-center" onClick={e => e.stopPropagation()}>
+                          <td className="px-2 py-3 align-middle text-center" onClick={e => e.stopPropagation()}>
                             {selectMode && canManageTickets
                               ? <input type="checkbox" checked={selectedIds.has(ticket.id)}
                                   onChange={() => toggleSelectId(ticket.id)}
                                   className="w-4 h-4 rounded accent-red-600 cursor-pointer" />
                               : <span className="text-[11px] font-bold text-gray-400">{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</span>}
                           </td>
-                          <td className="px-3 py-3 border-r border-gray-100 align-middle">
+                          <td className="px-3 py-3 align-middle">
                             <div className="flex items-start gap-1">
                               {isActiveOverdue && <span className="text-red-500 text-xs mt-0.5 shrink-0" title="Overdue!">🚨</span>}
                               <div className="font-bold text-gray-800 text-sm break-words leading-tight">{ticket.project_name}</div>
@@ -2813,7 +2838,7 @@ function TicketingSystemInner() {
                             {isActiveOverdue && <div className="text-xs text-red-600 font-bold mt-0.5">⏰ OVERDUE</div>}
                           </td>
                           {/* Warranty cell */}
-                          <td className="px-3 py-3 border-r border-gray-100 align-middle">
+                          <td className="px-3 py-3 align-middle">
                             {(() => {
                               const w = getWarrantyInfo(ticket.project_name);
                               if (!w) return <span className="text-gray-300 text-xs">—</span>;
@@ -2836,7 +2861,7 @@ function TicketingSystemInner() {
                               );
                             })()}
                           </td>
-                          <td className="px-3 py-3 border-r border-gray-100 align-middle">
+                          <td className="px-3 py-3 align-middle">
                             {ticket.product && (
                               <button onClick={() => { setProductFilter(prev => prev === ticket.product ? null : (ticket.product ?? null)); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }}
                                 className="mt-1 text-[12px] font-semibold px-1.5 py-0.5 rounded break-words leading-tight transition-all inline-block"
@@ -2845,9 +2870,9 @@ function TicketingSystemInner() {
                               </button>
                             )}
                           </td>
-                          <td className="px-3 py-3 border-r border-gray-100 align-middle py-4"><div className="text-[13px] text-gray-600 break-words leading-tight">{ticket.sn_unit || "—"}</div></td>
-                          <td className="px-3 py-3 border-r border-gray-100 align-middle py-4"><div className="text-[13px] text-gray-700 break-words leading-tight">{ticket.issue_case}</div></td>
-                          <td className="px-3 py-3 border-r border-gray-100 align-middle py-4">
+                          <td className="px-3 py-3 align-middle py-4"><div className="text-[13px] text-gray-600 break-words leading-tight">{ticket.sn_unit || "—"}</div></td>
+                          <td className="px-3 py-3 align-middle py-4"><div className="text-[13px] text-gray-700 break-words leading-tight">{ticket.issue_case}</div></td>
+                          <td className="px-3 py-3 align-middle py-4">
                             <div className="text-sm text-gray-700 break-words leading-tight">{ticket.assign_name}</div>
                             {/* Tampilkan team handler (dari users), bukan current_team ticket */}
                             {(() => {
@@ -2868,7 +2893,7 @@ function TicketingSystemInner() {
                               );
                             })()}
                           </td>
-                          <td className="px-3 py-3 border-r border-gray-100 align-middle py-4">
+                          <td className="px-3 py-3 align-middle py-4">
                             <div className="flex flex-col gap-1 items-start">
                               <span className={`px-2 py-0.5 text-xs font-bold ${ticket.status === "Waiting Approval" ? statusColors["Waiting Approval"] : statusColors[ticket.status] || statusColors["Pending"]}`}>{ticket.status === "Waiting Approval" ? "⏳ Waiting Approval" : ticket.status}</span>
                               {overdue && <span className={`px-2 py-0.5 text-xs font-bold ${ticket.status === "Solved" ? "bg-purple-100 text-purple-800 border-purple-400" : statusColors["Overdue"]}`}>{ticket.status === "Solved" ? "⚠️ Solved Overdue" : "🚨 Overdue"}</span>}
@@ -2883,7 +2908,7 @@ function TicketingSystemInner() {
                               )}
                             </div>
                            </td>
-                          <td className="px-2 py-3 border-r border-gray-100 align-middle"><div className="text-xs text-gray-600 break-words leading-tight">{ticket.sales_name || "—"}</div>{ticket.sales_division && <div className="text-xs text-purple-500 font-semibold mt-0.5">{ticket.sales_division}</div>}</td>
+                          <td className="px-2 py-3 align-middle"><div className="text-xs text-gray-600 break-words leading-tight">{ticket.sales_name || "—"}</div>{ticket.sales_division && <div className="text-xs text-purple-500 font-semibold mt-0.5">{ticket.sales_division}</div>}</td>
                           <td className="px-1 py-2 align-middle">
                             <div className="flex flex-wrap items-center justify-center gap-1">
                               {/* Activity log badge + View */}
