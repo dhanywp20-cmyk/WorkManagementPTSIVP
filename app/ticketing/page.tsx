@@ -66,6 +66,20 @@ function TicketingSystemInner() {
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [approvalTicket, setApprovalTicket] = useState<Ticket | null>(null);
   const [approvalAssignee, setApprovalAssignee] = useState("");
+  /**
+   * Pilihan handler PER TICKET di modal approval, dikunci id ticket.
+   *
+   * Sebelumnya seluruh baris di modal berbagi SATU pasang state
+   * (approvalTicket + approvalAssignee). Modal itu menampilkan semua ticket
+   * "Waiting Approval" sekaligus, jadi satu nilai bersama untuk banyak baris
+   * membuat pilihan bisa bocor antar-ticket begitu state-nya tertinggal —
+   * dan itu berujung ticket ke-assign ke orang yang salah. Dengan peta
+   * per-id, tiap baris memegang pilihannya sendiri dan tidak mungkin
+   * tertukar.
+   */
+  const [approvalAssignees, setApprovalAssignees] = useState<Record<string, string>>({});
+  /** Id ticket yang sedang diproses — mencegah klik ganda pada baris yang sama. */
+  const [approvingId, setApprovingId] = useState<string | null>(null);
   // Supervisor assign (tahap supervisor_assign) — Supervisor lanjut assign ke tim / sendiri
   const [supAssignTicket, setSupAssignTicket] = useState<Ticket | null>(null);
   const [supAssignTo, setSupAssignTo] = useState("");
@@ -952,40 +966,72 @@ function TicketingSystemInner() {
     return { isIn, diffDays, wy, bastStr, expiryStr, assignName: best.assign_name, category: best.category };
   };
 
-  const approveTicket = async () => {
-    if (!approvalTicket || !approvalAssignee) { notify("error", "Please select a Team PTS IVP member to assign!"); return; }
+  /**
+   * Beres-beres setelah SATU ticket selesai diproses di modal approval.
+   *
+   * Modal sengaja TIDAK ditutup selama masih ada ticket lain yang menunggu:
+   * sebelumnya modal langsung tertutup tiap kali satu ticket di-approve,
+   * sehingga admin harus membukanya lagi berulang kali saat antre banyak.
+   * Pilihan handler ticket yang baru selesai ikut dibuang supaya tidak ada
+   * sisa yang bisa terbawa ke ticket berikutnya.
+   */
+  const selesaikanSatuApproval = (ticketId: string) => {
+    setApprovalAssignees(prev => {
+      const sisa = { ...prev };
+      delete sisa[ticketId];
+      return sisa;
+    });
+    setApprovalTicket(null);
+    setApprovalAssignee("");
+    const masihAdaLain = pendingApprovalTickets.some(t => t.id !== ticketId);
+    if (!masihAdaLain) setShowApprovalModal(false);
+  };
+
+  /**
+   * Ticket & handler diterima sebagai ARGUMEN, bukan dibaca dari state bersama.
+   * Modal approval menampilkan banyak ticket sekaligus; membaca state bersama
+   * membuat hasilnya bergantung pada state yang mungkin sudah berubah/tertinggal
+   * saat proses async berjalan — persis yang membuat ticket ke-assign ke orang
+   * yang salah. Dengan argumen eksplisit, yang diproses selalu baris yang
+   * benar-benar diklik.
+   */
+  const approveTicket = async (ticketArg?: Ticket | null, assigneeArg?: string) => {
+    const tk = ticketArg ?? approvalTicket;
+    const asg = assigneeArg ?? approvalAssignee;
+    if (!tk || !asg) { notify("error", "Please select a Team PTS IVP member to assign!"); return; }
     try {
+      setApprovingId(tk.id);
       setUploading(true);
       // ── Route ke Supervisor: approve tapi belum assign ke handler. Supervisor
       //    yang lanjut assign ke anggota tim (atau kerjakan sendiri). ────────────
-      if (approvalAssignee.startsWith("SUP::")) {
-        const [, supId, supName] = approvalAssignee.split("::");
+      if (asg.startsWith("SUP::")) {
+        const [, supId, supName] = asg.split("::");
         const { error: routeErr } = await supabase.from("tickets").update({
           status: "Pending", assign_name: "",
           routing_status: "supervisor_assign", assigned_supervisor_id: supId,
-        }).eq("id", approvalTicket.id);
+        }).eq("id", tk.id);
         if (routeErr) throw routeErr;
         try {
           const supMember = teamMembers.find(m => m.id === supId);
           const { data: supUser } = supMember?.username
             ? await supabase.from("users").select("id, phone_number, full_name").eq("username", supMember.username).maybeSingle()
             : { data: null };
-          if (supUser?.id) createNotification({ user_id: supUser.id, type: 'ticket', title: '🎯 Ticket perlu kamu assign', body: `${approvalTicket.project_name} — ${approvalTicket.issue_case}`, action_url: '/ticketing', ref_id: approvalTicket.id, created_by: currentUser?.full_name || '' }).catch(() => {});
+          if (supUser?.id) createNotification({ user_id: supUser.id, type: 'ticket', title: '🎯 Ticket perlu kamu assign', body: `${tk.project_name} — ${tk.issue_case}`, action_url: '/ticketing', ref_id: tk.id, created_by: currentUser?.full_name || '' }).catch(() => {});
           if (supUser?.phone_number) {
             const waMsg = [
               "🎯 *Ticket Perlu Di-assign ke Tim*",
               "━━━━━━━━━━━━━━━━━━",
               `Halo *${supUser.full_name || supName}*, ticket sudah diapprove Admin — silakan assign ke anggota tim / kerjakan sendiri:`,
-              `📌 *Project :* ${approvalTicket.project_name}`,
-              `⚠️ *Issue   :* ${approvalTicket.issue_case}`,
+              `📌 *Project :* ${tk.project_name}`,
+              `⚠️ *Issue   :* ${tk.issue_case}`,
               "━━━━━━━━━━━━━━━━━━",
               "🔗 https://team-ticketing.vercel.app/dashboard",
             ].join("\n");
             await sendWANotif({ type: "reminder_wa", target: supUser.phone_number, message: waMsg });
           }
         } catch { }
-        logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'approve', module: 'ticket', target_id: approvalTicket.id, target_name: approvalTicket.project_name, notes: `Routed to supervisor: ${supName}` }).catch(() => {});
-        setShowApprovalModal(false); setApprovalTicket(null); setApprovalAssignee("");
+        logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'approve', module: 'ticket', target_id: tk.id, target_name: tk.project_name, notes: `Routed to supervisor: ${supName}` }).catch(() => {});
+        selesaikanSatuApproval(tk.id);
         await fetchData();
         notify("success", `Ticket diteruskan ke Supervisor ${supName} untuk di-assign`);
         return;
@@ -993,19 +1039,19 @@ function TicketingSystemInner() {
       // Assign langsung (bukan route). Kolom routing TIDAK ditulis di sini supaya
       // tetap jalan walau migrasi supervisor belum di-run (ticket "Waiting Approval"
       // yg di-approve langsung tak pernah punya routing_status).
-      const { error } = await supabase.from("tickets").update({ status: "Pending", assign_name: approvalAssignee }).eq("id", approvalTicket.id);
+      const { error } = await supabase.from("tickets").update({ status: "Pending", assign_name: asg }).eq("id", tk.id);
       if (error) throw error;
-      if (approvalTicket.created_by) {
-        const creatorUser = users.find((u) => u.username === approvalTicket.created_by);
+      if (tk.created_by) {
+        const creatorUser = users.find((u) => u.username === tk.created_by);
         if (creatorUser && creatorUser.role === "guest" && creatorUser.id) {
           // Notify guest/sales bahwa ticket mereka sudah diproses
-          void createNotification({ user_id: creatorUser.id, type: 'ticket', title: `🎫 Ticket disetujui`, body: `${approvalTicket.project_name} — ditugaskan ke ${approvalAssignee}`, action_url: '/ticketing', ref_id: approvalTicket.id, created_by: currentUser?.full_name || '' });
+          void createNotification({ user_id: creatorUser.id, type: 'ticket', title: `🎫 Ticket disetujui`, body: `${tk.project_name} — ditugaskan ke ${asg}`, action_url: '/ticketing', ref_id: tk.id, created_by: currentUser?.full_name || '' });
         }
       }
       // ── WA ke handler yang di-assign ──────────────────────────────────────
       try {
         // Cari handler dari teamMembers state (sudah load dari users)
-        const tm = teamMembers.find(m => m.name === approvalAssignee);
+        const tm = teamMembers.find(m => m.name === asg);
         const { data: handlerUser } = tm?.username ? await supabase
           .from("users").select("phone_number, full_name")
           .eq("username", tm.username).maybeSingle() : { data: null };
@@ -1014,22 +1060,22 @@ function TicketingSystemInner() {
           const { data: handlerFull } = await supabase.from('users').select('id').eq('username', tm!.username).maybeSingle();
           if (handlerFull?.id) {
             notifyTicketAssigned(
-              handlerFull.id, approvalAssignee, approvalTicket.id,
-              approvalTicket.project_name, currentUser?.full_name ?? 'Admin'
+              handlerFull.id, asg, tk.id,
+              tk.project_name, currentUser?.full_name ?? 'Admin'
             ).catch(() => {});
           }
         }
         // Audit log
-        logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'assign', module: 'ticket', target_id: approvalTicket.id, target_name: approvalTicket.project_name, new_value: approvalAssignee }).catch(() => {});
+        logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'assign', module: 'ticket', target_id: tk.id, target_name: tk.project_name, new_value: asg }).catch(() => {});
         if (handlerUser?.phone_number) {
           const waMsg = [
             "🎫 *Ticket Assigned ke Kamu*",
             "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501",
             `Halo *${handlerUser?.full_name || "Handler"}*, ada ticket untukmu:`,
             "",
-            `📌 *Project :* ${approvalTicket.project_name}`,
-            `⚠️ *Issue   :* ${approvalTicket.issue_case}`,
-            `📅 *Tanggal :* ${approvalTicket.date || "-"}`,
+            `📌 *Project :* ${tk.project_name}`,
+            `⚠️ *Issue   :* ${tk.issue_case}`,
+            `📅 *Tanggal :* ${tk.date || "-"}`,
             "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501",
             "Mohon segera ditangani. Semangat! 💪",
             "🔗 https://team-ticketing.vercel.app/dashboard",
@@ -1042,17 +1088,17 @@ function TicketingSystemInner() {
       }
       // ── CC ke atasan + IVP berdasarkan divisi creator ticket ──
       try {
-        const creatorUser = approvalTicket.created_by ? users.find((u) => u.username === approvalTicket.created_by) : null;
-        const ccDiv = (approvalTicket as any).sales_division ?? creatorUser?.sales_division ?? "";
+        const creatorUser = tk.created_by ? users.find((u) => u.username === tk.created_by) : null;
+        const ccDiv = (tk as any).sales_division ?? creatorUser?.sales_division ?? "";
         if (ccDiv && ccDiv !== "IVP" && creatorUser?.id) {
           const ccTargets = await fetchWACCTargets(creatorUser.id, ccDiv);
           if (ccTargets.length > 0) {
             const ccMsg = [
               `✅ *[CC] Ticket Diapprove — Divisi ${ccDiv}*`,
               "━━━━━━━━━━━━━━━━━━",
-              `📌 *Project  :* ${approvalTicket.project_name}`,
-              `⚠️ *Issue    :* ${approvalTicket.issue_case}`,
-              `👷 *Handler  :* ${approvalAssignee}`,
+              `📌 *Project  :* ${tk.project_name}`,
+              `⚠️ *Issue    :* ${tk.issue_case}`,
+              `👷 *Handler  :* ${asg}`,
               "━━━━━━━━━━━━━━━━━━",
               `📋 *CC ke   :* ${ccTargets.map(t => t.name + (t.relation === "ivp_handler" ? " (IVP)" : "")).join(", ")}`,
               "🔗 https://team-ticketing.vercel.app/dashboard",
@@ -1062,12 +1108,10 @@ function TicketingSystemInner() {
         }
       } catch { }
       // ─────────────────────────────────────────────────────────────────────
-      setShowApprovalModal(false);
-      setApprovalTicket(null);
-      setApprovalAssignee("");
+      selesaikanSatuApproval(tk.id);
       await fetchData();
-      notify("success", `Ticket approved & assigned to ${approvalAssignee}`);
-    } catch (err: any) { notify("error", "Error: " + err.message); } finally { setUploading(false); }
+      notify("success", `Ticket approved & assigned to ${asg}`);
+    } catch (err: any) { notify("error", "Error: " + err.message); } finally { setUploading(false); setApprovingId(null); }
   };
 
   // ── Supervisor: assign final ticket yg di-route ke dia → anggota tim / sendiri ──
@@ -2290,7 +2334,7 @@ function TicketingSystemInner() {
 
           {/* Approval button */}
           {canApproveAssign && pendingApprovalTickets.length > 0 && (
-            <button onClick={() => { fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} className="relative flex items-center gap-1.5 text-white text-sm font-bold px-3.5 py-2 rounded-xl transition-all hover:scale-105 hover:opacity-90" style={{ background: "linear-gradient(135deg,#ea580c,#c2410c)", boxShadow: "0 2px 8px rgba(234,88,12,0.35)" }}>
+            <button onClick={() => { setApprovalAssignees({}); fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} className="relative flex items-center gap-1.5 text-white text-sm font-bold px-3.5 py-2 rounded-xl transition-all hover:scale-105 hover:opacity-90" style={{ background: "linear-gradient(135deg,#ea580c,#c2410c)", boxShadow: "0 2px 8px rgba(234,88,12,0.35)" }}>
               ⏳ Approval
               <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">{pendingApprovalTickets.length}</span>
             </button>
@@ -2668,7 +2712,7 @@ function TicketingSystemInner() {
                         <FlowchartIconBtn onClick={() => { setSummaryTicket(ticket); setShowActivitySummary(true); }} />
                         <PrintIconBtn onClick={() => exportToPDF(ticket)} />
                         {canApproveAssign && ticket.status === "Waiting Approval" && (
-                          <ApproveIconBtn onClick={() => { setApprovalTicket(ticket); setApprovalAssignee(""); fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} pulse />
+                          <ApproveIconBtn onClick={() => { setApprovalAssignees({}); setApprovalTicket(ticket); setApprovalAssignee(""); fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} pulse />
                         )}
                         {ticket.status === "Solved" && canUpdateTicket && (
                           <ReopenIconBtn onClick={() => { setReopenTargetTicket(ticket); setReopenAssignee(ticket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} />
@@ -2853,7 +2897,7 @@ function TicketingSystemInner() {
                               <PrintIconBtn onClick={() => exportToPDF(ticket)} />
                               {/* Waiting Approval — admin only */}
                               {canApproveAssign && ticket.status === "Waiting Approval" && (
-                                <ApproveIconBtn onClick={() => { setApprovalTicket(ticket); setApprovalAssignee(""); fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} pulse />
+                                <ApproveIconBtn onClick={() => { setApprovalAssignees({}); setApprovalTicket(ticket); setApprovalAssignee(""); fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} pulse />
                               )}
                               {/* Re-open */}
                               {ticket.status === "Solved" && canUpdateTicket && (
@@ -3402,7 +3446,7 @@ function TicketingSystemInner() {
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-2xl w-full max-h-full overflow-hidden flex flex-col" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(245,158,11,0.5)" }}>
               <div className="p-6 flex-shrink-0" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>
-                <div className="flex justify-between items-center"><div className="flex items-center gap-3"><span className="text-3xl">⏳</span><div><h3 className="text-xl font-bold text-white">Ticket Approval</h3><p className="text-sm text-white/90">{pendingApprovalTickets.length} ticket menunggu persetujuan</p></div></div><button onClick={() => setShowApprovalModal(false)} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold transition-all">✕</button></div>
+                <div className="flex justify-between items-center"><div className="flex items-center gap-3"><span className="text-3xl">⏳</span><div><h3 className="text-xl font-bold text-white">Ticket Approval</h3><p className="text-sm text-white/90">{pendingApprovalTickets.length} ticket menunggu persetujuan</p></div></div><button onClick={() => { setShowApprovalModal(false); setApprovalAssignees({}); setApprovalTicket(null); setApprovalAssignee(""); }} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold transition-all">✕</button></div>
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
                 {pendingApprovalTickets.length === 0 ? (<div className="text-center py-12"><div className="text-5xl mb-3">✅</div><p className="text-gray-500 font-medium">Tidak ada ticket yang menunggu approval</p></div>) : pendingApprovalTickets.map((ticket) => (
@@ -3470,10 +3514,10 @@ function TicketingSystemInner() {
                             <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wide mb-1.5">💡 Saran Handler (handle project ini sebelumnya)</p>
                             <div className="flex flex-wrap gap-2">
                               {unique.map((ref, idx) => {
-                                const isSelected = approvalTicket?.id === ticket.id && approvalAssignee === ref.assign_name;
+                                const isSelected = approvalAssignees[ticket.id] === ref.assign_name;
                                 return (
                                   <button key={idx}
-                                    onClick={() => { setApprovalTicket(ticket); setApprovalAssignee(ref.assign_name); }}
+                                    onClick={() => setApprovalAssignees(prev => ({ ...prev, [ticket.id]: ref.assign_name }))}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${isSelected ? "bg-emerald-600 text-white border-emerald-600 scale-105" : "bg-emerald-50 text-emerald-800 border-emerald-400 hover:bg-emerald-100"}`}>
                                     ⭐ {ref.assign_name}
                                   </button>
@@ -3488,8 +3532,8 @@ function TicketingSystemInner() {
                         <select
                           className="flex-1 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-orange-500"
                           style={{ border: "2px solid rgba(245,158,11,0.3)", background: "white" }}
-                          value={approvalTicket?.id === ticket.id ? approvalAssignee : ""}
-                          onChange={(e) => { setApprovalTicket(ticket); setApprovalAssignee(e.target.value); }}>
+                          value={approvalAssignees[ticket.id] ?? ""}
+                          onChange={(e) => setApprovalAssignees(prev => ({ ...prev, [ticket.id]: e.target.value }))}>
                           <option value="">Pilih handler / Supervisor</option>
                           <optgroup label="👷 Assign langsung ke Team PTS">
                             {teamPTSMembers.map((m) => (<option key={m.id} value={m.name}>{m.name}</option>))}
@@ -3500,7 +3544,16 @@ function TicketingSystemInner() {
                             </optgroup>
                           )}
                         </select>
-                        <button onClick={async () => { if (!approvalAssignee || approvalTicket?.id !== ticket.id) { notify("error", "Pilih handler atau Supervisor terlebih dahulu!"); return; } await approveTicket(); }} disabled={uploading || !(approvalTicket?.id === ticket.id && approvalAssignee)} className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-bold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm">✅ Approve</button>
+                        {/* Ticket & handler baris INI dikirim eksplisit — bukan lewat state
+                            bersama — supaya yang diproses tidak mungkin tertukar dengan
+                            baris lain di modal yang sama. */}
+                        <button onClick={async () => {
+                          const pilihan = approvalAssignees[ticket.id];
+                          if (!pilihan) { notify("error", "Pilih handler atau Supervisor terlebih dahulu!"); return; }
+                          await approveTicket(ticket, pilihan);
+                        }} disabled={uploading || !approvalAssignees[ticket.id]} className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-bold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm">
+                          {approvingId === ticket.id ? "⏳ Memproses..." : "✅ Approve"}
+                        </button>
                         <button onClick={() => rejectTicket(ticket)} disabled={uploading} className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg font-bold hover:from-red-600 hover:to-red-700 transition-all disabled:opacity-40 text-sm">❌ Reject</button>
                       </div>
                     </div>
