@@ -3019,7 +3019,13 @@ jangan lupa peralatan & Semangat💪🏼
                     awal={{
                       oleh: detailReminder.sales_name || detailReminder.created_by || null,
                       waktu: detailReminder.created_at ?? null,
-                      keterangan: `Diajukan${detailReminder.sales_division ? ` — ${detailReminder.sales_division}` : ''} · kategori ${detailReminder.category}`,
+                      // Sales Internal kadang menginput request ATAS NAMA Sales External
+                      // (fitur SBU) — created_by (username penginput) beda dari sales_name
+                      // (yg diajukan). Disebutkan eksplisit di sini supaya admin tidak
+                      // salah kira sales_name-lah yang mengetik/mengirim request-nya.
+                      keterangan: `Diajukan${detailReminder.sales_division ? ` — ${detailReminder.sales_division}` : ''} · kategori ${detailReminder.category}`
+                        + (detailReminder.created_by && detailReminder.created_by !== detailReminder.sales_name
+                          ? ` · diinput oleh ${detailReminder.created_by}` : ''),
                     }}
                     /* Peristiwa lain yang terjadi SEBELUM logAudit mencatatnya.
                        Waktunya memakai updated_at — itu satu-satunya jejak waktu
@@ -3771,7 +3777,8 @@ jangan lupa peralatan & Semangat💪🏼
                                       ? <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 text-[9px] font-bold text-white" style={{ background: '#f59e0b' }} title="Menunggu review Sales Internal sebelum Admin bisa proses">
                                           🔍 Review: {guestUsers.find(g => g.id === group[0].internal_sales_id)?.full_name ?? '—'}
                                         </span>
-                                      : <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 text-[9px] font-bold text-white" style={{ background: '#2563eb' }}>
+                                      : <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 text-[9px] font-bold text-white" style={{ background: '#2563eb' }}
+                                          title={group[0].created_by ? `Diinput oleh: ${group[0].created_by}${group[0].sales_name ? ` — atas nama Sales: ${group[0].sales_name}` : ''}` : undefined}>
                                           📩 Req. Sales
                                         </span>
                                   )}
