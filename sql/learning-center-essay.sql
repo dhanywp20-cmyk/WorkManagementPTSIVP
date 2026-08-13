@@ -73,6 +73,18 @@ ALTER TABLE lc_answers
   ADD COLUMN IF NOT EXISTS essay_text   TEXT NULL,
   ADD COLUMN IF NOT EXISTS manual_score NUMERIC NULL;
 
+-- Baris jawaban ESSAY tidak memakai pilihan ganda: teksnya di essay_text, dan
+-- kolom answer dibiarkan kosong. Aturan lama pada kolom answer hanya menerima
+-- 'A'/'B'/'C'/'D' (peninggalan masa Learning Center khusus pilihan ganda),
+-- sehingga baris essay DITOLAK dan jawabannya tidak pernah tersimpan.
+-- Dilonggarkan di sini; lihat sql/learning-center-essay-answer-fix.sql untuk
+-- basis data yang sudah terlanjur menjalankan berkas ini versi lama.
+ALTER TABLE lc_answers ALTER COLUMN answer DROP NOT NULL;
+ALTER TABLE lc_answers DROP CONSTRAINT IF EXISTS lc_answers_answer_check;
+ALTER TABLE lc_answers
+  ADD CONSTRAINT lc_answers_answer_check
+  CHECK (answer IS NULL OR answer = '' OR answer IN ('A', 'B', 'C', 'D'));
+
 DO $$ BEGIN
   ALTER TABLE lc_answers
     ADD CONSTRAINT lc_answers_manual_score_range
