@@ -5,7 +5,16 @@ import { ListEmptyState } from '@/components/shared';
 import { supabase, User, Question, QuizAttempt, DIFF_COLOR, fmtDate, ScoreBadge, SearchInput, BtnView, GradingStatusBadge, AppDialog, DialogState, gradeEssayWithAI } from './shared';
 import { getSession } from '@/lib/auth';
 
-function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: () => void; isAdminView: boolean }) {
+function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
+  user: User; onBack: () => void; isAdminView: boolean;
+  /**
+   * Langsung buka detail attempt ini begitu daftar selesai dimuat. Dipakai
+   * tombol "Nilai Sekarang" di Laporan: admin sudah menunjuk satu jawaban,
+   * jadi memaksanya memilih ulang dari daftar hanya menambah satu langkah
+   * yang tidak perlu.
+   */
+  autoOpenAttemptId?: string | null;
+}) {
   const [attempts, setAttempts] = useState<any[]>([]);
   const [selectedAttempt, setSelectedAttempt] = useState<any | null>(null);
   const [answerDetails, setAnswerDetails] = useState<any[]>([]);
@@ -24,8 +33,16 @@ function UserAnswerReview({ user, onBack, isAdminView }: { user: User; onBack: (
       .select('*, lc_quiz_sessions(session_name, passing_grade, materi_name, question_ids)')
       .eq('user_id', user.id).eq('is_submitted', true)
       .order('submitted_at', { ascending: false })
-      .then(({ data }: { data: any[] | null }) => setAttempts(data ?? []));
-  }, [user.id]);
+      .then(({ data }: { data: any[] | null }) => {
+        const rows = data ?? [];
+        setAttempts(rows);
+        if (autoOpenAttemptId) {
+          const target = rows.find((a: any) => a.id === autoOpenAttemptId);
+          if (target) handleViewDetail(target);
+        }
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.id, autoOpenAttemptId]);
 
   const handleViewDetail = async (attempt: any) => {
     setSelectedAttempt(attempt);

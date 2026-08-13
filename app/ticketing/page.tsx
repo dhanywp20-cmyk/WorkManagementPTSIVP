@@ -788,7 +788,9 @@ function TicketingSystemInner() {
       // ── Kirim WA notifikasi ke semua admin & superadmin jika butuh approval ──
       // Hanya role guest dan team yang butuh approval → trigger WA ke admin
       if (!isElevated) {
-        setLoadingMessage("Mengirim notifikasi WA ke admin & manager...");
+        // Pesan menyebut STATUS ticket-nya, bukan mekanisme internal (WA ke siapa) —
+        // yang ditunggu user adalah kabar tiketnya, bukan detail cara sistem memberi tahu.
+        setLoadingMessage("Ticket sedang diproses & menunggu approval...");
         try {
           const { data: adminUsers } = await supabase
             .from("users")
@@ -879,7 +881,7 @@ function TicketingSystemInner() {
 
       // ── Kirim WA ke handler jika ticket langsung di-assign ke anggota tim (bukan self/route) ──
       if (resolvedAssignName && rawAssign !== "SELF") {
-        setLoadingMessage("Mengirim notifikasi WA ke handler...");
+        setLoadingMessage("Ticket sedang diproses...");
         try {
           const eTM = teamMembers.find(m => m.name === resolvedAssignName);
           const { data: handlerInfo } = eTM?.username ? await supabase
