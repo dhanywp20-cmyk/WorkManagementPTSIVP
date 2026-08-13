@@ -32,6 +32,44 @@ import {
   Toast, PageHeader, ConfirmDialog, type ConfirmState, ErrorState,
 } from "@/components/shared";
 
+// ─── Ikon garis ───────────────────────────────────────────────────────────────
+/**
+ * Emoji dipakai sebagai ikon di banyak tempat, dan itu punya tiga masalah nyata:
+ * bentuknya berbeda-beda di tiap sistem operasi (Windows, Android, iOS
+ * menggambar 📦 dengan gaya yang sama sekali lain), ukuran & posisi vertikalnya
+ * tidak bisa dikendalikan CSS sehingga sering tidak sejajar dengan teks di
+ * sebelahnya, dan warnanya tetap walau teks di sekitarnya berubah.
+ *
+ * Ikon garis di bawah memakai `currentColor`, jadi selalu selaras dengan warna
+ * label induknya, ukurannya diatur lewat class, dan tampil identik di semua
+ * perangkat. `aria-hidden` karena ikon ini hanya penguat visual — labelnya
+ * sudah ditulis di sebelahnya, jadi pembaca layar tidak perlu menyebutkannya.
+ */
+const ICON_SHAPES: Record<string, React.ReactNode> = {
+  search:   <><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" /></>,
+  user:     <><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></>,
+  users:    <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>,
+  package:  <><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" /></>,
+  tag:      <><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" /><circle cx="7.5" cy="7.5" r="1.5" /></>,
+  calendar: <><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></>,
+  alert:    <><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></>,
+  pin:      <><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /><circle cx="12" cy="10" r="3" /></>,
+  chart:    <><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></>,
+  chevron:  <><path d="m6 9 6 6 6-6" /></>,
+  check:    <><path d="M20 6 9 17l-5-5" /></>,
+  close:    <><path d="M18 6 6 18M6 6l12 12" /></>,
+  refresh:  <><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" /></>,
+};
+
+function Ico({ name, className = "w-3.5 h-3.5" }: { name: keyof typeof ICON_SHAPES; className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {ICON_SHAPES[name]}
+    </svg>
+  );
+}
+
 function TicketingSystemInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -2507,20 +2545,29 @@ function TicketingSystemInner() {
                 <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{ticketsLoading ? "..." : filteredTickets.length}</span>
               </div>
               <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                {/* Ketiga tombol memakai kerangka yang SAMA (tinggi, padding, radius,
+                    ukuran ikon) dan hanya dibedakan oleh peran: Export adalah aksi
+                    utama sehingga dibuat solid, dua lainnya sekunder sehingga bergaris.
+                    Sebelumnya tiap tombol punya tinggi & gaya sendiri — Export bahkan
+                    membesar saat disentuh — sehingga barisnya terlihat tidak rapi. */}
                 {canManageTickets && (
                   <button onClick={() => { setSelectMode(m => !m); setSelectedIds(new Set()); }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${selectMode ? 'bg-red-50 border-red-300 text-red-600' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-                    {selectMode ? '✕ Batal' : '☑ Select'}
+                    className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-slate-400 ${selectMode ? 'bg-rose-50 border-rose-300 text-rose-700 hover:bg-rose-100' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                    <Ico name={selectMode ? "close" : "check"} className="w-3.5 h-3.5" />
+                    {selectMode ? 'Batal' : 'Select'}
                   </button>
                 )}
-                <button onClick={() => fetchData()}  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:bg-gray-100 border border-gray-200 text-gray-600 disabled:opacity-60 bg-white">
-                  <svg className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                <button onClick={() => fetchData()} disabled={loading}
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-slate-400">
+                  <Ico name="refresh" className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                   Refresh
                 </button>
-                <button onClick={exportToExcel} 
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:scale-105"
-                  style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 2px 8px rgba(220,38,38,0.3)' }}>
-                  {uploading ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '📊'}
+                <button onClick={exportToExcel} disabled={uploading}
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold text-white border border-transparent transition-colors disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+                  style={{ background: '#be123c' }}>
+                  {uploading
+                    ? <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    : <Ico name="chart" className="w-3.5 h-3.5" />}
                   Export
                 </button>
               </div>
@@ -2532,7 +2579,7 @@ function TicketingSystemInner() {
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Search Project / Location</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🔍</span>
+                    <Ico name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                     <input 
                       type="text" 
                       value={searchProject} 
@@ -2545,7 +2592,7 @@ function TicketingSystemInner() {
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Search Sales Name</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">👤</span>
+                    <Ico name="user" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                     <input 
                       type="text" 
                       value={searchSalesName} 
@@ -2556,9 +2603,9 @@ function TicketingSystemInner() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">📦 Product</label>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Product</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">📦</span>
+                    <Ico name="package" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                     <input
                       type="text"
                       value={searchProduct}
@@ -2571,7 +2618,7 @@ function TicketingSystemInner() {
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Team Handler</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">👥</span>
+                    <Ico name="users" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                     <select 
                       value={handlerFilter || ""} 
                       onChange={(e) => setHandlerFilter(e.target.value || null)} 
@@ -2582,13 +2629,13 @@ function TicketingSystemInner() {
                         <option key={m.id} value={m.name}>{m.name}</option>
                       ))}
                     </select>
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">▼</span>
+                    <Ico name="chevron" className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Status</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🏷️</span>
+                    <Ico name="tag" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                     <select 
                       value={filterStatus} 
                       onChange={(e) => setFilterStatus(e.target.value)} 
@@ -2608,13 +2655,13 @@ function TicketingSystemInner() {
                         </>
                       )}
                     </select>
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">▼</span>
+                    <Ico name="chevron" className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Filter Year</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">📅</span>
+                    <Ico name="calendar" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                     <select 
                       value={filterYear} 
                       onChange={(e) => setFilterYear(e.target.value)} 
@@ -2623,7 +2670,7 @@ function TicketingSystemInner() {
                       <option value="all">All Years</option>
                       {availableYears.map((year) => (<option key={year} value={year}>{year}</option>))}
                     </select>
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">▼</span>
+                    <Ico name="chevron" className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
               </div>
@@ -2706,11 +2753,11 @@ function TicketingSystemInner() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
-                            {isActiveOverdue && <span className="text-red-500 text-xs shrink-0">🚨</span>}
+                            {isActiveOverdue && <Ico name="alert" className="w-3.5 h-3.5 text-red-500 shrink-0" />}
                             <p className="font-bold text-sm text-gray-800 leading-tight">{ticket.project_name}</p>
                           </div>
                           {ticket.address && (
-                            <p className="text-[10px] text-gray-400 mt-0.5 truncate">📍 {ticket.address.split(',')[0]}</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5 truncate flex items-center gap-1"><Ico name="pin" className="w-3 h-3 shrink-0" />{ticket.address.split(',')[0]}</p>
                           )}
                           <p className="text-[10px] text-gray-400 mt-0.5">{ticket.created_at ? formatDateTime(ticket.created_at) : '—'}</p>
                         </div>
@@ -2824,12 +2871,12 @@ function TicketingSystemInner() {
                           </td>
                           <td className="px-3 py-3 align-middle">
                             <div className="flex items-start gap-1">
-                              {isActiveOverdue && <span className="text-red-500 text-xs mt-0.5 shrink-0" title="Overdue!">🚨</span>}
+                              {isActiveOverdue && <span className="mt-0.5 shrink-0" title="Overdue!"><Ico name="alert" className="w-3.5 h-3.5 text-red-500" /></span>}
                               <div className="font-bold text-gray-800 text-sm break-words leading-tight">{ticket.project_name}</div>
                             </div>
                             {ticket.address && (
                               <div className="text-[10px] text-gray-500 mt-0.5 flex items-center gap-0.5">
-                                <span>📍</span>
+                                <Ico name="pin" className="w-3 h-3 shrink-0" />
                                 <span className="truncate">{ticket.address.split(',')[0]}</span>
                               </div>
                             )}
