@@ -38,7 +38,14 @@ Thumbs.db
 .vercel
 
 # Claude Code
-.claude/
+# Setelan LOKAL (settings.local.json, dsb) tetap diabaikan — itu preferensi
+# per-mesin. Tapi .claude/skills/ SENGAJA dilacak: skill adalah kemampuan
+# bersama tim, dan sesi Claude Code berjalan di container sementara, jadi
+# tanpa ikut ter-commit skill-nya hilang tiap kali sesi baru dimulai.
+# ".claude/*" (bukan ".claude/") supaya git tetap bisa masuk ke dalamnya
+# dan aturan pengecualian di bawah berlaku.
+.claude/*
+!.claude/skills/
 .git-commit-msg.tmp
 
 .vercel
