@@ -1,4 +1,4 @@
-import { setDbToken } from './supabase';
+import { setDbToken, dbTokenExpiryMs, refreshDbToken } from './supabase';
 /**
  * lib/auth.ts — Helper auth terpusat
  *
@@ -106,9 +106,40 @@ export function checkSessionOrRedirect(): boolean {
  * Setup interval cek session (tiap 60 detik).
  * Kembalikan cleanup function untuk dipakai di useEffect return.
  */
+/**
+ * Perbarui token PostgREST bila sudah dekat kedaluwarsa.
+ *
+ * ── Kenapa perlu ────────────────────────────────────────────────────────────
+ * Token dan sesi browser sama-sama berumur 6 jam, tapi diperpanjang oleh hal
+ * yang berbeda. setSession() dipanggil di beberapa layar untuk menyegarkan
+ * profil user, dan panggilan itu MENGULANG hitungan mundur sesi dari nol —
+ * sementara tokennya tidak ikut diterbitkan ulang.
+ *
+ * Akibatnya sesi di browser bisa terlihat masih segar padahal tokennya sudah
+ * lewat batas. Aplikasi tetap mengira user login, tapi PostgREST menolak
+ * SETIAP query dengan galat JWT — termasuk saat membuat ticket. Gejalanya
+ * membingungkan justru karena tidak ada yang tampak kedaluwarsa dari sisi user.
+ *
+ * Pemantau di bawah menutup celah itu dengan memperbarui token dari
+ * /api/auth/session (yang selalu menerbitkan token baru selama cookie masih
+ * sah), jadi masa berlaku token tidak lagi bergantung pada layar mana yang
+ * kebetulan dibuka.
+ */
+export async function refreshDbTokenIfNeeded(ambangMenit = 30): Promise<void> {
+  const exp = dbTokenExpiryMs();
+  // Tidak ada token: biarkan — permintaan berjalan memakai anon key seperti
+  // sebelum fitur token ada, dan verifySessionFromCookie yang akan memasangnya.
+  if (exp === null) return;
+  if (exp - Date.now() > ambangMenit * 60_000) return;
+  await refreshDbToken();
+}
+
 export function startSessionWatcher(): () => void {
+  // Sekali di awal: menolong tab yang sudah lama terbuka dengan token basi.
+  void refreshDbTokenIfNeeded();
   const interval = setInterval(() => {
-    checkSessionOrRedirect();
+    if (!checkSessionOrRedirect()) return;
+    void refreshDbTokenIfNeeded();
   }, 60_000);
   return () => clearInterval(interval);
 }
