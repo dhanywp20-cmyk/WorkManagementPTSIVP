@@ -62,7 +62,12 @@ export function MiniPieChart({
     <div className="rounded-2xl p-4 flex flex-col gap-3"
       style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)', backdropFilter: 'blur(10px)' }}>
       <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">{icon} {title}</p>
-      <div className="flex items-center gap-3">
+      {/* justify-center + lebar maksimum pada legenda: sebelumnya legenda memakai
+          flex-1 tanpa batas, sehingga ia melahap SELURUH sisa lebar kartu dan
+          mendorong donat menempel ke tepi kiri. Pada kartu lebar dengan legenda
+          pendek, donat jadi terlihat tidak center. Dengan legenda dibatasi,
+          pasangan donat+legenda mengambang di tengah kartu. */}
+      <div className="flex items-center justify-center gap-3">
         <svg width="120" height="120" viewBox="0 0 120 120" className="flex-shrink-0">
           {slices.map((s) => (
             s.isFullCircle ? (
@@ -85,7 +90,7 @@ export function MiniPieChart({
           <text x="60" y="57" textAnchor="middle" fontSize="16" fontWeight="800" fill="#1e293b">{centerValue ?? total}</text>
           <text x="60" y="70" textAnchor="middle" fontSize="7" fill="#94a3b8" fontWeight="600">{centerLabel ?? 'TOTAL'}</text>
         </svg>
-        <div className="flex flex-col gap-1.5 flex-1 min-w-0 max-h-[120px] overflow-y-auto">
+        <div className="flex flex-col gap-1.5 flex-1 min-w-0 max-w-[210px] max-h-[120px] overflow-y-auto">
           {slices.map((s) => {
             const isActive = activeFilter === s.label;
             return (

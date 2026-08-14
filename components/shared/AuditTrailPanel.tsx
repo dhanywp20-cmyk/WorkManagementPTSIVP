@@ -202,13 +202,37 @@ export function AuditTrailPanel({
    */
   const aksiTercatat = new Set(entri.map(e => e.action));
 
+  /**
+   * Waktu catatan ASLI paling awal. Dipakai untuk membatasi waktu baris
+   * turunan di bawah — lihat alasannya di sana.
+   */
+  const catatanAsliTerawal = entri.length > 0
+    ? entri.reduce((min, e) => (e.created_at < min ? e.created_at : min), entri[0].created_at)
+    : null;
+
   const tambahan: AuditEntry[] = [];
   for (const t of turunan) {
     if (!t.waktu || aksiTercatat.has(t.aksi)) continue;
+    /**
+     * Baris turunan diturunkan dari kolom seperti `updated_at`, yang menyimpan
+     * waktu perubahan TERAKHIR — bukan waktu peristiwa itu sendiri. Akibatnya
+     * baris turunan bisa tampak terjadi SESUDAH peristiwa yang sebenarnya
+     * menyusulnya: sebuah jadwal yang di-assign lalu ditandai selesai akan
+     * menampilkan "Di-assign" di atas "Status berubah → done", seolah alurnya
+     * berhenti di assign padahal sudah selesai.
+     *
+     * Baris turunan memang hanya ada untuk menambal masa sebelum pencatatan
+     * sungguhan berjalan, jadi tempatnya selalu SEBELUM catatan asli pertama.
+     * Waktunya dibatasi ke situ bila tebakannya melewati batas itu.
+     */
+    let waktu = t.waktu;
+    if (catatanAsliTerawal && waktu >= catatanAsliTerawal) {
+      waktu = new Date(new Date(catatanAsliTerawal).getTime() - 1000).toISOString();
+    }
     tambahan.push({
       id: `__turunan_${t.aksi}__`, target_id: ids[0] ?? '', user_name: t.oleh, action: t.aksi,
       target_name: null, old_value: null, new_value: null,
-      notes: t.keterangan ?? null, created_at: t.waktu,
+      notes: t.keterangan ?? null, created_at: waktu,
     });
   }
   if (awal?.waktu && !aksiTercatat.has('create')) {
