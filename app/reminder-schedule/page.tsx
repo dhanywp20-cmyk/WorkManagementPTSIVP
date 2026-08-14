@@ -27,7 +27,7 @@ import {
   FormField, SectionHeader, SectionHeaderSmall, InfoRow,
   LoadingScreen, MiniPieChart, PageHeader,
   ViewIconBtn, RescheduleIconBtn, ApproveIconBtn, DeleteIconBtn, ActionGroup,
-  ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState, AuditTrailPanel, FlowSteps, Username
+  ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState, AuditTrailPanel, FlowSteps, Username, StatCard
 } from '@/components/shared';
 import { MiniCalendar } from './_components/MiniCalendar';
 import { RescheduleModal } from './_components/RescheduleModal';
@@ -3297,52 +3297,19 @@ jangan lupa peralatan & Semangat💪🏼
               {/* ── Stat cards (clickable filter) ── */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
-                  {
-                    label: 'Total Jadwal', value: totalCount, sub: 'Semua reminder',
-                    gradient: 'linear-gradient(135deg,#4f46e5,#6d28d9)', icon: '📋', shadow: 'rgba(79,70,229,0.35)',
+                  { label: 'Total Jadwal', value: totalCount, sub: 'Semua reminder', accent: '#4f46e5',
                     onClick: () => { setFilterStatus('all'); setSelectedCalDay(null); },
-                    active: filterStatus === 'all' && !selectedCalDay,
-                  },
-                  {
-                    label: 'Pending', value: pendingCount, sub: 'Menunggu tindakan',
-                    gradient: 'linear-gradient(135deg,#d97706,#b45309)', icon: '⏳', shadow: 'rgba(217,119,6,0.35)',
+                    active: filterStatus === 'all' && !selectedCalDay },
+                  { label: 'Pending', value: pendingCount, sub: 'Menunggu tindakan', accent: '#b45309',
                     onClick: () => setFilterStatus(filterStatus === 'pending' ? 'all' : 'pending'),
-                    active: filterStatus === 'pending',
-                  },
-                  {
-                    label: 'Selesai', value: doneCount, sub: 'Terselesaikan',
-                    gradient: 'linear-gradient(135deg,#059669,#047857)', icon: '✅', shadow: 'rgba(5,150,105,0.35)',
+                    active: filterStatus === 'pending' },
+                  { label: 'Selesai', value: doneCount, sub: 'Terselesaikan', accent: '#047857',
                     onClick: () => setFilterStatus(filterStatus === 'done' ? 'all' : 'done'),
-                    active: filterStatus === 'done',
-                  },
-                  {
-                    label: 'Hari Ini', value: todayCount, sub: 'Jadwal hari ini',
-                    gradient: 'linear-gradient(135deg,#0891b2,#0e7490)', icon: '📅', shadow: 'rgba(8,145,178,0.35)',
+                    active: filterStatus === 'done' },
+                  { label: 'Hari Ini', value: todayCount, sub: 'Jadwal hari ini', accent: '#0e7490',
                     onClick: () => setSelectedCalDay(selectedCalDay === new Date().toISOString().split('T')[0] ? null : new Date().toISOString().split('T')[0]),
-                    active: selectedCalDay === new Date().toISOString().split('T')[0],
-                  },
-                ].map(card => (
-                  <div key={card.label}
-                    onClick={card.onClick}
-                    className="rounded-2xl p-4 relative overflow-hidden flex flex-col gap-2 cursor-pointer transition-all hover:scale-[1.03] select-none"
-                    style={{
-                      background: card.gradient,
-                      boxShadow: card.active ? `0 6px 24px ${card.shadow}` : `0 4px 16px ${card.shadow}`,
-                      outline: card.active ? '3px solid white' : 'none',
-                      transform: card.active ? 'scale(1.04)' : undefined,
-                    }}>
-                    <div className="absolute right-3 top-2 text-4xl opacity-[0.15] select-none">{card.icon}</div>
-                    {card.active && (
-                      <div className="absolute inset-0 rounded-2xl border-4 border-white/50 pointer-events-none" />
-                    )}
-                    <span className="text-3xl font-black text-white leading-none">{card.value}</span>
-                    <div>
-                      <p className="text-sm font-bold text-white leading-tight">{card.label}</p>
-                      <p className="text-[10px] font-medium leading-tight" style={{ color: 'rgba(255,255,255,0.75)' }}>{card.sub}</p>
-                    </div>
-                    {card.active && <span className="absolute top-2 left-2 text-white/80 text-[9px] font-bold uppercase tracking-widest">Filter Aktif ✓</span>}
-                  </div>
-                ))}
+                    active: selectedCalDay === new Date().toISOString().split('T')[0] },
+                ].map((card, i) => <StatCard key={i} {...card} />)}
               </div>
 
               {/* ── Pie Charts — klick untuk filter ── */}

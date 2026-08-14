@@ -30,3 +30,6 @@ export { MobileListCard, MobileCardBadge, type MobileCardField } from './MobileL
 // Username kadang berupa nama pendek, kadang berupa email penuh. Awalan @ hanya
 // dipasang pada yang pertama — lihat catatan di Username.tsx.
 export { Username, formatUsername } from './Username';
+// Kartu ringkasan angka — satu implementasi untuk semua modul, supaya gayanya
+// tidak menyimpang lagi seperti saat markup-nya disalin per halaman.
+export { StatCard, StatCardGrid, type StatCardItem } from './StatCard';

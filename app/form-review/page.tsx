@@ -16,7 +16,7 @@ import {
   FormField, SectionHeader, StarRating, LoadingScreen, MiniPieChart,
   ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup,
   ConfirmDialog, type ConfirmState, ErrorState,
-  MobileListCard, MobileCardBadge, ListEmptyState
+  MobileListCard, MobileCardBadge, ListEmptyState, StatCard
 } from '@/components/shared';
 
 // ─── Main Component ────────────────────────────────────────────────────────────
@@ -984,52 +984,15 @@ export default function FormReviewPage() {
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-slide-up anim-d80">
             {[
-              {
-                label: 'Total Review', value: reviews.length, sub: 'Semua form review',
-                gradient: 'linear-gradient(135deg,#4f46e5,#6d28d9)', icon: '⭐', shadow: 'rgba(79,70,229,0.35)',
+              { label: 'Total Review', value: reviews.length, sub: 'Semua form review', accent: '#4f46e5',
                 onClick: () => { setFilterReviewCat('all'); setHandlerFilter(null); setProductFilterChart(null); },
-                active: filterReviewCat === 'all' && !handlerFilter && !productFilterChart,
-              },
-              {
-                label: 'Demo Product', value: totalDemo, sub: 'Review demo unit',
-                gradient: 'linear-gradient(135deg,#7c3aed,#5b21b6)', icon: '🖥️', shadow: 'rgba(124,58,237,0.35)',
+                active: filterReviewCat === 'all' && !handlerFilter && !productFilterChart },
+              { label: 'Demo Product', value: totalDemo, sub: 'Review demo unit', accent: '#6d28d9',
                 onClick: () => setFilterReviewCat(filterReviewCat === 'Demo Product' ? 'all' : 'Demo Product'),
-                active: filterReviewCat === 'Demo Product',
-              },
-              {
-                label: 'Belum Diisi', value: reviews.filter(r => !r.grade_product_knowledge && !r.grade_product_knowledge_bast).length, sub: 'Menunggu input guest',
-                gradient: 'linear-gradient(135deg,#d97706,#b45309)', icon: '⏳', shadow: 'rgba(217,119,6,0.35)',
-                onClick: () => {},
-                active: false,
-              },
-              {
-                label: 'Sudah Diisi', value: reviews.filter(r => r.grade_product_knowledge || r.grade_product_knowledge_bast).length, sub: 'Review terselesaikan',
-                gradient: 'linear-gradient(135deg,#059669,#047857)', icon: '✅', shadow: 'rgba(5,150,105,0.35)',
-                onClick: () => {},
-                active: false,
-              },
-            ].map(card => (
-              <div key={card.label}
-                onClick={card.onClick}
-                className="rounded-2xl p-4 relative overflow-hidden flex flex-col gap-2 cursor-pointer transition-all hover:scale-[1.03] select-none"
-                style={{
-                  background: card.gradient,
-                  boxShadow: card.active ? `0 6px 24px ${card.shadow}` : `0 4px 16px ${card.shadow}`,
-                  outline: card.active ? '3px solid white' : 'none',
-                  transform: card.active ? 'scale(1.04)' : undefined,
-                }}>
-                <div className="absolute right-3 top-2 text-4xl opacity-[0.15] select-none">{card.icon}</div>
-                {card.active && (
-                  <div className="absolute inset-0 rounded-2xl border-4 border-white/50 pointer-events-none" />
-                )}
-                <span className="text-3xl font-black text-white leading-none">{card.value}</span>
-                <div>
-                  <p className="text-sm font-bold text-white leading-tight">{card.label}</p>
-                  <p className="text-[10px] font-medium leading-tight" style={{ color: 'rgba(255,255,255,0.75)' }}>{card.sub}</p>
-                </div>
-                {card.active && <span className="absolute top-2 left-2 text-white/80 text-[9px] font-bold uppercase tracking-widest">Filter Aktif ✓</span>}
-              </div>
-            ))}
+                active: filterReviewCat === 'Demo Product' },
+              { label: 'Belum Diisi', value: reviews.filter(r => !r.grade_product_knowledge && !r.grade_product_knowledge_bast).length, sub: 'Menunggu input guest', accent: '#b45309' },
+              { label: 'Sudah Diisi', value: reviews.filter(r => r.grade_product_knowledge || r.grade_product_knowledge_bast).length, sub: 'Review terselesaikan', accent: '#047857' },
+            ].map((card, i) => <StatCard key={i} {...card} />)}
           </div>
 
           {/* Mini Pie Charts */}

@@ -9,7 +9,7 @@ import { notifyProjectStatusChange } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { compressImage } from '@/lib/image-compress';
-import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState, ListEmptyState, AuditTrailPanel, FlowSteps
+import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState, ListEmptyState, AuditTrailPanel, FlowSteps, StatCard
 } from '@/components/shared';
 import {
   User, ProjectRequest, RoomDetail, BrandPicMapping,
@@ -1761,24 +1761,12 @@ Hubungi Admin untuk info lebih lanjut.
         {/* Stat Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 animate-slide-up anim-d80">
           {[
-            { label: 'Total', value: stats.total, sub: 'Semua request', gradient: 'linear-gradient(135deg,#4f46e5,#6d28d9)', shadow: 'rgba(79,70,229,0.35)', onClick: () => setFilterStatus('all'), active: filterStatus === 'all' },
-            { label: 'Pending', value: stats.pending, sub: 'Menunggu approval', gradient: 'linear-gradient(135deg,#d97706,#b45309)', shadow: 'rgba(217,119,6,0.35)', onClick: () => setFilterStatus(filterStatus === 'pending' ? 'all' : 'pending'), active: filterStatus === 'pending' },
-            { label: 'In Progress', value: stats.in_progress, sub: 'Sedang dikerjakan', gradient: 'linear-gradient(135deg,#2563eb,#1d4ed8)', shadow: 'rgba(37,99,235,0.35)', onClick: () => setFilterStatus(filterStatus === 'in_progress' ? 'all' : 'in_progress'), active: filterStatus === 'in_progress' },
-            { label: 'Completed', value: stats.completed, sub: 'Selesai ditangani', gradient: 'linear-gradient(135deg,#059669,#047857)', shadow: 'rgba(5,150,105,0.35)', onClick: () => setFilterStatus(filterStatus === 'completed' ? 'all' : 'completed'), active: filterStatus === 'completed' },
-            { label: 'Rejected', value: stats.rejected, sub: 'Ditolak', gradient: 'linear-gradient(135deg,#dc2626,#b91c1c)', shadow: 'rgba(220,38,38,0.35)', onClick: () => setFilterStatus(filterStatus === 'rejected' ? 'all' : 'rejected'), active: filterStatus === 'rejected' },
-          ].map(card => (
-            <div key={card.label} onClick={card.onClick}
-              className="rounded-2xl p-4 relative overflow-hidden flex flex-col gap-2 cursor-pointer transition-all hover:scale-[1.03] select-none"
-              style={{ background: card.gradient, boxShadow: card.active ? `0 6px 24px ${card.shadow}` : `0 4px 16px ${card.shadow}`, outline: card.active ? '3px solid white' : 'none', transform: card.active ? 'scale(1.04)' : undefined }}>
-              {card.active && <div className="absolute inset-0 rounded-2xl border-4 border-white/50 pointer-events-none" />}
-              {card.active && <span className="absolute top-1 left-2 text-white/80 text-[9px] font-bold uppercase tracking-widest">Filter Aktif ✓</span>}
-              <span className="text-3xl font-black text-white leading-none mt-3">{card.value}</span>
-              <div>
-                <p className="text-sm font-bold text-white leading-tight">{card.label}</p>
-                <p className="text-[10px] font-medium leading-tight" style={{ color: 'rgba(255,255,255,0.75)' }}>{card.sub}</p>
-              </div>
-            </div>
-          ))}
+            { label: 'Total', value: stats.total, sub: 'Semua request', accent: '#4f46e5', onClick: () => setFilterStatus('all'), active: filterStatus === 'all' },
+            { label: 'Pending', value: stats.pending, sub: 'Menunggu approval', accent: '#b45309', onClick: () => setFilterStatus(filterStatus === 'pending' ? 'all' : 'pending'), active: filterStatus === 'pending' },
+            { label: 'In Progress', value: stats.in_progress, sub: 'Sedang dikerjakan', accent: '#1d4ed8', onClick: () => setFilterStatus(filterStatus === 'in_progress' ? 'all' : 'in_progress'), active: filterStatus === 'in_progress' },
+            { label: 'Completed', value: stats.completed, sub: 'Selesai ditangani', accent: '#047857', onClick: () => setFilterStatus(filterStatus === 'completed' ? 'all' : 'completed'), active: filterStatus === 'completed' },
+            { label: 'Rejected', value: stats.rejected, sub: 'Ditolak', accent: '#b91c1c', onClick: () => setFilterStatus(filterStatus === 'rejected' ? 'all' : 'rejected'), active: filterStatus === 'rejected' },
+          ].map((card, i) => <StatCard key={i} {...card} />)}
         </div>
 
         {/* Charts - guest sees handler + product, PTS sees all 3 */}

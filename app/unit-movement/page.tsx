@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ErrorState, MobileListCard, MobileCardBadge, ListEmptyState
+import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ErrorState, MobileListCard, MobileCardBadge, ListEmptyState, StatCard
 } from '@/components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { User, MovementLog, EVENTS, COLORS, splitTypeLines, fmtDate } from './_components/shared';
@@ -252,16 +252,10 @@ function UnitMovementPageInner() {
         {/* Stat Cards — 3 saja, tanpa Anggota PTS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-slide-up anim-d80">
           {[
-            {label:'Total Log',     value:filteredLogs.length, icon:'📋', g:'linear-gradient(135deg,#6366f1,#4f46e5)', sh:'rgba(99,102,241,0.35)'},
-            {label:'Barang Masuk',  value:filteredLogs.filter(l=>l.status_barang==='Masuk').length,  icon:'📥', g:'linear-gradient(135deg,#10b981,#059669)', sh:'rgba(16,185,129,0.35)'},
-            {label:'Barang Keluar', value:filteredLogs.filter(l=>l.status_barang==='Keluar').length, icon:'📤', g:'linear-gradient(135deg,#ef4444,#dc2626)', sh:'rgba(239,68,68,0.35)'},
-          ].map(c=>(
-            <div key={c.label} className="rounded-2xl p-4 relative overflow-hidden flex flex-col gap-2" style={{background:c.g,boxShadow:`0 4px 16px ${c.sh}`}}>
-              <div className="absolute right-3 top-2 text-4xl opacity-[0.15] select-none">{c.icon}</div>
-              <span className="text-3xl font-black text-white leading-none">{loading?'…':c.value}</span>
-              <p className="text-sm font-bold text-white">{c.label}</p>
-            </div>
-          ))}
+            { label:'Total Log',     value:filteredLogs.length, sub:'Semua catatan', accent:'#4f46e5' },
+            { label:'Barang Masuk',  value:filteredLogs.filter(l=>l.status_barang==='Masuk').length,  sub:'Diterima', accent:'#047857' },
+            { label:'Barang Keluar', value:filteredLogs.filter(l=>l.status_barang==='Keluar').length, sub:'Dikirim',  accent:'#b91c1c' },
+          ].map((card, i) => <StatCard key={i} {...card} />)}
         </div>
 
         {/* ── Open Loans Alert ── */}

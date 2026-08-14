@@ -29,7 +29,7 @@ import { NewTicketModal, type NewTicketForm } from "./_components/NewTicketModal
 import {
   ViewIconBtn, DeleteIconBtn,
   FlowchartIconBtn, PrintIconBtn, ApproveIconBtn, ReopenIconBtn, OverdueIconBtn,
-  Toast, PageHeader, ConfirmDialog, type ConfirmState, ErrorState,
+  Toast, PageHeader, ConfirmDialog, type ConfirmState, ErrorState, StatCard,
 } from "@/components/shared";
 
 // ─── Ikon garis ───────────────────────────────────────────────────────────────
@@ -2432,20 +2432,7 @@ function TicketingSystemInner() {
                   { label: "Pending", value: stats.pending, sub: "Menunggu tindakan", accent: "#b45309" },
                   { label: "In Progress", value: stats.processing, sub: "Sedang ditangani", accent: "#1d4ed8" },
                   { label: "Solved", value: stats.solved, sub: "Terselesaikan", accent: "#047857" },
-                ].map((card, i) => (
-                  /* Sengaja tetap <div>: kartu ringkasan ini memang tidak bisa diklik untuk
-                     peran ini. Tampilannya disamakan dengan varian admin agar bahasa visual
-                     satu halaman tetap konsisten. */
-                  <div key={i} className="rounded-xl px-4 py-3.5 relative overflow-hidden flex flex-col gap-1.5"
-                    style={{ background: "#ffffff", border: "1px solid rgba(15,23,42,0.10)", boxShadow: "0 1px 2px rgba(15,23,42,0.06)" }}>
-                    <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: card.accent, opacity: 0.55 }} />
-                    <span className="text-3xl font-black leading-none tabular-nums" style={{ color: "#0f172a" }}>{card.value}</span>
-                    <div>
-                      <p className="text-[13px] font-bold leading-tight" style={{ color: "#1e293b" }}>{card.label}</p>
-                      <p className="text-[10px] font-medium leading-tight text-slate-500">{card.sub}</p>
-                    </div>
-                  </div>
-                ))}
+                ].map((card, i) => <StatCard key={i} {...card} />)}
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 animate-zoom-in anim-d160">
                 <StatusDonutCard
@@ -2489,41 +2476,13 @@ function TicketingSystemInner() {
               {/* ── Stat Cards (Redesigned like ReminderSchedule) ── */}
               <div className="grid grid-cols-2 md:grid-cols-6 gap-3 animate-slide-up anim-d80">
                 {[
-                  { label: "Total Tickets", value: stats.total, sub: "Seluruh tiket", accent: "#4f46e5", tint: "rgba(79,70,229,0.06)", onClick: () => { setFilterStatus("All"); setHandlerFilter(null); }, active: filterStatus === "All" && !handlerFilter },
-                  { label: "Pending", value: stats.pending, sub: "Menunggu tindakan", accent: "#b45309", tint: "rgba(180,83,9,0.06)", onClick: () => { setFilterStatus(filterStatus === "Pending" ? "All" : "Pending"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Pending" },
-                  { label: "In Progress", value: stats.processing, sub: "Sedang ditangani", accent: "#1d4ed8", tint: "rgba(29,78,216,0.06)", onClick: () => { setFilterStatus(filterStatus === "In Progress" ? "All" : "In Progress"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "In Progress" },
-                  { label: "Solved", value: stats.solved, sub: "Terselesaikan", accent: "#047857", tint: "rgba(4,120,87,0.06)", onClick: () => { setFilterStatus(filterStatus === "Solved" ? "All" : "Solved"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Solved" },
-                  { label: "Overdue", value: stats.overdue, sub: "Berpotensi denda", accent: "#b91c1c", tint: "rgba(185,28,28,0.06)", onClick: () => { setFilterStatus(filterStatus === "Overdue" ? "All" : "Overdue"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Overdue" },
-                  { label: "Solved Overdue", value: stats.solvedOverdue, sub: "Butuh verifikasi", accent: "#6d28d9", tint: "rgba(109,40,217,0.06)", onClick: () => { setFilterStatus(filterStatus === "Solved Overdue" ? "All" : "Solved Overdue"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Solved Overdue" },
-                ].map((card, i) => (
-                  /* Kartu memakai <button>, bukan <div onClick>: ini kontrol filter, jadi
-                     harus bisa dicapai & ditekan lewat keyboard, dan punya cincin fokus.
-                     Permukaan dibuat putih dengan aksen warna tipis — enam gradien jenuh
-                     yang saling berebut perhatian membuat angka justru sulit dibandingkan;
-                     warna kini dipakai untuk MENANDAI kategori, bukan mengecat seluruh kartu.
-                     Hanya kartu yang sedang jadi filter yang ditonjolkan. */
-                  <button key={i} type="button" onClick={card.onClick} aria-pressed={card.active}
-                    title={`Filter: ${card.label}`}
-                    className="group text-left rounded-xl px-4 py-3.5 relative overflow-hidden flex flex-col gap-1.5 cursor-pointer select-none transition-all duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                    style={{
-                      background: card.active ? card.tint : "#ffffff",
-                      border: `1px solid ${card.active ? card.accent : "rgba(15,23,42,0.10)"}`,
-                      boxShadow: card.active ? `0 4px 16px ${card.tint}, 0 0 0 1px ${card.accent}` : "0 1px 2px rgba(15,23,42,0.06)",
-                    }}>
-                    {/* Pita aksen tipis — penanda kategori yang tetap terbaca tanpa mendominasi. */}
-                    <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: card.accent, opacity: card.active ? 1 : 0.55 }} />
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-3xl font-black leading-none tabular-nums" style={{ color: card.active ? card.accent : "#0f172a" }}>{card.value}</span>
-                      {card.active && (
-                        <span className="text-[9px] font-bold uppercase tracking-widest whitespace-nowrap" style={{ color: card.accent }}>Aktif</span>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-[13px] font-bold leading-tight" style={{ color: card.active ? card.accent : "#1e293b" }}>{card.label}</p>
-                      <p className="text-[10px] font-medium leading-tight text-slate-500">{card.sub}</p>
-                    </div>
-                  </button>
-                ))}
+                  { label: "Total Tickets", value: stats.total, sub: "Seluruh tiket", accent: "#4f46e5", onClick: () => { setFilterStatus("All"); setHandlerFilter(null); }, active: filterStatus === "All" && !handlerFilter },
+                  { label: "Pending", value: stats.pending, sub: "Menunggu tindakan", accent: "#b45309", onClick: () => { setFilterStatus(filterStatus === "Pending" ? "All" : "Pending"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Pending" },
+                  { label: "In Progress", value: stats.processing, sub: "Sedang ditangani", accent: "#1d4ed8", onClick: () => { setFilterStatus(filterStatus === "In Progress" ? "All" : "In Progress"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "In Progress" },
+                  { label: "Solved", value: stats.solved, sub: "Terselesaikan", accent: "#047857", onClick: () => { setFilterStatus(filterStatus === "Solved" ? "All" : "Solved"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Solved" },
+                  { label: "Overdue", value: stats.overdue, sub: "Berpotensi denda", accent: "#b91c1c", onClick: () => { setFilterStatus(filterStatus === "Overdue" ? "All" : "Overdue"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Overdue" },
+                  { label: "Solved Overdue", value: stats.solvedOverdue, sub: "Butuh verifikasi", accent: "#6d28d9", onClick: () => { setFilterStatus(filterStatus === "Solved Overdue" ? "All" : "Solved Overdue"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Solved Overdue" },
+                ].map((card, i) => <StatCard key={i} {...card} />)}
               </div>
 
               {/* ── Donut Charts ── */}
