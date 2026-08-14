@@ -74,17 +74,16 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
     ?`${MONTH_NAMES[selectedMonth-1]} ${selectedYear}`
     :`Tahun ${selectedYear}`;
   const accentColor=selectedMonth!==null?'#7c3aed':'#059669';
-  const accentGrad=selectedMonth!==null?'linear-gradient(135deg,#7c3aed,#4c1d95)':'linear-gradient(135deg,#059669,#047857)';
 
   return(
     <div className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.97)',border:`1px solid ${accentColor}20`,boxShadow:`0 4px 20px ${accentColor}15`}}>
       {/* Header */}
-      <div className="px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap" style={{background:accentGrad}}>
+      <div className="px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap" style={{background:'#f8fafc',borderBottom:'1px solid rgba(15,23,42,0.08)'}}>
         <div className="flex items-center gap-2">
           <span className="text-base">📊</span>
           <div>
-            <p className="text-xs font-black text-white leading-none">Ringkasan Aktivitas</p>
-            <p className="text-[9px] text-white/70 mt-0.5">{periodLabel}</p>
+            <p className="text-xs font-black leading-none" style={{color:accentColor}}>Ringkasan Aktivitas</p>
+            <p className="text-[9px] text-slate-500 mt-0.5">{periodLabel}</p>
           </div>
         </div>
         {/* Controls: Year + Month */}
@@ -92,20 +91,20 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
           {/* Year dropdown */}
           <select value={selectedYear} onChange={e=>onYearChange(Number(e.target.value))}
             className="rounded-lg px-2 py-1 text-[11px] font-bold outline-none cursor-pointer"
-            style={{background:'rgba(255,255,255,0.2)',color:'white',border:'1px solid rgba(255,255,255,0.3)'}}>
+            style={{background:'#ffffff',color:'#334155',border:'1px solid rgba(15,23,42,0.12)'}}>
             {yearOptions.map(y=><option key={y} value={y} style={{background:'#1e293b',color:'white'}}>{y}</option>)}
           </select>
           {/* Month buttons */}
-          <div className="flex items-center gap-0.5 bg-black/20 rounded-xl p-1 flex-wrap">
+          <div className="flex items-center gap-0.5 rounded-xl p-1 flex-wrap" style={{background:'rgba(15,23,42,0.05)'}}>
             <button onClick={()=>onMonthChange(null)}
               className="px-2 py-1 rounded-lg text-[10px] font-bold transition-all"
-              style={selectedMonth===null?{background:'white',color:accentColor}:{color:'rgba(255,255,255,0.65)'}}>
+              style={selectedMonth===null?{background:accentColor,color:'white'}:{color:'#64748b'}}>
               Semua
             </button>
             {MONTH_NAMES.map((mn,i)=>(
               <button key={i} onClick={()=>onMonthChange(i+1)}
                 className="px-2 py-1 rounded-lg text-[10px] font-bold transition-all"
-                style={selectedMonth===i+1?{background:'white',color:accentColor}:{color:'rgba(255,255,255,0.65)'}}>
+                style={selectedMonth===i+1?{background:accentColor,color:'white'}:{color:'#64748b'}}>
                 {mn}
               </button>
             ))}

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase, User, fmtDate, ScoreBadge, SearchInput } from './shared';
+import { StatCardGrid } from '@/components/shared';
 
 // ─── Donut Chart ──────────────────────────────────────────────────────────────
 function DonutChart({ segments, size = 68, strokeWidth = 10, label = '' }: {
@@ -329,10 +330,10 @@ export function AdminDashboard({ user }: { user: User }) {
     .filter(u => !searchPerformer || u.name.toLowerCase().includes(searchPerformer.toLowerCase()));
 
   const cards = [
-    { label: 'Total Materi', value: stats.materials, icon: '📚', color: 'from-blue-500/90 to-blue-600/90' },
-    { label: 'Active Team', value: stats.activeTeam, icon: '👥', color: 'from-violet-500/90 to-violet-600/90' },
-    { label: 'Sesi Aktif', value: stats.sessions, icon: '🎯', color: 'from-emerald-500/90 to-emerald-600/90' },
-    { label: 'Total Attempt', value: stats.attempts, icon: '📝', color: 'from-amber-500/90 to-amber-600/90' },
+    { label: 'Total Materi', value: stats.materials, sub: 'Materi tersedia', accent: '#1d4ed8' },
+    { label: 'Active Team', value: stats.activeTeam, sub: 'Anggota aktif', accent: '#6d28d9' },
+    { label: 'Sesi Aktif', value: stats.sessions, sub: 'Sesi quiz berjalan', accent: '#047857' },
+    { label: 'Total Attempt', value: stats.attempts, sub: 'Pengerjaan tercatat', accent: '#b45309' },
   ];
 
   return (
@@ -349,15 +350,7 @@ export function AdminDashboard({ user }: { user: User }) {
       <div className="p-8 space-y-10">
 
         {/* ── Summary Cards ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
-          {cards.map(c => (
-            <div key={c.label} className={`bg-gradient-to-br ${c.color} rounded-2xl p-5 text-white shadow-lg`}>
-              <div className="text-3xl mb-2">{c.icon}</div>
-              <div className="text-3xl font-black">{c.value}</div>
-              <div className="text-white/80 text-sm font-medium mt-1">{c.label}</div>
-            </div>
-          ))}
-        </div>
+        <StatCardGrid cols={4} items={cards} />
 
         {/* ── Analytics Overview + Top Performers (side by side) ── */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">

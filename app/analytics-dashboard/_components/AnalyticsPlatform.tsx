@@ -14,6 +14,7 @@ import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import DashboardKPI from '@/app/kpi-team/_components/DashboardKPI';
 import { User as DashUser } from '@/app/dashboard/_components/shared';
+import { StatCard } from '@/components/shared';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -46,26 +47,6 @@ interface Stats {
 type Tab = 'kpi' | 'command' | 'audit';
 
 // ── Small helper components ───────────────────────────────────────────────────
-
-function StatCard({ icon, label, value, sub, gradient, alert }: {
-  icon: string; label: string; value: number; sub?: string; gradient: string; alert?: number;
-}) {
-  return (
-    <div className="rounded-2xl p-4 relative overflow-hidden"
-      style={{ background: gradient, boxShadow: '0 6px 20px rgba(0,0,0,0.18)' }}>
-      {(alert ?? 0) > 0 && (
-        <div className="absolute top-2.5 right-2.5 min-w-[20px] h-5 rounded-full bg-yellow-400
-          flex items-center justify-center text-[10px] font-black text-yellow-900 px-1 shadow">
-          {(alert ?? 0) > 99 ? '99+' : alert}
-        </div>
-      )}
-      <div className="text-2xl mb-2 opacity-80 select-none">{icon}</div>
-      <div className="text-3xl font-black text-white tabular-nums leading-none">{value}</div>
-      <div className="text-sm font-bold text-white/90 mt-1 leading-tight">{label}</div>
-      {sub && <div className="text-xs text-white/60 mt-0.5">{sub}</div>}
-    </div>
-  );
-}
 
 function Panel({ title, icon, color, borderClr, count, children }: {
   title: string; icon: string; color: string; borderClr: string; count?: number; children: React.ReactNode;
@@ -453,10 +434,12 @@ export function AnalyticsPlatform({ embedded = false, injectedUser }: { embedded
               : <>
                 {/* Stat Cards */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <StatCard icon="🎫" label="Tiket Open"     value={stats?.ticketOpen ?? 0}      sub={`${stats?.ticketOverdue??0} overdue`}  gradient="linear-gradient(135deg,#dc2626,#991b1b)" alert={stats?.ticketOverdue} />
-                  <StatCard icon="📅" label="Jadwal Pending" value={stats?.reminderPending ?? 0} sub="Belum di-assign"                       gradient="linear-gradient(135deg,#2563eb,#1e40af)" alert={stats?.reminderPending} />
-                  <StatCard icon="🏗️" label="Proyek Pending" value={stats?.projectPending ?? 0} sub="Design request"                        gradient="linear-gradient(135deg,#7c3aed,#4c1d95)" alert={stats?.projectPending} />
-                  <StatCard icon="👥" label="User Pending"   value={stats?.userPending ?? 0}    sub="Menunggu aktivasi"                    gradient="linear-gradient(135deg,#d97706,#92400e)" alert={stats?.userPending} />
+                  {/* Lonceng peringatan lama dihapus: angkanya mengulang nilai utama
+                      di tiga dari empat kartu, jadi tidak menambah informasi apa pun. */}
+                  <StatCard label="Tiket Open"     value={stats?.ticketOpen ?? 0}      sub={`${stats?.ticketOverdue ?? 0} overdue`} accent="#b91c1c" />
+                  <StatCard label="Jadwal Pending" value={stats?.reminderPending ?? 0} sub="Belum di-assign"                        accent="#1d4ed8" />
+                  <StatCard label="Proyek Pending" value={stats?.projectPending ?? 0}  sub="Design request"                         accent="#6d28d9" />
+                  <StatCard label="User Pending"   value={stats?.userPending ?? 0}     sub="Menunggu aktivasi"                      accent="#b45309" />
                 </div>
 
                 {/* Bottleneck 2×2 */}

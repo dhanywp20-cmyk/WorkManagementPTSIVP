@@ -27,7 +27,7 @@ import { hasFullAccess } from '@/lib/constants';
 import {
   FormField, SectionHeaderSmall, LoadingScreen, ListEmptyState, Username
 } from '@/components/shared';
-import { MiniPieChart, PageHeader } from '@/components/shared';
+import { MiniPieChart, PageHeader, StatCardGrid } from '@/components/shared';
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const inp: React.CSSProperties = {
@@ -820,21 +820,13 @@ export default function DailyReportPage() {
       <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto px-5 py-5 space-y-5 pb-12 w-full">
 
         {/* ── Stat cards besar (identik reminder-schedule) ── */}
-        <div className="grid grid-cols-4 gap-4">
-          {[
-            { label: 'Total Aktivitas', sub: 'Semua platform', value: stats.total, gradient: 'linear-gradient(135deg,#4f46e5,#6d28d9)', icon: '📋', shadow: 'rgba(79,70,229,0.45)' },
-            { label: 'Pending', sub: 'Menunggu tindakan', value: stats.pending, gradient: 'linear-gradient(135deg,#f59e0b,#d97706)', icon: '⏳', shadow: 'rgba(245,158,11,0.45)' },
-            { label: 'Selesai', sub: 'Terselesaikan', value: stats.selesai, gradient: 'linear-gradient(135deg,#10b981,#059669)', icon: '✅', shadow: 'rgba(16,185,129,0.45)' },
-            { label: 'Hari Ini', sub: todayISO(), value: stats.hariIni, gradient: 'linear-gradient(135deg,#0891b2,#0e7490)', icon: '📅', shadow: 'rgba(8,145,178,0.45)' },
-          ].map(s => (
-            <div key={s.label} className="rounded-2xl p-5 relative overflow-hidden text-white" style={{ background: s.gradient, boxShadow: `0 6px 24px ${s.shadow}` }}>
-              <div className="absolute right-4 top-3 text-5xl opacity-10 select-none">{s.icon}</div>
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">{s.label}</p>
-              <span className="text-4xl font-black leading-none">{s.value}</span>
-              <p className="text-[10px] opacity-60 mt-2">{s.sub}</p>
-            </div>
-          ))}
-        </div>
+        <StatCardGrid cols={4} items={[
+          { label: 'Total Aktivitas', sub: 'Semua platform', value: stats.total, accent: '#4f46e5' },
+          { label: 'Pending', sub: 'Menunggu tindakan', value: stats.pending, accent: '#b45309' },
+          { label: 'Selesai', sub: 'Terselesaikan', value: stats.selesai, accent: '#047857' },
+          { label: 'Hari Ini', sub: todayISO(), value: stats.hariIni, accent: '#0e7490' },
+        ]} />
+        
 
         {/* ── Source breakdown strip ── */}
         <div className="rounded-2xl px-5 py-3.5 flex items-center gap-6 flex-wrap" style={{ background: 'rgba(255,255,255,0.92)', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>

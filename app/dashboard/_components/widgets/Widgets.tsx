@@ -217,20 +217,27 @@ interface SalesAnalytics {
   ticket: { total: number; open: number; solved: number };
 }
 
-function AnalyticStat({ gradient, icon, label, value, subs }: {
-  gradient: string; icon: string; label: string; value: number;
+/**
+ * Kartu ini menampilkan satu angka utama PLUS rincian pecahannya, jadi tidak
+ * bisa langsung memakai StatCard bersama (yang hanya membawa satu angka).
+ * Gayanya disamakan secara manual: permukaan putih, angka gelap, dan warna
+ * kategori dipakai sebagai pita tepi — persis seperti StatCard.
+ */
+function AnalyticStat({ accent, label, value, subs }: {
+  accent: string; label: string; value: number;
   subs: { label: string; value: number }[];
 }) {
   return (
-    <div className="rounded-2xl p-4 relative overflow-hidden" style={{ background: gradient, boxShadow: '0 6px 20px rgba(0,0,0,0.16)' }}>
-      <div className="text-xl mb-1.5 opacity-80 select-none">{icon}</div>
-      <div className="text-3xl font-black text-white tabular-nums leading-none">{value}</div>
-      <div className="text-xs font-bold text-white/90 mt-1 leading-tight">{label}</div>
+    <div className="rounded-xl px-4 py-3.5 relative overflow-hidden"
+      style={{ background: '#ffffff', border: '1px solid rgba(15,23,42,0.10)', boxShadow: '0 1px 2px rgba(15,23,42,0.06)' }}>
+      <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: accent, opacity: 0.55 }} />
+      <div className="text-3xl font-black tabular-nums leading-none" style={{ color: '#0f172a' }}>{value}</div>
+      <div className="text-[13px] font-bold mt-1 leading-tight" style={{ color: '#1e293b' }}>{label}</div>
       <div className="flex gap-3 mt-2.5">
         {subs.map((s, i) => (
           <div key={i}>
-            <div className="text-sm font-black text-white tabular-nums leading-none">{s.value}</div>
-            <div className="text-[9px] text-white/70 mt-0.5">{s.label}</div>
+            <div className="text-sm font-black tabular-nums leading-none text-slate-700">{s.value}</div>
+            <div className="text-[9px] text-slate-500 mt-0.5">{s.label}</div>
           </div>
         ))}
       </div>
@@ -301,19 +308,19 @@ const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
             {showSchedule && (
-              <AnalyticStat gradient="linear-gradient(135deg,#0891b2,#0e7490)" icon="🗓️" label="Request Schedule" value={data.schedule.total}
+              <AnalyticStat accent="#0e7490" label="Request Schedule" value={data.schedule.total}
                 subs={[{ label: 'Aktif', value: data.schedule.active }, { label: 'Selesai', value: data.schedule.done }]} />
             )}
             {showProject && (
-              <AnalyticStat gradient="linear-gradient(135deg,#7c3aed,#5b21b6)" icon="🏗️" label="Design Project" value={data.project.total}
+              <AnalyticStat accent="#6d28d9" label="Design Project" value={data.project.total}
                 subs={[{ label: 'Pending', value: data.project.pending }, { label: 'Proses', value: data.project.progress }, { label: 'Selesai', value: data.project.done }]} />
             )}
             {showReview && (
-              <AnalyticStat gradient="linear-gradient(135deg,#64748b,#475569)" icon="⭐" label="Form Review/BAST" value={data.review.total}
+              <AnalyticStat accent="#475569" label="Form Review/BAST" value={data.review.total}
                 subs={[{ label: 'Demo', value: data.review.demo }, { label: 'BAST', value: data.review.bast }]} />
             )}
             {showTicket && (
-              <AnalyticStat gradient="linear-gradient(135deg,#e11d48,#9f1239)" icon="🎫" label="Ticket" value={data.ticket.total}
+              <AnalyticStat accent="#be123c" label="Ticket" value={data.ticket.total}
                 subs={[{ label: 'Aktif', value: data.ticket.open }, { label: 'Solved', value: data.ticket.solved }]} />
             )}
           </div>
