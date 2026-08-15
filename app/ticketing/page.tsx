@@ -3604,8 +3604,13 @@ function TicketingSystemInner() {
         )}
 
         {/* ── SERVICES APPROVAL MODAL (Redesigned) ── */}
+        {/* Z.overlayTop — dibuka DARI DALAM popup detail (Z.overlay), jadi
+            harus selapis di atasnya. Sebelumnya selevel dan hanya tampil di
+            depan karena kebetulan letaknya lebih bawah di berkas ini; sekali
+            urutan blok ini bergeser ke atas popup detail, ia langsung hilang
+            ke belakang. */}
         {showServicesApprovalModal && currentUserTeamType === "Team Services" && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-2xl w-full max-h-full overflow-hidden flex flex-col" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(219,39,119,0.5)" }}>
               <div className="p-6 flex-shrink-0" style={{ background: "linear-gradient(135deg,#db2777,#be185d)" }}>
                 <div className="flex justify-between items-center"><div className="flex items-center gap-3"><span className="text-3xl">🔧</span><div><h3 className="text-xl font-bold text-white">Ticket Masuk — Team Services</h3><p className="text-sm text-white/90">{pendingServicesApprovalTickets.length} ticket menunggu konfirmasi</p></div></div><button onClick={() => setShowServicesApprovalModal(false)} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold transition-all">✕</button></div>
@@ -3720,8 +3725,10 @@ function TicketingSystemInner() {
         )}
 
         {/* ── RE-OPEN TICKET MODAL (Redesigned) ── */}
+        {/* Z.overlayTop — bisa dibuka dari daftar MAUPUN dari dalam popup
+            detail (Z.overlay), jadi harus selapis di atasnya. */}
         {showReopenModal && reopenTargetTicket && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(245,158,11,0.5)" }}>
               <div className="flex items-center gap-3 mb-5"><span className="text-3xl">🔓</span><div><h3 className="text-lg font-bold text-gray-800">Re-open Ticket</h3><p className="text-xs text-gray-500">{reopenTargetTicket.project_name} · {reopenTargetTicket.issue_case}</p></div></div>
               <div className="rounded-xl p-3 mb-4 text-xs" style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", color: "#b45309" }}>⚠️ Status akan berubah ke <strong>Pending</strong> dan activity log baru ditambahkan otomatis.</div>
