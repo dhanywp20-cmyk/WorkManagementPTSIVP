@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { CATEGORY_CONFIG, PRODUCT_TYPES } from './shared';
-import { MultiDatePicker } from '@/components/shared';
+import { MultiDatePicker, ModalPortal } from '@/components/shared';
 import { SalesPicker, type SalesPickerUser } from '@/components/shared/SalesPicker';
 import { BRAND_OPTIONS, type Brand } from '@/lib/brand-routing';
 
@@ -104,6 +104,7 @@ export function RequestJadwalModal({
   };
 
   return (
+    <ModalPortal>
     <div
       className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4 overflow-y-auto"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
@@ -490,5 +491,6 @@ export function RequestJadwalModal({
           </div>
         </div>
       </div>
+    </ModalPortal>
   );
 }

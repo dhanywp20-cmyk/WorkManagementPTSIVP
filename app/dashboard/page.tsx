@@ -23,6 +23,7 @@ import PermissionAwareDashboard from './_components/widgets/PermissionAwareDashb
 import OnboardingTour, { JelajahiButton } from './_components/OnboardingTour';
 import { notifyNewUserRegistration } from '@/lib/notifications';
 import SessionExpiryBanner from '@/app/_components/SessionExpiryBanner';
+import { ModalPortal } from '@/components/shared';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -944,6 +945,7 @@ export default function Dashboard() {
 
         {/* ── Forgot Password Modal (login page) ── */}
         {showForgot && (
+        <ModalPortal>
           <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
               <div className="flex items-center justify-between">
@@ -994,6 +996,7 @@ export default function Dashboard() {
               )}
             </div>
           </div>
+        </ModalPortal>
         )}
       </div>
       </>

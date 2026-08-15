@@ -7,7 +7,7 @@ import {
   REPEAT_OPTIONS, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES,
   PRODUCT_TYPES,
 } from './shared';
-import { FormField, SectionHeader, MultiDatePicker } from '@/components/shared';
+import { FormField, SectionHeader, MultiDatePicker, ModalPortal } from '@/components/shared';
 
 export type ReminderForm = Omit<Reminder, 'id' | 'created_at' | 'created_by' | 'wa_sent_h1'>;
 export type BulkTarget = 'none' | 'ivp' | 'mvi' | 'ump';
@@ -56,6 +56,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
   const inputStyle = { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(0,0,0,0.12)' };
 
   return (
+  <ModalPortal>
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4 overflow-y-auto"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
@@ -533,5 +534,6 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }

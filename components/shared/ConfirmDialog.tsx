@@ -1,4 +1,5 @@
 'use client';
+import { ModalPortal } from './ModalPortal';
 
 export interface ConfirmState {
   message: string;
@@ -17,6 +18,7 @@ export function ConfirmDialog({
 }) {
   if (!state) return null;
   return (
+    <ModalPortal>
     <div
       // Z.blocking (2000) — WAJIB di atas SELURUH lapisan overlay, karena
       // dialog ini dipanggil dari dalam modal bertingkat (mis. detail Project
@@ -60,5 +62,6 @@ export function ConfirmDialog({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }

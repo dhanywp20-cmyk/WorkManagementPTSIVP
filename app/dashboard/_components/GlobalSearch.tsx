@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from './shared';
+import { ModalPortal } from '@/components/shared';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -512,6 +513,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
   );
 
   return (
+  <ModalPortal>
     <div className="fixed inset-0 z-[1000] flex items-start justify-center pt-[12vh] px-4"
       onClick={e => { if (e.target === e.currentTarget) setOpen(false); }}>
 
@@ -650,5 +652,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }

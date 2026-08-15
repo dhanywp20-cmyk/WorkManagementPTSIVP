@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase, User, fmtDate, ScoreBadge, SearchInput } from './shared';
-import { StatCardGrid } from '@/components/shared';
+import { StatCardGrid, ModalPortal } from '@/components/shared';
 
 // ─── Donut Chart ──────────────────────────────────────────────────────────────
 function DonutChart({ segments, size = 68, strokeWidth = 10, label = '' }: {
@@ -739,6 +739,7 @@ export function AdminDashboard({ user }: { user: User }) {
 
       {/* ── User Detail Modal ── */}
       {selectedUser && (
+      <ModalPortal>
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(4px)' }}
           onClick={() => setSelectedUser(null)}>
@@ -830,6 +831,7 @@ export function AdminDashboard({ user }: { user: User }) {
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
     </div>
   );

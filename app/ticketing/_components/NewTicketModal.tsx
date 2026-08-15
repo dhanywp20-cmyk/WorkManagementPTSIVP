@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User, TeamMember } from './shared';
-import { SalesPicker } from '@/components/shared';
+import { SalesPicker, ModalPortal } from '@/components/shared';
 import { BRAND_OPTIONS, type Brand } from '@/lib/brand-routing';
 import { hasFullAccess } from '@/lib/constants';
 
@@ -120,6 +120,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
   };
 
   return (
+  <ModalPortal>
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4 overflow-y-auto"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
@@ -505,5 +506,6 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }

@@ -16,8 +16,7 @@ import {
   FormField, SectionHeader, StarRating, LoadingScreen, MiniPieChart,
   ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup,
   ConfirmDialog, type ConfirmState, ErrorState,
-  MobileListCard, MobileCardBadge, ListEmptyState, StatCard
-} from '@/components/shared';
+  MobileListCard, MobileCardBadge, ListEmptyState, StatCard, ModalPortal } from '@/components/shared';
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
@@ -444,6 +443,7 @@ export default function FormReviewPage() {
 
         {/* ── DELETE MODAL ── */}
         {showDeleteModal && deleteTarget && (
+        <ModalPortal>
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6"
               style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(220,38,38,0.5)' }}>
@@ -480,10 +480,12 @@ export default function FormReviewPage() {
               </div>
             </div>
           </div>
+        </ModalPortal>
         )}
 
         {/* ── FORM MODAL (Edit/View Review) ── */}
         {showFormModal && editingReview && (
+        <ModalPortal>
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4 overflow-y-auto"
             onClick={e => { if (e.target === e.currentTarget) { setShowFormModal(false); setEditingReview(null); setReviewFormData(emptyReviewForm); } }}>
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
@@ -601,10 +603,12 @@ export default function FormReviewPage() {
               </div>
             </div>
           </div>
+        </ModalPortal>
         )}
 
         {/* ── DETAIL MODAL ── */}
         {detailReview && (
+        <ModalPortal>
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4"
             onClick={e => { if (e.target === e.currentTarget) setDetailReview(null); }}>
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 overflow-hidden flex flex-col"
@@ -810,10 +814,12 @@ export default function FormReviewPage() {
               </div>
             </div>
           </div>
+        </ModalPortal>
         )}
 
         {/* ── NOTIFICATION POPUP ── */}
         {showNotificationPopup && (
+        <ModalPortal>
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-full overflow-hidden flex flex-col border-4 border-yellow-400"
               style={{ animation: 'scale-in 0.3s ease-out' }}>
@@ -872,10 +878,12 @@ export default function FormReviewPage() {
               </div>
             </div>
           </div>
+        </ModalPortal>
         )}
 
         {/* ── BELL POPUP ── */}
         {showBellPopup && (
+        <ModalPortal>
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-full overflow-hidden flex flex-col border-4 border-yellow-400"
               style={{ animation: 'scale-in 0.3s ease-out' }}>
@@ -934,6 +942,7 @@ export default function FormReviewPage() {
               </div>
             </div>
           </div>
+        </ModalPortal>
         )}
 
         {/* ── HEADER ── */}
@@ -1350,6 +1359,7 @@ export default function FormReviewPage() {
       `}</style>
       {/* Bulk Delete Confirm Modal */}
       {bulkConfirm && (
+      <ModalPortal>
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
             <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
@@ -1374,6 +1384,7 @@ export default function FormReviewPage() {
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
     </div>
   );

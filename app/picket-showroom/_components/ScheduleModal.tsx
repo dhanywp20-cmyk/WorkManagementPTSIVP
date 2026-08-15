@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { ModalPortal } from '@/components/shared';
 import {
   PiketRow, UserRow, DayOfWeek,
   DAYS_OF_WEEK, DAY_COLOR, DAY_EN, TEAM_LABEL,
@@ -110,6 +111,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
   const fmtWk=(ws:Date)=>`${ws.toLocaleDateString('id-ID',{day:'2-digit',month:'short'})} – ${addDays(ws,4).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}`;
 
   return(
+  <ModalPortal>
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4 overflow-y-auto">
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden" style={{animation:'scale-in 0.25s ease-out',border:'1.5px solid rgba(220,38,38,0.25)'}}>
         <div className="px-6 py-5 rounded-t-2xl" style={{background:'linear-gradient(135deg,#dc2626,#991b1b)'}}>
@@ -189,5 +191,6 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }

@@ -8,8 +8,7 @@ import {
   PageHeader, LoadingScreen, Toast, type Notif,
   ConfirmDialog, type ConfirmState, EmptyState,
   ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup,
-  MobileListCard, MobileCardBadge, MiniPieChart, AuditTrailPanel,
-} from '@/components/shared';
+  MobileListCard, MobileCardBadge, MiniPieChart, AuditTrailPanel, ModalPortal } from '@/components/shared';
 import { ProjectDetailView, SectionLabel } from './_components/ProjectDetailView';
 import { exportProjectToExcel } from './_components/excel-export';
 import {
@@ -617,6 +616,7 @@ export default function ProjectProgressPage() {
 
       {/* ══ MODAL DETAIL ══ */}
       {detail && (
+      <ModalPortal>
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 z-[1000]"
           onClick={e => { if (e.target === e.currentTarget) closeDetail(); }}>
           <div className="w-full h-full flex flex-col overflow-hidden relative" style={{
@@ -677,10 +677,12 @@ export default function ProjectProgressPage() {
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
 
       {/* ══ MODAL FORM PROYEK ══ */}
       {projectForm && (
+      <ModalPortal>
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1100]">
           <div className="rounded-md shadow-2xl w-full max-w-lg overflow-hidden" style={{ background: PALETTE.surface }}>
             <div className="px-6 py-4" style={{ borderBottom: `1px solid ${PALETTE.border}` }}>
@@ -764,10 +766,12 @@ export default function ProjectProgressPage() {
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
 
       {/* ══ MODAL SHARE ══ */}
       {shareFor && (
+      <ModalPortal>
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1100]">
           <div className="rounded-md shadow-2xl w-full max-w-lg overflow-hidden" style={{ background: PALETTE.surface }}>
             <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${PALETTE.border}` }}>
@@ -818,6 +822,7 @@ export default function ProjectProgressPage() {
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
     </div>
   );

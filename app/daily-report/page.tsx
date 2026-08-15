@@ -25,8 +25,7 @@ import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
 
 import {
-  FormField, SectionHeaderSmall, LoadingScreen, ListEmptyState, Username
-} from '@/components/shared';
+  FormField, SectionHeaderSmall, LoadingScreen, ListEmptyState, Username, ModalPortal } from '@/components/shared';
 import { MiniPieChart, PageHeader, StatCardGrid } from '@/components/shared';
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -568,6 +567,7 @@ export default function DailyReportPage() {
     const targetUser = isAdmin ? teamUsers.find(u => u.id === formUserId) : currentUser;
     const autoCount = formReminders.length + formTickets.length;
     return (
+    <ModalPortal>
       <div className="fixed inset-0 z-[1000] flex items-start justify-center overflow-y-auto" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', paddingTop: '20px', paddingBottom: '40px' }}>
         <div className="w-full max-w-2xl mx-4" style={{ ...card, overflow: 'visible' }}>
           {/* Modal header */}
@@ -684,6 +684,7 @@ export default function DailyReportPage() {
           </div>
         </div>
       </div>
+    </ModalPortal>
     );
   };
 
@@ -695,6 +696,7 @@ export default function DailyReportPage() {
     const badge = sb(row.status);
     const linkedReport = row.report_id ? reports.find(r => r.id === row.report_id) : undefined;
     return (
+    <ModalPortal>
       <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }} onClick={() => setModalRow(null)}>
         <div className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col" style={{ background: 'white', maxHeight: '96vh' }} onClick={e => e.stopPropagation()}>
           {/* Colored header */}
@@ -808,6 +810,7 @@ export default function DailyReportPage() {
           </div>
         </div>
       </div>
+    </ModalPortal>
     );
   };
 

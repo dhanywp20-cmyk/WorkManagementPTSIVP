@@ -5,8 +5,7 @@ import { createPortal } from 'react-dom';
 import * as XLSX from 'xlsx-js-style';
 import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
-import { PageHeader, MobileListCard, MobileCardBadge, MiniSpark, MonthBarChart, DonutChart, TrendBadge, ListEmptyState
-} from '@/components/shared';
+import { PageHeader, MobileListCard, MobileCardBadge, MiniSpark, MonthBarChart, DonutChart, TrendBadge, ListEmptyState, ModalPortal } from '@/components/shared';
 import { notifyKPIAlert } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
@@ -488,6 +487,7 @@ function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: (
   const teamColor = TEAM_COLORS[member.team_type] ?? KPI_COLOR;
 
   return (
+  <ModalPortal>
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -605,6 +605,7 @@ function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: (
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }
 

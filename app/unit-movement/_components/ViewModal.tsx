@@ -1,5 +1,6 @@
 'use client';
 import { MovementLog, fmtDate, splitTypeLines } from './shared';
+import { ModalPortal } from '@/components/shared';
 
 export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void }) {
   const suratUrls  = log.foto_surat_url  ? log.foto_surat_url.split(',').map(s=>s.trim()).filter(Boolean) : [];
@@ -8,6 +9,7 @@ export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void 
   const sc         = isMasuk ? {bg:'#d1fae5',text:'#065f46',dot:'#10b981'} : {bg:'#fee2e2',text:'#991b1b',dot:'#ef4444'};
   const typeLines  = splitTypeLines(log.type_barang);
   return (
+  <ModalPortal>
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
       <div className="w-full max-w-2xl max-h-full overflow-y-auto rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10 rounded-t-2xl">
@@ -85,5 +87,6 @@ export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void 
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }

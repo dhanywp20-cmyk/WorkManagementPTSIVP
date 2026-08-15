@@ -1970,6 +1970,7 @@ jangan lupa peralatan & Semangat💪🏼
 
         {/* ── TOLAK MODAL (Sales Internal, tahap internal_review) ── */}
         {internalRejectTarget && (
+        <ModalPortal>
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
             onClick={e => { if (e.target === e.currentTarget) setInternalRejectTarget(null); }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
@@ -2000,10 +2001,12 @@ jangan lupa peralatan & Semangat💪🏼
               </div>
             </div>
           </div>
+        </ModalPortal>
         )}
 
         {/* ── KONFIRMASI APPROVE Sales Internal (detail dulu, jangan instan) ── */}
         {internalApproveTarget && (
+        <ModalPortal>
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
             onClick={e => { if (e.target === e.currentTarget) setInternalApproveTarget(null); }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
@@ -2052,10 +2055,12 @@ jangan lupa peralatan & Semangat💪🏼
               </div>
             </div>
           </div>
+        </ModalPortal>
         )}
 
         {/* ── APPROVE & ASSIGN MODAL (Admin only) ── */}
         {approveTarget && canApproveAssign && (
+        <ModalPortal>
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
             onClick={e => { if (e.target === e.currentTarget) { setApproveTarget(null); setApproveBatchSiblings([]); setApproveAssignTo(''); } }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
@@ -2221,10 +2226,12 @@ jangan lupa peralatan & Semangat💪🏼
               </div>
             </div>
           </div>
+        </ModalPortal>
         )}
 
         {/* ── SUPERVISOR ASSIGN MODAL ── */}
         {supervisorAssignTarget && (
+        <ModalPortal>
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
             onClick={e => { if (e.target === e.currentTarget) { setSupervisorAssignTarget(null); setSupervisorAssignBatchSiblings([]); setSupervisorAssignTo(''); } }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
@@ -2295,10 +2302,12 @@ jangan lupa peralatan & Semangat💪🏼
               </div>
             </div>
           </div>
+        </ModalPortal>
         )}
 
         {/* ── DELETE MODAL ── */}
         {showDeleteModal && deleteTarget && (
+        <ModalPortal>
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6"
               style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(220,38,38,0.5)' }}>
@@ -2342,11 +2351,13 @@ jangan lupa peralatan & Semangat💪🏼
               </div>
             </div>
           </div>
+        </ModalPortal>
         )}
 
         {/* ── FORM MODAL (Tambah / Edit Reminder) ── */}
         {/* Bulk Delete Confirm Modal */}
       {bulkConfirm && (
+      <ModalPortal>
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
             <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
@@ -2371,6 +2382,7 @@ jangan lupa peralatan & Semangat💪🏼
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
 
       {showFormModal && (
@@ -2394,6 +2406,7 @@ jangan lupa peralatan & Semangat💪🏼
 
         {/* ── NOTIFICATION POPUP ── */}
         {showNotificationPopup && (
+        <ModalPortal>
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-full overflow-hidden flex flex-col border-4 border-yellow-400"
               style={{ animation: 'scale-in 0.3s ease-out' }}>
@@ -2439,10 +2452,12 @@ jangan lupa peralatan & Semangat💪🏼
               </div>
             </div>
           </div>
+        </ModalPortal>
         )}
 
         {/* ── BELL POPUP ── */}
         {showBellPopup && (
+        <ModalPortal>
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-full overflow-hidden flex flex-col border-4 border-yellow-400"
               style={{ animation: 'scale-in 0.3s ease-out' }}>
@@ -2492,6 +2507,7 @@ jangan lupa peralatan & Semangat💪🏼
               </div>
             </div>
           </div>
+        </ModalPortal>
         )}
 
         {/* ── DETAIL POPUP ── */}

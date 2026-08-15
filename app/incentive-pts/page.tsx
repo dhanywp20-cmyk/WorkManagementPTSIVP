@@ -13,7 +13,7 @@ import {
 } from './_components/calc';
 import { exportPengajuanIncentive, exportSummaryIncentive } from './_components/exportPengajuan';
 import { adminSetIncentiveInput } from '@/lib/admin-users';
-import { MobileListCard, MobileCardBadge } from '@/components/shared';
+import { MobileListCard, MobileCardBadge, ModalPortal } from '@/components/shared';
 
 void insertSplits; void validateSplitTotal;
 
@@ -664,6 +664,7 @@ export default function IncentivePTSPage() {
 
       {/* ─── MODAL: Input Nominal ─── */}
       {nominalProject && (
+      <ModalPortal>
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1100] p-4" onClick={e => { if (e.target === e.currentTarget) setNominalProject(null); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" style={{ border: '1.5px solid rgba(99,102,241,0.3)' }}>
             <div className="px-5 py-4" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
@@ -726,10 +727,12 @@ export default function IncentivePTSPage() {
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
 
       {/* ─── MODAL: Project Detail ─── */}
       {detailProject && (
+      <ModalPortal>
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1100] p-4 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setDetailProject(null); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden border border-gray-200">
             <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
@@ -918,10 +921,12 @@ export default function IncentivePTSPage() {
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
 
       {/* ─── MODAL: Generate Tranche ─── */}
       {showGenerateModal && generateProject && (
+      <ModalPortal>
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1200] p-4" onClick={e => { if (e.target === e.currentTarget) { setShowGenerateModal(false); setGenerateProject(null); } }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-gray-200">
             <h3 className="text-lg font-bold text-gray-800 mb-4">⚡ Generate Tranche</h3>
@@ -951,10 +956,12 @@ export default function IncentivePTSPage() {
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
 
       {/* ─── MODAL: Batch Confirm ─── */}
       {batchConfirm && (
+      <ModalPortal>
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1200] p-4" onClick={e => { if (e.target === e.currentTarget) setBatchConfirm(false); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-red-200">
             <h3 className="text-lg font-bold text-gray-800 mb-2">🚀 Konfirmasi Process Batch</h3>
@@ -978,6 +985,7 @@ export default function IncentivePTSPage() {
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
 
     </div>

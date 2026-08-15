@@ -9,8 +9,7 @@ import { notifyProjectStatusChange } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { compressImage } from '@/lib/image-compress';
-import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState, ListEmptyState, AuditTrailPanel, FlowSteps, StatCard
-} from '@/components/shared';
+import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState, ListEmptyState, AuditTrailPanel, FlowSteps, StatCard, ModalPortal } from '@/components/shared';
 import {
   User, ProjectRequest, RoomDetail, BrandPicMapping,
   ProjectMessage, ProjectAttachment,
@@ -2173,6 +2172,7 @@ Hubungi Admin untuk info lebih lanjut.
 
       {/* Bulk Delete Confirm Modal */}
       {bulkConfirm && (
+      <ModalPortal>
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlay }}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
             <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
@@ -2197,10 +2197,12 @@ Hubungi Admin untuk info lebih lanjut.
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
 
       {/* Reject Modal — muncul di atas detail modal (lihat lib/z-index.ts) */}
       {rejectModal.open && rejectModal.req && (
+      <ModalPortal>
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
           <div className="bg-white/90 rounded-2xl shadow-2xl max-w-md w-full border-2 border-red-400 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-red-500 to-red-700 px-6 py-4">
@@ -2218,10 +2220,12 @@ Hubungi Admin untuk info lebih lanjut.
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
 
       {/* Status Update Modal — muncul di atas detail modal (lihat lib/z-index.ts) */}
       {statusUpdateModal.open && statusUpdateModal.req && (
+      <ModalPortal>
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
           <div className="bg-white/90 rounded-2xl shadow-2xl max-w-sm w-full border border-gray-200 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4 flex items-center justify-between">
@@ -2281,10 +2285,12 @@ Hubungi Admin untuk info lebih lanjut.
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
 
       {/* Delete Confirmation Modal — muncul di atas detail modal (lihat lib/z-index.ts) */}
       {deleteModal.open && deleteModal.req && (
+      <ModalPortal>
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
           <div className="bg-white/90 rounded-2xl shadow-2xl max-w-md w-full animate-scale-in overflow-hidden" style={{ border: '1.5px solid #e5e7eb' }}>
             {/* Header */}
@@ -2332,6 +2338,7 @@ Hubungi Admin untuk info lebih lanjut.
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
 
       <style>{`
@@ -2351,6 +2358,7 @@ Hubungi Admin untuk info lebih lanjut.
         const activeTickets = requests.filter(r => r.status === 'pending' || r.status === 'in_progress');
         if (activeTickets.length === 0) return null;
         return (
+        <ModalPortal>
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.overlayMax }}>
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in border-2 border-amber-400">
               <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-5 flex items-center justify-between">
@@ -2393,6 +2401,7 @@ Hubungi Admin untuk info lebih lanjut.
               </div>
             </div>
           </div>
+        </ModalPortal>
         );
       })()}
 
@@ -3236,6 +3245,7 @@ Hubungi Admin untuk info lebih lanjut.
 
       {/* Edit Form Modal */}
       {editFormModal && selectedRequest && (
+      <ModalPortal>
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
           <div className="bg-white/90 rounded-3xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col border-2 border-amber-400 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-amber-500 to-amber-700 px-6 py-4 flex items-center justify-between flex-shrink-0">
@@ -3465,6 +3475,7 @@ Hubungi Admin untuk info lebih lanjut.
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
     </div>
   );
@@ -3485,6 +3496,7 @@ export default function Page() {
   if (loading) return <LoadingScreen />;
 
   if (!currentUser) return (
+  <ModalPortal>
     <div className="fixed inset-0 flex items-center justify-center"
       style={{ backgroundImage: `url('/IVP_Background.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.4)' }} />
@@ -3498,6 +3510,7 @@ export default function Page() {
         </a>
       </div>
     </div>
+  </ModalPortal>
   );
 
   return (

@@ -7,6 +7,7 @@ import {
   AppDialog, DialogState, BtnEdit, BtnDelete, BtnOpen,
 } from './shared';
 import { logAudit } from '@/lib/audit';
+import { ModalPortal } from '@/components/shared';
 
 // ─── Folder Color Palette ─────────────────────────────────────────────────────
 
@@ -595,6 +596,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
 
       {/* ── Modal: Add Materi ── */}
       {isAdmin && showForm && (
+      <ModalPortal>
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden">
@@ -657,10 +659,12 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
 
       {/* ── Modal: Rename Folder ── */}
       {isAdmin && renameFolder && (
+      <ModalPortal>
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-slate-200">
@@ -700,10 +704,12 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
 
       {/* ── Modal: Edit Material ── */}
       {isAdmin && editMaterial && (
+      <ModalPortal>
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden">
@@ -764,6 +770,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
 
       {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}

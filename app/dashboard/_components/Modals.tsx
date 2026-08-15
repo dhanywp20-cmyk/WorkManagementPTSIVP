@@ -15,7 +15,7 @@ import {
   NotifBellProps, AdminPanelModalProps,
   DISPLAY_BRANDS_DB, MIDDLEWARE_BRANDS_DB, BrandPicMappingDB,
 } from './shared';
-import { ConfirmDialog, type ConfirmState, Username } from '@/components/shared';
+import { ConfirmDialog, type ConfirmState, Username, ModalPortal } from '@/components/shared';
 
 /**
  * Sebar perubahan nama/username user ke semua snapshot di tabel terkait,
@@ -323,6 +323,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
   );
 
   return (
+  <ModalPortal>
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden border border-slate-200">
@@ -586,6 +587,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }
 
@@ -728,6 +730,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
   const ivpList = sortedSupervisors.filter((s: any) => s._isIVP);
 
   return (
+  <ModalPortal>
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-full overflow-y-auto flex flex-col border border-slate-200">
 
@@ -1024,6 +1027,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }
 
@@ -1199,6 +1203,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
   }) : [];
 
   return (
+  <ModalPortal>
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-full flex flex-col border border-slate-200">
@@ -1638,6 +1643,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }
 
@@ -1704,6 +1710,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
+  <ModalPortal>
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-full flex flex-col border border-slate-200">
         <div className="bg-gradient-to-r from-amber-600 to-amber-500 px-6 py-5 flex items-center justify-between flex-shrink-0 rounded-t-2xl">
@@ -1740,6 +1747,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }
 
@@ -2455,6 +2463,7 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
   const activeNav = navItems.find(n => n.key === activeSection)!;
 
   return (
+  <ModalPortal>
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm pt-16 px-4 pb-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-7xl h-[90vh] flex overflow-hidden border border-slate-200">
 
@@ -2534,6 +2543,7 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }
 

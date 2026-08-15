@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase, SearchInput } from './shared';
+import { ModalPortal } from '@/components/shared';
 
 function DonutChart({ segments, size = 72, strokeWidth = 11, label = '' }: {
   segments: { value: number; color: string }[];
@@ -496,6 +497,7 @@ export function AnalyticsPage() {
 
       {/* ─── User Detail Modal ─────────────────────────────────────────────── */}
       {selectedUser && (
+      <ModalPortal>
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(4px)' }}
           onClick={() => setSelectedUser(null)}>
@@ -609,6 +611,7 @@ export function AnalyticsPage() {
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
     </div>
   );

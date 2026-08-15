@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { User, MovementLog, EVENTS, KONDISI_BARANG_LIST, KondisiBarang, uploadFiles } from './shared';
 import { MultiFileField } from './MultiFileField';
 import { UrlListField } from './UrlListField';
+import { ModalPortal } from '@/components/shared';
 
 export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }: {
   log?:MovementLog|null; currentUser:User; teamMembers:string[]; onClose:()=>void; onSave:()=>void;
@@ -69,6 +70,7 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
   };
 
   return (
+  <ModalPortal>
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
       <div className="w-full max-w-lg max-h-full overflow-y-auto rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10 rounded-t-2xl">
@@ -195,5 +197,6 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }

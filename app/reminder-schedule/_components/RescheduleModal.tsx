@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Reminder, formatDate } from './shared';
+import { ModalPortal } from '@/components/shared';
 
 export function RescheduleModal({
   reminder,
@@ -18,6 +19,7 @@ export function RescheduleModal({
   const inputCls = "w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40";
 
   return (
+  <ModalPortal>
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
@@ -78,5 +80,6 @@ export function RescheduleModal({
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }

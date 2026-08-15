@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { PiketRow, KegiatanEntry, DAY_COLOR, TEAM_LABEL, KEGIATAN_COLORS } from './shared';
+import { ModalPortal } from '@/components/shared';
 
 export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{row:PiketRow;kegiatanList:KegiatanEntry[];currentUser?:any;onClose:()=>void;onEdit?:()=>void}) {
   const dc=DAY_COLOR[row.day_of_week];
@@ -25,6 +26,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
   };
 
   return(
+  <ModalPortal>
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-4 flex flex-col"
@@ -228,5 +230,6 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }

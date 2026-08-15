@@ -9,7 +9,7 @@ import {
   SALES_DIVISIONS, DISPLAY_BRANDS, MIDDLEWARE_BRANDS,
   PIE_COLORS,
 } from './shared';
-import { SalesPicker } from '@/components/shared';
+import { SalesPicker, ModalPortal } from '@/components/shared';
 import { isAssignablePTSTeam } from '@/lib/teams';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
 
@@ -142,6 +142,7 @@ export function AssignPTSModal({
   };
 
   return (
+  <ModalPortal>
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1200] p-4">
       <div className="bg-white/90 rounded-2xl shadow-2xl w-full border-2 border-teal-500 overflow-hidden"
         style={{ maxWidth: 460 }}>
@@ -280,6 +281,7 @@ export function AssignPTSModal({
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }
 
@@ -708,6 +710,7 @@ export function NewFormModal({
   );
 
   return (
+  <ModalPortal>
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1100] p-4">
       <div className="bg-white/90 rounded-3xl shadow-2xl w-full max-w-5xl max-h-[94vh] flex flex-col border-2 border-teal-500 animate-scale-in overflow-hidden">
         {/* Header */}
@@ -1226,6 +1229,7 @@ export function NewFormModal({
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }
 

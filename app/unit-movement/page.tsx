@@ -3,8 +3,7 @@
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ErrorState, MobileListCard, MobileCardBadge, ListEmptyState, StatCard
-} from '@/components/shared';
+import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ErrorState, MobileListCard, MobileCardBadge, ListEmptyState, StatCard, ModalPortal } from '@/components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { User, MovementLog, EVENTS, COLORS, splitTypeLines, fmtDate } from './_components/shared';
 import { logAudit } from '@/lib/audit';
@@ -216,6 +215,7 @@ function UnitMovementPageInner() {
       {/* Z.overlayTop — konfirmasi hapus bisa dipicu dari dalam ViewModal
           (Z.overlay), jadi harus selalu selapis di atasnya. */}
       {deleteConfirm&&(
+      <ModalPortal>
         <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center space-y-4">
             <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl" style={{background:'#fee2e2'}}>🗑️</div>
@@ -228,6 +228,7 @@ function UnitMovementPageInner() {
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
 
       {notif&&(

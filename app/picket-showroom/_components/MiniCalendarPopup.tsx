@@ -1,6 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PiketRow, DayOfWeek, DAY_COLOR, DAYS_OF_WEEK, MONTH_NAMES, addDays, toKey, getRollingNameForDate } from './shared';
+import { ModalPortal } from '@/components/shared';
 
 export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRow[];holidays?:string[];onClose:()=>void}) {
   const [calMonth,setCalMonth]=useState(()=>new Date());
@@ -54,6 +55,7 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
   const WEEK_DAYS=['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
 
   return(
+  <ModalPortal>
     <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div className="bg-white rounded-2xl shadow-2xl overflow-hidden" style={{width:'640px',maxWidth:'95vw',animation:'scale-in 0.2s ease-out',border:'1.5px solid rgba(220,38,38,0.2)'}}>
@@ -159,5 +161,6 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }

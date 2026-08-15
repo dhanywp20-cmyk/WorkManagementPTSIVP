@@ -12,8 +12,7 @@ import {
   JENIS_KEGIATAN_LIST, KEGIATAN_COLORS, PIE_COLORS,
   getMonday, addDays, toKey, getDayDate, getRollingNameForDate,
 } from './_components/shared';
-import { MiniPieChart, PageHeader, ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState
-} from '@/components/shared';
+import { MiniPieChart, PageHeader, ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState, ModalPortal } from '@/components/shared';
 import { TamuSummaryCards } from './_components/TamuSummaryCards';
 import { MiniCalendarPopup } from './_components/MiniCalendarPopup';
 import { FillDetailModal } from './_components/FillDetailModal';
@@ -283,6 +282,7 @@ function PiketShowroomPageInner() {
       <ConfirmDialog state={confirmState} onCancel={()=>setConfirmState(null)} />
       <div className="absolute inset-0 pointer-events-none" style={{background:'rgba(255,255,255,0.08)'}}/>
       {loading&&rows.length===0&&(
+      <ModalPortal>
         <div className="fixed inset-0 z-[1000] flex items-center justify-center" style={{backgroundImage:`url('/IVP_Background.png')`,backgroundSize:'cover'}}>
           <div className="absolute inset-0" style={{background:'rgba(255,255,255,0.15)',backdropFilter:'blur(2px)'}}/>
           <div className="relative flex flex-col items-center gap-4 px-10 py-8 rounded-3xl" style={{background:'rgba(255,255,255,0.92)',backdropFilter:'blur(20px)',boxShadow:'0 8px 40px rgba(0,0,0,0.18)'}}>
@@ -290,6 +290,7 @@ function PiketShowroomPageInner() {
             <p className="text-sm font-bold text-slate-700">Loading...</p>
           </div>
         </div>
+      </ModalPortal>
       )}
 
       {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk

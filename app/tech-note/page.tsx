@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { ListEmptyState } from '@/components/shared';
+import { ListEmptyState, ModalPortal } from '@/components/shared';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/app/dashboard/_components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
@@ -209,6 +209,7 @@ function Modal({ open, onClose, title, width=560, children }:{
 }) {
   if (!open) return null;
   return (
+  <ModalPortal>
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
       style={{ background:'rgba(0,0,0,0.45)', backdropFilter:'blur(4px)' }} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:width, maxHeight:'100%',
@@ -221,6 +222,7 @@ function Modal({ open, onClose, title, width=560, children }:{
         <div className="p-6">{children}</div>
       </div>
     </div>
+  </ModalPortal>
   );
 }
 

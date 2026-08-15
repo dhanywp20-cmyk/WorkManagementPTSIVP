@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, User, Material, Question, QuizSession, fmtDate, SearchInput, AppDialog, DialogState, BtnDelete } from './shared';
 import { logAudit } from '@/lib/audit';
+import { ModalPortal } from '@/components/shared';
 
 export function SessionsPage({ user, onViewResults }: { user: User; onViewResults?: (sessionId: string) => void }) {
   const [sessions, setSessions] = useState<QuizSession[]>([]);
@@ -691,6 +692,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
       </div>
       {/* ════ Assign Ulang Modal ════ */}
       {showReassign && reassignSource && (
+      <ModalPortal>
         <div className="fixed inset-0 z-[1000] flex items-start justify-center p-4 overflow-y-auto"
           style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(6px)' }}
           onClick={e => { if (e.target === e.currentTarget) setShowReassign(false); }}>
@@ -884,6 +886,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
 
       {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
