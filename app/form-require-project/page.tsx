@@ -1722,7 +1722,7 @@ Hubungi Admin untuk info lebih lanjut.
                 </span>
               </button>
               {bellDropdownOpen && (
-                <div className="absolute right-0 top-11 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-scale-in" style={{ zIndex: Z.modal }}>
+                <div className="absolute right-0 top-11 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-scale-in" style={{ zIndex: Z.dropdown }}>
                   <div className="bg-gradient-to-r from-violet-500 to-violet-600 px-4 py-3 flex items-center justify-between">
                     <p className="text-white text-xs font-bold">🔔 Tiket Aktif ({activeTickets.length})</p>
                     <button onClick={() => setBellDropdownOpen(false)} className="text-white/70 hover:text-white text-xs font-bold">✕</button>
@@ -2173,7 +2173,7 @@ Hubungi Admin untuk info lebih lanjut.
 
       {/* Bulk Delete Confirm Modal */}
       {bulkConfirm && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.modal }}>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlay }}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
             <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
               <span className="text-2xl">🗑️</span>
@@ -2201,7 +2201,7 @@ Hubungi Admin untuk info lebih lanjut.
 
       {/* Reject Modal — muncul di atas detail modal (lihat lib/z-index.ts) */}
       {rejectModal.open && rejectModal.req && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.modalNestedTop }}>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
           <div className="bg-white/90 rounded-2xl shadow-2xl max-w-md w-full border-2 border-red-400 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-red-500 to-red-700 px-6 py-4">
               <h3 className="font-bold text-white text-lg">❌ Tolak Request</h3>
@@ -2222,7 +2222,7 @@ Hubungi Admin untuk info lebih lanjut.
 
       {/* Status Update Modal — muncul di atas detail modal (lihat lib/z-index.ts) */}
       {statusUpdateModal.open && statusUpdateModal.req && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.modalNestedTop }}>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
           <div className="bg-white/90 rounded-2xl shadow-2xl max-w-sm w-full border border-gray-200 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4 flex items-center justify-between">
               <div>
@@ -2285,7 +2285,7 @@ Hubungi Admin untuk info lebih lanjut.
 
       {/* Delete Confirmation Modal — muncul di atas detail modal (lihat lib/z-index.ts) */}
       {deleteModal.open && deleteModal.req && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.modalNestedTop }}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
           <div className="bg-white/90 rounded-2xl shadow-2xl max-w-md w-full animate-scale-in overflow-hidden" style={{ border: '1.5px solid #e5e7eb' }}>
             {/* Header */}
             <div className="p-6 pb-4">
@@ -2351,7 +2351,7 @@ Hubungi Admin untuk info lebih lanjut.
         const activeTickets = requests.filter(r => r.status === 'pending' || r.status === 'in_progress');
         if (activeTickets.length === 0) return null;
         return (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.modalBlocking }}>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.overlayMax }}>
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in border-2 border-amber-400">
               <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -2398,7 +2398,7 @@ Hubungi Admin untuk info lebih lanjut.
 
       {/* DETAIL MODAL */}
       {showDetailModal && selectedRequest && detailSc && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0" style={{ zIndex: Z.modalNested }}
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0" style={{ zIndex: Z.overlay }}
           onClick={e => { if (e.target === e.currentTarget) handleCloseDetail(); }}>
           <div className="bg-white w-full h-full animate-slide-up flex flex-col overflow-hidden"
             style={{ border: 'none' }}>
@@ -3236,7 +3236,7 @@ Hubungi Admin untuk info lebih lanjut.
 
       {/* Edit Form Modal */}
       {editFormModal && selectedRequest && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.modalNestedTop }}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
           <div className="bg-white/90 rounded-3xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col border-2 border-amber-400 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-amber-500 to-amber-700 px-6 py-4 flex items-center justify-between flex-shrink-0">
               <div>

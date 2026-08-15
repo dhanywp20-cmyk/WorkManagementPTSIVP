@@ -488,7 +488,7 @@ function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: (
   const teamColor = TEAM_COLORS[member.team_type] ?? KPI_COLOR;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col"
@@ -1838,7 +1838,7 @@ export default function KPITeamPage() {
         const c         = noData ? '#94a3b8' : finalKPI >= 85 ? '#10b981' : finalKPI >= 70 ? '#3b82f6' : finalKPI >= 50 ? '#f59e0b' : '#ef4444';
 
         return createPortal(
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
             style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
             onClick={e => { if (e.target === e.currentTarget) setSelectedKPIMember(null); }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-y-auto" style={{ maxHeight: '100%', scrollbarWidth: 'thin' }}>
@@ -1989,7 +1989,7 @@ export default function KPITeamPage() {
 
       {/* ── Mulai KPI Confirm Modal ── */}
       {showStartKPI && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
           onClick={e => { if (e.target === e.currentTarget) setShowStartKPI(false); }}>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -2045,7 +2045,7 @@ export default function KPITeamPage() {
         const tc  = TEAM_COLORS[m.team_type] ?? '#64748b';
         const sc  = (v: number) => v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b' : '#ef4444';
         return createPortal(
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
             style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
             onClick={e => { if (e.target === e.currentTarget) setSelectedSnapMember(null); }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-y-auto" style={{ maxHeight: '100%' }}>
@@ -2102,7 +2102,7 @@ export default function KPITeamPage() {
 
       {/* ── KPI Settings Modal ── */}
       {showSettings && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
           onClick={e => { if (e.target === e.currentTarget) setShowSettings(false); }}>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">

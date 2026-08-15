@@ -1579,7 +1579,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 const kpiColor = noData ? '#94a3b8' : finalKPI>=85?'#10b981':finalKPI>=70?'#3b82f6':finalKPI>=50?'#f59e0b':'#ef4444';
                 const isEditing = kpiTeam.editingMember === member.id;
                 const modalContent = (
-                  <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+                  <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
                     style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)' }}
                     onClick={e => { if (e.target === e.currentTarget) { setSelectedKPIMember(null); setKpiTeam(prev=>({...prev,editingMember:null,editValues:{}})); } }}>
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-full overflow-y-auto"

@@ -12,7 +12,7 @@ export function LoadingScreen({
   accentColor?: string;
 }) {
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-[9999]"
+    <div className="fixed inset-0 flex items-center justify-center z-[1000]"
       style={{ backgroundImage: `url('/IVP_Background.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.25)' }} />
       <div className="relative z-10 flex flex-col items-center gap-3 px-10 py-8 rounded-2xl"

@@ -91,7 +91,13 @@ function PW({ children }: { children: React.ReactNode }) {
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
 
-      <div className="relative z-10 flex flex-col flex-1 overflow-hidden">{children}</div>
+      {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk
+          stacking context, sehingga z-index SEMUA modal di dalamnya cuma
+          dibandingkan sesama isi pembungkus ini, bukan dengan overlay yang
+          di-portal ke <body>. Akibatnya modal z-[1100] bisa tampil DI BELAKANG
+          modal z-[1000] yang di-portal. Urutan cat terhadap tint di atas tetap
+          aman karena elemen ini datang belakangan di DOM. */}
+      <div className="relative flex flex-col flex-1 overflow-hidden">{children}</div>
     </div>
   );
 }
@@ -159,7 +165,7 @@ function SalesDrop({ value, division, guests, onChange }: { value: string; divis
 function Toast({ t }: { t: { type: 'success' | 'error'; msg: string } | null }) {
   if (!t) return null;
   return (
-    <div className="fixed top-5 right-5 z-[300] px-5 py-3.5 rounded-xl shadow-2xl text-sm font-bold flex items-center gap-2 text-white"
+    <div className="fixed top-5 right-5 z-[3000] px-5 py-3.5 rounded-xl shadow-2xl text-sm font-bold flex items-center gap-2 text-white"
       style={{ background: t.type === 'success' ? '#059669' : '#dc2626' }}>
       {t.type === 'success' ? '✅' : '❌'} {t.msg}
     </div>
@@ -562,7 +568,7 @@ export default function DailyReportPage() {
     const targetUser = isAdmin ? teamUsers.find(u => u.id === formUserId) : currentUser;
     const autoCount = formReminders.length + formTickets.length;
     return (
-      <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', paddingTop: '20px', paddingBottom: '40px' }}>
+      <div className="fixed inset-0 z-[1000] flex items-start justify-center overflow-y-auto" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', paddingTop: '20px', paddingBottom: '40px' }}>
         <div className="w-full max-w-2xl mx-4" style={{ ...card, overflow: 'visible' }}>
           {/* Modal header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
@@ -689,7 +695,7 @@ export default function DailyReportPage() {
     const badge = sb(row.status);
     const linkedReport = row.report_id ? reports.find(r => r.id === row.report_id) : undefined;
     return (
-      <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }} onClick={() => setModalRow(null)}>
+      <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }} onClick={() => setModalRow(null)}>
         <div className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col" style={{ background: 'white', maxHeight: '96vh' }} onClick={e => e.stopPropagation()}>
           {/* Colored header */}
           <div className="px-6 py-5 text-white flex-shrink-0 relative" style={{ background: `linear-gradient(135deg, ${c.accent}, ${c.accent}cc)` }}>

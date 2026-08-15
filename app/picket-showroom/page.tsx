@@ -283,7 +283,7 @@ function PiketShowroomPageInner() {
       <ConfirmDialog state={confirmState} onCancel={()=>setConfirmState(null)} />
       <div className="absolute inset-0 pointer-events-none" style={{background:'rgba(255,255,255,0.08)'}}/>
       {loading&&rows.length===0&&(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center" style={{backgroundImage:`url('/IVP_Background.png')`,backgroundSize:'cover'}}>
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center" style={{backgroundImage:`url('/IVP_Background.png')`,backgroundSize:'cover'}}>
           <div className="absolute inset-0" style={{background:'rgba(255,255,255,0.15)',backdropFilter:'blur(2px)'}}/>
           <div className="relative flex flex-col items-center gap-4 px-10 py-8 rounded-3xl" style={{background:'rgba(255,255,255,0.92)',backdropFilter:'blur(20px)',boxShadow:'0 8px 40px rgba(0,0,0,0.18)'}}>
             <svg className="w-16 h-16 animate-spin" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="26" stroke="#f1f5f9" strokeWidth="6"/><path d="M32 6 A26 26 0 0 1 58 32" stroke="#dc2626" strokeWidth="6" strokeLinecap="round"/></svg>
@@ -292,7 +292,13 @@ function PiketShowroomPageInner() {
         </div>
       )}
 
-      <div className="relative z-10 flex flex-col flex-1 overflow-hidden">
+      {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk
+          stacking context, sehingga z-index SEMUA modal di dalamnya cuma
+          dibandingkan sesama isi pembungkus ini, bukan dengan overlay yang
+          di-portal ke <body>. Akibatnya modal z-[1100] bisa tampil DI BELAKANG
+          modal z-[1000] yang di-portal. Urutan cat terhadap tint di atas tetap
+          aman karena elemen ini datang belakangan di DOM. */}
+      <div className="relative flex flex-col flex-1 overflow-hidden">
         {/* ── HEADER ── */}
         <PageHeader icon="🏪" title="Piket Showroom" subtitle="IndoVisual Presentama · Jadwal Piket Tim PTS" color="#0d9488" colorLight="#0f766e">
           <button onClick={()=>exportToExcel(allRows,kegiatanList)}

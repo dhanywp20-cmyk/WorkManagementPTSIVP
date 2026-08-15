@@ -384,7 +384,13 @@ export default function ProjectProgressPage() {
       {/* Tint TIPIS, bukan lapisan putih pekat — biar background IVP tetap
           kelihatan, cuma teks & kartu di atasnya tetap terbaca. */}
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.08)' }} />
-      <div className="relative z-10 flex flex-col flex-1 overflow-hidden">
+      {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk
+          stacking context, sehingga z-index SEMUA modal di dalamnya cuma
+          dibandingkan sesama isi pembungkus ini, bukan dengan overlay yang
+          di-portal ke <body>. Akibatnya modal z-[1100] bisa tampil DI BELAKANG
+          modal z-[1000] yang di-portal. Urutan cat terhadap tint di atas tetap
+          aman karena elemen ini datang belakangan di DOM. */}
+      <div className="relative flex flex-col flex-1 overflow-hidden">
 
         {toast && <Toast notif={toast} />}
 
@@ -611,7 +617,7 @@ export default function ProjectProgressPage() {
 
       {/* ══ MODAL DETAIL ══ */}
       {detail && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 z-[9990]"
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 z-[1000]"
           onClick={e => { if (e.target === e.currentTarget) closeDetail(); }}>
           <div className="w-full h-full flex flex-col overflow-hidden relative" style={{
             backgroundImage: `url('/IVP_Background.png')`,
@@ -675,7 +681,7 @@ export default function ProjectProgressPage() {
 
       {/* ══ MODAL FORM PROYEK ══ */}
       {projectForm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9995]">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1100]">
           <div className="rounded-md shadow-2xl w-full max-w-lg overflow-hidden" style={{ background: PALETTE.surface }}>
             <div className="px-6 py-4" style={{ borderBottom: `1px solid ${PALETTE.border}` }}>
               <h3 className="font-bold text-base" style={{ color: PALETTE.ink }}>
@@ -762,7 +768,7 @@ export default function ProjectProgressPage() {
 
       {/* ══ MODAL SHARE ══ */}
       {shareFor && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9995]">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1100]">
           <div className="rounded-md shadow-2xl w-full max-w-lg overflow-hidden" style={{ background: PALETTE.surface }}>
             <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${PALETTE.border}` }}>
               <h3 className="font-bold text-base" style={{ color: PALETTE.ink }}>🔗 Share View-Only</h3>

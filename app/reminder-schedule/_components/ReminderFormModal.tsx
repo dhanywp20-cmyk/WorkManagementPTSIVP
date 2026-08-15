@@ -56,7 +56,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
   const inputStyle = { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(0,0,0,0.12)' };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4 overflow-y-auto"
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4 overflow-y-auto"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
         style={{ animation: 'scale-in 0.25s ease-out', border: '1.5px solid rgba(220,38,38,0.25)' }}>

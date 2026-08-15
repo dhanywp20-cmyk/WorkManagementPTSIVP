@@ -691,7 +691,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
       </div>
       {/* ════ Assign Ulang Modal ════ */}
       {showReassign && reassignSource && (
-        <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4 overflow-y-auto"
+        <div className="fixed inset-0 z-[1000] flex items-start justify-center p-4 overflow-y-auto"
           style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(6px)' }}
           onClick={e => { if (e.target === e.currentTarget) setShowReassign(false); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-6 border border-slate-200 overflow-hidden">

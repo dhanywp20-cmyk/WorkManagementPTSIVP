@@ -2328,11 +2328,17 @@ function TicketingSystemInner() {
       <div className="absolute inset-0 pointer-events-none" style={{ background: "rgba(255,255,255,0.08)" }} />
       {/* Toast notifications */}
       {toast && <Toast notif={toast} />}
-      <div className="relative z-10 flex flex-col flex-1 overflow-hidden">
+      {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk
+          stacking context, sehingga z-index SEMUA modal di dalamnya cuma
+          dibandingkan sesama isi pembungkus ini, bukan dengan overlay yang
+          di-portal ke <body>. Akibatnya modal z-[1100] bisa tampil DI BELAKANG
+          modal z-[1000] yang di-portal. Urutan cat terhadap tint di atas tetap
+          aman karena elemen ini datang belakangan di DOM. */}
+      <div className="relative flex flex-col flex-1 overflow-hidden">
 
         {/* ── LOADING POPUP (Redesigned) ── */}
         {showLoadingPopup && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110]">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100]">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(220,38,38,0.3)" }}>
               <div className="flex flex-col items-center">
                 {loadingMessage.includes("✅") ? (
@@ -2996,7 +3002,7 @@ function TicketingSystemInner() {
 
         {/* Bulk Delete Confirm Modal */}
         {bulkConfirm && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
               <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
                 <span className="text-2xl">🗑️</span>
@@ -3032,7 +3038,7 @@ function TicketingSystemInner() {
 
         {/* ── NOTIFICATION POPUP (Redesigned) ── */}
         {showNotificationPopup && notifications.length > 0 && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-full overflow-hidden flex flex-col" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(245,158,11,0.5)" }}>
               <div className="p-5 flex-shrink-0" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>
                 <div className="flex justify-between items-center">
@@ -3060,7 +3066,7 @@ function TicketingSystemInner() {
 
         {/* ── NOTIFICATIONS MODAL (Redesigned) ── */}
         {showNotifications && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-2xl w-full max-h-full overflow-hidden flex flex-col" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(245,158,11,0.5)" }}>
               <div className="p-5 flex-shrink-0" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>
                 <div className="flex justify-between items-center">
@@ -3085,7 +3091,7 @@ function TicketingSystemInner() {
 
         {/* ── TICKET DETAIL POPUP — detail kiri + update panel kanan ── */}
         {showTicketDetailPopup && selectedTicket && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-3"
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1000] p-3"
             onClick={e => { if (e.target === e.currentTarget) { setShowTicketDetailPopup(false); setSelectedTicket(null); setShowUpdateForm(false); } }}>
             <div className="flex items-start gap-3 w-full my-2" style={{ maxWidth: showUpdateForm ? '1120px' : '720px', transition: 'max-width 0.2s' }}>
 
@@ -3476,7 +3482,7 @@ function TicketingSystemInner() {
 
                 {/* ── APPROVAL MODAL (Redesigned) ── */}
         {showApprovalModal && canApproveAssign && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-2xl w-full max-h-full overflow-hidden flex flex-col" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(245,158,11,0.5)" }}>
               <div className="p-6 flex-shrink-0" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>
                 <div className="flex justify-between items-center"><div className="flex items-center gap-3"><span className="text-3xl">⏳</span><div><h3 className="text-xl font-bold text-white">Ticket Approval</h3><p className="text-sm text-white/90">{pendingApprovalTickets.length} ticket menunggu persetujuan</p></div></div><button onClick={() => { setShowApprovalModal(false); setApprovalAssignees({}); setApprovalTicket(null); setApprovalAssignee(""); }} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold transition-all">✕</button></div>
@@ -3599,7 +3605,7 @@ function TicketingSystemInner() {
 
         {/* ── SERVICES APPROVAL MODAL (Redesigned) ── */}
         {showServicesApprovalModal && currentUserTeamType === "Team Services" && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-2xl w-full max-h-full overflow-hidden flex flex-col" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(219,39,119,0.5)" }}>
               <div className="p-6 flex-shrink-0" style={{ background: "linear-gradient(135deg,#db2777,#be185d)" }}>
                 <div className="flex justify-between items-center"><div className="flex items-center gap-3"><span className="text-3xl">🔧</span><div><h3 className="text-xl font-bold text-white">Ticket Masuk — Team Services</h3><p className="text-sm text-white/90">{pendingServicesApprovalTickets.length} ticket menunggu konfirmasi</p></div></div><button onClick={() => setShowServicesApprovalModal(false)} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold transition-all">✕</button></div>
@@ -3618,7 +3624,7 @@ function TicketingSystemInner() {
 
         {/* ── REMINDER SCHEDULE MODAL (Redesigned) ── */}
         {showReminderSchedule && canManageTickets && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(124,58,237,0.5)" }}>
               <div className="flex items-center justify-between mb-5"><div className="flex items-center gap-3"><span className="text-3xl">⏰</span><div><h3 className="text-lg font-bold text-gray-800">Jadwal WA Reminder</h3><p className="text-xs text-gray-500">Kirim reminder otomatis ke semua handler</p></div></div><button onClick={() => setShowReminderSchedule(false)} className="text-gray-400 hover:text-gray-600 text-xl font-bold">✕</button></div>
               <div className="flex items-center justify-between rounded-xl p-3 mb-4" style={{ background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.2)" }}><div><p className="text-sm font-bold text-violet-800">Status Reminder</p><p className="text-xs text-violet-600">{reminderSchedule.active ? "Aktif — akan kirim WA otomatis" : "Nonaktif — tidak ada WA dikirim"}</p></div><button onClick={() => setReminderSchedule((prev) => ({ ...prev, active: !prev.active }))} className={`relative w-12 h-6 rounded-full transition-colors ${reminderSchedule.active ? "bg-violet-600" : "bg-gray-300"}`}><span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${reminderSchedule.active ? "translate-x-6" : "translate-x-0.5"}`} /></button></div>
@@ -3632,7 +3638,7 @@ function TicketingSystemInner() {
 
         {/* ── ACCOUNT SETTINGS MODAL (Redesigned) ── */}
         {showAccountSettings && canAccessAccountSettings && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-5xl w-full max-h-full overflow-y-auto p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(75,85,99,0.3)" }}>
               <div className="flex justify-between items-center mb-6 sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-6 px-6 py-3 border-b border-gray-100"><h2 className="text-2xl font-bold text-gray-800">⚙️ Account Management</h2><button onClick={() => setShowAccountSettings(false)} className="text-gray-500 hover:text-gray-700 text-xl font-bold">✕</button></div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -3649,7 +3655,7 @@ function TicketingSystemInner() {
         {/* ── NEW TICKET MODAL  ── */}
         {/* ── SUPERVISOR ASSIGN TICKET MODAL ── */}
         {supAssignTicket && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[120] p-4"
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1200] p-4"
             onClick={e => { if (e.target === e.currentTarget) { setSupAssignTicket(null); setSupAssignTo(""); } }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(245,158,11,0.4)" }}>
               <div className="px-6 py-5 flex items-center justify-between" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>
@@ -3704,7 +3710,7 @@ function TicketingSystemInner() {
 
         {/* ── OVERDUE SETTING MODAL (Redesigned) ── */}
         {showOverdueSetting && overdueTargetTicket && canManageTickets && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(245,158,11,0.5)" }}>
               <div className="flex items-center gap-3 mb-4"><span className="text-3xl">⏰</span><div><h3 className="text-lg font-bold text-gray-800">Overdue Setting</h3><p className="text-xs text-gray-500 font-medium">{overdueTargetTicket.project_name}</p><p className="text-xs text-gray-400">{overdueTargetTicket.issue_case}</p></div></div>
               <p className="text-xs text-orange-700 rounded-lg p-2 mb-4" style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)" }}>⚠️ Setting ini hanya terlihat oleh admin Anda. Handler akan mendapat notifikasi merah ketika ticket overdue. Default otomatis: ticket overdue setelah 48 jam jika tidak di-set manual.</p>
@@ -3715,7 +3721,7 @@ function TicketingSystemInner() {
 
         {/* ── RE-OPEN TICKET MODAL (Redesigned) ── */}
         {showReopenModal && reopenTargetTicket && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(245,158,11,0.5)" }}>
               <div className="flex items-center gap-3 mb-5"><span className="text-3xl">🔓</span><div><h3 className="text-lg font-bold text-gray-800">Re-open Ticket</h3><p className="text-xs text-gray-500">{reopenTargetTicket.project_name} · {reopenTargetTicket.issue_case}</p></div></div>
               <div className="rounded-xl p-3 mb-4 text-xs" style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", color: "#b45309" }}>⚠️ Status akan berubah ke <strong>Pending</strong> dan activity log baru ditambahkan otomatis.</div>
@@ -3726,7 +3732,7 @@ function TicketingSystemInner() {
 
         {/* ── ACTIVITY SUMMARY MODAL (Redesigned) ── */}
         {showActivitySummary && summaryTicket && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-2">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-2">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-2xl w-full h-[96vh] flex flex-col" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(59,130,246,0.5)" }}>
               <div className="p-5 border-b flex-shrink-0" style={{ background: "linear-gradient(135deg,#2563eb,#1d4ed8)", borderColor: "rgba(0,0,0,0.1)" }}>
                 <div className="flex justify-between items-center"><div className="flex items-center gap-3"><span className="text-2xl">🔄</span><div><h3 className="text-lg font-bold text-white">Activity Summary</h3><p className="text-sm text-blue-100 font-medium">{summaryTicket.project_name}</p><p className="text-xs text-blue-200">{summaryTicket.issue_case}</p></div></div><button onClick={() => { setShowActivitySummary(false); setSummaryTicket(null); }} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold transition-all text-lg">✕</button></div>
@@ -3800,7 +3806,7 @@ function TicketingSystemInner() {
         )}
         {/* ── REJECT TICKET MODAL — Soft reject dengan alasan ── */}
         {showRejectModal && rejectTargetTicket && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(220,38,38,0.4)" }}>
               <div className="flex items-center gap-3 mb-1">
                 <span className="text-3xl">❌</span>
@@ -3840,7 +3846,7 @@ function TicketingSystemInner() {
 
         {/* ── DELETE TICKET MODAL (Admin Only) ── */}
         {showDeleteModal && deleteTargetTicket && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(220,38,38,0.5)" }}>
               <div className="flex items-center gap-3 mb-4"><span className="text-3xl">🗑️</span><div><h3 className="text-lg font-bold text-gray-800">Hapus Ticket</h3><p className="text-xs text-gray-500 font-medium">{deleteTargetTicket.project_name}</p><p className="text-xs text-gray-400">{deleteTargetTicket.issue_case}</p></div></div>
               <div className="rounded-xl p-3 mb-4 text-xs" style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", color: "#b91c1c" }}>

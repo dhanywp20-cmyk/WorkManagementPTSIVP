@@ -113,7 +113,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
   };
 
   return(
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 flex flex-col" style={{animation:'scale-in 0.25s ease-out',border:`1.5px solid ${dc.accent}40`,maxHeight:'96dvh'}}>
         <div className="px-6 py-5 rounded-t-2xl flex-shrink-0 relative" style={{background:dc.grad}}>
           <div>

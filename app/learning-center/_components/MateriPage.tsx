@@ -661,7 +661,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
 
       {/* ── Modal: Rename Folder ── */}
       {isAdmin && renameFolder && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-slate-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
@@ -704,7 +704,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
 
       {/* ── Modal: Edit Material ── */}
       {isAdmin && editMaterial && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">

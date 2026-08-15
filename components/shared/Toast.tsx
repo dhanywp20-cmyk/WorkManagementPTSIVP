@@ -14,7 +14,7 @@ export interface Notif {
 export function Toast({ notif }: { notif: Notif | null }) {
   if (!notif) return null;
   return (
-    <div className="fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-sm font-semibold shadow-xl flex items-center gap-2"
+    <div className="fixed top-4 right-4 z-[3000] px-4 py-3 rounded-xl text-sm font-semibold shadow-xl flex items-center gap-2"
       style={{
         background: notif.type === 'success' ? '#d1fae5' : '#fee2e2',
         color: notif.type === 'success' ? '#065f46' : '#991b1b',

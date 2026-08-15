@@ -512,7 +512,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
   );
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-start justify-center pt-[12vh] px-4"
+    <div className="fixed inset-0 z-[1000] flex items-start justify-center pt-[12vh] px-4"
       onClick={e => { if (e.target === e.currentTarget) setOpen(false); }}>
 
       <div className="w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl"

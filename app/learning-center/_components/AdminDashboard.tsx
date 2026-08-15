@@ -739,7 +739,7 @@ export function AdminDashboard({ user }: { user: User }) {
 
       {/* ── User Detail Modal ── */}
       {selectedUser && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(4px)' }}
           onClick={() => setSelectedUser(null)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col"

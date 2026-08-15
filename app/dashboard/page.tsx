@@ -944,7 +944,7 @@ export default function Dashboard() {
 
         {/* ── Forgot Password Modal (login page) ── */}
         {showForgot && (
-          <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-bold text-slate-800">🔐 Reset Password</h3>
@@ -1264,7 +1264,7 @@ export default function Dashboard() {
             borderRight: '1px solid rgba(0,0,0,0.07)',
             // On desktop: position:static so it participates in flex layout
             // On mobile: fixed overlay (overridden by Tailwind fixed above)
-            ...(tourVisible ? { zIndex: 215 } : {}),
+            ...(tourVisible ? { zIndex: 1505 } : {}),
           }}
         >
           {/* Top accent line */}
@@ -1391,7 +1391,7 @@ export default function Dashboard() {
                               className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
                               style={
                                 isTourHL
-                                  ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite', position: 'relative', zIndex: 220 }
+                                  ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite', position: 'relative', zIndex: 1510 }
                                   : isActive
                                     ? { background: 'rgba(67,56,202,0.10)', border: '1px solid rgba(67,56,202,0.25)', color: '#3730a3' }
                                     : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
@@ -1442,7 +1442,7 @@ export default function Dashboard() {
                               className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
                               style={
                                 isTourHL
-                                  ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite', position: 'relative', zIndex: 220 }
+                                  ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite', position: 'relative', zIndex: 1510 }
                                   : isActive
                                     ? { background: 'rgba(200,134,29,0.11)', border: '1px solid rgba(200,134,29,0.28)', color: '#92600a' }
                                     : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
@@ -1492,7 +1492,7 @@ export default function Dashboard() {
                               className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
                               style={
                                 isTourHL
-                                  ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite', position: 'relative', zIndex: 220 }
+                                  ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite', position: 'relative', zIndex: 1510 }
                                   : isActive
                                     ? { background: 'rgba(200,134,29,0.11)', border: '1px solid rgba(200,134,29,0.28)', color: '#92600a' }
                                     : { background: 'transparent', border: '1px solid transparent', color: '#334155' }

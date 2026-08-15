@@ -22,17 +22,16 @@ export const BRAND = {
 
 // ─── Z-Index Standar ──────────────────────────────────────────────────────────
 /**
- * Gunakan konstanta ini untuk z-index agar tidak bentrok antar modul.
- * Jangan pakai angka arbitrary seperti z-[99999].
+ * Skala z-index tinggal di lib/z-index.ts.
+ *
+ * Dulu ada salinan kedua di berkas ini dengan angka BERBEDA untuk nama yang
+ * sama (modal 100 vs 100, tapi toast 200 vs 10000). Selama tiap halaman masih
+ * terkurung stacking context sendiri, selisih itu tidak pernah ketahuan —
+ * begitu kurungannya dibongkar, dua tangga yang bersaing langsung menghasilkan
+ * popup yang tampil di belakang popup lain. Satu sumber saja, supaya tidak
+ * terulang.
  */
-export const Z = {
-  dropdown:  40,
-  sticky:    50,
-  modal:     100,
-  modalTop:  110,   // modal di atas modal (konfirmasi hapus, dll)
-  toast:     200,
-  tooltip:   300,
-} as const;
+export { Z } from './z-index';
 
 // ─── Role Helpers ─────────────────────────────────────────────────────────────
 import type { CurrentUser } from './use-current-user';

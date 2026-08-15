@@ -142,7 +142,7 @@ export function AssignPTSModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1200] p-4">
       <div className="bg-white/90 rounded-2xl shadow-2xl w-full border-2 border-teal-500 overflow-hidden"
         style={{ maxWidth: 460 }}>
 
@@ -708,7 +708,7 @@ export function NewFormModal({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9998] p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1100] p-4">
       <div className="bg-white/90 rounded-3xl shadow-2xl w-full max-w-5xl max-h-[94vh] flex flex-col border-2 border-teal-500 animate-scale-in overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-teal-600 to-teal-800 px-6 py-4 flex items-center justify-between flex-shrink-0">

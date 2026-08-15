@@ -266,7 +266,7 @@ export default function IncentivePTSPage() {
     <div className="h-screen overflow-hidden flex flex-col" style={{ fontFamily: "'Inter', sans-serif", backgroundImage: "url('/IVP_Background.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
 
       {toast && (
-        <div className={`fixed top-4 right-4 z-[9999] px-4 py-3 rounded-xl shadow-lg text-sm font-semibold text-white flex items-center gap-2 ${toast.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`}>
+        <div className={`fixed top-4 right-4 z-[3000] px-4 py-3 rounded-xl shadow-lg text-sm font-semibold text-white flex items-center gap-2 ${toast.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`}>
           {toast.type === 'success' ? '✅' : '❌'} {toast.msg}
         </div>
       )}
@@ -664,7 +664,7 @@ export default function IncentivePTSPage() {
 
       {/* ─── MODAL: Input Nominal ─── */}
       {nominalProject && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4" onClick={e => { if (e.target === e.currentTarget) setNominalProject(null); }}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1100] p-4" onClick={e => { if (e.target === e.currentTarget) setNominalProject(null); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" style={{ border: '1.5px solid rgba(99,102,241,0.3)' }}>
             <div className="px-5 py-4" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
               <h3 className="text-base font-bold text-white">💰 Input Nominal Incentive</h3>
@@ -730,7 +730,7 @@ export default function IncentivePTSPage() {
 
       {/* ─── MODAL: Project Detail ─── */}
       {detailProject && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setDetailProject(null); }}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1100] p-4 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setDetailProject(null); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden border border-gray-200">
             <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
               <div className="flex items-center justify-between">
@@ -922,7 +922,7 @@ export default function IncentivePTSPage() {
 
       {/* ─── MODAL: Generate Tranche ─── */}
       {showGenerateModal && generateProject && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[120] p-4" onClick={e => { if (e.target === e.currentTarget) { setShowGenerateModal(false); setGenerateProject(null); } }}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1200] p-4" onClick={e => { if (e.target === e.currentTarget) { setShowGenerateModal(false); setGenerateProject(null); } }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-gray-200">
             <h3 className="text-lg font-bold text-gray-800 mb-4">⚡ Generate Tranche</h3>
             <p className="text-sm text-gray-500 mb-1">Project: <strong className="text-gray-800">{generateProject.project_name}</strong></p>
@@ -955,7 +955,7 @@ export default function IncentivePTSPage() {
 
       {/* ─── MODAL: Batch Confirm ─── */}
       {batchConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[120] p-4" onClick={e => { if (e.target === e.currentTarget) setBatchConfirm(false); }}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1200] p-4" onClick={e => { if (e.target === e.currentTarget) setBatchConfirm(false); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-red-200">
             <h3 className="text-lg font-bold text-gray-800 mb-2">🚀 Konfirmasi Process Batch</h3>
             <p className="text-sm text-gray-500 mb-2">Proses semua tranche <strong>payment_year = {batchYear}</strong> status <strong>pending</strong>.</p>

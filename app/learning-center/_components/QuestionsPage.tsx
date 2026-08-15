@@ -314,7 +314,7 @@ export function QuestionsPage({ user }: { user: User }) {
 
   // ─── Rename Folder Modal ────────────────────────────────────────────────────
   const renameFolderModalJSX = renameFolder ? (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
         <h3 className="font-bold text-slate-800 mb-1 text-base">✏️ Ubah Nama Folder</h3>
         <p className="text-xs text-slate-400 mb-4">Semua materi dalam folder ini akan diperbarui secara otomatis.</p>
@@ -477,7 +477,7 @@ export function QuestionsPage({ user }: { user: User }) {
 
   // ─── Manual Add Modal (plain JSX var — NOT a sub-component, avoids remount on every keystroke) ──
   const addManualModalJSX = showAddManual ? (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
       <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-full overflow-y-auto" style={{ background: '#ffffff' }}>
         <h3 className="font-bold text-slate-800 mb-1 text-base sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-slate-100">➕ Tambah Soal Manual</h3>
         <p className="text-xs text-slate-400 mb-4">
@@ -944,7 +944,7 @@ export function QuestionsPage({ user }: { user: User }) {
 
         {/* Edit Soal Modal */}
         {editQ && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
             <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-full overflow-y-auto" style={{ background: '#ffffff' }}>
               <h3 className="font-bold text-slate-800 mb-4 sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-slate-100">✏️ Edit Soal</h3>
               <div className="space-y-3">

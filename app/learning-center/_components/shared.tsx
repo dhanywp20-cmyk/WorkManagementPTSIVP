@@ -300,7 +300,7 @@ export function AppDialog({ dialog, onClose }: { dialog: DialogState; onClose: (
   const cfg = cfgMap[dialog.type];
   const isConfirm = dialog.type === 'confirm';
   return (
-    <div className="fixed inset-0 z-[220] flex items-center justify-center p-4"
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4"
       style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
       <div className="bg-white rounded-2xl shadow-2xl p-7 w-full max-w-sm border border-slate-200">
         <div className="flex flex-col items-center text-center mb-6">

@@ -122,7 +122,13 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
         backgroundAttachment: 'fixed',
       }}
     >
-      <div className="relative z-10 flex flex-col flex-1 overflow-hidden">
+      {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk
+          stacking context, sehingga z-index SEMUA modal di dalamnya cuma
+          dibandingkan sesama isi pembungkus ini, bukan dengan overlay yang
+          di-portal ke <body>. Akibatnya modal z-[1100] bisa tampil DI BELAKANG
+          modal z-[1000] yang di-portal. Urutan cat terhadap tint di atas tetap
+          aman karena elemen ini datang belakangan di DOM. */}
+      <div className="relative flex flex-col flex-1 overflow-hidden">
         {isAdmin
           ? <AdminTopNav view={adminView} onChange={changeAdminView} />
           : <TeamTopNav view={teamView} onChange={changeTeamView} />}

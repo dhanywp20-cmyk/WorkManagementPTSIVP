@@ -120,7 +120,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4 overflow-y-auto"
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4 overflow-y-auto"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
         style={{ animation: "scale-in 0.25s ease-out", border: "1.5px solid rgba(220,38,38,0.25)" }}>

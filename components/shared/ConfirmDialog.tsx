@@ -18,11 +18,12 @@ export function ConfirmDialog({
   if (!state) return null;
   return (
     <div
-      // z tinggi WAJIB: dialog ini dipakai dari dalam modal full-screen
-      // (mis. detail Project Progress ada di z-[9990]) — di bawah itu
-      // konfirmasi ter-render tapi tertutup total, klik jatuh ke modal
+      // Z.blocking (2000) — WAJIB di atas SELURUH lapisan overlay, karena
+      // dialog ini dipanggil dari dalam modal bertingkat (mis. detail Project
+      // Progress di Z.overlay, assign di Z.overlayTop). Kalau lebih rendah,
+      // konfirmasinya ter-render tapi tertutup total: klik user jatuh ke modal
       // di belakangnya dan terasa seperti tombolnya tidak berfungsi.
-      className="fixed inset-0 z-[9996] flex items-center justify-center"
+      className="fixed inset-0 z-[2000] flex items-center justify-center"
       style={{ background: 'rgba(0,0,0,0.45)' }}
       onClick={onCancel}
     >

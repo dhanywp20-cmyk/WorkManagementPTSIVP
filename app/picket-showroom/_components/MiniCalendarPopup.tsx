@@ -54,7 +54,7 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
   const WEEK_DAYS=['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
 
   return(
-    <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+    <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div className="bg-white rounded-2xl shadow-2xl overflow-hidden" style={{width:'640px',maxWidth:'95vw',animation:'scale-in 0.2s ease-out',border:'1.5px solid rgba(220,38,38,0.2)'}}>
         <div className="px-5 py-3.5 flex items-center justify-between" style={{background:'linear-gradient(135deg,#dc2626,#991b1b)'}}>

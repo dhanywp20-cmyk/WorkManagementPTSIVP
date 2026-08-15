@@ -233,17 +233,17 @@ function SpotlightOverlay({ rect, onClick }: { rect: DOMRect; onClick: () => voi
   return (
     <>
       {/* Top */}
-      <div onClick={onClick} style={{ position: 'fixed', inset: 0, bottom: `calc(100vh - ${y}px)`, background: dark, zIndex: 210 }} />
+      <div onClick={onClick} style={{ position: 'fixed', inset: 0, bottom: `calc(100vh - ${y}px)`, background: dark, zIndex: 1500 }} />
       {/* Bottom */}
-      <div onClick={onClick} style={{ position: 'fixed', inset: 0, top: y + h, background: dark, zIndex: 210 }} />
+      <div onClick={onClick} style={{ position: 'fixed', inset: 0, top: y + h, background: dark, zIndex: 1500 }} />
       {/* Left */}
-      <div onClick={onClick} style={{ position: 'fixed', top: y, left: 0, width: Math.max(0, x), height: h, background: dark, zIndex: 210 }} />
+      <div onClick={onClick} style={{ position: 'fixed', top: y, left: 0, width: Math.max(0, x), height: h, background: dark, zIndex: 1500 }} />
       {/* Right */}
-      <div onClick={onClick} style={{ position: 'fixed', top: y, left: x + w, right: 0, height: h, background: dark, zIndex: 210 }} />
+      <div onClick={onClick} style={{ position: 'fixed', top: y, left: x + w, right: 0, height: h, background: dark, zIndex: 1500 }} />
       {/* Highlight ring */}
       <div style={{
         position: 'fixed', top: y, left: x, width: w, height: h,
-        borderRadius: 12, zIndex: 211, pointerEvents: 'none',
+        borderRadius: 12, zIndex: 1501, pointerEvents: 'none',
         border: '2.5px solid rgba(251,191,36,0.9)',
         boxShadow: '0 0 0 4px rgba(251,191,36,0.2), inset 0 0 0 1px rgba(251,191,36,0.15)',
         animation: 'tourRingPulse 1.8s ease-in-out infinite',
@@ -256,7 +256,7 @@ function SpotlightOverlay({ rect, onClick }: { rect: DOMRect; onClick: () => voi
 
 function FullBackdrop({ onClick }: { onClick: () => void }) {
   return (
-    <div onClick={onClick} style={{ position: 'fixed', inset: 0, background: 'rgba(2,6,23,0.75)', zIndex: 210 }} />
+    <div onClick={onClick} style={{ position: 'fixed', inset: 0, background: 'rgba(2,6,23,0.75)', zIndex: 1500 }} />
   );
 }
 
@@ -359,7 +359,7 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
   const cardStyle: React.CSSProperties = {
     position: 'fixed',
     width: 320,
-    zIndex: 212,
+    zIndex: 1502,
     ...(isCenter
       ? { top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }
       : { top: popupPos.top, left: popupPos.left, transform: 'translateY(-50%)' }
@@ -388,7 +388,7 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
             ? { borderRight: '10px solid white' }
             : { borderLeft: '10px solid white' }
           ),
-          zIndex: 213,
+          zIndex: 1503,
           filter: 'drop-shadow(-2px 0px 3px rgba(0,0,0,0.12))',
         }} />
       )}
@@ -508,7 +508,7 @@ export function JelajahiButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={() => { if (melebar) onClick(); else setMelebar(true); }}
-      className={`fixed bottom-6 z-[9990] flex items-center gap-2 py-2.5 text-xs font-bold text-white shadow-xl active:scale-95 ${
+      className={`fixed bottom-6 z-[1504] flex items-center gap-2 py-2.5 text-xs font-bold text-white shadow-xl active:scale-95 ${
         melebar
           ? 'right-6 px-4 rounded-2xl hover:scale-105'
           : 'right-0 pl-3 pr-2 rounded-l-2xl opacity-60 hover:opacity-100'

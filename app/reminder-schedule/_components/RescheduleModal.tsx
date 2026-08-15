@@ -18,7 +18,7 @@ export function RescheduleModal({
   const inputCls = "w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40";
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4"
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
         style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(245,158,11,0.5)' }}>

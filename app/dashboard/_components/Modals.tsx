@@ -323,7 +323,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
   );
 
   return (
-    <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden border border-slate-200">
         <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-8 py-6 flex items-center justify-between flex-shrink-0">
@@ -728,7 +728,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
   const ivpList = sortedSupervisors.filter((s: any) => s._isIVP);
 
   return (
-    <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-full overflow-y-auto flex flex-col border border-slate-200">
 
         {/* Header */}
@@ -1199,7 +1199,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
   }) : [];
 
   return (
-    <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-full flex flex-col border border-slate-200">
 
@@ -1704,7 +1704,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-full flex flex-col border border-slate-200">
         <div className="bg-gradient-to-r from-amber-600 to-amber-500 px-6 py-5 flex items-center justify-between flex-shrink-0 rounded-t-2xl">
           <div className="flex items-center gap-3">
@@ -1793,7 +1793,7 @@ export function NotifBell({ icon, label, count, color, bgColor, borderColor, dot
       </button>
 
       {open && (
-        <div className="absolute top-full mt-2 right-0 z-[210] rounded-2xl shadow-2xl overflow-hidden"
+        <div className="absolute top-full mt-2 right-0 z-[40] rounded-2xl shadow-2xl overflow-hidden"
           style={{
             width: 320,
             background: 'rgba(255,255,255,0.97)',
@@ -2455,7 +2455,7 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
   const activeNav = navItems.find(n => n.key === activeSection)!;
 
   return (
-    <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/60 backdrop-blur-sm pt-16 px-4 pb-4">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm pt-16 px-4 pb-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-7xl h-[90vh] flex overflow-hidden border border-slate-200">
 
         {/* ── LEFT SIDEBAR ── */}

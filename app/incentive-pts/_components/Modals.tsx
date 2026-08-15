@@ -37,7 +37,7 @@ export function ViewModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.5)' }}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-full flex flex-col">
@@ -339,7 +339,7 @@ export function BiayaModal({
   const supervisorIsHandler = supervisorUser?.full_name === project.handler_name;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
         <h3 className="font-bold text-gray-800 text-lg">
           {project.biaya_cadangan > 0 ? '✏️ Edit Biaya Cadangan' : '💵 Input Biaya Cadangan'}
@@ -510,7 +510,7 @@ export function BackupModal({
   else if (settings) supportPct = backupCount > 0 ? settings.backup_pct / backupCount : 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
         <h3 className="font-bold text-gray-800 text-lg">🤝 Set Tim Support</h3>
         <div className="bg-blue-50 rounded-xl p-3 text-sm">
@@ -604,7 +604,7 @@ interface PaidModalProps {
 
 export function PaidModal({ project, onClose, onConfirm }: PaidModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 text-center">
         <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center text-3xl mx-auto">✅</div>
         <h3 className="font-bold text-gray-800 text-lg">Tandai Lunas?</h3>

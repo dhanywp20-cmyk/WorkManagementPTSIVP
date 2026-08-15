@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
-import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { setSession, clearSession, getSession, startSessionWatcher } from '@/lib/auth';
@@ -27,7 +26,8 @@ import {
   FormField, SectionHeader, SectionHeaderSmall, InfoRow,
   LoadingScreen, MiniPieChart, PageHeader,
   ViewIconBtn, RescheduleIconBtn, ApproveIconBtn, DeleteIconBtn, ActionGroup,
-  ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState, AuditTrailPanel, FlowSteps, Username, StatCard
+  ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState, AuditTrailPanel, FlowSteps, Username, StatCard,
+  ModalPortal
 } from '@/components/shared';
 import { MiniCalendar } from './_components/MiniCalendar';
 import { RescheduleModal } from './_components/RescheduleModal';
@@ -1925,11 +1925,17 @@ jangan lupa peralatan & Semangat💪🏼
     }}>
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.08)' }} />
-      <div className="relative z-10 flex flex-col flex-1 overflow-hidden">
+      {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk
+          stacking context, sehingga z-index SEMUA modal di dalamnya cuma
+          dibandingkan sesama isi pembungkus ini, bukan dengan overlay yang
+          di-portal ke <body>. Akibatnya modal z-[1100] bisa tampil DI BELAKANG
+          modal z-[1000] yang di-portal. Urutan cat terhadap tint di atas tetap
+          aman karena elemen ini datang belakangan di DOM. */}
+      <div className="relative flex flex-col flex-1 overflow-hidden">
 
         {/* Toast */}
         {toast && (
-          <div className={`fixed top-5 right-5 z-[200] px-5 py-3.5 rounded-xl shadow-2xl text-sm font-bold flex items-center gap-2 text-white ${toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`}
+          <div className={`fixed top-5 right-5 z-[3000] px-5 py-3.5 rounded-xl shadow-2xl text-sm font-bold flex items-center gap-2 text-white ${toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`}
             style={{ boxShadow: toast.type === 'success' ? '0 4px 20px rgba(16,185,129,0.4)' : '0 4px 20px rgba(220,38,38,0.4)' }}>
             {toast.type === 'success' ? '✅' : '❌'} {toast.msg}
           </div>
@@ -1964,7 +1970,7 @@ jangan lupa peralatan & Semangat💪🏼
 
         {/* ── TOLAK MODAL (Sales Internal, tahap internal_review) ── */}
         {internalRejectTarget && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4"
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
             onClick={e => { if (e.target === e.currentTarget) setInternalRejectTarget(null); }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
               style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(220,38,38,0.35)' }}>
@@ -1998,7 +2004,7 @@ jangan lupa peralatan & Semangat💪🏼
 
         {/* ── KONFIRMASI APPROVE Sales Internal (detail dulu, jangan instan) ── */}
         {internalApproveTarget && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4"
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
             onClick={e => { if (e.target === e.currentTarget) setInternalApproveTarget(null); }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
               style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(245,158,11,0.4)' }}>
@@ -2050,7 +2056,7 @@ jangan lupa peralatan & Semangat💪🏼
 
         {/* ── APPROVE & ASSIGN MODAL (Admin only) ── */}
         {approveTarget && canApproveAssign && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4"
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
             onClick={e => { if (e.target === e.currentTarget) { setApproveTarget(null); setApproveBatchSiblings([]); setApproveAssignTo(''); } }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
               style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(34,197,94,0.4)' }}>
@@ -2219,7 +2225,7 @@ jangan lupa peralatan & Semangat💪🏼
 
         {/* ── SUPERVISOR ASSIGN MODAL ── */}
         {supervisorAssignTarget && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4"
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
             onClick={e => { if (e.target === e.currentTarget) { setSupervisorAssignTarget(null); setSupervisorAssignBatchSiblings([]); setSupervisorAssignTo(''); } }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
               style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(245,158,11,0.4)' }}>
@@ -2293,7 +2299,7 @@ jangan lupa peralatan & Semangat💪🏼
 
         {/* ── DELETE MODAL ── */}
         {showDeleteModal && deleteTarget && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6"
               style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(220,38,38,0.5)' }}>
               <div className="flex items-center gap-3 mb-4">
@@ -2341,7 +2347,7 @@ jangan lupa peralatan & Semangat💪🏼
         {/* ── FORM MODAL (Tambah / Edit Reminder) ── */}
         {/* Bulk Delete Confirm Modal */}
       {bulkConfirm && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
             <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
               <span className="text-2xl">🗑️</span>
@@ -2388,7 +2394,7 @@ jangan lupa peralatan & Semangat💪🏼
 
         {/* ── NOTIFICATION POPUP ── */}
         {showNotificationPopup && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-full overflow-hidden flex flex-col border-4 border-yellow-400"
               style={{ animation: 'scale-in 0.3s ease-out' }}>
               <div className="p-5 border-b-2 border-yellow-300 flex-shrink-0" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
@@ -2437,7 +2443,7 @@ jangan lupa peralatan & Semangat💪🏼
 
         {/* ── BELL POPUP ── */}
         {showBellPopup && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-full overflow-hidden flex flex-col border-4 border-yellow-400"
               style={{ animation: 'scale-in 0.3s ease-out' }}>
               <div className="p-5 border-b-2 border-yellow-300 flex-shrink-0" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
@@ -2489,15 +2495,20 @@ jangan lupa peralatan & Semangat💪🏼
         )}
 
         {/* ── DETAIL POPUP ── */}
-        {/* Dicabut ke document.body lewat portal.
-            position:fixed diukur terhadap leluhur terdekat yang membentuk
-            containing block — cukup satu leluhur ber-transform, filter, atau
-            backdrop-filter untuk memerangkap modal di dalam kotaknya, sehingga
-            latar gelapnya berhenti di tengah layar alih-alih menutup penuh.
-            Dengan portal, modal berada langsung di bawah <body> dan tidak
-            mungkin terperangkap oleh pembungkus mana pun. */}
-        {detailReminder && typeof document !== 'undefined' && createPortal(
-          <div className="fixed inset-0 bg-black/60 flex justify-center z-[100] p-4"
+        {/* Dicabut ke <body> lewat ModalPortal — alasan lengkapnya ada di
+            components/shared/ModalPortal.tsx. Singkatnya: `position: fixed`
+            bisa terperangkap leluhur ber-backdrop-filter, dan z-index bisa
+            terperangkap leluhur yang membentuk stacking context.
+
+            Modal ini Z.overlay (1000) — ia KANVAS DASAR. Popup yang dibuka DARI
+            dalamnya (Assign, Approve, Reject, Hapus) memakai Z.overlayTop
+            (1100) supaya selalu di atas kanvas ini. Dulu keduanya di angka yang
+            sama-sama benar (110 > 100) tapi tidak pernah dibandingkan karena
+            yang satu di-portal dan yang lain terkurung pembungkus `relative
+            z-10` — itulah sebabnya popup Assign muncul di belakang. */}
+        {detailReminder && (
+          <ModalPortal>
+          <div className="fixed inset-0 bg-black/60 flex justify-center z-[1000] p-4"
             onClick={e => { if (e.target === e.currentTarget) { setDetailReminder(null); setShowModeModal(false); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); } }}>
             <div className="flex gap-3 w-full justify-center min-h-0"
               style={{ maxWidth: showModeModal ? '1140px' : showRiwayat ? '1060px' : '672px', transition: 'max-width 0.25s ease' }}>
@@ -3237,7 +3248,8 @@ jangan lupa peralatan & Semangat💪🏼
             )}
             </div>
           </div>
-        , document.body)}
+          </ModalPortal>
+        )}
 
         {/* ── HEADER ── */}
         <PageHeader icon="🗓️" title="Request Schedule" color="#0891b2" colorLight="#0e7490">

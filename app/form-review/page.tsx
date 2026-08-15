@@ -423,11 +423,17 @@ export default function FormReviewPage() {
     }}>
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.08)' }} />
-      <div className="relative z-10 flex flex-col flex-1 overflow-hidden">
+      {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk
+          stacking context, sehingga z-index SEMUA modal di dalamnya cuma
+          dibandingkan sesama isi pembungkus ini, bukan dengan overlay yang
+          di-portal ke <body>. Akibatnya modal z-[1100] bisa tampil DI BELAKANG
+          modal z-[1000] yang di-portal. Urutan cat terhadap tint di atas tetap
+          aman karena elemen ini datang belakangan di DOM. */}
+      <div className="relative flex flex-col flex-1 overflow-hidden">
 
         {/* Toast */}
         {toast && (
-          <div className={`fixed top-5 right-5 z-[200] px-5 py-3.5 rounded-xl shadow-2xl text-sm font-bold flex items-center gap-2 text-white animate-bounce`}
+          <div className={`fixed top-5 right-5 z-[3000] px-5 py-3.5 rounded-xl shadow-2xl text-sm font-bold flex items-center gap-2 text-white animate-bounce`}
             style={{
               background: toast.type === 'success' ? '#059669' : '#dc2626',
               boxShadow: toast.type === 'success' ? '0 4px 20px rgba(5,150,105,0.4)' : '0 4px 20px rgba(220,38,38,0.4)',
@@ -438,7 +444,7 @@ export default function FormReviewPage() {
 
         {/* ── DELETE MODAL ── */}
         {showDeleteModal && deleteTarget && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6"
               style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(220,38,38,0.5)' }}>
               <div className="flex items-center gap-3 mb-4">
@@ -478,7 +484,7 @@ export default function FormReviewPage() {
 
         {/* ── FORM MODAL (Edit/View Review) ── */}
         {showFormModal && editingReview && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4 overflow-y-auto"
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4 overflow-y-auto"
             onClick={e => { if (e.target === e.currentTarget) { setShowFormModal(false); setEditingReview(null); setReviewFormData(emptyReviewForm); } }}>
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
               style={{ animation: 'scale-in 0.25s ease-out', border: '1.5px solid rgba(124,58,237,0.25)' }}>
@@ -599,7 +605,7 @@ export default function FormReviewPage() {
 
         {/* ── DETAIL MODAL ── */}
         {detailReview && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4"
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4"
             onClick={e => { if (e.target === e.currentTarget) setDetailReview(null); }}>
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 overflow-hidden flex flex-col"
               style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '96dvh' }}>
@@ -808,7 +814,7 @@ export default function FormReviewPage() {
 
         {/* ── NOTIFICATION POPUP ── */}
         {showNotificationPopup && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-full overflow-hidden flex flex-col border-4 border-yellow-400"
               style={{ animation: 'scale-in 0.3s ease-out' }}>
               <div className="p-5 border-b-2 border-yellow-300 flex-shrink-0" style={{ background: isTeam ? 'linear-gradient(135deg,#7c3aed,#5b21b6)' : 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
@@ -870,7 +876,7 @@ export default function FormReviewPage() {
 
         {/* ── BELL POPUP ── */}
         {showBellPopup && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-full overflow-hidden flex flex-col border-4 border-yellow-400"
               style={{ animation: 'scale-in 0.3s ease-out' }}>
               <div className="p-5 border-b-2 border-yellow-300 flex-shrink-0" style={{ background: isTeam ? 'linear-gradient(135deg,#7c3aed,#5b21b6)' : 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
@@ -1344,7 +1350,7 @@ export default function FormReviewPage() {
       `}</style>
       {/* Bulk Delete Confirm Modal */}
       {bulkConfirm && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
             <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
               <span className="text-2xl">🗑️</span>

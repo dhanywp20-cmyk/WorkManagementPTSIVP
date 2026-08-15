@@ -33,3 +33,4 @@ export { Username, formatUsername } from './Username';
 // Kartu ringkasan angka — satu implementasi untuk semua modul, supaya gayanya
 // tidak menyimpang lagi seperti saat markup-nya disalin per halaman.
 export { StatCard, StatCardGrid, type StatCardItem } from './StatCard';
+export { ModalPortal } from './ModalPortal';

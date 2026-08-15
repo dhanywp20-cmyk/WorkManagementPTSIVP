@@ -105,7 +105,7 @@ export function RequestJadwalModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 flex items-center justify-center z-[110] p-4 overflow-y-auto"
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4 overflow-y-auto"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
