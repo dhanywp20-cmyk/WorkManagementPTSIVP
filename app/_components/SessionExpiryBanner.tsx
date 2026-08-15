@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { SESSION_DURATION_MS } from '@/lib/constants';
+import { ModalPortal } from '@/components/shared';
 
 const WARN_BEFORE_MS  = 5 * 60 * 1000;
 const CHECK_INTERVAL_MS = 30_000;
@@ -48,7 +49,7 @@ export default function SessionExpiryBanner() {
 
   if (minutesLeft === 0) {
     return (
-      <>
+      <ModalPortal>
         {/* Overlay blok semua interaksi saat sesi expired */}
         <div
           className="fixed inset-0 z-[2400] bg-black/30 cursor-not-allowed"
@@ -68,7 +69,7 @@ export default function SessionExpiryBanner() {
             Login Ulang
           </button>
         </div>
-      </>
+      </ModalPortal>
     );
   }
 

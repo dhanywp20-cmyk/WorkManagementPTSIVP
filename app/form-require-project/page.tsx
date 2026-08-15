@@ -2407,6 +2407,7 @@ Hubungi Admin untuk info lebih lanjut.
 
       {/* DETAIL MODAL */}
       {showDetailModal && selectedRequest && detailSc && (
+      <ModalPortal>
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0" style={{ zIndex: Z.overlay }}
           onClick={e => { if (e.target === e.currentTarget) handleCloseDetail(); }}>
           <div className="bg-white w-full h-full animate-slide-up flex flex-col overflow-hidden"
@@ -3241,6 +3242,7 @@ Hubungi Admin untuk info lebih lanjut.
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
 
       {/* Edit Form Modal */}

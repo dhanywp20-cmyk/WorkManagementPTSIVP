@@ -4,6 +4,7 @@
 import { IncentiveProject, IncentiveDisbursement, IncentiveSetting, User } from './types';
 
 import { Badge, fmtRp, fmtPct, fmtDate, fmtPeriode, inputCls, btnPrimary, INCENTIVE_TRIGGER_CATEGORIES } from './shared';
+import { ModalPortal } from '@/components/shared';
 
 // ── 1. View Detail Modal ──────────────────────────────────────────────────────
 interface ViewModalProps {
@@ -36,6 +37,7 @@ export function ViewModal({
   void onMarkPaid;
 
   return (
+    <ModalPortal>
     <div
       className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.5)' }}
@@ -298,6 +300,7 @@ export function ViewModal({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
 
@@ -339,6 +342,7 @@ export function BiayaModal({
   const supervisorIsHandler = supervisorUser?.full_name === project.handler_name;
 
   return (
+  <ModalPortal>
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
         <h3 className="font-bold text-gray-800 text-lg">
@@ -479,6 +483,7 @@ export function BiayaModal({
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }
 
@@ -510,6 +515,7 @@ export function BackupModal({
   else if (settings) supportPct = backupCount > 0 ? settings.backup_pct / backupCount : 0;
 
   return (
+  <ModalPortal>
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
         <h3 className="font-bold text-gray-800 text-lg">🤝 Set Tim Support</h3>
@@ -592,6 +598,7 @@ export function BackupModal({
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }
 
@@ -604,6 +611,7 @@ interface PaidModalProps {
 
 export function PaidModal({ project, onClose, onConfirm }: PaidModalProps) {
   return (
+  <ModalPortal>
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 text-center">
         <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center text-3xl mx-auto">✅</div>
@@ -621,5 +629,6 @@ export function PaidModal({ project, onClose, onConfirm }: PaidModalProps) {
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }
