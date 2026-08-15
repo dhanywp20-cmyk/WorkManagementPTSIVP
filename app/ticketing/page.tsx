@@ -3888,7 +3888,7 @@ function TicketingSystemInner() {
       <style>{`
         @keyframes scale-in {
           from { opacity: 0; transform: scale(0.92); }
-          to { opacity: 1; transform: scale(1); }
+          to { opacity: 1; transform: none; }
         }
         @keyframes bounce {
           0%, 80%, 100% { transform: scale(0); opacity: 0.3; }

@@ -79,10 +79,27 @@ html {
   box-sizing: border-box;
 }
 
-/* ── Page / section transitions ─────────────────────────────────────────── */
+/* ── Page / section transitions ─────────────────────────────────────────────
+   ATURAN WAJIB untuk animasi masuk: frame terakhir memakai `transform: none`,
+   BUKAN `translateY(0)` / `scale(1)`.
+
+   Keduanya sama-sama tak kelihatan, tapi tidak sama bagi CSS. `translateY(0)`
+   tetap transform yang aktif, dan animasi ber-fill-mode `both`/`forwards`
+   MENAHAN frame terakhir itu selamanya. Elemen yang punya transform aktif
+   menjadi containing block bagi keturunannya yang `position: fixed` — jadi
+   `inset-0` pada modal berhenti di tepi elemen ini, bukan di tepi layar.
+
+   Gejalanya di lapangan: popup muncul di dalam panel konten yang bisa
+   digulir. Sidebar dan header tidak ikut menggelap, dan user harus menggulir
+   dulu untuk menemukan popup-nya. Yang salah bukan modalnya — modalnya tidak
+   pernah tahu ada leluhur yang memerangkapnya.
+
+   `transform: none` di frame terakhir menghapus jebakan itu tanpa mengubah
+   satu piksel pun: interpolasinya tetap mulus (none = matriks identitas), dan
+   setelah animasi selesai elemennya benar-benar bebas transform. */
 @keyframes lcPageIn {
   from { opacity: 0; transform: translateY(50px) scale(0.92); }
-  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+  to   { opacity: 1; transform: none; }
 }
 .lc-page-enter { animation: lcPageIn 0.95s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
@@ -92,15 +109,15 @@ html {
 }
 @keyframes zoomIn {
   from { opacity: 0; transform: scale(0.75); }
-  to   { opacity: 1; transform: scale(1); }
+  to   { opacity: 1; transform: none; }
 }
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(60px); }
-  to   { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: none; }
 }
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-35px); }
-  to   { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: none; }
 }
 
 .animate-fade-in  { animation: fadeIn   0.65s ease-out both; }
@@ -144,11 +161,11 @@ html {
 /* ── Dashboard KPI + GlobalSearch animations ──────────────────────────────── */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: none; }
 }
 @keyframes dropIn {
   from { opacity: 0; transform: translateY(-12px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 1; transform: none; }
 }
 
 /* ── Overlay modal: selalu setinggi layar sebenarnya ───────────────────────
@@ -234,7 +251,7 @@ html {
 @keyframes lcKartuPopUp {
   from { opacity: 0; transform: translateY(70vh) scale(0.94); }
   55%  { opacity: 1; }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 1; transform: none; }
 }
 
 /* ── Tukar form: masuk ⇄ daftar ──

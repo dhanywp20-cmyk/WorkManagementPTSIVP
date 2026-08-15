@@ -1330,11 +1330,11 @@ export default function FormReviewPage() {
       <style>{`
         @keyframes fadeInUp {
           from { opacity:0; transform:translateY(14px); }
-          to   { opacity:1; transform:translateY(0); }
+          to   { opacity:1; transform: none; }
         }
         @keyframes scale-in {
           from { opacity:0; transform:scale(0.92); }
-          to   { opacity:1; transform:scale(1); }
+          to   { opacity:1; transform: none; }
         }
         @keyframes shimmer {
           0% { background-position: 200% center; }

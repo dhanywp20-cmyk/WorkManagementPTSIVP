@@ -471,7 +471,7 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
       <style>{`
         @keyframes tourCardIn {
           0%   { opacity:0; transform:scale(0.88) translateY(8px); }
-          100% { opacity:1; transform:scale(1) translateY(0); }
+          100% { opacity:1; transform:none; }
         }
         @keyframes tourRingPulse {
           0%,100% { box-shadow: 0 0 0 4px rgba(251,191,36,0.20), inset 0 0 0 1px rgba(251,191,36,0.15); }

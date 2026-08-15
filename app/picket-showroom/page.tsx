@@ -676,7 +676,7 @@ function PiketShowroomPageInner() {
       {showCalendar&&<MiniCalendarPopup allRows={allRows} holidays={holidays} onClose={()=>setShowCalendar(false)}/>}
 
       <style>{`
-        @keyframes scale-in{from{opacity:0;transform:scale(0.92)}to{opacity:1;transform:scale(1)}}
+        @keyframes scale-in{from{opacity:0;transform:scale(0.92)}to{opacity:1;transform: none;}}
         select option{background:#ffffff;color:#1e293b}
       `}</style>
     </div>
