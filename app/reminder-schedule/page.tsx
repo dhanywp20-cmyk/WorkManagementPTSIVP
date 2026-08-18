@@ -508,6 +508,14 @@ function ReminderSchedulePageInner() {
         batch_id: batchId,
         assign_name: assignee?.full_name ?? formData.assigned_to,
         created_by: currentUser?.username ?? 'system',
+        // Dibuat langsung ke Supervisor: jadwal masuk ke tahap supervisor_assign
+        // dengan pelaksana masih kosong, jadi Supervisor itu yang menentukan
+        // siapa yang mengerjakan — alurnya sama dengan ticket Troubleshooting.
+        ...(alihKeSupervisor ? {
+          assigned_to: '', assign_name: '',
+          routing_status: 'supervisor_assign',
+          assigned_supervisor_id: alihKeSupervisor[1],
+        } : {}),
       }));
       const insRes = await supabase.from('reminders').insert(payloads).select('id, project_name, address, sales_name, sales_division, assign_name, due_date, category, progress_start_date, progress_target_date');
       error = insRes.error;
@@ -594,6 +602,35 @@ function ReminderSchedulePageInner() {
     notify('success', editingReminder ? 'Reminder diperbarui!' : (allDates.length > 1 ? `${allDates.length} reminder dibuat!` : 'Reminder ditambahkan!'));
 
     // ── Kirim WA notifikasi ke assignee saat reminder BARU dibuat ────────────
+    // Dibuat langsung ke Supervisor: yang dikabari Supervisor-nya, bukan
+    // pelaksana — pelaksananya memang belum ada, dia yang akan menentukan.
+    if (!editingReminder && alihKeSupervisor) {
+      const supUser = teamUsers.find(u => u.id === alihKeSupervisor[1]);
+      if (supUser?.phone_number) {
+        void sendFonnteWA(supUser.phone_number, [
+          '🎯 *Jadwal Perlu Di-assign ke Tim*',
+          '━━━━━━━━━━━━━━━━━━',
+          `Halo *${supUser.full_name}*, kamu dapat jadwal dari *${currentUser?.full_name ?? 'Admin'}*:`,
+          `📌 *Project :* ${formData.project_name}`,
+          `🏷️ *Kategori:* ${formData.category}`,
+          `📍 *Lokasi  :* ${formData.address || '-'}`,
+          `🗓️ *Tanggal :* ${formatDate(formData.due_date)} ${formData.due_time || ''}`,
+          '━━━━━━━━━━━━━━━━━━',
+          'Mohon tentukan anggota tim yang mengerjakan.',
+          '🔗 https://team-ticketing.vercel.app/reminder-schedule',
+        ].join('\n'));
+      }
+      if (supUser?.id) {
+        void createNotification({
+          user_id: supUser.id, type: 'reminder',
+          title: '🎯 Jadwal perlu kamu assign',
+          body: `${formData.project_name} — dari ${currentUser?.full_name ?? 'Admin'}`,
+          action_url: '/reminder-schedule',
+          created_by: currentUser?.full_name ?? 'Admin',
+        });
+      }
+    }
+
     if (!editingReminder && assignee?.phone_number) {
       const assigneeName = assignee.full_name ?? formData.assigned_to;
       const msg =

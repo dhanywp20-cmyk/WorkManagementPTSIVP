@@ -170,11 +170,16 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                 {canAssignSelf && selfUser && (
                   <option value={selfUser.username}>🙋 Saya kerjakan sendiri ({selfUser.full_name})</option>
                 )}
-                {/* Route ke Supervisor — hanya muncul saat MENYUNTING. Saat
-                    membuat baru, tujuan supervisor sudah ditentukan otomatis
-                    dari tipe produk; menaruhnya di sini juga akan membuat dua
-                    penentu yang bisa saling bertentangan. */}
-                {editingReminder && supervisorUsers.length > 0 && (
+                {/* Route ke Supervisor — tersedia saat MEMBUAT maupun menyunting,
+                    sama seperti form ticket Troubleshooting.
+
+                    Sempat dibatasi hanya saat menyunting, dengan alasan tujuan
+                    supervisor sudah ditentukan otomatis dari tipe produk. Itu
+                    keliru: penentuan otomatis itu hanya berjalan di alur approve
+                    request Sales, bukan saat admin membuat jadwal langsung — jadi
+                    pembatasan tadi justru menutup satu-satunya jalan ke Supervisor
+                    pada alur ini. */}
+                {supervisorUsers.length > 0 && (
                   <optgroup label="🎯 Route ke Supervisor">
                     {supervisorUsers.map(u => (
                       <option key={`sup-${u.id}`} value={`SUP::${u.id}::${u.full_name}`}>{u.full_name} (Supervisor)</option>
