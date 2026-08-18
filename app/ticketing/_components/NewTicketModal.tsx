@@ -121,9 +121,9 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
 
   return (
   <ModalPortal>
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4 overflow-y-auto"
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-3 sm:p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-[1500px] h-full max-h-full flex flex-col overflow-hidden"
         style={{ animation: "scale-in 0.25s ease-out", border: "1.5px solid rgba(220,38,38,0.25)" }}>
 
         {/* Header */}
@@ -142,7 +142,14 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           </div>
         </div>
 
-        <div className="p-8 space-y-5 flex-1 min-h-0 overflow-y-auto">
+        {/* Tiga kolom menyamping — pola yang sama dengan form Request Schedule.
+            Di bawah xl tetap satu kolom; memaksa tiga kolom di layar kecil hanya
+            memindahkan gulirnya jadi ke samping. */}
+        <div className="flex-1 min-h-0 overflow-y-auto xl:overflow-hidden">
+          <div className="p-6 grid grid-cols-1 xl:grid-cols-3 gap-6 xl:h-full xl:overflow-hidden">
+
+          {/* ── Kolom 1: ticket ini tentang apa ── */}
+          <div className="space-y-5 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
           {/* Section: Informasi Ticket */}
           <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "rgba(0,0,0,0.1)" }}>
             <span className="text-lg">🎫</span>
@@ -253,8 +260,17 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
             </div>
           )}
 
+          </div>
+
+          {/* ── Kolom 2: detail project ── */}
+          <div className="space-y-5 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
+            <span className="text-base">📋</span>
+            <h3 className="text-sm font-bold tracking-wide text-slate-700">Detail Project</h3>
+          </div>
+
           {/* Row 1: Project Name | Address */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 Project Name *
@@ -289,7 +305,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           </div>
 
           {/* Row 2: Product | SN Unit */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>📦 Product / Brand</label>
               <div className="relative">
@@ -315,7 +331,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           </div>
 
           {/* Row 3: Customer Phone | Date */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Customer Phone</label>
               <div className="relative">
@@ -372,6 +388,15 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
               rows={3} placeholder="Explain the problem details..."
               className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none"
               style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
+          </div>
+
+          </div>
+
+          {/* ── Kolom 3: penugasan & lampiran ── */}
+          <div className="space-y-5 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
+            <span className="text-base">🎯</span>
+            <h3 className="text-sm font-bold tracking-wide text-slate-700">Penugasan &amp; Lampiran</h3>
           </div>
 
           {/* SBU — Sales Internal (guest) buat ticket ATAS NAMA Sales External.
@@ -490,7 +515,14 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
+          </div>
+          </div>
+        </div>
+
+        {/* Footer dipisah supaya tombol Buat Ticket tidak ikut tergulir bersama
+            kolom dan berada di luar layar justru saat form siap dikirim. */}
+        <div className="px-6 py-4 flex-shrink-0 border-t border-slate-200 bg-white/70">
+          <div className="flex gap-3">
             <button onClick={onClose}
               className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
               style={{ background: "rgba(255,255,255,0.95)", color: "#64748b", border: "1px solid rgba(0,0,0,0.12)" }}>

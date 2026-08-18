@@ -2411,7 +2411,7 @@ export function BrandPicSettingContent() {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden bg-slate-50">
       {notif && (
         <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex-shrink-0 ${notif.type==='success'?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200'}`}>
           {notif.type==='success'?'✅':'❌'} {notif.msg}
@@ -2571,6 +2571,36 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
 
 // ─── Inline variants (no fixed overlay, used inside AdminPanelModal) ──────────
 
+/**
+ * Strip info di puncak tiap bagian Admin Panel.
+ *
+ * Sebelumnya tiap bagian memakai warnanya sendiri — sky untuk KPI Roster,
+ * teal untuk yang lain — sehingga berpindah tab terasa seperti berpindah
+ * aplikasi. Satu bentuk untuk semuanya, mengikuti bahasa visual halaman
+ * Profil: netral, dengan angka penting di kanan.
+ */
+function StripInfo({ icon, judul, keterangan, angka, satuan }: {
+  icon: string; judul: string; keterangan: React.ReactNode;
+  angka?: number | string; satuan?: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm mb-4">
+      <div className="text-2xl flex-shrink-0">{icon}</div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">{judul}</p>
+        <p className="text-xs text-slate-500 mt-0.5 leading-snug">{keterangan}</p>
+      </div>
+      {angka !== undefined && (
+        <div className="text-right flex-shrink-0 pl-2">
+          <p className="text-xl font-black text-slate-800 leading-none">{angka}</p>
+          {satuan && <p className="text-[10px] text-slate-400 mt-1">{satuan}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 // ─── KpiRosterInline ─────────────────────────────────────────────────────────
 export function KpiRosterInline() {
   const [users, setUsers] = useState<User[]>([]);
@@ -2621,15 +2651,20 @@ export function KpiRosterInline() {
     members: User[]; label: string; color: string; bg: string; border: string;
   }) => {
     if (!members.length) return null;
+    const aktif = members.filter(u => u.kpi_enabled !== false).length;
     return (
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-3">
+      // Kartu putih di atas latar slate — bentuk yang sama dengan Kartu di
+      // halaman Profil, supaya berpindah antar bagian tidak terasa seperti
+      // berpindah aplikasi.
+      <div className="mb-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-4 py-3 flex items-center gap-2 border-b border-slate-100 bg-slate-50/60">
           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
-          <span className="text-xs font-bold uppercase tracking-widest" style={{ color }}>{label}</span>
-          <span className="text-xs text-slate-400 font-medium">
-            ({members.filter(u => u.kpi_enabled !== false).length}/{members.length} aktif)
+          <span className="text-[11px] font-bold uppercase tracking-widest flex-1" style={{ color }}>{label}</span>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-500">
+            {aktif}/{members.length} aktif
           </span>
         </div>
+        <div className="p-3">
         <div className="space-y-2">
           {members.map(u => {
             const enabled = u.kpi_enabled !== false;
@@ -2678,12 +2713,13 @@ export function KpiRosterInline() {
             );
           })}
         </div>
+        </div>
       </div>
     );
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden bg-slate-50">
       {notification && (
         <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 flex-shrink-0 ${
           notification.type === 'success'
@@ -2696,19 +2732,10 @@ export function KpiRosterInline() {
 
       {/* Header info */}
       <div className="px-5 pt-4 pb-3 flex-shrink-0">
-        <div className="flex items-center gap-3 p-3.5 rounded-xl bg-sky-50 border border-sky-200 mb-4">
-          <div className="text-2xl">🎯</div>
-          <div className="flex-1">
-            <p className="text-sm font-bold text-sky-800">KPI Roster</p>
-            <p className="text-xs text-sky-600">Hanya anggota yang <strong>diaktifkan</strong> di sini yang akan muncul & dinilai di Dashboard KPI (berlaku untuk IVP & MVI).</p>
-          </div>
-          {!loading && (
-            <div className="text-right flex-shrink-0">
-              <p className="text-xl font-black text-sky-700">{activeCount}</p>
-              <p className="text-[10px] text-sky-500">aktif dari {users.length}</p>
-            </div>
-          )}
-        </div>
+        <StripInfo icon="🎯" judul="KPI Roster"
+          keterangan={<>Hanya anggota yang <strong>diaktifkan</strong> di sini yang akan muncul &amp; dinilai di halaman KPI Team.</>}
+          angka={loading ? undefined : activeCount}
+          satuan={`aktif dari ${users.length}`} />
 
         {/* Filter tim */}
         <div className="flex gap-1.5">
@@ -2987,7 +3014,7 @@ export function AccountSettingsInline() {
   const filteredUsers = users.filter(u => !searchQuery || u.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || u.username?.toLowerCase().includes(searchQuery.toLowerCase()) || u.role?.toLowerCase().includes(searchQuery.toLowerCase()) || u.sales_division?.toLowerCase().includes(searchQuery.toLowerCase()) || u.team_type?.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden bg-slate-50">
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       {notification && (
         <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 flex-shrink-0 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
@@ -3633,7 +3660,7 @@ export function UserManagementInline() {
   const filteredIvpByUser = Object.entries(ivpByUser).filter(([, { user }]) => !searchQuery || user?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden bg-slate-50">
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       {notification && (
         <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 flex-shrink-0 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : notification.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>

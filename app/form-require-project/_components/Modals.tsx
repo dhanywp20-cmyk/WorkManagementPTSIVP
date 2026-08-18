@@ -712,7 +712,7 @@ export function NewFormModal({
   return (
   <ModalPortal>
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1100] p-4">
-      <div className="bg-white/90 rounded-3xl shadow-2xl w-full max-w-5xl max-h-[94vh] flex flex-col border-2 border-teal-500 animate-scale-in overflow-hidden">
+      <div className="bg-white/90 rounded-3xl shadow-2xl w-full max-w-[1500px] h-full max-h-full flex flex-col border-2 border-teal-500 animate-scale-in overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-teal-600 to-teal-800 px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div>
@@ -722,7 +722,15 @@ export function NewFormModal({
           <button onClick={onClose} className="bg-white/20 hover:bg-white/30 text-white w-9 h-9 rounded-xl flex items-center justify-center font-bold transition-all text-lg">✕</button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50">
+        {/* Dua kolom, BUKAN tiga seperti form lain — pembagiannya mengikuti
+            isinya, bukan angka. Konfigurator ruangan di kanan berisi tab per
+            ruangan dengan puluhan isian perangkat; dipaksa selebar sepertiga
+            layar, tab-nya berdesakan dan justru lebih sulit dipakai daripada
+            saat harus digulir. Info project yang ringkas cukup di kolom kiri. */}
+        <div className="flex-1 min-h-0 overflow-y-auto xl:overflow-hidden bg-gray-50">
+          <div className="p-5 grid grid-cols-1 xl:grid-cols-3 gap-4 xl:h-full xl:overflow-hidden">
+
+          <div className="xl:col-span-1 space-y-4 xl:overflow-y-auto xl:pr-1 xl:min-h-0">
 
           {/* ── Project Info ── */}
           <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
@@ -802,6 +810,9 @@ export function NewFormModal({
             </div>
           </div>
 
+          </div>
+
+          <div className="xl:col-span-2 space-y-4 xl:overflow-y-auto xl:pr-1 xl:min-h-0">
           {/* ── Room Tab Navigator ── */}
           <div className="bg-white/95 rounded-2xl border-2 border-teal-200 shadow-sm overflow-hidden">
             {/* Tab bar */}
@@ -1213,6 +1224,9 @@ export function NewFormModal({
           </div>
 
 
+
+          </div>
+          </div>
         </div>
 
         <div className="border-t-2 border-gray-200 p-4 flex gap-3 bg-white/90 flex-shrink-0">

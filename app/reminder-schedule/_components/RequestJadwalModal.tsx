@@ -106,11 +106,11 @@ export function RequestJadwalModal({
   return (
     <ModalPortal>
     <div
-      className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4 overflow-y-auto"
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-3 sm:p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-[1500px] h-full max-h-full flex flex-col overflow-hidden"
         style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(59,130,246,0.35)' }}
       >
         {/* Header */}
@@ -134,7 +134,12 @@ export function RequestJadwalModal({
           </button>
         </div>
 
-        <div className="p-8 space-y-5 flex-1 min-h-0 overflow-y-auto">
+        {/* Tiga kolom menyamping — pola yang sama dengan form Reminder & Ticket. */}
+        <div className="flex-1 min-h-0 overflow-y-auto xl:overflow-hidden">
+          <div className="p-6 grid grid-cols-1 xl:grid-cols-3 gap-6 xl:h-full xl:overflow-hidden">
+
+          {/* ── Kolom 1: siapa & project apa ── */}
+          <div className="space-y-5 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
 
           {/* Info requester */}
           <div
@@ -254,6 +259,10 @@ export function RequestJadwalModal({
             />
           </div>
 
+          </div>
+
+          {/* ── Kolom 2: jenis pekerjaan & waktu ── */}
+          <div className="space-y-5 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
           {/* Kategori */}
           <div>
             <label className="block text-xs font-bold mb-2 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
@@ -329,7 +338,7 @@ export function RequestJadwalModal({
           </div>
 
           {/* Tanggal & Waktu */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 Tanggal Usulan *
@@ -368,7 +377,7 @@ export function RequestJadwalModal({
                 Perkiraan rentang pengerjaan di lokasi, untuk dipantau di Project Progress.
                 Boleh dikosongkan — Admin dapat menetapkannya saat menyetujui request.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                     Mulai Pengerjaan
@@ -393,15 +402,19 @@ export function RequestJadwalModal({
           {/* Tambah Hari Lain — mini calendar multi-select. Disembunyikan di HP
              (layar sempit → tampilan bertumpuk); hanya muncul di layar sm: ke atas.
              Di HP user cukup submit 1 tanggal (Tanggal Usulan di atas). */}
-          <div className="hidden sm:block">
+          <div className="hidden xl:block">
             <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Tambah Hari Lain (Opsional)
             </label>
             <MultiDatePicker dates={form.extra_dates} onChange={dates => f({ extra_dates: dates })} accentColor="#2563eb" />
           </div>
 
+          </div>
+
+          {/* ── Kolom 3: PIC, catatan & alur ── */}
+          <div className="space-y-5 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
           {/* PIC */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 Nama PIC Project
@@ -459,8 +472,13 @@ export function RequestJadwalModal({
             </div>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex gap-3 pt-1">
+          </div>
+          </div>
+        </div>
+
+        {/* Footer tetap — tombol kirim tidak boleh ikut tergulir bersama kolom. */}
+        <div className="px-6 py-4 flex-shrink-0 border-t border-slate-200 bg-white/70">
+          <div className="flex gap-3">
             <button
               onClick={onClose}
               className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
