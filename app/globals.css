@@ -246,7 +246,7 @@ html {
    mapan, supaya gerakannya terasa mendarat, bukan meluncur lalu berhenti
    mendadak. */
 .lc-kartu-masuk {
-  animation: lcKartuPopUp 760ms cubic-bezier(.34, 1.56, .64, 1) both;
+  animation: lcKartuPopUp 1500ms cubic-bezier(.34, 1.56, .64, 1) both;
 }
 @keyframes lcKartuPopUp {
   from { opacity: 0; transform: translateY(70vh) scale(0.94); }
@@ -285,11 +285,16 @@ html {
    membongkar sesuatu yang tadinya tersusun. Kartu form diangkat lebih dulu
    (bagian yang paling atas), isi panel kiri lepas satu per satu, lalu kedua
    panel terbelah ke arah berlawanan. Tiap bagian bergerak dalam ukuran
-   aslinya, jadi tidak ada yang meleot. */
+   aslinya, jadi tidak ada yang meleot.
+
+   Total 1500ms, ditutup oleh panel yang terbelah (jeda 270ms + 1230ms).
+   Angka itu dicerminkan di setTimeout pada app/dashboard/page.tsx — kalau
+   durasi di sini diubah, angka di sana WAJIB ikut, kalau tidak halaman login
+   dilepas dari DOM di tengah gerakan. */
 
 /* Latar hanya memudar di ujung — kalau ikut memudar sejak awal, potongan-
    potongannya sudah transparan sebelum sempat terlihat bergerak. */
-.lc-bongkar { animation: lcBongkarLatar 780ms ease-in forwards; }
+.lc-bongkar { animation: lcBongkarLatar 1500ms ease-in forwards; }
 @keyframes lcBongkarLatar {
   0%, 62% { opacity: 1; }
   100%    { opacity: 0; }
@@ -297,7 +302,7 @@ html {
 
 /* Kartu form — bagian teratas, dilepas duluan. */
 .lc-bongkar .lc-kartu {
-  animation: lcBongkarKartu 520ms cubic-bezier(.55, .06, .68, .19) forwards;
+  animation: lcBongkarKartu 1000ms cubic-bezier(.55, .06, .68, .19) forwards;
 }
 @keyframes lcBongkarKartu {
   from { transform: none; opacity: 1; }
@@ -306,19 +311,19 @@ html {
 
 /* Isi panel kiri lepas satu per satu, sebelum panelnya sendiri bergeser. */
 .lc-bongkar-kiri > * {
-  animation: lcBongkarKeping 420ms cubic-bezier(.55, .06, .68, .19) both;
+  animation: lcBongkarKeping 820ms cubic-bezier(.55, .06, .68, .19) both;
 }
 .lc-bongkar-kiri > *:nth-child(1) { animation-delay:   0ms; }
-.lc-bongkar-kiri > *:nth-child(2) { animation-delay:  70ms; }
-.lc-bongkar-kiri > *:nth-child(3) { animation-delay: 140ms; }
+.lc-bongkar-kiri > *:nth-child(2) { animation-delay: 135ms; }
+.lc-bongkar-kiri > *:nth-child(3) { animation-delay: 270ms; }
 @keyframes lcBongkarKeping {
   from { transform: none; opacity: 1; }
   to   { transform: translateX(-30px) translateY(12px); opacity: 0; }
 }
 
 /* Terakhir: kedua panel terbelah ke arah berlawanan. */
-.lc-bongkar-kiri  { animation: lcBongkarKiri  640ms cubic-bezier(.55, .06, .68, .19) 140ms forwards; }
-.lc-bongkar-kanan { animation: lcBongkarKanan 640ms cubic-bezier(.55, .06, .68, .19) 140ms forwards; }
+.lc-bongkar-kiri  { animation: lcBongkarKiri  1230ms cubic-bezier(.55, .06, .68, .19) 270ms forwards; }
+.lc-bongkar-kanan { animation: lcBongkarKanan 1230ms cubic-bezier(.55, .06, .68, .19) 270ms forwards; }
 @keyframes lcBongkarKiri {
   from { transform: none; }
   to   { transform: translateX(-58%) skewX(7deg); opacity: 0; }

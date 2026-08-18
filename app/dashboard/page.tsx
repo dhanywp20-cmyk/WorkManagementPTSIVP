@@ -283,9 +283,11 @@ export default function Dashboard() {
          tanda centang, lalu halaman login dibongkar — kartu form terangkat,
          isi panel kiri lepas satu per satu, kedua panel terbelah.
 
-         780ms = panjang animasi terakhir yang selesai (panel terbelah: jeda
-         140ms + durasi 640ms). Kalau angka ini lebih pendek dari itu, halaman
+         1500ms = panjang animasi terakhir yang selesai (panel terbelah: jeda
+         270ms + durasi 1230ms). Kalau angka ini lebih pendek dari itu, halaman
          login dilepas dari DOM di tengah gerakan dan pembongkarannya terpotong.
+         Jadi angka ini WAJIB ikut berubah setiap durasi di globals.css diubah —
+         keduanya menggambarkan hal yang sama dari dua sisi.
 
          Jujur soal biayanya: ini MENAMBAH waktu, bukan menyembunyikan waktu
          tunggu yang sudah ada — kerangka dashboard sebenarnya tampil hampir
@@ -296,7 +298,7 @@ export default function Dashboard() {
       setMasukBerhasil(true);
       const pakaiAnimasi = typeof window !== 'undefined'
         && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      window.setTimeout(masukKeDashboard, pakaiAnimasi ? 780 : 0);
+      window.setTimeout(masukKeDashboard, pakaiAnimasi ? 1500 : 0);
     } catch { setLoginErr('Login gagal. Coba lagi.'); } finally { setLoginLoading(false); }
   };
 
