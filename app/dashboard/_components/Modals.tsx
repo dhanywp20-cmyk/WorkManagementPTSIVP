@@ -1255,7 +1255,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
         )}
 
         {/* Tabs */}
-        <div className="flex border-b border-slate-200 px-5 pt-3 gap-1 flex-shrink-0 flex-wrap">
+        <div className="flex border-b border-slate-100 px-5 pt-3 gap-1 flex-shrink-0 flex-wrap bg-slate-50/60">
           <button onClick={() => setActiveTab('atasan')}
             className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${activeTab === 'atasan' ? 'border-amber-500 text-amber-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
             👨‍💼 Mapping Atasan ({Object.keys(atasanByDiv).length} divisi)
@@ -2417,7 +2417,10 @@ export function BrandPicSettingContent() {
           {notif.type==='success'?'✅':'❌'} {notif.msg}
         </div>
       )}
-      <div className="flex-1 overflow-y-auto p-5 space-y-5">
+      {/* Kartu putih di atas latar slate — sama dengan Kartu di Profil. */}
+      <div className="flex-1 min-h-0 p-4">
+        <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
         {loading ? (
           <div className="flex justify-center py-16"><div className="w-6 h-6 rounded-full border-2 border-t-amber-500 border-amber-200 animate-spin"/></div>
         ) : (
@@ -2438,6 +2441,8 @@ export function BrandPicSettingContent() {
             </div>
           </>
         )}
+        </div>
+        </div>
       </div>
       <div className="px-5 py-4 border-t border-slate-100 flex-shrink-0">
         <button onClick={handleSave} disabled={saving||loading}
@@ -3022,8 +3027,14 @@ export function AccountSettingsInline() {
         </div>
       )}
 
+      {/* Isi dibungkus kartu putih di atas latar slate — bentuk yang sama
+          dengan Kartu di halaman Profil. Sebelumnya tab dan isinya menempel
+          langsung ke latar tanpa bidang sendiri, jadi bagian ini terlihat
+          belum jadi dibanding bagian lain. */}
+      <div className="flex-1 min-h-0 p-4">
+        <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       {/* Tab bar */}
-      <div className="flex border-b border-slate-200 px-5 pt-3 flex-shrink-0">
+      <div className="flex border-b border-slate-100 px-5 pt-3 flex-shrink-0 bg-slate-50/60">
         <button onClick={() => { setActiveTab('list'); setEditingUser(null); setEditDivisi(''); setEditPtsType(''); }}
           className={`px-4 py-2 text-sm font-bold border-b-2 transition-all mr-1 ${activeTab === 'list' ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           👥 Daftar Akun ({users.length})
@@ -3376,6 +3387,8 @@ export function AccountSettingsInline() {
           </div>
         )}
       </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -3668,8 +3681,14 @@ export function UserManagementInline() {
         </div>
       )}
 
+      {/* Isi dibungkus kartu putih di atas latar slate — bentuk yang sama
+          dengan Kartu di halaman Profil. Sebelumnya tab dan isinya menempel
+          langsung ke latar tanpa bidang sendiri, jadi bagian ini terlihat
+          belum jadi dibanding bagian lain. */}
+      <div className="flex-1 min-h-0 p-4">
+        <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 px-5 pt-3 gap-1 flex-shrink-0 flex-wrap">
+      <div className="flex border-b border-slate-100 px-5 pt-3 gap-1 flex-shrink-0 flex-wrap bg-slate-50/60">
         <button onClick={() => setActiveTab('org')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'org' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           🏛️ Struktur Organisasi
         </button>
@@ -4141,6 +4160,8 @@ export function UserManagementInline() {
 
           </>
         )}
+      </div>
+        </div>
       </div>
     </div>
   );
