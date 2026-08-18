@@ -9,6 +9,7 @@ import { isAssignablePTSTeam } from '@/lib/teams';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { notifyReminderApproved, createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
+import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField } from '@/lib/admin-edit';
 import { syncRemindersToProjectProgress, triggersProjectProgress, type ReminderSnapshot } from '@/lib/project-progress-sync';
 import { compressImage } from '@/lib/image-compress';
 
@@ -481,8 +482,23 @@ function ReminderSchedulePageInner() {
     let error: { message: string } | null = null;
     /** Baris yang benar-benar tersimpan — dipakai mencatat riwayat pembuatan. */
     let barisBaru: { id: string; project_name: string | null }[] = [];
+    // Tujuan "SUP::id::nama" berarti dialihkan ke Supervisor, bukan ke anggota
+    // tim. Bedanya: assigned_to dikosongkan dan reminder masuk kembali ke tahap
+    // supervisor_assign, sehingga Supervisor itulah yang menentukan siapa yang
+    // mengerjakan — persis seperti alur normalnya, bukan jalur pintas.
+    const alihKeSupervisor = formData.assigned_to.startsWith('SUP::')
+      ? formData.assigned_to.split('::')
+      : null;
+
     if (editingReminder) {
       const payload = { ...formData, assign_name: assignee?.full_name ?? formData.assigned_to, created_by: currentUser?.username ?? 'system', updated_at: new Date().toISOString() };
+      if (alihKeSupervisor) {
+        const [, supId] = alihKeSupervisor;
+        Object.assign(payload, {
+          assigned_to: '', assign_name: '',
+          routing_status: 'supervisor_assign', assigned_supervisor_id: supId,
+        });
+      }
       ({ error } = await supabase.from('reminders').update(payload).eq('id', editingReminder.id));
     } else {
       const payloads = allDates.map(d => ({
@@ -506,12 +522,65 @@ function ReminderSchedulePageInner() {
     }
 
     if (editingReminder) {
+      // Catat APA yang berubah, bukan sekadar bahwa ada perubahan.
+      const perubahanEdit = bandingkan(
+        REMINDER_FIELDS,
+        editingReminder as unknown as Record<string, unknown>,
+        formData as unknown as Record<string, unknown>,
+      );
       logAudit({
         user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
         action: 'update', module: 'reminder',
         target_id: editingReminder.id, target_name: formData.project_name,
-        notes: 'Detail reminder disunting',
+        notes: alihKeSupervisor
+          ? `Re-route ke Supervisor ${alihKeSupervisor[2]}${perubahanEdit.length ? ' | ' + ringkasPerubahan(perubahanEdit) : ''}`
+          : (perubahanEdit.length ? ringkasPerubahan(perubahanEdit) : 'Disimpan tanpa perubahan'),
       }).catch(() => {});
+
+      // Dialihkan ke Supervisor: yang perlu dikabari adalah Supervisor itu,
+      // bukan assignee lama — assigned_to sudah dikosongkan di atas, jadi blok
+      // WA di bawah tidak akan menemukan siapa pun untuk dikirimi.
+      if (alihKeSupervisor) {
+        const supUser = teamUsers.find(u => u.id === alihKeSupervisor[1]);
+        if (supUser?.phone_number) {
+          void sendFonnteWA(supUser.phone_number, pesanWAPerubahan({
+            namaPenerima: supUser.full_name,
+            namaPengubah: currentUser?.full_name ?? 'Admin',
+            judulItem: formData.project_name,
+            jenisItem: 'Jadwal',
+            perubahan: perubahanEdit,
+            reroute: { dari: editingReminder.assign_name ?? '', ke: supUser.full_name },
+            tautan: 'https://team-ticketing.vercel.app/reminder-schedule',
+          }));
+        }
+        if (supUser?.id) {
+          void createNotification({
+            user_id: supUser.id, type: 'reminder',
+            title: '🔀 Jadwal dialihkan ke kamu',
+            body: `${formData.project_name} — pilih anggota tim yang mengerjakan`,
+            action_url: '/reminder-schedule', ref_id: editingReminder.id,
+            created_by: currentUser?.full_name ?? 'Admin',
+          });
+        }
+      }
+
+      // Beri tahu yang menangani. Sebelumnya WA HANYA dikirim saat reminder
+      // dibuat, jadi koreksi tanggal atau alamat yang sudah terlanjur salah
+      // tidak pernah sampai ke orang yang akan berangkat ke lokasi.
+      if (perubahanEdit.length > 0 && assignee?.phone_number && assignee.full_name !== currentUser?.full_name) {
+        void sendFonnteWA(
+          assignee.phone_number,
+          pesanWAPerubahan({
+            namaPenerima: assignee.full_name ?? formData.assigned_to,
+            namaPengubah: currentUser?.full_name ?? 'Admin',
+            judulItem: formData.project_name,
+            jenisItem: 'Jadwal',
+            perubahan: perubahanEdit,
+            reroute: null,
+            tautan: 'https://team-ticketing.vercel.app/reminder-schedule',
+          }),
+        );
+      }
     } else {
       for (const row of barisBaru) {
         logAudit({
@@ -950,6 +1019,35 @@ function ReminderSchedulePageInner() {
     }
     setResendingFormReview(false);
   };
+
+  /**
+   * Label field reminder untuk catatan audit & pesan WA.
+   *
+   * Sebelumnya penyuntingan hanya tercatat sebagai "Detail reminder disunting"
+   * — benar, tapi tidak berguna: kalau ada yang salah, tidak ada cara tahu apa
+   * yang berubah tanpa membandingkan sendiri ke database.
+   */
+  const REMINDER_FIELDS: AdminField[] = [
+    { key: 'project_name', label: 'Nama Project' },
+    { key: 'description',  label: 'Deskripsi' },
+    { key: 'assigned_to',  label: 'Ditugaskan ke' },
+    { key: 'due_date',     label: 'Tanggal' },
+    { key: 'due_time',     label: 'Jam' },
+    { key: 'priority',     label: 'Prioritas' },
+    { key: 'status',       label: 'Status' },
+    { key: 'category',     label: 'Kategori' },
+    { key: 'sales_name',   label: 'Sales' },
+    { key: 'sales_division', label: 'Divisi Sales' },
+    { key: 'address',      label: 'Alamat' },
+    { key: 'pic_name',     label: 'PIC' },
+    { key: 'pic_phone',    label: 'Telepon PIC' },
+    { key: 'product',      label: 'Produk' },
+    { key: 'product_type', label: 'Tipe Produk' },
+    { key: 'notes',        label: 'Catatan' },
+    { key: 'warranty_years', label: 'Garansi (tahun)' },
+    { key: 'progress_start_date',  label: 'Mulai Pengerjaan' },
+    { key: 'progress_target_date', label: 'Target Selesai' },
+  ];
 
   const openEdit = (r: Reminder) => {
     setEditingReminder(r);
@@ -2399,6 +2497,7 @@ jangan lupa peralatan & Semangat💪🏼
           onExtraDatesChange={setExtraDates}
           onClose={() => { setShowFormModal(false); setEditingReminder(null); setFormData(emptyForm); setBulkTarget('none'); setExtraDates([]); }}
           onSubmit={handleSave}
+          supervisorUsers={(isAdmin || isManager) ? teamUsers.filter(u => u.jabatan === 'Supervisor') : []}
           canAssignSelf={isAdmin || isManager}
           selfUser={currentUser ? { username: currentUser.username, full_name: currentUser.full_name } : null}
         />

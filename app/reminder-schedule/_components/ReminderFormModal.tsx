@@ -28,6 +28,8 @@ interface Props {
   onExtraDatesChange: (dates: string[]) => void;
   onClose: () => void;
   onSubmit: () => void;
+  /** Supervisor yang bisa dijadikan tujuan re-route. Hanya diisi saat menyunting. */
+  supervisorUsers?: TeamUser[];
   /**
    * Admin, atau akun Team PTS dengan toggle "Full Access" aktif (mis. Manager
    * PTS) — boleh assign reminder ke DIRINYA SENDIRI. Manager sengaja
@@ -38,7 +40,7 @@ interface Props {
   selfUser?: { username: string; full_name: string } | null;
 }
 
-export function ReminderFormModal({ editingReminder, formData, setFormData, saving, teamUsers, guestUsers, bulkTarget, onBulkTargetChange, extraDates, onExtraDatesChange, onClose, onSubmit, canAssignSelf, selfUser }: Props) {
+export function ReminderFormModal({ editingReminder, formData, setFormData, saving, teamUsers, guestUsers, bulkTarget, onBulkTargetChange, extraDates, onExtraDatesChange, onClose, onSubmit, canAssignSelf, selfUser, supervisorUsers = []}: Props) {
   const [guestSearch, setGuestSearch] = useState('');
   const [guestDropdownOpen, setGuestDropdownOpen] = useState(false);
   const [err, setErr] = useState('');
@@ -167,6 +169,17 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                 <option value="">-- Pilih Anggota Team --</option>
                 {canAssignSelf && selfUser && (
                   <option value={selfUser.username}>🙋 Saya kerjakan sendiri ({selfUser.full_name})</option>
+                )}
+                {/* Route ke Supervisor — hanya muncul saat MENYUNTING. Saat
+                    membuat baru, tujuan supervisor sudah ditentukan otomatis
+                    dari tipe produk; menaruhnya di sini juga akan membuat dua
+                    penentu yang bisa saling bertentangan. */}
+                {editingReminder && supervisorUsers.length > 0 && (
+                  <optgroup label="🎯 Route ke Supervisor">
+                    {supervisorUsers.map(u => (
+                      <option key={`sup-${u.id}`} value={`SUP::${u.id}::${u.full_name}`}>{u.full_name} (Supervisor)</option>
+                    ))}
+                  </optgroup>
                 )}
                 {/* Manager dikecualikan di semua grup — bukan anggota tim biasa yg di-assign tugas */}
                 {teamUsers.filter(u => u.team_type === 'Team PTS IVP' && u.jabatan !== 'Manager').length > 0 && (
