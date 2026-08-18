@@ -935,8 +935,8 @@ export function NewFormModal({
                     placeholder="Other solution..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-teal-400 bg-white outline-none" />
                 </div>
 
-                {/* Brand Display & Middleware */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 pt-2 border-t border-gray-100">
+                {/* Brand Display 1 & 2 + Middleware — kembar dari RoomSection di atas. */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 pt-2 border-t border-gray-100">
                   <div>
                     <label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5">🖥️ Brand Display <span className="text-gray-400 font-normal">(opsional)</span></label>
                     <select value={form.brand_display||''} onChange={e => {
@@ -950,6 +950,19 @@ export function NewFormModal({
                     {form.brand_display && form.brand_display_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1">👤 PIC: {form.brand_display_pic_name}</p>}
                     {form.brand_display && !form.brand_display_pic_name && <p className="mt-1 text-[11px] text-gray-400 italic">PIC belum di-set admin</p>}
                   </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5">🖥️ Brand Display 2 <span className="text-gray-400 normal-case font-normal">(opsional)</span></label>
+                  <select value={form.brand_display_2||''} onChange={e => {
+                    const brand = e.target.value;
+                    const pic = brandPicMappings.find(m => m.brand_type==='display' && m.brand_name===brand);
+                    setForm(prev => ({...prev, brand_display_2:brand, brand_display_2_pic_id:pic?.pic_user_id||'', brand_display_2_pic_name:pic?.pic_user_name||''}));
+                  }} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-amber-400">
+                    <option value="">— Pilih Brand Display 2 —</option>
+                    {DISPLAY_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                  {form.brand_display_2 && form.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded px-2 py-1">👤 PIC: {form.brand_display_2_pic_name}</p>}
+                  {form.brand_display_2 && !form.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-gray-400 italic">PIC belum di-mapping</p>}
+                </div>
                   <div>
                     <label className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1.5">🔌 Brand Middleware <span className="text-gray-400 font-normal">(opsional)</span></label>
                     <select value={form.brand_middleware||''} onChange={e => {
@@ -1024,8 +1037,14 @@ export function NewFormModal({
                     placeholder="Other source..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400" />
                 </div>
 
-                {/* Camera */}
-                <div className="mb-4 pt-2 border-t border-gray-100">
+                {/* Camera + Audio — 2 kolom.
+                    Blok ini DUPLIKAT dari RoomSection di atas: form ruangan ditulis
+                    dua kali — inline untuk Ruangan 1 (terikat `form`), dan sebagai
+                    komponen untuk ruangan ke-2 dst (terikat `rooms[i]`). Perubahan
+                    tata letak WAJIB dikerjakan di keduanya, kalau tidak yang berubah
+                    hanya ruangan yang jarang dibuka. */}
+                <div className="mb-4 pt-2 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+                <div>
                   <div className="mb-4">
                     <label className="block text-xs font-bold text-gray-600 tracking-widest uppercase mb-2">Camera Conference</label>
                     <div className="flex flex-wrap gap-2">
@@ -1054,8 +1073,7 @@ export function NewFormModal({
                   </div>}
                 </div>
 
-                {/* Audio */}
-                <div className="mb-4 pt-2 border-t border-gray-100">
+                <div>
                   <div className="mb-4">
                     <label className="block text-xs font-bold text-gray-600 tracking-widest uppercase mb-2">Audio System</label>
                     <div className="flex flex-wrap gap-2">
@@ -1082,6 +1100,7 @@ export function NewFormModal({
                       </div>
                     </div>
                   </div>}
+                </div>
                 </div>
 
                 {/* Wallplate + Tabletop — 2 col */}
@@ -1114,8 +1133,9 @@ export function NewFormModal({
                   </div>
                 </div>
 
-                {/* Wireless */}
-                <div className="mb-4 pt-2 border-t border-gray-100">
+                {/* Wireless + Controller — 2 kolom, sama seperti Camera+Audio. */}
+                <div className="mb-4 pt-2 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+                <div>
                   <div className="mb-4">
                     <label className="block text-xs font-bold text-gray-600 tracking-widest uppercase mb-2">Wireless Presentation</label>
                     <div className="flex flex-wrap gap-2">
@@ -1153,8 +1173,7 @@ export function NewFormModal({
                   </div>}
                 </div>
 
-                {/* Controller */}
-                <div className="mb-4 pt-2 border-t border-gray-100">
+                <div>
                   <div className="mb-4">
                     <label className="block text-xs font-bold text-gray-600 tracking-widest uppercase mb-2">Controller / Automation</label>
                     <div className="flex flex-wrap gap-2">
@@ -1180,6 +1199,7 @@ export function NewFormModal({
                       </div>
                     </div>
                   </div>}
+                </div>
                 </div>
 
                 {/* Ukuran, Suggest, Keterangan */}

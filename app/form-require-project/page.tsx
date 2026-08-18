@@ -311,18 +311,32 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       // Brand PIC: tambahkan request yang brand pic-nya = user ini (dari rooms JSONB)
       const selfDiv = currentUser.sales_division;
       if (!isPTS && !isIVPGuest && currentUser.team_type === 'Marketing') {
-        const { data: allReqs } = await supabase.from('project_requests').select('id, project_name, status, sales_name, created_at, rooms, requester_id').order('created_at', { ascending: false });
+        // Kolom brand Ruangan 1 ikut diambil, dengan jalur mundur: kolomnya
+        // baru ada setelah sql/design-project-brand-display-2.sql dijalankan,
+        // dan PostgREST menolak SELURUH query kalau satu kolom tak dikenal.
+        const KOLOM_DASAR = 'id, project_name, status, sales_name, created_at, rooms, requester_id';
+        const KOLOM_BRAND = 'brand_display_pic_id, brand_display_2_pic_id, brand_middleware_pic_id';
+        let allReqsRes = await supabase.from('project_requests')
+          .select(`${KOLOM_DASAR}, ${KOLOM_BRAND}`).order('created_at', { ascending: false });
+        if (allReqsRes.error) {
+          allReqsRes = await supabase.from('project_requests')
+            .select(KOLOM_DASAR).order('created_at', { ascending: false });
+        }
+        const allReqs = allReqsRes.data;
         (allReqs ?? []).forEach((r: any) => {
           if (filtered.find(x => x.id === r.id)) return;
           if (!r.rooms || !Array.isArray(r.rooms)) return;
           // brand_display_2_pic_id WAJIB ikut dicek: tanpa itu, PIC display
           // kedua tidak akan pernah melihat request-nya sama sekali — slot
           // display keduanya jadi sekadar catatan, bukan penugasan.
-          const isBrandPic = r.rooms.some((room: any) =>
-            room.brand_display_pic_id === currentUser.id
-            || room.brand_display_2_pic_id === currentUser.id
-            || room.brand_middleware_pic_id === currentUser.id
-          );
+          // Ruangan 1 disimpan di kolom tabel (r.brand_*), ruangan ke-2 dst di
+          // r.rooms — keduanya harus dicek, kalau tidak PIC Ruangan 1 tidak
+          // pernah melihat request-nya.
+          const cocok = (o: any) =>
+            o?.brand_display_pic_id === currentUser.id
+            || o?.brand_display_2_pic_id === currentUser.id
+            || o?.brand_middleware_pic_id === currentUser.id;
+          const isBrandPic = cocok(r) || r.rooms.some(cocok);
           if (isBrandPic) filtered.push(r as ProjectRequest);
         });
       }
@@ -731,7 +745,33 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         // internal/admin tetap jalan walau sql/brand-multi-internal.sql belum di-run.
         ...(chosenBrand ? { internal_sales_id_2: internalSalesId2, brand: chosenBrand } : {}),
       };
-      const { data, error } = await supabase.from('project_requests').insert([payload]).select().single();
+
+      // Brand Ruangan 1 dipisah dari payload utama supaya bisa dilepas kalau
+      // kolomnya belum ada. Kolom-kolom ini memang belum pernah dibuat: ruangan
+      // ke-2 dst ikut tersimpan sendirinya di `rooms` (JSONB), sementara
+      // Ruangan 1 disimpan di kolom tabel — dan kolom brand-nya terlewat. Jadi
+      // selama ini memilih Brand Display di Ruangan 1 tidak berefek apa pun.
+      // Lihat sql/design-project-brand-display-2.sql.
+      const brandRuangan1 = {
+        brand_display: form.brand_display || null,
+        brand_display_pic_id: form.brand_display_pic_id || null,
+        brand_display_pic_name: form.brand_display_pic_name || null,
+        brand_display_2: form.brand_display_2 || null,
+        brand_display_2_pic_id: form.brand_display_2_pic_id || null,
+        brand_display_2_pic_name: form.brand_display_2_pic_name || null,
+        brand_middleware: form.brand_middleware || null,
+        brand_middleware_pic_id: form.brand_middleware_pic_id || null,
+        brand_middleware_pic_name: form.brand_middleware_pic_name || null,
+      };
+      let { data, error } = await supabase.from('project_requests')
+        .insert([{ ...payload, ...brandRuangan1 }]).select().single();
+      if (error) {
+        // PostgREST menolak SELURUH insert kalau satu kolom tak dikenal, bukan
+        // cuma kolom itu. Tanpa jalur mundur ini, submit gagal total di basis
+        // data yang migrasinya belum dijalankan.
+        ({ data, error } = await supabase.from('project_requests')
+          .insert([payload]).select().single());
+      }
       if (error) { notify('error', 'Gagal submit form: ' + error.message); setSubmitting(false); return; }
       if (data?.id) {
         // Catat pembuatan ke audit trail. Sebelumnya HANYA approve/reject/
@@ -891,7 +931,16 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
           // ── WA notif ke Brand PIC dari rooms ──
           try {
-            const allRooms = rooms.length > 0 ? rooms : [];
+            // Ruangan 1 ikut: datanya ada di `form`, bukan di `rooms` — tanpa
+            // ini PIC Ruangan 1 tidak pernah dikabari sama sekali, padahal
+            // ruangan itulah yang paling sering diisi.
+            const ruangan1 = {
+              room_name: form.room_name || 'Ruangan 1',
+              brand_display: form.brand_display, brand_display_pic_id: form.brand_display_pic_id,
+              brand_display_2: form.brand_display_2, brand_display_2_pic_id: form.brand_display_2_pic_id,
+              brand_middleware: form.brand_middleware, brand_middleware_pic_id: form.brand_middleware_pic_id,
+            } as unknown as (typeof rooms)[number];
+            const allRooms = [ruangan1, ...rooms];
             const brandPicIds = new Set<string>();
             allRooms.forEach(r => {
               // Ketiganya ikut: PIC display KEDUA harus dikabari juga, kalau
