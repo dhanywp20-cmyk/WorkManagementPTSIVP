@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { hitungReviewMenggantung } from '@/lib/form-review-gate';
 import { setSession, clearSession, getSession, startSessionWatcher } from '@/lib/auth';
 import { isAdmin as checkIsAdmin, hasFullAccess } from '@/lib/constants';
 import { isAssignablePTSTeam } from '@/lib/teams';
@@ -123,6 +124,10 @@ function ReminderSchedulePageInner() {
 
   // ─── Guest Request Jadwal State ───────────────────────────────────────────
   const [showRequestModal, setShowRequestModal] = useState(false);
+  /** Jawaban query review sudah tiba? Dipakai pintasan ?buat=1 di bawah. */
+  const [jumlahReviewSiap, setJumlahReviewSiap] = useState(false);
+  /** Pintasan hanya boleh membuka modal sekali, bukan tiap kali render ulang. */
+  const pintasanTerpakai = useRef(false);
   const [pendingReviewCount, setPendingReviewCount] = useState(0);
 
   // ─── Approve & Assign State (admin only) ─────────────────────────────────
@@ -1345,20 +1350,37 @@ function ReminderSchedulePageInner() {
   const isGuest = currentUser?.role === 'guest' || currentUser?.role === 'sales';
 
   // ─── Cek Form Review menggantung (guest/sales) ────────────────────────────
+  // Kriterianya ada di lib/form-review-gate.ts, bukan di sini, karena pintasan
+  // "buat" di dashboard menegakkan aturan yang sama.
   useEffect(() => {
     if (!isGuest || !currentUser?.full_name) return;
-    const checkPendingReviews = async () => {
-      const { data } = await supabase
-        .from('form_reviews')
-        .select('id, grade_product_knowledge, grade_product_knowledge_bast, grade_training_customer')
-        .eq('sales_name', currentUser.full_name);
-      const pending = (data ?? []).filter((r: any) =>
-        !r.grade_product_knowledge && !r.grade_product_knowledge_bast && !r.grade_training_customer
-      );
-      setPendingReviewCount(pending.length);
-    };
-    checkPendingReviews();
+    hitungReviewMenggantung(currentUser.full_name)
+      .then(n => { setPendingReviewCount(n); setJumlahReviewSiap(true); });
   }, [isGuest, currentUser?.full_name]);
+
+  // ─── Pintasan "buat" dari dashboard (?buat=1) ─────────────────────────────
+  // Dashboard hanya menautkan ke sini; yang memutuskan boleh atau tidaknya
+  // tetap halaman ini. Untuk Sales, keputusan itu bergantung pada jumlah form
+  // review yang menggantung — dan jumlah itu baru diketahui setelah query di
+  // atas selesai. Karena itu pintasan menunggu jawabannya dulu: membuka modal
+  // sebelum jawabannya tiba sama saja melewati penjagaan.
+  useEffect(() => {
+    if (!currentUser || searchParams.get('buat') !== '1' || pintasanTerpakai.current) return;
+    if (isGuest) {
+      if (!jumlahReviewSiap) return;
+      pintasanTerpakai.current = true;
+      if (pendingReviewCount === 0) { setShowRequestModal(true); return; }
+      // Kalau ditahan, katakan sebabnya. Tanpa ini pintasan terasa rusak:
+      // halamannya terbuka, tapi form yang dituju tidak pernah muncul.
+      setToast({ type: 'error', msg: `Selesaikan dulu ${pendingReviewCount} form review Demo/BAST yang belum dinilai.` });
+      setTimeout(() => setToast(null), 5000);
+      return;
+    }
+    if (canAddReminder) {
+      pintasanTerpakai.current = true;
+      setEditingReminder(null); setFormData(emptyForm); setExtraDates([]); setShowFormModal(true);
+    }
+  }, [searchParams, currentUser, isGuest, jumlahReviewSiap, pendingReviewCount, canAddReminder]);
 
   // ─── Cari Supervisor tim sesuai tipe produk saat modal Approve dibuka ──────
   useEffect(() => {

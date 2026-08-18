@@ -75,6 +75,23 @@ html, body {
 html {
   -webkit-text-size-adjust: 100%;   /* prevent iOS font-size inflation */
 }
+
+/* ── Skala layar ponsel ───────────────────────────────────────────────────
+   Semua ukuran Tailwind — teks, padding, gap, lebar ikon — dinyatakan dalam
+   rem, yaitu kelipatan ukuran font akar. Mengecilkan akar sekali di sini
+   mengecilkan SELURUHNYA secara serempak dan sebanding, tanpa perlu menyisir
+   ribuan kelas satu per satu dan tanpa risiko satu layar ketinggalan lalu
+   terlihat lebih besar sendiri.
+
+   87.5% (14px dari 16px) dipilih karena masih di atas ambang keterbacaan:
+   teks terkecil yang dipakai antarmuka ini (text-xs = 0.75rem) menjadi 10.5px,
+   bukan turun sampai tak terbaca.
+
+   Nilai yang ditulis dalam px — mis. text-[10px] — memang tidak ikut mengecil.
+   Itu disengaja: yang seperti itu sudah kecil sejak awal. */
+@media (max-width: 640px) {
+  html { font-size: 87.5%; }
+}
 *, *::before, *::after {
   box-sizing: border-box;
 }

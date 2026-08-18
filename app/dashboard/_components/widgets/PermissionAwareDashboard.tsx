@@ -46,18 +46,27 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
 
   return (
     <div className="w-full h-full overflow-y-auto">
-      <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6 space-y-5">
-        {/* Header sambutan — di atas background transparan, pakai text-shadow biar terbaca */}
-        <div className="flex items-end justify-between flex-wrap gap-2">
-          <div style={{ textShadow: '0 1px 6px rgba(0,0,0,0.35)' }}>
-            <h1 className="text-xl md:text-2xl font-black text-white">Halo, {firstName} 👋</h1>
-            <p className="text-xs md:text-sm text-white/85 mt-0.5">{today}</p>
+      {/* ── Header sambutan ──────────────────────────────────────────────────
+          Dulu sambutan ini ikut terkurung di dalam kolom max-w-[1600px] yang
+          sama dengan isi, jadi ia melayang di atas latar tanpa batas yang
+          jelas — beda sendiri dari seluruh platform lain yang memakai bilah
+          header penuh kiri-ke-kanan. Sekarang bilahnya membentang penuh dan
+          menempel di atas seperti PageHeader di modul lain; hanya isinya yang
+          tetap dibatasi lebarnya supaya sejajar dengan widget di bawahnya. */}
+      <header className="sticky top-0 z-40"
+        style={{ background: 'rgba(255,255,255,0.95)', borderBottom: '3px solid #b91c1c', backdropFilter: 'blur(16px)' }}>
+        <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-2.5 md:py-3.5 flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <h1 className="text-base md:text-xl font-black tracking-tight leading-tight text-slate-800">Halo, {firstName} 👋</h1>
+            <p className="text-[10px] md:text-xs text-slate-500 font-medium mt-0.5">{today}</p>
           </div>
-          <span className="text-[11px] font-semibold px-3 py-1.5 rounded-full bg-white/85 text-slate-600 border border-black/5">
+          <span className="text-[10px] md:text-[11px] font-semibold px-2.5 py-1 md:px-3 md:py-1.5 rounded-full bg-slate-100 text-slate-600 border border-black/5 flex-shrink-0">
             {visible.length} widget aktif
           </span>
         </div>
+      </header>
 
+      <div className="max-w-[1600px] mx-auto px-3 md:px-8 py-4 md:py-6 space-y-4 md:space-y-5">
         {composed.map((block, i) =>
           block.type === 'full' ? (
             <div key={`full-${block.widget.id}-${i}`}>

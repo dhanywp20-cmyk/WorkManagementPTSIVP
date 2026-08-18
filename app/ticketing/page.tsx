@@ -161,6 +161,13 @@ function TicketingSystemInner() {
     const q = searchParams.get('q');
     if (q) setSearchProject(q);
   }, [searchParams]);
+
+  // ── Pintasan "buat" dari dashboard (?buat=1) ──
+  // Dashboard hanya menautkan; keputusan boleh-tidaknya tetap milik halaman
+  // ini, supaya tidak ada dua tempat yang memutuskan hal yang sama.
+  useEffect(() => {
+    if (searchParams.get('buat') === '1') setShowNewTicket(true);
+  }, [searchParams]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Ticket[]>([]);
   const [showNotificationPopup, setShowNotificationPopup] = useState(false);

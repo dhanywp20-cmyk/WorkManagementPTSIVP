@@ -211,7 +211,7 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
 // Ticket Troubleshooting. Tiap panel hanya muncul kalau user punya menunya.
 // ═══════════════════════════════════════════════════════════════════════════════
 interface SalesAnalytics {
-  schedule: { total: number; active: number; done: number; byCat: { name: string; count: number }[] };
+  schedule: { total: number; active: number; done: number };
   project: { total: number; pending: number; progress: number; done: number };
   review: { total: number; demo: number; bast: number };
   ticket: { total: number; open: number; solved: number };
@@ -228,12 +228,12 @@ function AnalyticStat({ accent, label, value, subs }: {
   subs: { label: string; value: number }[];
 }) {
   return (
-    <div className="rounded-xl px-4 py-3.5 relative overflow-hidden"
+    <div className="rounded-xl px-3 py-2.5 sm:px-4 sm:py-3.5 relative overflow-hidden"
       style={{ background: '#ffffff', border: '1px solid rgba(15,23,42,0.10)', boxShadow: '0 1px 2px rgba(15,23,42,0.06)' }}>
       <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: accent, opacity: 0.55 }} />
-      <div className="text-3xl font-black tabular-nums leading-none" style={{ color: '#0f172a' }}>{value}</div>
-      <div className="text-[13px] font-bold mt-1 leading-tight" style={{ color: '#1e293b' }}>{label}</div>
-      <div className="flex gap-3 mt-2.5">
+      <div className="text-2xl sm:text-3xl font-black tabular-nums leading-none" style={{ color: '#0f172a' }}>{value}</div>
+      <div className="text-[11px] sm:text-[13px] font-bold mt-1 leading-tight" style={{ color: '#1e293b' }}>{label}</div>
+      <div className="flex gap-2 sm:gap-3 mt-2 sm:mt-2.5">
         {subs.map((s, i) => (
           <div key={i}>
             <div className="text-sm font-black tabular-nums leading-none text-slate-700">{s.value}</div>
@@ -245,7 +245,33 @@ function AnalyticStat({ accent, label, value, subs }: {
   );
 }
 
-const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
+/**
+ * Pintasan membuat data baru dari dashboard.
+ *
+ * Ikon kirim yang sama dengan tombol Submit Form di tiap platform, supaya
+ * jelas sejak dari dashboard bahwa tombol ini bermuara ke sebuah form — bukan
+ * ke tabel. Ukurannya sengaja jauh lebih besar daripada tautan teks yang dulu
+ * ada di sini: inilah aksi yang paling sering dipakai Sales dari halaman ini.
+ */
+function PintasanBuat({ label, warna, onClick }: { label: string; warna: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick}
+      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white font-bold text-xs sm:text-[13px] transition-all hover:scale-[1.02] w-full text-left"
+      style={{ background: warna, boxShadow: `0 4px 14px ${warna}59` }}>
+      <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.22)' }}>
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+        </svg>
+      </span>
+      <span className="min-w-0 leading-tight">
+        <span className="block opacity-80 text-[10px] font-semibold">Buat</span>
+        <span className="block truncate">{label}</span>
+      </span>
+    </button>
+  );
+}
+
+const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openUrl }) => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<SalesAnalytics | null>(null);
   const showSchedule = hasMenu(user, 'reminder-schedule');
@@ -260,24 +286,20 @@ const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
         // Scope "data sendiri": cocokkan lewat created_by (username) ATAU nama sales
         // (full_name) — menangkap request/tiket yg dia buat maupun yg atas namanya.
         const [remRes, prRes, rvRes, tkRes] = await Promise.all([
-          showSchedule ? supabase.from('reminders').select('status,category').or(`sales_name.eq.${user.full_name},created_by.eq.${user.username}`) : Promise.resolve({ data: [] }),
+          showSchedule ? supabase.from('reminders').select('status').or(`sales_name.eq.${user.full_name},created_by.eq.${user.username}`) : Promise.resolve({ data: [] }),
           showProject  ? supabase.from('project_requests').select('status').or(`requester_id.eq.${user.id},ivp_assignee.eq.${user.full_name}`) : Promise.resolve({ data: [] }),
           showReview   ? supabase.from('form_reviews').select('review_category').or(`guest_username.eq.${user.username},sales_name.eq.${user.full_name}`) : Promise.resolve({ data: [] }),
           showTicket   ? supabase.from('tickets').select('status').or(`created_by.eq.${user.username},sales_name.eq.${user.full_name}`) : Promise.resolve({ data: [] }),
         ]);
-        const rem = (remRes.data ?? []) as { status: string; category: string }[];
+        const rem = (remRes.data ?? []) as { status: string }[];
         const pr  = (prRes.data ?? []) as { status: string }[];
         const rv  = (rvRes.data ?? []) as { review_category: string }[];
         const tk  = (tkRes.data ?? []) as { status: string }[];
-        const catMap: Record<string, number> = {};
-        rem.forEach(r => { if (r.category) catMap[r.category] = (catMap[r.category] ?? 0) + 1; });
-        const byCat = Object.entries(catMap).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 4);
         if (alive) setData({
           schedule: {
             total: rem.length,
             active: rem.filter(r => r.status !== 'done' && r.status !== 'cancelled').length,
             done: rem.filter(r => r.status === 'done').length,
-            byCat,
           },
           project: {
             total: pr.length,
@@ -306,7 +328,10 @@ const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
     <WidgetCard title="Analytics Saya" icon="📊" accent="#c8861d">
       {loading || !data ? <Loading /> : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          {/* Dua kolom sejak layar tersempit: satu kolom membuat empat kartu
+              memakan hampir seluruh layar ponsel, sehingga pintasan di bawahnya
+              baru terlihat setelah menggulir jauh. */}
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-3">
             {showSchedule && (
               <AnalyticStat accent="#0e7490" label="Request Schedule" value={data.schedule.total}
                 subs={[{ label: 'Aktif', value: data.schedule.active }, { label: 'Selesai', value: data.schedule.done }]} />
@@ -324,30 +349,30 @@ const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
                 subs={[{ label: 'Aktif', value: data.ticket.open }, { label: 'Solved', value: data.ticket.solved }]} />
             )}
           </div>
-          {/* Breakdown kategori Request Schedule */}
-          {showSchedule && data.schedule.byCat.length > 0 && (
-            <div className="mt-3">
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Request Schedule per Kategori</div>
-              <div className="space-y-1.5">
-                {data.schedule.byCat.map(c => {
-                  const pct = data.schedule.total > 0 ? Math.round((c.count / data.schedule.total) * 100) : 0;
-                  return (
-                    <div key={c.name} className="flex items-center gap-2">
-                      <span className="text-[11px] font-semibold text-slate-600 w-32 truncate">{c.name}</span>
-                      <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: '#0891b2' }} />
-                      </div>
-                      <span className="text-[10px] font-bold text-slate-500 w-6 text-right">{c.count}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          <div className="flex gap-2 mt-3 flex-wrap">
-            {showSchedule && <button onClick={() => openMenu('reminder-schedule')} className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(8,145,178,0.1)', color: '#0891b2' }}>🗓️ Request Schedule →</button>}
-            {showProject && <button onClick={() => openMenu('request-design-project')} className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(124,58,237,0.1)', color: '#7c3aed' }}>🏗️ Design Project →</button>}
-            {showTicket && <button onClick={() => openMenu('ticket-troubleshooting')} className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(225,29,72,0.1)', color: '#e11d48' }}>🎫 Ticket →</button>}
+          {/* Batang kategori Request Schedule dihapus: angkanya sudah terbaca
+              utuh di kartu ringkasan tepat di atasnya, jadi ia hanya mengulang
+              hal yang sama dengan bentuk lain dan mendorong pintasan turun.
+
+              ── Pintasan BUAT, bukan pintasan LIHAT ──────────────────────────
+              Tiga tombol ini dulu hanya membuka daftarnya, padahal yang paling
+              sering dituju Sales dari dashboard adalah membuat yang baru.
+              Sekarang tautannya membawa ?buat=1 dan halaman tujuanlah yang
+              memutuskan boleh atau tidak — mis. Request Schedule tetap menahan
+              Sales yang masih punya form review belum dinilai. Dashboard tidak
+              ikut memutuskan, supaya aturannya tidak ada dua salinan. */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
+            {showSchedule && (
+              <PintasanBuat label="Request Schedule" warna="#0891b2"
+                onClick={() => openUrl('/reminder-schedule?buat=1', 'Request Schedule')} />
+            )}
+            {showProject && (
+              <PintasanBuat label="Design Project" warna="#7c3aed"
+                onClick={() => openUrl('/form-require-project?buat=1', 'Request Design Project')} />
+            )}
+            {showTicket && (
+              <PintasanBuat label="Ticket" warna="#e11d48"
+                onClick={() => openUrl('/ticketing?buat=1', 'Ticket Troubleshooting')} />
+            )}
           </div>
         </>
       )}

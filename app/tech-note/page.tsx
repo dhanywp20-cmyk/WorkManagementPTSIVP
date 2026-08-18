@@ -562,7 +562,7 @@ export default function TechNotePage() {
 
         {/* ── Main Content ── */}
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-[1200px] mx-auto px-6 py-5">
+          <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-4 sm:py-5">
             {currentUser && <TechNoteKPISummary technotes={technotes} currentUser={currentUser} year={year} />}
 
             {/* Tabs + Search */}
@@ -583,11 +583,14 @@ export default function TechNotePage() {
                   {t.label}
                 </button>
               ))}
-              <div className="ml-auto flex items-center gap-2">
-                <div className="relative">
+              {/* ml-auto hanya berlaku saat barisnya memang muat. Di ponsel ia
+                  mendorong kotak cari keluar layar, jadi di sana kelompok ini
+                  mengisi barisnya sendiri. */}
+              <div className="w-full sm:w-auto sm:ml-auto flex items-center gap-2">
+                <div className="relative flex-1 sm:flex-initial min-w-0">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
                   <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari judul, produk, tag..."
-                    className="pl-8 pr-3 py-2 text-[13px] rounded-xl outline-none w-52 text-slate-700 border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 placeholder-slate-400" style={{ background: 'rgba(255,255,255,0.95)' }} />
+                    className="pl-8 pr-3 py-2 text-[13px] rounded-xl outline-none w-full sm:w-52 text-slate-700 border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 placeholder-slate-400" style={{ background: 'rgba(255,255,255,0.95)' }} />
                 </div>
                 <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}
                   className="px-3 py-2 text-[13px] rounded-xl outline-none text-slate-700 border border-gray-200 focus:border-rose-400" style={{ background: 'rgba(255,255,255,0.95)' }}>

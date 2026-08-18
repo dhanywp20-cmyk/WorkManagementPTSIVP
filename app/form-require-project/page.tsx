@@ -62,6 +62,11 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     const q = searchParams.get('q');
     if (q) setSearchQuery(q);
   }, [searchParams]);
+
+  // ── Pintasan "buat" dari dashboard (?buat=1) ──
+  useEffect(() => {
+    if (searchParams.get('buat') === '1') setShowNewFormModal(true);
+  }, [searchParams]);
   const [searchSales, setSearchSales] = useState(() => {
     try { return sessionStorage.getItem('frp_searchSales') || ''; } catch { return ''; }
   });
