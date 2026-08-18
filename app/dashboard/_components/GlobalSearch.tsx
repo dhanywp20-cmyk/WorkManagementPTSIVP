@@ -71,8 +71,8 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
    *   sales supervisor           → divisi & bawahannya
    *   sales biasa                → HANYA yang mencatat namanya
    *
-   * Penyaringan sales biasa dilakukan DI QUERY (lihat batasiMilikSendiri),
-   * bukan setelah data tiba. Menyaring setelah tiba berarti data sales lain
+   * Penyaringan dilakukan DI QUERY (lihat batasiLingkup), bukan setelah data
+   * tiba. Menyaring setelah tiba berarti data sales lain
    * sudah sampai di browser dan terbaca lewat DevTools — untuk daftar
    * pelanggan dan nilai project, itu kebocoran yang sesungguhnya.
    */
@@ -91,8 +91,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
   /**
    * Lingkup divisi untuk Sales Internal.
    *
-   * batasiMilikSendiri di bawah hanya mengenal "milik saya". Itu benar untuk
-   * sales biasa, tapi TERLALU sempit untuk Sales Internal: dia memang bertugas
+   * Batas "hanya milik saya" saja TERLALU sempit untuk Sales Internal: dia bertugas
    * menangani beberapa divisi sekaligus, dan divisi itu ditentukan tabel
    * pemetaan — bukan bisa disimpulkan dari profilnya. Tanpa ini, Sales Internal
    * tidak menemukan project divisi yang justru jadi tanggung jawabnya.
@@ -101,8 +100,8 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
   /**
    * Batasi query ke lingkup user.
    *
-   * Untuk sales biasa hasilnya sama dengan batasiMilikSendiri; untuk Sales
-   * Internal, divisi yang dipetakan ikut terbuka.
+   * Untuk sales biasa hasilnya "hanya milik saya"; untuk Sales Internal,
+   * divisi yang dipetakan ikut terbuka.
    */
   const batasiLingkup = <T,>(lingkup: LingkupProject, query: T, kolomMilik: string[], kolomDivisi = 'sales_division'): T => {
     if (lingkup.semua) return query;
@@ -128,25 +127,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     const izin = (currentUser as { allowed_menus?: string[] }).allowed_menus;
     if (!izin) return true; // belum diatur = perilaku lama, jangan mendadak menutup
     return izin.includes(kunci);
-  };
-
-  /**
-   * Tempelkan batas "hanya milik saya" ke sebuah query.
-   *
-   * Nilai dikutip ganda karena nama bisa memuat koma — tanpa kutip, PostgREST
-   * akan membacanya sebagai pemisah kondisi dan batasannya jadi melar.
-   * Tanda kutip di dalam nama dibuang, bukan di-escape, supaya tidak ada celah
-   * penyisipan sintaks filter.
-   */
-  const batasiMilikSendiri = <T,>(query: T, kolom: string[]): T => {
-    const nama = (currentUser.full_name ?? '').replace(/"/g, '');
-    const user = (currentUser.username ?? '').replace(/"/g, '');
-    const syarat = kolom
-      .map(k => (k === 'created_by' ? `${k}.eq."${user}"` : `${k}.eq."${nama}"`))
-      .join(',');
-    // .or() kedua di-AND-kan dengan .or() pencarian teks oleh PostgREST,
-    // jadi hasilnya: (cocok kata kunci) DAN (milik saya).
-    return (query as { or: (f: string) => T }).or(syarat);
   };
 
   // ── Open/close via keyboard ──
@@ -460,7 +440,11 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
         .select('id, report_date, user_name, sales_division, reminder_notes')
         .or(`user_name.ilike.%${q}%,reminder_notes.ilike.%${q}%,sales_division.ilike.%${q}%`)
         .order('report_date', { ascending: false }).limit(10);
-      if (isSalesBiasa) qd = batasiMilikSendiri(qd, ['user_name']);
+      // Dulu hanya sales BIASA yang dibatasi di sini, sehingga Sales Supervisor
+      // — dan siapa pun di luar dua kategori itu — membaca laporan harian
+      // seluruh divisi. Sekarang batasnya sama dengan modul lain: siapa pun
+      // yang bukan orang dalam PTS dibatasi ke lingkupnya.
+      if (!tanpaBatas) qd = batasiLingkup(lingkup, qd, ['user_name']);
       const { data } = await qd;
       (data ?? []).forEach((d: any) => res.push({
         id: `daily-${d.id}`, type: 'daily', icon: '📋',

@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { getSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
+import { hitungLingkupProject, filterLingkup } from '@/lib/project-scope';
 import {
   PiketRow, KegiatanEntry, UserRow, DayOfWeek,
   DAYS_OF_WEEK, DAY_COLOR, TEAM_LABEL,
@@ -67,11 +68,24 @@ function PiketShowroomPageInner() {
     setFetchError(null);
     const wk2=toKey(addDays(weekStart,7));
     try {
+      // ── Isolasi antar-Sales pada catatan kegiatan tamu ─────────────────────
+      // piket_tamu_detail mencatat nama_sales & sales_division: siapa membawa
+      // tamu mana, untuk project apa. Jadwal piketnya sendiri memang terbuka
+      // (itu roster PTS), tapi catatan kegiatannya tidak — Sales divisi lain
+      // tidak berkepentingan dengan daftar kunjungan pelanggan divisi tetangga.
+      //
+      // Batas dipasang DI QUERY, bukan saat render, supaya barisnya tidak
+      // pernah sampai ke browser dan terbaca lewat DevTools.
+      const lingkup = await hitungLingkupProject(currentUser as never);
+      const batas = filterLingkup(lingkup, 'nama_sales', 'sales_division');
+      let kgQ = supabase.from('piket_tamu_detail').select('*').order('created_at');
+      if (batas) kgQ = kgQ.or(batas);
+
       const[wRes,aRes,uRes,kgRes,plRes]=await Promise.all([
         supabase.from('piket_schedules').select('*').in('week_start',[wk,wk2]).order('day_date'),
         supabase.from('piket_schedules').select('id,day_date,week_start,day_of_week,pic_ivp_name,pic_ump_name,pic_mvi_name'),
         supabase.from('users').select('id,full_name,username,team_type,role').in('team_type',['Team PTS IVP','Team PTS UMP','Team PTS MVI']).order('full_name'),
-        supabase.from('piket_tamu_detail').select('*').order('created_at'),
+        kgQ,
         supabase.from('piket_produk_lain').select('kegiatan_id,nama,watt'), // optional — tabel mungkin belum ada
       ]);
       const firstErr = wRes.error || aRes.error || uRes.error || kgRes.error; // plRes sengaja tidak diikutkan (opsional)
@@ -91,7 +105,7 @@ function PiketShowroomPageInner() {
       setFetchError(err?.message ?? 'Gagal memuat data');
     }
     setLoading(false);
-  },[weekStart]);
+  },[weekStart,currentUser]);
 
   useEffect(()=>{fetchData();},[fetchData]);
   useEffect(()=>{
