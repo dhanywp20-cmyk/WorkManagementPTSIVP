@@ -190,7 +190,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
   <ModalPortal>
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-3 sm:p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-[1500px] h-full max-h-full flex flex-col overflow-hidden"
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-[1500px] max-h-full flex flex-col overflow-hidden"
         style={{ animation: "scale-in 0.25s ease-out", border: "1.5px solid rgba(220,38,38,0.25)" }}>
 
         {/* Header */}
@@ -213,10 +213,15 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
             Di bawah xl tetap satu kolom; memaksa tiga kolom di layar kecil hanya
             memindahkan gulirnya jadi ke samping. */}
         <div className="flex-1 min-h-0 overflow-y-auto xl:overflow-hidden">
-          <div className="p-4 grid grid-cols-1 xl:grid-cols-3 gap-4 xl:h-full xl:overflow-hidden">
+          {/* TANPA xl:h-full — modal Ticket menyesuaikan tingginya dengan isi.
+              Field-nya jauh lebih sedikit daripada form Reminder; dipaksa
+              setinggi layar, dua pertiga bawahnya jadi kotak kosong yang tidak
+              mengerjakan apa-apa. Batas atasnya tetap max-h-full, jadi kalau
+              isinya panjang ia berhenti di tepi layar dan kolomnya menggulir. */}
+          <div className="p-5 grid grid-cols-1 xl:grid-cols-3 gap-5">
 
           {/* ── Kolom 1: ticket ini tentang apa ── */}
-          <div className="space-y-3 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <div className="space-y-4 xl:pr-2 xl:min-h-0">
           {/* Section: Informasi Ticket */}
           <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "rgba(0,0,0,0.1)" }}>
             <span className="text-lg">🎫</span>
@@ -226,7 +231,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           {/* Brand — WAJIB utk Sales External. Menentukan Sales Internal (House/Global) yg di-CC. */}
           {isExternalGuest && (
             <div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
+              <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 Brand * <span className="normal-case text-slate-400 font-medium tracking-normal">(Sales Internal yang di-CC)</span>
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -248,7 +253,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
 
           {/* Project Type Toggle */}
           <div>
-            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Tipe Project</label>
+            <label className="block text-[11px] font-bold mb-2 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Tipe Project</label>
             <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: "rgba(0,0,0,0.12)" }}>
               <button type="button"
                 onClick={() => switchProjectType('new')}
@@ -272,7 +277,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           {/* Project Existing: Search */}
           {projectType === 'existing' && (
             <div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
+              <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 Cari Project (Request Schedule &amp; Ticket)
               </label>
               <div className="relative">
@@ -282,7 +287,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                   value={reminderQuery}
                   onChange={e => handleQueryChange(e.target.value)}
                   placeholder="Ketik nama project untuk mencari..."
-                  className="w-full rounded-lg pl-8 pr-3 py-2 text-xs outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
                   style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}
                 />
                 {reminderSearching && (
@@ -350,13 +355,13 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
               Barang & keluhannya baru urusan kolom tengah. */}
           <div className="flex items-center gap-2 pb-2 border-b pt-2" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
             <span className="text-sm">📋</span>
-            <h3 className="text-xs font-bold tracking-wide text-slate-700">Detail Project</h3>
+            <h3 className="text-sm font-bold tracking-wide text-slate-700">Detail Project</h3>
           </div>
 
           {/* Row 1: Project Name | Address */}
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
+              <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 Project Name *
                 {projectType === 'existing' && selectedReminder && (
                   <span className="ml-2 text-red-400 font-semibold normal-case text-[10px]">🔒 dari reminder</span>
@@ -368,7 +373,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                   onChange={e => projectType === 'new' || !selectedReminder ? set({ project_name: e.target.value }) : undefined}
                   readOnly={projectType === 'existing' && !!selectedReminder}
                   placeholder={projectType === 'existing' ? 'Pilih project dari pencarian di atas' : 'Example: BCA Cibitung Project'}
-                  className="w-full rounded-lg pl-8 pr-3 py-2 text-xs outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
                   style={{
                     background: projectType === 'existing' && selectedReminder ? "rgba(220,38,38,0.05)" : "rgba(255,255,255,0.95)",
                     border: projectType === 'existing' && selectedReminder ? "1px solid rgba(220,38,38,0.3)" : "1px solid rgba(0,0,0,0.12)",
@@ -377,12 +382,12 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: "#94a3b8" }}>📍 Address Detail</label>
+              <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>📍 Address Detail</label>
               <div className="relative">
                 <span className="absolute left-3 top-3">📍</span>
                 <textarea value={form.address} onChange={e => set({ address: e.target.value })}
                   rows={2} placeholder="Example: Jl. Jend. Sudirman No. 1..."
-                  className="w-full rounded-lg pl-8 pr-3 py-2 text-xs outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none"
+                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none"
                   style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
               </div>
             </div>
@@ -392,12 +397,12 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           {/* Kontak customer — penutup blok "di mana & siapa". */}
           <div>
             <div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Customer Phone</label>
+              <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Customer Phone</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2">📱</span>
                 <input type="text" value={form.customer_phone} onChange={e => set({ customer_phone: e.target.value })}
                   placeholder="Adi - 08xx-xxxx-xxxx"
-                  className="w-full rounded-lg pl-8 pr-3 py-2 text-xs outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
                   style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
               </div>
             </div>
@@ -406,33 +411,33 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           </div>
 
           {/* ── Kolom 2: barang & keluhannya ── */}
-          <div className="space-y-3 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <div className="space-y-4 xl:pr-2 xl:min-h-0">
           <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
             <span className="text-sm">📦</span>
-            <h3 className="text-xs font-bold tracking-wide text-slate-700">Product &amp; Issue</h3>
+            <h3 className="text-sm font-bold tracking-wide text-slate-700">Product &amp; Issue</h3>
           </div>
 
           {/* Row 2: Product | SN Unit */}
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: "#94a3b8" }}>📦 Product / Brand</label>
+              <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>📦 Product / Brand</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2">📦</span>
                 <input type="text" value={form.product} onChange={e => set({ product: e.target.value })}
                   placeholder="Panasonic PT-MZ682, LG 75UL3Q, dll"
-                  className="w-full rounded-lg pl-8 pr-3 py-2 text-xs outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
                   style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
+              <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 SN Unit <span className="text-gray-400 normal-case font-normal text-[10px]">(opsional)</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2">🔢</span>
                 <input type="text" value={form.sn_unit} onChange={e => set({ sn_unit: e.target.value })}
                   placeholder="SN12345678 (opsional)"
-                  className="w-full rounded-lg pl-8 pr-3 py-2 text-xs outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
                   style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
               </div>
             </div>
@@ -441,7 +446,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
 
           <div>
             <div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
+              <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 📅 Date <span className="text-gray-400 normal-case font-normal text-[10px]">(hari ini)</span>
               </label>
               <div className="relative">
@@ -449,7 +454,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                 <input type="text"
                   value={new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
                   disabled
-                  className="w-full rounded-lg pl-8 pr-3 py-2 text-xs text-slate-400 cursor-not-allowed"
+                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-400 cursor-not-allowed"
                   style={{ background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.08)" }} />
               </div>
             </div>
@@ -457,7 +462,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
 
           {/* Issue Case */}
           <div>
-            <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Issue Case *</label>
+            <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Issue Case *</label>
             <div className="relative">
               <span className="absolute left-3 top-3">⚠️</span>
               <input type="text" value={form.issue_case}
@@ -468,7 +473,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                     set({ issue_case: val });
                 }}
                 placeholder="Maks. 4 kata, contoh: Videowall Not Working"
-                className="w-full rounded-lg pl-8 pr-3 py-2 text-xs outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+                className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
                 style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
             </div>
             <div className="flex justify-between items-center mt-1.5 px-1">
@@ -481,20 +486,20 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
 
           {/* Description */}
           <div>
-            <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: "#94a3b8" }}>📝 Detailed Description</label>
+            <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>📝 Detailed Description</label>
             <textarea value={form.description} onChange={e => set({ description: e.target.value })}
               rows={3} placeholder="Explain the problem details..."
-              className="w-full rounded-lg px-3 py-2 text-xs outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none"
+              className="w-full rounded-xl px-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none"
               style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
           </div>
 
           </div>
 
           {/* ── Kolom 3: penugasan & lampiran ── */}
-          <div className="space-y-3 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <div className="space-y-4 xl:pr-2 xl:min-h-0">
           <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
             <span className="text-sm">🎯</span>
-            <h3 className="text-xs font-bold tracking-wide text-slate-700">Penugasan &amp; Lampiran</h3>
+            <h3 className="text-sm font-bold tracking-wide text-slate-700">Penugasan &amp; Lampiran</h3>
           </div>
 
           {/* SBU — Sales Internal (guest) buat ticket ATAS NAMA Sales External.
@@ -505,7 +510,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                 <span className="text-lg">🏢</span>
                 <span className="text-sm font-bold tracking-wide text-slate-700">SBU (Sales External)</span>
               </div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
+              <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 SBU <span className="normal-case text-gray-400 font-medium tracking-normal">(opsional — atas nama Sales External)</span>
               </label>
               <SalesPicker
@@ -529,7 +534,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                 <span className="text-lg">🏢</span>
                 <span className="text-sm font-bold tracking-wide text-slate-700">Informasi Sales</span>
               </div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Sales Name</label>
+              <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Sales Name</label>
               <SalesPicker
                 value={form.sales_name}
                 users={users.filter(u => u.role === "guest")}
@@ -547,11 +552,11 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                 <span className="text-lg">👷</span>
                 <span className="text-sm font-bold tracking-wide text-slate-700">Penanganan</span>
               </div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Assign ke *</label>
+              <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Assign ke *</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2">👨‍💼</span>
                 <select value={form.assign_name} onChange={e => set({ assign_name: e.target.value })}
-                  className="w-full rounded-lg pl-8 pr-3 py-2 text-xs outline-none transition-all text-slate-800 focus:ring-2 focus:ring-red-500/40 appearance-none cursor-pointer"
+                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-red-500/40 appearance-none cursor-pointer"
                   style={{ background: "rgba(255,255,255,0.90)", border: "1px solid rgba(0,0,0,0.12)" }}>
                   <option value="">— Pilih penanganan —</option>
                   <option value="SELF">🙋 Saya kerjakan sendiri</option>
@@ -590,7 +595,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
             <span className="text-sm font-bold tracking-wide text-slate-700">Foto Pendukung</span>
           </div>
           <div>
-            <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
+            <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
               Upload Foto <span className="text-gray-400 font-normal">(Optional)</span>
             </label>
             <p className="text-xs text-gray-500 mb-3">Foto pendukung kondisi awal / bukti masalah</p>

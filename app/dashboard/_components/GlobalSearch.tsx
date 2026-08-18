@@ -97,12 +97,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
    * pemetaan — bukan bisa disimpulkan dari profilnya. Tanpa ini, Sales Internal
    * tidak menemukan project divisi yang justru jadi tanggung jawabnya.
    */
-  const [lingkup, setLingkup] = useState<LingkupProject | null>(null);
-  useEffect(() => {
-    let batal = false;
-    hitungLingkupProject(currentUser as never).then(l => { if (!batal) setLingkup(l); });
-    return () => { batal = true; };
-  }, [currentUser]);
 
   /**
    * Batasi query ke lingkup user.
@@ -110,8 +104,8 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
    * Untuk sales biasa hasilnya sama dengan batasiMilikSendiri; untuk Sales
    * Internal, divisi yang dipetakan ikut terbuka.
    */
-  const batasiLingkup = <T,>(query: T, kolomMilik: string[], kolomDivisi = 'sales_division'): T => {
-    if (!lingkup || lingkup.semua) return query;
+  const batasiLingkup = <T,>(lingkup: LingkupProject, query: T, kolomMilik: string[], kolomDivisi = 'sales_division'): T => {
+    if (lingkup.semua) return query;
     const nama = (currentUser.full_name ?? '').replace(/"/g, '');
     const user = (currentUser.username ?? '').replace(/"/g, '');
     const syarat = kolomMilik
@@ -234,6 +228,14 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
   // ── Main search ──
   const doSearch = useCallback(async (q: string) => {
+    /* Lingkup dihitung DI SINI dan ditunggu, bukan disimpan di state.
+       Versi sebelumnya memuatnya lewat useEffect lalu memasang penjaga
+       `if (!lingkup) return query` — artinya selama lingkup belum tiba, query
+       berangkat TANPA filter sama sekali. Mengetik sedetik setelah kotak
+       pencarian dibuka sudah cukup untuk memunculkan seluruh project milik
+       siapa pun. Penjaga yang gagal ke arah "terbuka" lebih berbahaya daripada
+       tidak ada penjaga, karena ia terlihat seolah sudah aman. */
+    const lingkup = await hitungLingkupProject(currentUser as never);
     if (!q.trim()) { setResults([]); return; }
     setLoading(true);
     const ql = q.toLowerCase();
@@ -260,7 +262,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
       // Sales biasa: dibatasi DI QUERY — tiket sales lain tidak pernah dikirim
       // ke browser, bukan sekadar disembunyikan setelah tiba.
-      if (!tanpaBatas) q2 = batasiLingkup(q2, ['sales_name', 'created_by']);
+      if (!tanpaBatas) q2 = batasiLingkup(lingkup, q2, ['sales_name', 'created_by']);
 
       const { data: tData } = await q2;
       let tickets = (tData ?? []) as any[];
@@ -295,7 +297,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
         // project lama tidak pernah muncul di pencarian.
         .or(`project_name.ilike.%${q}%,title.ilike.%${q}%,category.ilike.%${q}%,assign_name.ilike.%${q}%,sales_name.ilike.%${q}%,address.ilike.%${q}%`)
         .order('created_at', { ascending: false }).limit(20);
-      if (!tanpaBatas) qr = batasiLingkup(qr, ['sales_name', 'created_by']);
+      if (!tanpaBatas) qr = batasiLingkup(lingkup, qr, ['sales_name', 'created_by']);
       const { data: rData } = await qr;
       let reminders = (rData ?? []) as any[];
 
@@ -327,7 +329,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
         .select('id, project_name, status, sales_name, sales_division, created_at, requester_id')
         .or(`project_name.ilike.%${q}%,sales_name.ilike.%${q}%`)
         .order('created_at', { ascending: false }).limit(15);
-      if (!tanpaBatas) qp = batasiLingkup(qp, ['sales_name']);
+      if (!tanpaBatas) qp = batasiLingkup(lingkup, qp, ['sales_name']);
       const { data: pData } = await qp;
       let projects = (pData ?? []) as any[];
 
@@ -418,7 +420,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
         .select('id, name, client, status, sales_name')
         .or(`name.ilike.%${q}%,client.ilike.%${q}%,sales_name.ilike.%${q}%`)
         .order('created_at', { ascending: false }).limit(10);
-      if (!tanpaBatas) qpp = batasiLingkup(qpp, ['sales_name']);
+      if (!tanpaBatas) qpp = batasiLingkup(lingkup, qpp, ['sales_name']);
       const { data } = await qpp;
       (data ?? []).forEach((p: any) => res.push({
         id: `progress-${p.id}`, type: 'progress', icon: '📊',
@@ -475,7 +477,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
         .select('id, project_name, address, sales_name, sales_division, assign_name')
         .or(`project_name.ilike.%${q}%,address.ilike.%${q}%,sales_name.ilike.%${q}%,assign_name.ilike.%${q}%`)
         .order('created_at', { ascending: false }).limit(10);
-      if (!tanpaBatas) qf = batasiLingkup(qf, ['sales_name']);
+      if (!tanpaBatas) qf = batasiLingkup(lingkup, qf, ['sales_name']);
       const { data } = await qf;
       let reviews = (data ?? []) as any[];
       if (isSalesSup) {
