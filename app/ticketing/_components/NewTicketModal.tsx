@@ -31,6 +31,12 @@ interface ReminderRef {
   id: string;
   /** Nama project bisa tersimpan di sini pada data lama — lihat pencarian di bawah. */
   title?: string;
+  /**
+   * Asal baris ini. Menentukan apakah ticket baru boleh ditautkan ke reminder:
+   * hanya baris dari tabel reminders yang punya reminder_id yang sah. Baris
+   * dari tabel tickets cuma dipakai untuk menyalin data project.
+   */
+  _sumber?: 'reminder' | 'ticket';
   project_name: string;
   address: string;
   sales_name: string;
@@ -91,19 +97,56 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     if (!q.trim()) { setReminderResults([]); return; }
     setReminderSearching(true);
     const lingkup = await hitungLingkupProject(currentUser as never);
-    let query = supabase
+    const cocokNama = `project_name.ilike.%${q}%,title.ilike.%${q}%`;
+
+    // ── Reminders: SEMUA kategori ──
+    // Dulu dibatasi ['Konfigurasi & Training', 'Training'] saja, sehingga
+    // project yang tercatat di kategori lain — Maintenance, Demo, apa pun —
+    // tidak pernah muncul, seolah tidak pernah ada.
+    let qr = supabase
       .from('reminders')
       .select('id, project_name, title, address, sales_name, sales_division, product, pic_name, pic_phone, category, assign_name')
-      .in('category', ['Konfigurasi & Training', 'Training'])
-      // Nama project bisa ada di project_name ATAU title — data lama memakai
-      // title, dan aplikasi memang menampilkan `project_name || title`.
-      // Mencari di project_name saja membuat project lama tidak pernah
-      // ketemu, seolah tidak ada di sistem.
-      .or(`project_name.ilike.%${q}%,title.ilike.%${q}%`);
+      .or(cocokNama);
+
+    // ── Tickets: project yang pernah punya ticket ──
+    // Tabel ini sebelumnya tidak ikut dicari sama sekali. Padahal project yang
+    // sudah pernah bermasalah justru yang paling mungkin dibuatkan ticket lagi,
+    // dan datanya cuma ada di sini kalau ia tidak pernah lewat Request Schedule.
+    let qt = supabase
+      .from('tickets')
+      .select('id, project_name, address, sales_name, sales_division, product, customer_phone, assign_name')
+      .ilike('project_name', `%${q}%`);
+
     const filter = filterLingkup(lingkup);
-    if (filter) query = query.or(filter);
-    const { data } = await query.order('created_at', { ascending: false }).limit(10);
-    setReminderResults(data ?? []);
+    if (filter) { qr = qr.or(filter); qt = qt.or(filter); }
+
+    const [rRes, tRes] = await Promise.all([
+      qr.order('created_at', { ascending: false }).limit(15),
+      qt.order('created_at', { ascending: false }).limit(15),
+    ]);
+
+    const hasil: ReminderRef[] = [];
+    const sudah = new Set<string>();
+    const tambah = (r: ReminderRef) => {
+      // Satu project bisa muncul di kedua tabel — disatukan berdasarkan nama +
+      // alamat supaya daftarnya tidak memuat baris kembar yang membingungkan.
+      const kunci = `${(r.project_name || r.title || '').trim().toLowerCase()}|${(r.address || '').trim().toLowerCase()}`;
+      if (sudah.has(kunci)) return;
+      sudah.add(kunci);
+      hasil.push(r);
+    };
+    for (const r of (rRes.data ?? []) as ReminderRef[]) tambah({ ...r, _sumber: 'reminder' });
+    for (const t of (tRes.data ?? []) as Record<string, unknown>[]) {
+      tambah({
+        id: String(t.id), project_name: String(t.project_name ?? ''), title: undefined,
+        address: String(t.address ?? ''), sales_name: String(t.sales_name ?? ''),
+        sales_division: String(t.sales_division ?? ''), product: String(t.product ?? ''),
+        pic_name: '', pic_phone: String(t.customer_phone ?? ''),
+        category: 'Ticket', assign_name: String(t.assign_name ?? ''),
+        _sumber: 'ticket',
+      });
+    }
+    setReminderResults(hasil.slice(0, 12));
     setReminderSearching(false);
   }, [currentUser]);
 
@@ -126,7 +169,10 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
       product: r.product || '',
       customer_phone: r.pic_phone || '',
       assign_name: r.assign_name || form.assign_name,
-      reminder_id: r.id,
+      // Hanya baris dari tabel reminders yang boleh menautkan reminder_id.
+      // Memakai id ticket di sini akan menunjuk ke baris yang tidak ada di
+      // tabel reminders — tautannya rusak, dan sinkronisasi progress ikut salah.
+      reminder_id: r._sumber === 'ticket' ? null : r.id,
     });
   };
 
@@ -227,7 +273,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           {projectType === 'existing' && (
             <div>
               <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
-                Cari Project (Konfigurasi & Training / Training)
+                Cari Project (Request Schedule &amp; Ticket)
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
@@ -244,6 +290,19 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                 )}
               </div>
 
+              {/* Tidak ketemu — sebutkan kemungkinan penyebabnya.
+                  Hasil kosong bisa berarti project-nya memang tidak ada, ATAU
+                  ada tapi milik divisi lain sehingga di luar lingkup pencari.
+                  Tanpa keterangan ini keduanya terlihat sama, dan orang akan
+                  mengira sistemnya yang rusak. */}
+              {!reminderSearching && reminderQuery.trim().length >= 2 && reminderResults.length === 0 && (
+                <p className="mt-1.5 text-[11px] text-slate-400 leading-snug">
+                  Tidak ada project bernama &quot;{reminderQuery.trim()}&quot; dalam jangkauan akun kamu.
+                  Pencarian hanya mencakup project divisi kamu — kalau project ini milik divisi lain,
+                  minta Admin atau Team PTS yang membuatkan ticket-nya.
+                </p>
+              )}
+
               {/* Search Results */}
               {reminderResults.length > 0 && (
                 <div className="mt-1 rounded-xl border overflow-hidden shadow-lg z-10"
@@ -255,7 +314,11 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                       style={{ borderColor: "rgba(0,0,0,0.06)" }}>
                       <span className="text-sm font-bold text-slate-800">{r.project_name || r.title}</span>
                       <span className="text-xs text-slate-500 flex gap-3">
-                        {r.category && <span className="text-red-600 font-semibold">{r.category}</span>}
+                        {r.category && (
+                          <span className={r._sumber === 'ticket' ? 'text-slate-500 font-semibold' : 'text-red-600 font-semibold'}>
+                            {r._sumber === 'ticket' ? '🎫 Ticket lama' : r.category}
+                          </span>
+                        )}
                         {r.address && <span>📍 {r.address.slice(0, 50)}{r.address.length > 50 ? '…' : ''}</span>}
                         {r.sales_name && <span>👤 {r.sales_name}</span>}
                       </span>
