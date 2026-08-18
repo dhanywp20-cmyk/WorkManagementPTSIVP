@@ -1996,9 +1996,46 @@ jangan lupa peralatan & Semangat💪🏼
     setSupervisorAssignSaving(false);
   };
 
-  const myActiveReminders = reminders.filter(r =>
-    currentUser && r.assigned_to === currentUser.username && r.status !== 'done' && r.status !== 'cancelled'
-  );
+  /**
+   * Semua yang MENUNGGU TINDAKAN saya — bukan cuma yang saya kerjakan sendiri.
+   *
+   * Sebelumnya lonceng ini hanya menghitung `assigned_to === username`, yaitu
+   * item yang sudah ditugaskan ke saya SEBAGAI PELAKSANA. Item yang menunggu
+   * saya yang MENUGASKAN atau MENYETUJUI punya assigned_to kosong — jadi tidak
+   * pernah terhitung sama sekali. Akibatnya lonceng bisa menampilkan "1 aktif"
+   * padahal ada beberapa request lain yang justru sedang menunggu saya
+   * bertindak; satu-satunya cara menemukannya adalah menyisir daftar manual.
+   *
+   * Tiap baris membawa alasannya, supaya dari lonceng saja sudah jelas apa yang
+   * diminta — bukan cuma bahwa ada sesuatu.
+   */
+  const perluAksiSaya: { r: Reminder; alasan: string; warna: string }[] = (() => {
+    if (!currentUser) return [];
+    const hasil: { r: Reminder; alasan: string; warna: string }[] = [];
+    const sudah = new Set<string>();
+    const tambah = (r: Reminder, alasan: string, warna: string) => {
+      if (sudah.has(r.id)) return;
+      sudah.add(r.id);
+      hasil.push({ r, alasan, warna });
+    };
+    for (const r of reminders) {
+      if (r.status === 'done' || r.status === 'cancelled') continue;
+      // Urutan pengecekan = urutan mendesaknya. Yang menunggu SAYA bertindak
+      // didahulukan daripada yang tinggal saya kerjakan sendiri.
+      if (r.routing_status === 'supervisor_assign' && r.assigned_supervisor_id === currentUser.id) {
+        tambah(r, 'Perlu kamu assign ke tim', '#f59e0b');
+      } else if (r.routing_status === 'admin_review' && (isAdmin || isManager)) {
+        tambah(r, 'Menunggu approval kamu', '#dc2626');
+      } else if (isMyReviewStage(r)) {
+        tambah(r, 'Perlu review kamu', '#8b5cf6');
+      } else if (r.assigned_to === currentUser.username) {
+        tambah(r, 'Dikerjakan kamu', '#0891b2');
+      }
+    }
+    return hasil;
+  })();
+
+  const myActiveReminders = perluAksiSaya.map(x => x.r);
 
   // ─── Login handler ─────────────────────────────────────────────────────────
   const handleLogout = () => {
@@ -2565,8 +2602,22 @@ jangan lupa peralatan & Semangat💪🏼
                   <div className="flex items-center gap-3">
                     <span className="text-3xl">🔔</span>
                     <div>
-                      <h3 className="text-lg font-bold text-white">Reminder Aktif Kamu</h3>
-                      <p className="text-sm text-white/90">{myActiveReminders.length} aktif</p>
+                      <h3 className="text-lg font-bold text-white">Perlu Tindakan Kamu</h3>
+                      {/* Dipecah per alasan: "5 aktif" tidak memberi tahu apakah
+                          ada yang menunggu diputuskan atau semuanya tinggal
+                          dikerjakan — padahal itu bedanya mendesak dan tidak. */}
+                      <p className="text-sm text-white/90">
+                        {(() => {
+                          const n = (a: string) => perluAksiSaya.filter(x => x.alasan === a).length;
+                          const bagian = [
+                            n('Perlu kamu assign ke tim') && `${n('Perlu kamu assign ke tim')} perlu di-assign`,
+                            n('Menunggu approval kamu')   && `${n('Menunggu approval kamu')} perlu approval`,
+                            n('Perlu review kamu')        && `${n('Perlu review kamu')} perlu review`,
+                            n('Dikerjakan kamu')          && `${n('Dikerjakan kamu')} dikerjakan kamu`,
+                          ].filter(Boolean);
+                          return bagian.length ? bagian.join(' · ') : 'Tidak ada yang menunggu';
+                        })()}
+                      </p>
                     </div>
                   </div>
                   <button onClick={() => setShowBellPopup(false)} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold">✕</button>
@@ -2578,13 +2629,19 @@ jangan lupa peralatan & Semangat💪🏼
                     <div className="text-5xl mb-3">✅</div>
                     <p className="font-semibold">Tidak ada reminder aktif</p>
                   </div>
-                ) : myActiveReminders.map(r => (
+                ) : perluAksiSaya.map(({ r, alasan, warna }) => (
                   <div key={r.id} onClick={() => { setDetailReminder(r); setShowBellPopup(false); }}
                     className="rounded-xl p-3 border-2 cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all"
-                    style={{ background: 'rgba(249,250,251,0.9)', borderColor: '#e5e7eb' }}>
+                    style={{ background: 'rgba(249,250,251,0.9)', borderColor: warna + '55' }}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                          {/* Alasan ditaruh PALING DEPAN: yang dicari orang saat
+                              membuka lonceng adalah "saya harus apa", bukan
+                              kategori pekerjaannya. */}
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: warna }}>
+                            {alasan}
+                          </span>
                           <CategoryBadge category={r.category} />
                         </div>
                         <p className="font-bold text-sm text-gray-800 truncate">{(r.project_name || '').trim() || ((r as any).title || '').trim() || '—'}</p>
