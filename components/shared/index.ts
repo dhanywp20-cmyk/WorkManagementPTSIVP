@@ -34,3 +34,4 @@ export { Username, formatUsername } from './Username';
 // tidak menyimpang lagi seperti saat markup-nya disalin per halaman.
 export { StatCard, StatCardGrid, type StatCardItem } from './StatCard';
 export { ModalPortal } from './ModalPortal';
+export { AdminEditFields } from './AdminEditFields';

@@ -1,16 +1,17 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
-import { ListEmptyState, AuditTrailPanel, ModalPortal } from '@/components/shared';
+import { ListEmptyState, AuditTrailPanel, ModalPortal, AdminEditFields } from '@/components/shared';
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase, supabaseServices } from "@/lib/supabase";
 import { setSession, clearSession, getSession } from "@/lib/auth";
 import { adminCreateUser } from "@/lib/admin-users";
 import { notifyTicketAssigned, createNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
+import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField } from "@/lib/admin-edit";
 import { isAssignablePTSTeam } from "@/lib/teams";
 import { hasFullAccess } from "@/lib/constants";
-import { resolveBrandInternals, type Brand } from "@/lib/brand-routing";
+import { resolveBrandInternals, BRAND_OPTIONS, type Brand } from "@/lib/brand-routing";
 import { compressImage } from "@/lib/image-compress";
 
 import {
@@ -119,6 +120,12 @@ function TicketingSystemInner() {
   const [approvingId, setApprovingId] = useState<string | null>(null);
   // Supervisor assign (tahap supervisor_assign) — Supervisor lanjut assign ke tim / sendiri
   const [supAssignTicket, setSupAssignTicket] = useState<Ticket | null>(null);
+  // Panel admin "Edit Detail & Re-route" — menggantikan kebiasaan membetulkan
+  // data langsung di Supabase, yang tidak meninggalkan jejak siapa mengubah apa.
+  const [adminEditTicket, setAdminEditTicket] = useState<Ticket | null>(null);
+  const [adminEditForm,   setAdminEditForm]   = useState<Record<string, unknown>>({});
+  const [adminRerouteTo,  setAdminRerouteTo]  = useState('');
+  const [adminEditSaving, setAdminEditSaving] = useState(false);
   const [supAssignTo, setSupAssignTo] = useState("");
   const [supAssignSaving, setSupAssignSaving] = useState(false);
   // State untuk referensi project dari reminder-schedule (Konfigurasi / Konfigurasi & Training)
@@ -1197,6 +1204,117 @@ function TicketingSystemInner() {
     finally { setSupAssignSaving(false); }
   };
 
+  /** Buka panel admin dengan nilai ticket saat ini. */
+  const bukaAdminEdit = (t: Ticket) => {
+    const isi: Record<string, unknown> = {};
+    for (const f of TICKET_ADMIN_FIELDS) isi[f.key] = (t as unknown as Record<string, unknown>)[f.key] ?? '';
+    setAdminEditForm(isi);
+    setAdminRerouteTo('');
+    setAdminEditTicket(t);
+  };
+
+  /**
+   * Simpan perubahan admin: koreksi field dan/atau pengalihan pekerjaan.
+   *
+   * Urutannya disengaja — simpan dulu, baru beri tahu. Kalau WA dikirim
+   * duluan lalu penyimpanannya gagal, orang sudah terlanjur diberi tahu soal
+   * perubahan yang tidak pernah terjadi.
+   */
+  const simpanAdminEdit = async () => {
+    if (!adminEditTicket) return;
+    const t = adminEditTicket;
+    const lama = t as unknown as Record<string, unknown>;
+    const perubahan = bandingkan(TICKET_ADMIN_FIELDS, lama, adminEditForm);
+    const adaReroute = adminRerouteTo !== '';
+
+    if (perubahan.length === 0 && !adaReroute) { notify('error', 'Tidak ada yang diubah.'); return; }
+
+    setAdminEditSaving(true);
+    try {
+      const payload: Record<string, unknown> = {};
+      for (const x of perubahan) payload[x.key] = adminEditForm[x.key] === '' ? null : adminEditForm[x.key];
+
+      // ── Pengalihan pekerjaan ──
+      let penerimaBaru = '';
+      let labelTujuanLama = t.assign_name || '';
+      if (adaReroute) {
+        if (adminRerouteTo.startsWith('SUP::')) {
+          const [, supId, supName] = adminRerouteTo.split('::');
+          payload.routing_status = 'supervisor_assign';
+          payload.assigned_supervisor_id = supId;
+          payload.assign_name = '';
+          payload.status = 'Waiting Approval';
+          penerimaBaru = supName;
+        } else {
+          const nama = adminRerouteTo === 'SELF' ? (currentUser?.full_name ?? '') : adminRerouteTo;
+          payload.routing_status = null;
+          payload.assigned_supervisor_id = null;
+          payload.assign_name = nama;
+          // Status hanya diturunkan ke Pending kalau memang belum jalan —
+          // dan bolehReroute sudah menjamin itu, jadi tidak ada progress hilang.
+          payload.status = 'Pending';
+          penerimaBaru = nama;
+        }
+        if (!labelTujuanLama && t.assigned_supervisor_id) {
+          labelTujuanLama = teamMembers.find(m => m.id === t.assigned_supervisor_id)?.name ?? '';
+        }
+      }
+
+      const { error } = await supabase.from('tickets').update(payload).eq('id', t.id);
+      if (error) throw error;
+
+      // ── Catat ke audit ──
+      const catatan = [
+        adaReroute ? `Re-route: ${labelTujuanLama || '(belum ada)'} → ${penerimaBaru}` : '',
+        perubahan.length ? ringkasPerubahan(perubahan) : '',
+      ].filter(Boolean).join(' | ');
+      void logAudit({
+        user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
+        action: adaReroute ? 'assign' : 'update', module: 'ticket',
+        target_id: t.id, target_name: String(adminEditForm.project_name ?? t.project_name),
+        notes: catatan,
+      });
+
+      // ── Beri tahu lewat WA ──
+      // Dikirim ke penerima BARU kalau dialihkan, dan ke penanganya sekarang
+      // kalau cuma koreksi data. Keduanya sama-sama perlu tahu.
+      const targetNama = penerimaBaru || t.assign_name || '';
+      if (targetNama && targetNama !== currentUser?.full_name) {
+        try {
+          const tm = teamMembers.find(m => m.name === targetNama);
+          const { data: u } = tm?.username
+            ? await supabase.from('users').select('id, phone_number, full_name').eq('username', tm.username).maybeSingle()
+            : { data: null };
+          if (u?.id) {
+            void createNotification({
+              user_id: u.id, type: 'ticket',
+              title: adaReroute ? '🔀 Ticket dialihkan ke kamu' : '✏️ Detail ticket diperbarui',
+              body: `${adminEditForm.project_name ?? t.project_name} — oleh ${currentUser?.full_name ?? 'Admin'}`,
+              action_url: '/ticketing', ref_id: t.id, created_by: currentUser?.full_name ?? 'Admin',
+            });
+          }
+          if (u?.phone_number) {
+            await sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesanWAPerubahan({
+              namaPenerima: u.full_name || targetNama,
+              namaPengubah: currentUser?.full_name ?? 'Admin',
+              judulItem: String(adminEditForm.project_name ?? t.project_name),
+              jenisItem: 'Ticket',
+              perubahan,
+              reroute: adaReroute ? { dari: labelTujuanLama, ke: penerimaBaru } : null,
+              tautan: 'https://team-ticketing.vercel.app/ticketing',
+            }) });
+          }
+        } catch { /* WA gagal tidak boleh membatalkan perubahan yang sudah tersimpan */ }
+      }
+
+      setAdminEditTicket(null);
+      await fetchData();
+      notify('success', adaReroute ? `Dialihkan ke ${penerimaBaru}` : `${perubahan.length} perubahan tersimpan`);
+    } catch (err: any) {
+      notify('error', 'Gagal menyimpan: ' + err.message);
+    } finally { setAdminEditSaving(false); }
+  };
+
   const rejectTicket = (ticket: Ticket) => {
     setRejectTargetTicket(ticket);
     setRejectReason("");
@@ -2231,6 +2349,53 @@ function TicketingSystemInner() {
   // supaya Full Access tidak otomatis dapat modal Account Management.
   const canManageTickets = canApproveAssign;
 
+  /**
+   * Field ticket yang boleh dibetulkan admin lewat panel Edit Detail.
+   *
+   * Sengaja TIDAK memuat assign_name / routing_status / assigned_supervisor_id:
+   * ketiganya milik bagian Re-route, yang punya syarat sendiri (lihat
+   * bolehReroute) dan efek samping sendiri (WA ke penerima baru). Kalau ikut
+   * di sini, mengetik nama di kotak teks bisa memindahkan pekerjaan orang
+   * tanpa ada yang diberi tahu.
+   */
+  const TICKET_ADMIN_FIELDS: AdminField[] = [
+    { key: 'project_name',   label: 'Nama Project',    span: 2 },
+    { key: 'date',           label: 'Tanggal',         type: 'date' },
+    { key: 'sales_name',     label: 'Sales',           span: 1 },
+    { key: 'sales_division', label: 'Divisi Sales',    span: 1 },
+    { key: 'customer_phone', label: 'Telepon Customer', type: 'tel' },
+    { key: 'address',        label: 'Alamat',          span: 3 },
+    { key: 'issue_case',     label: 'Issue / Kasus',   span: 3 },
+    { key: 'description',    label: 'Deskripsi',       type: 'textarea', span: 3 },
+    { key: 'sn_unit',        label: 'Serial Number' },
+    { key: 'product',        label: 'Produk' },
+    { key: 'priority',       label: 'Prioritas', type: 'select',
+      options: ['Low', 'Medium', 'High', 'Critical'].map(v => ({ value: v, label: v })) },
+    { key: 'status',         label: 'Status', type: 'select',
+      options: ['Waiting Approval', 'Pending', 'Call', 'Onsite', 'In Progress', 'Solved', 'Rejected'].map(v => ({ value: v, label: v })) },
+    { key: 'current_team',   label: 'Team Penanganan', type: 'select',
+      options: ['Team PTS IVP', 'Team PTS MVI', 'Team PTS UMP', 'Team Services'].map(v => ({ value: v, label: v })) },
+    { key: 'brand',          label: 'Brand', type: 'select',
+      options: BRAND_OPTIONS.map(b => ({ value: b.value, label: b.label })) },
+  ];
+
+  /**
+   * Re-route hanya boleh selama pekerjaannya BELUM jalan.
+   *
+   * Begitu ticket melewati "Pending", sudah ada orang yang menelepon customer,
+   * datang ke lokasi, atau mulai memperbaiki. Memindahkannya saat itu bukan
+   * membetulkan salah route — itu membuang pekerjaan yang sudah terlanjur
+   * dikerjakan, dan riwayatnya jadi menunjuk orang yang tidak mengerjakannya.
+   */
+  const bolehReroute = (t: Ticket): boolean => {
+    if (['Call', 'Onsite', 'In Progress', 'Solved', 'Rejected'].includes(t.status)) return false;
+    // Ticket yang sudah masuk alur Team Services punya tahapannya sendiri.
+    const ss = t.services_status ?? '';
+    if (ss && !['Waiting Approval', 'Pending'].includes(ss)) return false;
+    return true;
+  };
+
+
   const pendingApprovalTickets = useMemo(() => {
     if (currentUser?.role !== "admin" && currentUser?.role !== "superadmin" && !isManagerPTS) return [];
     return tickets.filter((t) => t.status === "Waiting Approval");
@@ -3151,6 +3316,27 @@ function TicketingSystemInner() {
                       </button>
                     </div>
                   )}
+                  {/* Admin / Full Access: betulkan data & alihkan pekerjaan.
+                      Sebelum ini satu-satunya cara membetulkan ticket yang salah
+                      adalah mengeditnya langsung di Supabase — tanpa jejak dan
+                      tanpa pemberitahuan ke yang menangani. */}
+                  {canManageTickets && (
+                    <div className="mx-4 mt-3 rounded-xl p-3 flex items-center gap-3" style={{ background: 'rgba(99,102,241,0.08)', border: '1.5px solid rgba(99,102,241,0.25)' }}>
+                      <span className="text-2xl">🛠️</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-indigo-800">Koreksi data ticket</p>
+                        <p className="text-[11px] text-indigo-700">
+                          {bolehReroute(selectedTicket)
+                            ? 'Betulkan detail atau alihkan ke supervisor/tim lain.'
+                            : 'Detail bisa dibetulkan. Pengalihan tidak tersedia — pengerjaannya sudah jalan.'}
+                        </p>
+                      </div>
+                      <button onClick={() => bukaAdminEdit(selectedTicket)}
+                        className="flex-shrink-0 text-white px-3 py-2 rounded-lg text-xs font-bold" style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
+                        🛠️ Edit &amp; Re-route
+                      </button>
+                    </div>
+                  )}
                   {/* Progress Flowchart */}
                   <div className="px-4 py-3 border-b border-gray-100">
                     <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2">Progress</p>
@@ -3675,6 +3861,88 @@ function TicketingSystemInner() {
         {/* ── GUEST MAPPING MODAL (Redesigned) ── */}
 
         {/* ── NEW TICKET MODAL  ── */}
+        {/* ── ADMIN: EDIT DETAIL & RE-ROUTE ── */}
+        {/* Z.overlayTop — dibuka DARI DALAM popup detail (Z.overlay). */}
+        {adminEditTicket && (
+        <ModalPortal>
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
+            onClick={e => { if (e.target === e.currentTarget && !adminEditSaving) setAdminEditTicket(null); }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-full flex flex-col overflow-hidden"
+              style={{ animation: 'scale-in 0.25s ease-out' }}>
+              <div className="px-6 py-4 flex items-center justify-between flex-shrink-0" style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
+                <div className="min-w-0">
+                  <h3 className="text-lg font-bold text-white">🛠️ Edit Detail &amp; Re-route</h3>
+                  <p className="text-indigo-100/90 text-xs mt-0.5 truncate">{adminEditTicket.project_name}</p>
+                </div>
+                <button onClick={() => setAdminEditTicket(null)} disabled={adminEditSaving}
+                  className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg disabled:opacity-40">✕</button>
+              </div>
+
+              <div className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
+                {/* ── Re-route ── */}
+                <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)' }}>
+                  <p className="text-[11px] font-bold text-amber-700 uppercase tracking-widest mb-2">🔀 Alihkan Pekerjaan</p>
+                  {bolehReroute(adminEditTicket) ? (
+                    <>
+                      <select value={adminRerouteTo} onChange={e => setAdminRerouteTo(e.target.value)}
+                        className="w-full border border-amber-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-amber-200">
+                        <option value="">— Biarkan seperti sekarang —</option>
+                        <option value="SELF">🙋 Saya kerjakan sendiri</option>
+                        {supervisorMembers.length > 0 && (
+                          <optgroup label="🎯 Route ke Supervisor">
+                            {supervisorMembers.map(m => <option key={`ar-sup-${m.id}`} value={`SUP::${m.id}::${m.name}`}>{m.name} (Supervisor)</option>)}
+                          </optgroup>
+                        )}
+                        {teamPTSMembers.length > 0 && (
+                          <optgroup label="👥 Assign langsung ke Tim">
+                            {teamPTSMembers.map(m => <option key={`ar-tm-${m.id}`} value={m.name}>{m.name}</option>)}
+                          </optgroup>
+                        )}
+                      </select>
+                      <p className="text-[11px] text-amber-700 mt-1.5">
+                        Sekarang ditangani: <strong>{adminEditTicket.assign_name || (adminEditTicket.routing_status === 'supervisor_assign' ? 'menunggu assign Supervisor' : '—')}</strong>.
+                        Yang dipilih akan langsung dikabari lewat WA.
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-xs text-amber-800">
+                      Pengalihan tidak tersedia — status ticket sudah <strong>{adminEditTicket.status}</strong>,
+                      artinya pengerjaannya sudah berjalan. Detail di bawah tetap bisa dibetulkan.
+                    </p>
+                  )}
+                </div>
+
+                {/* ── Edit detail ── */}
+                <div>
+                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">✏️ Detail Ticket</p>
+                  <AdminEditFields fields={TICKET_ADMIN_FIELDS} value={adminEditForm} disabled={adminEditSaving}
+                    onChange={(k, v) => setAdminEditForm(prev => ({ ...prev, [k]: v }))} />
+                </div>
+
+                <p className="text-[11px] text-slate-400">
+                  Setiap perubahan tercatat di Audit Trail lengkap dengan nilai sebelum dan sesudahnya,
+                  dan diberitahukan ke yang menangani lewat WA.
+                </p>
+              </div>
+
+              <div className="px-6 py-4 flex gap-3 flex-shrink-0 border-t border-slate-100">
+                <button onClick={() => setAdminEditTicket(null)} disabled={adminEditSaving}
+                  className="flex-1 py-3 rounded-xl font-semibold text-sm border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40">
+                  Batal
+                </button>
+                <button onClick={simpanAdminEdit} disabled={adminEditSaving}
+                  className="flex-[2] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                  style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
+                  {adminEditSaving
+                    ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>
+                    : <>💾 Simpan Perubahan</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+        )}
+
         {/* ── SUPERVISOR ASSIGN TICKET MODAL ── */}
         {supAssignTicket && (
         <ModalPortal>
