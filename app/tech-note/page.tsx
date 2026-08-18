@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { ListEmptyState, ModalPortal } from '@/components/shared';
+import { ListEmptyState, ModalPortal, ConfirmDialog, type ConfirmState } from '@/components/shared';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/app/dashboard/_components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
@@ -12,6 +12,7 @@ import {
 } from './_components/shared';
 import { logAudit } from '@/lib/audit';
 import { createNotification, createNotificationForAdmins } from '@/lib/notifications';
+import { hasFullAccess } from '@/lib/constants';
 
 // ─── Spinner ──────────────────────────────────────────────────────────────────
 function Spinner() {
@@ -60,7 +61,10 @@ function StatusBadge({ status }: { status: TechNote['status'] }) {
 // Team/user: TIDAK tampilkan progress pribadi & target KKM — cukup info singkat
 function TechNoteKPISummary({ technotes, currentUser, year }:
   { technotes: TechNote[]; currentUser: User; year: number }) {
-  const isAdmin = ['admin','superadmin','supervisor'].includes(currentUser.role);
+  // Sama dengan canManage di komponen induk — akun Full Access juga melihat
+  // ringkasan seluruh tim, bukan cuma catatannya sendiri.
+  const isAdmin = hasFullAccess(currentUser as never)
+    || ['admin','superadmin','supervisor'].includes(currentUser.role);
 
   if (isAdmin) {
     // Admin: ringkasan global — tanpa menyebut "Target: X/orang"
@@ -111,6 +115,22 @@ function TechNoteKPISummary({ technotes, currentUser, year }:
     </div>
   );
 }
+
+/**
+ * Kategori folder Tech Note — emoji MENGIKUTI kategori, bukan dipilih bebas.
+ *
+ * Dulu emoji-nya kotak teks bebas. Hasilnya menyimpang pelan-pelan: folder
+ * yang isinya sama-sama layar bisa berikon 📄, 🖥️, atau apa pun yang kebetulan
+ * dipilih saat itu — jadi ikonnya berhenti berarti apa-apa. Dengan diikatkan
+ * ke kategori, satu pandangan ke sidebar sudah cukup untuk tahu jenis isinya.
+ */
+const KATEGORI_FOLDER = [
+  { value: 'display',    icon: '🖥️', label: 'Display',    desc: 'Panel, videowall, LED, LCD' },
+  { value: 'middleware', icon: '🎛️', label: 'Middleware', desc: 'Perangkat controller & processor' },
+  { value: 'software',   icon: '💿', label: 'Software',   desc: 'Aplikasi, CMS, lisensi' },
+] as const;
+
+type KategoriFolder = (typeof KATEGORI_FOLDER)[number]['value'];
 
 // ─── Folder Sidebar ───────────────────────────────────────────────────────────
 function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManage }:{
@@ -254,16 +274,30 @@ export default function TechNotePage() {
 
   const [showFolderModal,  setShowFolderModal]  = useState(false);
   const [showUploadModal,  setShowUploadModal]  = useState(false);
+  // Edit & hapus tech note — sebelumnya tidak ada jalan sama sekali, bahkan
+  // untuk admin. Satu-satunya koreksi adalah lewat database.
+  const [editingNote, setEditingNote] = useState<TechNote | null>(null);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [detailNote,       setDetailNote]       = useState<TechNote | null>(null);
   const [detailHistory,    setDetailHistory]    = useState<TechNoteHistory[]>([]);
   const [approveModal,     setApproveModal]     = useState<TechNote | null>(null);
 
-  const [folderForm,   setFolderForm]   = useState({ name:'', icon:'📄', color:'#ec4899', parent_id:'' });
+  const [folderForm,   setFolderForm]   = useState({ name:'', icon:'🖥️', color:'#ec4899', parent_id:'', category:'display' as string });
   const [uploadForm,   setUploadForm]   = useState({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' });
   const [approvalForm, setApprovalForm] = useState({ action:'approved', note:'' });
   const [saving, setSaving] = useState(false);
 
-  const canManage = ['admin','superadmin','supervisor'].includes(currentUser?.role ?? '');
+  /**
+   * Boleh mengelola: admin/superadmin, Supervisor, atau akun Team PTS yang
+   * diberi Full Access lewat Admin Panel.
+   *
+   * Sebelumnya hanya mencocokkan daftar role. Akibatnya akun Team PTS yang
+   * sudah diberi Full Access tetap tidak bisa membuat folder maupun
+   * menyetujui — padahal justru itu gunanya toggle tersebut. Sekarang lewat
+   * helper terpusat di lib/constants.ts, sama dengan modul lain.
+   */
+  const canManage = hasFullAccess(currentUser as never)
+    || ['admin','superadmin','supervisor'].includes(currentUser?.role ?? '');
   const isTeam = !canManage;
 
   useEffect(() => {
@@ -349,13 +383,59 @@ export default function TechNotePage() {
   async function saveFolder() {
     if (!folderForm.name.trim()) return;
     setSaving(true);
-    await supabase.from('tech_note_folders').insert({
-      name: folderForm.name.trim(), icon: folderForm.icon || '📄',
+    const dasar = {
+      name: folderForm.name.trim(),
+      // Emoji mengikuti kategori, bukan diketik bebas — lihat KATEGORI_FOLDER.
+      icon: KATEGORI_FOLDER.find(k => k.value === folderForm.category)?.icon ?? '📄',
       color: folderForm.color, parent_id: folderForm.parent_id || null,
       created_by: currentUser?.full_name ?? 'Admin',
+    };
+    let { error } = await supabase.from('tech_note_folders')
+      .insert({ ...dasar, category: folderForm.category });
+    if (error) {
+      // Kolom `category` baru ada setelah sql/tech-note-folder-category.sql
+      // dijalankan. Sebelum itu PostgREST menolak SELURUH insert, bukan cuma
+      // kolom yang tak dikenal — jadi tanpa jalur mundur ini, membuat folder
+      // gagal total di lingkungan yang migrasinya belum dijalankan.
+      ({ error } = await supabase.from('tech_note_folders').insert(dasar));
+    }
+    setSaving(false);
+    if (error) { alert('Gagal membuat folder: ' + error.message); return; }
+    setFolderForm({ name:'', icon:'🖥️', color:'#ec4899', parent_id:'', category:'display' });
+    setShowFolderModal(false); fetchFolders();
+  }
+
+  /** Buka modal upload dalam mode sunting, terisi nilai catatan yang dipilih. */
+  function bukaEditNote(n: TechNote) {
+    setUploadForm({
+      title: n.title ?? '', description: n.description ?? '', product: n.product ?? '',
+      one_drive_link: n.one_drive_link ?? '', folder_id: n.folder_id ?? '',
+      tags: (n.tags ?? []).join(', '),
     });
-    setFolderForm({ name:'', icon:'📄', color:'#ec4899', parent_id:'' });
-    setSaving(false); setShowFolderModal(false); fetchFolders();
+    setEditingNote(n);
+    setShowUploadModal(true);
+  }
+
+  /** Hapus tech note beserta riwayatnya. */
+  function hapusNote(n: TechNote) {
+    setConfirmState({
+      message: `Hapus tech note "${n.title}"?`,
+      description: 'Riwayat review-nya ikut terhapus. Tindakan ini tidak bisa dibatalkan.',
+      danger: true, confirmLabel: 'Hapus',
+      onConfirm: async () => {
+        // Riwayat dihapus DULUAN: kalau induknya lebih dulu hilang, baris
+        // riwayatnya tertinggal tanpa tujuan dan tidak akan pernah terbaca lagi.
+        await supabase.from('tech_note_history').delete().eq('tech_note_id', n.id);
+        const { error } = await supabase.from('tech_notes').delete().eq('id', n.id);
+        if (error) { alert('Gagal menghapus: ' + error.message); return; }
+        void logAudit({
+          user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
+          action: 'delete', module: 'tech-note', target_id: n.id, target_name: n.title,
+        });
+        setDetailNote(null);
+        fetchNotes();
+      },
+    });
   }
 
   async function submitTechNote() {
@@ -363,6 +443,33 @@ export default function TechNotePage() {
     setSaving(true);
     const now = new Date().toISOString();
     const tags = uploadForm.tags.split(',').map(s=>s.trim()).filter(Boolean);
+
+    // ── Mode sunting ──
+    // status & author TIDAK disentuh: menyunting isi bukan berarti catatannya
+    // jadi milik penyunting, dan bukan pula berarti hasil review-nya batal.
+    if (editingNote) {
+      const { error } = await supabase.from('tech_notes').update({
+        title: uploadForm.title.trim(), description: uploadForm.description.trim(),
+        folder_id: uploadForm.folder_id, one_drive_link: uploadForm.one_drive_link.trim(),
+        product: uploadForm.product.trim(), tags,
+      }).eq('id', editingNote.id);
+      setSaving(false);
+      if (error) { alert('Gagal menyimpan: ' + error.message); return; }
+      await supabase.from('tech_note_history').insert({
+        tech_note_id: editingNote.id, action: 'edited',
+        performed_by: currentUser.id, performed_by_name: currentUser.full_name,
+        note: 'Detail disunting oleh pengelola', created_at: now,
+      });
+      void logAudit({
+        user_id: currentUser.id, user_name: currentUser.full_name ?? '',
+        action: 'update', module: 'tech-note', target_id: editingNote.id,
+        target_name: uploadForm.title.trim(),
+      });
+      setUploadForm({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' });
+      setEditingNote(null); setShowUploadModal(false); setDetailNote(null); fetchNotes();
+      return;
+    }
+
     const { data: inserted } = await supabase.from('tech_notes').insert({
       title: uploadForm.title.trim(), description: uploadForm.description.trim(),
       folder_id: uploadForm.folder_id, author_id: currentUser.id, author_name: currentUser.full_name,
@@ -562,16 +669,32 @@ export default function TechNotePage() {
           <input className={inputCls} value={folderForm.name}
             onChange={e=>setFolderForm(p=>({...p,name:e.target.value}))} placeholder="cth: Display Panel" />
         </Field>
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Icon (emoji)">
-            <input className={inputCls} value={folderForm.icon}
-              onChange={e=>setFolderForm(p=>({...p,icon:e.target.value}))} placeholder="📄" />
-          </Field>
-          <Field label="Warna">
-            <input type="color" value={folderForm.color} onChange={e=>setFolderForm(p=>({...p,color:e.target.value}))}
-              className="w-full h-11 rounded-xl cursor-pointer p-1 border border-gray-200 bg-gray-50" />
-          </Field>
-        </div>
+        <Field label="Kategori *">
+          <div className="grid grid-cols-3 gap-2">
+            {KATEGORI_FOLDER.map(k => {
+              const aktif = folderForm.category === k.value;
+              return (
+                <button key={k.value} type="button"
+                  onClick={()=>setFolderForm(p=>({...p, category:k.value, icon:k.icon}))}
+                  className={`text-left px-3 py-2.5 rounded-xl border-2 transition-all ${
+                    aktif ? 'bg-pink-50 border-pink-400 text-pink-800' : 'bg-white border-gray-200 text-slate-500 hover:border-gray-300'
+                  }`}>
+                  <span className="block text-lg leading-none mb-1">{k.icon}</span>
+                  <span className="block text-sm font-bold">{k.label}</span>
+                  <span className="block text-[10px] mt-0.5 opacity-80 leading-tight">{k.desc}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[11px] text-slate-400 mt-1.5">
+            Emoji folder mengikuti kategori yang dipilih — tidak diketik sendiri, supaya
+            folder sejenis selalu berikon sama.
+          </p>
+        </Field>
+        <Field label="Warna">
+          <input type="color" value={folderForm.color} onChange={e=>setFolderForm(p=>({...p,color:e.target.value}))}
+            className="w-full h-11 rounded-xl cursor-pointer p-1 border border-gray-200 bg-gray-50" />
+        </Field>
         <Field label="Parent Folder (opsional)">
           <select className={inputCls} value={folderForm.parent_id}
             onChange={e=>setFolderForm(p=>({...p,parent_id:e.target.value}))}>
@@ -589,8 +712,12 @@ export default function TechNotePage() {
         </div>
       </Modal>
 
+      <ConfirmDialog state={confirmState} onCancel={()=>setConfirmState(null)} />
+
       {/* ══ MODAL: Upload Tech Note ══ */}
-      <Modal open={showUploadModal} onClose={()=>setShowUploadModal(false)} title="📤 Upload Tech Note" width={600}>
+      <Modal open={showUploadModal}
+        onClose={()=>{ setShowUploadModal(false); setEditingNote(null); setUploadForm({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' }); }}
+        title={editingNote ? '✏️ Edit Tech Note' : '📤 Upload Tech Note'} width={600}>
         <Field label="Judul Tech Note *">
           <input className={inputCls} value={uploadForm.title}
             onChange={e=>setUploadForm(p=>({...p,title:e.target.value}))} placeholder="cth: Prosedur Setup Display Newline" />
@@ -624,7 +751,7 @@ export default function TechNotePage() {
           ⚠️ Tech Note akan masuk ke <b>Approval Queue</b>. Setelah disetujui Admin/Supervisor, otomatis tampil ke semua anggota tim.
         </div>
         <div className="flex gap-3 justify-end">
-          <button onClick={()=>setShowUploadModal(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-gray-100 border border-gray-200 hover:bg-gray-200">Batal</button>
+          <button onClick={()=>{ setShowUploadModal(false); setEditingNote(null); setUploadForm({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' }); }} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-gray-100 border border-gray-200 hover:bg-gray-200">Batal</button>
           <button onClick={submitTechNote} disabled={saving||!uploadForm.title.trim()||!uploadForm.folder_id||!uploadForm.one_drive_link.trim()}
             className="px-4 py-2 rounded-xl text-white text-sm font-bold disabled:opacity-40 transition-colors"
             style={{ background:'linear-gradient(135deg,#ec4899,#be185d)' }}>
@@ -673,6 +800,19 @@ export default function TechNotePage() {
           )}
 
           <HistoryTimeline history={detailHistory} />
+
+          {canManage && (
+            <div className="flex gap-2 mt-4 pt-4 justify-end border-t border-gray-100">
+              <button onClick={()=>bukaEditNote(detailNote)}
+                className="px-4 py-2 rounded-xl text-sm font-bold transition-colors bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100">
+                ✏️ Edit Detail
+              </button>
+              <button onClick={()=>hapusNote(detailNote)}
+                className="px-4 py-2 rounded-xl text-sm font-bold transition-colors bg-red-50 text-red-600 border border-red-200 hover:bg-red-100">
+                🗑️ Hapus
+              </button>
+            </div>
+          )}
 
           {canManage && detailNote.status==='pending' && (
             <div className="flex gap-2 mt-4 pt-4 justify-end border-t border-gray-100">

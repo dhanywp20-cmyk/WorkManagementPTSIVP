@@ -22,6 +22,11 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
     session_type: 'abcd' as 'abcd' | 'essay',
   });
   const [saving, setSaving] = useState(false);
+  // Pencarian target penerima. Daftar anggota memuat seluruh akun (74 dan terus
+  // bertambah); tanpa penyaring, memilih satu orang berarti menggulir kotak
+  // setinggi 13rem sampai ketemu.
+  const [cariAnggota, setCariAnggota] = useState('');
+  const [cariDivisi, setCariDivisi]   = useState('');
   const [search, setSearch] = useState('');
   const [dialog, setDialog] = useState<DialogState>(null);
 
@@ -486,11 +491,20 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                 {form.target_mode === 'division' && (
                   <div>
                     <p className="text-xs text-slate-400 mb-2">Pilih Sales Division yang akan menerima quiz ini:</p>
-                    <div className="border border-slate-200 rounded-xl p-3 space-y-1">
+                    <input value={cariDivisi} onChange={e => setCariDivisi(e.target.value)}
+                      placeholder="🔍 Cari divisi..."
+                      className="w-full mb-2 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400" />
+                    <div className="border border-slate-200 rounded-xl p-3 max-h-52 overflow-y-auto space-y-1">
                       {uniqueDivisions.length === 0 && (
                         <p className="text-xs text-slate-400 text-center py-3">Tidak ada sales division ditemukan. Pastikan field <code>sales_division</code> diisi di data user.</p>
                       )}
-                      {uniqueDivisions.map(div => {
+                      {uniqueDivisions
+                        // Divisi terpilih tetap tampil walau tidak cocok kata kunci,
+                        // sama alasannya dengan daftar anggota di bawah.
+                        .filter(div => !cariDivisi.trim()
+                          || form.target_divisions.includes(div)
+                          || div.toLowerCase().includes(cariDivisi.trim().toLowerCase()))
+                        .map(div => {
                         const checked = form.target_divisions.includes(div);
                         const count = teamUsers.filter(u => (u as any).sales_division === div).length;
                         return (
@@ -519,9 +533,26 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                 {form.target_mode === 'user' && (
                   <div>
                     <p className="text-xs text-slate-400 mb-2">Pilih anggota secara individual:</p>
+                    <input value={cariAnggota} onChange={e => setCariAnggota(e.target.value)}
+                      placeholder="🔍 Cari nama, role, atau jabatan..."
+                      className="w-full mb-2 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" />
                     <div className="border border-slate-200 rounded-xl p-3 max-h-52 overflow-y-auto space-y-1">
                       {teamUsers.length === 0 && <p className="text-xs text-slate-400 text-center py-4">Tidak ada user ditemukan</p>}
-                      {teamUsers.map(u => {
+                      {(() => {
+                        const q = cariAnggota.trim().toLowerCase();
+                        // Yang SUDAH dicentang selalu ikut tampil walau tidak cocok
+                        // dengan kata kunci — kalau tidak, pilihan yang sudah dibuat
+                        // seolah hilang begitu kata kuncinya diganti, dan mudah
+                        // dikira ikut terhapus.
+                        const tampil = q
+                          ? teamUsers.filter(u =>
+                              form.target_user_ids.includes(u.id) ||
+                              `${u.full_name ?? ''} ${u.role ?? ''} ${u.jabatan ?? ''}`.toLowerCase().includes(q))
+                          : teamUsers;
+                        if (tampil.length === 0) {
+                          return <p className="text-xs text-slate-400 text-center py-4">Tidak ada yang cocok dengan &quot;{cariAnggota}&quot;</p>;
+                        }
+                        return tampil.map(u => {
                         const checked = form.target_user_ids.includes(u.id);
                         return (
                           <label key={u.id} className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all ${checked ? 'bg-indigo-50 border border-indigo-200' : 'hover:bg-slate-50 border border-transparent'}`}>
@@ -536,7 +567,8 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                             </div>
                           </label>
                         );
-                      })}
+                        });
+                      })()}
                     </div>
                     {form.target_user_ids.length > 0 && (
                       <p className="text-xs text-indigo-600 font-semibold mt-1.5">✓ {form.target_user_ids.length} anggota dipilih</p>

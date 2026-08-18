@@ -4,6 +4,12 @@ export interface TechNoteFolder {
   id: string;
   name: string;
   icon: string;
+  /**
+   * display | middleware | software — menentukan emoji folder.
+   * Opsional: folder yang dibuat sebelum sql/tech-note-folder-category.sql
+   * dijalankan tidak punya nilai ini.
+   */
+  category?: string | null;
   color: string;
   parent_id: string | null;
   created_by: string;
