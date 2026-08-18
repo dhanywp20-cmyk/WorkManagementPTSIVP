@@ -279,8 +279,13 @@ export default function Dashboard() {
       autoNavigatedRef.current = true; // matikan auto-navigate useEffect
 
       /* Perpindahan ke dashboard SENGAJA ditunda sebentar supaya animasi
-         penutupnya (lc-hisap, lihat globals.css) sempat jalan: tombol jadi
-         tanda centang, lalu halaman login memudar & mengecil.
+         penutupnya (lc-bongkar, lihat globals.css) sempat jalan: tombol jadi
+         tanda centang, lalu halaman login dibongkar — kartu form terangkat,
+         isi panel kiri lepas satu per satu, kedua panel terbelah.
+
+         780ms = panjang animasi terakhir yang selesai (panel terbelah: jeda
+         140ms + durasi 640ms). Kalau angka ini lebih pendek dari itu, halaman
+         login dilepas dari DOM di tengah gerakan dan pembongkarannya terpotong.
 
          Jujur soal biayanya: ini MENAMBAH waktu, bukan menyembunyikan waktu
          tunggu yang sudah ada — kerangka dashboard sebenarnya tampil hampir
@@ -291,7 +296,7 @@ export default function Dashboard() {
       setMasukBerhasil(true);
       const pakaiAnimasi = typeof window !== 'undefined'
         && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      window.setTimeout(masukKeDashboard, pakaiAnimasi ? 700 : 0);
+      window.setTimeout(masukKeDashboard, pakaiAnimasi ? 780 : 0);
     } catch { setLoginErr('Login gagal. Coba lagi.'); } finally { setLoginLoading(false); }
   };
 
@@ -396,11 +401,11 @@ export default function Dashboard() {
     autoNavigatedRef.current = false; // reset so next login re-navigates correctly
     setIsLoggedIn(false); setCurrentUser(null);
     /* Wajib: tanpa ini `masukBerhasil` tetap true selamanya, dan begitu
-       halaman login dirender ulang setelah logout, kelas .lc-hisap terpasang
-       lagi dari awal. Animasinya `forwards`, jadi ia langsung menutup
-       (opacity 0, skala 0,035) halaman yang baru saja muncul — persis layar
-       putih kosong yang dilaporkan. sudahMasukRef juga direset supaya login
-       BERIKUTNYA bisa memicu urutan keluar lagi, bukan cuma yang pertama. */
+       halaman login dirender ulang setelah logout, kelas .lc-bongkar terpasang
+       lagi dari awal. Animasinya `forwards`, jadi halaman yang baru saja muncul
+       langsung terbongkar dan menyisakan layar kosong — persis bug yang dulu
+       dilaporkan. sudahMasukRef juga direset supaya login BERIKUTNYA bisa
+       memicu urutan keluar lagi, bukan cuma yang pertama. */
     setMasukBerhasil(false);
     setDasborMuncul(false);
     sudahMasukRef.current = false;
@@ -752,9 +757,9 @@ export default function Dashboard() {
       {/* Seluruh isi halaman login ada di dalam bungkus ini supaya bisa dihisap
           masuk ke koper sebagai satu benda. Lapisan kopernya SENGAJA di luar —
           kalau ikut di dalam, kopernya akan menghisap dirinya sendiri. */}
-      <div className={`${masukBerhasil ? 'lc-hisap' : ''} flex bg-cover bg-center bg-fixed`} style={{ minHeight: '100dvh', backgroundImage: 'url(/IVP_Background.png)' }}>
+      <div className={`${masukBerhasil ? 'lc-bongkar' : ''} flex bg-cover bg-center bg-fixed`} style={{ minHeight: '100dvh', backgroundImage: 'url(/IVP_Background.png)' }}>
         {/* ── LEFT: panel branding (desktop) — overlay merah transparan, gambar tembus dari bg penuh ── */}
-        <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 text-white overflow-hidden"
+        <div className={`hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 text-white overflow-hidden ${masukBerhasil ? 'lc-bongkar-kiri' : ''}`}
           style={{ background: 'linear-gradient(135deg, rgba(190,18,60,0.82), rgba(136,19,55,0.86))' }}>
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center backdrop-blur">
@@ -776,7 +781,7 @@ export default function Dashboard() {
 
         {/* ── RIGHT: panel form — overlay PUTIH transparan di atas bg penuh (biar tidak
             contrast), form dlm kartu frosted ── */}
-        <div className="relative overflow-hidden flex-1 flex items-center justify-center p-4 sm:p-8"
+        <div className={`relative overflow-hidden flex-1 flex items-center justify-center p-4 sm:p-8 ${masukBerhasil ? 'lc-bongkar-kanan' : ''}`}
           style={{ background: 'rgba(255,255,255,0.55)' }}>
           <div
             key={putaranAnim}

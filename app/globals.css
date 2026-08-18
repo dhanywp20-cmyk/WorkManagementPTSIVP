@@ -231,7 +231,7 @@ html {
    Lapisan ini hanya hidup di panel putih sebelah kanan. Panel merah, foto
    latar, tata letak, logo, tipografi, tombol, dan isian form tidak disentuh. */
 
-/* Titik anchor animasi login berhasil (lc-hisap / lc-dasbor-muncul di bawah).
+/* Titik anchor animasi login berhasil (lc-dasbor-muncul di bawah).
    Tengah layar — dulu dipatok ke posisi mulut koper 3D, sekarang cukup titik
    tetap karena tidak ada lagi objek yang posisinya perlu diikuti. */
 :root { --lc-mulut-x: 50vw; --lc-mulut-y: 50vh; }
@@ -267,21 +267,65 @@ html {
   from { opacity: 0; transform: scale(.92) translateY(10px); }
 }
 
-/* ── Login berhasil: halaman dihisap masuk, dashboard keluar dari koper ──
+/* ── Login berhasil: halaman DIBONGKAR, dashboard keluar dari satu titik ──
    Keduanya sengaja animasi CSS murni, bukan digerakkan JavaScript per bingkai.
    Sebabnya keselamatan: transform/clip-path yang tertinggal pada akar
    dashboard akan menjadikannya containing block bagi seluruh modal
    `fixed inset-0` di platform ini — persis akar bug modal yang dulu sudah
-   dicabut. Dengan animasi CSS tanpa fill di ujung, begitu selesai TIDAK ada
-   transform atau clip-path yang tersisa, bahkan bila kelasnya lupa dilepas. */
-.lc-hisap {
-  animation: lcHisap 700ms cubic-bezier(.55, .06, .68, .19) forwards;
-  transform-origin: var(--lc-mulut-x) var(--lc-mulut-y);
+   dicabut. Animasi di bawah memang berakhir dengan transform (`forwards`),
+   tapi HANYA pada halaman login, yang dilepas dari DOM begitu animasinya
+   selesai. Akar dashboard tidak pernah memakainya.
+
+   Yang lama menyusutkan seluruh halaman jadi satu titik ("dihisap"). Masalahnya
+   bukan cuma selera: menskalakan kotak SELUAS SATU LAYAR ke 3,5% membuat semua
+   teks di dalamnya melewati puluhan ukuran font dalam setengah detik, dan yang
+   terlihat adalah gumpalan yang meleot — bukan gerakan yang punya bentuk.
+
+   Gantinya: halamannya DIBONGKAR jadi bagian-bagiannya, berurutan seperti
+   membongkar sesuatu yang tadinya tersusun. Kartu form diangkat lebih dulu
+   (bagian yang paling atas), isi panel kiri lepas satu per satu, lalu kedua
+   panel terbelah ke arah berlawanan. Tiap bagian bergerak dalam ukuran
+   aslinya, jadi tidak ada yang meleot. */
+
+/* Latar hanya memudar di ujung — kalau ikut memudar sejak awal, potongan-
+   potongannya sudah transparan sebelum sempat terlihat bergerak. */
+.lc-bongkar { animation: lcBongkarLatar 780ms ease-in forwards; }
+@keyframes lcBongkarLatar {
+  0%, 62% { opacity: 1; }
+  100%    { opacity: 0; }
 }
-@keyframes lcHisap {
-  0%   { transform: scale(1) rotate(0deg); opacity: 1; }
-  62%  { opacity: 1; }
-  100% { transform: scale(.035) rotate(-9deg); opacity: 0; }
+
+/* Kartu form — bagian teratas, dilepas duluan. */
+.lc-bongkar .lc-kartu {
+  animation: lcBongkarKartu 520ms cubic-bezier(.55, .06, .68, .19) forwards;
+}
+@keyframes lcBongkarKartu {
+  from { transform: none; opacity: 1; }
+  to   { transform: translateY(-42vh) rotate(-6deg); opacity: 0; }
+}
+
+/* Isi panel kiri lepas satu per satu, sebelum panelnya sendiri bergeser. */
+.lc-bongkar-kiri > * {
+  animation: lcBongkarKeping 420ms cubic-bezier(.55, .06, .68, .19) both;
+}
+.lc-bongkar-kiri > *:nth-child(1) { animation-delay:   0ms; }
+.lc-bongkar-kiri > *:nth-child(2) { animation-delay:  70ms; }
+.lc-bongkar-kiri > *:nth-child(3) { animation-delay: 140ms; }
+@keyframes lcBongkarKeping {
+  from { transform: none; opacity: 1; }
+  to   { transform: translateX(-30px) translateY(12px); opacity: 0; }
+}
+
+/* Terakhir: kedua panel terbelah ke arah berlawanan. */
+.lc-bongkar-kiri  { animation: lcBongkarKiri  640ms cubic-bezier(.55, .06, .68, .19) 140ms forwards; }
+.lc-bongkar-kanan { animation: lcBongkarKanan 640ms cubic-bezier(.55, .06, .68, .19) 140ms forwards; }
+@keyframes lcBongkarKiri {
+  from { transform: none; }
+  to   { transform: translateX(-58%) skewX(7deg); opacity: 0; }
+}
+@keyframes lcBongkarKanan {
+  from { transform: none; }
+  to   { transform: translateX(58%) skewX(-7deg); opacity: 0; }
 }
 
 /* Dashboard tumbuh keluar dari mulut koper.
@@ -321,6 +365,10 @@ html {
   .lc-kartu-masuk,
   .lc-tukar-keluar,
   .lc-tukar-masuk,
-  .lc-hisap,
+  .lc-bongkar,
+  .lc-bongkar .lc-kartu,
+  .lc-bongkar-kiri,
+  .lc-bongkar-kiri > *,
+  .lc-bongkar-kanan,
   .lc-dasbor-muncul { animation: none; clip-path: none; }
 }
