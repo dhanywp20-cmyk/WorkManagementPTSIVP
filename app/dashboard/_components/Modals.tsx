@@ -2762,7 +2762,15 @@ export function AccountSettingsInline() {
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [approvingUser, setApprovingUser] = useState<User | null>(null);
   const [approveMenus, setApproveMenus] = useState<string[]>(DEFAULT_MENU_KEYS);
-  const [savingAccess, setSavingAccess] = useState<string | null>(null);
+  /**
+   * Nilai AKSES yang sedang dipilih di form Edit.
+   *
+   * Dulu ini tombol di kolom tersendiri pada tabel, yang berarti satu klik
+   * langsung mengubah hak akses tanpa konfirmasi apa pun — mudah tersenggol
+   * saat menggulir daftar 74 akun. Sekarang ia jadi bagian form Edit dan baru
+   * berlaku saat "Simpan Perubahan" ditekan, sama seperti field lainnya.
+   */
+  const [editAccessLevel, setEditAccessLevel] = useState<'full' | 'guest'>('guest');
 
   const menuLabels: Record<string, { label: string; icon: string }> = {
     'dashboard': { label: 'Analytics Dashboard (KPI)', icon: '📊' },
@@ -2897,6 +2905,17 @@ export function AccountSettingsInline() {
       ...(editDivisi ? { is_internal_sales: editDivisi === 'Marketing' || (editDivisi === 'Sales' && ['IVP', 'MVI', 'MLDS'].includes(editingUser.sales_division ?? '')) } : {}) };
     const { error } = await adminUpdateUser(editingUser.id, updatePayload);
     if (error) { setSaving(false); notify('error', 'Gagal menyimpan: ' + error.message); return; }
+
+    // access_level TIDAK bisa ikut updatePayload di atas: kolom itu dibekukan
+    // trigger guard_users_privileged_columns() untuk anon/authenticated, jadi
+    // harus lewat jalur admin tersendiri. Hanya dikirim kalau memang berubah,
+    // supaya tiap simpan form tidak menambah baris audit palsu.
+    const aksesLama = editingUser.access_level === 'full' ? 'full' : 'guest';
+    if (role === 'team' && editAccessLevel !== aksesLama) {
+      const { error: eAkses } = await adminSetAccessLevel(editingUser.id, editAccessLevel);
+      if (eAkses) { setSaving(false); notify('error', 'Data tersimpan, tapi akses gagal diubah: ' + eAkses.message); return; }
+    }
+
     const sebar = await propagateUserRename(editingUser, editOrig);
     setSaving(false);
     notify(sebar.taraf === 'ok' ? 'success' : 'error', pesanSebar(sebar));
@@ -2914,25 +2933,6 @@ export function AccountSettingsInline() {
     }});
   };
 
-  /**
-   * Toggle "Full Access" — akses setara admin di modul DATA (Piket Showroom,
-   * Learning Center, KPI Team, Form Review, Ticketing, Reminder Schedule,
-   * Daily Report, Unit Movement, Project Progress) untuk akun Team PTS ini.
-   * BUKAN hak kelola akun — itu tetap admin/superadmin saja. Lihat
-   * lib/constants.ts hasFullAccess().
-   */
-  const handleToggleAccessLevel = async (userId: string, current: string | undefined) => {
-    const next = current === 'full' ? 'guest' : 'full';
-    setSavingAccess(userId);
-    const { error } = await adminSetAccessLevel(userId, next);
-    if (error) { notify('error', 'Gagal: ' + error.message); setSavingAccess(null); return; }
-    const target = users.find(u => u.id === userId);
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, access_level: next } : u));
-    notify('success', next === 'full' ? 'Diberi Full Access.' : 'Dikembalikan ke Guest.');
-    const admin = getSession<User>();
-    void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'update', module: 'user', target_id: userId, target_name: target?.full_name, notes: `Akses: ${next === 'full' ? 'Full Access' : 'Guest'}` });
-    setSavingAccess(null);
-  };
 
   function MenuPermissionSelector({ selected, target }: { selected: string[]; target: 'new' | 'edit' }) {
     const toggle = (key: string) => {
@@ -3067,6 +3067,35 @@ export function AccountSettingsInline() {
                     <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">📱 No. Telepon / WA</label>
                     <input value={editingUser.phone_number || ''} onChange={e => setEditingUser({ ...editingUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
                   </div>
+                  {/* AKSES — dulu tombol di kolom tabel tersendiri. Dipindah ke sini
+                      supaya perubahannya melewati "Simpan Perubahan" seperti field lain,
+                      bukan berubah seketika begitu tersenggol di daftar. */}
+                  {editingUser.role === 'team' && (
+                    <div className="col-span-3">
+                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">🔑 Akses Platform</label>
+                      <div className="flex gap-2">
+                        {([
+                          { v: 'guest' as const, icon: '🔒', label: 'Guest',       desc: 'Hanya data miliknya sendiri' },
+                          { v: 'full'  as const, icon: '🔓', label: 'Full Access', desc: 'Setara admin di modul data' },
+                        ]).map(o => (
+                          <button key={o.v} type="button" onClick={() => setEditAccessLevel(o.v)}
+                            className={`flex-1 text-left px-3 py-2 rounded-lg border-2 transition-all ${
+                              editAccessLevel === o.v
+                                ? 'bg-emerald-50 border-emerald-400 text-emerald-800'
+                                : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                            }`}>
+                            <span className="block text-sm font-bold">{o.icon} {o.label}</span>
+                            <span className="block text-[11px] mt-0.5 opacity-80">{o.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-1.5">
+                        Full Access memberi akses setara admin pada modul <strong>data</strong> (Ticketing,
+                        Request Schedule, Piket Showroom, KPI Team, dll) — termasuk edit detail &amp; re-route.
+                        Hak kelola akun tetap hanya admin/superadmin.
+                      </p>
+                    </div>
+                  )}
                   <div className="col-span-3">
                     <MenuPermissionSelector selected={editingUser.allowed_menus ?? ALL_MENU_KEYS} target="edit" />
                   </div>
@@ -3084,7 +3113,7 @@ export function AccountSettingsInline() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200 text-left">
-                      {['Nama', 'Username', 'Role', 'Divisi', 'Akses', 'No. Telepon'].map(h => (
+                      {['Nama', 'Username', 'Role', 'Divisi', 'No. Telepon'].map(h => (
                         <th key={h} className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 whitespace-nowrap">{h}</th>
                       ))}
                       <th className="sticky right-0 bg-slate-50 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 text-right whitespace-nowrap">Aksi</th>
@@ -3092,7 +3121,7 @@ export function AccountSettingsInline() {
                   </thead>
                   <tbody>
                     {filteredUsers.length === 0 ? (
-                      <tr><td colSpan={7} className="text-center py-10 text-slate-400 text-sm">Tidak ada akun ditemukan</td></tr>
+                      <tr><td colSpan={6} className="text-center py-10 text-slate-400 text-sm">Tidak ada akun ditemukan</td></tr>
                     ) : filteredUsers.map((user, idx) => {
                       const divisi = (user.role === 'superadmin' || user.role === 'admin')
                         ? 'Admin / Superadmin'
@@ -3106,17 +3135,6 @@ export function AccountSettingsInline() {
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap"><Username value={user.username} /></td>
                           <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{user.role}</span></td>
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{divisi}</td>
-                          <td className="px-4 py-2.5 whitespace-nowrap">
-                            {user.role === 'team' ? (
-                              <button onClick={() => handleToggleAccessLevel(user.id, user.access_level)} disabled={savingAccess === user.id}
-                                title="Akses setara admin di modul data (Piket Showroom, KPI Team, dll) — bukan hak kelola akun"
-                                className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all disabled:opacity-50 ${
-                                  user.access_level === 'full' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
-                                }`}>
-                                {savingAccess === user.id ? '…' : user.access_level === 'full' ? '🔓 Full Access' : '🔒 Guest'}
-                              </button>
-                            ) : <span className="text-slate-300 text-xs">—</span>}
-                          </td>
                           <td className="px-4 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-600">📱 {user.phone_number}</span> : <span className="text-slate-300">—</span>}</td>
                           <td className="sticky right-0 px-4 py-2.5" style={{ background: rowBg }}>
                             <div className="flex items-center justify-end gap-1.5">
@@ -3125,7 +3143,7 @@ export function AccountSettingsInline() {
                                 if (user.role === 'team') { d = 'PTS'; if (user.team_type === 'Team PTS IVP') p = 'PTS IVP'; else if (user.team_type === 'Team PTS UMP') p = 'PTS UMP'; else if (user.team_type === 'Team PTS MVI') p = 'PTS MVI'; }
                                 else if (user.team_type === 'Guest') { d = 'Sales'; }
                                 else if (user.team_type === 'Marketing') { d = 'Marketing'; }
-                                setEditDivisi(d); setEditPtsType(p); setEditOrig({ username: user.username, full_name: user.full_name }); setEditingUser(user);
+                                setEditDivisi(d); setEditPtsType(p); setEditOrig({ username: user.username, full_name: user.full_name }); setEditAccessLevel(user.access_level === 'full' ? 'full' : 'guest'); setEditingUser(user);
                               }} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all">Edit</button>
                               <button onClick={() => handleDeleteUser(user.id)} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-all">Hapus</button>
                             </div>
