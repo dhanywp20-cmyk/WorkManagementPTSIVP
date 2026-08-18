@@ -23,11 +23,14 @@ const getFolderColor = (name: string) => FOLDER_COLORS[name.charCodeAt(0) % FOLD
 
 // ─── Grid helper ──────────────────────────────────────────────────────────────
 
+// Jumlah kolom hanya berlaku mulai layar sm. Di ponsel tiga sampai lima kolom
+// menyisakan lebar puluhan piksel per kartu — namanya terpotong jadi satu-dua
+// huruf dan grid-nya meluber keluar layar.
 const GRID_COLS: Record<number, string> = {
   2: 'grid-cols-2',
-  3: 'grid-cols-3',
-  4: 'grid-cols-4',
-  5: 'grid-cols-5',
+  3: 'grid-cols-2 sm:grid-cols-3',
+  4: 'grid-cols-2 sm:grid-cols-4',
+  5: 'grid-cols-2 sm:grid-cols-5',
 };
 
 // ─── MaterialCard ─────────────────────────────────────────────────────────────
@@ -328,18 +331,20 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
   const panelCol = selectedFolderKey ? getFolderColor(selectedFolderKey) : null;
   const panelOpen = !!(selectedFolderNode && panelCol);
 
+  // Tinggi dikurangi sesuai tinggi navigasi atas, yang di ponsel memakai dua
+  // baris (judul + tab) sehingga lebih tinggi daripada di layar lebar.
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 60px)', overflow: 'hidden' }}>
+    <div className="flex flex-col overflow-hidden h-[calc(100vh-112px)] sm:h-[calc(100vh-60px)]">
       {/* ── Header ── */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0"
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 flex-shrink-0"
         style={{ background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-        <div>
-          <h1 className="text-lg font-bold text-slate-800 tracking-tight leading-tight">📚 Materi Training</h1>
+        <div className="min-w-0">
+          <h1 className="text-base sm:text-lg font-bold text-slate-800 tracking-tight leading-tight">📚 Materi Training</h1>
           <p className="text-xs text-slate-500 mt-0.5">
             {isAdmin ? 'Kelola & organisir materi training team' : 'Materi training tersedia untuk dipelajari'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <SearchInput value={search} onChange={setSearch} placeholder="Cari materi..." />
           <div className="flex rounded-xl border border-slate-200 overflow-hidden bg-white">
             <button onClick={() => setViewMode('folder')}
@@ -353,7 +358,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
           </div>
           {isAdmin && (
             <button onClick={() => openForm()}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white rounded-xl shadow-md hover:scale-[1.03] transition-all"
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold text-white rounded-xl shadow-md hover:scale-[1.03] transition-all whitespace-nowrap"
               style={{ background: 'linear-gradient(135deg,#3b82f6,#6366f1)', boxShadow: '0 4px 12px rgba(99,102,241,0.35)' }}>
               <span className="text-base leading-none">+</span> Tambah Materi
             </button>
@@ -362,7 +367,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
       </div>
 
       {/* ── Stats bar ── */}
-      <div className="flex items-center gap-5 px-6 py-2 border-b border-slate-100 text-xs flex-shrink-0"
+      <div className="flex items-center gap-3 sm:gap-5 px-4 sm:px-6 py-2 border-b border-slate-100 text-xs flex-shrink-0 flex-wrap"
         style={{ background: 'rgba(248,250,252,0.8)' }}>
         <span className="text-slate-500">📦 <strong className="text-slate-700">{materials.length}</strong> materi</span>
         <span className="text-slate-300">|</span>
@@ -379,12 +384,12 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
       <div className="flex-1 relative overflow-hidden">
 
         {/* LEFT scrollable content */}
-        <div className="h-full overflow-y-auto"
-          style={{
-            paddingRight: panelOpen ? 'calc(42% + 1px)' : '0',
-            transition: 'padding-right 0.28s cubic-bezier(0.4,0,0.2,1)',
-          }}>
-          <div className="p-6">
+        {/* Ruang untuk panel kanan hanya disisihkan mulai layar sm. Di ponsel
+            panel tampil menutupi seluruh lebar, sebab menyisihkan 42% dari
+            layar 360px menyisakan 200px untuk isi — kartu foldernya meluber
+            keluar dan halaman jadi bisa digeser ke samping. */}
+        <div className={`h-full overflow-y-auto transition-[padding] duration-300 ${panelOpen ? 'sm:pr-[calc(42%+1px)]' : ''}`}>
+          <div className="p-4 sm:p-6">
 
             {!isAdmin && (
               <div className="mb-5 bg-indigo-50 border border-indigo-200 rounded-2xl px-5 py-3 flex items-center gap-3">
@@ -517,11 +522,12 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
         </div>
 
         {/* ── RIGHT PANE: Windows Explorer style, full height ── */}
+        {/* Di ponsel panel menutupi seluruh layar, jadi latarnya dibuat nyaris
+            pekat: tembus pandang 62% di atas isi halaman membuat dua lapis teks
+            saling tumpang tindih dan tidak ada yang terbaca. */}
         <div
-          className="absolute top-0 right-0 bottom-0 flex flex-col"
+          className="absolute top-0 right-0 bottom-0 flex flex-col w-full sm:w-[42%] bg-white/95 sm:bg-white/60"
           style={{
-            width: '42%',
-            background: 'rgba(255,255,255,0.62)',
             backdropFilter: 'blur(18px)',
             WebkitBackdropFilter: 'blur(18px)',
             borderLeft: panelOpen && panelCol

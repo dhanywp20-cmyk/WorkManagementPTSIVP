@@ -185,7 +185,7 @@ function QuizPlayer({ session, user, attempt, onDone }: {
             <button onClick={() => setShowReview(false)}
               className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all">← Kembali ke Hasil</button>
           </div>
-          <div className="p-8 space-y-4 max-w-3xl mx-auto w-full">
+          <div className="p-4 sm:p-8 space-y-4 max-w-3xl mx-auto w-full">
             {questions.map((q, idx) => {
               const userAnswer = answers[q.id] ?? savedAnswers[q.id] ?? null;
               const isCorrect = userAnswer === q.correct_answer;
@@ -468,15 +468,15 @@ export function MyQuizPage({ user }: { user: User }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div>
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">📝 My Quiz</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Quiz yang tersedia untuk kamu</p>
+          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">📝 My Quiz</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Quiz yang tersedia untuk kamu</p>
         </div>
         <SearchInput value={search} onChange={setSearch} placeholder="Cari quiz..." />
       </div>
-      <div className="p-8 grid grid-cols-1 gap-4">
+      <div className="p-4 sm:p-8 grid grid-cols-1 gap-4">
         {filteredSessions.length === 0 && (
           <div className="flex justify-center py-16">
             <div className="text-center px-10 py-8 rounded-2xl"

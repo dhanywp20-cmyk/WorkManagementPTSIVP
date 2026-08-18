@@ -148,9 +148,18 @@ export function GradingStatusBadge({ attempt }: { attempt: { grading_status?: st
   );
 }
 
+/**
+ * Kotak pencarian.
+ *
+ * Lebarnya dulu dipatok w-64 tanpa pengecualian. Di layar ponsel patokan itu
+ * lebih lebar daripada ruang yang tersisa di baris header, sehingga judul di
+ * sebelahnya terhimpit sampai satu kata per baris dan sisanya terdorong keluar
+ * layar. Sekarang ia mengisi baris sendiri di layar sempit dan baru memakai
+ * lebar tetap saat ruangnya memang ada.
+ */
 export function SearchInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
-    <div className="relative">
+    <div className="relative w-full sm:w-auto">
       <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
@@ -159,7 +168,7 @@ export function SearchInput({ value, onChange, placeholder }: { value: string; o
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder ?? 'Cari...'}
-        className="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white w-64"
+        className="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white w-full sm:w-64"
       />
     </div>
   );

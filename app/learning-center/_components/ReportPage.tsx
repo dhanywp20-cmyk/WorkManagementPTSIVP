@@ -84,22 +84,25 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
 
   return (
     <div>
-      <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
-        <div>
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">📋 Laporan</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Hasil quiz per sesi</p>
-		<div>
-          <select value={selectedSession} onChange={e => setSelectedSession(e.target.value)}
-            className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 bg-white min-w-[320px]">
-            <option value="">-- Pilih Sesi --</option>
-            {sessions.map(s => <option key={s.id} value={s.id}>{s.session_type === 'essay' ? '📝 ' : ''}{s.session_name}</option>)}
-          </select>
-        </div>
+        <div className="min-w-0">
+          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">📋 Laporan</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Hasil quiz per sesi</p>
+          {/* Lebar 320px sebelumnya dipatok tanpa pengecualian — lebih lebar
+              daripada layar ponsel 360px setelah dikurangi padding, jadi
+              halamannya bisa digeser ke samping. */}
+          <div className="mt-2">
+            <select value={selectedSession} onChange={e => setSelectedSession(e.target.value)}
+              className="w-full sm:min-w-[320px] sm:w-auto border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 bg-white">
+              <option value="">-- Pilih Sesi --</option>
+              {sessions.map(s => <option key={s.id} value={s.id}>{s.session_type === 'essay' ? '📝 ' : ''}{s.session_name}</option>)}
+            </select>
+          </div>
         </div>
         <SearchInput value={search} onChange={setSearch} placeholder="Cari peserta..." />
       </div>
-      <div className="p-8 space-y-6">
+      <div className="p-4 sm:p-8 space-y-6">
 
         {data.length > 0 && (
           <>

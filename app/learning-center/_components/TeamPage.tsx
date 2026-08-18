@@ -144,17 +144,17 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
   if (selectedAttempt) {
     return (
       <div>
-        <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
           style={{ background: '#ffffff' }}>
           <div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">📋 Review Jawaban — {user.full_name}</h1>
-            <p className="text-sm text-slate-500 mt-0.5">{selectedAttempt.lc_quiz_sessions?.session_name}</p>
+            <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">📋 Review Jawaban — {user.full_name}</h1>
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">{selectedAttempt.lc_quiz_sessions?.session_name}</p>
           </div>
           <button onClick={() => setSelectedAttempt(null)}
             className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all flex items-center gap-2">← Kembali</button>
         </div>
-        <div className="p-8">
-          <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="p-4 sm:p-8">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8">
             {[
               { label: 'Skor', value: selectedAttempt.grading_status === 'pending_review' ? '⏳' : (selectedAttempt.score?.toFixed(0) ?? '—'), color: selectedAttempt.grading_status === 'pending_review' ? 'from-amber-500 to-amber-600' : (selectedAttempt.score ?? 0) >= (selectedAttempt.lc_quiz_sessions?.passing_grade ?? 70) ? 'from-emerald-500 to-emerald-600' : 'from-rose-500 to-rose-600' },
               { label: 'Benar', value: `${selectedAttempt.total_correct}/${selectedAttempt.total_questions}`, color: 'from-blue-500 to-blue-600' },
@@ -322,15 +322,15 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
 
   return (
     <div>
-      <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div>
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">{isAdminView ? `👁️ Jawaban — ${user.full_name}` : '📋 Lihat Jawaban Saya'}</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Pilih quiz untuk melihat detail jawaban</p>
+          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">{isAdminView ? `👁️ Jawaban — ${user.full_name}` : '📋 Lihat Jawaban Saya'}</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Pilih quiz untuk melihat detail jawaban</p>
         </div>
         <button onClick={onBack} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all flex items-center gap-2">← Kembali</button>
       </div>
-      <div className="p-8 space-y-4">
+      <div className="p-4 sm:p-8 space-y-4">
         {attempts.length === 0 && (
           <div className="flex justify-center py-16">
             <div className="text-center px-10 py-8 rounded-2xl"
@@ -400,15 +400,15 @@ export function TeamPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div>
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">👥 Team</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Daftar anggota team & partisipasi quiz</p>
+          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">👥 Team</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Daftar anggota team & partisipasi quiz</p>
         </div>
         <SearchInput value={search} onChange={setSearch} placeholder="Cari anggota..." />
       </div>
-      <div className="p-8">
+      <div className="p-4 sm:p-8">
         <div className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto"
           style={{ background: '#ffffff' }}>
           <table className="w-full text-sm table-zebra">

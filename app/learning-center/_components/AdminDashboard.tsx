@@ -338,16 +338,16 @@ export function AdminDashboard({ user }: { user: User }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div>
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">📊 Dashboard</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Selamat datang, {user.full_name}</p>
+          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">📊 Dashboard</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Selamat datang, {user.full_name}</p>
         </div>
         <SearchInput value={search} onChange={setSearch} placeholder="Cari aktivitas..." />
       </div>
 
-      <div className="p-8 space-y-10">
+      <div className="p-4 sm:p-8 space-y-10">
 
         {/* ── Summary Cards ── */}
         <StatCardGrid cols={4} items={cards} />

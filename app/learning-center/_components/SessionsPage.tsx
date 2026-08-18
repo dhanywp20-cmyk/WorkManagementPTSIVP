@@ -306,13 +306,13 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
 
   return (
     <div>
-      <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 sticky top-0 z-10"
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div>
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">🎯 Sesi Quiz</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Buat & kelola sesi quiz untuk team</p>
+          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">🎯 Sesi Quiz</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Buat & kelola sesi quiz untuk team</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <SearchInput value={search} onChange={setSearch} placeholder="Cari sesi..." />
           <button onClick={() => setShowForm(true)}
             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
@@ -320,7 +320,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
           </button>
         </div>
       </div>
-      <div className="p-8 space-y-6">
+      <div className="p-4 sm:p-8 space-y-6">
         {showForm && (
           <div className="rounded-2xl border border-emerald-100 shadow-lg p-6" style={{ background: '#ffffff' }}>
             <h3 className="font-bold text-slate-800 mb-5">📋 Form Sesi Quiz Baru</h3>
@@ -607,8 +607,12 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
             return (
               <div key={s.id} className="stagger-item rounded-2xl border border-white/60 shadow-sm p-5"
                 style={{ background: '#ffffff' }}>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
+                {/* Di layar sempit deretan tombol turun ke bawah, bukan berdesakan
+                    di kanan judul: dengan flex-shrink-0 tombolnya tidak mau
+                    mengecil, jadi ia meluber keluar kartu dan halaman ikut bisa
+                    digeser ke samping. */}
+                <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-3 sm:gap-4">
+                  <div className="flex-1 min-w-0 w-full">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="font-bold text-slate-800">{s.session_name}</h4>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${status.cls}`}>{status.label}</span>
@@ -677,7 +681,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                       })()}
                     </div>
                   </div>
-                  <div className="flex gap-2 flex-shrink-0 flex-wrap justify-end">
+                  <div className="flex gap-2 flex-wrap w-full sm:w-auto sm:flex-shrink-0 justify-start sm:justify-end">
                     {onViewResults && (
                       <button
                         onClick={() => onViewResults(s.id)}
@@ -761,7 +765,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
               </div>
 
               {/* Pengaturan ringkas */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Timer (mnt)</label>
                   <input type="number" min={0} value={reassignForm.timer_minutes}
