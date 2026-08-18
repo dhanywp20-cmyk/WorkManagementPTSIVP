@@ -15,7 +15,7 @@ import {
   NotifBellProps, AdminPanelModalProps,
   DISPLAY_BRANDS_DB, MIDDLEWARE_BRANDS_DB, BrandPicMappingDB,
 } from './shared';
-import { ConfirmDialog, type ConfirmState, Username, ModalPortal } from '@/components/shared';
+import { ConfirmDialog, type ConfirmState, Username, ModalPortal, formatUsername} from '@/components/shared';
 
 /**
  * Sebar perubahan nama/username user ke semua snapshot di tabel terkait,
@@ -603,6 +603,93 @@ function maskPhone(phone?: string): string {
   return phone.slice(0, 4) + '••••' + phone.slice(-3);
 }
 
+const KOLOM_PROFIL_DASAR =
+  'id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type';
+
+/**
+ * Ambil profil user, dengan jalur mundur bila kolom tambahan belum ada.
+ *
+ * created_at dan access_level dipakai kartu "Bergabung Sejak" dan "Level
+ * Akses". Keduanya bisa belum ada di basis data yang migrasinya belum
+ * dijalankan — dan PostgREST menolak SELURUH query kalau satu kolom saja tak
+ * dikenal, bukan cuma kolom itu. Tanpa jalur mundur ini, satu kolom yang
+ * hilang membuat seluruh halaman Profil kosong.
+ */
+async function ambilProfil(id: string) {
+  const lengkap = await supabase.from('users')
+    .select(`${KOLOM_PROFIL_DASAR},created_at,access_level`).eq('id', id).single();
+  if (!lengkap.error) return lengkap;
+  return await supabase.from('users').select(KOLOM_PROFIL_DASAR).eq('id', id).single();
+}
+
+/**
+ * Kartu bersection-header — bentuk dasar tampilan Profil.
+ *
+ * Dibuat satu kali lalu dipakai berulang, bukan disalin per bagian: enam
+ * bagian dengan markup kartu yang disalin manual sudah cukup untuk membuat
+ * pembatas, padding, dan tebal border-nya pelan-pelan berbeda satu sama lain.
+ */
+function Kartu({ icon, judul, hitung, children }: {
+  icon: string; judul: string; hitung?: string; children: React.ReactNode;
+}) {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+      <div className="px-4 py-3 flex items-center justify-between border-b border-slate-100 bg-slate-50/60">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+          <span className="text-sm">{icon}</span> {judul}
+        </p>
+        {hitung && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-500">
+            {hitung}
+          </span>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/** Satu baris "label di kiri, nilai di kanan". */
+function Baris({ icon, label, value, children }: {
+  icon: string; label: string; value?: string; children?: React.ReactNode;
+}) {
+  return (
+    <div className="px-4 py-2.5 flex items-center justify-between gap-4">
+      <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2 flex-shrink-0">
+        <span className="w-4 text-center text-slate-300">{icon}</span> {label}
+      </span>
+      <div className="min-w-0 text-right">
+        {children ?? <span className="text-sm font-semibold text-slate-800 truncate">{value || '—'}</span>}
+      </div>
+    </div>
+  );
+}
+
+/** Kelompok orang pada Struktur Organisasi (atasan / IVP / bawahan). */
+function Kelompok({ label, kosong, orang, warna }: {
+  label: string; kosong: string; warna: string;
+  orang: { full_name: string; jabatan?: string; sales_division?: string; phone_number?: string }[];
+}) {
+  return (
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: warna }}>{label}</p>
+      {orang.length === 0 ? (
+        <p className="text-xs text-slate-300 italic">{kosong}</p>
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {orang.map((o, i) => (
+            <span key={`${o.full_name}-${i}`}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-50 border border-slate-200 text-slate-700">
+              {o.full_name}
+              {o.jabatan && <span className="text-slate-400 font-normal">· {o.jabatan}</span>}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps) {
   const [userData, setUserData] = useState<User>(currentUser);
   const [editPhone, setEditPhone] = useState(false);
@@ -612,6 +699,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+  const [cariIzin, setCariIzin] = useState('');
   const [supervisors, setSupervisors] = useState<{ full_name: string; phone_number?: string; sales_division?: string; jabatan?: string }[]>([]);
   const [subordinates, setSubordinates] = useState<{ full_name: string; username: string; sales_division?: string; jabatan?: string }[]>([]);
 
@@ -622,7 +710,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type').eq('id', currentUser.id).single();
+      const { data } = await ambilProfil(currentUser.id);
       if (data) { setUserData(data); setPhoneInput(data.phone_number || ''); }
 
       const userDiv = currentUser.sales_division;
@@ -674,7 +762,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
     else {
       notify('success', 'Nomor WhatsApp berhasil diperbarui!');
       setEditPhone(false);
-      const { data } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type').eq('id', currentUser.id).single();
+      const { data } = await ambilProfil(currentUser.id);
       if (data) { setUserData(data); setSession(data); }
     }
     setSaving(false);
@@ -726,304 +814,238 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
     return tb - ta;
   });
 
+  // ── Nilai turunan untuk tampilan ──
+  const salam = (() => {
+    const j = new Date().getHours();
+    if (j < 11) return 'Selamat Pagi';
+    if (j < 15) return 'Selamat Siang';
+    if (j < 19) return 'Selamat Sore';
+    return 'Selamat Malam';
+  })();
+
+  // Admin & superadmin melewati allowed_menus sepenuhnya, jadi daftarnya
+  // dianggap penuh — kalau tidak, profil mereka justru terbaca paling sedikit
+  // aksesnya, kebalikan dari kenyataannya.
+  const menuAktif = ['admin', 'superadmin'].includes((userData.role ?? '').toLowerCase())
+    ? ALL_MENU_KEYS
+    : (userData.allowed_menus ?? []);
+
+  const menuTersaring = menuAktif.filter(k => {
+    const q = cariIzin.trim().toLowerCase();
+    if (!q) return true;
+    return `${k} ${ALL_MENU_LABELS[k]?.label ?? ''}`.toLowerCase().includes(q);
+  });
+
+  const bergabung = (userData as { created_at?: string }).created_at
+    ? new Date((userData as { created_at?: string }).created_at as string)
+        .toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+    : '—';
+
   const atasanList = sortedSupervisors.filter((s: any) => !s._isIVP);
   const ivpList = sortedSupervisors.filter((s: any) => s._isIVP);
 
   return (
   <ModalPortal>
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-full overflow-y-auto flex flex-col border border-slate-200">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4">
+      <div className="bg-slate-50 rounded-2xl shadow-2xl w-full max-w-5xl h-full max-h-full flex flex-col overflow-hidden border border-slate-200">
 
-        {/* Header */}
-        <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-6 py-5 flex items-center justify-between flex-shrink-0 rounded-t-2xl">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-white tracking-tight">User Profile</h2>
-              <p className="text-white/60 text-xs">Informasi pribadi akun Anda</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all">
+        {/* ── HERO ──
+            Menyapa lalu langsung menyebut identitas, bukan judul generik
+            "User Profile". Judul semacam itu hanya mengulang apa yang sudah
+            jelas dari cara halamannya dibuka — ruangnya lebih berguna dipakai
+            menampilkan siapa pemilik akun ini. */}
+        <div className="flex-shrink-0 px-6 py-5 relative overflow-hidden"
+          style={{ background: 'linear-gradient(120deg,#be123c,#9f1239 55%,#881337)' }}>
+          <button onClick={onClose}
+            className="absolute top-4 right-4 bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all z-10">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
+          <div className="flex flex-wrap items-end justify-between gap-4 pr-10">
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-rose-200/90 mb-1.5">
+                {salam} · <span className="text-white/70 normal-case tracking-normal font-medium">{formatUsername(userData.username)}</span>
+              </p>
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight truncate">
+                {userData.full_name}
+              </h2>
+              <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+                {jabatanCfg && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white/15 text-white backdrop-blur">
+                    {jabatanCfg.icon} {userData.jabatan}
+                  </span>
+                )}
+                {jabatanCfg && (userData.team_type || userData.sales_division) && (
+                  <span className="text-white/40 text-xs">›</span>
+                )}
+                {(userData.team_type || userData.sales_division) && (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white/15 text-white backdrop-blur">
+                    {userData.team_type || userData.sales_division}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2.5 flex-shrink-0">
+              <div className="rounded-xl px-4 py-2.5 text-center min-w-[76px]" style={{ background: 'rgba(0,0,0,0.22)' }}>
+                <p className="text-2xl font-black text-white leading-none">{menuAktif.length}</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-rose-200/80 mt-1">Modul</p>
+              </div>
+              <div className="rounded-xl px-4 py-2.5 text-center min-w-[76px]" style={{ background: 'rgba(250,204,21,0.9)' }}>
+                <p className="text-sm font-black text-amber-900 leading-none pt-1.5 truncate">{userData.role}</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-amber-900/70 mt-1.5">Peran</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {notification && (
-          <div className={`mx-5 mt-4 px-4 py-3 rounded-lg text-sm font-semibold flex items-center gap-2 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+          <div className={`mx-5 mt-4 px-4 py-3 rounded-lg text-sm font-semibold flex items-center gap-2 flex-shrink-0 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
             {notification.type === 'success' ? '✅' : '❌'} {notification.msg}
           </div>
         )}
 
-        <div className="p-5 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto p-5">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-          {/* ── ROW 1: Identity card (avatar + info) ── */}
-          <div className="rounded-2xl border-2 overflow-hidden" style={{ borderColor: jabatanCfg?.border ?? '#e2e8f0' }}>
-            {/* Avatar + name row */}
-            <div className="flex items-center gap-4 px-5 py-4" style={{ background: jabatanCfg ? `linear-gradient(135deg, ${jabatanCfg.bg}, white)` : 'linear-gradient(135deg, #f8fafc, white)' }}>
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl flex-shrink-0 shadow-sm"
-                style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#78350f' }}>
-                {initials}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-black text-slate-900 text-xl leading-tight truncate">{userData.full_name}</p>
-                <p className="text-slate-500 text-sm font-medium"><Username value={userData.username} /></p>
-                {jabatanCfg ? (
-                  <div className="inline-flex items-center gap-1.5 mt-1.5 px-2.5 py-1 rounded-full text-xs font-bold border"
-                    style={{ background: jabatanCfg.bg, color: jabatanCfg.color, borderColor: jabatanCfg.border }}>
-                    <span className="text-sm">{jabatanCfg.icon}</span>
-                    {userData.jabatan}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-400 mt-1 italic">Jabatan belum diset</p>
-                )}
-              </div>
-            </div>
+            {/* ══ KIRI ══ */}
+            <div className="lg:col-span-2 space-y-4">
 
-            {/* ── 3-column info grid ── */}
-            <div className="grid grid-cols-3 divide-x divide-slate-100 border-t border-slate-100">
-              <div className="px-4 py-3">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Role Sistem</p>
-                <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold border ${roleClass}`}>{userData.role}</span>
-              </div>
-              <div className="px-4 py-3">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Sales Division</p>
-                <p className="text-sm font-semibold text-slate-700">{userData.sales_division || <span className="text-slate-400 italic">—</span>}</p>
-              </div>
-              <div className="px-4 py-3">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tim / Type</p>
-                <p className="text-sm font-semibold text-slate-700">{userData.team_type && userData.team_type !== 'Pending Approval' ? userData.team_type : <span className="text-slate-400 italic">—</span>}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* ── ROW 2: WA + Password side by side ── */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* WhatsApp */}
-            <div className="rounded-xl border border-slate-200 overflow-hidden">
-              <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">📱 Nomor WhatsApp</p>
-              </div>
-              <div className="px-4 py-3">
-                {editPhone ? (
-                  <div className="space-y-2">
-                    <input type="text" value={phoneInput} onChange={e => setPhoneInput(e.target.value)} placeholder="628123456789"
-                      className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none" />
-                    <p className="text-[10px] text-slate-400">Format internasional, tanpa spasi</p>
-                    <div className="flex gap-2">
-                      <button onClick={handleSavePhone} disabled={saving} className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-all">
-                        {saving ? 'Menyimpan...' : 'Simpan'}
-                      </button>
-                      <button onClick={() => { setEditPhone(false); setPhoneInput(userData.phone_number || ''); }}
-                        className="px-3 py-1.5 bg-slate-100 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-200 transition-all">Batal</button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold flex-1 min-w-0">
-                      {userData.phone_number
-                        ? <span className="text-emerald-700 truncate block">📱 {userData.phone_number}</span>
-                        : <span className="text-rose-500 italic text-xs">⚠️ Belum diisi</span>}
-                    </p>
-                    <button onClick={() => setEditPhone(true)} className="text-xs text-indigo-600 font-bold hover:underline flex-shrink-0">Edit</button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Password */}
-            <div className="rounded-xl border border-slate-200 overflow-hidden">
-              <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">🔒 Password</p>
-              </div>
-              <div className="px-4 py-3">
-                {editPassword ? (
-                  <div className="space-y-2">
-                    <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} placeholder="Password baru (min. 8, ada kapital & angka)"
-                      className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none" />
-                    {passwordInput.length > 0 && (() => {
-                      const { score, label, color } = getPasswordStrength(passwordInput);
-                      const bars = [1,2,3,4,5];
-                      return (
-                        <div className="space-y-1">
-                          <div className="flex gap-1">
-                            {bars.map(b => (
-                              <div key={b} className={`h-1.5 flex-1 rounded-full transition-all ${b <= score ? color : 'bg-slate-200'}`} />
-                            ))}
-                          </div>
-                          <p className={`text-[10px] font-bold ${score <= 1 ? 'text-red-500' : score <= 2 ? 'text-amber-500' : score <= 3 ? 'text-yellow-600' : 'text-emerald-600'}`}>
-                            Kekuatan: {label}
-                          </p>
-                        </div>
-                      );
-                    })()}
-                    <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Konfirmasi password"
-                      className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none" />
-                    {confirmPassword && passwordInput !== confirmPassword && (
-                      <p className="text-[10px] text-red-500 font-semibold">Password tidak cocok</p>
+              <Kartu icon="👤" judul="Informasi Pribadi & Kontak">
+                <div className="divide-y divide-slate-100">
+                  <Baris icon="#"  label="Username / NIK"  value={formatUsername(userData.username)} />
+                  <Baris icon="👤" label="Nama Lengkap"    value={userData.full_name} />
+                  <Baris icon="📱" label="No. Telepon / WA">
+                    {editPhone ? (
+                      <div className="flex items-center gap-2">
+                        <input value={phoneInput} onChange={e => setPhoneInput(e.target.value)}
+                          placeholder="08xxxxxxxxxx"
+                          className="w-40 rounded-lg border border-slate-300 px-2.5 py-1 text-sm outline-none focus:ring-2 focus:ring-rose-200" />
+                        <button onClick={handleSavePhone} disabled={saving}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-bold disabled:opacity-40">Simpan</button>
+                        <button onClick={() => { setEditPhone(false); setPhoneInput(userData.phone_number || ''); }}
+                          className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 text-xs font-bold">Batal</button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className={userData.phone_number ? 'text-slate-800 font-semibold text-sm' : 'text-slate-300 text-sm'}>
+                          {userData.phone_number || 'Belum diisi'}
+                        </span>
+                        <button onClick={() => setEditPhone(true)}
+                          className="text-[11px] text-rose-600 font-bold hover:underline">Ubah</button>
+                      </div>
                     )}
-                    <div className="flex gap-2">
-                      <button onClick={handleSavePassword} disabled={saving} className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-all">
-                        {saving ? 'Menyimpan...' : 'Simpan'}
-                      </button>
-                      <button onClick={() => { setEditPassword(false); setPasswordInput(''); setConfirmPassword(''); }}
-                        className="px-3 py-1.5 bg-slate-100 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-200 transition-all">Batal</button>
-                    </div>
-                  </div>
-                ) : (
+                  </Baris>
+                  <Baris icon="🏢" label="Divisi / Team" value={userData.team_type || userData.sales_division || '—'} />
+                  <Baris icon="⭐" label="Jabatan"       value={userData.jabatan || '—'} />
+                  <Baris icon="📅" label="Bergabung Sejak" value={bergabung} />
+                  <Baris icon="🔑" label="Status Akun">
+                    <span className="inline-flex items-center gap-1.5 text-emerald-600 font-bold text-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Aktif
+                    </span>
+                  </Baris>
+                </div>
+              </Kartu>
+
+              <Kartu icon="🗂️" judul="Struktur Organisasi">
+                <div className="p-4 space-y-3">
+                  <Kelompok label={`Atasan${userData.sales_division ? ' · ' + userData.sales_division : ''}`} kosong="Belum ada atasan terdaftar" orang={atasanList} warna="#b45309" />
+                  <Kelompok label="Sales Internal (IVP)" kosong="Belum ada Sales Internal terpetakan" orang={ivpList} warna="#0369a1" />
+                  <Kelompok label="Bawahan" kosong="Belum ada bawahan terdaftar" orang={sortedSubordinates} warna="#4d7c0f" />
+                </div>
+              </Kartu>
+
+              <Kartu icon="🛡️" judul="Keamanan & Sandi">
+                <div className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-slate-400 tracking-widest">••••••••</p>
-                    <button onClick={() => setEditPassword(true)} className="text-xs text-indigo-600 font-bold hover:underline flex-shrink-0">Ubah</button>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Sesi Saat Ini</span>
+                    <span className="inline-flex items-center gap-1.5 text-emerald-600 font-bold text-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Online &amp; Terotentikasi
+                    </span>
                   </div>
-                )}
-              </div>
+                  {editPassword ? (
+                    <div className="space-y-2 pt-1">
+                      <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)}
+                        placeholder="Password baru (min. 8 karakter, 1 kapital, 1 angka)"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200" />
+                      {passwordInput && (() => {
+                        const { score, label, color } = getPasswordStrength(passwordInput);
+                        return (
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                              <div className={`h-full ${color} transition-all`} style={{ width: `${(score / 5) * 100}%` }} />
+                            </div>
+                            <span className="text-[11px] font-bold text-slate-500">{label}</span>
+                          </div>
+                        );
+                      })()}
+                      <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+                        placeholder="Ulangi password baru"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200" />
+                      {confirmPassword && passwordInput !== confirmPassword && (
+                        <p className="text-[11px] text-red-500 font-semibold">Password tidak cocok</p>
+                      )}
+                      <div className="flex gap-2">
+                        <button onClick={handleSavePassword} disabled={saving}
+                          className="px-3 py-1.5 bg-rose-600 text-white text-xs font-bold rounded-lg disabled:opacity-40">Simpan Password</button>
+                        <button onClick={() => { setEditPassword(false); setPasswordInput(''); setConfirmPassword(''); }}
+                          className="px-3 py-1.5 bg-slate-100 text-slate-500 text-xs font-bold rounded-lg">Batal</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button onClick={() => setEditPassword(true)}
+                      className="w-full py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                      🔑 Ubah Password
+                    </button>
+                  )}
+                </div>
+              </Kartu>
+            </div>
+
+            {/* ══ KANAN ══ */}
+            <div className="space-y-4">
+              <Kartu icon="🎭" judul="Peran Pengguna" hitung="1 Role">
+                <div className="p-4 space-y-3">
+                  <span className={`inline-flex px-3 py-1.5 rounded-lg text-xs font-bold border ${roleClass}`}>
+                    {userData.role}
+                  </span>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Level Akses</p>
+                    <span className={`inline-flex px-3 py-1.5 rounded-lg text-xs font-bold border ${
+                      (userData as { access_level?: string }).access_level === 'full'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : 'bg-slate-100 text-slate-500 border-slate-200'
+                    }`}>
+                      {(userData as { access_level?: string }).access_level === 'full' ? '🔓 Full Access' : '🔒 Guest'}
+                    </span>
+                  </div>
+                </div>
+              </Kartu>
+
+              <Kartu icon="🔐" judul="Hak Akses Modul" hitung={String(menuAktif.length)}>
+                <div className="p-4 space-y-2.5">
+                  <input value={cariIzin} onChange={e => setCariIzin(e.target.value)}
+                    placeholder="🔍 Cari modul..."
+                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-rose-200" />
+                  <div className="flex flex-wrap gap-1.5 max-h-64 overflow-y-auto">
+                    {menuTersaring.length === 0 ? (
+                      <p className="text-xs text-slate-400 py-2">Tidak ada modul yang cocok.</p>
+                    ) : menuTersaring.map(k => {
+                      const cfg = ALL_MENU_LABELS[k];
+                      return (
+                        <span key={k}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                          {cfg?.icon} {cfg?.label ?? k}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-relaxed pt-1">
+                    Daftar ini ditentukan admin lewat Admin Panel. Untuk menambah akses modul,
+                    hubungi admin.
+                  </p>
+                </div>
+              </Kartu>
             </div>
           </div>
-
-          {/* ── ROW 3: Hierarki (Atasan + IVP) side by side, Bawahan full width ── */}
-          {(atasanList.length > 0 || ivpList.length > 0 || sortedSubordinates.length > 0) && (
-            <div className="grid grid-cols-2 gap-4">
-              {/* Atasan */}
-              {atasanList.length > 0 && (
-                <div className="rounded-xl overflow-hidden border border-amber-200">
-                  <div className="px-4 py-2.5 bg-amber-50 border-b border-amber-200 flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span>🔺</span>
-                      <span className="font-bold text-amber-800 text-xs">Atasan · {userData.sales_division}</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-200">{atasanList.length}</span>
-                  </div>
-                  <div className="divide-y divide-amber-50">
-                    {atasanList.map((sup, i) => {
-                      const cfg = sup.jabatan ? JABATAN_CONFIG[sup.jabatan as JabatanType] : null;
-                      return (
-                        <div key={i} className="px-3 py-2.5 flex items-center gap-2.5 bg-white hover:bg-amber-50/40 transition-colors">
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-base"
-                            style={{ background: cfg?.bg ?? '#f1f5f9', border: `1.5px solid ${cfg?.border ?? '#e2e8f0'}` }}>
-                            {cfg?.icon ?? '👤'}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-slate-800 text-sm truncate">{sup.full_name}</p>
-                            {sup.jabatan && (
-                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: cfg?.bg, color: cfg?.color }}>
-                                {cfg?.icon} {sup.jabatan}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="px-3 py-2 bg-amber-50 border-t border-amber-100">
-                    <p className="text-[9px] text-amber-600 font-medium">✉️ Di-CC otomatis via WA</p>
-                  </div>
-                </div>
-              )}
-
-              {/* IVP & MVI Account */}
-              {ivpList.length > 0 && (
-                <div className="rounded-xl overflow-hidden border border-violet-200">
-                  <div className="px-4 py-2.5 bg-violet-50 border-b border-violet-200 flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span>🔗</span>
-                      <span className="font-bold text-violet-800 text-xs">IVP & MVI Account</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded-full border border-violet-200">{ivpList.length}</span>
-                  </div>
-                  <div className="divide-y divide-violet-50">
-                    {ivpList.map((ivp, i) => (
-                      <div key={i} className="px-3 py-2.5 flex items-center gap-2.5 bg-white hover:bg-violet-50/40 transition-colors">
-                        <div className="w-8 h-8 rounded-lg bg-violet-100 border border-violet-200 flex items-center justify-center font-bold text-sm text-violet-700 flex-shrink-0">
-                          {ivp.full_name?.charAt(0)?.toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <p className="font-bold text-violet-900 text-sm truncate">{ivp.full_name}</p>
-                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-300 flex-shrink-0">IVP</span>
-                          </div>
-                          {ivp.phone_number
-                            ? <p className="text-[10px] text-emerald-600">📱 {maskPhone(ivp.phone_number)}</p>
-                            : <p className="text-[10px] text-rose-400">⚠️ No WA</p>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="px-3 py-2 bg-violet-50 border-t border-violet-100">
-                    <p className="text-[9px] text-violet-600 font-medium">✉️ Di-CC &amp; lihat ticket divisi ini</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Jika hanya ada salah satu dari Atasan/IVP, isi kolom lain dengan Bawahan */}
-              {atasanList.length === 0 && ivpList.length > 0 && sortedSubordinates.length > 0 && (
-                <div className="rounded-xl overflow-hidden border border-indigo-200">
-                  <div className="px-4 py-2.5 bg-indigo-50 border-b border-indigo-200 flex items-center justify-between">
-                    <div className="flex items-center gap-1.5"><span>🔻</span><span className="font-bold text-indigo-800 text-xs">Bawahan Anda</span></div>
-                    <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-1.5 py-0.5 rounded-full border border-indigo-200">{sortedSubordinates.length}</span>
-                  </div>
-                  <div className="p-3 flex flex-wrap gap-1.5 bg-white">
-                    {sortedSubordinates.map((sub, i) => {
-                      const cfg = sub.jabatan ? JABATAN_CONFIG[sub.jabatan as JabatanType] : null;
-                      return (
-                        <div key={i} className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl border text-xs"
-                          style={{ background: cfg?.bg ?? '#f8fafc', borderColor: cfg?.border ?? '#e2e8f0' }}>
-                          <span className="flex-shrink-0">{cfg?.icon ?? '👤'}</span>
-                          <div>
-                            <p className="font-bold leading-tight" style={{ color: cfg?.color ?? '#374151' }}>{sub.full_name}</p>
-                            <p className="text-[9px] text-slate-400">{sub.jabatan || '—'}{sub.sales_division ? ` · ${sub.sales_division}` : ''}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── ROW 4: Bawahan full width (jika ada keduanya atasan dan IVP) ── */}
-          {sortedSubordinates.length > 0 && (atasanList.length > 0 || (atasanList.length === 0 && ivpList.length === 0)) && (
-            <div className="rounded-xl overflow-hidden border border-indigo-200">
-              <div className="px-4 py-2.5 bg-indigo-50 border-b border-indigo-200 flex items-center justify-between">
-                <div className="flex items-center gap-2"><span className="text-base">🔻</span><span className="font-bold text-indigo-800 text-sm">Bawahan Anda</span></div>
-                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full border border-indigo-200">{sortedSubordinates.length} orang</span>
-              </div>
-              <div className="p-3 flex flex-wrap gap-2 bg-white">
-                {sortedSubordinates.map((sub, i) => {
-                  const cfg = sub.jabatan ? JABATAN_CONFIG[sub.jabatan as JabatanType] : null;
-                  return (
-                    <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-xl border text-xs"
-                      style={{ background: cfg?.bg ?? '#f8fafc', borderColor: cfg?.border ?? '#e2e8f0' }}>
-                      <span className="text-base flex-shrink-0">{cfg?.icon ?? '👤'}</span>
-                      <div>
-                        <p className="font-bold" style={{ color: cfg?.color ?? '#374151' }}>{sub.full_name}</p>
-                        <p className="text-[10px] text-slate-500">{sub.jabatan || '—'}{sub.sales_division ? ` · ${sub.sales_division}` : ''}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* ── ROW 5: Menu Akses ── */}
-          {userData.role?.toLowerCase() !== 'superadmin' && userData.role?.toLowerCase() !== 'admin' && userData.allowed_menus && userData.allowed_menus.length > 0 && (
-            <div className="rounded-xl border border-slate-200 overflow-hidden">
-              <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200">
-                <div className="flex items-center gap-2"><span>🗂️</span><span className="font-bold text-slate-700 text-sm">Menu yang Dapat Diakses</span></div>
-              </div>
-              <div className="px-4 py-3 flex flex-wrap gap-1.5">
-                {userData.allowed_menus.map(key => {
-                  const m = ALL_MENU_LABELS[key];
-                  if (!m) return null;
-                  return <span key={key} className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700">{m.icon} {m.label}</span>;
-                })}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

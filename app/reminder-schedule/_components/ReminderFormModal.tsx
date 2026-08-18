@@ -59,13 +59,13 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
   return (
   <ModalPortal>
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4 overflow-y-auto"
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-3 sm:p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-[1500px] h-full max-h-full flex flex-col overflow-hidden"
         style={{ animation: 'scale-in 0.25s ease-out', border: '1.5px solid rgba(220,38,38,0.25)' }}>
 
         {/* Header */}
-        <div className="px-8 py-6 rounded-t-2xl flex-shrink-0"
+        <div className="px-6 py-4 rounded-t-2xl flex-shrink-0"
           style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <div className="flex items-center justify-between">
             <div>
@@ -80,7 +80,19 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
           </div>
         </div>
 
-        <div className="p-8 space-y-5 flex-1 min-h-0 overflow-y-auto">
+        {/* Tiga kolom menyamping supaya seluruh isian terlihat sekaligus.
+            Sebelumnya semuanya bertumpuk vertikal di modal selebar 2xl, jadi
+            mengisi satu form berarti menggulir berkali-kali dan kehilangan
+            gambaran utuh — bagian yang sudah diisi tidak kelihatan lagi saat
+            mengisi bagian berikutnya.
+
+            Di layar sempit (<xl) tetap satu kolom: memaksa tiga kolom di layar
+            kecil hanya memindahkan gulirnya jadi ke samping, yang lebih buruk. */}
+        <div className="flex-1 min-h-0 overflow-y-auto xl:overflow-hidden">
+          <div className="p-6 grid grid-cols-1 xl:grid-cols-3 gap-6 xl:h-full xl:overflow-hidden">
+
+          {/* ── Kolom 1: apa & siapa ── */}
+          <div className="space-y-5 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
           <SectionHeader icon="📋" title="Informasi Jadwal" />
 
           <FormField label="Nama Project*">
@@ -213,6 +225,12 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
               </div>
             )}
           </div>
+
+          </div>
+
+          {/* ── Kolom 2: kapan ── */}
+          <div className="space-y-5 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <SectionHeader icon="🗓️" title="Waktu & Jadwal" />
 
           <FormField label="Pengulangan">
             <select value={formData.repeat} onChange={e => fd({ repeat: e.target.value as RepeatType })}
@@ -350,6 +368,10 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             </FormField>
           )}
 
+          </div>
+
+          {/* ── Kolom 3: konteks project ── */}
+          <div className="space-y-5 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
           <SectionHeader icon="🏢" title="Informasi Project" />
 
           <FormField label="Product / Unit (Opsional)">
@@ -523,6 +545,14 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
               rows={2} className={`${inputCls} resize-none`} style={inputStyle} placeholder="Informasi tambahan untuk team..." />
           </FormField>
 
+          </div>
+          </div>
+        </div>
+
+        {/* Footer dipisah dari area isian: tombol Simpan tidak boleh ikut
+            tergulir bersama kolom, kalau tidak ia bisa berada di luar layar
+            justru saat form sudah siap dikirim. */}
+        <div className="px-6 py-4 flex-shrink-0 border-t border-slate-200 bg-white/70 space-y-3">
           {err && (
             <div className="rounded-xl px-4 py-3 text-sm font-semibold flex items-center gap-2"
               style={{ background: 'rgba(225,29,72,0.08)', border: '1px solid rgba(225,29,72,0.3)', color: '#e11d48' }}>
@@ -530,7 +560,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             </div>
           )}
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3">
             <button onClick={onClose}
               className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
               style={{ background: 'rgba(255,255,255,0.95)', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>
