@@ -260,11 +260,11 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
             </div>
           )}
 
-          </div>
 
-          {/* ── Kolom 2: detail project ── */}
-          <div className="space-y-5 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
-          <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
+          {/* Detail Project ikut kolom KIRI sampai kontak customer — sesuai
+              urutan orang mengisinya: project apa, di mana, siapa yang dihubungi.
+              Barang & keluhannya baru urusan kolom tengah. */}
+          <div className="flex items-center gap-2 pb-2 border-b pt-2" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
             <span className="text-base">📋</span>
             <h3 className="text-sm font-bold tracking-wide text-slate-700">Detail Project</h3>
           </div>
@@ -304,6 +304,30 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
             </div>
           </div>
 
+
+          {/* Kontak customer — penutup blok "di mana & siapa". */}
+          <div>
+            <div>
+              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Customer Phone</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2">📱</span>
+                <input type="text" value={form.customer_phone} onChange={e => set({ customer_phone: e.target.value })}
+                  placeholder="Adi - 08xx-xxxx-xxxx"
+                  className="w-full rounded-xl pl-9 pr-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+                  style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
+              </div>
+            </div>
+          </div>
+
+          </div>
+
+          {/* ── Kolom 2: barang & keluhannya ── */}
+          <div className="space-y-5 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
+            <span className="text-base">📦</span>
+            <h3 className="text-sm font-bold tracking-wide text-slate-700">Product &amp; Issue</h3>
+          </div>
+
           {/* Row 2: Product | SN Unit */}
           <div className="grid grid-cols-1 gap-4">
             <div>
@@ -330,18 +354,8 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
             </div>
           </div>
 
-          {/* Row 3: Customer Phone | Date */}
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Customer Phone</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2">📱</span>
-                <input type="text" value={form.customer_phone} onChange={e => set({ customer_phone: e.target.value })}
-                  placeholder="Adi - 08xx-xxxx-xxxx"
-                  className="w-full rounded-xl pl-9 pr-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
-                  style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
-              </div>
-            </div>
+
+          <div>
             <div>
               <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 📅 Date <span className="text-gray-400 normal-case font-normal text-[10px]">(hari ini)</span>

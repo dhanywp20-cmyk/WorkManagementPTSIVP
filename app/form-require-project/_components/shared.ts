@@ -84,6 +84,10 @@ export interface RoomDetail {
   solution_product: string[];
   solution_other: string;
   brand_display: string;
+  /** Display kedua — satu ruangan bisa memakai dua brand display dengan PIC berbeda. */
+  brand_display_2?: string;
+  brand_display_2_pic_id?: string;
+  brand_display_2_pic_name?: string;
   brand_display_pic_id: string;
   brand_display_pic_name: string;
   brand_middleware: string;
@@ -246,6 +250,7 @@ export const emptyRoom = (): RoomDetail => ({
   id: Math.random().toString(36).slice(2, 10),
   room_name: '', kebutuhan: [], kebutuhan_other: '', solution_product: [], solution_other: '',
   brand_display: '', brand_display_pic_id: '', brand_display_pic_name: '',
+  brand_display_2: '', brand_display_2_pic_id: '', brand_display_2_pic_name: '',
   brand_middleware: '', brand_middleware_pic_id: '', brand_middleware_pic_name: '',
   layout_signage: [], jaringan_cms: [], jumlah_input: '', jumlah_output: '',
   source: [], source_other: '', source_laptop_qty: '', source_pc_qty: '',

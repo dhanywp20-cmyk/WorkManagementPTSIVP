@@ -376,8 +376,13 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400" />
       </div>
 
-      {/* Brand Display & Middleware */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 pt-2 border-t border-gray-100">
+      {/* Brand Display 1 & 2 + Middleware.
+          Slot display KEDUA ada karena satu ruangan bisa memakai dua produk
+          display dari brand berbeda, dan tiap brand punya PIC-nya sendiri.
+          Sebelumnya brand yang satunya hanya bisa dititipkan di kolom
+          keterangan — dan PIC-nya tidak pernah ikut ter-mapping, jadi orang
+          yang seharusnya menangani tidak pernah tahu. */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 pt-2 border-t border-gray-100">
         <div>
           <label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5">🖥️ Brand Display <span className="text-gray-400 font-normal">(opsional)</span></label>
           <select value={room.brand_display} onChange={e => {
@@ -390,6 +395,19 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
           </select>
           {room.brand_display && room.brand_display_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1">👤 PIC: {room.brand_display_pic_name}</p>}
           {room.brand_display && !room.brand_display_pic_name && <p className="mt-1 text-[11px] text-gray-400 italic">PIC belum di-set admin</p>}
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5">🖥️ Brand Display 2 <span className="text-gray-400 normal-case font-normal">(opsional)</span></label>
+          <select value={room.brand_display_2 ?? ''} onChange={e => {
+            const brand = e.target.value;
+            const pic = getBrandPic('display', brand);
+            onUpdate({ brand_display_2: brand, brand_display_2_pic_id: pic?.pic_user_id||'', brand_display_2_pic_name: pic?.pic_user_name||'' });
+          }} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-amber-400">
+            <option value="">— Pilih Brand Display 2 —</option>
+            {DISPLAY_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+          </select>
+          {room.brand_display_2 && room.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded px-2 py-1">👤 PIC: {room.brand_display_2_pic_name}</p>}
+          {room.brand_display_2 && !room.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-gray-400 italic">PIC belum di-mapping</p>}
         </div>
         <div>
           <label className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1.5">🔌 Brand Middleware <span className="text-gray-400 font-normal">(opsional)</span></label>
@@ -428,8 +446,14 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
         <input value={room.source_other} onChange={e=>onUpdate({source_other:e.target.value})} placeholder="Other source..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400"/>
       </div>
 
-      {/* Camera */}
-      <div className="pt-2 border-t border-gray-100">
+      {/* Camera + Audio — 2 kolom.
+          Sebelumnya tiap Yes/No memakai satu baris penuh sendiri, KECUALI
+          Wallplate+Tabletop yang berdua. Hasilnya satu baris terlihat
+          berpasangan sementara sisanya menyisakan ruang kosong selebar
+          setengah kartu — terbaca seperti ada isian yang lupa dipasang.
+          Semua dipasangkan supaya ritmenya sama. */}
+      <div className="pt-2 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+      <div>
         <YN label="Camera Conference" field="camera_conference" value={room.camera_conference}/>
         {room.camera_conference==='Yes' && <div className="ml-4 mb-4 space-y-3 border-l-2 border-teal-200 pl-4">
           <div>
@@ -440,8 +464,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
         </div>}
       </div>
 
-      {/* Audio */}
-      <div className="pt-2 border-t border-gray-100">
+      <div>
         <YN label="Audio System" field="audio_system" value={room.audio_system}/>
         {room.audio_system==='Yes' && <div className="ml-4 mb-4 space-y-3 border-l-2 border-teal-200 pl-4">
           <div>
@@ -450,6 +473,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
           </div>
           <Chips label="Audio Detail" opts={['Speaker Ceiling','Speaker Line Array','Subwoofer','Microphone','Amplifier']} value={room.audio_detail} field="audio_detail"/>
         </div>}
+      </div>
       </div>
 
       {/* Wallplate + Tabletop — 2 col */}
@@ -470,8 +494,9 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
         </div>
       </div>
 
-      {/* Wireless */}
-      <div className="pt-2 border-t border-gray-100">
+      {/* Wireless + Controller — 2 kolom, alasan sama dengan Camera+Audio di atas. */}
+      <div className="pt-2 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+      <div>
         <YN label="Wireless Presentation" field="wireless_presentation" value={room.wireless_presentation}/>
         {room.wireless_presentation==='Yes' && <div className="ml-4 mb-4 space-y-3 border-l-2 border-teal-200 pl-4">
           <Chips label="Wireless Mode" opts={['Aplikasi','AirPlay','Miracast','Chromecast','BYOM']} value={room.wireless_mode} field="wireless_mode"/>
@@ -479,12 +504,12 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
         </div>}
       </div>
 
-      {/* Controller */}
-      <div className="pt-2 border-t border-gray-100">
+      <div>
         <YN label="Controller / Automation" field="controller_automation" value={room.controller_automation}/>
         {room.controller_automation==='Yes' && <div className="ml-4 mb-4 border-l-2 border-teal-200 pl-4">
           <Chips label="Controller Type" opts={['Cue','Wyrestorm','Extron','Custom']} value={room.controller_type} field="controller_type"/>
         </div>}
+      </div>
       </div>
 
       {/* Ukuran, Suggest, Keterangan */}
@@ -615,6 +640,16 @@ export type InitialFormType = {
   controller_automation: string; controller_type: string[];
   ukuran_ruangan: string; suggest_tampilan: string; keterangan_lain: string;
   brand_display: string; brand_display_pic_id: string; brand_display_pic_name: string;
+  /**
+   * Display KEDUA — satu ruangan bisa memakai dua produk display dari brand
+   * berbeda, dan tiap brand punya PIC-nya sendiri. Tanpa slot kedua, brand
+   * yang satunya hanya bisa dititipkan di kolom keterangan dan PIC-nya tidak
+   * pernah ikut ter-mapping.
+   *
+   * Opsional: ruangan yang dibuat sebelum kolom ini ada tidak memilikinya.
+   * Rooms disimpan sebagai JSONB, jadi tidak perlu migrasi basis data.
+   */
+  brand_display_2?: string; brand_display_2_pic_id?: string; brand_display_2_pic_name?: string;
   brand_middleware: string; brand_middleware_pic_id: string; brand_middleware_pic_name: string;
   source_laptop_qty: string; source_pc_qty: string;
   brand?: string; // Marketing Brand: 'MVI' | 'IVP' | 'BOTH' — Sales External pilih (routing Sales Internal)

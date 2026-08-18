@@ -206,6 +206,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     controller_automation: 'No', controller_type: [],
     ukuran_ruangan: '', suggest_tampilan: '', keterangan_lain: '',
     brand_display: '', brand_display_pic_id: '', brand_display_pic_name: '',
+  brand_display_2: '', brand_display_2_pic_id: '', brand_display_2_pic_name: '',
     brand_middleware: '', brand_middleware_pic_id: '', brand_middleware_pic_name: '',
     source_laptop_qty: '', source_pc_qty: '',
   };
@@ -314,8 +315,13 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         (allReqs ?? []).forEach((r: any) => {
           if (filtered.find(x => x.id === r.id)) return;
           if (!r.rooms || !Array.isArray(r.rooms)) return;
+          // brand_display_2_pic_id WAJIB ikut dicek: tanpa itu, PIC display
+          // kedua tidak akan pernah melihat request-nya sama sekali — slot
+          // display keduanya jadi sekadar catatan, bukan penugasan.
           const isBrandPic = r.rooms.some((room: any) =>
-            room.brand_display_pic_id === currentUser.id || room.brand_middleware_pic_id === currentUser.id
+            room.brand_display_pic_id === currentUser.id
+            || room.brand_display_2_pic_id === currentUser.id
+            || room.brand_middleware_pic_id === currentUser.id
           );
           if (isBrandPic) filtered.push(r as ProjectRequest);
         });
@@ -888,14 +894,18 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
             const allRooms = rooms.length > 0 ? rooms : [];
             const brandPicIds = new Set<string>();
             allRooms.forEach(r => {
+              // Ketiganya ikut: PIC display KEDUA harus dikabari juga, kalau
+              // tidak slot display keduanya cuma jadi catatan dan orang yang
+              // seharusnya menangani tidak pernah tahu.
               if (r.brand_display_pic_id) brandPicIds.add(r.brand_display_pic_id);
+              if (r.brand_display_2_pic_id) brandPicIds.add(r.brand_display_2_pic_id);
               if (r.brand_middleware_pic_id) brandPicIds.add(r.brand_middleware_pic_id);
             });
             if (brandPicIds.size > 0) {
               const { data: picUsers } = await supabase.from('users').select('id, full_name, phone_number').in('id', Array.from(brandPicIds));
               for (const pic of (picUsers || []) as any[]) {
                 if (!pic.phone_number) continue;
-                const picRooms = allRooms.filter(r => r.brand_display_pic_id===pic.id || r.brand_middleware_pic_id===pic.id);
+                const picRooms = allRooms.filter(r => r.brand_display_pic_id===pic.id || r.brand_display_2_pic_id===pic.id || r.brand_middleware_pic_id===pic.id);
                 const brandMsg = [
                   '🏷️ *[Brand PIC] Request Design Project Baru*',
                   '━━━━━━━━━━━━━━━━━━',
@@ -905,6 +915,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
                   ...picRooms.map((r,i) => {
                     const lines = [`🚪 *Ruangan:* ${r.room_name||'—'}`];
                     if (r.brand_display_pic_id===pic.id) lines.push(`  🖥️ Brand Display: ${r.brand_display} *(Anda PIC-nya)*`);
+                    if (r.brand_display_2_pic_id===pic.id) lines.push(`  🖥️ Brand Display 2: ${r.brand_display_2} *(Anda PIC-nya)*`);
                     if (r.brand_middleware_pic_id===pic.id) lines.push(`  🔌 Brand Middleware: ${r.brand_middleware} *(Anda PIC-nya)*`);
                     return lines.join('\n');
                   }),
@@ -2797,6 +2808,7 @@ Hubungi Admin untuk info lebih lanjut.
                       controller_automation: activeRoom.controller_automation, controller_type: activeRoom.controller_type,
                       ukuran_ruangan: activeRoom.ukuran_ruangan, suggest_tampilan: activeRoom.suggest_tampilan, keterangan_lain: activeRoom.keterangan_lain,
                       brand_display: activeRoom.brand_display, brand_display_pic_name: activeRoom.brand_display_pic_name,
+                      brand_display_2: activeRoom.brand_display_2, brand_display_2_pic_name: activeRoom.brand_display_2_pic_name,
                       brand_middleware: activeRoom.brand_middleware, brand_middleware_pic_name: activeRoom.brand_middleware_pic_name,
                     } : {
                       room_name: selectedRequest.room_name,
@@ -2929,8 +2941,9 @@ Hubungi Admin untuk info lebih lanjut.
                     <div className="space-y-4">
                       <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Kebutuhan</label><ChipDisplay items={[...(dr.kebutuhan||[]), dr.kebutuhan_other]} /></div>
                       <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Solution Product</label><ChipDisplay items={[...(dr.solution_product||[]), dr.solution_other]} /></div>
-                      {dr.brand_display && <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {(dr.brand_display || dr.brand_display_2) && <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div><label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">🖥️ Brand Display</label><p className="text-sm font-semibold text-gray-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{dr.brand_display}{dr.brand_display_pic_name && <span className="text-[11px] text-amber-600 ml-2">· PIC: {dr.brand_display_pic_name}</span>}</p></div>
+                        {dr.brand_display_2 && <div><label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">🖥️ Brand Display 2</label><p className="text-sm font-semibold text-gray-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{dr.brand_display_2}{dr.brand_display_2_pic_name && <span className="text-[11px] text-amber-600 ml-2">· PIC: {dr.brand_display_2_pic_name}</span>}</p></div>}
                         {dr.brand_middleware && <div><label className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1">🔌 Brand Middleware</label><p className="text-sm font-semibold text-gray-800 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2">{dr.brand_middleware}{dr.brand_middleware_pic_name && <span className="text-[11px] text-violet-600 ml-2">· PIC: {dr.brand_middleware_pic_name}</span>}</p></div>}
                       </div>}
                     </div>
