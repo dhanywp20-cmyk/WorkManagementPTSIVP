@@ -5,11 +5,13 @@ import { Z } from '@/lib/z-index';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { setSession, clearSession, getSession } from '@/lib/auth';
-import { notifyProjectStatusChange } from '@/lib/notifications';
+import { notifyProjectStatusChange, createNotification } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { compressImage } from '@/lib/image-compress';
 import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState, ListEmptyState, AuditTrailPanel, FlowSteps, StatCard, ModalPortal } from '@/components/shared';
+import { hasFullAccess } from '@/lib/constants';
+import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField } from '@/lib/admin-edit';
 import {
   User, ProjectRequest, RoomDetail, BrandPicMapping,
   ProjectMessage, ProjectAttachment,
@@ -67,6 +69,24 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     try { return sessionStorage.getItem('frp_filterDivision') || 'all'; } catch { return 'all'; }
   });
   const [ptsMembersList, setPtsMembersList] = useState<string[]>([]);
+  /**
+   * Roster Team PTS sebenarnya, untuk tujuan re-route.
+   *
+   * TIDAK memakai ptsMembersList di atas: isinya cuma nama-nama yang KEBETULAN
+   * sudah pernah di-assign sesuatu — cukup untuk mengisi dropdown filter, tapi
+   * kalau dipakai untuk mengalihkan pekerjaan, anggota tim yang belum pernah
+   * dapat request sama sekali tidak akan pernah bisa dipilih.
+   */
+  const [rosterPTS, setRosterPTS] = useState<{ id: string; full_name: string; jabatan: string | null; phone_number: string | null }[]>([]);
+  const [rerouteTarget, setRerouteTarget] = useState<ProjectRequest | null>(null);
+  const [rerouteTo, setRerouteTo] = useState('');
+  const [rerouteSaving, setRerouteSaving] = useState(false);
+
+  useEffect(() => {
+    supabase.from('users').select('id, full_name, jabatan, phone_number')
+      .in('role', ['team', 'team_pts']).order('full_name')
+      .then((res: { data: unknown }) => setRosterPTS((res.data ?? []) as never));
+  }, []);
   const [unreadMsgMap, setUnreadMsgMap] = useState<Record<string, number>>({});
   const [lastSeenMap, setLastSeenMap] = useState<Record<string, number>>({});
   // Persist filters to sessionStorage
@@ -134,6 +154,24 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const isTeamPTS = role === 'team_pts' || role === 'team';
   const isSuperAdmin = role === 'superadmin';
   const isAdmin = role === 'admin';
+  /**
+   * Boleh membetulkan data & mengalihkan pekerjaan: admin/superadmin, atau
+   * akun Team PTS yang diberi Full Access lewat Admin Panel.
+   *
+   * Sebelumnya tombol Edit hanya muncul untuk NON-PTS (sisi Sales). Artinya
+   * admin — yang justru paling sering diminta membetulkan data — sama sekali
+   * tidak punya jalan lewat platform, dan terpaksa mengeditnya langsung di
+   * Supabase.
+   */
+  const bisaKelolaRequest = isAdmin || isSuperAdmin || hasFullAccess(currentUser as never);
+
+  /**
+   * Re-route hanya selama pekerjaannya BELUM jalan. Begitu masuk in_progress,
+   * sudah ada yang menggarap desainnya — memindahkannya berarti membuang
+   * pekerjaan itu, bukan membetulkan salah route.
+   */
+  const bolehRerouteRequest = (r: ProjectRequest) =>
+    !['in_progress', 'completed', 'rejected'].includes(r.status ?? '');
   // Guest IVP = role guest dengan sales_division IVP/MVI (Sales Internal, bisa lihat
   // semua request divisi yang dia handle via division_ivp_mappings)
   const isIVPGuest = role === 'guest' && (currentUser.sales_division === 'IVP' || currentUser.sales_division === 'MVI');
@@ -1069,6 +1107,79 @@ Hubungi Admin untuk info lebih lanjut.
     setEditFormModal(true);
   };
 
+  /**
+   * Field yang dilacak untuk audit & pesan WA.
+   *
+   * Hanya field yang berarti bagi orang yang mengerjakan. Isian teknis
+   * (checkbox perangkat, ukuran, dsb) tetap tersimpan seperti biasa — cuma
+   * tidak diuraikan satu per satu di WA, karena daftarnya bisa puluhan baris
+   * dan justru menenggelamkan yang penting.
+   */
+  const REQUEST_FIELDS: AdminField[] = [
+    { key: 'project_name',     label: 'Nama Project' },
+    { key: 'room_name',        label: 'Nama Ruangan' },
+    { key: 'project_location', label: 'Lokasi' },
+    { key: 'sales_name',       label: 'Sales' },
+    { key: 'sales_division',   label: 'Divisi Sales' },
+    { key: 'due_date',         label: 'Target Selesai' },
+    { key: 'ukuran_ruangan',   label: 'Ukuran Ruangan' },
+    { key: 'suggest_tampilan', label: 'Saran Tampilan' },
+    { key: 'keterangan_lain',  label: 'Keterangan' },
+  ];
+
+  /** Alihkan request ke anggota tim / supervisor lain. */
+  const simpanReroute = async () => {
+    if (!rerouteTarget || !rerouteTo) return;
+    setRerouteSaving(true);
+    try {
+      const orang = rosterPTS.find(u => u.id === rerouteTo);
+      if (!orang) throw new Error('Tujuan tidak ditemukan');
+      const dari = rerouteTarget.assign_name || '(belum ada)';
+
+      const payload: Record<string, unknown> = orang.jabatan === 'Supervisor'
+        // Ke Supervisor: dikembalikan ke tahap supervisor_assign supaya
+        // Supervisor itu yang menentukan pelaksananya — sama seperti alur
+        // normal, bukan jalur pintas yang melompati tahapannya.
+        ? { assign_name: null, assigned_supervisor_id: orang.id, routing_status: 'supervisor_assign', status: 'approved' }
+        : { assign_name: orang.full_name, assigned_supervisor_id: null, routing_status: null, status: 'approved' };
+
+      const { error } = await supabase.from('project_requests').update(payload).eq('id', rerouteTarget.id);
+      if (error) throw error;
+
+      void logAudit({
+        user_id: currentUser.id, user_name: currentUser.full_name,
+        action: 'assign', module: 'require',
+        target_id: rerouteTarget.id, target_name: rerouteTarget.project_name,
+        notes: `Re-route: ${dari} → ${orang.full_name}`,
+      });
+
+      if (orang.phone_number && orang.full_name !== currentUser.full_name) {
+        void sendWANotif({ type: 'reminder_wa', target: orang.phone_number, message: pesanWAPerubahan({
+          namaPenerima: orang.full_name,
+          namaPengubah: currentUser.full_name,
+          judulItem: rerouteTarget.project_name,
+          jenisItem: 'Request Design Project',
+          perubahan: [],
+          reroute: { dari, ke: orang.full_name },
+          tautan: 'https://team-ticketing.vercel.app/form-require-project',
+        }) });
+      }
+      void createNotification({
+        user_id: orang.id, type: 'project',
+        title: '🔀 Request dialihkan ke kamu',
+        body: `${rerouteTarget.project_name} — oleh ${currentUser.full_name}`,
+        action_url: '/form-require-project', ref_id: rerouteTarget.id,
+        created_by: currentUser.full_name,
+      });
+
+      notify('success', `Dialihkan ke ${orang.full_name}`);
+      setRerouteTarget(null); setRerouteTo('');
+      fetchRequests();
+    } catch (e: any) {
+      notify('error', 'Gagal mengalihkan: ' + e.message);
+    } finally { setRerouteSaving(false); }
+  };
+
   const handleEditFormSubmit = async () => {
     if (!selectedRequest) return;
     const updateData = { 
@@ -1076,8 +1187,44 @@ Hubungi Admin untuk info lebih lanjut.
       sales_division: editFormData.sales_division || '',
       due_date: editDueDate || null,
     };
+    const perubahanReq = bandingkan(
+      REQUEST_FIELDS,
+      selectedRequest as unknown as Record<string, unknown>,
+      updateData as unknown as Record<string, unknown>,
+    );
     const { error } = await supabase.from('project_requests').update(updateData).eq('id', selectedRequest.id);
     if (error) { notify('error', 'Gagal menyimpan perubahan.'); return; }
+
+    // Jejak siapa mengubah apa. Tanpa ini, satu-satunya bukti perubahan adalah
+    // pesan otomatis di kolom diskusi — yang tidak menyebut nilai lamanya.
+    void logAudit({
+      user_id: currentUser.id, user_name: currentUser.full_name,
+      action: 'update', module: 'require',
+      target_id: selectedRequest.id, target_name: String(updateData.project_name ?? selectedRequest.project_name),
+      notes: perubahanReq.length ? ringkasPerubahan(perubahanReq) : 'Disimpan tanpa perubahan',
+    });
+
+    // Kabari yang mengerjakan. Selama ini perubahan detail sama sekali tidak
+    // diberitahukan — orang bisa berangkat memakai data lama.
+    const penangani = String(selectedRequest.assign_name ?? '');
+    if (perubahanReq.length > 0 && penangani && penangani !== currentUser.full_name) {
+      try {
+        const { data: u } = await supabase.from('users')
+          .select('id, phone_number, full_name').eq('full_name', penangani).maybeSingle();
+        if (u?.phone_number) {
+          void sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesanWAPerubahan({
+            namaPenerima: u.full_name || penangani,
+            namaPengubah: currentUser.full_name,
+            judulItem: String(updateData.project_name ?? selectedRequest.project_name),
+            jenisItem: 'Request Design Project',
+            perubahan: perubahanReq,
+            reroute: null,
+            tautan: 'https://team-ticketing.vercel.app/form-require-project',
+          }) });
+        }
+      } catch { /* WA gagal tidak membatalkan perubahan yang sudah tersimpan */ }
+    }
+
     notify('success', 'Perubahan disimpan!');
     setEditFormModal(false);
     fetchRequests();
@@ -2485,7 +2632,13 @@ Hubungi Admin untuk info lebih lanjut.
                     Update Status
                   </button>
                 )}
-                {!isPTS && selectedRequest.status !== 'rejected' && (
+                {bisaKelolaRequest && bolehRerouteRequest(selectedRequest) && (
+                  <button onClick={() => { setRerouteTarget(selectedRequest); setRerouteTo(''); }}
+                    className="bg-indigo-500 hover:bg-indigo-400 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+                    🔀 Re-route
+                  </button>
+                )}
+                {(!isPTS || bisaKelolaRequest) && selectedRequest.status !== 'rejected' && (
                   <button onClick={handleOpenEditForm}
                     className="bg-amber-400 hover:bg-amber-300 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -3239,6 +3392,61 @@ Hubungi Admin untuk info lebih lanjut.
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </ModalPortal>
+      )}
+
+      {/* ── RE-ROUTE MODAL (admin / Full Access) ── */}
+      {/* Z.overlayTop — dibuka dari dalam modal detail (Z.overlay). */}
+      {rerouteTarget && (
+      <ModalPortal>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1100]"
+          onClick={e => { if (e.target === e.currentTarget && !rerouteSaving) setRerouteTarget(null); }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="px-6 py-4" style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
+              <h3 className="text-lg font-bold text-white">🔀 Alihkan Pekerjaan</h3>
+              <p className="text-indigo-100/90 text-xs mt-0.5 truncate">{rerouteTarget.project_name}</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="rounded-xl p-3 text-xs" style={{ background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                Sekarang dikerjakan: <strong>{rerouteTarget.assign_name || 'belum di-assign'}</strong>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold mb-1 text-slate-600 uppercase tracking-widest">Alihkan ke</label>
+                <select value={rerouteTo} onChange={e => setRerouteTo(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-200">
+                  <option value="">— pilih tujuan —</option>
+                  {rosterPTS.filter(u => u.jabatan === 'Supervisor').length > 0 && (
+                    <optgroup label="🎯 Supervisor">
+                      {rosterPTS.filter(u => u.jabatan === 'Supervisor').map(u => (
+                        <option key={u.id} value={u.id}>{u.full_name} (Supervisor)</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  <optgroup label="👥 Anggota Tim">
+                    {rosterPTS.filter(u => u.jabatan !== 'Supervisor' && u.jabatan !== 'Manager').map(u => (
+                      <option key={u.id} value={u.id}>{u.full_name}</option>
+                    ))}
+                  </optgroup>
+                </select>
+                <p className="text-[11px] text-slate-400 mt-1.5">
+                  Kalau dialihkan ke Supervisor, request kembali ke tahap penugasan — Supervisor
+                  itu yang menentukan siapa yang mengerjakan. Tujuannya langsung dikabari lewat WA.
+                </p>
+              </div>
+            </div>
+            <div className="px-6 py-4 flex gap-3 border-t border-slate-100">
+              <button onClick={() => setRerouteTarget(null)} disabled={rerouteSaving}
+                className="flex-1 py-2.5 rounded-xl font-semibold text-sm border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40">
+                Batal
+              </button>
+              <button onClick={simpanReroute} disabled={rerouteSaving || !rerouteTo}
+                className="flex-[2] text-white py-2.5 rounded-xl font-bold text-sm disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
+                {rerouteSaving ? 'Mengalihkan...' : '🔀 Alihkan Sekarang'}
+              </button>
             </div>
           </div>
         </div>
