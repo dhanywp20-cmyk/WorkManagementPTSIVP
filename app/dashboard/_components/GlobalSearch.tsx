@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from './shared';
 import { ModalPortal } from '@/components/shared';
+import { hitungLingkupProject, filterLingkup, type LingkupProject } from '@/lib/project-scope';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -86,6 +87,54 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
   /** Sales biasa = guest/sales yang BUKAN supervisor. Inilah yang dulu terlewat. */
   const isSalesBiasa = ['guest','sales'].includes(currentUser.role?.toLowerCase() ?? '') && !isSalesSup;
+
+  /**
+   * Lingkup divisi untuk Sales Internal.
+   *
+   * batasiMilikSendiri di bawah hanya mengenal "milik saya". Itu benar untuk
+   * sales biasa, tapi TERLALU sempit untuk Sales Internal: dia memang bertugas
+   * menangani beberapa divisi sekaligus, dan divisi itu ditentukan tabel
+   * pemetaan — bukan bisa disimpulkan dari profilnya. Tanpa ini, Sales Internal
+   * tidak menemukan project divisi yang justru jadi tanggung jawabnya.
+   */
+  const [lingkup, setLingkup] = useState<LingkupProject | null>(null);
+  useEffect(() => {
+    let batal = false;
+    hitungLingkupProject(currentUser as never).then(l => { if (!batal) setLingkup(l); });
+    return () => { batal = true; };
+  }, [currentUser]);
+
+  /**
+   * Batasi query ke lingkup user.
+   *
+   * Untuk sales biasa hasilnya sama dengan batasiMilikSendiri; untuk Sales
+   * Internal, divisi yang dipetakan ikut terbuka.
+   */
+  const batasiLingkup = <T,>(query: T, kolomMilik: string[], kolomDivisi = 'sales_division'): T => {
+    if (!lingkup || lingkup.semua) return query;
+    const nama = (currentUser.full_name ?? '').replace(/"/g, '');
+    const user = (currentUser.username ?? '').replace(/"/g, '');
+    const syarat = kolomMilik
+      .map(k => (k === 'created_by' ? `${k}.eq."${user}"` : `${k}.eq."${nama}"`));
+    // Divisi yang dipetakan ikut di-OR — inilah bedanya dengan batas
+    // "hanya milik saya": Sales Internal memang bertugas atas beberapa divisi.
+    for (const d of lingkup.divisi) syarat.push(`${kolomDivisi}.eq."${d.replace(/"/g, '')}"`);
+    return (query as { or: (x: string) => T }).or(syarat.join(','));
+  };
+
+  /**
+   * Modul yang boleh dicari = modul yang menunya memang diberikan ke user ini.
+   *
+   * Tanpa penjagaan ini, kotak pencarian jadi pintu belakang: menu-nya tidak
+   * ada di sidebar, tapi isinya tetap bisa dibaca dengan mengetikkan kata
+   * kunci. Admin & superadmin melewati allowed_menus sebagaimana di tempat lain.
+   */
+  const bolehModul = (kunci: string): boolean => {
+    if (isAdmin) return true;
+    const izin = (currentUser as { allowed_menus?: string[] }).allowed_menus;
+    if (!izin) return true; // belum diatur = perilaku lama, jangan mendadak menutup
+    return izin.includes(kunci);
+  };
 
   /**
    * Tempelkan batas "hanya milik saya" ke sebuah query.
@@ -203,7 +252,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     const res: SearchResult[] = [];
 
     // ── 1. Tickets ──
-    try {
+    if (bolehModul('ticket-troubleshooting')) try {
       let q2 = supabase.from('tickets')
         .select('id, project_name, issue_case, assign_name, status, date, sales_division, sales_name, created_by')
         .or(`project_name.ilike.%${q}%,issue_case.ilike.%${q}%,assign_name.ilike.%${q}%,sales_name.ilike.%${q}%,sn_unit.ilike.%${q}%`)
@@ -211,7 +260,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
       // Sales biasa: dibatasi DI QUERY — tiket sales lain tidak pernah dikirim
       // ke browser, bukan sekadar disembunyikan setelah tiba.
-      if (isSalesBiasa) q2 = batasiMilikSendiri(q2, ['sales_name', 'created_by']);
+      if (!tanpaBatas) q2 = batasiLingkup(q2, ['sales_name', 'created_by']);
 
       const { data: tData } = await q2;
       let tickets = (tData ?? []) as any[];
@@ -238,7 +287,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     } catch (e) { console.error('[search] tickets:', e); }
 
     // ── 2. Reminders ──
-    try {
+    if (bolehModul('reminder-schedule')) try {
       let qr = supabase.from('reminders')
         .select('id, project_name, title, category, due_date, assign_name, sales_name, sales_division, status')
         // title ikut dicari: nama project data lama tersimpan di sana, dan
@@ -246,7 +295,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
         // project lama tidak pernah muncul di pencarian.
         .or(`project_name.ilike.%${q}%,title.ilike.%${q}%,category.ilike.%${q}%,assign_name.ilike.%${q}%,sales_name.ilike.%${q}%,address.ilike.%${q}%`)
         .order('created_at', { ascending: false }).limit(20);
-      if (isSalesBiasa) qr = batasiMilikSendiri(qr, ['sales_name', 'created_by']);
+      if (!tanpaBatas) qr = batasiLingkup(qr, ['sales_name', 'created_by']);
       const { data: rData } = await qr;
       let reminders = (rData ?? []) as any[];
 
@@ -273,12 +322,12 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     } catch (e) { console.error('[search] reminders:', e); }
 
     // ── 3. Form Require Project ──
-    try {
+    if (bolehModul('request-design-project')) try {
       let qp = supabase.from('project_requests')
         .select('id, project_name, status, sales_name, sales_division, created_at, requester_id')
         .or(`project_name.ilike.%${q}%,sales_name.ilike.%${q}%`)
         .order('created_at', { ascending: false }).limit(15);
-      if (isSalesBiasa) qp = batasiMilikSendiri(qp, ['sales_name']);
+      if (!tanpaBatas) qp = batasiLingkup(qp, ['sales_name']);
       const { data: pData } = await qp;
       let projects = (pData ?? []) as any[];
 
@@ -306,7 +355,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     } catch (e) { console.error('[search] projects:', e); }
 
     // ── 4. Piket Showroom ──
-    try {
+    if (bolehModul('picket-showroom')) try {
       const { data: pkData } = await supabase.from('piket_schedules')
         .select('id, day_date, day_of_week, pic_ivp_name, pic_ump_name, pic_mvi_name')
         .or(`pic_ivp_name.ilike.%${q}%,pic_ump_name.ilike.%${q}%,pic_mvi_name.ilike.%${q}%,day_date.ilike.%${q}%`)
@@ -335,7 +384,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     } catch (e) { console.error('[search] piket:', e); }
 
     // ── 5. Unit Movement ──
-    try {
+    if (bolehModul('unit-movement')) try {
       if (tanpaBatas) {
         const { data: uData } = await supabase.from('movement_logs')
           .select('id, project_name, event, status_barang, nama_pts, tanggal, serial_number')
@@ -364,12 +413,12 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     //  jadi query ini otomatis hanya mengembalikan proyek yang memang haknya —
     //  tanpa perlu penyaringan tambahan di sini. Batas untuk sales biasa tetap
     //  dipasang sebagai lapis kedua, kalau-kalau RLS dimatikan sewaktu-waktu.
-    try {
+    if (bolehModul('project-progress')) try {
       let qpp = supabase.from('progress_projects')
         .select('id, name, client, status, sales_name')
         .or(`name.ilike.%${q}%,client.ilike.%${q}%,sales_name.ilike.%${q}%`)
         .order('created_at', { ascending: false }).limit(10);
-      if (isSalesBiasa) qpp = batasiMilikSendiri(qpp, ['sales_name']);
+      if (!tanpaBatas) qpp = batasiLingkup(qpp, ['sales_name']);
       const { data } = await qpp;
       (data ?? []).forEach((p: any) => res.push({
         id: `progress-${p.id}`, type: 'progress', icon: '📊',
@@ -385,7 +434,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     // ── 8. Tech Note ──
     //  Catatan teknis adalah pengetahuan bersama tim PTS — tidak dibatasi per
     //  orang, tapi Sales memang tidak berkepentingan dengannya.
-    try {
+    if (bolehModul('tech-note')) try {
       if (tanpaBatas) {
         const { data } = await supabase.from('tech_notes')
           .select('id, title, description, product, author_name, status')
@@ -404,7 +453,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     } catch (e) { console.error('[search] tech note:', e); }
 
     // ── 9. Daily Report ──
-    try {
+    if (bolehModul('daily-report')) try {
       let qd = supabase.from('daily_reports')
         .select('id, report_date, user_name, sales_division, reminder_notes')
         .or(`user_name.ilike.%${q}%,reminder_notes.ilike.%${q}%,sales_division.ilike.%${q}%`)
@@ -421,12 +470,12 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     } catch (e) { console.error('[search] daily report:', e); }
 
     // ── 10. Form Review ──
-    try {
+    if (bolehModul('form-bast')) try {
       let qf = supabase.from('form_reviews')
         .select('id, project_name, address, sales_name, sales_division, assign_name')
         .or(`project_name.ilike.%${q}%,address.ilike.%${q}%,sales_name.ilike.%${q}%,assign_name.ilike.%${q}%`)
         .order('created_at', { ascending: false }).limit(10);
-      if (isSalesBiasa) qf = batasiMilikSendiri(qf, ['sales_name']);
+      if (!tanpaBatas) qf = batasiLingkup(qf, ['sales_name']);
       const { data } = await qf;
       let reviews = (data ?? []) as any[];
       if (isSalesSup) {
@@ -445,7 +494,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     // ── 11. Materi Learning Center ──
     //  Materi pelatihan terbuka untuk semua yang login — tidak ada isi rahasia
     //  antar-orang di sini, jadi tidak perlu dibatasi.
-    try {
+    if (bolehModul('learning-center')) try {
       const { data } = await supabase.from('lc_materials')
         .select('id, materi_name')
         .ilike('materi_name', `%${q}%`)

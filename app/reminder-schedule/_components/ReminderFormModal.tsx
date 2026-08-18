@@ -54,7 +54,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
     onSubmit();
   }
 
-  const inputCls = "w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40";
+  const inputCls = "w-full rounded-lg px-3 py-2 text-xs outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40";
   const inputStyle = { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(0,0,0,0.12)' };
 
   return (
@@ -69,7 +69,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
           style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-white">{editingReminder ? '✏️ Edit Reminder' : '➕ Tambah Reminder'}</h2>
+              <h2 className="text-base font-bold text-white">{editingReminder ? '✏️ Edit Reminder' : '➕ Tambah Reminder'}</h2>
               <p className="text-cyan-200/80 text-xs mt-1">Isi detail jadwal & informasi project</p>
             </div>
             <button onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all">
@@ -89,10 +89,10 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             Di layar sempit (<xl) tetap satu kolom: memaksa tiga kolom di layar
             kecil hanya memindahkan gulirnya jadi ke samping, yang lebih buruk. */}
         <div className="flex-1 min-h-0 overflow-y-auto xl:overflow-hidden">
-          <div className="p-6 grid grid-cols-1 xl:grid-cols-3 gap-6 xl:h-full xl:overflow-hidden">
+          <div className="p-4 grid grid-cols-1 xl:grid-cols-3 gap-4 xl:h-full xl:overflow-hidden">
 
           {/* ── Kolom 1: apa & siapa ── */}
-          <div className="space-y-5 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <div className="space-y-3 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
           <SectionHeader icon="📋" title="Informasi Jadwal" />
 
           <FormField label="Nama Project*">
@@ -115,7 +115,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
           {/* Category picker */}
           <div>
-            <label className="block text-xs font-bold mb-2 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Kategori *</label>
+            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Kategori *</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {CATEGORIES.map(cat => {
                 const c = CATEGORY_CONFIG[cat];
@@ -137,7 +137,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
           {/* Tipe Produk — WAJIB, untuk routing ke supervisor (LED→Wahyu, LCD/MW→Yoga) */}
           <div>
-            <label className="block text-xs font-bold mb-2 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Tipe Produk *</label>
+            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Tipe Produk *</label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {PRODUCT_TYPES.map(pt => {
                 const sel = formData.product_type === pt;
@@ -156,7 +156,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
           {/* Assign To — single or bulk */}
           <div>
-            <label className="block text-xs font-bold mb-2 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Assign To *</label>
+            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Assign To *</label>
             {!editingReminder && (
               <div className="flex flex-wrap gap-2 mb-3">
                 {([
@@ -229,7 +229,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
           </div>
 
           {/* ── Kolom 2: kapan ── */}
-          <div className="space-y-5 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <div className="space-y-3 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
           <SectionHeader icon="🗓️" title="Waktu & Jadwal" />
 
           <FormField label="Pengulangan">
@@ -371,7 +371,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
           </div>
 
           {/* ── Kolom 3: konteks project ── */}
-          <div className="space-y-5 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <div className="space-y-3 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
           <SectionHeader icon="🏢" title="Informasi Project" />
 
           <FormField label="Product / Unit (Opsional)">
@@ -560,14 +560,18 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             </div>
           )}
 
-          <div className="flex gap-3">
+          {/* Tombol rata KANAN dan seukuran isinya, bukan melebar penuh.
+              Tombol selebar frame membuat aksi terasa seberat isinya sendiri,
+              padahal ia cuma penutup; dan dua tombol sama besar tidak
+              membedakan mana aksi utama dan mana jalan keluar. */}
+          <div className="flex gap-2 justify-end">
             <button onClick={onClose}
-              className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
+              className="px-4 py-2 rounded-lg font-semibold text-xs transition-all hover:bg-slate-50"
               style={{ background: 'rgba(255,255,255,0.95)', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>
               Batal
             </button>
             <button onClick={handleSubmit} disabled={saving}
-              className="flex-1 text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02]"
+              className="text-white px-5 py-2 rounded-lg font-bold transition-all text-xs flex items-center justify-center gap-1.5 hover:scale-[1.02]"
               style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', boxShadow: '0 4px 14px rgba(8,145,178,0.35)' }}>
               {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
               {(() => {

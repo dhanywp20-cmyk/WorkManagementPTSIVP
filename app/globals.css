@@ -302,28 +302,33 @@ html {
 
 /* Kartu form — bagian teratas, dilepas duluan. */
 .lc-bongkar .lc-kartu {
-  animation: lcBongkarKartu 1000ms cubic-bezier(.55, .06, .68, .19) forwards;
+  animation: lcBongkarKartu 620ms cubic-bezier(.55, .06, .68, .19) forwards;
 }
+/* Kartu login MENYINGKIR KE KANAN, bukan ikut terbelah bersama panelnya.
+   Kartu itu bukan bagian dari bangunan halaman — ia benda yang diletakkan di
+   atasnya. Membiarkannya ikut terbelah membuat pembongkarannya kehilangan
+   makna: yang dibongkar seharusnya panelnya, bukan formulirnya.
+   Karena itu ia keluar DULUAN (620ms), baru panel mulai bergerak. */
 @keyframes lcBongkarKartu {
   from { transform: none; opacity: 1; }
-  to   { transform: translateY(-42vh) rotate(-6deg); opacity: 0; }
+  to   { transform: translateX(120%) rotate(3deg); opacity: 0; }
 }
 
 /* Isi panel kiri lepas satu per satu, sebelum panelnya sendiri bergeser. */
 .lc-bongkar-kiri > * {
-  animation: lcBongkarKeping 820ms cubic-bezier(.55, .06, .68, .19) both;
+  animation: lcBongkarKeping 700ms cubic-bezier(.55, .06, .68, .19) both;
 }
-.lc-bongkar-kiri > *:nth-child(1) { animation-delay:   0ms; }
-.lc-bongkar-kiri > *:nth-child(2) { animation-delay: 135ms; }
-.lc-bongkar-kiri > *:nth-child(3) { animation-delay: 270ms; }
+.lc-bongkar-kiri > *:nth-child(1) { animation-delay: 560ms; }
+.lc-bongkar-kiri > *:nth-child(2) { animation-delay: 680ms; }
+.lc-bongkar-kiri > *:nth-child(3) { animation-delay: 800ms; }
 @keyframes lcBongkarKeping {
   from { transform: none; opacity: 1; }
   to   { transform: translateX(-30px) translateY(12px); opacity: 0; }
 }
 
 /* Terakhir: kedua panel terbelah ke arah berlawanan. */
-.lc-bongkar-kiri  { animation: lcBongkarKiri  1230ms cubic-bezier(.55, .06, .68, .19) 270ms forwards; }
-.lc-bongkar-kanan { animation: lcBongkarKanan 1230ms cubic-bezier(.55, .06, .68, .19) 270ms forwards; }
+.lc-bongkar-kiri  { animation: lcBongkarKiri   940ms cubic-bezier(.55, .06, .68, .19) 560ms forwards; }
+.lc-bongkar-kanan { animation: lcBongkarKanan  940ms cubic-bezier(.55, .06, .68, .19) 560ms forwards; }
 @keyframes lcBongkarKiri {
   from { transform: none; }
   to   { transform: translateX(-58%) skewX(7deg); opacity: 0; }

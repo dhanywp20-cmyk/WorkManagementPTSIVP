@@ -45,7 +45,7 @@ interface RequestJadwalModalProps {
 }
 
 const inputCls =
-  'w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-blue-500/40';
+  'w-full rounded-lg px-3 py-2 text-xs outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-blue-500/40';
 const inputStyle = {
   background: '#ffffff',
   border: '1px solid rgba(0,0,0,0.12)',
@@ -136,10 +136,10 @@ export function RequestJadwalModal({
 
         {/* Tiga kolom menyamping — pola yang sama dengan form Reminder & Ticket. */}
         <div className="flex-1 min-h-0 overflow-y-auto xl:overflow-hidden">
-          <div className="p-6 grid grid-cols-1 xl:grid-cols-3 gap-6 xl:h-full xl:overflow-hidden">
+          <div className="p-4 grid grid-cols-1 xl:grid-cols-3 gap-4 xl:h-full xl:overflow-hidden">
 
           {/* ── Kolom 1: siapa & project apa ── */}
-          <div className="space-y-5 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <div className="space-y-3 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
 
           {/* Info requester */}
           <div
@@ -172,7 +172,7 @@ export function RequestJadwalModal({
              schedule diatasnamakan Sales External tsb (nama & divisi). */}
           {isInternalSales && (
             <div>
-              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 SBU <span className="normal-case text-slate-400 font-medium tracking-normal">(opsional — buat atas nama Sales External)</span>
               </label>
               <SalesPicker
@@ -196,7 +196,7 @@ export function RequestJadwalModal({
              yang meng-handle & meng-approve request ini. */}
           {!isInternalSales && (
             <div>
-              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 Brand * <span className="normal-case text-slate-400 font-medium tracking-normal">(Sales Internal yang handle)</span>
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -218,7 +218,7 @@ export function RequestJadwalModal({
 
           {/* Nama Project */}
           <div>
-            <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+            <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Nama Project *
             </label>
             <input
@@ -231,7 +231,7 @@ export function RequestJadwalModal({
 
           {/* Lokasi */}
           <div>
-            <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+            <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Lokasi Project *
             </label>
             <div className="relative">
@@ -247,7 +247,7 @@ export function RequestJadwalModal({
 
           {/* Deskripsi */}
           <div>
-            <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+            <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Deskripsi Kebutuhan
             </label>
             <textarea
@@ -262,10 +262,10 @@ export function RequestJadwalModal({
           </div>
 
           {/* ── Kolom 2: jenis pekerjaan & waktu ── */}
-          <div className="space-y-5 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <div className="space-y-3 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
           {/* Kategori */}
           <div>
-            <label className="block text-xs font-bold mb-2 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Kategori *
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -302,7 +302,7 @@ export function RequestJadwalModal({
 
           {/* Tipe Produk — WAJIB, untuk auto-routing ke supervisor */}
           <div>
-            <label className="block text-xs font-bold mb-2 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Tipe Produk *
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -323,7 +323,7 @@ export function RequestJadwalModal({
 
           {/* Product */}
           <div>
-            <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+            <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Product / Unit (Opsional)
             </label>
             <div className="relative">
@@ -340,7 +340,7 @@ export function RequestJadwalModal({
           {/* Tanggal & Waktu */}
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 Tanggal Usulan *
               </label>
               <input
@@ -351,7 +351,7 @@ export function RequestJadwalModal({
               />
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 Waktu Usulan
               </label>
               <input
@@ -379,7 +379,7 @@ export function RequestJadwalModal({
               </p>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                  <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                     Mulai Pengerjaan
                   </label>
                   <input type="date" value={form.progress_start_date}
@@ -387,7 +387,7 @@ export function RequestJadwalModal({
                     className={inputCls} style={inputStyle} />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                  <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                     Target Selesai
                   </label>
                   <input type="date" value={form.progress_target_date}
@@ -403,7 +403,7 @@ export function RequestJadwalModal({
              (layar sempit → tampilan bertumpuk); hanya muncul di layar sm: ke atas.
              Di HP user cukup submit 1 tanggal (Tanggal Usulan di atas). */}
           <div className="hidden xl:block">
-            <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+            <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Tambah Hari Lain (Opsional)
             </label>
             <MultiDatePicker dates={form.extra_dates} onChange={dates => f({ extra_dates: dates })} accentColor="#2563eb" />
@@ -412,11 +412,11 @@ export function RequestJadwalModal({
           </div>
 
           {/* ── Kolom 3: PIC, catatan & alur ── */}
-          <div className="space-y-5 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <div className="space-y-3 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
           {/* PIC */}
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 Nama PIC Project
               </label>
               <input
@@ -427,7 +427,7 @@ export function RequestJadwalModal({
               />
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 No. Telepon PIC
               </label>
               <div className="relative">
@@ -444,7 +444,7 @@ export function RequestJadwalModal({
 
           {/* Catatan */}
           <div>
-            <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+            <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Catatan Tambahan
             </label>
             <textarea
@@ -478,23 +478,23 @@ export function RequestJadwalModal({
 
         {/* Footer tetap — tombol kirim tidak boleh ikut tergulir bersama kolom. */}
         <div className="px-6 py-4 flex-shrink-0 border-t border-slate-200 bg-white/70">
-          <div className="flex gap-3">
+          {formErr && (
+            <div className="px-3 py-2 rounded-lg text-xs font-medium text-red-700 bg-red-50 border border-red-200 mb-2">{formErr}</div>
+          )}
+          {/* Satu baris, rata kanan, seukuran isinya — bukan dua baris tombol
+              selebar frame yang membuat Batal terasa sepenting Kirim. */}
+          <div className="flex gap-2 justify-end">
             <button
               onClick={onClose}
-              className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
+              className="px-4 py-2 rounded-lg font-semibold text-xs transition-all hover:bg-slate-50"
               style={{ background: '#ffffff', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}
             >
               Batal
             </button>
-          </div>
-          {formErr && (
-            <div className="px-4 py-2.5 rounded-xl text-sm font-medium text-red-700 bg-red-50 border border-red-200 mb-2">{formErr}</div>
-          )}
-          <div className="flex gap-3">
             <button
               onClick={handleSubmit}
               disabled={submitting || !form.project_name.trim() || !form.address.trim() || (!isInternalSales && !form.brand) || !form.product_type || !form.due_date}
-              className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-white px-5 py-2 rounded-lg font-bold transition-all text-xs flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', boxShadow: '0 4px 14px rgba(37,99,235,0.35)' }}
             >
               {submitting

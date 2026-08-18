@@ -4,10 +4,18 @@
  * Shared form helpers — sama persis dipakai di reminder-schedule & form-review.
  */
 
+/**
+ * Ukuran label & header sengaja kecil.
+ *
+ * Form create kini bertata letak tiga kolom dalam satu layar; tiap kolom cuma
+ * selebar ~470px. Ukuran yang nyaman saat form masih satu kolom lebar membuat
+ * isian di sini berdesakan dan justru memaksa gulir — yang persis ingin
+ * dihindari oleh tata letak satu layar itu.
+ */
 export function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>{label}</label>
+      <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>{label}</label>
       {children}
     </div>
   );
@@ -15,9 +23,9 @@ export function FormField({ label, children }: { label: string; children: React.
 
 export function SectionHeader({ icon, title }: { icon: string; title: string }) {
   return (
-    <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-      <span className="text-lg">{icon}</span>
-      <span className="text-sm font-bold tracking-wide text-slate-700">{title}</span>
+    <div className="flex items-center gap-1.5 pb-1.5 border-b" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+      <span className="text-sm">{icon}</span>
+      <span className="text-xs font-bold tracking-wide text-slate-700">{title}</span>
     </div>
   );
 }

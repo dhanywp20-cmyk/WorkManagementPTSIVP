@@ -1284,13 +1284,13 @@ export function NewFormModal({
           </div>
         </div>
 
-        <div className="border-t-2 border-gray-200 p-4 flex gap-3 bg-white/90 flex-shrink-0">
+        <div className="border-t border-gray-200 px-4 py-3 flex gap-2 justify-end bg-white/90 flex-shrink-0">
           <button type="button" onClick={onClose}
-            className="flex-1 border-2 border-gray-300 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50 transition-all">
+            className="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg font-semibold text-xs hover:bg-gray-50 transition-all">
             Batal
           </button>
           <button type="button" onClick={onSubmit} disabled={submitting}
-            className="flex-[2] bg-gradient-to-r from-teal-600 to-teal-800 hover:from-teal-700 hover:to-teal-900 text-white py-3 rounded-xl font-bold shadow-lg transition-all disabled:opacity-60 flex items-center justify-center gap-2">
+            className="px-5 py-2 bg-gradient-to-r from-teal-600 to-teal-800 hover:from-teal-700 hover:to-teal-900 text-white rounded-lg font-bold text-xs shadow-md transition-all disabled:opacity-60 flex items-center justify-center gap-1.5">
             {submitting
               ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Mengirim...</>
               : <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>Submit Form</>}
