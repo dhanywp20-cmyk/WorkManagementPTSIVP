@@ -6,6 +6,7 @@ import { User, TeamMember } from './shared';
 import { SalesPicker, ModalPortal } from '@/components/shared';
 import { BRAND_OPTIONS, type Brand } from '@/lib/brand-routing';
 import { hasFullAccess } from '@/lib/constants';
+import { hitungLingkupProject, filterLingkup } from '@/lib/project-scope';
 
 export interface NewTicketForm {
   project_name: string;
@@ -28,6 +29,8 @@ export interface NewTicketForm {
 
 interface ReminderRef {
   id: string;
+  /** Nama project bisa tersimpan di sini pada data lama — lihat pencarian di bawah. */
+  title?: string;
   project_name: string;
   address: string;
   sales_name: string;
@@ -72,19 +75,37 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
   const [selectedReminder, setSelectedReminder] = useState<ReminderRef | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  /**
+   * Cari project yang sudah ada — DIBATASI lingkup si pencari.
+   *
+   * Sebelumnya query ini hanya menyaring kategori lalu mencocokkan nama
+   * project, tanpa batas divisi sama sekali. Akibatnya Sales dari divisi mana
+   * pun bisa menemukan project milik divisi lain hanya dengan mengetik
+   * sepotong namanya — lengkap dengan alamat, PIC, dan nomor teleponnya,
+   * karena memilih hasilnya langsung menyalin semua itu ke form.
+   *
+   * Lingkupnya dihitung di lib/project-scope.ts supaya aturannya satu, bukan
+   * diturunkan ulang di tiap tempat yang punya pencarian.
+   */
   const searchReminders = useCallback(async (q: string) => {
     if (!q.trim()) { setReminderResults([]); return; }
     setReminderSearching(true);
-    const { data } = await supabase
+    const lingkup = await hitungLingkupProject(currentUser as never);
+    let query = supabase
       .from('reminders')
-      .select('id, project_name, address, sales_name, sales_division, product, pic_name, pic_phone, category, assign_name')
+      .select('id, project_name, title, address, sales_name, sales_division, product, pic_name, pic_phone, category, assign_name')
       .in('category', ['Konfigurasi & Training', 'Training'])
-      .ilike('project_name', `%${q}%`)
-      .order('created_at', { ascending: false })
-      .limit(10);
+      // Nama project bisa ada di project_name ATAU title — data lama memakai
+      // title, dan aplikasi memang menampilkan `project_name || title`.
+      // Mencari di project_name saja membuat project lama tidak pernah
+      // ketemu, seolah tidak ada di sistem.
+      .or(`project_name.ilike.%${q}%,title.ilike.%${q}%`);
+    const filter = filterLingkup(lingkup);
+    if (filter) query = query.or(filter);
+    const { data } = await query.order('created_at', { ascending: false }).limit(10);
     setReminderResults(data ?? []);
     setReminderSearching(false);
-  }, []);
+  }, [currentUser]);
 
   const handleQueryChange = (q: string) => {
     setReminderQuery(q);
@@ -98,7 +119,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     setReminderQuery('');
     setForm({
       ...form,
-      project_name: r.project_name,
+      project_name: r.project_name || (r as { title?: string }).title || '',
       address: r.address || '',
       sales_name: r.sales_name || '',
       sales_division: r.sales_division || '',
@@ -232,7 +253,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                       onClick={() => selectReminder(r)}
                       className="w-full text-left px-4 py-3 hover:bg-red-50 transition-colors border-b last:border-b-0 flex flex-col gap-0.5"
                       style={{ borderColor: "rgba(0,0,0,0.06)" }}>
-                      <span className="text-sm font-bold text-slate-800">{r.project_name}</span>
+                      <span className="text-sm font-bold text-slate-800">{r.project_name || r.title}</span>
                       <span className="text-xs text-slate-500 flex gap-3">
                         {r.category && <span className="text-red-600 font-semibold">{r.category}</span>}
                         {r.address && <span>📍 {r.address.slice(0, 50)}{r.address.length > 50 ? '…' : ''}</span>}
@@ -249,7 +270,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                   style={{ background: "rgba(220,38,38,0.07)", border: "1px solid rgba(220,38,38,0.2)" }}>
                   <span className="text-red-600 font-bold text-sm">✓</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-slate-800 truncate">{selectedReminder.project_name}</p>
+                    <p className="text-sm font-bold text-slate-800 truncate">{selectedReminder.project_name || selectedReminder.title}</p>
                     <p className="text-xs text-slate-500">{selectedReminder.category} · Data berhasil di-fill otomatis</p>
                   </div>
                   <button type="button"

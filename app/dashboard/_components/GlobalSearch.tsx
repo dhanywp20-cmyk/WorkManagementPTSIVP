@@ -240,8 +240,11 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     // ── 2. Reminders ──
     try {
       let qr = supabase.from('reminders')
-        .select('id, project_name, category, due_date, assign_name, sales_name, sales_division, status')
-        .or(`project_name.ilike.%${q}%,category.ilike.%${q}%,assign_name.ilike.%${q}%,sales_name.ilike.%${q}%,address.ilike.%${q}%`)
+        .select('id, project_name, title, category, due_date, assign_name, sales_name, sales_division, status')
+        // title ikut dicari: nama project data lama tersimpan di sana, dan
+        // aplikasi memang menampilkan `project_name || title`. Tanpa ini
+        // project lama tidak pernah muncul di pencarian.
+        .or(`project_name.ilike.%${q}%,title.ilike.%${q}%,category.ilike.%${q}%,assign_name.ilike.%${q}%,sales_name.ilike.%${q}%,address.ilike.%${q}%`)
         .order('created_at', { ascending: false }).limit(20);
       if (isSalesBiasa) qr = batasiMilikSendiri(qr, ['sales_name', 'created_by']);
       const { data: rData } = await qr;
@@ -258,7 +261,9 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
       reminders.forEach((r: any) => res.push({
         id: `reminder-${r.id}`, type: 'reminder', icon: '🗓️',
-        title: r.project_name ?? '-',
+        // Nama bisa ada di salah satu dari dua kolom — pakai urutan yang sama
+        // dengan halaman Request Schedule supaya judulnya tidak jadi '-'.
+        title: r.project_name || r.title || '-',
         sub: `${r.category} · ${r.due_date ?? '-'}`,
         meta: r.assign_name ?? '-',
         badge: r.status,

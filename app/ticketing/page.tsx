@@ -2156,6 +2156,9 @@ function TicketingSystemInner() {
       else if (filterStatus === "Overdue") statusMatch = isTicketOverdue(t) && t.status !== "Solved";
       else if (filterStatus === "Solved Overdue") statusMatch = isTicketOverdue(t) && t.status === "Solved";
       else if (currentUserTeamType === "Team Services") statusMatch = t.services_status === filterStatus || t.status === filterStatus;
+      // Klik kartu "Pending" menampilkan seluruh varian Pending, supaya angka
+      // di kartu dan jumlah baris yang muncul tidak berbeda.
+      else if (filterStatus === "Pending") statusMatch = (t.status ?? '').startsWith("Pending");
       else statusMatch = t.status === filterStatus;
       const handlerMatch = handlerFilter === null || t.assign_name === handlerFilter;
       const divisionMatch = salesDivisionFilter === null || t.sales_division === salesDivisionFilter;
@@ -2179,10 +2182,21 @@ function TicketingSystemInner() {
     return filteredTickets.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredTickets, currentPage, ITEMS_PER_PAGE]);
 
+  /**
+   * "Pending" bukan satu status, melainkan beberapa: Pending, Pending Action,
+   * dan Pending Check. Kartu ringkasan dulu mencocokkannya PERSIS dengan
+   * "Pending" saja, sehingga ticket yang duduk di Pending Action tidak
+   * terhitung di kartu mana pun — bukan pending, bukan in-progress, bukan
+   * solved. Ia hilang begitu saja dari ringkasan, padahal justru status itulah
+   * yang paling perlu ditindaklanjuti.
+   */
+  const adalahPending = (st: string | undefined | null) =>
+    (st ?? '').startsWith('Pending');
+
   const stats = useMemo(() => {
     const total = tickets.length;
     const processing = tickets.filter((t) => t.status === "In Progress").length;
-    const pending = tickets.filter((t) => t.status === "Pending").length;
+    const pending = tickets.filter((t) => adalahPending(t.status)).length;
     const solved = tickets.filter((t) => t.status === "Solved").length;
     const overdue = tickets.filter((t) => isTicketOverdue(t) && t.status !== "Solved").length;
     const solvedOverdue = tickets.filter((t) => isTicketOverdue(t) && t.status === "Solved").length;
@@ -3339,11 +3353,50 @@ function TicketingSystemInner() {
                   )}
                   {/* Progress Flowchart */}
                   <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2">Progress</p>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Progress</p>
+                      {/* Status Pending menahan pekerjaan, bukan membatalkannya —
+                          jadi yang perlu diketahui adalah berapa lama lagi
+                          tenggatnya, bukan sekadar bahwa ia sedang tertahan. */}
+                      {adalahPending(selectedTicket.status) && (() => {
+                        const dl = getDeadline(selectedTicket);
+                        if (!dl) return null;
+                        const sisaHari = Math.ceil((dl.getTime() - Date.now()) / 86400000);
+                        const lewat = sisaHari < 0;
+                        return (
+                          <span className="text-[10px] font-bold px-2 py-1 rounded-full border"
+                            style={lewat
+                              ? { background: 'rgba(220,38,38,0.08)', borderColor: 'rgba(220,38,38,0.3)', color: '#b91c1c' }
+                              : { background: 'rgba(245,158,11,0.1)', borderColor: 'rgba(245,158,11,0.35)', color: '#b45309' }}>
+                            {selectedTicket.status} · {lewat
+                              ? `lewat ${Math.abs(sisaHari)} hari`
+                              : `${sisaHari} hari lagi`}
+                          </span>
+                        );
+                      })()}
+                    </div>
                     <div className="flex items-center">
                       {(["Pending","Call","Onsite","In Progress","Solved"] as const).map((step, idx, arr) => {
                         const order = ["Pending","Call","Onsite","In Progress","Solved"];
-                        const curIdx = order.indexOf(selectedTicket.status);
+                        /* Posisi diambil dari langkah TERJAUH yang pernah dicapai,
+                           bukan semata status sekarang.
+
+                           "Pending Action" dan "Pending Check" tidak ada di daftar
+                           ini, jadi indexOf mengembalikan -1 dan SELURUH langkah
+                           tampak belum tercapai — ticket yang sudah melewati Call
+                           dan In Progress terlihat mundur ke titik awal begitu
+                           di-set Pending Action. Padahal pekerjaannya tidak hilang;
+                           yang terjadi cuma menunggu sesuatu.
+
+                           Riwayat aktivitas menyimpan tiap perpindahan status, jadi
+                           dari situlah langkah terjauhnya dibaca. */
+                        const dariRiwayat = (selectedTicket.activity_logs ?? [])
+                          .map(l => order.indexOf(l.new_status))
+                          .filter(i => i >= 0);
+                        const curIdx = Math.max(
+                          order.indexOf(selectedTicket.status),
+                          ...(dariRiwayat.length ? dariRiwayat : [-1]),
+                        );
                         const stepIdx = order.indexOf(step);
                         const done = stepIdx < curIdx;
                         const active = stepIdx === curIdx;
