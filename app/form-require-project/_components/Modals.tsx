@@ -9,7 +9,7 @@ import {
   SALES_DIVISIONS, DISPLAY_BRANDS, MIDDLEWARE_BRANDS,
   PIE_COLORS,
 } from './shared';
-import { SalesPicker, ModalPortal } from '@/components/shared';
+import { SalesPicker, ModalPortal, BatalButton, SubmitFormButton } from '@/components/shared';
 import { isAssignablePTSTeam } from '@/lib/teams';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
 
@@ -1285,16 +1285,10 @@ export function NewFormModal({
         </div>
 
         <div className="border-t border-gray-200 px-4 py-3 flex gap-2 justify-end bg-white/90 flex-shrink-0">
-          <button type="button" onClick={onClose}
-            className="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg font-semibold text-xs hover:bg-gray-50 transition-all">
-            Batal
-          </button>
-          <button type="button" onClick={onSubmit} disabled={submitting}
-            className="px-5 py-2 bg-gradient-to-r from-teal-600 to-teal-800 hover:from-teal-700 hover:to-teal-900 text-white rounded-lg font-bold text-xs shadow-md transition-all disabled:opacity-60 flex items-center justify-center gap-1.5">
-            {submitting
-              ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Mengirim...</>
-              : <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>Submit Form</>}
-          </button>
+          <BatalButton onClick={onClose} />
+          <SubmitFormButton onClick={onSubmit} loading={submitting}
+            gradient="linear-gradient(135deg,#0d9488,#115e59)"
+            shadow="0 4px 14px rgba(13,148,136,0.35)" />
         </div>
       </div>
     </div>

@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User, TeamMember } from './shared';
-import { SalesPicker, ModalPortal } from '@/components/shared';
+import { SalesPicker, ModalPortal, BatalButton, SubmitFormButton } from '@/components/shared';
 import { BRAND_OPTIONS, type Brand } from '@/lib/brand-routing';
 import { hasFullAccess } from '@/lib/constants';
 import { hitungLingkupProject, filterLingkup } from '@/lib/project-scope';
@@ -630,17 +630,15 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
               padahal ia cuma penutup; dan dua tombol sama besar tidak
               membedakan mana aksi utama dan mana jalan keluar. */}
           <div className="flex gap-2 justify-end">
-            <button onClick={onClose}
-              className="px-4 py-2 rounded-lg font-semibold text-xs transition-all hover:bg-slate-50"
-              style={{ background: "rgba(255,255,255,0.95)", color: "#64748b", border: "1px solid rgba(0,0,0,0.12)" }}>
-              Batal
-            </button>
-            <button onClick={() => { if (isExternalGuest && !form.brand) return; onSubmit(); }} disabled={uploading || (isExternalGuest && !form.brand)}
-              className="text-white px-5 py-2 rounded-lg font-bold transition-all text-xs flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg,#dc2626,#b91c1c)", boxShadow: "0 4px 14px rgba(220,38,38,0.35)" }}>
-              {uploading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              {uploading ? "⏳ Menyimpan..." : (isExternalGuest && !form.brand) ? "⚠️ Pilih Brand dulu" : "💾 Save Ticket"}
-            </button>
+            <BatalButton onClick={onClose} />
+            <SubmitFormButton
+              onClick={() => { if (isExternalGuest && !form.brand) return; onSubmit(); }}
+              loading={uploading}
+              disabled={isExternalGuest && !form.brand}
+              blockedLabel={isExternalGuest && !form.brand ? "Pilih Brand dulu" : undefined}
+              gradient="linear-gradient(135deg,#dc2626,#b91c1c)"
+              shadow="0 4px 14px rgba(220,38,38,0.35)"
+            />
           </div>
         </div>
       </div>

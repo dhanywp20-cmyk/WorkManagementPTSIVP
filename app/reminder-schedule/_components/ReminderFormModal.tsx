@@ -7,7 +7,7 @@ import {
   REPEAT_OPTIONS, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES,
   PRODUCT_TYPES,
 } from './shared';
-import { FormField, SectionHeader, MultiDatePicker, ModalPortal } from '@/components/shared';
+import { FormField, SectionHeader, MultiDatePicker, ModalPortal, BatalButton, SubmitFormButton } from '@/components/shared';
 
 export type ReminderForm = Omit<Reminder, 'id' | 'created_at' | 'created_by' | 'wa_sent_h1'>;
 export type BulkTarget = 'none' | 'ivp' | 'mvi' | 'ump';
@@ -565,23 +565,23 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
               padahal ia cuma penutup; dan dua tombol sama besar tidak
               membedakan mana aksi utama dan mana jalan keluar. */}
           <div className="flex gap-2 justify-end">
-            <button onClick={onClose}
-              className="px-4 py-2 rounded-lg font-semibold text-xs transition-all hover:bg-slate-50"
-              style={{ background: 'rgba(255,255,255,0.95)', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>
-              Batal
-            </button>
-            <button onClick={handleSubmit} disabled={saving}
-              className="text-white px-5 py-2 rounded-lg font-bold transition-all text-xs flex items-center justify-center gap-1.5 hover:scale-[1.02]"
-              style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', boxShadow: '0 4px 14px rgba(8,145,178,0.35)' }}>
-              {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              {(() => {
-                if (editingReminder) return 'Simpan Perubahan';
+            <BatalButton onClick={onClose} />
+            <SubmitFormButton
+              onClick={handleSubmit}
+              loading={saving}
+              editing={!!editingReminder}
+              suffix={(() => {
+                if (editingReminder) return undefined;
                 const dateCount = new Set([formData.due_date, ...extraDates].filter(Boolean)).size || 1;
                 const targetCount = bulkTarget !== 'none' ? teamUsers.filter(u => u.team_type === BULK_TEAM_TYPE[bulkTarget]).length : 1;
                 const total = dateCount * targetCount;
-                return total > 1 ? `➕ Buat ${total} Reminder (${dateCount} hari${targetCount > 1 ? ` × ${targetCount} orang` : ''})` : '➕ Tambah Reminder';
+                return total > 1
+                  ? `${total} Reminder (${dateCount} hari${targetCount > 1 ? ` × ${targetCount} orang` : ''})`
+                  : undefined;
               })()}
-            </button>
+              gradient="linear-gradient(135deg,#0891b2,#0e7490)"
+              shadow="0 4px 14px rgba(8,145,178,0.35)"
+            />
           </div>
         </div>
       </div>

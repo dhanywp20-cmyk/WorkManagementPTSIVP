@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { CATEGORY_CONFIG, PRODUCT_TYPES } from './shared';
-import { MultiDatePicker, ModalPortal } from '@/components/shared';
+import { MultiDatePicker, ModalPortal, BatalButton, SubmitFormButton } from '@/components/shared';
 import { SalesPicker, type SalesPickerUser } from '@/components/shared/SalesPicker';
 import { BRAND_OPTIONS, type Brand } from '@/lib/brand-routing';
 
@@ -484,27 +484,18 @@ export function RequestJadwalModal({
           {/* Satu baris, rata kanan, seukuran isinya — bukan dua baris tombol
               selebar frame yang membuat Batal terasa sepenting Kirim. */}
           <div className="flex gap-2 justify-end">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg font-semibold text-xs transition-all hover:bg-slate-50"
-              style={{ background: '#ffffff', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}
-            >
-              Batal
-            </button>
-            <button
+            <BatalButton onClick={onClose} />
+            <SubmitFormButton
               onClick={handleSubmit}
-              disabled={submitting || !form.project_name.trim() || !form.address.trim() || (!isInternalSales && !form.brand) || !form.product_type || !form.due_date}
-              className="text-white px-5 py-2 rounded-lg font-bold transition-all text-xs flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', boxShadow: '0 4px 14px rgba(37,99,235,0.35)' }}
-            >
-              {submitting
-                ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Mengirim...</>
-                : (() => {
-                    const dateCount = new Set([form.due_date, ...form.extra_dates].filter(Boolean)).size || 1;
-                    return dateCount > 1 ? <>📩 Kirim Request ({dateCount} Hari)</> : <>📩 Kirim Request Jadwal</>;
-                  })()
-              }
-            </button>
+              loading={submitting}
+              disabled={!form.project_name.trim() || !form.address.trim() || (!isInternalSales && !form.brand) || !form.product_type || !form.due_date}
+              suffix={(() => {
+                const dateCount = new Set([form.due_date, ...form.extra_dates].filter(Boolean)).size || 1;
+                return dateCount > 1 ? `${dateCount} Hari` : undefined;
+              })()}
+              gradient="linear-gradient(135deg,#2563eb,#1d4ed8)"
+              shadow="0 4px 14px rgba(37,99,235,0.35)"
+            />
           </div>
           </div>
         </div>
