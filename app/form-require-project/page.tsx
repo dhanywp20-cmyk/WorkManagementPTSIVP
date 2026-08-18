@@ -2874,6 +2874,7 @@ Hubungi Admin untuk info lebih lanjut.
                       controller_automation: selectedRequest.controller_automation, controller_type: selectedRequest.controller_type,
                       ukuran_ruangan: selectedRequest.ukuran_ruangan, suggest_tampilan: selectedRequest.suggest_tampilan, keterangan_lain: selectedRequest.keterangan_lain,
                       brand_display: selectedRequest.brand_display, brand_display_pic_name: selectedRequest.brand_display_pic_name,
+                      brand_display_2: selectedRequest.brand_display_2, brand_display_2_pic_name: selectedRequest.brand_display_2_pic_name,
                       brand_middleware: selectedRequest.brand_middleware, brand_middleware_pic_name: selectedRequest.brand_middleware_pic_name,
                     };
 
@@ -2991,7 +2992,7 @@ Hubungi Admin untuk info lebih lanjut.
                       <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Kebutuhan</label><ChipDisplay items={[...(dr.kebutuhan||[]), dr.kebutuhan_other]} /></div>
                       <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Solution Product</label><ChipDisplay items={[...(dr.solution_product||[]), dr.solution_other]} /></div>
                       {(dr.brand_display || dr.brand_display_2) && <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div><label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">🖥️ Brand Display</label><p className="text-sm font-semibold text-gray-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{dr.brand_display}{dr.brand_display_pic_name && <span className="text-[11px] text-amber-600 ml-2">· PIC: {dr.brand_display_pic_name}</span>}</p></div>
+                        {dr.brand_display && <div><label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">🖥️ Brand Display</label><p className="text-sm font-semibold text-gray-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{dr.brand_display}{dr.brand_display_pic_name && <span className="text-[11px] text-amber-600 ml-2">· PIC: {dr.brand_display_pic_name}</span>}</p></div>}
                         {dr.brand_display_2 && <div><label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">🖥️ Brand Display 2</label><p className="text-sm font-semibold text-gray-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{dr.brand_display_2}{dr.brand_display_2_pic_name && <span className="text-[11px] text-amber-600 ml-2">· PIC: {dr.brand_display_2_pic_name}</span>}</p></div>}
                         {dr.brand_middleware && <div><label className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1">🔌 Brand Middleware</label><p className="text-sm font-semibold text-gray-800 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2">{dr.brand_middleware}{dr.brand_middleware_pic_name && <span className="text-[11px] text-violet-600 ml-2">· PIC: {dr.brand_middleware_pic_name}</span>}</p></div>}
                       </div>}

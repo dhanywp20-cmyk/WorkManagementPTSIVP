@@ -62,6 +62,14 @@ export interface ProjectRequest {
   brand_display?: string;
   brand_display_pic_id?: string;
   brand_display_pic_name?: string;
+  /**
+   * Display KEDUA untuk Ruangan 1. Disimpan di kolom tabel (bukan di `rooms`),
+   * karena Ruangan 1 memang tidak ikut JSONB — lihat
+   * sql/design-project-brand-display-2.sql.
+   */
+  brand_display_2?: string;
+  brand_display_2_pic_id?: string;
+  brand_display_2_pic_name?: string;
   brand_middleware?: string;
   brand_middleware_pic_id?: string;
   brand_middleware_pic_name?: string;
