@@ -115,7 +115,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
 
   return(
   <ModalPortal>
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 flex flex-col" style={{animation:'scale-in 0.25s ease-out',border:`1.5px solid ${dc.accent}40`,maxHeight:'96dvh'}}>
         <div className="px-6 py-5 rounded-t-2xl flex-shrink-0 relative" style={{background:dc.grad}}>
           <div>
@@ -124,7 +124,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
             <p className="text-[9px] font-bold uppercase tracking-widest text-white/50 mt-1.5 mb-0.5">Tanggal · PIC</p>
             <p className="text-white/70 text-xs">{new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})} · {[row.pic_ivp_name,row.pic_ump_name,row.pic_mvi_name].filter(Boolean).join(' / ')||'Belum ada PIC'}</p>
           </div>
-          <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
+          <button aria-label="Tutup" onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
         </div>
         {toast&&<div className={`mx-5 mt-4 px-4 py-3 rounded-xl text-sm font-semibold flex gap-2 flex-shrink-0 ${toast.type==='success'?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200'}`}><span>{toast.type==='success'?'✅':'❌'}</span><span>{toast.msg}</span></div>}
         <div className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
@@ -169,7 +169,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                           style={chk?{borderColor:dc.accent,background:`${dc.accent}12`,color:dc.accent}:{borderColor:'rgba(0,0,0,0.1)',background:'rgba(255,255,255,0.5)',color:'#64748b'}}>
                           <div className="w-3.5 h-3.5 rounded border-2 flex items-center justify-center flex-shrink-0"
                             style={chk?{borderColor:dc.accent,background:dc.accent}:{borderColor:'#d1d5db',background:'white'}}>
-                            {chk&&<svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg>}
+                            {chk&&<svg aria-hidden="true" focusable="false" className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg>}
                           </div>
                           <span className="text-xs font-semibold leading-tight">{p}</span>
                         </button>
@@ -178,7 +178,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                   </div>
                   {entry.produk.length>0&&(
                     <div className="mt-2 p-2.5 rounded-xl flex flex-wrap gap-1.5" style={{background:'rgba(0,0,0,0.03)',border:'1px solid rgba(0,0,0,0.08)'}}>
-                      {entry.produk.map(p=><span key={p} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{background:dc.grad}}>{p}<button onClick={()=>toggleP(idx,p)} className="ml-0.5 opacity-80">✕</button></span>)}
+                      {entry.produk.map(p=><span key={p} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{background:dc.grad}}>{p}<button aria-label="Tutup" onClick={()=>toggleP(idx,p)} className="ml-0.5 opacity-80">✕</button></span>)}
                     </div>
                   )}
                 </div>
@@ -198,7 +198,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                             className="w-full rounded-xl pl-3 pr-8 py-2 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}}/>
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">W</span>
                         </div>
-                        <button type="button" onClick={()=>rmProdukLain(idx,j)} className="w-8 h-8 rounded-lg text-red-500 hover:bg-red-50 flex items-center justify-center flex-shrink-0" style={{border:'1px solid rgba(220,38,38,0.25)'}}>✕</button>
+                        <button aria-label="Tutup" type="button" onClick={()=>rmProdukLain(idx,j)} className="w-8 h-8 rounded-lg text-red-500 hover:bg-red-50 flex items-center justify-center flex-shrink-0" style={{border:'1px solid rgba(220,38,38,0.25)'}}>✕</button>
                       </div>
                     ))}
                   </div>
@@ -227,7 +227,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">🏷️ Division</label>
-                        <select value={entry.sales_division} onChange={e=>upd(idx,{sales_division:e.target.value})}
+                        <select aria-label="— Pilih Division —" value={entry.sales_division} onChange={e=>upd(idx,{sales_division:e.target.value})}
                           className="w-full rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
                           <option value="">— Pilih Division —</option>
                           {SALES_DIVISIONS.map(d=><option key={d} value={d}>{d}</option>)}
@@ -245,7 +245,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                               style={chk?{borderColor:dc.accent,background:`${dc.accent}12`,color:dc.accent}:{borderColor:'rgba(0,0,0,0.1)',background:'rgba(255,255,255,0.5)',color:'#64748b'}}>
                               <div className="w-3.5 h-3.5 rounded border-2 flex items-center justify-center flex-shrink-0"
                                 style={chk?{borderColor:dc.accent,background:dc.accent}:{borderColor:'#d1d5db',background:'white'}}>
-                                {chk&&<svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg>}
+                                {chk&&<svg aria-hidden="true" focusable="false" className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg>}
                               </div>
                               <span className="text-xs font-semibold leading-tight">{k}</span>
                             </button>
@@ -254,7 +254,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                       </div>
                       {entry.kebutuhan.length>0&&(
                         <div className="mt-2 p-2.5 rounded-xl flex flex-wrap gap-1.5" style={{background:'rgba(0,0,0,0.03)',border:'1px solid rgba(0,0,0,0.08)'}}>
-                          {entry.kebutuhan.map(k=><span key={k} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{background:dc.grad}}>{k}<button onClick={()=>toggleK(idx,k)} className="ml-0.5 opacity-80">✕</button></span>)}
+                          {entry.kebutuhan.map(k=><span key={k} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{background:dc.grad}}>{k}<button aria-label="Tutup" onClick={()=>toggleK(idx,k)} className="ml-0.5 opacity-80">✕</button></span>)}
                         </div>
                       )}
                     </div>
@@ -267,7 +267,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                       <div>
                         <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">👥 Team yang RnD</label>
                         <div className="flex items-center gap-2">
-                          <select value={entry.team_rnd} onChange={e=>upd(idx,{team_rnd:e.target.value})}
+                          <select aria-label="— Pilih Team —" value={entry.team_rnd} onChange={e=>upd(idx,{team_rnd:e.target.value})}
                             className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
                             <option value="">— Pilih Team —</option>
                             <optgroup label="Team PTS IVP">
@@ -307,7 +307,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
             <button onClick={()=>setEntries(p=>[...p,emptyKF()])}
               className="w-full py-3 rounded-2xl border-2 border-dashed text-sm font-bold flex items-center justify-center gap-2"
               style={{borderColor:`${dc.accent}60`,color:dc.accent,background:`${dc.accent}08`}}>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
+              <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
               Tambah Kegiatan Lain
             </button>
           )}

@@ -399,7 +399,7 @@ export default function ProjectProgressPage() {
             <button onClick={() => setProjectForm({ status: 'in_progress' })}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90"
               style={{ background: THEME.gradient, boxShadow: `0 4px 14px ${THEME.shadow}` }}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+              <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
               Tambah Project
             </button>
           )}
@@ -425,7 +425,7 @@ export default function ProjectProgressPage() {
 
             {/* ── Filter bar ── */}
             <div className="flex flex-wrap items-center gap-2">
-              <input value={search} onChange={e => setSearch(e.target.value)}
+              <input aria-label="Cari nama project atau client…" value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Cari nama project atau client…"
                 className="flex-1 min-w-[220px] px-3.5 py-2.5 rounded-md text-sm font-medium outline-none"
                 style={{ border: `1px solid ${PALETTE.borderStrong}`, background: PALETTE.surface, color: PALETTE.ink }} />
@@ -617,7 +617,7 @@ export default function ProjectProgressPage() {
       {/* ══ MODAL DETAIL ══ */}
       {detail && (
       <ModalPortal>
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 z-[1000]"
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 z-[1000]"
           onClick={e => { if (e.target === e.currentTarget) closeDetail(); }}>
           <div className="w-full h-full flex flex-col overflow-hidden relative" style={{
             backgroundImage: `url('/IVP_Background.png')`,
@@ -648,7 +648,7 @@ export default function ProjectProgressPage() {
                   style={{ background: PALETTE.surface, color: PALETTE.inkSoft, border: `1px solid ${PALETTE.borderStrong}` }}>
                   ⬇ Excel
                 </button>
-                <button onClick={closeDetail}
+                <button aria-label="Tutup" onClick={closeDetail}
                   className="w-8 h-8 rounded-md font-bold flex items-center justify-center transition-all"
                   style={{ background: PALETTE.surface, color: PALETTE.inkSoft, border: `1px solid ${PALETTE.borderStrong}` }}>✕</button>
               </div>
@@ -683,7 +683,7 @@ export default function ProjectProgressPage() {
       {/* ══ MODAL FORM PROYEK ══ */}
       {projectForm && (
       <ModalPortal>
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1100]">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1100]">
           <div className="rounded-md shadow-2xl w-full max-w-lg overflow-hidden" style={{ background: PALETTE.surface }}>
             <div className="px-6 py-4" style={{ borderBottom: `1px solid ${PALETTE.border}` }}>
               <h3 className="font-bold text-base" style={{ color: PALETTE.ink }}>
@@ -703,7 +703,7 @@ export default function ProjectProgressPage() {
                   dari daftar, bukan diketik: satu huruf beda berarti proyeknya
                   tidak muncul di daftar sales yang bersangkutan. */}
               <Field label="Sales">
-                <select
+                <select aria-label="— Tanpa Sales —"
                   value={projectForm.sales_name ?? ''}
                   onChange={e => {
                     const dipilih = salesUsers.find(u => u.full_name === e.target.value);
@@ -772,11 +772,11 @@ export default function ProjectProgressPage() {
       {/* ══ MODAL SHARE ══ */}
       {shareFor && (
       <ModalPortal>
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1100]">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1100]">
           <div className="rounded-md shadow-2xl w-full max-w-lg overflow-hidden" style={{ background: PALETTE.surface }}>
             <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${PALETTE.border}` }}>
               <h3 className="font-bold text-base" style={{ color: PALETTE.ink }}>🔗 Share View-Only</h3>
-              <button onClick={() => setShareFor(null)} className="font-bold" style={{ color: PALETTE.inkFaint }}>✕</button>
+              <button aria-label="Tutup" onClick={() => setShareFor(null)} className="font-bold" style={{ color: PALETTE.inkFaint }}>✕</button>
             </div>
             <div className="p-6 flex flex-col gap-4">
               <p className="text-xs text-gray-500 font-medium leading-relaxed">
@@ -1241,7 +1241,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
                     <input value={loc.name} placeholder="Nama lokasi"
                       onChange={e => patchLoc(loc.id, { name: e.target.value })}
                       className="flex-1 px-2.5 py-1.5 rounded-lg text-sm font-black text-gray-800 border-2 border-gray-200 focus:border-cyan-500 outline-none" />
-                    <button onClick={() => removeLoc(loc)}
+                    <button aria-label="Tutup" onClick={() => removeLoc(loc)}
                       className="w-8 h-8 rounded-lg text-rose-500 hover:bg-rose-50 font-bold flex-shrink-0">✕</button>
                   </>
                 ) : (
@@ -1264,7 +1264,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
               {/* Sales per lokasi — satu proyek bisa berisi lokasi milik sales
                   berbeda, dan nilai inilah yang menentukan siapa boleh melihat. */}
               {isFull && (
-                <select value={loc.sales_name ?? ''}
+                <select aria-label="— Sales lokasi ini —" value={loc.sales_name ?? ''}
                   onChange={e => {
                     const dipilih = salesUsers.find(u => u.full_name === e.target.value);
                     patchLoc(loc.id, {
@@ -1283,7 +1283,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
               )}
               <div className={`grid grid-cols-2 gap-2 ${isFull ? '' : 'hidden'}`}>
                 {/* PIC diambil dari daftar Team PTS — bukan ketikan bebas */}
-                <select value={loc.pic ?? ''} onChange={e => patchLoc(loc.id, { pic: e.target.value || null })}
+                <select aria-label="— Pilih PIC —" value={loc.pic ?? ''} onChange={e => patchLoc(loc.id, { pic: e.target.value || null })}
                   className={inputSm}>
                   <option value="">— Pilih PIC —</option>
                   {teamUsers.map(u => <option key={u.id} value={u.full_name}>{u.full_name}</option>)}
@@ -1395,7 +1395,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
                               loading="lazy" decoding="async" width={24} height={24}
                               className="w-6 h-6 rounded object-cover border border-gray-200" />
                           </a>
-                          <button onClick={() => patchComp(loc.id, c.id, { photo_url: null, photo_thumb_url: null })}
+                          <button aria-label="Tutup" onClick={() => patchComp(loc.id, c.id, { photo_url: null, photo_thumb_url: null })}
                             title="Hapus foto" className="text-gray-300 hover:text-rose-500 text-[10px] font-bold">✕</button>
                         </span>
                       ) : (
@@ -1413,7 +1413,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
                       )}
 
                       {isFull && (
-                        <button onClick={() => removeComp(loc.id, c.id)}
+                        <button aria-label="Tutup" onClick={() => removeComp(loc.id, c.id)}
                           className="text-gray-300 hover:text-rose-500 font-bold px-1 flex-shrink-0">✕</button>
                       )}
                     </div>
@@ -1480,7 +1480,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
             <input value={is.note ?? ''} placeholder="Keterangan"
               onChange={e => patchIssue(is.id, { note: e.target.value })}
               className={`${inputSm} md:col-span-4`} />
-            <button onClick={() => removeIssue(is.id)}
+            <button aria-label="Tutup" onClick={() => removeIssue(is.id)}
               className="md:col-span-1 text-rose-500 hover:bg-rose-50 rounded-lg py-1.5 font-bold">✕</button>
           </div>
         ))}
@@ -1520,13 +1520,13 @@ function RowActions({ p, canEdit, onView, onExport, onShare, onEdit, onDelete }:
     <ActionGroup>
       <ViewIconBtn onClick={onView} label="Lihat Detail" />
       <IconBtn label="Export Excel" color="#059669" onClick={onExport}>
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
+        <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
       </IconBtn>
       {canEdit && (
         <>
           <IconBtn label={p.share_enabled ? 'Share View-Only (aktif)' : 'Share View-Only'}
             color={p.share_enabled ? '#0891b2' : '#94a3b8'} onClick={onShare}>
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" /></svg>
+            <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" /></svg>
           </IconBtn>
           <EditIconBtn onClick={onEdit} label="Edit" />
           <DeleteIconBtn onClick={onDelete} label="Hapus" />
@@ -1549,7 +1549,7 @@ function IconBtn({ label, color, onClick, children }: {
   label: string; color: string; onClick: () => void; children: React.ReactNode;
 }) {
   return (
-    <button onClick={onClick} title={label}
+    <button aria-label={label} onClick={onClick} title={label}
       className="w-7 h-7 rounded-lg border flex items-center justify-center transition-all hover:text-white"
       style={{ color, borderColor: `${color}40`, background: `${color}12` }}
       onMouseEnter={e => { e.currentTarget.style.background = color; e.currentTarget.style.color = '#fff'; }}

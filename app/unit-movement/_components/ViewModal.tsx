@@ -10,7 +10,7 @@ export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void 
   const typeLines  = splitTypeLines(log.type_barang);
   return (
   <ModalPortal>
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
       <div className="w-full max-w-2xl max-h-full overflow-y-auto rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10 rounded-t-2xl">
           <div className="flex items-center gap-3">
@@ -22,7 +22,7 @@ export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void 
               <p className="text-xs text-gray-600">{fmtDate(log.tanggal,true)}</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-sm flex-shrink-0">✕</button>
+          <button aria-label="Tutup" onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-sm flex-shrink-0">✕</button>
         </div>
         <div className="p-6 space-y-4">
           <div className="flex items-center gap-2 flex-wrap">

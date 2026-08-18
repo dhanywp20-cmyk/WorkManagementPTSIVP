@@ -31,7 +31,7 @@ export function UrlListField({ label, icon, value, onChange }: {
               <span className="text-sm">🔗</span>
               <a href={url} target="_blank" rel="noopener noreferrer"
                 className="text-xs font-semibold text-blue-600 flex-1 truncate hover:underline">{url}</a>
-              <button type="button" onClick={()=>remove(i)} className="text-red-400 hover:text-red-600 font-bold text-xs flex-shrink-0">✕</button>
+              <button aria-label="Tutup" type="button" onClick={()=>remove(i)} className="text-red-400 hover:text-red-600 font-bold text-xs flex-shrink-0">✕</button>
             </div>
           ))}
         </div>

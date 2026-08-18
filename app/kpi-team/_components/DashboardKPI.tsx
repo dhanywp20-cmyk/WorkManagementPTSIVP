@@ -193,10 +193,10 @@ function computeCascadedPiketToday(
 
 function MiniDonut({ segments, size = 72 }: { segments: { value: number; color: string }[]; size?: number }) {
   const total = segments.reduce((s, x) => s + x.value, 0);
-  if (!total) return <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}><circle cx={size/2} cy={size/2} r={size/2-5} fill="none" stroke="#e2e8f0" strokeWidth={9}/></svg>;
+  if (!total) return <svg aria-hidden="true" focusable="false" width={size} height={size} viewBox={`0 0 ${size} ${size}`}><circle cx={size/2} cy={size/2} r={size/2-5} fill="none" stroke="#e2e8f0" strokeWidth={9}/></svg>;
   const r = size/2-6, circ = 2*Math.PI*r; let off = 0;
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform:'rotate(-90deg)' }}>
+    <svg aria-hidden="true" focusable="false" width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform:'rotate(-90deg)' }}>
       <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#e8ecf0" strokeWidth={9}/>
       {segments.map((seg,i) => { const pct=seg.value/total, dash=pct*circ, gap=circ-dash;
         const el=<circle key={i} cx={size/2} cy={size/2} r={r} fill="none" stroke={seg.color} strokeWidth={9} strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-off*circ} strokeLinecap="butt"/>;
@@ -210,7 +210,7 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
   const max = Math.max(...values, 1), w=80, h=28;
   const pts = values.map((v,i) => `${(i/(values.length-1))*w},${h-(v/max)*h}`).join(' ');
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ overflow:'visible' }}>
+    <svg aria-hidden="true" focusable="false" width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ overflow:'visible' }}>
       <polyline points={pts} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round"/>
       <circle cx={(values.length-1)/(values.length-1)*w} cy={h-(values[values.length-1]/max)*h} r={3} fill={color}/>
     </svg>
@@ -697,7 +697,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
     let cumBefore = 0;
     return (
       <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
-        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <svg aria-hidden="true" focusable="false" width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
           <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} />
           {segments.map((seg, i) => {
             const dash = (seg.value / total) * circ;
@@ -1370,10 +1370,10 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               {/* Search + filter */}
               <div className="flex flex-wrap items-center gap-2">
                 <div className="relative flex-1 min-w-[180px]">
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg aria-hidden="true" focusable="false" className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                   </svg>
-                  <input value={auditSearch} onChange={e=>setAuditSearch(e.target.value)}
+                  <input aria-label="Cari actor, aksi, target..." value={auditSearch} onChange={e=>setAuditSearch(e.target.value)}
                     placeholder="Cari actor, aksi, target..."
                     className="w-full rounded-lg pl-8 pr-3 py-2 text-sm outline-none bg-slate-50 border border-slate-200 text-slate-700 focus:border-blue-300 focus:ring-1 focus:ring-blue-100 transition-all"/>
                 </div>
@@ -1414,7 +1414,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 <div className="font-bold text-slate-800 text-base">⚙️ Pengaturan KPI</div>
                 <div className="text-sm text-slate-400 mt-0.5">Atur batas & bobot masing-masing komponen</div>
               </div>
-              <button onClick={()=>setShowSettings(false)} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100">×</button>
+              <button aria-label="Tutup" onClick={()=>setShowSettings(false)} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100">×</button>
             </div>
             <div className="p-6 space-y-5">
               {/* LC Min Score */}

@@ -59,7 +59,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
   return (
   <ModalPortal>
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-3 sm:p-4"
+    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-3 sm:p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-[1500px] h-full max-h-full flex flex-col overflow-hidden"
         style={{ animation: 'scale-in 0.25s ease-out', border: '1.5px solid rgba(220,38,38,0.25)' }}>
@@ -72,8 +72,8 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
               <h2 className="text-base font-bold text-white">{editingReminder ? '✏️ Edit Reminder' : '➕ Tambah Reminder'}</h2>
               <p className="text-cyan-200/80 text-xs mt-1">Isi detail jadwal & informasi project</p>
             </div>
-            <button onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <button aria-label="Tutup" onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all">
+              <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -128,7 +128,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                       : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }}>
                     <span className="text-2xl">{c.icon}</span>
                     <span className="text-base font-bold leading-tight flex-1">{cat}</span>
-                    {sel && <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                    {sel && <svg aria-hidden="true" focusable="false" className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                   </button>
                 );
               })}
@@ -176,7 +176,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
               </div>
             )}
             {bulkTarget === 'none' ? (
-              <select value={formData.assigned_to} onChange={e => fd({ assigned_to: e.target.value })}
+              <select aria-label="-- Pilih Anggota Team --" value={formData.assigned_to} onChange={e => fd({ assigned_to: e.target.value })}
                 className={inputCls} style={inputStyle}>
                 <option value="">-- Pilih Anggota Team --</option>
                 {canAssignSelf && selfUser && (
@@ -421,7 +421,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                         ? <span className="font-semibold text-slate-800">{formData.sales_name} <span className={`font-normal ${isTrigger ? 'text-violet-500' : 'text-slate-500'}`}>{formData.sales_division ? `· ${formData.sales_division}` : ''}</span></span>
                         : <span className="text-slate-400">-- Pilih Sales --</span>
                       }
-                      <svg className={`w-4 h-4 flex-shrink-0 transition-transform ${guestDropdownOpen ? 'rotate-180' : ''} ${isTrigger ? 'text-violet-400' : 'text-slate-400'}`}
+                      <svg aria-hidden="true" focusable="false" className={`w-4 h-4 flex-shrink-0 transition-transform ${guestDropdownOpen ? 'rotate-180' : ''} ${isTrigger ? 'text-violet-400' : 'text-slate-400'}`}
                         fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
@@ -433,7 +433,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                         <div className="p-2 border-b" style={{ borderColor: 'rgba(124,58,237,0.15)' }}>
                           <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-violet-400 text-sm">🔍</span>
-                            <input autoFocus type="text" value={guestSearch}
+                            <input aria-label="Cari nama sales / guest..." autoFocus type="text" value={guestSearch}
                               onChange={e => setGuestSearch(e.target.value)}
                               placeholder="Cari nama sales / guest..."
                               className="w-full pl-8 pr-3 py-2 rounded-lg text-sm outline-none"

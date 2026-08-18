@@ -180,17 +180,20 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
           <span className="ml-2 text-[10px] text-blue-600 font-semibold uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-full">Admin Portal</span>
         </div>
       </div>
-      <nav className="flex items-end gap-1 px-4 pt-2 overflow-x-auto">
+      {/* role="tablist": deretan ini mengganti isi halaman, bukan sekadar
+          tombol lepas. Dengan penandanya pembaca layar menyebut "tab 2 dari 6"
+          dan mana yang sedang terpilih. */}
+      <nav role="tablist" aria-label="Bagian Learning Center" className="flex items-end gap-1 px-4 pt-2 overflow-x-auto">
         {items.map(i => (
-          <button key={i.key} onClick={() => onChange(i.key)}
+          <button key={i.key} type="button" role="tab" aria-selected={view === i.key} onClick={() => onChange(i.key)}
             className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap flex-shrink-0
               ${view === i.key ? 'text-blue-700 border-blue-600 bg-blue-50/60 font-semibold' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'}`}>
-            <span className="text-sm">{i.icon}</span>{i.label}
+            <span className="text-sm" aria-hidden="true">{i.icon}</span>{i.label}
           </button>
         ))}
-        <button onClick={() => window.location.reload()} title="Refresh halaman"
+        <button aria-label="Refresh halaman" onClick={() => window.location.reload()} title="Refresh halaman"
           className="ml-1 mb-1 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all border border-transparent hover:border-blue-200 text-base flex-shrink-0">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
         </button>
@@ -216,17 +219,20 @@ function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView
           <span className="ml-2 text-[10px] text-indigo-500 font-semibold uppercase tracking-wider bg-indigo-50 px-2 py-0.5 rounded-full">Team Portal</span>
         </div>
       </div>
-      <nav className="flex items-end gap-1 px-4 pt-2 overflow-x-auto">
+      {/* role="tablist": deretan ini mengganti isi halaman, bukan sekadar
+          tombol lepas. Dengan penandanya pembaca layar menyebut "tab 2 dari 6"
+          dan mana yang sedang terpilih. */}
+      <nav role="tablist" aria-label="Bagian Learning Center" className="flex items-end gap-1 px-4 pt-2 overflow-x-auto">
         {items.map(i => (
-          <button key={i.key} onClick={() => onChange(i.key)}
+          <button key={i.key} type="button" role="tab" aria-selected={view === i.key} onClick={() => onChange(i.key)}
             className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap flex-shrink-0
               ${view === i.key ? 'text-indigo-700 border-indigo-600 bg-indigo-50/60 font-semibold' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'}`}>
-            <span className="text-sm">{i.icon}</span>{i.label}
+            <span className="text-sm" aria-hidden="true">{i.icon}</span>{i.label}
           </button>
         ))}
-        <button onClick={() => window.location.reload()} title="Refresh halaman"
+        <button aria-label="Refresh halaman" onClick={() => window.location.reload()} title="Refresh halaman"
           className="ml-1 mb-1 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all border border-transparent hover:border-indigo-200 flex-shrink-0">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
         </button>

@@ -143,7 +143,7 @@ export function AssignPTSModal({
 
   return (
   <ModalPortal>
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1200] p-4">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1200] p-4">
       <div className="bg-white/90 rounded-2xl shadow-2xl w-full border-2 border-teal-500 overflow-hidden"
         style={{ maxWidth: 460 }}>
 
@@ -158,7 +158,7 @@ export function AssignPTSModal({
               </span>
             </p>
           </div>
-          <button onClick={onClose} className="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold">✕</button>
+          <button aria-label="Tutup" onClick={onClose} className="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold">✕</button>
         </div>
 
         {/* Info banner untuk external */}
@@ -334,11 +334,11 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
         {opts.map(opt => {
           const active = value.includes(opt);
           return (
-            <button key={opt} type="button"
+            <button aria-pressed={active} key={opt} type="button"
               onClick={() => onUpdate({ [field]: multi ? toggleArr(value, opt) : (active ? [] : [opt]) } as any)}
               className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
               <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>
-                {active && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                {active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
               </div>
               {opt}
             </button>
@@ -356,9 +356,9 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
         <input value={room.room_name} onChange={e => onUpdate({ room_name: e.target.value })}
           placeholder="Nama ruangan / area..."
           className="flex-1 min-w-0 border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm font-medium bg-white outline-none focus:border-teal-400" />
-        <button type="button" onClick={onRemove}
+        <button aria-label="Tutup" type="button" onClick={onRemove}
           className="p-1.5 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all flex-shrink-0">
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+          <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
 
@@ -385,7 +385,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 pt-2 border-t border-gray-100">
         <div>
           <label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5">🖥️ Brand Display <span className="text-gray-400 font-normal">(opsional)</span></label>
-          <select value={room.brand_display} onChange={e => {
+          <select aria-label="— Pilih Brand Display —" value={room.brand_display} onChange={e => {
             const brand = e.target.value;
             const pic = getBrandPic('display', brand);
             onUpdate({ brand_display: brand, brand_display_pic_id: pic?.pic_user_id||'', brand_display_pic_name: pic?.pic_user_name||'' });
@@ -398,7 +398,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
         </div>
         <div>
           <label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5">🖥️ Brand Display 2 <span className="text-gray-400 normal-case font-normal">(opsional)</span></label>
-          <select value={room.brand_display_2 ?? ''} onChange={e => {
+          <select aria-label="— Pilih Brand Display 2 —" value={room.brand_display_2 ?? ''} onChange={e => {
             const brand = e.target.value;
             const pic = getBrandPic('display', brand);
             onUpdate({ brand_display_2: brand, brand_display_2_pic_id: pic?.pic_user_id||'', brand_display_2_pic_name: pic?.pic_user_name||'' });
@@ -411,7 +411,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
         </div>
         <div>
           <label className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1.5">🔌 Brand Middleware <span className="text-gray-400 font-normal">(opsional)</span></label>
-          <select value={room.brand_middleware} onChange={e => {
+          <select aria-label="— Pilih Brand Middleware —" value={room.brand_middleware} onChange={e => {
             const brand = e.target.value;
             const pic = getBrandPic('middleware', brand);
             onUpdate({ brand_middleware: brand, brand_middleware_pic_id: pic?.pic_user_id||'', brand_middleware_pic_name: pic?.pic_user_name||'' });
@@ -549,7 +549,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
                   {previews.map((src, i) => (
                     <div key={i} className="relative group rounded-lg overflow-hidden aspect-square border border-gray-200">
                       <img src={src} alt="" className="w-full h-full object-cover"/>
-                      <button type="button" onClick={() => onRemovePhoto(i)} className="absolute top-0.5 right-0.5 bg-red-500 text-white w-4 h-4 rounded-full text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                      <button aria-label="Tutup" type="button" onClick={() => onRemovePhoto(i)} className="absolute top-0.5 right-0.5 bg-red-500 text-white w-4 h-4 rounded-full text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
                     </div>
                   ))}
                   {photos.length < 10 && (
@@ -580,7 +580,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
                     <p className="text-xs font-bold text-emerald-800 truncate">{boqFile.name}</p>
                     <p className="text-[11px] text-emerald-600">{(boqFile.size/1024).toFixed(1)} KB</p>
                   </div>
-                  <button type="button" onClick={() => onSetBoq && onSetBoq(null)} className="text-red-400 hover:text-red-600 font-bold text-sm">✕</button>
+                  <button aria-label="Tutup" type="button" onClick={() => onSetBoq && onSetBoq(null)} className="text-red-400 hover:text-red-600 font-bold text-sm">✕</button>
                 </div>
                 <button type="button" onClick={() => boqRef.current?.click()}
                   className="mt-1.5 w-full text-xs text-emerald-600 hover:text-emerald-800 font-bold py-1 transition-all">🔄 Ganti File</button>
@@ -607,7 +607,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
                 {previews.map((src, i) => (
                   <div key={i} className="relative group rounded-lg overflow-hidden aspect-square border border-gray-200">
                     <img src={src} alt="" className="w-full h-full object-cover"/>
-                    <button type="button" onClick={() => onRemovePhoto(i)} className="absolute top-0.5 right-0.5 bg-red-500 text-white w-4 h-4 rounded-full text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                    <button aria-label="Tutup" type="button" onClick={() => onRemovePhoto(i)} className="absolute top-0.5 right-0.5 bg-red-500 text-white w-4 h-4 rounded-full text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
                   </div>
                 ))}
                 {photos.length < 10 && (
@@ -717,7 +717,7 @@ export function NewFormModal({
             <button key={opt} type="button" onClick={() => onChange(toggleArr(value, opt))}
               className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${checked ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
               <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>
-                {checked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                {checked && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
               </div>
               {opt}
             </button>
@@ -746,7 +746,7 @@ export function NewFormModal({
 
   return (
   <ModalPortal>
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1100] p-4">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1100] p-4">
       <div className="bg-white/90 rounded-3xl shadow-2xl w-full max-w-[1500px] h-full max-h-full flex flex-col border-2 border-teal-500 animate-scale-in overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-teal-600 to-teal-800 px-6 py-4 flex items-center justify-between flex-shrink-0">
@@ -754,7 +754,7 @@ export function NewFormModal({
             <h2 className="text-xl font-bold text-white flex items-center gap-2">📋 Form Equipment Request — IVP &amp; MVI</h2>
             <p className="text-teal-100 text-xs mt-0.5">Requester: <span className="font-bold">{currentUser.full_name}</span></p>
           </div>
-          <button onClick={onClose} className="bg-white/20 hover:bg-white/30 text-white w-9 h-9 rounded-xl flex items-center justify-center font-bold transition-all text-lg">✕</button>
+          <button aria-label="Tutup" onClick={onClose} className="bg-white/20 hover:bg-white/30 text-white w-9 h-9 rounded-xl flex items-center justify-center font-bold transition-all text-lg">✕</button>
         </div>
 
         {/* Dua kolom, BUKAN tiga seperti form lain — pembagiannya mengikuti
@@ -838,7 +838,7 @@ export function NewFormModal({
               )}
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Target Selesai *</label>
-                <input type="date" value={dueDateForm} onChange={e => setDueDateForm(e.target.value)} required
+                <input type="date" value={dueDateForm} onChange={e => setDueDateForm(e.target.value)} required aria-label="Target selesai"
                   className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all text-sm font-medium bg-white outline-none" />
               </div>
 
@@ -852,9 +852,9 @@ export function NewFormModal({
           <div className="bg-white/95 rounded-2xl border-2 border-teal-200 shadow-sm overflow-hidden">
             {/* Tab bar */}
             <div className="flex items-center bg-teal-50 border-b border-teal-200 px-2 py-1.5 gap-1 overflow-x-auto">
-              <button type="button" onClick={goLeft} disabled={activeRoomIdx === 0}
+              <button aria-label="Sebelumnya" type="button" onClick={goLeft} disabled={activeRoomIdx === 0}
                 className="p-1.5 rounded-lg text-teal-600 hover:bg-teal-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex-shrink-0">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/></svg>
+                <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/></svg>
               </button>
               {Array.from({length: totalRooms}).map((_, i) => {
                 const label = i === 0 ? (form.room_name.trim() || 'Ruangan 1') : (rooms[i-1]?.room_name?.trim() || `Ruangan ${i+1}`);
@@ -866,9 +866,9 @@ export function NewFormModal({
                   </button>
                 );
               })}
-              <button type="button" onClick={goRight} disabled={activeRoomIdx === totalRooms - 1}
+              <button aria-label="Berikutnya" type="button" onClick={goRight} disabled={activeRoomIdx === totalRooms - 1}
                 className="p-1.5 rounded-lg text-teal-600 hover:bg-teal-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex-shrink-0">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
+                <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
               </button>
               <button type="button" onClick={addAndGoToRoom}
                 className="flex-shrink-0 px-3 py-1.5 rounded-xl bg-teal-500 text-white text-xs font-bold hover:bg-teal-600 transition-all whitespace-nowrap ml-1">
@@ -879,9 +879,9 @@ export function NewFormModal({
               <div className="hidden sm:block flex-1"/>
               <span className="text-[10px] text-teal-600 font-bold mr-1">{activeRoomIdx+1}/{totalRooms}</span>
               {activeRoomIdx > 0 && (
-                <button type="button" onClick={() => { setRooms(p => p.filter((_,i)=>i!==activeRoomIdx-1)); setActiveRoomIdx(a=>Math.max(0,a-1)); }}
+                <button aria-label="Tutup" type="button" onClick={() => { setRooms(p => p.filter((_,i)=>i!==activeRoomIdx-1)); setActiveRoomIdx(a=>Math.max(0,a-1)); }}
                   className="flex-shrink-0 p-1.5 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all">
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                  <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               )}
             </div>
@@ -905,7 +905,7 @@ export function NewFormModal({
                   <div className="flex flex-wrap gap-2">
                     {['Signage','Immersive','Meeting Room','Mapping','Command Center','Hybrid Classroom'].map(opt => {
                       const active = form.kebutuhan[0] === opt;
-                      return <button key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, kebutuhan: active ? [] : [opt] }))}
+                      return <button aria-pressed={active} key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, kebutuhan: active ? [] : [opt] }))}
                         className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
                         <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500' : 'border-gray-400'}`}>{active && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
                         {opt}
@@ -924,9 +924,9 @@ export function NewFormModal({
                   <div className="flex flex-wrap gap-2">
                     {['Videowall','Signage Display','Videotron','Projector','Kiosk','IFP'].map(opt => {
                       const active = form.solution_product.includes(opt);
-                      return <button key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, solution_product: active ? prev.solution_product.filter(x=>x!==opt) : [...prev.solution_product,opt] }))}
+                      return <button aria-pressed={active} key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, solution_product: active ? prev.solution_product.filter(x=>x!==opt) : [...prev.solution_product,opt] }))}
                         className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
-                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
+                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
                         {opt}
                       </button>;
                     })}
@@ -941,7 +941,7 @@ export function NewFormModal({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 pt-2 border-t border-gray-100">
                   <div>
                     <label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5">🖥️ Brand Display <span className="text-gray-400 font-normal">(opsional)</span></label>
-                    <select value={form.brand_display||''} onChange={e => {
+                    <select aria-label="— Pilih Brand Display —" value={form.brand_display||''} onChange={e => {
                       const brand = e.target.value;
                       const pic = brandPicMappings.find(m => m.brand_type==='display' && m.brand_name===brand);
                       setForm(prev => ({...prev, brand_display:brand, brand_display_pic_id:pic?.pic_user_id||'', brand_display_pic_name:pic?.pic_user_name||''}));
@@ -954,7 +954,7 @@ export function NewFormModal({
                   </div>
                 <div>
                   <label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5">🖥️ Brand Display 2 <span className="text-gray-400 normal-case font-normal">(opsional)</span></label>
-                  <select value={form.brand_display_2||''} onChange={e => {
+                  <select aria-label="— Pilih Brand Display 2 —" value={form.brand_display_2||''} onChange={e => {
                     const brand = e.target.value;
                     const pic = brandPicMappings.find(m => m.brand_type==='display' && m.brand_name===brand);
                     setForm(prev => ({...prev, brand_display_2:brand, brand_display_2_pic_id:pic?.pic_user_id||'', brand_display_2_pic_name:pic?.pic_user_name||''}));
@@ -967,7 +967,7 @@ export function NewFormModal({
                 </div>
                   <div>
                     <label className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1.5">🔌 Brand Middleware <span className="text-gray-400 font-normal">(opsional)</span></label>
-                    <select value={form.brand_middleware||''} onChange={e => {
+                    <select aria-label="— Pilih Brand Middleware —" value={form.brand_middleware||''} onChange={e => {
                       const brand = e.target.value;
                       const pic = brandPicMappings.find(m => m.brand_type==='middleware' && m.brand_name===brand);
                       setForm(prev => ({...prev, brand_middleware:brand, brand_middleware_pic_id:pic?.pic_user_id||'', brand_middleware_pic_name:pic?.pic_user_name||''}));
@@ -988,7 +988,7 @@ export function NewFormModal({
                       <div className="flex flex-wrap gap-2">
                         {['Single Zone','Multi Zone','Full Screen','Custom Layout'].map(opt => {
                           const active = form.layout_signage[0] === opt;
-                          return <button key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, layout_signage: active ? [] : [opt] }))}
+                          return <button aria-pressed={active} key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, layout_signage: active ? [] : [opt] }))}
                             className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300'}`}>
                             <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500' : 'border-gray-400'}`}>{active && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
                             {opt}
@@ -1001,9 +1001,9 @@ export function NewFormModal({
                       <div className="flex flex-wrap gap-2">
                         {['Cloud','Onpremise','USB'].map(opt => {
                           const active = form.jaringan_cms.includes(opt);
-                          return <button key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, jaringan_cms: active ? prev.jaringan_cms.filter(x=>x!==opt) : [...prev.jaringan_cms,opt] }))}
+                          return <button aria-pressed={active} key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, jaringan_cms: active ? prev.jaringan_cms.filter(x=>x!==opt) : [...prev.jaringan_cms,opt] }))}
                             className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
-                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
+                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
                             {opt}
                           </button>;
                         })}
@@ -1023,9 +1023,9 @@ export function NewFormModal({
                     <div className="flex flex-wrap gap-2">
                       {['PC / Mini PC','Laptop','URL Dashboard','NVR CCTV','Media Player','IPTV','Set Top Box'].map(opt => {
                         const active = form.source.includes(opt);
-                        return <button key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, source: active ? prev.source.filter(x=>x!==opt) : [...prev.source,opt] }))}
+                        return <button aria-pressed={active} key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, source: active ? prev.source.filter(x=>x!==opt) : [...prev.source,opt] }))}
                           className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
-                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
+                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
                           {opt}
                         </button>;
                       })}
@@ -1064,9 +1064,9 @@ export function NewFormModal({
                       <div className="flex flex-wrap gap-2">
                         {['Auto Tracking','Manual PTZ','Fixed'].map(opt => {
                           const active = form.camera_tracking.includes(opt);
-                          return <button key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, camera_tracking: active ? prev.camera_tracking.filter(x=>x!==opt) : [...prev.camera_tracking,opt] }))}
+                          return <button aria-pressed={active} key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, camera_tracking: active ? prev.camera_tracking.filter(x=>x!==opt) : [...prev.camera_tracking,opt] }))}
                             className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
-                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
+                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
                             {opt}
                           </button>;
                         })}
@@ -1093,9 +1093,9 @@ export function NewFormModal({
                       <div className="flex flex-wrap gap-2">
                         {['Speaker Ceiling','Speaker Line Array','Subwoofer','Microphone','Amplifier'].map(opt => {
                           const active = form.audio_detail.includes(opt);
-                          return <button key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, audio_detail: active ? prev.audio_detail.filter(x=>x!==opt) : [...prev.audio_detail,opt] }))}
+                          return <button aria-pressed={active} key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, audio_detail: active ? prev.audio_detail.filter(x=>x!==opt) : [...prev.audio_detail,opt] }))}
                             className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
-                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
+                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
                             {opt}
                           </button>;
                         })}
@@ -1154,9 +1154,9 @@ export function NewFormModal({
                       <div className="flex flex-wrap gap-2">
                         {['Aplikasi','AirPlay','Miracast','Chromecast','BYOM'].map(opt => {
                           const active = form.wireless_mode.includes(opt);
-                          return <button key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, wireless_mode: active ? prev.wireless_mode.filter(x=>x!==opt) : [...prev.wireless_mode,opt] }))}
+                          return <button aria-pressed={active} key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, wireless_mode: active ? prev.wireless_mode.filter(x=>x!==opt) : [...prev.wireless_mode,opt] }))}
                             className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
-                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
+                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
                             {opt}
                           </button>;
                         })}
@@ -1192,9 +1192,9 @@ export function NewFormModal({
                       <div className="flex flex-wrap gap-2">
                         {['Cue','Wyrestorm','Extron','Custom'].map(opt => {
                           const active = form.controller_type.includes(opt);
-                          return <button key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, controller_type: active ? prev.controller_type.filter(x=>x!==opt) : [...prev.controller_type,opt] }))}
+                          return <button aria-pressed={active} key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, controller_type: active ? prev.controller_type.filter(x=>x!==opt) : [...prev.controller_type,opt] }))}
                             className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
-                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
+                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
                             {opt}
                           </button>;
                         })}
@@ -1228,7 +1228,7 @@ export function NewFormModal({
                             {surveyPhotosPreviews.map((src,i) => (
                               <div key={i} className="relative group rounded-lg overflow-hidden aspect-square border border-gray-200">
                                 <img src={src} alt="" className="w-full h-full object-cover"/>
-                                <button type="button" onClick={() => { const n=surveyPhotos.filter((_,j)=>j!==i); setSurveyPhotos(n); setSurveyPhotosPreviews(n.map(f=>URL.createObjectURL(f))); }} className="absolute top-0.5 right-0.5 bg-red-500 text-white w-4 h-4 rounded-full text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                                <button aria-label="Tutup" type="button" onClick={() => { const n=surveyPhotos.filter((_,j)=>j!==i); setSurveyPhotos(n); setSurveyPhotosPreviews(n.map(f=>URL.createObjectURL(f))); }} className="absolute top-0.5 right-0.5 bg-red-500 text-white w-4 h-4 rounded-full text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
                               </div>
                             ))}
                             {surveyPhotos.length < 10 && <button type="button" onClick={() => surveyPhotoRef.current?.click()} className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-teal-400 cursor-pointer"><span className="text-xl">+</span></button>}
@@ -1251,7 +1251,7 @@ export function NewFormModal({
                           <div className="border-2 border-emerald-300 bg-emerald-50 rounded-xl p-3 flex items-center gap-3">
                             <span className="text-xl">📊</span>
                             <div className="flex-1 min-w-0"><p className="text-xs font-bold text-emerald-800 truncate">{boqFormFile.name}</p><p className="text-[11px] text-emerald-600">{(boqFormFile.size/1024).toFixed(1)} KB</p></div>
-                            <button type="button" onClick={() => setBoqFormFile(null)} className="text-red-400 hover:text-red-600 font-bold text-sm">✕</button>
+                            <button aria-label="Tutup" type="button" onClick={() => setBoqFormFile(null)} className="text-red-400 hover:text-red-600 font-bold text-sm">✕</button>
                           </div>
                           <button type="button" onClick={() => boqRoom1Ref.current?.click()} className="mt-1.5 w-full text-xs text-emerald-600 hover:text-emerald-800 font-bold py-1 transition-all">🔄 Ganti File</button>
                         </div>

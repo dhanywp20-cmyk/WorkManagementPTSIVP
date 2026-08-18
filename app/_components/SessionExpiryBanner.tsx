@@ -51,7 +51,7 @@ export default function SessionExpiryBanner() {
     return (
       <ModalPortal>
         {/* Overlay blok semua interaksi saat sesi expired */}
-        <div
+        <div role="dialog" aria-modal="true"
           className="fixed inset-0 z-[2400] bg-black/30 cursor-not-allowed"
           onClick={e => e.stopPropagation()}
           style={{ pointerEvents: 'all' }}

@@ -20,7 +20,7 @@ function DonutChart({ segments, size = 68, strokeWidth = 10, label = '' }: {
   let cumBefore = 0;
   return (
     <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+      <svg aria-hidden="true" focusable="false" width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} />
         {segments.map((seg, i) => {
           const dash = (seg.value / total) * circ;

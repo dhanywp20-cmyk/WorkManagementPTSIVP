@@ -160,7 +160,7 @@ export function GradingStatusBadge({ attempt }: { attempt: { grading_status?: st
 export function SearchInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <div className="relative w-full sm:w-auto">
-      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" focusable="false" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
       <input
@@ -311,7 +311,7 @@ export function AppDialog({ dialog, onClose }: { dialog: DialogState; onClose: (
   const isConfirm = dialog.type === 'confirm';
   return (
   <ModalPortal>
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4"
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[2000] flex items-center justify-center p-4"
       style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
       <div className="bg-white rounded-2xl shadow-2xl p-7 w-full max-w-sm border border-slate-200">
         <div className="flex flex-col items-center text-center mb-6">
@@ -354,7 +354,7 @@ export function AppDialog({ dialog, onClose }: { dialog: DialogState; onClose: (
 
 export function IcoView({ size = 12 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <svg aria-hidden="true" focusable="false" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
       <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
     </svg>
   );
@@ -362,7 +362,7 @@ export function IcoView({ size = 12 }: { size?: number }) {
 
 export function IcoEdit({ size = 12 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <svg aria-hidden="true" focusable="false" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
       <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
     </svg>
   );
@@ -370,7 +370,7 @@ export function IcoEdit({ size = 12 }: { size?: number }) {
 
 export function IcoDelete({ size = 12 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <svg aria-hidden="true" focusable="false" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
       <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
       <line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
@@ -380,7 +380,7 @@ export function IcoDelete({ size = 12 }: { size?: number }) {
 
 export function IcoOpen({ size = 12 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <svg aria-hidden="true" focusable="false" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
       <path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
     </svg>
   );
@@ -395,7 +395,7 @@ const textBase = 'inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] fon
 export function BtnView({ onClick, children, disabled }: { onClick?: () => void; children?: React.ReactNode; disabled?: boolean }) {
   const hasText = !!children;
   return (
-    <button onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Lihat'}
+    <button aria-label={hasText ? undefined : 'Lihat'} onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Lihat'}
       className={`${hasText ? textBase : iconOnlyBase} text-blue-600 bg-white border-slate-200 hover:bg-blue-50 hover:border-blue-200`}>
       <IcoView size={hasText ? 12 : 13} />{hasText && children}
     </button>
@@ -405,7 +405,7 @@ export function BtnView({ onClick, children, disabled }: { onClick?: () => void;
 export function BtnEdit({ onClick, children, disabled }: { onClick?: () => void; children?: React.ReactNode; disabled?: boolean }) {
   const hasText = !!children;
   return (
-    <button onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Edit'}
+    <button aria-label={hasText ? undefined : 'Edit'} onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Edit'}
       className={`${hasText ? textBase : iconOnlyBase} text-emerald-600 bg-white border-slate-200 hover:bg-emerald-50 hover:border-emerald-200`}>
       <IcoEdit size={hasText ? 12 : 13} />{hasText && children}
     </button>
@@ -415,7 +415,7 @@ export function BtnEdit({ onClick, children, disabled }: { onClick?: () => void;
 export function BtnDelete({ onClick, children, disabled }: { onClick?: () => void; children?: React.ReactNode; disabled?: boolean }) {
   const hasText = !!children;
   return (
-    <button onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Hapus'}
+    <button aria-label={hasText ? undefined : 'Hapus'} onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Hapus'}
       className={`${hasText ? textBase : iconOnlyBase} text-rose-600 bg-white border-slate-200 hover:bg-rose-50 hover:border-rose-200`}>
       <IcoDelete size={hasText ? 12 : 13} />{hasText && children}
     </button>
@@ -425,7 +425,7 @@ export function BtnDelete({ onClick, children, disabled }: { onClick?: () => voi
 export function BtnOpen({ onClick, children, disabled }: { onClick?: () => void; children?: React.ReactNode; disabled?: boolean }) {
   const hasText = !!children;
   return (
-    <button onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Buka'}
+    <button aria-label={hasText ? undefined : 'Buka'} onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Buka'}
       className={`${hasText ? textBase : iconOnlyBase} text-violet-600 bg-white border-slate-200 hover:bg-violet-50 hover:border-violet-200`}>
       <IcoOpen size={hasText ? 12 : 13} />{hasText && children}
     </button>

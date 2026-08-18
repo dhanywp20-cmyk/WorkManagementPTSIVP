@@ -322,7 +322,7 @@ export default function IncentivePTSPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-4 pt-4 pb-3 border-b border-gray-200 space-y-2">
               <div className="flex flex-wrap gap-2 items-center justify-between">
-                <input value={searchProject} onChange={e => setSearchProject(e.target.value)}
+                <input aria-label="Cari project atau handler..." value={searchProject} onChange={e => setSearchProject(e.target.value)}
                   placeholder="🔍 Cari project atau handler..."
                   className="flex-1 min-w-[180px] max-w-sm px-4 py-2 rounded-lg text-sm outline-none bg-gray-50 border border-gray-200 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-rose-400" />
                 <div className="flex items-center gap-2 flex-wrap">
@@ -375,17 +375,17 @@ export default function IncentivePTSPage() {
                       { label: 'Bagian Handler', value: handlerSplit ? <span className="text-rose-700 font-bold">{formatRupiah(handlerSplit.amt)} ({handlerSplit.pct.toFixed(0)}%)</span> : '—', span2: true, hide: !showNominal },
                     ]}
                     actions={<>
-                      <button onClick={() => openProjectDetail(p)} title="Lihat Detail" className="inline-flex items-center justify-center w-7 h-7 rounded-lg border bg-white border-slate-200 text-blue-500 hover:bg-blue-50">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                      <button aria-label="Lihat Detail" onClick={() => openProjectDetail(p)} title="Lihat Detail" className="inline-flex items-center justify-center w-7 h-7 rounded-lg border bg-white border-slate-200 text-blue-500 hover:bg-blue-50">
+                        <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                       </button>
                       {showNominal && (
-                        <button onClick={() => { setNominalProject(p); setNominalValue(String(p.incentive_value || '')); }} title="Input Nominal" className="inline-flex items-center justify-center w-7 h-7 rounded-lg border bg-white border-slate-200 text-rose-500 hover:bg-rose-50">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <button aria-label="Input Nominal" onClick={() => { setNominalProject(p); setNominalValue(String(p.incentive_value || '')); }} title="Input Nominal" className="inline-flex items-center justify-center w-7 h-7 rounded-lg border bg-white border-slate-200 text-rose-500 hover:bg-rose-50">
+                          <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </button>
                       )}
                       {hasNominal && projTranches.length === 0 && p.bast_date && (
-                        <button onClick={() => { setGenerateProject(p); setShowGenerateModal(true); }} title="Generate Tranche" className="inline-flex items-center justify-center w-7 h-7 rounded-lg border bg-white border-slate-200 text-blue-500 hover:bg-blue-50">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        <button aria-label="Generate Tranche" onClick={() => { setGenerateProject(p); setShowGenerateModal(true); }} title="Generate Tranche" className="inline-flex items-center justify-center w-7 h-7 rounded-lg border bg-white border-slate-200 text-blue-500 hover:bg-blue-50">
+                          <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                         </button>
                       )}
                     </>}
@@ -488,23 +488,23 @@ export default function IncentivePTSPage() {
                         <td className={`${cellCls} text-center`} onClick={e => e.stopPropagation()}>
                           <div className="flex gap-1 justify-center">
                             {/* View — semua role bisa akses */}
-                            <button onClick={() => openProjectDetail(p)}
+                            <button aria-label="Lihat Detail" onClick={() => openProjectDetail(p)}
                               title="Lihat Detail"
                               className="inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all bg-white border-slate-200 text-blue-500 hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                              <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                             </button>
                             {canInputNominal(currentUser) && (
-                              <button onClick={() => { setNominalProject(p); setNominalValue(String(p.incentive_value || '')); }}
+                              <button aria-label="Input Nominal" onClick={() => { setNominalProject(p); setNominalValue(String(p.incentive_value || '')); }}
                                 title="Input Nominal"
                                 className="inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all bg-white border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-300 hover:shadow-sm">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                               </button>
                             )}
                             {hasNominal && projTranches.length === 0 && p.bast_date && (
-                              <button onClick={() => { setGenerateProject(p); setShowGenerateModal(true); }}
+                              <button aria-label="Generate Tranche" onClick={() => { setGenerateProject(p); setShowGenerateModal(true); }}
                                 title="Generate Tranche"
                                 className="inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all bg-white border-slate-200 text-blue-500 hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                               </button>
                             )}
                           </div>
@@ -665,7 +665,7 @@ export default function IncentivePTSPage() {
       {/* ─── MODAL: Input Nominal ─── */}
       {nominalProject && (
       <ModalPortal>
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1100] p-4" onClick={e => { if (e.target === e.currentTarget) setNominalProject(null); }}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1100] p-4" onClick={e => { if (e.target === e.currentTarget) setNominalProject(null); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" style={{ border: '1.5px solid rgba(99,102,241,0.3)' }}>
             <div className="px-5 py-4" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
               <h3 className="text-base font-bold text-white">💰 Input Nominal Incentive</h3>
@@ -733,7 +733,7 @@ export default function IncentivePTSPage() {
       {/* ─── MODAL: Project Detail ─── */}
       {detailProject && (
       <ModalPortal>
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1100] p-4 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setDetailProject(null); }}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1100] p-4 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setDetailProject(null); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden border border-gray-200">
             <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
               <div className="flex items-center justify-between">
@@ -741,8 +741,8 @@ export default function IncentivePTSPage() {
                   <h2 className="text-lg font-bold text-white">{detailProject.project_name}</h2>
                   <p className="text-xs text-rose-200 mt-0.5">{detailProject.assign_name} · {detailProject.category}</p>
                 </div>
-                <button onClick={() => setDetailProject(null)} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                <button aria-label="Tutup" onClick={() => setDetailProject(null)} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg">
+                  <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
             </div>
@@ -927,7 +927,7 @@ export default function IncentivePTSPage() {
       {/* ─── MODAL: Generate Tranche ─── */}
       {showGenerateModal && generateProject && (
       <ModalPortal>
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1200] p-4" onClick={e => { if (e.target === e.currentTarget) { setShowGenerateModal(false); setGenerateProject(null); } }}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1200] p-4" onClick={e => { if (e.target === e.currentTarget) { setShowGenerateModal(false); setGenerateProject(null); } }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-gray-200">
             <h3 className="text-lg font-bold text-gray-800 mb-4">⚡ Generate Tranche</h3>
             <p className="text-sm text-gray-500 mb-1">Project: <strong className="text-gray-800">{generateProject.project_name}</strong></p>
@@ -962,7 +962,7 @@ export default function IncentivePTSPage() {
       {/* ─── MODAL: Batch Confirm ─── */}
       {batchConfirm && (
       <ModalPortal>
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1200] p-4" onClick={e => { if (e.target === e.currentTarget) setBatchConfirm(false); }}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1200] p-4" onClick={e => { if (e.target === e.currentTarget) setBatchConfirm(false); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-red-200">
             <h3 className="text-lg font-bold text-gray-800 mb-2">🚀 Konfirmasi Process Batch</h3>
             <p className="text-sm text-gray-500 mb-2">Proses semua tranche <strong>payment_year = {batchYear}</strong> status <strong>pending</strong>.</p>

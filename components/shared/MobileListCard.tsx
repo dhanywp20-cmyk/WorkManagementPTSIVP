@@ -37,8 +37,22 @@ export function MobileListCard({
 }: MobileListCardProps) {
   const visibleFields = (fields ?? []).filter(f => !f.hide);
   return (
+    // Kartu yang bisa diklik harus bisa dicapai keyboard juga. Sebuah <div>
+    // ber-onClick TIDAK masuk urutan Tab dan tidak menanggapi Enter/Spasi:
+    // bagi yang tidak memakai tetikus, detail baris ini sama sekali tidak
+    // terbuka. Bentuknya tetap <div> karena kartunya memuat tombol aksi di
+    // dalamnya, dan <button> di dalam <button> tidak sah.
     <div
       onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          // Spasi kalau tidak dicegah akan menggulir halaman, bukan membuka kartu.
+          e.preventDefault();
+          onClick();
+        }
+      } : undefined}
       className={`px-4 py-3.5 border-l-4 ${highlight ? 'bg-red-50/60' : ''} ${onClick ? 'active:bg-gray-50 cursor-pointer' : ''}`}
       style={{ borderLeftColor: accent ?? 'transparent' }}
     >

@@ -256,16 +256,16 @@ function AnalyticStat({ accent, label, value, subs }: {
 function PintasanBuat({ label, warna, onClick }: { label: string; warna: string; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white font-bold text-xs sm:text-[13px] transition-all hover:scale-[1.02] w-full text-left"
+      className="flex items-center gap-2 px-3 py-2 rounded-xl text-white font-bold text-xs transition-all hover:scale-[1.02] text-left"
       style={{ background: warna, boxShadow: `0 4px 14px ${warna}59` }}>
-      <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.22)' }}>
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <span className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.22)' }}>
+        <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
         </svg>
       </span>
-      <span className="min-w-0 leading-tight">
-        <span className="block opacity-80 text-[10px] font-semibold">Buat</span>
-        <span className="block truncate">{label}</span>
+      <span className="leading-tight whitespace-nowrap">
+        <span className="block opacity-80 text-[9px] font-semibold">Buat</span>
+        <span className="block">{label}</span>
       </span>
     </button>
   );
@@ -360,7 +360,10 @@ const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openUrl }) => {
               memutuskan boleh atau tidak — mis. Request Schedule tetap menahan
               Sales yang masih punya form review belum dinilai. Dashboard tidak
               ikut memutuskan, supaya aturannya tidak ada dua salinan. */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
+          {/* Seukuran isinya dan rata kiri, bukan melebar memenuhi frame:
+              tombol selebar layar membuat aksi terasa seberat seluruh kartu,
+              padahal ia cuma pintasan. */}
+          <div className="flex flex-wrap gap-2 mt-3">
             {showSchedule && (
               <PintasanBuat label="Request Schedule" warna="#0891b2"
                 onClick={() => openUrl('/reminder-schedule?buat=1', 'Request Schedule')} />

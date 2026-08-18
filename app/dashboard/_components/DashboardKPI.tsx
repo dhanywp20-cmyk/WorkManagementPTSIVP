@@ -122,10 +122,10 @@ function getMonday() {
 
 function MiniDonut({ segments, size = 56 }: { segments: { value: number; color: string }[]; size?: number }) {
   const total = segments.reduce((s, x) => s + x.value, 0);
-  if (!total) return <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}><circle cx={size/2} cy={size/2} r={size/2-4} fill="none" stroke="#e2e8f0" strokeWidth={7}/></svg>;
+  if (!total) return <svg aria-hidden="true" focusable="false" width={size} height={size} viewBox={`0 0 ${size} ${size}`}><circle cx={size/2} cy={size/2} r={size/2-4} fill="none" stroke="#e2e8f0" strokeWidth={7}/></svg>;
   const r = size/2-5, circ = 2*Math.PI*r; let off = 0;
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform:'rotate(-90deg)' }}>
+    <svg aria-hidden="true" focusable="false" width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform:'rotate(-90deg)' }}>
       <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#e8ecf0" strokeWidth={7}/>
       {segments.map((seg,i) => { const pct=seg.value/total, dash=pct*circ, gap=circ-dash;
         const el=<circle key={i} cx={size/2} cy={size/2} r={r} fill="none" stroke={seg.color} strokeWidth={7} strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-off*circ} strokeLinecap="butt"/>;
@@ -139,7 +139,7 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
   const max = Math.max(...values, 1), w=80, h=28;
   const pts = values.map((v,i) => `${(i/(values.length-1))*w},${h-(v/max)*h}`).join(' ');
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ overflow:'visible' }}>
+    <svg aria-hidden="true" focusable="false" width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ overflow:'visible' }}>
       <polyline points={pts} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round"/>
       <circle cx={(values.length-1)/(values.length-1)*w} cy={h-(values[values.length-1]/max)*h} r={3} fill={color}/>
     </svg>
@@ -733,7 +733,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     let cumBefore = 0;
     return (
       <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
-        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <svg aria-hidden="true" focusable="false" width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
           <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} />
           {segments.map((seg, i) => {
             const dash = (seg.value / total) * circ;
@@ -778,7 +778,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           style={{ background:'rgba(255,255,255,0.97)', backdropFilter:'blur(16px)', borderBottom:'3px solid #dc2626' }}>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
               </svg>
             </div>
@@ -794,7 +794,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           <div className="flex items-center gap-2 flex-shrink-0">
             <button onClick={()=>{ setLoading(true); setAuditLoading(true); fetchKPI(); fetchAudit(); setLastRefresh(new Date()); }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-50 border border-slate-200 transition-all">
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              <svg aria-hidden="true" focusable="false" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
               Sync
             </button>
             {/* Tab pills */}
@@ -818,7 +818,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
             <div className="space-y-3">
 
               {/* ── ROW 1: Piket + Ticket dalam 1 baris ── */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
                 {/* PIKET SHOWROOM */}
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-3">
@@ -867,7 +867,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     <span className="text-[9px] text-slate-400">{scope.kind==='pts_sup'?scope.ptsTeamType:'Semua'}</span>
                   </div>
                   {/* Mini stat row */}
-                  <div className="grid grid-cols-4 gap-1 mb-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 mb-2">
                     {[
                       {label:'Total', value:kpi?.tickets.total??0,         c:'#64748b'},
                       {label:'Open',  value:kpi?.tickets.open??0,          c:'#ef4444'},
@@ -906,7 +906,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               </div>
 
               {/* ── ROW 2: Reminder + Unit Movement ── */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
                 {/* Request Schedule */}
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-3">
@@ -914,7 +914,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">📅 Request Schedule</span>
                   </div>
                   {/* Stat row */}
-                  <div className="grid grid-cols-4 gap-1 mb-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 mb-2">
                     {[
                       {label:'Total',   value:kpi?.reminders.total??0,       c:'#6366f1'},
                       {label:'Pending', value:kpi?.reminders.pending??0,     c:'#f59e0b'},
@@ -1031,7 +1031,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">🎓 Learning Center</span>
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {/* Stat mini col */}
                     <div className="grid grid-cols-2 gap-1 col-span-1">
                       {[
@@ -1122,7 +1122,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     onClick={()=>fetchKPITeam()}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 transition-all"
                   >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    <svg aria-hidden="true" focusable="false" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                     Refresh
                   </button>
                   {/* Download Excel per orang — format corporate seperti Formulir KPI */}
@@ -1315,7 +1315,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     }}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-emerald-600 hover:text-white hover:bg-emerald-600 bg-white border border-emerald-200 transition-all"
                   >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    <svg aria-hidden="true" focusable="false" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                     Excel {kpiTeam.filterYear} ({kpiTeam.filterPeriod==='6m'?'6bln':'1thn'})
                   </button>
 
@@ -1413,7 +1413,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     }}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-blue-600 hover:text-white hover:bg-blue-600 bg-white border border-blue-200 transition-all"
                   >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <svg aria-hidden="true" focusable="false" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     Rekap Tim {kpiTeam.filterYear}
                   </button>
                 </div>
@@ -1506,7 +1506,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       <div className="text-[8px] font-bold uppercase tracking-wide" style={{color:kpiColor}}>{kpiLabel}</div>
                       {/* Sparkline tickets trend */}
                       {spark.some(v=>v>0) && (
-                        <svg width={sparkW} height={sparkH} viewBox={`0 0 ${sparkW} ${sparkH}`} style={{overflow:'visible'}}>
+                        <svg aria-hidden="true" focusable="false" width={sparkW} height={sparkH} viewBox={`0 0 ${sparkW} ${sparkH}`} style={{overflow:'visible'}}>
                           <polyline points={sparkPts} fill="none" stroke={kpiColor} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" opacity={0.7}/>
                           <circle cx={(11/11)*sparkW} cy={sparkH-(spark[11]/sparkMax)*sparkH} r={2.5} fill={kpiColor}/>
                         </svg>
@@ -1628,9 +1628,9 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                             {isEditing ? '💾 Simpan' : '✏️ Edit'}
                           </button>
                         )}
-                        <button onClick={() => { setSelectedKPIMember(null); setKpiTeam(prev=>({...prev,editingMember:null,editValues:{}})); }}
+                        <button aria-label="Tutup" onClick={() => { setSelectedKPIMember(null); setKpiTeam(prev=>({...prev,editingMember:null,editValues:{}})); }}
                           className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all flex-shrink-0">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                          <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                       </div>
 
@@ -2026,10 +2026,10 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               {/* Search + filter */}
               <div className="flex flex-wrap items-center gap-2">
                 <div className="relative flex-1 min-w-[180px]">
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg aria-hidden="true" focusable="false" className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                   </svg>
-                  <input value={auditSearch} onChange={e=>setAuditSearch(e.target.value)}
+                  <input aria-label="Cari actor, aksi, target..." value={auditSearch} onChange={e=>setAuditSearch(e.target.value)}
                     placeholder="Cari actor, aksi, target..."
                     className="w-full rounded-lg pl-8 pr-3 py-2 text-xs outline-none bg-slate-50 border border-slate-200 text-slate-700 focus:border-blue-300 focus:ring-1 focus:ring-blue-100 transition-all"/>
                 </div>

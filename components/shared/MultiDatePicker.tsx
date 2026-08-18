@@ -50,13 +50,16 @@ export function MultiDatePicker({ dates, onChange, accentColor = '#e11d48' }: Mu
   };
 
   return (
-    <div className="rounded-xl p-2 mx-auto" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.1)', maxWidth: 240 }}>
+    <div role="group" aria-label="Pilih beberapa tanggal"
+      className="rounded-xl p-2 mx-auto" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.1)', maxWidth: 240 }}>
       <div className="flex items-center justify-between mb-1.5">
-        <button type="button" onClick={() => changeMonth(-1)}
-          className="w-5 h-5 rounded flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-all text-xs">‹</button>
-        <span className="text-xs font-bold text-slate-700">{MONTH_NAMES[viewMonth]} {viewYear}</span>
-        <button type="button" onClick={() => changeMonth(1)}
-          className="w-5 h-5 rounded flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-all text-xs">›</button>
+        {/* '‹' dan '›' tidak punya arti apa pun saat dibacakan; namanya harus
+            ditulis terpisah dari lambangnya. */}
+        <button type="button" onClick={() => changeMonth(-1)} aria-label="Bulan sebelumnya"
+          className="w-5 h-5 rounded flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-all text-xs"><span aria-hidden="true">‹</span></button>
+        <span className="text-xs font-bold text-slate-700" aria-live="polite">{MONTH_NAMES[viewMonth]} {viewYear}</span>
+        <button type="button" onClick={() => changeMonth(1)} aria-label="Bulan berikutnya"
+          className="w-5 h-5 rounded flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-all text-xs"><span aria-hidden="true">›</span></button>
       </div>
 
       <div className="grid grid-cols-7 gap-0.5 mb-0.5">
@@ -71,6 +74,8 @@ export function MultiDatePicker({ dates, onChange, accentColor = '#e11d48' }: Mu
           const isToday = iso === todayISO;
           return (
             <button key={iso} type="button" onClick={() => toggle(iso)}
+              aria-pressed={selected}
+              aria-label={`${day} ${MONTH_NAMES[viewMonth]} ${viewYear}${isToday ? ' (hari ini)' : ''}`}
               className="aspect-square rounded text-[10px] font-semibold transition-all flex items-center justify-center"
               style={selected
                 ? { background: accentColor, color: 'white' }
@@ -89,7 +94,8 @@ export function MultiDatePicker({ dates, onChange, accentColor = '#e11d48' }: Mu
             <div key={d} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold"
               style={{ background: `${accentColor}18`, border: `1px solid ${accentColor}40`, color: accentColor }}>
               {fmtChip(d)}
-              <button type="button" onClick={() => toggle(d)} className="hover:opacity-60 transition-opacity" title="Hapus tanggal ini">✕</button>
+              <button type="button" onClick={() => toggle(d)} className="hover:opacity-60 transition-opacity"
+                title={`Hapus tanggal ${fmtChip(d)}`} aria-label={`Hapus tanggal ${fmtChip(d)}`}><span aria-hidden="true">✕</span></button>
             </div>
           ))}
           <span className="text-[10px] text-slate-400 ml-1">{dates.length} hari dipilih</span>

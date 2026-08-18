@@ -25,7 +25,7 @@ export function MultiFileField({ label, icon, files, onAdd, onRemove }: {
               <span className="text-sm">{f.type.startsWith('image/')?'🖼️':'📄'}</span>
               <span className="text-xs font-semibold text-gray-700 flex-1 truncate">{f.name}</span>
               <span className="text-[10px] text-gray-400 flex-shrink-0">{(f.size/1024).toFixed(0)} KB</span>
-              <button type="button" onClick={()=>onRemove(i)} className="text-red-400 hover:text-red-600 font-bold text-xs flex-shrink-0">✕</button>
+              <button aria-label="Tutup" type="button" onClick={()=>onRemove(i)} className="text-red-400 hover:text-red-600 font-bold text-xs flex-shrink-0">✕</button>
             </div>
           ))}
         </div>

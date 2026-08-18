@@ -142,7 +142,7 @@ export function RekapTab({ projects, disbursements, isTeamPTS, isAdmin, currentU
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white hover:opacity-90 flex-shrink-0"
           style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}
         >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
           Export Excel
@@ -191,7 +191,7 @@ export function RekapTab({ projects, disbursements, isTeamPTS, isAdmin, currentU
                     <p className="text-sm font-bold text-emerald-600">{fmtRp(g.totalIncentive)}</p>
                   </div>
                   {/* Chevron */}
-                  <svg
+                  <svg aria-hidden="true" focusable="false"
                     className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
                     fill="none" stroke="currentColor" viewBox="0 0 24 24"
                   >

@@ -526,32 +526,32 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     <>
       {canInternalApproveProject(req) && (
         <>
-          <button onClick={() => handleInternalApproveProject(req)} title="Approve & Teruskan ke Admin"
+          <button aria-label="Approve & Teruskan ke Admin" onClick={() => handleInternalApproveProject(req)} title="Approve & Teruskan ke Admin"
             className="w-7 h-7 bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white border border-amber-200 rounded-lg flex items-center justify-center transition-all">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+            <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
           </button>
-          <button onClick={() => handleReject(req)} title="Tolak"
+          <button aria-label="Tolak" onClick={() => handleReject(req)} title="Tolak"
             className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+            <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </>
       )}
       {(isAdmin || isSuperAdmin) && req.status === 'pending' && req.routing_status !== 'internal_review' && (
         <>
-          <button onClick={() => handleApprove(req)} title="Approve"
+          <button aria-label="Approve" onClick={() => handleApprove(req)} title="Approve"
             className="w-7 h-7 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 rounded-lg flex items-center justify-center transition-all">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+            <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
           </button>
-          <button onClick={() => handleReject(req)} title="Tolak"
+          <button aria-label="Tolak" onClick={() => handleReject(req)} title="Tolak"
             className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+            <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </>
       )}
       {isTeamPTS && req.status === 'approved' && req.assign_name === currentUser.full_name && (
-        <button onClick={() => handleStatusUpdate(req, 'in_progress')} title="Mulai In Progress"
+        <button aria-label="Mulai In Progress" onClick={() => handleStatusUpdate(req, 'in_progress')} title="Mulai In Progress"
           className="w-7 h-7 bg-blue-50 hover:bg-blue-500 text-blue-600 hover:text-white border border-blue-200 rounded-lg flex items-center justify-center transition-all">
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </button>
       )}
       <ViewIconBtn onClick={() => handleOpenDetail(req)} label="Detail" />
@@ -631,7 +631,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
             <button key={opt} type="button" onClick={() => onChange(toggleArr(value, opt))}
               className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${checked ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
               <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>
-                {checked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                {checked && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
               </div>
               {opt}
             </button>
@@ -1925,7 +1925,7 @@ Hubungi Admin untuk info lebih lanjut.
                 onClick={() => setBellDropdownOpen(o => !o)}
                 className="relative flex items-center justify-center w-9 h-9 rounded-xl transition-all hover:bg-violet-50"
                 style={{ border: '1.5px solid rgba(124,58,237,0.35)', background: 'rgba(124,58,237,0.07)' }}>
-                <svg className="w-5 h-5 text-violet-500 animate-[wiggle_1.5s_ease-in-out_infinite]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-violet-500 animate-[wiggle_1.5s_ease-in-out_infinite]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
                 <span className="absolute -top-1 -right-1 bg-violet-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">
@@ -1936,7 +1936,7 @@ Hubungi Admin untuk info lebih lanjut.
                 <div className="absolute right-0 top-11 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-scale-in" style={{ zIndex: Z.dropdown }}>
                   <div className="bg-gradient-to-r from-violet-500 to-violet-600 px-4 py-3 flex items-center justify-between">
                     <p className="text-white text-xs font-bold">🔔 Tiket Aktif ({activeTickets.length})</p>
-                    <button onClick={() => setBellDropdownOpen(false)} className="text-white/70 hover:text-white text-xs font-bold">✕</button>
+                    <button aria-label="Tutup" onClick={() => setBellDropdownOpen(false)} className="text-white/70 hover:text-white text-xs font-bold">✕</button>
                   </div>
                   <div className="max-h-64 overflow-y-auto divide-y divide-gray-100">
                     {activeTickets.map(req => {
@@ -1962,7 +1962,7 @@ Hubungi Admin untuk info lebih lanjut.
         <button onClick={() => setShowNewFormModal(true)}
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90"
           style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', boxShadow: '0 4px 14px rgba(124,58,237,0.4)' }}>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+          <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
           Buat Request
         </button>
       </PageHeader>
@@ -2028,7 +2028,7 @@ Hubungi Admin untuk info lebih lanjut.
               )}
               <button onClick={fetchRequests} disabled={loading}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all hover:bg-gray-100 border border-gray-200 text-gray-600 disabled:opacity-60" style={{ background: 'white' }}>
-                <svg className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                <svg aria-hidden="true" focusable="false" className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                 Refresh
               </button>
             </div>
@@ -2041,7 +2041,7 @@ Hubungi Admin untuk info lebih lanjut.
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Search Project / Lokasi</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🔍</span>
-                  <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                  <input aria-label="Search project / lokasi..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                     placeholder="Search project / lokasi..."
                     className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300" />
                 </div>
@@ -2050,7 +2050,7 @@ Hubungi Admin untuk info lebih lanjut.
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Search Sales / Requester</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">👤</span>
-                  <input value={searchSales} onChange={e => setSearchSales(e.target.value)}
+                  <input aria-label="Search sales / requester..." value={searchSales} onChange={e => setSearchSales(e.target.value)}
                     placeholder="Search sales / requester..."
                     className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300" />
                 </div>
@@ -2059,7 +2059,7 @@ Hubungi Admin untuk info lebih lanjut.
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Team Handler</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">👥</span>
-                  <select value={filterHandler} onChange={e => setFilterHandler(e.target.value)}
+                  <select aria-label="All Handlers" value={filterHandler} onChange={e => setFilterHandler(e.target.value)}
                     className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Handlers</option>
                     {ptsMembersList.map(m => <option key={m} value={m}>{m}</option>)}
@@ -2071,7 +2071,7 @@ Hubungi Admin untuk info lebih lanjut.
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Status</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🏷️</span>
-                  <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+                  <select aria-label="All Status" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
                     className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Status</option>
                     <option value="pending">⏳ Pending</option>
@@ -2087,7 +2087,7 @@ Hubungi Admin untuk info lebih lanjut.
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Filter Year</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">📅</span>
-                  <select value={filterYear} onChange={e => setFilterYear(e.target.value)}
+                  <select aria-label="All Years" value={filterYear} onChange={e => setFilterYear(e.target.value)}
                     className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Years</option>
                     {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
@@ -2099,7 +2099,7 @@ Hubungi Admin untuk info lebih lanjut.
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Filter Bulan</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🗓️</span>
-                  <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
+                  <select aria-label="All Months" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
                     className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Months</option>
                     <option value="01">Januari</option>
@@ -2385,7 +2385,7 @@ Hubungi Admin untuk info lebih lanjut.
       {/* Bulk Delete Confirm Modal */}
       {bulkConfirm && (
       <ModalPortal>
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlay }}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlay }}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
             <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
               <span className="text-2xl">🗑️</span>
@@ -2415,7 +2415,7 @@ Hubungi Admin untuk info lebih lanjut.
       {/* Reject Modal — muncul di atas detail modal (lihat lib/z-index.ts) */}
       {rejectModal.open && rejectModal.req && (
       <ModalPortal>
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
           <div className="bg-white/90 rounded-2xl shadow-2xl max-w-md w-full border-2 border-red-400 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-red-500 to-red-700 px-6 py-4">
               <h3 className="font-bold text-white text-lg">❌ Tolak Request</h3>
@@ -2438,17 +2438,17 @@ Hubungi Admin untuk info lebih lanjut.
       {/* Status Update Modal — muncul di atas detail modal (lihat lib/z-index.ts) */}
       {statusUpdateModal.open && statusUpdateModal.req && (
       <ModalPortal>
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
           <div className="bg-white/90 rounded-2xl shadow-2xl max-w-sm w-full border border-gray-200 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4 flex items-center justify-between">
               <div>
                 <h3 className="font-bold text-white text-base flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                  <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                   Update Status
                 </h3>
                 <p className="text-blue-100 text-xs mt-0.5 truncate">{statusUpdateModal.req.project_name}</p>
               </div>
-              <button onClick={() => setStatusUpdateModal({ open: false, req: null })} className="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold transition-all">✕</button>
+              <button aria-label="Tutup" onClick={() => setStatusUpdateModal({ open: false, req: null })} className="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold transition-all">✕</button>
             </div>
             <div className="p-5">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Pilih Status Baru</p>
@@ -2490,7 +2490,7 @@ Hubungi Admin untuk info lebih lanjut.
                     setSelectedNewStatus('');
                   }}
                   className="flex-[2] bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white py-2.5 rounded-xl font-bold shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                   Update Status
                 </button>
               </div>
@@ -2503,13 +2503,13 @@ Hubungi Admin untuk info lebih lanjut.
       {/* Delete Confirmation Modal — muncul di atas detail modal (lihat lib/z-index.ts) */}
       {deleteModal.open && deleteModal.req && (
       <ModalPortal>
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
           <div className="bg-white/90 rounded-2xl shadow-2xl max-w-md w-full animate-scale-in overflow-hidden" style={{ border: '1.5px solid #e5e7eb' }}>
             {/* Header */}
             <div className="p-6 pb-4">
               <div className="flex items-start gap-4 mb-4">
                 <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  <svg aria-hidden="true" focusable="false" className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-gray-900 text-base">Hapus Ticket</h3>
@@ -2518,7 +2518,7 @@ Hubungi Admin untuk info lebih lanjut.
                 </div>
               </div>
               <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-2.5 mb-5">
-                <svg className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                 <p className="text-xs font-semibold text-amber-700">Tindakan ini tidak dapat dibatalkan. Ticket beserta seluruh activity log dan overdue setting akan dihapus permanen dari database.</p>
               </div>
               <div className="mb-4">
@@ -2538,7 +2538,7 @@ Hubungi Admin untuk info lebih lanjut.
                   className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ background: deleteConfirmText === 'HAPUS' ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : '#e5e7eb', color: deleteConfirmText === 'HAPUS' ? 'white' : '#9ca3af' }}>
                   {deleting ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Menghapus...</> : <>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     Hapus Permanen
                   </>}
                 </button>
@@ -2571,12 +2571,12 @@ Hubungi Admin untuk info lebih lanjut.
         if (activeTickets.length === 0) return null;
         return (
         <ModalPortal>
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.overlayMax }}>
+          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.overlayMax }}>
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in border-2 border-amber-400">
               <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg aria-hidden="true" focusable="false" className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                     </svg>
                   </div>
@@ -2585,7 +2585,7 @@ Hubungi Admin untuk info lebih lanjut.
                     <p className="text-amber-100 text-xs">{activeTickets.length} tiket masih aktif</p>
                   </div>
                 </div>
-                <button onClick={() => setShowTicketPopup(false)} className="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold">✕</button>
+                <button aria-label="Tutup" onClick={() => setShowTicketPopup(false)} className="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold">✕</button>
               </div>
               <div className="max-h-72 overflow-y-auto divide-y divide-gray-100">
                 {activeTickets.map(req => {
@@ -2600,7 +2600,7 @@ Hubungi Admin untuk info lebih lanjut.
                         <p className="text-xs text-gray-400 truncate">{req.sales_name}{req.assign_name ? ` · ${req.assign_name}` : ''}</p>
                         {req.due_date && <p className="text-[10px] text-amber-600 font-semibold mt-0.5">📅 {formatDueDate(req.due_date)}</p>}
                       </div>
-                      <svg className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                      <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                     </button>
                   );
                 })}
@@ -2620,16 +2620,16 @@ Hubungi Admin untuk info lebih lanjut.
       {/* DETAIL MODAL */}
       {showDetailModal && selectedRequest && detailSc && (
       <ModalPortal>
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0" style={{ zIndex: Z.overlay }}
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0" style={{ zIndex: Z.overlay }}
           onClick={e => { if (e.target === e.currentTarget) handleCloseDetail(); }}>
           <div className="bg-white w-full h-full animate-slide-up flex flex-col overflow-hidden"
             style={{ border: 'none' }}>
 
             {/* Detail Modal Header */}
             <div className="bg-gradient-to-r from-teal-700 to-teal-900 px-5 py-4 flex items-center gap-4 flex-shrink-0">
-              <button onClick={handleCloseDetail}
+              <button aria-label="Tutup" onClick={handleCloseDetail}
                 className="bg-white/20 hover:bg-white/30 text-white p-2 rounded-xl transition-all flex-shrink-0">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 flex-wrap">
@@ -2649,12 +2649,12 @@ Hubungi Admin untuk info lebih lanjut.
                   <>
                     <button onClick={() => handleInternalApproveProject(selectedRequest)}
                       className="bg-amber-500 hover:bg-amber-400 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                      <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                       Approve & Teruskan ke Admin
                     </button>
                     <button onClick={() => handleReject(selectedRequest)}
                       className="bg-white/20 hover:bg-red-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-white/30 flex items-center gap-1.5">
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                      <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                       Tolak
                     </button>
                   </>
@@ -2664,12 +2664,12 @@ Hubungi Admin untuk info lebih lanjut.
                   <>
                     <button onClick={() => { setAssignModal({ open: true, req: selectedRequest }); }}
                       className="bg-emerald-500 hover:bg-emerald-400 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                      <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                       Approve & Assign PTS
                     </button>
                     <button onClick={() => handleReject(selectedRequest)}
                       className="bg-white/20 hover:bg-red-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-white/30 flex items-center gap-1.5">
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                      <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                       Tolak
                     </button>
                   </>
@@ -2685,7 +2685,7 @@ Hubungi Admin untuk info lebih lanjut.
                 {isTeamPTS && selectedRequest?.status === 'approved' && selectedRequest?.assign_name === currentUser.full_name && (
                   <button onClick={() => handleStatusUpdate(selectedRequest, 'in_progress')}
                     className="bg-blue-500 hover:bg-blue-400 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     Mulai In Progress
                   </button>
                 )}
@@ -2693,7 +2693,7 @@ Hubungi Admin untuk info lebih lanjut.
                 {isPTS && !detailIsPending && (isAdmin || isSuperAdmin || selectedRequest?.assign_name === currentUser.full_name) && (
                   <button onClick={() => { setSelectedNewStatus(''); setStatusUpdateModal({ open: true, req: selectedRequest }); }}
                     className="bg-blue-500 hover:bg-blue-400 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                     Update Status
                   </button>
                 )}
@@ -2706,25 +2706,25 @@ Hubungi Admin untuk info lebih lanjut.
                 {(!isPTS || bisaKelolaRequest) && selectedRequest.status !== 'rejected' && (
                   <button onClick={handleOpenEditForm}
                     className="bg-amber-400 hover:bg-amber-300 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                    <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                     Edit
                   </button>
                 )}
                 {(isSuperAdmin || isAdmin) && (
                   <button onClick={() => { setDeleteModal({ open: true, req: selectedRequest }); setDeleteConfirmText(''); }}
                     className="bg-white/10 hover:bg-red-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-white/20 flex items-center gap-1.5">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     Hapus
                   </button>
                 )}
                 <button onClick={handleDownloadPackage} disabled={downloadingPackage}
                   className="bg-white/20 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-white/30 flex items-center gap-1.5 disabled:opacity-60">
-                  {downloadingPackage ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+                  {downloadingPackage ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
                   {downloadingPackage ? 'Menyiapkan...' : 'Download .zip'}
                 </button>
                 <button onClick={handlePrint}
                   className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-white/30 flex items-center gap-1.5">
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                  <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                   Print
                 </button>
               </div>
@@ -2804,9 +2804,9 @@ Hubungi Admin untuk info lebih lanjut.
                   return (
                     <div className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm px-5 pt-4 pb-3 border-b border-gray-200 shadow-sm">
                       <div className="flex items-center bg-teal-50 border border-teal-200 rounded-2xl px-2 py-1.5 gap-1 overflow-x-auto">
-                        <button type="button" onClick={() => setDetailRoomIdx(i => Math.max(0, i-1))} disabled={detailRoomIdx === 0}
+                        <button aria-label="Sebelumnya" type="button" onClick={() => setDetailRoomIdx(i => Math.max(0, i-1))} disabled={detailRoomIdx === 0}
                           className="p-1.5 rounded-lg text-teal-600 hover:bg-teal-100 disabled:opacity-30 transition-all flex-shrink-0">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/></svg>
+                          <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/></svg>
                         </button>
                         {Array.from({length: totalDetailRooms}).map((_, i) => {
                           const label = i === 0 ? (selectedRequest.room_name?.trim() || 'Ruangan 1') : (detailRooms[i-1]?.room_name?.trim() || `Ruangan ${i+1}`);
@@ -2817,9 +2817,9 @@ Hubungi Admin untuk info lebih lanjut.
                             </button>
                           );
                         })}
-                        <button type="button" onClick={() => setDetailRoomIdx(i => Math.min(totalDetailRooms-1, i+1))} disabled={detailRoomIdx === totalDetailRooms-1}
+                        <button aria-label="Berikutnya" type="button" onClick={() => setDetailRoomIdx(i => Math.min(totalDetailRooms-1, i+1))} disabled={detailRoomIdx === totalDetailRooms-1}
                           className="p-1.5 rounded-lg text-teal-600 hover:bg-teal-100 disabled:opacity-30 transition-all flex-shrink-0">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
+                          <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
                         </button>
                         <span className="text-[10px] text-teal-600 font-bold ml-auto mr-1">{detailRoomIdx+1}/{totalDetailRooms}</span>
                       </div>
@@ -2832,7 +2832,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {isTeamPTS && selectedRequest.status === 'approved' && selectedRequest.assign_name === currentUser.full_name && (
                     <div className="rounded-xl px-4 py-3 flex items-center gap-3"
                       style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.25)' }}>
-                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                       </svg>
                       <div>
@@ -2889,7 +2889,7 @@ Hubungi Admin untuk info lebih lanjut.
                       if (!filtered.length) return <span className="text-sm text-gray-400 italic">—</span>;
                       return <div className="flex flex-wrap gap-2">{filtered.map(item => (
                         <span key={item} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-teal-500 bg-teal-50 text-teal-700 text-sm font-medium">
-                          <div className="w-4 h-4 rounded border-2 border-teal-500 bg-teal-500 flex items-center justify-center flex-shrink-0"><svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg></div>
+                          <div className="w-4 h-4 rounded border-2 border-teal-500 bg-teal-500 flex items-center justify-center flex-shrink-0"><svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg></div>
                           {item}
                         </span>
                       ))}</div>;
@@ -3118,7 +3118,7 @@ Hubungi Admin untuk info lebih lanjut.
                       </h3>
                       <button onClick={() => fileInputRef.current?.click()} disabled={uploadingFile}
                         className="text-xs bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 disabled:opacity-60">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                        <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                         {uploadingFile ? 'Uploading...' : 'Upload File'}
                       </button>
                     </div>
@@ -3197,7 +3197,7 @@ Hubungi Admin untuk info lebih lanjut.
                                   </div>
                                   <p className="text-[10px] text-gray-400 mt-0.5">{formatFileSize(latest.file_size)} · {new Date(latest.uploaded_at).toLocaleDateString('id-ID')}</p>
                                 </div>
-                                <svg className="w-4 h-4 text-teal-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-teal-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                               </a>
                               {/* Version history */}
                               {history.map(att => (
@@ -3210,7 +3210,7 @@ Hubungi Admin untuk info lebih lanjut.
                                     <p className="text-[10px] font-semibold text-gray-500 truncate">{displayFileName(att.file_name)}</p>
                                     <p className="text-[9px] text-gray-400">{att.revision_version ? `Rev ${att.revision_version}` : ''} · {new Date(att.uploaded_at).toLocaleDateString('id-ID')}</p>
                                   </div>
-                                  <svg className="w-3 h-3 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                  <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                                 </a>
                               ))}
                             </div>
@@ -3431,7 +3431,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {/* Show which room this message will go to */}
                   {chatRoomFilter !== 'all' && selectedRequest.status !== 'rejected' && selectedRequest.status !== 'pending' && (
                     <div className="mb-2 px-2.5 py-1.5 bg-teal-50 border border-teal-200 rounded-lg text-[10px] text-teal-700 font-semibold flex items-center gap-1.5">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                      <svg aria-hidden="true" focusable="false" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                       Mengirim ke: <strong>{chatRoomFilter}</strong>
                     </div>
                   )}
@@ -3447,14 +3447,14 @@ Hubungi Admin untuk info lebih lanjut.
                           placeholder="Ketik pesan... (Enter kirim)" rows={1}
                           className="flex-1 bg-transparent text-sm text-gray-800 outline-none resize-none max-h-24 placeholder-gray-400" />
                         <button onClick={() => chatFileRef.current?.click()} className="text-gray-400 hover:text-teal-600 transition-colors flex-shrink-0">
-                          {uploadingFile ? <div className="w-4 h-4 border-2 border-gray-300 border-t-teal-500 rounded-full animate-spin" /> : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>}
+                          {uploadingFile ? <div className="w-4 h-4 border-2 border-gray-300 border-t-teal-500 rounded-full animate-spin" /> : <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>}
                         </button>
                         <input ref={chatFileRef} type="file" className="hidden" accept="image/*,.pdf,.doc,.docx"
                           onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); e.target.value = ''; }} />
                       </div>
                       <button onClick={handleSendMessage} disabled={sendingMsg || !msgText.trim()}
                         className="bg-gradient-to-r from-teal-600 to-teal-800 text-white px-4 py-2 rounded-xl font-bold transition-all disabled:opacity-50 shadow-md flex-shrink-0">
-                        {sendingMsg ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>}
+                        {sendingMsg ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>}
                       </button>
                     </div>
                   )}
@@ -3470,7 +3470,7 @@ Hubungi Admin untuk info lebih lanjut.
       {/* Z.overlayTop — dibuka dari dalam modal detail (Z.overlay). */}
       {rerouteTarget && (
       <ModalPortal>
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1100]"
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1100]"
           onClick={e => { if (e.target === e.currentTarget && !rerouteSaving) setRerouteTarget(null); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
             <div className="px-6 py-4" style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
@@ -3483,7 +3483,7 @@ Hubungi Admin untuk info lebih lanjut.
               </div>
               <div>
                 <label className="block text-[11px] font-bold mb-1 text-slate-600 uppercase tracking-widest">Alihkan ke</label>
-                <select value={rerouteTo} onChange={e => setRerouteTo(e.target.value)}
+                <select aria-label="— pilih tujuan —" value={rerouteTo} onChange={e => setRerouteTo(e.target.value)}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-200">
                   <option value="">— pilih tujuan —</option>
                   {rosterPTS.filter(u => u.jabatan === 'Supervisor').length > 0 && (
@@ -3524,14 +3524,14 @@ Hubungi Admin untuk info lebih lanjut.
       {/* Edit Form Modal */}
       {editFormModal && selectedRequest && (
       <ModalPortal>
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
           <div className="bg-white/90 rounded-3xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col border-2 border-amber-400 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-amber-500 to-amber-700 px-6 py-4 flex items-center justify-between flex-shrink-0">
               <div>
                 <h2 className="text-lg font-bold text-white">✏️ Edit Kebutuhan Project</h2>
                 <p className="text-amber-100 text-xs mt-0.5">{selectedRequest.project_name}</p>
               </div>
-              <button onClick={() => setEditFormModal(false)} className="bg-white/20 hover:bg-white/30 text-white w-9 h-9 rounded-xl flex items-center justify-center font-bold text-lg">✕</button>
+              <button aria-label="Tutup" onClick={() => setEditFormModal(false)} className="bg-white/20 hover:bg-white/30 text-white w-9 h-9 rounded-xl flex items-center justify-center font-bold text-lg">✕</button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-gray-50">
 
@@ -3747,7 +3747,7 @@ Hubungi Admin untuk info lebih lanjut.
             <div className="border-t-2 border-gray-200 p-4 flex gap-3 bg-white/90 flex-shrink-0">
               <button onClick={() => setEditFormModal(false)} className="flex-1 border-2 border-gray-300 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50">Batal</button>
               <button onClick={handleEditFormSubmit} className="flex-[2] bg-gradient-to-r from-amber-500 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                 Simpan Perubahan
               </button>
             </div>
@@ -3775,7 +3775,7 @@ export default function Page() {
 
   if (!currentUser) return (
   <ModalPortal>
-    <div className="fixed inset-0 flex items-center justify-center"
+    <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center"
       style={{ backgroundImage: `url('/IVP_Background.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.4)' }} />
       <div className="relative z-10 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center"

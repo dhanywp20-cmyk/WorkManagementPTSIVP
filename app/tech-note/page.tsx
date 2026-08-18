@@ -230,14 +230,14 @@ function Modal({ open, onClose, title, width=560, children }:{
   if (!open) return null;
   return (
   <ModalPortal>
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
       style={{ background:'rgba(0,0,0,0.45)', backdropFilter:'blur(4px)' }} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:width, maxHeight:'100%',
         overflowY:'auto', borderRadius:20, border:'1px solid rgba(0,0,0,0.08)',
         background:'#fff', boxShadow:'0 24px 64px rgba(0,0,0,0.18)' }}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h3 className="text-[15px] font-bold text-slate-800">{title}</h3>
-          <button onClick={onClose} className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 text-lg transition-colors bg-gray-100 hover:bg-gray-200">×</button>
+          <button aria-label="Tutup" onClick={onClose} className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 text-lg transition-colors bg-gray-100 hover:bg-gray-200">×</button>
         </div>
         <div className="p-6">{children}</div>
       </div>
@@ -541,7 +541,7 @@ export default function TechNotePage() {
             <p className="text-slate-500 text-[11px]">Dokumentasi teknikal & R&D · KPI 10%</p>
           </div>
           <div className="ml-auto flex items-center gap-3">
-            <select value={year} onChange={e=>setYear(Number(e.target.value))}
+            <select aria-label="Tahun" value={year} onChange={e=>setYear(Number(e.target.value))}
               className="text-slate-700 text-sm font-bold outline-none rounded-xl px-3 py-1.5 bg-gray-100 border border-gray-200 focus:border-rose-400">
               {[curY,curY-1,curY-2].map(y=><option key={y} value={y}>{y}</option>)}
             </select>
@@ -589,10 +589,10 @@ export default function TechNotePage() {
               <div className="w-full sm:w-auto sm:ml-auto flex items-center gap-2">
                 <div className="relative flex-1 sm:flex-initial min-w-0">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
-                  <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari judul, produk, tag..."
+                  <input aria-label="Cari judul, produk, tag..." value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari judul, produk, tag..."
                     className="pl-8 pr-3 py-2 text-[13px] rounded-xl outline-none w-full sm:w-52 text-slate-700 border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 placeholder-slate-400" style={{ background: 'rgba(255,255,255,0.95)' }} />
                 </div>
-                <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}
+                <select aria-label="Semua Status" value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}
                   className="px-3 py-2 text-[13px] rounded-xl outline-none text-slate-700 border border-gray-200 focus:border-rose-400" style={{ background: 'rgba(255,255,255,0.95)' }}>
                   <option value="all">Semua Status</option>
                   <option value="approved">✅ Approved</option>
@@ -699,7 +699,7 @@ export default function TechNotePage() {
             className="w-full h-11 rounded-xl cursor-pointer p-1 border border-gray-200 bg-gray-50" />
         </Field>
         <Field label="Parent Folder (opsional)">
-          <select className={inputCls} value={folderForm.parent_id}
+          <select aria-label="— Root (tidak ada parent) —" className={inputCls} value={folderForm.parent_id}
             onChange={e=>setFolderForm(p=>({...p,parent_id:e.target.value}))}>
             <option value="">— Root (tidak ada parent) —</option>
             {folders.filter(f=>!f.parent_id).map(f=><option key={f.id} value={f.id}>{f.icon} {f.name}</option>)}
@@ -735,7 +735,7 @@ export default function TechNotePage() {
               onChange={e=>setUploadForm(p=>({...p,product:e.target.value}))} placeholder="cth: Newline NT-86" />
           </Field>
           <Field label="Folder *">
-            <select className={inputCls} value={uploadForm.folder_id}
+            <select aria-label="— Pilih Folder —" className={inputCls} value={uploadForm.folder_id}
               onChange={e=>setUploadForm(p=>({...p,folder_id:e.target.value}))}>
               <option value="">— Pilih Folder —</option>
               {folders.map(f=><option key={f.id} value={f.id}>{f.icon} {f.name}</option>)}

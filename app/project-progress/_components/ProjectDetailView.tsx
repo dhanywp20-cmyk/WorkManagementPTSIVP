@@ -172,7 +172,7 @@ export function ProjectDetailView({ detail, maxKolomLokasi = 2 }: {
               Progres Keseluruhan
             </p>
             <div className="flex flex-col items-center gap-0.5">
-              <svg width="112" height="112" viewBox="0 0 120 120">
+              <svg aria-hidden="true" focusable="false" width="112" height="112" viewBox="0 0 120 120">
                 <circle cx="60" cy="60" r="50" fill="none" stroke={PALETTE.surfaceSunken} strokeWidth="10" />
                 <circle cx="60" cy="60" r="50" fill="none" stroke={THEME.color} strokeWidth="10"
                   strokeLinecap="round" strokeDasharray={RING_C} strokeDashoffset={ringOffset}

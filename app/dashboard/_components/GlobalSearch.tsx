@@ -540,13 +540,13 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
   }, {} as Record<ResultType, number>);
 
   if (!open) return (
-    <button onClick={() => setOpen(true)}
+    <button aria-label="Cari platform... (⌘K)" onClick={() => setOpen(true)}
       className="flex items-center justify-center w-10 h-10 rounded-xl transition-all hover:shadow-md"
       style={{ background: 'rgba(15,23,42,0.06)', border: '1.5px solid rgba(15,23,42,0.12)', color: '#475569' }}
       onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(15,23,42,0.12)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(15,23,42,0.22)'; }}
       onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(15,23,42,0.06)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(15,23,42,0.12)'; }}
       title="Cari platform... (⌘K)">
-      <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
     </button>
@@ -554,7 +554,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
   return (
   <ModalPortal>
-    <div className="fixed inset-0 z-[1000] flex items-start justify-center pt-[12vh] px-4"
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-start justify-center pt-[12vh] px-4"
       onClick={e => { if (e.target === e.currentTarget) setOpen(false); }}>
 
       <div className="w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl"
@@ -562,10 +562,10 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
         {/* ── Search input ── */}
         <div className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100">
-          <svg className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)}
+          <input aria-label="Cari ticket, reminder, project, piket, unit, user..." ref={inputRef} value={query} onChange={e => setQuery(e.target.value)}
             placeholder="Cari ticket, reminder, project, piket, unit, user..."
             className="flex-1 text-sm font-medium text-slate-800 outline-none bg-transparent placeholder-slate-400"
           />
@@ -670,7 +670,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
                     </span>
                     {/* Arrow */}
                     {isSelected && r.url && (
-                      <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: cfg.color }}>
+                      <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: cfg.color }}>
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     )}

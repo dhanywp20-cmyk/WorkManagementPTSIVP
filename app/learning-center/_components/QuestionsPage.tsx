@@ -316,7 +316,7 @@ export function QuestionsPage({ user }: { user: User }) {
   // ─── Rename Folder Modal ────────────────────────────────────────────────────
   const renameFolderModalJSX = renameFolder ? (
   <ModalPortal>
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
         <h3 className="font-bold text-slate-800 mb-1 text-base">✏️ Ubah Nama Folder</h3>
         <p className="text-xs text-slate-400 mb-4">Semua materi dalam folder ini akan diperbarui secara otomatis.</p>
@@ -421,7 +421,7 @@ export function QuestionsPage({ user }: { user: User }) {
         </div>
         <div>
           <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
-          <select value={selectedMat} onChange={e => setSelectedMat(e.target.value)}
+          <select aria-label="-- Pilih Materi --" value={selectedMat} onChange={e => setSelectedMat(e.target.value)}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
             <option value="">-- Pilih Materi --</option>
             {(viewMaterials.length > 0 ? viewMaterials : materials).map(m =>
@@ -457,7 +457,7 @@ export function QuestionsPage({ user }: { user: User }) {
             {pdfFile
               ? <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg">✅ {pdfFile.name}</span>
               : <span className="text-xs text-slate-400">atau dari teks materi</span>}
-            {pdfFile && <button onClick={() => { setPdfFile(null); if (pdfRef.current) pdfRef.current.value = ''; }} className="text-xs text-rose-500">✕</button>}
+            {pdfFile && <button aria-label="Tutup" onClick={() => { setPdfFile(null); if (pdfRef.current) pdfRef.current.value = ''; }} className="text-xs text-rose-500">✕</button>}
           </div>
         </div>
       </div>
@@ -481,7 +481,7 @@ export function QuestionsPage({ user }: { user: User }) {
   // ─── Manual Add Modal (plain JSX var — NOT a sub-component, avoids remount on every keystroke) ──
   const addManualModalJSX = showAddManual ? (
   <ModalPortal>
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
       <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-full overflow-y-auto" style={{ background: '#ffffff' }}>
         <h3 className="font-bold text-slate-800 mb-1 text-base sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-slate-100">➕ Tambah Soal Manual</h3>
         <p className="text-xs text-slate-400 mb-4">
@@ -499,7 +499,7 @@ export function QuestionsPage({ user }: { user: User }) {
         <div className="space-y-3">
           <div>
             <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
-            <select value={newQ.material_id} onChange={e => setNewQ(p => ({ ...p, material_id: e.target.value }))}
+            <select aria-label="-- Pilih Materi --" value={newQ.material_id} onChange={e => setNewQ(p => ({ ...p, material_id: e.target.value }))}
               className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
               <option value="">-- Pilih Materi --</option>
               {(viewMaterials.length > 0 ? viewMaterials : materials).map(m =>
@@ -592,7 +592,7 @@ export function QuestionsPage({ user }: { user: User }) {
                 className="flex items-center gap-2 px-4 py-2 text-white text-sm font-semibold rounded-xl shadow transition-all hover:opacity-90"
                 style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}
               >
-                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" focusable="false" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
                 Tambah Manual
@@ -602,7 +602,7 @@ export function QuestionsPage({ user }: { user: User }) {
                 className="flex items-center gap-2 px-4 py-2 text-white text-sm font-semibold rounded-xl shadow transition-all hover:opacity-90"
                 style={{ background: 'linear-gradient(135deg,#8b5cf6,#6366f1)' }}
               >
-                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" focusable="false" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3l14 9-14 9V3z" />
                 </svg>
                 ✨ Generate AI
@@ -612,11 +612,11 @@ export function QuestionsPage({ user }: { user: User }) {
           {/* Stats bar */}
           <div className="flex items-center gap-3 px-6 py-2.5 bg-slate-50 border-t border-slate-100">
             <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 bg-white border border-slate-200 px-3 py-1 rounded-full shadow-sm">
-              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <svg aria-hidden="true" focusable="false" width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               {questions.length} total soal
             </span>
             <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full shadow-sm">
-              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+              <svg aria-hidden="true" focusable="false" width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
               {rootFolders.length} folder
             </span>
           </div>
@@ -640,7 +640,7 @@ export function QuestionsPage({ user }: { user: User }) {
                       className="w-11 h-11 rounded-2xl flex items-center justify-center mb-3"
                       style={{ background: fc.light }}
                     >
-                      <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
+                      <svg aria-hidden="true" focusable="false" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                       </svg>
                     </div>
@@ -649,7 +649,7 @@ export function QuestionsPage({ user }: { user: User }) {
                       {questions.filter(q => rootMaterials.map(m => m.id).includes(q.material_id)).length} soal
                     </p>
                     <div className="flex justify-end mt-2">
-                      <svg width="14" height="14" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
+                      <svg aria-hidden="true" focusable="false" width="14" height="14" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </div>
@@ -670,7 +670,7 @@ export function QuestionsPage({ user }: { user: User }) {
                       className="w-full flex flex-col p-4 rounded-2xl border-2 border-slate-200 bg-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-left"
                     >
                       <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-3" style={{ background: fc.light }}>
-                        <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
+                        <svg aria-hidden="true" focusable="false" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                         </svg>
                       </div>
@@ -679,19 +679,19 @@ export function QuestionsPage({ user }: { user: User }) {
                     </button>
                     {/* Folder action buttons */}
                     <div className="absolute top-2.5 right-2.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                      <button
+                      <button aria-label="Ubah nama folder"
                         onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: fKey, newName: fKey }); }}
                         className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-blue-100 bg-white/80 border border-slate-200 hover:border-blue-300"
                         title="Ubah nama folder">
-                        <svg width="11" height="11" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
+                        <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
-                      <button
+                      <button aria-label="Hapus semua soal folder"
                         onClick={e => { e.stopPropagation(); handleDeleteFolder(fKey); }}
                         className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-rose-100 bg-white/80 border border-slate-200 hover:border-rose-300"
                         title="Hapus semua soal folder">
-                        <svg width="11" height="11" fill="none" stroke="#be123c" viewBox="0 0 24 24">
+                        <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="#be123c" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
@@ -741,7 +741,7 @@ export function QuestionsPage({ user }: { user: User }) {
             {/* Breadcrumb */}
             <div className="flex items-center gap-1 text-xs text-slate-400 mb-1 flex-wrap">
               <span className="font-medium">Bank Soal</span>
-              <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" focusable="false" width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
               <span className="font-medium text-slate-600 truncate max-w-[120px]">
@@ -749,7 +749,7 @@ export function QuestionsPage({ user }: { user: User }) {
               </span>
               {selectedSubFolder && selectedSubFolder !== '__direct__' && (
                 <>
-                  <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg aria-hidden="true" focusable="false" width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                   <span className="font-medium text-slate-600 truncate max-w-[120px]">{selectedSubFolder}</span>
@@ -757,7 +757,7 @@ export function QuestionsPage({ user }: { user: User }) {
               )}
               {selectedSubFolder === '__direct__' && (
                 <>
-                  <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg aria-hidden="true" focusable="false" width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                   <span className="font-medium text-slate-600">Langsung</span>
@@ -772,7 +772,7 @@ export function QuestionsPage({ user }: { user: User }) {
               onClick={goBack}
               className="flex items-center gap-1.5 px-3 py-2 text-slate-700 text-sm font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all"
             >
-              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" focusable="false" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               Kembali
@@ -782,7 +782,7 @@ export function QuestionsPage({ user }: { user: User }) {
               className="flex items-center gap-1.5 px-3 py-2 text-white text-sm font-semibold rounded-xl shadow transition-all hover:opacity-90"
               style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}
             >
-              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" focusable="false" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               Tambah Manual
@@ -792,7 +792,7 @@ export function QuestionsPage({ user }: { user: User }) {
               className="flex items-center gap-1.5 px-3 py-2 text-white text-sm font-semibold rounded-xl shadow transition-all hover:opacity-90"
               style={{ background: 'linear-gradient(135deg,#8b5cf6,#6366f1)' }}
             >
-              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" focusable="false" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3l14 9-14 9V3z" />
               </svg>
               Generate AI
@@ -839,29 +839,29 @@ export function QuestionsPage({ user }: { user: User }) {
                       className="w-full flex flex-col p-3 rounded-2xl border-2 border-slate-200 bg-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-left"
                     >
                       <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2" style={{ background: fc.light }}>
-                        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
+                        <svg aria-hidden="true" focusable="false" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                         </svg>
                       </div>
                       <p className="text-sm font-bold text-slate-800 truncate pr-6">{sfKey}</p>
                       <p className="text-xs text-slate-400 mt-0.5">{sfNode.materials.length} materi · {sfQCount} soal</p>
                       <div className="flex justify-end mt-1.5">
-                        <svg width="12" height="12" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
+                        <svg aria-hidden="true" focusable="false" width="12" height="12" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       </div>
                     </button>
                     {/* Subfolder action buttons */}
                     <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                      <button
+                      <button aria-label="Ubah nama subfolder"
                         onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: sfKey, newName: sfKey }); }}
                         className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-blue-100 bg-white/80 border border-slate-200 hover:border-blue-300"
                         title="Ubah nama subfolder">
-                        <svg width="11" height="11" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
+                        <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
-                      <button
+                      <button aria-label="Hapus semua soal subfolder"
                         onClick={e => {
                           e.stopPropagation();
                           // Delete all questions in this subfolder
@@ -884,7 +884,7 @@ export function QuestionsPage({ user }: { user: User }) {
                         }}
                         className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-rose-100 bg-white/80 border border-slate-200 hover:border-rose-300"
                         title="Hapus semua soal subfolder">
-                        <svg width="11" height="11" fill="none" stroke="#be123c" viewBox="0 0 24 24">
+                        <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="#be123c" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
@@ -900,14 +900,14 @@ export function QuestionsPage({ user }: { user: User }) {
                     className="group flex flex-col p-3 rounded-2xl border-2 border-slate-200 bg-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-left"
                   >
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2" style={{ background: fc.light }}>
-                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
+                      <svg aria-hidden="true" focusable="false" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                       </svg>
                     </div>
                     <p className="text-sm font-bold text-slate-800">Langsung</p>
                     <p className="text-xs text-slate-400 mt-0.5">{currentFolderNode.materials.length} materi</p>
                     <div className="flex justify-end mt-1.5">
-                      <svg width="12" height="12" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
+                      <svg aria-hidden="true" focusable="false" width="12" height="12" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </div>
@@ -950,7 +950,7 @@ export function QuestionsPage({ user }: { user: User }) {
         {/* Edit Soal Modal */}
         {editQ && (
         <ModalPortal>
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
+          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
             <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-full overflow-y-auto" style={{ background: '#ffffff' }}>
               <h3 className="font-bold text-slate-800 mb-4 sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-slate-100">✏️ Edit Soal</h3>
               <div className="space-y-3">
@@ -1051,7 +1051,7 @@ export function QuestionsPage({ user }: { user: User }) {
                       onClick={() => handleDeleteMatGroup(mat.id, mat.materi_name)}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl hover:bg-rose-100 transition-all"
                     >
-                      <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg aria-hidden="true" focusable="false" width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                       Hapus Semua ({totalForMat})
@@ -1114,13 +1114,13 @@ export function QuestionsPage({ user }: { user: User }) {
                                 onClick={e => { e.stopPropagation(); handleDeleteBatch(batchKey); }}
                                 className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold text-rose-500 bg-white border border-rose-200 rounded-lg hover:bg-rose-50 transition-all"
                               >
-                                <svg width="9" height="9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg aria-hidden="true" focusable="false" width="9" height="9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                                 Hapus
                               </button>
                               {/* Chevron */}
-                              <svg
+                              <svg aria-hidden="true" focusable="false"
                                 width="16" height="16" fill="none" stroke={bc.text} viewBox="0 0 24 24"
                                 className="transition-transform duration-200 flex-shrink-0"
                                 style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}

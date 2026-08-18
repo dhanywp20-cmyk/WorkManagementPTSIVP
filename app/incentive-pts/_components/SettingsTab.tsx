@@ -156,17 +156,17 @@ function AllowBiayaList({
     <div className="space-y-3">
       {/* Search input */}
       <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
-        <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
-        <input
+        <input aria-label="Cari nama..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari nama..."
           className="flex-1 text-sm outline-none text-gray-700 placeholder-gray-400 bg-transparent"
         />
         {search && (
-          <button onClick={() => setSearch('')} className="text-gray-400 hover:text-gray-600 text-sm leading-none">✕</button>
+          <button aria-label="Tutup" onClick={() => setSearch('')} className="text-gray-400 hover:text-gray-600 text-sm leading-none">✕</button>
         )}
       </div>
 

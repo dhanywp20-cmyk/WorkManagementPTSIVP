@@ -39,7 +39,7 @@ export function AdminEditFields({
               <textarea rows={3} value={teks} disabled={disabled} placeholder={f.placeholder}
                 onChange={e => onChange(f.key, e.target.value)} className={kelasIsian + ' resize-y'} />
             ) : f.type === 'select' ? (
-              <select value={teks} disabled={disabled}
+              <select aria-label="— pilih —" value={teks} disabled={disabled}
                 onChange={e => onChange(f.key, e.target.value)} className={kelasIsian + ' bg-white'}>
                 <option value="">— pilih —</option>
                 {(f.options ?? []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}

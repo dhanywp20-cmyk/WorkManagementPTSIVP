@@ -48,7 +48,7 @@ function MaterialCard({
       style={{ background: 'rgba(255,255,255,0.72)' }}>
       <div className={`${compact ? 'w-7 h-7' : 'w-9 h-9'} rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm`}
         style={{ background: `${hex}18`, border: `1.5px solid ${hex}33` }}>
-        <svg className={`${compact ? 'w-3.5 h-3.5' : 'w-4.5 h-4.5'}`} style={{ color: hex }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" focusable="false" className={`${compact ? 'w-3.5 h-3.5' : 'w-4.5 h-4.5'}`} style={{ color: hex }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       </div>
@@ -116,7 +116,7 @@ function FolderTreeView({
                     ? 'border-blue-300 bg-blue-50 shadow-sm'
                     : 'border-slate-200 bg-white hover:border-blue-300 hover:shadow-sm hover:bg-blue-50/40'}`}>
                 <div className="flex items-start justify-between gap-1">
-                  <svg className="w-7 h-7 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                  <svg aria-hidden="true" focusable="false" className="w-7 h-7 flex-shrink-0" viewBox="0 0 24 24" fill="none">
                     <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z"
                       fill={isOpen ? '#FCD34D' : '#FBBF24'} stroke="#D97706" strokeWidth="0.8" />
                   </svg>
@@ -130,7 +130,7 @@ function FolderTreeView({
                 <p className="text-[11px] font-bold text-slate-800 leading-snug line-clamp-2">{child.name}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-[9px] text-slate-400 font-medium">{totalInside} item</span>
-                  <svg className={`w-3 h-3 text-slate-400 transition-transform ${isOpen ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg aria-hidden="true" focusable="false" className={`w-3 h-3 text-slate-400 transition-transform ${isOpen ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
@@ -149,7 +149,7 @@ function FolderTreeView({
         return (
           <div key={`exp-${child.path}`} className="mt-2 rounded-xl border border-blue-200 overflow-hidden">
             <div className="flex items-center gap-2 px-3 py-1.5 border-b border-blue-100 bg-blue-50/80">
-              <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+              <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
                 <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill="#FCD34D" stroke="#D97706" strokeWidth="0.8" />
               </svg>
               <span className="text-[11px] font-bold text-blue-800 truncate">{child.name}</span>
@@ -446,7 +446,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                                   style={isSelected ? { borderColor: col.icon, background: col.light } : {}}>
                                   <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-sm transition-all"
                                     style={{ background: isSelected ? col.gradient : col.light }}>
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                                    <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none">
                                       <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z"
                                         fill={isSelected ? '#FCD34D' : col.light === '#fef3c7' ? '#FBBF24' : col.icon + '88'}
                                         stroke={isSelected ? '#D97706' : col.icon} strokeWidth="0.9" />
@@ -463,7 +463,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                                           style={{ background: col.light, border: `1px solid ${col.icon}44`, color: col.icon }}
                                           title={`Tambah ke "${child.name}"`}>+</button>
                                       )}
-                                      <svg className={`w-3 h-3 transition-all ${isSelected ? 'rotate-90' : 'text-slate-300'}`}
+                                      <svg aria-hidden="true" focusable="false" className={`w-3 h-3 transition-all ${isSelected ? 'rotate-90' : 'text-slate-300'}`}
                                         style={isSelected ? { color: col.icon } : {}}
                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
@@ -474,19 +474,19 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                                 {/* Folder action buttons */}
                                 {isAdmin && (
                                   <div className="absolute top-2.5 right-2.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                    <button
+                                    <button aria-label="Ubah nama folder"
                                       onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: key, newName: key }); }}
                                       className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-blue-100 bg-white/80 border border-slate-200 hover:border-blue-300"
                                       title="Ubah nama folder">
-                                      <svg width="11" height="11" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
+                                      <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                       </svg>
                                     </button>
-                                    <button
+                                    <button aria-label="Hapus folder"
                                       onClick={e => { e.stopPropagation(); handleDeleteFolder(key); }}
                                       className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-rose-100 bg-white/80 border border-slate-200 hover:border-rose-300"
                                       title="Hapus folder">
-                                      <svg width="11" height="11" fill="none" stroke="#be123c" viewBox="0 0 24 24">
+                                      <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="#be123c" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                       </svg>
                                     </button>
@@ -548,7 +548,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                 }}>
                 <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-md flex-shrink-0"
                   style={{ background: panelCol.gradient }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z"
                       fill="#FCD34D" stroke="#D97706" strokeWidth="0.8" />
                   </svg>
@@ -561,11 +561,11 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                 </div>
                 {isAdmin && (
                   <>
-                    <button onClick={() => setRenameFolder({ oldName: selectedFolderNode.name, newName: selectedFolderNode.name })}
+                    <button aria-label="Ubah nama folder" onClick={() => setRenameFolder({ oldName: selectedFolderNode.name, newName: selectedFolderNode.name })}
                       className="w-8 h-8 rounded-xl flex items-center justify-center border-2 transition-all hover:scale-110"
                       style={{ background: panelCol.icon + '18', borderColor: panelCol.icon + '44' }}
                       title="Ubah nama folder">
-                      <svg width="14" height="14" fill="none" stroke={panelCol.icon} viewBox="0 0 24 24">
+                      <svg aria-hidden="true" focusable="false" width="14" height="14" fill="none" stroke={panelCol.icon} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                     </button>
@@ -575,7 +575,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                       title="Tambah materi ke folder ini">+</button>
                   </>
                 )}
-                <button onClick={() => setSelectedFolderKey(null)}
+                <button aria-label="Tutup" onClick={() => setSelectedFolderKey(null)}
                   className="w-8 h-8 rounded-xl bg-white hover:bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-lg border border-slate-200 transition-all flex-shrink-0">✕</button>
               </div>
 
@@ -603,12 +603,12 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
       {/* ── Modal: Add Materi ── */}
       {isAdmin && showForm && (
       <ModalPortal>
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h3 className="font-bold text-slate-800 flex items-center gap-2">✏️ Tambah Materi Baru</h3>
-              <button onClick={() => setShowForm(false)}
+              <button aria-label="Tutup" onClick={() => setShowForm(false)}
                 className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-all text-xl font-light">×</button>
             </div>
             <div className="p-6 space-y-4">
@@ -671,12 +671,12 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
       {/* ── Modal: Rename Folder ── */}
       {isAdmin && renameFolder && (
       <ModalPortal>
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-slate-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h3 className="font-bold text-slate-800 flex items-center gap-2">✏️ Ubah Nama Folder</h3>
-              <button onClick={() => setRenameFolder(null)}
+              <button aria-label="Tutup" onClick={() => setRenameFolder(null)}
                 className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-all text-xl font-light">×</button>
             </div>
             <div className="p-6">
@@ -716,12 +716,12 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
       {/* ── Modal: Edit Material ── */}
       {isAdmin && editMaterial && (
       <ModalPortal>
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h3 className="font-bold text-slate-800 flex items-center gap-2">✏️ Edit Materi</h3>
-              <button onClick={() => setEditMaterial(null)}
+              <button aria-label="Tutup" onClick={() => setEditMaterial(null)}
                 className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-all text-xl font-light">×</button>
             </div>
             <div className="p-6 space-y-4">

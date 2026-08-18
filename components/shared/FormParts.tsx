@@ -13,18 +13,29 @@
  * dihindari oleh tata letak satu layar itu.
  */
 export function FormField({ label, children }: { label: string; children: React.ReactNode }) {
+  // ── Menautkan label ke isiannya ───────────────────────────────────────────
+  // <label> yang hanya berdiri di atas isian TIDAK menamainya: secara program
+  // keduanya tidak berhubungan, jadi isiannya terbaca tanpa nama sama sekali.
+  // Membungkus isian di DALAM <label> membuat tautannya berlaku tanpa perlu
+  // id — dan tanpa perlu menyentuh ratusan pemanggil untuk menambahkan id
+  // satu per satu, yang pasti menyisakan sebagian terlewat.
+  //
+  // Ini juga membuat label bisa diklik untuk memfokuskan isiannya, seperti
+  // yang sudah diharapkan orang dari sebuah label.
   return (
-    <div>
-      <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>{label}</label>
+    <label className="block">
+      <span className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>{label}</span>
       {children}
-    </div>
+    </label>
   );
 }
 
 export function SectionHeader({ icon, title }: { icon: string; title: string }) {
   return (
     <div className="flex items-center gap-1.5 pb-1.5 border-b" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-      <span className="text-sm">{icon}</span>
+      {/* Emoji di sini murni hiasan judul: dibiarkan terbaca, pembaca layar
+          mengeja namanya ("wajah tersenyum", "map") sebelum judul aslinya. */}
+      <span className="text-sm" aria-hidden="true">{icon}</span>
       <span className="text-xs font-bold tracking-wide text-slate-700">{title}</span>
     </div>
   );
@@ -33,7 +44,7 @@ export function SectionHeader({ icon, title }: { icon: string; title: string }) 
 export function SectionHeaderSmall({ icon, title }: { icon: string; title: string }) {
   return (
     <p className="text-[10px] font-bold tracking-widest uppercase flex items-center gap-1.5" style={{ color: '#94a3b8' }}>
-      <span>{icon}</span>{title}
+      <span aria-hidden="true">{icon}</span>{title}
     </p>
   );
 }
@@ -42,7 +53,7 @@ export function InfoRow({ icon, label, value }: { icon: string; label: string; v
   if (!value) return null;
   return (
     <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-      <span className="text-base flex-shrink-0">{icon}</span>
+      <span className="text-base flex-shrink-0" aria-hidden="true">{icon}</span>
       <div className="min-w-0">
         <p className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#64748b' }}>{label}</p>
         <p className="text-sm font-semibold text-slate-800 break-words">{value}</p>

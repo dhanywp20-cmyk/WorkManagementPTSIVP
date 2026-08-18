@@ -105,7 +105,7 @@ export function RequestJadwalModal({
 
   return (
     <ModalPortal>
-    <div
+    <div role="dialog" aria-modal="true"
       className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-3 sm:p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
@@ -124,11 +124,11 @@ export function RequestJadwalModal({
               Permintaan akan dikirim ke Admin untuk disetujui &amp; di-assign ke Team PTS
             </p>
           </div>
-          <button
+          <button aria-label="Tutup"
             onClick={onClose}
             className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -290,7 +290,7 @@ export function RequestJadwalModal({
                     <span className="text-xl">{c.icon}</span>
                     <span className="text-sm font-bold leading-tight flex-1">{cat}</span>
                     {sel && (
-                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg aria-hidden="true" focusable="false" className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     )}

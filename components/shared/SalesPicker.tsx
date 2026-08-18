@@ -38,9 +38,14 @@ export function SalesPicker({
 
   return (
     <div className="relative">
+      {/* Pemicu daftar pilihan: tanpa aria-expanded pembaca layar tidak pernah
+          tahu daftarnya sedang terbuka atau tertutup. */}
       <button
         type="button"
         onClick={() => { setOpen(o => !o); if (!open) setQ(''); }}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={value ? `Sales terpilih: ${value}. Ubah pilihan.` : placeholder}
         className={`w-full flex items-center justify-between gap-2 text-sm text-left ${triggerClassName}`}
         style={triggerStyle}
       >
@@ -50,7 +55,7 @@ export function SalesPicker({
             : <span className="text-slate-400">{placeholder}</span>
           }
         </span>
-        <svg className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg aria-hidden="true" focusable="false" className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
@@ -68,14 +73,19 @@ export function SalesPicker({
                 value={q}
                 onChange={e => setQ(e.target.value)}
                 placeholder="Cari nama sales..."
+                aria-label="Cari nama sales"
                 onClick={e => e.stopPropagation()}
                 className="w-full px-3 py-1.5 rounded-lg text-sm outline-none border border-slate-200 bg-slate-50 placeholder-slate-400 focus:border-blue-300 text-slate-800"
               />
             </div>
-            <div className="overflow-y-auto" style={{ maxHeight: 196 }}>
+            <div role="listbox" aria-label="Daftar sales" className="overflow-y-auto" style={{ maxHeight: 196 }}>
               {value && (
                 <div
+                  role="option"
+                  aria-selected={false}
+                  tabIndex={0}
                   className="px-3 py-2 text-sm cursor-pointer text-slate-400 italic hover:bg-slate-50 border-b border-slate-100"
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange('', ''); setOpen(false); setQ(''); } }}
                   onClick={() => { onChange('', ''); setOpen(false); setQ(''); }}
                 >
                   — Kosongkan —
@@ -87,22 +97,28 @@ export function SalesPicker({
               {filtered.map(u => (
                 <div
                   key={u.id}
+                  role="option"
+                  aria-selected={value === u.full_name}
+                  tabIndex={0}
                   className="px-3 py-2.5 cursor-pointer flex items-center justify-between gap-2 hover:bg-slate-50"
                   style={value === u.full_name
                     ? { background: 'rgba(59,130,246,0.06)', borderLeft: '3px solid #3b82f6' }
                     : { borderLeft: '3px solid transparent' }}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange(u.full_name, u.sales_division ?? ''); setOpen(false); setQ(''); } }}
                   onClick={() => { onChange(u.full_name, u.sales_division ?? ''); setOpen(false); setQ(''); }}
                 >
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-slate-800 truncate">{u.full_name}</p>
                     {u.sales_division && <p className="text-xs text-slate-400">{u.sales_division}</p>}
                   </div>
-                  {value === u.full_name && <span className="text-blue-500 text-xs flex-shrink-0">✓</span>}
+                  {value === u.full_name && <span aria-hidden="true" className="text-blue-500 text-xs flex-shrink-0">✓</span>}
                 </div>
               ))}
             </div>
           </div>
-          <div className="fixed inset-0" style={{ zIndex: dropdownZIndex - 1 }} onClick={() => { setOpen(false); setQ(''); }} />
+          {/* Lapis penutup: murni penangkap klik di luar, tidak boleh ikut
+              terbaca maupun masuk urutan Tab. */}
+          <div aria-hidden="true" className="fixed inset-0" style={{ zIndex: dropdownZIndex - 1 }} onClick={() => { setOpen(false); setQ(''); }} />
         </>
       )}
     </div>

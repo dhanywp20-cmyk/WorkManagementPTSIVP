@@ -27,7 +27,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
 
   return(
   <ModalPortal>
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
+    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-4 flex flex-col"
         style={{animation:'scale-in 0.2s ease-out',border:`1.5px solid ${dc.accent}40`,maxHeight:'96dvh'}}>
@@ -40,7 +40,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
             <p className="text-[9px] font-bold uppercase tracking-widest text-white/50 mt-1.5 mb-0.5">Hari · Tanggal</p>
             <p className="text-white/70 text-xs">{row.day_of_week} · {dateLabel}</p>
           </div>
-          <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
+          <button aria-label="Tutup" onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
         </div>
 
         <div className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0">

@@ -20,7 +20,7 @@ function DonutChart({ segments, size = 68, strokeWidth = 10, label = '' }: {
   let cumBefore = 0;
   return (
     <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+      <svg aria-hidden="true" focusable="false" width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} />
         {segments.map((seg, i) => {
           const dash = (seg.value / total) * circ;
@@ -740,7 +740,7 @@ export function AdminDashboard({ user }: { user: User }) {
       {/* ── User Detail Modal ── */}
       {selectedUser && (
       <ModalPortal>
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(4px)' }}
           onClick={() => setSelectedUser(null)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col"
@@ -750,7 +750,7 @@ export function AdminDashboard({ user }: { user: User }) {
                 <h2 className="font-bold text-slate-800 text-lg leading-tight">{selectedUser.name}</h2>
                 <p className="text-xs text-slate-400 mt-0.5">Riwayat semua quiz yang diselesaikan</p>
               </div>
-              <button onClick={() => setSelectedUser(null)}
+              <button aria-label="Tutup" onClick={() => setSelectedUser(null)}
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all text-lg font-bold">✕</button>
             </div>
             <div className="overflow-y-auto flex-1 p-6 space-y-5">

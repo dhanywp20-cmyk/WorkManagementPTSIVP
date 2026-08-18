@@ -20,7 +20,7 @@ export function RescheduleModal({
 
   return (
   <ModalPortal>
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
+    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
         style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(245,158,11,0.5)' }}>
@@ -31,7 +31,7 @@ export function RescheduleModal({
               <h3 className="text-lg font-bold text-white">📅 Re-Schedule Jadwal</h3>
               <p className="text-amber-200/80 text-xs mt-0.5 truncate max-w-[260px]">{reminder.project_name || (reminder as any).title || '—'}</p>
             </div>
-            <button onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg">✕</button>
+            <button aria-label="Tutup" onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg">✕</button>
           </div>
         </div>
         <div className="p-6 space-y-4">

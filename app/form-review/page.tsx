@@ -444,7 +444,7 @@ export default function FormReviewPage() {
         {/* ── DELETE MODAL ── */}
         {showDeleteModal && deleteTarget && (
         <ModalPortal>
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4">
+          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6"
               style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(220,38,38,0.5)' }}>
               <div className="flex items-center gap-3 mb-4">
@@ -486,7 +486,7 @@ export default function FormReviewPage() {
         {/* ── FORM MODAL (Edit/View Review) ── */}
         {showFormModal && editingReview && (
         <ModalPortal>
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4 overflow-y-auto"
+          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4 overflow-y-auto"
             onClick={e => { if (e.target === e.currentTarget) { setShowFormModal(false); setEditingReview(null); setReviewFormData(emptyReviewForm); } }}>
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
               style={{ animation: 'scale-in 0.25s ease-out', border: '1.5px solid rgba(124,58,237,0.25)' }}>
@@ -500,9 +500,9 @@ export default function FormReviewPage() {
                       {editingReview.review_category === 'Demo Product' ? '🖥️ Demo Product' : '📌 BAST (Training)'}
                     </p>
                   </div>
-                  <button onClick={() => { setShowFormModal(false); setEditingReview(null); setReviewFormData(emptyReviewForm); }}
+                  <button aria-label="Tutup" onClick={() => { setShowFormModal(false); setEditingReview(null); setReviewFormData(emptyReviewForm); }}
                     className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
               </div>
@@ -609,7 +609,7 @@ export default function FormReviewPage() {
         {/* ── DETAIL MODAL ── */}
         {detailReview && (
         <ModalPortal>
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4"
+          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4"
             onClick={e => { if (e.target === e.currentTarget) setDetailReview(null); }}>
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 overflow-hidden flex flex-col"
               style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '96dvh' }}>
@@ -652,7 +652,7 @@ export default function FormReviewPage() {
                     <p className="text-white/80 text-sm flex items-center gap-1.5">📍 {detailReview.address}</p>
                   </>
                 )}
-                <button onClick={() => setDetailReview(null)}
+                <button aria-label="Tutup" onClick={() => setDetailReview(null)}
                   className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
               </div>
 
@@ -820,7 +820,7 @@ export default function FormReviewPage() {
         {/* ── NOTIFICATION POPUP ── */}
         {showNotificationPopup && (
         <ModalPortal>
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
+          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-full overflow-hidden flex flex-col border-4 border-yellow-400"
               style={{ animation: 'scale-in 0.3s ease-out' }}>
               <div className="p-5 border-b-2 border-yellow-300 flex-shrink-0" style={{ background: isTeam ? 'linear-gradient(135deg,#7c3aed,#5b21b6)' : 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
@@ -838,7 +838,7 @@ export default function FormReviewPage() {
                       </p>
                     </div>
                   </div>
-                  <button onClick={() => setShowNotificationPopup(false)} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold">✕</button>
+                  <button aria-label="Tutup" onClick={() => setShowNotificationPopup(false)} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold">✕</button>
                 </div>
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2">
@@ -884,7 +884,7 @@ export default function FormReviewPage() {
         {/* ── BELL POPUP ── */}
         {showBellPopup && (
         <ModalPortal>
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
+          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
             <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-full overflow-hidden flex flex-col border-4 border-yellow-400"
               style={{ animation: 'scale-in 0.3s ease-out' }}>
               <div className="p-5 border-b-2 border-yellow-300 flex-shrink-0" style={{ background: isTeam ? 'linear-gradient(135deg,#7c3aed,#5b21b6)' : 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
@@ -900,7 +900,7 @@ export default function FormReviewPage() {
                       </p>
                     </div>
                   </div>
-                  <button onClick={() => setShowBellPopup(false)} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold">✕</button>
+                  <button aria-label="Tutup" onClick={() => setShowBellPopup(false)} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold">✕</button>
                 </div>
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2">
@@ -977,9 +977,9 @@ export default function FormReviewPage() {
           </div>
           <div className="flex items-center gap-3">
             {/* Bell */}
-            <button onClick={() => setShowBellPopup(true)}
+            <button type="button" onClick={() => setShowBellPopup(true)} aria-label="Notifikasi form review"
               className="relative p-2 rounded-xl transition-all hover:bg-amber-50 border-2 border-transparent hover:border-amber-200">
-              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
               {myActivePendingReviews.length > 0 && (
@@ -1055,7 +1055,7 @@ export default function FormReviewPage() {
                 )}
                 <button onClick={fetchReviews} disabled={listLoading}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:bg-gray-100 border border-gray-200 text-gray-600 disabled:opacity-60 bg-white">
-                  <svg className={`w-3.5 h-3.5 ${listLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                  <svg aria-hidden="true" focusable="false" className={`w-3.5 h-3.5 ${listLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                   Refresh
                 </button>
               </div>
@@ -1067,7 +1067,7 @@ export default function FormReviewPage() {
                 <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">🔍 Search Project / Lokasi</label>
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">🔍</span>
-                  <input value={searchProject} onChange={e => setSearchProject(e.target.value)}
+                  <input aria-label="Search project / lokasi..." value={searchProject} onChange={e => setSearchProject(e.target.value)}
                     className="w-full rounded-lg pl-7 pr-3 py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Search project / lokasi..." style={{ minWidth: 180 }} />
                 </div>
@@ -1076,7 +1076,7 @@ export default function FormReviewPage() {
                 <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">👤 Sales Name</label>
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">👤</span>
-                  <input value={searchSalesName} onChange={e => setSearchSalesName(e.target.value)}
+                  <input aria-label="Search sales..." value={searchSalesName} onChange={e => setSearchSalesName(e.target.value)}
                     className="w-full rounded-lg pl-7 pr-3 py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Search sales..." />
                 </div>
@@ -1085,7 +1085,7 @@ export default function FormReviewPage() {
                 <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Team Handler</label>
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">👷</span>
-                  <input value={searchHandler} onChange={e => setSearchHandler(e.target.value)}
+                  <input aria-label="Search handler..." value={searchHandler} onChange={e => setSearchHandler(e.target.value)}
                     className="w-full rounded-lg pl-7 pr-3 py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Search handler..." />
                 </div>
@@ -1094,7 +1094,7 @@ export default function FormReviewPage() {
                 <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Kategori</label>
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">📋</span>
-                  <select value={filterReviewCat} onChange={e => setFilterReviewCat(e.target.value as any)}
+                  <select aria-label="Semua Kategori" value={filterReviewCat} onChange={e => setFilterReviewCat(e.target.value as any)}
                     className="w-full rounded-lg pl-7 pr-3 py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 appearance-none cursor-pointer transition-all">
                     <option value="all">Semua Kategori</option>
                     <option value="Demo Product">Demo Product</option>
@@ -1360,7 +1360,7 @@ export default function FormReviewPage() {
       {/* Bulk Delete Confirm Modal */}
       {bulkConfirm && (
       <ModalPortal>
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
             <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
               <span className="text-2xl">🗑️</span>

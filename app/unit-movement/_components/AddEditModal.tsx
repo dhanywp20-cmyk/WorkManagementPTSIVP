@@ -71,14 +71,14 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
 
   return (
   <ModalPortal>
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
       <div className="w-full max-w-lg max-h-full overflow-y-auto rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <span className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{background:'linear-gradient(135deg,#f59e0b,#d97706)'}}>{isEdit?'✏️':'➕'}</span>
             <h2 className="font-bold text-gray-900">{isEdit?'Edit Movement Log':'Tambah Movement Log'}</h2>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors">✕</button>
+          <button aria-label="Tutup" onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors">✕</button>
         </div>
         <div className="p-6 space-y-4">
           {error&&<div className="px-4 py-3 rounded-xl text-sm font-semibold text-red-700 bg-red-50 border border-red-200">{error}</div>}
@@ -103,7 +103,7 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
               {isMasuk?'📥 PTS = Penerima — Pengirim adalah Pihak Luar':'📤 PTS = Pengirim — Penerima adalah Pihak Luar'}
             </p>
             <div><label className={lbl}>{isMasuk?'👤 Nama PTS (Penerima)':'👤 Nama PTS (Pengirim)'}</label>
-              <select className={inp+" cursor-pointer"} value={form.nama_pts} onChange={e=>set('nama_pts',e.target.value)}>
+              <select aria-label="-- Pilih Anggota PTS --" className={inp+" cursor-pointer"} value={form.nama_pts} onChange={e=>set('nama_pts',e.target.value)}>
                 <option value="">-- Pilih Anggota PTS --</option>
                 {teamMembers.map(m=><option key={m} value={m}>{m}</option>)}
               </select>

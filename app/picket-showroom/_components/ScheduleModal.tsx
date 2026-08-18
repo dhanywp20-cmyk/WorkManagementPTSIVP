@@ -112,7 +112,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
 
   return(
   <ModalPortal>
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4 overflow-y-auto">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4 overflow-y-auto">
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden" style={{animation:'scale-in 0.25s ease-out',border:'1.5px solid rgba(220,38,38,0.25)'}}>
         <div className="px-6 py-5 rounded-t-2xl" style={{background:'linear-gradient(135deg,#dc2626,#991b1b)'}}>
           <div className="flex items-center justify-between">
@@ -120,8 +120,8 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
               <h2 className="text-lg font-bold text-white">📋 Atur Jadwal Piket — 2 Minggu</h2>
               <p className="text-red-200/80 text-xs mt-0.5">{fmtWk(weekStart)} &amp; {fmtWk(week2Start)}</p>
             </div>
-            <button onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+            <button aria-label="Tutup" onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg">
+              <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
           </div>
         </div>
@@ -160,7 +160,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
                           {isToday(date)&&<span className="absolute -top-2 left-2 text-[8px] font-bold px-1 py-0.5 rounded text-white z-10" style={{background:dc.accent}}>TODAY</span>}
                           <div className="flex items-center gap-1.5 p-1.5 rounded-xl border" style={{borderColor:`${dc.accent}25`,background:'white'}}>
                             {tc&&<div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{background:tc.dot}}/>}
-                            <select value={assign[wk]?.[day]||''} onChange={e=>setAssign(p=>({...p,[wk]:{...p[wk],[day]:e.target.value}}))}
+                            <select aria-label="— Belum —" value={assign[wk]?.[day]||''} onChange={e=>setAssign(p=>({...p,[wk]:{...p[wk],[day]:e.target.value}}))}
                               className="flex-1 text-[11px] outline-none bg-transparent min-w-0 py-1">
                               <option value="">— Belum —</option>
                               <optgroup label="Team PTS IVP">

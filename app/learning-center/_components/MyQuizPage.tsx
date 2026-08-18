@@ -339,7 +339,7 @@ function QuizPlayer({ session, user, attempt, onDone }: {
                       ${selected ? 'bg-white text-slate-800' : 'bg-slate-100 text-slate-500'}`}>{opt}</span>
                     <span className="text-sm font-medium flex-1">{val}</span>
                     {selected && (
-                      <svg className="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                       </svg>
                     )}
@@ -350,13 +350,13 @@ function QuizPlayer({ session, user, attempt, onDone }: {
             <div className="flex justify-between mt-8">
               <button onClick={() => setCurrent(p => Math.max(0, p-1))} disabled={current === 0}
                 className="flex items-center gap-2 px-5 py-2.5 bg-white text-slate-600 text-sm font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                 Sebelumnya
               </button>
               <button onClick={() => setCurrent(p => Math.min(questions.length-1, p+1))} disabled={current === questions.length-1}
                 className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 text-white text-sm font-semibold rounded-xl hover:bg-slate-900 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm">
                 Berikutnya
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>
             </div>
           </div>

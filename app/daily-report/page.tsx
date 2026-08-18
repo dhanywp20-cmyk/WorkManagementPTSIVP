@@ -113,7 +113,7 @@ function CatPicker({ value, onChange }: { value: string; onChange: (v: string) =
             style={sel ? { borderColor: c.accent, background: c.bg, color: c.color } : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }}>
             <span className="text-lg">{c.icon}</span>
             <span className="text-xs font-bold leading-tight flex-1">{cat}</span>
-            {sel && <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+            {sel && <svg aria-hidden="true" focusable="false" className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
           </button>
         );
       })}
@@ -132,13 +132,13 @@ function SalesDrop({ value, division, guests, onChange }: { value: string; divis
         style={{ ...inp, borderColor: open ? 'rgba(220,38,38,0.5)' : 'rgba(0,0,0,0.12)' }}
         onClick={() => { setOpen(o => !o); if (!open) setQ(''); }}>
         {value ? <span className="font-semibold text-slate-800">{value}{division && <span className="font-normal text-red-400"> · {division}</span>}</span> : <span className="text-slate-400">-- Pilih Sales --</span>}
-        <svg className={`w-4 h-4 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+        <svg aria-hidden="true" focusable="false" className={`w-4 h-4 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
       </div>
       {open && (
         <>
           <div className="absolute z-50 mt-1 w-full rounded-xl shadow-xl overflow-hidden" style={{ background: 'white', border: '1.5px solid rgba(220,38,38,0.25)', maxHeight: '240px' }}>
             <div className="p-2 border-b" style={{ borderColor: 'rgba(220,38,38,0.1)' }}>
-              <input autoFocus type="text" value={q} onChange={e => setQ(e.target.value)} placeholder="Cari sales..." onClick={e => e.stopPropagation()}
+              <input aria-label="Cari sales..." autoFocus type="text" value={q} onChange={e => setQ(e.target.value)} placeholder="Cari sales..." onClick={e => e.stopPropagation()}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none" style={{ background: 'rgba(220,38,38,0.04)', border: '1px solid rgba(220,38,38,0.15)', color: '#1e293b' }} />
             </div>
             <div className="overflow-y-auto" style={{ maxHeight: '180px' }}>
@@ -568,7 +568,7 @@ export default function DailyReportPage() {
     const autoCount = formReminders.length + formTickets.length;
     return (
     <ModalPortal>
-      <div className="fixed inset-0 z-[1000] flex items-start justify-center overflow-y-auto" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', paddingTop: '20px', paddingBottom: '40px' }}>
+      <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-start justify-center overflow-y-auto" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', paddingTop: '20px', paddingBottom: '40px' }}>
         <div className="w-full max-w-2xl mx-4" style={{ ...card, overflow: 'visible' }}>
           {/* Modal header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
@@ -578,8 +578,8 @@ export default function DailyReportPage() {
                 {formLoading ? 'Memuat aktivitas...' : autoCount > 0 ? `${formReminders.length} reminder + ${formTickets.length} ticket ter-insert otomatis` : 'Isi form di bawah'}
               </p>
             </div>
-            <button onClick={() => { setFormOpen(false); setEditingId(null); }} className="p-2 rounded-xl hover:bg-gray-100 transition-all text-slate-400">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            <button aria-label="Tutup" onClick={() => { setFormOpen(false); setEditingId(null); }} className="p-2 rounded-xl hover:bg-gray-100 transition-all text-slate-400">
+              <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
           <div className="px-6 py-5 space-y-5 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 80px)' }}>
@@ -591,7 +591,7 @@ export default function DailyReportPage() {
               </FormField>
               {isAdmin && (
                 <FormField label="Anggota Team *">
-                  <select value={formUserId} onChange={e => setFormUserId(e.target.value)} className={inpCls} style={inp}>
+                  <select aria-label="-- Pilih anggota --" value={formUserId} onChange={e => setFormUserId(e.target.value)} className={inpCls} style={inp}>
                     <option value="">-- Pilih anggota --</option>
                     {teamUsers.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
                   </select>
@@ -697,7 +697,7 @@ export default function DailyReportPage() {
     const linkedReport = row.report_id ? reports.find(r => r.id === row.report_id) : undefined;
     return (
     <ModalPortal>
-      <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }} onClick={() => setModalRow(null)}>
+      <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }} onClick={() => setModalRow(null)}>
         <div className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col" style={{ background: 'white', maxHeight: '96vh' }} onClick={e => e.stopPropagation()}>
           {/* Colored header */}
           <div className="px-6 py-5 text-white flex-shrink-0 relative" style={{ background: `linear-gradient(135deg, ${c.accent}, ${c.accent}cc)` }}>
@@ -724,7 +724,7 @@ export default function DailyReportPage() {
               {row.jam !== '-' && <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/20">🕐 {row.jam}</span>}
               <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/20">📅 {row.report_date}</span>
             </div>
-            <button onClick={() => setModalRow(null)}
+            <button aria-label="Tutup" onClick={() => setModalRow(null)}
               className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
           </div>
           {/* Body */}
@@ -821,7 +821,7 @@ export default function DailyReportPage() {
         <button onClick={openNewForm}
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-sm text-white hover:scale-[1.02] transition-all"
           style={{ background: 'linear-gradient(135deg,#059669,#047857)', boxShadow: '0 4px 14px rgba(5,150,105,0.4)' }}>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+          <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
           + Tambah Report
         </button>
       </PageHeader>
@@ -895,7 +895,7 @@ export default function DailyReportPage() {
             <button onClick={() => { loadLiveData(); loadReports(); }} disabled={liveLoading}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:bg-slate-100 disabled:opacity-50"
               style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)', color: '#475569' }}>
-              <svg className={`w-3.5 h-3.5 ${liveLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              <svg aria-hidden="true" focusable="false" className={`w-3.5 h-3.5 ${liveLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
               Refresh
             </button>
           </div>
@@ -937,20 +937,20 @@ export default function DailyReportPage() {
           {/* Search + filter bar identik reminder-schedule */}
           <div className="px-5 py-3 flex flex-wrap gap-2 border-b border-gray-100">
             <div className="flex items-center gap-2 rounded-xl px-3 py-2 flex-1 min-w-[180px]" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)' }}>
-              <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-              <input value={searchProject} onChange={e => setSearchProject(e.target.value)} placeholder="Cari project / lokasi..." className="bg-transparent outline-none text-xs text-slate-700 placeholder-slate-400 w-full" />
+              <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <input aria-label="Cari project / lokasi..." value={searchProject} onChange={e => setSearchProject(e.target.value)} placeholder="Cari project / lokasi..." className="bg-transparent outline-none text-xs text-slate-700 placeholder-slate-400 w-full" />
             </div>
             {isAdmin && (
               <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)', minWidth: '150px' }}>
-                <svg className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                <select value={filterUser} onChange={e => setFilterUser(e.target.value)} className="bg-transparent outline-none text-xs text-slate-700 w-full">
+                <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                <select value={filterUser} onChange={e => setFilterUser(e.target.value)} aria-label="Saring per team handler" className="bg-transparent outline-none text-xs text-slate-700 w-full">
                   <option value="">Team Handler</option>
                   {teamUsers.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
                 </select>
               </div>
             )}
             <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)', minWidth: '130px' }}>
-              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-transparent outline-none text-xs text-slate-700 w-full">
+              <select aria-label="All Status" value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-transparent outline-none text-xs text-slate-700 w-full">
                 <option value="">All Status</option>
                 <option value="pending">Pending</option>
                 <option value="completed">Selesai</option>
@@ -959,7 +959,7 @@ export default function DailyReportPage() {
               </select>
             </div>
             <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)', minWidth: '140px' }}>
-              <select value={filterSource} onChange={e => setFilterSource(e.target.value)} className="bg-transparent outline-none text-xs text-slate-700 w-full">
+              <select aria-label="Semua Platform" value={filterSource} onChange={e => setFilterSource(e.target.value)} className="bg-transparent outline-none text-xs text-slate-700 w-full">
                 <option value="">Semua Platform</option>
                 <option value="ticket">🎫 Ticketing</option>
                 <option value="reminder">🔔 Schedule</option>
@@ -967,8 +967,8 @@ export default function DailyReportPage() {
               </select>
             </div>
             <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)' }}>
-              <svg className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-              <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="bg-transparent outline-none text-xs text-slate-700" />
+              <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} aria-label="Saring per tanggal" className="bg-transparent outline-none text-xs text-slate-700" />
             </div>
             {(filterDate || filterUser || filterStatus || filterSource || searchProject) && (
               <button onClick={() => { setFilterDate(''); setFilterUser(''); setFilterStatus(''); setFilterSource(''); setSearchProject(''); }} className="px-3 py-2 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-50 transition-all">Reset</button>
@@ -1087,14 +1087,14 @@ export default function DailyReportPage() {
                         </td>
                         <td style={{ ...TD, textAlign: 'center' as const }} onClick={e => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-1.5">
-                            <button onClick={() => setModalRow(row)}
+                            <button aria-label="Lihat" onClick={() => setModalRow(row)}
                               className="p-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-500 transition-all" title="Lihat">
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                              <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                             </button>
                             {row.report_id && (
-                              <button onClick={() => { const r = reports.find(x => x.id === row.report_id); if (r) openEditForm(r); }}
+                              <button aria-label="Edit Report" onClick={() => { const r = reports.find(x => x.id === row.report_id); if (r) openEditForm(r); }}
                                 className="p-1.5 rounded-lg text-white transition-all" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }} title="Edit Report">
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                               </button>
                             )}
                           </div>

@@ -301,7 +301,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
               <button key={key} type="button" onClick={() => toggle(key)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-left ${checked ? 'border-rose-400 bg-rose-50 text-rose-700' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}>
                 <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked ? 'border-rose-500 bg-rose-500' : 'border-slate-300 bg-white'}`}>
-                  {checked && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                  {checked && <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                 </div>
                 <span className="text-lg">{m.icon}</span>
                 <span className="font-semibold text-sm">{m.label}</span>
@@ -324,13 +324,13 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
 
   return (
   <ModalPortal>
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden border border-slate-200">
         <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-8 py-6 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
@@ -340,8 +340,8 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
               <p className="text-white/60 text-xs">Kelola akun & hak akses menu</p>
             </div>
           </div>
-          <button onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          <button aria-label="Tutup" onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all">
+            <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
@@ -365,7 +365,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
             <>
               <div className="relative mb-4">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
-                <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari nama, username, atau role..."
+                <input aria-label="Cari nama, username, atau role..." type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari nama, username, atau role..."
                   className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all" />
               </div>
               {loadingUsers ? (
@@ -376,7 +376,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                     <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-bold text-slate-800">✏️ Edit: {editingUser.full_name}</h3>
-                        <button onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+                        <button aria-label="Tutup" onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -402,7 +402,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                         </div>
                         <div className="col-span-2">
                           <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi</label>
-                          <select value={editDivisi} onChange={e => { setEditDivisi(e.target.value); setEditPtsType(''); }}
+                          <select aria-label="-- Pilih Divisi --" value={editDivisi} onChange={e => { setEditDivisi(e.target.value); setEditPtsType(''); }}
                             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                             <option value="">-- Pilih Divisi --</option>
                             <option value="PTS">PTS</option>
@@ -413,7 +413,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                         {editDivisi === 'PTS' && (
                           <div className="col-span-2">
                             <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS</label>
-                            <select value={editPtsType} onChange={e => setEditPtsType(e.target.value)}
+                            <select aria-label="-- Pilih Tipe PTS --" value={editPtsType} onChange={e => setEditPtsType(e.target.value)}
                               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                               <option value="">-- Pilih Tipe PTS --</option>
                               <option value="PTS IVP">PTS IVP → Team PTS IVP</option>
@@ -427,7 +427,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                             <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">
                               {editDivisi === 'Marketing' ? 'Marketing Division' : 'Sales Division'}
                             </label>
-                            <select value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
+                            <select aria-label="-- Pilih {editDivisi} Division --" value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
                               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                               <option value="">-- Pilih {editDivisi} Division --</option>
                               {SALES_DIVISIONS.map(div => <option key={div} value={div}>{div}</option>)}
@@ -436,7 +436,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                         )}
                         <div>
                           <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Jabatan / Posisi</label>
-                          <select value={editingUser.jabatan || ''} onChange={e => setEditingUser({ ...editingUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                          <select aria-label="— Pilih Jabatan —" value={editingUser.jabatan || ''} onChange={e => setEditingUser({ ...editingUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                             <option value="">— Pilih Jabatan —</option>
                             {JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
                           </select>
@@ -531,7 +531,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Divisi *</label>
-                  <select value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', sales_division: '' })}
+                  <select aria-label="-- Pilih Divisi --" value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', sales_division: '' })}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
                     <option value="">-- Pilih Divisi --</option>
                     <option value="PTS">PTS</option>
@@ -542,7 +542,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                 {newUser.divisi === 'PTS' && (
                   <div className="col-span-2">
                     <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Tipe PTS *</label>
-                    <select value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value })}
+                    <select aria-label="-- Pilih Tipe PTS --" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value })}
                       className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
                       <option value="">-- Pilih Tipe PTS --</option>
                       <option value="PTS IVP">PTS IVP → Team PTS IVP</option>
@@ -556,7 +556,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                     <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">
                       {newUser.divisi === 'Marketing' ? 'Marketing Division *' : 'Sales Division *'}
                     </label>
-                    <select value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
+                    <select aria-label="-- Pilih {newUser.divisi} Division --" value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
                       className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
                       <option value="">-- Pilih {newUser.divisi} Division --</option>
                       {SALES_DIVISIONS.map(div => <option key={div} value={div}>{div}</option>)}
@@ -565,7 +565,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                 )}
                 <div>
                   <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Jabatan / Posisi</label>
-                  <select value={newUser.jabatan} onChange={e => setNewUser({ ...newUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
+                  <select aria-label="— Pilih Jabatan —" value={newUser.jabatan} onChange={e => setNewUser({ ...newUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
                     <option value="">— Pilih Jabatan —</option>
                     {JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
                   </select>
@@ -846,7 +846,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
 
   return (
   <ModalPortal>
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4">
       <div className="bg-slate-50 rounded-2xl shadow-2xl w-full max-w-5xl h-full max-h-full flex flex-col overflow-hidden border border-slate-200">
 
         {/* ── HERO ──
@@ -856,9 +856,9 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
             menampilkan siapa pemilik akun ini. */}
         <div className="flex-shrink-0 px-6 py-5 relative overflow-hidden"
           style={{ background: 'linear-gradient(120deg,#be123c,#9f1239 55%,#881337)' }}>
-          <button onClick={onClose}
+          <button aria-label="Tutup" onClick={onClose}
             className="absolute top-4 right-4 bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all z-10">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
           <div className="flex flex-wrap items-end justify-between gap-4 pr-10">
             <div className="min-w-0">
@@ -1022,7 +1022,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
 
               <Kartu icon="🔐" judul="Hak Akses Modul" hitung={String(menuAktif.length)}>
                 <div className="p-4 space-y-2.5">
-                  <input value={cariIzin} onChange={e => setCariIzin(e.target.value)}
+                  <input aria-label="Cari modul..." value={cariIzin} onChange={e => setCariIzin(e.target.value)}
                     placeholder="🔍 Cari modul..."
                     className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-rose-200" />
                   <div className="flex flex-wrap gap-1.5 max-h-64 overflow-y-auto">
@@ -1226,7 +1226,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
 
   return (
   <ModalPortal>
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-full flex flex-col border border-slate-200">
 
@@ -1234,7 +1234,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
         <div className="bg-gradient-to-r from-teal-700 to-teal-600 px-6 py-5 flex items-center justify-between flex-shrink-0 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
@@ -1243,8 +1243,8 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
               <p className="text-white/60 text-xs">Mapping Atasan, IVP & MVI Account &amp; CC per User</p>
             </div>
           </div>
-          <button onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          <button aria-label="Tutup" onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all">
+            <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
@@ -1283,7 +1283,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sales Division</label>
-                    <select value={atasanDiv} onChange={e => setAtasanDiv(e.target.value)}
+                    <select aria-label="— Pilih Divisi —" value={atasanDiv} onChange={e => setAtasanDiv(e.target.value)}
                       className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 bg-white">
                       <option value="">— Pilih Divisi —</option>
                       {nonIvpDivisions.map(d => <option key={d} value={d}>{d}</option>)}
@@ -1294,7 +1294,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                     {supervisorCandidates.length === 0 ? (
                       <div className="text-[11px] text-rose-600 p-2 bg-rose-50 rounded-lg border border-rose-200">⚠️ Set jabatan user di Account Settings terlebih dahulu.</div>
                     ) : (
-                      <select value={atasanSupId} onChange={e => setAtasanSupId(e.target.value)}
+                      <select aria-label="— Pilih Atasan —" value={atasanSupId} onChange={e => setAtasanSupId(e.target.value)}
                         className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 bg-white">
                         <option value="">— Pilih Atasan —</option>
                         {ATASAN_JABATAN.slice().reverse().map(tier => {
@@ -1418,9 +1418,9 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                         : <span className="text-[10px] text-rose-400">⚠️ No WA</span>}
                                     </div>
                                   </div>
-                                  <button onClick={() => handleDeleteAtasan(m.id)}
+                                  <button aria-label="Tutup" onClick={() => handleDeleteAtasan(m.id)}
                                     className="p-1.5 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all flex-shrink-0">
-                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                    <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                   </button>
                                 </div>
                               );
@@ -1459,7 +1459,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sales Division (External)</label>
-                    <select value={ivpDiv} onChange={e => setIvpDiv(e.target.value)}
+                    <select aria-label="— Pilih Divisi —" value={ivpDiv} onChange={e => setIvpDiv(e.target.value)}
                       className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 bg-white">
                       <option value="">— Pilih Divisi —</option>
                       {nonIvpDivisions.map(d => <option key={d} value={d}>{d}</option>)}
@@ -1470,7 +1470,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                     {ivpUsers.length === 0 ? (
                       <div className="text-[11px] text-rose-600 p-2 bg-rose-50 rounded-lg border border-rose-200">⚠️ Tidak ada akun Sales Internal.</div>
                     ) : (
-                      <select value={ivpUserId} onChange={e => setIvpUserId(e.target.value)}
+                      <select aria-label="— Pilih Sales Internal —" value={ivpUserId} onChange={e => setIvpUserId(e.target.value)}
                         className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 bg-white">
                         <option value="">— Pilih Sales Internal —</option>
                         {ivpUsers.map(u => (
@@ -1517,9 +1517,9 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                       : <span className="text-[10px] text-rose-400">⚠️ No WA</span>}
                                   </div>
                                 </div>
-                                <button onClick={() => handleDeleteIvp(m.id)}
+                                <button aria-label="Tutup" onClick={() => handleDeleteIvp(m.id)}
                                   className="p-1.5 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all flex-shrink-0">
-                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                  <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
                               </div>
                             );
@@ -1623,7 +1623,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                               })}
                                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all ${checked ? 'border-teal-400 bg-teal-50' : 'border-slate-200 bg-white hover:border-teal-200 hover:bg-teal-50/30'}`}>
                                 <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked ? 'border-teal-500 bg-teal-500' : 'border-slate-300 bg-white'}`}>
-                                  {checked && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                                  {checked && <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                                 </div>
                                 <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                                   style={{ background: cfg?.bg ?? '#f1f5f9', border: `1.5px solid ${cfg?.border ?? '#e2e8f0'}` }}>
@@ -1721,7 +1721,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
     return (
       <div className="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0">
         <span className="w-36 text-sm font-semibold text-slate-700 flex-shrink-0">{brand}</span>
-        <select value={mappings[key]||''} onChange={e=>setMappings(p=>({...p,[key]:e.target.value}))}
+        <select aria-label="— Belum ada PIC —" value={mappings[key]||''} onChange={e=>setMappings(p=>({...p,[key]:e.target.value}))}
           className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400 appearance-none">
           <option value="">— Belum ada PIC —</option>
           {brandUsers.map(u=><option key={u.id} value={u.id}>{u.full_name} ({u.sales_division})</option>)}
@@ -1733,14 +1733,14 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
 
   return (
   <ModalPortal>
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-full flex flex-col border border-slate-200">
         <div className="bg-gradient-to-r from-amber-600 to-amber-500 px-6 py-5 flex items-center justify-between flex-shrink-0 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-lg">⚙️</div>
             <div><h2 className="text-base font-bold text-white">Setting PIC Brand</h2><p className="text-white/70 text-xs">Mapping brand ke PIC penanggung jawab (Request Design Project)</p></div>
           </div>
-          <button onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all">✕</button>
+          <button aria-label="Tutup" onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all">✕</button>
         </div>
         {notif && <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex-shrink-0 ${notif.type==='success'?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200'}`}>{notif.type==='success'?'✅':'❌'} {notif.msg}</div>}
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
@@ -2309,7 +2309,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
       {totalCount > 0 ? (
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg flex-shrink-0 mr-1"
           style={{ background: 'linear-gradient(135deg, #dc2626, #b91c1c)', boxShadow: '0 1px 4px rgba(220,38,38,0.35)' }}>
-          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
           <span className="text-white font-bold text-xs leading-none">{totalCount}</span>
@@ -2317,7 +2317,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
       ) : (
         <div className="flex items-center justify-center px-2 py-1 rounded-lg flex-shrink-0 mr-1"
           style={{ background: 'rgba(0,0,0,0.05)' }}>
-          <svg className="w-4 h-4" style={{ color: '#94a3b8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" focusable="false" className="w-4 h-4" style={{ color: '#94a3b8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
         </div>
@@ -2400,7 +2400,7 @@ export function BrandPicSettingContent() {
     return (
       <div className="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0">
         <span className="w-36 text-sm font-semibold text-slate-700 flex-shrink-0">{brand}</span>
-        <select value={mappings[key]||''} onChange={e=>setMappings(p=>({...p,[key]:e.target.value}))}
+        <select aria-label="— Belum ada PIC —" value={mappings[key]||''} onChange={e=>setMappings(p=>({...p,[key]:e.target.value}))}
           className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-amber-400 appearance-none">
           <option value="">— Belum ada PIC —</option>
           {brandUsers.map(u=><option key={u.id} value={u.id}>{u.full_name} ({u.sales_division})</option>)}
@@ -2464,25 +2464,25 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
     {
       key: 'settings',
       label: 'Account Settings',
-      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+      icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
       color: '#4338ca', activeBg: 'rgba(99,102,241,0.1)', activeBorder: 'rgba(99,102,241,0.4)', activeText: '#4338ca',
     },
     {
       key: 'userManagement',
       label: 'User Management',
-      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+      icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
       color: '#0f766e', activeBg: 'rgba(13,148,136,0.1)', activeBorder: 'rgba(13,148,136,0.4)', activeText: '#0f766e',
     },
     {
       key: 'picBrand',
       label: 'PIC Brand',
-      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>,
+      icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>,
       color: '#b45309', activeBg: 'rgba(217,119,6,0.1)', activeBorder: 'rgba(217,119,6,0.4)', activeText: '#b45309',
     },
     {
       key: 'kpiRoster',
       label: 'KPI Roster',
-      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
+      icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
       color: '#0369a1', activeBg: 'rgba(3,105,161,0.1)', activeBorder: 'rgba(3,105,161,0.4)', activeText: '#0369a1',
     },
   ];
@@ -2491,41 +2491,46 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
 
   return (
   <ModalPortal>
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm pt-16 px-4 pb-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-7xl h-[90vh] flex overflow-hidden border border-slate-200">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm pt-16 px-4 pb-4">
+      {/* Di ponsel panel navigasi TIDAK boleh berdiri sebagai kolom kiri: 224px
+          dari layar 360px hanya menyisakan seratusan piksel untuk isinya, dan
+          tabel di dalamnya jadi terpotong sampai hanya kolom aksi yang terlihat.
+          Di sana ia berubah jadi deretan tab mendatar di atas isi. */}
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-7xl h-[90vh] flex flex-col sm:flex-row overflow-hidden border border-slate-200">
 
-        {/* ── LEFT SIDEBAR ── */}
-        <div className="w-56 flex-shrink-0 flex flex-col border-r border-slate-100" style={{ background: 'linear-gradient(160deg, #1e293b 0%, #0f172a 100%)' }}>
+        {/* ── LEFT SIDEBAR (ponsel: bilah tab atas) ── */}
+        <div className="w-full sm:w-56 flex-shrink-0 flex flex-col border-b sm:border-b-0 sm:border-r border-slate-100" style={{ background: 'linear-gradient(160deg, #1e293b 0%, #0f172a 100%)' }}>
           {/* Sidebar header */}
-          <div className="px-5 py-5 border-b border-white/10">
+          <div className="px-4 sm:px-5 py-3 sm:py-5 border-b border-white/10">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
               <div>
                 <p className="text-white font-bold text-sm leading-tight">Admin Panel</p>
-                <p className="text-white/40 text-[10px]">Superadmin Settings</p>
+                <p className="text-white/40 text-[10px] hidden sm:block">Superadmin Settings</p>
               </div>
             </div>
           </div>
 
           {/* Nav items */}
-          <div className="flex-1 p-3 space-y-1">
+          <div role="tablist" aria-label="Bagian Admin Panel"
+            className="flex-1 p-2 sm:p-3 flex flex-row overflow-x-auto sm:flex-col gap-1 sm:gap-0 sm:space-y-1">
             {navItems.map(item => {
               const isActive = activeSection === item.key;
               return (
-                <button key={item.key} onClick={() => setActiveSection(item.key)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all text-sm font-semibold"
+                <button key={item.key} type="button" role="tab" aria-selected={isActive} onClick={() => setActiveSection(item.key)}
+                  className="flex-shrink-0 sm:w-full flex items-center gap-2 sm:gap-3 px-3 py-2 sm:py-2.5 rounded-xl text-left transition-all text-xs sm:text-sm font-semibold whitespace-nowrap"
                   style={isActive
                     ? { background: item.activeBg, border: `1px solid ${item.activeBorder}`, color: item.activeText }
                     : { background: 'transparent', border: '1px solid transparent', color: 'rgba(255,255,255,0.55)' }}
                   onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.07)'; }}
                   onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
                   <span className={isActive ? '' : 'opacity-60'}>{item.icon}</span>
-                  <span className="truncate">{item.label}</span>
-                  {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: item.color }} />}
+                  <span className="sm:truncate">{item.label}</span>
+                  {isActive && <div className="hidden sm:block ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: item.color }} />}
                 </button>
               );
             })}
@@ -2535,28 +2540,28 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
         {/* ── RIGHT CONTENT ── */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Section header strip */}
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3 flex-shrink-0"
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex items-center gap-2 sm:gap-3 flex-shrink-0"
             style={{ background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)' }}>
             <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
               style={{ background: activeNav.activeBg, border: `1px solid ${activeNav.activeBorder}`, color: activeNav.activeText }}>
               {activeNav.icon}
             </div>
-            <div className="flex-1">
-              <h2 className="font-bold text-slate-800 text-base leading-tight">{activeNav.label}</h2>
-              <p className="text-slate-500 text-xs">
+            <div className="flex-1 min-w-0">
+              <h2 className="font-bold text-slate-800 text-sm sm:text-base leading-tight">{activeNav.label}</h2>
+              <p className="text-slate-500 text-[10px] sm:text-xs hidden sm:block">
                 {activeSection === 'settings' && 'Kelola akun user & hak akses menu'}
                 {activeSection === 'userManagement' && 'Mapping Atasan, IVP & MVI Account & CC per User'}
                 {activeSection === 'picBrand' && 'Mapping Brand PIC per divisi & produk'}
                 {activeSection === 'kpiRoster' && 'Pilih anggota tim yang masuk dalam penilaian KPI'}
               </p>
             </div>
-            <button onClick={onClose}
+            <button aria-label="Tutup" onClick={onClose}
               className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all text-slate-400 hover:text-slate-700"
               style={{ background: 'rgba(0,0,0,0.05)' }}
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)'; (e.currentTarget as HTMLButtonElement).style.color = '#dc2626'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.05)'; (e.currentTarget as HTMLButtonElement).style.color = ''; }}
               title="Tutup">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
 
@@ -2702,7 +2707,7 @@ export function KpiRosterInline() {
                   {enabled ? '✅ KPI Aktif' : '⏸ Nonaktif'}
                 </span>
                 {/* Toggle button */}
-                <button
+                <button aria-label={enabled ? 'Nonaktifkan dari KPI' : 'Aktifkan ke KPI'}
                   onClick={() => toggleKpi(u)}
                   disabled={isSaving}
                   className={`relative w-11 h-6 rounded-full transition-all flex-shrink-0 focus:outline-none ${
@@ -3004,7 +3009,7 @@ export function AccountSettingsInline() {
               <button key={key} type="button" onClick={() => toggle(key)}
                 className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all text-left text-xs ${checked ? 'border-rose-400 bg-rose-50 text-rose-700' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}>
                 <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked ? 'border-rose-500 bg-rose-500' : 'border-slate-300 bg-white'}`}>
-                  {checked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                  {checked && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                 </div>
                 <span>{m.icon}</span>
                 <span className="font-semibold truncate">{m.label}</span>
@@ -3055,7 +3060,7 @@ export function AccountSettingsInline() {
             {/* Search bar */}
             <div className="relative mb-4">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
-              <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari nama, username, atau role..."
+              <input aria-label="Cari nama, username, atau role..." type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari nama, username, atau role..."
                 className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all" />
             </div>
 
@@ -3065,7 +3070,7 @@ export function AccountSettingsInline() {
               <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-bold text-slate-800">✏️ Edit: {editingUser.full_name}</h3>
-                  <button onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+                  <button aria-label="Tutup" onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
@@ -3088,7 +3093,7 @@ export function AccountSettingsInline() {
                   </div>
                   <div className="col-span-3">
                     <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi</label>
-                    <select value={editDivisi} onChange={e => { setEditDivisi(e.target.value); setEditPtsType(''); }}
+                    <select aria-label="-- Pilih Divisi --" value={editDivisi} onChange={e => { setEditDivisi(e.target.value); setEditPtsType(''); }}
                       className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                       <option value="">-- Pilih Divisi --</option>
                       <option value="PTS">PTS</option>
@@ -3099,7 +3104,7 @@ export function AccountSettingsInline() {
                   {editDivisi === 'PTS' && (
                     <div className="col-span-3">
                       <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS</label>
-                      <select value={editPtsType} onChange={e => setEditPtsType(e.target.value)}
+                      <select aria-label="-- Pilih Tipe PTS --" value={editPtsType} onChange={e => setEditPtsType(e.target.value)}
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                         <option value="">-- Pilih Tipe PTS --</option>
                         <option value="PTS IVP">PTS IVP → Team PTS IVP</option>
@@ -3111,7 +3116,7 @@ export function AccountSettingsInline() {
                   {(editDivisi === 'Sales' || editDivisi === 'Marketing') && (
                     <div className="col-span-3">
                       <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division</label>
-                      <select value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
+                      <select aria-label="-- Pilih Divisi Sales --" value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                         <option value="">-- Pilih Divisi Sales --</option>{SALES_DIVISIONS.map(div => <option key={div} value={div}>{div}</option>)}
                       </select>
@@ -3119,7 +3124,7 @@ export function AccountSettingsInline() {
                   )}
                   <div>
                     <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Jabatan</label>
-                    <select value={editingUser.jabatan || ''} onChange={e => setEditingUser({ ...editingUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                    <select aria-label="— Pilih Jabatan —" value={editingUser.jabatan || ''} onChange={e => setEditingUser({ ...editingUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                       <option value="">— Pilih Jabatan —</option>{JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
                     </select>
                   </div>
@@ -3176,7 +3181,10 @@ export function AccountSettingsInline() {
                       {['Nama', 'Username', 'Role', 'Divisi', 'No. Telepon'].map(h => (
                         <th key={h} className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 whitespace-nowrap">{h}</th>
                       ))}
-                      <th className="sticky right-0 bg-slate-50 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 text-right whitespace-nowrap">Aksi</th>
+                      {/* Menempel di kanan hanya mulai layar md. Di ponsel kolom
+                          ini menutupi kolom lain sampai yang terlihat cuma
+                          tombol Edit/Hapus berulang tanpa nama pemiliknya. */}
+                      <th className="md:sticky md:right-0 bg-slate-50 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 text-right whitespace-nowrap">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3196,7 +3204,7 @@ export function AccountSettingsInline() {
                           <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{user.role}</span></td>
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{divisi}</td>
                           <td className="px-4 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-600">📱 {user.phone_number}</span> : <span className="text-slate-300">—</span>}</td>
-                          <td className="sticky right-0 px-4 py-2.5" style={{ background: rowBg }}>
+                          <td className="md:sticky md:right-0 px-4 py-2.5" style={{ background: rowBg }}>
                             <div className="flex items-center justify-end gap-1.5">
                               <button onClick={() => {
                                 let d = '', p = '';
@@ -3235,7 +3243,7 @@ export function AccountSettingsInline() {
               </div>
               <div className="col-span-3">
                 <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi *</label>
-                <select value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', sales_division: '' })}
+                <select aria-label="-- Pilih Divisi --" value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', sales_division: '' })}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                   <option value="">-- Pilih Divisi --</option>
                   <option value="PTS">PTS</option>
@@ -3246,7 +3254,7 @@ export function AccountSettingsInline() {
               {newUser.divisi === 'PTS' && (
                 <div className="col-span-3">
                   <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS *</label>
-                  <select value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value })}
+                  <select aria-label="-- Pilih Tipe PTS --" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value })}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                     <option value="">-- Pilih Tipe PTS --</option>
                     <option value="PTS IVP">PTS IVP → Team PTS IVP</option>
@@ -3258,7 +3266,7 @@ export function AccountSettingsInline() {
               {(newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') && (
                 <div className="col-span-3">
                   <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division *</label>
-                  <select value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
+                  <select aria-label="-- Pilih Sales Division --" value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                     <option value="">-- Pilih Sales Division --</option>{SALES_DIVISIONS.map(div => <option key={div} value={div}>{div}</option>)}
                   </select>
@@ -3266,7 +3274,7 @@ export function AccountSettingsInline() {
               )}
               <div>
                 <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Jabatan</label>
-                <select value={newUser.jabatan} onChange={e => setNewUser({ ...newUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                <select aria-label="— Pilih Jabatan —" value={newUser.jabatan} onChange={e => setNewUser({ ...newUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                   <option value="">— Pilih Jabatan —</option>{JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
                 </select>
               </div>
@@ -3294,7 +3302,7 @@ export function AccountSettingsInline() {
               <div className="space-y-4 p-4 rounded-xl bg-amber-50 border border-amber-200">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-slate-800">✅ Review Pendaftaran: {approvingUser.full_name}</h3>
-                  <button onClick={() => { setApprovingUser(null); setApproveMenus(DEFAULT_MENU_KEYS); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+                  <button aria-label="Tutup" onClick={() => { setApprovingUser(null); setApproveMenus(DEFAULT_MENU_KEYS); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm bg-white p-3 rounded-lg border border-slate-200">
                   <div><span className="text-xs text-slate-500 uppercase font-bold">Nama</span><p className="font-semibold text-slate-800">{approvingUser.full_name}</p></div>
@@ -3318,7 +3326,7 @@ export function AccountSettingsInline() {
                         <button key={key} type="button" onClick={() => setApproveMenus(prev => checked ? prev.filter(k => k !== key) : [...prev, key])}
                           className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all text-left text-xs ${checked ? 'border-amber-400 bg-amber-50 text-amber-800' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
                           <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${checked ? 'border-amber-500 bg-amber-500' : 'border-slate-300 bg-white'}`}>
-                            {checked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                            {checked && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                           </div>
                           <span>{m.icon}</span><span className="font-semibold truncate">{m.label}</span>
                         </button>
@@ -3780,7 +3788,7 @@ export function UserManagementInline() {
                     ))}
                     <div className="relative flex-1 min-w-[160px]">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
-                      <input type="text" value={orgSearch} onChange={e => setOrgSearch(e.target.value)} placeholder="Cari nama / username..."
+                      <input aria-label="Cari nama / username..." type="text" value={orgSearch} onChange={e => setOrgSearch(e.target.value)} placeholder="Cari nama / username..."
                         className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all" />
                     </div>
                   </div>
@@ -3819,7 +3827,7 @@ export function UserManagementInline() {
                           {isSel && (
                             <div style={{ marginLeft: depth * 18 + 30 }} className="my-1 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
                               <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest mb-1.5">Atur atasan langsung — {u.full_name}</p>
-                              <select value={u.atasan_id || ''} onChange={e => { handleSetAtasan(u.id, e.target.value); setOrgSelectedId(''); }} disabled={saving}
+                              <select aria-label="— Tidak ada (puncak / Direktur) —" value={u.atasan_id || ''} onChange={e => { handleSetAtasan(u.id, e.target.value); setOrgSelectedId(''); }} disabled={saving}
                                 className="w-full border border-emerald-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-200 bg-white">
                                 <option value="">— Tidak ada (puncak / Direktur) —</option>
                                 {allUsers.filter(c => c.id !== u.id).slice().sort((a, b) => orgTierOf(b) - orgTierOf(a) || a.full_name.localeCompare(b.full_name, 'id')).map(c => (
@@ -3857,7 +3865,7 @@ export function UserManagementInline() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Divisi / Grup</label>
-                      <select value={atasanDiv} onChange={e => setAtasanDiv(e.target.value)} className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
+                      <select aria-label="-- Pilih Divisi / Grup --" value={atasanDiv} onChange={e => setAtasanDiv(e.target.value)} className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
                         <option value="">-- Pilih Divisi / Grup --</option>
                         <optgroup label="Divisi Sales">{nonIvpDivisions.map(d => <option key={d} value={d}>{d}</option>)}</optgroup>
                         <optgroup label="Tim Internal / IVP">{INTERNAL_GROUPS.map(d => <option key={d} value={d}>{d === 'IVP' ? '🔗' : '🔧'} {d}</option>)}</optgroup>
@@ -3865,7 +3873,7 @@ export function UserManagementInline() {
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Atasan</label>
-                      <select value={atasanSupId} onChange={e => setAtasanSupId(e.target.value)} className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
+                      <select aria-label="-- Pilih Atasan --" value={atasanSupId} onChange={e => setAtasanSupId(e.target.value)} className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
                         <option value="">-- Pilih Atasan --</option>{supervisorCandidates.map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.jabatan}{u.team_type ? ` · ${u.team_type}` : ''})</option>)}
                       </select>
                     </div>
@@ -3893,8 +3901,8 @@ export function UserManagementInline() {
                                 <p className="font-semibold text-slate-800 text-xs truncate">{u?.full_name ?? '—'}</p>
                                 <div className="mt-0.5">{jabatanBadge(u as User)}</div>
                               </div>
-                              <button onClick={() => handleDeleteAtasan(m.id)} className="text-red-400 hover:text-red-600 flex-shrink-0 p-1 rounded hover:bg-red-50 transition-all" title="Hapus">
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              <button aria-label="Hapus" onClick={() => handleDeleteAtasan(m.id)} className="text-red-400 hover:text-red-600 flex-shrink-0 p-1 rounded hover:bg-red-50 transition-all" title="Hapus">
+                                <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                               </button>
                             </div>
                           );
@@ -3925,13 +3933,13 @@ export function UserManagementInline() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Divisi Sales</label>
-                      <select value={ivpDiv} onChange={e => setIvpDiv(e.target.value)} className="w-full border border-violet-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-200 bg-white">
+                      <select aria-label="-- Pilih Divisi --" value={ivpDiv} onChange={e => setIvpDiv(e.target.value)} className="w-full border border-violet-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-200 bg-white">
                         <option value="">-- Pilih Divisi --</option>{nonIvpDivisions.map(d => <option key={d} value={d}>{d}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Sales Account (IVP / MVI)</label>
-                      <select value={ivpUserId} onChange={e => setIvpUserId(e.target.value)} className="w-full border border-violet-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-200 bg-white">
+                      <select aria-label="-- Pilih Account --" value={ivpUserId} onChange={e => setIvpUserId(e.target.value)} className="w-full border border-violet-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-200 bg-white">
                         <option value="">-- Pilih Account --</option>
                         {ivpUsers.length > 0 && (
                           <optgroup label="── IVP ──">
@@ -3977,7 +3985,7 @@ export function UserManagementInline() {
                             <span className="text-[10px] font-semibold text-violet-800">{m.sales_division}</span>
                             <span className="text-[8px] font-bold px-1 rounded" style={(m.brand_type ?? '') === 'IVP' ? { background: '#dbeafe', color: '#1e40af' } : { background: '#fef3c7', color: '#92400e' }}>{(m.brand_type ?? 'MVI') === 'IVP' ? 'IVP' : 'MVI'}</span>
                             <button onClick={() => handleDeleteIvp(m.id)} className="text-violet-300 hover:text-red-500 transition-colors ml-0.5" title={`Hapus ${m.sales_division}`}>
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                              <svg aria-hidden="true" focusable="false" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                           </div>
                         ))}
@@ -3997,7 +4005,7 @@ export function UserManagementInline() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Tipe Produk</label>
-                      <select value={prodType} onChange={e => setProdType(e.target.value)} className="w-full border border-rose-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 bg-white">
+                      <select aria-label="-- Pilih Tipe --" value={prodType} onChange={e => setProdType(e.target.value)} className="w-full border border-rose-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 bg-white">
                         <option value="">-- Pilih Tipe --</option>
                         {PRODUCT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
@@ -4027,8 +4035,8 @@ export function UserManagementInline() {
                             <span className="text-slate-400">→</span>
                             {m.team_types.map(tt => <span key={tt} className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{tt.replace('Team PTS ', '')}</span>)}
                           </div>
-                          <button onClick={() => handleDeleteProdSup(m.id)} className="text-rose-300 hover:text-red-500 transition-colors" title="Hapus">
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                          <button aria-label="Hapus" onClick={() => handleDeleteProdSup(m.id)} className="text-rose-300 hover:text-red-500 transition-colors" title="Hapus">
+                            <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                           </button>
                         </div>
                         <div className="mt-1 text-[10px] text-slate-400">
@@ -4044,7 +4052,7 @@ export function UserManagementInline() {
                   <p className="text-xs font-bold text-amber-700 mb-1">👑 Akun Manager (gerbang approval)</p>
                   <p className="text-[11px] text-slate-500 mb-3">Manager yang wajib approve sebelum request turun ke supervisor. Untuk sekarang boleh sama dengan Admin (Dhany); bisa dialihkan ke akun lain kapan saja.</p>
                   <div className="flex gap-3">
-                    <select value={managerUserId} onChange={e => setManagerUserId(e.target.value)} className="flex-1 min-w-0 border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
+                    <select aria-label="-- Pilih Akun Manager --" value={managerUserId} onChange={e => setManagerUserId(e.target.value)} className="flex-1 min-w-0 border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
                       <option value="">-- Pilih Akun Manager --</option>
                       {allUsers.filter(u => u.jabatan === 'Manager' || ['admin', 'superadmin'].includes((u.role || '').toLowerCase())).map(u => <option key={u.id} value={u.id}>{u.full_name}{u.jabatan ? ` (${u.jabatan})` : ''}</option>)}
                     </select>
@@ -4058,7 +4066,7 @@ export function UserManagementInline() {
                   <p className="text-[11px] text-slate-500 mb-3">Tandai akun Guest mana yang Sales Internal (pemilik akun, approve request dari Sales External) — dipakai pipeline, bukan tebakan dari divisi.</p>
                   <div className="relative mb-3">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
-                    <input value={internalSearch} onChange={e => setInternalSearch(e.target.value)} placeholder="Cari nama sales..."
+                    <input aria-label="Cari nama sales..." value={internalSearch} onChange={e => setInternalSearch(e.target.value)} placeholder="Cari nama sales..."
                       className="w-full pl-9 pr-3 py-2 border border-sky-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-sky-200 bg-white" />
                   </div>
                   <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
@@ -4085,7 +4093,7 @@ export function UserManagementInline() {
                 {/* Search user */}
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
-                  <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari nama user..."
+                  <input aria-label="Cari nama user..." type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari nama user..."
                     className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all" />
                 </div>
                 <div className="grid grid-cols-2 gap-5">
@@ -4134,7 +4142,7 @@ export function UserManagementInline() {
                                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all text-left"
                                 style={isChecked ? { background: 'rgba(13,148,136,0.08)', borderColor: 'rgba(13,148,136,0.35)' } : { background: '#f8fafc', borderColor: '#e2e8f0' }}>
                                 <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${isChecked ? 'border-teal-500 bg-teal-500' : 'border-slate-300 bg-white'}`}>
-                                  {isChecked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                                  {isChecked && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="font-semibold text-slate-800 text-xs truncate">{target.full_name}</p>

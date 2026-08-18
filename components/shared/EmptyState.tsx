@@ -7,8 +7,8 @@ interface LoadingSpinnerProps {
 
 export function LoadingSpinner({ message = 'Memuat data...', color = '#6366f1' }: LoadingSpinnerProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 gap-3">
-      <div className="w-8 h-8 rounded-full animate-spin"
+    <div role="status" aria-live="polite" aria-busy="true" className="flex flex-col items-center justify-center py-16 gap-3">
+      <div className="w-8 h-8 rounded-full animate-spin" aria-hidden="true"
         style={{ border: '3px solid #e2e8f0', borderTopColor: color }} />
       <span className="text-gray-400 text-sm">{message}</span>
     </div>
@@ -25,13 +25,13 @@ interface EmptyStateProps {
 export function EmptyState({ icon = '📭', title, description, action }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-2">
-      <span className="text-5xl">{icon}</span>
+      <span className="text-5xl" aria-hidden="true">{icon}</span>
       <p className="font-semibold text-gray-600 text-sm mt-1">{title}</p>
       {description && (
         <p className="text-xs text-gray-400 text-center max-w-xs leading-relaxed">{description}</p>
       )}
       {action && (
-        <button onClick={action.onClick}
+        <button type="button" onClick={action.onClick}
           className="mt-2 px-4 py-2 text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl transition-all">
           {action.label}
         </button>
@@ -92,12 +92,14 @@ interface ErrorStateProps {
 
 export function ErrorState({ message = 'Gagal memuat data', onRetry }: ErrorStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 gap-2">
-      <span className="text-5xl">⚠️</span>
+    // role="alert": kegagalan memuat harus terdengar begitu terjadi, bukan
+    // menunggu pengguna kebetulan menyusuri halaman sampai menemukannya.
+    <div role="alert" className="flex flex-col items-center justify-center py-16 gap-2">
+      <span className="text-5xl" aria-hidden="true">⚠️</span>
       <p className="font-semibold text-gray-700 text-sm mt-1">{message}</p>
       <p className="text-xs text-gray-400">Periksa koneksi internet dan coba lagi</p>
       {onRetry && (
-        <button onClick={onRetry}
+        <button type="button" onClick={onRetry}
           className="mt-3 px-5 py-2 text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl border border-rose-200 transition-all">
           ↻ Coba Lagi
         </button>

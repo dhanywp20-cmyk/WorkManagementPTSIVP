@@ -42,7 +42,7 @@ function StyleA() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 bg-slate-800 border border-slate-600 rounded-lg px-3 py-1.5">
-            <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             <span className="text-xs text-slate-400">Cari materi...</span>
           </div>
           <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg,#3b82f6,#6366f1)' }}>
@@ -81,11 +81,11 @@ function StyleA() {
               {selected.sub.map(s => (
                 <button key={s} onClick={() => setOpenSub(openSub === s ? null : s)}
                   className={`flex items-center gap-2 p-2.5 rounded-xl border text-left transition-all ${openSub === s ? 'border-blue-300 bg-blue-50 shadow-sm' : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/40'}`}>
-                  <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                  <svg aria-hidden="true" focusable="false" className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
                     <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill={openSub === s ? '#FCD34D' : '#FBBF24'} stroke="#D97706" strokeWidth="0.8" />
                   </svg>
                   <span className="text-xs font-semibold text-slate-700 truncate">{s}</span>
-                  <svg className={`w-3 h-3 ml-auto text-slate-400 transition-transform flex-shrink-0 ${openSub === s ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+                  <svg aria-hidden="true" focusable="false" className={`w-3 h-3 ml-auto text-slate-400 transition-transform flex-shrink-0 ${openSub === s ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
                 </button>
               ))}
             </div>
@@ -95,14 +95,14 @@ function StyleA() {
           {openSub && (
             <div className="rounded-xl border border-blue-200 overflow-hidden mb-3">
               <div className="flex items-center gap-2 px-3 py-2 border-b border-blue-100" style={{ background: 'rgba(219,234,254,0.5)' }}>
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"><path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill="#FCD34D" stroke="#D97706" strokeWidth="0.8" /></svg>
+                <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"><path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill="#FCD34D" stroke="#D97706" strokeWidth="0.8" /></svg>
                 <span className="text-xs font-bold text-blue-800">{openSub}</span>
               </div>
               <div className="p-2.5 space-y-1.5" style={{ background: '#fff' }}>
                 {MOCK_MATERIALS.slice(0, 2).map(m => (
                   <div key={m.id} className="flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-200 hover:border-blue-200 hover:shadow-sm transition-all">
                     <div className="w-7 h-7 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-slate-800 truncate">{m.name}</p>
@@ -120,7 +120,7 @@ function StyleA() {
               {MOCK_MATERIALS.slice(0, 3).map(m => (
                 <div key={m.id} className="flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white hover:border-blue-200 hover:shadow-sm transition-all">
                   <div className="w-7 h-7 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-slate-800 truncate">{m.name}</p>
@@ -152,7 +152,7 @@ function StyleB() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
-            <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             <span className="text-xs text-slate-400">Cari materi...</span>
           </div>
           <button className="px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-md" style={{ background: 'linear-gradient(135deg,#3b82f6,#6366f1)' }}>+ Tambah Materi</button>
@@ -177,7 +177,7 @@ function StyleB() {
                 <p className="text-sm font-bold text-white leading-snug mb-1">{f.name}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-white/70 font-medium">{f.items} materi</span>
-                  <svg className={`w-4 h-4 text-white/80 transition-transform ${selected?.id === f.id ? 'rotate-90' : 'group-hover:translate-x-0.5'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                  <svg aria-hidden="true" focusable="false" className={`w-4 h-4 text-white/80 transition-transform ${selected?.id === f.id ? 'rotate-90' : 'group-hover:translate-x-0.5'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </div>
               </div>
             </button>
@@ -195,14 +195,14 @@ function StyleB() {
               <span className="text-xl">{selected.icon}</span>
               <span className="font-bold text-slate-800">{selected.name}</span>
               <span className="text-xs text-slate-500 bg-white/70 px-2 py-0.5 rounded-full ml-1">{selected.items} item</span>
-              <button onClick={() => setSelected(null)} className="ml-auto w-6 h-6 rounded-lg bg-white/70 hover:bg-white flex items-center justify-center text-slate-500 text-sm font-bold transition-all">✕</button>
+              <button aria-label="Tutup" onClick={() => setSelected(null)} className="ml-auto w-6 h-6 rounded-lg bg-white/70 hover:bg-white flex items-center justify-center text-slate-500 text-sm font-bold transition-all">✕</button>
             </div>
             <div className="p-3 space-y-2" style={{ background: '#fff' }}>
               {MOCK_MATERIALS.slice(0, 3).map(m => (
                 <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-slate-200 hover:shadow-sm transition-all">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
                     style={{ background: `linear-gradient(135deg, ${selected.color.replace('from-','').replace('to-','').split(' ').map(c=>{const m2:Record<string,string>={'amber-500':'#fde68a','orange-500':'#fed7aa','blue-500':'#bfdbfe','indigo-600':'#c7d2fe','teal-500':'#99f6e4','cyan-600':'#a5f3fc','purple-500':'#e9d5ff','violet-600':'#ddd6fe','rose-500':'#fecdd3','pink-600':'#fbcfe8','emerald-500':'#a7f3d0','green-600':'#bbf7d0'};return m2[c]||'#c7d2fe';}).join(',')})` }}>
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-800 truncate">{m.name}</p>
@@ -247,7 +247,7 @@ function StyleC() {
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5">
-              <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               <span className="text-xs text-slate-400">Cari materi...</span>
             </div>
             <button className="px-3 py-1.5 rounded-lg text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg,#3b82f6,#6366f1)' }}>+ Tambah</button>
@@ -260,7 +260,7 @@ function StyleC() {
         {breadcrumb.length > 0 && (
           <button onClick={() => setBreadcrumb(b => b.slice(0, -1))}
             className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-blue-600 mb-4 transition-all">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+            <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
             Kembali
           </button>
         )}
@@ -277,7 +277,7 @@ function StyleC() {
                   <p className="text-xs text-slate-400 mt-0.5">{f.items} materi tersedia</p>
                   {f.sub.length > 0 && <p className="text-[10px] text-slate-300 mt-0.5">{f.sub.length} subfolder</p>}
                 </div>
-                <svg className="w-4 h-4 text-slate-300 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-slate-300 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>
             ))}
           </div>
@@ -291,7 +291,7 @@ function StyleC() {
                   {currentFolder.sub.map(s => (
                     <button key={s} onClick={() => setBreadcrumb(b => [...b, s])}
                       className="flex items-center gap-2 p-3 rounded-xl border border-slate-200 bg-white hover:border-amber-300 hover:bg-amber-50/40 hover:shadow-sm transition-all text-left group">
-                      <svg className="w-7 h-7 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                      <svg aria-hidden="true" focusable="false" className="w-7 h-7 flex-shrink-0" viewBox="0 0 24 24" fill="none">
                         <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill="#FBBF24" stroke="#D97706" strokeWidth="0.8" />
                       </svg>
                       <span className="text-xs font-semibold text-slate-700 group-hover:text-amber-700 transition-all">{s}</span>
@@ -305,7 +305,7 @@ function StyleC() {
               {MOCK_MATERIALS.map(m => (
                 <div key={m.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 bg-white hover:border-blue-200 hover:shadow-sm transition-all">
                   <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-800">{m.name}</p>
@@ -316,7 +316,7 @@ function StyleC() {
                     </div>
                   </div>
                   <a href="#" className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg font-bold hover:bg-blue-100 transition-all flex-shrink-0">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                    <svg aria-hidden="true" focusable="false" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                     Buka
                   </a>
                 </div>
@@ -345,7 +345,7 @@ function StyleD() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
-            <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             <span className="text-xs text-slate-400">Cari materi...</span>
           </div>
           <button className="px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-md" style={{ background: 'linear-gradient(135deg,#0ea5e9,#6366f1)' }}>+ Tambah</button>
@@ -370,7 +370,7 @@ function StyleD() {
                     {f.sub.map(s => (
                       <button key={s} onClick={() => setOpenSub(openSub === s ? null : s)}
                         className={`w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-left transition-all ${openSub === s ? 'text-blue-600 bg-blue-50 font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}>
-                        <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none"><path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill={openSub === s ? '#FCD34D' : '#FBBF24'} stroke="#D97706" strokeWidth="0.8" /></svg>
+                        <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none"><path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill={openSub === s ? '#FCD34D' : '#FBBF24'} stroke="#D97706" strokeWidth="0.8" /></svg>
                         <span className="text-[11px] font-medium truncate">{s}</span>
                       </button>
                     ))}
@@ -397,7 +397,7 @@ function StyleD() {
                 <div key={m.id} className="group rounded-xl border border-slate-200 bg-white hover:border-blue-200 hover:shadow-md transition-all overflow-hidden">
                   <div className="flex items-start gap-3 p-3.5">
                     <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${selected.color} flex items-center justify-center flex-shrink-0 shadow-sm`}>
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-slate-800 group-hover:text-blue-700 transition-all">{m.name}</p>
@@ -409,7 +409,7 @@ function StyleD() {
                     </div>
                     <a href="#" className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg text-white shadow-sm flex-shrink-0 transition-all"
                       style={{ background: 'linear-gradient(135deg,#3b82f6,#6366f1)' }}>
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                      <svg aria-hidden="true" focusable="false" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                       Buka
                     </a>
                   </div>

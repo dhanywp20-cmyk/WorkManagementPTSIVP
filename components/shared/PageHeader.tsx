@@ -44,7 +44,7 @@ export function PageHeader({ icon, title, subtitle, color, colorLight, children 
             className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ background: iconBg, boxShadow: iconShadow }}
           >
-            <span className="text-lg">{icon}</span>
+            <span className="text-lg" aria-hidden="true">{icon}</span>
           </div>
           <div>
             <h1

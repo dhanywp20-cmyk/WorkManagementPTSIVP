@@ -68,7 +68,7 @@ export function MiniPieChart({
           pendek, donat jadi terlihat tidak center. Dengan legenda dibatasi,
           pasangan donat+legenda mengambang di tengah kartu. */}
       <div className="flex items-center justify-center gap-3">
-        <svg width="120" height="120" viewBox="0 0 120 120" className="flex-shrink-0">
+        <svg aria-hidden="true" focusable="false" width="120" height="120" viewBox="0 0 120 120" className="flex-shrink-0">
           {slices.map((s) => (
             s.isFullCircle ? (
               <g key={s.i} style={{ cursor: onSliceClick ? 'pointer' : 'default' }}

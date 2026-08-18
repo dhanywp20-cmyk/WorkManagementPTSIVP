@@ -357,10 +357,10 @@ export function AnalyticsPlatform({ embedded = false, injectedUser }: { embedded
           <TabBtn label="Analytics"      icon="📊" active={tab==='kpi'}     onClick={() => setTab('kpi')} />
           <TabBtn label="Command Center" icon="🏠" active={tab==='command'} onClick={() => setTab('command')} badge={totalAlerts || undefined} />
           <TabBtn label="Audit Log"      icon="📋" active={tab==='audit'}   onClick={() => setTab('audit')} badge={auditRows.length > 0 ? auditRows.length : undefined} />
-          <button onClick={() => { loadStats(); if (tab === 'audit') loadAudit(); }} title="Refresh"
+          <button aria-label="Refresh" onClick={() => { loadStats(); if (tab === 'audit') loadAudit(); }} title="Refresh"
             className="ml-auto w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110"
             style={{ background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)' }}>
-            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           </button>
         </div>
       )}
@@ -399,8 +399,8 @@ export function AnalyticsPlatform({ embedded = false, injectedUser }: { embedded
                     <p className="text-sm font-bold text-emerald-700">Platform berjalan baik</p>
                   </div>
               }
-              <button onClick={loadStats} className="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:scale-110" style={{background:'rgba(0,0,0,0.05)',border:'1px solid rgba(0,0,0,0.08)'}}>
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              <button aria-label="Muat ulang" onClick={loadStats} className="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:scale-110" style={{background:'rgba(0,0,0,0.05)',border:'1px solid rgba(0,0,0,0.08)'}}>
+                <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
               </button>
             </div>
           </div>
@@ -517,7 +517,7 @@ export function AnalyticsPlatform({ embedded = false, injectedUser }: { embedded
               </select>
               <button onClick={loadAudit} disabled={auditLoading}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-60 bg-white">
-                <svg className={`w-3.5 h-3.5 ${auditLoading?'animate-spin':''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                <svg aria-hidden="true" focusable="false" className={`w-3.5 h-3.5 ${auditLoading?'animate-spin':''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                 Refresh
               </button>
               <div className="ml-auto flex items-center gap-2">

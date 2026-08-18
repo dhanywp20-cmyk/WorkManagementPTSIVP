@@ -488,7 +488,7 @@ function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: (
 
   return (
   <ModalPortal>
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col"
@@ -497,7 +497,7 @@ function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: (
         {/* Header */}
         <div className="px-5 py-4 flex items-center gap-3 flex-shrink-0 relative"
           style={{ background: `linear-gradient(135deg, ${teamColor}, ${teamColor}cc)` }}>
-          <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
+          <button aria-label="Tutup" onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-black text-white"
               style={{ background: 'rgba(255,255,255,0.2)' }}>
@@ -1110,7 +1110,7 @@ export default function KPITeamPage() {
         <button onClick={() => { fetchAllData(); fetchKPIMembers(); }}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
           style={{ background: 'rgba(255,255,255,0.9)', borderColor: '#e2e8f0', color: '#64748b' }}>
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" focusable="false" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
           </svg>
           Sync
@@ -1126,7 +1126,7 @@ export default function KPITeamPage() {
             <button onClick={() => setShowSettings(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
               style={{ background: 'rgba(255,255,255,0.9)', borderColor: '#ddd6fe', color: '#7c3aed' }}>
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" focusable="false" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
               </svg>
               Pengaturan KPI
@@ -1166,20 +1166,20 @@ export default function KPITeamPage() {
                 ))}
               </div>
               {kpiPeriodLen === '6m' && (
-                <select value={kpiStartMonth} onChange={e => setKpiStartMonth(Number(e.target.value))}
+                <select value={kpiStartMonth} onChange={e => setKpiStartMonth(Number(e.target.value))} aria-label="Periode enam bulan"
                   className="text-[10px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-none">
                   {[{v:1,l:'Jan–Jun'},{v:2,l:'Feb–Jul'},{v:3,l:'Mar–Agt'},{v:4,l:'Apr–Sep'},{v:5,l:'Mei–Okt'},{v:6,l:'Jun–Nov'},{v:7,l:'Jul–Des'}].map(o=>(
                     <option key={o.v} value={o.v}>{o.l}</option>
                   ))}
                 </select>
               )}
-              <select value={kpiYear} onChange={e => setKpiYear(Number(e.target.value))}
+              <select value={kpiYear} onChange={e => setKpiYear(Number(e.target.value))} aria-label="Tahun"
                 className="text-[10px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-none">
                 {[2024,2025,2026,2027].map(y=>(<option key={y} value={y}>{y}</option>))}
               </select>
               <button onClick={() => fetchKPIMembers()}
                 className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 transition-all">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                <svg aria-hidden="true" focusable="false" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                 Refresh
               </button>
               <span className="text-[9px] font-semibold px-2 py-1 rounded-lg text-slate-500" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
@@ -1257,7 +1257,7 @@ export default function KPITeamPage() {
                               </div>
                               <div className="text-[8px] font-bold uppercase tracking-wide" style={{ color: c }}>{lbl}</div>
                               {m.monthlyTickets.some(v => v > 0) && (
-                                <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
+                                <svg aria-hidden="true" focusable="false" width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
                                   <polyline points={pts} fill="none" stroke={c} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" opacity={0.7} />
                                   <circle cx={W} cy={H - (m.monthlyTickets[11] / sparkMax) * H} r={2.5} fill={c} />
                                 </svg>
@@ -1304,7 +1304,7 @@ export default function KPITeamPage() {
 
           {/* Team filter — admin only */}
           {scope.kind === 'admin' && allTeamTypes.length > 1 && (
-            <select value={filterTeam} onChange={e => setFilterTeam(e.target.value)}
+            <select aria-label="Semua Tim" value={filterTeam} onChange={e => setFilterTeam(e.target.value)}
               className="ml-auto text-[11px] border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 font-medium focus:outline-none focus:ring-2 focus:ring-sky-200">
               <option value="all">Semua Tim</option>
               {allTeamTypes.map(t => <option key={t} value={t}>{t}</option>)}
@@ -1325,7 +1325,7 @@ export default function KPITeamPage() {
               )}
             </div>
             {/* Search */}
-            <input
+            <input aria-label="Cari nama..."
               value={searchQ} onChange={e => setSearchQ(e.target.value)}
               placeholder="Cari nama..."
               className="text-[11px] border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-100 w-40"
@@ -1553,7 +1553,7 @@ export default function KPITeamPage() {
                   </select>
                   <button onClick={() => fetchKPIMembers()}
                     className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 transition-all">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    <svg aria-hidden="true" focusable="false" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                     Refresh
                   </button>
                   <span className="text-[9px] font-semibold px-2 py-1 rounded-lg text-slate-500" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
@@ -1631,7 +1631,7 @@ export default function KPITeamPage() {
                                   </div>
                                   <div className="text-[8px] font-bold uppercase tracking-wide" style={{ color: c }}>{lbl}</div>
                                   {m.monthlyTickets.some(v => v > 0) && (
-                                    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
+                                    <svg aria-hidden="true" focusable="false" width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
                                       <polyline points={pts} fill="none" stroke={c} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" opacity={0.7} />
                                       <circle cx={W} cy={H - (m.monthlyTickets[11] / sparkMax) * H} r={2.5} fill={c} />
                                     </svg>
@@ -1858,9 +1858,9 @@ export default function KPITeamPage() {
                   <div className="text-2xl font-black" style={{ color: c }}>{noData ? '—' : `${finalKPI}%`}</div>
                   <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">KPI Score</div>
                 </div>
-                <button onClick={() => setSelectedKPIMember(null)}
+                <button aria-label="Tutup" onClick={() => setSelectedKPIMember(null)}
                   className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all flex-shrink-0">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                  <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               </div>
 
@@ -2064,9 +2064,9 @@ export default function KPITeamPage() {
                   <div className="text-2xl font-black" style={{ color: c }}>{m.finalKPI}%</div>
                   <div className="text-[9px] font-bold uppercase tracking-wide" style={{ color: c }}>{lbl}</div>
                 </div>
-                <button onClick={() => setSelectedSnapMember(null)}
+                <button aria-label="Tutup" onClick={() => setSelectedSnapMember(null)}
                   className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all flex-shrink-0">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                  <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               </div>
               <div className="p-4 space-y-3">
@@ -2112,7 +2112,7 @@ export default function KPITeamPage() {
                 <div className="font-bold text-slate-800 text-base">⚙️ Pengaturan KPI</div>
                 <div className="text-xs text-slate-400 mt-0.5">Atur batas & bobot masing-masing komponen</div>
               </div>
-              <button onClick={() => setShowSettings(false)} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100">✕</button>
+              <button aria-label="Tutup" onClick={() => setShowSettings(false)} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100">✕</button>
             </div>
             <div className="p-6 space-y-5">
               {/* LC Min Score */}

@@ -38,7 +38,7 @@ export function ViewModal({
 
   return (
     <ModalPortal>
-    <div
+    <div role="dialog" aria-modal="true"
       className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.5)' }}
     >
@@ -48,7 +48,7 @@ export function ViewModal({
           className="px-6 py-4 border-b border-gray-100 flex-shrink-0 relative"
           style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.04))' }}
         >
-          <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-sm">✕</button>
+          <button aria-label="Tutup" onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-sm">✕</button>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <Badge color="purple" square>{project.category}</Badge>
@@ -343,7 +343,7 @@ export function BiayaModal({
 
   return (
   <ModalPortal>
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
         <h3 className="font-bold text-gray-800 text-lg">
           {project.biaya_cadangan > 0 ? '✏️ Edit Biaya Cadangan' : '💵 Input Biaya Cadangan'}
@@ -516,7 +516,7 @@ export function BackupModal({
 
   return (
   <ModalPortal>
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
         <h3 className="font-bold text-gray-800 text-lg">🤝 Set Tim Support</h3>
         <div className="bg-blue-50 rounded-xl p-3 text-sm">
@@ -612,7 +612,7 @@ interface PaidModalProps {
 export function PaidModal({ project, onClose, onConfirm }: PaidModalProps) {
   return (
   <ModalPortal>
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 text-center">
         <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center text-3xl mx-auto">✅</div>
         <h3 className="font-bold text-gray-800 text-lg">Tandai Lunas?</h3>

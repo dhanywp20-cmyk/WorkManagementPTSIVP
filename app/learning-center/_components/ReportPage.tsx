@@ -93,7 +93,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
               daripada layar ponsel 360px setelah dikurangi padding, jadi
               halamannya bisa digeser ke samping. */}
           <div className="mt-2">
-            <select value={selectedSession} onChange={e => setSelectedSession(e.target.value)}
+            <select aria-label="-- Pilih Sesi --" value={selectedSession} onChange={e => setSelectedSession(e.target.value)}
               className="w-full sm:min-w-[320px] sm:w-auto border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 bg-white">
               <option value="">-- Pilih Sesi --</option>
               {sessions.map(s => <option key={s.id} value={s.id}>{s.session_type === 'essay' ? '📝 ' : ''}{s.session_name}</option>)}

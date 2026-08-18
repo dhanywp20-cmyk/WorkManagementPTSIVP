@@ -89,7 +89,7 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
         {/* Controls: Year + Month */}
         <div className="flex items-center gap-2">
           {/* Year dropdown */}
-          <select value={selectedYear} onChange={e=>onYearChange(Number(e.target.value))}
+          <select value={selectedYear} onChange={e=>onYearChange(Number(e.target.value))} aria-label="Tahun"
             className="rounded-lg px-2 py-1 text-[11px] font-bold outline-none cursor-pointer"
             style={{background:'#ffffff',color:'#334155',border:'1px solid rgba(15,23,42,0.12)'}}>
             {yearOptions.map(y=><option key={y} value={y} style={{background:'#1e293b',color:'white'}}>{y}</option>)}
