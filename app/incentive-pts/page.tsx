@@ -8,12 +8,14 @@ import {
   fetchIncentiveProjects, fetchTranches, fetchVisibleSplits, fetchSupportFromTickets, fetchLateTickets,
   insertTranches, insertSplits, processYearlyBatch,
   calculateIncentiveSplits, validateSplitTotal, generateTranches, findUpline, resolveUserId, OrgUser,
+  ambilSkema, type SkemaInsentif,
   formatRupiah, formatPct,
   ROLE_LABELS, TRANCHE_STATUS,
 } from './_components/calc';
 import { exportPengajuanIncentive, exportSummaryIncentive } from './_components/exportPengajuan';
 import { adminSetIncentiveInput } from '@/lib/admin-users';
 import { MobileListCard, MobileCardBadge, ModalPortal } from '@/components/shared';
+import { SchemeTab } from './_components/SchemeTab';
 
 void insertSplits; void validateSplitTotal;
 
@@ -22,23 +24,37 @@ interface CurrentUser { id?: string; username?: string; full_name?: string; role
 function isAdmin(u: CurrentUser | null) { const r = (u?.role || '').toLowerCase(); return r === 'admin' || r === 'superadmin'; }
 function canInputNominal(u: CurrentUser | null) { return isAdmin(u) || !!u?.allow_incentive_input; }
 
-function calcHandlerSplit(p: IncentiveProjectRow): { pct: number; amt: number } | null {
+/**
+ * Ringkasan cepat "berapa bagian Handler" untuk kolom daftar.
+ *
+ * Angkanya diambil dari skema yang berlaku, bukan dipatok di sini. Versi lama
+ * menulis 60% dan faktor 0.85 langsung di rumus ini — nilai yang sudah tidak
+ * cocok lagi dengan tabel pembagian, sehingga kolom daftar dan layar rincian
+ * bisa menampilkan angka yang berbeda untuk proyek yang sama.
+ */
+function calcHandlerSplit(sk: SkemaInsentif | null, p: IncentiveProjectRow): { pct: number; amt: number } | null {
   const pool = p.incentive_value || 0;
-  if (!pool || !p.mode_penyelesaian) return null;
+  if (!pool || !p.mode_penyelesaian || !sk) return null;
   const remote = p.mode_penyelesaian === 'remote';
+  const pctInstaller = remote ? Math.max(0, Math.min(99, sk.installerRemotePersen || 0)) : 0;
+  const faktor = (100 - pctInstaller) / 100;
   if (p.pic_type === 'manager_pic') {
-    return { pct: remote ? 85 : 100, amt: Math.round(pool * (remote ? 0.85 : 1.0)) };
+    const pct = (sk.managerSebagaiPic.pic ?? 100) * faktor;
+    return { pct, amt: Math.round((pool * pct) / 100) };
   }
-  const factor = remote ? 0.85 : 1.0;
-  return { pct: 60 * factor, amt: Math.round(pool * 0.60 * factor) };
+  const pctPic = sk.porsi.find(x => x.peran === 'pic')?.persen ?? 0;
+  const pct = pctPic * faktor;
+  return { pct, amt: Math.round((pool * pct) / 100) };
 }
 
-type TabKey = 'projects' | 'tranches' | 'late' | 'settings';
+type TabKey = 'projects' | 'tranches' | 'late' | 'skema' | 'settings';
 
 export default function IncentivePTSPage() {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [appReady, setAppReady] = useState(false);
   const [tab, setTab] = useState<TabKey>('projects');
+  /** Skema pembagian yang berlaku — sumber tunggal seluruh angka di layar ini. */
+  const [skema, setSkema] = useState<SkemaInsentif | null>(null);
 
   const [projects, setProjects] = useState<IncentiveProjectRow[]>([]);
   const [tranches, setTranches] = useState<(IncentiveTranche & { project: IncentiveProjectRow })[]>([]);
@@ -92,9 +108,13 @@ export default function IncentivePTSPage() {
 
   async function loadAll() {
     setLoading(true);
-    const [projRes, trancheRes, splitRes, lateRes] = await Promise.all([
-      fetchIncentiveProjects(), fetchTranches(), fetchVisibleSplits(), fetchLateTickets(),
+    // Skema dimuat bersama data lain. Selama ia belum ada, layar tidak
+    // menghitung apa pun (lihat calcHandlerSplit) — lebih baik kolomnya kosong
+    // sesaat daripada menampilkan angka dari aturan yang salah.
+    const [projRes, trancheRes, splitRes, lateRes, sk] = await Promise.all([
+      fetchIncentiveProjects(), fetchTranches(), fetchVisibleSplits(), fetchLateTickets(), ambilSkema(),
     ]);
+    setSkema(sk);
     if (projRes.data) setProjects(projRes.data);
     if (trancheRes.data) setTranches(trancheRes.data);
     if (splitRes.data) setAllSplits(splitRes.data);
@@ -129,7 +149,7 @@ export default function IncentivePTSPage() {
     const [splitsRes, tranchesRes, supportsRes] = await Promise.all([
       fetchVisibleSplits(p.id),
       supabase.from('incentive_tranches').select('*').eq('project_id', p.id).order('tranche_number'),
-      fetchSupportFromTickets(p.project_name),
+      fetchSupportFromTickets(p.project_name, p.bast_date, skema?.jendelaSupportBulan ?? 0),
     ]);
     setDetailSplits(splitsRes.data || []);
     setDetailTranches((tranchesRes.data || []) as IncentiveTranche[]);
@@ -150,7 +170,7 @@ export default function IncentivePTSPage() {
   async function handleGenerateTranches() {
     if (!generateProject?.bast_date) { notify('error', 'BAST belum ada — isi saat Handler klik Completed di Reminder Schedule!'); return; }
     setGenerating(true);
-    const { error } = await insertTranches(generateProject.id, generateProject.bast_date, generateProject.mode_penyelesaian);
+    const { error } = await insertTranches(skema!, generateProject.id, generateProject.bast_date, generateProject.mode_penyelesaian);
     if (error) { notify('error', 'Gagal: ' + error.message); } else { notify('success', 'Tranche berhasil di-generate!'); }
     setGenerating(false); setShowGenerateModal(false); setGenerateProject(null);
     loadAll();
@@ -297,6 +317,7 @@ export default function IncentivePTSPage() {
             { id: 'projects', label: '📋 Projects',            show: true },
             { id: 'tranches', label: '📅 Tranche Schedule',    show: canInputNominal(currentUser) },
             { id: 'late',     label: '🕐 Late Ticket Queue',   show: canInputNominal(currentUser) },
+            { id: 'skema',    label: '🧮 Skema Pembagian',    show: isAdmin(currentUser) },
             { id: 'settings', label: '⚙️ Pengaturan Akses',   show: isAdmin(currentUser) },
           ] as { id: TabKey; label: string; show: boolean }[])
             .filter(t => t.show)
@@ -351,7 +372,7 @@ export default function IncentivePTSPage() {
                 <div className="px-4 py-10 text-center text-sm text-gray-400">Belum ada project incentive.</div>
               ) : filteredProjects.map((p) => {
                 const hasNominal = (p.incentive_value || 0) > 0;
-                const handlerSplit = calcHandlerSplit(p);
+                const handlerSplit = calcHandlerSplit(skema, p);
                 const projTranches = tranches.filter(t => t.project_id === p.id);
                 const showNominal = canInputNominal(currentUser);
                 return (
@@ -423,7 +444,7 @@ export default function IncentivePTSPage() {
                     const cellCls = `border border-gray-200 px-3 py-2.5 ${rowBg}`;
                     const hasNominal = (p.incentive_value || 0) > 0;
                     const projTranches = tranches.filter(t => t.project_id === p.id);
-                    const handlerSplit = calcHandlerSplit(p);
+                    const handlerSplit = calcHandlerSplit(skema, p);
                     return (
                       <tr key={p.id} className="hover:bg-rose-50/60 transition-colors group">
                         <td className={`${cellCls} text-xs text-gray-400 text-center`}>{idx + 1}</td>
@@ -519,7 +540,7 @@ export default function IncentivePTSPage() {
                       <td colSpan={6} className="px-3 py-2.5 border border-gray-200 text-xs font-bold text-gray-600 text-right">TOTAL</td>
                       <td className="px-3 py-2.5 border border-gray-200 text-right text-sm font-black text-emerald-700">{formatRupiah(totalPool)}</td>
                       <td className="px-3 py-2.5 border border-gray-200 text-right text-sm font-black text-rose-700">
-                        {formatRupiah(filteredProjects.reduce((s, p) => s + (calcHandlerSplit(p)?.amt || 0), 0))}
+                        {formatRupiah(filteredProjects.reduce((s, p) => s + (calcHandlerSplit(skema, p)?.amt || 0), 0))}
                       </td>
                       <td colSpan={2} className="border border-gray-200" />
                     </tr>
@@ -634,6 +655,14 @@ export default function IncentivePTSPage() {
           </div>
         )}
 
+        {/* ─── Skema pembagian (admin) ─── */}
+        {tab === 'skema' && isAdmin(currentUser) && (
+          <SchemeTab
+            olehNama={(currentUser?.full_name as string) || (currentUser?.username as string) || 'admin'}
+            notify={notify}
+          />
+        )}
+
         {/* ─── Settings tab ─── */}
         {tab === 'settings' && isAdmin(currentUser) && !loading && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -710,7 +739,7 @@ export default function IncentivePTSPage() {
                   <div className="mt-2 p-3 rounded-xl bg-rose-50 border border-rose-100 space-y-1">
                     <p className="text-xs font-bold text-rose-600">{formatRupiah(Number(nominalValue))}</p>
                     {nominalProject.mode_penyelesaian && (() => {
-                      const split = calcHandlerSplit({ ...nominalProject, incentive_value: Number(nominalValue) });
+                      const split = calcHandlerSplit(skema, { ...nominalProject, incentive_value: Number(nominalValue) });
                       return split ? <p className="text-[11px] text-gray-500">Bagian handler: <strong className="text-rose-700">{formatRupiah(split.amt)}</strong> ({formatPct(split.pct)})</p> : null;
                     })()}
                   </div>
@@ -793,7 +822,7 @@ export default function IncentivePTSPage() {
                 const supervisorId   = (supUser?.id        || '') as string;
                 const supervisorName = (supUser?.full_name || 'Supervisor') as string;
                 const displayProject: IncentiveProjectRow = { ...detailProject, incentive_value: effectivePool, mode_penyelesaian: effectiveMode };
-                const splits = calculateIncentiveSplits(displayProject, managerId, managerName, supervisorId, supervisorName, detailSupports);
+                const splits = calculateIncentiveSplits(skema!, displayProject, managerId, managerName, supervisorId, supervisorName, detailSupports);
                 if (!splits.length) return null;
                 // Privasi: non-privileged (selain Admin & yang ditunjuk input nominal)
                 // hanya melihat bagiannya sendiri — bukan total pool / bagian orang lain.
@@ -933,7 +962,7 @@ export default function IncentivePTSPage() {
             <p className="text-sm text-gray-500 mb-1">Project: <strong className="text-gray-800">{generateProject.project_name}</strong></p>
             <p className="text-sm text-gray-500 mb-4">BAST: <strong>{generateProject.bast_date}</strong> · Pool: <strong className="text-emerald-600">{formatRupiah(generateProject.incentive_value || 0)}</strong></p>
             <div className="space-y-2 mb-6">
-              {generateTranches(generateProject.id, generateProject.bast_date!, generateProject.mode_penyelesaian).map(t => {
+              {generateTranches(skema!, generateProject.id, generateProject.bast_date!, generateProject.mode_penyelesaian).map(t => {
                 const isInstallerT3 = t.tranche_number === 3 && generateProject.mode_penyelesaian === 'remote';
                 return (
                   <div key={t.tranche_number} className="flex justify-between rounded-lg px-4 py-2.5 border border-gray-100" style={{ background: isInstallerT3 ? 'rgba(245,158,11,0.07)' : 'rgb(249,250,251)' }}>

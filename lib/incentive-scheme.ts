@@ -1,0 +1,326 @@
+import { supabase } from './supabase';
+
+/**
+ * Skema pembagian insentif project — DATA, bukan kode.
+ *
+ * ── Kenapa begini ───────────────────────────────────────────────────────────
+ * Angka pembagian sebelumnya ditulis langsung di dalam rumus (65/15/10/10,
+ * faktor 0.85 untuk Remote, potongan Installer 15%). Setiap kali kebijakannya
+ * berubah — dan kebijakan insentif memang berubah — seseorang harus menyunting
+ * rumus di beberapa tempat sekaligus, membangun ulang aplikasi, lalu berharap
+ * tidak ada satu tempat pun yang terlewat. Itu sudah terbukti sekali: potongan
+ * Installer hidup di empat tempat berbeda di dalam satu berkas.
+ *
+ * Sekarang seluruh angkanya disimpan sebagai satu baris JSON yang disunting
+ * dari layar Pengaturan. Menambah peran baru (mis. Installer Cabang kembali
+ * diberi porsi) cukup menambah satu baris di layar — tidak ada kode yang
+ * perlu disentuh, dan tidak ada tempat yang bisa ketinggalan.
+ */
+
+/** Peran yang dikenal bawaan. Peran baru boleh memakai kunci apa pun. */
+export type PeranInti = 'pic' | 'support' | 'supervisor' | 'manager' | 'installer';
+
+export interface PorsiPeran {
+  /** Kunci peran, dipakai sebagai `role` pada tabel incentive_splits. */
+  peran: string;
+  /** Nama yang tampil di layar dan di rekap. */
+  label: string;
+  /** Persentase dari pool insentif proyek. */
+  persen: number;
+  /**
+   * true = porsi ini dibagi rata ke SEMUA orang yang memenuhi peran tersebut
+   * (mis. beberapa anggota support), bukan diberikan ke satu orang.
+   */
+  bagiRata: boolean;
+}
+
+export interface TahapPencairan {
+  nomor: number;
+  persen: number;
+  /** Dicairkan pada tahun BAST + nilai ini. */
+  tahunKe: number;
+}
+
+export interface SkemaInsentif {
+  /** Dinaikkan tiap kali struktur skema berubah, untuk keperluan migrasi. */
+  versi: number;
+
+  /** Pembagian normal — harus berjumlah 100. */
+  porsi: PorsiPeran[];
+
+  /**
+   * Pembagian pengganti bila TIDAK ADA anggota support yang membantu dalam
+   * jendela penilaian. Peta peran → persen; peran yang tidak disebut mendapat 0.
+   * Harus berjumlah 100 juga.
+   */
+  tanpaSupport: Record<string, number>;
+
+  /**
+   * Lama penilaian keaktifan support, dihitung sejak BAST. Menentukan kapan
+   * sebuah proyek dianggap "tanpa support".
+   */
+  jendelaSupportBulan: number;
+
+  /**
+   * Bila orang yang menjadi PIC ternyata juga Supervisor proyek itu, porsi
+   * koordinasinya tidak boleh dobel — dialihkan ke peran ini.
+   * Kosongkan untuk membiarkan porsinya hangus tanpa penerima.
+   */
+  hangusSupervisorKe: string;
+
+  /** Pembagian saat Manager sendiri yang menjadi PIC. Peta peran → persen. */
+  managerSebagaiPic: Record<string, number>;
+
+  /**
+   * Porsi Installer Cabang pada proyek mode REMOTE, dalam persen dari pool.
+   * 0 = Installer tidak mendapat porsi (nama & daerahnya TETAP dicatat untuk
+   * keperluan rekam jejak — pencatatan itu tidak bergantung pada angka ini).
+   * Bila > 0, seluruh porsi lain diperkecil sebanding agar totalnya tetap 100.
+   */
+  installerRemotePersen: number;
+
+  /** Installer dibayar penuh di muka, tidak mengikuti tahapan pencairan. */
+  installerBayarDiMuka: boolean;
+
+  /** Tahapan pencairan untuk Tim PTS. Harus berjumlah 100. */
+  tranche: TahapPencairan[];
+}
+
+/**
+ * Nilai bawaan = kebijakan yang berlaku saat ini (Proposal Insentif 2026,
+ * opsi tanpa porsi Installer). Dipakai bila baris pengaturan belum ada.
+ */
+export const SKEMA_BAWAAN: SkemaInsentif = {
+  versi: 2,
+  porsi: [
+    { peran: 'pic',        label: 'PIC Proyek',                 persen: 50, bagiRata: true  },
+    { peran: 'support',    label: 'Tim Support (Troubleshooting)', persen: 20, bagiRata: true  },
+    { peran: 'supervisor', label: 'Supervisor',                 persen: 15, bagiRata: true  },
+    { peran: 'manager',    label: 'Manager',                    persen: 15, bagiRata: false },
+  ],
+  tanpaSupport: { pic: 60, supervisor: 20, manager: 20 },
+  jendelaSupportBulan: 12,
+  hangusSupervisorKe: 'manager',
+  managerSebagaiPic: { pic: 100 },
+  installerRemotePersen: 0,
+  installerBayarDiMuka: true,
+  tranche: [
+    { nomor: 1, persen: 50, tahunKe: 1 },
+    { nomor: 2, persen: 35, tahunKe: 2 },
+    { nomor: 3, persen: 15, tahunKe: 3 },
+  ],
+};
+
+// ─── Pemeriksaan ─────────────────────────────────────────────────────────────
+
+export interface MasalahSkema { bidang: string; pesan: string }
+
+/**
+ * Periksa skema sebelum disimpan.
+ *
+ * Skema yang totalnya bukan 100 tidak ditolak diam-diam di kemudian hari — ia
+ * akan lolos sampai batch pencairan berjalan, lalu seluruh proyek tahun itu
+ * gagal diproses sekaligus. Karena itu pemeriksaannya dilakukan di depan.
+ */
+export function periksaSkema(sk: SkemaInsentif): MasalahSkema[] {
+  const masalah: MasalahSkema[] = [];
+  const bulat = (n: number) => Math.round(n * 100) / 100;
+
+  const totalPorsi = bulat(sk.porsi.reduce((t, p) => t + (p.persen || 0), 0));
+  if (totalPorsi !== 100) masalah.push({ bidang: 'porsi', pesan: `Total porsi ${totalPorsi}% — harus tepat 100%.` });
+
+  const kunci = sk.porsi.map(p => p.peran.trim().toLowerCase());
+  if (new Set(kunci).size !== kunci.length) masalah.push({ bidang: 'porsi', pesan: 'Ada kunci peran yang kembar.' });
+  if (kunci.some(k => !k)) masalah.push({ bidang: 'porsi', pesan: 'Ada peran tanpa kunci.' });
+  if (!kunci.includes('pic')) masalah.push({ bidang: 'porsi', pesan: 'Peran "pic" wajib ada — ia penerima utama.' });
+
+  const totalTanpa = bulat(Object.values(sk.tanpaSupport).reduce((t, n) => t + (n || 0), 0));
+  if (totalTanpa !== 100) masalah.push({ bidang: 'tanpaSupport', pesan: `Total porsi tanpa support ${totalTanpa}% — harus tepat 100%.` });
+  for (const k of Object.keys(sk.tanpaSupport)) {
+    if (!kunci.includes(k)) masalah.push({ bidang: 'tanpaSupport', pesan: `Peran "${k}" tidak ada di daftar porsi.` });
+  }
+
+  const totalMgr = bulat(Object.values(sk.managerSebagaiPic).reduce((t, n) => t + (n || 0), 0));
+  if (totalMgr !== 100) masalah.push({ bidang: 'managerSebagaiPic', pesan: `Total skema Manager-sebagai-PIC ${totalMgr}% — harus tepat 100%.` });
+
+  if (sk.installerRemotePersen < 0 || sk.installerRemotePersen >= 100) {
+    masalah.push({ bidang: 'installer', pesan: 'Porsi Installer harus 0–99%.' });
+  }
+  if (sk.jendelaSupportBulan < 0) masalah.push({ bidang: 'jendela', pesan: 'Jendela penilaian support tidak boleh negatif.' });
+
+  const totalTranche = bulat(sk.tranche.reduce((t, x) => t + (x.persen || 0), 0));
+  if (totalTranche !== 100) masalah.push({ bidang: 'tranche', pesan: `Total tahapan pencairan ${totalTranche}% — harus tepat 100%.` });
+  if (!sk.tranche.length) masalah.push({ bidang: 'tranche', pesan: 'Minimal ada satu tahapan pencairan.' });
+
+  return masalah;
+}
+
+// ─── Baca / simpan ───────────────────────────────────────────────────────────
+
+/** Gabungkan hasil baca dengan bawaan supaya kolom baru tidak bernilai undefined. */
+function rapikan(raw: unknown): SkemaInsentif {
+  const r = (raw ?? {}) as Partial<SkemaInsentif>;
+  return {
+    versi: r.versi ?? SKEMA_BAWAAN.versi,
+    porsi: Array.isArray(r.porsi) && r.porsi.length ? r.porsi : SKEMA_BAWAAN.porsi,
+    tanpaSupport: r.tanpaSupport ?? SKEMA_BAWAAN.tanpaSupport,
+    jendelaSupportBulan: r.jendelaSupportBulan ?? SKEMA_BAWAAN.jendelaSupportBulan,
+    hangusSupervisorKe: r.hangusSupervisorKe ?? SKEMA_BAWAAN.hangusSupervisorKe,
+    managerSebagaiPic: r.managerSebagaiPic ?? SKEMA_BAWAAN.managerSebagaiPic,
+    installerRemotePersen: r.installerRemotePersen ?? SKEMA_BAWAAN.installerRemotePersen,
+    installerBayarDiMuka: r.installerBayarDiMuka ?? SKEMA_BAWAAN.installerBayarDiMuka,
+    tranche: Array.isArray(r.tranche) && r.tranche.length ? r.tranche : SKEMA_BAWAAN.tranche,
+  };
+}
+
+/**
+ * Ambil skema yang berlaku.
+ *
+ * Bila tabelnya belum dibuat (migrasi belum dijalankan) atau barisnya belum
+ * ada, kembalikan bawaan — perhitungan tetap jalan dengan kebijakan terkini,
+ * bukan gagal total.
+ */
+export async function ambilSkema(): Promise<SkemaInsentif> {
+  try {
+    const { data } = await supabase
+      .from('incentive_scheme_settings')
+      .select('scheme')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return rapikan((data as { scheme?: unknown } | null)?.scheme);
+  } catch {
+    return SKEMA_BAWAAN;
+  }
+}
+
+export async function simpanSkema(sk: SkemaInsentif, olehNama: string): Promise<{ error: string | null }> {
+  const masalah = periksaSkema(sk);
+  if (masalah.length) return { error: masalah.map(m => m.pesan).join(' ') };
+  const { data } = await supabase.from('incentive_scheme_settings').select('id').limit(1).maybeSingle();
+  const baris = { scheme: sk as unknown as Record<string, unknown>, updated_at: new Date().toISOString(), updated_by: olehNama };
+  const res = (data as { id?: string } | null)?.id
+    ? await supabase.from('incentive_scheme_settings').update(baris).eq('id', (data as { id: string }).id)
+    : await supabase.from('incentive_scheme_settings').insert(baris);
+  return { error: res.error?.message ?? null };
+}
+
+// ─── Perhitungan ─────────────────────────────────────────────────────────────
+
+export interface PenerimaPeran {
+  peran: string;
+  user_id: string;
+  user_name: string;
+}
+
+export interface HasilBagi {
+  role: string;
+  user_id: string;
+  user_name: string;
+  percentage: number;
+  amount: number;
+}
+
+/**
+ * Hitung pembagian satu proyek berdasarkan skema.
+ *
+ * @param pool          nilai insentif proyek (rupiah)
+ * @param remote        proyek diselesaikan secara remote
+ * @param penerima      daftar orang per peran; satu peran boleh diisi banyak
+ *                      orang bila porsinya `bagiRata`
+ * @param adaSupport    apakah ada anggota support yang tercatat membantu
+ * @param supervisorJadiPic  PIC-nya adalah Supervisor proyek itu sendiri
+ * @param namaInstaller nama Installer Cabang untuk dicatat pada porsinya
+ */
+export function hitungPembagian(
+  sk: SkemaInsentif,
+  pool: number,
+  remote: boolean,
+  penerima: PenerimaPeran[],
+  adaSupport: boolean,
+  supervisorJadiPic: boolean,
+  namaInstaller?: string | null,
+): HasilBagi[] {
+  if (pool <= 0) return [];
+
+  // Porsi Installer dipotong dari pool LEBIH DULU; sisanya baru dibagi menurut
+  // skema. Dengan begitu total selalu 100% berapa pun porsi Installer diset.
+  const pctInstaller = remote ? Math.max(0, Math.min(99, sk.installerRemotePersen || 0)) : 0;
+  const faktor = (100 - pctInstaller) / 100;
+
+  const dasar: Record<string, number> = adaSupport
+    ? Object.fromEntries(sk.porsi.map(p => [p.peran, p.persen]))
+    : { ...sk.tanpaSupport };
+
+  // Supervisor merangkap PIC: porsi koordinasinya dialihkan, bukan dibayar dua kali.
+  if (supervisorJadiPic && dasar.supervisor) {
+    const pindah = dasar.supervisor;
+    dasar.supervisor = 0;
+    const tujuan = sk.hangusSupervisorKe;
+    if (tujuan) dasar[tujuan] = (dasar[tujuan] || 0) + pindah;
+  }
+
+  const bagiRata = new Map(sk.porsi.map(p => [p.peran, p.bagiRata]));
+  const hasil: HasilBagi[] = [];
+
+  for (const [peran, persenPenuh] of Object.entries(dasar)) {
+    const persen = (persenPenuh || 0) * faktor;
+    if (persen <= 0) continue;
+    const orang = penerima.filter(p => p.peran === peran);
+    if (!orang.length) continue;
+    const bagi = bagiRata.get(peran) !== false && orang.length > 1;
+    const n = bagi ? orang.length : 1;
+    for (const o of (bagi ? orang : orang.slice(0, 1))) {
+      hasil.push({
+        role: peran,
+        user_id: o.user_id,
+        user_name: o.user_name,
+        percentage: persen / n,
+        amount: Math.round((pool * persen) / 100 / n),
+      });
+    }
+  }
+
+  if (pctInstaller > 0) {
+    hasil.push({
+      role: 'installer',
+      user_id: '',
+      user_name: namaInstaller || 'Installer Cabang',
+      percentage: pctInstaller,
+      amount: Math.round((pool * pctInstaller) / 100),
+    });
+  }
+
+  return hasil;
+}
+
+/** Pembagian saat Manager sendiri yang menjadi PIC. */
+export function hitungManagerSebagaiPic(
+  sk: SkemaInsentif,
+  pool: number,
+  remote: boolean,
+  managerId: string,
+  managerNama: string,
+  namaInstaller?: string | null,
+): HasilBagi[] {
+  if (pool <= 0) return [];
+  const pctInstaller = remote ? Math.max(0, Math.min(99, sk.installerRemotePersen || 0)) : 0;
+  const faktor = (100 - pctInstaller) / 100;
+  const hasil: HasilBagi[] = Object.entries(sk.managerSebagaiPic)
+    .filter(([, p]) => (p || 0) > 0)
+    .map(([peran, p]) => ({
+      role: peran,
+      user_id: managerId,
+      user_name: managerNama,
+      percentage: (p || 0) * faktor,
+      amount: Math.round((pool * (p || 0) * faktor) / 100),
+    }));
+  if (pctInstaller > 0) {
+    hasil.push({
+      role: 'installer', user_id: '',
+      user_name: namaInstaller || 'Installer Cabang',
+      percentage: pctInstaller, amount: Math.round((pool * pctInstaller) / 100),
+    });
+  }
+  return hasil;
+}

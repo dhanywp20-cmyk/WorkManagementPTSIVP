@@ -1,4 +1,10 @@
 import { supabase } from '@/lib/supabase';
+import {
+  SkemaInsentif, PenerimaPeran, hitungPembagian, hitungManagerSebagaiPic, ambilSkema,
+} from '@/lib/incentive-scheme';
+
+export type { SkemaInsentif };
+export { ambilSkema };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,7 +50,8 @@ export interface IncentiveSplit {
   id: string;
   project_id: string;
   tranche_id: string | null;
-  role: 'pic' | 'support' | 'installer' | 'supervisor' | 'manager';
+  /** Kunci peran; bebas karena peran baru bisa ditambah lewat Pengaturan. */
+  role: string;
   user_id: string;
   user_name: string;
   percentage: number;
@@ -76,7 +83,8 @@ export interface LateTicketLink {
 }
 
 export interface SplitResult {
-  role: 'pic' | 'support' | 'installer' | 'supervisor' | 'manager';
+  /** Kunci peran; bukan union tertutup karena peran baru bisa ditambah admin. */
+  role: string;
   user_id: string;
   user_name: string;
   percentage: number;
@@ -130,11 +138,19 @@ export function getSupervisorTeamForPic(picName: string): 'wahyu' | 'yoga' | nul
   return null;
 }
 
-// StandardScheme: PIC 65% / Support 15% / Supervisor 10% / Manager 10%
-// Forfeiture: if PIC IS the supervisor → supervisor 0%, manager 20%
-// Fallback no support: PIC absorbs 15% → PIC 80%
-// Remote: all roles ×0.85, Installer 15% (T3 carve-out, paid upfront)
+/**
+ * ── Pembagian mengikuti SKEMA yang dapat diatur admin ──────────────────────
+ *
+ * Angka pembagian tidak lagi ditulis di sini. Ia dibaca dari
+ * lib/incentive-scheme.ts (tabel incentive_scheme_settings) supaya perubahan
+ * kebijakan cukup dilakukan lewat layar Pengaturan — tanpa menyunting rumus di
+ * beberapa tempat lalu berharap tidak ada yang terlewat.
+ *
+ * Fungsi lama tetap dipertahankan namanya agar seluruh pemanggil tidak perlu
+ * diubah; yang berganti hanya isinya.
+ */
 export function calculateStandardScheme(
+  sk: SkemaInsentif,
   pool: number,
   modePenyelesaian: 'onsite' | 'remote' | null,
   picUserId: string,
@@ -144,70 +160,40 @@ export function calculateStandardScheme(
   supervisorUserId: string,
   supervisorUserName: string,
   assignedSupports: { user_id: string; user_name: string }[],
+  installerName?: string | null,
 ): SplitResult[] {
-  const results: SplitResult[] = [];
-  const f = modePenyelesaian === 'remote' ? 0.85 : 1.0; // tranche factor
+  // Supervisor merangkap PIC — porsinya dialihkan, bukan dibayar dua kali.
+  const supervisorJadiPic = supervisorUserId !== '' && picUserId === supervisorUserId;
 
-  // Forfeiture: PIC is the supervisor → supervisor share goes to manager
-  const isForfeit = supervisorUserId !== '' && picUserId === supervisorUserId;
-  const supervisorShare = isForfeit ? 0 : pool * 0.10 * f;
-  const managerShare    = pool * (isForfeit ? 0.20 : 0.10) * f;
-  const picBase         = pool * 0.65 * f;
-  const supportPool     = pool * 0.15 * f;
-
-  // PIC
-  const hasSupport = assignedSupports.length > 0;
-  results.push({
-    role: 'pic',
-    user_id: picUserId,
-    user_name: picUserName,
-    percentage: hasSupport ? 65 * f : 80 * f,
-    amount: Math.round(hasSupport ? picBase : picBase + supportPool),
-  });
-
-  // Support (divided equally among assigned)
-  if (hasSupport) {
-    const supportEach = supportPool / assignedSupports.length;
-    const supportPct  = (15 * f) / assignedSupports.length;
-    for (const s of assignedSupports) {
-      results.push({ role: 'support', user_id: s.user_id, user_name: s.user_name, percentage: supportPct, amount: Math.round(supportEach) });
-    }
+  const penerima: PenerimaPeran[] = [{ peran: 'pic', user_id: picUserId, user_name: picUserName }];
+  for (const s of assignedSupports) penerima.push({ peran: 'support', user_id: s.user_id, user_name: s.user_name });
+  if (supervisorUserId && !supervisorJadiPic) {
+    penerima.push({ peran: 'supervisor', user_id: supervisorUserId, user_name: supervisorUserName });
   }
+  penerima.push({ peran: 'manager', user_id: managerUserId, user_name: managerUserName });
 
-  // Supervisor (skip if forfeiture)
-  if (!isForfeit && supervisorUserId) {
-    results.push({ role: 'supervisor', user_id: supervisorUserId, user_name: supervisorUserName, percentage: 10 * f, amount: Math.round(supervisorShare) });
-  }
-
-  // Manager (Dhany)
-  results.push({ role: 'manager', user_id: managerUserId, user_name: managerUserName, percentage: isForfeit ? 20 * f : 10 * f, amount: Math.round(managerShare) });
-
-  // Installer (Remote only — T3 carve-out 15%, paid upfront)
-  if (modePenyelesaian === 'remote') {
-    results.push({ role: 'installer', user_id: '', user_name: 'Installer Cabang', percentage: 15, amount: Math.round(pool * 0.15) });
-  }
-
-  return results;
+  return hitungPembagian(
+    sk, pool, modePenyelesaian === 'remote', penerima,
+    assignedSupports.length > 0, supervisorJadiPic, installerName,
+  ) as SplitResult[];
 }
 
-// ManagerPicScheme: Dhany 100% onsite / Dhany 85% + Installer 15% remote
-// No supervisor, no manager slot
+/** Manager sendiri yang menjadi PIC — tanpa slot Supervisor & Manager terpisah. */
 export function calculateManagerPicScheme(
+  sk: SkemaInsentif,
   pool: number,
   modePenyelesaian: 'onsite' | 'remote' | null,
   dhanyUserId: string,
   dhanyUserName: string,
+  installerName?: string | null,
 ): SplitResult[] {
-  if (modePenyelesaian === 'remote') {
-    return [
-      { role: 'pic', user_id: dhanyUserId, user_name: dhanyUserName, percentage: 85, amount: Math.round(pool * 0.85) },
-      { role: 'installer', user_id: '', user_name: 'Installer Cabang', percentage: 15, amount: Math.round(pool * 0.15) },
-    ];
-  }
-  return [{ role: 'pic', user_id: dhanyUserId, user_name: dhanyUserName, percentage: 100, amount: pool }];
+  return hitungManagerSebagaiPic(
+    sk, pool, modePenyelesaian === 'remote', dhanyUserId, dhanyUserName, installerName,
+  ) as SplitResult[];
 }
 
 export function calculateIncentiveSplits(
+  sk: SkemaInsentif,
   project: IncentiveProjectRow,
   managerUserId: string,
   managerUserName: string,
@@ -219,15 +205,15 @@ export function calculateIncentiveSplits(
   if (pool <= 0) return [];
 
   if (project.pic_type === 'manager_pic') {
-    return calculateManagerPicScheme(pool, project.mode_penyelesaian, managerUserId, managerUserName);
+    return calculateManagerPicScheme(sk, pool, project.mode_penyelesaian, managerUserId, managerUserName, project.installer_name);
   }
 
   return calculateStandardScheme(
-    pool, project.mode_penyelesaian,
+    sk, pool, project.mode_penyelesaian,
     project.pic_id || '', project.assign_name || '',
     managerUserId, managerUserName,
     supervisorUserId, supervisorUserName,
-    assignedSupports,
+    assignedSupports, project.installer_name,
   );
 }
 
@@ -239,19 +225,29 @@ export function validateSplitTotal(splits: SplitResult[], pool: number): { valid
 
 // ─── Tranche Generation ──────────────────────────────────────────────────────
 
+/**
+ * Tahapan pencairan diambil dari skema, bukan dipatok di sini.
+ *
+ * Pengecualian yang tetap ada: bila Installer Cabang memang diberi porsi DAN
+ * disetel dibayar di muka, tahap terakhir dipindah ke tahun pertama — sebab
+ * itulah tahap yang menampung porsinya. Bila porsi Installer 0 (keadaan saat
+ * ini), tidak ada yang perlu dipindah dan seluruh tahap berjalan normal.
+ */
 export function generateTranches(
+  sk: SkemaInsentif,
   projectId: string,
   bastDate: string,
   modePenyelesaian?: 'onsite' | 'remote' | null,
 ): { tranche_number: number; percentage: number; payment_year: number }[] {
   const baseYear = new Date(bastDate).getFullYear();
-  const isRemote = modePenyelesaian === 'remote';
-  return [
-    { tranche_number: 1, percentage: 50, payment_year: baseYear + 1 },
-    { tranche_number: 2, percentage: 35, payment_year: baseYear + 2 },
-    // Remote: T3 = Installer carve-out, paid upfront at same year as T1 (N+1), not N+3
-    { tranche_number: 3, percentage: 15, payment_year: isRemote ? baseYear + 1 : baseYear + 3 },
-  ];
+  const installerDiMuka =
+    modePenyelesaian === 'remote' && (sk.installerRemotePersen || 0) > 0 && sk.installerBayarDiMuka;
+  const terakhir = sk.tranche.length ? Math.max(...sk.tranche.map(t => t.nomor)) : 0;
+  return sk.tranche.map(t => ({
+    tranche_number: t.nomor,
+    percentage: t.persen,
+    payment_year: baseYear + (installerDiMuka && t.nomor === terakhir ? 1 : t.tahunKe),
+  }));
 }
 
 // ─── DB Helpers ───────────────────────────────────────────────────────────────
@@ -302,13 +298,39 @@ export async function fetchVisibleSplits(projectId?: string): Promise<{ data: In
   }
 }
 
-export async function fetchSupportFromTickets(projectName: string): Promise<{ data: { user_id: string; user_name: string }[]; error: unknown }> {
-  const { data, error } = await supabase
+/**
+ * Siapa saja yang tercatat membantu troubleshooting proyek ini.
+ *
+ * @param bastDate     tanggal BAST — awal jendela penilaian
+ * @param jendelaBulan lama jendela penilaian (bulan). Kebijakan menyebut satu
+ *                     tahun: bantuan yang datang setelah jendela itu lewat
+ *                     tidak lagi mengubah porsi proyek ini, karena porsinya
+ *                     sudah dianggap final. Nilainya diatur admin di layar
+ *                     Skema Pembagian, bukan dipatok di sini.
+ *                     0 = tanpa batas waktu (perilaku lama).
+ *
+ * Reminder Schedule TIDAK diubah untuk ini — yang dibaca tetap catatan
+ * Troubleshooting yang sudah ada, hanya rentang waktunya yang disaring.
+ */
+export async function fetchSupportFromTickets(
+  projectName: string,
+  bastDate?: string | null,
+  jendelaBulan = 0,
+): Promise<{ data: { user_id: string; user_name: string }[]; error: unknown }> {
+  let q = supabase
     .from('reminders')
     .select('assigned_to, assign_name')
     .eq('category', 'Troubleshooting')
     .eq('project_name', projectName)
     .eq('status', 'done');
+
+  if (bastDate && jendelaBulan > 0) {
+    const batas = new Date(bastDate);
+    batas.setMonth(batas.getMonth() + jendelaBulan);
+    q = q.lte('due_date', batas.toISOString().slice(0, 10));
+  }
+
+  const { data, error } = await q;
   const seen = new Set<string>();
   const rows = (data || []) as { assigned_to: string | null; assign_name: string | null }[];
   const unique = rows
@@ -324,8 +346,8 @@ export async function fetchLateTickets(parentProjectId?: string) {
   return { data: (data || []) as LateTicketLink[], error };
 }
 
-export async function insertTranches(projectId: string, bastDate: string, modePenyelesaian?: 'onsite' | 'remote' | null) {
-  const tranches = generateTranches(projectId, bastDate, modePenyelesaian);
+export async function insertTranches(sk: SkemaInsentif, projectId: string, bastDate: string, modePenyelesaian?: 'onsite' | 'remote' | null) {
+  const tranches = generateTranches(sk, projectId, bastDate, modePenyelesaian);
   const rows = tranches.map(t => ({
     project_id: projectId,
     tranche_number: t.tranche_number,
@@ -364,6 +386,11 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
 
   if (fetchErr || !dueTranches) return { error: fetchErr, processed: 0 };
 
+  // Skema dibaca SEKALI di depan: seluruh proyek dalam satu batch harus dihitung
+  // dengan aturan yang sama persis. Membacanya per proyek membuka celah setengah
+  // batch memakai aturan lama bila admin menyimpan perubahan di tengah proses.
+  const sk = await ambilSkema();
+
   // Baca hierarki dari Struktur Organisasi (users.atasan_id + jabatan).
   // Fallback transisi: pts_team_mappings bila atasan_id belum dipetakan.
   const orgUsers = await fetchOrgUsers();
@@ -388,33 +415,46 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
     const projManagerId   = mgrUp?.id || managerUserId;
     const projManagerName = mgrUp?.full_name || managerUserName;
 
-    const { data: supports } = await fetchSupportFromTickets(project.project_name);
+    const { data: supports } = await fetchSupportFromTickets(project.project_name, project.bast_date, sk.jendelaSupportBulan);
     const splits = calculateIncentiveSplits(
-      project, projManagerId, projManagerName,
+      sk, project, projManagerId, projManagerName,
       supervisorUserId, supervisorUserName,
       (supports || []).map(s => ({ user_id: s.user_id, user_name: s.user_name || '' })),
     );
 
     const pool = project.incentive_value || 0;
-    const isRemote = project.mode_penyelesaian === 'remote';
-    const tranchePool = pool * (tranche.percentage / 100);
+
+    // ── Porsi Installer & tahapan pencairan ────────────────────────────────
+    // Bila Installer Cabang diberi porsi DAN disetel dibayar di muka, tahap
+    // terakhir dipakai untuk menampung porsinya utuh; porsi Tim PTS dibagi ke
+    // tahap-tahap sisanya, sebanding dengan persentase tahap itu. Cara ini
+    // membuat jumlahnya selalu tepat berapa pun angka yang disetel admin —
+    // bukan hanya saat kebetulan porsi Installer sama dengan persentase tahap
+    // terakhir, seperti pada versi sebelumnya yang mematok 15% di kedua sisi.
+    const pctInstaller = project.mode_penyelesaian === 'remote'
+      ? Math.max(0, Math.min(99, sk.installerRemotePersen || 0)) : 0;
+    const tahapTerakhir = sk.tranche.length ? Math.max(...sk.tranche.map(t => t.nomor)) : 0;
+    const installerAmbilTahapTerakhir = pctInstaller > 0 && sk.installerBayarDiMuka;
+    const tahapTim = sk.tranche.filter(t => !installerAmbilTahapTerakhir || t.nomor !== tahapTerakhir);
+    const totalTahapTim = tahapTim.reduce((n, t) => n + (t.persen || 0), 0) || 100;
 
     let trancheSplits: SplitResult[];
-    if (isRemote && tranche.tranche_number === 3) {
-      // T3 Remote: Installer carve-out only, paid upfront
+    let tranchePool: number;
+
+    if (installerAmbilTahapTerakhir && tranche.tranche_number === tahapTerakhir) {
+      tranchePool = (pool * pctInstaller) / 100;
       trancheSplits = [{
         role: 'installer', user_id: '',
         user_name: project.installer_name || 'Installer Cabang',
-        percentage: 15, amount: Math.round(pool * 0.15),
+        percentage: pctInstaller, amount: Math.round(tranchePool),
       }];
-    } else if (isRemote) {
-      // T1/T2 Remote: exclude installer, scale within the 85% base
+    } else {
+      // Bagian tahap ini terhadap seluruh porsi Tim PTS.
+      const bagian = (tranche.percentage || 0) / totalTahapTim;
+      tranchePool = pool * ((100 - pctInstaller) / 100) * bagian;
       trancheSplits = splits
         .filter(s => s.role !== 'installer')
-        .map(s => ({ ...s, amount: Math.round(s.amount * (tranche.percentage / 85)) }));
-    } else {
-      // Onsite: all splits (no installer) scaled by tranche %
-      trancheSplits = splits.map(s => ({ ...s, amount: Math.round(s.amount * (tranche.percentage / 100)) }));
+        .map(s => ({ ...s, amount: Math.round(s.amount * bagian) }));
     }
 
     const validation = validateSplitTotal(trancheSplits, tranchePool);

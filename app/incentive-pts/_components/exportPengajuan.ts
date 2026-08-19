@@ -5,7 +5,7 @@ import { saveAs } from 'file-saver';
 import {
   IncentiveProjectRow, IncentiveSplit, IncentiveTranche,
   SplitResult, formatRupiah, formatPct,
-  calculateIncentiveSplits, findUpline, resolveUserId, OrgUser,
+  calculateIncentiveSplits, findUpline, resolveUserId, OrgUser, ambilSkema,
 } from './calc';
 
 const NAVY = '1B3A6B';
@@ -380,6 +380,9 @@ export async function exportSummaryIncentive(data: {
 }) {
   const { projects, allUsers, supportsMap, managerName, managerUserId } = data;
   const orgList = allUsers as unknown as OrgUser[];
+  // Skema pembagian dibaca sekali untuk seluruh berkas: satu rekap harus
+  // memakai satu aturan, bukan campuran bila ada perubahan di tengah proses.
+  const sk = await ambilSkema();
   // Akumulasi total per orang (hanya project dgn nominal & mode final)
   const personMap = new Map<string, { name: string; role: string; amount: number; count: number }>();
 
@@ -458,7 +461,7 @@ export async function exportSummaryIncentive(data: {
     const effectivePool = hasNominal ? p.incentive_value : 1_000_000;
     const effectiveMode = p.mode_penyelesaian || 'onsite';
     const displayProject = { ...p, incentive_value: effectivePool, mode_penyelesaian: effectiveMode };
-    const splits = calculateIncentiveSplits(displayProject, projManagerId, projManagerName, supervisorId, supervisorName, projectSupports);
+    const splits = calculateIncentiveSplits(sk, displayProject, projManagerId, projManagerName, supervisorId, supervisorName, projectSupports);
     const isEstimate = !hasNominal || !p.mode_penyelesaian;
 
     // Akumulasi total per orang — hanya project final (ada nominal & mode), pakai amount asli
