@@ -21,8 +21,11 @@ export const dynamic = 'force-dynamic';
 const ALLOWED_FIELDS = new Set([
   'username', 'full_name', 'role', 'team_type', 'sales_division',
   'jabatan', 'phone_number', 'allowed_menus', 'allow_incentive_input',
-  'atasan_id', 'kpi_enabled', 'password', 'is_internal_sales', 'access_level',
+  'atasan_id', 'kpi_enabled', 'is_internal_sales', 'access_level',
 ]);
+// 'password' sengaja TIDAK ada di daftar: kolom itu peninggalan dan tidak
+// pernah dibaca saat login. Password disimpan di user_credentials lewat
+// /api/auth/set-credential (akun baru) atau /api/auth/change-password.
 
 function pick(obj: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};

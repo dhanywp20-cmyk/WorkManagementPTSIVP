@@ -1537,44 +1537,34 @@ function TicketingSystemInner() {
       if (isServicesTeam) {
         updateData.services_status = effectiveStatus;
         const { error: svcErr } = await supabaseServices.from("tickets").update(updateData).eq("id", selectedTicket.id);
-        await supabase.from("tickets").update({ services_status: effectiveStatus }).eq("id", selectedTicket.id);
+        if (svcErr) throw new Error(`Gagal memperbarui ticket di basis data Services: ${svcErr.message}`);
+        // Salin status ke basis data PTS supaya kedua sisi tidak berbeda. Gagal
+        // di sini tidak membatalkan pekerjaan Services yang sudah tercatat,
+        // tapi harus terlihat — bukan hilang tanpa jejak.
+        const { error: ptsErr } = await supabase.from("tickets").update({ services_status: effectiveStatus }).eq("id", selectedTicket.id);
+        if (ptsErr) notify("error", `Status tersimpan di Services, tapi gagal disalin ke PTS: ${ptsErr.message}. Refresh lalu ulangi.`);
       } else {
         updateData.status = effectiveStatus;
         if (newActivity.assign_to_services) {
           // ── ASSIGN TO TEAM SERVICES ──
-          // current_team pindah ke Team Services, services_status = Waiting Approval
-          // assign_name TETAP handler PTS terakhir (tidak berubah ke nama anggota Services)
-          // Team Services admin yang akan assign ke anggota mereka sendiri
-          updateData.current_team = "Team Services";
-          updateData.services_status = "Waiting Approval";
-          // assign_name TIDAK diubah — tetap handler PTS terakhir
-          // (hanya current_team & services_status yang berubah di PTS DB)
-
-          // Kabari admin Team Services lewat WA. Pembacaan nomor mereka dan
-          // penyusunan pesannya dikerjakan di server (/api/services/notify-admins)
-          // supaya kontak organisasi lain tidak ikut terunduh ke browser.
+          // Dua basis data terpisah, tanpa transaksi bersama. Dulu urutannya
+          // terbalik: basis data PTS langsung ditandai "sudah pindah ke Team
+          // Services", lalu penyalinan ke basis data Services dikerjakan di
+          // dalam try/catch kosong. Kalau penyalinan itu gagal — jaringan
+          // putus, kolom berubah, kredensial salah — ticket hilang dari kedua
+          // sisi: PTS menganggap bukan urusannya lagi, Services tidak pernah
+          // menerimanya, dan tidak ada satu pun pesan galat.
+          //
+          // Sekarang penyalinan dikerjakan LEBIH DULU. Serah terimanya hanya
+          // ditulis kalau penyalinan itu benar-benar berhasil; kalau tidak,
+          // ticket tetap di PTS dan bisa diulang.
+          let mirrorBerhasil = true;
+          let mirrorPesan = "";
           try {
-            await fetch("/api/services/notify-admins", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-              body: JSON.stringify({
-                project_name:   selectedTicket.project_name,
-                issue_case:     selectedTicket.issue_case,
-                product:        selectedTicket.product,
-                sn_unit:        selectedTicket.sn_unit,
-                customer_phone: selectedTicket.customer_phone,
-                sales_name:     selectedTicket.sales_name,
-                catatan:        newActivity.notes,
-              }),
-            });
-          } catch { }
-
-          // Mirror ticket ke Services DB
-          try {
-            const { data: existSvc } = await supabaseServices.from("tickets").select("id").eq("id", selectedTicket.id).maybeSingle();
+            const { data: existSvc, error: cekErr } = await supabaseServices.from("tickets").select("id").eq("id", selectedTicket.id).maybeSingle();
+            if (cekErr) throw cekErr;
             if (!existSvc) {
-              await supabaseServices.from("tickets").insert([{
+              const { error: insErr } = await supabaseServices.from("tickets").insert([{
                 id: selectedTicket.id,
                 pts_ticket_id: selectedTicket.id,
                 project_name: selectedTicket.project_name,
@@ -1593,15 +1583,50 @@ function TicketingSystemInner() {
                 current_team: "Team Services",
                 created_by: selectedTicket.created_by || null,
               }]);
+              if (insErr) throw insErr;
             } else {
-              // Update existing mirror
-              await supabaseServices.from("tickets").update({
+              const { error: updErr } = await supabaseServices.from("tickets").update({
                 services_status: "Waiting Approval",
                 current_team: "Team Services",
               }).eq("id", selectedTicket.id);
+              if (updErr) throw updErr;
             }
-          } catch { }
+          } catch (e: any) {
+            mirrorBerhasil = false;
+            mirrorPesan = e?.message ?? "penyebab tidak diketahui";
+          }
+
+          if (mirrorBerhasil) {
+            // current_team pindah ke Team Services, services_status = Waiting Approval.
+            // assign_name TETAP handler PTS terakhir — admin Services yang akan
+            // meneruskannya ke anggota mereka sendiri.
+            updateData.current_team = "Team Services";
+            updateData.services_status = "Waiting Approval";
+
+            // Kabari admin Team Services lewat WA. Pembacaan nomor mereka dan
+            // penyusunan pesannya dikerjakan di server (/api/services/notify-admins)
+            // supaya kontak organisasi lain tidak ikut terunduh ke browser.
+            try {
+              await fetch("/api/services/notify-admins", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                  project_name:   selectedTicket.project_name,
+                  issue_case:     selectedTicket.issue_case,
+                  product:        selectedTicket.product,
+                  sn_unit:        selectedTicket.sn_unit,
+                  customer_phone: selectedTicket.customer_phone,
+                  sales_name:     selectedTicket.sales_name,
+                  catatan:        newActivity.notes,
+                }),
+              });
+            } catch { /* WA gagal tidak boleh membatalkan serah terima */ }
+          } else {
+            notify("error", `Catatan tersimpan, tapi ticket GAGAL dikirim ke Team Services (${mirrorPesan}). Ticket masih di PTS — coba assign ulang.`);
+          }
         }
+
         const { error: updateError } = await supabase.from("tickets").update(updateData).eq("id", selectedTicket.id);
         if (updateError) throw new Error(`Failed to update ticket: ${updateError.message}`);
 
@@ -2435,7 +2460,12 @@ function TicketingSystemInner() {
       setShowLoadingPopup(true);
       setLoadingMessage("Approving ticket untuk Team Services...");
       await supabase.from("tickets").update({ services_status: "Pending" }).eq("id", ticket.id);
-      try { await supabaseServices.from("tickets").update({ services_status: "Pending", status: "Pending" }).eq("id", ticket.id); } catch { }
+      try {
+        const { error: svcErr } = await supabaseServices.from("tickets").update({ services_status: "Pending", status: "Pending" }).eq("id", ticket.id);
+        if (svcErr) throw svcErr;
+      } catch (e: any) {
+        notify("error", `Status di basis data Services gagal diperbarui (${e?.message ?? "penyebab tidak diketahui"}). Kedua sisi bisa berbeda — periksa ticket ini.`);
+      }
       await supabaseServices.from("activity_logs").insert([{
         ticket_id: ticket.id,
         handler_name: currentUser?.full_name || "",
@@ -2489,7 +2519,12 @@ function TicketingSystemInner() {
               assigned_to_services: false,
               file_url: "", file_name: "", photo_url: "", photo_name: ""
             }]);
-          } catch { }
+          } catch (e: any) {
+            // Sisi PTS sudah mengambil ticket ini kembali, jadi tidak ada yang
+            // hilang. Yang tersisa cuma catatan di basis data Services yang
+            // belum ikut berubah — itu harus terlihat, bukan didiamkan.
+            notify("error", `Ticket sudah kembali ke PTS, tapi catatan di basis data Services gagal diperbarui (${e?.message ?? "penyebab tidak diketahui"}).`);
+          }
           await fetchData();
           setLoadingMessage("✅ Ticket dikembalikan ke Team PTS IVP.");
           setTimeout(() => { setShowLoadingPopup(false); setUploading(false); setShowServicesApprovalModal(false); }, 1500);

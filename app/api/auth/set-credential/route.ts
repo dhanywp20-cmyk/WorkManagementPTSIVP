@@ -1,20 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { getAdminClient } from '@/lib/supabase-admin';
+import { getSessionUser, isAdminRole } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * POST /api/auth/set-credential
- * Set password PERTAMA kali untuk user baru (registrasi publik / admin create-user).
- * Hashing dilakukan di server, lalu disimpan ke user_credentials lewat admin client
- * — supaya browser tidak perlu menulis langsung ke tabel kredensial (yang akan
- * dikunci dari anon lewat RLS).
+ * POST /api/auth/set-credential — memasang password PERTAMA untuk akun baru.
  *
- * Aman dipanggil tanpa session: HANYA boleh untuk akun yang BELUM punya kredensial
- * (cek di bawah). Reset/ubah password akun existing tetap lewat change-password /
- * forgot-password (verify-otp).
+ * Hashing dikerjakan di server lalu disimpan ke user_credentials lewat admin
+ * client, supaya browser tidak pernah menulis langsung ke tabel kredensial.
+ *
+ * Endpoint ini harus tetap bisa dipanggil TANPA sesi, karena dipakai form
+ * registrasi mandiri di halaman login. Konsekuensinya harus dijaga ketat:
+ * tabel users terbaca anon, jadi siapa pun bisa mendaftar id akun mana saja
+ * dan — kalau syaratnya hanya "belum punya kredensial" — memasang password
+ * pada akun orang lain yang kebetulan belum pernah login.
+ *
+ * Karena itu jalur tanpa sesi dibatasi pada akun yang bentuknya memang hasil
+ * registrasi yang belum disetujui: role guest dan team_type "Pending
+ * Approval". Bila kolom created_at tersedia, umurnya juga dibatasi. Admin yang
+ * membuat akun dari panel tetap boleh memasang password apa pun bentuk akunnya
+ * karena sesinya diverifikasi.
+ *
+ * Mengganti password akun yang sudah punya kredensial tetap hanya lewat
+ * change-password / verify-otp.
  */
+const UMUR_PENDAFTARAN_MENIT = 30;
+
 export async function POST(request: NextRequest) {
   try {
     const { userId, password } = await request.json();
@@ -24,9 +37,14 @@ export async function POST(request: NextRequest) {
 
     const supabase = getAdminClient();
 
-    // Pastikan user-nya ada
-    const { data: user } = await supabase
-      .from('users').select('id').eq('id', userId).maybeSingle();
+    // created_at belum tentu ada di tabel users — kalau kolomnya tidak dikenal
+    // PostgREST menggagalkan seluruh query, jadi dicoba dulu lalu jatuh balik.
+    let { data: user } = await supabase
+      .from('users').select('id, role, team_type, created_at').eq('id', userId).maybeSingle();
+    if (!user) {
+      ({ data: user } = await supabase
+        .from('users').select('id, role, team_type').eq('id', userId).maybeSingle());
+    }
     if (!user) {
       return NextResponse.json({ error: 'User tidak ditemukan.' }, { status: 404 });
     }
@@ -37,6 +55,23 @@ export async function POST(request: NextRequest) {
       .from('user_credentials').select('id').eq('user_id', userId).maybeSingle();
     if (existing) {
       return NextResponse.json({ error: 'Akun sudah memiliki password.' }, { status: 409 });
+    }
+
+    const caller = await getSessionUser(request);
+    if (!caller || !isAdminRole(caller.role)) {
+      const u = user as { role?: string | null; team_type?: string | null; created_at?: string | null };
+      const bentukPendaftaran =
+        (u.role ?? '').toLowerCase() === 'guest' &&
+        (u.team_type ?? '') === 'Pending Approval';
+      const masihBaru =
+        !u.created_at ||
+        Date.now() - new Date(u.created_at).getTime() < UMUR_PENDAFTARAN_MENIT * 60 * 1000;
+      if (!bentukPendaftaran || !masihBaru) {
+        return NextResponse.json(
+          { error: 'Tidak berwenang memasang password untuk akun ini.' },
+          { status: 403 },
+        );
+      }
     }
 
     const hash = await bcrypt.hash(password, 12);

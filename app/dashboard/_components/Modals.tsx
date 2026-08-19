@@ -249,14 +249,23 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
       // terisi) — kalau cuma edit field lain, jangan sentuh nilai yang sudah ada.
       ...(editDivisi ? { is_internal_sales: editDivisi === 'Marketing' || (editDivisi === 'Sales' && ['IVP', 'MVI', 'MLDS'].includes(editingUser.sales_division ?? '')) } : {}),
     };
+    // Password baru harus masuk ke user_credentials — itu satu-satunya tempat
+    // yang dibaca login. Sebelumnya hash-nya ditulis ke kolom lama users.password
+    // yang tidak dibaca siapa pun, sehingga reset password dari panel admin
+    // tampak berhasil padahal user tetap tidak bisa masuk dengan password baru.
     if (editingUser.password) {
-      const hashRes = await fetch('/api/auth/hash', {
+      const pwdRes = await fetch('/api/auth/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: editingUser.password }),
+        credentials: 'include',
+        body: JSON.stringify({ userId: editingUser.id, newPassword: editingUser.password }),
       });
-      const { hash: pwdHash } = await hashRes.json();
-      if (pwdHash) updatePayload.password = pwdHash;
+      if (!pwdRes.ok) {
+        const j = await pwdRes.json().catch(() => ({}));
+        setSaving(false);
+        notify('error', 'Gagal mengubah password: ' + (j.error || 'permintaan ditolak'));
+        return;
+      }
     }
     const { error } = await adminUpdateUser(editingUser.id, updatePayload);
     if (error) { setSaving(false); notify('error', 'Gagal menyimpan: ' + error.message); return; }
