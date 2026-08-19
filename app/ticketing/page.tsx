@@ -697,8 +697,20 @@ function TicketingSystemInner() {
           );
         }
         try {
-          const { data: svcLogs } = await supabaseServices.from("activity_logs").select("id,ticket_id,handler_name,handler_username,action_taken,notes,file_url,file_name,photo_url,photo_name,new_status,team_type,assigned_to_services,created_at").order("created_at", { ascending: false });
-          if (svcLogs && svcLogs.length > 0) {
+          // Ambil HANYA log milik ticket yang benar-benar tampil. Sebelumnya
+          // seluruh isi activity_logs basis data Services ditarik lalu disaring
+          // di browser — log ticket organisasi lain ikut terunduh, dan
+          // ukurannya tumbuh terus seiring umur platform.
+          const idTampil = mergedTickets.map((t: Ticket) => t.id).filter(Boolean);
+          const svcLogs: ActivityLog[] = [];
+          for (let i = 0; i < idTampil.length; i += 100) {
+            const { data } = await supabaseServices.from("activity_logs")
+              .select("id,ticket_id,handler_name,handler_username,action_taken,notes,file_url,file_name,photo_url,photo_name,new_status,team_type,assigned_to_services,created_at")
+              .in("ticket_id", idTampil.slice(i, i + 100))
+              .order("created_at", { ascending: false });
+            if (data) svcLogs.push(...(data as ActivityLog[]));
+          }
+          if (svcLogs.length > 0) {
             mergedTickets = mergedTickets.map((ticket: Ticket) => {
               const svcTicketLogs = svcLogs.filter((l: ActivityLog) => l.ticket_id === ticket.id);
               if (svcTicketLogs.length === 0) return ticket;
@@ -1538,34 +1550,24 @@ function TicketingSystemInner() {
           // assign_name TIDAK diubah — tetap handler PTS terakhir
           // (hanya current_team & services_status yang berubah di PTS DB)
 
-          // Kirim WA notif ke admin Team Services
+          // Kabari admin Team Services lewat WA. Pembacaan nomor mereka dan
+          // penyusunan pesannya dikerjakan di server (/api/services/notify-admins)
+          // supaya kontak organisasi lain tidak ikut terunduh ke browser.
           try {
-            const { data: svcAdmins } = await supabaseServices.from("users")
-              .select("phone_number, full_name")
-              .eq("role", "admin")
-              .not("phone_number", "is", null)
-              .neq("phone_number", "");
-            if (svcAdmins && svcAdmins.length > 0) {
-              const waMsg = [
-                "🔔 *TICKET MASUK — Servisindo*",
-                "━━━━━━━━━━━━━━━━━━",
-                `📌 *Project:* ${selectedTicket.project_name}`,
-                `⚠️ *Issue:* ${selectedTicket.issue_case}`,
-                selectedTicket.product ? `📦 *Product:* ${selectedTicket.product}` : null,
-                selectedTicket.sn_unit ? `🔢 *SN:* ${selectedTicket.sn_unit}` : null,
-                selectedTicket.customer_phone ? `📱 *Telepon:* ${selectedTicket.customer_phone}` : null,
-                `👤 *Sales:* ${selectedTicket.sales_name || "-"}`,
-                newActivity.notes ? `📝 *Catatan:* ${newActivity.notes}` : null,
-                "━━━━━━━━━━━━━━━━━━",
-                "Silakan buka platform Servisindo untuk menerima dan assign ticket.",
-              ].filter(Boolean).join("\n");
-              for (const admin of svcAdmins) {
-                // 'reminder_wa' = tipe generik (target+message) yg didukung edge
-                // function. Sebelumnya 'ticket_notif' TIDAK dikenali swift-responder
-                // -> jatuh ke "Unhandled type", WA ke admin Servisindo tak pernah kirim.
-                await sendWANotif({ type: "reminder_wa", target: admin.phone_number, message: waMsg });
-              }
-            }
+            await fetch("/api/services/notify-admins", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                project_name:   selectedTicket.project_name,
+                issue_case:     selectedTicket.issue_case,
+                product:        selectedTicket.product,
+                sn_unit:        selectedTicket.sn_unit,
+                customer_phone: selectedTicket.customer_phone,
+                sales_name:     selectedTicket.sales_name,
+                catatan:        newActivity.notes,
+              }),
+            });
           } catch { }
 
           // Mirror ticket ke Services DB

@@ -127,8 +127,54 @@ export const supabase = createClient(
   { global: { fetch: fetchWithToken } },
 );
 
-// Khusus ticketing — services database (terpisah)
+/**
+ * Basis data Services — TERPISAH dari basis data utama.
+ *
+ * Dipakai ticketing untuk alur lintas divisi/lintas kantor (Team Services
+ * Servisindo). Sengaja tidak membawa token identitas: kredensialnya milik
+ * organisasi lain, dan penyaringannya dikerjakan di sisi sana.
+ */
 export const supabaseServices = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_SERVICES_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_SERVICES_ANON_KEY!
 );
+
+/**
+ * Apakah konfigurasi dua basis data ini masuk akal.
+ *
+ * Yang paling berbahaya adalah URL keduanya SAMA: di keadaan itu setiap
+ * "mirror ke Services DB" sebenarnya menulis balik ke basis data yang sama,
+ * jadi seluruh alur tampak berhasil padahal tidak ada yang menyeberang. Di
+ * lokal hal itu wajar (satu instance dipakai untuk dua-duanya), tapi di
+ * produksi artinya alur lintas organisasi diam-diam mati.
+ *
+ * Dipakai dua tempat: peringatan konsol saat dev, dan laporan kesiapan di
+ * /api/auth/db-token-check yang hanya bisa dibaca admin.
+ */
+export function periksaKonfigurasiServices(): {
+  urlSama: boolean;
+  servicesBelumDiset: boolean;
+} {
+  const utama = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  const svc = process.env.NEXT_PUBLIC_SUPABASE_SERVICES_URL ?? '';
+  return {
+    urlSama: !!utama && !!svc && utama === svc,
+    servicesBelumDiset: !svc || !process.env.NEXT_PUBLIC_SUPABASE_SERVICES_ANON_KEY,
+  };
+}
+
+if (process.env.NODE_ENV !== 'production') {
+  const cek = periksaKonfigurasiServices();
+  if (cek.servicesBelumDiset) {
+    console.warn(
+      '[supabase] NEXT_PUBLIC_SUPABASE_SERVICES_URL / ANON_KEY belum di-set — ' +
+      'seluruh alur Team Services di Ticketing akan gagal.',
+    );
+  } else if (cek.urlSama) {
+    console.warn(
+      '[supabase] URL basis data utama dan Services SAMA. Di lokal ini normal, ' +
+      'tapi artinya mirror ticket ke Services DB tidak benar-benar menyeberang. ' +
+      'Pastikan di produksi keduanya berbeda.',
+    );
+  }
+}
