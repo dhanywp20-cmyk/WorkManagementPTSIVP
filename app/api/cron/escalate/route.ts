@@ -104,7 +104,7 @@ async function runEscalation() {
   return { escalated: escalatedIds.length, ids: escalatedIds };
 }
 
-// GET — dipanggil Vercel Cron (Authorization: Bearer <CRON_SECRET>)
+// GET - dipanggil Vercel Cron (Authorization: Bearer <CRON_SECRET>)
 export async function GET(request: NextRequest) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST — dipanggil manual atau external cron (X-Cron-Secret: <secret>)
+// POST - dipanggil manual atau external cron (X-Cron-Secret: <secret>)
 export async function POST(request: NextRequest) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

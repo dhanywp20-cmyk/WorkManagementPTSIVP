@@ -31,10 +31,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Username dan password wajib diisi.' }, { status: 400 });
     }
 
-    // ── Lockout brute-force ───────────────────────────────────────────────
+    // Lockout brute-force
     // Kunci per-username (threshold ketat) supaya 1 akun yang dibrute-force
     // diblok, tapi threshold IP dibuat longgar karena 1 kantor biasanya
-    // berbagi 1 IP publik (NAT) — jangan sampai 1 IP mengunci semua orang.
+    // berbagi 1 IP publik (NAT) - jangan sampai 1 IP mengunci semua orang.
     const windowStart = new Date(Date.now() - 15 * 60 * 1000).toISOString();
     const [byUser, byIp] = await Promise.all([
       supabase.from('login_attempts').select('*', { count: 'exact', head: true })
@@ -51,8 +51,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── Ambil user ────────────────────────────────────────────────────────
-    // access_level (toggle Full Access) opsional — kolom baru, belum tentu
+    // Ambil user
+    // access_level (toggle Full Access) opsional - kolom baru, belum tentu
     // sudah ada di database (sql/user-full-access-toggle.sql belum dijalankan).
     // Coba sertakan dulu; kalau gagal (kolom belum ada), jatuh balik TANPA
     // kolom itu supaya login tidak pernah ikut gagal gara-gara ini.
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Username atau password salah!' }, { status: 401 });
     }
 
-    // ── Ambil password hash dari user_credentials ─────────────────────────
+    // Ambil password hash dari user_credentials
     const { data: cred } = await supabase
       .from('user_credentials')
       .select('password_hash')
@@ -82,12 +82,12 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!cred?.password_hash) {
-      // Tidak ada credential — akun belum dimigrasi atau tidak punya password
+      // Tidak ada credential - akun belum dimigrasi atau tidak punya password
       await supabase.from('login_attempts').insert({ username, ip_address: ip, success: false });
       return NextResponse.json({ error: 'Akun belum aktif. Hubungi admin.' }, { status: 401 });
     }
 
-    // ── Verifikasi password ───────────────────────────────────────────────
+    // Verifikasi password
     const stored = cred.password_hash;
     const isHashed = stored.startsWith('$2b$') || stored.startsWith('$2a$');
     let valid = false;
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     if (isHashed) {
       valid = await bcrypt.compare(password, stored);
     } else {
-      // Plaintext tersisa — bandingkan lalu upgrade ke bcrypt
+      // Plaintext tersisa - bandingkan lalu upgrade ke bcrypt
       valid = stored === password;
       if (valid) {
         const hash = await bcrypt.hash(password, 12);
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Username atau password salah!' }, { status: 401 });
     }
 
-    // ── Login berhasil ────────────────────────────────────────────────────
+    // Login berhasil
     await supabase.from('login_attempts').insert({ username, ip_address: ip, success: true });
 
     // Cleanup expired sessions (housekeeping)
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
       expires_at: expiresAt,
     });
 
-    // Token PostgREST — memberi basis data cara mengenali user ini, sehingga
+    // Token PostgREST - memberi basis data cara mengenali user ini, sehingga
     // policy RLS bisa menyaring berdasarkan identitas alih-alih USING (true).
     // Bernilai null bila SUPABASE_JWT_SECRET belum diset; login tetap berhasil.
     const response = NextResponse.json({ user, db_token: issueDbToken(user) });

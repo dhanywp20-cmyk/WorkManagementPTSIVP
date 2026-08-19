@@ -9,7 +9,7 @@ import {
   BtnEdit, BtnDelete,
 } from './shared';
 
-// ─── Folder color palette ───────────────────────────────────────────────────
+// Folder color palette
 const FOLDER_COLORS = [
   { gradient: 'linear-gradient(135deg,#3b82f6,#4f46e5)', light: '#dbeafe', icon: '#3b82f6' },
   { gradient: 'linear-gradient(135deg,#10b981,#0d9488)', light: '#d1fae5', icon: '#10b981' },
@@ -20,7 +20,7 @@ const FOLDER_COLORS = [
 ];
 const getFolderColor = (name: string) => FOLDER_COLORS[name.charCodeAt(0) % FOLDER_COLORS.length];
 
-// ─── Difficulty helpers ─────────────────────────────────────────────────────
+// Difficulty helpers
 const DIFF_BG: Record<string, string> = { easy: '#ecfdf5', medium: '#fffbeb', hard: '#fff1f2' };
 const DIFF_BORDER: Record<string, string> = { easy: '#d1fae5', medium: '#fef3c7', hard: '#ffe4e6' };
 const DIFF_TEXT: Record<string, string> = { easy: '#065f46', medium: '#92400e', hard: '#be123c' };
@@ -45,7 +45,7 @@ export function QuestionsPage({ user }: { user: User }) {
   });
   const [genCount, setGenCount] = useState(10);
   const [genDiff, setGenDiff] = useState<'easy' | 'medium' | 'hard' | 'mixed'>('mixed');
-  // Tipe soal untuk panel Generate AI — soal essay tidak dicampur dengan ABCD dalam satu batch generate
+  // Tipe soal untuk panel Generate AI - soal essay tidak dicampur dengan ABCD dalam satu batch generate
   const [genType, setGenType] = useState<'abcd' | 'essay'>('abcd');
   const [batchName, setBatchName] = useState('');
   const [genExtraPrompt, setGenExtraPrompt] = useState('');
@@ -59,7 +59,7 @@ export function QuestionsPage({ user }: { user: User }) {
   const [search, setSearch] = useState('');
   const [dialog, setDialog] = useState<DialogState>(null);
   const [renameFolder, setRenameFolder] = useState<{ oldName: string; newName: string } | null>(null);
-  // collapsed state: key = `${matId}__${batchKey}` — collapsed by default
+  // collapsed state: key = `${matId}__${batchKey}` - collapsed by default
   const [expandedBatches, setExpandedBatches] = useState<Set<string>>(new Set());
   const [renameSaving, setRenameSaving] = useState(false);
 
@@ -172,7 +172,7 @@ export function QuestionsPage({ user }: { user: User }) {
       const text = await generateWithGemini(prompt, pdfFile ?? null);
       setGenStatus('⚙️ Memproses hasil...');
 
-      // ── Robust JSON extraction ──────────────────────────────────────────────
+      // Robust JSON extraction
       // 1. Strip all markdown code fences (```json, ```javascript, ```, etc.)
       let cleanText = text
         .replace(/```[\w]*\n?/gi, '')  // opening fence with optional lang tag
@@ -313,7 +313,7 @@ export function QuestionsPage({ user }: { user: User }) {
     setSelectedFolder(null); setSelectedMat('');
   };
 
-  // ─── Rename Folder Modal ────────────────────────────────────────────────────
+  // Rename Folder Modal
   const renameFolderModalJSX = renameFolder ? (
   <ModalPortal>
     <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
@@ -354,7 +354,7 @@ export function QuestionsPage({ user }: { user: User }) {
   </ModalPortal>
   ) : null;
 
-  // ─── Gemini usage helper ────────────────────────────────────────────────────
+  // Gemini usage helper
   const getGeminiUsage = () => {
     if (typeof window === 'undefined') return { count: 0, lastUsed: null };
     const today = new Date().toISOString().slice(0, 10);
@@ -368,7 +368,7 @@ export function QuestionsPage({ user }: { user: User }) {
     ? new Date(geminiUsage.lastUsed).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
     : null;
 
-  // ─── Generate Panel (plain JSX var — NOT a sub-component, avoids remount on every keystroke) ──
+  // Generate Panel (plain JSX var - NOT a sub-component, avoids remount on every keystroke)
   const generatePanelJSX = (
     <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl border border-violet-200 p-6">
       <div className="flex items-start justify-between mb-3">
@@ -478,7 +478,7 @@ export function QuestionsPage({ user }: { user: User }) {
     </div>
   );
 
-  // ─── Manual Add Modal (plain JSX var — NOT a sub-component, avoids remount on every keystroke) ──
+  // Manual Add Modal (plain JSX var - NOT a sub-component, avoids remount on every keystroke)
   const addManualModalJSX = showAddManual ? (
   <ModalPortal>
     <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
@@ -567,9 +567,7 @@ export function QuestionsPage({ user }: { user: User }) {
   </ModalPortal>
   ) : null;
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SCREEN 1 — Folder Selection
-  // ═══════════════════════════════════════════════════════════════════════════
+  // SCREEN 1 - Folder Selection
   if (selectedFolder === null) {
     return (
       <div className="flex flex-col h-full">
@@ -721,9 +719,7 @@ export function QuestionsPage({ user }: { user: User }) {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SCREEN 2 — Folder View with questions
-  // ═══════════════════════════════════════════════════════════════════════════
+  // SCREEN 2 - Folder View with questions
   const currentFolderNode = selectedFolder === '__root__' ? null : folderTree.children[selectedFolder];
   const subFolders = currentFolderNode ? Object.keys(currentFolderNode.children).sort() : [];
 

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase, User, fmtDate, ScoreBadge, SearchInput } from './shared';
 import { StatCardGrid, ModalPortal } from '@/components/shared';
 
-// ─── Donut Chart ──────────────────────────────────────────────────────────────
+// Donut Chart
 function DonutChart({ segments, size = 68, strokeWidth = 10, label = '' }: {
   segments: { value: number; color: string }[];
   size?: number; strokeWidth?: number; label?: string;
@@ -49,7 +49,7 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ─── Team Switch ──────────────────────────────────────────────────────────────
+// Team Switch
 type TeamFilter = 'PTS' | 'Sales' | 'Marketing';
 
 const TEAM_FILTER_CONFIG: Record<TeamFilter, { label: string; emoji: string; activeClass: string }> = {
@@ -90,7 +90,7 @@ function TeamSwitch({ active, onChange }: { active: TeamFilter; onChange: (t: Te
   );
 }
 
-// ─── Main Dashboard ───────────────────────────────────────────────────────────
+// Main Dashboard
 export function AdminDashboard({ user }: { user: User }) {
   const [stats, setStats] = useState({ materials: 0, activeTeam: 0, sessions: 0, attempts: 0 });
   const [recentAttempts, setRecentAttempts] = useState<any[]>([]);
@@ -121,7 +121,7 @@ export function AdminDashboard({ user }: { user: User }) {
 
   useEffect(() => {
     const load = async () => {
-      // ── Round 1: counts ────────────────────────────────────────────────────
+      // Round 1: counts
       const [mat, ses, att, totalUsersRes, abandonedRes] = await Promise.all([
         supabase.from('lc_materials').select('id', { count: 'exact', head: true }),
         supabase.from('lc_quiz_sessions').select('id', { count: 'exact', head: true }).eq('is_active', true),
@@ -133,14 +133,14 @@ export function AdminDashboard({ user }: { user: User }) {
       const uniqueTeam = new Set((teamData ?? []).map((a: any) => a.user_id)).size;
       setStats({ materials: mat.count ?? 0, activeTeam: uniqueTeam, sessions: ses.count ?? 0, attempts: att.count ?? 0 });
 
-      // ── Round 2: analytics data in parallel ────────────────────────────────
+      // Round 2: analytics data in parallel
       const [recentRes, allAttRes, qListRes, aListRes, usersRes] = await Promise.all([
         supabase.from('lc_quiz_attempts')
           .select('*, users(full_name), lc_quiz_sessions(session_name, passing_grade)')
           .eq('is_submitted', true).order('submitted_at', { ascending: false }).limit(50),
         // Dua hal yang DISENGAJA di query ini:
         //
-        // 1. '*' — bukan daftar kolom eksplisit. PostgREST menolak SELURUH
+        // 1. '*' - bukan daftar kolom eksplisit. PostgREST menolak SELURUH
         //    query bila satu kolom belum ada di skema, jadi menyebut
         //    grading_status membuat tabel kosong total sebelum migrasi essay
         //    dijalankan, tanpa pesan error apa pun.
@@ -148,7 +148,7 @@ export function AdminDashboard({ user }: { user: User }) {
         // 2. TANPA embed users(...). Data user diambil terpisah lalu digabung
         //    di JS. Embed bergantung pada relasi FK yang terbaca PostgREST;
         //    kalau embed gagal, a.users bernilai null sehingga role ikut null
-        //    dan SELURUH tab (PTS/Sales/Marketing) kosong — tanpa error.
+        //    dan SELURUH tab (PTS/Sales/Marketing) kosong - tanpa error.
         //    Query terpisah juga lebih hemat: data user tidak diulang di
         //    setiap baris attempt.
         supabase.from('lc_quiz_attempts').select('*').eq('is_submitted', true),
@@ -158,7 +158,7 @@ export function AdminDashboard({ user }: { user: User }) {
       ]);
       setRecentAttempts(recentRes.data ?? []);
 
-      // Peta user dipakai menggantikan embed users(...) — lihat catatan query di atas.
+      // Peta user dipakai menggantikan embed users(...) - lihat catatan query di atas.
       const userMap: Record<string, any> = {};
       (usersRes.data ?? []).forEach((u: any) => { userMap[u.id] = u; });
 
@@ -166,7 +166,7 @@ export function AdminDashboard({ user }: { user: User }) {
         .filter((a: any) => a.grading_status !== 'pending_review') // essay belum dinilai jangan masuk statistik
         .map((a: any) => ({ ...a, users: userMap[a.user_id] ?? null }));
 
-      // ── Overview mini pies ─────────────────────────────────────────────────
+      // Overview mini pies
       const participants = new Set(allAtt.map((a: any) => a.user_id)).size;
       const passCount    = allAtt.filter((a: any) => a.passed).length;
       const scoreGood    = allAtt.filter((a: any) => (a.score ?? 0) >= 80).length;
@@ -182,7 +182,7 @@ export function AdminDashboard({ user }: { user: User }) {
         abandoned: abandonedRes.count ?? 0,
       });
 
-      // ── Top performers + consistency + fast-submit ─────────────────────────
+      // Top performers + consistency + fast-submit
       const byUser: Record<string, {
         name: string; scores: number[]; passed: number; tabSw: number;
         minScore: number; maxScore: number; fastCount: number;
@@ -217,7 +217,7 @@ export function AdminDashboard({ user }: { user: User }) {
       setAllTopUsers(allUsers);
       setTopUsers(allUsers.filter(u => matchesTeamFilter(u, 'PTS')).slice(0, 20));
 
-      // ── Per division/jabatan ───────────────────────────────────────────────
+      // Per division/jabatan
       // Group key = sales_division if present, else jabatan, else 'Lainnya'
       // Also track the source field so we can label it in the table
       const byDiv: Record<string, {
@@ -245,11 +245,11 @@ export function AdminDashboard({ user }: { user: User }) {
         passed: v.passed,
       })).sort((a, b) => b.avg - a.avg));
 
-      // ── Nasional (semua divisi/jabatan digabung) — pembanding gap tiap kelompok ──
+      // Nasional (semua divisi/jabatan digabung) - pembanding gap tiap kelompok
       const allScoresNational = allAtt.map((a: any) => a.score ?? 0);
       setNationalAvg(allScoresNational.length ? allScoresNational.reduce((s: number, n: number) => s + n, 0) / allScoresNational.length : null);
 
-      // ── Batch/topic performance ────────────────────────────────────────────
+      // Batch/topic performance
       if (qListRes.data && aListRes.data) {
         const qBatch: Record<string, string> = {};
         qListRes.data.forEach((q: any) => { if (q.batch_name) qBatch[q.id] = q.batch_name; });
@@ -268,7 +268,7 @@ export function AdminDashboard({ user }: { user: User }) {
         })).sort((a, b) => a.pct - b.pct));
       }
 
-      // ── Per session ────────────────────────────────────────────────────────
+      // Per session
       const { data: ss } = await supabase.from('lc_quiz_sessions').select('id, session_name');
       if (ss) {
         const sStats = await Promise.all(ss.map(async (s: any) => {

@@ -37,7 +37,7 @@ export default function Dashboard() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [registerErr, setRegisterErr] = useState('');
   const [showRegister, setShowRegister] = useState(false);
-  /* Animasi kartu login saat berpindah masuk ⇄ daftar.
+  /* Animasi kartu login saat berpindah masuk  daftar.
      'masuk'       kartu tumbuh keluar dari koper (adegan penuh diputar ulang)
      'tukarKeluar' kartu lama menyusut & memudar, isinya belum diganti
      'tukarMasuk'  isi sudah berganti, kartu baru muncul sementara koper berputar */
@@ -47,7 +47,7 @@ export default function Dashboard() {
      soal kenapa perpindahannya sengaja ditunda. */
   const [masukBerhasil, setMasukBerhasil] = useState(false);
   /* Dashboard baru saja menggantikan halaman login: ia tumbuh keluar dari
-     koper. Kelasnya dilepas lagi setelah animasinya habis — lihat catatan di
+     koper. Kelasnya dilepas lagi setelah animasinya habis - lihat catatan di
      app/globals.css soal kenapa transform tidak boleh menetap di akar
      dashboard. */
   const [dasborMuncul, setDasborMuncul] = useState(false);
@@ -100,7 +100,7 @@ export default function Dashboard() {
   const [showDashboardPanel, setShowDashboardPanel] = useState(false);
 
   /* Perpindahan antara form masuk dan form daftar.
-     Ke DAFTAR  : kartu ditutup dulu 240 ms, baru isinya diganti — kalau tidak,
+     Ke DAFTAR  : kartu ditutup dulu 240 ms, baru isinya diganti - kalau tidak,
                   isi baru terlihat menyusut keluar dan efek tukarnya rusak,
                   karena React mengganti isi pada saat diklik, bukan di tengah
                   animasi. Kopernya berputar di tempat.
@@ -139,12 +139,12 @@ export default function Dashboard() {
   /**
    * Dua antrean yang menunggu tindakan admin, sengaja DIPISAH karena
    * diselesaikan di tempat yang berbeda:
-   *   pendingUsers    → Admin Panel → User Management
-   *   pendingRequests → Request Schedule (BUKAN Admin Panel)
+   *   pendingUsers     Admin Panel  User Management
+   *   pendingRequests  Request Schedule (BUKAN Admin Panel)
    *
    * Sebelumnya keduanya dijumlahkan jadi satu badge di ikon Admin Panel, jadi
    * request jadwal baru memunculkan angka merah di tempat yang tidak memuat
-   * request itu sama sekali — mengklik badge membuka panel yang tidak ada
+   * request itu sama sekali - mengklik badge membuka panel yang tidak ada
    * kaitannya.
    */
   const [pendingUsers, setPendingUsers] = useState(0);
@@ -272,7 +272,7 @@ export default function Dashboard() {
       setCurrentUser(data);
       setSession(data);
       // Pasang token PostgREST supaya seluruh query berikutnya membawa
-      // identitas user — inilah yang membuat policy RLS bisa menyaring.
+      // identitas user - inilah yang membuat policy RLS bisa menyaring.
       setDbToken(result.db_token ?? null);
       // Permission-Aware Dashboard = homepage utk SEMUA role. Semua mendarat di
       // dashboard home (widget adaptif); tidak lagi auto-lompat ke menu pertama.
@@ -280,17 +280,17 @@ export default function Dashboard() {
 
       /* Perpindahan ke dashboard SENGAJA ditunda sebentar supaya animasi
          penutupnya (lc-bongkar, lihat globals.css) sempat jalan: tombol jadi
-         tanda centang, lalu halaman login dibongkar — kartu form terangkat,
+         tanda centang, lalu halaman login dibongkar - kartu form terangkat,
          isi panel kiri lepas satu per satu, kedua panel terbelah.
 
          1500ms = panjang animasi terakhir yang selesai (panel terbelah: jeda
          270ms + durasi 1230ms). Kalau angka ini lebih pendek dari itu, halaman
          login dilepas dari DOM di tengah gerakan dan pembongkarannya terpotong.
-         Jadi angka ini WAJIB ikut berubah setiap durasi di globals.css diubah —
+         Jadi angka ini WAJIB ikut berubah setiap durasi di globals.css diubah -
          keduanya menggambarkan hal yang sama dari dua sisi.
 
          Jujur soal biayanya: ini MENAMBAH waktu, bukan menyembunyikan waktu
-         tunggu yang sudah ada — kerangka dashboard sebenarnya tampil hampir
+         tunggu yang sudah ada - kerangka dashboard sebenarnya tampil hampir
          seketika. Yang membuatnya masih pantas: hanya dibayar saat orang
          benar-benar menekan tombol login, sedangkan membuka ulang halaman
          dengan sesi yang masih hidup langsung masuk dashboard tanpa melewati
@@ -405,7 +405,7 @@ export default function Dashboard() {
     /* Wajib: tanpa ini `masukBerhasil` tetap true selamanya, dan begitu
        halaman login dirender ulang setelah logout, kelas .lc-bongkar terpasang
        lagi dari awal. Animasinya `forwards`, jadi halaman yang baru saja muncul
-       langsung terbongkar dan menyisakan layar kosong — persis bug yang dulu
+       langsung terbongkar dan menyisakan layar kosong - persis bug yang dulu
        dilaporkan. sudahMasukRef juga direset supaya login BERIKUTNYA bisa
        memicu urutan keluar lagi, bukan cuma yang pertama. */
     setMasukBerhasil(false);
@@ -418,7 +418,7 @@ export default function Dashboard() {
   };
 
   // Auto-navigate sales/guest to first allowed menu when sidebar opens
-  // Uses autoNavigatedRef so this runs EXACTLY ONCE per login — no race conditions
+  // Uses autoNavigatedRef so this runs EXACTLY ONCE per login - no race conditions
   useEffect(() => {
     if (!isLoggedIn || !currentUser || !showSidebar) return;
     if (autoNavigatedRef.current) return; // already navigated this session
@@ -426,7 +426,7 @@ export default function Dashboard() {
     const isSalesGuest = ['guest','sales'].includes(role);
     const isRegularTeam = role === 'team' && !(currentUser.allowed_menus ?? []).includes('dashboard') && currentUser.jabatan !== 'Supervisor';
     if (isSalesGuest || isRegularTeam) {
-      // Navigate to VISUAL FIRST menu — matches sidebar category order: LEARNING → PROJECT → INTERNAL DAILY
+      // Navigate to VISUAL FIRST menu - matches sidebar category order: LEARNING  PROJECT  INTERNAL DAILY
       // Using allowed[0] was wrong because sidebar groups by category, not by allowed_menus order
       const allowed = currentUser.allowed_menus ?? [];
       const categoryOrderedKey = [
@@ -489,7 +489,7 @@ export default function Dashboard() {
     }, 150);
   };
 
-  // ── postMessage bridge ────────────────────────────────────────────────────────
+  // postMessage bridge
   // Receives CC_NAVIGATE messages from Command Center iframe and routes to the
   // matching menu item, so Quick Access buttons in Command Center work seamlessly.
   useEffect(() => {
@@ -516,7 +516,7 @@ export default function Dashboard() {
   }, [allMenuItems]);
 
   const handleBackToDashboard = () => {
-    // Tidak kembali ke card view — untuk admin/supervisor: dashboard panel
+    // Tidak kembali ke card view - untuk admin/supervisor: dashboard panel
     // Untuk sales/guest: navigasikan ke menu pertama yang tersedia
     setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setIframeTitle('');
     const role = currentUser?.role?.toLowerCase() ?? '';
@@ -571,11 +571,11 @@ export default function Dashboard() {
     load();
   }, []);
 
-  // isAdmin TETAP admin/superadmin murni — khusus tombol Admin Panel (kelola
+  // isAdmin TETAP admin/superadmin murni - khusus tombol Admin Panel (kelola
   // akun, bukan sekadar lihat data). Lihat lib/constants.ts hasFullAccess.
   const isAdmin = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
   // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
-  // (mis. Manager PTS) — dipakai untuk hal yang BUKAN kelola akun: lihat
+  // (mis. Manager PTS) - dipakai untuk hal yang BUKAN kelola akun: lihat
   // badge pending, akses KPI penuh, dst.
   const isFullAccess = isAdmin || hasFullAccess(currentUser);
 
@@ -738,7 +738,7 @@ export default function Dashboard() {
     );
   };
 
-  // ── LOADING ──
+  // LOADING
   if (loading) {
     return (
       <div className="flex items-center justify-center bg-cover bg-center bg-fixed" style={{ backgroundImage: 'url(/IVP_Background.png)', minHeight: '100dvh' }}>
@@ -750,10 +750,10 @@ export default function Dashboard() {
     );
   }
 
-  // ── LOGIN / REGISTER SCREEN ──
+  // LOGIN / REGISTER SCREEN
   if (!isLoggedIn) {
     return (
-      // SATU background penuh utk seluruh halaman (tidak dipotong per panel) —
+      // SATU background penuh utk seluruh halaman (tidak dipotong per panel) -
       // tiap panel hanya overlay transparan di atas gambar yang sama.
       <>
       {/* Seluruh isi halaman login ada di dalam bungkus ini supaya bisa dihisap
@@ -1010,7 +1010,7 @@ export default function Dashboard() {
     );
   }
 
-  // ── SHARED HEADER JSX ──
+  // SHARED HEADER JSX
   const renderHeader = (withBackBtn = false) => (
     <div className="bg-white/80 backdrop-blur-md shadow-md flex-shrink-0" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', position: 'relative', zIndex: 50 }}>
       <div className="w-full px-3 md:px-4 py-3 md:py-3.5">
@@ -1123,7 +1123,7 @@ export default function Dashboard() {
     </div>
   );
 
-  // ── MODAL RENDERS (shared) ──
+  // MODAL RENDERS (shared)
   const renderModals = () => (
     <>
       {showAdminPanel && <AdminPanelModal initialTab={adminPanelTab} onClose={() => setShowAdminPanel(false)} />}
@@ -1131,7 +1131,7 @@ export default function Dashboard() {
     </>
   );
 
-  // ── VIEW: NO SIDEBAR (main dashboard) ──
+  // VIEW: NO SIDEBAR (main dashboard)
   if (!showSidebar) {
     return (
       <div className={`${dasborMuncul ? 'lc-dasbor-muncul' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ backgroundImage: 'url(/IVP_Background.png)', height: '100dvh' }}>
@@ -1223,7 +1223,7 @@ export default function Dashboard() {
     );
   }
 
-  // ── VIEW: SIDEBAR ──
+  // VIEW: SIDEBAR
   return (
     <div className={`${dasborMuncul ? 'lc-dasbor-muncul' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ backgroundImage: 'url(/IVP_Background.png)', height: '100dvh' }}>
       {isLoggedIn && <SessionExpiryBanner />}
@@ -1703,9 +1703,9 @@ export default function Dashboard() {
               </div>
             )}
             {showDashboardPanel && currentUser ? (
-              /* ── Permission-Aware Dashboard — widget adaptif per permission.
+              /* Permission-Aware Dashboard - widget adaptif per permission.
                  Background transparan (IVP bg tembus); hanya card yg opaque.
-                 Analytics = launcher full-screen (bukan embed) utk yg berhak. ── */
+                 Analytics = launcher full-screen (bukan embed) utk yg berhak. */
               <div className="w-full h-full overflow-hidden relative"
                 style={{ backgroundImage: 'url(/IVP_Background.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
                 <PermissionAwareDashboard currentUser={currentUser} openMenu={openMenuByKey} openUrl={handleNotifNavigate} />

@@ -5,10 +5,10 @@ import {
 } from './shared';
 
 /**
- * Export 1 proyek ke Excel — 3 sheet:
- *   1. Ringkasan       — header proyek + statistik
- *   2. Status Lokasi   — 1 baris per lokasi + komponennya
- *   3. Rekap Isu       — daftar isu terbuka
+ * Export 1 proyek ke Excel - 3 sheet:
+ *   1. Ringkasan       - header proyek + statistik
+ *   2. Status Lokasi   - 1 baris per lokasi + komponennya
+ *   3. Rekap Isu       - daftar isu terbuka
  *
  * Gaya sel mengikuti pola Picket Showroom & Ticketing (Arial, border tipis,
  * header berwarna solid) supaya file yang dikirim ke user terlihat seragam.
@@ -19,7 +19,7 @@ export function exportProjectToExcel(detail: ProjectDetail) {
     const exportDate = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
     const sortedLoc = [...locations].sort((a, b) => a.sort_order - b.sort_order);
 
-    // ── Style ────────────────────────────────────────────────────────────────
+    // Style
     const border = { top:{style:'thin',color:{rgb:'D1D5DB'}}, bottom:{style:'thin',color:{rgb:'D1D5DB'}}, left:{style:'thin',color:{rgb:'D1D5DB'}}, right:{style:'thin',color:{rgb:'D1D5DB'}} };
     const boldBorder = { top:{style:'thin',color:{rgb:'000000'}}, bottom:{style:'thin',color:{rgb:'000000'}}, left:{style:'thin',color:{rgb:'000000'}}, right:{style:'thin',color:{rgb:'000000'}} };
     const hdrStyle   = { font:{name:'Arial',bold:true,sz:11,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:'0E7490'},patternType:'solid'}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border:boldBorder };
@@ -41,7 +41,7 @@ export function exportProjectToExcel(detail: ProjectDetail) {
     const avg = averageProgress(sortedLoc);
     const blocked = sortedLoc.filter(l => l.status === 'blocked').length;
 
-    // ── Sheet 1: Ringkasan ──────────────────────────────────────────────────
+    // Sheet 1: Ringkasan
     {
       const data: any[][] = [];
       data.push([{ v: project.name, s: titleStyle }, ...row0(3, titleStyle)]);
@@ -76,7 +76,7 @@ export function exportProjectToExcel(detail: ProjectDetail) {
       XLSX.utils.book_append_sheet(wb, ws, 'Ringkasan');
     }
 
-    // ── Sheet 2: Status Lokasi ──────────────────────────────────────────────
+    // Sheet 2: Status Lokasi
     {
       const data: any[][] = [];
       data.push([{ v: 'STATUS PER LOKASI', s: titleStyle }, ...row0(6, titleStyle)]);
@@ -86,7 +86,7 @@ export function exportProjectToExcel(detail: ProjectDetail) {
       sortedLoc.forEach((loc, i) => {
         const st = i % 2 === 1 ? altStyle : cellStyle;
         const comps = componentsOf(components, loc.id);
-        // Sertakan status tiap komponen — progres lokasi diturunkan dari sini,
+        // Sertakan status tiap komponen - progres lokasi diturunkan dari sini,
         // jadi angka di kolom Progres bisa ditelusuri dari daftar ini.
         const compText = comps.length
           ? comps.map(c => `• ${c.label} — ${COMPONENT_STATE_CONFIG[c.state]?.label ?? c.state}`).join('\n')
@@ -121,7 +121,7 @@ export function exportProjectToExcel(detail: ProjectDetail) {
       XLSX.utils.book_append_sheet(wb, ws, 'Status Lokasi');
     }
 
-    // ── Sheet 3: Rekap Isu ──────────────────────────────────────────────────
+    // Sheet 3: Rekap Isu
     {
       const data: any[][] = [];
       data.push([{ v: 'REKAP ISU TERBUKA', s: titleStyle }, ...row0(3, titleStyle)]);

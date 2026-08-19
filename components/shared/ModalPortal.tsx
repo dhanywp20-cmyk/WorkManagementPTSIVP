@@ -3,26 +3,26 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 /**
- * ModalPortal — mencabut overlay ke <body>.
+ * ModalPortal - mencabut overlay ke <body>.
  *
- * ── Kenapa ada ──────────────────────────────────────────────────────────────
+ * Kenapa ada
  * Ada DUA cara sebuah popup gagal tampil, dan keduanya tidak kelihatan dari
- * kode popup itu sendiri — penyebabnya selalu ada di leluhurnya:
+ * kode popup itu sendiri - penyebabnya selalu ada di leluhurnya:
  *
  * 1. TERPERANGKAP STACKING CONTEXT.
  *    Leluhur ber-`position` + `z-index` (mis. pembungkus halaman
  *    `relative z-10`) membentuk stacking context baru. Semua z-index di
  *    dalamnya jadi RELATIF terhadap kotak itu, bukan terhadap halaman. Jadi
  *    modal Z.overlayTop di dalam pembungkus z-10 tetap kalah dari modal
- *    Z.overlay yang berada langsung di bawah <body> — angkanya lebih besar,
+ *    Z.overlay yang berada langsung di bawah <body> - angkanya lebih besar,
  *    tapi dibandingkan di liga yang berbeda. Inilah kenapa popup Assign muncul
  *    di BELAKANG popup detail.
  *
  * 2. TERPERANGKAP CONTAINING BLOCK.
  *    `position: fixed` diukur terhadap viewport HANYA bila tidak ada leluhur
  *    ber-`transform`, `filter`, `backdrop-filter`, `perspective`, atau
- *    `contain`. Satu saja leluhur seperti itu — dan kartu ber-`backdropFilter`
- *    tersebar di banyak halaman — membuat `inset-0` berhenti di tepi kartu,
+ *    `contain`. Satu saja leluhur seperti itu - dan kartu ber-`backdropFilter`
+ *    tersebar di banyak halaman - membuat `inset-0` berhenti di tepi kartu,
  *    bukan di tepi layar. Popup-nya "muncul", tapi terpotong di tengah layar.
  *
  * Dengan portal, overlay berada langsung di bawah <body>: tidak ada leluhur

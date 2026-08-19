@@ -22,11 +22,11 @@ import { ConfirmDialog, type ConfirmState, Username, ModalPortal, formatUsername
  * lewat SQL function propagate_user_rename.
  *
  * Tiga hasil yang mungkin, dan ketiganya berbeda artinya bagi admin:
- *   ok       — semua tabel ikut terbarui
- *   sebagian — sebagian tabel gagal, sisanya berhasil (fungsi SQL-nya kini
+ *   ok       - semua tabel ikut terbarui
+ *   sebagian - sebagian tabel gagal, sisanya berhasil (fungsi SQL-nya kini
  *              menangkap galat per tabel dan meneruskan ke tabel berikutnya,
  *              jadi keadaan ini nyata dan perlu disebut apa adanya)
- *   gagal    — panggilan RPC-nya sendiri yang gagal, tidak ada yang tersebar
+ *   gagal    - panggilan RPC-nya sendiri yang gagal, tidak ada yang tersebar
  *
  * Akun sendiri SUDAH tersimpan sebelum fungsi ini dipanggil; apa pun hasilnya
  * di sini tidak membatalkan penyimpanan itu.
@@ -66,7 +66,7 @@ function pesanSebar(h: HasilSebar): string {
   return `Akun tersimpan, tapi sebar nama ke data terkait gagal: ${h.pesan}`;
 }
 
-// WA selamat datang saat akun baru dibuat — dipakai kedua handleAddUser di
+// WA selamat datang saat akun baru dibuat - dipakai kedua handleAddUser di
 // bawah (list lama & baru). Fire-and-forget lewat swift-responder (satu-satunya
 // jalur WA di platform ini), tidak boleh menggagalkan alur create-akun.
 function sendWelcomeWA(phone: string | null | undefined, fullName: string, username: string, password: string) {
@@ -178,7 +178,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     }
 
     setSaving(true);
-    // Marketing & Sales divisi IVP/MVI = "Sales Internal" utk routing pipeline —
+    // Marketing & Sales divisi IVP/MVI = "Sales Internal" utk routing pipeline -
     // request mereka sendiri (project direct ke user) tidak boleh kena gerbang
     // review internal. Auto-set di sini supaya admin tidak perlu toggle manual.
     const isInternalSales = newUser.divisi === 'Marketing' || (newUser.divisi === 'Sales' && ['IVP', 'MVI', 'MLDS'].includes(newUser.sales_division));
@@ -246,10 +246,10 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
       phone_number: editingUser.phone_number ?? null,
       sales_division: (editDivisi === 'Sales' || editDivisi === 'Marketing') ? (editingUser.sales_division ?? null) : null,
       // Ikut update is_internal_sales HANYA kalau admin ganti divisi (editDivisi
-      // terisi) — kalau cuma edit field lain, jangan sentuh nilai yang sudah ada.
+      // terisi) - kalau cuma edit field lain, jangan sentuh nilai yang sudah ada.
       ...(editDivisi ? { is_internal_sales: editDivisi === 'Marketing' || (editDivisi === 'Sales' && ['IVP', 'MVI', 'MLDS'].includes(editingUser.sales_division ?? '')) } : {}),
     };
-    // Password baru harus masuk ke user_credentials — itu satu-satunya tempat
+    // Password baru harus masuk ke user_credentials - itu satu-satunya tempat
     // yang dibaca login. Sebelumnya hash-nya ditulis ke kolom lama users.password
     // yang tidak dibaca siapa pun, sehingga reset password dari panel admin
     // tampak berhasil padahal user tetap tidak bisa masuk dengan password baru.
@@ -600,7 +600,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
   );
 }
 
-// ─── UserProfileModal ─────────────────────────────────────────────────────────
+// UserProfileModal
 
 interface UserProfileModalProps {
   currentUser: User;
@@ -620,7 +620,7 @@ const KOLOM_PROFIL_DASAR =
  *
  * created_at dan access_level dipakai kartu "Bergabung Sejak" dan "Level
  * Akses". Keduanya bisa belum ada di basis data yang migrasinya belum
- * dijalankan — dan PostgREST menolak SELURUH query kalau satu kolom saja tak
+ * dijalankan - dan PostgREST menolak SELURUH query kalau satu kolom saja tak
  * dikenal, bukan cuma kolom itu. Tanpa jalur mundur ini, satu kolom yang
  * hilang membuat seluruh halaman Profil kosong.
  */
@@ -632,7 +632,7 @@ async function ambilProfil(id: string) {
 }
 
 /**
- * Kartu bersection-header — bentuk dasar tampilan Profil.
+ * Kartu bersection-header - bentuk dasar tampilan Profil.
  *
  * Dibuat satu kali lalu dipakai berulang, bukan disalin per bagian: enam
  * bagian dengan markup kartu yang disalin manual sudah cukup untuk membuat
@@ -823,7 +823,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
     return tb - ta;
   });
 
-  // ── Nilai turunan untuk tampilan ──
+  // Nilai turunan untuk tampilan
   const salam = (() => {
     const j = new Date().getHours();
     if (j < 11) return 'Selamat Pagi';
@@ -833,7 +833,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
   })();
 
   // Admin & superadmin melewati allowed_menus sepenuhnya, jadi daftarnya
-  // dianggap penuh — kalau tidak, profil mereka justru terbaca paling sedikit
+  // dianggap penuh - kalau tidak, profil mereka justru terbaca paling sedikit
   // aksesnya, kebalikan dari kenyataannya.
   const menuAktif = ['admin', 'superadmin'].includes((userData.role ?? '').toLowerCase())
     ? ALL_MENU_KEYS
@@ -1062,7 +1062,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
   );
 }
 
-// ─── UserManagementModal ──────────────────────────────────────────────────────
+// UserManagementModal
 interface UserManagementModalProps {
   onClose: () => void;
 }
@@ -1678,7 +1678,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
   );
 }
 
-// ─── BrandPicSettingModal ─────────────────────────────────────────────────────
+// BrandPicSettingModal
 
 export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
   const [brandUsers, setBrandUsers] = useState<{id:string;full_name:string;sales_division?:string}[]>([]);
@@ -1782,7 +1782,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Notification Bell Component ─────────────────────────────────────────────
+// Notification Bell Component
 
 export function NotifBell({ icon, label, count, color, bgColor, borderColor, dotColor, items, onItemClick }: NotifBellProps) {
   const [open, setOpen] = useState(false);
@@ -1880,7 +1880,7 @@ export function NotifBell({ icon, label, count, color, bgColor, borderColor, dot
   );
 }
 
-// ─── Notification Bar Component ───────────────────────────────────────────────
+// Notification Bar Component
 interface NotificationBarProps {
   currentUser: User;
   onNavigate: (internalUrl: string, title: string) => void;
@@ -1902,7 +1902,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
   const isTeamPTS_MVI = roleLC === 'team' && teamType === 'Team PTS MVI';
   const isTeamPTS_SubGroup = isTeamPTS_UMP || isTeamPTS_MVI;
   // isAdmin di sini dipakai sebagai "lihat SEMUA notifikasi" (bukan hak kelola
-  // akun) — jadi ikut diperluas ke akun Team PTS dengan toggle "Full Access"
+  // akun) - jadi ikut diperluas ke akun Team PTS dengan toggle "Full Access"
   // aktif (lihat lib/constants.ts hasFullAccess), mis. Manager PTS.
   const isAdmin = ['admin', 'superadmin'].includes(roleLC) || hasFullAccess(currentUser);
   const isPTS  = isAdmin || isTeamPTS;
@@ -1925,7 +1925,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
     // (cover perbedaan nama di team_members vs nama asli user)
     const namesToCheck = [...new Set([assignedName, currentUser.full_name].filter(Boolean))];
 
-    // ── 1. Ticket Troubleshooting ──
+    // 1. Ticket Troubleshooting
     try {
       if (isAdmin) {
         const { data } = await supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at').neq('status', 'Solved').order('created_at', { ascending: false }).limit(50);
@@ -1985,8 +1985,8 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
       }
     } catch (e) { console.error('[notif] ticket fetch error:', e); }
 
-    // ── 2. Form Require Project ──
-    // Helper: status yang dianggap "selesai" — exclude dari notif
+    // 2. Form Require Project
+    // Helper: status yang dianggap "selesai" - exclude dari notif
     const DONE_STATUSES = ['completed', 'rejected', 'cancelled'];
     const excludeDone = (q: any) => DONE_STATUSES.reduce((acc, s) => acc.neq('status', s), q);
     // Helper: build notif item dari row
@@ -2040,7 +2040,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         const selfTierN = selfJabatanN ? (TIER_MAP[selfJabatanN] ?? 0) : 0;
         const selfDivN = currentUser.sales_division;
 
-        // ── Base: selalu ambil milik sendiri + yang di-assign via ivp_assignee ──
+        // Base: selalu ambil milik sendiri + yang di-assign via ivp_assignee
         // Ini cover semua kasus termasuk Hendri yang request-nya di-assign ke dia
         const [{ data: ownReqs }, { data: ivpAssignedReqs }] = await Promise.all([
           excludeDone(
@@ -2061,7 +2061,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
           if (!baseMap.has(r.id)) baseMap.set(r.id, r);
         });
 
-        // ── Extended scope berdasarkan role ──
+        // Extended scope berdasarkan role
         if (isIVPUser2) {
           // IVP guest: tambahkan request dari divisi yang dia handle via mapping
           const { data: ivpDivMaps2 } = await supabase
@@ -2118,7 +2118,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
       } else { setRequireNotifs([]); }
     } catch (e) { console.error('[notif] require fetch error:', e); }
 
-    // ── 3. Request Schedule ──
+    // 3. Request Schedule
     try {
       if (isAdmin) {
         // Admin: semua reminder aktif (tidak done/cancelled)
@@ -2146,7 +2146,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         // di-assign ke diri sendiri + request yang MENUNGGU DI-ASSIGN dia sbg
         // Supervisor (assigned_supervisor_id + routing_status='supervisor_assign')
         // + kalau dia Manager (jabatan='Manager'), request yang MENUNGGU APPROVAL
-        // dia (routing_status='admin_review') — sebelumnya Manager (role='team',
+        // dia (routing_status='admin_review') - sebelumnya Manager (role='team',
         // bukan role='admin') sama sekali tidak dapat badge utk item yg perlu
         // di-approve, harus buka tabel manual.
         const selfJabatanTeam = (currentUser as any).jabatan as string | undefined;
@@ -2169,7 +2169,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
             : Promise.resolve({ data: [] as any[] }),
         ]);
         // routing_status='admin_review' bisa jadi stale (belum di-clear) meski
-        // assigned_to sudah terisi — saring client-side, jangan andalkan filter DB.
+        // assigned_to sudah terisi - saring client-side, jangan andalkan filter DB.
         const needsMyApprovalFiltered = (needsMyApproval ?? []).filter((r: any) => !r.assigned_to);
         const needsAssignIds = new Set((needsMyAssign ?? []).map((r: any) => r.id));
         const needsApprovalIds = new Set(needsMyApprovalFiltered.map((r: any) => r.id));
@@ -2193,7 +2193,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
       } else if (roleLC === 'guest' || roleLC === 'sales') {
         // Guest/Sales (termasuk Marketing & Sales Internal): reminder miliknya
         // sendiri yang aktif + request yang MENUNGGU REVIEW dia (Sales Internal,
-        // Fase 2 routing pipeline) — sebelumnya role ini tidak dapat badge sama sekali.
+        // Fase 2 routing pipeline) - sebelumnya role ini tidak dapat badge sama sekali.
         const [{ data: ownReminders }, { data: awaitingReview }] = await Promise.all([
           supabase.from('reminders')
             .select('id, project_name, category, due_date, status, sales_name, created_at')
@@ -2223,7 +2223,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
       } else { setReminderNotifs([]); }
     } catch (e) { console.error('[notif] reminder fetch error:', e); }
 
-    // ── 4. Form Review ──
+    // 4. Form Review
     try {
       if (isAdmin) {
         // Admin/superadmin: semua review yang belum di-grade
@@ -2254,7 +2254,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
       } else { setReviewNotifs([]); }
     } catch (e) { console.error('[notif] review fetch error:', e); }
 
-    // ── 5. Personal / System Notifications (from `notifications` table) ──
+    // 5. Personal / System Notifications (from `notifications` table)
     try {
       const { data: pn } = await supabase
         .from('notifications')
@@ -2302,7 +2302,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
   };
 
   // Total = jumlah chip yg terlihat (Ticket + Require + Reminder + Review) SAJA.
-  // personalNotifs (tabel notifications) dulu ikut dihitung tapi tak punya chip →
+  // personalNotifs (tabel notifications) dulu ikut dihitung tapi tak punya chip
   // total tak cocok dgn angka chip. Sebagian personalNotifs juga duplikat dari
   // badge kategori (mis. badge Manager/Supervisor). Dikeluarkan dari total.
   const totalCount = ticketNotifs.length + requireNotifs.length + reminderNotifs.length + reviewNotifs.length;
@@ -2358,7 +2358,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
   );
 }
 
-// ─── BrandPicSettingContent (reusable inline, no overlay) ────────────────────
+// BrandPicSettingContent (reusable inline, no overlay)
 export function BrandPicSettingContent() {
   const [brandUsers, setBrandUsers] = useState<{id:string;full_name:string;sales_division?:string}[]>([]);
   const [mappings, setMappings] = useState<Record<string, string>>({});
@@ -2464,7 +2464,7 @@ export function BrandPicSettingContent() {
   );
 }
 
-// ─── AdminPanelModal (unified: Settings + User Management + PIC Brand) ───────
+// AdminPanelModal (unified: Settings + User Management + PIC Brand)
 
 export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
   const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster'>(initialTab);
@@ -2588,13 +2588,13 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
   );
 }
 
-// ─── Inline variants (no fixed overlay, used inside AdminPanelModal) ──────────
+// Inline variants (no fixed overlay, used inside AdminPanelModal)
 
 /**
  * Strip info di puncak tiap bagian Admin Panel.
  *
- * Sebelumnya tiap bagian memakai warnanya sendiri — sky untuk KPI Roster,
- * teal untuk yang lain — sehingga berpindah tab terasa seperti berpindah
+ * Sebelumnya tiap bagian memakai warnanya sendiri - sky untuk KPI Roster,
+ * teal untuk yang lain - sehingga berpindah tab terasa seperti berpindah
  * aplikasi. Satu bentuk untuk semuanya, mengikuti bahasa visual halaman
  * Profil: netral, dengan angka penting di kanan.
  */
@@ -2620,7 +2620,7 @@ function StripInfo({ icon, judul, keterangan, angka, satuan }: {
 }
 
 
-// ─── KpiRosterInline ─────────────────────────────────────────────────────────
+// KpiRosterInline
 export function KpiRosterInline() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -2672,7 +2672,7 @@ export function KpiRosterInline() {
     if (!members.length) return null;
     const aktif = members.filter(u => u.kpi_enabled !== false).length;
     return (
-      // Kartu putih di atas latar slate — bentuk yang sama dengan Kartu di
+      // Kartu putih di atas latar slate - bentuk yang sama dengan Kartu di
       // halaman Profil, supaya berpindah antar bagian tidak terasa seperti
       // berpindah aplikasi.
       <div className="mb-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -2834,7 +2834,7 @@ export function AccountSettingsInline() {
    * Nilai AKSES yang sedang dipilih di form Edit.
    *
    * Dulu ini tombol di kolom tersendiri pada tabel, yang berarti satu klik
-   * langsung mengubah hak akses tanpa konfirmasi apa pun — mudah tersenggol
+   * langsung mengubah hak akses tanpa konfirmasi apa pun - mudah tersenggol
    * saat menggulir daftar 74 akun. Sekarang ia jadi bagian form Edit dan baru
    * berlaku saat "Simpan Perubahan" ditekan, sama seperti field lainnya.
    */
@@ -2931,7 +2931,7 @@ export function AccountSettingsInline() {
     }
 
     setSaving(true);
-    // Marketing & Sales divisi IVP/MVI = "Sales Internal" utk routing pipeline —
+    // Marketing & Sales divisi IVP/MVI = "Sales Internal" utk routing pipeline -
     // request mereka sendiri (project direct ke user) tidak boleh kena gerbang
     // review internal. Auto-set di sini supaya admin tidak perlu toggle manual.
     const isInternalSales = newUser.divisi === 'Marketing' || (newUser.divisi === 'Sales' && ['IVP', 'MVI', 'MLDS'].includes(newUser.sales_division));
@@ -3453,10 +3453,10 @@ export function UserManagementInline() {
       // Query terpisah & tahan-error: jika kolom atasan_id belum ada (migration belum jalan),
       // ini hanya error sendiri tanpa mematahkan load user utama.
       supabase.from('users').select('id, atasan_id'),
-      // Routing pipeline (Fase 1) — tahan-error bila tabel/setting belum ada.
+      // Routing pipeline (Fase 1) - tahan-error bila tabel/setting belum ada.
       supabase.from('product_team_map').select('id,product_type,team_types').order('product_type'),
       supabase.from('app_settings').select('value').eq('key', 'manager_user_id').maybeSingle(),
-      // Flag Internal/External Sales — tahan-error bila kolom belum ada.
+      // Flag Internal/External Sales - tahan-error bila kolom belum ada.
       supabase.from('users').select('id, is_internal_sales'),
     ]);
     if (usersRes.data) {
@@ -3557,7 +3557,7 @@ export function UserManagementInline() {
     return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}>{cfg.icon} {u.jabatan}</span>;
   };
 
-  // ─── Struktur Organisasi (atasan_id) helpers ──────────────────────────────
+  // Struktur Organisasi (atasan_id) helpers
   const orgGroupOf = (u: User | undefined): 'Sales' | 'Marketing' | 'PTS' | 'Lainnya' => {
     if (!u) return 'Lainnya';
     const tt = (u.team_type || '').toLowerCase();
@@ -3573,7 +3573,7 @@ export function UserManagementInline() {
     PTS:       { bg: '#E1F5EE', color: '#085041' },
     Lainnya:   { bg: '#F1EFE8', color: '#444441' },
   };
-  // ── Routing pipeline: tipe produk → TIM (bukan orang) + akun Manager ──
+  // Routing pipeline: tipe produk  TIM (bukan orang) + akun Manager
   const toggleProdTeamType = (tt: string) => {
     setProdTeamTypes(prev => prev.includes(tt) ? prev.filter(x => x !== tt) : [...prev, tt]);
   };
@@ -3599,7 +3599,7 @@ export function UserManagementInline() {
     else notify('success', 'Akun Manager disimpan!');
     setSavingMgr(false);
   };
-  // Supervisor tim dicari LIVE dari Struktur Organisasi (team_type + jabatan=Supervisor) —
+  // Supervisor tim dicari LIVE dari Struktur Organisasi (team_type + jabatan=Supervisor) -
   // tidak disimpan, jadi otomatis benar walau supervisornya berganti orang.
   const getSupervisorsForTeam = (teamType: string): string =>
     allUsers.filter(u => u.team_type === teamType && u.jabatan === 'Supervisor').map(u => u.full_name).join(', ') || '— (belum ada Supervisor di tim ini)';
@@ -3663,7 +3663,7 @@ export function UserManagementInline() {
   const ivpByDiv: Record<string, typeof divIvpMaps> = {};
   divIvpMaps.forEach(m => { if (!ivpByDiv[m.sales_division]) ivpByDiv[m.sales_division] = []; ivpByDiv[m.sales_division].push(m); });
 
-  // Group IVP/MVI mappings by person (ivp_id) — each person shows all divisions they handle
+  // Group IVP/MVI mappings by person (ivp_id) - each person shows all divisions they handle
   const ivpByUser: Record<string, { user: User | undefined; group: 'IVP' | 'MVI'; maps: typeof divIvpMaps }> = {};
   divIvpMaps.forEach(m => {
     if (!ivpByUser[m.ivp_id]) {
@@ -3744,7 +3744,7 @@ export function UserManagementInline() {
                * Penelusuran berangkat dari __root__, yaitu orang tanpa atasan.
                * Rantai yang melingkar (A atasan B, B atasan A) tidak pernah
                * tersambung ke akar mana pun, jadi anggotanya lenyap dari layar
-               * tanpa pesan apa pun — bukan membeku, tapi justru lebih sulit
+               * tanpa pesan apa pun - bukan membeku, tapi justru lebih sulit
                * disadari. Yang hilang begini juga tidak masuk rekap siapa pun.
                *
                * Dihitung tanpa filter pencarian, supaya peringatannya tidak
@@ -4189,4 +4189,4 @@ export function BrandPicSettingInline() {
   return <BrandPicSettingContent />;
 }
 
-// ─── Main Dashboard ───────────────────────────────────────────────────────────
+// Main Dashboard

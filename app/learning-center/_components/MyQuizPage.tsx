@@ -97,7 +97,7 @@ function QuizPlayer({ session, user, attempt, onDone }: {
     }
     // Tanpa ini, jawaban yang GAGAL tersimpan (RLS, jaringan putus, dst) tetap
     // terlihat terisi di layar (state lokal `answers` sudah ter-update di atas)
-    // padahal server tidak pernah menerimanya — persis pola yang membuat admin
+    // padahal server tidak pernah menerimanya - persis pola yang membuat admin
     // melihat "Tidak dijawab" walau peserta yakin sudah menjawab.
     if (error) {
       setDialog({ type: 'error', title: 'Jawaban Gagal Tersimpan', message: `Jawaban belum tersimpan ke server (${error.message}). Coba ketik ulang atau periksa koneksi internet kamu sebelum lanjut.` });
@@ -119,11 +119,11 @@ function QuizPlayer({ session, user, attempt, onDone }: {
     const timeTaken = Math.round((Date.now() - startTime.current) / 1000);
 
     if (isEssay) {
-      // Flush SEMUA jawaban essay yang ada di state lokal dulu — kalau peserta
+      // Flush SEMUA jawaban essay yang ada di state lokal dulu - kalau peserta
       // mengetik lalu langsung klik Submit tanpa pindah fokus dulu, onBlur pada
       // textarea belum sempat terpanggil dan teks itu belum pernah tersimpan ke
       // server sama sekali. Tanpa flush ini submit tetap "berhasil" tapi
-      // jawaban terakhir hilang — persis kasus "sudah jawab tapi admin lihat
+      // jawaban terakhir hilang - persis kasus "sudah jawab tapi admin lihat
       // Tidak dijawab".
       const flushResults = await Promise.all(
         questions.map(q => {
@@ -421,7 +421,7 @@ export function MyQuizPage({ user }: { user: User }) {
     (a ?? []).forEach((att: any) => { map[att.quiz_session_id] = att; });
     setActiveAttempts(map);
 
-    // Fetch submitted attempts — used to disable button when allow_retake=false
+    // Fetch submitted attempts - used to disable button when allow_retake=false
     const { data: submitted } = await supabase
       .from('lc_quiz_attempts')
       .select('quiz_session_id')  // grading_status tidak dipakai di sini; jangan disebut agar tidak gagal sebelum migrasi

@@ -1,8 +1,8 @@
 /**
- * lib/admin-users.ts — pemanggil /api/admin/users dari klien.
+ * lib/admin-users.ts - pemanggil /api/admin/users dari klien.
  *
  * Operasi yang menyentuh kolom hak akses (role, team_type, allow_incentive_input,
- * allowed_menus) WAJIB lewat sini — kolom itu dibekukan untuk anon oleh trigger DB
+ * allowed_menus) WAJIB lewat sini - kolom itu dibekukan untuk anon oleh trigger DB
  * (sql/lock-users-privileged-columns.sql). Route server memverifikasi admin lalu
  * menulis pakai service-role. Mengembalikan { error? } seperti pola supabase.
  */
@@ -41,7 +41,7 @@ export async function adminSetIncentiveInput(userId: string, value: boolean): Pr
 }
 
 /**
- * Toggle "Full Access" — akses setara admin di modul data (Piket Showroom,
+ * Toggle "Full Access" - akses setara admin di modul data (Piket Showroom,
  * Learning Center, KPI Team, Form Review, Ticketing, Reminder Schedule, Daily
  * Report, Unit Movement, Project Progress) untuk akun Team PTS tertentu.
  * Lihat lib/constants.ts hasFullAccess() dan sql/user-full-access-toggle.sql.

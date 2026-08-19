@@ -5,7 +5,7 @@ import { ProjectDetailView } from '../../_components/ProjectDetailView';
 import { ProjectDetail, THEME, PALETTE, fontMono, STATUS_CONFIG, formatDatetime } from '../../_components/shared';
 
 /**
- * Halaman share View-Only — PUBLIK, tanpa login.
+ * Halaman share View-Only - PUBLIK, tanpa login.
  * Data diambil dari /api/project-progress/share/<token> (service_role di server),
  * jadi halaman ini tidak pernah menyentuh supabase anon key maupun session.
  * Murni baca: tidak ada satu pun kontrol edit di sini.

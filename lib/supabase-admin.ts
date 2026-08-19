@@ -1,9 +1,9 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 /**
- * lib/supabase-admin.ts — Supabase client KHUSUS server (route handler).
+ * lib/supabase-admin.ts - Supabase client KHUSUS server (route handler).
  *
- * Memakai SERVICE_ROLE key bila tersedia → bypass RLS untuk operasi tepercaya
+ * Memakai SERVICE_ROLE key bila tersedia  bypass RLS untuk operasi tepercaya
  * di server (baca hash password, kelola session, dll) tanpa membuka tabel
  * sensitif ke anon key yang ikut ter-bundle di browser.
  *
@@ -21,7 +21,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
  * Bawaannya tetap fallback agar deployment yang sedang berjalan tidak mati
  * mendadak hanya karena berkas ini berubah.
  *
- * JANGAN diimpor dari komponen klien — hanya untuk kode server.
+ * JANGAN diimpor dari komponen klien - hanya untuk kode server.
  */
 let cached: SupabaseClient | null = null;
 let sudahDiperingatkan = false;

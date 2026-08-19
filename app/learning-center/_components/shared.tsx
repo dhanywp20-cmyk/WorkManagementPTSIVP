@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ModalPortal } from '@/components/shared';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Types
 
 export interface User {
   id: string;
@@ -43,7 +43,7 @@ export interface Question {
   difficulty: 'easy' | 'medium' | 'hard';
   batch_name?: string | null;
   created_at: string;
-  // ── Essay addition (non-breaking; defaults to 'abcd' for all existing rows) ──
+  // Essay addition (non-breaking; defaults to 'abcd' for all existing rows)
   question_type?: 'abcd' | 'essay';
   model_answer?: string | null; // kunci/referensi jawaban essay, untuk bantu admin menilai manual
 }
@@ -65,7 +65,7 @@ export interface QuizSession {
   target_user_ids: string[] | null;
   open_at: string | null;
   close_at: string | null;
-  // ── Essay addition ──
+  // Essay addition
   session_type?: 'abcd' | 'essay';
 }
 
@@ -81,7 +81,7 @@ export interface QuizAttempt {
   passed: boolean | null;
   time_taken_sec: number | null;
   is_submitted: boolean;
-  // ── Essay addition: attempt tetap is_submitted=true, tapi belum final sampai admin nilai ──
+  // Essay addition: attempt tetap is_submitted=true, tapi belum final sampai admin nilai
   grading_status?: 'auto' | 'pending_review' | 'graded';
   graded_by?: string | null;
   graded_at?: string | null;
@@ -93,10 +93,10 @@ export interface AnswerRecord {
   question_id: string;
   answer: string;
   is_correct: boolean;
-  // ── Essay addition ──
+  // Essay addition
   essay_text?: string | null;
-  manual_score?: number | null; // 0-100 per soal — SKOR FINAL, diisi/dikoreksi admin
-  // ── AI grading addition — SARAN saja, tidak pernah jadi skor final sendiri ──
+  manual_score?: number | null; // 0-100 per soal - SKOR FINAL, diisi/dikoreksi admin
+  // AI grading addition - SARAN saja, tidak pernah jadi skor final sendiri
   ai_score?: number | null;
   ai_feedback?: string | null;
 }
@@ -104,7 +104,7 @@ export interface AnswerRecord {
 export type AdminView = 'dashboard' | 'materi' | 'questions' | 'sessions' | 'team' | 'report';
 export type TeamView = 'my-quiz' | 'materi' | 'history' | 'score';
 
-// ─── Gemini (server-side proxy — API key tidak terekspos ke browser) ─────────
+// Gemini (server-side proxy - API key tidak terekspos ke browser)
 
 export const GEMINI_URL = '/api/ai/generate';
 
@@ -114,7 +114,7 @@ export const DIFF_COLOR: Record<string, string> = {
   hard: 'bg-rose-100 text-rose-700 border-rose-200',
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Helpers
 
 export const fmtDate = (d: string) =>
   new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -132,7 +132,7 @@ export function ScoreBadge({ score, passing }: { score: number | null; passing: 
   );
 }
 
-// ─── Essay grading status badge (dipakai di HistoryPage, ScorePage, ReportPage) ─
+// Essay grading status badge (dipakai di HistoryPage, ScorePage, ReportPage)
 export function GradingStatusBadge({ attempt }: { attempt: { grading_status?: string | null; passed: boolean | null } }) {
   if (attempt.grading_status === 'pending_review') {
     return (
@@ -174,7 +174,7 @@ export function SearchInput({ value, onChange, placeholder }: { value: string; o
   );
 }
 
-// ─── Gemini helpers ───────────────────────────────────────────────────────────
+// Gemini helpers
 
 export async function fileToBase64(f: File): Promise<string> {
   return new Promise((res, rej) => {
@@ -209,13 +209,13 @@ export async function generateWithGemini(prompt: string, pdfFile?: File | null):
 }
 
 /**
- * Minta AI menilai SATU jawaban essay terhadap kunci referensi — dipakai
+ * Minta AI menilai SATU jawaban essay terhadap kunci referensi - dipakai
  * TeamPage sebagai SARAN awal (bukan skor final) supaya admin sebisa mungkin
  * tinggal konfirmasi, bukan menilai semuanya dari nol. Skor final tetap
  * manual_score yang admin simpan sendiri (lihat lc_answers.ai_score vs
  * manual_score di sql/learning-center-ai-grading.sql).
  *
- * Melempar Error kalau AI gagal/keluaran tidak bisa dibaca — pemanggil wajib
+ * Melempar Error kalau AI gagal/keluaran tidak bisa dibaca - pemanggil wajib
  * menangkapnya dan tetap membiarkan admin menilai manual (AI tidak boleh
  * memblokir alur penilaian sama sekali).
  */
@@ -236,7 +236,7 @@ Balas HANYA dengan JSON valid persis format ini, tanpa markdown, tanpa teks lain
 
   const raw = await generateWithGemini(prompt);
   // Gemini kadang membungkus JSON dalam code fence ```json ... ``` walau
-  // sudah diminta "tanpa markdown" — dibersihkan dulu sebelum parse.
+  // sudah diminta "tanpa markdown" - dibersihkan dulu sebelum parse.
   const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
   let parsed: { score?: unknown; feedback?: unknown };
   try {
@@ -252,7 +252,7 @@ Balas HANYA dengan JSON valid persis format ini, tanpa markdown, tanpa teks lain
   };
 }
 
-// ─── Folder Tree ──────────────────────────────────────────────────────────────
+// Folder Tree
 
 export interface FolderNode {
   name: string;
@@ -287,7 +287,7 @@ export function countMaterials(node: FolderNode): number {
   return count;
 }
 
-// ─── App Dialog ───────────────────────────────────────────────────────────────
+// App Dialog
 
 export type DialogState = {
   type: 'info' | 'success' | 'error' | 'warning' | 'confirm';
@@ -350,7 +350,7 @@ export function AppDialog({ dialog, onClose }: { dialog: DialogState; onClose: (
   );
 }
 
-// ─── Icon SVGs ────────────────────────────────────────────────────────────────
+// Icon SVGs
 
 export function IcoView({ size = 12 }: { size?: number }) {
   return (
@@ -386,7 +386,7 @@ export function IcoOpen({ size = 12 }: { size?: number }) {
   );
 }
 
-// ─── Action Button Components ─────────────────────────────────────────────────
+// Action Button Components
 // Icon-only (w-7 h-7) when no children; text+icon when children provided (e.g. "Lihat Jawaban")
 
 const iconOnlyBase = 'inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed';

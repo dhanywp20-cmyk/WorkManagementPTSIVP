@@ -32,17 +32,17 @@ import {
   Toast, PageHeader, ConfirmDialog, type ConfirmState, ErrorState, StatCard,
 } from "@/components/shared";
 
-// ─── Ikon garis ───────────────────────────────────────────────────────────────
+// Ikon garis
 /**
  * Emoji dipakai sebagai ikon di banyak tempat, dan itu punya tiga masalah nyata:
  * bentuknya berbeda-beda di tiap sistem operasi (Windows, Android, iOS
- * menggambar 📦 dengan gaya yang sama sekali lain), ukuran & posisi vertikalnya
+ * menggambar  dengan gaya yang sama sekali lain), ukuran & posisi vertikalnya
  * tidak bisa dikendalikan CSS sehingga sering tidak sejajar dengan teks di
  * sebelahnya, dan warnanya tetap walau teks di sekitarnya berubah.
  *
  * Ikon garis di bawah memakai `currentColor`, jadi selalu selaras dengan warna
  * label induknya, ukurannya diatur lewat class, dan tampil identik di semua
- * perangkat. `aria-hidden` karena ikon ini hanya penguat visual — labelnya
+ * perangkat. `aria-hidden` karena ikon ini hanya penguat visual - labelnya
  * sudah ditulis di sebelahnya, jadi pembaca layar tidak perlu menyebutkannya.
  */
 const ICON_SHAPES: Record<string, React.ReactNode> = {
@@ -110,17 +110,17 @@ function TicketingSystemInner() {
    * Sebelumnya seluruh baris di modal berbagi SATU pasang state
    * (approvalTicket + approvalAssignee). Modal itu menampilkan semua ticket
    * "Waiting Approval" sekaligus, jadi satu nilai bersama untuk banyak baris
-   * membuat pilihan bisa bocor antar-ticket begitu state-nya tertinggal —
+   * membuat pilihan bisa bocor antar-ticket begitu state-nya tertinggal -
    * dan itu berujung ticket ke-assign ke orang yang salah. Dengan peta
    * per-id, tiap baris memegang pilihannya sendiri dan tidak mungkin
    * tertukar.
    */
   const [approvalAssignees, setApprovalAssignees] = useState<Record<string, string>>({});
-  /** Id ticket yang sedang diproses — mencegah klik ganda pada baris yang sama. */
+  /** Id ticket yang sedang diproses - mencegah klik ganda pada baris yang sama. */
   const [approvingId, setApprovingId] = useState<string | null>(null);
-  // Supervisor assign (tahap supervisor_assign) — Supervisor lanjut assign ke tim / sendiri
+  // Supervisor assign (tahap supervisor_assign) - Supervisor lanjut assign ke tim / sendiri
   const [supAssignTicket, setSupAssignTicket] = useState<Ticket | null>(null);
-  // Panel admin "Edit Detail & Re-route" — menggantikan kebiasaan membetulkan
+  // Panel admin "Edit Detail & Re-route" - menggantikan kebiasaan membetulkan
   // data langsung di Supabase, yang tidak meninggalkan jejak siapa mengubah apa.
   const [adminEditTicket, setAdminEditTicket] = useState<Ticket | null>(null);
   const [adminEditForm,   setAdminEditForm]   = useState<Record<string, unknown>>({});
@@ -156,13 +156,13 @@ function TicketingSystemInner() {
   const [filterStatus, setFilterStatus] = useState("All");
   const [selectedHandlerTeam, setSelectedHandlerTeam] = useState<"PTS" | "Services">("PTS");
 
-  // ── Auto-apply filter dari Global Search (?q=...) ──
+  // Auto-apply filter dari Global Search (?q=...)
   useEffect(() => {
     const q = searchParams.get('q');
     if (q) setSearchProject(q);
   }, [searchParams]);
 
-  // ── Pintasan "buat" dari dashboard (?buat=1) ──
+  // Pintasan "buat" dari dashboard (?buat=1)
   // Dashboard hanya menautkan; keputusan boleh-tidaknya tetap milik halaman
   // ini, supaya tidak ada dua tempat yang memutuskan hal yang sama.
   useEffect(() => {
@@ -403,7 +403,7 @@ function TicketingSystemInner() {
       .map(n => n.toLowerCase().trim());
     return tickets.filter((t) => {
       // Ticket yg di-route ke Supervisor ini (belum di-assign lanjut ke tim)
-      // TIDAK punya assign_name — id ada di assigned_supervisor_id, bukan
+      // TIDAK punya assign_name - id ada di assigned_supervisor_id, bukan
       // nama, jadi harus dicek terpisah dari kecocokan nama di bawah. Tanpa
       // ini, ticket yg baru di-route ke Supervisor cuma nongol di badge lonceng
       // atas (dari tabel notifications terpisah) tapi tidak pernah masuk
@@ -433,7 +433,7 @@ function TicketingSystemInner() {
     try {
       if (!silent) setTicketsLoading(true);
       const [membersData, usersData] = await Promise.all([
-        // team_members tidak ada — ambil dari users dengan role team
+        // team_members tidak ada - ambil dari users dengan role team
         supabase.from("users").select("id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan").in("role", ["team", "team_pts"]).order("full_name"),
         supabase.from("users").select("id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan, is_internal_sales"),
       ]);
@@ -465,7 +465,7 @@ function TicketingSystemInner() {
         const selfUsername = resolvedUser.username;
         const selfDiv = resolvedUser.sales_division;
         // selfFullName bisa berupa full name ("Handono Sugianto") atau nama singkat ("Handono")
-        // DB ticket sales_name sering menyimpan nama pertama atau username — cek keduanya
+        // DB ticket sales_name sering menyimpan nama pertama atau username - cek keduanya
         const selfFullName = (freshUser?.full_name || (resolvedUser as any).full_name) as string | undefined;
         const selfFirstName = selfFullName?.split(' ')[0]; // nama pertama saja
         // Helper: apakah ticket ini "milik" user ini
@@ -475,7 +475,7 @@ function TicketingSystemInner() {
           (selfFirstName && t.sales_name === selfFirstName) ||
           t.sales_name === selfUsername;
 
-        // ── SAFETY NET: selalu ambil semua ticket milik sendiri dulu via semua cara ──
+        // SAFETY NET: selalu ambil semua ticket milik sendiri dulu via semua cara
         const ownBase: Ticket[] = [];
         const addOwn = (t: Ticket) => { if (!ownBase.find(x => x.id === t.id)) ownBase.push(t); };
 
@@ -498,13 +498,13 @@ function TicketingSystemInner() {
         (byUsername ?? []).forEach(addOwn);
 
         // Sales Internal (IVP/MVI): lihat ticket dari semua divisi yang dia handle
-        // (division_ivp_mappings) — ini yang mewujudkan "CC ke list ticket" utk
+        // (division_ivp_mappings) - ini yang mewujudkan "CC ke list ticket" utk
         // Troubleshooting (fast-track, tanpa gerbang approval, tapi tetap visible).
         const isIVP = selfDiv === "IVP" || selfDiv === "MVI";
         if (isIVP) {
           // IVP/MVI guest: lihat ticket divisi yg dia handle, TAPI hanya utk BRAND yg dia
           // pegang (division_ivp_mappings.brand_type). Ticket lama tanpa brand / brand BOTH /
-          // guest dgn mapping legacy (brand_type null) → tetap tampil (backward compat).
+          // guest dgn mapping legacy (brand_type null)  tetap tampil (backward compat).
           const { data: ivpDivMaps } = await supabase.from("division_ivp_mappings").select("sales_division, brand_type").eq("ivp_id", resolvedUser.id);
           const myBrandMaps = (ivpDivMaps ?? []) as { sales_division: string; brand_type: string | null }[];
           const handledDivisions = Array.from(new Set(myBrandMaps.map(m => m.sales_division)));
@@ -519,7 +519,7 @@ function TicketingSystemInner() {
               if (match) addIVP(t);
             });
           }
-          // Ticket yg secara eksplisit di-CC ke guest ini (internal_sales_id / _2) — brand match.
+          // Ticket yg secara eksplisit di-CC ke guest ini (internal_sales_id / _2) - brand match.
           const { data: byInternalId } = await supabase.from("tickets").select("*, activity_logs(*)")
             .or(`internal_sales_id.eq.${resolvedUser.id},internal_sales_id_2.eq.${resolvedUser.id}`).order("created_at", { ascending: false });
           (byInternalId ?? []).forEach(addIVP);
@@ -542,7 +542,7 @@ function TicketingSystemInner() {
             supervisedDivisions.push(selfDiv);
           }
 
-          // Cek user_supervisor_mappings — user yang secara manual di-CC ke user ini
+          // Cek user_supervisor_mappings - user yang secara manual di-CC ke user ini
           const { data: userSupMapsData } = await supabase.from("user_supervisor_mappings")
             .select("user_id").eq("supervisor_id", resolvedUser.id);
           const manualSubordinateIds = new Set((userSupMapsData ?? []).map((m: any) => m.user_id as string));
@@ -611,7 +611,7 @@ function TicketingSystemInner() {
               }
             }
 
-            // ── Fallback: ticket tanpa sales_division tapi sales_name = bawahan (divisi valid) ──
+            // Fallback: ticket tanpa sales_division tapi sales_name = bawahan (divisi valid)
             // Menangkap ticket yang dibuat admin/superadmin untuk bawahan di divisi yang disupervisi,
             // dimana sales_division tidak diisi, sehingga query .in("sales_division") melewatinya.
             // subordinateNames sudah terfilter hanya bawahan yang divisinya valid (subordinateIds).
@@ -640,13 +640,12 @@ function TicketingSystemInner() {
                 // division_supervisor_mappings atau user_supervisor_mappings.
               }
             } catch { }
-            // ────────────────────────────────────────────────────────────────
 
             allDivTickets.forEach((t: Ticket) => {
               // Ticket milik sendiri selalu masuk
               if (isMyTicket(t)) { addUnique(t); return; }
 
-              // Cek via created_by username → apakah bawahan yang valid (divisi + tier)
+              // Cek via created_by username  apakah bawahan yang valid (divisi + tier)
               if (t.created_by && subordinateUsernames.has(t.created_by)) { addUnique(t); return; }
 
               // Cek via manual subordinate
@@ -654,7 +653,7 @@ function TicketingSystemInner() {
               if (ownerId && manualSubordinateIds.has(ownerId)) { addUnique(t); return; }
 
               // Cek via sales_name: userId harus ada di subordinateIds
-              // (sudah tervalidasi divisi + tier — tidak lolos hanya karena tier saja)
+              // (sudah tervalidasi divisi + tier - tidak lolos hanya karena tier saja)
               if (t.sales_name) {
                 const salesUserId = nameToId[t.sales_name];
                 if (salesUserId && subordinateIds.has(salesUserId)) { addUnique(t); return; }
@@ -675,7 +674,7 @@ function TicketingSystemInner() {
             }
           }
 
-          // Sort akhir berdasarkan created_at descending — gabungan ticket sendiri + bawahan
+          // Sort akhir berdasarkan created_at descending - gabungan ticket sendiri + bawahan
           finalTickets.sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
           setTickets(finalTickets);
           if (selectedTicket && !finalTickets.find((t: Ticket) => t.id === selectedTicket.id)) setSelectedTicket(null);
@@ -699,7 +698,7 @@ function TicketingSystemInner() {
         try {
           // Ambil HANYA log milik ticket yang benar-benar tampil. Sebelumnya
           // seluruh isi activity_logs basis data Services ditarik lalu disaring
-          // di browser — log ticket organisasi lain ikut terunduh, dan
+          // di browser - log ticket organisasi lain ikut terunduh, dan
           // ukurannya tumbuh terus seiring umur platform.
           const idTampil = mergedTickets.map((t: Ticket) => t.id).filter(Boolean);
           const svcLogs: ActivityLog[] = [];
@@ -775,15 +774,15 @@ function TicketingSystemInner() {
       const isRoute = rawAssign.startsWith("SUP::");
       const routeSup = isRoute ? rawAssign.split("::") : null; // [_, id, nama]
       const resolvedAssignName = !isElevated ? "" : (isRoute ? "" : (rawAssign === "SELF" ? (currentUser?.full_name ?? "") : rawAssign));
-      // Ticket dari guest/team biasa → Waiting Approval; dari elevated → langsung Pending.
+      // Ticket dari guest/team biasa  Waiting Approval; dari elevated  langsung Pending.
       const ticketStatus = isElevated ? "Pending" : "Waiting Approval";
-      // SBU: Sales Internal (guest) yg pilih Sales External → ticket diatasnamakan
+      // SBU: Sales Internal (guest) yg pilih Sales External  ticket diatasnamakan
       // External tsb. created_by tetap Sales Internal (jejak pembuat).
       const meInternalSales = !!users.find((u) => u.id === currentUser?.id)?.is_internal_sales;
       const guestSBU = currentUser?.role === "guest" && meInternalSales && !!newTicket.sales_name?.trim();
-      // Brand: Sales External pilih brand → resolve Sales Internal utk CC + visibility
+      // Brand: Sales External pilih brand  resolve Sales Internal utk CC + visibility
       // (ticket = CC saja, tanpa gerbang approval). Kalau brand tak ter-mapping, ticket
-      // tetap dibuat (fast-track) — cuma tanpa CC brand.
+      // tetap dibuat (fast-track) - cuma tanpa CC brand.
       const ticketBrand: Brand | null = (currentUser?.role === "guest" && !meInternalSales) ? ((newTicket.brand as Brand | undefined) ?? null) : null;
       let brandInternalId: string | null = null;
       let brandInternalId2: string | null = null;
@@ -815,14 +814,14 @@ function TicketingSystemInner() {
         photo_name: photoName || null,
         reminder_id: (newTicket as any).reminder_id || null,
       };
-      // Kolom brand hanya ditulis kalau Sales External pilih brand — supaya create
+      // Kolom brand hanya ditulis kalau Sales External pilih brand - supaya create
       // ticket lain tetap jalan walau sql/brand-multi-internal.sql belum di-run.
       if (ticketBrand) {
         ticketData.brand = ticketBrand;
         ticketData.internal_sales_id = brandInternalId;
         ticketData.internal_sales_id_2 = brandInternalId2;
       }
-      // Route ke Supervisor → tandai supervisor_assign (SPV yg lanjut assign ke tim).
+      // Route ke Supervisor  tandai supervisor_assign (SPV yg lanjut assign ke tim).
       if (isRoute && routeSup) {
         ticketData.routing_status = "supervisor_assign";
         ticketData.assigned_supervisor_id = routeSup[1];
@@ -831,7 +830,7 @@ function TicketingSystemInner() {
       if (error) throw error;
 
       // Catat pembuatan ke audit trail. Sebelumnya HANYA approve/assign yang
-      // dicatat, sehingga riwayat tiap ticket seolah tidak punya pangkal —
+      // dicatat, sehingga riwayat tiap ticket seolah tidak punya pangkal -
       // tidak terlihat siapa yang benar-benar membuatnya. Saat Sales Internal
       // mengajukan atas nama Sales External (SBU), keduanya disebut supaya
       // jelas siapa penginput vs atas nama siapa.
@@ -848,10 +847,10 @@ function TicketingSystemInner() {
         }).catch(() => {});
       }
 
-      // ── Kirim WA notifikasi ke semua admin & superadmin jika butuh approval ──
-      // Hanya role guest dan team yang butuh approval → trigger WA ke admin
+      // Kirim WA notifikasi ke semua admin & superadmin jika butuh approval
+      // Hanya role guest dan team yang butuh approval  trigger WA ke admin
       if (!isElevated) {
-        // Pesan menyebut STATUS ticket-nya, bukan mekanisme internal (WA ke siapa) —
+        // Pesan menyebut STATUS ticket-nya, bukan mekanisme internal (WA ke siapa) -
         // yang ditunggu user adalah kabar tiketnya, bukan detail cara sistem memberi tahu.
         setLoadingMessage("Ticket sedang diproses & menunggu approval...");
         try {
@@ -861,7 +860,7 @@ function TicketingSystemInner() {
             .in("role", ["admin", "superadmin"])
             .not("phone_number", "is", null)
             .neq("phone_number", "");
-          // Manager — role='team' TIDAK ke-cover query role admin di atas, jadi
+          // Manager - role='team' TIDAK ke-cover query role admin di atas, jadi
           // ditambah terpisah supaya notifikasi ke Manager datang BERSAMAAN
           // dengan admin (bukan menyusul). Dua sumber, dedup by id:
           //   1. akun Team PTS ber-toggle "Full Access" (cara yang disarankan)
@@ -903,7 +902,7 @@ function TicketingSystemInner() {
             }
           }
         } catch { }
-        // ── CC ke atasan + IVP berdasarkan divisi user yang submit ──
+        // CC ke atasan + IVP berdasarkan divisi user yang submit
         try {
           const ccDiv = (ticketData.sales_division as string | null) ?? currentUser?.sales_division ?? "";
           if (ccDiv && ccDiv !== "IVP" && currentUser?.id) {
@@ -926,7 +925,7 @@ function TicketingSystemInner() {
         } catch { }
       }
 
-      // ── Route ke Supervisor saat create (Manager/Admin) → WA + badge ke Supervisor ──
+      // Route ke Supervisor saat create (Manager/Admin)  WA + badge ke Supervisor
       if (isRoute && routeSup && insertedTicket?.id) {
         try {
           const supId = routeSup[1], supName = routeSup[2] ?? "";
@@ -942,7 +941,7 @@ function TicketingSystemInner() {
         } catch { }
       }
 
-      // ── Kirim WA ke handler jika ticket langsung di-assign ke anggota tim (bukan self/route) ──
+      // Kirim WA ke handler jika ticket langsung di-assign ke anggota tim (bukan self/route)
       if (resolvedAssignName && rawAssign !== "SELF") {
         setLoadingMessage("Ticket sedang diproses...");
         try {
@@ -1056,7 +1055,7 @@ function TicketingSystemInner() {
    * Ticket & handler diterima sebagai ARGUMEN, bukan dibaca dari state bersama.
    * Modal approval menampilkan banyak ticket sekaligus; membaca state bersama
    * membuat hasilnya bergantung pada state yang mungkin sudah berubah/tertinggal
-   * saat proses async berjalan — persis yang membuat ticket ke-assign ke orang
+   * saat proses async berjalan - persis yang membuat ticket ke-assign ke orang
    * yang salah. Dengan argumen eksplisit, yang diproses selalu baris yang
    * benar-benar diklik.
    */
@@ -1067,8 +1066,8 @@ function TicketingSystemInner() {
     try {
       setApprovingId(tk.id);
       setUploading(true);
-      // ── Route ke Supervisor: approve tapi belum assign ke handler. Supervisor
-      //    yang lanjut assign ke anggota tim (atau kerjakan sendiri). ────────────
+      // Route ke Supervisor: approve tapi belum assign ke handler. Supervisor
+      //    yang lanjut assign ke anggota tim (atau kerjakan sendiri).
       if (asg.startsWith("SUP::")) {
         const [, supId, supName] = asg.split("::");
         const { error: routeErr } = await supabase.from("tickets").update({
@@ -1113,7 +1112,7 @@ function TicketingSystemInner() {
           void createNotification({ user_id: creatorUser.id, type: 'ticket', title: `🎫 Ticket disetujui`, body: `${tk.project_name} — ditugaskan ke ${asg}`, action_url: '/ticketing', ref_id: tk.id, created_by: currentUser?.full_name || '' });
         }
       }
-      // ── WA ke handler yang di-assign ──────────────────────────────────────
+      // WA ke handler yang di-assign
       try {
         // Cari handler dari teamMembers state (sudah load dari users)
         const tm = teamMembers.find(m => m.name === asg);
@@ -1151,7 +1150,7 @@ function TicketingSystemInner() {
         console.warn('[ticket] WA to handler (approval) failed:', err?.message);
         notify('error', 'WA ke handler gagal dikirim. Ticket berhasil di-approve.');
       }
-      // ── CC ke atasan + IVP berdasarkan divisi creator ticket ──
+      // CC ke atasan + IVP berdasarkan divisi creator ticket
       try {
         const creatorUser = tk.created_by ? users.find((u) => u.username === tk.created_by) : null;
         const ccDiv = (tk as any).sales_division ?? creatorUser?.sales_division ?? "";
@@ -1172,14 +1171,13 @@ function TicketingSystemInner() {
           }
         }
       } catch { }
-      // ─────────────────────────────────────────────────────────────────────
       selesaikanSatuApproval(tk.id);
       await fetchData();
       notify("success", `Ticket approved & assigned to ${asg}`);
     } catch (err: any) { notify("error", "Error: " + err.message); } finally { setUploading(false); setApprovingId(null); }
   };
 
-  // ── Supervisor: assign final ticket yg di-route ke dia → anggota tim / sendiri ──
+  // Supervisor: assign final ticket yg di-route ke dia  anggota tim / sendiri
   const handleSupervisorAssignTicket = async () => {
     if (!supAssignTicket || !supAssignTo) { notify("error", "Pilih anggota tim atau kerjakan sendiri!"); return; }
     setSupAssignSaving(true);
@@ -1235,7 +1233,7 @@ function TicketingSystemInner() {
   /**
    * Simpan perubahan admin: koreksi field dan/atau pengalihan pekerjaan.
    *
-   * Urutannya disengaja — simpan dulu, baru beri tahu. Kalau WA dikirim
+   * Urutannya disengaja - simpan dulu, baru beri tahu. Kalau WA dikirim
    * duluan lalu penyimpanannya gagal, orang sudah terlanjur diberi tahu soal
    * perubahan yang tidak pernah terjadi.
    */
@@ -1253,7 +1251,7 @@ function TicketingSystemInner() {
       const payload: Record<string, unknown> = {};
       for (const x of perubahan) payload[x.key] = adminEditForm[x.key] === '' ? null : adminEditForm[x.key];
 
-      // ── Pengalihan pekerjaan ──
+      // Pengalihan pekerjaan
       let penerimaBaru = '';
       let labelTujuanLama = t.assign_name || '';
       if (adaReroute) {
@@ -1269,7 +1267,7 @@ function TicketingSystemInner() {
           payload.routing_status = null;
           payload.assigned_supervisor_id = null;
           payload.assign_name = nama;
-          // Status hanya diturunkan ke Pending kalau memang belum jalan —
+          // Status hanya diturunkan ke Pending kalau memang belum jalan -
           // dan bolehReroute sudah menjamin itu, jadi tidak ada progress hilang.
           payload.status = 'Pending';
           penerimaBaru = nama;
@@ -1282,7 +1280,7 @@ function TicketingSystemInner() {
       const { error } = await supabase.from('tickets').update(payload).eq('id', t.id);
       if (error) throw error;
 
-      // ── Catat ke audit ──
+      // Catat ke audit
       const catatan = [
         adaReroute ? `Re-route: ${labelTujuanLama || '(belum ada)'} → ${penerimaBaru}` : '',
         perubahan.length ? ringkasPerubahan(perubahan) : '',
@@ -1294,7 +1292,7 @@ function TicketingSystemInner() {
         notes: catatan,
       });
 
-      // ── Beri tahu lewat WA ──
+      // Beri tahu lewat WA
       // Dikirim ke penerima BARU kalau dialihkan, dan ke penanganya sekarang
       // kalau cuma koreksi data. Keduanya sama-sama perlu tahu.
       const targetNama = penerimaBaru || t.assign_name || '';
@@ -1397,7 +1395,7 @@ function TicketingSystemInner() {
         assigned_to_services: false,
         file_url: "", file_name: "", photo_url: "", photo_name: ""
       }]);
-      // ── WA ke handler saat reopen ───────────────────────────────────────────
+      // WA ke handler saat reopen
       try {
         // Cari handler dari teamMembers state (sudah load dari users)
         const rhTM = teamMembers.find(m => m.name === reopenAssignee);
@@ -1419,7 +1417,6 @@ function TicketingSystemInner() {
           await sendWANotif({ type: "reminder_wa", target: reopenHandler.phone_number, message: waMsg });
         }
       } catch { }
-      // ─────────────────────────────────────────────────────────────────────
       await fetchData();
       setLoadingMessage("✅ Ticket berhasil dibuka kembali!");
       setTimeout(() => {
@@ -1510,7 +1507,7 @@ function TicketingSystemInner() {
         if (onsiteHasSchedule) autoNotes = `Dijadwalkan Onsite pada ${newActivity.onsite_schedule_date} pukul ${newActivity.onsite_schedule_hour}:${newActivity.onsite_schedule_minute} WIB.`;
         else autoNotes = "Tim sedang Onsite ke lokasi customer.";
       } else if (isSvcSimpleCalc) autoNotes = svcSimpleNotes[newActivity.new_status] || newActivity.new_status;
-      // Onsite + punya jadwal → status ticket = "Onsite" (bukan Pending)
+      // Onsite + punya jadwal  status ticket = "Onsite" (bukan Pending)
       // Activity log juga dicatat sebagai "Onsite"
       const effectiveStatus = newActivity.new_status;
       const useAutoNotes = isSimpleStatusCalc || isSvcSimpleCalc;
@@ -1540,18 +1537,18 @@ function TicketingSystemInner() {
         if (svcErr) throw new Error(`Gagal memperbarui ticket di basis data Services: ${svcErr.message}`);
         // Salin status ke basis data PTS supaya kedua sisi tidak berbeda. Gagal
         // di sini tidak membatalkan pekerjaan Services yang sudah tercatat,
-        // tapi harus terlihat — bukan hilang tanpa jejak.
+        // tapi harus terlihat - bukan hilang tanpa jejak.
         const { error: ptsErr } = await supabase.from("tickets").update({ services_status: effectiveStatus }).eq("id", selectedTicket.id);
         if (ptsErr) notify("error", `Status tersimpan di Services, tapi gagal disalin ke PTS: ${ptsErr.message}. Refresh lalu ulangi.`);
       } else {
         updateData.status = effectiveStatus;
         if (newActivity.assign_to_services) {
-          // ── ASSIGN TO TEAM SERVICES ──
+          // ASSIGN TO TEAM SERVICES
           // Dua basis data terpisah, tanpa transaksi bersama. Dulu urutannya
           // terbalik: basis data PTS langsung ditandai "sudah pindah ke Team
           // Services", lalu penyalinan ke basis data Services dikerjakan di
-          // dalam try/catch kosong. Kalau penyalinan itu gagal — jaringan
-          // putus, kolom berubah, kredensial salah — ticket hilang dari kedua
+          // dalam try/catch kosong. Kalau penyalinan itu gagal - jaringan
+          // putus, kolom berubah, kredensial salah - ticket hilang dari kedua
           // sisi: PTS menganggap bukan urusannya lagi, Services tidak pernah
           // menerimanya, dan tidak ada satu pun pesan galat.
           //
@@ -1598,7 +1595,7 @@ function TicketingSystemInner() {
 
           if (mirrorBerhasil) {
             // current_team pindah ke Team Services, services_status = Waiting Approval.
-            // assign_name TETAP handler PTS terakhir — admin Services yang akan
+            // assign_name TETAP handler PTS terakhir - admin Services yang akan
             // meneruskannya ke anggota mereka sendiri.
             updateData.current_team = "Team Services";
             updateData.services_status = "Waiting Approval";
@@ -1630,8 +1627,8 @@ function TicketingSystemInner() {
         const { error: updateError } = await supabase.from("tickets").update(updateData).eq("id", selectedTicket.id);
         if (updateError) throw new Error(`Failed to update ticket: ${updateError.message}`);
 
-        // ── PENDING ACTION: perpanjang deadline Overdue sesuai hari yg dipilih ──
-        // Kendala bisa dari sisi user → team boleh menggeser deadline supaya
+        // PENDING ACTION: perpanjang deadline Overdue sesuai hari yg dipilih
+        // Kendala bisa dari sisi user  team boleh menggeser deadline supaya
         // ticket tidak dihitung overdue. Pakai tabel overdue_settings yg sudah ada
         // (due_date absolut = sekarang + N hari).
         if (newActivity.new_status === "Pending Action") {
@@ -1650,7 +1647,7 @@ function TicketingSystemInner() {
           }
         }
 
-        // ── AUTO-CREATE REMINDER saat status Onsite ──────────────────────────
+        // AUTO-CREATE REMINDER saat status Onsite
         // Jika team update status ke Onsite, otomatis buat reminder di tabel
         // reminders sebagai kategori Troubleshooting.
         // Jika ada jadwal (onsite_use_schedule + date), gunakan tanggal tersebut.
@@ -1676,7 +1673,7 @@ function TicketingSystemInner() {
             const reminderPayload = {
               project_name: selectedTicket.project_name,
               description: `[AUTO dari Ticketing] Issue: ${selectedTicket.issue_case}${selectedTicket.product ? ` | Product: ${selectedTicket.product}` : ""}`,
-              // assigned_to = username (FK ke users.username) — wajib untuk filter notif
+              // assigned_to = username (FK ke users.username) - wajib untuk filter notif
               assigned_to: assignedUsername,
               // assign_name = full name untuk display
               assign_name: assignedName,
@@ -1699,10 +1696,9 @@ function TicketingSystemInner() {
             const { error: reminderErr } = await supabase.from("reminders").insert([reminderPayload]);
           } catch { }
         }
-        // ────────────────────────────────────────────────────────────────────
       }
-      // ── Refresh OPTIMIS: update selectedTicket + list saat itu juga supaya
-      // status baru langsung terlihat tanpa perlu refresh manual (fix keluhan). ──
+      // Refresh OPTIMIS: update selectedTicket + list saat itu juga supaya
+      // status baru langsung terlihat tanpa perlu refresh manual (fix keluhan).
       const optimisticLog = { ...activityData, id: `tmp-${Date.now()}`, created_at: new Date().toISOString() } as any;
       setSelectedTicket(prev => prev && prev.id === selectedTicket.id ? {
         ...prev,
@@ -1759,7 +1755,7 @@ function TicketingSystemInner() {
         });
         if (!credRes.ok) { const j = await credRes.json().catch(() => ({})); throw new Error(j.error || 'Gagal set password'); }
       }
-      // team_members table tidak digunakan — data handler dari tabel users langsung
+      // team_members table tidak digunakan - data handler dari tabel users langsung
       setNewUser({ username: "", password: "", full_name: "", team_member: "", role: "team", team_type: "Team PTS IVP" });
       await fetchData();
       notify("success", "User created successfully!");
@@ -2220,7 +2216,7 @@ function TicketingSystemInner() {
    * "Pending" bukan satu status, melainkan beberapa: Pending, Pending Action,
    * dan Pending Check. Kartu ringkasan dulu mencocokkannya PERSIS dengan
    * "Pending" saja, sehingga ticket yang duduk di Pending Action tidak
-   * terhitung di kartu mana pun — bukan pending, bukan in-progress, bukan
+   * terhitung di kartu mana pun - bukan pending, bukan in-progress, bukan
    * solved. Ia hilang begitu saja dari ringkasan, padahal justru status itulah
    * yang paling perlu ditindaklanjuti.
    */
@@ -2258,7 +2254,7 @@ function TicketingSystemInner() {
     return { data: divisionData, total: divisionData.reduce((sum, d) => sum + d.value, 0) };
   }, [tickets]);
 
-  // ── Product stats untuk mini donut chart ──────────────────────────
+  // Product stats untuk mini donut chart
   const productStats = useMemo(() => {
     const counts: Record<string, number> = {};
     tickets.forEach((t) => { if (t.product) counts[t.product] = (counts[t.product] || 0) + 1; });
@@ -2281,11 +2277,11 @@ function TicketingSystemInner() {
     return Array.from(new Set(names)).sort();
   }, [tickets]);
 
-  // Team yg boleh di-assign tiket = ASSIGNABLE_PTS_TEAMS (IVP/MVI — UMP dikecualikan,
-  // lihat lib/teams.ts). Manager dikecualikan — bukan handler teknis biasa.
+  // Team yg boleh di-assign tiket = ASSIGNABLE_PTS_TEAMS (IVP/MVI - UMP dikecualikan,
+  // lihat lib/teams.ts). Manager dikecualikan - bukan handler teknis biasa.
   const teamPTSMembers = useMemo(() => teamMembers.filter((m) => isAssignablePTSTeam(m.team_type) && m.jabatan !== "Manager"), [teamMembers]);
   const teamServicesMembers = useMemo(() => teamMembers.filter((m) => m.team_type === "Team Services" && m.jabatan !== "Manager"), [teamMembers]);
-  // Supervisor PTS — utk opsi "Route ke Supervisor" saat approve (tahap supervisor_assign).
+  // Supervisor PTS - utk opsi "Route ke Supervisor" saat approve (tahap supervisor_assign).
   const supervisorMembers = useMemo(() => teamMembers.filter((m) => isAssignablePTSTeam(m.team_type) && m.jabatan === "Supervisor"), [teamMembers]);
 
   useEffect(() => {
@@ -2329,7 +2325,7 @@ function TicketingSystemInner() {
 
   useEffect(() => { if (currentUser) fetchData(); }, [currentUser]);
 
-  // ── Realtime subscription: auto-update tanpa refresh ─────────────────────
+  // Realtime subscription: auto-update tanpa refresh
   useEffect(() => {
     if (!currentUser) return;
     // PTS DB realtime
@@ -2350,7 +2346,7 @@ function TicketingSystemInner() {
         fetchData(currentUser, true);
       })
       .subscribe();
-    // Polling fallback setiap 30 detik — juga silent
+    // Polling fallback setiap 30 detik - juga silent
     const pollInterval = setInterval(() => fetchData(currentUser, true), 30000);
     return () => {
       supabase.removeChannel(ptsCh);
@@ -2359,7 +2355,7 @@ function TicketingSystemInner() {
     };
   }, [currentUser]);
 
-  // ── SLA Auto-Escalation ──────────────────────────────────────────────────────
+  // SLA Auto-Escalation
   // Runs whenever tickets or overdueSettings change.
   // Finds tickets that exceed their SLA deadline and automatically marks them
   // as 'Overdue' in the DB so the Command Center and all clients see it in real-time.
@@ -2383,17 +2379,17 @@ function TicketingSystemInner() {
 
   const canCreateTicket = true;
   const canUpdateTicket = currentUser?.role !== "guest";
-  // canAccessAccountSettings TETAP admin/superadmin murni — khusus modal
+  // canAccessAccountSettings TETAP admin/superadmin murni - khusus modal
   // "Account Management" (buat akun, ganti password, daftar user), bukan
   // untuk aksi tiket biasa.
   const canAccessAccountSettings = currentUser?.role === "admin" || currentUser?.role === "superadmin";
   // Akun Team PTS dengan toggle "Full Access" aktif (lihat lib/constants.ts
-  // hasFullAccess) — mis. Dhany (Manager PTS) — boleh approve & assign ticket
+  // hasFullAccess) - mis. Dhany (Manager PTS) - boleh approve & assign ticket
   // (langsung ke team, route ke Supervisor, atau kerjakan sendiri) seperti admin.
   const isManagerPTS = hasFullAccess(currentUser);
   const canApproveAssign = canAccessAccountSettings || isManagerPTS;
   // Aksi kelola tiket sehari-hari (hapus, bulk-select, reminder cron, overdue
-  // setting) — BUKAN hak kelola akun. Dipisah dari canAccessAccountSettings
+  // setting) - BUKAN hak kelola akun. Dipisah dari canAccessAccountSettings
   // supaya Full Access tidak otomatis dapat modal Account Management.
   const canManageTickets = canApproveAssign;
 
@@ -2432,7 +2428,7 @@ function TicketingSystemInner() {
    *
    * Begitu ticket melewati "Pending", sudah ada orang yang menelepon customer,
    * datang ke lokasi, atau mulai memperbaiki. Memindahkannya saat itu bukan
-   * membetulkan salah route — itu membuang pekerjaan yang sudah terlanjur
+   * membetulkan salah route - itu membuang pekerjaan yang sudah terlanjur
    * dikerjakan, dan riwayatnya jadi menunjuk orang yang tidak mengerjakannya.
    */
   const bolehReroute = (t: Ticket): boolean => {
@@ -2522,7 +2518,7 @@ function TicketingSystemInner() {
           } catch (e: any) {
             // Sisi PTS sudah mengambil ticket ini kembali, jadi tidak ada yang
             // hilang. Yang tersisa cuma catatan di basis data Services yang
-            // belum ikut berubah — itu harus terlihat, bukan didiamkan.
+            // belum ikut berubah - itu harus terlihat, bukan didiamkan.
             notify("error", `Ticket sudah kembali ke PTS, tapi catatan di basis data Services gagal diperbarui (${e?.message ?? "penyebab tidak diketahui"}).`);
           }
           await fetchData();
@@ -3427,7 +3423,7 @@ function TicketingSystemInner() {
 
                            "Pending Action" dan "Pending Check" tidak ada di daftar
                            ini, jadi indexOf mengembalikan -1 dan SELURUH langkah
-                           tampak belum tercapai — ticket yang sudah melewati Call
+                           tampak belum tercapai - ticket yang sudah melewati Call
                            dan In Progress terlihat mundur ke titik awal begitu
                            di-set Pending Action. Padahal pekerjaannya tidak hilang;
                            yang terjadi cuma menunggu sesuatu.

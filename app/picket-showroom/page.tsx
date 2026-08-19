@@ -22,7 +22,7 @@ import { ViewDetailModal } from './_components/ViewDetailModal';
 import { exportToExcel } from './_components/excel-export';
 import { ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup } from '@/components/shared';
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// Main Page
 
 function PiketShowroomPageInner() {
   const searchParams = useSearchParams();
@@ -42,7 +42,7 @@ function PiketShowroomPageInner() {
   const [search,setSearch]=useState('');
   const [filterDay,setFilterDay]=useState<DayOfWeek|''>('');
 
-  // ── Auto-apply filter dari Global Search (?q=...) ──
+  // Auto-apply filter dari Global Search (?q=...)
   useEffect(() => {
     const q = searchParams.get('q');
     if (q) setSearch(q);
@@ -59,7 +59,7 @@ function PiketShowroomPageInner() {
 
   useEffect(()=>{ const u=getSession(); if(u) setCurrentUser(u as unknown as UserRow); },[]);
   // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
-  // (lihat lib/constants.ts hasFullAccess) — mis. Manager PTS yang mengelola
+  // (lihat lib/constants.ts hasFullAccess) - mis. Manager PTS yang mengelola
   // jadwal piket timnya sendiri.
   const isAdmin=hasFullAccess(currentUser);
 
@@ -68,10 +68,10 @@ function PiketShowroomPageInner() {
     setFetchError(null);
     const wk2=toKey(addDays(weekStart,7));
     try {
-      // ── Isolasi antar-Sales pada catatan kegiatan tamu ─────────────────────
+      // Isolasi antar-Sales pada catatan kegiatan tamu
       // piket_tamu_detail mencatat nama_sales & sales_division: siapa membawa
       // tamu mana, untuk project apa. Jadwal piketnya sendiri memang terbuka
-      // (itu roster PTS), tapi catatan kegiatannya tidak — Sales divisi lain
+      // (itu roster PTS), tapi catatan kegiatannya tidak - Sales divisi lain
       // tidak berkepentingan dengan daftar kunjungan pelanggan divisi tetangga.
       //
       // Batas dipasang DI QUERY, bukan saat render, supaya barisnya tidak
@@ -98,7 +98,7 @@ function PiketShowroomPageInner() {
         (plRes.data||[]).forEach((pl:{kegiatan_id:string;nama:string;watt:number})=>{(plByKg[pl.kegiatan_id]=plByKg[pl.kegiatan_id]||[]).push({nama:pl.nama||'',watt:pl.watt||0});});
         setKegiatanList((kgRes.data as KegiatanEntry[]).map(k=>({...k,produk_lain:plByKg[k.id||'']||[]})));
       }
-      // Holidays: optional — if table doesn't exist yet, silently ignore
+      // Holidays: optional - if table doesn't exist yet, silently ignore
       const hRes = await supabase.from('picket_holidays').select('date');
       if (hRes.data) setHolidays(hRes.data.map((h: any) => h.date));
     } catch (err: any) {
@@ -122,7 +122,7 @@ function PiketShowroomPageInner() {
 
   // Generate virtual rows untuk minggu yang belum ada di DB
   // FIX 1: Selalu tampilkan semua 10 hari kerja meski rolling name belum ada (PIC kosong)
-  // FIX 2: Hari yang sudah LEWAT (< hari ini) dan tidak ada di DB → tampil kosong tanpa rolling
+  // FIX 2: Hari yang sudah LEWAT (< hari ini) dan tidak ada di DB  tampil kosong tanpa rolling
   //         supaya perubahan rolling tidak meretroaktif mengubah data historis yang belum disave
   const effectiveRows = useMemo(()=>{
     const todayKey = toKey(new Date());
@@ -211,9 +211,9 @@ function PiketShowroomPageInner() {
     return `${h}:${m}`;
   };
 
-  // ── Holiday cascade ────────────────────────────────────────────────────────
+  // Holiday cascade
   // When a saved row's date is a holiday, its PIC is not consumed from the pool.
-  // The next non-holiday row takes that PIC instead — cascading forward.
+  // The next non-holiday row takes that PIC instead - cascading forward.
   const cascadedRows = useMemo(() => {
     if (holidays.length === 0) return effectiveRows;
     const holidaySet = new Set(holidays);

@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// Types
 
 export interface User {
   id: string;
@@ -64,7 +64,7 @@ export interface ProjectRequest {
   brand_display_pic_name?: string;
   /**
    * Display KEDUA untuk Ruangan 1. Disimpan di kolom tabel (bukan di `rooms`),
-   * karena Ruangan 1 memang tidak ikut JSONB — lihat
+   * karena Ruangan 1 memang tidak ikut JSONB - lihat
    * sql/design-project-brand-display-2.sql.
    */
   brand_display_2?: string;
@@ -78,7 +78,7 @@ export interface ProjectRequest {
   internal_sales_id?: string | null;   // Sales Internal reviewer utama / MVI saat brand BOTH
   internal_approved_by?: string | null;
   internal_approved_at?: string | null;
-  brand?: string | null;               // 'MVI' | 'IVP' | 'BOTH' — Marketing Brand pilihan Sales External
+  brand?: string | null;               // 'MVI' | 'IVP' | 'BOTH' - Marketing Brand pilihan Sales External
   internal_sales_id_2?: string | null; // reviewer kedua (IVP) saat brand BOTH
   internal_approved_at_2?: string | null; // approve reviewer kedua
   assigned_supervisor_id?: string | null; // Supervisor yg wajib assign lanjut ke tim (tahap supervisor_assign)
@@ -92,7 +92,7 @@ export interface RoomDetail {
   solution_product: string[];
   solution_other: string;
   brand_display: string;
-  /** Display kedua — satu ruangan bisa memakai dua brand display dengan PIC berbeda. */
+  /** Display kedua - satu ruangan bisa memakai dua brand display dengan PIC berbeda. */
   brand_display_2?: string;
   brand_display_2_pic_id?: string;
   brand_display_2_pic_name?: string;
@@ -163,13 +163,13 @@ export interface ProjectAttachment {
   revision_version?: number;
 }
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// Constants
 
 
-// WA notif terpusat di lib/wa.ts — re-export agar call-site lama tetap jalan.
+// WA notif terpusat di lib/wa.ts - re-export agar call-site lama tetap jalan.
 export { sendWANotif } from '@/lib/wa';
 
-// ── Hierarki jabatan (bawah → atas) ──────────────────────────────────────────
+// Hierarki jabatan (bawah  atas)
 export const JABATAN_TIER: Record<string, number> = {
   'Staff': 1, 'Supervisor': 2, 'Manager': 3,
   'Deputy General Manager': 4, 'General Manager': 5, 'Direktur': 6,
@@ -183,7 +183,7 @@ export const JABATAN_CC_RULES: Record<string, string[]> = {
   'Direktur':                [],
 };
 
-// ── CC ke atasan berdasarkan jabatan tier + IVP handler ──────────────────────
+// CC ke atasan berdasarkan jabatan tier + IVP handler
 export async function fetchWACCTargets(
   userId: string,
   salesDiv: string

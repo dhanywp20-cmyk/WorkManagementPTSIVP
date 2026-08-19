@@ -5,11 +5,11 @@ import { sendWA } from '@/lib/wa';
 export const dynamic = 'force-dynamic';
 
 /**
- * /api/cron/digest — ringkasan tenggat harian per orang, lewat WhatsApp.
+ * /api/cron/digest - ringkasan tenggat harian per orang, lewat WhatsApp.
  *
  * Platform ini penuh hal yang punya tenggat: target Project Progress, jadwal
  * reminder, garansi yang akan habis. Tapi sampai berkas ini ada, satu-satunya
- * pekerjaan terjadwal adalah eskalasi tiket — semua tenggat lain menunggu
+ * pekerjaan terjadwal adalah eskalasi tiket - semua tenggat lain menunggu
  * seseorang kebetulan membuka halaman yang tepat pada hari yang tepat.
  *
  * Kiriman ini mengubah platform dari menunggu dibuka menjadi mengingatkan
@@ -66,7 +66,7 @@ async function jalankan() {
   const hariIni = tanggalISO(0);
   const batas   = tanggalISO(HARI_KE_DEPAN);
 
-  // nama lengkap → daftar tenggat miliknya
+  // nama lengkap  daftar tenggat miliknya
   const perOrang = new Map<string, Item[]>();
   const catat = (nama: string | null | undefined, item: Item) => {
     const n = (nama ?? '').trim();
@@ -76,7 +76,7 @@ async function jalankan() {
     perOrang.set(n, arr);
   };
 
-  // ── Lokasi Project Progress yang targetnya mendekat / lewat ──
+  // Lokasi Project Progress yang targetnya mendekat / lewat
   //  Yang sudah selesai dilewati: mengingatkan target pada pekerjaan yang
   //  sudah rampung hanya membuat kiriman ini terasa tidak akurat.
   const { data: lokasi } = await supabase
@@ -101,7 +101,7 @@ async function jalankan() {
     if (l.sales_name && l.sales_name !== l.pic) catat(l.sales_name, item);
   }
 
-  // ── Reminder yang jatuh tempo dan belum selesai ──
+  // Reminder yang jatuh tempo dan belum selesai
   const { data: reminders } = await supabase
     .from('reminders')
     .select('project_name, address, assign_name, due_date, status, category')
@@ -123,7 +123,7 @@ async function jalankan() {
     return { penerima: 0, terkirim: 0, gagal: 0, catatan: 'tidak ada tenggat dalam jangkauan' };
   }
 
-  // ── Nomor WA, diambil sekali untuk semua penerima ──
+  // Nomor WA, diambil sekali untuk semua penerima
   const { data: users } = await supabase
     .from('users')
     .select('full_name, phone_number')
@@ -141,7 +141,7 @@ async function jalankan() {
     const wa = nomor.get(nama);
     if (!wa) { tanpaNomor++; continue; }
 
-    // Terlambat lebih dulu, lalu urut tanggal — yang paling mendesak dibaca
+    // Terlambat lebih dulu, lalu urut tanggal - yang paling mendesak dibaca
     // pertama, karena pesan panjang sering hanya terbaca beberapa baris awal.
     items.sort((a, b) =>
       (a.terlambat === b.terlambat ? 0 : a.terlambat ? -1 : 1) || a.tanggal.localeCompare(b.tanggal));

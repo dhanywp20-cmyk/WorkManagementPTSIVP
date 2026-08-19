@@ -93,7 +93,7 @@ export interface DailyReportTeamEntry {
   created_at: string;
 }
 
-// ─── Unified flat row untuk listing real-time ──────────────────────────────────
+// Unified flat row untuk listing real-time
 export interface LiveRow {
   source: 'reminder' | 'ticket' | 'manual';
   id: string;
@@ -127,7 +127,7 @@ export function formatLogTime(isoStr: string): string {
   return `${String(wib.getUTCHours()).padStart(2, '0')}:${String(wib.getUTCMinutes()).padStart(2, '0')}`;
 }
 
-// ─── Fetch semua reminder dari SEMUA team users (untuk listing real-time) ──────
+// Fetch semua reminder dari SEMUA team users (untuk listing real-time)
 export async function fetchAllReminders(opts: {
   date?: string;
   usernames?: string[];   // filter by assigned_to
@@ -164,7 +164,7 @@ export async function fetchAllReminders(opts: {
   } as any));
 }
 
-// ─── Fetch semua ticket activity_logs (untuk listing real-time) ────────────────
+// Fetch semua ticket activity_logs (untuk listing real-time)
 export async function fetchAllTickets(opts: {
   date?: string;
   usernames?: string[];
@@ -210,7 +210,7 @@ export async function fetchAllTickets(opts: {
   return Array.from(seen.values());
 }
 
-// ─── Fetch Reminder untuk 1 user + date (dipakai di form) ─────────────────────
+// Fetch Reminder untuk 1 user + date (dipakai di form)
 export async function fetchReminderActivities(username: string, date: string): Promise<ReminderActivity[]> {
   if (!username || !date) return [];
   const { data, error } = await supabase
@@ -237,7 +237,7 @@ export async function fetchReminderActivities(username: string, date: string): P
   }));
 }
 
-// ─── Fetch Ticket untuk 1 user + date (dipakai di form) ───────────────────────
+// Fetch Ticket untuk 1 user + date (dipakai di form)
 export async function fetchTicketActivities(username: string, date: string): Promise<TicketActivity[]> {
   if (!username || !date) return [];
   const startUTC = new Date(date + 'T00:00:00+07:00').toISOString();

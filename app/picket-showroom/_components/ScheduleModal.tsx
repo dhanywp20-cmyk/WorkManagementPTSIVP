@@ -27,7 +27,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
       if(data&&data.length>0){
         (data as PiketRow[]).forEach(s=>{if(na[s.week_start])na[s.week_start][s.day_of_week]=s.pic_ivp_id||s.pic_ump_id||s.pic_mvi_id||'';});
       }
-      // Pre-fill hari kosong dari rolling — pola berulang selamanya sampai admin ubah
+      // Pre-fill hari kosong dari rolling - pola berulang selamanya sampai admin ubah
       const{data:allData}=await supabase.from('piket_schedules').select('week_start,day_of_week,pic_ivp_id,pic_ump_id,pic_mvi_id');
       if(allData&&allData.length>0){
         const allRows=allData as PiketRow[];
@@ -63,12 +63,12 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
         for(const day of DAYS_OF_WEEK){
           const uid=assign[wk]?.[day]||'';
 
-          // FIX #1: Skip hari "— Belum —" — jangan timpa data existing dengan null
+          // FIX #1: Skip hari "- Belum -" - jangan timpa data existing dengan null
           if(!uid) continue;
 
           const u=users.find(x=>x.id===uid);
 
-          // FIX #2: Skip jika user tidak ditemukan — jangan simpan row rusak
+          // FIX #2: Skip jika user tidak ditemukan - jangan simpan row rusak
           if(!u){
             console.warn(`[ScheduleModal] User not found for id: "${uid}", skipping ${day} ${wk}`);
             continue;

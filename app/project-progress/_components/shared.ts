@@ -1,4 +1,4 @@
-// ─── Project Progress — types, konstanta & helper ────────────────────────────
+// Project Progress - types, konstanta & helper
 // Tema mengikuti Request Schedule (#0891b2 / #0e7490) agar konsisten dengan
 // platform lain di Work Management.
 
@@ -13,10 +13,10 @@ export const THEME = {
 } as const;
 
 /**
- * Palet "console" — kertas netral bertekstur satu warna, satu aksen (THEME
+ * Palet "console" - kertas netral bertekstur satu warna, satu aksen (THEME
  * di atas), dan warna status terpisah dari aksen. Menggantikan pola foto
  * latar + kartu kaca-buram: itulah yang membuat layar sebelumnya terasa
- * ramai dan tidak proporsional — foto ikut bersaing dengan data, dan setiap
+ * ramai dan tidak proporsional - foto ikut bersaing dengan data, dan setiap
  * elemen (badge/tombol/header) memakai gradasi sekaligus sehingga tidak ada
  * satu pun yang terasa "utama". Angka & tanggal dipakai bersama fontMono di
  * bawah supaya kolomnya sejajar (font-variant-numeric: tabular-nums).
@@ -35,7 +35,7 @@ export const PALETTE = {
   warn: '#92400e', warnTint: '#fdf1e2', warnBorder: '#f3d4a3',
   bad: '#9f1239', badTint: '#fde8ee', badBorder: '#f3c1d1',
   /**
-   * Kuning sorot — SENGAJA beda dari warnTint (amber redup di atas, dipakai
+   * Kuning sorot - SENGAJA beda dari warnTint (amber redup di atas, dipakai
    * untuk teks/badge). Ini latar baris PENUH untuk komponen stuck/pending,
    * jadi harus cukup kontras supaya baris bermasalah langsung kelihatan
    * sekilas mata tanpa perlu membaca teks satu-satu.
@@ -43,7 +43,7 @@ export const PALETTE = {
   highlight: '#fef9c3', highlightBorder: '#fde047',
 } as const;
 
-/** Dipakai pada setiap angka/tanggal/persentase — lihat catatan PALETTE. */
+/** Dipakai pada setiap angka/tanggal/persentase - lihat catatan PALETTE. */
 export const fontMono: CSSProperties = {
   fontFamily: 'var(--font-plex-mono)', fontVariantNumeric: 'tabular-nums',
 };
@@ -51,7 +51,7 @@ export const fontMono: CSSProperties = {
 export type ProjectStatus = 'in_progress' | 'done' | 'blocked';
 /**
  * Status komponen. Progres lokasi DIHITUNG dari komposisi status ini
- * (lihat computeProgress) — bukan diisi manual.
+ * (lihat computeProgress) - bukan diisi manual.
  */
 export type ComponentState = 'done' | 'progress' | 'pending' | 'stuck';
 export type Severity = 'kritis' | 'tinggi' | 'sedang' | 'rendah';
@@ -68,7 +68,7 @@ export interface ProgressProject {
   status: ProjectStatus;
   share_token: string | null;
   share_enabled: boolean;
-  /** Jadwal proyek. Nullable — proyek lama tetap jalan tanpa tanggal. */
+  /** Jadwal proyek. Nullable - proyek lama tetap jalan tanpa tanggal. */
   start_date: string | null;
   target_date: string | null;
   /** Snapshot dari reminder saat proyek dibuat otomatis; bisa disunting admin. */
@@ -90,7 +90,7 @@ export interface ProgressLocation {
   progress: number;
   note: string | null;
   note_flag: boolean;
-  /** Jadwal per lokasi — tiap site bisa mulai & selesai di waktu berbeda. */
+  /** Jadwal per lokasi - tiap site bisa mulai & selesai di waktu berbeda. */
   start_date: string | null;
   target_date: string | null;
   /**
@@ -111,7 +111,7 @@ export interface ProgressComponent {
   location_id: string;
   label: string;
   state: ComponentState;
-  /** Foto bukti opsional — terpasang (Done) atau kendala (Stuck). Ukuran penuh. */
+  /** Foto bukti opsional - terpasang (Done) atau kendala (Stuck). Ukuran penuh. */
   photo_url: string | null;
   /**
    * Versi kecil (~320px) untuk dirender di daftar komponen. Selalu pakai ini
@@ -120,7 +120,7 @@ export interface ProgressComponent {
    */
   photo_thumb_url: string | null;
   /**
-   * Bobot kepentingan komponen ini dalam progres lokasi — komponen yang lebih
+   * Bobot kepentingan komponen ini dalam progres lokasi - komponen yang lebih
    * kritis (mis. "Server Utama") boleh diberi bobot lebih besar dari yang
    * sekadar pelengkap (mis. "Kabel Patch"). DEFAULT 1 di DB, sehingga lokasi
    * yang semua komponennya belum diberi bobot khusus menghasilkan progres
@@ -148,7 +148,7 @@ export interface ProgressIssue {
   action_plan: string | null;
   resolution: string | null;
   resolved_at: string | null;
-  /** Penaut opsional ke lokasi/komponen spesifik — location_label tetap dipertahankan untuk isu lintas lokasi. */
+  /** Penaut opsional ke lokasi/komponen spesifik - location_label tetap dipertahankan untuk isu lintas lokasi. */
   location_id: string | null;
   component_id: string | null;
   sort_order: number;
@@ -170,7 +170,7 @@ export interface ProgressAction {
 
 /**
  * Satu baris riwayat perubahan (audit_trail). Bentuknya sama dengan AuditEntry
- * di components/shared/AuditTrailPanel — didefinisikan ulang di sini supaya
+ * di components/shared/AuditTrailPanel - didefinisikan ulang di sini supaya
  * berkas tipe murni ini tidak perlu bergantung pada modul komponen UI.
  */
 export interface ProgressAuditEntry {
@@ -185,14 +185,14 @@ export interface ProgressAuditEntry {
   created_at: string;
 }
 
-/** Bundel lengkap 1 proyek — dipakai modal detail & halaman share view-only. */
+/** Bundel lengkap 1 proyek - dipakai modal detail & halaman share view-only. */
 export interface ProjectDetail {
   project: ProgressProject;
   locations: ProgressLocation[];
   components: ProgressComponent[];
   issues: ProgressIssue[];
   /**
-   * Riwayat status lokasi & state komponen se-proyek — dipakai alur mendatar
+   * Riwayat status lokasi & state komponen se-proyek - dipakai alur mendatar
    * di ProjectDetailView (lewat prop `data` AuditTrailPanel, BUKAN fetch
    * sendiri, karena komponen itu juga dirender di halaman share publik).
    * Opsional: DetailEditor tidak mengisi ini, masih pakai fetch langsung.
@@ -200,7 +200,7 @@ export interface ProjectDetail {
   auditTrail?: ProgressAuditEntry[];
 }
 
-// ─── Konfigurasi tampilan ────────────────────────────────────────────────────
+// Konfigurasi tampilan
 
 export const STATUS_CONFIG: Record<ProjectStatus, { label: string; color: string; bg: string; border: string; icon: string }> = {
   in_progress: { label: 'In Progress', color: '#92400e', bg: '#fef3c7', border: '#f59e0b', icon: '⏳' },
@@ -245,18 +245,18 @@ export const ACTION_STATUS_CONFIG: Record<ActionStatus, { label: string; color: 
   done:        { label: 'Selesai',     color: '#065f46', bg: '#d1fae5' },
 };
 
-/** Warna pie chart — sinkron dengan STATUS_CONFIG.border. */
+/** Warna pie chart - sinkron dengan STATUS_CONFIG.border. */
 export const STATUS_PIE_COLOR: Record<ProjectStatus, string> = {
   in_progress: '#f59e0b',
   done:        '#10b981',
   blocked:     '#f43f5e',
 };
 
-// ─── Helper ──────────────────────────────────────────────────────────────────
+// Helper
 
 /**
- * Progres sebuah lokasi — DIHITUNG dari komposisi status komponennya, bukan
- * diisi manual. Selesai dihitung penuh, Proses setengah, Pending & Stuck nol —
+ * Progres sebuah lokasi - DIHITUNG dari komposisi status komponennya, bukan
+ * diisi manual. Selesai dihitung penuh, Proses setengah, Pending & Stuck nol -
  * masing-masing dikalikan bobot kepentingan komponen (`weight`, DEFAULT 1 di
  * DB) sebelum dirata-ratakan, sehingga komponen yang lebih kritis menyumbang
  * lebih banyak ke persentase.
@@ -287,7 +287,7 @@ export interface StateBreakdown {
   percent: number;
 }
 
-/** Rekap jumlah & persentase komponen per status — untuk ditampilkan di kartu lokasi. */
+/** Rekap jumlah & persentase komponen per status - untuk ditampilkan di kartu lokasi. */
 export function stateBreakdown(components: { state: ComponentState }[]): StateBreakdown[] {
   const total = components.length;
   return COMPONENT_STATES.map(st => {
@@ -307,7 +307,7 @@ export function stateBreakdown(components: { state: ComponentState }[]): StateBr
  * Rata-rata progres seluruh lokasi. Dibulatkan ke bilangan bulat agar cocok
  * dengan angka yang ditampilkan di kartu ringkasan.
  *
- * Parameter sengaja struktural (bukan ProgressLocation[] penuh) — dipakai
+ * Parameter sengaja struktural (bukan ProgressLocation[] penuh) - dipakai
  * juga oleh halaman listing yang hanya menarik kolom `progress` per lokasi
  * (lihat projectHealth di bawah).
  */
@@ -317,7 +317,7 @@ export function averageProgress(locations: { progress: number }[]): number {
   return Math.round(total / locations.length);
 }
 
-// ─── Timeline & overtime ─────────────────────────────────────────────────────
+// Timeline & overtime
 
 export type TimelineState =
   | 'no_date'    // belum dijadwalkan
@@ -336,11 +336,11 @@ export interface TimelineInfo {
   daysLeft: number | null;
   /** Berapa hari berjalan sejak mulai. Null bila belum mulai / tak ada tanggal. */
   daysElapsed: number | null;
-  /** Posisi hari ini pada rentang mulai→target, 0-100. Null bila rentang tak lengkap. */
+  /** Posisi hari ini pada rentang mulaitarget, 0-100. Null bila rentang tak lengkap. */
   elapsedPercent: number | null;
 }
 
-/** Tanggal lokal hari ini sebagai YYYY-MM-DD — hindari pergeseran zona waktu dari toISOString(). */
+/** Tanggal lokal hari ini sebagai YYYY-MM-DD - hindari pergeseran zona waktu dari toISOString(). */
 export function todayStr(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -355,7 +355,7 @@ function diffDays(a: string, b: string): number {
 }
 
 /**
- * Status jadwal sebuah proyek/lokasi. Dihitung saat tampil, bukan disimpan —
+ * Status jadwal sebuah proyek/lokasi. Dihitung saat tampil, bukan disimpan -
  * status "overtime" berubah sendiri seiring hari berjalan, jadi menyimpannya
  * di kolom akan selalu basi kecuali ada job harian.
  *
@@ -394,7 +394,7 @@ export function timelineInfo(
 
 /**
  * Lokasi yang sudah lewat target dan belum selesai.
- * Generik & struktural — jadi berlaku juga untuk lokasi "lite" dari query
+ * Generik & struktural - jadi berlaku juga untuk lokasi "lite" dari query
  * listing yang cuma menarik status/tanggal, bukan ProgressLocation penuh.
  */
 export function overdueLocations<T extends { start_date: string | null; target_date: string | null; status: ProjectStatus }>(
@@ -403,7 +403,7 @@ export function overdueLocations<T extends { start_date: string | null; target_d
   return locations.filter(l => timelineInfo(l).state === 'overdue');
 }
 
-// ─── Project Health & Location Health ────────────────────────────────────────
+// Project Health & Location Health
 
 export type HealthLevel = 'good' | 'at_risk' | 'critical';
 
@@ -413,7 +413,7 @@ export interface HealthInfo {
   color: string;
   bg: string;
   border: string;
-  /** Alasan singkat kenapa level ini diberikan — ditampilkan di tooltip/subtext badge. */
+  /** Alasan singkat kenapa level ini diberikan - ditampilkan di tooltip/subtext badge. */
   reason: string;
 }
 
@@ -423,13 +423,13 @@ export const HEALTH_CONFIG: Record<HealthLevel, { label: string; color: string; 
   critical: { label: 'Critical', color: PALETTE.bad,  bg: PALETTE.badTint,  border: PALETTE.badBorder },
 };
 
-/** Bentuk minimal lokasi yang dibutuhkan untuk hitung Health — dipakai juga oleh query listing yang ringkas. */
+/** Bentuk minimal lokasi yang dibutuhkan untuk hitung Health - dipakai juga oleh query listing yang ringkas. */
 export type ProgressLocationLite = { status: ProjectStatus; progress: number; start_date: string | null; target_date: string | null };
 
 /**
- * Progres jadwal (0-100) = rata-rata "posisi hari ini pada rentang mulai→
+ * Progres jadwal (0-100) = rata-rata "posisi hari ini pada rentang mulai
  * target" seluruh lokasi yang PUNYA kedua tanggal. Lokasi tanpa jadwal tidak
- * ikut dihitung — bukan berarti 0%, tapi memang tidak bisa diukur.
+ * ikut dihitung - bukan berarti 0%, tapi memang tidak bisa diukur.
  * null bila TIDAK ADA lokasi yang punya jadwal lengkap sama sekali.
  */
 export function scheduleProgress(locations: ProgressLocationLite[]): number | null {
@@ -441,16 +441,16 @@ export function scheduleProgress(locations: ProgressLocationLite[]): number | nu
 }
 
 /**
- * Kesehatan proyek — GOOD / AT RISK / CRITICAL dengan alasan singkat.
+ * Kesehatan proyek - GOOD / AT RISK / CRITICAL dengan alasan singkat.
  * DIHITUNG saat tampil (seperti timelineInfo), bukan kolom tersimpan, supaya
  * nilainya tidak pernah basi.
  *
  * Urutan pemeriksaan (yang lebih parah menang):
- *   1. Proyek/lokasi Blocked                    → Critical
- *   2. ≥2 lokasi overtime, atau tertinggal ≥25% dari jadwal → Critical
- *   3. 1 lokasi overtime, atau tertinggal ≥10%   → At Risk
- *   4. Ada lokasi jatuh tempo ≤3 hari lagi       → At Risk
- *   5. Selain itu                                → Good
+ *   1. Proyek/lokasi Blocked                     Critical
+ *   2. ≥2 lokasi overtime, atau tertinggal ≥25% dari jadwal  Critical
+ *   3. 1 lokasi overtime, atau tertinggal ≥10%    At Risk
+ *   4. Ada lokasi jatuh tempo ≤3 hari lagi        At Risk
+ *   5. Selain itu                                 Good
  */
 export function projectHealth(
   project: { status: ProjectStatus }, locations: ProgressLocationLite[],
@@ -495,7 +495,7 @@ export function projectHealth(
 }
 
 /**
- * Kesehatan 1 lokasi — gabungan status kerja (Blocked/Done/In Progress) dan
+ * Kesehatan 1 lokasi - gabungan status kerja (Blocked/Done/In Progress) dan
  * status jadwal (overdue/due_soon) jadi SATU badge, menggantikan dua badge
  * terpisah yang sebelumnya harus dibaca berdampingan.
  */
@@ -527,7 +527,7 @@ export const TIMELINE_PIE: { state: TimelineState; label: string; color: string 
 ];
 
 /**
- * Sebaran status jadwal seluruh lokasi — menjawab "berapa yang selesai tepat
+ * Sebaran status jadwal seluruh lokasi - menjawab "berapa yang selesai tepat
  * waktu dan berapa yang sudah lewat target" dalam satu pandang.
  * Status yang tidak terpakai tidak ikut ditampilkan agar legenda tetap ringkas.
  */
@@ -550,12 +550,12 @@ export const PIE_PALETTE = [
 export interface PieSlice { label: string; value: number; color: string }
 
 /**
- * Progres tiap PIC — RATA-RATA progres seluruh lokasi yang dia pegang (bukan
+ * Progres tiap PIC - RATA-RATA progres seluruh lokasi yang dia pegang (bukan
  * jumlah lokasinya), diurutkan dari yang tertinggi. PIC dengan beberapa lokasi
  * dirata-ratakan supaya yang memegang banyak site tidak otomatis terlihat lebih
  * besar.
  *
- * Catatan: nilainya persentase, jadi MENJUMLAHKAN slice tidak bermakna — pemakai
+ * Catatan: nilainya persentase, jadi MENJUMLAHKAN slice tidak bermakna - pemakai
  * komponen wajib mengisi centerValue sendiri (lihat ProjectDetailView).
  * Lokasi tanpa PIC dikelompokkan "Belum ada PIC" agar tidak hilang diam-diam.
  */
@@ -581,7 +581,7 @@ export function picBreakdown(locations: ProgressLocation[]): PieSlice[] {
 }
 
 /**
- * Komponen bermasalah — hanya yang Stuck atau Pending — dikelompokkan menurut
+ * Komponen bermasalah - hanya yang Stuck atau Pending - dikelompokkan menurut
  * NAMA komponen. Menjawab "jenis komponen apa yang paling sering menahan
  * progres", karena nama yang sama berulang di banyak lokasi (mis. OCS Sensor).
  * Dibatasi 8 teratas agar legenda pie tetap terbaca; sisanya digabung.
@@ -607,7 +607,7 @@ export function problemComponentBreakdown(
 /** Ringkasan agregat 1 proyek untuk halaman listing. */
 export interface ProjectAgg { total: number; avg: number; issues: number }
 
-/** Distribusi status seluruh proyek — pie halaman utama. */
+/** Distribusi status seluruh proyek - pie halaman utama. */
 export function projectStatusBreakdown(projects: ProgressProject[]): PieSlice[] {
   return (['done', 'in_progress', 'blocked'] as ProjectStatus[])
     .map(s => ({
@@ -619,7 +619,7 @@ export function projectStatusBreakdown(projects: ProgressProject[]): PieSlice[] 
 }
 
 /**
- * Progres tiap proyek — nilainya persentase, jadi pemakai wajib mengisi
+ * Progres tiap proyek - nilainya persentase, jadi pemakai wajib mengisi
  * centerValue sendiri (jumlah persentase tidak bermakna).
  */
 export function projectProgressBreakdown(
@@ -632,7 +632,7 @@ export function projectProgressBreakdown(
     .map((r, i) => ({ ...r, color: PIE_PALETTE[i % PIE_PALETTE.length] }));
 }
 
-/** Sebaran isu terbuka per proyek — menunjukkan proyek mana yang paling bermasalah. */
+/** Sebaran isu terbuka per proyek - menunjukkan proyek mana yang paling bermasalah. */
 export function projectIssueBreakdown(
   projects: ProgressProject[], agg: Record<string, ProjectAgg>, limit = 8,
 ): PieSlice[] {
@@ -672,7 +672,7 @@ export function formatDatetime(dateStr: string | null | undefined): string {
 }
 
 /**
- * Token share — 32 hex char. Dipakai sebagai bagian URL publik, jadi hindari
+ * Token share - 32 hex char. Dipakai sebagai bagian URL publik, jadi hindari
  * karakter yang perlu di-encode.
  */
 export function newShareToken(): string {
@@ -684,7 +684,7 @@ export function newShareToken(): string {
   return `${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`.padEnd(32, '0').slice(0, 32);
 }
 
-/** URL absolut halaman share — aman dipanggil hanya di browser. */
+/** URL absolut halaman share - aman dipanggil hanya di browser. */
 export function shareUrl(token: string): string {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   return `${origin}/project-progress/share/${token}`;
@@ -695,7 +695,7 @@ export function shareUrl(token: string): string {
  * isu. Admin & superadmin, ATAU akun Team PTS dengan toggle "Full Access"
  * aktif (lihat lib/constants.ts hasFullAccess & sql/user-full-access-toggle.sql).
  *
- * teamType & accessLevel opsional — pemanggil lama yang cuma kirim role
+ * teamType & accessLevel opsional - pemanggil lama yang cuma kirim role
  * (mis. cek admin murni) tetap jalan seperti sebelumnya.
  */
 export function canEditProjectProgress(
@@ -709,13 +709,13 @@ export function canEditProjectProgress(
 /**
  * Cakupan data yang boleh DITERIMA seorang user.
  *
- * 'all'       → admin, superadmin, dan team PTS internal.
- * 'own_sales' → role sales/guest: HANYA proyek yang mencatat namanya.
+ * 'all'        admin, superadmin, dan team PTS internal.
+ * 'own_sales'  role sales/guest: HANYA proyek yang mencatat namanya.
  *
  * Penting: pembatasan ini WAJIB diterapkan di level query (lihat
  * fetchProjects), bukan sekadar menyembunyikan baris saat render. Menyaring di
  * render berarti data sales lain tetap terkirim ke browser dan bisa dibaca dari
- * DevTools — padahal daftar proyek bersifat rahasia antar-sales.
+ * DevTools - padahal daftar proyek bersifat rahasia antar-sales.
  */
 export type Visibility =
   | { scope: 'all' }
@@ -725,7 +725,7 @@ export function resolveVisibility(
   role: string | null | undefined, fullName: string | null | undefined,
 ): Visibility {
   // Catatan: role 'team' polos (bukan cuma admin/superadmin) SUDAH dapat
-  // scope 'all' sejak dulu — beda dengan canEditProjectProgress (yang butuh
+  // scope 'all' sejak dulu - beda dengan canEditProjectProgress (yang butuh
   // Full Access untuk EDIT). Di sini hanya soal visibilitas BACA data.
   const r = (role ?? '').toLowerCase();
   if (['admin', 'superadmin', 'team'].includes(r)) return { scope: 'all' };
@@ -762,7 +762,7 @@ export function isPicOfLocation(
  * Lokasi yang boleh disunting user ini.
  * - Admin/superadmin: semua lokasi.
  * - Anggota team: hanya lokasi yang men-tag namanya sebagai PIC, dan hanya
- *   bagian PROGRES-nya (status komponen, catatan, foto) — lihat EditorMode.
+ *   bagian PROGRES-nya (status komponen, catatan, foto) - lihat EditorMode.
  */
 export function editableLocationIds(
   locations: ProgressLocation[], role: string | null | undefined, fullName: string | null | undefined,
@@ -780,7 +780,7 @@ export function editableLocationIds(
 /**
  * 'full' = admin/superadmin (seluruh struktur proyek).
  * 'pic'  = anggota team yang jadi PIC ATAU Sales yang tercatat pada minimal 1
- *          lokasi — keduanya hanya boleh memperbarui progres lokasinya sendiri
+ *          lokasi - keduanya hanya boleh memperbarui progres lokasinya sendiri
  *          (status komponen, item komponen, foto, catatan).
  * null   = hanya boleh melihat.
  */

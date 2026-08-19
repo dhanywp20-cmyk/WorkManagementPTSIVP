@@ -11,7 +11,7 @@ function hashOTP(otp: string): string {
 
 /**
  * OTP-nya enam angka. Tanpa pembatasan, seluruh sejuta kemungkinan bisa
- * dicoba dalam hitungan menit — dan karena tebakan yang salah tidak menemukan
+ * dicoba dalam hitungan menit - dan karena tebakan yang salah tidak menemukan
  * baris apa pun di password_reset_otps, tidak ada tempat untuk menyimpan
  * hitungannya di baris OTP itu sendiri.
  *
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Kode OTP sudah kedaluwarsa. Minta kode baru.' }, { status: 400 });
     }
 
-    // OTP valid — ambil user id
+    // OTP valid - ambil user id
     const { data: user } = await supabase
       .from('users')
       .select('id')
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     // Invalidate semua session aktif user ini
     await supabase.from('user_sessions').delete().eq('user_id', user.id);
 
-    // Kode yang benar mengosongkan hitungan salah — kalau tidak, pemilik akun
+    // Kode yang benar mengosongkan hitungan salah - kalau tidak, pemilik akun
     // yang sempat salah ketik ikut terkunci saat berikutnya butuh reset.
     await supabase.from('login_attempts').delete().eq('username', penanda);
 

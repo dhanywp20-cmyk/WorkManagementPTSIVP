@@ -27,7 +27,7 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
 
   const demoList=activeKg.filter(k=>k.jenis_kegiatan==='Demo Product'&&k.tamu_instansi);
 
-  // Top divisi — divisi yang paling banyak bawa tamu
+  // Top divisi - divisi yang paling banyak bawa tamu
   const divMap:Record<string,number>={};
   activeKg.forEach(k=>{if(k.sales_division)divMap[k.sales_division]=(divMap[k.sales_division]||0)+1;});
   const topDivisiEntry=Object.entries(divMap).sort(([,a],[,b])=>b-a)[0];
@@ -46,7 +46,7 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
   const topKebutuhan=topKbtEntry?topKbtEntry[0]:'—';
   const topKebutuhanCount=topKbtEntry?topKbtEntry[1]:0;
 
-  // Jam pakai per produk — 6 kategori tetap, All Product distribusi ke semua
+  // Jam pakai per produk - 6 kategori tetap, All Product distribusi ke semua
   const PRODUK_KATEGORI=['Videowall','LED','IFP','Audio System','Lighting','Kiosk'] as const;
   const PRODUK_ICONS:Record<string,string>={Videowall:'🖥️',LED:'💡',IFP:'📺','Audio System':'🔊',Lighting:'🎬',Kiosk:'🏧'};
   const PRODUK_COLORS:Record<string,string>={Videowall:'#dc2626',LED:'#d97706',IFP:'#2563eb','Audio System':'#7c3aed',Lighting:'#059669',Kiosk:'#0891b2'};

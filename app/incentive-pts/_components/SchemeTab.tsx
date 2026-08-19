@@ -1,5 +1,5 @@
 'use client';
-// ─── Incentive PTS — Tab: Skema Pembagian ────────────────────────────────────
+// Incentive PTS - Tab: Skema Pembagian
 
 import { useState, useEffect } from 'react';
 import {
@@ -10,7 +10,7 @@ import {
 const rp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const inputKecil = 'w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100';
 
-/** Contoh nominal untuk pratinjau — angka bulat supaya mudah dicocokkan manual. */
+/** Contoh nominal untuk pratinjau - angka bulat supaya mudah dicocokkan manual. */
 const CONTOH = 5_000_000;
 
 export function SchemeTab({ olehNama, notify }: {
@@ -51,9 +51,9 @@ export function SchemeTab({ olehNama, notify }: {
     notify('success', 'Skema pembagian tersimpan. Perhitungan berikutnya memakai angka ini.');
   };
 
-  // ── Pratinjau: memakai mesin hitung yang SAMA dengan proses sebenarnya ─────
+  // Pratinjau: memakai mesin hitung yang SAMA dengan proses sebenarnya
   // Kalau pratinjau memakai rumusnya sendiri, ia bisa menampilkan angka yang
-  // tidak pernah terjadi saat batch dijalankan — persis jenis selisih yang
+  // tidak pernah terjadi saat batch dijalankan - persis jenis selisih yang
   // paling sulit ditelusuri belakangan.
   const contohPenerima = [
     { peran: 'pic', user_id: '1', user_name: 'PIC' },

@@ -11,7 +11,7 @@ import { hasFullAccess } from '@/lib/constants';
 import { ViewModal } from './_components/ViewModal';
 import { AddEditModal } from './_components/AddEditModal';
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// Main Page
 
 function UnitMovementPageInner() {
   const searchParams = useSearchParams();
@@ -30,7 +30,7 @@ function UnitMovementPageInner() {
   const [filterYear,   setFilterYear]   = useState('All');
   const [searchQuery,  setSearchQuery]  = useState('');
 
-  // ── Auto-apply filter dari Global Search (?q=...) ──
+  // Auto-apply filter dari Global Search (?q=...)
   useEffect(() => {
     const q = searchParams.get('q');
     if (q) setSearchQuery(q);
@@ -69,13 +69,13 @@ function UnitMovementPageInner() {
   const fetchLogs = async () => {
     setLoading(true);
     setFetchError(null);
-    // ── Isolasi antar-Sales ──────────────────────────────────────────────────
+    // Isolasi antar-Sales
     // movement_logs memuat project_name, jadi daftar lengkapnya membocorkan
     // nama project divisi lain ke Sales yang tidak berkepentingan. Orang dalam
     // PTS (admin/team/marketing) memang perlu melihat seluruh lalu lintas unit;
     // Sales hanya perlu yang dia catat sendiri atau yang mencatat namanya.
     //
-    // Penyaringan dipasang DI QUERY, bukan saat render — kalau disaring saat
+    // Penyaringan dipasang DI QUERY, bukan saat render - kalau disaring saat
     // render, barisnya sudah terkirim ke browser dan terbaca lewat DevTools.
     const peran = (currentUser?.role ?? '').toLowerCase();
     const orangDalam = hasFullAccess(currentUser) ||
@@ -83,7 +83,7 @@ function UnitMovementPageInner() {
 
     let q = supabase.from('movement_logs').select('id,tanggal,nama_pts,nama_luar,status_barang,event,project_name,type_barang,serial_number,catatan,foto_surat_url,foto_barang_url,created_by,created_at,kondisi_barang,expected_return_date,return_confirmed,checkout_reference_id').order('tanggal',{ascending:false}).limit(500);
     if (!orangDalam) {
-      // Tanpa sesi yang terbaca, jangan tampilkan apa pun — bukan tampilkan
+      // Tanpa sesi yang terbaca, jangan tampilkan apa pun - bukan tampilkan
       // semuanya. Batas yang gagal ke arah "terbuka" lebih berbahaya daripada
       // tidak ada batas, karena terlihat seolah sudah aman.
       if (!currentUser) { setLogs([]); setLoading(false); return; }
@@ -202,7 +202,7 @@ function UnitMovementPageInner() {
     && l.expected_return_date < today
   ).sort((a,b)=>(a.expected_return_date??'').localeCompare(b.expected_return_date??'')),[logs, today]);
 
-  // ─── Loading / Not Authenticated screen ────────────────────────────────────
+  // Loading / Not Authenticated screen
 
   if (!appReady) return (
     <div className="min-h-screen flex items-center justify-center" style={{backgroundImage:'url(/IVP_Background.png)',backgroundSize:'cover'}}>

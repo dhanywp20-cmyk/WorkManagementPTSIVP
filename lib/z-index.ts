@@ -1,7 +1,7 @@
 /**
- * Skala z-index terpusat — SATU tangga untuk seluruh platform.
+ * Skala z-index terpusat - SATU tangga untuk seluruh platform.
  *
- * ── Kenapa ini perlu ada ────────────────────────────────────────────────────
+ * Kenapa ini perlu ada
  * Sebelumnya ada dua skala yang bersaing (lib/z-index.ts dan Z di
  * lib/constants.ts) dengan angka berbeda untuk nama yang sama, ditambah
  * puluhan angka lepas di JSX: 100, 110, 120, 150, 200, 210, 220, 300, 9990,
@@ -10,16 +10,16 @@
  * Angka-angka liar itu SELAMA INI tidak menimbulkan masalah bukan karena
  * benar, tapi karena tiap halaman membungkus isinya dengan `relative z-10`.
  * Pembungkus itu membentuk stacking context, jadi z-index di dalamnya hanya
- * dibandingkan sesama isi halaman — tidak pernah bertemu overlay dari halaman
+ * dibandingkan sesama isi halaman - tidak pernah bertemu overlay dari halaman
  * atau komponen lain. Begitu satu overlay lolos ke <body> (lewat portal),
  * perbandingannya jadi lintas-liga dan urutannya kacau: modal z-[110] muncul
  * DI BELAKANG modal z-[100] yang di-portal.
  *
  * Pembungkus `relative z-10` sudah dibongkar (lihat komentar di tiap halaman),
  * jadi sekarang SEMUA overlay dibandingkan di liga yang sama. Karena itu
- * angkanya harus konsisten lintas berkas — dan itulah gunanya berkas ini.
+ * angkanya harus konsisten lintas berkas - dan itulah gunanya berkas ini.
  *
- * ── Aturan pakai ────────────────────────────────────────────────────────────
+ * Aturan pakai
  * Jangan menulis angka z-index baru di JSX. Ambil dari sini, supaya urutan
  * tumpukan bisa dibaca dari NAMA, bukan ditebak dari besarnya angka.
  *
@@ -35,7 +35,7 @@ export const Z = {
   /** Header/kolom yang menempel saat digulir. */
   sticky: 50,
 
-  /** Dropdown milik SalesPicker — di atas sticky, di bawah overlay. */
+  /** Dropdown milik SalesPicker - di atas sticky, di bawah overlay. */
   picker: 55,
 
   /** Latar gelap sidebar mobile. */
@@ -56,7 +56,7 @@ export const Z = {
    */
   overlayTop: 1100,
 
-  /** Lapisan ketiga — modal yang dibuka dari dalam `overlayTop`. Jarang. */
+  /** Lapisan ketiga - modal yang dibuka dari dalam `overlayTop`. Jarang. */
   overlayMax: 1200,
 
   /** Onboarding tour: latar gelap berlubang. */
@@ -71,12 +71,12 @@ export const Z = {
   tourFab: 1504,
   /** Sidebar dinaikkan saat tour agar tidak tertutup latar gelapnya. */
   tourSidebar: 1505,
-  /** Item menu yang sedang disorot tour — harus di atas sidebar. */
+  /** Item menu yang sedang disorot tour - harus di atas sidebar. */
   tourMenuItem: 1510,
 
   /**
    * Dialog konfirmasi yang MEMBLOKIR. Dipanggil dari mana saja, termasuk dari
-   * dalam modal bertingkat, jadi harus di atas seluruh lapisan overlay —
+   * dalam modal bertingkat, jadi harus di atas seluruh lapisan overlay -
    * kalau tidak, dialognya ter-render tapi tertutup dan klik user jatuh ke
    * modal di belakangnya, persis seperti tombol yang tidak berfungsi.
    */
@@ -87,10 +87,10 @@ export const Z = {
   /** Spanduk peringatan sesi habis. */
   session: 2450,
 
-  /** Toast — tidak boleh tertutup apa pun. */
+  /** Toast - tidak boleh tertutup apa pun. */
   toast: 3000,
 
-  /** Tooltip — lapisan paling atas. */
+  /** Tooltip - lapisan paling atas. */
   tooltip: 3100,
 } as const;
 

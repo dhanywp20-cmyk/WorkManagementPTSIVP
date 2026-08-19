@@ -1,12 +1,12 @@
 'use client';
 
 /**
- * analytics-dashboard/page.tsx  —  Analytics Platform
+ * analytics-dashboard/page.tsx  -  Analytics Platform
  *
  * Tab order (default: Dashboard Analytics first):
- *   1. Dashboard Analytics — full DashboardKPI component (original KPI view)
- *   2. Command Center      — live bottleneck alerts, My Tasks, Aktivitas Terbaru
- *   3. Audit Log           — audit_trail + activity_logs (historical ticketing logs)
+ *   1. Dashboard Analytics - full DashboardKPI component (original KPI view)
+ *   2. Command Center      - live bottleneck alerts, My Tasks, Aktivitas Terbaru
+ *   3. Audit Log           - audit_trail + activity_logs (historical ticketing logs)
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -16,7 +16,7 @@ import DashboardKPI from '@/app/kpi-team/_components/DashboardKPI';
 import { User as DashUser } from '@/app/dashboard/_components/shared';
 import { StatCard } from '@/components/shared';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// Types
 
 interface User {
   id: string; full_name: string; role: string;
@@ -46,7 +46,7 @@ interface Stats {
 
 type Tab = 'kpi' | 'command' | 'audit';
 
-// ── Small helper components ───────────────────────────────────────────────────
+// Small helper components
 
 function Panel({ title, icon, color, borderClr, count, children }: {
   title: string; icon: string; color: string; borderClr: string; count?: number; children: React.ReactNode;
@@ -100,7 +100,7 @@ function Row({ dot, title, sub, badge, badgeBg, badgeColor, badgeBorder }: {
   );
 }
 
-// ── Action badge colors ───────────────────────────────────────────────────────
+// Action badge colors
 const ACTION_STYLE: Record<string, { bg: string; color: string; border: string }> = {
   create:        { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
   approve:       { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
@@ -126,7 +126,7 @@ const MODULE_ICON: Record<string, string> = {
   'daily-report': '📈', system: '⚙️',
 };
 
-// ── Tab button ────────────────────────────────────────────────────────────────
+// Tab button
 function TabBtn({ label, icon, active, onClick, badge }: {
   label: string; icon: string; active: boolean; onClick: () => void; badge?: number;
 }) {
@@ -148,7 +148,7 @@ function TabBtn({ label, icon, active, onClick, badge }: {
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
+// Main component
 
 export function AnalyticsPlatform({ embedded = false, injectedUser }: { embedded?: boolean; injectedUser?: User } = {}) {
   const [user,    setUser]    = useState<User | null>(injectedUser ?? null);
@@ -180,7 +180,7 @@ export function AnalyticsPlatform({ embedded = false, injectedUser }: { embedded
 
   const today = new Date().toISOString().split('T')[0];
 
-  // ── Load Command Center stats ─────────────────────────────────────────────
+  // Load Command Center stats
   const loadStats = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -217,7 +217,7 @@ export function AnalyticsPlatform({ embedded = false, injectedUser }: { embedded
     setLoading(false);
   }, [user, today]);
 
-  // ── Load Audit Log — gabungan audit_trail + activity_logs ────────────────
+  // Load Audit Log - gabungan audit_trail + activity_logs
   const loadAudit = useCallback(async () => {
     setAuditLoading(true);
     try {
@@ -228,7 +228,7 @@ export function AnalyticsPlatform({ embedded = false, injectedUser }: { embedded
         .order('created_at', { ascending: false })
         .limit(300);
 
-      // 2. Legacy activity_logs table (ticketing per-ticket activity — historical)
+      // 2. Legacy activity_logs table (ticketing per-ticket activity - historical)
       const actQ = supabase
         .from('activity_logs')
         .select('id,handler_name,action_taken,new_status,notes,created_at,ticket_id')
@@ -251,7 +251,7 @@ export function AnalyticsPlatform({ embedded = false, injectedUser }: { embedded
         source:      'audit_trail' as const,
       }));
 
-      // Map activity_logs rows → same AuditRow shape
+      // Map activity_logs rows  same AuditRow shape
       const fromActivity: AuditRow[] = ((actRes.data ?? []) as any[]).map(r => ({
         id:          r.id,
         user_name:   r.handler_name ?? '—',
@@ -293,7 +293,7 @@ export function AnalyticsPlatform({ embedded = false, injectedUser }: { embedded
       supabase.channel('cc-r').on('postgres_changes',{event:'*',schema:'public',table:'reminders'},loadStats).subscribe(),
       supabase.channel('cc-p').on('postgres_changes',{event:'*',schema:'public',table:'project_requests'},loadStats).subscribe(),
     ];
-    // Polling fallback — realtime can miss events in iframe context
+    // Polling fallback - realtime can miss events in iframe context
     const poll = setInterval(loadStats, 30000);
     return () => { chs.forEach(c => supabase.removeChannel(c)); clearInterval(poll); };
   }, [auth, user, loadStats]);
@@ -325,7 +325,7 @@ export function AnalyticsPlatform({ embedded = false, injectedUser }: { embedded
   const AUDIT_MODULES = ['All','ticket','reminder','project','piket','kpi','incentive','movement','user','learning','system'];
   const AUDIT_ACTIONS = ['All','create','update','delete','approve','reject','assign','status_change','login','logout','export','mark_done','Solved','Overdue','In Progress','Waiting Approval'];
 
-  // ── Auth screens ──────────────────────────────────────────────────────────
+  // Auth screens
   if (auth === 'denied') return (
     <div className="flex items-center justify-center h-screen" style={{backgroundImage:'url(/IVP_Background.png)',backgroundSize:'cover'}}>
       <div className="bg-white rounded-2xl p-8 text-center shadow-xl">
@@ -344,7 +344,7 @@ export function AnalyticsPlatform({ embedded = false, injectedUser }: { embedded
     </div>
   );
 
-  // ── RENDER ────────────────────────────────────────────────────────────────
+  // RENDER
   return (
     <div className={embedded ? 'flex flex-col w-full' : 'flex flex-col bg-cover bg-center bg-fixed'}
       style={embedded ? undefined : { height: '100dvh', backgroundImage: 'url(/IVP_Background.png)' }}>

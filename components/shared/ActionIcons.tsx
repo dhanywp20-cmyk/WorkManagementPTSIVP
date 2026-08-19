@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-// ─── SVG Icons ────────────────────────────────────────────────────────────────
+// SVG Icons
 
 function IcoEye({ s = 15 }: { s?: number }) {
   return (
@@ -80,10 +80,10 @@ function IcoClock({ s = 15 }: { s?: number }) {
   );
 }
 
-// ─── Base style — icon-only, no background ────────────────────────────────────
+// Base style - icon-only, no background
 const base = 'inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed';
 
-// ─── Action Button Components ─────────────────────────────────────────────────
+// Action Button Components
 
 export function ViewIconBtn({ onClick, title, label, disabled }: {
   onClick: () => void; title?: string; label?: string; disabled?: boolean;
@@ -207,7 +207,7 @@ export function OverdueIconBtn({ onClick, title = 'Overdue Setting', disabled, a
 }
 
 /**
- * Wrapper untuk action column — flex container standar
+ * Wrapper untuk action column - flex container standar
  */
 export function ActionGroup({ children, label = 'Aksi baris' }: { children: React.ReactNode; label?: string }) {
   // role="group" + nama: tanpa ini pembaca layar membacakan deretan tombol

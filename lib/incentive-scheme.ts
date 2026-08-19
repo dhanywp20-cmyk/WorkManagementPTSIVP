@@ -1,19 +1,19 @@
 import { supabase } from './supabase';
 
 /**
- * Skema pembagian insentif project — DATA, bukan kode.
+ * Skema pembagian insentif project - DATA, bukan kode.
  *
- * ── Kenapa begini ───────────────────────────────────────────────────────────
+ * Kenapa begini
  * Angka pembagian sebelumnya ditulis langsung di dalam rumus (65/15/10/10,
  * faktor 0.85 untuk Remote, potongan Installer 15%). Setiap kali kebijakannya
- * berubah — dan kebijakan insentif memang berubah — seseorang harus menyunting
+ * berubah - dan kebijakan insentif memang berubah - seseorang harus menyunting
  * rumus di beberapa tempat sekaligus, membangun ulang aplikasi, lalu berharap
  * tidak ada satu tempat pun yang terlewat. Itu sudah terbukti sekali: potongan
  * Installer hidup di empat tempat berbeda di dalam satu berkas.
  *
  * Sekarang seluruh angkanya disimpan sebagai satu baris JSON yang disunting
  * dari layar Pengaturan. Menambah peran baru (mis. Installer Cabang kembali
- * diberi porsi) cukup menambah satu baris di layar — tidak ada kode yang
+ * diberi porsi) cukup menambah satu baris di layar - tidak ada kode yang
  * perlu disentuh, dan tidak ada tempat yang bisa ketinggalan.
  */
 
@@ -45,12 +45,12 @@ export interface SkemaInsentif {
   /** Dinaikkan tiap kali struktur skema berubah, untuk keperluan migrasi. */
   versi: number;
 
-  /** Pembagian normal — harus berjumlah 100. */
+  /** Pembagian normal - harus berjumlah 100. */
   porsi: PorsiPeran[];
 
   /**
    * Pembagian pengganti bila TIDAK ADA anggota support yang membantu dalam
-   * jendela penilaian. Peta peran → persen; peran yang tidak disebut mendapat 0.
+   * jendela penilaian. Peta peran  persen; peran yang tidak disebut mendapat 0.
    * Harus berjumlah 100 juga.
    */
   tanpaSupport: Record<string, number>;
@@ -63,18 +63,18 @@ export interface SkemaInsentif {
 
   /**
    * Bila orang yang menjadi PIC ternyata juga Supervisor proyek itu, porsi
-   * koordinasinya tidak boleh dobel — dialihkan ke peran ini.
+   * koordinasinya tidak boleh dobel - dialihkan ke peran ini.
    * Kosongkan untuk membiarkan porsinya hangus tanpa penerima.
    */
   hangusSupervisorKe: string;
 
-  /** Pembagian saat Manager sendiri yang menjadi PIC. Peta peran → persen. */
+  /** Pembagian saat Manager sendiri yang menjadi PIC. Peta peran  persen. */
   managerSebagaiPic: Record<string, number>;
 
   /**
    * Porsi Installer Cabang pada proyek mode REMOTE, dalam persen dari pool.
    * 0 = Installer tidak mendapat porsi (nama & daerahnya TETAP dicatat untuk
-   * keperluan rekam jejak — pencatatan itu tidak bergantung pada angka ini).
+   * keperluan rekam jejak - pencatatan itu tidak bergantung pada angka ini).
    * Bila > 0, seluruh porsi lain diperkecil sebanding agar totalnya tetap 100.
    */
   installerRemotePersen: number;
@@ -111,14 +111,14 @@ export const SKEMA_BAWAAN: SkemaInsentif = {
   ],
 };
 
-// ─── Pemeriksaan ─────────────────────────────────────────────────────────────
+// Pemeriksaan
 
 export interface MasalahSkema { bidang: string; pesan: string }
 
 /**
  * Periksa skema sebelum disimpan.
  *
- * Skema yang totalnya bukan 100 tidak ditolak diam-diam di kemudian hari — ia
+ * Skema yang totalnya bukan 100 tidak ditolak diam-diam di kemudian hari - ia
  * akan lolos sampai batch pencairan berjalan, lalu seluruh proyek tahun itu
  * gagal diproses sekaligus. Karena itu pemeriksaannya dilakukan di depan.
  */
@@ -155,7 +155,7 @@ export function periksaSkema(sk: SkemaInsentif): MasalahSkema[] {
   return masalah;
 }
 
-// ─── Baca / simpan ───────────────────────────────────────────────────────────
+// Baca / simpan
 
 /** Gabungkan hasil baca dengan bawaan supaya kolom baru tidak bernilai undefined. */
 function rapikan(raw: unknown): SkemaInsentif {
@@ -177,7 +177,7 @@ function rapikan(raw: unknown): SkemaInsentif {
  * Ambil skema yang berlaku.
  *
  * Bila tabelnya belum dibuat (migrasi belum dijalankan) atau barisnya belum
- * ada, kembalikan bawaan — perhitungan tetap jalan dengan kebijakan terkini,
+ * ada, kembalikan bawaan - perhitungan tetap jalan dengan kebijakan terkini,
  * bukan gagal total.
  */
 export async function ambilSkema(): Promise<SkemaInsentif> {
@@ -205,7 +205,7 @@ export async function simpanSkema(sk: SkemaInsentif, olehNama: string): Promise<
   return { error: res.error?.message ?? null };
 }
 
-// ─── Perhitungan ─────────────────────────────────────────────────────────────
+// Perhitungan
 
 export interface PenerimaPeran {
   peran: string;

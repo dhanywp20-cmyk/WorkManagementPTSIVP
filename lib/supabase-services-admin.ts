@@ -1,10 +1,10 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 /**
- * lib/supabase-services-admin.ts — client basis data Services untuk sisi SERVER.
+ * lib/supabase-services-admin.ts - client basis data Services untuk sisi SERVER.
  *
  * Basis data Services milik organisasi lain (lintas divisi & lintas kantor).
- * Sebagian isinya — nomor telepon admin mereka, misalnya — tidak ada urusannya
+ * Sebagian isinya - nomor telepon admin mereka, misalnya - tidak ada urusannya
  * dengan siapa pun yang membuka platform ini, jadi pembacaannya dikerjakan di
  * server dan hasilnya tidak pernah dikirim ke browser.
  *

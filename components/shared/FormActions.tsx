@@ -3,7 +3,7 @@
 /**
  * Tombol penutup form: "Batal" dan tombol kirim.
  *
- * ── Kenapa satu komponen ────────────────────────────────────────────────────
+ * Kenapa satu komponen
  * Ketiga form pembuatan (Ticket, Request Schedule, Request Design Project)
  * menulis tombolnya sendiri-sendiri, dan labelnya ikut menyimpang: Ticket
  * memakai "Save Ticket", Request Schedule "Tambah Reminder", hanya Request
@@ -11,7 +11,7 @@
  * yang sama membuat orang ragu apakah yang terjadi memang sama.
  *
  * Aturannya sekarang satu: MENGIRIM data baru selalu "Submit Form" dengan ikon
- * kirim; kata "Simpan" hanya dipakai saat mengubah data yang sudah ada — sebab
+ * kirim; kata "Simpan" hanya dipakai saat mengubah data yang sudah ada - sebab
  * di situlah artinya memang menyimpan, bukan mengirim.
  *
  * Warnanya tetap dibedakan per modul (merah untuk Ticket, cyan untuk Schedule,

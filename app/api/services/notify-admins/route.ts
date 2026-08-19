@@ -5,7 +5,7 @@ import { getServicesAdminClient } from '@/lib/supabase-services-admin';
 export const dynamic = 'force-dynamic';
 
 /**
- * /api/services/notify-admins — kabari admin Team Services bahwa ada ticket masuk.
+ * /api/services/notify-admins - kabari admin Team Services bahwa ada ticket masuk.
  *
  * Dulu halaman Ticketing membaca sendiri tabel users basis data Services dari
  * browser untuk mengambil nomor telepon admin di sana. Artinya kontak orang
@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
  * meng-assign ticket. Pembacaan itu dipindah ke sini: nomornya dipakai untuk
  * mengirim WA lalu berhenti di server.
  *
- * Isi pesannya sengaja disusun di sini juga — kalau formatnya dikirim dari
+ * Isi pesannya sengaja disusun di sini juga - kalau formatnya dikirim dari
  * klien, endpoint ini berubah jadi jalan untuk mengirim WA sembarangan ke
  * kontak yang tidak bisa dilihat pemanggilnya.
  */
@@ -99,6 +99,6 @@ export async function POST(request: NextRequest) {
     .filter((n): n is string => !!n);
   for (const n of nomor) await kirimWA(n, pesan);
 
-  // Yang dikembalikan hanya jumlahnya — nomornya tidak pernah keluar dari server.
+  // Yang dikembalikan hanya jumlahnya - nomornya tidak pernah keluar dari server.
   return NextResponse.json({ terkirim: nomor.length });
 }

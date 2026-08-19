@@ -8,12 +8,12 @@ export interface User {
   phone_number?: string;
   sales_division?: string;
   jabatan?: string;
-  atasan_id?: string | null;  // atasan langsung — pohon hierarki Struktur Organisasi
+  atasan_id?: string | null;  // atasan langsung - pohon hierarki Struktur Organisasi
   allowed_menus?: string[];
   kpi_enabled?: boolean;  // true = masuk roster KPI, false = dikecualikan
   created_at?: string;    // used to calculate days pending for Pending Approval users
-  is_internal_sales?: boolean; // Guest/Sales internal (IVP/MVI) vs external — untuk routing pipeline
-  /** 'full' | 'guest' — toggle akses setara admin di modul data. Lihat lib/constants.ts hasFullAccess(). */
+  is_internal_sales?: boolean; // Guest/Sales internal (IVP/MVI) vs external - untuk routing pipeline
+  /** 'full' | 'guest' - toggle akses setara admin di modul data. Lihat lib/constants.ts hasFullAccess(). */
   access_level?: string;
 }
 
@@ -33,7 +33,7 @@ export interface MenuItem {
   }[];
 }
 
-// ─── Notification Types ───────────────────────────────────────────────────────
+// Notification Types
 
 export interface NotificationItem {
   id: string;
@@ -53,7 +53,7 @@ export const SALES_DIVISIONS = [
   'IOCBali', 'SGP', 'SGP 1', 'SGP 2', 'OSS',
 ];
 
-// Hierarki jabatan — urutan dari bawah ke atas
+// Hierarki jabatan - urutan dari bawah ke atas
 export const JABATAN_LIST = ['Staff', 'Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'] as const;
 export type JabatanType = typeof JABATAN_LIST[number];
 
@@ -66,7 +66,7 @@ export const JABATAN_CONFIG: Record<JabatanType, { icon: string; color: string; 
   'Direktur':               { icon: '👑', color: '#991b1b', bg: '#fff1f2',   border: '#fca5a5', tier: 6 },
 };
 
-// Rules CC otomatis berdasarkan jabatan (bawahan → CC ke jabatan mana di atas)
+// Rules CC otomatis berdasarkan jabatan (bawahan  CC ke jabatan mana di atas)
 export const JABATAN_CC_RULES: Record<JabatanType, JabatanType[]> = {
   'Staff':                  ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager'],
   'Supervisor':             ['Manager', 'Deputy General Manager', 'General Manager'],
@@ -77,7 +77,7 @@ export const JABATAN_CC_RULES: Record<JabatanType, JabatanType[]> = {
 };
 
 
-// ─── Account Settings Modal ──────────────────────────────────────────────────
+// Account Settings Modal
 
 export const ALL_MENU_KEYS = [
   'dashboard',

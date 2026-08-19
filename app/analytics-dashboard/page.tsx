@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * analytics-dashboard/page.tsx — thin wrapper.
+ * analytics-dashboard/page.tsx - thin wrapper.
  * Isi komponen dipindah ke _components/AnalyticsPlatform.tsx supaya bisa
  * dipakai ulang secara native (embedded) di Dashboard tanpa iframe.
  */

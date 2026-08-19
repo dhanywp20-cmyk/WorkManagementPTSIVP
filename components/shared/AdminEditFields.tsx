@@ -6,7 +6,7 @@ import type { AdminField } from '@/lib/admin-edit';
  *
  * Digerakkan skema (lihat AdminField), bukan JSX per field, karena tiga modul
  * memakainya dengan 20–40 field masing-masing. Ditulis manual, itu berarti
- * ratusan baris yang nyaris sama — dan tiap penambahan kolom di database harus
+ * ratusan baris yang nyaris sama - dan tiap penambahan kolom di database harus
  * disisipkan di tiga tempat berbeda dengan gaya yang pelan-pelan menyimpang.
  */
 export function AdminEditFields({

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase, User, fmtDate, ScoreBadge, SearchInput, GradingStatusBadge } from './shared';
 import { UserAnswerReview } from './TeamPage';
 
-// ─── Donut Chart ──────────────────────────────────────────────────────────────
+// Donut Chart
 function DonutChart({ segments, size = 68, strokeWidth = 10, label = '' }: {
   segments: { value: number; color: string }[];
   size?: number; strokeWidth?: number; label?: string;
@@ -49,7 +49,7 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ─── Personal Dashboard ───────────────────────────────────────────────────────
+// Personal Dashboard
 export function ScorePage({ user }: { user: User }) {
   const [attempts, setAttempts]       = useState<any[]>([]);
   const [rankings, setRankings]       = useState<any[]>([]);
@@ -63,7 +63,7 @@ export function ScorePage({ user }: { user: User }) {
           .select('*, lc_quiz_sessions(session_name, passing_grade, materi_name, question_ids)')
           .eq('user_id', user.id).eq('is_submitted', true)
           .order('submitted_at', { ascending: false }),
-        // '*' disengaja — lihat catatan di AdminDashboard: menyebut
+        // '*' disengaja - lihat catatan di AdminDashboard: menyebut
         // grading_status eksplisit membuat query gagal total sebelum migrasi.
         supabase.from('lc_quiz_attempts')
           .select('*, users(full_name, role)')
@@ -94,7 +94,7 @@ export function ScorePage({ user }: { user: User }) {
     load();
   }, [user.id]);
 
-  // ── computed ────────────────────────────────────────────────────────────────
+  // computed
   const gradedAttempts = attempts.filter((a: any) => a.grading_status !== 'pending_review');
   const total      = gradedAttempts.length;
   const avg        = total ? gradedAttempts.reduce((s: number, a: any) => s + (a.score ?? 0), 0) / total : 0;

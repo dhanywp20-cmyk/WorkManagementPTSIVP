@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Shared form helpers — sama persis dipakai di reminder-schedule & form-review.
+ * Shared form helpers - sama persis dipakai di reminder-schedule & form-review.
  */
 
 /**
@@ -9,15 +9,15 @@
  *
  * Form create kini bertata letak tiga kolom dalam satu layar; tiap kolom cuma
  * selebar ~470px. Ukuran yang nyaman saat form masih satu kolom lebar membuat
- * isian di sini berdesakan dan justru memaksa gulir — yang persis ingin
+ * isian di sini berdesakan dan justru memaksa gulir - yang persis ingin
  * dihindari oleh tata letak satu layar itu.
  */
 export function FormField({ label, children }: { label: string; children: React.ReactNode }) {
-  // ── Menautkan label ke isiannya ───────────────────────────────────────────
+  // Menautkan label ke isiannya
   // <label> yang hanya berdiri di atas isian TIDAK menamainya: secara program
   // keduanya tidak berhubungan, jadi isiannya terbaca tanpa nama sama sekali.
   // Membungkus isian di DALAM <label> membuat tautannya berlaku tanpa perlu
-  // id — dan tanpa perlu menyentuh ratusan pemanggil untuk menambahkan id
+  // id - dan tanpa perlu menyentuh ratusan pemanggil untuk menambahkan id
   // satu per satu, yang pasti menyisakan sebagian terlewat.
   //
   // Ini juga membuat label bisa diklik untuk memfokuskan isiannya, seperti
@@ -63,7 +63,7 @@ export function InfoRow({ icon, label, value }: { icon: string; label: string; v
 }
 
 /**
- * InfoLine — compact print-style row untuk detail popup (style dari ticketing)
+ * InfoLine - compact print-style row untuk detail popup (style dari ticketing)
  */
 export function InfoLine({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;

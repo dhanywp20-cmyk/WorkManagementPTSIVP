@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-compress';
 
-// ── Types ────────────────────────────────────────────────────────────────────
+// Types
 
 export interface User {
   id: string; username: string; password: string;
@@ -17,7 +17,7 @@ export interface MovementLog {
   created_by: string; created_at: string;
   // Asset tracking fields (added in migration 001)
   kondisi_barang?: 'Baik' | 'Perlu Service' | 'Rusak';
-  expected_return_date?: string;        // ISO date — when item should return (Keluar only)
+  expected_return_date?: string;        // ISO date - when item should return (Keluar only)
   return_confirmed?: boolean;           // True when the Masuk log confirms this Keluar is returned
   checkout_reference_id?: string;       // On a Masuk row: references the original Keluar row id
 }
@@ -25,12 +25,12 @@ export interface MovementLog {
 export const KONDISI_BARANG_LIST = ['Baik', 'Perlu Service', 'Rusak'] as const;
 export type KondisiBarang = typeof KONDISI_BARANG_LIST[number];
 
-// ── Constants ────────────────────────────────────────────────────────────────
+// Constants
 
 export const EVENTS = ['Troubleshooting', 'R&D', 'Demo Product', 'Project', 'Service'];
 export const COLORS = ['#f59e0b','#3b82f6','#10b981','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1'];
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// Helpers
 
 export function splitTypeLines(raw: string | null | undefined): string[] {
   if (!raw) return [];
@@ -55,7 +55,7 @@ export async function uploadFiles(files: File[], folder: string): Promise<string
     const ext  = toUpload.name.split('.').pop() ?? 'bin';
     const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
     // Nama berkas di-generate (bukan nama asli) sehingga isinya tidak pernah
-    // berubah → aman di-cache lama. '3600' membuat browser mengunduh ulang
+    // berubah  aman di-cache lama. '3600' membuat browser mengunduh ulang
     // tiap jam tanpa alasan.
     const { error } = await supabase.storage.from('movement-files').upload(path, toUpload, { cacheControl:'31536000', upsert:false });
     if (error) throw new Error(`Upload ${file.name}: ${error.message}`);

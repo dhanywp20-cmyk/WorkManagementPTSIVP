@@ -1,20 +1,20 @@
 'use client';
 
 /**
- * components/shared/Charts.tsx — grafik yang bisa dipakai SEMUA modul.
+ * components/shared/Charts.tsx - grafik yang bisa dipakai SEMUA modul.
  *
  * Sebelumnya keempat komponen di berkas ini hidup di dalam app/kpi-team/, dan
- * MiniSpark bahkan disalin tiga kali — dua di antaranya dideklarasikan di DALAM
+ * MiniSpark bahkan disalin tiga kali - dua di antaranya dideklarasikan di DALAM
  * fungsi komponen, sehingga dibuat ulang setiap render dan memaksa React
  * melepas-pasang seluruh subtree-nya.
  *
  * Sampai berkas ini ada, satu-satunya grafik bersama adalah MiniPieChart. Pie
- * hanya bisa menjawab "komposisi sekarang berapa persen" — bukan pertanyaan
+ * hanya bisa menjawab "komposisi sekarang berapa persen" - bukan pertanyaan
  * yang paling sering ditanyakan: MEMBAIK ATAU MEMBURUK? Itu butuh deret waktu,
  * dan deret waktu itulah yang disediakan di sini.
  */
 
-// ─── Sparkline ───────────────────────────────────────────────────────────────
+// Sparkline
 
 /**
  * Batang mungil untuk diselipkan di dalam baris tabel atau kartu.
@@ -44,13 +44,13 @@ export function MiniSpark({
   );
 }
 
-// ─── Batang per bulan ────────────────────────────────────────────────────────
+// Batang per bulan
 
 const BULAN = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 
 /**
  * Grafik batang 12 bulan. Bulan berjalan diberi warna penuh, sisanya diredupkan
- * — supaya mata langsung menemukan "sekarang" tanpa membaca label.
+ * - supaya mata langsung menemukan "sekarang" tanpa membaca label.
  *
  * `labels` bisa diisi bila deretnya bukan Januari–Desember (mis. periode 6
  * bulan terakhir); bila kosong dipakai inisial bulan.
@@ -83,11 +83,11 @@ export function MonthBarChart({
   );
 }
 
-// ─── Donat ───────────────────────────────────────────────────────────────────
+// Donat
 
 /**
  * Cincin proporsi dengan angka di tengah. Berbeda dari MiniPieChart yang
- * membawa legenda sendiri — yang ini sengaja telanjang, untuk disandingkan di
+ * membawa legenda sendiri - yang ini sengaja telanjang, untuk disandingkan di
  * dalam kartu yang sudah punya keterangannya.
  */
 export function DonutChart({
@@ -131,7 +131,7 @@ export function DonutChart({
   );
 }
 
-// ─── Pembanding periode ──────────────────────────────────────────────────────
+// Pembanding periode
 
 /**
  * Selisih terhadap periode sebelumnya, dalam persen.
@@ -140,7 +140,7 @@ export function DonutChart({
  * sampai diketahui bulan lalu berapa. Sengaja disediakan bersama grafik supaya
  * dipasang berbarengan.
  *
- * `lowerIsBetter` untuk metrik yang justru bagus kalau turun — waktu respons,
+ * `lowerIsBetter` untuk metrik yang justru bagus kalau turun - waktu respons,
  * jumlah tiket terlambat, keluhan. Tanpa itu, penurunan yang bagus akan
  * diwarnai merah.
  */
@@ -168,7 +168,7 @@ export function TrendBadge({
  * Hitung selisih persen antara periode sekarang dan sebelumnya.
  *
  * Kasus dari-nol ditangani eksplisit: naik dari 0 ke berapa pun bukan
- * "kenaikan tak hingga" melainkan 100%, dan 0→0 adalah 0 — bukan NaN yang
+ * "kenaikan tak hingga" melainkan 100%, dan 00 adalah 0 - bukan NaN yang
  * akhirnya tampil sebagai "NaN%" di layar.
  */
 export function hitungDelta(sekarang: number, sebelumnya: number): number {

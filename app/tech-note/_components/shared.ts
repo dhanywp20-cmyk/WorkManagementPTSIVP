@@ -1,11 +1,11 @@
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Types
 
 export interface TechNoteFolder {
   id: string;
   name: string;
   icon: string;
   /**
-   * display | middleware | software — menentukan emoji folder.
+   * display | middleware | software - menentukan emoji folder.
    * Opsional: folder yang dibuat sebelum sql/tech-note-folder-category.sql
    * dijalankan tidak punya nilai ini.
    */
@@ -46,7 +46,7 @@ export interface TechNoteHistory {
   created_at: string;
 }
 
-// ─── Status Config ────────────────────────────────────────────────────────────
+// Status Config
 
 export const STATUS_CONFIG = {
   pending:  { label: 'Pending Review', color: '#d97706', bg: '#fef3c7', border: '#fcd34d', icon: '⏳' },
@@ -63,7 +63,7 @@ export const ACTION_CONFIG = {
   resubmitted:        { label: 'Resubmit',     color: '#8b5cf6', icon: '📤' },
 } as const;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Helpers
 
 export const KKM_REQUIRED = 2; // target 2 tech note approved per tahun
 

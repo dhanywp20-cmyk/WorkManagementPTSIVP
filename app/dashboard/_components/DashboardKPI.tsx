@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
 import { User } from './shared';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Types
 
 interface KPIData {
   tickets: {
@@ -87,7 +87,7 @@ interface Scope {
   ptsMemberNames?: string[];
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// Constants
 
 const STATUS_COLORS: Record<string, string> = {
   'Waiting Approval': '#f59e0b', 'Pending': '#3b82f6', 'Solved': '#10b981',
@@ -107,7 +107,7 @@ const SEVERITY_STYLE = {
   critical: { bg: 'rgba(239,68,68,0.06)',   border: 'rgba(239,68,68,0.18)',   dot: '#ef4444', text: '#991b1b' },
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Helpers
 
 const todayStr   = () => new Date().toISOString().split('T')[0];
 const dayOfWeek  = () => ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][new Date().getDay()];
@@ -118,7 +118,7 @@ function getMonday() {
   return d.toISOString().split('T')[0];
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// Sub-components
 
 function MiniDonut({ segments, size = 56 }: { segments: { value: number; color: string }[]; size?: number }) {
   const total = segments.reduce((s, x) => s + x.value, 0);
@@ -232,7 +232,7 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
   );
 }
 
-// ── Scope badge ──
+// Scope badge
 function ScopeBadge({ scope }: { scope: Scope }) {
   const cfg = {
     admin:     { label: 'Semua Data',         color: '#be123c', icon: '👑' },
@@ -247,7 +247,7 @@ function ScopeBadge({ scope }: { scope: Scope }) {
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// Main Component
 
 export default function DashboardKPI({ currentUser }: { currentUser: User }) {
   const [scope, setScope]           = useState<Scope>({ kind: 'none' });
@@ -272,7 +272,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
   const [selectedKPIMember, setSelectedKPIMember] = useState<string | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval>|null>(null);
 
-  // ── 1. Resolve scope ──────────────────────────────────────────────────────
+  // 1. Resolve scope
 
   useEffect(() => {
     (async () => {
@@ -300,7 +300,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     })();
   }, [currentUser]);
 
-  // ── 2. Fetch KPI (scope-aware) ────────────────────────────────────────────
+  // 2. Fetch KPI (scope-aware)
 
   const fetchKPI = useCallback(async () => {
     if (!scopeReady || scope.kind === 'none') { setLoading(false); return; }
@@ -310,7 +310,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const inOneWeek = new Date(); inOneWeek.setDate(inOneWeek.getDate()+7);
       const oneWeekStr = inOneWeek.toISOString().split('T')[0];
 
-      // ── Helpers to build scoped queries ──
+      // Helpers to build scoped queries
       const scopeTickets = (q: any) => {
         if (scope.kind === 'pts_sup' && scope.ptsMemberNames?.length) {
           return q.in('assign_name', scope.ptsMemberNames);
@@ -324,7 +324,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         return q;
       };
 
-      // ── Parallel fetches ──
+      // Parallel fetches
       const [ticketsRes, actLogsRes, remindersRes, piketTodayRes, piketWeekRes, kegiatanRes, movRes, usersRes, lcSessionsRes] =
         await Promise.all([
           scopeTickets(supabase.from('tickets').select('id,status,assign_name,sales_division,date,created_at')),
@@ -359,7 +359,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         // piket: show all, but today card highlights their team column
       }
 
-      // ── KPI calculations (identical to before, just on scoped data) ──
+      // KPI calculations (identical to before, just on scoped data)
       const open           = tickets.filter((t:any)=>!['Solved','Cancelled'].includes(t.status)).length;
       const solved         = tickets.filter((t:any)=>t.status==='Solved').length;
       const waitingApproval= tickets.filter((t:any)=>t.status==='Waiting Approval').length;
@@ -428,7 +428,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     finally { setLoading(false); }
   }, [scope, scopeReady]);
 
-  // ── 3. Fetch Audit (scope-aware) ──────────────────────────────────────────
+  // 3. Fetch Audit (scope-aware)
 
   const fetchAudit = useCallback(async () => {
     if (!scopeReady || scope.kind === 'none') { setAuditLoading(false); return; }
@@ -487,7 +487,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     finally { setAuditLoading(false); }
   }, [scope, scopeReady]);
 
-  // ── 4. Fetch KPI Team data ───────────────────────────────────────────────
+  // 4. Fetch KPI Team data
 
   const fetchKPITeam = useCallback(async () => {
     if (!scopeReady || scope.kind === 'none') return;
@@ -603,7 +603,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
         const picCol = tt === 'Team PTS IVP' ? 'pic_ivp_name' : tt === 'Team PTS UMP' ? 'pic_ump_name' : 'pic_mvi_name';
         const piketFilled = piketSchedules.filter((p: any) => p[picCol] === name).length;
 
-        // Ticket response time: avg jam dari ticket created → first activity_log per ticket
+        // Ticket response time: avg jam dari ticket created  first activity_log per ticket
         const myTicketIds = new Set(myTickets.map((t: any) => t.id as string));
         const firstActPerTicket: Record<string, string> = {};
         actLogs.filter((a: any) => myTicketIds.has(a.ticket_id) && a.handler_name === name).forEach((a: any) => {
@@ -659,7 +659,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     } catch { setKpiTeam(prev => ({ ...prev, loading: false })); }
   }, [scope, scopeReady, kpiTeam.filterYear, kpiTeam.filterPeriod]);
 
-  // ── Effects ───────────────────────────────────────────────────────────────
+  // Effects
 
   useEffect(() => {
     if (!scopeReady) return;
@@ -672,7 +672,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     return () => { if(intervalRef.current) clearInterval(intervalRef.current); };
   }, [tab, scopeReady, fetchKPITeam]);
 
-  // ── Filtered Audit ────────────────────────────────────────────────────────
+  // Filtered Audit
 
   const filteredAudit = audit.filter(a => {
     const matchFilter = auditFilter==='all'
@@ -684,7 +684,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     return matchFilter && (!q||[a.actor,a.target,a.action,a.detail].some(x=>x.toLowerCase().includes(q)));
   });
 
-  // ── Early return if no access ─────────────────────────────────────────────
+  // Early return if no access
   if (!scopeReady) return (
     <div className="flex items-center justify-center py-16">
       <div className="w-8 h-8 border-3 border-white/30 border-t-white rounded-full animate-spin"/>
@@ -692,7 +692,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
   );
   if (scope.kind === 'none') return null;
 
-  // ── Piket card highlight per team ─────────────────────────────────────────
+  // Piket card highlight per team
   const isPTSIVP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS IVP';
   const isPTSUMP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS UMP';
   const isPTSMVI = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS MVI';
@@ -709,7 +709,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     : scope.kind==='pts_sup' ? `Summary ${scope.ptsTeamType}`
     : 'KPI Dashboard';
 
-  // ─── LC-style design helpers ────────────────────────────────────────────────
+  // LC-style design helpers
   function SectionPill({ icon, children }: { icon: string; children: React.ReactNode }) {
     return (
       <h3 className="text-[10px] font-bold uppercase tracking-widest mb-4 inline-flex items-center gap-1.5 bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm border border-slate-200">
@@ -718,7 +718,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     );
   }
 
-  // ── Full DonutChart (same as LC) ──
+  // Full DonutChart (same as LC)
   function DonutChart({ segments, size = 68, strokeWidth = 10, label = '' }: {
     segments: { value: number; color: string }[]; size?: number; strokeWidth?: number; label?: string;
   }) {
@@ -754,7 +754,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
     );
   }
 
-  // ── MiniBar: horizontal progress bar ──
+  // MiniBar: horizontal progress bar
   function MiniBar({ value, max, color='#3b82f6', h=4 }: { value:number; max:number; color?:string; h?:number }) {
     const pct = max>0 ? Math.min(100,(value/max)*100) : 0;
     return (
@@ -765,7 +765,6 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
   }
 
 
-  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="w-full" style={{ animation:'fadeInUp 0.35s ease forwards' }}>
 
@@ -1131,7 +1130,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       const allMembers = kpiTeam.members;
                       if (!allMembers.length) return;
 
-                      // ── load SheetJS from CDN ──
+                      // load SheetJS from CDN
                       const XLSX_MOD: any = await new Promise((resolve, reject) => {
                         if ((window as any).XLSX) { resolve((window as any).XLSX); return; }
                         const s = document.createElement('script');
@@ -1166,20 +1165,20 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                         const wsName = ('KPI ' + m.name).substring(0, 31);
                         const aoa: (string|number|null)[][] = [];
 
-                        // Row 1 — Company
+                        // Row 1 - Company
                         aoa.push(['INDOVISUAL GROUP', null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'No','']);
-                        // Row 2 — Form title
+                        // Row 2 - Form title
                         aoa.push(['FORMULIR MONITORING KEY PERFORMANCE INDICATOR', null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'Dokumen :','']);
-                        // Row 3-5 — Identity
+                        // Row 3-5 - Identity
                         aoa.push([`Nama              : ${m.name}`,null,null,null,null,null,null,null,null,null,null,null,null,'Divisi',':', team,null,null,null,'Developed by :','']);
                         aoa.push([`No. Karyawan   : —`,null,null,null,null,null,null,null,null,null,null,null,null,'Department',':', 'Indovisual',null,null,null,'Initial by :','']);
                         aoa.push([`Periode Penilaian : ${year}`,null,null,null,null,null,null,null,null,null,null,null,null,'Level / Posisi',':', m.jabatan,null,null,null,'','']);
-                        // Row 6 — Col headers
+                        // Row 6 - Col headers
                         aoa.push(['Sasaran','Indikator Kinerja','Sumber Data','Periode Isla\nRata2/Total','TARGET\nRata2/Total','', 'January — December',null,null,null,null,null,null,null,null,null,null,null,null,'BOBOT','Nilai\nAkhir']);
-                        // Row 7 — Month names
+                        // Row 7 - Month names
                         aoa.push([null,null,null,null,null,...([''].concat(MONTHS)), null,'Rata2/Total',null,null]);
 
-                        // Helper — push 3 sub-rows for a KPI component
+                        // Helper - push 3 sub-rows for a KPI component
                         const pushRows = (
                           sasaran: string, indikator: string, sumber: string,
                           target: string, bobot: string, nilaiNum: number,
@@ -1198,7 +1197,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                           aoa.push(pctRow);
                         };
 
-                        // ── Section: Customer Perspective ──
+                        // Section: Customer Perspective
                         aoa.push(['Customer Perspective',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]);
                         pushRows(
                           'Technical knowledge\n(Troubleshooting Platform)',
@@ -1219,7 +1218,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                           100
                         );
 
-                        // ── Section: Internal process ──
+                        // Section: Internal process
                         aoa.push(['Internal process Perspective',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]);
                         pushRows(
                           'Technical knowledge\n(Learning Center Platform)',
@@ -1276,7 +1275,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
                         const ws2 = XLSX_MOD.utils.aoa_to_sheet(aoa);
 
-                        // ── Column widths ──
+                        // Column widths
                         ws2['!cols'] = [
                           {wch:28},{wch:32},{wch:22},{wch:11},{wch:18},{wch:11},
                           {wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},
@@ -1284,7 +1283,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                           {wch:10},{wch:9},{wch:10},
                         ];
 
-                        // ── Merges ──
+                        // Merges
                         const M = (r1:number,c1:number,r2:number,c2:number) => ({s:{r:r1,c:c1},e:{r:r2,c:c2}});
                         ws2['!merges'] = [
                           M(0,0,0,18), // Row1 company
@@ -1337,7 +1336,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       const rndTarget = 6 * pm;
                       const wb = XLSX_MOD.utils.book_new();
 
-                      // ── Sheet 1: Rekap Tim ──
+                      // Sheet 1: Rekap Tim
                       const summaryAoa: (string|number|null)[][] = [
                         ['REKAP KPI TIM PTS — INDOVISUAL GROUP', null, null, null, null, null, null, null, null],
                         [`Tahun: ${year}  |  Periode: ${kpiTeam.filterPeriod==='6m'?'6 Bulan (Jul-Des)':'1 Tahun (Jan-Des)'}`, null, null, null, null, null, null, null, null],
@@ -1375,7 +1374,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       wsSummary['!cols'] = [{wch:5},{wch:28},{wch:14},{wch:20},{wch:9},{wch:14},{wch:12},{wch:13},{wch:15},{wch:10},{wch:12},{wch:14}];
                       XLSX_MOD.utils.book_append_sheet(wb, wsSummary, 'Rekap Tim');
 
-                      // ── Sheet 2: Detail per tim (IVP vs MVI) ──
+                      // Sheet 2: Detail per tim (IVP vs MVI)
                       const teams: Record<string, typeof allMembers[0][]> = {};
                       allMembers.forEach(m => {
                         const k = m.team_type;
@@ -1447,17 +1446,17 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 const mviMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS MVI');
                 const umpMembers = kpiTeam.members.filter(m => m.team_type === 'Team PTS UMP');
                 const calcKPI = (member: KPITeamMember) => {
-                  // Ticketing 20%: jika tidak ada ticket sama sekali → 0 (belum ada data), bukan 100%
+                  // Ticketing 20%: jika tidak ada ticket sama sekali  0 (belum ada data), bukan 100%
                   const tickScore = member.ticketsHandled > 0
                     ? Math.max(0, 1 - member.ticketsOverdue / Math.max(member.ticketsHandled, 1))
                     : 0;
-                  // BAST & Demo 30%: dari formReviewLowRating — jika belum ada review sama sekali → 0
+                  // BAST & Demo 30%: dari formReviewLowRating - jika belum ada review sama sekali  0
                   // Punya review dan tidak ada bintang rendah = 100%, ada bintang rendah = kurang
                   const hasFormReview = (member.ticketsHandled > 0); // proxy: aktif bekerja
                   const bastScore = !hasFormReview ? 0
                     : member.formReviewLowRating === 0 ? 1
                     : Math.max(0, 1 - member.formReviewLowRating * 0.25);
-                  // Tech Knowledge 40%: dari LC — jika belum ada attempt sama sekali → 0
+                  // Tech Knowledge 40%: dari LC - jika belum ada attempt sama sekali  0
                   const lcScore = member.lcAttempts === 0
                     ? 0
                     : Math.max(0, 1 - (member.lcFailedBelow75 / Math.max(member.lcAttempts, 1)));
@@ -1467,7 +1466,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   const rndScore = member.manual.technicalNote >= rndTarget ? 1 : member.manual.technicalNote / rndTarget;
                   return Math.round([0.20, 0.30, 0.40, 0.10].reduce((s, w, i) => s + w * [tickScore, bastScore, lcScore, rndScore][i], 0) * 100);
                 };
-                // ── Compact horizontal member chip ───────────────────────
+                // Compact horizontal member chip
                   const MemberChip = ({ member }: { member: KPITeamMember }) => {
                   const finalKPI = calcKPI(member);
                   const noData   = member.ticketsHandled===0 && member.lcAttempts===0 && member.manual.technicalNote===0;
@@ -1523,7 +1522,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   );
                 };
 
-                // ── Team row: 1 line horizontal scroll ──────────────────
+                // Team row: 1 line horizontal scroll
                 const TeamRow = ({ members, label, color, abbr }: { members: KPITeamMember[]; label: string; color: string; abbr: string }) => {
                   const scored = members.filter(m=>!(m.ticketsHandled===0&&m.lcAttempts===0&&m.manual.technicalNote===0));
                   const avg    = scored.length ? Math.round(scored.reduce((s,m)=>s+calcKPI(m),0)/scored.length) : null;
@@ -1566,7 +1565,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
               {selectedKPIMember && (() => {
                 const member = kpiTeam.members.find(m => m.id === selectedKPIMember);
                 if (!member) return null;
-                // New 4-component scoring — belum ada data = 0, bukan 100%
+                // New 4-component scoring - belum ada data = 0, bukan 100%
                 const tickScore = member.ticketsHandled > 0 ? Math.max(0, 1 - member.ticketsOverdue / Math.max(member.ticketsHandled,1)) : 0;
                 const hasFormReview = member.ticketsHandled > 0;
                 const bastScore = !hasFormReview ? 0 : member.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - member.formReviewLowRating * 0.25);

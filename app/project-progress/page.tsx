@@ -49,17 +49,17 @@ export default function ProjectProgressPage() {
   // Modal share
   const [shareFor, setShareFor] = useState<ProgressProject | null>(null);
 
-  // Daftar PIC untuk dropdown lokasi — Team PTS assignable (lihat lib/teams.ts)
+  // Daftar PIC untuk dropdown lokasi - Team PTS assignable (lihat lib/teams.ts)
   const [teamUsers, setTeamUsers] = useState<{ id: string; full_name: string }[]>([]);
   /**
-   * Daftar Sales untuk dropdown — sumber yang SAMA dengan Reminder Schedule
+   * Daftar Sales untuk dropdown - sumber yang SAMA dengan Reminder Schedule
    * (users role='guest'), supaya nama yang tersimpan identik. Kecocokan nama
    * inilah yang menentukan proyek mana yang terlihat oleh tiap sales, jadi
    * mengetik bebas tidak boleh: satu huruf beda = proyeknya hilang dari daftar
    * miliknya.
    */
   const [salesUsers, setSalesUsers] = useState<{ id: string; full_name: string; sales_division: string | null }[]>([]);
-  // Perubahan editor yang belum disimpan — dipakai untuk mencegah modal
+  // Perubahan editor yang belum disimpan - dipakai untuk mencegah modal
   // tertutup tanpa sengaja dan menghilangkan pekerjaan.
   const [editorDirty, setEditorDirty] = useState(false);
 
@@ -68,14 +68,14 @@ export default function ProjectProgressPage() {
     setTimeout(() => setToast(null), 3200);
   };
 
-  // ── Load daftar proyek + ringkasan agregat ────────────────────────────────
+  // Load daftar proyek + ringkasan agregat
   const fetchProjects = useCallback(async () => {
     if (!currentUser) return;
     setLoading(true);
 
-    // ── Isolasi antar-Sales ────────────────────────────────────────────────
+    // Isolasi antar-Sales
     // Daftar proyek bersifat rahasia antar-sales. Penyaringan dilakukan DI
-    // QUERY, bukan saat render — kalau hanya disaring saat render, data proyek
+    // QUERY, bukan saat render - kalau hanya disaring saat render, data proyek
     // sales lain tetap terkirim ke browser dan terbaca lewat DevTools.
     // Konsekuensinya pencarian pun otomatis aman: kotak Cari hanya menyaring
     // data yang memang sudah menjadi haknya.
@@ -85,7 +85,7 @@ export default function ProjectProgressPage() {
     if (vis.scope === 'own_sales') {
       if (!vis.salesName) { setProjects([]); setLocCount({}); setLoading(false); return; }
       const [ownLocRes, ownProjRes] = await Promise.all([
-        // Lokasi yang mencatat namanya — proyeknya ikut terlihat.
+        // Lokasi yang mencatat namanya - proyeknya ikut terlihat.
         supabase.from('progress_locations').select('project_id').eq('sales_name', vis.salesName),
         // Proyek yang mencatat namanya (mis. hasil auto-create dari reminder).
         supabase.from('progress_projects').select('id').eq('sales_name', vis.salesName),
@@ -133,7 +133,7 @@ export default function ProjectProgressPage() {
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
-  // Daftar PIC: hanya Team PTS yang assignable, tanpa admin/superadmin —
+  // Daftar PIC: hanya Team PTS yang assignable, tanpa admin/superadmin -
   // pola yang sama dengan dropdown handler di Request Schedule.
   useEffect(() => {
     (async () => {
@@ -154,7 +154,7 @@ export default function ProjectProgressPage() {
     })();
   }, []);
 
-  // ── Buka detail ───────────────────────────────────────────────────────────
+  // Buka detail
   const openDetail = async (project: ProgressProject) => {
     setDetailLoading(true);
     setEditMode(false);
@@ -170,7 +170,7 @@ export default function ProjectProgressPage() {
         .select('*').in('location_id', locations.map(l => l.id)).order('sort_order');
       components = (data ?? []) as ProgressComponent[];
     }
-    // Riwayat status/state se-proyek — dipakai ProjectDetailView (tampilan
+    // Riwayat status/state se-proyek - dipakai ProjectDetailView (tampilan
     // "Lihat") untuk menggambar alur mendatar tanpa komponennya fetch sendiri.
     const idsRiwayat = [project.id, ...locations.map(l => l.id), ...components.map(c => c.id)];
     let auditTrail: ProgressAuditEntry[] = [];
@@ -185,7 +185,7 @@ export default function ProjectProgressPage() {
     setDetailLoading(false);
   };
 
-  /** Tarik seluruh isi 1 proyek lalu kirim ke Excel — dipakai tabel & kartu mobile. */
+  /** Tarik seluruh isi 1 proyek lalu kirim ke Excel - dipakai tabel & kartu mobile. */
   const handleExport = async (p: ProgressProject) => {
     const [lRes, iRes] = await Promise.all([
       supabase.from('progress_locations').select('*').eq('project_id', p.id).order('sort_order'),
@@ -213,7 +213,7 @@ export default function ProjectProgressPage() {
     setEditMode(wasEdit);
   };
 
-  /** Tutup modal detail — konfirmasi dulu bila ada perubahan belum tersimpan. */
+  /** Tutup modal detail - konfirmasi dulu bila ada perubahan belum tersimpan. */
   const closeDetail = () => {
     if (!editorDirty) { setDetail(null); setEditMode(false); return; }
     setConfirmState({
@@ -230,7 +230,7 @@ export default function ProjectProgressPage() {
     });
   };
 
-  /** Keluar dari mode edit — juga dijaga bila masih ada perubahan. */
+  /** Keluar dari mode edit - juga dijaga bila masih ada perubahan. */
   const exitEditMode = () => {
     if (!editorDirty) { setEditMode(false); return; }
     setConfirmState({
@@ -242,7 +242,7 @@ export default function ProjectProgressPage() {
     });
   };
 
-  // ── CRUD proyek ───────────────────────────────────────────────────────────
+  // CRUD proyek
   const saveProject = async () => {
     if (!projectForm?.name?.trim()) { notify('error', 'Nama proyek wajib diisi.'); return; }
     setSaving(true);
@@ -261,7 +261,7 @@ export default function ProjectProgressPage() {
       if (error) { notify('error', 'Gagal menyimpan: ' + error.message); setSaving(false); return; }
       notify('success', 'Proyek diperbarui.');
       // Status proyek dibandingkan dengan data SEBELUM edit (dari daftar yang
-      // sudah dimuat) — payload di atas selalu berisi status baru, jadi tidak
+      // sudah dimuat) - payload di atas selalu berisi status baru, jadi tidak
       // bisa dipakai sendiri untuk tahu apakah nilainya benar-benar berubah.
       const before = projects.find(p => p.id === projectForm.id);
       if (before && before.status !== payload.status) {
@@ -307,7 +307,7 @@ export default function ProjectProgressPage() {
     });
   };
 
-  // ── Share link ────────────────────────────────────────────────────────────
+  // Share link
   const toggleShare = async (p: ProgressProject, enable: boolean) => {
     const token = p.share_token ?? newShareToken();
     const { error } = await supabase.from('progress_projects')
@@ -340,7 +340,7 @@ export default function ProjectProgressPage() {
     }
   };
 
-  // ── Filter ────────────────────────────────────────────────────────────────
+  // Filter
   /**
    * Hak sunting untuk proyek yang sedang dibuka:
    * 'full' untuk admin/superadmin, 'pic' untuk anggota team yang di-tag PIC
@@ -355,7 +355,7 @@ export default function ProjectProgressPage() {
     [detail, currentUser],
   );
 
-  /** Rata-rata progres seluruh project — angka tengah pie "Progres per Project". */
+  /** Rata-rata progres seluruh project - angka tengah pie "Progres per Project". */
   const overallAvg = useMemo(() => {
     const vals = projects.map(p => locCount[p.id]?.avg ?? 0);
     return vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : 0;
@@ -663,7 +663,7 @@ export default function ProjectProgressPage() {
               ) : editMode && detailMode ? (
                 <DetailEditor
                   // key: paksa draft dibangun ulang HANYA saat ganti proyek /
-                  // setelah simpan — bukan tiap render, supaya tidak berkedip.
+                  // setelah simpan - bukan tiap render, supaya tidak berkedip.
                   key={`${detail.project.id}-${detail.locations.length}-${detail.components.length}-${detail.issues.length}`}
                   detail={detail} teamUsers={teamUsers} salesUsers={salesUsers}
                   mode={detailMode ?? 'pic'} editableIds={detailEditableIds}
@@ -828,7 +828,7 @@ export default function ProjectProgressPage() {
   );
 }
 
-// ─── Editor detail (lokasi / komponen / isu) ─────────────────────────────────
+// Editor detail (lokasi / komponen / isu)
 
 /**
  * Editor memakai DRAFT LOKAL. Semua perubahan hanya mengubah state di memori;
@@ -885,14 +885,14 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
   salesUsers: { id: string; full_name: string; sales_division: string | null }[];
   /**
    * 'full' = admin/superadmin: seluruh struktur proyek.
-   * 'pic'  = anggota team yang di-tag PIC: HANYA progres lokasinya sendiri —
+   * 'pic'  = anggota team yang di-tag PIC: HANYA progres lokasinya sendiri -
    *          status komponen, foto evidence, dan catatan. Tidak boleh menambah/
    *          menghapus lokasi & komponen, mengubah PIC/status lokasi, atau
    *          menyunting rekap isu.
    */
   mode: EditorMode;
   editableIds: Set<string>;
-  /** Dipakai untuk mencatat SIAPA di riwayat perubahan — lihat save(). */
+  /** Dipakai untuk mencatat SIAPA di riwayat perubahan - lihat save(). */
   currentUser: CurrentUser | null;
   onSaved: () => void;
   onDirtyChange: (d: boolean) => void;
@@ -909,7 +909,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
   const [removedLoc, setRemovedLoc] = useState<string[]>([]);
   const [removedComp, setRemovedComp] = useState<string[]>([]);
   const [removedIssue, setRemovedIssue] = useState<string[]>([]);
-  // Draft lokasi/komponen tidak membawa created_at/sales_name — dipakai
+  // Draft lokasi/komponen tidak membawa created_at/sales_name - dipakai
   // timeline mini per field ("Lokasi dibuat" / "Komponen ditambahkan") lewat
   // lookup ke data asli ini.
   const origLocById = useMemo(() => new Map(detail.locations.map(l => [l.id, l])), [detail.locations]);
@@ -919,7 +919,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
   /**
    * Dinaikkan tiap kali draft berhasil disimpan, dipakai sebagai bagian `key`
    * panel Riwayat per kartu lokasi supaya ia RE-MOUNT dan mengambil ulang
-   * datanya — status/state yang berubah tidak mengubah id lokasi/komponen itu
+   * datanya - status/state yang berubah tidak mengubah id lokasi/komponen itu
    * sendiri, jadi effect di dalam AuditTrailPanel tidak akan tahu ada baris
    * baru untuk id yang sama tanpa dipaksa remount begini.
    */
@@ -927,7 +927,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
 
   const touch = () => { if (!dirty) { setDirty(true); onDirtyChange(true); } };
 
-  // ── Mutasi draft (murni lokal) ──────────────────────────────────────────
+  // Mutasi draft (murni lokal)
   const patchLoc = (id: string, patch: Partial<DraftLocation>) => {
     touch();
     setLocations(prev => prev.map(l => l.id === id ? { ...l, ...patch } : l));
@@ -978,7 +978,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
 
   /**
    * Foto evidence per komponen. File diunggah ke Storage saat dipilih, tapi
-   * TAUTANNYA baru masuk database saat "Simpan Perubahan" ditekan — konsisten
+   * TAUTANNYA baru masuk database saat "Simpan Perubahan" ditekan - konsisten
    * dengan janji "tidak ada autosave".
    * Nama file disanitasi: Supabase Storage menolak key bertanda kurung/spasi.
    */
@@ -987,8 +987,8 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
     setUploadingComp(compId);
     try {
       // DUA berkas sekaligus, demi menekan egress Supabase paket gratis:
-      //  - thumb 320px q0.6 (~15-30KB) → yang dirender di daftar komponen
-      //  - full  1280px q0.7 (~120-250KB) → hanya diunduh saat thumbnail diklik
+      //  - thumb 320px q0.6 (~15-30KB)  yang dirender di daftar komponen
+      //  - full  1280px q0.7 (~120-250KB)  hanya diunduh saat thumbnail diklik
       // Foto evidence tidak perlu kualitas cetak, jadi 1280 sudah lebih dari
       // cukup untuk dibaca layar penuh.
       const [full, thumb] = await Promise.all([
@@ -1008,7 +1008,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
       if (fullRes.error) { notify('error', 'Upload foto gagal: ' + fullRes.error.message); return; }
 
       const fullUrl = supabase.storage.from('project-files').getPublicUrl(`${base}-${safe}`).data.publicUrl;
-      // Thumbnail gagal bukan alasan membatalkan upload — jatuh balik ke foto
+      // Thumbnail gagal bukan alasan membatalkan upload - jatuh balik ke foto
       // penuh supaya fitur tetap jalan, hanya kurang hemat.
       const thumbUrl = thumbRes.error
         ? fullUrl
@@ -1036,7 +1036,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
     setIssues(prev => prev.filter(i => i.id !== id));
   };
 
-  // ── Simpan seluruh draft ────────────────────────────────────────────────
+  // Simpan seluruh draft
   const save = async () => {
     if (locations.some(l => !l.name.trim())) {
       notify('error', 'Ada lokasi tanpa nama. Isi dulu sebelum menyimpan.');
@@ -1046,17 +1046,17 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
 
     /* Riwayat perubahan (audit_trail). Dua hal yang membuat pencatatan ini
        tidak bisa ditempel begitu saja di setiap .update():
-       1. Ini penyimpanan diff, bukan autosave per field — satu tekan
+       1. Ini penyimpanan diff, bukan autosave per field - satu tekan
           "Simpan" bisa membawa banyak lokasi & komponen sekaligus, sebagian
           benar-benar berubah, sebagian cuma ikut terkirim ulang. Tanpa
           membandingkan ke data ASLI (before-save, dari `detail` yang dimuat
           sebelum draft disunting), setiap simpan akan mencatat SEMUA baris
           sebagai "berubah" walau isinya sama persis.
-       2. logAudit tidak boleh pernah menggagalkan simpan utama — makanya
+       2. logAudit tidak boleh pernah menggagalkan simpan utama - makanya
           setiap pemanggilan diberi .catch(() => {}) sendiri, konsisten
           dengan cara modul lain (ticketing, dll) memakainya.
        Sengaja HANYA status/state yang dibandingkan (bukan label/foto/catatan):
-       itulah yang diminta — "kapan status-nya berubah" — dan itulah satu-
+       itulah yang diminta - "kapan status-nya berubah" - dan itulah satu-
        satunya field yang benar-benar menentukan progres proyek. */
     const oleh = { user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '' };
     const origLoc = new Map(detail.locations.map(l => [l.id, l]));
@@ -1064,7 +1064,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
 
     try {
       // 1) Hapus dulu, supaya baris yang dihapus tidak ikut divalidasi ulang.
-      //    Dicatat SEBELUM dihapus — sesudahnya nama/labelnya sudah tidak
+      //    Dicatat SEBELUM dihapus - sesudahnya nama/labelnya sudah tidak
       //    terjangkau lagi.
       for (const id of removedComp) {
         const c = origComp.get(id);
@@ -1078,7 +1078,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
       if (removedIssue.length) await supabase.from('progress_issues').delete().in('id', removedIssue);
       if (removedLoc.length)   await supabase.from('progress_locations').delete().in('id', removedLoc);
 
-      // 2) Lokasi — progress DIHITUNG dari komponennya, tidak diisi manual.
+      // 2) Lokasi - progress DIHITUNG dari komponennya, tidak diisi manual.
       for (let i = 0; i < locations.length; i++) {
         const l = locations[i];
         // Mode 'pic' hanya boleh mengubah progres/catatan. sort_order SENGAJA
@@ -1114,7 +1114,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
         } else {
           const { error } = await supabase.from('progress_locations').update(payload).eq('id', l.id);
           if (error) throw error;
-          // status hanya ada di payload mode 'full' — mode 'pic' tidak pernah
+          // status hanya ada di payload mode 'full' - mode 'pic' tidak pernah
           // mengubahnya, jadi tidak ada yang perlu dibandingkan di sana.
           const before = origLoc.get(l.id);
           if (isFull && before && before.status !== l.status) {
@@ -1138,7 +1138,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
           let { data, error } = await supabase.from('progress_components').insert(rows).select('id');
           if (error) {
             // weight/category belum ada di DB (sql/project-progress-weighted-issues.sql
-            // belum dijalankan) — coba lagi tanpa kolom itu supaya simpan tetap jalan.
+            // belum dijalankan) - coba lagi tanpa kolom itu supaya simpan tetap jalan.
             ({ data, error } = await supabase.from('progress_components')
               .insert(rows.map(({ weight: _weight, ...rest }) => rest)).select('id'));
           }
@@ -1152,7 +1152,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
           const compPayload = { label: c.label.trim(), state: c.state, weight: c.weight, photo_url: c.photo_url, photo_thumb_url: c.photo_thumb_url, sort_order: l.components.indexOf(c) };
           let { error } = await supabase.from('progress_components').update(compPayload).eq('id', c.id);
           if (error) {
-            // Sama seperti di atas — weight opsional, jangan sampai memblokir simpan progres.
+            // Sama seperti di atas - weight opsional, jangan sampai memblokir simpan progres.
             const { weight: _weight, ...withoutWeight } = compPayload;
             ({ error } = await supabase.from('progress_components').update(withoutWeight).eq('id', c.id));
           }
@@ -1383,7 +1383,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
                           onChange={e => patchComp(loc.id, c.id, { label: e.target.value })}
                           className="flex-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-gray-200 focus:border-cyan-500 outline-none" />
                       ) : (
-                        // PIC hanya mengubah progres — nama komponen dikunci.
+                        // PIC hanya mengubah progres - nama komponen dikunci.
                         <span className="flex-1 px-2 py-1 text-[11px] font-semibold text-gray-700 truncate">{c.label}</span>
                       )}
 
@@ -1502,13 +1502,13 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
   );
 }
 
-// ─── UI kecil ────────────────────────────────────────────────────────────────
+// UI kecil
 
 const inputCls = 'w-full px-3.5 py-2.5 rounded-xl text-sm font-medium border-2 border-gray-200 focus:border-cyan-500 outline-none bg-white';
 const inputSm  = 'w-full px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border-2 border-gray-200 focus:border-cyan-500 outline-none bg-white';
 
 /**
- * Baris ikon aksi — dipakai DUA tempat (tabel desktop & kartu mobile) supaya
+ * Baris ikon aksi - dipakai DUA tempat (tabel desktop & kartu mobile) supaya
  * tidak ada duplikasi tombol yang bisa lupa disinkronkan.
  */
 function RowActions({ p, canEdit, onView, onExport, onShare, onEdit, onDelete }: {

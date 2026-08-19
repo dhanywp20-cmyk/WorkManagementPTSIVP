@@ -17,7 +17,7 @@ export function AssignPTSModal({
   req, onClose, onAssigned, currentUser, allowSupervisorRoute = false,
 }: {
   req: ProjectRequest; onClose: () => void; onAssigned: () => void; currentUser: User;
-  // true = dibuka oleh Admin/Manager saat approve → boleh pilih "Route ke Supervisor".
+  // true = dibuka oleh Admin/Manager saat approve  boleh pilih "Route ke Supervisor".
   // false = dibuka oleh Supervisor utk assign final ke Tim PTS (tanpa opsi route).
   allowSupervisorRoute?: boolean;
 }) {
@@ -34,12 +34,12 @@ export function AssignPTSModal({
   const isExternal = !!(req.sales_division && req.sales_division.trim() && req.sales_division.trim().toUpperCase() !== 'IVP');
 
   useEffect(() => {
-    // Fetch Team PTS (hanya team assignable = IVP/MVI, UMP dikecualikan — lib/teams.ts)
+    // Fetch Team PTS (hanya team assignable = IVP/MVI, UMP dikecualikan - lib/teams.ts)
     supabase.from('users')
       .select('id, full_name, role, team_type, phone_number, sales_division')
       .in('role', ['team_pts', 'team'])
       .then(({ data }: { data: User[] | null }) => { if (data) setTeamMembers(data.filter(u => isAssignablePTSTeam(u.team_type))); });
-    // Fetch Supervisor (jabatan='Supervisor') — utk opsi Route ke Supervisor
+    // Fetch Supervisor (jabatan='Supervisor') - utk opsi Route ke Supervisor
     if (allowSupervisorRoute) {
       supabase.from('users')
         .select('id, full_name, team_type, phone_number')
@@ -48,7 +48,7 @@ export function AssignPTSModal({
     }
   }, [allowSupervisorRoute]);
 
-  // ── Route ke Supervisor: request lanjut ke Supervisor utk di-assign ke tim ──
+  // Route ke Supervisor: request lanjut ke Supervisor utk di-assign ke tim
   const handleRouteToSupervisor = async () => {
     if (!selectedSupervisorId) { setFormErr('Pilih Supervisor tujuan terlebih dahulu.'); return; }
     setFormErr('');
@@ -116,7 +116,7 @@ export function AssignPTSModal({
       }]);
 
       // WA notif ke PTS. (IVP Sales internal reviewer sudah dinotif via WA saat
-      // request dibuat — lihat resolveBrandInternals/internalHandlers di page.tsx —
+      // request dibuat - lihat resolveBrandInternals/internalHandlers di page.tsx -
       // jadi tidak perlu dikirim ulang di sini.)
       const ptsMember = teamMembers.find(m => m.full_name === selectedPTS);
       if (ptsMember?.phone_number) {
@@ -285,7 +285,7 @@ export function AssignPTSModal({
   );
 }
 
-// ─── RoomSection ─────────────────────────────────────────────────────────────
+// RoomSection
 // Style matches Ruangan 1 exactly: larger buttons (px-3 py-2 text-sm), bold labels
 
 export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, photos, onAddPhotos, onRemovePhoto, toggleArr, boqFile, onSetBoq, isGuest }: {
@@ -623,7 +623,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
   );
 }
 
-// ─── NewFormModal ─────────────────────────────────────────────────────────────
+// NewFormModal
 
 export type InitialFormType = {
   project_name: string; room_name: string; project_location: string; sales_name: string; sales_division: string;
@@ -641,7 +641,7 @@ export type InitialFormType = {
   ukuran_ruangan: string; suggest_tampilan: string; keterangan_lain: string;
   brand_display: string; brand_display_pic_id: string; brand_display_pic_name: string;
   /**
-   * Display KEDUA — satu ruangan bisa memakai dua produk display dari brand
+   * Display KEDUA - satu ruangan bisa memakai dua produk display dari brand
    * berbeda, dan tiap brand punya PIC-nya sendiri. Tanpa slot kedua, brand
    * yang satunya hanya bisa dititipkan di kolom keterangan dan PIC-nya tidak
    * pernah ikut ter-mapping.
@@ -652,7 +652,7 @@ export type InitialFormType = {
   brand_display_2?: string; brand_display_2_pic_id?: string; brand_display_2_pic_name?: string;
   brand_middleware: string; brand_middleware_pic_id: string; brand_middleware_pic_name: string;
   source_laptop_qty: string; source_pc_qty: string;
-  brand?: string; // Marketing Brand: 'MVI' | 'IVP' | 'BOTH' — Sales External pilih (routing Sales Internal)
+  brand?: string; // Marketing Brand: 'MVI' | 'IVP' | 'BOTH' - Sales External pilih (routing Sales Internal)
 };
 
 export interface NewFormModalProps {
@@ -672,7 +672,7 @@ export interface NewFormModalProps {
   onClose: () => void;
   onSubmit: () => void;
   salesGuestUsers: {id:string;full_name:string;username:string;sales_division?:string;is_internal_sales?:boolean}[];
-  isInternalSalesGuest?: boolean; // creator = Sales Internal (guest) → tampilkan field SBU
+  isInternalSalesGuest?: boolean; // creator = Sales Internal (guest)  tampilkan field SBU
   rooms: RoomDetail[];
   setRooms: React.Dispatch<React.SetStateAction<RoomDetail[]>>;
   brandPicMappings: BrandPicMapping[];
@@ -889,7 +889,7 @@ export function NewFormModal({
             {/* Content — 2 columns */}
             <div className="p-5">
               {activeRoomIdx === 0 ? (
-                /* ── Ruangan 1 (main form) — same style as RoomSection ── */
+                /* Ruangan 1 (main form) - same style as RoomSection */
                 <>
                 {/* Nama Ruangan 1 */}
                 <div className="flex items-center gap-2 mb-4 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl">
@@ -1261,7 +1261,7 @@ export function NewFormModal({
                 )}
                 </>
               ) : (
-                /* ── Extra Room (RoomSection component) ── */
+                /* Extra Room (RoomSection component) */
                 <RoomSection
                   room={rooms[activeRoomIdx - 1]}
                   rIdx={activeRoomIdx - 1}
@@ -1298,4 +1298,4 @@ export function NewFormModal({
   );
 }
 
-// ─── request design Project Module ──────────────────────────────────────────────
+// request design Project Module

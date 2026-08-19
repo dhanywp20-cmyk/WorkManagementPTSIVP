@@ -5,7 +5,7 @@ import { User } from './shared';
 import { ModalPortal } from '@/components/shared';
 import { hitungLingkupProject, filterLingkup, type LingkupProject } from '@/lib/project-scope';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Types
 
 type ResultType = 'ticket' | 'reminder' | 'project' | 'piket' | 'unit' | 'user'
   | 'progress' | 'technote' | 'daily' | 'review' | 'materi';
@@ -41,7 +41,7 @@ const ALL_TYPES: ResultType[] = [
   'piket','unit','technote','materi','user',
 ];
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// Component
 
 export default function GlobalSearch({ currentUser, onNavigate }: {
   currentUser: User;
@@ -58,22 +58,22 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
   const debounce  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
-   * ── Cakupan pencarian ────────────────────────────────────────────────────
+   * Cakupan pencarian
    *
    * BUG yang ditutup di sini: sebelumnya penyaringan hanya punya cabang untuk
-   * PTS Supervisor dan Sales Supervisor. Sales BIASA — role guest tanpa jabatan
-   * supervisor, yang jumlahnya paling banyak — tidak masuk cabang mana pun,
+   * PTS Supervisor dan Sales Supervisor. Sales BIASA - role guest tanpa jabatan
+   * supervisor, yang jumlahnya paling banyak - tidak masuk cabang mana pun,
    * sehingga LOLOS DARI SELURUH PENYARINGAN dan bisa melihat tiket, jadwal,
    * serta project milik sales lain lewat kotak pencarian.
    *
    * Aturan sekarang:
-   *   admin · superadmin · team  → seluruh data, tanpa batas
-   *   sales supervisor           → divisi & bawahannya
-   *   sales biasa                → HANYA yang mencatat namanya
+   *   admin · superadmin · team   seluruh data, tanpa batas
+   *   sales supervisor            divisi & bawahannya
+   *   sales biasa                 HANYA yang mencatat namanya
    *
    * Penyaringan dilakukan DI QUERY (lihat batasiLingkup), bukan setelah data
    * tiba. Menyaring setelah tiba berarti data sales lain
-   * sudah sampai di browser dan terbaca lewat DevTools — untuk daftar
+   * sudah sampai di browser dan terbaca lewat DevTools - untuk daftar
    * pelanggan dan nilai project, itu kebocoran yang sesungguhnya.
    */
   const isAdmin  = ['admin','superadmin'].includes(currentUser.role?.toLowerCase() ?? '');
@@ -93,7 +93,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
    *
    * Batas "hanya milik saya" saja TERLALU sempit untuk Sales Internal: dia bertugas
    * menangani beberapa divisi sekaligus, dan divisi itu ditentukan tabel
-   * pemetaan — bukan bisa disimpulkan dari profilnya. Tanpa ini, Sales Internal
+   * pemetaan - bukan bisa disimpulkan dari profilnya. Tanpa ini, Sales Internal
    * tidak menemukan project divisi yang justru jadi tanggung jawabnya.
    */
 
@@ -109,7 +109,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     const user = (currentUser.username ?? '').replace(/"/g, '');
     const syarat = kolomMilik
       .map(k => (k === 'created_by' ? `${k}.eq."${user}"` : `${k}.eq."${nama}"`));
-    // Divisi yang dipetakan ikut di-OR — inilah bedanya dengan batas
+    // Divisi yang dipetakan ikut di-OR - inilah bedanya dengan batas
     // "hanya milik saya": Sales Internal memang bertugas atas beberapa divisi.
     for (const d of lingkup.divisi) syarat.push(`${kolomDivisi}.eq."${d.replace(/"/g, '')}"`);
     return (query as { or: (x: string) => T }).or(syarat.join(','));
@@ -129,7 +129,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     return izin.includes(kunci);
   };
 
-  // ── Open/close via keyboard ──
+  // Open/close via keyboard
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setOpen(o => !o); }
@@ -143,7 +143,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     if (open) { setTimeout(() => inputRef.current?.focus(), 50); setQuery(''); setResults([]); setSelected(0); }
   }, [open]);
 
-  // ── Keyboard navigation inside modal ──
+  // Keyboard navigation inside modal
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -156,7 +156,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     return () => window.removeEventListener('keydown', handler);
   }, [open, results, selected, activeType]);
 
-  // ── Fetch scope: get team member names for PTS supervisor ──
+  // Fetch scope: get team member names for PTS supervisor
   const getPTSTeamNames = useCallback(async (): Promise<string[]> => {
     const { data } = await supabase.from('users')
       .select('full_name')
@@ -165,7 +165,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     return (data ?? []).map((u: any) => u.full_name as string);
   }, [currentUser]);
 
-  // ── Fetch scope: get supervised divisions & subordinate names for Sales supervisor ──
+  // Fetch scope: get supervised divisions & subordinate names for Sales supervisor
   const getSalesScope = useCallback(async (): Promise<{ divisions: string[]; subNames: string[] }> => {
     const selfTier = currentUser.jabatan === 'Supervisor' ? 2 :
                      currentUser.jabatan === 'Manager' ? 3 :
@@ -206,11 +206,11 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     return { divisions, subNames };
   }, [currentUser]);
 
-  // ── Main search ──
+  // Main search
   const doSearch = useCallback(async (q: string) => {
     /* Lingkup dihitung DI SINI dan ditunggu, bukan disimpan di state.
        Versi sebelumnya memuatnya lewat useEffect lalu memasang penjaga
-       `if (!lingkup) return query` — artinya selama lingkup belum tiba, query
+       `if (!lingkup) return query` - artinya selama lingkup belum tiba, query
        berangkat TANPA filter sama sekali. Mengetik sedetik setelah kotak
        pencarian dibuka sudah cukup untuk memunculkan seluruh project milik
        siapa pun. Penjaga yang gagal ke arah "terbuka" lebih berbahaya daripada
@@ -233,14 +233,14 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
     const res: SearchResult[] = [];
 
-    // ── 1. Tickets ──
+    // 1. Tickets
     if (bolehModul('ticket-troubleshooting')) try {
       let q2 = supabase.from('tickets')
         .select('id, project_name, issue_case, assign_name, status, date, sales_division, sales_name, created_by')
         .or(`project_name.ilike.%${q}%,issue_case.ilike.%${q}%,assign_name.ilike.%${q}%,sales_name.ilike.%${q}%,sn_unit.ilike.%${q}%`)
         .order('created_at', { ascending: false }).limit(20);
 
-      // Sales biasa: dibatasi DI QUERY — tiket sales lain tidak pernah dikirim
+      // Sales biasa: dibatasi DI QUERY - tiket sales lain tidak pernah dikirim
       // ke browser, bukan sekadar disembunyikan setelah tiba.
       if (!tanpaBatas) q2 = batasiLingkup(lingkup, q2, ['sales_name', 'created_by']);
 
@@ -268,7 +268,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }));
     } catch (e) { console.error('[search] tickets:', e); }
 
-    // ── 2. Reminders ──
+    // 2. Reminders
     if (bolehModul('reminder-schedule')) try {
       let qr = supabase.from('reminders')
         .select('id, project_name, title, category, due_date, assign_name, sales_name, sales_division, status')
@@ -292,7 +292,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
       reminders.forEach((r: any) => res.push({
         id: `reminder-${r.id}`, type: 'reminder', icon: '🗓️',
-        // Nama bisa ada di salah satu dari dua kolom — pakai urutan yang sama
+        // Nama bisa ada di salah satu dari dua kolom - pakai urutan yang sama
         // dengan halaman Request Schedule supaya judulnya tidak jadi '-'.
         title: r.project_name || r.title || '-',
         sub: `${r.category} · ${r.due_date ?? '-'}`,
@@ -303,7 +303,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }));
     } catch (e) { console.error('[search] reminders:', e); }
 
-    // ── 3. Form Require Project ──
+    // 3. Form Require Project
     if (bolehModul('request-design-project')) try {
       let qp = supabase.from('project_requests')
         .select('id, project_name, status, sales_name, sales_division, created_at, requester_id')
@@ -336,7 +336,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }));
     } catch (e) { console.error('[search] projects:', e); }
 
-    // ── 4. Piket Showroom ──
+    // 4. Piket Showroom
     if (bolehModul('picket-showroom')) try {
       const { data: pkData } = await supabase.from('piket_schedules')
         .select('id, day_date, day_of_week, pic_ivp_name, pic_ump_name, pic_mvi_name')
@@ -365,7 +365,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }));
     } catch (e) { console.error('[search] piket:', e); }
 
-    // ── 5. Unit Movement ──
+    // 5. Unit Movement
     if (bolehModul('unit-movement')) try {
       if (tanpaBatas) {
         const { data: uData } = await supabase.from('movement_logs')
@@ -390,9 +390,9 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }
     } catch (e) { console.error('[search] units:', e); }
 
-    // ── 7. Project Progress ──
+    // 7. Project Progress
     //  RLS di progress_* sudah menegakkan isolasi Sales di level basis data,
-    //  jadi query ini otomatis hanya mengembalikan proyek yang memang haknya —
+    //  jadi query ini otomatis hanya mengembalikan proyek yang memang haknya -
     //  tanpa perlu penyaringan tambahan di sini. Batas untuk sales biasa tetap
     //  dipasang sebagai lapis kedua, kalau-kalau RLS dimatikan sewaktu-waktu.
     if (bolehModul('project-progress')) try {
@@ -413,8 +413,8 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }));
     } catch (e) { console.error('[search] project progress:', e); }
 
-    // ── 8. Tech Note ──
-    //  Catatan teknis adalah pengetahuan bersama tim PTS — tidak dibatasi per
+    // 8. Tech Note
+    //  Catatan teknis adalah pengetahuan bersama tim PTS - tidak dibatasi per
     //  orang, tapi Sales memang tidak berkepentingan dengannya.
     if (bolehModul('tech-note')) try {
       if (tanpaBatas) {
@@ -434,14 +434,14 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }
     } catch (e) { console.error('[search] tech note:', e); }
 
-    // ── 9. Daily Report ──
+    // 9. Daily Report
     if (bolehModul('daily-report')) try {
       let qd = supabase.from('daily_reports')
         .select('id, report_date, user_name, sales_division, reminder_notes')
         .or(`user_name.ilike.%${q}%,reminder_notes.ilike.%${q}%,sales_division.ilike.%${q}%`)
         .order('report_date', { ascending: false }).limit(10);
       // Dulu hanya sales BIASA yang dibatasi di sini, sehingga Sales Supervisor
-      // — dan siapa pun di luar dua kategori itu — membaca laporan harian
+      // - dan siapa pun di luar dua kategori itu - membaca laporan harian
       // seluruh divisi. Sekarang batasnya sama dengan modul lain: siapa pun
       // yang bukan orang dalam PTS dibatasi ke lingkupnya.
       if (!tanpaBatas) qd = batasiLingkup(lingkup, qd, ['user_name']);
@@ -455,7 +455,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }));
     } catch (e) { console.error('[search] daily report:', e); }
 
-    // ── 10. Form Review ──
+    // 10. Form Review
     if (bolehModul('form-bast')) try {
       let qf = supabase.from('form_reviews')
         .select('id, project_name, address, sales_name, sales_division, assign_name')
@@ -477,8 +477,8 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }));
     } catch (e) { console.error('[search] form review:', e); }
 
-    // ── 11. Materi Learning Center ──
-    //  Materi pelatihan terbuka untuk semua yang login — tidak ada isi rahasia
+    // 11. Materi Learning Center
+    //  Materi pelatihan terbuka untuk semua yang login - tidak ada isi rahasia
     //  antar-orang di sini, jadi tidak perlu dibatasi.
     if (bolehModul('learning-center')) try {
       const { data } = await supabase.from('lc_materials')
@@ -494,7 +494,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }));
     } catch (e) { console.error('[search] materi:', e); }
 
-    // ── 6. Users (admin only) ──
+    // 6. Users (admin only)
     try {
       if (isAdmin) {
         const { data: usrData } = await supabase.from('users')
@@ -515,7 +515,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     setLoading(false);
   }, [isAdmin, isPTSsup, isSalesSup, currentUser, getPTSTeamNames, getSalesScope]);
 
-  // ── Debounced search ──
+  // Debounced search
   useEffect(() => {
     if (debounce.current) clearTimeout(debounce.current);
     if (!query.trim()) { setResults([]); setLoading(false); return; }

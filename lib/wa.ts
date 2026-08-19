@@ -1,12 +1,12 @@
 /**
- * lib/wa.ts — Pengirim notifikasi WhatsApp terpusat (sisi klien)
+ * lib/wa.ts - Pengirim notifikasi WhatsApp terpusat (sisi klien)
  *
  * Semua modul (ticketing, form-require-project, reminder-schedule) memakai
  * helper yang sama: POST ke Supabase Edge Function `swift-responder`, yang
  * meneruskan ke gateway WA (Fonnte). Sebelumnya logika ini diduplikasi di
- * beberapa _components/shared.ts — sekarang satu sumber.
+ * beberapa _components/shared.ts - sekarang satu sumber.
  *
- * Catatan: gagal kirim WA TIDAK boleh menggagalkan alur utama → selalu silent.
+ * Catatan: gagal kirim WA TIDAK boleh menggagalkan alur utama  selalu silent.
  *
  * Route server (cron escalate, forgot-password) memanggil Fonnte langsung
  * dengan token rahasia dan TIDAK lewat helper ini (transport berbeda).

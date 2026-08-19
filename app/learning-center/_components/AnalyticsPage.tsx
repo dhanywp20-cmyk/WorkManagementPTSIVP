@@ -64,7 +64,7 @@ function matchesTeamFilter(u: any, filter: TeamFilter): boolean {
   return false;
 }
 
-// ─── Team Switch Button ────────────────────────────────────────────────────────
+// Team Switch Button
 function TeamSwitch({ active, onChange }: { active: TeamFilter; onChange: (t: TeamFilter) => void }) {
   return (
     <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1">
@@ -104,7 +104,7 @@ export function AnalyticsPage() {
 
   useEffect(() => {
     const load = async () => {
-      // '*' disengaja — lihat catatan di AdminDashboard.
+      // '*' disengaja - lihat catatan di AdminDashboard.
       const { data: a } = await supabase
         .from('lc_quiz_attempts')
         .select('*, users(full_name, sales_division, team_type, role)')
@@ -112,7 +112,7 @@ export function AnalyticsPage() {
 
       if (a) {
         const graded = a.filter((att: any) => att.grading_status !== 'pending_review'); // skor essay yg belum dinilai jangan masuk rata-rata
-        // ── Per user ──
+        // Per user
         const byUser: Record<string, { name: string; division: string | null; teamType: string | null; role: string | null; salesDivision: string | null; scores: number[]; passed: number; flags: number }> = {};
         graded.forEach((att: any) => {
           if (!byUser[att.user_id]) byUser[att.user_id] = {
@@ -136,7 +136,7 @@ export function AnalyticsPage() {
         setAllTopUsers(allUsers);
         setTopUsers(allUsers.filter(u => matchesTeamFilter(u, 'PTS')).slice(0, 20));
 
-        // ── Per Sales Division ──
+        // Per Sales Division
         const byDiv: Record<string, { scores: number[]; passed: number; userIds: Set<string> }> = {};
         graded.forEach((att: any) => {
           const div: string = att.users?.sales_division ?? '(Tidak ada divisi)';
@@ -156,7 +156,7 @@ export function AnalyticsPage() {
           scoreLow:  v.scores.filter(s => s < 60).length,
         })).sort((a, b) => b.avg - a.avg));
 
-        // ── Nasional (semua divisi digabung) — dipakai sebagai pembanding ──
+        // Nasional (semua divisi digabung) - dipakai sebagai pembanding
         const allScores = graded.map((att: any) => att.score ?? 0);
         setNationalAvg(allScores.length ? allScores.reduce((s: number, n: number) => s + n, 0) / allScores.length : null);
       }

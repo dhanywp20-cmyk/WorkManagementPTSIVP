@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ user: null }, { status: 401 });
   }
 
-  // access_level opsional — kolom baru, jatuh balik tanpanya kalau belum ada
+  // access_level opsional - kolom baru, jatuh balik tanpanya kalau belum ada
   // di database (lihat catatan yang sama di app/api/auth/login/route.ts).
   let { data: user, error: userErr } = await supabase
     .from('users')

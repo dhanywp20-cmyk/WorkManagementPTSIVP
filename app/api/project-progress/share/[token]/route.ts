@@ -6,7 +6,7 @@ export const revalidate = 0;
 
 /**
  * Progres berubah terus, dan link ini sering dibuka ulang oleh orang yang sama.
- * Tanpa header ini, browser bisa menyajikan salinan lama — proyek terlihat
+ * Tanpa header ini, browser bisa menyajikan salinan lama - proyek terlihat
  * masih kosong padahal lokasinya sudah ditambahkan.
  */
 const NO_STORE = {
@@ -23,8 +23,8 @@ const NO_STORE = {
  * Keamanan:
  *  - Memakai service_role di server, sehingga tabel progress_* TIDAK perlu
  *    dibuka ke anon key yang ikut ter-bundle di browser.
- *  - Token dicari dengan .eq() persis; token salah → 404, tidak bocor apa pun.
- *  - share_enabled = false → 404 juga, jadi link bisa dimatikan tanpa perlu
+ *  - Token dicari dengan .eq() persis; token salah  404, tidak bocor apa pun.
+ *  - share_enabled = false  404 juga, jadi link bisa dimatikan tanpa perlu
  *    mengganti token.
  *  - Hanya READ. Tidak ada jalur tulis di sini.
  *  - Kolom yang dikembalikan dipilih eksplisit; share_token tidak ikut keluar.
@@ -45,7 +45,7 @@ export async function GET(
   // PENTING: daftar kolom di bawah SENGAJA eksplisit, bukan '*', supaya
   // share_token & created_by tidak pernah bocor ke halaman publik.
   // Konsekuensinya: setiap kali menambah kolom baru yang perlu tampil di share,
-  // kolom itu WAJIB ditambahkan di sini juga — kalau tidak, datanya hilang
+  // kolom itu WAJIB ditambahkan di sini juga - kalau tidak, datanya hilang
   // diam-diam tanpa error (persis yang terjadi pada start_date/target_date).
   const { data: project, error: pErr } = await supabase
     .from('progress_projects')
@@ -66,7 +66,7 @@ export async function GET(
       .eq('project_id', project.id).order('sort_order'),
   ]);
 
-  // Kegagalan query JANGAN ditelan jadi array kosong — halaman publik akan
+  // Kegagalan query JANGAN ditelan jadi array kosong - halaman publik akan
   // tampak "proyek kosong" padahal datanya ada, dan penyebabnya tak terlihat.
   if (locRes.error || issueRes.error) {
     return NextResponse.json(
@@ -78,7 +78,7 @@ export async function GET(
   const locations = locRes.data ?? [];
   const locationIds = locations.map((l: { id: string }) => l.id);
 
-  // Komponen hanya diambil bila ada lokasi — .in() dengan array kosong
+  // Komponen hanya diambil bila ada lokasi - .in() dengan array kosong
   // menghasilkan query yang tidak perlu.
   let componentsData: unknown[] = [];
   if (locationIds.length > 0) {
@@ -96,7 +96,7 @@ export async function GET(
     componentsData = data ?? [];
   }
 
-  // Riwayat status/state se-proyek — dipakai ProjectDetailView untuk
+  // Riwayat status/state se-proyek - dipakai ProjectDetailView untuk
   // menggambar alur mendatar "kapan status berubah". Diambil di server
   // (service_role) persis seperti data lain di atas, supaya halaman publik
   // tetap tidak pernah menyentuh supabase langsung.
@@ -108,7 +108,7 @@ export async function GET(
       .select('id, target_id, user_name, action, target_name, old_value, new_value, notes, created_at')
       .in('target_id', idsRiwayat).eq('module', 'project-progress')
       .order('created_at', { ascending: false }).limit(500);
-    // Riwayat gagal dimuat bukan alasan menolak seluruh halaman — proyeknya
+    // Riwayat gagal dimuat bukan alasan menolak seluruh halaman - proyeknya
     // tetap tampil, hanya alur mendatarnya kosong.
     if (!error) auditTrail = data ?? [];
   }

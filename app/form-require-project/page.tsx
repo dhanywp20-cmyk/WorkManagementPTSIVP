@@ -57,13 +57,13 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     try { return sessionStorage.getItem('frp_searchQuery') || ''; } catch { return ''; }
   });
 
-  // ── Auto-apply filter dari Global Search (?q=...) ──
+  // Auto-apply filter dari Global Search (?q=...)
   useEffect(() => {
     const q = searchParams.get('q');
     if (q) setSearchQuery(q);
   }, [searchParams]);
 
-  // ── Pintasan "buat" dari dashboard (?buat=1) ──
+  // Pintasan "buat" dari dashboard (?buat=1)
   useEffect(() => {
     if (searchParams.get('buat') === '1') setShowNewFormModal(true);
   }, [searchParams]);
@@ -78,7 +78,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
    * Roster Team PTS sebenarnya, untuk tujuan re-route.
    *
    * TIDAK memakai ptsMembersList di atas: isinya cuma nama-nama yang KEBETULAN
-   * sudah pernah di-assign sesuatu — cukup untuk mengisi dropdown filter, tapi
+   * sudah pernah di-assign sesuatu - cukup untuk mengisi dropdown filter, tapi
    * kalau dipakai untuk mengalihkan pekerjaan, anggota tim yang belum pernah
    * dapat request sama sekali tidak akan pernah bisa dipilih.
    */
@@ -164,7 +164,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
    * akun Team PTS yang diberi Full Access lewat Admin Panel.
    *
    * Sebelumnya tombol Edit hanya muncul untuk NON-PTS (sisi Sales). Artinya
-   * admin — yang justru paling sering diminta membetulkan data — sama sekali
+   * admin - yang justru paling sering diminta membetulkan data - sama sekali
    * tidak punya jalan lewat platform, dan terpaksa mengeditnya langsung di
    * Supabase.
    */
@@ -172,7 +172,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
   /**
    * Re-route hanya selama pekerjaannya BELUM jalan. Begitu masuk in_progress,
-   * sudah ada yang menggarap desainnya — memindahkannya berarti membuang
+   * sudah ada yang menggarap desainnya - memindahkannya berarti membuang
    * pekerjaan itu, bukan membetulkan salah route.
    */
   const bolehRerouteRequest = (r: ProjectRequest) =>
@@ -185,7 +185,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   // Bisa ubah status in_progress: hanya PTS yang di-assign ke request tsb
   const canSetInProgress = (req: ProjectRequest) =>
     isPTS && (isAdmin || isSuperAdmin || req.assign_name === currentUser.full_name);
-  // Sales Internal reviewer (utama atau kedua utk brand BOTH) — boleh approve kalau
+  // Sales Internal reviewer (utama atau kedua utk brand BOTH) - boleh approve kalau
   // bagian-nya belum di-approve.
   const canInternalApproveProject = (req: ProjectRequest) => {
     if (req.routing_status !== 'internal_review') return false;
@@ -218,8 +218,8 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
   // Guest/Sales users list for dropdown
   const [salesGuestUsers, setSalesGuestUsers] = useState<{id:string;full_name:string;username:string;sales_division?:string;is_internal_sales?:boolean}[]>([]);
-  const [myIsInternalSales, setMyIsInternalSales] = useState(false); // creator = Sales Internal → boleh isi SBU (atas nama Sales External)
-  // Cache nama Sales Internal (CC) hasil resolve dari internal_sales_id / internal_sales_id_2 —
+  const [myIsInternalSales, setMyIsInternalSales] = useState(false); // creator = Sales Internal  boleh isi SBU (atas nama Sales External)
+  // Cache nama Sales Internal (CC) hasil resolve dari internal_sales_id / internal_sales_id_2 -
   // kolom lama `ivp_assignee` (nama string langsung) sudah tidak diisi lagi sejak brand-multi-internal
   // (sql/brand-multi-internal.sql), request baru pakai internal_sales_id(_2) yang berupa UUID.
   const [internalSalesNames, setInternalSalesNames] = useState<Record<string, string>>({});
@@ -332,10 +332,10 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
           if (filtered.find(x => x.id === r.id)) return;
           if (!r.rooms || !Array.isArray(r.rooms)) return;
           // brand_display_2_pic_id WAJIB ikut dicek: tanpa itu, PIC display
-          // kedua tidak akan pernah melihat request-nya sama sekali — slot
+          // kedua tidak akan pernah melihat request-nya sama sekali - slot
           // display keduanya jadi sekadar catatan, bukan penugasan.
           // Ruangan 1 disimpan di kolom tabel (r.brand_*), ruangan ke-2 dst di
-          // r.rooms — keduanya harus dicek, kalau tidak PIC Ruangan 1 tidak
+          // r.rooms - keduanya harus dicek, kalau tidak PIC Ruangan 1 tidak
           // pernah melihat request-nya.
           const cocok = (o: any) =>
             o?.brand_display_pic_id === currentUser.id
@@ -398,7 +398,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
   useEffect(() => { fetchRequests(); }, [fetchRequests]);
 
-  // Popup tiket pending/in_progress — muncul sekali saat masuk platform
+  // Popup tiket pending/in_progress - muncul sekali saat masuk platform
   useEffect(() => {
     if (!appReady || ticketPopupShown) return;
     const activeTickets = requests.filter(r => r.status === 'pending' || r.status === 'in_progress');
@@ -441,7 +441,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     const reqId = selectedRequest.id;
     activeRequestIdRef.current = reqId;
     const channelName = `detail_chat:${reqId}_${Date.now()}`;
-    // EGRESS FIX: debounce fetchAttachments — upload beberapa file sekaligus
+    // EGRESS FIX: debounce fetchAttachments - upload beberapa file sekaligus
     // (mis. 6 file) sebelumnya = 6x refetch attachment terpisah.
     let attachDebounce: ReturnType<typeof setTimeout> | null = null;
     const channel = supabase.channel(channelName)
@@ -465,9 +465,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         })
       .subscribe();
 
-    // EGRESS FIX: polling fallback dinaikkan dari 3 DETIK → 60 detik. Realtime
+    // EGRESS FIX: polling fallback dinaikkan dari 3 DETIK  60 detik. Realtime
     // di atas sudah append pesan baru langsung ke state (tanpa refetch), jadi
-    // polling 3 detik ini sepenuhnya redundant — full refetch pesan tiap 3
+    // polling 3 detik ini sepenuhnya redundant - full refetch pesan tiap 3
     // detik selama modal detail terbuka adalah kontributor egress yang berat.
     // Sekarang murni jaring pengaman kalau koneksi Realtime putus.
     const pollInterval = setInterval(async () => {
@@ -496,7 +496,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const formatDate = (dt: string) => new Date(dt).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const formatDueDate = (dt: string) => new Date(dt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-  // ── Room-scoped attachments ──────────────────────────────────────────────
+  // Room-scoped attachments
   // project_attachments belum punya kolom room_index tersendiri di DB. Tapi upload
   // foto/BOQ utk ruangan tambahan (saat create) SUDAH ditandai dengan prefix nama file
   // "[roomN] ..." (lihat submit handler: label = `room${rIdx+2}`). detailRoomIdx di modal
@@ -511,17 +511,17 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
   // BUG FIX: Supabase Storage menolak key yang mengandung karakter seperti "[", "]",
   // dan spasi ganda tertentu ("Invalid key"). Prefix "[roomN] " di atas dipakai untuk
-  // penanda TAMPILAN/DB (file_name, getFileRoomIdx) dan sengaja TIDAK diubah — supaya
+  // penanda TAMPILAN/DB (file_name, getFileRoomIdx) dan sengaja TIDAK diubah - supaya
   // parsing existing di atas tetap jalan persis sama. Untuk PATH PENYIMPANAN saja,
   // kita pakai versi yang sudah disanitasi (aman dari karakter yang ditolak Supabase).
   // Ini kenapa upload di Ruangan 1 selalu berhasil (tidak ada prefix "[room1] " karena
-  // detailRoomIdx===0) sementara Ruangan 2+ gagal — sekarang keduanya konsisten aman.
+  // detailRoomIdx===0) sementara Ruangan 2+ gagal - sekarang keduanya konsisten aman.
   const toStorageSafeName = (name: string): string =>
     name
       .replace(/^\[room(\d+)\]\s*/i, 'room$1_')   // "[room2] " -> "room2_" (aman utk storage key)
       .replace(/[^a-zA-Z0-9._-]/g, '_');           // spasi & karakter aneh lain -> underscore
 
-  // Tombol aksi per-baris — dipakai di tabel desktop DAN kartu mobile (anti-duplikat).
+  // Tombol aksi per-baris - dipakai di tabel desktop DAN kartu mobile (anti-duplikat).
   const renderRequestActions = (req: ProjectRequest) => (
     <>
       {canInternalApproveProject(req) && (
@@ -671,7 +671,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     </div>
   ) : null;
 
-  // ── HANDLERS ──────────────────────────────────────────────────────────────
+  // HANDLERS
 
   const handleSubmitForm = async () => {
     if (!form.project_name.trim()) { notify('error', 'Nama Project wajib diisi!'); return; }
@@ -685,10 +685,10 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     if (!dueDateForm) { notify('error', 'Target Selesai wajib diisi!'); return; }
     setSubmitting(true);
     try {
-      // ── Routing: Sales External wajib direview Sales Internal (division_ivp_mappings)
+      // Routing: Sales External wajib direview Sales Internal (division_ivp_mappings)
       // dulu, BARU Admin dapat notifikasi actionable. Sales Internal/Marketing yang
       // request utk kebutuhan sendiri (project direct ke user) TIDAK kena gerbang ini
-      // — sama seperti Request Schedule. Admin/PTS yang submit langsung (isPTS) juga
+      // - sama seperti Request Schedule. Admin/PTS yang submit langsung (isPTS) juga
       // skip gerbang (dia sudah tahu/putuskan sendiri).
       let routingStatus: 'internal_review' | 'admin_review' = 'admin_review';
       let internalSalesId: string | null = null;
@@ -721,7 +721,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         project_name: form.project_name.trim(), room_name: form.room_name.trim(),
         project_location: form.project_location.trim(),
         // Guest biasa: pakai nama & divisi akun sendiri. TAPI Sales Internal yang
-        // pilih SBU (Sales External) → atasnamakan External tsb (form.sales_name).
+        // pilih SBU (Sales External)  atasnamakan External tsb (form.sales_name).
         // requester_id/name tetap akun Sales Internal (jejak pembuat).
         sales_name: (!isPTS
           ? ((myIsInternalSales && form.sales_name.trim()) ? form.sales_name.trim() : (currentUser.full_name || form.sales_name).trim())
@@ -746,7 +746,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         rooms: rooms.length > 0 ? rooms : [],
         routing_status: routingStatus,
         internal_sales_id: internalSalesId,
-        // Kolom brand hanya ditulis kalau ada brand (Sales External) — supaya submit
+        // Kolom brand hanya ditulis kalau ada brand (Sales External) - supaya submit
         // internal/admin tetap jalan walau sql/brand-multi-internal.sql belum di-run.
         ...(chosenBrand ? { internal_sales_id_2: internalSalesId2, brand: chosenBrand } : {}),
       };
@@ -754,7 +754,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       // Brand Ruangan 1 dipisah dari payload utama supaya bisa dilepas kalau
       // kolomnya belum ada. Kolom-kolom ini memang belum pernah dibuat: ruangan
       // ke-2 dst ikut tersimpan sendirinya di `rooms` (JSONB), sementara
-      // Ruangan 1 disimpan di kolom tabel — dan kolom brand-nya terlewat. Jadi
+      // Ruangan 1 disimpan di kolom tabel - dan kolom brand-nya terlewat. Jadi
       // selama ini memilih Brand Display di Ruangan 1 tidak berefek apa pun.
       // Lihat sql/design-project-brand-display-2.sql.
       const brandRuangan1 = {
@@ -873,7 +873,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         }
         // CC/upload/brand-PIC di bawah ini berlaku utk KEDUA jalur routing (internal_review & admin_review).
         if (adminUsersWA && adminUsersWA.length > 0) {
-          // ── CC ke atasan + IVP berdasarkan divisi requester ──
+          // CC ke atasan + IVP berdasarkan divisi requester
           try {
             const ccDiv = currentUser?.sales_division ?? '';
             if (ccDiv && ccDiv !== 'IVP' && currentUser?.id) {
@@ -893,7 +893,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
             }
           } catch { }
 
-          // ── Upload foto per ruangan tambahan ──
+          // Upload foto per ruangan tambahan
           try {
             for (const [roomId, photos] of Object.entries(roomPhotoMap)) {
               const rIdx = rooms.findIndex(r => r.id === roomId);
@@ -913,7 +913,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
             }
           } catch { }
 
-          // ── Upload BOQ per ruangan tambahan ──
+          // Upload BOQ per ruangan tambahan
           try {
             for (const [roomId, boqFile] of Object.entries(boqRoomMap)) {
               if (!boqFile) continue;
@@ -934,9 +934,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
             }
           } catch { }
 
-          // ── WA notif ke Brand PIC dari rooms ──
+          // WA notif ke Brand PIC dari rooms
           try {
-            // Ruangan 1 ikut: datanya ada di `form`, bukan di `rooms` — tanpa
+            // Ruangan 1 ikut: datanya ada di `form`, bukan di `rooms` - tanpa
             // ini PIC Ruangan 1 tidak pernah dikabari sama sekali, padahal
             // ruangan itulah yang paling sering diisi.
             const ruangan1 = {
@@ -1020,7 +1020,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     setAssignModal({ open: true, req });
   };
 
-  // ─── Handler: Sales Internal approve & teruskan ke Admin ─────────────────
+  // Handler: Sales Internal approve & teruskan ke Admin
   const handleInternalApproveProject = async (req: ProjectRequest) => {
     const now = new Date().toISOString();
     // Brand BOTH = 2 reviewer (MVI + IVP), WAJIB keduanya approve baru lanjut ke Admin.
@@ -1045,7 +1045,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'approve', module: 'project', target_id: req.id, target_name: req.project_name, notes: 'Internal review approved' }).catch(() => {});
     fetchRequests();
     if (selectedRequest?.id === req.id) setSelectedRequest({ ...req, routing_status: 'admin_review' });
-    // WA ke Admin — actionable, sudah lolos review Sales Internal.
+    // WA ke Admin - actionable, sudah lolos review Sales Internal.
     try {
       const { data: admins } = await supabase.from('users').select('phone_number, full_name').in('role', ['admin', 'superadmin']).not('phone_number', 'is', null).neq('phone_number', '');
       const msg =
@@ -1176,7 +1176,7 @@ Hubungi Admin untuk info lebih lanjut.
    * Field yang dilacak untuk audit & pesan WA.
    *
    * Hanya field yang berarti bagi orang yang mengerjakan. Isian teknis
-   * (checkbox perangkat, ukuran, dsb) tetap tersimpan seperti biasa — cuma
+   * (checkbox perangkat, ukuran, dsb) tetap tersimpan seperti biasa - cuma
    * tidak diuraikan satu per satu di WA, karena daftarnya bisa puluhan baris
    * dan justru menenggelamkan yang penting.
    */
@@ -1203,7 +1203,7 @@ Hubungi Admin untuk info lebih lanjut.
 
       const payload: Record<string, unknown> = orang.jabatan === 'Supervisor'
         // Ke Supervisor: dikembalikan ke tahap supervisor_assign supaya
-        // Supervisor itu yang menentukan pelaksananya — sama seperti alur
+        // Supervisor itu yang menentukan pelaksananya - sama seperti alur
         // normal, bukan jalur pintas yang melompati tahapannya.
         ? { assign_name: null, assigned_supervisor_id: orang.id, routing_status: 'supervisor_assign', status: 'approved' }
         : { assign_name: orang.full_name, assigned_supervisor_id: null, routing_status: null, status: 'approved' };
@@ -1261,7 +1261,7 @@ Hubungi Admin untuk info lebih lanjut.
     if (error) { notify('error', 'Gagal menyimpan perubahan.'); return; }
 
     // Jejak siapa mengubah apa. Tanpa ini, satu-satunya bukti perubahan adalah
-    // pesan otomatis di kolom diskusi — yang tidak menyebut nilai lamanya.
+    // pesan otomatis di kolom diskusi - yang tidak menyebut nilai lamanya.
     void logAudit({
       user_id: currentUser.id, user_name: currentUser.full_name,
       action: 'update', module: 'require',
@@ -1270,7 +1270,7 @@ Hubungi Admin untuk info lebih lanjut.
     });
 
     // Kabari yang mengerjakan. Selama ini perubahan detail sama sekali tidak
-    // diberitahukan — orang bisa berangkat memakai data lama.
+    // diberitahukan - orang bisa berangkat memakai data lama.
     const penangani = String(selectedRequest.assign_name ?? '');
     if (perubahanReq.length > 0 && penangani && penangani !== currentUser.full_name) {
       try {
@@ -1587,7 +1587,7 @@ Hubungi Admin untuk info lebih lanjut.
     if (w) { w.document.write(printContent); w.document.close(); setTimeout(() => w.print(), 300); }
   };
 
-  // ── Pure-JS ZIP helpers (no external library needed) ──────────────────────
+  // Pure-JS ZIP helpers (no external library needed)
   const crc32Table = (() => {
     const t = new Uint32Array(256);
     for (let i = 0; i < 256; i++) {
@@ -1683,7 +1683,7 @@ Hubungi Admin untuk info lebih lanjut.
     for (const p of allParts) { result.set(p, pos); pos += p.length; }
     return new Blob([result], { type: 'application/zip' });
   };
-  // ── End ZIP helpers ────────────────────────────────────────────────────────
+  // End ZIP helpers
 
   const handleDownloadPackage = async () => {
     if (!selectedRequest) return;
@@ -1697,7 +1697,7 @@ Hubungi Admin untuk info lebih lanjut.
       const folderName = `FormRequire_${projectSlug}_${dateStr}`;
       const zipFiles: { name: string; data: Uint8Array }[] = [];
 
-      // ── 1. Form Detail as PDF (HTML → printed to PDF via hidden iframe) ────
+      // 1. Form Detail as PDF (HTML  printed to PDF via hidden iframe)
       // We generate it as a styled HTML file the user can open & print-to-PDF
       const sc2 = statusConfig[selectedRequest.status] || statusConfig.pending;
       const formHtml = `<!DOCTYPE html>
@@ -1787,7 +1787,7 @@ Hubungi Admin untuk info lebih lanjut.
 </body></html>`;
       zipFiles.push({ name: `${folderName}/01_Form_Detail_${projectSlug}.html`, data: enc.encode(formHtml) });
 
-      // ── 2-4. Download LATEST revision per structured category (SLD/BOQ/3D) + all general ────
+      // 2-4. Download LATEST revision per structured category (SLD/BOQ/3D) + all general
       const structuredCats: { cat: 'sld' | 'boq' | 'design3d'; prefix: string }[] = [
         { cat: 'sld', prefix: '02_SLD' },
         { cat: 'boq', prefix: '03_BOQ' },
@@ -1814,7 +1814,7 @@ Hubungi Admin untuk info lebih lanjut.
         } catch { /* skip inaccessible files */ }
       }
 
-      // General files — download all
+      // General files - download all
       const generalFiles = attachments.filter(a => a.attachment_category === 'general' || !a.attachment_category);
       for (let i = 0; i < generalFiles.length; i++) {
         const att = generalFiles[i];
@@ -1897,7 +1897,7 @@ Hubungi Admin untuk info lebih lanjut.
           req={assignModal.req}
           // Opsi "Route ke Supervisor" hanya saat approve awal (belum di-route).
           // Kalau Supervisor yg buka utk assign final (routing_status='supervisor_assign'),
-          // opsi route disembunyikan — dia langsung pilih Tim PTS.
+          // opsi route disembunyikan - dia langsung pilih Tim PTS.
           allowSupervisorRoute={assignModal.req.routing_status !== 'supervisor_assign'}
           onClose={() => setAssignModal({ open: false, req: null })}
           onAssigned={() => {
@@ -3106,7 +3106,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {/* Attachments Panel — prominent */}
                   <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                     {(() => {
-                      // Scope file ke room tab yang lagi aktif — pakai konvensi prefix
+                      // Scope file ke room tab yang lagi aktif - pakai konvensi prefix
                       // "[roomN]" yang sudah ada di nama file (lihat getFileRoomIdx).
                       const roomAttachments = attachments.filter(a => getFileRoomIdx(a.file_name) === detailRoomIdx);
                       return (<>
@@ -3291,7 +3291,7 @@ Hubungi Admin untuk info lebih lanjut.
                         : 2;
                       // Nama Sales Internal-nya, bukan label generik. Dua sumber,
                       // sesuai bagaimana request masuk: reviewer hasil mapping brand
-                      // IVP/MVI (dua nama saat brand BOTH — keduanya wajib approve),
+                      // IVP/MVI (dua nama saat brand BOTH - keduanya wajib approve),
                       // atau pembuatnya sendiri bila request memang dibuat oleh Sales
                       // Internal (tahap ini langsung terlewati ke admin_review).
                       const ccLabel = getCCLabel(selectedRequest);
@@ -3759,7 +3759,7 @@ Hubungi Admin untuk info lebih lanjut.
   );
 }
 
-// ─── Page Entry ───────────────────────────────────────────────────────────────
+// Page Entry
 
 export default function Page() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);

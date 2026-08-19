@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { User } from './shared';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Types
 
 interface FlowChip {
   icon: string;
@@ -21,7 +21,7 @@ interface TourStep {
   flow?: FlowChip[];
 }
 
-// ─── Steps ────────────────────────────────────────────────────────────────────
+// Steps
 
 const ALL_STEPS: TourStep[] = [
   {
@@ -164,7 +164,7 @@ const ALL_STEPS: TourStep[] = [
 
 const getTourKey = (userId: string) => `pts_tour_done_${userId}`;
 
-// ─── Flow chip color ──────────────────────────────────────────────────────────
+// Flow chip color
 
 function chipStyle(state: FlowChip['state']): React.CSSProperties {
   if (state === 'done')   return { background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0' };
@@ -173,7 +173,7 @@ function chipStyle(state: FlowChip['state']): React.CSSProperties {
   return { background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0' };
 }
 
-// ─── Mini flow visualization ──────────────────────────────────────────────────
+// Mini flow visualization
 
 function FlowViz({ flow }: { flow: FlowChip[] }) {
   return (
@@ -202,7 +202,7 @@ function FlowViz({ flow }: { flow: FlowChip[] }) {
   );
 }
 
-// ─── Progress dots ────────────────────────────────────────────────────────────
+// Progress dots
 
 function ProgressDots({ total, current, color }: { total: number; current: number; color: string }) {
   return (
@@ -220,7 +220,7 @@ function ProgressDots({ total, current, color }: { total: number; current: numbe
   );
 }
 
-// ─── Spotlight overlay (4-quad technique) ────────────────────────────────────
+// Spotlight overlay (4-quad technique)
 
 function SpotlightOverlay({ rect, onClick }: { rect: DOMRect; onClick: () => void }) {
   const pad = 10;
@@ -252,7 +252,7 @@ function SpotlightOverlay({ rect, onClick }: { rect: DOMRect; onClick: () => voi
   );
 }
 
-// ─── Full dark backdrop (for center-mode steps) ───────────────────────────────
+// Full dark backdrop (for center-mode steps)
 
 function FullBackdrop({ onClick }: { onClick: () => void }) {
   return (
@@ -260,7 +260,7 @@ function FullBackdrop({ onClick }: { onClick: () => void }) {
   );
 }
 
-// ─── Props ────────────────────────────────────────────────────────────────────
+// Props
 
 interface Props {
   currentUser: User;
@@ -271,7 +271,7 @@ interface Props {
   onVisibleChange?: (visible: boolean) => void;
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// Main component
 
 export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow, onDone, onHighlightKey, onVisibleChange }: Props) {
   const [visible, setVisible]     = useState(false);
@@ -295,11 +295,11 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
     try { if (!localStorage.getItem(tourKey)) { setStep(0); setVisible(true); } } catch { /* noop */ }
   }, [forceShow, tourKey, menuCount]);
 
-  // ── Recompute spotlight & popup position when step changes ──
+  // Recompute spotlight & popup position when step changes
   useEffect(() => {
     if (!visible) { onHighlightKey?.(null); setSpotRect(null); setPopupPos(null); return; }
     if (!s?.menuKey) {
-      // Center modal — no spotlight
+      // Center modal - no spotlight
       onHighlightKey?.(null);
       setSpotRect(null);
       setPopupPos({ top: 0, left: 0, side: 'center' });
@@ -482,7 +482,7 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
   );
 }
 
-// ─── "Jelajahi Platform" floating button ─────────────────────────────────────
+// "Jelajahi Platform" floating button
 
 /**
  * Tombol melayang "Jelajahi Platform".

@@ -1,11 +1,11 @@
 /**
- * components/shared/Username.tsx — menampilkan username apa adanya.
+ * components/shared/Username.tsx - menampilkan username apa adanya.
  *
  * Di platform ini kolom `username` menampung dua bentuk yang berbeda: pegawai
  * internal memakai nama pendek (`amed`, `abrhml01`), sedangkan sebagian besar
  * akun Sales/Guest memakai alamat email penuh (`rafi@indovisual.co.id`).
  *
- * Layar-layar yang menampilkannya menulis `@{user.username}` — kebiasaan gaya
+ * Layar-layar yang menampilkannya menulis `@{user.username}` - kebiasaan gaya
  * media sosial. Untuk nama pendek itu memang membantu membedakan username dari
  * nama orang. Tapi pada akun yang isinya email, hasilnya jadi
  * `@rafi@indovisual.co.id`: satu alamat dengan dua tanda @, yang bukan hanya

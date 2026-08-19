@@ -2,7 +2,7 @@
 
 /**
  * Shared full-screen loading overlay.
- * accentColor default merah — bisa di-override per platform.
+ * accentColor default merah - bisa di-override per platform.
  */
 export function LoadingScreen({
   message = 'Loading...',

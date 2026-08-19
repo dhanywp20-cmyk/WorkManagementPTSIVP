@@ -1,4 +1,4 @@
-// ─── Constants ────────────────────────────────────────────────────────────────
+// Constants
 
 export const DAYS_OF_WEEK = ['Senin','Selasa','Rabu','Kamis','Jumat'] as const;
 export type DayOfWeek = typeof DAYS_OF_WEEK[number];
@@ -46,7 +46,7 @@ export const KEGIATAN_COLORS: Record<string,string> = {
   'Demo Product':'#2563eb','RnD':'#7c3aed','Maintenance':'#d97706','Shooting Markom':'#059669',
 };
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Types
 
 export interface UserRow { id:string; full_name:string; username:string; team_type?:string; role:string; }
 
@@ -60,7 +60,7 @@ export interface PiketRow {
   edited_by_name?:string|null;
 }
 
-// Barang temporer di luar PRODUK_LIST default — dicatat beban dayanya (watt)
+// Barang temporer di luar PRODUK_LIST default - dicatat beban dayanya (watt)
 export interface ProdukLain { nama:string; watt:number }
 
 export interface KegiatanEntry {
@@ -72,7 +72,7 @@ export interface KegiatanEntry {
   updated_at?:string|null; edited_by_name?:string|null;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// Helpers
 
 export function getMonday(d:Date):Date{
   const r=new Date(d.getFullYear(),d.getMonth(),d.getDate());
@@ -107,7 +107,7 @@ export function getWeekKey(dateStr:string):string{
   return toKey(getMonday(new Date(y,m-1,dd)));
 }
 
-// ─── Rolling schedule ─────────────────────────────────────────────────────────
+// Rolling schedule
 //
 // DESIGN:
 //   Admin saves a 2-week block (W1 + W2 with different people each week).
@@ -126,15 +126,15 @@ export function getWeekKey(dateStr:string):string{
 //      whose two weeks have DIFFERENT PIC assignments (heterogeneous pair).
 //      This is the true W1+W2 template.
 //   3. If no heterogeneous pair exists (all consecutive pairs are identical),
-//      use the latest consecutive pair regardless — the pattern is a 1-week repeat.
+//      use the latest consecutive pair regardless - the pattern is a 1-week repeat.
 //   4. anchorMonday = Monday of W1 (the earlier week of the found pair).
-//   5. For any target date: diffDays from anchor, mod14 → slot 0-6 = W1, 7-13 = W2.
+//   5. For any target date: diffDays from anchor, mod14  slot 0-6 = W1, 7-13 = W2.
 //
 // WHY THIS MATTERS:
 //   If admin saved weeks [2026-05-11, 2026-05-18] then later re-saved
 //   [2026-05-18, 2026-05-25] and 2026-05-25 accidentally got 2026-05-18's
 //   people (rolling pre-fill bug), the latest consecutive pair (05-18, 05-25)
-//   would be identical → we fall back to the heterogeneous pair (05-11, 05-18).
+//   would be identical  we fall back to the heterogeneous pair (05-11, 05-18).
 
 type DayNameMap = Partial<Record<DayOfWeek, string>>;
 
@@ -160,7 +160,7 @@ function buildDayMaps(wk: string, dbRows: PiketRow[]): { nameMap: DayNameMap; ui
   return { nameMap, uidMap };
 }
 
-/** Returns true if two day→name maps have the same content for all weekdays */
+/** Returns true if two dayname maps have the same content for all weekdays */
 function mapsAreIdentical(a: DayNameMap, b: DayNameMap): boolean {
   for (const day of DAYS_OF_WEEK) {
     if ((a[day] || '') !== (b[day] || '')) return false;
@@ -196,7 +196,7 @@ function buildRollingTemplate(dbRows: PiketRow[]): RollingTemplate | null {
 
   // A week is "complete" when all 5 weekdays have a PIC assigned (name OR uid).
   // Incomplete weeks (e.g. only Monday saved after a partial edit) must NOT be
-  // used as the template — otherwise one partial save corrupts the whole pattern.
+  // used as the template - otherwise one partial save corrupts the whole pattern.
   const isComplete = (wk: string): boolean =>
     DAYS_OF_WEEK.every(d => nameMapsCache[wk][d] || uidMapsCache[wk][d]);
 
@@ -231,7 +231,7 @@ function buildRollingTemplate(dbRows: PiketRow[]): RollingTemplate | null {
     }
   }
 
-  // Pass 3: latest CONSECUTIVE + HETEROGENEOUS pair (relaxed — allows incomplete)
+  // Pass 3: latest CONSECUTIVE + HETEROGENEOUS pair (relaxed - allows incomplete)
   if (week1Key === null) {
     for (let i = sortedWeeks.length - 1; i >= 1; i--) {
       const a = sortedWeeks[i - 1], b = sortedWeeks[i];
@@ -291,7 +291,7 @@ function resolveSlot(
 
   if (holidaySet) {
     // Holiday-aware: skip holiday dates in the working-day count so PIC shifts forward.
-    if (holidaySet.has(toKey(date))) return null; // holiday → no PIC
+    if (holidaySet.has(toKey(date))) return null; // holiday  no PIC
 
     const anchorDate = new Date(tpl.anchorMonday.getFullYear(), tpl.anchorMonday.getMonth(), tpl.anchorMonday.getDate());
     const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());

@@ -1,5 +1,5 @@
 /**
- * lib/brand-routing.ts — routing Sales External → Sales Internal per BRAND.
+ * lib/brand-routing.ts - routing Sales External  Sales Internal per BRAND.
  *
  * Sales External bisa di-handle 2 Sales Internal: MVI (House Brand) & IVP (Global
  * Brand). Saat request, Sales External pilih brand (WAJIB). Mapping disimpan di

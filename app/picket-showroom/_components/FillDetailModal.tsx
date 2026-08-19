@@ -89,7 +89,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
         edited_by_name:editedByName,
       }));
       if(ins.length>0){const{error}=await supabase.from('piket_tamu_detail').insert(ins);if(error)throw error;}
-      // Produk Lain → tabel piket_produk_lain (kegiatan_id = id kegiatan yg barusan dibuat)
+      // Produk Lain  tabel piket_produk_lain (kegiatan_id = id kegiatan yg barusan dibuat)
       const plRows=withId.flatMap(({kgId,e})=>
         (e.produk_lain||[]).filter(x=>x.nama.trim()!==''||(x.watt||0)>0)
           .map(pl=>({kegiatan_id:kgId,piket_id:row.id,nama:pl.nama.trim(),watt:pl.watt||0}))

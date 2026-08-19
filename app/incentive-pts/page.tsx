@@ -28,7 +28,7 @@ function canInputNominal(u: CurrentUser | null) { return isAdmin(u) || !!u?.allo
  * Ringkasan cepat "berapa bagian Handler" untuk kolom daftar.
  *
  * Angkanya diambil dari skema yang berlaku, bukan dipatok di sini. Versi lama
- * menulis 60% dan faktor 0.85 langsung di rumus ini — nilai yang sudah tidak
+ * menulis 60% dan faktor 0.85 langsung di rumus ini - nilai yang sudah tidak
  * cocok lagi dengan tabel pembagian, sehingga kolom daftar dan layar rincian
  * bisa menampilkan angka yang berbeda untuk proyek yang sama.
  */
@@ -53,7 +53,7 @@ export default function IncentivePTSPage() {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [appReady, setAppReady] = useState(false);
   const [tab, setTab] = useState<TabKey>('projects');
-  /** Skema pembagian yang berlaku — sumber tunggal seluruh angka di layar ini. */
+  /** Skema pembagian yang berlaku - sumber tunggal seluruh angka di layar ini. */
   const [skema, setSkema] = useState<SkemaInsentif | null>(null);
 
   const [projects, setProjects] = useState<IncentiveProjectRow[]>([]);
@@ -61,7 +61,7 @@ export default function IncentivePTSPage() {
   const [allSplits, setAllSplits] = useState<IncentiveSplit[]>([]);
   const [allUsers, setAllUsers] = useState<CurrentUser[]>([]);
   const [ptsTeamMappings, setPtsTeamMappings] = useState<{ staff_user_id: string; supervisor_user_id: string }[]>([]);
-  // project_name → set username/full_name (lowercase) yang membantu di ticket Troubleshooting
+  // project_name  set username/full_name (lowercase) yang membantu di ticket Troubleshooting
   const [supportMap, setSupportMap] = useState<Map<string, Set<string>>>(new Map());
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
@@ -109,7 +109,7 @@ export default function IncentivePTSPage() {
   async function loadAll() {
     setLoading(true);
     // Skema dimuat bersama data lain. Selama ia belum ada, layar tidak
-    // menghitung apa pun (lihat calcHandlerSplit) — lebih baik kolomnya kosong
+    // menghitung apa pun (lihat calcHandlerSplit) - lebih baik kolomnya kosong
     // sesaat daripada menampilkan angka dari aturan yang salah.
     const [projRes, trancheRes, splitRes, lateRes, sk] = await Promise.all([
       fetchIncentiveProjects(), fetchTranches(), fetchVisibleSplits(), fetchLateTickets(), ambilSkema(),
@@ -130,7 +130,7 @@ export default function IncentivePTSPage() {
       setAllUsers((usersRes.data as CurrentUser[]).map(u => ({ ...u, atasan_id: atasanMap.get(u.id as string) ?? null })));
     }
     if (ptsTeamRes.data) setPtsTeamMappings(ptsTeamRes.data as { staff_user_id: string; supervisor_user_id: string }[]);
-    // Support per project (dari ticket Troubleshooting selesai) — untuk filter visibilitas list
+    // Support per project (dari ticket Troubleshooting selesai) - untuk filter visibilitas list
     const { data: trouble } = await supabase.from('reminders').select('project_name, assigned_to, assign_name').eq('category', 'Troubleshooting').eq('status', 'done');
     const sm = new Map<string, Set<string>>();
     for (const t of (trouble || []) as { project_name: string | null; assigned_to: string | null; assign_name: string | null }[]) {
@@ -179,7 +179,7 @@ export default function IncentivePTSPage() {
   async function handleBatchProcess() {
     if (!currentUser) return;
     setBatchProcessing(true);
-    // Fallback manager (berbasis jabatan, bukan nama) — utama tetap dari Struktur Organisasi di calc.ts
+    // Fallback manager (berbasis jabatan, bukan nama) - utama tetap dari Struktur Organisasi di calc.ts
     const { data: mgrData } = await supabase.from('users').select('id, full_name').eq('jabatan', 'Manager').eq('team_type', 'Team PTS IVP').limit(1).single();
     const managerId = (mgrData?.id || currentUser.id || '') as string;
     const managerName = (mgrData?.full_name || 'Manager') as string;
@@ -825,7 +825,7 @@ export default function IncentivePTSPage() {
                 const splits = calculateIncentiveSplits(skema!, displayProject, managerId, managerName, supervisorId, supervisorName, detailSupports);
                 if (!splits.length) return null;
                 // Privasi: non-privileged (selain Admin & yang ditunjuk input nominal)
-                // hanya melihat bagiannya sendiri — bukan total pool / bagian orang lain.
+                // hanya melihat bagiannya sendiri - bukan total pool / bagian orang lain.
                 const privileged = canInputNominal(currentUser);
                 const myName = (currentUser?.full_name || '').toLowerCase().trim();
                 const visibleSplits = privileged

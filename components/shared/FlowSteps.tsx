@@ -1,11 +1,11 @@
 'use client';
 
 /**
- * components/shared/FlowSteps.tsx — diagram tahapan untuk alur bertahap.
+ * components/shared/FlowSteps.tsx - diagram tahapan untuk alur bertahap.
  *
  * Request Schedule punya alur paling bercabang di seluruh platform: Sales
  * External mengajukan, Sales Internal meneruskan, Admin assign, Team
- * mengerjakan, lalu selesai. Alur itu tidak pernah tergambar di mana pun — ia
+ * mengerjakan, lalu selesai. Alur itu tidak pernah tergambar di mana pun - ia
  * hanya hidup di kolom routing_status yang punya tiga nilai, dan di kepala
  * orang yang membangunnya.
  *
@@ -18,13 +18,13 @@
  */
 
 export interface FlowStep {
-  /** Nama tahap, sependek mungkin — ini label di bawah bulatan. */
+  /** Nama tahap, sependek mungkin - ini label di bawah bulatan. */
   label: string;
   /** Siapa yang mengerjakan tahap ini. Ditampilkan lebih kecil. */
   pelaku?: string;
   /**
    * Kapan tahap ini terjadi. Kalau diisi, ditampilkan sebagai bukti bahwa
-   * tahapnya benar-benar sudah lewat — bukan sekadar dianggap lewat.
+   * tahapnya benar-benar sudah lewat - bukan sekadar dianggap lewat.
    */
   waktu?: string | null;
 }
@@ -47,7 +47,7 @@ export function FlowSteps({
    * semua sesudahnya menunggu. Isi steps.length bila seluruh alur tuntas.
    */
   aktif: number;
-  /** Alur berhenti di tengah — tahap aktif ditandai merah, sisanya diredupkan. */
+  /** Alur berhenti di tengah - tahap aktif ditandai merah, sisanya diredupkan. */
   dibatalkan?: boolean;
   judul?: string;
 }) {

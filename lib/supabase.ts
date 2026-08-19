@@ -18,7 +18,7 @@ let dbToken: string | null =
  * dipulihkan dari cookie (lihat lib/auth.ts).
  *
  * Dibaca ulang dari sessionStorage saat modul dimuat supaya query yang jalan
- * paling awal setelah refresh halaman tetap membawa identitas — tanpa itu,
+ * paling awal setelah refresh halaman tetap membawa identitas - tanpa itu,
  * query pertama akan berangkat sebagai anonim dan tertolak begitu policy
  * diperketat.
  */
@@ -29,7 +29,7 @@ export function setDbToken(token: string | null): void {
   else window.sessionStorage.removeItem(TOKEN_KEY);
 }
 
-/** Token yang sedang dipakai — dibaca pemantau sesi untuk tahu kapan harus diperbarui. */
+/** Token yang sedang dipakai - dibaca pemantau sesi untuk tahu kapan harus diperbarui. */
 export function getDbToken(): string | null {
   return dbToken;
 }
@@ -38,7 +38,7 @@ export function getDbToken(): string | null {
  * Kapan token kedaluwarsa (epoch ms), dibaca dari klaim `exp`.
  *
  * Payload JWT hanya di-base64, jadi bisa dibaca tanpa rahasia apa pun. Yang
- * dibaca di sini SEMATA waktu kedaluwarsa untuk menjadwalkan pembaruan —
+ * dibaca di sini SEMATA waktu kedaluwarsa untuk menjadwalkan pembaruan -
  * keabsahan tanda tangannya tetap diverifikasi PostgREST di server, bukan di
  * sini. Mengembalikan null bila token tidak ada atau bentuknya tak terbaca.
  */
@@ -59,7 +59,7 @@ export function dbTokenExpiryMs(): number | null {
  * fetch yang menyelipkan Authorization pada tiap permintaan.
  *
  * Ini jalur yang didukung resmi (opsi global.fetch) dan satu-satunya cara
- * menyisipkan token yang BERUBAH-UBAH ke klien singleton — opsi global.headers
+ * menyisipkan token yang BERUBAH-UBAH ke klien singleton - opsi global.headers
  * hanya dibaca sekali saat klien dibuat, jadi tidak bisa dipakai di sini.
  *
  * Tanpa token, permintaan berangkat memakai anon key seperti sebelumnya.
@@ -97,12 +97,12 @@ export function refreshDbToken(): Promise<void> {
  * fetch yang menyelipkan Authorization pada tiap permintaan.
  *
  * Ini jalur yang didukung resmi (opsi global.fetch) dan satu-satunya cara
- * menyisipkan token yang BERUBAH-UBAH ke klien singleton — opsi global.headers
+ * menyisipkan token yang BERUBAH-UBAH ke klien singleton - opsi global.headers
  * hanya dibaca sekali saat klien dibuat, jadi tidak bisa dipakai di sini.
  *
  * Sebelum mengirim, token yang sudah lewat batas waktu DIPERBARUI dulu.
  * Tanpa ini, token basi tetap dikirim dan PostgREST menolak setiap query
- * dengan galat JWT — termasuk saat membuat ticket — padahal dari sisi user
+ * dengan galat JWT - termasuk saat membuat ticket - padahal dari sisi user
  * tidak ada tanda apa pun bahwa sesinya bermasalah. Penjagaannya diletakkan
  * di sini, bukan di tiap halaman, karena hanya sebagian halaman yang memasang
  * pemantau sesi; di lapisan ini SEMUA modul ikut terlindungi.
@@ -128,7 +128,7 @@ export const supabase = createClient(
 );
 
 /**
- * Basis data Services — TERPISAH dari basis data utama.
+ * Basis data Services - TERPISAH dari basis data utama.
  *
  * Dipakai ticketing untuk alur lintas divisi/lintas kantor (Team Services
  * Servisindo). Sengaja tidak membawa token identitas: kredensialnya milik

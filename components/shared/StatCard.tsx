@@ -11,7 +11,7 @@
  * disalin per modul, gayanya perlahan menyimpang satu sama lain.
  *
  * Komponen ini menyatukannya: permukaan putih, angka gelap, dan warna dipakai
- * sebagai PENANDA kategori lewat pita tipis di tepi kiri — bukan untuk mengecat
+ * sebagai PENANDA kategori lewat pita tipis di tepi kiri - bukan untuk mengecat
  * seluruh kartu. Hanya kartu yang sedang dipakai sebagai filter yang
  * ditonjolkan.
  */
@@ -23,7 +23,7 @@ import React from 'react';
  *
  * Penting: latar kartu aktif TIDAK boleh memakai rgba semi-transparan.
  * Halaman-halaman modul memakai foto sebagai latar, dan warna tembus pandang
- * membuat foto itu terlihat menembus kartu — hasilnya terlihat seperti kaca
+ * membuat foto itu terlihat menembus kartu - hasilnya terlihat seperti kaca
  * buram dan angkanya jadi sulit dibaca. Dengan mencampur ke putih di sini,
  * warnanya tetap lembut tapi kartunya benar-benar pekat.
  */
@@ -42,7 +42,7 @@ export interface StatCardItem {
   value: React.ReactNode;
   /** Baris keterangan kecil di bawah label. */
   sub?: string;
-  /** Warna penanda kategori — dipakai untuk pita tepi & penonjolan saat aktif. */
+  /** Warna penanda kategori - dipakai untuk pita tepi & penonjolan saat aktif. */
   accent: string;
   /** Diisi bila kartu berfungsi sebagai tombol filter. */
   onClick?: () => void;
@@ -75,7 +75,7 @@ export function StatCard({ label, value, sub, accent, onClick, active = false }:
   );
 
   const gaya: React.CSSProperties = {
-    // Selalu warna PEKAT — lihat catatan di campurPutih().
+    // Selalu warna PEKAT - lihat catatan di campurPutih().
     background: active ? campurPutih(accent, 0.10) : '#ffffff',
     border: `1px solid ${active ? accent : 'rgba(15,23,42,0.10)'}`,
     boxShadow: active ? `0 0 0 1px ${accent}` : '0 1px 2px rgba(15,23,42,0.06)',

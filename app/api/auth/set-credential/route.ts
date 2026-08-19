@@ -6,7 +6,7 @@ import { getSessionUser, isAdminRole } from '@/lib/server-auth';
 export const dynamic = 'force-dynamic';
 
 /**
- * POST /api/auth/set-credential — memasang password PERTAMA untuk akun baru.
+ * POST /api/auth/set-credential - memasang password PERTAMA untuk akun baru.
  *
  * Hashing dikerjakan di server lalu disimpan ke user_credentials lewat admin
  * client, supaya browser tidak pernah menulis langsung ke tabel kredensial.
@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
  * Endpoint ini harus tetap bisa dipanggil TANPA sesi, karena dipakai form
  * registrasi mandiri di halaman login. Konsekuensinya harus dijaga ketat:
  * tabel users terbaca anon, jadi siapa pun bisa mendaftar id akun mana saja
- * dan — kalau syaratnya hanya "belum punya kredensial" — memasang password
+ * dan - kalau syaratnya hanya "belum punya kredensial" - memasang password
  * pada akun orang lain yang kebetulan belum pernah login.
  *
  * Karena itu jalur tanpa sesi dibatasi pada akun yang bentuknya memang hasil
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = getAdminClient();
 
-    // created_at belum tentu ada di tabel users — kalau kolomnya tidak dikenal
+    // created_at belum tentu ada di tabel users - kalau kolomnya tidak dikenal
     // PostgREST menggagalkan seluruh query, jadi dicoba dulu lalu jatuh balik.
     let { data: user } = await supabase
       .from('users').select('id, role, team_type, created_at').eq('id', userId).maybeSingle();
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User tidak ditemukan.' }, { status: 404 });
     }
 
-    // Hanya set pertama kali — tolak bila sudah ada kredensial (cegah dipakai
+    // Hanya set pertama kali - tolak bila sudah ada kredensial (cegah dipakai
     // sebagai jalur reset password tanpa otorisasi).
     const { data: existing } = await supabase
       .from('user_credentials').select('id').eq('user_id', userId).maybeSingle();

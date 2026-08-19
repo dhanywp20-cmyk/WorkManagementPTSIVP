@@ -2,7 +2,7 @@
 import { useState } from 'react';
 
 /**
- * Shared MiniPieChart — basis pattern dari ticketing StatusDonutCard.
+ * Shared MiniPieChart - basis pattern dari ticketing StatusDonutCard.
  * Dipakai di semua platform KECUALI piket-showroom (yang punya style sendiri).
  *
  * Props compatibility:
@@ -21,7 +21,7 @@ export function MiniPieChart({
   onSliceClick?: (label: string) => void;
   /**
    * Angka besar di tengah donat. Default = jumlah seluruh nilai ("TOTAL").
-   * Diisi manual bila menjumlahkan slice TIDAK bermakna — mis. saat nilainya
+   * Diisi manual bila menjumlahkan slice TIDAK bermakna - mis. saat nilainya
    * berupa persentase, di mana totalnya tidak berarti apa-apa.
    */
   centerValue?: string | number;

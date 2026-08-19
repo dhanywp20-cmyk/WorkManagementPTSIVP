@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { hasFullAccess } from '@/lib/constants';
 import { User } from '@/app/dashboard/_components/shared';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Types
 
 interface KPIData {
   tickets: {
@@ -50,7 +50,7 @@ interface KPITeamMember {
   lcAvgScore: number;
   lcPassed: number;
   lcFailedBelow75: number;   // LC: jumlah attempt score < 75 (hardcode, untuk backward compat)
-  lcScores: number[];        // semua score mentah — untuk recompute dengan lcMinScore dinamis
+  lcScores: number[];        // semua score mentah - untuk recompute dengan lcMinScore dinamis
   piketFilled: number;
   ticketAvgResponseHours: number;
   formReviewLowRating: number;
@@ -129,7 +129,7 @@ interface Scope {
   ptsMemberNames?: string[];
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// Constants
 
 const STATUS_COLORS: Record<string, string> = {
   'Waiting Approval': '#f59e0b', 'Pending': '#3b82f6', 'Solved': '#10b981',
@@ -149,7 +149,7 @@ const SEVERITY_STYLE = {
   critical: { bg: 'rgba(239,68,68,0.06)',   border: 'rgba(239,68,68,0.18)',   dot: '#ef4444', text: '#991b1b' },
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Helpers
 
 const todayStr   = () => new Date().toISOString().split('T')[0];
 const dayOfWeek  = () => ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][new Date().getDay()];
@@ -189,7 +189,7 @@ function computeCascadedPiketToday(
   return null;
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// Sub-components
 
 function MiniDonut({ segments, size = 72 }: { segments: { value: number; color: string }[]; size?: number }) {
   const total = segments.reduce((s, x) => s + x.value, 0);
@@ -303,7 +303,7 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
   );
 }
 
-// ── Scope badge ──
+// Scope badge
 function ScopeBadge({ scope }: { scope: Scope }) {
   const cfg = {
     admin:     { label: 'Semua Data',         color: '#be123c', icon: '👑' },
@@ -319,7 +319,7 @@ function ScopeBadge({ scope }: { scope: Scope }) {
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// Main Component
 
 interface DashboardKPIProps { currentUser: User; }
 
@@ -352,7 +352,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
   const [kpiSettings, setKpiSettings] = useState<KPISettings>(DEFAULT_KPI_SETTINGS);
   const intervalRef = useRef<ReturnType<typeof setInterval>|null>(null);
 
-  // ── Load KPI settings from Supabase (fallback: localStorage) ────────────────
+  // Load KPI settings from Supabase (fallback: localStorage)
   // Table needed in Supabase:
   //   CREATE TABLE kpi_global_settings (
   //     id INT PRIMARY KEY DEFAULT 1,
@@ -388,7 +388,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
     } catch { /* table may not exist — localStorage is the fallback */ }
   };
 
-  // ── 1. Resolve scope ──────────────────────────────────────────────────────
+  // 1. Resolve scope
 
   useEffect(() => {
     (async () => {
@@ -414,7 +414,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
         setScopeReady(true); return;
       }
 
-      // Regular team member — check if they have dashboard access
+      // Regular team member - check if they have dashboard access
       if (role === 'team' || role === 'team_pts') {
         const hasDashboard = (currentUser.allowed_menus ?? []).includes('dashboard');
         setScope({ kind: hasDashboard ? 'team' : 'none' }); setScopeReady(true); return;
@@ -424,7 +424,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
     })();
   }, [currentUser]);
 
-  // ── 2. Fetch KPI (scope-aware) ────────────────────────────────────────────
+  // 2. Fetch KPI (scope-aware)
 
   const fetchKPI = useCallback(async () => {
     if (!scopeReady || scope.kind === 'none') { setLoading(false); return; }
@@ -434,7 +434,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
       const inOneWeek = new Date(); inOneWeek.setDate(inOneWeek.getDate()+7);
       const oneWeekStr = inOneWeek.toISOString().split('T')[0];
 
-      // ── Helpers to build scoped queries ──
+      // Helpers to build scoped queries
       const scopeTickets = (q: any) => {
         if (scope.kind === 'pts_sup' && scope.ptsMemberNames?.length) {
           return q.in('assign_name', scope.ptsMemberNames);
@@ -448,7 +448,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
         return q;
       };
 
-      // ── Parallel fetches ──
+      // Parallel fetches
       const [ticketsRes, actLogsRes, remindersRes, piketHolidaysRes, piketWeekRes, kegiatanRes, movRes, usersRes, lcSessionsRes] =
         await Promise.all([
           scopeTickets(supabase.from('tickets').select('id,status,assign_name,sales_division,date,created_at,product')),
@@ -484,7 +484,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
         // piket: show all, but today card highlights their team column
       }
 
-      // ── KPI calculations (identical to before, just on scoped data) ──
+      // KPI calculations (identical to before, just on scoped data)
       const open           = tickets.filter((t:any)=>!['Solved','Cancelled'].includes(t.status)).length;
       const solved         = tickets.filter((t:any)=>t.status==='Solved').length;
       const waitingApproval= tickets.filter((t:any)=>t.status==='Waiting Approval').length;
@@ -571,7 +571,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
     finally { setLoading(false); }
   }, [scope, scopeReady]);
 
-  // ── 3. Fetch Audit (scope-aware) ──────────────────────────────────────────
+  // 3. Fetch Audit (scope-aware)
 
   const fetchAudit = useCallback(async () => {
     if (!scopeReady || scope.kind === 'none') { setAuditLoading(false); return; }
@@ -630,7 +630,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
     finally { setAuditLoading(false); }
   }, [scope, scopeReady]);
 
-  // ── Effects: trigger fetch when scope is resolved ─────────────────────────
+  // Effects: trigger fetch when scope is resolved
 
   useEffect(() => {
     if (!scopeReady) return;
@@ -641,7 +641,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [scopeReady, fetchKPI, fetchAudit]);
 
-  // ── Filtered Audit ────────────────────────────────────────────────────────
+  // Filtered Audit
 
   const filteredAudit = audit.filter(a => {
     const matchFilter = auditFilter==='all'
@@ -653,13 +653,13 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
     return matchFilter && (!q||[a.actor,a.target,a.action,a.detail].some(x=>x.toLowerCase().includes(q)));
   });
 
-  // ── Early return if no access ─────────────────────────────────────────────
+  // Early return if no access
   if (!scopeReady) return (
     <div className="flex items-center justify-center py-16">
       <div className="w-8 h-8 border-3 border-white/30 border-t-white rounded-full animate-spin"/>
     </div>
   );
-  // ── Piket card highlight per team ─────────────────────────────────────────
+  // Piket card highlight per team
   const isPTSIVP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS IVP';
   const isPTSUMP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS UMP';
   const isPTSMVI = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS MVI';
@@ -673,7 +673,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
     {key:'analytics' as const, icon:'📊', label:'Analytics'},
   ];
 
-  // ─── LC-style design helpers ────────────────────────────────────────────────
+  // LC-style design helpers
   function SectionPill({ icon, children }: { icon: string; children: React.ReactNode }) {
     return (
       <h3 className="text-sm font-bold uppercase tracking-widest mb-4 inline-flex items-center gap-1.5 bg-white text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm border border-slate-200">
@@ -682,7 +682,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
     );
   }
 
-  // ── Full DonutChart (same as LC) ──
+  // Full DonutChart (same as LC)
   function DonutChart({ segments, size = 68, strokeWidth = 10, label = '' }: {
     segments: { value: number; color: string }[]; size?: number; strokeWidth?: number; label?: string;
   }) {
@@ -718,7 +718,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
     );
   }
 
-  // ── MiniBar: horizontal progress bar ──
+  // MiniBar: horizontal progress bar
   function MiniBar({ value, max, color='#3b82f6', h=4 }: { value:number; max:number; color?:string; h?:number }) {
     const pct = max>0 ? Math.min(100,(value/max)*100) : 0;
     return (
@@ -729,7 +729,6 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
   }
 
 
-  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="w-full">
         {/* ── Content area ── */}

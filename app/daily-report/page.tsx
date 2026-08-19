@@ -28,7 +28,7 @@ import {
   FormField, SectionHeaderSmall, LoadingScreen, ListEmptyState, Username, ModalPortal } from '@/components/shared';
 import { MiniPieChart, PageHeader, StatCardGrid } from '@/components/shared';
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// Styles
 const inp: React.CSSProperties = {
   background: 'rgba(255,255,255,0.95)', border: '1.5px solid rgba(0,0,0,0.12)',
   borderRadius: '12px', color: '#1e293b', fontSize: '14px',
@@ -58,7 +58,7 @@ const TD: React.CSSProperties = {
   borderRight: '1px solid rgba(0,0,0,0.04)',
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Helpers
 const SB: Record<string, { label: string; bg: string; color: string; border: string }> = {
   done:          { label: 'Selesai',  bg: '#d1fae5', color: '#065f46', border: '#10b981' },
   completed:     { label: 'Selesai',  bg: '#d1fae5', color: '#065f46', border: '#10b981' },
@@ -82,7 +82,7 @@ function emptyTeamEntry(m: TeamUser): TeamEntry {
   return { _key: newTeamKey(), member_user_id: m.id, member_name: m.full_name, category: 'Internal', project_name: '', address: '', sales_name: '', sales_division: m.sales_division ?? '', supervisor_notes: '' };
 }
 
-// ─── PageWrapper ──────────────────────────────────────────────────────────────
+// PageWrapper
 function PW({ children }: { children: React.ReactNode }) {
   return (
     <div className="h-screen overflow-hidden flex flex-col relative" style={{
@@ -101,7 +101,7 @@ function PW({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ─── Category picker ──────────────────────────────────────────────────────────
+// Category picker
 function CatPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div className="grid grid-cols-2 gap-2">
@@ -121,7 +121,7 @@ function CatPicker({ value, onChange }: { value: string; onChange: (v: string) =
   );
 }
 
-// ─── Sales Dropdown ───────────────────────────────────────────────────────────
+// Sales Dropdown
 function SalesDrop({ value, division, guests, onChange }: { value: string; division: string; guests: GuestUser[]; onChange: (n: string, d: string) => void }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
@@ -160,7 +160,7 @@ function SalesDrop({ value, division, guests, onChange }: { value: string; divis
   );
 }
 
-// ─── Toast ────────────────────────────────────────────────────────────────────
+// Toast
 function Toast({ t }: { t: { type: 'success' | 'error'; msg: string } | null }) {
   if (!t) return null;
   return (
@@ -171,22 +171,22 @@ function Toast({ t }: { t: { type: 'success' | 'error'; msg: string } | null }) 
   );
 }
 
-// ─── MAIN ─────────────────────────────────────────────────────────────────────
+// MAIN
 export default function DailyReportPage() {
   const [appReady, setAppReady]       = useState(false);
   const [currentUser, setCurrentUser] = useState<TeamUser | null>(null);
   const [teamUsers, setTeamUsers]     = useState<TeamUser[]>([]);
   const [guestUsers, setGuestUsers]   = useState<GuestUser[]>([]);
 
-  // ── Live data (dari reminder + ticket platform, tanpa perlu submit dulu) ──────
+  // Live data (dari reminder + ticket platform, tanpa perlu submit dulu)
   const [liveReminders, setLiveReminders] = useState<(ReminderActivity & { handler_username?: string; report_date?: string })[]>([]);
   const [liveTickets, setLiveTickets]     = useState<(TicketActivity & { handler_username?: string; report_date?: string })[]>([]);
   const [liveLoading, setLiveLoading]     = useState(false);
 
-  // ── Submitted reports ─────────────────────────────────────────────────────────
+  // Submitted reports
   const [reports, setReports]         = useState<DailyReport[]>([]);
 
-  // ── Filter ────────────────────────────────────────────────────────────────────
+  // Filter
   const [filterDate, setFilterDate]   = useState('');
   const [filterUser, setFilterUser]   = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -197,7 +197,7 @@ export default function DailyReportPage() {
   const [filterDivision, setFilterDivision] = useState<string | null>(null);
   const [filterProduct, setFilterProduct]   = useState<string | null>(null);
 
-  // ── Form state ────────────────────────────────────────────────────────────────
+  // Form state
   const [formOpen, setFormOpen]       = useState(false);
   const [editingId, setEditingId]     = useState<string | null>(null);
   const [formDate, setFormDate]       = useState(todayISO());
@@ -210,7 +210,7 @@ export default function DailyReportPage() {
   const [formLoading, setFormLoading]     = useState(false);
   const [saving, setSaving]               = useState(false);
 
-  // ── Modal detail ──────────────────────────────────────────────────────────────
+  // Modal detail
   const [modalRow, setModalRow]       = useState<any | null>(null);
 
   const [toast, setToast]             = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
@@ -220,7 +220,7 @@ export default function DailyReportPage() {
   // (lihat lib/constants.ts hasFullAccess).
   const isAdmin = hasFullAccess(currentUser);
 
-  // ── Init ──────────────────────────────────────────────────────────────────────
+  // Init
   useEffect(() => {
     const user = getSession<TeamUser>();
     if (!user) {
@@ -250,7 +250,7 @@ export default function DailyReportPage() {
     if (data) setGuestUsers(data as GuestUser[]);
   };
 
-  // ── Load live data dari kedua platform ───────────────────────────────────────
+  // Load live data dari kedua platform
   const loadLiveData = useCallback(async () => {
     if (!currentUser) return;
     setLiveLoading(true);
@@ -277,7 +277,7 @@ export default function DailyReportPage() {
     setLiveLoading(false);
   }, [currentUser, isAdmin, teamUsers, filterDate, filterUser]);
 
-  // ── Load submitted reports ────────────────────────────────────────────────────
+  // Load submitted reports
   const loadReports = useCallback(async () => {
     if (!currentUser) return;
     try {
@@ -294,7 +294,7 @@ export default function DailyReportPage() {
     loadReports();
   }, [currentUser, isAdmin, teamUsers, filterDate, filterUser]);
 
-  // ── Build flat rows: gabung live data + manual dari submitted reports ──────────
+  // Build flat rows: gabung live data + manual dari submitted reports
   interface FlatRow {
     id: string;
     source: 'reminder' | 'ticket' | 'manual';
@@ -318,10 +318,10 @@ export default function DailyReportPage() {
   const allRows = useMemo<FlatRow[]>(() => {
     const rows: FlatRow[] = [];
 
-    // ── Build ticket key set untuk deduplication ──────────────────────────────
+    // Build ticket key set untuk deduplication
     // Key format: `${project_name_lower}|${handler_username_lower}|${date}`
     // Reminder Troubleshooting yang sudah ada tiketnya di platform ticketing tidak
-    // ditampilkan duplikat — ticket lebih prioritas karena lebih lengkap (action_taken, status aktual)
+    // ditampilkan duplikat - ticket lebih prioritas karena lebih lengkap (action_taken, status aktual)
     const ticketKeySet = new Set<string>(
       liveTickets.map(t => {
         const hu = ((t as any).handler_username ?? '').toLowerCase();
@@ -330,14 +330,14 @@ export default function DailyReportPage() {
       })
     );
 
-    // Reminder — langsung dari platform, tanpa perlu submit
+    // Reminder - langsung dari platform, tanpa perlu submit
     liveReminders.forEach(r => {
       const hr = (r as any).handler_username ?? '';
       const tu = teamUsers.find(u => u.username === hr);
       const rd = ((r as any).report_date ?? '').split('T')[0];
 
       // Jika reminder kategori Troubleshooting DAN sudah ada ticket yang matching
-      // (project_name + handler + tanggal sama) → skip untuk hindari duplicate
+      // (project_name + handler + tanggal sama)  skip untuk hindari duplicate
       if ((r.category ?? '').toLowerCase() === 'troubleshooting') {
         const key = `${(r.project_name ?? '').trim().toLowerCase()}|${hr.toLowerCase()}|${rd}`;
         if (ticketKeySet.has(key)) return;
@@ -363,7 +363,7 @@ export default function DailyReportPage() {
       });
     });
 
-    // Ticket — langsung dari platform
+    // Ticket - langsung dari platform
     liveTickets.forEach(t => {
       const hu = (t as any).handler_username ?? '';
       const tu = teamUsers.find(u => u.username === hu);
@@ -388,7 +388,7 @@ export default function DailyReportPage() {
       });
     });
 
-    // Manual — dari submitted daily_reports saja
+    // Manual - dari submitted daily_reports saja
     reports.forEach(r => {
       r.manual_activities.forEach((m, idx) => {
         const tu = teamUsers.find(u => u.id === r.user_id);
@@ -436,7 +436,7 @@ export default function DailyReportPage() {
     });
   }, [allRows, searchProject, filterStatus, filterCategory, filterHandler, filterDivision, filterProduct]);
 
-  // ── Stats ─────────────────────────────────────────────────────────────────────
+  // Stats
   const stats = useMemo(() => {
     const total = allRows.length;
     const pending = allRows.filter(r => ['pending', 'in progress', 'proses'].includes(r.status.toLowerCase())).length;
@@ -476,7 +476,7 @@ export default function DailyReportPage() {
     return Array.from(m.entries()).sort((a,b)=>b[1]-a[1]).map(([label, value], i) => ({ label, value, color: PIE_C[(i+2) % PIE_C.length] }));
   }, [allRows]);
 
-  // ── Form helpers ──────────────────────────────────────────────────────────────
+  // Form helpers
   const openNewForm = async () => {
     const date = todayISO();
     setFormDate(date); setFormUserId(isAdmin ? '' : currentUser?.id ?? '');
@@ -561,7 +561,7 @@ export default function DailyReportPage() {
 
   if (!appReady) return <LoadingScreen />;
 
-  // ── FORM MODAL ────────────────────────────────────────────────────────────────
+  // FORM MODAL
   const FormModal = () => {
     if (!formOpen) return null;
     const targetUser = isAdmin ? teamUsers.find(u => u.id === formUserId) : currentUser;
@@ -688,7 +688,7 @@ export default function DailyReportPage() {
     );
   };
 
-  // ── DETAIL MODAL (popup persis reminder-schedule) ─────────────────────────────
+  // DETAIL MODAL (popup persis reminder-schedule)
   const DetailModal = () => {
     if (!modalRow) return null;
     const row: FlatRow = modalRow;
@@ -814,7 +814,7 @@ export default function DailyReportPage() {
     );
   };
 
-  // ── MAIN LIST VIEW ────────────────────────────────────────────────────────────
+  // MAIN LIST VIEW
   return (
     <PW>
       <PageHeader icon="📋" title="Daily Report" subtitle="PTS IVP & MVI" color="#059669" colorLight="#047857">

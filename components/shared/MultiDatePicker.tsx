@@ -14,7 +14,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const toISO = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
 
 /**
- * Kalender mini multi-select — klik beberapa tanggal langsung (mis. tanggal
+ * Kalender mini multi-select - klik beberapa tanggal langsung (mis. tanggal
  * 1, 2, 3) tanpa buka date-picker berulang kali. Dipakai di form Request
  * Jadwal & buat Reminder agar bisa sekali submit untuk beberapa hari.
  */

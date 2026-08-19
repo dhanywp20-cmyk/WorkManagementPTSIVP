@@ -1,15 +1,15 @@
-// ─── Session ──────────────────────────────────────────────────────────────────
+// Session
 /** Durasi sesi login: 6 jam (sama di semua modul) */
 export const SESSION_DURATION_MS = 6 * 60 * 60 * 1000;
 
-// ─── Brand Colors ─────────────────────────────────────────────────────────────
+// Brand Colors
 /**
- * Token warna brand IVP — gunakan ini di semua modul, jangan hardcode hex/tailwind class.
+ * Token warna brand IVP - gunakan ini di semua modul, jangan hardcode hex/tailwind class.
  * Tailwind class alias ada di tailwind.config (jika sudah setup),
  * atau gunakan CSS variable --ivp-brand-* via globals.css.
  */
 export const BRAND = {
-  /** Warna utama brand — rose-600 */
+  /** Warna utama brand - rose-600 */
   primary:      '#e11d48',
   primaryDark:  '#be123c',
   primaryLight: '#f43f5e',
@@ -20,20 +20,20 @@ export const BRAND = {
   tintBorder:   '#fecdd3',
 } as const;
 
-// ─── Z-Index Standar ──────────────────────────────────────────────────────────
+// Z-Index Standar
 /**
  * Skala z-index tinggal di lib/z-index.ts.
  *
  * Dulu ada salinan kedua di berkas ini dengan angka BERBEDA untuk nama yang
  * sama (modal 100 vs 100, tapi toast 200 vs 10000). Selama tiap halaman masih
- * terkurung stacking context sendiri, selisih itu tidak pernah ketahuan —
+ * terkurung stacking context sendiri, selisih itu tidak pernah ketahuan -
  * begitu kurungannya dibongkar, dua tangga yang bersaing langsung menghasilkan
  * popup yang tampil di belakang popup lain. Satu sumber saja, supaya tidak
  * terulang.
  */
 export { Z } from './z-index';
 
-// ─── Role Helpers ─────────────────────────────────────────────────────────────
+// Role Helpers
 import type { CurrentUser } from './use-current-user';
 
 /** Cek apakah user adalah admin atau superadmin */
@@ -74,7 +74,7 @@ export function isAdminOrSupervisor(user: CurrentUser | null): boolean {
 }
 
 /**
- * Bentuk minimal yang dibutuhkan hasFullAccess() — SENGAJA bukan CurrentUser
+ * Bentuk minimal yang dibutuhkan hasFullAccess() - SENGAJA bukan CurrentUser
  * langsung. Modul lain (Learning Center, Piket Showroom, dst) masing-masing
  * punya `User`/`currentUser` bertipe lokal sendiri (pola yang sudah dipakai
  * di seluruh platform ini, lihat CLAUDE.md/audit modul); mensyaratkan
@@ -87,14 +87,14 @@ type AccessCheckUser = { role?: string | null; team_type?: string | null; access
 /**
  * Akses PENUH setara admin di modul DATA (Piket Showroom, Learning Center,
  * KPI Team, Form Review, Ticketing, Reminder Schedule, Daily Report, Unit
- * Movement, Project Progress) — BUKAN hak kelola akun (itu tetap admin/
+ * Movement, Project Progress) - BUKAN hak kelola akun (itu tetap admin/
  * superadmin saja lewat /api/admin/users).
  *
- * Sengaja BUKAN ditebak dari jabatan ('Manager', dst) — itu rapuh, harus
+ * Sengaja BUKAN ditebak dari jabatan ('Manager', dst) - itu rapuh, harus
  * diubah di kode tiap kali struktur organisasi berubah. Sebagai gantinya,
  * admin men-toggle kolom users.access_level ('full'/'guest') per akun lewat
  * Admin Panel (lib/admin-users.ts adminSetAccessLevel). Toggle ini HANYA
- * berlaku untuk role='team' — sesuai desain platform: dibuat untuk Team PTS
+ * berlaku untuk role='team' - sesuai desain platform: dibuat untuk Team PTS
  * mengelola timnya sendiri, bukan untuk Guest/Sales/Marketing mengelola tim
  * lain, jadi access_level='full' pada akun non-team diabaikan.
  *

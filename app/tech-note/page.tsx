@@ -14,7 +14,7 @@ import { logAudit } from '@/lib/audit';
 import { createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { hasFullAccess } from '@/lib/constants';
 
-// ─── Spinner ──────────────────────────────────────────────────────────────────
+// Spinner
 function Spinner() {
   return (
     <div className="flex items-center justify-center py-24">
@@ -26,7 +26,7 @@ function Spinner() {
   );
 }
 
-// ─── Avatar ───────────────────────────────────────────────────────────────────
+// Avatar
 function Avatar({ name, size = 32 }: { name: string; size?: number }) {
   const cols = ['#3b82f6','#8b5cf6','#ec4899','#10b981','#f59e0b','#ef4444'];
   const bg = cols[name.charCodeAt(0) % cols.length];
@@ -39,7 +39,7 @@ function Avatar({ name, size = 32 }: { name: string; size?: number }) {
   );
 }
 
-// ─── StatusBadge ──────────────────────────────────────────────────────────────
+// StatusBadge
 function StatusBadge({ status }: { status: TechNote['status'] }) {
   const cfg = STATUS_CONFIG[status];
   const bgMap: Record<string,string> = {
@@ -56,18 +56,18 @@ function StatusBadge({ status }: { status: TechNote['status'] }) {
   );
 }
 
-// ─── KPI Summary ──────────────────────────────────────────────────────────────
+// KPI Summary
 // Admin/supervisor: tampilkan ringkasan semua tim (tanpa menyebut target per orang)
-// Team/user: TIDAK tampilkan progress pribadi & target KKM — cukup info singkat
+// Team/user: TIDAK tampilkan progress pribadi & target KKM - cukup info singkat
 function TechNoteKPISummary({ technotes, currentUser, year }:
   { technotes: TechNote[]; currentUser: User; year: number }) {
-  // Sama dengan canManage di komponen induk — akun Full Access juga melihat
+  // Sama dengan canManage di komponen induk - akun Full Access juga melihat
   // ringkasan seluruh tim, bukan cuma catatannya sendiri.
   const isAdmin = hasFullAccess(currentUser as never)
     || ['admin','superadmin','supervisor'].includes(currentUser.role);
 
   if (isAdmin) {
-    // Admin: ringkasan global — tanpa menyebut "Target: X/orang"
+    // Admin: ringkasan global - tanpa menyebut "Target: X/orang"
     const totalApproved = technotes.filter(t => t.status === 'approved').length;
     const totalPending  = technotes.filter(t => t.status === 'pending').length;
     return (
@@ -117,11 +117,11 @@ function TechNoteKPISummary({ technotes, currentUser, year }:
 }
 
 /**
- * Kategori folder Tech Note — emoji MENGIKUTI kategori, bukan dipilih bebas.
+ * Kategori folder Tech Note - emoji MENGIKUTI kategori, bukan dipilih bebas.
  *
  * Dulu emoji-nya kotak teks bebas. Hasilnya menyimpang pelan-pelan: folder
- * yang isinya sama-sama layar bisa berikon 📄, 🖥️, atau apa pun yang kebetulan
- * dipilih saat itu — jadi ikonnya berhenti berarti apa-apa. Dengan diikatkan
+ * yang isinya sama-sama layar bisa berikon , , atau apa pun yang kebetulan
+ * dipilih saat itu - jadi ikonnya berhenti berarti apa-apa. Dengan diikatkan
  * ke kategori, satu pandangan ke sidebar sudah cukup untuk tahu jenis isinya.
  */
 const KATEGORI_FOLDER = [
@@ -132,7 +132,7 @@ const KATEGORI_FOLDER = [
 
 type KategoriFolder = (typeof KATEGORI_FOLDER)[number]['value'];
 
-// ─── Folder Sidebar ───────────────────────────────────────────────────────────
+// Folder Sidebar
 function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManage }:{
   folders: TechNoteFolder[]; technotes: TechNote[];
   selected: string | null; onSelect: (id: string | null) => void;
@@ -194,7 +194,7 @@ function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManag
   );
 }
 
-// ─── Approval History ─────────────────────────────────────────────────────────
+// Approval History
 function HistoryTimeline({ history }: { history: TechNoteHistory[] }) {
   if (!history.length) return null;
   return (
@@ -223,7 +223,7 @@ function HistoryTimeline({ history }: { history: TechNoteHistory[] }) {
   );
 }
 
-// ─── Modal ────────────────────────────────────────────────────────────────────
+// Modal
 function Modal({ open, onClose, title, width=560, children }:{
   open:boolean; onClose:()=>void; title:string; width?:number; children:React.ReactNode;
 }) {
@@ -260,7 +260,7 @@ const inputCls = [
   'placeholder-slate-400 bg-gray-50 border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100',
 ].join(' ');
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// Main Page
 export default function TechNotePage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [folders,    setFolders]    = useState<TechNoteFolder[]>([]);
@@ -274,7 +274,7 @@ export default function TechNotePage() {
 
   const [showFolderModal,  setShowFolderModal]  = useState(false);
   const [showUploadModal,  setShowUploadModal]  = useState(false);
-  // Edit & hapus tech note — sebelumnya tidak ada jalan sama sekali, bahkan
+  // Edit & hapus tech note - sebelumnya tidak ada jalan sama sekali, bahkan
   // untuk admin. Satu-satunya koreksi adalah lewat database.
   const [editingNote, setEditingNote] = useState<TechNote | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
@@ -293,7 +293,7 @@ export default function TechNotePage() {
    *
    * Sebelumnya hanya mencocokkan daftar role. Akibatnya akun Team PTS yang
    * sudah diberi Full Access tetap tidak bisa membuat folder maupun
-   * menyetujui — padahal justru itu gunanya toggle tersebut. Sekarang lewat
+   * menyetujui - padahal justru itu gunanya toggle tersebut. Sekarang lewat
    * helper terpusat di lib/constants.ts, sama dengan modul lain.
    */
   const canManage = hasFullAccess(currentUser as never)
@@ -320,12 +320,11 @@ export default function TechNotePage() {
     if (!currentUser) return;
     setLoading(true);
 
-    // ── Aturan visibilitas Tech Note ──────────────────────────────────────────
+    // Aturan visibilitas Tech Note
     // Admin/supervisor: semua tech note (untuk bisa melakukan approval)
     // Team/user biasa:
     //   - Semua tech note yang sudah APPROVED (visible ke semua)
     //   - Tech note milik sendiri dengan status apapun (pending, revision, rejected)
-    // ─────────────────────────────────────────────────────────────────────────
 
     if (canManage) {
       // Admin: ambil semua tech note tahun ini
@@ -385,7 +384,7 @@ export default function TechNotePage() {
     setSaving(true);
     const dasar = {
       name: folderForm.name.trim(),
-      // Emoji mengikuti kategori, bukan diketik bebas — lihat KATEGORI_FOLDER.
+      // Emoji mengikuti kategori, bukan diketik bebas - lihat KATEGORI_FOLDER.
       icon: KATEGORI_FOLDER.find(k => k.value === folderForm.category)?.icon ?? '📄',
       color: folderForm.color, parent_id: folderForm.parent_id || null,
       created_by: currentUser?.full_name ?? 'Admin',
@@ -395,7 +394,7 @@ export default function TechNotePage() {
     if (error) {
       // Kolom `category` baru ada setelah sql/tech-note-folder-category.sql
       // dijalankan. Sebelum itu PostgREST menolak SELURUH insert, bukan cuma
-      // kolom yang tak dikenal — jadi tanpa jalur mundur ini, membuat folder
+      // kolom yang tak dikenal - jadi tanpa jalur mundur ini, membuat folder
       // gagal total di lingkungan yang migrasinya belum dijalankan.
       ({ error } = await supabase.from('tech_note_folders').insert(dasar));
     }
@@ -444,7 +443,7 @@ export default function TechNotePage() {
     const now = new Date().toISOString();
     const tags = uploadForm.tags.split(',').map(s=>s.trim()).filter(Boolean);
 
-    // ── Mode sunting ──
+    // Mode sunting
     // status & author TIDAK disentuh: menyunting isi bukan berarti catatannya
     // jadi milik penyunting, dan bukan pula berarti hasil review-nya batal.
     if (editingNote) {

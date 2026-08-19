@@ -2,7 +2,7 @@
 import { useState } from 'react';
 
 /**
- * Shared 5-star rating widget — dari form-review.
+ * Shared 5-star rating widget - dari form-review.
  */
 export function StarRating({ value, onChange, disabled }: { value: number; onChange?: (v: number) => void; disabled?: boolean }) {
   const [hovered, setHovered] = useState(0);

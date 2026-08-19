@@ -3,7 +3,7 @@
 import React from 'react';
 
 /**
- * MobileListCard — kartu daftar untuk tampilan MOBILE, pola acuan dari
+ * MobileListCard - kartu daftar untuk tampilan MOBILE, pola acuan dari
  * Ticket Troubleshooting: header (judul + badge status di kanan), meta
  * (lokasi/tanggal), grid 2-kolom label:value, lalu baris ikon aksi.
  *
@@ -22,7 +22,7 @@ export interface MobileCardField {
 
 interface MobileListCardProps {
   title: React.ReactNode;
-  titlePrefix?: React.ReactNode;   // mis. ikon 🚨 di depan judul
+  titlePrefix?: React.ReactNode;   // mis. ikon  di depan judul
   meta?: React.ReactNode;          // baris kecil di bawah judul (lokasi/tanggal)
   badges?: React.ReactNode;        // badge status di kanan atas (boleh beberapa, stacked)
   fields?: MobileCardField[];      // pasangan label:value (grid 2 kolom)

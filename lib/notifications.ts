@@ -26,7 +26,7 @@
 
 import { supabase } from '@/lib/supabase';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// Types
 
 export type NotifType = 'ticket' | 'reminder' | 'project' | 'user' | 'kpi' | 'system';
 
@@ -40,11 +40,11 @@ export interface NotifPayload {
   created_by?: string;   // Full name of who triggered this
 }
 
-// ── Core helpers ──────────────────────────────────────────────────────────────
+// Core helpers
 
 /**
  * Create a notification for a single user.
- * Fails silently — never throws. Safe to call from any event handler.
+ * Fails silently - never throws. Safe to call from any event handler.
  */
 export async function createNotification(payload: NotifPayload): Promise<void> {
   try {
@@ -67,7 +67,7 @@ export async function createNotification(payload: NotifPayload): Promise<void> {
 
 /**
  * Create notifications for all users with role admin/superadmin, PLUS akun
- * Team PTS dengan toggle "Full Access" aktif (mis. Manager PTS — lihat
+ * Team PTS dengan toggle "Full Access" aktif (mis. Manager PTS - lihat
  * lib/constants.ts hasFullAccess & sql/user-full-access-toggle.sql). Full
  * Access dimaksudkan supaya notifikasi yang masuk ke admin juga masuk ke
  * Manager pada saat yang sama, bukan menyusul terpisah.
@@ -147,7 +147,7 @@ export async function fetchUnreadNotifs(userId: string): Promise<{
   }
 }
 
-// ── Preset notification factories ─────────────────────────────────────────────
+// Preset notification factories
 // Use these instead of constructing payloads manually.
 
 /** Notify when a new user registers and waits for approval */

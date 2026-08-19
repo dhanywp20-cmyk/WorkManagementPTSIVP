@@ -10,7 +10,7 @@ import { notifyKPIAlert } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Types
 
 interface KPIUser {
   id: string; full_name: string; role: string;
@@ -78,7 +78,7 @@ type PeriodKey = 'Minggu Ini' | 'Bulan Ini' | '3 Bulan' | '6 Bulan' | '1 Tahun';
 type SortKey = 'name' | 'tickets' | 'solved' | 'solveRate' | 'avgDays' | 'remRate' | 'lcScore' | 'piket';
 type SortDir = 'asc' | 'desc';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// Constants
 
 const PERIODS: PeriodKey[] = ['Minggu Ini', 'Bulan Ini', '3 Bulan', '6 Bulan', '1 Tahun'];
 const PERIOD_EMOJI: Record<PeriodKey, string> = {
@@ -97,7 +97,7 @@ const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov
 const MN     = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
 const KPI_COLOR = '#0284c7';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// Helpers
 
 function fmt(d: Date): string { return d.toISOString().split('T')[0]; }
 
@@ -158,7 +158,7 @@ function exportKPIExcel(
   const periodLabel = yearLabel ?? period;
 
   members.forEach(member => {
-    // ── Calculate KPI scores ───────────────────────────────────────────────
+    // Calculate KPI scores
     const lcFailed = member.lcScores.filter(sc => sc < settings.lcMinScore).length;
     const tickS  = member.ticketsHandled > 0 ? Math.max(0, 1 - member.ticketsOverdue / Math.max(member.ticketsHandled, 1)) : 0;
     const bastS  = member.formReviewTotal === 0 ? 0 : member.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - member.formReviewLowRating / Math.max(member.formReviewTotal, 1));
@@ -190,7 +190,7 @@ function exportKPIExcel(
       BOBOT_RND * (rndPct / 100) +
       BOBOT_LAPORAN * (laporanPct / 100);
 
-    // ── Build sheet data ────────────────────────────────────────────────────
+    // Build sheet data
     // Column layout: A=No, B=KPI Item, C=Target, D..O=Jan-Dec, P=Rata2, Q=Bobot, R=Nilai Akhir
     const COL_COUNT = 18; // A to R
 
@@ -299,7 +299,7 @@ function exportKPIExcel(
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
 
-    // ── Cell styling ─────────────────────────────────────────────────────────
+    // Cell styling
     const thin = { style: 'thin' as const, color: { rgb: 'FFD1D5DB' } };
     const med  = { style: 'medium' as const, color: { rgb: 'FF6B7280' } };
     const bThin = { top: thin, bottom: thin, left: thin, right: thin };
@@ -318,7 +318,7 @@ function exportKPIExcel(
     const fr = (R: number, s: object) => { for (let C = 0; C < COL_COUNT; C++) sc(R, C, s); };
     const rng = (r1: number, r2: number, s: object) => { for (let R = r1; R <= r2; R++) fr(R, s); };
 
-    // Base: thin border on entire table (header → total NILAI)
+    // Base: thin border on entire table (header  total NILAI)
     rng(8, 36, { font: F(), border: bThin, alignment: { vertical: 'center' } });
 
     // Table column header row (idx 8): navy bg, white bold
@@ -434,7 +434,7 @@ function exportKPIExcel(
   XLSX.writeFile(wb, filename, { bookType: 'xlsx', cellStyles: true } as any);
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// Sub-components
 
 
 function ProgressBar({ value, max, showPct = true, h = 6 }: { value: number; max: number; showPct?: boolean; h?: number }) {
@@ -479,7 +479,7 @@ function SummaryCard({ icon, label, value, sub, color, trend, lowerIsBetter }: {
   );
 }
 
-// ─── Drill-down Modal ─────────────────────────────────────────────────────────
+// Drill-down Modal
 
 function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: () => void; period: PeriodKey }) {
   const solveRate = member.ticketsHandled > 0 ? Math.round((member.ticketsSolved / member.ticketsHandled) * 100) : 0;
@@ -609,7 +609,7 @@ function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: (
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// Main Page
 
 export default function KPITeamPage() {
   const [currentUser, setCurrentUser] = useState<KPIUser | null>(null);
@@ -630,7 +630,7 @@ export default function KPITeamPage() {
   const [drillMember, setDrillMember] = useState<KPIMember | null>(null);
   const [searchQ, setSearchQ] = useState('');
 
-  // KPI scoring — separate data + period (tidak ikut period picker atas)
+  // KPI scoring - separate data + period (tidak ikut period picker atas)
   const [kpiSettings, setKpiSettings] = useState<KPISettings>(DEFAULT_KPI_SETTINGS);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedKPIMember, setSelectedKPIMember] = useState<string | null>(null);
@@ -647,7 +647,7 @@ export default function KPITeamPage() {
   const [expandedSnapshot, setExpandedSnapshot] = useState<string | null>(null);
   const [selectedSnapMember, setSelectedSnapMember] = useState<string | null>(null);
 
-  // ── Auth ──────────────────────────────────────────────────────────────────
+  // Auth
 
   useEffect(() => {
     const u = getSession<KPIUser>();
@@ -662,7 +662,7 @@ export default function KPITeamPage() {
     return startSessionWatcher();
   }, []);
 
-  // ── Scope resolution ──────────────────────────────────────────────────────
+  // Scope resolution
 
   useEffect(() => {
     if (!currentUser) return;
@@ -671,7 +671,7 @@ export default function KPITeamPage() {
       const jabatan = currentUser.jabatan ?? '';
       const PTS_TYPES = ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MVI'];
       // Admin/superadmin ATAU akun Team PTS dengan toggle "Full Access" aktif
-      // (lihat lib/constants.ts hasFullAccess) — lihat seluruh tim, bukan cuma
+      // (lihat lib/constants.ts hasFullAccess) - lihat seluruh tim, bukan cuma
       // KPI-nya sendiri atau tim satu jenis PTS saja seperti Supervisor.
       if (['admin', 'superadmin'].includes(role) || hasFullAccess(currentUser)) {
         setScope({ kind: 'admin' }); setScopeReady(true); return;
@@ -680,7 +680,7 @@ export default function KPITeamPage() {
         setScope({ kind: 'pts_sup', ptsTeamType: currentUser.team_type ?? '' });
         setScopeReady(true); return;
       }
-      // Regular team member — can view their own KPI (read-only)
+      // Regular team member - can view their own KPI (read-only)
       if (role === 'team') {
         setScope({ kind: 'team' }); setScopeReady(true); return;
       }
@@ -688,7 +688,7 @@ export default function KPITeamPage() {
     })();
   }, [currentUser]);
 
-  // ── Load / save KPI settings ──────────────────────────────────────────────
+  // Load / save KPI settings
 
   useEffect(() => {
     const load = async () => {
@@ -710,7 +710,7 @@ export default function KPITeamPage() {
     try { await supabase.from('kpi_global_settings').upsert({ id: 1, settings: s, updated_at: new Date().toISOString() }); } catch { /* ignore */ }
   }, []);
 
-  // ── Data fetching ─────────────────────────────────────────────────────────
+  // Data fetching
 
   const buildMembers = useCallback(async (membersData: any[], start: string, end: string): Promise<KPIMember[]> => {
     const endFull   = end + 'T23:59:59';
@@ -775,7 +775,7 @@ export default function KPITeamPage() {
       const lcScores = lcScoreArr;
       const lcAvg    = lcScoreArr.length ? Math.round(lcScoreArr.reduce((a: number, b: number) => a + b, 0) / lcScoreArr.length) : 0;
 
-      // Form reviews (BAST & Demo — low rating = bintang <3)
+      // Form reviews (BAST & Demo - low rating = bintang <3)
       const myReviews = formReviews.filter((r: any) => r.assign_name === name);
       const formReviewTotal = myReviews.length;
       const formReviewLowRating = myReviews.filter((r: any) => {
@@ -785,7 +785,7 @@ export default function KPITeamPage() {
         return g1 < 3 || g2 < 3 || g3 < 3;
       }).length;
 
-      // Tech Notes approved (R&D — auto from platform)
+      // Tech Notes approved (R&D - auto from platform)
       const techNotesApproved = techNotes.filter((tn: any) => tn.author_id === uid).length;
 
       // Piket
@@ -860,7 +860,7 @@ export default function KPITeamPage() {
 
   useEffect(() => { fetchAllData(); }, [fetchAllData]);
 
-  // ── KPI scoring fetch (independent of period picker) ─────────────────────
+  // KPI scoring fetch (independent of period picker)
 
   const fetchKPIMembers = useCallback(async () => {
     if (!scopeReady || scope.kind === 'none') return;
@@ -896,7 +896,7 @@ export default function KPITeamPage() {
 
   useEffect(() => { fetchKPIMembers(); }, [fetchKPIMembers]);
 
-  // ── KPI Snapshots ─────────────────────────────────────────────────────────
+  // KPI Snapshots
 
   const fetchKPISnapshots = useCallback(async () => {
     try {
@@ -961,7 +961,7 @@ export default function KPITeamPage() {
     finally { setSavingSnapshot(false); }
   }, [currentUser, kpiSettings, kpiMembers, kpiStartMonth, kpiPeriodLen, kpiYear, scope, fetchKPISnapshots]);
 
-  // ── Computed values ───────────────────────────────────────────────────────
+  // Computed values
 
   const allTeamTypes = useMemo(() => Array.from(new Set(members.map(m => m.team_type))).sort(), [members]);
 
@@ -1041,12 +1041,12 @@ export default function KPITeamPage() {
       ? <span className="text-sky-500 ml-0.5">{sortDir === 'asc' ? '↑' : '↓'}</span>
       : <span className="text-slate-300 ml-0.5">↕</span>;
 
-  // ── Period label ──────────────────────────────────────────────────────────
+  // Period label
 
   const { start, end } = getPeriodRange(period);
   const periodLabel = `${new Date(start).toLocaleDateString('id-ID', { day:'2-digit', month:'short' })} — ${new Date(end).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' })}`;
 
-  // ── KPI period + helpers (used both in Penilaian section and Mulai KPI) ──
+  // KPI period + helpers (used both in Penilaian section and Mulai KPI)
 
   const kpiEndMonth    = Math.min(kpiStartMonth + (kpiPeriodLen === '6m' ? 5 : 11), 12);
   const kpiPeriodLabel = `${MN[kpiStartMonth - 1]}–${MN[kpiEndMonth - 1]} ${kpiYear}`;
@@ -1066,7 +1066,7 @@ export default function KPITeamPage() {
   const kpiScoreLabel = (score: number, noData: boolean) =>
     noData ? 'Belum Ada Data' : score >= 85 ? 'Excellent' : score >= 70 ? 'Good' : score >= 50 ? 'Fair' : 'Needs Work';
 
-  // ── Guards ────────────────────────────────────────────────────────────────
+  // Guards
 
   if (!isLoggedIn || !appReady) return (
     <div className="flex items-center justify-center min-h-screen"
@@ -1087,14 +1087,14 @@ export default function KPITeamPage() {
     </div>
   );
 
-  // ── Ticket status breakdown for donut chart ─────────────────────────────
+  // Ticket status breakdown for donut chart
   const donutSegments = [
     { value: summary.totalS,                                 color: STATUS_COLORS['Solved'] },
     { value: summary.totalOD,                                color: STATUS_COLORS['Overdue'] },
     { value: Math.max(0, summary.totalT - summary.totalS - summary.totalOD), color: STATUS_COLORS['Pending'] },
   ].filter(s => s.value > 0);
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // Render
 
   return (
     <div className="h-screen overflow-hidden flex flex-col"

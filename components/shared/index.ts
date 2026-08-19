@@ -1,9 +1,9 @@
-// ─── Shared UI Components ────────────────────────────────────────────────────
+// Shared UI Components
 // Pattern standar dipakai di semua platform KECUALI piket-showroom.
 // Basis: ticketing platform.
 
 export { MiniPieChart } from './MiniPieChart';
-// Grafik deret waktu — sebelumnya terkunci di dalam app/kpi-team/ dan MiniSpark
+// Grafik deret waktu - sebelumnya terkunci di dalam app/kpi-team/ dan MiniSpark
 // disalin tiga kali (dua di antaranya di dalam fungsi komponen). Lihat Charts.tsx.
 export { MiniSpark, MonthBarChart, DonutChart, TrendBadge, hitungDelta } from './Charts';
 export {
@@ -23,14 +23,14 @@ export { LoadingSpinner, EmptyState, ListEmptyState, ErrorState } from './EmptyS
 // sampai komponen ini ada hanya satu layar yang pernah membacanya kembali.
 export { AuditTrailPanel, type AuditEntry } from './AuditTrailPanel';
 // Diagram tahapan untuk alur bertahap. Alur Request Schedule sebelumnya hanya
-// hidup di kolom routing_status — tidak pernah tergambar di layar mana pun.
+// hidup di kolom routing_status - tidak pernah tergambar di layar mana pun.
 export { FlowSteps, type FlowStep } from './FlowSteps';
 export { MultiDatePicker } from './MultiDatePicker';
 export { MobileListCard, MobileCardBadge, type MobileCardField } from './MobileListCard';
 // Username kadang berupa nama pendek, kadang berupa email penuh. Awalan @ hanya
-// dipasang pada yang pertama — lihat catatan di Username.tsx.
+// dipasang pada yang pertama - lihat catatan di Username.tsx.
 export { Username, formatUsername } from './Username';
-// Kartu ringkasan angka — satu implementasi untuk semua modul, supaya gayanya
+// Kartu ringkasan angka - satu implementasi untuk semua modul, supaya gayanya
 // tidak menyimpang lagi seperti saat markup-nya disalin per halaman.
 export { StatCard, StatCardGrid, type StatCardItem } from './StatCard';
 export { ModalPortal } from './ModalPortal';

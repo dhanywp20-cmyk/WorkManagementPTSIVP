@@ -10,7 +10,7 @@ const plexMono = IBM_Plex_Mono({
 });
 
 /**
- * IBM Plex Sans/Mono di-scope ke modul Project Progress saja — bagian dari
+ * IBM Plex Sans/Mono di-scope ke modul Project Progress saja - bagian dari
  * pergantian bahasa visual dari "foto latar + kartu kaca" ke "kertas netral +
  * angka monospace" (lihat PALETTE di _components/shared.ts). Modul lain di
  * platform tidak disentuh oleh perubahan ini.

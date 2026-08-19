@@ -1,14 +1,14 @@
 'use client';
 
 /**
- * Widgets.tsx — kumpulan widget reusable + Widget Registry.
+ * Widgets.tsx - kumpulan widget reusable + Widget Registry.
  *
  * Setiap widget: komponen mandiri yang fetch datanya sendiri & render 1 kartu.
  * Registry (WIDGETS) = metadata deklaratif (id, permission, priority, size,
  * Component). Permission Resolver ada di permissions.ts. Proses compose
- * (filter → sort → render) ada di PermissionAwareDashboard.tsx.
+ * (filter  sort  render) ada di PermissionAwareDashboard.tsx.
  *
- * Prinsip: widget = RINGKASAN untuk homepage, bukan list otoritatif — angka &
+ * Prinsip: widget = RINGKASAN untuk homepage, bukan list otoritatif - angka &
  * beberapa item terbaru, lalu "Lihat semua" membuka menu aslinya.
  */
 
@@ -22,7 +22,7 @@ import {
 import { AnalyticsPlatform } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 import { ASSIGNABLE_PTS_TEAMS } from '@/lib/teams';
 
-// ── Kontrak widget ────────────────────────────────────────────────────────────
+// Kontrak widget
 
 export interface WidgetProps {
   user: User;
@@ -42,7 +42,7 @@ export interface WidgetDef {
 
 const todayStr = () => new Date().toISOString().split('T')[0];
 
-// ── UI primitives ──────────────────────────────────────────────────────────────
+// UI primitives
 
 function WidgetCard({ title, icon, accent, children, onSeeAll, seeAllLabel }: {
   title: string; icon: string; accent: string;
@@ -105,19 +105,15 @@ function Loading() {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// WIDGET: Analytics (native) — render AnalyticsPlatform LANGSUNG (BUKAN iframe),
+// WIDGET: Analytics (native) - render AnalyticsPlatform LANGSUNG (BUKAN iframe),
 // lengkap dgn tab Analytics / Command Center / Audit Log. Tema analytics penuh utk
 // Admin/Team, digabung ke dashboard. Widget ringkasan personal disembunyikan utk
-// role ini (`!canAccessAnalytics`) → anti-duplikat.
-// ═══════════════════════════════════════════════════════════════════════════════
+// role ini (`!canAccessAnalytics`)  anti-duplikat.
 const AnalyticsNativeWidget: React.FC<WidgetProps> = ({ user }) => (
   <AnalyticsPlatform embedded injectedUser={user} />
 );
 
-// ═══════════════════════════════════════════════════════════════════════════════
 // WIDGET: Team Monitoring Hari Ini (Team/Admin).
-// ═══════════════════════════════════════════════════════════════════════════════
 const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<{ id: string; name: string; reported: boolean; active: number }[]>([]);
@@ -205,11 +201,9 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
   );
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// WIDGET: Analytics Saya (Sales/Marketing) — tema analytics, DATA MILIK SENDIRI.
+// WIDGET: Analytics Saya (Sales/Marketing) - tema analytics, DATA MILIK SENDIRI.
 // Menggabung 4 platform: Request Schedule, Request Design Project, Form Review BAST,
 // Ticket Troubleshooting. Tiap panel hanya muncul kalau user punya menunya.
-// ═══════════════════════════════════════════════════════════════════════════════
 interface SalesAnalytics {
   schedule: { total: number; active: number; done: number };
   project: { total: number; pending: number; progress: number; done: number };
@@ -221,7 +215,7 @@ interface SalesAnalytics {
  * Kartu ini menampilkan satu angka utama PLUS rincian pecahannya, jadi tidak
  * bisa langsung memakai StatCard bersama (yang hanya membawa satu angka).
  * Gayanya disamakan secara manual: permukaan putih, angka gelap, dan warna
- * kategori dipakai sebagai pita tepi — persis seperti StatCard.
+ * kategori dipakai sebagai pita tepi - persis seperti StatCard.
  */
 function AnalyticStat({ accent, label, value, subs }: {
   accent: string; label: string; value: number;
@@ -249,7 +243,7 @@ function AnalyticStat({ accent, label, value, subs }: {
  * Pintasan membuat data baru dari dashboard.
  *
  * Ikon kirim yang sama dengan tombol Submit Form di tiap platform, supaya
- * jelas sejak dari dashboard bahwa tombol ini bermuara ke sebuah form — bukan
+ * jelas sejak dari dashboard bahwa tombol ini bermuara ke sebuah form - bukan
  * ke tabel. Ukurannya sengaja jauh lebih besar daripada tautan teks yang dulu
  * ada di sini: inilah aksi yang paling sering dipakai Sales dari halaman ini.
  */
@@ -284,7 +278,7 @@ const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openUrl }) => {
     (async () => {
       try {
         // Scope "data sendiri": cocokkan lewat created_by (username) ATAU nama sales
-        // (full_name) — menangkap request/tiket yg dia buat maupun yg atas namanya.
+        // (full_name) - menangkap request/tiket yg dia buat maupun yg atas namanya.
         const [remRes, prRes, rvRes, tkRes] = await Promise.all([
           showSchedule ? supabase.from('reminders').select('status').or(`sales_name.eq.${user.full_name},created_by.eq.${user.username}`) : Promise.resolve({ data: [] }),
           showProject  ? supabase.from('project_requests').select('status').or(`requester_id.eq.${user.id},ivp_assignee.eq.${user.full_name}`) : Promise.resolve({ data: [] }),
@@ -383,9 +377,7 @@ const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openUrl }) => {
   );
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// WIDGET: Learning (menu learning-center) — CTA ringkas.
-// ═══════════════════════════════════════════════════════════════════════════════
+// WIDGET: Learning (menu learning-center) - CTA ringkas.
 const LearningWidget: React.FC<WidgetProps> = ({ openMenu }) => (
   <WidgetCard title="Learning Center" icon="🎓" accent="#4338ca">
     <div className="flex flex-col items-center justify-center h-full text-center gap-2 py-2">
@@ -398,11 +390,9 @@ const LearningWidget: React.FC<WidgetProps> = ({ openMenu }) => (
   </WidgetCard>
 );
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// WIDGET: Piket Showroom — siapa PIC piket hari ini + minggu ini.
+// WIDGET: Piket Showroom - siapa PIC piket hari ini + minggu ini.
 // Muncul utk SEMUA role (info penting bersama: Sales/Marketing perlu tahu PIC).
-// Nama PIC dihitung dgn getRollingNameForDate — SAMA persis dgn halaman Piket.
-// ═══════════════════════════════════════════════════════════════════════════════
+// Nama PIC dihitung dgn getRollingNameForDate - SAMA persis dgn halaman Piket.
 interface PicketDay { day: string; dateKey: string; name: string; isToday: boolean; team: string; }
 
 const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
@@ -466,17 +456,15 @@ const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
   );
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// WIDGET REGISTRY — metadata deklaratif. Compose di PermissionAwareDashboard.
-// ═══════════════════════════════════════════════════════════════════════════════
+// WIDGET REGISTRY - metadata deklaratif. Compose di PermissionAwareDashboard.
 export const WIDGETS: WidgetDef[] = [
-  // Team Monitoring paling atas utk Admin/Team (full width) — jawab "mana report tim".
+  // Team Monitoring paling atas utk Admin/Team (full width) - jawab "mana report tim".
   { id: 'team-monitoring', permission: canSeeTeamMonitoring, priority: 1, size: 'full', Component: TeamMonitoringWidget },
-  // Analytics native (DashboardKPI, tanpa iframe) — tema analytics penuh utk Admin/Team.
-  // Sudah memuat Ticket/Reminder/Piket/Unit/Pengguna/Learning → widget di bawah
+  // Analytics native (DashboardKPI, tanpa iframe) - tema analytics penuh utk Admin/Team.
+  // Sudah memuat Ticket/Reminder/Piket/Unit/Pengguna/Learning  widget di bawah
   // DISEMBUNYIKAN utk role ini (`!canAccessAnalytics`) supaya TIDAK duplikat data.
   { id: 'analytics',       permission: canAccessAnalytics,   priority: 2, size: 'full', Component: AnalyticsNativeWidget },
-  // Analytics Saya (Sales/Marketing) — tema analytics, DATA SENDIRI, 4 platform.
+  // Analytics Saya (Sales/Marketing) - tema analytics, DATA SENDIRI, 4 platform.
   // Hanya utk role TANPA analytics global & punya minimal 1 dari 4 menu terkait.
   { id: 'sales-analytics', permission: (u) => !canAccessAnalytics(u) && (hasMenu(u, 'reminder-schedule') || hasMenu(u, 'request-design-project') || hasMenu(u, 'form-bast') || hasMenu(u, 'ticket-troubleshooting')), priority: 3, size: 'full', Component: SalesAnalyticsWidget },
   // Piket Showroom: role tanpa analytics (Admin/Team sudah lihat piket di dalam analytics).

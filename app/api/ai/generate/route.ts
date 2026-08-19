@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       return errJson('AI service tidak tersedia (GEMINI_API_KEY belum diset di server).', 503);
     }
 
-    // Batasi ukuran body — endpoint sudah butuh session (middleware), tapi cegah
+    // Batasi ukuran body - endpoint sudah butuh session (middleware), tapi cegah
     // penyalahgunaan sebagai proxy gratis dengan payload besar.
     const raw = await request.text();
     if (raw.length > MAX_BODY_BYTES) {
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       return errJson('Body permintaan tidak valid.', 400);
     }
 
-    // Hanya teruskan field yang memang dipakai Gemini — bukan passthrough mentah.
+    // Hanya teruskan field yang memang dipakai Gemini - bukan passthrough mentah.
     const b = body as Record<string, unknown>;
     if (!b || typeof b !== 'object' || !Array.isArray(b.contents)) {
       return errJson('Format permintaan tidak valid.', 400);
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       // supaya gampang di-debug kalau Gemini balikin error yang shape-nya nggak terduga.
       console.error('[api/ai/generate] Gemini error', res.status, JSON.stringify(data));
       // generativelanguage.googleapis.com KADANG membungkus error dalam array
-      // ([{error:{...}}], bukan {error:{...}}) — klien (generateWithGemini di
+      // ([{error:{...}}], bukan {error:{...}}) - klien (generateWithGemini di
       // shared.tsx) hanya membaca data.error.message, jadi bentuk array ini
       // sebelumnya selalu jatuh ke pesan generik "Gemini API error" walau
       // Gemini sebenarnya sudah mengirim alasan yang jelas. Diratakan di sini

@@ -1,10 +1,10 @@
 import { setDbToken, dbTokenExpiryMs, refreshDbToken } from './supabase';
 /**
- * lib/auth.ts — Helper auth terpusat
+ * lib/auth.ts - Helper auth terpusat
  *
  * Arsitektur session (v2):
- * - Auth TOKEN  → httpOnly cookie (diset oleh /api/auth/login, tidak bisa dibaca JS)
- * - User PROFILE → sessionStorage (bisa dibaca JS, cleared on tab close, bukan localStorage)
+ * - Auth TOKEN   httpOnly cookie (diset oleh /api/auth/login, tidak bisa dibaca JS)
+ * - User PROFILE  sessionStorage (bisa dibaca JS, cleared on tab close, bukan localStorage)
  *
  * Keuntungan vs localStorage:
  * - Token tidak bisa dicuri via XSS (httpOnly cookie)
@@ -36,7 +36,7 @@ export function clearSession(): void {
   sessionStorage.removeItem(SS_USER);
   sessionStorage.removeItem(SS_TIME);
   // Fire-and-forget: invalidate cookie di server
-  // Token PostgREST ikut dibuang — kalau tertinggal, tab yang sama masih
+  // Token PostgREST ikut dibuang - kalau tertinggal, tab yang sama masih
   // memegang identitas user sebelumnya.
   setDbToken(null);
   fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
@@ -78,7 +78,7 @@ export async function verifySessionFromCookie<T = Record<string, unknown>>(): Pr
     if (user) {
       // Re-populate sessionStorage dari cookie yang valid
       setSession(user);
-      // Pasang ulang token PostgREST — tanpa ini, query setelah refresh
+      // Pasang ulang token PostgREST - tanpa ini, query setelah refresh
       // halaman berangkat tanpa identitas.
       setDbToken(db_token ?? null);
     }
@@ -109,15 +109,15 @@ export function checkSessionOrRedirect(): boolean {
 /**
  * Perbarui token PostgREST bila sudah dekat kedaluwarsa.
  *
- * ── Kenapa perlu ────────────────────────────────────────────────────────────
+ * Kenapa perlu
  * Token dan sesi browser sama-sama berumur 6 jam, tapi diperpanjang oleh hal
  * yang berbeda. setSession() dipanggil di beberapa layar untuk menyegarkan
- * profil user, dan panggilan itu MENGULANG hitungan mundur sesi dari nol —
+ * profil user, dan panggilan itu MENGULANG hitungan mundur sesi dari nol -
  * sementara tokennya tidak ikut diterbitkan ulang.
  *
  * Akibatnya sesi di browser bisa terlihat masih segar padahal tokennya sudah
  * lewat batas. Aplikasi tetap mengira user login, tapi PostgREST menolak
- * SETIAP query dengan galat JWT — termasuk saat membuat ticket. Gejalanya
+ * SETIAP query dengan galat JWT - termasuk saat membuat ticket. Gejalanya
  * membingungkan justru karena tidak ada yang tampak kedaluwarsa dari sisi user.
  *
  * Pemantau di bawah menutup celah itu dengan memperbarui token dari
@@ -127,7 +127,7 @@ export function checkSessionOrRedirect(): boolean {
  */
 export async function refreshDbTokenIfNeeded(ambangMenit = 30): Promise<void> {
   const exp = dbTokenExpiryMs();
-  // Tidak ada token: biarkan — permintaan berjalan memakai anon key seperti
+  // Tidak ada token: biarkan - permintaan berjalan memakai anon key seperti
   // sebelum fitur token ada, dan verifySessionFromCookie yang akan memasangnya.
   if (exp === null) return;
   if (exp - Date.now() > ambangMenit * 60_000) return;

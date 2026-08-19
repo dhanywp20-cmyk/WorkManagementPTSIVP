@@ -19,12 +19,12 @@ interface PageHeaderProps {
  * Enforces consistent visual identity per module through `color` prop.
  *
  * @example
- * <PageHeader icon="🎫" title="Ticket Troubleshooting" color="#dc2626">
+ * <PageHeader icon="" title="Ticket Troubleshooting" color="#dc2626">
  *   <button>...</button>
  * </PageHeader>
  */
 export function PageHeader({ icon, title, subtitle, color, colorLight, children }: PageHeaderProps) {
-  // Auto-derive a lighter shade if not provided (darken ~20% → use as gradient end)
+  // Auto-derive a lighter shade if not provided (darken ~20%  use as gradient end)
   const iconBg = `linear-gradient(135deg,${color},${colorLight ?? color + 'cc'})`;
   const iconShadow = `0 3px 12px ${color}40`;
 

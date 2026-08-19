@@ -44,7 +44,7 @@ function jadikanTeks(v: unknown): string {
  * Perbandingannya sengaja lewat teks: nilai dari <input> selalu string,
  * sementara nilai dari database bisa number/null. Tanpa penyeragaman ini,
  * membuka lalu menutup form tanpa mengubah apa pun akan tercatat sebagai
- * belasan "perubahan" — dan ikut mengirim WA.
+ * belasan "perubahan" - dan ikut mengirim WA.
  */
 export function bandingkan(
   fields: AdminField[],
@@ -63,7 +63,7 @@ export function bandingkan(
   return hasil;
 }
 
-/** Ringkasan satu baris per perubahan — dipakai di catatan audit. */
+/** Ringkasan satu baris per perubahan - dipakai di catatan audit. */
 export function ringkasPerubahan(p: Perubahan[]): string {
   return p.map(x => `${x.label}: ${x.dari} → ${x.ke}`).join('; ');
 }
@@ -71,7 +71,7 @@ export function ringkasPerubahan(p: Perubahan[]): string {
 /**
  * Pesan WA untuk orang yang menangani pekerjaan ini.
  *
- * Isinya menyebut APA yang berubah, bukan sekadar "ada perubahan" — supaya
+ * Isinya menyebut APA yang berubah, bukan sekadar "ada perubahan" - supaya
  * penerimanya tidak perlu membuka platform hanya untuk tahu apakah perubahan
  * itu menyangkut dirinya.
  */

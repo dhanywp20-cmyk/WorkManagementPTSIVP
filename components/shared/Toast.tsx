@@ -1,9 +1,9 @@
 'use client';
 
 /**
- * Shared Toast notification — pattern standar untuk semua platform.
+ * Shared Toast notification - pattern standar untuk semua platform.
  * Caller manages state: const [notif, setNotif] = useState<Notif|null>(null);
- *  → setNotif({type, msg}); setTimeout(()=>setNotif(null), 3500);
+ *   setNotif({type, msg}); setTimeout(()=>setNotif(null), 3500);
  */
 
 export interface Notif {
@@ -31,7 +31,7 @@ export function Toast({ notif }: { notif: Notif | null }) {
 }
 
 /**
- * Inline toast — untuk dipakai di dalam modal (bukan fixed top-right)
+ * Inline toast - untuk dipakai di dalam modal (bukan fixed top-right)
  */
 export function InlineToast({ notif }: { notif: Notif | null }) {
   if (!notif) return null;

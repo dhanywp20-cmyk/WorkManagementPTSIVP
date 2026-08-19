@@ -24,12 +24,12 @@ export interface NewTicketForm {
   current_team: string;
   photo: File | null;
   reminder_id: string | null;
-  brand?: Brand;   // Sales External pilih brand (MVI/IVP/BOTH) → CC ke Sales Internal brand itu
+  brand?: Brand;   // Sales External pilih brand (MVI/IVP/BOTH)  CC ke Sales Internal brand itu
 }
 
 interface ReminderRef {
   id: string;
-  /** Nama project bisa tersimpan di sini pada data lama — lihat pencarian di bawah. */
+  /** Nama project bisa tersimpan di sini pada data lama - lihat pencarian di bawah. */
   title?: string;
   /**
    * Asal baris ini. Menentukan apakah ticket baru boleh ditautkan ke reminder:
@@ -67,9 +67,9 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
   const canAssignDirect = currentUser?.role === 'admin' || currentUser?.role === 'superadmin'
     || hasFullAccess(currentUser);
 
-  // Creator = Sales Internal (guest) → boleh isi SBU (buat ticket atas nama Sales External).
+  // Creator = Sales Internal (guest)  boleh isi SBU (buat ticket atas nama Sales External).
   const isInternalSalesGuest = currentUser?.role === 'guest' && !!users.find(u => u.id === currentUser.id)?.is_internal_sales;
-  // Sales External (guest bukan internal) → WAJIB pilih Brand (menentukan Sales Internal yg di-CC).
+  // Sales External (guest bukan internal)  WAJIB pilih Brand (menentukan Sales Internal yg di-CC).
   const isExternalGuest = currentUser?.role === 'guest' && !isInternalSalesGuest;
   const externalSalesUsers = users.filter(u => u.role === 'guest' && !u.is_internal_sales && u.id !== currentUser?.id)
     .map(u => ({ id: u.id, full_name: u.full_name, sales_division: u.sales_division ?? null }));
@@ -82,12 +82,12 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
-   * Cari project yang sudah ada — DIBATASI lingkup si pencari.
+   * Cari project yang sudah ada - DIBATASI lingkup si pencari.
    *
    * Sebelumnya query ini hanya menyaring kategori lalu mencocokkan nama
    * project, tanpa batas divisi sama sekali. Akibatnya Sales dari divisi mana
    * pun bisa menemukan project milik divisi lain hanya dengan mengetik
-   * sepotong namanya — lengkap dengan alamat, PIC, dan nomor teleponnya,
+   * sepotong namanya - lengkap dengan alamat, PIC, dan nomor teleponnya,
    * karena memilih hasilnya langsung menyalin semua itu ke form.
    *
    * Lingkupnya dihitung di lib/project-scope.ts supaya aturannya satu, bukan
@@ -99,16 +99,16 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     const lingkup = await hitungLingkupProject(currentUser as never);
     const cocokNama = `project_name.ilike.%${q}%,title.ilike.%${q}%`;
 
-    // ── Reminders: SEMUA kategori ──
+    // Reminders: SEMUA kategori
     // Dulu dibatasi ['Konfigurasi & Training', 'Training'] saja, sehingga
-    // project yang tercatat di kategori lain — Maintenance, Demo, apa pun —
+    // project yang tercatat di kategori lain - Maintenance, Demo, apa pun -
     // tidak pernah muncul, seolah tidak pernah ada.
     let qr = supabase
       .from('reminders')
       .select('id, project_name, title, address, sales_name, sales_division, product, pic_name, pic_phone, category, assign_name')
       .or(cocokNama);
 
-    // ── Tickets: project yang pernah punya ticket ──
+    // Tickets: project yang pernah punya ticket
     // Tabel ini sebelumnya tidak ikut dicari sama sekali. Padahal project yang
     // sudah pernah bermasalah justru yang paling mungkin dibuatkan ticket lagi,
     // dan datanya cuma ada di sini kalau ia tidak pernah lewat Request Schedule.
@@ -128,7 +128,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     const hasil: ReminderRef[] = [];
     const sudah = new Set<string>();
     const tambah = (r: ReminderRef) => {
-      // Satu project bisa muncul di kedua tabel — disatukan berdasarkan nama +
+      // Satu project bisa muncul di kedua tabel - disatukan berdasarkan nama +
       // alamat supaya daftarnya tidak memuat baris kembar yang membingungkan.
       const kunci = `${(r.project_name || r.title || '').trim().toLowerCase()}|${(r.address || '').trim().toLowerCase()}`;
       if (sudah.has(kunci)) return;
@@ -171,7 +171,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
       assign_name: r.assign_name || form.assign_name,
       // Hanya baris dari tabel reminders yang boleh menautkan reminder_id.
       // Memakai id ticket di sini akan menunjuk ke baris yang tidak ada di
-      // tabel reminders — tautannya rusak, dan sinkronisasi progress ikut salah.
+      // tabel reminders - tautannya rusak, dan sinkronisasi progress ikut salah.
       reminder_id: r._sumber === 'ticket' ? null : r.id,
     });
   };

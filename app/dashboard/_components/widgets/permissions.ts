@@ -1,9 +1,9 @@
 /**
- * permissions.ts — Permission Resolver untuk Permission-Aware Dashboard.
+ * permissions.ts - Permission Resolver untuk Permission-Aware Dashboard.
  *
  * SATU sumber untuk memutuskan widget mana yang boleh dilihat sebuah akun.
  * Berbasis `allowed_menus` (bukan hardcode role per widget). Admin/superadmin
- * diperlakukan punya SEMUA menu — persis seperti resolusi menu di
+ * diperlakukan punya SEMUA menu - persis seperti resolusi menu di
  * dashboard/page.tsx (`if (!allowed || role==='superadmin' || role==='admin')`).
  */
 
@@ -27,7 +27,7 @@ export function hasMenu(u: User, key: string): boolean {
 /**
  * Analytics Platform penuh (DashboardKPI + Command Center + Audit Log) = HANYA
  * Admin & Team. Sesuai instruksi: Command Center & Audit Log DILARANG utk selain
- * admin/team. Supervisor Sales/Marketing TIDAK termasuk — mereka role "lain" yang
+ * admin/team. Supervisor Sales/Marketing TIDAK termasuk - mereka role "lain" yang
  * dapat dashboard ringkas (Analytics Saya, data sendiri). DashboardKPI juga tidak
  * meng-scope data untuk guest/sales (hasilnya kosong), jadi memang tak cocok utk mereka.
  */
@@ -40,7 +40,7 @@ export function canAccessAnalytics(u: User): boolean {
  * Team Monitoring Hari Ini = pantauan tim PTS (daily report vs reminder aktif).
  * Hanya relevan utk yang mengawasi tim PTS: admin + akun Team PTS yang punya
  * akses analytics (Supervisor / Team dgn menu dashboard). Supervisor Sales TIDAK
- * masuk — mereka tidak mengawasi tim PTS.
+ * masuk - mereka tidak mengawasi tim PTS.
  */
 export function canSeeTeamMonitoring(u: User): boolean {
   if (isAdminRole(u)) return true;

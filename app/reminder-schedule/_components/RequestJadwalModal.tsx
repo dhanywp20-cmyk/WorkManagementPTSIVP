@@ -10,26 +10,26 @@ export interface JadwalRequest {
   description: string;
   address: string;
   category: string;
-  product_type: string;   // tipe produk (LED / LCD·Middleware / LED & LCD) — utk routing
+  product_type: string;   // tipe produk (LED / LCD·Middleware / LED & LCD) - utk routing
   due_date: string;
   /**
    * Usulan rentang pengerjaan untuk Project Progress. Hanya diisi bila
-   * kategorinya Konfigurasi / Konfigurasi & Training. Sifatnya USULAN — admin
+   * kategorinya Konfigurasi / Konfigurasi & Training. Sifatnya USULAN - admin
    * masih bisa mengubahnya saat approve, dan draft baru lahir setelah request
    * di-assign ke tim.
    */
   progress_start_date: string;
   progress_target_date: string;
-  extra_dates: string[];   // hari tambahan — request sekali untuk beberapa hari sekaligus
+  extra_dates: string[];   // hari tambahan - request sekali untuk beberapa hari sekaligus
   due_time: string;
   pic_name: string;
   pic_phone: string;
   product: string;
   notes: string;
   sales_division?: string; // dikirim dari modal agar tidak bergantung hanya pada localStorage
-  brand?: Brand;           // Sales External pilih brand (MVI/IVP/BOTH) → routing ke Sales Internal
-  // SBU — hanya diisi kalau creator = Sales Internal & membuat atas nama Sales
-  // External tertentu. Kalau terisi → request diatasnamakan External tsb.
+  brand?: Brand;           // Sales External pilih brand (MVI/IVP/BOTH)  routing ke Sales Internal
+  // SBU - hanya diisi kalau creator = Sales Internal & membuat atas nama Sales
+  // External tertentu. Kalau terisi  request diatasnamakan External tsb.
   sbu_name?: string;
   sbu_division?: string;
 }
@@ -38,7 +38,7 @@ interface RequestJadwalModalProps {
   salesName: string;       // full_name dari currentUser (guest)
   salesUsername: string;   // username dari currentUser
   salesDivision?: string;  // sales_division dari currentUser (opsional, pre-fill)
-  isInternalSales?: boolean;          // creator adalah Sales Internal → tampilkan SBU
+  isInternalSales?: boolean;          // creator adalah Sales Internal  tampilkan SBU
   externalSalesUsers?: SalesPickerUser[]; // daftar Sales External utk dropdown SBU
   onClose: () => void;
   onSubmit: (data: JadwalRequest) => Promise<void>;

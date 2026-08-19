@@ -44,8 +44,8 @@ export function EmptyState({ icon = '📭', title, description, action }: EmptyS
  * Layar kosong yang MEMBEDAKAN dua keadaan yang tampak sama tapi berbeda
  * artinya bagi pengguna:
  *
- *   belum ada data sama sekali  → ajakan membuat yang pertama
- *   filter menyaring habis      → tawaran mengembalikan filter
+ *   belum ada data sama sekali   ajakan membuat yang pertama
+ *   filter menyaring habis       tawaran mengembalikan filter
  *
  * Sebelum komponen ini, keduanya ditulis dengan kalimat yang sama di tiap
  * modul, dan tidak satu pun menawarkan jalan keluar. Pengguna yang menyaring
@@ -60,7 +60,7 @@ export function ListEmptyState({
   /** Mengembalikan seluruh filter ke keadaan awal. */
   onReset: () => void;
   icon?: string;
-  /** Dipakai saat memang belum ada data — bukan karena filter. */
+  /** Dipakai saat memang belum ada data - bukan karena filter. */
   judulKosong: string;
   deskripsiKosong?: string;
   aksiKosong?: { label: string; onClick: () => void };

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
+// Mock Data
 const MOCK_FOLDERS = [
   { id: '1', name: 'Keselamatan Kerja', items: 3, color: 'from-amber-500 to-orange-500', icon: '🦺', sub: ['K3 Dasar', 'SOP Lapangan'] },
   { id: '2', name: 'Produk', items: 5, color: 'from-blue-500 to-indigo-600', icon: '📦', sub: ['Pengetahuan Dasar', 'Spesifikasi Teknis'] },
@@ -20,14 +20,12 @@ const MOCK_MATERIALS = [
   { id: 'm5', name: 'Teknik Presentasi & Demo Produk', folder: 'Sales & Marketing', hasAI: true, date: '05 Mei 2026' },
 ];
 
-// ─── Shared badge ─────────────────────────────────────────────────────────────
+// Shared badge
 const AIBadge = () => (
   <span className="text-[10px] bg-emerald-100 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-bold">AI ✓</span>
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  STYLE A — Dark Explorer
-// ─────────────────────────────────────────────────────────────────────────────
+//  STYLE A - Dark Explorer
 function StyleA() {
   const [selected, setSelected] = useState(MOCK_FOLDERS[1]);
   const [openSub, setOpenSub] = useState<string | null>('Pengetahuan Dasar');
@@ -137,9 +135,7 @@ function StyleA() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  STYLE B — Colorful Hub
-// ─────────────────────────────────────────────────────────────────────────────
+//  STYLE B - Colorful Hub
 function StyleB() {
   const [selected, setSelected] = useState<typeof MOCK_FOLDERS[0] | null>(null);
   return (
@@ -220,9 +216,7 @@ function StyleB() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  STYLE C — Breadcrumb Navigator
-// ─────────────────────────────────────────────────────────────────────────────
+//  STYLE C - Breadcrumb Navigator
 function StyleC() {
   const [breadcrumb, setBreadcrumb] = useState<string[]>([]);
   const currentFolder = breadcrumb.length > 0 ? MOCK_FOLDERS.find(f => f.name === breadcrumb[0]) : null;
@@ -266,7 +260,7 @@ function StyleC() {
         )}
 
         {breadcrumb.length === 0 ? (
-          /* Root view — all folders as large tiles */
+          /* Root view - all folders as large tiles */
           <div className="grid grid-cols-2 gap-3">
             {MOCK_FOLDERS.map(f => (
               <button key={f.id} onClick={() => setBreadcrumb([f.name])}
@@ -329,9 +323,7 @@ function StyleC() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  STYLE D — Sidebar Tree + Cards
-// ─────────────────────────────────────────────────────────────────────────────
+//  STYLE D - Sidebar Tree + Cards
 function StyleD() {
   const [selected, setSelected] = useState(MOCK_FOLDERS[1]);
   const [openSub, setOpenSub] = useState<string | null>(null);
@@ -423,9 +415,7 @@ function StyleD() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 //  Preview Page
-// ─────────────────────────────────────────────────────────────────────────────
 export default function MateriStylePreview() {
   const [active, setActive] = useState<'A' | 'B' | 'C' | 'D'>('A');
   const styles = [

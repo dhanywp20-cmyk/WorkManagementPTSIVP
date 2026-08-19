@@ -18,7 +18,7 @@ import {
   ConfirmDialog, type ConfirmState, ErrorState,
   MobileListCard, MobileCardBadge, ListEmptyState, StatCard, ModalPortal } from '@/components/shared';
 
-// ─── Main Component ────────────────────────────────────────────────────────────
+// Main Component
 
 export default function FormReviewPage() {
   const router = useRouter();
@@ -97,7 +97,7 @@ export default function FormReviewPage() {
   const isGuest = currentUser?.role === 'guest';
   const isTeam = currentUser?.role === 'team';
 
-  // ─── Init ──────────────────────────────────────────────────────────────────
+  // Init
 
   useEffect(() => {
     const user = getSession<GuestUser>();
@@ -149,7 +149,7 @@ export default function FormReviewPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // ─── Fetch ─────────────────────────────────────────────────────────────────
+  // Fetch
 
   const fetchReviewsQuiet = async (user?: GuestUser | null) => {
     let activeUser: GuestUser | null = user ?? currentUser;
@@ -163,7 +163,7 @@ export default function FormReviewPage() {
         `guest_username.eq.${activeUser.username},sales_name.eq.${activeUser.full_name}`
       );
     }
-    // Team: hanya lihat form review yang di-handle oleh mereka (assigned_to = username) —
+    // Team: hanya lihat form review yang di-handle oleh mereka (assigned_to = username) -
     // KECUALI akun dengan toggle "Full Access" aktif, yang lihat semua seperti admin.
     else if (activeUser?.role === 'team' && !hasFullAccess(activeUser)) {
       query = query.eq('assigned_to', activeUser.username);
@@ -175,14 +175,14 @@ export default function FormReviewPage() {
     if (data) {
       setReviews(data as ReviewForm[]);
 
-      // ── Notif untuk Guest: pending review yang belum diisi
+      // Notif untuk Guest: pending review yang belum diisi
       if (activeUser?.role === 'guest') {
         const pending = (data as ReviewForm[]).filter(r => !r.grade_product_knowledge && !r.grade_product_knowledge_bast);
         setMyPendingReviews(pending);
         if (pending.length > 0) setTimeout(() => setShowNotificationPopup(true), 800);
       }
 
-      // ── Notif untuk Team: form review milik mereka yang BELUM diisi guest
+      // Notif untuk Team: form review milik mereka yang BELUM diisi guest
       if (activeUser?.role === 'team') {
         const pendingByGuest = (data as ReviewForm[]).filter(r =>
           !r.grade_product_knowledge && !r.grade_product_knowledge_bast
@@ -202,7 +202,7 @@ export default function FormReviewPage() {
     setTimeout(() => { setLoadingBar(0); setListLoading(false); }, 300);
   };
 
-  // ─── CRUD ──────────────────────────────────────────────────────────────────
+  // CRUD
 
   const handleSaveReview = async () => {
     if (!editingReview) return;
@@ -326,7 +326,7 @@ export default function FormReviewPage() {
     setShowDeleteModal(true);
   };
 
-  // ─── Login ─────────────────────────────────────────────────────────────────
+  // Login
 
   const handleLogout = () => {
     setSelectMode(false); setSelectedIds(new Set()); setFilterCategory('all'); setFilterReviewCat('all');
@@ -338,7 +338,7 @@ export default function FormReviewPage() {
     if (target) target.location.href = '/dashboard';
   };
 
-  // ─── Filters ───────────────────────────────────────────────────────────────
+  // Filters
 
   const filteredReviews = reviews.filter(r => {
     if (filterReviewCat !== 'all' && r.review_category !== filterReviewCat) return false;
@@ -408,12 +408,12 @@ export default function FormReviewPage() {
   const inputCls = "w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-violet-500/40";
   const inputStyle = { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(0,0,0,0.12)' };
 
-  // Loading awal — tampilkan sebelum data siap (sesuai role)
+  // Loading awal - tampilkan sebelum data siap (sesuai role)
   if (!appReady) return <LoadingScreen message={loadingMessage} accentColor="#7c3aed" />;
 
   if (dashLoading) return <LoadingScreen message="Memuat data..." accentColor="#7c3aed" />;
 
-  // ─── Main Render ────────────────────────────────────────────────────────────
+  // Main Render
 
   return (
     <div className="h-screen overflow-hidden flex flex-col relative" style={{

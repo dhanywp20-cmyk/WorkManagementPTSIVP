@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Username wajib diisi.' }, { status: 400 });
     }
 
-    // ── Rate limiting: max 3 request OTP per jam per username ────────────
+    // Rate limiting: max 3 request OTP per jam per username
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const { count: recentCount } = await supabase
       .from('password_reset_otps')

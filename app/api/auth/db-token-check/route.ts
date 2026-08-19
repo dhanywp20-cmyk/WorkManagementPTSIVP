@@ -7,7 +7,7 @@ import { periksaKonfigurasiServices } from '@/lib/supabase';
 export const dynamic = 'force-dynamic';
 
 /**
- * /api/auth/db-token-check — apakah SUPABASE_JWT_SECRET yang dipasang benar?
+ * /api/auth/db-token-check - apakah SUPABASE_JWT_SECRET yang dipasang benar?
  *
  * Ini pemeriksaan yang HARUS lolos sebelum sql/rls-project-progress.sql
  * dijalankan. Kalau rahasianya salah, PostgREST menolak setiap token, dan
@@ -15,15 +15,15 @@ export const dynamic = 'force-dynamic';
  *
  * Cara kerjanya: terbitkan token untuk pemanggil, lalu pakai token itu untuk
  * memanggil PostgREST sungguhan. Yang diuji bukan bentuk tokennya, melainkan
- * apakah PostgREST MENERIMA tanda tangannya — dan itu hanya terjadi bila
+ * apakah PostgREST MENERIMA tanda tangannya - dan itu hanya terjadi bila
  * rahasia di aplikasi sama persis dengan rahasia di Supabase.
  *
  * Kode status dari PostgREST dibaca begini:
- *   401  → rahasia SALAH (tanda tangan ditolak)
- *   404  → rahasia BENAR, tapi fungsi debug_jwt_claims belum dibuat
- *   200  → rahasia benar dan fungsi sudah ada; klaim ikut dikembalikan
+ *   401   rahasia SALAH (tanda tangan ditolak)
+ *   404   rahasia BENAR, tapi fungsi debug_jwt_claims belum dibuat
+ *   200   rahasia benar dan fungsi sudah ada; klaim ikut dikembalikan
  *
- * Hanya admin yang boleh memanggil — hasilnya menyebut keadaan konfigurasi.
+ * Hanya admin yang boleh memanggil - hasilnya menyebut keadaan konfigurasi.
  */
 export async function GET(request: NextRequest) {
   const caller = await getSessionUser(request);
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
   }
 
   /**
-   * Kesiapan environment. Yang dilaporkan hanya ADA / TIDAK ADA — nilainya
+   * Kesiapan environment. Yang dilaporkan hanya ADA / TIDAK ADA - nilainya
    * tidak pernah ikut, supaya endpoint ini tidak berubah jadi jalan membaca
    * rahasia lewat browser.
    */

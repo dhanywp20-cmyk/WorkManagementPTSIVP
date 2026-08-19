@@ -1,14 +1,14 @@
 import { supabase } from '@/lib/supabase';
 
-// WA notif terpusat di lib/wa.ts — re-export agar call-site lama tetap jalan.
+// WA notif terpusat di lib/wa.ts - re-export agar call-site lama tetap jalan.
 export { sendWANotif } from '@/lib/wa';
 
-// ── Hierarki jabatan (bawah → atas) ──────────────────────────────────────────
+// Hierarki jabatan (bawah  atas)
 export const JABATAN_TIER: Record<string, number> = {
   'Staff': 1, 'Supervisor': 2, 'Manager': 3,
   'Deputy General Manager': 4, 'General Manager': 5, 'Direktur': 6,
 };
-// Rules CC otomatis: jabatan sender → list jabatan yang wajib di-CC
+// Rules CC otomatis: jabatan sender  list jabatan yang wajib di-CC
 export const JABATAN_CC_RULES: Record<string, string[]> = {
   'Staff':                   ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager'],
   'Supervisor':              ['Manager', 'Deputy General Manager', 'General Manager'],
@@ -18,7 +18,7 @@ export const JABATAN_CC_RULES: Record<string, string[]> = {
   'Direktur':                [],
 };
 
-// ── CC ke atasan berdasarkan jabatan tier + IVP handler ──────────────────────
+// CC ke atasan berdasarkan jabatan tier + IVP handler
 // userId  = id user yang trigger event (untuk lookup jabatan mereka)
 // salesDiv = sales_division user (untuk lookup IVP handler)
 export async function fetchWACCTargets(
@@ -35,7 +35,7 @@ export async function fetchWACCTargets(
       const ccJabatanList = JABATAN_CC_RULES[jabatan];
       if (ccJabatanList.length > 0) {
         // 2. Ambil user dengan jabatan yang masuk list CC, dari divisi yang sama
-        //    Prioritas: div_supervisor_mappings → semua atasan yang terdaftar untuk divisi ini
+        //    Prioritas: div_supervisor_mappings  semua atasan yang terdaftar untuk divisi ini
         const { data: supMaps } = await supabase
           .from("division_supervisor_mappings")
           .select("supervisor_id")
@@ -94,7 +94,7 @@ export async function fetchWACCTargets(
   return targets;
 }
 
-// ── Status list khusus Team Services ─────────────────────────────────────────
+// Status list khusus Team Services
 export const SERVICES_STATUSES = [
   "Waiting Approval",
   "Pending",
@@ -174,12 +174,12 @@ export interface Ticket {
   reminder_id?: string | null | undefined;
   priority?: 'Low' | 'Medium' | 'High' | 'Critical';
   escalation_notified_at?: string | null;
-  // Routing: tahap Supervisor (Admin approve → SPV assign) + CC Sales Internal.
+  // Routing: tahap Supervisor (Admin approve  SPV assign) + CC Sales Internal.
   routing_status?: string | null;          // 'supervisor_assign' | null
   assigned_supervisor_id?: string | null;  // Supervisor yg wajib assign lanjut ke tim
   internal_sales_id?: string | null;       // Sales Internal yg di-CC (informational, bukan gate)
   internal_sales_id_2?: string | null;     // Sales Internal kedua (brand IVP saat BOTH)
-  brand?: string | null;                   // 'MVI' | 'IVP' | 'BOTH' — brand yg dipilih Sales External
+  brand?: string | null;                   // 'MVI' | 'IVP' | 'BOTH' - brand yg dipilih Sales External
 }
 
 export interface OverdueSetting {
@@ -198,7 +198,7 @@ export const SALES_DIVISIONS = [
   'IOCBali', 'SGP', 'SGP 1', 'SGP 2', 'OSS',
 ] as const;
 
-// ── Helper Functions ─────────────────────────────────────────────────────────
+// Helper Functions
 export function formatDateTime(dateString: string) {
   if (!dateString) return "-";
   let normalized = dateString;
@@ -217,16 +217,16 @@ export function formatDateTime(dateString: string) {
   return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
 }
 
-// ── Penanganan tiket dari sudut pandang Team PTS IVP ─────────────────────────
+// Penanganan tiket dari sudut pandang Team PTS IVP
 /**
  * Satu tiket bisa berpindah tangan ke Team Services, dan itu dulu membuat tiga
- * hal salah tampil — di layar View Ticket maupun di laporan cetak:
+ * hal salah tampil - di layar View Ticket maupun di laporan cetak:
  *
  *   1. Baris "Team" memakai current_team. Padahal current_team menyatakan tiket
  *      sedang ADA DI MANA, bukan siapa yang mengerjakannya. Akibatnya handler
  *      PTS tercetak seolah anggota Team Services.
  *   2. Status "Solved" berdiri sendiri tanpa keterangan, padahal pekerjaannya
- *      diteruskan pihak lain — pembacanya mengira selesai sepenuhnya di PTS.
+ *      diteruskan pihak lain - pembacanya mengira selesai sepenuhnya di PTS.
  *   3. Lembar tanda tangan hanya bertuliskan "Tanda Tangan", tidak menyebut
  *      siapa yang bertanggung jawab.
  *
@@ -237,7 +237,7 @@ export const TEAM_PTS = "Team PTS IVP";
 export const TEAM_SERVICES = "Team Services";
 
 export interface RingkasPenanganan {
-  /** Nama orang Team PTS yang terakhir memegang tiket — yang menandatangani. */
+  /** Nama orang Team PTS yang terakhir memegang tiket - yang menandatangani. */
   handlerPTS: string;
   /** Team si penanda tangan. Selalu Team PTS IVP, apa pun isi current_team. */
   teamHandler: string;

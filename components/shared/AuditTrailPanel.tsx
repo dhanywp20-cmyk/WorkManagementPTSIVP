@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
 /**
- * components/shared/AuditTrailPanel.tsx — riwayat perubahan sebuah record.
+ * components/shared/AuditTrailPanel.tsx - riwayat perubahan sebuah record.
  *
  * logAudit() dipanggil dari 14 berkas di seluruh platform, tapi sampai
  * komponen ini ada hanya SATU layar yang pernah membacanya kembali
@@ -53,7 +53,7 @@ function waktuRelatif(iso: string): string {
   return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-/** Tanggal + jam pendek tetap (bukan relatif) — dipakai alur mendatar, sebaris. */
+/** Tanggal + jam pendek tetap (bukan relatif) - dipakai alur mendatar, sebaris. */
 function tanggalPendek(iso: string): string {
   const d = new Date(iso);
   const tanggal = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
@@ -64,7 +64,7 @@ function tanggalPendek(iso: string): string {
 /**
  * Label satu langkah pada alur MENDATAR. Beda dari label aksi biasa: yang
  * ingin dilihat orang di sebuah alur status bukan "Status berubah" (generik),
- * tapi status APA yang dicapai — jadi status_change dilabeli new_value-nya.
+ * tapi status APA yang dicapai - jadi status_change dilabeli new_value-nya.
  */
 function labelLangkah(e: AuditEntry): string {
   if (e.action === 'status_change' && e.new_value) return e.new_value;
@@ -79,14 +79,14 @@ export function AuditTrailPanel({
   /**
    * Record yang riwayatnya ditampilkan. Panel diam bila kosong.
    *
-   * Boleh berupa daftar id — dipakai saat satu layar perlu menggabungkan
+   * Boleh berupa daftar id - dipakai saat satu layar perlu menggabungkan
    * riwayat beberapa record sekaligus (mis. satu proyek + seluruh lokasi +
    * seluruh komponennya) jadi satu garis waktu, bukan dipisah per record.
    * `batas` tetap berlaku atas GABUNGANNYA, jadi hasilnya "N perubahan
    * terbaru di proyek ini", bukan "N per lokasi".
    */
   targetId: string | string[] | null | undefined;
-  /** Mempersempit ke satu modul — berguna bila id dipakai lintas tabel. */
+  /** Mempersempit ke satu modul - berguna bila id dipakai lintas tabel. */
   modul?: string;
   judul?: string;
   batas?: number;
@@ -96,7 +96,7 @@ export function AuditTrailPanel({
    */
   selaluTerbuka?: boolean;
   /**
-   * Di dalam modal detail, panel kosong hanya menambah kebisingan — jadi
+   * Di dalam modal detail, panel kosong hanya menambah kebisingan - jadi
    * disembunyikan. Tapi sebagai panel samping ia SUDAH dibuka sengaja oleh
    * user, sehingga menghilang begitu saja justru membingungkan: lebih baik
    * mengatakan "belum ada riwayat".
@@ -109,7 +109,7 @@ export function AuditTrailPanel({
    * logAudit baru mencatat pembuatan sejak perbaikan terakhir, sehingga record
    * lama tidak punya baris "dibuat" dan riwayatnya seolah dimulai dari tengah.
    * Padahal datanya sudah tersimpan sejak awal di kolom created_at &
-   * created_by/sales_name — tinggal ditampilkan.
+   * created_by/sales_name - tinggal ditampilkan.
    *
    * Ditempatkan paling bawah (paling tua) dan tidak digandakan bila
    * audit_trail ternyata sudah memuat baris create-nya sendiri.
@@ -119,13 +119,13 @@ export function AuditTrailPanel({
    * Peristiwa lain yang DITURUNKAN dari record, untuk record lama yang
    * terjadi sebelum logAudit mencatat peristiwa itu.
    *
-   * Tiap entri hanya disisipkan bila audit_trail belum memuat aksi yang sama —
+   * Tiap entri hanya disisipkan bila audit_trail belum memuat aksi yang sama -
    * jadi begitu pencatatan sungguhan masuk, turunan ini menyingkir sendiri dan
    * tidak pernah menggandakan.
    */
   turunan?: { aksi: string; oleh: string | null; waktu: string | null; keterangan?: string }[];
   /**
-   * Mode timeline mini — ditempel langsung di bawah SATU field (status lokasi,
+   * Mode timeline mini - ditempel langsung di bawah SATU field (status lokasi,
    * atau satu baris komponen), bukan sebagai panel berdiri sendiri. Padding &
    * jarak antar baris dipadatkan supaya tidak mendominasi kartu saat dipasang
    * berulang (satu per komponen).
@@ -133,18 +133,18 @@ export function AuditTrailPanel({
   kompak?: boolean;
   /**
    * 'horizontal' menggambar alur MENDATAR ala "Alur Request" (lingkaran
-   * bercentang tersambung garis, kiri = paling lama → kanan = terbaru),
-   * dengan status/aksi sebagai label dan TANGGAL di bawahnya — bukan nama
+   * bercentang tersambung garis, kiri = paling lama  kanan = terbaru),
+   * dengan status/aksi sebagai label dan TANGGAL di bawahnya - bukan nama
    * orang, karena yang ingin diketahui di sini adalah kapan status berubah,
    * bukan siapa. Default 'vertikal' tetap dipakai untuk riwayat yang
-   * memuat detail lengkap (nilai lama→baru, catatan, siapa).
+   * memuat detail lengkap (nilai lamabaru, catatan, siapa).
    */
   arah?: 'vertikal' | 'horizontal';
   /**
-   * Data siap-pakai — dipakai halaman yang TIDAK BOLEH menyentuh supabase
+   * Data siap-pakai - dipakai halaman yang TIDAK BOLEH menyentuh supabase
    * langsung (mis. ProjectDetailView, karena juga dirender di halaman share
    * publik tanpa session). Saat diisi, panel TIDAK PERNAH melakukan fetch
-   * sendiri — hanya menyaring `data` (yang sudah diambil pemanggilnya, lewat
+   * sendiri - hanya menyaring `data` (yang sudah diambil pemanggilnya, lewat
    * server route atau query lain) menurut `targetId`. Diasumsikan sudah
    * difilter modul-nya oleh pemanggil.
    */
@@ -157,7 +157,7 @@ export function AuditTrailPanel({
 
   /* Kunci string yang stabil untuk dependency effect. targetId sebagai array
      baru dibuat ulang tiap render oleh pemanggilnya (mis. `[proj.id, ...ids]`
-     ditulis langsung di JSX) — memakai array itu sendiri sebagai dependency
+     ditulis langsung di JSX) - memakai array itu sendiri sebagai dependency
      akan memicu fetch ulang tiap render, bukan tiap kali isinya benar-benar
      berubah. String gabungan ini nilainya sama selama daftarnya sama. */
   const idsKey = Array.isArray(targetId)
@@ -165,7 +165,7 @@ export function AuditTrailPanel({
     : (targetId ?? '');
 
   useEffect(() => {
-    if (modeStatis) return; // data sudah tersedia — tidak pernah fetch dari supabase.
+    if (modeStatis) return; // data sudah tersedia - tidak pernah fetch dari supabase.
     const ids = idsKey ? idsKey.split(' ') : [];
     if (ids.length === 0) { setEntriFetch([]); setMemuatFetch(false); return; }
     let batal = false;
@@ -197,14 +197,14 @@ export function AuditTrailPanel({
 
   /**
    * Gabungan yang benar-benar ditampilkan. Baris awal hanya disisipkan bila
-   * audit_trail belum memuat 'create' sendiri — kalau tidak, record baru akan
+   * audit_trail belum memuat 'create' sendiri - kalau tidak, record baru akan
    * menampilkan dua baris pembuatan yang sama.
    */
   const aksiTercatat = new Set(entri.map(e => e.action));
 
   /**
    * Waktu catatan ASLI paling awal. Dipakai untuk membatasi waktu baris
-   * turunan di bawah — lihat alasannya di sana.
+   * turunan di bawah - lihat alasannya di sana.
    */
   const catatanAsliTerawal = entri.length > 0
     ? entri.reduce((min, e) => (e.created_at < min ? e.created_at : min), entri[0].created_at)
@@ -215,10 +215,10 @@ export function AuditTrailPanel({
     if (!t.waktu || aksiTercatat.has(t.aksi)) continue;
     /**
      * Baris turunan diturunkan dari kolom seperti `updated_at`, yang menyimpan
-     * waktu perubahan TERAKHIR — bukan waktu peristiwa itu sendiri. Akibatnya
+     * waktu perubahan TERAKHIR - bukan waktu peristiwa itu sendiri. Akibatnya
      * baris turunan bisa tampak terjadi SESUDAH peristiwa yang sebenarnya
      * menyusulnya: sebuah jadwal yang di-assign lalu ditandai selesai akan
-     * menampilkan "Di-assign" di atas "Status berubah → done", seolah alurnya
+     * menampilkan "Di-assign" di atas "Status berubah  done", seolah alurnya
      * berhenti di assign padahal sudah selesai.
      *
      * Baris turunan memang hanya ada untuk menambal masa sebelum pencatatan
@@ -243,7 +243,7 @@ export function AuditTrailPanel({
     });
   }
 
-  // Terbaru di atas — sama seperti urutan dari basis data.
+  // Terbaru di atas - sama seperti urutan dari basis data.
   const semua: AuditEntry[] = [...entri, ...tambahan]
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
 

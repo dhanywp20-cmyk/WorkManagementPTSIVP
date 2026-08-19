@@ -32,7 +32,7 @@ interface Props {
   supervisorUsers?: TeamUser[];
   /**
    * Admin, atau akun Team PTS dengan toggle "Full Access" aktif (mis. Manager
-   * PTS) — boleh assign reminder ke DIRINYA SENDIRI. Manager sengaja
+   * PTS) - boleh assign reminder ke DIRINYA SENDIRI. Manager sengaja
    * dikecualikan dari daftar "Pilih Anggota Team" biasa (lihat komentar di
    * bawah), jadi opsi ini satu-satunya jalan menugaskan diri sendiri.
    */

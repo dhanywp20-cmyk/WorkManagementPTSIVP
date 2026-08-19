@@ -30,7 +30,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
   const [search, setSearch] = useState('');
   const [dialog, setDialog] = useState<DialogState>(null);
 
-  // ── Re-Assign (assign quiz ke target berbeda tanpa buat quiz baru) ──────────
+  // Re-Assign (assign quiz ke target berbeda tanpa buat quiz baru)
   const [showReassign, setShowReassign] = useState(false);
   const [reassignSource, setReassignSource] = useState<QuizSession | null>(null);
   const [reassignForm, setReassignForm] = useState({
@@ -156,7 +156,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
     await supabase.from('lc_quiz_sessions').update({ is_active: !current }).eq('id', id); load();
   };
 
-  // Duplicate an existing session — re-sends the same quiz to the same targets
+  // Duplicate an existing session - re-sends the same quiz to the same targets
   const handleResend = (session: QuizSession) => {
     setDialog({
       type: 'confirm',
@@ -188,7 +188,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
     });
   };
 
-  // ── Open re-assign modal — pre-fill from source session ────────────────────
+  // Open re-assign modal - pre-fill from source session
   const openReassign = (session: QuizSession) => {
     setReassignSource(session);
     setReassignForm({
@@ -206,7 +206,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
     setShowReassign(true);
   };
 
-  // ── Confirm re-assign — creates a new session row with new targets ──────────
+  // Confirm re-assign - creates a new session row with new targets
   const handleReassign = async () => {
     if (!reassignSource) return;
     if (!reassignForm.session_name.trim()) { setDialog({ type: 'error', message: 'Nama sesi wajib diisi!' }); return; }
@@ -541,7 +541,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                       {(() => {
                         const q = cariAnggota.trim().toLowerCase();
                         // Yang SUDAH dicentang selalu ikut tampil walau tidak cocok
-                        // dengan kata kunci — kalau tidak, pilihan yang sudah dibuat
+                        // dengan kata kunci - kalau tidak, pilihan yang sudah dibuat
                         // seolah hilang begitu kata kuncinya diganti, dan mudah
                         // dikira ikut terhapus.
                         const tampil = q

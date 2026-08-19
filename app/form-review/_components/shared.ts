@@ -1,4 +1,4 @@
-// ── Types ────────────────────────────────────────────────────────────────────
+// Types
 
 export type ReviewCategory = 'Demo Product' | 'BAST';
 
@@ -57,13 +57,13 @@ export interface GuestUser {
   access_level?: string;
 }
 
-// ── Constants ────────────────────────────────────────────────────────────────
+// Constants
 
 export const PIE_COLORS = ['#7c3aed','#0ea5e9','#10b981','#e11d48','#f59e0b','#6366f1','#14b8a6','#f97316','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
 
 export const REVIEW_TRIGGER_CATEGORIES = ['Demo Product', 'Konfigurasi & Training', 'Training'];
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// Helpers
 
 export function getCategoryType(reminderCategory: string): ReviewCategory {
   if (reminderCategory === 'Demo Product') return 'Demo Product';

@@ -9,7 +9,7 @@ import {
 import { logAudit } from '@/lib/audit';
 import { ModalPortal } from '@/components/shared';
 
-// ─── Folder Color Palette ─────────────────────────────────────────────────────
+// Folder Color Palette
 
 const FOLDER_COLORS = [
   { gradient: 'linear-gradient(135deg,#3b82f6,#4f46e5)', light: '#dbeafe', icon: '#3b82f6' },
@@ -21,10 +21,10 @@ const FOLDER_COLORS = [
 ];
 const getFolderColor = (name: string) => FOLDER_COLORS[name.charCodeAt(0) % FOLDER_COLORS.length];
 
-// ─── Grid helper ──────────────────────────────────────────────────────────────
+// Grid helper
 
 // Jumlah kolom hanya berlaku mulai layar sm. Di ponsel tiga sampai lima kolom
-// menyisakan lebar puluhan piksel per kartu — namanya terpotong jadi satu-dua
+// menyisakan lebar puluhan piksel per kartu - namanya terpotong jadi satu-dua
 // huruf dan grid-nya meluber keluar layar.
 const GRID_COLS: Record<number, string> = {
   2: 'grid-cols-2',
@@ -33,7 +33,7 @@ const GRID_COLS: Record<number, string> = {
   5: 'grid-cols-2 sm:grid-cols-5',
 };
 
-// ─── MaterialCard ─────────────────────────────────────────────────────────────
+// MaterialCard
 
 function MaterialCard({
   material: m, isAdmin, onDelete, onEdit, compact, colorHex,
@@ -74,7 +74,7 @@ function MaterialCard({
   );
 }
 
-// ─── FolderTreeView (used inside right panel) ────────────────────────────────
+// FolderTreeView (used inside right panel)
 
 function FolderTreeView({
   node, depth = 0, isAdmin, onDelete, onEdit, expandedPaths, togglePath, onAddToFolder, gridCols = 2, colorHex,
@@ -169,7 +169,7 @@ function FolderTreeView({
   );
 }
 
-// ─── MateriPage ───────────────────────────────────────────────────────────────
+// MateriPage
 
 export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) {
   const [materials, setMaterials] = useState<Material[]>([]);

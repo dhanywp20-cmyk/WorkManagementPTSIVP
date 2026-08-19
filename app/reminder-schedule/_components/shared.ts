@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { sendWA } from '@/lib/wa';
 
-// Placeholder default saat Sales request tanpa isi notes — BUKAN catatan asli,
+// Placeholder default saat Sales request tanpa isi notes - BUKAN catatan asli,
 // jangan ditampilkan/disimpan lagi begitu request sudah di-assign ke pengerjaan.
 export const DEFAULT_REQUEST_NOTE = 'Menunggu assignment dari Admin';
 
@@ -12,7 +12,7 @@ export function cleanRequestNotes(notes: string | null | undefined): string {
   return stripped === DEFAULT_REQUEST_NOTE ? '' : stripped;
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Types
 
 export type Priority = 'low' | 'medium' | 'high' | 'urgent';
 export type Status = 'pending' | 'done' | 'cancelled';
@@ -46,7 +46,7 @@ export interface Reminder {
   product?: string;
   updated_at?: string;
   warranty_years?: 1 | 2 | 3 | null;
-  /** Timeline pengerjaan → disalin ke progress_locations. Hanya kategori Konfigurasi. */
+  /** Timeline pengerjaan  disalin ke progress_locations. Hanya kategori Konfigurasi. */
   progress_start_date?: string;
   progress_target_date?: string;
   mode_penyelesaian?: 'onsite' | 'remote' | null;
@@ -66,7 +66,7 @@ export interface Reminder {
   internal_sales_id?: string | null;   // Sales Internal reviewer utama / reviewer MVI saat brand BOTH
   internal_approved_by?: string | null;
   internal_approved_at?: string | null; // approve reviewer utama (internal_sales_id)
-  brand?: string | null;               // 'MVI' | 'IVP' | 'BOTH' — brand yg dipilih Sales External
+  brand?: string | null;               // 'MVI' | 'IVP' | 'BOTH' - brand yg dipilih Sales External
   internal_sales_id_2?: string | null; // Sales Internal reviewer IVP saat brand BOTH
   internal_approved_at_2?: string | null; // approve reviewer kedua (internal_sales_id_2)
   rejection_reason?: string | null;    // alasan saat Sales Internal Tolak request
@@ -99,7 +99,7 @@ export interface GuestUser {
 // Kategori yang men-trigger auto form_review ke Guest
 export const REVIEW_TRIGGER_CATEGORIES = ['Konfigurasi', 'Demo Product', 'Konfigurasi & Training', 'Training'] as const;
 
-// Kategori yang wajib memilih Onsite/Remote saat status → Completed
+// Kategori yang wajib memilih Onsite/Remote saat status  Completed
 export const INCENTIVE_TRIGGER_CATEGORIES = ['Konfigurasi', 'Konfigurasi & Training', 'Training'] as const;
 
 // Kategori yang mendukung Controller Automation (subset dari INCENTIVE_TRIGGER_CATEGORIES)
@@ -117,7 +117,7 @@ export const CONTROLLER_AUTOMATION_ELIGIBLE = ['yoga', 'farhan'] as const;
 // Manager/PIC fixed user (Dhany)
 export const MANAGER_PIC_USERNAME = 'dhany';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// Constants
 export const PRIORITY_CONFIG: Record<Priority, { label: string; color: string; bg: string; border: string; dot: string }> = {
   low:    { label: 'Low',    color: '#94a3b8', bg: 'rgba(148,163,184,0.15)', border: 'rgba(148,163,184,0.4)', dot: '#94a3b8' },
   medium: { label: 'Medium', color: '#f59e0b', bg: 'rgba(245,158,11,0.15)',  border: 'rgba(245,158,11,0.4)',  dot: '#f59e0b' },
@@ -137,7 +137,7 @@ export const CATEGORIES = ['Demo Product', 'Meeting & Survey', 'Konfigurasi', 'K
 // = proyek punya keduanya. Satu sumber untuk form + mapping Admin Panel.
 export const PRODUCT_TYPES = ['LED', 'LCD/Middleware', 'LED & LCD'] as const;
 
-// Kategori khusus Daily Report (input manual) — superset dari CATEGORIES.
+// Kategori khusus Daily Report (input manual) - superset dari CATEGORIES.
 export const DAILY_REPORT_CATEGORIES = [
   ...CATEGORIES,
   'Design Single Line Diagram',
@@ -174,7 +174,7 @@ export const SALES_DIVISIONS = [
 
 export const PIE_COLORS = ['#7c3aed','#0ea5e9','#10b981','#e11d48','#f59e0b','#6366f1','#14b8a6','#f97316','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// Helpers
 
 export function formatDate(dateStr: string) {
   if (!dateStr) return '';
@@ -196,10 +196,10 @@ export interface SupervisorCandidate {
 }
 
 /**
- * Cari Supervisor tim yang menangani tipe produk tertentu — TIDAK hardcode
- * nama orang. Baca product_team_map (Fase 1: product_type → team_types[])
+ * Cari Supervisor tim yang menangani tipe produk tertentu - TIDAK hardcode
+ * nama orang. Baca product_team_map (Fase 1: product_type  team_types[])
  * lalu cari user ber-jabatan Supervisor di tim itu (Struktur Organisasi).
- * "LED & LCD" bisa punya >1 tim → kembalikan semua supervisor yang cocok
+ * "LED & LCD" bisa punya >1 tim  kembalikan semua supervisor yang cocok
  * (dipakai utk WA notify-all; yang assign duluan yang eksekusi).
  */
 export async function resolveSupervisorsForProductType(productType: string | null | undefined): Promise<SupervisorCandidate[]> {
@@ -216,10 +216,10 @@ export async function resolveSupervisorsForProductType(productType: string | nul
 
 /**
  * Cari akun Manager yang berhak ke-notify actionable (WA & in-app) di luar
- * role='admin' — gabungan DUA sumber, dedup by id:
+ * role='admin' - gabungan DUA sumber, dedup by id:
  *   1. app_settings.manager_user_id (override lama, satu akun spesifik)
  *   2. SEMUA akun role='team' dengan toggle "Full Access" aktif (lihat
- *      lib/constants.ts hasFullAccess & sql/user-full-access-toggle.sql) —
+ *      lib/constants.ts hasFullAccess & sql/user-full-access-toggle.sql) -
  *      cara yang disarankan sekarang, bisa lebih dari satu akun.
  */
 export async function fetchManagerTargets(): Promise<{ id: string; full_name: string; phone_number: string | null }[]> {
@@ -250,11 +250,11 @@ export function isDueToday(due_date: string) {
   return due_date === new Date().toISOString().split('T')[0];
 }
 
-// Token Fonnte TIDAK lagi diambil di sisi klien — dulu getFonnteToken() menarik
+// Token Fonnte TIDAK lagi diambil di sisi klien - dulu getFonnteToken() menarik
 // token rahasia ke browser via app_settings (anon). Pengiriman WA sekarang lewat
 // Edge Function swift-responder yang memegang token-nya sendiri di server.
 
-// WA terpusat di lib/wa.ts — wrapper menjaga signature lama (target, message, _meta).
+// WA terpusat di lib/wa.ts - wrapper menjaga signature lama (target, message, _meta).
 export async function sendFonnteWA(
   target: string,
   message: string,

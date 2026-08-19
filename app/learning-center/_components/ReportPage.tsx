@@ -6,7 +6,7 @@ import { UserAnswerReview } from './TeamPage';
 
 export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }: {
   currentUser: User;
-  /** Diisi lewat tombol "Lihat Hasil" di kartu Sesi Quiz — langsung buka sesi ini. */
+  /** Diisi lewat tombol "Lihat Hasil" di kartu Sesi Quiz - langsung buka sesi ini. */
   initialSessionId?: string | null;
   onSessionConsumed?: () => void;
 }) {
@@ -37,9 +37,9 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
     (async () => {
       setLoading(true); setLoadErr(null);
       // Peserta diambil TERPISAH, tidak lewat embed `users(...)`. Embed hanya
-      // jalan bila PostgREST mengenali relasi lc_quiz_attempts→users; kalau
+      // jalan bila PostgREST mengenali relasi lc_quiz_attemptsusers; kalau
       // relasi itu tidak ada, SELURUH query gagal dan error-nya sebelumnya
-      // ditelan diam-diam (`data ?? []`) — halaman jadi tampak "belum ada
+      // ditelan diam-diam (`data ?? []`) - halaman jadi tampak "belum ada
       // peserta" padahal datanya ada. Dua query sederhana selalu bisa
       // diandalkan, apa pun keadaan relasinya.
       const { data: attempts, error } = await supabase

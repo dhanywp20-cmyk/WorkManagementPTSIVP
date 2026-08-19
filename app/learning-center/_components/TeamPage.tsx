@@ -23,7 +23,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
   const [manualScores, setManualScores] = useState<Record<string, string>>({});
   const [savingGrade, setSavingGrade] = useState(false);
   const [dialog, setDialog] = useState<DialogState>(null);
-  // ── Saran AI (bukan skor final — lihat gradeEssayWithAI di shared.tsx) ──
+  // Saran AI (bukan skor final - lihat gradeEssayWithAI di shared.tsx)
   const [aiFeedback, setAiFeedback] = useState<Record<string, string>>({});
   const [aiGradingIds, setAiGradingIds] = useState<Set<string>>(new Set());
   const [aiError, setAiError] = useState<Record<string, string>>({});
@@ -70,7 +70,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
       if (a.ai_feedback) feedbackMap[a.question_id] = a.ai_feedback;
       if (adaAi) aiScoreMap[a.question_id] = Number(a.ai_score);
       // Nilai admin selalu menang. Kalau belum ada, skor AI yang tersimpan dari
-      // sesi sebelumnya dipakai sebagai isian awal — sekaligus menandakan soal
+      // sesi sebelumnya dipakai sebagai isian awal - sekaligus menandakan soal
       // ini tidak perlu dinilai AI ulang.
       if (adaManual)      scoreMap[a.question_id] = String(a.manual_score);
       else if (adaAi)     scoreMap[a.question_id] = String(a.ai_score);
@@ -81,7 +81,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
     setLoadingDetail(false);
 
     // Otomatis minta AI menilai essay yang BELUM pernah dinilai (manual maupun
-    // AI) — supaya admin buka halaman ini dan skornya sudah terisi, tinggal
+    // AI) - supaya admin buka halaman ini dan skornya sudah terisi, tinggal
     // konfirmasi atau koreksi. Essay tanpa jawaban (Tidak dijawab) dilewati.
     if (isAdminView) {
       for (const q of orderedQs) {
@@ -94,7 +94,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
     }
   };
 
-  /** Best-effort — kegagalan AI TIDAK PERNAH menghalangi penilaian manual. */
+  /** Best-effort - kegagalan AI TIDAK PERNAH menghalangi penilaian manual. */
   const runAiGrading = async (attemptId: string, q: Question, studentText: string) => {
     setAiGradingIds(p => new Set(p).add(q.id));
     setAiError(p => { const n = { ...p }; delete n[q.id]; return n; });
@@ -176,7 +176,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                 if (q.question_type === 'essay') {
                   // Latar SOLID: halaman Learning Center memakai foto sebagai latar, dan
                   // kartu semi-transparan (bg-indigo-50/40) membuat foto itu tembus ke
-                  // belakang teks soal — pertanyaan & jawaban jadi sulit dibaca justru
+                  // belakang teks soal - pertanyaan & jawaban jadi sulit dibaca justru
                   // saat admin perlu membacanya untuk menilai.
                   return (
                     <div key={q.id} className="rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-5 shadow-sm">

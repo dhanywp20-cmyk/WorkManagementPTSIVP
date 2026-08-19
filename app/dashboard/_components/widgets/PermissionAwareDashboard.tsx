@@ -1,10 +1,10 @@
 'use client';
 
 /**
- * PermissionAwareDashboard.tsx — Homepage adaptif berbasis permission.
+ * PermissionAwareDashboard.tsx - Homepage adaptif berbasis permission.
  *
- * Flow (sesuai spec): Registry → Permission Resolver → Filter → Sort Priority →
- * Compose → Render. Semua role memakai komponen INI (tidak ada dashboard
+ * Flow (sesuai spec): Registry  Permission Resolver  Filter  Sort Priority
+ * Compose  Render. Semua role memakai komponen INI (tidak ada dashboard
  * terpisah per role); yang berbeda hanya kumpulan widget hasil resolve dari
  * `allowed_menus`. Widget `full` (Analytics hero, Quick Action) dirender full
  * width; sisanya (lg/md/sm) di-grid responsif dengan `lg` melebar 2 kolom.
@@ -25,7 +25,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
   openMenu: (key: string) => void;
   openUrl: (url: string, title: string) => void;
 }) {
-  // Resolve: filter by permission → sort by priority.
+  // Resolve: filter by permission  sort by priority.
   const visible = WIDGETS
     .filter(w => w.permission(currentUser))
     .sort((a, b) => a.priority - b.priority);

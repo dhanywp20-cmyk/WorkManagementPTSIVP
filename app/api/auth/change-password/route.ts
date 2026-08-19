@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password minimal 8 karakter.' }, { status: 400 });
     }
 
-    // ── Otorisasi: cegah account-takeover (IDOR) ──────────────────────────
+    // Otorisasi: cegah account-takeover (IDOR)
     // userId datang dari body. Tanpa ikatan ke session, user login mana pun
     // bisa mengubah password user lain (apalagi karena currentPassword opsional).
     // Aturan: hanya boleh ubah password DIRI SENDIRI, kecuali admin, atau bila

@@ -51,7 +51,7 @@ export async function exportPengajuanIncentive(data: ExportData) {
 
   let row = 1;
 
-  // ─── 1. Title ──────────────────────────────────────────────────────────────
+  // 1. Title
   const titleCell = ws.getCell(row, 1);
   titleCell.value = `Pengajuan Incentive Project-Project IVP Tahun ${year}`;
   titleCell.font = { bold: true, size: 14, name: 'Arial' };
@@ -67,7 +67,7 @@ export async function exportPengajuanIncentive(data: ExportData) {
   ws.getRow(row).height = 40;
   row += 2;
 
-  // ─── 2. Daftar Project ────────────────────────────────────────────────────
+  // 2. Daftar Project
   const recipientMap = new Map<string, { user_id: string; user_name: string; role: string }>();
   for (const s of splits) {
     const key = `${s.user_id || s.user_name}_${s.role}`;
@@ -222,7 +222,7 @@ export async function exportPengajuanIncentive(data: ExportData) {
   }
   row += 2;
 
-  // ─── 3. Ringkasan per penerima ────────────────────────────────────────────
+  // 3. Ringkasan per penerima
   const sectionTitle2 = ws.getCell(row, 1);
   sectionTitle2.value = 'Ringkasan Pencairan Per Penerima';
   sectionTitle2.font = { bold: true, size: 12, name: 'Arial' };
@@ -278,7 +278,7 @@ export async function exportPengajuanIncentive(data: ExportData) {
   }
   row += 2;
 
-  // ─── 4. Cadangan Team Support ─────────────────────────────────────────────
+  // 4. Cadangan Team Support
   const sectionTitle3 = ws.getCell(row, 1);
   sectionTitle3.value = 'Cadangan Team Support Handle';
   sectionTitle3.font = { bold: true, size: 12, name: 'Arial' };
@@ -327,7 +327,7 @@ export async function exportPengajuanIncentive(data: ExportData) {
   }
   row += 2;
 
-  // ─── 5. Footer: Tanda tangan ──────────────────────────────────────────────
+  // 5. Footer: Tanda tangan
   const city = 'Jakarta';
   const dateStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -353,7 +353,7 @@ export async function exportPengajuanIncentive(data: ExportData) {
   ws.getCell(row, 4).value = 'Director';
   ws.getCell(row, 4).font = { ...dataFont(), italic: true };
 
-  // ─── Column widths ─────────────────────────────────────────────────────────
+  // Column widths
   ws.getColumn(1).width = 5;
   ws.getColumn(2).width = 35;
   ws.getColumn(3).width = 20;
@@ -369,7 +369,7 @@ export async function exportPengajuanIncentive(data: ExportData) {
   saveAs(blob, `Pengajuan_Incentive_PTS_IVP_${year}.xlsx`);
 }
 
-// ─── Summary Export (semua project, split dihitung on-the-fly) ───────────────
+// Summary Export (semua project, split dihitung on-the-fly)
 
 export async function exportSummaryIncentive(data: {
   projects: IncentiveProjectRow[];
@@ -464,7 +464,7 @@ export async function exportSummaryIncentive(data: {
     const splits = calculateIncentiveSplits(sk, displayProject, projManagerId, projManagerName, supervisorId, supervisorName, projectSupports);
     const isEstimate = !hasNominal || !p.mode_penyelesaian;
 
-    // Akumulasi total per orang — hanya project final (ada nominal & mode), pakai amount asli
+    // Akumulasi total per orang - hanya project final (ada nominal & mode), pakai amount asli
     if (!isEstimate) {
       for (const s of splits) {
         const nm = s.user_name || '—';
@@ -561,7 +561,7 @@ export async function exportSummaryIncentive(data: {
   ws.getCell(row, 1).font = { italic: true, size: 9, name: 'Arial', color: { argb: 'BBBB44' } };
   ws.mergeCells(row, 1, row, 12);
 
-  // ── Rekapitulasi Total Incentive Per Orang ──────────────────────────────────
+  // Rekapitulasi Total Incentive Per Orang
   row += 2;
   const rpTitle = ws.getCell(row, 1);
   rpTitle.value = 'Rekapitulasi Total Incentive Per Orang';

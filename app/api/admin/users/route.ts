@@ -5,7 +5,7 @@ import { getSessionUser, isAdminRole } from '@/lib/server-auth';
 export const dynamic = 'force-dynamic';
 
 /**
- * /api/admin/users — operasi user yang menyentuh kolom HAK AKSES
+ * /api/admin/users - operasi user yang menyentuh kolom HAK AKSES
  * (role, team_type, allow_incentive_input, allowed_menus).
  *
  * Kenapa harus di server: tabel users dipakai anon key di browser. Trigger DB
@@ -14,10 +14,10 @@ export const dynamic = 'force-dynamic';
  * sah hanya boleh lewat route ini (pakai service-role) dan WAJIB admin.
  *
  * Kolom non-hak-akses (nama, phone, jabatan, atasan_id) tetap boleh diubah
- * langsung dari klien — trigger tidak menyentuhnya.
+ * langsung dari klien - trigger tidak menyentuhnya.
  */
 
-// Field yang BOLEH ditulis route ini (whitelist — cegah set kolom sembarangan).
+// Field yang BOLEH ditulis route ini (whitelist - cegah set kolom sembarangan).
 const ALLOWED_FIELDS = new Set([
   'username', 'full_name', 'role', 'team_type', 'sales_division',
   'jabatan', 'phone_number', 'allowed_menus', 'allow_incentive_input',

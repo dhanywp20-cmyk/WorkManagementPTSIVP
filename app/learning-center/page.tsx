@@ -73,7 +73,7 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
   const [teamView, setTeamView] = useState<TeamView>('my-quiz');
   const [loading, setLoading] = useState(false);
   const [contentKey, setContentKey] = useState(0);
-  // Sesi yang mau langsung dibuka di tab Laporan — diisi lewat tombol "Lihat
+  // Sesi yang mau langsung dibuka di tab Laporan - diisi lewat tombol "Lihat
   // Hasil" di kartu Sesi Quiz, supaya admin tidak perlu cari sendiri sesinya
   // lagi dari dropdown di Laporan.
   const [reportSessionId, setReportSessionId] = useState<string | null>(null);

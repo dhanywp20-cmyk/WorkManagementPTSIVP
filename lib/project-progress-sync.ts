@@ -2,35 +2,35 @@ import { supabase } from './supabase';
 import { logAudit } from './audit';
 
 /**
- * lib/project-progress-sync.ts — jembatan Reminder Schedule → Project Progress.
+ * lib/project-progress-sync.ts - jembatan Reminder Schedule  Project Progress.
  *
  * SATU ARAH SAJA. Nilai yang disalin adalah SNAPSHOT saat reminder dibuat.
  * Setelah itu kedua sisi berdiri sendiri: menyunting draft di Project Progress
  * tidak menulis balik ke reminder, dan menyunting reminder tidak memperbarui
- * draft. Ini disengaja — progres lapangan sering menyimpang dari rencana awal,
+ * draft. Ini disengaja - progres lapangan sering menyimpang dari rencana awal,
  * dan menimpanya otomatis akan menghapus pekerjaan admin.
  *
  * Pemetaan field (dicek langsung dari skema, bukan asumsi):
- *   reminders.project_name    ("Nama Project*")   → progress_projects.name
- *   reminders.address         ("Lokasi Project*") → HANYA syarat pemicu, TIDAK disalin
- *   reminders.sales_name      → sales_name  (proyek & lokasi)
- *   reminders.sales_division  → sales_division
- *   reminders.assign_name          → progress_locations.pic
- *   reminders.progress_start_date  → progress_locations.start_date
- *   reminders.progress_target_date → progress_locations.target_date
+ *   reminders.project_name    ("Nama Project*")    progress_projects.name
+ *   reminders.address         ("Lokasi Project*")  HANYA syarat pemicu, TIDAK disalin
+ *   reminders.sales_name       sales_name  (proyek & lokasi)
+ *   reminders.sales_division   sales_division
+ *   reminders.assign_name           progress_locations.pic
+ *   reminders.progress_start_date   progress_locations.start_date
+ *   reminders.progress_target_date  progress_locations.target_date
  *
  * progress_locations.name SENGAJA dibiarkan kosong meski reminder.address
- * terisi — "Lokasi Project" di form Reminder itu alamat kunjungan, belum
+ * terisi - "Lokasi Project" di form Reminder itu alamat kunjungan, belum
  * tentu sama dengan nama lokasi kerja yang dipakai tim lapangan di Project
  * Progress (mis. per lantai/gedung/area). Diisi manual di sana, judul
  * project di atasnya tetap ikut nama project seperti biasa.
  *
- * due_date TIDAK dipakai sebagai target selesai — itu tanggal kunjungan
+ * due_date TIDAK dipakai sebagai target selesai - itu tanggal kunjungan
  * (sekaligus titik mulai garansi), bukan rentang pengerjaan. Timeline diisi
  * terpisah di form Reminder; bila dikosongkan, draft lahir tanpa jadwal dan
  * diisi menyusul di Project Progress.
  *
- * Item Komponen SENGAJA dikosongkan — tidak ada komponen yang dibuat di sini.
+ * Item Komponen SENGAJA dikosongkan - tidak ada komponen yang dibuat di sini.
  */
 
 /** Kategori reminder yang memicu pembuatan draft. */
@@ -74,7 +74,7 @@ function normalizeName(v: string | null | undefined): string {
  * Buat draft lokasi di Project Progress untuk sekumpulan reminder.
  *
  * Tahan gagal: kegagalan satu reminder tidak membatalkan yang lain, dan TIDAK
- * PERNAH melempar error. Pembuatan reminder adalah aksi utama user — integrasi
+ * PERNAH melempar error. Pembuatan reminder adalah aksi utama user - integrasi
  * ini pelengkap, jadi tidak boleh menggagalkannya.
  */
 export async function syncRemindersToProjectProgress(
@@ -87,18 +87,18 @@ export async function syncRemindersToProjectProgress(
   if (relevan.length === 0) return out;
 
   try {
-    // ── Cegah draft ganda: reminder yang sudah punya lokasi dilewati ──
+    // Cegah draft ganda: reminder yang sudah punya lokasi dilewati
     const { data: sudahAda } = await supabase
       .from('progress_locations')
       .select('source_reminder_id')
       .in('source_reminder_id', relevan.map(r => r.id));
     const terpakai = new Set((sudahAda ?? []).map((r: { source_reminder_id: string }) => r.source_reminder_id));
 
-    // ── Muat proyek yang ada sekali saja, lalu cocokkan di memori ──
+    // Muat proyek yang ada sekali saja, lalu cocokkan di memori
     const { data: proyekAda } = await supabase
       .from('progress_projects')
       .select('id, name, sales_name, sales_division');
-    const petaProyek = new Map<string, string>(); // nama ternormalisasi → id
+    const petaProyek = new Map<string, string>(); // nama ternormalisasi  id
     for (const p of (proyekAda ?? []) as { id: string; name: string }[]) {
       const key = normalizeName(p.name);
       if (key && !petaProyek.has(key)) petaProyek.set(key, p.id);
@@ -145,8 +145,8 @@ export async function syncRemindersToProjectProgress(
         .select('id', { count: 'exact', head: true })
         .eq('project_id', projectId);
 
-      // 3) Draft lokasi. name SENGAJA dikosongkan — bukan namaLokasi (alamat
-      //    kunjungan dari Reminder) — supaya diisi manual di Project Progress.
+      // 3) Draft lokasi. name SENGAJA dikosongkan - bukan namaLokasi (alamat
+      //    kunjungan dari Reminder) - supaya diisi manual di Project Progress.
       //    Item Komponen sengaja TIDAK dibuat.
       const { error: errLokasi } = await supabase.from('progress_locations').insert([{
         project_id: projectId,
@@ -164,7 +164,7 @@ export async function syncRemindersToProjectProgress(
       }]);
 
       if (errLokasi) {
-        // Index unik bisa menolak bila dua proses berjalan bersamaan —
+        // Index unik bisa menolak bila dua proses berjalan bersamaan -
         // itu justru perilaku yang diinginkan, jadi dihitung sebagai skip.
         if ((errLokasi.message ?? '').toLowerCase().includes('duplicate')) out.skipped++;
         else out.errors.push(`Lokasi "${namaLokasi}": ${errLokasi.message}`);

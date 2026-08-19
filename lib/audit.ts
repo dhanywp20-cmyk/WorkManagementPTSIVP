@@ -16,13 +16,13 @@
  *     new_value: 'in_progress',
  *   });
  *
- * IMPORTANT: logAudit never throws — failures are silently swallowed.
+ * IMPORTANT: logAudit never throws - failures are silently swallowed.
  * This ensures audit logging never breaks the main user flow.
  */
 
 import { supabase } from '@/lib/supabase';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// Types
 
 export type AuditAction =
   | 'create'   // New record created
@@ -59,11 +59,11 @@ export interface AuditPayload {
   notes?: string;
 }
 
-// ── Core logger ───────────────────────────────────────────────────────────────
+// Core logger
 
 /**
  * Log an audit event.
- * Always safe to call — never throws, never blocks main flow.
+ * Always safe to call - never throws, never blocks main flow.
  */
 export async function logAudit(payload: AuditPayload): Promise<void> {
   try {
@@ -85,7 +85,7 @@ export async function logAudit(payload: AuditPayload): Promise<void> {
   }
 }
 
-// ── Convenience helpers ───────────────────────────────────────────────────────
+// Convenience helpers
 
 /** Log record creation */
 export const auditCreate = (

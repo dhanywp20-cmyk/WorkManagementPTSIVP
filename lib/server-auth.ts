@@ -3,10 +3,10 @@ import crypto from 'crypto';
 import { getAdminClient } from './supabase-admin';
 
 /**
- * lib/server-auth.ts — Verifikasi session dari httpOnly cookie di sisi server.
+ * lib/server-auth.ts - Verifikasi session dari httpOnly cookie di sisi server.
  *
  * Dipakai route handler yang perlu tahu SIAPA pemanggilnya (bukan sekadar
- * "punya cookie") — mis. agar tidak bisa mengubah data milik user lain.
+ * "punya cookie") - mis. agar tidak bisa mengubah data milik user lain.
  * Token mentah TIDAK pernah keluar; yang dicocokkan hanya hash-nya.
  */
 export interface SessionUser {
@@ -16,7 +16,7 @@ export interface SessionUser {
   /**
    * Diperlukan untuk menerbitkan token PostgREST: policy RLS mencocokkan
    * kepemilikan lewat klaim full_name, karena kolom sales_name & pic menyimpan
-   * full name — bukan username.
+   * full name - bukan username.
    */
   full_name: string | null;
   sales_division: string | null;

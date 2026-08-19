@@ -10,23 +10,23 @@ import {
 } from './shared';
 
 /**
- * Tampilan detail progres 1 proyek — MURNI display, tanpa aksi tulis.
+ * Tampilan detail progres 1 proyek - MURNI display, tanpa aksi tulis.
  * Dipakai dua tempat:
  *   1. Modal detail di halaman Project Progress (in-app)
  *   2. Halaman share view-only publik
  * Karena dipakai publik, komponen ini tidak boleh melakukan query supabase
- * ATAU membaca session sendiri — semua datanya, TERMASUK riwayat perubahan
+ * ATAU membaca session sendiri - semua datanya, TERMASUK riwayat perubahan
  * (detail.auditTrail), harus sudah diambilkan pemanggil dan lewat props.
  * AuditTrailPanel di bawah dipakai dengan prop `data`, bukan `targetId` saja
- * — itulah yang membuatnya tidak pernah fetch sendiri di halaman ini.
+ * - itulah yang membuatnya tidak pernah fetch sendiri di halaman ini.
  */
 export function ProjectDetailView({ detail, maxKolomLokasi = 2 }: {
   detail: ProjectDetail;
   /**
-   * Batas atas kolom kartu lokasi — beda konteks, beda ruang yang wajar:
+   * Batas atas kolom kartu lokasi - beda konteks, beda ruang yang wajar:
    * modal in-app (2, ruangnya dibagi sidebar platform) vs halaman share
    * publik (3, jendela browser penuh). Kolomnya sendiri tetap MENYUSUT di
-   * layar sempit (lihat gridTemplateColumns di bawah) — ini cuma batas ATAS.
+   * layar sempit (lihat gridTemplateColumns di bawah) - ini cuma batas ATAS.
    */
   maxKolomLokasi?: number;
 }) {
@@ -51,7 +51,7 @@ export function ProjectDetailView({ detail, maxKolomLokasi = 2 }: {
   const telat = overdueLocations(sortedLoc);
   const bermasalah = components.filter(c => c.state === 'stuck' || c.state === 'pending').length;
 
-  // Ring progres keseluruhan — lingkar r=50 → keliling 2πr ≈ 314.16
+  // Ring progres keseluruhan - lingkar r=50  keliling 2πr ≈ 314.16
   const RING_C = 314.16;
   const ringOffset = RING_C * (1 - avg / 100);
 
@@ -268,7 +268,7 @@ export function ProjectDetailView({ detail, maxKolomLokasi = 2 }: {
                     <div className="rounded-sm overflow-hidden" style={{ border: `1px solid ${PALETTE.border}` }}>
                       {comps.map((c, i) => {
                         const sc = COMPONENT_STATE_CONFIG[c.state] ?? COMPONENT_STATE_CONFIG.pending;
-                        // Stuck/pending disorot kuning penuh sebaris — supaya
+                        // Stuck/pending disorot kuning penuh sebaris - supaya
                         // komponen bermasalah langsung kelihatan sekilas mata
                         // di tengah daftar panjang, bukan cuma lewat teks kecil.
                         const bermasalah = c.state === 'stuck' || c.state === 'pending';
@@ -384,7 +384,7 @@ export function ProjectDetailView({ detail, maxKolomLokasi = 2 }: {
   );
 }
 
-/** Label seksi kecil, huruf kapital berjarak — penanda kelompok, bukan hiasan. */
+/** Label seksi kecil, huruf kapital berjarak - penanda kelompok, bukan hiasan. */
 export function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <span className="self-start px-3 py-1.5 rounded-sm text-xs font-bold uppercase tracking-widest"

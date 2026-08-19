@@ -22,7 +22,7 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
     rowMap[r.day_date].push(r);
   });
 
-  // Holiday cascade: same algorithm as main table — non-holiday rows inherit
+  // Holiday cascade: same algorithm as main table - non-holiday rows inherit
   // PICs in sequence (pool index only advances for non-holiday rows)
   const gridStartKey = toKey(gridStart);
   const gridEndKey = toKey(addDays(gridStart, 42));
@@ -95,7 +95,7 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
 
             const isHoliday = holidays.includes(ds);
 
-            // Rolling projection — ONLY shown for weekdays in the current month
+            // Rolling projection - ONLY shown for weekdays in the current month
             // that have NO actual DB row. Uses the holiday-aware rolling engine.
             const showRolling = !hasDB && !isWeekend && inMonth && !isHoliday;
             const rollingName = showRolling ? getRollingNameForDate(date, allRows, holidays) : '';

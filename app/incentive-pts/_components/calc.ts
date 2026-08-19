@@ -6,7 +6,7 @@ import {
 export type { SkemaInsentif };
 export { ambilSkema };
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Types
 
 export interface IncentiveProjectRow {
   id: string;
@@ -91,14 +91,14 @@ export interface SplitResult {
   amount: number;
 }
 
-// ─── Calculation Engine ───────────────────────────────────────────────────────
+// Calculation Engine
 
-// ─── Org hierarchy lookup — baca dari Struktur Organisasi (users.atasan_id + jabatan)
+// Org hierarchy lookup - baca dari Struktur Organisasi (users.atasan_id + jabatan)
 // JANGAN hardcode nama di code. Manager & Supervisor ditentukan dari pohon atasan
-// yang dikelola di Admin Panel → User Management → Struktur Organisasi.
+// yang dikelola di Admin Panel  User Management  Struktur Organisasi.
 export interface OrgUser { id: string; full_name?: string | null; jabatan?: string | null; atasan_id?: string | null }
 
-// Telusuri rantai atasan ke atas (TERMASUK node awal) → user pertama dengan jabatan cocok.
+// Telusuri rantai atasan ke atas (TERMASUK node awal)  user pertama dengan jabatan cocok.
 // Untuk PIC staff: Supervisor = atasan langsung yg ber-jabatan Supervisor; Manager = di atasnya lagi.
 // Kalau PIC sendiri ber-jabatan Supervisor, ia dikembalikan sebagai supervisor (memicu forfeiture).
 export function findUpline(startId: string, targetJabatan: string, users: OrgUser[]): OrgUser | null {
@@ -119,7 +119,7 @@ export async function fetchOrgUsers(): Promise<OrgUser[]> {
 }
 
 // Resolve user id dari kandidat id ATAU nama. reminders.assigned_to belum tentu
-// UUID user — fallback cocokkan via full_name (assign_name) supaya walk-up atasan jalan.
+// UUID user - fallback cocokkan via full_name (assign_name) supaya walk-up atasan jalan.
 export function resolveUserId(idCandidate: string | null | undefined, nameCandidate: string | null | undefined, users: OrgUser[]): string {
   if (idCandidate && users.some(u => u.id === idCandidate)) return idCandidate;
   const nm = (nameCandidate || '').toLowerCase().trim();
@@ -130,7 +130,7 @@ export function resolveUserId(idCandidate: string | null | undefined, nameCandid
   return idCandidate || '';
 }
 
-// Deprecated — name-based fallback lama. Hanya dipakai bila Struktur Organisasi belum diisi.
+// Deprecated - name-based fallback lama. Hanya dipakai bila Struktur Organisasi belum diisi.
 export function getSupervisorTeamForPic(picName: string): 'wahyu' | 'yoga' | null {
   const n = (picName || '').toLowerCase();
   if (n.includes('wahyu') || n.includes('ade') || n.includes('pandu')) return 'wahyu';
@@ -139,11 +139,11 @@ export function getSupervisorTeamForPic(picName: string): 'wahyu' | 'yoga' | nul
 }
 
 /**
- * ── Pembagian mengikuti SKEMA yang dapat diatur admin ──────────────────────
+ * Pembagian mengikuti SKEMA yang dapat diatur admin
  *
  * Angka pembagian tidak lagi ditulis di sini. Ia dibaca dari
  * lib/incentive-scheme.ts (tabel incentive_scheme_settings) supaya perubahan
- * kebijakan cukup dilakukan lewat layar Pengaturan — tanpa menyunting rumus di
+ * kebijakan cukup dilakukan lewat layar Pengaturan - tanpa menyunting rumus di
  * beberapa tempat lalu berharap tidak ada yang terlewat.
  *
  * Fungsi lama tetap dipertahankan namanya agar seluruh pemanggil tidak perlu
@@ -162,7 +162,7 @@ export function calculateStandardScheme(
   assignedSupports: { user_id: string; user_name: string }[],
   installerName?: string | null,
 ): SplitResult[] {
-  // Supervisor merangkap PIC — porsinya dialihkan, bukan dibayar dua kali.
+  // Supervisor merangkap PIC - porsinya dialihkan, bukan dibayar dua kali.
   const supervisorJadiPic = supervisorUserId !== '' && picUserId === supervisorUserId;
 
   const penerima: PenerimaPeran[] = [{ peran: 'pic', user_id: picUserId, user_name: picUserName }];
@@ -178,7 +178,7 @@ export function calculateStandardScheme(
   ) as SplitResult[];
 }
 
-/** Manager sendiri yang menjadi PIC — tanpa slot Supervisor & Manager terpisah. */
+/** Manager sendiri yang menjadi PIC - tanpa slot Supervisor & Manager terpisah. */
 export function calculateManagerPicScheme(
   sk: SkemaInsentif,
   pool: number,
@@ -223,13 +223,13 @@ export function validateSplitTotal(splits: SplitResult[], pool: number): { valid
   return { valid: diff <= 1, diff };
 }
 
-// ─── Tranche Generation ──────────────────────────────────────────────────────
+// Tranche Generation
 
 /**
  * Tahapan pencairan diambil dari skema, bukan dipatok di sini.
  *
  * Pengecualian yang tetap ada: bila Installer Cabang memang diberi porsi DAN
- * disetel dibayar di muka, tahap terakhir dipindah ke tahun pertama — sebab
+ * disetel dibayar di muka, tahap terakhir dipindah ke tahun pertama - sebab
  * itulah tahap yang menampung porsinya. Bila porsi Installer 0 (keadaan saat
  * ini), tidak ada yang perlu dipindah dan seluruh tahap berjalan normal.
  */
@@ -250,7 +250,7 @@ export function generateTranches(
   }));
 }
 
-// ─── DB Helpers ───────────────────────────────────────────────────────────────
+// DB Helpers
 
 export const INCENTIVE_CATEGORIES = ['Konfigurasi', 'Konfigurasi & Training', 'Training'] as const;
 
@@ -301,7 +301,7 @@ export async function fetchVisibleSplits(projectId?: string): Promise<{ data: In
 /**
  * Siapa saja yang tercatat membantu troubleshooting proyek ini.
  *
- * @param bastDate     tanggal BAST — awal jendela penilaian
+ * @param bastDate     tanggal BAST - awal jendela penilaian
  * @param jendelaBulan lama jendela penilaian (bulan). Kebijakan menyebut satu
  *                     tahun: bantuan yang datang setelah jendela itu lewat
  *                     tidak lagi mengubah porsi proyek ini, karena porsinya
@@ -309,7 +309,7 @@ export async function fetchVisibleSplits(projectId?: string): Promise<{ data: In
  *                     Skema Pembagian, bukan dipatok di sini.
  *                     0 = tanpa batas waktu (perilaku lama).
  *
- * Reminder Schedule TIDAK diubah untuk ini — yang dibaca tetap catatan
+ * Reminder Schedule TIDAK diubah untuk ini - yang dibaca tetap catatan
  * Troubleshooting yang sudah ada, hanya rentang waktunya yang disaring.
  */
 export async function fetchSupportFromTickets(
@@ -424,11 +424,11 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
 
     const pool = project.incentive_value || 0;
 
-    // ── Porsi Installer & tahapan pencairan ────────────────────────────────
+    // Porsi Installer & tahapan pencairan
     // Bila Installer Cabang diberi porsi DAN disetel dibayar di muka, tahap
     // terakhir dipakai untuk menampung porsinya utuh; porsi Tim PTS dibagi ke
     // tahap-tahap sisanya, sebanding dengan persentase tahap itu. Cara ini
-    // membuat jumlahnya selalu tepat berapa pun angka yang disetel admin —
+    // membuat jumlahnya selalu tepat berapa pun angka yang disetel admin -
     // bukan hanya saat kebetulan porsi Installer sama dengan persentase tahap
     // terakhir, seperti pada versi sebelumnya yang mematok 15% di kedua sisi.
     const pctInstaller = project.mode_penyelesaian === 'remote'
@@ -473,7 +473,7 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
   return { processed, errors, total: dueTranches.length };
 }
 
-// ─── Formatting ───────────────────────────────────────────────────────────────
+// Formatting
 
 export function formatRupiah(n: number): string {
   return 'Rp ' + n.toLocaleString('id-ID');

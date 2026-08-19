@@ -10,7 +10,7 @@ import { MiniPieChart } from '@/components/shared';
 
 export { InfoLine } from '@/components/shared';
 
-// ── Status Donut Card ──────────────────────────────────────────────────────────
+// Status Donut Card
 export function StatusDonutCard({
   data, total, onSliceClick, title, icon,
 }: {
@@ -30,7 +30,7 @@ export function StatusDonutCard({
   );
 }
 
-// ── Sales Division Donut Card ─────────────────────────────────────────────────
+// Sales Division Donut Card
 export function SalesDivisionDonutCard({
   data, total, onSliceClick, activeDivision,
 }: {
@@ -50,7 +50,7 @@ export function SalesDivisionDonutCard({
   );
 }
 
-// ── Product Donut Card ─────────────────────────────────────────────────────
+// Product Donut Card
 export function ProductDonutCard({
   data, total, onSliceClick, activeProduct,
 }: {
@@ -70,7 +70,7 @@ export function ProductDonutCard({
   );
 }
 
-// ── Handler Donut Card (UNIK — ada teamToggle PTS/Services) ───────────────────
+// Handler Donut Card (UNIK - ada teamToggle PTS/Services)
 export function HandlerDonutCard({
   data,
   total,
