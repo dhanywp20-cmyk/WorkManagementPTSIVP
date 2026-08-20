@@ -26,44 +26,15 @@ import {
   ProductDonutCard, InfoLine,
 } from "./_components/DonutCards";
 import { NewTicketModal, type NewTicketForm } from "./_components/NewTicketModal";
+import { Ico } from "./_components/Ico";
+import { cetakTicket } from "./_components/cetak-ticket";
+import { eksporExcel } from "./_components/ekspor-excel";
 import {
   ViewIconBtn, DeleteIconBtn,
   FlowchartIconBtn, PrintIconBtn, ApproveIconBtn, ReopenIconBtn, OverdueIconBtn,
   Toast, PageHeader, ConfirmDialog, type ConfirmState, ErrorState, StatCard,
   MobileListCard, MobileCardBadge,
 } from "@/components/shared";
-
-// Ikon garis
-/**
- * Ikon garis pengganti emoji: memakai `currentColor` sehingga selaras dengan
- * warna label induknya, ukurannya diatur lewat class, dan bentuknya sama di
- * semua sistem operasi. `aria-hidden` karena labelnya sudah ditulis di
- * sebelahnya.
- */
-const ICON_SHAPES: Record<string, React.ReactNode> = {
-  search:   <><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" /></>,
-  user:     <><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></>,
-  users:    <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>,
-  package:  <><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" /></>,
-  tag:      <><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" /><circle cx="7.5" cy="7.5" r="1.5" /></>,
-  calendar: <><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></>,
-  alert:    <><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></>,
-  pin:      <><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /><circle cx="12" cy="10" r="3" /></>,
-  chart:    <><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></>,
-  chevron:  <><path d="m6 9 6 6 6-6" /></>,
-  check:    <><path d="M20 6 9 17l-5-5" /></>,
-  close:    <><path d="M18 6 6 18M6 6l12 12" /></>,
-  refresh:  <><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" /></>,
-};
-
-function Ico({ name, className = "w-3.5 h-3.5" }: { name: keyof typeof ICON_SHAPES; className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      {ICON_SHAPES[name]}
-    </svg>
-  );
-}
 
 function TicketingSystemInner() {
   const router = useRouter();
@@ -1761,203 +1732,6 @@ function TicketingSystemInner() {
     } catch (err: any) { notify("error", "Error: " + err.message); }
   };
 
-  const exportToPDF = async (ticket: Ticket) => {
-    const printDate = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
-
-    const statusLabel = ticket.status;
-
-    // Aturan handler/team/catatan pelimpahan hidup di satu tempat supaya layar
-    // View Ticket dan laporan cetak tidak pernah menjawab berbeda.
-    const { handlerPTS, teamHandler, catatanServices } = ringkasPenanganan(ticket);
-
-    const statusColor = ticket.status === "Solved" ? "#059669"
-      : ticket.status === "In Progress" ? "#2563eb"
-      : ticket.status === "Pending" ? "#d97706"
-      : ticket.status === "Onsite" ? "#7c3aed"
-      : ticket.status === "Call" ? "#0891b2"
-      : ticket.status === "Waiting Approval" ? "#ea580c"
-      : "#64748b";
-
-    const row = (label: string, value: string | null | undefined) =>
-      value ? `<tr>
-        <td style="font-weight:600;color:#475569;width:160px;padding:7px 12px;border:1px solid #e2e8f0;font-size:12px;background:#f8fafc">${label}</td>
-        <td style="padding:7px 12px;border:1px solid #e2e8f0;font-size:12px;color:#1e293b">${value}</td>
-      </tr>` : "";
-
-    const badge = (text: string, bg = "#fef3c7", color = "#92400e") =>
-      `<span style="display:inline-block;padding:2px 10px;border-radius:20px;background:${bg};color:${color};font-size:11px;font-weight:700;margin:2px 2px 2px 0">${text}</span>`;
-
-    // Activity log rows
-    const activityRows = (ticket.activity_logs || [])
-      .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-      .map((log: any, idx: number) => {
-        const ts = formatDateTime(log.created_at);
-        const teamColor = log.team_type === "Team Services" ? "#92400e" : "#1d4ed8";
-        const statusCol = log.new_status === "Solved" ? "#065f46"
-          : log.new_status === "In Progress" ? "#1d4ed8"
-          : log.new_status === "Pending" ? "#92400e"
-          : "#475569";
-        return `<tr style="background:${idx % 2 === 0 ? "#fff" : "#f8fafc"}">
-          <td style="padding:10px 12px;border:1px solid #e2e8f0;width:120px;white-space:nowrap;vertical-align:top">
-            <div style="font-size:11px;color:#64748b">${ts}</div>
-            <div style="margin-top:3px;font-size:10px;font-weight:700;color:${teamColor}">${log.team_type || "Team PTS IVP"}</div>
-          </td>
-          <td style="padding:10px 12px;border:1px solid #e2e8f0;width:130px;vertical-align:top">
-            <div style="font-weight:700;font-size:12px;color:#1e293b">${log.handler_name || "-"}</div>
-            <div style="margin-top:4px;font-size:10px;font-weight:700;color:${statusCol}">${log.new_status}</div>
-            ${log.assigned_to_services ? `<div style="margin-top:4px;font-size:10px;font-weight:700;color:#dc2626">🔄 → Team Services</div>` : ""}
-          </td>
-          <td style="padding:10px 12px;border:1px solid #e2e8f0;vertical-align:top">
-            ${log.action_taken ? `<div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:4px">🔧 ${log.action_taken}</div>` : ""}
-            ${log.notes ? `<div style="font-size:12px;color:#1e293b;line-height:1.6;white-space:pre-line">${log.notes}</div>` : "<div style=\"color:#94a3b8;font-size:11px;font-style:italic\">—</div>"}
-            ${log.file_url ? `<div style="margin-top:6px"><a href="${log.file_url}" style="font-size:11px;color:#2563eb;font-weight:600">📎 ${log.file_name || "Download"}</a></div>` : ""}
-            ${log.photo_url ? `<div style="margin-top:6px"><img src="${log.photo_url}" style="max-height:100px;border-radius:6px;border:1px solid #e2e8f0" alt="bukti"/></div>` : ""}
-          </td>
-        </tr>`;
-      }).join("");
-
-    const printContent = `<!DOCTYPE html>
-<html lang="id"><head><meta charset="UTF-8">
-<title>Ticket Report — ${ticket.project_name}</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; background: #fff; font-size: 13px; }
-  .page { padding: 28px 32px; max-width: 940px; margin: 0 auto; }
-  .header { background: linear-gradient(135deg,#dc2626,#991b1b); color: white; border-radius: 12px; padding: 18px 22px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; }
-  .header-left h1 { font-size: 17px; font-weight: 800; margin-bottom: 3px; }
-  .header-left p { font-size: 11px; opacity: 0.85; }
-  .header-right { text-align: right; font-size: 11px; opacity: 0.85; line-height: 1.8; }
-  /* Dulu di sini ada .status-pill: latar rgba(255,255,255,0.92) dengan tulisan
-     putih — praktis putih di atas putih, jadi teksnya tidak pernah terbaca.
-     Latar bulat itu dibuang seluruhnya di laporan ini; statusnya cukup teks. */
-  .status-line { font-size: 11px; font-weight: 700; margin-top: 6px; opacity: 1; }
-  .section { border: 1.5px solid #e2e8f0; border-radius: 10px; margin-bottom: 16px; overflow: hidden; page-break-inside: avoid; }
-  .section-title { background: #f1f5f9; padding: 8px 14px; font-size: 11px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.07em; color: #475569; border-bottom: 1px solid #e2e8f0; }
-  .log-section .section-title { background: #fff1f2; color: #9f1239; border-color: #fecdd3; }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; }
-  .grid2 > * { border-right: 1px solid #e2e8f0; }
-  .grid2 > *:last-child { border-right: none; }
-  .info-box { padding: 10px 14px; border-bottom: 1px solid #e2e8f0; }
-  .info-box:last-child { border-bottom: none; }
-  .info-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; margin-bottom: 3px; }
-  .info-value { font-size: 12px; font-weight: 600; color: #1e293b; line-height: 1.5; }
-  table.log { width: 100%; border-collapse: collapse; }
-  .footer { margin-top: 20px; padding-top: 12px; border-top: 1.5px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 10px; color: #94a3b8; }
-  .sign-grid { margin-top: 40px; display: grid; grid-template-columns: 250px; page-break-inside: avoid; }
-  .sign-box { border-top: 1.5px solid #334155; padding-top: 8px; text-align: center; }
-  .sign-label { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; }
-  .sign-space { height: 58px; }
-  .sign-name { font-size: 12px; font-weight: 700; color: #1e293b; border-top: 1px solid #cbd5e1; padding-top: 6px; }
-  @media print {
-    .page { padding: 16px 20px; }
-    .section, .log-section { page-break-inside: avoid; }
-    button { display: none !important; }
-  }
-</style>
-</head>
-<body><div class="page">
-
-  <!-- HEADER -->
-  <div class="header">
-    <div class="header-left">
-      <h1>🎫 Report Troubleshooting — IVP</h1>
-      <p>Ticket ID: ${ticket.id?.substring(0,8).toUpperCase()}</p>
-      <div class="status-line">PTS: ${statusLabel}${ticket.services_status ? " &nbsp;·&nbsp; Services: " + ticket.services_status : ""}</div>
-    </div>
-    <div class="header-right">
-      <div><b>Dicetak:</b> ${printDate}</div>
-      <div><b>Handler:</b> ${handlerPTS || "—"}</div>
-      <div><b>Team:</b> ${teamHandler}</div>
-      <div><b>Status:</b> ${statusLabel}${catatanServices}</div>
-      <div><b>Dibuat:</b> ${formatDateTime(ticket.created_at)}</div>
-    </div>
-  </div>
-
-  <!-- INFORMASI TICKET -->
-  <div class="section">
-    <div class="section-title">🎫 Informasi Ticket</div>
-    <div class="grid2">
-      <div>
-        <div class="info-box"><div class="info-label">Nama Project</div><div class="info-value" style="font-size:14px;font-weight:800;color:#dc2626">${ticket.project_name}</div></div>
-        <div class="info-box"><div class="info-label">Issue Case</div><div class="info-value">${ticket.issue_case}</div></div>
-        <div class="info-box"><div class="info-label">Deskripsi</div><div class="info-value" style="font-weight:400;color:#475569">${ticket.description || "—"}</div></div>
-      </div>
-      <div>
-        <div class="info-box"><div class="info-label">Address / Lokasi</div><div class="info-value">${ticket.address || "—"}</div></div>
-        <div class="info-box"><div class="info-label">Product / Unit</div><div class="info-value">${ticket.product || "—"}</div></div>
-        <div class="info-box"><div class="info-label">SN Unit</div><div class="info-value">${ticket.sn_unit || "—"}</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- INFORMASI SALES & STATUS -->
-  <div class="section">
-    <div class="section-title">🏢 Sales & Status</div>
-    <div class="grid2">
-      <div>
-        <div class="info-box"><div class="info-label">Sales / Account</div><div class="info-value">${ticket.sales_name || "—"}</div></div>
-        <div class="info-box"><div class="info-label">Divisi Sales</div><div class="info-value">${ticket.sales_division || "—"}</div></div>
-        <div class="info-box"><div class="info-label">Customer / User</div><div class="info-value">${ticket.customer_phone || "—"}</div></div>
-      </div>
-      <div>
-        <div class="info-box"><div class="info-label">Status Team PTS IVP</div>
-          <div class="info-value" style="color:${statusColor}">${ticket.status}${catatanServices}</div>
-        </div>
-        ${ticket.services_status ? `<div class="info-box"><div class="info-label">Status Team Services</div>
-          <div class="info-value" style="color:#b45309">${ticket.services_status}</div>
-        </div>` : ""}
-        <div class="info-box"><div class="info-label">Tanggal Dibuat</div><div class="info-value">${formatDateTime(ticket.created_at)}</div></div>
-        <div class="info-box"><div class="info-label">Created By</div><div class="info-value">${ticket.created_by || "—"}</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ACTIVITY LOG -->
-  <div class="section log-section">
-    <div class="section-title">📋 Activity Log — Riwayat Penanganan</div>
-    ${activityRows ? `
-    <table class="log">
-      <thead>
-        <tr style="background:#fff1f2">
-          <th style="padding:8px 12px;font-size:10px;font-weight:700;text-align:left;color:#9f1239;border-bottom:1.5px solid #fecdd3;width:130px">Waktu</th>
-          <th style="padding:8px 12px;font-size:10px;font-weight:700;text-align:left;color:#9f1239;border-bottom:1.5px solid #fecdd3;width:140px">Handler & Status</th>
-          <th style="padding:8px 12px;font-size:10px;font-weight:700;text-align:left;color:#9f1239;border-bottom:1.5px solid #fecdd3">Action & Notes</th>
-        </tr>
-      </thead>
-      <tbody>${activityRows}</tbody>
-    </table>` : `<div style="padding:20px;text-align:center;color:#94a3b8;font-size:12px">Belum ada activity log</div>`}
-  </div>
-
-  <!-- FOTO TICKET -->
-  ${ticket.photo_url ? `
-  <div class="section" style="page-break-inside:avoid">
-    <div class="section-title">📸 Foto Ticket</div>
-    <div style="padding:12px;text-align:center">
-      <img src="${ticket.photo_url}" style="max-height:220px;max-width:100%;border-radius:8px;border:1.5px solid #e2e8f0" alt="foto ticket"/>
-    </div>
-  </div>` : ""}
-
-  <!-- FOOTER -->
-  <div class="footer">
-    <div>🎫 IndoVisual Professional Tools — Ticket Troubleshooting System</div>
-    <div>Dicetak: ${printDate} | Status: ${ticket.status}${catatanServices}</div>
-  </div>
-
-  <!-- TANDA TANGAN -->
-  <div class="sign-grid">
-    <div class="sign-box">
-      <div class="sign-label">Handler / ${teamHandler}</div>
-      <div class="sign-space"></div>
-      <div class="sign-name">${handlerPTS || "( ............................ )"}</div>
-    </div>
-  </div>
-
-</div></body></html>`;
-
-    const win = window.open("", "_blank");
-    if (win) { win.document.write(printContent); win.document.close(); setTimeout(() => win.print(), 300); }
-  };
 
   const handleBulkDelete = () => {
     if (selectedIds.size === 0) return;
@@ -1995,155 +1769,6 @@ function TicketingSystemInner() {
     prev.size === filteredTickets.length ? new Set() : new Set(filteredTickets.map(t => t.id))
   );
 
-  const exportToExcel = () => {
-    const runExport = (XLSX: any) => {
-      const exportTickets = currentUserTeamType === "Team Services" ? filteredTickets : tickets;
-      const isServicesExport = currentUserTeamType === "Team Services";
-      const border = { top: { style: "thin", color: { rgb: "D1D5DB" } }, bottom: { style: "thin", color: { rgb: "D1D5DB" } }, left: { style: "thin", color: { rgb: "D1D5DB" } }, right: { style: "thin", color: { rgb: "D1D5DB" } } };
-      const boldBorder = { top: { style: "thin", color: { rgb: "000000" } }, bottom: { style: "thin", color: { rgb: "000000" } }, left: { style: "thin", color: { rgb: "000000" } }, right: { style: "thin", color: { rgb: "000000" } } };
-      const hdrStyle = { font: { name: "Arial", bold: true, sz: 11, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "1E3A5F" }, patternType: "solid" }, alignment: { horizontal: "center", vertical: "center", wrapText: true }, border: boldBorder };
-      const secHdrStyle = { font: { name: "Arial", bold: true, sz: 10, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "2563EB" }, patternType: "solid" }, alignment: { horizontal: "center", vertical: "center" }, border: boldBorder };
-      const cellStyle = { font: { name: "Arial", sz: 10 }, alignment: { vertical: "center", wrapText: true }, border };
-      const altStyle = { ...cellStyle, fill: { fgColor: { rgb: "EFF6FF" }, patternType: "solid" } };
-      const titleStyle = { font: { name: "Arial", bold: true, sz: 15, color: { rgb: "1E3A5F" } }, alignment: { horizontal: "left", vertical: "center" } };
-      const statusStyles: Record<string, object> = {
-        Solved: { ...cellStyle, font: { name: "Arial", sz: 10, bold: true, color: { rgb: "166534" } }, fill: { fgColor: { rgb: "DCFCE7" }, patternType: "solid" } },
-        "In Progress": { ...cellStyle, font: { name: "Arial", sz: 10, bold: true, color: { rgb: "1E40AF" } }, fill: { fgColor: { rgb: "DBEAFE" }, patternType: "solid" } },
-        Pending: { ...cellStyle, font: { name: "Arial", sz: 10, bold: true, color: { rgb: "92400E" } }, fill: { fgColor: { rgb: "FEF3C7" }, patternType: "solid" } },
-        Overdue: { ...cellStyle, font: { name: "Arial", sz: 10, bold: true, color: { rgb: "991B1B" } }, fill: { fgColor: { rgb: "FEE2E2" }, patternType: "solid" } },
-        "Waiting Approval": { ...cellStyle, font: { name: "Arial", sz: 10, bold: true, color: { rgb: "9A3412" } }, fill: { fgColor: { rgb: "FFEDD5" }, patternType: "solid" } },
-      };
-      const c = (v: any, s: object) => ({ v, s, t: typeof v === "number" ? "n" : "s" });
-      const empty = () => ({ v: "", s: cellStyle, t: "s" });
-      const row = (cells: number) => Array(cells).fill(empty());
-      const wb = XLSX.utils.book_new();
-      const exportDate = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
-      // Dashboard sheet
-      {
-        const COLS = 5;
-        const dashTitle = isServicesExport ? "📊 TICKET REPORT — TEAM SERVICES" : "📊 TICKET REPORT — DASHBOARD ANALYTICS";
-        const data: any[][] = [
-          [c(dashTitle, titleStyle), ...row(COLS - 1)],
-          [c(`Tanggal Export: ${exportDate}`, { font: { name: "Arial", sz: 10, color: { rgb: "6B7280" } } }), ...row(COLS - 1)],
-          row(COLS),
-          [c("RINGKASAN STATISTIK", secHdrStyle), ...row(COLS - 1)],
-          [c("Kategori", hdrStyle), c("Jumlah", hdrStyle), c("Persentase", hdrStyle), c("", hdrStyle), c("", hdrStyle)],
-        ];
-        const totalExport = exportTickets.length;
-        const statItems = isServicesExport ? [
-          { label: "Total Tickets (Services)", value: totalExport, color: "1E3A5F" },
-          { label: "Pending Check", value: exportTickets.filter((t: Ticket) => t.services_status === "Pending").length, color: "92400E" },
-          { label: "Process Repair", value: exportTickets.filter((t: Ticket) => t.services_status === "Process Repair").length, color: "1E40AF" },
-          { label: "Solved", value: exportTickets.filter((t: Ticket) => t.services_status === "Solved").length, color: "166534" },
-        ] : [
-          { label: "Total Tickets", value: stats.total, color: "1E3A5F" },
-          { label: "Pending", value: stats.pending, color: "92400E" },
-          { label: "In Progress", value: stats.processing, color: "1E40AF" },
-          { label: "Solved", value: stats.solved, color: "166534" },
-        ];
-        statItems.forEach((item, i) => {
-          const total = isServicesExport ? totalExport : stats.total;
-          const pct = total > 0 ? ((item.value / total) * 100).toFixed(1) + "%" : "0%";
-          const rs = { ...cellStyle, ...(i % 2 ? { fill: { fgColor: { rgb: "EFF6FF" }, patternType: "solid" } } : {}) };
-          data.push([
-            c(item.label, { ...rs, font: { name: "Arial", sz: 10, bold: true, color: { rgb: item.color } } }),
-            c(item.value, { ...rs, alignment: { horizontal: "center", vertical: "center" } }),
-            c(pct, { ...rs, alignment: { horizontal: "center", vertical: "center" } }),
-            empty(), empty(),
-          ]);
-        });
-        data.push(row(COLS));
-        const handlerMap: Record<string, number> = {};
-        exportTickets.forEach((t: Ticket) => { if (t.assign_name) handlerMap[t.assign_name] = (handlerMap[t.assign_name] || 0) + 1; });
-        data.push([c("HANDLER", hdrStyle), c("JUMLAH TICKET", hdrStyle), c("PERSENTASE", hdrStyle), c("", hdrStyle), c("", hdrStyle)]);
-        Object.entries(handlerMap).forEach(([handler, count], i) => {
-          const total = exportTickets.length;
-          const pct = total > 0 ? ((count / total) * 100).toFixed(1) + "%" : "0%";
-          const rs = i % 2 === 0 ? cellStyle : altStyle;
-          data.push([c(handler, rs), c(count, { ...rs, alignment: { horizontal: "center", vertical: "center" } }), c(pct, { ...rs, alignment: { horizontal: "center", vertical: "center" } }), empty(), empty()]);
-        });
-        const ws = XLSX.utils.aoa_to_sheet(data);
-        ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: COLS - 1 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: COLS - 1 } }, { s: { r: 3, c: 0 }, e: { r: 3, c: COLS - 1 } }];
-        ws["!cols"] = [{ wch: 30 }, { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 16 }];
-        ws["!rows"] = [{ hpt: 30 }, { hpt: 18 }, { hpt: 8 }];
-        XLSX.utils.book_append_sheet(wb, ws, "📊 Dashboard");
-      }
-      // Tickets sheet
-      {
-        const headers = ["No.", "Project Name", "Alamat", "Nama & Telepon Customer", "Sales", "Issue / Masalah", "Deskripsi", "SN Unit", "Product", "Handler (Assigned To)", "Status PTS", "Status Services", "Current Team", "Tgl Ticket", "Dibuat Oleh", "Dibuat Pada", "Jumlah Activity Log"];
-        const COLS = headers.length;
-        const data: any[][] = [[c(isServicesExport ? "📋 DATA TICKET — TEAM SERVICES" : "📋 DATA SEMUA TICKET", { ...titleStyle, font: { name: "Arial", bold: true, sz: 14, color: { rgb: "1E3A5F" } } }), ...row(COLS - 1)], row(COLS), headers.map((h) => c(h, hdrStyle))];
-        exportTickets.forEach((t: Ticket, idx: number) => {
-          const rs = idx % 2 === 0 ? cellStyle : altStyle;
-          const overdue = isTicketOverdue(t);
-          const effectiveStatus = overdue && t.status !== "Solved" ? "Overdue" : t.status;
-          const statusDisplay = overdue && t.status !== "Solved" ? `${t.status} (OVERDUE)` : t.status;
-          const ctr = { ...rs, alignment: { horizontal: "center", vertical: "center" } };
-          data.push([
-            c(idx + 1, ctr), c(t.project_name || "-", rs), c(t.address || "-", rs), c(t.customer_phone || "-", rs),
-            c(t.sales_name || "-", rs), c(t.issue_case || "-", rs), c(t.description || "-", rs), c(t.sn_unit || "-", ctr), c((t as any).product || "-", rs),
-            c(t.assign_name || "-", rs), c(statusDisplay, statusStyles[effectiveStatus] || rs), c(t.services_status || "-", t.services_status ? statusStyles[t.services_status] || rs : rs),
-            c(t.current_team || "-", rs), c(t.date || "-", ctr), c(t.created_by || "-", rs),
-            c(t.created_at ? formatDateTime(t.created_at) : "-", ctr), c(t.activity_logs?.length || 0, ctr),
-          ]);
-        });
-        const ws = XLSX.utils.aoa_to_sheet(data);
-        ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: COLS - 1 } }];
-        ws["!cols"] = [{ wch: 5 }, { wch: 28 }, { wch: 30 }, { wch: 28 }, { wch: 22 }, { wch: 28 }, { wch: 38 }, { wch: 18 }, { wch: 22 }, { wch: 22 }, { wch: 20 }, { wch: 20 }, { wch: 18 }, { wch: 14 }, { wch: 18 }, { wch: 22 }, { wch: 10 }];
-        ws["!rows"] = [{ hpt: 28 }, { hpt: 6 }, { hpt: 32 }];
-        XLSX.utils.book_append_sheet(wb, ws, "📋 Semua Ticket");
-      }
-      // Activity Logs sheet
-      {
-        const headers = ["No.", "Project Name", "Issue", "Status Ticket", "Handler", "Team", "Action Taken", "Notes", "Status Baru", "Ke Services?", "File Lampiran", "Waktu Activity"];
-        const COLS = headers.length;
-        const data: any[][] = [[c(isServicesExport ? "📝 ACTIVITY LOG — TEAM SERVICES" : "📝 DETAIL ACTIVITY LOG", { ...titleStyle, font: { name: "Arial", bold: true, sz: 14, color: { rgb: "1E3A5F" } } }), ...row(COLS - 1)], row(COLS), headers.map((h) => c(h, hdrStyle))];
-        let rowIdx = 0;
-        exportTickets.forEach((ticket: Ticket) => {
-          if (!ticket.activity_logs || ticket.activity_logs.length === 0) {
-            const rs = rowIdx % 2 === 0 ? cellStyle : altStyle;
-            data.push([
-              c(rowIdx + 1, { ...rs, alignment: { horizontal: "center", vertical: "center" } }),
-              c(ticket.project_name || "-", rs), c(ticket.issue_case || "-", rs), c(ticket.status || "-", statusStyles[ticket.status] || rs),
-              c("-", rs), c("-", rs), c("-", rs), c("(Belum ada activity log)", { ...rs, font: { name: "Arial", sz: 10, color: { rgb: "9CA3AF" } } }),
-              c("-", rs), c("-", rs), c("-", rs), c("-", rs),
-            ]);
-            rowIdx++;
-            return;
-          }
-          [...ticket.activity_logs].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).forEach((log) => {
-            const rs = rowIdx % 2 === 0 ? cellStyle : altStyle;
-            const ctr = { ...rs, alignment: { horizontal: "center", vertical: "center" } };
-            data.push([
-              c(rowIdx + 1, ctr), c(ticket.project_name || "-", rs), c(ticket.issue_case || "-", rs), c(ticket.status || "-", statusStyles[ticket.status] || rs),
-              c(log.handler_name || "-", rs), c(log.team_type || "-", rs), c(log.action_taken || "-", rs),
-              c(log.notes || "-", { ...rs, alignment: { horizontal: "left", vertical: "center", wrapText: true } }),
-              c(log.new_status || "-", statusStyles[log.new_status] || rs),
-              c(log.assigned_to_services ? "✅ Ya" : "Tidak", { ...ctr, font: { name: "Arial", sz: 10, bold: !!log.assigned_to_services, color: { rgb: log.assigned_to_services ? "166534" : "374151" } } }),
-              c(log.file_name || "-", rs), c(log.created_at ? formatDateTime(log.created_at) : "-", ctr),
-            ]);
-            rowIdx++;
-          });
-        });
-        const ws = XLSX.utils.aoa_to_sheet(data);
-        ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: COLS - 1 } }];
-        ws["!cols"] = [{ wch: 5 }, { wch: 26 }, { wch: 24 }, { wch: 18 }, { wch: 22 }, { wch: 16 }, { wch: 28 }, { wch: 40 }, { wch: 16 }, { wch: 12 }, { wch: 24 }, { wch: 22 }];
-        ws["!rows"] = [{ hpt: 28 }, { hpt: 6 }, { hpt: 32 }];
-        XLSX.utils.book_append_sheet(wb, ws, "📝 Activity Logs");
-      }
-      const teamLabel = isServicesExport ? "Services" : "PTS";
-      const fileName = `Ticket_Report_${teamLabel}_${new Date().toISOString().split("T")[0]}.xlsx`;
-      XLSX.writeFile(wb, fileName, { bookType: "xlsx", type: "binary", cellStyles: true });
-    };
-    if ((window as any).XLSX) runExport((window as any).XLSX);
-    else {
-      const script = document.createElement("script");
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
-      script.onload = () => runExport((window as any).XLSX);
-      script.onerror = () => notify("error", "Gagal memuat library Excel.");
-      document.head.appendChild(script);
-    }
-  };
 
   const currentUserTeamType = useMemo(() => {
     if (!currentUser) return "Team PTS IVP";
@@ -2724,7 +2349,7 @@ function TicketingSystemInner() {
                   <Ico name="refresh" className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                   Refresh
                 </button>
-                <button onClick={exportToExcel} disabled={uploading}
+                <button onClick={() => eksporExcel({ tickets, filteredTickets, currentUserTeamType, stats, isTicketOverdue, notify })} disabled={uploading}
                   className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold text-white border border-transparent transition-colors disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
                   style={{ background: '#be123c' }}>
                   {uploading
@@ -2942,7 +2567,7 @@ function TicketingSystemInner() {
                       actions={<>
                         <ViewIconBtn onClick={() => { setSelectedTicket(ticket); setShowTicketDetailPopup(true); }} title="Detail" />
                         <FlowchartIconBtn onClick={() => { setSummaryTicket(ticket); setShowActivitySummary(true); }} />
-                        <PrintIconBtn onClick={() => exportToPDF(ticket)} />
+                        <PrintIconBtn onClick={() => cetakTicket(ticket)} />
                         {canApproveAssign && ticket.status === "Waiting Approval" && (
                           <ApproveIconBtn onClick={() => { setApprovalAssignees({}); setApprovalTicket(ticket); setApprovalAssignee(""); fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} pulse />
                         )}
@@ -3128,7 +2753,7 @@ function TicketingSystemInner() {
                               {/* Flowchart */}
                               <FlowchartIconBtn onClick={() => { setSummaryTicket(ticket); setShowActivitySummary(true); }} />
                               {/* Print PDF */}
-                              <PrintIconBtn onClick={() => exportToPDF(ticket)} />
+                              <PrintIconBtn onClick={() => cetakTicket(ticket)} />
                               {/* Waiting Approval — admin only */}
                               {canApproveAssign && ticket.status === "Waiting Approval" && (
                                 <ApproveIconBtn onClick={() => { setApprovalAssignees({}); setApprovalTicket(ticket); setApprovalAssignee(""); fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} pulse />
@@ -3528,7 +3153,7 @@ function TicketingSystemInner() {
                 </div>
                 {/* Footer actions — outside overflow, always visible */}
                 <div className="px-4 py-3 border-t border-gray-100 flex flex-wrap gap-2 bg-gray-50/50 flex-shrink-0">
-                    <button onClick={() => exportToPDF(selectedTicket)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#16a34a,#15803d)" }}>📄 PDF</button>
+                    <button onClick={() => cetakTicket(selectedTicket)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#16a34a,#15803d)" }}>📄 PDF</button>
                     {selectedTicket.status === "Solved" && canUpdateTicket && currentUserTeamType !== "Team Services" && (
                       <button onClick={() => { setReopenTargetTicket(selectedTicket); setReopenAssignee(selectedTicket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>🔓 Re-open</button>
                     )}
