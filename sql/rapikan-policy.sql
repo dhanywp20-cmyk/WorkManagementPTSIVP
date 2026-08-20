@@ -164,15 +164,20 @@ CREATE POLICY audit_trail_baca ON audit_trail
 
 
 -- ─── Pemeriksaan sesudah bagian 1 & 2 ───────────────────────────────────────
---  Jumlah policy tanpa syarat harus turun dari 110 ke sekitar 82, dan
---  audit_trail harus menyisakan tepat dua policy: INSERT dan SELECT.
-SELECT count(*) AS policy_tanpa_syarat
+--  Satu query, karena Supabase SQL Editor hanya menampilkan hasil query
+--  TERAKHIR bila satu berkas berisi beberapa query.
+--
+--  Yang diharapkan: jumlah policy tanpa syarat turun dari 110 ke sekitar 82,
+--  dan audit_trail menyisakan tepat dua policy - INSERT dan SELECT.
+SELECT 'Ringkasan' AS bagian,
+       'policy tanpa syarat di seluruh skema' AS nama,
+       count(*)::text AS nilai
 FROM pg_policies
 WHERE schemaname = 'public'
   AND COALESCE(qual, 'true') = 'true'
-  AND COALESCE(with_check, 'true') = 'true';
-
-SELECT policyname AS policy, cmd AS perintah, roles
+  AND COALESCE(with_check, 'true') = 'true'
+UNION ALL
+SELECT 'audit_trail', policyname, cmd
 FROM pg_policies
 WHERE schemaname = 'public' AND tablename = 'audit_trail'
-ORDER BY policyname;
+ORDER BY 1, 2;

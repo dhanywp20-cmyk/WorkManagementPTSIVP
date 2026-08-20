@@ -159,10 +159,17 @@ BEGIN
 END;
 $$;
 
---  Jalankan satu per satu, dan baca kolom "hilang":
--- SELECT * FROM simulasi_lingkup('tickets');
--- SELECT * FROM simulasi_lingkup('reminders');
--- SELECT * FROM simulasi_lingkup('project_requests');
+--  Jalankan SATU query di bawah ini - jangan dipecah tiga. Supabase SQL
+--  Editor hanya menampilkan hasil query TERAKHIR bila satu berkas berisi
+--  beberapa query, jadi dua pemeriksaan pertama akan jalan tanpa pernah
+--  terlihat. Baca kolom "hilang": harus nol pada akun yang memang berhak.
+--
+-- SELECT 'tickets' AS tabel, * FROM simulasi_lingkup('tickets')
+-- UNION ALL
+-- SELECT 'reminders', * FROM simulasi_lingkup('reminders')
+-- UNION ALL
+-- SELECT 'project_requests', * FROM simulasi_lingkup('project_requests')
+-- ORDER BY hilang DESC, tabel, akun;
 
 
 -- ─── BAGIAN 3. Menyalakan policy - SATU TABEL PER HARI ──────────────────────

@@ -35,6 +35,17 @@ migrasi lama dianggap belum pernah dijalankan, dan CLI akan menjalankannya lagi
 di atas skema yang sudah ada. Untuk migrasi BARU, pakai stempel waktu
 (`20260819_nama.sql`) supaya tabrakan nomor tidak terulang.
 
+## Jebakan Supabase SQL Editor
+
+Kalau satu berkas berisi beberapa query, **editor hanya menampilkan hasil query
+terakhir**. Query sebelumnya tetap dijalankan, tapi hasilnya tidak pernah
+terlihat - jadi laporan yang dipecah jadi beberapa bagian akan tampak "cuma
+mengembalikan satu tabel", padahal bagian lainnya sudah jalan diam-diam.
+
+Karena itu berkas pemeriksaan di sini disusun sebagai **satu query**. Kalau Anda
+menulis pemeriksaan baru, gabungkan dengan `UNION ALL` alih-alih menumpuk
+beberapa `SELECT`.
+
 ## Isi `sql/`
 
 ### Pemeriksaan - hanya membaca, aman dijalankan kapan saja
