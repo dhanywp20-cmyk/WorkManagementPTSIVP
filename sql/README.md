@@ -97,6 +97,17 @@ dimiliki dua akun tetap tidak ditebak; laporan di akhir berkas mendaftarkannya
 lengkap dengan alasannya. Aman diulang - setiap UPDATE hanya menyentuh baris
 yang uuid-nya masih kosong.
 
+Sisanya - nama depan saja, ejaan yang berbeda - ditangani sepasang berkas
+yang memisahkan tebakan dari keputusan. `identitas-uuid-usulan.sql` hanya
+MENGUSULKAN: ia mendaftar nilai yang belum terpetakan, mencari calon akunnya
+dengan pencocokan di batas kata (minimal 4 huruf, dan hanya bila calonnya
+tepat satu), lalu memberi tahu seberapa kuat kecocokannya - `kata utuh` hampir
+pasti benar, `awalan kata` masih perlu Anda benarkan. Anda buang usulan yang
+salah, tambahkan yang alat itu tidak bisa tebak, baru jalankan
+`identitas-uuid-terapkan.sql`. Berkas terapkan menulis apa yang ada di tabel
+usulan dan tidak menebak apa pun sendiri; kalau satu nilai diusulkan ke dua
+orang, ia berhenti dan tidak mengubah satu baris pun.
+
 **Urutan menjalankannya tidak mengikat.** Aplikasi mencoba menulis kolom uuid,
 dan kalau basis datanya belum punya kolom itu, ia mengulang tanpa kolom uuid
 (`cobaIdentitas` di `lib/identitas.ts`). Jadi men-deploy kode lebih dulu tidak
