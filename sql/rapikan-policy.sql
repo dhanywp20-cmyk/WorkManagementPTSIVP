@@ -108,36 +108,68 @@ CREATE POLICY audit_trail_baca ON audit_trail
 --  butuh identitas, dan ada di bagian 3.
 
 
--- ─── BAGIAN 2b. form_reviews - policy bersyarat yang sedang dibatalkan ──────
---  Temuan dari sql/cek-jangkauan-anon.sql: form_reviews punya TIGA policy -
---  dua tanpa syarat ("allow_all" untuk public dan "anon_all_form_reviews"
---  untuk anon), dan satu bersyarat.
+-- ─── BAGIAN 2b. form_reviews - penyaringan yang tidak pernah menyaring ─────
+--  form_reviews punya tiga policy, dan KETIGANYA tidak menyaring apa pun:
 --
---  Policy permissive di Postgres di-OR-kan, jadi yang paling longgar menang.
---  Artinya policy bersyarat itu ADA tapi tidak pernah berlaku: seseorang sudah
---  menulis aturan penyaringan yang benar untuk Form Review, dan satu policy
---  sisa membatalkannya diam-diam.
+--    allow_all              ALL     public   USING (true)
+--    anon_all_form_reviews  ALL     anon     USING (true)
+--    guest_own_reviews      SELECT  public   USING (
+--                                      (guest_fullname = klaim 'username')
+--                                      OR true )
 --
---  Sudah diuji di Postgres: dengan policy tanpa syarat terpasang, anon membaca
---  baris milik orang lain. Begitu policy itu dibuang, policy bersyarat mulai
---  bekerja dan jumlah yang terbaca jadi nol.
+--  Yang ketiga itu yang perlu diperhatikan. Sekilas ia terbaca sebagai aturan
+--  "guest hanya melihat review miliknya", tapi ujungnya `OR true`, dan
+--  X OR true selalu benar - syarat di sebelah kirinya tidak pernah menentukan
+--  apa pun. Ditambah lagi kolom yang dibandingkan salah: guest_fullname berisi
+--  NAMA LENGKAP, sementara yang dibandingkan klaim `username`. Jadi seandainya
+--  `OR true` dibuang pun, syaratnya tetap tidak akan pernah cocok dan Form
+--  Review justru kosong untuk semua guest.
 --
---  Bagian 1 di atas sudah membuang "anon_all_form_reviews" - itu aman karena
---  "allow_all" masih menutupinya, jadi tidak ada yang berubah.
+--  Penyaringan yang sebenarnya hari ini SEPENUHNYA dikerjakan aplikasi
+--  (app/form-review/page.tsx: guest_username.eq.<username> atau
+--  sales_name.eq.<full name>). Siapa pun yang memanggil PostgREST langsung
+--  dengan anon key melewatinya.
 --
---  Membuang "allow_all" BELUM boleh dilakukan sekarang, karena policy
---  bersyarat yang tersisa belum diketahui isinya. Kalau ia hanya mengatur
---  SELECT, maka menyimpan Form Review langsung berhenti bekerja.
+--  Blok di bawah memindahkan aturan itu ke basis data. JANGAN dijalankan
+--  sebelum dua hal dipastikan:
+--    1. Project Progress masih menampilkan data dengan normal. Modul itu sudah
+--       memakai klaim JWT, jadi kalau ia normal berarti token identitas benar
+--       benar sampai ke basis data.
+--    2. Anda siap menguji Form Review langsung sesudahnya - sebagai admin,
+--       sebagai anggota tim, dan sebagai satu akun guest.
 --
---  Jalankan query ini dulu, lalu kirimkan hasilnya:
+--  Perhatikan bahwa membuang allow_all TANPA menambah policy tulis akan
+--  membuat menyimpan bintang berhenti bekerja: guest memang menulis ke tabel
+--  ini, bukan cuma membaca.
 --
---    SELECT policyname, cmd, roles, qual, with_check
---    FROM pg_policies
---    WHERE schemaname = 'public' AND tablename = 'form_reviews'
---    ORDER BY policyname;
+-- DROP POLICY IF EXISTS "allow_all"         ON form_reviews;
+-- DROP POLICY IF EXISTS "guest_own_reviews" ON form_reviews;
+-- DROP POLICY IF EXISTS fr_baca            ON form_reviews;
+-- DROP POLICY IF EXISTS fr_tulis           ON form_reviews;
 --
---  Setelah isi policy bersyaratnya terlihat, baris di bawah ini bisa dibuka:
--- DROP POLICY IF EXISTS "allow_all" ON form_reviews;
+-- --  Terlihat oleh orang dalam PTS, oleh guest yang diminta menilai, dan oleh
+-- --  sales yang namanya tercantum. Sama persis dengan penyaringan di halaman.
+-- CREATE POLICY fr_baca ON form_reviews
+--   FOR SELECT TO anon, authenticated
+--   USING (
+--     lingkup_semua()
+--     OR guest_username = jwt_claim('username')
+--     OR sales_name     = jwt_full_name()
+--   );
+--
+-- --  Menulis: orang dalam PTS, dan guest pada barisnya sendiri - dialah yang
+-- --  memberi bintang. Sales yang namanya tercantum sengaja TIDAK ikut; ia
+-- --  boleh melihat penilaian atas dirinya, bukan mengubahnya.
+-- CREATE POLICY fr_tulis ON form_reviews
+--   FOR ALL TO anon, authenticated
+--   USING (lingkup_semua() OR guest_username = jwt_claim('username'))
+--   WITH CHECK (lingkup_semua() OR guest_username = jwt_claim('username'));
+--
+--  Membatalkan bila Form Review bermasalah:
+--    DROP POLICY IF EXISTS fr_baca ON form_reviews;
+--    DROP POLICY IF EXISTS fr_tulis ON form_reviews;
+--    CREATE POLICY "allow_all" ON form_reviews FOR ALL TO public
+--      USING (true) WITH CHECK (true);
 
 
 -- ─── BAGIAN 3. Menunggu token identitas - JANGAN dijalankan dulu ────────────

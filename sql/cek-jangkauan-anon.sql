@@ -120,9 +120,18 @@ FROM (
            string_agg(DISTINCT pp.cmd, ', ' ORDER BY pp.cmd)
              FILTER (WHERE pp.tanpa_syarat) AS perintah
     FROM (
+      -- Sebuah policy dihitung "tanpa syarat" bukan hanya bila bunyinya
+      -- persis true, tapi juga bila di dalamnya ada `OR true` - X OR true
+      -- selalu benar, jadi syarat di sebelah kirinya tidak pernah menentukan
+      -- apa pun. Pola itu nyata: sebuah policy penyaring per-guest di
+      -- form_reviews berakhir dengan `OR true` dan karena itu tidak pernah
+      -- menyaring, padahal sekilas terlihat seperti aturan yang benar.
       SELECT cmd,
-             COALESCE(qual, 'true') = 'true'
-             AND COALESCE(with_check, 'true') = 'true' AS tanpa_syarat
+             (COALESCE(qual, 'true') = 'true'
+              OR qual ~* '(^|[^[:alnum:]_])or[[:space:]]+true([^[:alnum:]_]|$)')
+             AND
+             (COALESCE(with_check, 'true') = 'true'
+              OR with_check ~* '(^|[^[:alnum:]_])or[[:space:]]+true([^[:alnum:]_]|$)') AS tanpa_syarat
       FROM pg_policies
       WHERE schemaname = 'public' AND tablename = c.relname
     ) pp
