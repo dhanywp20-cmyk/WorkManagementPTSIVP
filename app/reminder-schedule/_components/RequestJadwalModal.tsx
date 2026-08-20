@@ -32,6 +32,8 @@ export interface JadwalRequest {
   // External tertentu. Kalau terisi  request diatasnamakan External tsb.
   sbu_name?: string;
   sbu_division?: string;
+  /** uuid Sales External yang dipilih - dicatat berdampingan dengan sbu_name. */
+  sbu_user_id?: string | null;
 }
 
 interface RequestJadwalModalProps {
@@ -83,6 +85,7 @@ export function RequestJadwalModal({
     brand: undefined,
     sbu_name: '',
     sbu_division: '',
+    sbu_user_id: null,
   });
 
   const f = (patch: Partial<JadwalRequest>) => setForm(prev => ({ ...prev, ...patch }));
@@ -178,7 +181,7 @@ export function RequestJadwalModal({
               <SalesPicker
                 value={form.sbu_name ?? ''}
                 users={externalSalesUsers}
-                onChange={(name, division) => f({ sbu_name: name, sbu_division: division })}
+                onChange={(name, division, userId) => f({ sbu_name: name, sbu_division: division, sbu_user_id: userId })}
                 placeholder="— Pilih Sales External (opsional) —"
                 triggerClassName="rounded-xl px-4 py-3"
                 triggerStyle={inputStyle}

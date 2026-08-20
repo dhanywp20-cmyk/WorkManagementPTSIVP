@@ -11,8 +11,28 @@ import {
 } from './shared';
 import { SalesPicker, ModalPortal, BatalButton, SubmitFormButton } from '@/components/shared';
 import { isAssignablePTSTeam } from '@/lib/teams';
+import { tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
 
+/**
+ * AssignPTSModal - popup Approve & Assign dan Assign ke Tim untuk Request
+ * Design Project.
+ *
+ * Tampilan dan model isian assign-nya sengaja MENGIKUTI Ticketing dan Request
+ * Schedule, bukan punya gaya sendiri. Tiga hal yang disamakan:
+ *
+ *   1. Warna menandai TAHAP, bukan halaman. Hijau untuk approve, kuning untuk
+ *      assign oleh Supervisor - persis seperti kedua platform lain.
+ *   2. Pemilihan orang memakai <select> dengan optgroup, bukan daftar kartu
+ *      avatar. Kartu avatar terlihat lebih ramai tapi memaksa admin menggulir
+ *      untuk menemukan satu nama, dan tidak bisa diketik.
+ *   3. Route ke Supervisor tampil sebagai kartu rekomendasi di dalam popup yang
+ *      sama, bukan tab yang menyembunyikan salah satu pilihan.
+ *
+ * Yang juga ikut: opsi "Saya kerjakan sendiri". Tanpa itu, Supervisor yang
+ * timnya penuh tidak punya jalan menyelesaikan sendiri di halaman ini,
+ * sementara di dua platform lain ia punya.
+ */
 export function AssignPTSModal({
   req, onClose, onAssigned, currentUser, allowSupervisorRoute = false,
 }: {
@@ -23,11 +43,12 @@ export function AssignPTSModal({
 }) {
   const [teamMembers, setTeamMembers] = useState<User[]>([]);
   const [supervisors, setSupervisors] = useState<{ id: string; full_name: string; team_type?: string; phone_number?: string }[]>([]);
-  const [selectedPTS, setSelectedPTS] = useState(req.assign_name || '');
+  // Nilai pilihan adalah id, bukan nama. Nama bisa dimiliki dua orang di satu
+  // kantor; id tidak. Nama tetap ditulis ke assign_name untuk tampilan.
+  const [selectedPTSId, setSelectedPTSId] = useState('');
   const [selectedSupervisorId, setSelectedSupervisorId] = useState('');
-  // mode: 'direct' = assign langsung ke Tim PTS; 'supervisor' = route ke Supervisor
-  const [mode, setMode] = useState<'direct' | 'supervisor'>('direct');
   const [saving, setSaving] = useState(false);
+  const [routeSaving, setRouteSaving] = useState(false);
   const [formErr, setFormErr] = useState('');
 
   // Request dari external (non-IVP) wajib assign IVP Sales internal
@@ -38,7 +59,16 @@ export function AssignPTSModal({
     supabase.from('users')
       .select('id, full_name, role, team_type, phone_number, sales_division')
       .in('role', ['team_pts', 'team'])
-      .then(({ data }: { data: User[] | null }) => { if (data) setTeamMembers(data.filter(u => isAssignablePTSTeam(u.team_type))); });
+      .then(({ data }: { data: User[] | null }) => {
+        if (!data) return;
+        const anggota = data.filter(u => isAssignablePTSTeam(u.team_type));
+        setTeamMembers(anggota);
+        // Pra-pilih handler yang sudah tercatat, kalau orangnya memang ketemu.
+        // Dicocokkan lewat uuid dulu; nama hanya cadangan untuk baris lama.
+        const sekarang = (req.assign_user_id && anggota.find(u => u.id === req.assign_user_id))
+          || (req.assign_name ? anggota.find(u => u.full_name === req.assign_name) : undefined);
+        if (sekarang) setSelectedPTSId(sekarang.id);
+      });
     // Fetch Supervisor (jabatan='Supervisor') - utk opsi Route ke Supervisor
     if (allowSupervisorRoute) {
       supabase.from('users')
@@ -46,13 +76,22 @@ export function AssignPTSModal({
         .eq('jabatan', 'Supervisor')
         .then(({ data }: { data: { id: string; full_name: string; team_type?: string; phone_number?: string }[] | null }) => { if (data) setSupervisors(data.filter(s => isAssignablePTSTeam(s.team_type))); });
     }
-  }, [allowSupervisorRoute]);
+  }, [allowSupervisorRoute, req.assign_name, req.assign_user_id]);
+
+  // Orang yang akan dicatat sebagai handler. 'SELF' berarti yang membuka popup
+  // ini mengerjakannya sendiri - jalan keluar saat timnya penuh.
+  const calonHandler: { id: string; full_name: string; phone_number?: string } | undefined =
+    selectedPTSId === 'SELF' ? currentUser : teamMembers.find(m => m.id === selectedPTSId);
+
+  // Dirinya sendiri disembunyikan dari daftar anggota karena sudah diwakili
+  // opsi "Saya kerjakan sendiri" - kalau tidak, namanya muncul dua kali.
+  const anggotaLain = teamMembers.filter(m => m.id !== currentUser.id);
 
   // Route ke Supervisor: request lanjut ke Supervisor utk di-assign ke tim
   const handleRouteToSupervisor = async () => {
     if (!selectedSupervisorId) { setFormErr('Pilih Supervisor tujuan terlebih dahulu.'); return; }
     setFormErr('');
-    setSaving(true);
+    setRouteSaving(true);
     const sup = supervisors.find(s => s.id === selectedSupervisorId);
     const updatePayload: Record<string, unknown> = {
       status: 'approved',
@@ -61,9 +100,11 @@ export function AssignPTSModal({
       routing_status: 'supervisor_assign',
       assigned_supervisor_id: selectedSupervisorId,
       assign_name: null,   // belum di-assign ke handler — Supervisor yg lanjut
+      assign_user_id: null,
     };
-    const { error } = await supabase.from('project_requests').update(updatePayload).eq('id', req.id);
-    if (error) { setFormErr('Gagal route: ' + error.message); setSaving(false); return; }
+    const { error } = await cobaIdentitas(async pakaiUuid => await supabase.from('project_requests')
+      .update(pakaiUuid ? updatePayload : tanpaIdentitas(updatePayload)).eq('id', req.id));
+    if (error) { setFormErr('Gagal route: ' + error.message); setRouteSaving(false); return; }
     await supabase.from('project_messages').insert([{
       request_id: req.id, sender_id: currentUser.id, sender_name: 'System', sender_role: 'system',
       message: `✅ Request diapprove oleh ${currentUser.full_name} & diteruskan ke Supervisor ${sup?.full_name ?? '-'} untuk di-assign ke tim.`,
@@ -81,18 +122,21 @@ export function AssignPTSModal({
       ].join('\n');
       await sendWANotif({ type: 'reminder_wa', target: sup.phone_number, message: lines });
     }
-    setSaving(false);
+    setRouteSaving(false);
     onAssigned();
   };
 
   const handleSave = async () => {
-    if (mode === 'supervisor') { await handleRouteToSupervisor(); return; }
-    if (!selectedPTS) { setFormErr('Pilih Tim PTS handler terlebih dahulu.'); return; }
+    if (!calonHandler) { setFormErr('Pilih Tim PTS handler terlebih dahulu.'); return; }
     setFormErr('');
     setSaving(true);
 
+    // Nama DAN uuid ditulis bersamaan: uuid menjawab siapa orangnya, nama
+    // menjawab tercatat sebagai siapa. Menulis salah satunya saja akan
+    // melahirkan baris baru dengan cacat data lama yang sedang dibereskan.
     const updatePayload: Record<string, unknown> = {
-      assign_name: selectedPTS,
+      assign_name: calonHandler.full_name,
+      assign_user_id: calonHandler.id,
       status: 'approved',
       approved_by: currentUser.full_name,
       approved_at: new Date().toISOString(),
@@ -105,21 +149,22 @@ export function AssignPTSModal({
       updatePayload.assigned_supervisor_id = null;
     }
 
-    const { error } = await supabase.from('project_requests').update(updatePayload).eq('id', req.id);
+    const { error } = await cobaIdentitas(async pakaiUuid => await supabase.from('project_requests')
+      .update(pakaiUuid ? updatePayload : tanpaIdentitas(updatePayload)).eq('id', req.id));
     if (!error) {
       await supabase.from('project_messages').insert([{
         request_id: req.id,
         sender_id: currentUser.id,
         sender_name: 'System',
         sender_role: 'system',
-        message: `✅ Request diapprove oleh ${currentUser.full_name}. Assigned ke Tim PTS: ${selectedPTS}.`,
+        message: `✅ Request diapprove oleh ${currentUser.full_name}. Assigned ke Tim PTS: ${calonHandler.full_name}.`,
       }]);
 
       // WA notif ke PTS. (IVP Sales internal reviewer sudah dinotif via WA saat
       // request dibuat - lihat resolveBrandInternals/internalHandlers di page.tsx -
       // jadi tidak perlu dikirim ulang di sini.)
-      const ptsMember = teamMembers.find(m => m.full_name === selectedPTS);
-      if (ptsMember?.phone_number) {
+      // Tidak dikirim ke diri sendiri: yang menekan tombolnya sudah tahu.
+      if (calonHandler.phone_number && calonHandler.id !== currentUser.id) {
         const lines = [
           '🏗️ *request design Project — Assigned ke Kamu*',
           '━━━━━━━━━━━━━━━━━━',
@@ -131,7 +176,7 @@ export function AssignPTSModal({
           'Segera proses dan update status ya! 💪',
           '🔗 https://work-management-ptsivp.vercel.app/dashboard',
         ].join('\n');
-        await sendWANotif({ type: 'reminder_wa', target: ptsMember.phone_number, message: lines });
+        await sendWANotif({ type: 'reminder_wa', target: calonHandler.phone_number, message: lines });
       }
 
       onAssigned();
@@ -141,141 +186,136 @@ export function AssignPTSModal({
     setSaving(false);
   };
 
+  // Warna menandai tahap, bukan halaman - sama seperti Ticketing & Request
+  // Schedule: hijau saat approve, kuning saat Supervisor meng-assign.
+  const hijau = allowSupervisorRoute;
+  const aksen = hijau
+    ? { garis: 'rgba(34,197,94,0.4)', gradasi: 'linear-gradient(135deg,#16a34a,#15803d)', bayang: '0 4px 14px rgba(22,163,74,0.35)', cincin: 'focus:ring-green-500/40', subjudul: 'text-green-200/80' }
+    : { garis: 'rgba(245,158,11,0.4)', gradasi: 'linear-gradient(135deg,#f59e0b,#d97706)', bayang: '0 4px 14px rgba(245,158,11,0.35)', cincin: 'focus:ring-amber-500/40', subjudul: 'text-amber-100/90' };
+
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1200] p-4">
-      <div className="bg-white/90 rounded-2xl shadow-2xl w-full border-2 border-teal-500 overflow-hidden"
-        style={{ maxWidth: 460 }}>
+    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1200] p-4"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+        style={{ animation: 'scale-in 0.25s ease-out', border: `2px solid ${aksen.garis}` }}>
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-teal-600 to-teal-800 px-6 py-4 flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-white text-lg">✅ Approve & Assign</h3>
-            <p className="text-teal-100 text-xs mt-0.5 flex items-center gap-2">
-              {req.project_name}
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${isExternal ? 'bg-orange-400 text-white' : 'bg-teal-400 text-white'}`}>
-                {isExternal ? `External · ${req.sales_division}` : 'Internal IVP'}
+        <div className="px-6 py-5 flex items-center justify-between" style={{ background: aksen.gradasi }}>
+          <div className="min-w-0">
+            <h3 className="text-lg font-bold text-white">{hijau ? '✅ Approve & Assign Request' : '🎯 Assign ke Tim'}</h3>
+            <p className={`text-xs mt-0.5 truncate max-w-[300px] ${aksen.subjudul}`}>{req.project_name}</p>
+          </div>
+          <button aria-label="Tutup" onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all flex-shrink-0">
+            <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {/* Info request */}
+          <div className="rounded-xl p-3 space-y-1"
+            style={{ background: 'rgba(59,130,246,0.07)', border: '1px solid rgba(59,130,246,0.2)' }}>
+            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Request dari Sales</p>
+            <p className="text-sm font-bold text-slate-800">
+              {req.sales_name || '-'}{req.sales_division ? ` · ${req.sales_division}` : ''}
+              <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold align-middle ${isExternal ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
+                {isExternal ? 'External' : 'Internal IVP'}
               </span>
             </p>
+            <p className="text-xs text-slate-500">🛋️ {req.room_name || '-'} · 👤 {req.requester_name}</p>
           </div>
-          <button aria-label="Tutup" onClick={onClose} className="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold">✕</button>
-        </div>
 
-        {/* Info banner untuk external */}
-        {isExternal && (
-          <div className="px-6 py-3 flex items-start gap-3 border-b border-indigo-100" style={{ background: 'rgba(99,102,241,0.07)' }}>
-            <span className="text-xl flex-shrink-0">🔗</span>
-            <div>
-              <p className="text-sm font-bold text-indigo-700">Request dari Divisi External: {req.sales_division}</p>
-              <p className="text-xs text-indigo-600 mt-0.5">
-                Pilih <strong>Tim PTS</strong> yang akan menangani. IVP Sales internal yang handle divisi ini sudah otomatis
-                ter-mapping sejak request dibuat — tidak perlu dipilih ulang di sini.
+          {/* Divisi external: IVP Sales internal sudah ter-mapping sejak request dibuat */}
+          {isExternal && (
+            <div className="rounded-xl p-3 flex items-start gap-2"
+              style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
+              <span className="text-base flex-shrink-0">🔗</span>
+              <p className="text-xs text-indigo-700 leading-relaxed">
+                Request dari divisi external <strong>{req.sales_division}</strong>. Cukup pilih <strong>Tim PTS</strong> yang menangani —
+                IVP Sales internal untuk divisi ini sudah otomatis ter-mapping sejak request dibuat.
               </p>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Toggle: assign langsung ke Tim PTS ATAU route ke Supervisor (hanya
-            saat dibuka Admin/Manager di tahap approve). */}
-        {allowSupervisorRoute && (
-          <div className="px-6 pt-4">
-            <div className="grid grid-cols-2 gap-2 p-1 rounded-xl" style={{ background: 'rgba(0,0,0,0.04)' }}>
-              <button type="button" onClick={() => { setMode('direct'); setFormErr(''); }}
-                className={`py-2 rounded-lg text-xs font-bold transition-all ${mode === 'direct' ? 'bg-white text-teal-700 shadow' : 'text-gray-500'}`}>
-                👷 Assign langsung ke Tim PTS
-              </button>
-              <button type="button" onClick={() => { setMode('supervisor'); setFormErr(''); }}
-                className={`py-2 rounded-lg text-xs font-bold transition-all ${mode === 'supervisor' ? 'bg-white text-amber-700 shadow' : 'text-gray-500'}`}>
-                🎯 Route ke Supervisor
+          {/* Route ke Supervisor — jalur UTAMA saat approve, sama seperti Request Schedule */}
+          {allowSupervisorRoute && supervisors.length > 0 && (
+            <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.08)', border: '1.5px solid rgba(245,158,11,0.3)' }}>
+              <p className="text-xs font-bold text-amber-700 mb-1">🎯 Route ke Supervisor (Rekomendasi)</p>
+              <p className="text-[11px] text-amber-600 mb-3">
+                Supervisor yang dipilih akan di-WA untuk meng-assign ke anggota timnya, atau mengerjakan sendiri.
+              </p>
+              <select aria-label="-- Pilih Supervisor --" value={selectedSupervisorId}
+                onChange={e => { setSelectedSupervisorId(e.target.value); setFormErr(''); }}
+                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-amber-500/40 mb-2.5"
+                style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
+                <option value="">-- Pilih Supervisor --</option>
+                {supervisors.map(s => <option key={s.id} value={s.id}>{s.full_name}{s.team_type ? ` · ${s.team_type}` : ''}</option>)}
+              </select>
+              <button type="button" onClick={handleRouteToSupervisor} disabled={routeSaving || !selectedSupervisorId}
+                className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
+                {routeSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                🎯 Approve &amp; Route ke Supervisor
               </button>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="p-6">
-
-          {/* Tim PTS (mode direct) ATAU Supervisor (mode supervisor) */}
+          {/* Assign ke Tim PTS */}
           <div>
-            {mode === 'supervisor' ? (
-              <>
-                <p className="text-xs font-bold text-amber-600 uppercase tracking-widest mb-1">
-                  🎯 Route ke Supervisor <span className="text-red-500">*</span>
-                </p>
-                <p className="text-[11px] text-gray-500 mb-3">
-                  Supervisor yang dipilih akan meng-assign ke anggota tim-nya (atau kerjakan sendiri).
-                </p>
-                {supervisors.length === 0 ? (
-                  <div className="text-center py-8 text-gray-400 text-sm">
-                    <div className="text-4xl mb-2">🎯</div>
-                    <p>Tidak ada Supervisor terdaftar</p>
-                    <p className="text-xs mt-1">(User jabatan = Supervisor di Struktur Organisasi)</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                    {supervisors.map(s => (
-                      <button key={s.id} type="button" onClick={() => setSelectedSupervisorId(s.id)}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all
-                          ${selectedSupervisorId === s.id ? 'border-amber-500 bg-amber-50' : 'border-gray-200 hover:border-amber-300 bg-white'}`}>
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0
-                          ${selectedSupervisorId === s.id ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
-                          {s.full_name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-bold truncate ${selectedSupervisorId === s.id ? 'text-amber-700' : 'text-gray-700'}`}>{s.full_name}</p>
-                          <p className="text-xs text-gray-400">{s.team_type || 'Supervisor'}</p>
-                        </div>
-                        {selectedSupervisorId === s.id && <span className="text-amber-600 font-bold flex-shrink-0">✓</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </>
+            <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+              {allowSupervisorRoute && supervisors.length > 0 ? 'Atau Assign Langsung Manual' : 'Assign ke Team PTS *'}
+            </label>
+            {teamMembers.length === 0 ? (
+              <div className="text-center py-6 text-gray-400 text-sm rounded-xl" style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.08)' }}>
+                <div className="text-3xl mb-1">👥</div>
+                <p className="text-xs">Tidak ada Team PTS tersedia</p>
+              </div>
             ) : (
-              <>
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
-                  👷 Tim PTS Handler <span className="text-red-500">*</span>
-                </p>
-                {teamMembers.length === 0 ? (
-                  <div className="text-center py-8 text-gray-400 text-sm">
-                    <div className="text-4xl mb-2">👥</div>
-                    <p>Tidak ada Team PTS tersedia</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                    {teamMembers.map(m => (
-                      <button key={m.id} type="button" onClick={() => setSelectedPTS(m.full_name)}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all
-                          ${selectedPTS === m.full_name ? 'border-teal-500 bg-teal-50' : 'border-gray-200 hover:border-teal-300 bg-white'}`}>
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0
-                          ${selectedPTS === m.full_name ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
-                          {m.full_name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-bold truncate ${selectedPTS === m.full_name ? 'text-teal-700' : 'text-gray-700'}`}>{m.full_name}</p>
-                          <p className="text-xs text-gray-400">{m.team_type || m.role}</p>
-                        </div>
-                        {selectedPTS === m.full_name && <span className="text-teal-600 font-bold flex-shrink-0">✓</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </>
+              <select aria-label="-- Pilih Anggota Team PTS --" value={selectedPTSId}
+                onChange={e => { setSelectedPTSId(e.target.value); setFormErr(''); }}
+                className={`w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 focus:ring-2 ${aksen.cincin}`}
+                style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
+                <option value="">-- Pilih Anggota Team PTS --</option>
+                <option value="SELF">🙋 Saya kerjakan sendiri</option>
+                <optgroup label="Anggota Tim">
+                  {anggotaLain.map(m => (
+                    <option key={m.id} value={m.id}>{m.full_name}{m.team_type ? ` · ${m.team_type}` : ''}</option>
+                  ))}
+                </optgroup>
+              </select>
             )}
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="px-6 pb-6 flex flex-col gap-2">
+          {/* Info WA */}
+          <div className="rounded-xl p-3 flex items-start gap-2"
+            style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)' }}>
+            <span className="text-base flex-shrink-0">💬</span>
+            <p className="text-[11px] text-green-700 leading-relaxed">
+              WA notifikasi otomatis dikirim ke <strong>Tim PTS</strong> yang di-assign (kecuali kamu sendiri).
+            </p>
+          </div>
+
           {formErr && (
             <div className="px-4 py-2.5 rounded-xl text-sm font-medium text-red-700 bg-red-50 border border-red-200">{formErr}</div>
           )}
-          <div className="flex gap-3">
-            <button onClick={onClose} className="flex-1 border-2 border-gray-300 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50 transition-all">Batal</button>
-            <button onClick={handleSave} disabled={saving || (mode === 'supervisor' ? !selectedSupervisorId : !selectedPTS)}
-              className={`flex-[2] text-white py-3 rounded-xl font-bold shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${mode === 'supervisor' ? 'bg-gradient-to-r from-amber-500 to-amber-700' : 'bg-gradient-to-r from-teal-600 to-teal-800'}`}>
+
+          {/* Buttons */}
+          <div className="flex gap-3 pt-1">
+            <button onClick={onClose}
+              className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
+              style={{ background: '#f8fafc', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>
+              Batal
+            </button>
+            <button onClick={handleSave} disabled={saving || !selectedPTSId}
+              className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              style={{ background: aksen.gradasi, boxShadow: aksen.bayang }}>
               {saving
-                ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Menyimpan...</>
-                : mode === 'supervisor' ? <>🎯 Approve &amp; Route ke Supervisor</> : <>✅ Approve &amp; Assign</>}
+                ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>
+                : hijau
+                  ? (supervisors.length > 0 ? <>✅ Assign Langsung (lewati Supervisor)</> : <>✅ Approve &amp; Assign</>)
+                  : <>🎯 Assign</>}
             </button>
           </div>
         </div>

@@ -11,7 +11,13 @@ export interface SalesPickerUser {
 interface Props {
   value: string;
   users: SalesPickerUser[];
-  onChange: (name: string, division: string) => void;
+  /**
+   * Argumen ketiga adalah id orang yang dipilih - itulah yang disimpan ke
+   * kolom *_user_id. Tanpa ini id-nya terbuang di sini, dan baris baru lahir
+   * hanya berbekal nama, persis seperti data lama yang sedang dibereskan.
+   * Kosong bila pilihannya dihapus.
+   */
+  onChange: (name: string, division: string, userId: string | null) => void;
   placeholder?: string;
   triggerClassName?: string;
   triggerStyle?: React.CSSProperties;
@@ -85,8 +91,8 @@ export function SalesPicker({
                   aria-selected={false}
                   tabIndex={0}
                   className="px-3 py-2 text-sm cursor-pointer text-slate-400 italic hover:bg-slate-50 border-b border-slate-100"
-                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange('', ''); setOpen(false); setQ(''); } }}
-                  onClick={() => { onChange('', ''); setOpen(false); setQ(''); }}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange('', '', null); setOpen(false); setQ(''); } }}
+                  onClick={() => { onChange('', '', null); setOpen(false); setQ(''); }}
                 >
                   — Kosongkan —
                 </div>
@@ -104,8 +110,8 @@ export function SalesPicker({
                   style={value === u.full_name
                     ? { background: 'rgba(59,130,246,0.06)', borderLeft: '3px solid #3b82f6' }
                     : { borderLeft: '3px solid transparent' }}
-                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange(u.full_name, u.sales_division ?? ''); setOpen(false); setQ(''); } }}
-                  onClick={() => { onChange(u.full_name, u.sales_division ?? ''); setOpen(false); setQ(''); }}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange(u.full_name, u.sales_division ?? '', u.id); setOpen(false); setQ(''); } }}
+                  onClick={() => { onChange(u.full_name, u.sales_division ?? '', u.id); setOpen(false); setQ(''); }}
                 >
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-slate-800 truncate">{u.full_name}</p>

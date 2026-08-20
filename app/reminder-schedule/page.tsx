@@ -13,6 +13,7 @@ import { logAudit } from '@/lib/audit';
 import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField } from '@/lib/admin-edit';
 import { syncRemindersToProjectProgress, triggersProjectProgress, type ReminderSnapshot } from '@/lib/project-progress-sync';
 import { compressImage } from '@/lib/image-compress';
+import { idDariNama, kutipNilai, tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
 
 import {
   Priority, Status, RepeatType, Reminder, TeamUser, GuestUser,
@@ -197,6 +198,7 @@ function ReminderSchedulePageInner() {
 
   const emptyForm: Omit<Reminder, 'id' | 'created_at' | 'created_by' | 'wa_sent_h1'> = {
     project_name: '', description: '', assigned_to: '', assign_name: '',
+    sales_user_id: null, assign_user_id: null,
     due_date: new Date().toISOString().split('T')[0],
     due_time: '09:00', priority: 'medium', status: 'pending',
     repeat: 'none', category: 'Demo Product',
@@ -231,13 +233,15 @@ function ReminderSchedulePageInner() {
       setAppReady(true); //  tampilkan konten setelah data siap
       // Popup notif setelah data loaded
       if (user && (user.role === 'team' || user.role === 'admin')) {
-        supabase
+        cobaIdentitas(async pakaiUuid => await supabase
           .from('reminders')
           .select('*')
-          .eq('assigned_to', user.username)
+          .or(pakaiUuid
+            ? `assign_user_id.eq.${user.id},assigned_to.eq.${kutipNilai(user.username)}`
+            : `assigned_to.eq.${kutipNilai(user.username)}`)
           .neq('status', 'done')
           .neq('status', 'cancelled')
-          .order('due_date', { ascending: true })
+          .order('due_date', { ascending: true }))
           .then(({ data: activeData }: { data: any[] | null }) => {
             const active = (activeData ?? []) as Reminder[];
             if (active.length > 0) {
@@ -354,7 +358,14 @@ function ReminderSchedulePageInner() {
     // Guest: ambil schedule yg atas nama dia (dibuat admin) + yg dia request sendiri (created_by)
     // + request Sales External yang menunggu REVIEW dia (Sales Internal, Fase 2 routing).
     const [bySales, byCreator, awaitingMyReview, awaitingMyReview2, approvedByMe] = await Promise.all([
-      supabase.from('reminders').select('*').eq('sales_name', activeUser.full_name).order('created_at', { ascending: false }),
+      // Dicocokkan lewat uuid ATAU nama. Klausa namanya belum boleh dicabut:
+      // baris lama yang namanya ambigu sengaja tidak dipetakan saat backfill,
+      // dan mencabutnya sekarang akan menghilangkan jadwal orang dari layarnya.
+      cobaIdentitas(async pakaiUuid => await supabase.from('reminders').select('*')
+        .or(pakaiUuid
+          ? `sales_user_id.eq.${activeUser.id},sales_name.eq.${kutipNilai(activeUser.full_name)}`
+          : `sales_name.eq.${kutipNilai(activeUser.full_name)}`)
+        .order('created_at', { ascending: false })),
       supabase.from('reminders').select('*').eq('created_by', activeUser.username).order('created_at', { ascending: false }),
       supabase.from('reminders').select('*').eq('internal_sales_id', activeUser.id).eq('routing_status', 'internal_review').order('created_at', { ascending: false }),
       // Reviewer KEDUA (brand IVP saat "Kedua Brand") - juga perlu lihat & approve.
@@ -410,6 +421,14 @@ function ReminderSchedulePageInner() {
       return;
     }
 
+    // Identitas uuid dicatat berdampingan dengan namanya - uuid menjawab SIAPA,
+    // nama tetap menjawab TERCATAT SEBAGAI SIAPA. Sales dicari di antara akun
+    // guest maupun akun tim, karena jadwal bisa diatasnamakan keduanya. Kalau
+    // namanya dimiliki lebih dari satu akun, idDariNama sengaja menjawab null:
+    // baris itu tetap bekerja lewat nama, persis seperti sebelum perubahan ini.
+    const semuaOrang = [...guestUsers, ...teamUsers];
+    const salesUserId = idDariNama(semuaOrang, formData.sales_name);
+
     // Multi-tanggal: request 1 kali untuk beberapa hari sekaligus (mis. tanggal 1, 2, 3).
     // Saat editing 1 reminder yang sudah ada, extraDates diabaikan (edit tetap 1 baris).
     const allDates: string[] = editingReminder
@@ -436,12 +455,16 @@ function ReminderSchedulePageInner() {
         batch_id: batchId,
         assigned_to: u.username,
         assign_name: u.full_name,
+        sales_user_id: salesUserId,
+        assign_user_id: u.id,
         created_by: currentUser?.username ?? 'system',
         ...progressTimelinePayload(),
       })));
       // .select() supaya id reminder yang baru dibuat bisa ditautkan ke draft
       // Project Progress. Tanpa id, penautan & pencegahan duplikat mustahil.
-      const { data: bulkRows, error: bulkErr } = await supabase.from('reminders').insert(payloads).select('id, project_name, address, sales_name, sales_division, assign_name, due_date, category, progress_start_date, progress_target_date');
+      const { data: bulkRows, error: bulkErr } = await cobaIdentitas(async pakaiUuid =>
+        await supabase.from('reminders').insert(pakaiUuid ? payloads : payloads.map(tanpaIdentitas))
+          .select('id, project_name, address, sales_name, sales_division, assign_name, due_date, category, progress_start_date, progress_target_date'));
       if (bulkErr) { notify('error', 'Gagal menyimpan: ' + bulkErr.message); setSaving(false); return; }
       void syncNewRemindersToProgress((bulkRows ?? []) as ReminderSnapshot[]);
       notify('success', `${payloads.length} reminder dibuat untuk Tim ${bulkLabelMap[bulkTarget]}${allDates.length > 1 ? ` (${allDates.length} hari)` : ''}!`);
@@ -492,15 +515,23 @@ function ReminderSchedulePageInner() {
       : null;
 
     if (editingReminder) {
-      const payload = { ...formData, assign_name: assignee?.full_name ?? formData.assigned_to, created_by: currentUser?.username ?? 'system', updated_at: new Date().toISOString() };
+      // Saat menyunting, uuid lama TIDAK boleh ditimpa null hanya karena nama
+      // yang sama itu ambigu. Kalau namanya tidak berubah, uuid yang sudah
+      // tercatat dipertahankan - ia hasil penetapan sebelumnya, dan menebak
+      // ulang dari nama justru membuang keterangan yang lebih pasti.
+      const namaSalesTetap = (formData.sales_name ?? '').trim() === (editingReminder.sales_name ?? '').trim();
+      const payload = { ...formData, assign_name: assignee?.full_name ?? formData.assigned_to,
+        sales_user_id: namaSalesTetap ? (editingReminder.sales_user_id ?? salesUserId) : salesUserId,
+        assign_user_id: assignee?.id ?? null, created_by: currentUser?.username ?? 'system', updated_at: new Date().toISOString() };
       if (alihKeSupervisor) {
         const [, supId] = alihKeSupervisor;
         Object.assign(payload, {
-          assigned_to: '', assign_name: '',
+          assigned_to: '', assign_name: '', assign_user_id: null,
           routing_status: 'supervisor_assign', assigned_supervisor_id: supId,
         });
       }
-      ({ error } = await supabase.from('reminders').update(payload).eq('id', editingReminder.id));
+      ({ error } = await cobaIdentitas(async pakaiUuid =>
+        await supabase.from('reminders').update(pakaiUuid ? payload : tanpaIdentitas(payload)).eq('id', editingReminder.id)));
     } else {
       const payloads = allDates.map(d => ({
         ...formData,
@@ -508,17 +539,21 @@ function ReminderSchedulePageInner() {
         ...progressTimelinePayload(),
         batch_id: batchId,
         assign_name: assignee?.full_name ?? formData.assigned_to,
+        sales_user_id: salesUserId,
+        assign_user_id: assignee?.id ?? null,
         created_by: currentUser?.username ?? 'system',
         // Dibuat langsung ke Supervisor: jadwal masuk ke tahap supervisor_assign
         // dengan pelaksana masih kosong, jadi Supervisor itu yang menentukan
         // siapa yang mengerjakan - alurnya sama dengan ticket Troubleshooting.
         ...(alihKeSupervisor ? {
-          assigned_to: '', assign_name: '',
+          assigned_to: '', assign_name: '', assign_user_id: null,
           routing_status: 'supervisor_assign',
           assigned_supervisor_id: alihKeSupervisor[1],
         } : {}),
       }));
-      const insRes = await supabase.from('reminders').insert(payloads).select('id, project_name, address, sales_name, sales_division, assign_name, due_date, category, progress_start_date, progress_target_date');
+      const insRes = await cobaIdentitas(async pakaiUuid =>
+        await supabase.from('reminders').insert(pakaiUuid ? payloads : payloads.map(tanpaIdentitas))
+          .select('id, project_name, address, sales_name, sales_division, assign_name, due_date, category, progress_start_date, progress_target_date'));
       error = insRes.error;
       barisBaru = (insRes.data ?? []) as { id: string; project_name: string | null }[];
       if (!insRes.error) void syncNewRemindersToProgress((insRes.data ?? []) as ReminderSnapshot[]);
@@ -751,12 +786,17 @@ function ReminderSchedulePageInner() {
               if (!existingReview) {
                 const reviewCategory = reminder.category === 'Demo Product' ? 'Demo Product' : 'BAST';
                 const productValue = reminder.product?.trim() || '';
-                const { error: reviewErr } = await supabase.from('form_reviews').insert([{
+                const barisReview = {
                   reminder_id: reminder.id,
                   batch_id: reminder.batch_id ?? null,
                   project_name: reminder.project_name,
                   address: reminder.address || '',
                   sales_name: salesName,
+                  // uuid berdampingan dengan namanya. sales_user_id diambil dari
+                  // reminder-nya kalau ada - itu identitas yang sudah dipastikan
+                  // saat jadwal dibuat, bukan hasil pencocokan nama ulang.
+                  sales_user_id: reminder.sales_user_id ?? resolvedGuest?.id ?? null,
+                  guest_user_id: resolvedGuest?.id ?? null,
                   sales_division: reminder.sales_division || '',
                   assign_name: reminder.assign_name,
                   assigned_to: reminder.assigned_to,
@@ -770,7 +810,9 @@ function ReminderSchedulePageInner() {
                   guest_fullname: resolvedGuest?.full_name ?? salesName,
                   // guest_username untuk filter di Form Review page
                   guest_username: resolvedGuest?.username ?? '',
-                }]);
+                };
+                const { error: reviewErr } = await cobaIdentitas(async pakaiUuid =>
+                  await supabase.from('form_reviews').insert([pakaiUuid ? barisReview : tanpaIdentitas(barisReview)]));
 
                 if (!reviewErr) {
                   notify('success', `Form review otomatis dibuat untuk ${salesName}!`);
@@ -999,12 +1041,14 @@ function ReminderSchedulePageInner() {
         // Buat form_review baru
         const reviewCategory = r.category === 'Demo Product' ? 'Demo Product' : 'BAST';
         const productValue = r.product?.trim() || '';
-        const { error: reviewErr } = await supabase.from('form_reviews').insert([{
+        const barisReview = {
           reminder_id: r.id,
           batch_id: r.batch_id ?? null,
           project_name: r.project_name,
           address: r.address || '',
           sales_name: salesName,
+          sales_user_id: r.sales_user_id ?? resolvedGuest.id ?? null,
+          guest_user_id: resolvedGuest.id ?? null,
           sales_division: r.sales_division || '',
           assign_name: r.assign_name,
           assigned_to: r.assigned_to,
@@ -1018,7 +1062,9 @@ function ReminderSchedulePageInner() {
           guest_fullname: resolvedGuest.full_name ?? salesName,
           // guest_username untuk filter di Form Review page
           guest_username: resolvedGuest.username,
-        }]);
+        };
+        const { error: reviewErr } = await cobaIdentitas(async pakaiUuid =>
+          await supabase.from('form_reviews').insert([pakaiUuid ? barisReview : tanpaIdentitas(barisReview)]));
         if (reviewErr) {
           notify('error', 'Gagal membuat form review: ' + reviewErr.message);
           setResendingFormReview(false);
@@ -1457,6 +1503,13 @@ function ReminderSchedulePageInner() {
     const sbuName = data.sbu_name?.trim();
     const effectiveSalesName = sbuName || currentUser.full_name;
     if (sbuName && data.sbu_division?.trim()) salesDivision = data.sbu_division.trim();
+    // uuid pemilik jadwal, sejalan dengan effectiveSalesName di atas. Saat atas
+    // nama Sales External, uuid-nya diambil langsung dari pilihan dropdown -
+    // jadi tidak ada tebakan nama sama sekali. Fallback pencarian nama hanya
+    // dipakai kalau dropdown-nya belum sempat mengirim id (data lama).
+    const effectiveSalesUserId = sbuName
+      ? (data.sbu_user_id ?? idDariNama(guestUsers, sbuName))
+      : (currentUser.id ?? null);
 
     // Insert ke tabel reminders dengan status pending & assigned_to kosong
     // Admin nantinya assign ke team dari list yang ada
@@ -1482,6 +1535,7 @@ function ReminderSchedulePageInner() {
       batch_id: batchId,
       due_time: data.due_time,
       sales_name: effectiveSalesName,
+      sales_user_id: effectiveSalesUserId,
       sales_division: salesDivision,
       pic_name: data.pic_name,
       pic_phone: data.pic_phone,
@@ -1501,8 +1555,8 @@ function ReminderSchedulePageInner() {
       ...(chosenBrand ? { internal_sales_id_2: internalSalesId2, brand: chosenBrand } : {}),
     }));
 
-    const { data: dibuat, error } = await supabase.from('reminders')
-      .insert(payloads).select('id, project_name');
+    const { data: dibuat, error } = await cobaIdentitas(async pakaiUuid => await supabase.from('reminders')
+      .insert(pakaiUuid ? payloads : payloads.map(tanpaIdentitas)).select('id, project_name'));
     if (error) {
       notify('error', 'Gagal mengirim request: ' + error.message);
       return;
@@ -1804,9 +1858,10 @@ function ReminderSchedulePageInner() {
     // handler yang sama - tiap tanggal tetap pakai due_date-nya sendiri
     // (hanya due_date milik approveTarget yang bisa di-override via field Tanggal).
     const cleanNotes = cleanRequestNotes(approveTarget.notes);
-    const { error } = await supabase.from('reminders').update({
+    const patchApprove = {
       assigned_to: assignee.username,
       assign_name: assignee.full_name,
+      assign_user_id: assignee.id,
       due_date: approveDate || approveTarget.due_date,
       due_time: approveTime || approveTarget.due_time,
       notes: cleanNotes,
@@ -1815,7 +1870,9 @@ function ReminderSchedulePageInner() {
         progress_start_date:  approveStart   || null,
         progress_target_date: approveTarget2 || null,
       } : {}),
-    }).eq('id', approveTarget.id);
+    };
+    const { error } = await cobaIdentitas(async pakaiUuid => await supabase.from('reminders')
+      .update(pakaiUuid ? patchApprove : tanpaIdentitas(patchApprove)).eq('id', approveTarget.id));
 
     if (error) {
       notify('error', 'Gagal approve: ' + error.message);
@@ -1850,11 +1907,13 @@ function ReminderSchedulePageInner() {
         const patch: Record<string, unknown> = {
           assigned_to: assignee.username,
           assign_name: assignee.full_name,
+          assign_user_id: assignee.id,
           notes: sibNotes,
           routing_status: null,
         };
         if (approveTime) patch.due_time = approveTime;
-        return supabase.from('reminders').update(patch).eq('id', sib.id);
+        return cobaIdentitas(async pakaiUuid => await supabase.from('reminders')
+          .update(pakaiUuid ? patch : tanpaIdentitas(patch)).eq('id', sib.id));
       }));
       const siblingErr = siblingResults.find(res => res.error)?.error ?? null;
       if (siblingErr) notify('error', 'Sebagian tanggal di batch gagal ter-assign: ' + siblingErr.message);
@@ -1990,16 +2049,20 @@ jangan lupa peralatan & Semangat💪🏼
     if (!assignee) return;
     setSupervisorAssignSaving(true);
 
-    const { error } = await supabase.from('reminders').update({
+    const patchSup = {
       assigned_to: assignee.username,
       assign_name: assignee.full_name,
+      assign_user_id: assignee.id,
       routing_status: null,
-    }).eq('id', r.id);
+    };
+    const { error } = await cobaIdentitas(async pakaiUuid => await supabase.from('reminders')
+      .update(pakaiUuid ? patchSup : tanpaIdentitas(patchSup)).eq('id', r.id));
     if (error) { notify('error', 'Gagal assign: ' + error.message); setSupervisorAssignSaving(false); return; }
 
     if (supervisorAssignBatchSiblings.length > 0) {
       const siblingResults: { error: { message: string } | null }[] = await Promise.all(supervisorAssignBatchSiblings.map(sib =>
-        supabase.from('reminders').update({ assigned_to: assignee.username, assign_name: assignee.full_name, routing_status: null }).eq('id', sib.id)
+        cobaIdentitas(async pakaiUuid => await supabase.from('reminders')
+          .update(pakaiUuid ? patchSup : tanpaIdentitas(patchSup)).eq('id', sib.id))
       ));
       const siblingErr = siblingResults.find(res => res.error)?.error ?? null;
       if (siblingErr) notify('error', 'Sebagian tanggal di batch gagal ter-assign: ' + siblingErr.message);

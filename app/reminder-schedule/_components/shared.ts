@@ -71,6 +71,14 @@ export interface Reminder {
   internal_approved_at_2?: string | null; // approve reviewer kedua (internal_sales_id_2)
   rejection_reason?: string | null;    // alasan saat Sales Internal Tolak request
   assigned_supervisor_id?: string | null; // Supervisor tim yang wajib assign ke anggota/diri sendiri (dari product_team_map)
+  /**
+   * Identitas berupa uuid, hidup berdampingan dengan sales_name/assigned_to.
+   * uuid menjawab SIAPA (pencocokan, assign, notifikasi); nama tetap menjawab
+   * TERCATAT SEBAGAI SIAPA. Boleh kosong: baris lama dan nama yang ambigu
+   * sengaja tidak ditebak - lihat sql/identitas-uuid.sql.
+   */
+  sales_user_id?: string | null;
+  assign_user_id?: string | null;
 }
 
 export interface TeamUser {

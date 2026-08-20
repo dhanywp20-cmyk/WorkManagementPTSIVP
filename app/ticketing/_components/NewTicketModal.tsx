@@ -14,6 +14,8 @@ export interface NewTicketForm {
   customer_phone: string;
   sales_name: string;
   sales_division: string;
+  /** Id orang di balik sales_name. Kosong bila diketik manual, bukan dipilih. */
+  sales_user_id?: string | null;
   sn_unit: string;
   product: string;
   issue_case: string;
@@ -510,7 +512,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
               <SalesPicker
                 value={form.sales_name}
                 users={externalSalesUsers}
-                onChange={(name, div) => set({ sales_name: name, sales_division: div })}
+                onChange={(name, div, id) => set({ sales_name: name, sales_division: div, sales_user_id: id })}
                 placeholder="— Pilih Sales External (opsional) —"
                 triggerClassName="rounded-xl px-4 py-3 cursor-pointer"
                 triggerStyle={{ background: "rgba(255,255,255,0.90)", border: "1px solid rgba(0,0,0,0.12)" }}
@@ -532,7 +534,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
               <SalesPicker
                 value={form.sales_name}
                 users={users.filter(u => u.role === "guest")}
-                onChange={(name, div) => set({ sales_name: name, sales_division: div })}
+                onChange={(name, div, id) => set({ sales_name: name, sales_division: div, sales_user_id: id })}
                 triggerClassName="rounded-xl px-4 py-3 cursor-pointer"
                 triggerStyle={{ background: "rgba(255,255,255,0.90)", border: "1px solid rgba(0,0,0,0.12)" }}
               />

@@ -54,6 +54,13 @@ export interface ProjectRequest {
   suggest_tampilan: string;
   keterangan_lain: string;
   assign_name?: string;
+  /**
+   * Identitas berupa uuid, hidup berdampingan dengan sales_name/assign_name.
+   * uuid menjawab SIAPA; nama tetap menjawab TERCATAT SEBAGAI SIAPA. Boleh
+   * kosong - lihat sql/identitas-uuid.sql.
+   */
+  sales_user_id?: string | null;
+  assign_user_id?: string | null;
   ivp_assignee?: string;
   approved_by?: string;
   approved_at?: string;

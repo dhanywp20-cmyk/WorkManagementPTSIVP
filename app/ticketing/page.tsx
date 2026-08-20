@@ -11,6 +11,7 @@ import { logAudit } from "@/lib/audit";
 import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField } from "@/lib/admin-edit";
 import { isAssignablePTSTeam } from "@/lib/teams";
 import { hasFullAccess } from "@/lib/constants";
+import { idDariNama, kutipNilai, tanpaIdentitas, cobaIdentitas } from "@/lib/identitas";
 import { resolveBrandInternals, BRAND_OPTIONS, type Brand } from "@/lib/brand-routing";
 import { compressImage } from "@/lib/image-compress";
 
@@ -436,27 +437,41 @@ function TicketingSystemInner() {
           (selfFirstName && t.sales_name === selfFirstName) ||
           t.sales_name === selfUsername;
 
-        // SAFETY NET: selalu ambil semua ticket milik sendiri dulu via semua cara
+        // Semua ticket milik sendiri, lewat SEMUA jalur kepemilikan sekaligus.
+        //
+        // Jalur pertama sales_user_id adalah yang benar: ia menunjuk orangnya,
+        // bukan tulisan namanya. Empat jalur berikutnya mencocokkan teks, dan
+        // sengaja DIPERTAHANKAN karena baris lama banyak yang uuid-nya masih
+        // kosong - sql/identitas-uuid.sql menolak menebak nama yang ambigu.
+        //
+        // Kelimanya digabung jadi satu .or() alih-alih lima query berurutan:
+        // hasilnya sama persis, tapi satu perjalanan ke basis data, bukan lima.
+        //
+        // Jalur nama dan jalur uuid disimpan TERPISAH lalu digabung, bukan
+        // digabung lalu dipisah lagi. Memisah ulang dengan split(",") akan
+        // mencacah nama yang memuat koma - "Rio, Putra" jadi dua potongan
+        // sintaks rusak, dan seluruh filternya ditolak.
+        const klausaNama = [
+          `created_by.eq.${kutipNilai(selfUsername)}`,
+          selfFullName ? `sales_name.eq.${kutipNilai(selfFullName)}` : null,
+          (selfFirstName && selfFirstName !== selfFullName)
+            ? `sales_name.eq.${kutipNilai(selfFirstName)}` : null,
+          `sales_name.eq.${kutipNilai(selfUsername)}`,
+        ].filter(Boolean) as string[];
+
+        // Jalur uuid dilepas kalau basis datanya belum punya kolomnya - lihat
+        // catatan di lib/identitas.ts. Tanpa itu, satu deploy yang mendahului
+        // SQL-nya akan membuat list ticket Sales kosong sama sekali.
+        const klausaMilik = [`sales_user_id.eq.${resolvedUser.id}`, ...klausaNama].join(",");
+        const klausaMilikTanpaUuid = klausaNama.join(",");
+
         const ownBase: Ticket[] = [];
         const addOwn = (t: Ticket) => { if (!ownBase.find(x => x.id === t.id)) ownBase.push(t); };
-
-        // by created_by
-        const { data: byCreator } = await supabase.from("tickets").select("*, activity_logs(*)").eq("created_by", selfUsername).order("created_at", { ascending: false });
-        (byCreator ?? []).forEach(addOwn);
-
-        // by sales_name = full_name
-        if (selfFullName) {
-          const { data: byFullName } = await supabase.from("tickets").select("*, activity_logs(*)").eq("sales_name", selfFullName).order("created_at", { ascending: false });
-          (byFullName ?? []).forEach(addOwn);
-        }
-        // by sales_name = first name
-        if (selfFirstName && selfFirstName !== selfFullName) {
-          const { data: byFirstName } = await supabase.from("tickets").select("*, activity_logs(*)").eq("sales_name", selfFirstName).order("created_at", { ascending: false });
-          (byFirstName ?? []).forEach(addOwn);
-        }
-        // by sales_name = username
-        const { data: byUsername } = await supabase.from("tickets").select("*, activity_logs(*)").eq("sales_name", selfUsername).order("created_at", { ascending: false });
-        (byUsername ?? []).forEach(addOwn);
+        const { data: milikSaya } = await cobaIdentitas(async pakaiUuid => await supabase.from("tickets")
+          .select("*, activity_logs(*)")
+          .or(pakaiUuid ? klausaMilik : klausaMilikTanpaUuid)
+          .order("created_at", { ascending: false }));
+        (milikSaya ?? []).forEach(addOwn);
 
         // Sales Internal (IVP/MVI): lihat ticket dari semua divisi yang dia handle
         // (division_ivp_mappings) - ini yang mewujudkan "CC ke list ticket" utk
@@ -770,6 +785,18 @@ function TicketingSystemInner() {
         current_team: "Team PTS IVP",
         services_status: null,
         created_by: currentUser?.username || null,
+        // Identitas: uuid menjawab SIAPA, nama menjawab tercatat sebagai siapa.
+        // Keduanya ditulis bersamaan - baris baru yang lahir hanya berbekal nama
+        // akan mengulang cacat data lama yang sedang dibereskan.
+        // Guest membuat ticket untuk dirinya sendiri, jadi id-nya sudah pasti.
+        // Selain itu id datang dari SalesPicker; kalau namanya diketik manual
+        // dan tidak bisa dipastikan milik siapa, dibiarkan kosong - bukan ditebak.
+        sales_user_id: guestSBU
+          ? (newTicket.sales_user_id ?? idDariNama(users, newTicket.sales_name))
+          : (currentUser?.role === "guest"
+              ? (currentUser.id ?? null)
+              : (newTicket.sales_user_id ?? idDariNama(users, newTicket.sales_name))),
+        assign_user_id: idDariNama(users, resolvedAssignName),
         photo_url: photoUrl || null,
         photo_name: photoName || null,
         reminder_id: (newTicket as any).reminder_id || null,
@@ -786,7 +813,7 @@ function TicketingSystemInner() {
         ticketData.routing_status = "supervisor_assign";
         ticketData.assigned_supervisor_id = routeSup[1];
       }
-      const { data: insertedTicket, error } = await supabase.from("tickets").insert([ticketData]).select("id").single();
+      const { data: insertedTicket, error } = await cobaIdentitas(async pakaiUuid => await supabase.from("tickets").insert([pakaiUuid ? ticketData : tanpaIdentitas(ticketData)]).select("id").single());
       if (error) throw error;
 
       // Catat pembuatan ke audit trail supaya riwayat ticket punya pangkal.
@@ -933,7 +960,7 @@ function TicketingSystemInner() {
       }
 
       setNewTicket({
-        project_name: "", address: "", customer_phone: "", sales_name: "", sales_division: "", sn_unit: "", product: "", issue_case: "", description: "", assign_name: "", date: getJakartaDateString(), status: "Pending", current_team: "Team PTS IVP", photo: null, reminder_id: null, brand: undefined
+        project_name: "", address: "", customer_phone: "", sales_name: "", sales_division: "", sales_user_id: null, sn_unit: "", product: "", issue_case: "", description: "", assign_name: "", date: getJakartaDateString(), status: "Pending", current_team: "Team PTS IVP", photo: null, reminder_id: null, brand: undefined
       });
       setShowNewTicket(false);
       await fetchData();

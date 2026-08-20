@@ -88,6 +88,20 @@ Backfill-nya sengaja menolak menebak: baris hanya dipetakan bila namanya
 cocok persis dengan TEPAT SATU akun. Nama yang dimiliki dua orang dibiarkan
 kosong dan tetap bekerja lewat pencocokan nama.
 
+**Urutan menjalankannya tidak mengikat.** Aplikasi mencoba menulis kolom uuid,
+dan kalau basis datanya belum punya kolom itu, ia mengulang tanpa kolom uuid
+(`cobaIdentitas` di `lib/identitas.ts`). Jadi men-deploy kode lebih dulu tidak
+membuat pembuatan ticket/jadwal/request gagal - fiturnya hanya belum aktif
+sampai SQL-nya dijalankan. Jalur mundur itu boleh dihapus setelah SQL-nya
+dipastikan sudah jalan.
+
+Yang sudah menulis uuid: Ticketing, Request Schedule (termasuk form_reviews),
+dan Request Design Project. Yang sengaja BELUM: `progress_projects` /
+`progress_locations`. Penautan Reminder Konfigurasi & Training ke Project
+Progress adalah jalur yang dipakai untuk mencatat nama installer remote, dan
+tidak disentuh; kolom uuid-nya sudah ada dan sudah di-backfill, tinggal
+menunggu keputusan untuk ikut ditulis.
+
 ### Skema & fitur - satu kali jalan, sudah diterapkan
 
 Kelompok Project Progress: `project-progress.sql` (dasar), lalu

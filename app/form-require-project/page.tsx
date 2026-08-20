@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { setSession, clearSession, getSession } from '@/lib/auth';
 import { notifyProjectStatusChange, createNotification } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
+import { idDariNama, tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { compressImage } from '@/lib/image-compress';
 import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState, ListEmptyState, AuditTrailPanel, FlowSteps, StatCard, ModalPortal } from '@/components/shared';
@@ -135,6 +136,11 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [downloadingPackage, setDownloadingPackage] = useState(false);
   const [assignModal, setAssignModal] = useState<{ open: boolean; req: ProjectRequest | null }>({ open: false, req: null });
+  // Approve Sales Internal ditampilkan dulu isinya, tidak langsung jalan begitu
+  // tombolnya ditekan - mengikuti Request Schedule. Approve adalah keputusan,
+  // dan keputusan yang tidak bisa dibaca dulu gampang salah tekan.
+  const [internalApproveTarget, setInternalApproveTarget] = useState<ProjectRequest | null>(null);
+  const [internalApproveSaving, setInternalApproveSaving] = useState(false);
   // Pop-up notif tiket aktif (pending/in_progress) saat masuk platform
   const [ticketPopupShown, setTicketPopupShown] = useState(false);
   const [showTicketPopup, setShowTicketPopup] = useState(false);
@@ -142,6 +148,8 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const [editDueDate, setEditDueDate] = useState('');
   const [editFormData, setEditFormData] = useState({
     project_name: '', room_name: '', project_location: '', sales_name: '', sales_division: '',
+    // uuid Sales, berdampingan dengan namanya - lihat lib/identitas.ts.
+    sales_user_id: null as string | null,
     kebutuhan: [] as string[], kebutuhan_other: '',
     solution_product: [] as string[], solution_other: '',
     layout_signage: [] as string[], jaringan_cms: [] as string[],
@@ -523,7 +531,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     <>
       {canInternalApproveProject(req) && (
         <>
-          <button aria-label="Approve & Teruskan ke Admin" onClick={() => handleInternalApproveProject(req)} title="Approve & Teruskan ke Admin"
+          <button aria-label="Approve & Teruskan ke Admin" onClick={() => setInternalApproveTarget(req)} title="Approve & Teruskan ke Admin"
             className="w-7 h-7 bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white border border-amber-200 rounded-lg flex items-center justify-center transition-all">
             <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
           </button>
@@ -726,6 +734,14 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         sales_division: (!isPTS
           ? ((myIsInternalSales && form.sales_name.trim()) ? (form.sales_division?.trim() || '') : (currentUser.sales_division || form.sales_division || '').trim())
           : (form.sales_division?.trim() || '')),
+        // uuid berdampingan dengan sales_name, mengikuti aturan yang sama persis
+        // seperti barisnya di atas. Saat Sales Internal mengatasnamakan Sales
+        // External (SBU), yang dicatat adalah uuid External itu; kalau namanya
+        // diketik dan tidak bisa dipastikan milik siapa, dibiarkan kosong.
+        // requester_id di bawah tetap jejak siapa yang menekan tombolnya.
+        sales_user_id: (!isPTS
+          ? ((myIsInternalSales && form.sales_name.trim()) ? idDariNama(salesGuestUsers, form.sales_name) : (currentUser.id ?? null))
+          : idDariNama(salesGuestUsers, form.sales_name)),
         kebutuhan: form.kebutuhan, kebutuhan_other: form.kebutuhan_other.trim(),
         solution_product: form.solution_product, solution_other: form.solution_other.trim(),
         layout_signage: form.layout_signage, jaringan_cms: form.jaringan_cms,
@@ -763,14 +779,14 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         brand_middleware_pic_id: form.brand_middleware_pic_id || null,
         brand_middleware_pic_name: form.brand_middleware_pic_name || null,
       };
-      let { data, error } = await supabase.from('project_requests')
-        .insert([{ ...payload, ...brandRuangan1 }]).select().single();
+      let { data, error } = await cobaIdentitas(async pakaiUuid => await supabase.from('project_requests')
+        .insert([{ ...(pakaiUuid ? payload : tanpaIdentitas(payload)), ...brandRuangan1 }]).select().single());
       if (error) {
         // PostgREST menolak SELURUH insert kalau satu kolom tak dikenal, bukan
         // cuma kolom itu. Tanpa jalur mundur ini, submit gagal total di basis
         // data yang migrasinya belum dijalankan.
-        ({ data, error } = await supabase.from('project_requests')
-          .insert([payload]).select().single());
+        ({ data, error } = await cobaIdentitas(async pakaiUuid => await supabase.from('project_requests')
+          .insert([pakaiUuid ? payload : tanpaIdentitas(payload)]).select().single()));
       }
       if (error) { notify('error', 'Gagal submit form: ' + error.message); setSubmitting(false); return; }
       if (data?.id) {
@@ -1016,6 +1032,16 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
   // Handler: Sales Internal approve & teruskan ke Admin
   const handleInternalApproveProject = async (req: ProjectRequest) => {
+    setInternalApproveSaving(true);
+    try {
+      await jalankanInternalApprove(req);
+    } finally {
+      setInternalApproveSaving(false);
+      setInternalApproveTarget(null);
+    }
+  };
+
+  const jalankanInternalApprove = async (req: ProjectRequest) => {
     const now = new Date().toISOString();
     // Brand BOTH = 2 reviewer (MVI + IVP), WAJIB keduanya approve baru lanjut ke Admin.
     const isSecondReviewer = !!req.internal_sales_id_2 && req.internal_sales_id_2 === currentUser.id;
@@ -1148,7 +1174,10 @@ Hubungi Admin untuk info lebih lanjut.
     setEditFormData({
       project_name: selectedRequest.project_name || '', room_name: selectedRequest.room_name || '',
       project_location: selectedRequest.project_location || '',
-      sales_name: selectedRequest.sales_name || '', sales_division: selectedRequest.sales_division || '', kebutuhan: selectedRequest.kebutuhan || [],
+      sales_name: selectedRequest.sales_name || '', sales_division: selectedRequest.sales_division || '',
+      // uuid ikut dibawa masuk supaya menyimpan tanpa mengganti Sales tidak
+      // menghapus identitas yang sudah tercatat.
+      sales_user_id: selectedRequest.sales_user_id ?? null, kebutuhan: selectedRequest.kebutuhan || [],
       kebutuhan_other: selectedRequest.kebutuhan_other || '', solution_product: selectedRequest.solution_product || [],
       solution_other: selectedRequest.solution_other || '', layout_signage: selectedRequest.layout_signage || [],
       jaringan_cms: selectedRequest.jaringan_cms || [], jumlah_input: selectedRequest.jumlah_input || '',
@@ -1199,10 +1228,11 @@ Hubungi Admin untuk info lebih lanjut.
         // Ke Supervisor: dikembalikan ke tahap supervisor_assign supaya
         // Supervisor itu yang menentukan pelaksananya - sama seperti alur
         // normal, bukan jalur pintas yang melompati tahapannya.
-        ? { assign_name: null, assigned_supervisor_id: orang.id, routing_status: 'supervisor_assign', status: 'approved' }
-        : { assign_name: orang.full_name, assigned_supervisor_id: null, routing_status: null, status: 'approved' };
+        ? { assign_name: null, assign_user_id: null, assigned_supervisor_id: orang.id, routing_status: 'supervisor_assign', status: 'approved' }
+        : { assign_name: orang.full_name, assign_user_id: orang.id, assigned_supervisor_id: null, routing_status: null, status: 'approved' };
 
-      const { error } = await supabase.from('project_requests').update(payload).eq('id', rerouteTarget.id);
+      const { error } = await cobaIdentitas(async pakaiUuid => await supabase.from('project_requests')
+        .update(pakaiUuid ? payload : tanpaIdentitas(payload)).eq('id', rerouteTarget.id));
       if (error) throw error;
 
       void logAudit({
@@ -1251,7 +1281,8 @@ Hubungi Admin untuk info lebih lanjut.
       selectedRequest as unknown as Record<string, unknown>,
       updateData as unknown as Record<string, unknown>,
     );
-    const { error } = await supabase.from('project_requests').update(updateData).eq('id', selectedRequest.id);
+    const { error } = await cobaIdentitas(async pakaiUuid => await supabase.from('project_requests')
+      .update(pakaiUuid ? updateData : tanpaIdentitas(updateData)).eq('id', selectedRequest.id));
     if (error) { notify('error', 'Gagal menyimpan perubahan.'); return; }
 
     // Jejak siapa mengubah apa. Tanpa ini, satu-satunya bukti perubahan adalah
@@ -1970,6 +2001,58 @@ Hubungi Admin untuk info lebih lanjut.
       )}
 
       {/* Reject Modal — muncul di atas detail modal (lihat lib/z-index.ts) */}
+      {/* ── KONFIRMASI APPROVE Sales Internal (detail dulu, jangan instan) ──
+          Bentuk & warnanya sengaja sama persis dengan popup senama di Request
+          Schedule: satu alur kerja, satu bahasa visual. */}
+      {internalApproveTarget && (
+      <ModalPortal>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}
+          onClick={e => { if (e.target === e.currentTarget && !internalApproveSaving) setInternalApproveTarget(null); }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+            style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(245,158,11,0.4)' }}>
+            <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
+              <h3 className="text-lg font-bold text-white">✅ Approve Request?</h3>
+              <p className="text-amber-100/90 text-xs mt-0.5">Teruskan ke Admin/Manager untuk di-assign</p>
+            </div>
+            <div className="p-6 space-y-3">
+              <div className="rounded-xl p-3 space-y-1.5 text-sm" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
+                <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Project</span><span className="font-bold text-slate-800 text-right">{internalApproveTarget.project_name}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Ruangan</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.room_name || '-'}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Sales</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.sales_name}{internalApproveTarget.sales_division ? ` · ${internalApproveTarget.sales_division}` : ''}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Requester</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.requester_name}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Lokasi</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.project_location || '-'}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Kebutuhan</span><span className="font-semibold text-slate-700 text-right">{(internalApproveTarget.kebutuhan ?? []).join(', ') || '-'}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Diajukan</span><span className="font-semibold text-slate-700 text-right">{formatDate(internalApproveTarget.created_at)}</span></div>
+              </div>
+
+              {/* Brand BOTH: dua reviewer, dan approve ini belum tentu yang terakhir. */}
+              {internalApproveTarget.internal_sales_id_2 && (
+                <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
+                  <span className="text-base flex-shrink-0">🤝</span>
+                  <p className="text-xs text-indigo-700 leading-relaxed">
+                    Request ini <strong>Kedua Brand</strong> — perlu approve dari dua Sales Internal.
+                    Kalau yang satunya belum, request menunggu dia dulu sebelum diteruskan ke Admin.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button onClick={() => setInternalApproveTarget(null)} disabled={internalApproveSaving}
+                  className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
+                  style={{ background: 'rgba(255,255,255,0.95)', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>Batal</button>
+                <button onClick={() => handleInternalApproveProject(internalApproveTarget)} disabled={internalApproveSaving}
+                  className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
+                  style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
+                  {internalApproveSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                  ✅ Ya, Approve &amp; Teruskan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ModalPortal>
+      )}
+
       {rejectModal.open && rejectModal.req && (
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
@@ -2204,7 +2287,7 @@ Hubungi Admin untuk info lebih lanjut.
                 {/* Sales Internal: wajib review dulu sebelum Admin bisa approve */}
                 {canInternalApproveProject(selectedRequest) && (
                   <>
-                    <button onClick={() => handleInternalApproveProject(selectedRequest)}
+                    <button onClick={() => setInternalApproveTarget(selectedRequest)}
                       className="bg-amber-500 hover:bg-amber-400 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
                       <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                       Approve & Teruskan ke Admin
@@ -3134,7 +3217,7 @@ Hubungi Admin untuk info lebih lanjut.
                       <SalesPicker
                         value={editFormData.sales_name}
                         users={salesGuestUsers}
-                        onChange={(name, div) => setEditFormData(p => ({ ...p, sales_name: name, sales_division: div || p.sales_division }))}
+                        onChange={(name, div, userId) => setEditFormData(p => ({ ...p, sales_name: name, sales_division: div || p.sales_division, sales_user_id: userId }))}
                         triggerClassName="border-2 border-gray-200 rounded-xl px-3 py-2.5 bg-white"
                       />
                     </div>
