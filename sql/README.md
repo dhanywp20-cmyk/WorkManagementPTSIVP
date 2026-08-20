@@ -77,6 +77,17 @@ diambil orang luar - bukan apa yang seharusnya.
 | `rls-lingkup-project.sql` | Menyiapkan RLS untuk tickets, reminders, project_requests, notifications. Simulasi dulu, policy masih komentar |
 | `rls-project-progress.sql` | Menyalakan RLS berbasis klaim JWT. Jalankan HANYA setelah `/api/auth/db-token-check` menjawab siap |
 
+### Identitas UUID
+
+`identitas-uuid.sql` menambahkan kolom UUID di samping kolom nama pada
+tickets, reminders, project_requests, form_reviews, dan progress_*. UUID
+menjawab *siapa* (pencocokan, assign, notifikasi, RLS); nama tetap ada dan
+menjawab *tercatat sebagai siapa* (tampilan, riwayat, cetak).
+
+Backfill-nya sengaja menolak menebak: baris hanya dipetakan bila namanya
+cocok persis dengan TEPAT SATU akun. Nama yang dimiliki dua orang dibiarkan
+kosong dan tetap bekerja lewat pencocokan nama.
+
 ### Skema & fitur - satu kali jalan, sudah diterapkan
 
 Kelompok Project Progress: `project-progress.sql` (dasar), lalu
