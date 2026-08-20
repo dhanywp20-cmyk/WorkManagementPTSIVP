@@ -7,21 +7,15 @@ export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/auth/set-credential - memasang password PERTAMA untuk akun baru.
+ * Hashing dikerjakan di server supaya browser tidak menulis ke tabel kredensial.
  *
- * Hashing dikerjakan di server lalu disimpan ke user_credentials lewat admin
- * client, supaya browser tidak pernah menulis langsung ke tabel kredensial.
- *
- * Endpoint ini harus tetap bisa dipanggil TANPA sesi, karena dipakai form
- * registrasi mandiri di halaman login. Konsekuensinya harus dijaga ketat:
- * tabel users terbaca anon, jadi siapa pun bisa mendaftar id akun mana saja
- * dan - kalau syaratnya hanya "belum punya kredensial" - memasang password
- * pada akun orang lain yang kebetulan belum pernah login.
- *
- * Karena itu jalur tanpa sesi dibatasi pada akun yang bentuknya memang hasil
- * registrasi yang belum disetujui: role guest dan team_type "Pending
- * Approval". Bila kolom created_at tersedia, umurnya juga dibatasi. Admin yang
- * membuat akun dari panel tetap boleh memasang password apa pun bentuk akunnya
- * karena sesinya diverifikasi.
+ * Endpoint ini harus tetap bisa dipanggil TANPA sesi karena dipakai form
+ * registrasi mandiri. Tabel users terbaca anon, jadi syarat "belum punya
+ * kredensial" saja tidak cukup: id akun mana pun bisa dipungut lalu dipasangi
+ * password. Jalur tanpa sesi karena itu dibatasi pada akun berbentuk
+ * pendaftaran yang belum disetujui - role guest, team_type "Pending Approval",
+ * dan masih baru bila created_at tersedia. Admin yang sesinya diverifikasi
+ * bebas dari batasan itu.
  *
  * Mengganti password akun yang sudah punya kredensial tetap hanya lewat
  * change-password / verify-otp.

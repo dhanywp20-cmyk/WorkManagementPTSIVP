@@ -36,8 +36,8 @@ export function clearSession(): void {
   sessionStorage.removeItem(SS_USER);
   sessionStorage.removeItem(SS_TIME);
   // Fire-and-forget: invalidate cookie di server
-  // Token PostgREST ikut dibuang - kalau tertinggal, tab yang sama masih
-  // memegang identitas user sebelumnya.
+  // Token PostgREST ikut dibuang; kalau tertinggal, tab yang sama masih
+  // memegang identitas user yang baru saja keluar.
   setDbToken(null);
   fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
 }

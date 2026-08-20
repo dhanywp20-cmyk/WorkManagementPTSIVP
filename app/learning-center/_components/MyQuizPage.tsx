@@ -31,10 +31,10 @@ function QuizPlayer({ session, user, attempt, onDone }: {
     const loadAnswers = async () => {
       const { data } = await supabase.from('lc_answers').select('*').eq('attempt_id', attempt.id);
       const map: Record<string, string> = {};
-      // Essay menyimpan teksnya di essay_text (answer selalu '' utk baris essay);
-      // ABCD menyimpan pilihannya di answer (essay_text selalu null). Membaca
-      // .answer saja utk KEDUANYA membuat quiz essay yang dilanjutkan ("Lanjutkan")
-      // selalu tampil kosong walau jawabannya sudah tersimpan sebelumnya.
+      // Essay menyimpan teksnya di essay_text (answer selalu '' untuk baris
+      // essay); ABCD menyimpan pilihannya di answer (essay_text selalu null).
+      // Membaca .answer saja untuk keduanya membuat quiz essay yang dilanjutkan
+      // tampil kosong walau jawabannya sudah tersimpan.
       (data ?? []).forEach((a: any) => { map[a.question_id] = a.essay_text || a.answer; });
       setSavedAnswers(map); setAnswers(map);
     };

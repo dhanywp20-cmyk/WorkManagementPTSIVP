@@ -76,7 +76,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
   const isSalesSup = ['guest','sales'].includes(currentUser.role?.toLowerCase() ?? '') &&
     ['Supervisor','Manager','Deputy General Manager','General Manager','Direktur'].includes(currentUser.jabatan ?? '');
 
-  /** Sales biasa = guest/sales yang BUKAN supervisor. Inilah yang dulu terlewat. */
+  /** Sales biasa = guest/sales yang BUKAN supervisor. */
   const isSalesBiasa = ['guest','sales'].includes(currentUser.role?.toLowerCase() ?? '') && !isSalesSup;
 
   /**
@@ -199,13 +199,10 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
   // Main search
   const doSearch = useCallback(async (q: string) => {
-    /* Lingkup dihitung DI SINI dan ditunggu, bukan disimpan di state.
-       Versi sebelumnya memuatnya lewat useEffect lalu memasang penjaga
-       `if (!lingkup) return query` - artinya selama lingkup belum tiba, query
-       berangkat TANPA filter sama sekali. Mengetik sedetik setelah kotak
-       pencarian dibuka sudah cukup untuk memunculkan seluruh project milik
-       siapa pun. Penjaga yang gagal ke arah "terbuka" lebih berbahaya daripada
-       tidak ada penjaga, karena ia terlihat seolah sudah aman. */
+    /* Lingkup dihitung DI SINI dan DITUNGGU, jangan disimpan di state lalu
+       dijaga dengan `if (!lingkup) return query`: penjaga seperti itu gagal ke
+       arah terbuka, sehingga query yang berangkat sebelum lingkup tiba tidak
+       tersaring sama sekali - dan tetap terlihat seolah sudah aman. */
     const lingkup = await hitungLingkupProject(currentUser as never);
     if (!q.trim()) { setResults([]); return; }
     setLoading(true);
@@ -431,10 +428,8 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
         .select('id, report_date, user_name, sales_division, reminder_notes')
         .or(`user_name.ilike.%${q}%,reminder_notes.ilike.%${q}%,sales_division.ilike.%${q}%`)
         .order('report_date', { ascending: false }).limit(10);
-      // Dulu hanya sales BIASA yang dibatasi di sini, sehingga Sales Supervisor
-      // - dan siapa pun di luar dua kategori itu - membaca laporan harian
-      // seluruh divisi. Sekarang batasnya sama dengan modul lain: siapa pun
-      // yang bukan orang dalam PTS dibatasi ke lingkupnya.
+      // Batasnya sama dengan modul lain: siapa pun yang bukan orang dalam PTS
+      // dibatasi ke lingkupnya, termasuk Sales Supervisor.
       if (!tanpaBatas) qd = batasiLingkup(lingkup, qd, ['user_name']);
       const { data } = await qd;
       (data ?? []).forEach((d: any) => res.push({

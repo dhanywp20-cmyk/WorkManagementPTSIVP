@@ -6,22 +6,14 @@ export const dynamic = 'force-dynamic';
 
 /**
  * /api/cron/digest - ringkasan tenggat harian per orang, lewat WhatsApp.
- *
- * Platform ini penuh hal yang punya tenggat: target Project Progress, jadwal
- * reminder, garansi yang akan habis. Tapi sampai berkas ini ada, satu-satunya
- * pekerjaan terjadwal adalah eskalasi tiket - semua tenggat lain menunggu
- * seseorang kebetulan membuka halaman yang tepat pada hari yang tepat.
- *
- * Kiriman ini mengubah platform dari menunggu dibuka menjadi mengingatkan
- * lebih dulu.
+ * Mencakup target Project Progress, jadwal reminder, dan garansi yang habis.
  *
  * Prinsip yang dijaga:
  *   - Satu pesan per orang, bukan satu per item. Sepuluh notifikasi terpisah
  *     berakhir diabaikan; satu ringkasan dibaca.
  *   - Tidak mengirim apa pun kepada orang yang tidak punya tenggat. Pesan
  *     "tidak ada apa-apa hari ini" melatih orang mengabaikan pengirimnya.
- *   - Hanya melihat ke DEPAN sampai H+3 dan ke belakang untuk yang lewat.
- *     Tenggat bulan depan bukan urusan hari ini.
+ *   - Hanya melihat ke depan sampai H+3, dan ke belakang untuk yang lewat.
  */
 
 /** Berapa hari ke depan yang dianggap "mendekat". */

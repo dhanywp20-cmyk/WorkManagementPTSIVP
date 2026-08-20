@@ -436,8 +436,8 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     const reqId = selectedRequest.id;
     activeRequestIdRef.current = reqId;
     const channelName = `detail_chat:${reqId}_${Date.now()}`;
-    // EGRESS FIX: debounce fetchAttachments - upload beberapa file sekaligus
-    // (mis. 6 file) sebelumnya = 6x refetch attachment terpisah.
+    // fetchAttachments di-debounce: tanpa itu, mengunggah enam berkas sekaligus
+    // memicu enam kali penarikan ulang daftar lampiran.
     let attachDebounce: ReturnType<typeof setTimeout> | null = null;
     const channel = supabase.channel(channelName)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'project_messages', filter: `request_id=eq.${reqId}` },
@@ -747,11 +747,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       };
 
       // Brand Ruangan 1 dipisah dari payload utama supaya bisa dilepas kalau
-      // kolomnya belum ada. Kolom-kolom ini memang belum pernah dibuat: ruangan
-      // ke-2 dst ikut tersimpan sendirinya di `rooms` (JSONB), sementara
-      // Ruangan 1 disimpan di kolom tabel - dan kolom brand-nya terlewat. Jadi
-      // selama ini memilih Brand Display di Ruangan 1 tidak berefek apa pun.
-      // Lihat sql/design-project-brand-display-2.sql.
+      // kolomnya belum ada. Ruangan ke-2 dst tersimpan di `rooms` (JSONB),
+      // sementara Ruangan 1 memakai kolom tabel tersendiri. Lihat
+      // sql/design-project-brand-display-2.sql.
       const brandRuangan1 = {
         brand_display: form.brand_display || null,
         brand_display_pic_id: form.brand_display_pic_id || null,
@@ -774,10 +772,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       }
       if (error) { notify('error', 'Gagal submit form: ' + error.message); setSubmitting(false); return; }
       if (data?.id) {
-        // Catat pembuatan ke audit trail. Sebelumnya HANYA approve/reject/
-        // status_change yang dicatat, sehingga riwayat request tidak punya
-        // pangkal. Saat Sales Internal mengajukan atas nama Sales External
-        // (SBU), keduanya disebut supaya jelas siapa penginput sebenarnya.
+        // Catat pembuatan ke audit trail supaya riwayat request punya pangkal.
+        // Saat Sales Internal mengajukan atas nama Sales External (SBU),
+        // keduanya disebut supaya jelas siapa penginput sebenarnya.
         {
           const atasNama = (payload.sales_name ?? '').trim();
           const bedaPenginput = atasNama && atasNama !== currentUser.full_name;
@@ -1264,8 +1261,7 @@ Hubungi Admin untuk info lebih lanjut.
       notes: perubahanReq.length ? ringkasPerubahan(perubahanReq) : 'Disimpan tanpa perubahan',
     });
 
-    // Kabari yang mengerjakan. Selama ini perubahan detail sama sekali tidak
-    // diberitahukan - orang bisa berangkat memakai data lama.
+    // Kabari yang mengerjakan: tanpa ini orang bisa berangkat memakai data lama.
     const penangani = String(selectedRequest.assign_name ?? '');
     if (perubahanReq.length > 0 && penangani && penangani !== currentUser.full_name) {
       try {

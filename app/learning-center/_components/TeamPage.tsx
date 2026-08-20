@@ -69,9 +69,9 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
       const adaAi     = a.ai_score !== null && a.ai_score !== undefined;
       if (a.ai_feedback) feedbackMap[a.question_id] = a.ai_feedback;
       if (adaAi) aiScoreMap[a.question_id] = Number(a.ai_score);
-      // Nilai admin selalu menang. Kalau belum ada, skor AI yang tersimpan dari
-      // sesi sebelumnya dipakai sebagai isian awal - sekaligus menandakan soal
-      // ini tidak perlu dinilai AI ulang.
+      // Nilai admin selalu menang. Kalau belum ada, skor AI yang tersimpan
+      // dipakai sebagai isian awal sekaligus penanda bahwa soal ini tidak perlu
+      // dinilai AI ulang.
       if (adaManual)      scoreMap[a.question_id] = String(a.manual_score);
       else if (adaAi)     scoreMap[a.question_id] = String(a.ai_score);
     });

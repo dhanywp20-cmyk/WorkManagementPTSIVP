@@ -478,9 +478,9 @@ export function projectHealth(
 }
 
 /**
- * Kesehatan 1 lokasi - gabungan status kerja (Blocked/Done/In Progress) dan
- * status jadwal (overdue/due_soon) jadi SATU badge, menggantikan dua badge
- * terpisah yang sebelumnya harus dibaca berdampingan.
+ * Kesehatan 1 lokasi: status kerja (Blocked/Done/In Progress) dan status jadwal
+ * (overdue/due_soon) digabung jadi SATU badge, bukan dua yang harus dibaca
+ * berdampingan.
  */
 export function locationHealth(location: ProgressLocationLite): HealthInfo {
   if (location.status === 'blocked') {
@@ -700,9 +700,8 @@ export type Visibility =
 export function resolveVisibility(
   role: string | null | undefined, fullName: string | null | undefined,
 ): Visibility {
-  // Catatan: role 'team' polos (bukan cuma admin/superadmin) SUDAH dapat
-  // scope 'all' sejak dulu - beda dengan canEditProjectProgress (yang butuh
-  // Full Access untuk EDIT). Di sini hanya soal visibilitas BACA data.
+  // role 'team' polos ikut dapat scope 'all'; ini hanya soal visibilitas BACA.
+  // Hak EDIT diatur terpisah oleh canEditProjectProgress, yang butuh Full Access.
   const r = (role ?? '').toLowerCase();
   if (['admin', 'superadmin', 'team'].includes(r)) return { scope: 'all' };
   return { scope: 'own_sales', salesName: (fullName ?? '').trim() };

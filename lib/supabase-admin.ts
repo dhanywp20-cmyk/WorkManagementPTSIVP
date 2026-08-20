@@ -3,25 +3,14 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 /**
  * lib/supabase-admin.ts - Supabase client KHUSUS server (route handler).
  *
- * Memakai SERVICE_ROLE key bila tersedia  bypass RLS untuk operasi tepercaya
- * di server (baca hash password, kelola session, dll) tanpa membuka tabel
- * sensitif ke anon key yang ikut ter-bundle di browser.
+ * Memakai SERVICE_ROLE key untuk operasi tepercaya di server: baca hash
+ * password, kelola session, kelola akun. Tanpa key itu client jatuh ke ANON
+ * key, dan route yang mengira dirinya melewati RLS sebenarnya berjalan sebagai
+ * anon tanpa satu pun galat. Keadaan itu dicatat ke log server, dan
+ * REQUIRE_SERVICE_ROLE=1 mengubahnya jadi galat keras - pasang setelah key
+ * terkonfigurasi supaya deploy berikutnya yang kehilangan key langsung gagal.
  *
- * Bila SUPABASE_SERVICE_ROLE_KEY belum di-set, client jatuh ke ANON key. Itu
- * bukan sekadar "kurang optimal": route yang mengira dirinya melewati RLS
- * sebenarnya berjalan sebagai anon, dan turunnya hak itu terjadi TANPA satu
- * pun galat. Maka:
- *
- *   1. Keadaan itu dicatat sekali ke log server (terbaca di Vercel), bukan
- *      didiamkan.
- *   2. REQUIRE_SERVICE_ROLE=1 mengubahnya jadi galat keras. Dipasang setelah
- *      key benar-benar terkonfigurasi, supaya key yang hilang di deploy
- *      berikutnya ketahuan seketika, bukan diam-diam turun jadi anon.
- *
- * Bawaannya tetap fallback agar deployment yang sedang berjalan tidak mati
- * mendadak hanya karena berkas ini berubah.
- *
- * JANGAN diimpor dari komponen klien - hanya untuk kode server.
+ * JANGAN diimpor dari komponen klien.
  */
 let cached: SupabaseClient | null = null;
 let sudahDiperingatkan = false;

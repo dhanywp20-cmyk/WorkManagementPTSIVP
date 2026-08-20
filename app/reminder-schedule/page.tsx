@@ -359,8 +359,8 @@ function ReminderSchedulePageInner() {
       supabase.from('reminders').select('*').eq('internal_sales_id', activeUser.id).eq('routing_status', 'internal_review').order('created_at', { ascending: false }),
       // Reviewer KEDUA (brand IVP saat "Kedua Brand") - juga perlu lihat & approve.
       supabase.from('reminders').select('*').eq('internal_sales_id_2', activeUser.id).eq('routing_status', 'internal_review').order('created_at', { ascending: false }),
-      // Item yg SUDAH dia approve sbg Sales Internal - tetap tampil supaya bisa
-      // dilacak (sebelumnya hilang begitu routing_status pindah ke admin_review).
+      // Item yang SUDAH dia approve sebagai Sales Internal - tetap tampil
+      // supaya bisa dilacak walau routing_status sudah pindah ke admin_review.
       supabase.from('reminders').select('*').eq('internal_approved_by', activeUser.id).order('created_at', { ascending: false }),
     ]);
     const combined = [...(bySales.data ?? []), ...(byCreator.data ?? []), ...(awaitingMyReview.data ?? []), ...(awaitingMyReview2.data ?? []), ...(approvedByMe.data ?? [])];
@@ -573,9 +573,8 @@ function ReminderSchedulePageInner() {
         }
       }
 
-      // Beri tahu yang menangani. Sebelumnya WA HANYA dikirim saat reminder
-      // dibuat, jadi koreksi tanggal atau alamat yang sudah terlanjur salah
-      // tidak pernah sampai ke orang yang akan berangkat ke lokasi.
+      // Beri tahu yang menangani. Tanpa ini, koreksi tanggal atau alamat tidak
+      // pernah sampai ke orang yang akan berangkat ke lokasi.
       if (perubahanEdit.length > 0 && assignee?.phone_number && assignee.full_name !== currentUser?.full_name) {
         void sendFonnteWA(
           assignee.phone_number,
@@ -706,10 +705,9 @@ function ReminderSchedulePageInner() {
       try {
         const reminder = reminders.find(r => r.id === id);
         if (reminder) {
-          // TIDAK filter team_type - assigned_to (username) sudah unik per user, dan
-          // handler bisa dari Team PTS IVP/UMP/MVI mana pun (routing pipeline multi-tim).
-          // Sebelumnya .eq('team_type','Team PTS IVP') bikin handlerUser selalu null
-          // (WA "selesai" tidak pernah terkirim) kalau handler-nya dari tim UMP/MVI.
+          // JANGAN filter team_type: assigned_to (username) sudah unik per user,
+          // dan handler bisa dari Team PTS IVP/UMP/MVI mana pun. Menyaring ke
+          // satu tim membuat handlerUser null dan WA "selesai" tidak terkirim.
           const { data: handlerUser } = await supabase
             .from('users').select('phone_number, full_name')
             .eq('username', reminder.assigned_to)
@@ -1057,11 +1055,8 @@ function ReminderSchedulePageInner() {
   };
 
   /**
-   * Label field reminder untuk catatan audit & pesan WA.
-   *
-   * Sebelumnya penyuntingan hanya tercatat sebagai "Detail reminder disunting"
-   * - benar, tapi tidak berguna: kalau ada yang salah, tidak ada cara tahu apa
-   * yang berubah tanpa membandingkan sendiri ke database.
+   * Label field reminder untuk catatan audit & pesan WA, supaya catatannya
+   * menyebut APA yang berubah - bukan sekadar "Detail reminder disunting".
    */
   const REMINDER_FIELDS: AdminField[] = [
     { key: 'project_name', label: 'Nama Project' },
@@ -1160,9 +1155,9 @@ function ReminderSchedulePageInner() {
     if (!r.assigned_to) { notify('error', 'Reminder belum di-assign ke handler.'); return; }
     setSendingWA(r.id);
 
-    // Ambil phone_number handler dari tabel users - TIDAK filter team_type,
-    // handler bisa dari Team PTS IVP/UMP/MVI mana pun (sebelumnya filter
-    // IVP-only bikin tombol ini selalu gagal utk handler tim UMP/MVI).
+    // Ambil phone_number handler dari tabel users. JANGAN filter team_type:
+    // handler bisa dari Team PTS IVP/UMP/MVI mana pun, dan menyaring ke satu
+    // tim membuat tombol ini selalu gagal untuk handler tim lain.
     const { data: handlerData, error: handlerErr } = await supabase
       .from('users')
       .select('phone_number, full_name')
@@ -1514,13 +1509,11 @@ function ReminderSchedulePageInner() {
     }
     const d0 = payloads[0]?.due_date as string;
 
-    // Pangkal riwayat: tanpa ini, jejak sebuah request baru dimulai dari
-    // "disetujui" - pembacanya tidak pernah tahu siapa yang mengajukan & kapan.
-    // user_name = PELAKU sebenarnya (yang menekan tombol), bukan atas nama siapa.
-    // Sebelumnya dipakai effectiveSalesName, sehingga saat Sales Internal
-    // mengajukan atas nama Sales External (SBU) riwayat mencatat Sales External
-    // sebagai pembuat - justru menghapus jejak siapa yang benar-benar menginput,
-    // yang merupakan inti dari audit trail. "Atas nama" pindah ke notes.
+    // Pangkal riwayat: tanpa ini jejak sebuah request baru dimulai dari
+    // "disetujui", dan pembacanya tidak pernah tahu siapa yang mengajukan.
+    // user_name WAJIB pelaku sebenarnya - yang menekan tombol - bukan
+    // effectiveSalesName. Saat Sales Internal mengajukan atas nama Sales
+    // External (SBU), "atas nama" ditulis di notes, bukan menggantikan pelaku.
     const atasNamaLain = effectiveSalesName && effectiveSalesName !== currentUser.full_name;
     for (const row of (dibuat ?? []) as { id: string; project_name: string | null }[]) {
       logAudit({

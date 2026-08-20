@@ -250,11 +250,10 @@ export function isDueToday(due_date: string) {
   return due_date === new Date().toISOString().split('T')[0];
 }
 
-// Token Fonnte TIDAK lagi diambil di sisi klien - dulu getFonnteToken() menarik
-// token rahasia ke browser via app_settings (anon). Pengiriman WA sekarang lewat
-// Edge Function swift-responder yang memegang token-nya sendiri di server.
-
-// WA terpusat di lib/wa.ts - wrapper menjaga signature lama (target, message, _meta).
+// Token Fonnte TIDAK boleh diambil di sisi klien. Pengiriman WA lewat Edge
+// Function swift-responder yang memegang tokennya sendiri di server.
+//
+// WA terpusat di lib/wa.ts; wrapper menjaga signature lama (target, message, _meta).
 export async function sendFonnteWA(
   target: string,
   message: string,

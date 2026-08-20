@@ -685,10 +685,9 @@ function TicketingSystemInner() {
           );
         }
         try {
-          // Ambil HANYA log milik ticket yang benar-benar tampil. Sebelumnya
-          // seluruh isi activity_logs basis data Services ditarik lalu disaring
-          // di browser - log ticket organisasi lain ikut terunduh, dan
-          // ukurannya tumbuh terus seiring umur platform.
+          // Ambil HANYA log milik ticket yang benar-benar tampil. Menarik
+          // seluruh activity_logs lalu menyaringnya di browser berarti log
+          // ticket organisasi lain ikut terunduh, dan ukurannya tumbuh terus.
           const idTampil = mergedTickets.map((t: Ticket) => t.id).filter(Boolean);
           const svcLogs: ActivityLog[] = [];
           for (let i = 0; i < idTampil.length; i += 100) {
@@ -818,11 +817,9 @@ function TicketingSystemInner() {
       const { data: insertedTicket, error } = await supabase.from("tickets").insert([ticketData]).select("id").single();
       if (error) throw error;
 
-      // Catat pembuatan ke audit trail. Sebelumnya HANYA approve/assign yang
-      // dicatat, sehingga riwayat tiap ticket seolah tidak punya pangkal -
-      // tidak terlihat siapa yang benar-benar membuatnya. Saat Sales Internal
-      // mengajukan atas nama Sales External (SBU), keduanya disebut supaya
-      // jelas siapa penginput vs atas nama siapa.
+      // Catat pembuatan ke audit trail supaya riwayat ticket punya pangkal.
+      // Saat Sales Internal mengajukan atas nama Sales External (SBU), keduanya
+      // disebut supaya jelas siapa penginput dan atas nama siapa.
       if (insertedTicket?.id) {
         const atasNama = (ticketData.sales_name as string | null) ?? "";
         const bedaPenginput = atasNama && atasNama !== currentUser?.full_name;
@@ -1530,17 +1527,12 @@ function TicketingSystemInner() {
         updateData.status = effectiveStatus;
         if (newActivity.assign_to_services) {
           // ASSIGN TO TEAM SERVICES
-          // Dua basis data terpisah, tanpa transaksi bersama. Dulu urutannya
-          // terbalik: basis data PTS langsung ditandai "sudah pindah ke Team
-          // Services", lalu penyalinan ke basis data Services dikerjakan di
-          // dalam try/catch kosong. Kalau penyalinan itu gagal - jaringan
-          // putus, kolom berubah, kredensial salah - ticket hilang dari kedua
-          // sisi: PTS menganggap bukan urusannya lagi, Services tidak pernah
-          // menerimanya, dan tidak ada satu pun pesan galat.
-          //
-          // Sekarang penyalinan dikerjakan LEBIH DULU. Serah terimanya hanya
-          // ditulis kalau penyalinan itu benar-benar berhasil; kalau tidak,
-          // ticket tetap di PTS dan bisa diulang.
+          // Dua basis data terpisah, tanpa transaksi bersama. Penyalinan ke
+          // basis data Services WAJIB dikerjakan lebih dulu, dan serah
+          // terimanya hanya ditulis kalau salinan itu berhasil. Kalau urutannya
+          // dibalik, satu penyalinan yang gagal membuat ticket hilang dari
+          // kedua sisi: PTS menganggap bukan urusannya lagi, Services tidak
+          // pernah menerimanya.
           let mirrorBerhasil = true;
           let mirrorPesan = "";
           try {

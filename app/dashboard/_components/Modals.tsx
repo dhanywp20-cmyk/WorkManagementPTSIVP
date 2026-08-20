@@ -243,9 +243,8 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
       ...(editDivisi ? { is_internal_sales: editDivisi === 'Marketing' || (editDivisi === 'Sales' && ['IVP', 'MVI', 'MLDS'].includes(editingUser.sales_division ?? '')) } : {}),
     };
     // Password baru harus masuk ke user_credentials - itu satu-satunya tempat
-    // yang dibaca login. Sebelumnya hash-nya ditulis ke kolom lama users.password
-    // yang tidak dibaca siapa pun, sehingga reset password dari panel admin
-    // tampak berhasil padahal user tetap tidak bisa masuk dengan password baru.
+    // yang dibaca login. Kolom lama users.password tidak dibaca siapa pun, jadi
+    // menulis ke sana membuat reset password tampak berhasil tanpa berlaku.
     if (editingUser.password) {
       const pwdRes = await fetch('/api/auth/change-password', {
         method: 'POST',
@@ -2136,9 +2135,8 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         // di-assign ke diri sendiri + request yang MENUNGGU DI-ASSIGN dia sbg
         // Supervisor (assigned_supervisor_id + routing_status='supervisor_assign')
         // + kalau dia Manager (jabatan='Manager'), request yang MENUNGGU APPROVAL
-        // dia (routing_status='admin_review') - sebelumnya Manager (role='team',
-        // bukan role='admin') sama sekali tidak dapat badge utk item yg perlu
-        // di-approve, harus buka tabel manual.
+        // dia (routing_status='admin_review'). Manager ber-role='team', jadi
+        // tanpa cabang ini item yang perlu di-approve tidak pernah dapat badge.
         const selfJabatanTeam = (currentUser as any).jabatan as string | undefined;
         const isManagerTeam = selfJabatanTeam === 'Manager';
         const [{ data: assignedToMe }, { data: needsMyAssign }, { data: needsMyApproval }] = await Promise.all([
@@ -2183,7 +2181,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
       } else if (roleLC === 'guest' || roleLC === 'sales') {
         // Guest/Sales (termasuk Marketing & Sales Internal): reminder miliknya
         // sendiri yang aktif + request yang MENUNGGU REVIEW dia (Sales Internal,
-        // Fase 2 routing pipeline) - sebelumnya role ini tidak dapat badge sama sekali.
+        // Fase 2 routing pipeline).
         const [{ data: ownReminders }, { data: awaitingReview }] = await Promise.all([
           supabase.from('reminders')
             .select('id, project_name, category, due_date, status, sales_name, created_at')
@@ -2581,12 +2579,9 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
 // Inline variants (no fixed overlay, used inside AdminPanelModal)
 
 /**
- * Strip info di puncak tiap bagian Admin Panel.
- *
- * Sebelumnya tiap bagian memakai warnanya sendiri - sky untuk KPI Roster,
- * teal untuk yang lain - sehingga berpindah tab terasa seperti berpindah
- * aplikasi. Satu bentuk untuk semuanya, mengikuti bahasa visual halaman
- * Profil: netral, dengan angka penting di kanan.
+ * Strip info di puncak tiap bagian Admin Panel. Satu bentuk untuk semua bagian,
+ * mengikuti bahasa visual halaman Profil: netral, dengan angka penting di
+ * kanan. Warna per bagian membuat berpindah tab terasa berpindah aplikasi.
  */
 function StripInfo({ icon, judul, keterangan, angka, satuan }: {
   icon: string; judul: string; keterangan: React.ReactNode;

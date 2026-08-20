@@ -51,11 +51,9 @@ export async function POST(request: NextRequest) {
       // supaya gampang di-debug kalau Gemini balikin error yang shape-nya nggak terduga.
       console.error('[api/ai/generate] Gemini error', res.status, JSON.stringify(data));
       // generativelanguage.googleapis.com KADANG membungkus error dalam array
-      // ([{error:{...}}], bukan {error:{...}}) - klien (generateWithGemini di
-      // shared.tsx) hanya membaca data.error.message, jadi bentuk array ini
-      // sebelumnya selalu jatuh ke pesan generik "Gemini API error" walau
-      // Gemini sebenarnya sudah mengirim alasan yang jelas. Diratakan di sini
-      // supaya klien SELALU dapat data.error.message yang sebenarnya.
+      // ([{error:{...}}], bukan {error:{...}}). Klien hanya membaca
+      // data.error.message, jadi bentuknya diratakan di sini supaya alasan
+      // yang dikirim Gemini tidak berubah jadi pesan generik.
       const normalized = Array.isArray(data) ? data[0] : data;
       if (normalized?.error?.message) {
         return NextResponse.json(normalized, { status: res.status });

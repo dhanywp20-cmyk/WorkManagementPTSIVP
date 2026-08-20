@@ -82,16 +82,11 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
-   * Cari project yang sudah ada - DIBATASI lingkup si pencari.
-   *
-   * Sebelumnya query ini hanya menyaring kategori lalu mencocokkan nama
-   * project, tanpa batas divisi sama sekali. Akibatnya Sales dari divisi mana
-   * pun bisa menemukan project milik divisi lain hanya dengan mengetik
-   * sepotong namanya - lengkap dengan alamat, PIC, dan nomor teleponnya,
-   * karena memilih hasilnya langsung menyalin semua itu ke form.
-   *
-   * Lingkupnya dihitung di lib/project-scope.ts supaya aturannya satu, bukan
-   * diturunkan ulang di tiap tempat yang punya pencarian.
+   * Cari project yang sudah ada - WAJIB dibatasi lingkup si pencari. Memilih
+   * satu hasil menyalin alamat, PIC, dan nomor teleponnya ke form, jadi
+   * pencarian tanpa batas divisi sama saja dengan membuka daftar pelanggan
+   * divisi lain. Lingkupnya dihitung di lib/project-scope.ts supaya aturannya
+   * satu, bukan diturunkan ulang di tiap tempat yang punya pencarian.
    */
   const searchReminders = useCallback(async (q: string) => {
     if (!q.trim()) { setReminderResults([]); return; }
@@ -99,10 +94,8 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     const lingkup = await hitungLingkupProject(currentUser as never);
     const cocokNama = `project_name.ilike.%${q}%,title.ilike.%${q}%`;
 
-    // Reminders: SEMUA kategori
-    // Dulu dibatasi ['Konfigurasi & Training', 'Training'] saja, sehingga
-    // project yang tercatat di kategori lain - Maintenance, Demo, apa pun -
-    // tidak pernah muncul, seolah tidak pernah ada.
+    // Reminders: SEMUA kategori. Membatasi ke Konfigurasi & Training membuat
+    // project yang tercatat di kategori lain seolah tidak pernah ada.
     let qr = supabase
       .from('reminders')
       .select('id, project_name, title, address, sales_name, sales_division, product, pic_name, pic_phone, category, assign_name')

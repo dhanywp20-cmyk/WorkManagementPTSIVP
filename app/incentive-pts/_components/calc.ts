@@ -417,11 +417,10 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
 
     // Porsi Installer & tahapan pencairan
     // Bila Installer Cabang diberi porsi DAN disetel dibayar di muka, tahap
-    // terakhir dipakai untuk menampung porsinya utuh; porsi Tim PTS dibagi ke
-    // tahap-tahap sisanya, sebanding dengan persentase tahap itu. Cara ini
-    // membuat jumlahnya selalu tepat berapa pun angka yang disetel admin -
-    // bukan hanya saat kebetulan porsi Installer sama dengan persentase tahap
-    // terakhir, seperti pada versi sebelumnya yang mematok 15% di kedua sisi.
+    // terakhir menampung porsinya utuh dan porsi Tim PTS dibagi ke tahap
+    // sisanya sebanding dengan persentase tahap itu. Cara ini membuat jumlahnya
+    // tetap tepat berapa pun angka yang disetel admin, bukan hanya saat porsi
+    // Installer kebetulan sama dengan persentase tahap terakhir.
     const pctInstaller = project.mode_penyelesaian === 'remote'
       ? Math.max(0, Math.min(99, sk.installerRemotePersen || 0)) : 0;
     const tahapTerakhir = sk.tranche.length ? Math.max(...sk.tranche.map(t => t.nomor)) : 0;

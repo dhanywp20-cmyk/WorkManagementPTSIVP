@@ -274,8 +274,7 @@ export default function TechNotePage() {
 
   const [showFolderModal,  setShowFolderModal]  = useState(false);
   const [showUploadModal,  setShowUploadModal]  = useState(false);
-  // Edit & hapus tech note - sebelumnya tidak ada jalan sama sekali, bahkan
-  // untuk admin. Satu-satunya koreksi adalah lewat database.
+  // Edit & hapus tech note.
   const [editingNote, setEditingNote] = useState<TechNote | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [detailNote,       setDetailNote]       = useState<TechNote | null>(null);
@@ -289,12 +288,9 @@ export default function TechNotePage() {
 
   /**
    * Boleh mengelola: admin/superadmin, Supervisor, atau akun Team PTS yang
-   * diberi Full Access lewat Admin Panel.
-   *
-   * Sebelumnya hanya mencocokkan daftar role. Akibatnya akun Team PTS yang
-   * sudah diberi Full Access tetap tidak bisa membuat folder maupun
-   * menyetujui - padahal justru itu gunanya toggle tersebut. Sekarang lewat
-   * helper terpusat di lib/constants.ts, sama dengan modul lain.
+   * diberi Full Access lewat Admin Panel. Lewat helper terpusat di
+   * lib/constants.ts, sama dengan modul lain - mencocokkan daftar role sendiri
+   * membuat toggle Full Access tidak berlaku di sini.
    */
   const canManage = hasFullAccess(currentUser as never)
     || ['admin','superadmin','supervisor'].includes(currentUser?.role ?? '');

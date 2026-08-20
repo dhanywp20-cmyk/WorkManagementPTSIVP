@@ -97,9 +97,9 @@ export function AssignPTSModal({
       approved_by: currentUser.full_name,
       approved_at: new Date().toISOString(),
     };
-    // Hanya bersihkan penanda tahap Supervisor kalau request ini MEMANG tadinya di-route
-    // (kolom pasti sudah ada). Assign langsung biasa TIDAK menyentuh kolom routing supaya
-    // tetap jalan walau migrasi supervisor belum di-run.
+    // Penanda tahap Supervisor hanya dibersihkan kalau request ini memang
+    // di-route ke sana. Assign langsung tidak menyentuh kolom routing supaya
+    // tetap jalan walau migrasi supervisor belum dijalankan.
     if (req.routing_status === 'supervisor_assign') {
       updatePayload.routing_status = null;
       updatePayload.assigned_supervisor_id = null;

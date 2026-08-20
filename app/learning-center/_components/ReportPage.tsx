@@ -37,11 +37,9 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
     (async () => {
       setLoading(true); setLoadErr(null);
       // Peserta diambil TERPISAH, tidak lewat embed `users(...)`. Embed hanya
-      // jalan bila PostgREST mengenali relasi lc_quiz_attemptsusers; kalau
-      // relasi itu tidak ada, SELURUH query gagal dan error-nya sebelumnya
-      // ditelan diam-diam (`data ?? []`) - halaman jadi tampak "belum ada
-      // peserta" padahal datanya ada. Dua query sederhana selalu bisa
-      // diandalkan, apa pun keadaan relasinya.
+      // jalan bila PostgREST mengenali relasi lc_quiz_attempts ke users; kalau
+      // relasi itu tidak ada, seluruh query gagal dan halaman tampak "belum ada
+      // peserta" padahal datanya ada.
       const { data: attempts, error } = await supabase
         .from('lc_quiz_attempts')
         .select('*')
