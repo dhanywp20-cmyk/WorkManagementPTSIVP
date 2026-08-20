@@ -22,20 +22,43 @@
 
 
 -- ─── Alat bantu: seberapa banyak pekerjaan yang menempel pada sebuah akun ───
+--
 --  Dipakai BAGIAN 2 untuk memilih di antara dua akun milik orang yang sama.
+--
+--  Menghitung DUA macam jejak, dan yang kedua ternyata justru yang menentukan:
+--
+--    lewat uuid      kolom *_user_id dan requester_id
+--    lewat username  kolom created_by, assigned_to, guest_username
+--
+--  Versi pertama fungsi ini cuma menghitung yang lewat uuid, dan itu keliru:
+--  akun yang belum pernah kebagian uuid pasti berjejak nol, jadi dua akun
+--  kembar selalu tampak SERI dan tidak pernah bisa dipilih. Persis itu yang
+--  terjadi pada "Reka" - dua akun, dua-duanya nol, buntu.
+--
+--  Jejak lewat username tidak punya masalah itu. Ia terisi sejak orangnya
+--  login dan mengerjakan sesuatu, jauh sebelum kolom uuid ada.
 CREATE OR REPLACE FUNCTION jejak_akun(p_id uuid) RETURNS bigint
 LANGUAGE sql STABLE AS $$
-  SELECT (SELECT count(*) FROM tickets            WHERE sales_user_id  = p_id)
-       + (SELECT count(*) FROM tickets            WHERE assign_user_id = p_id)
-       + (SELECT count(*) FROM reminders          WHERE sales_user_id  = p_id)
-       + (SELECT count(*) FROM reminders          WHERE assign_user_id = p_id)
-       + (SELECT count(*) FROM project_requests   WHERE sales_user_id  = p_id)
-       + (SELECT count(*) FROM project_requests   WHERE assign_user_id = p_id)
-       + (SELECT count(*) FROM form_reviews       WHERE sales_user_id  = p_id)
-       + (SELECT count(*) FROM form_reviews       WHERE guest_user_id  = p_id)
-       + (SELECT count(*) FROM progress_projects  WHERE sales_user_id  = p_id)
-       + (SELECT count(*) FROM progress_locations WHERE sales_user_id  = p_id)
-       + (SELECT count(*) FROM progress_locations WHERE pic_user_id    = p_id);
+  WITH akun AS (SELECT lower(btrim(username)) AS un FROM users WHERE id = p_id)
+  SELECT
+    --  lewat uuid
+      (SELECT count(*) FROM tickets            WHERE sales_user_id  = p_id)
+    + (SELECT count(*) FROM tickets            WHERE assign_user_id = p_id)
+    + (SELECT count(*) FROM reminders          WHERE sales_user_id  = p_id)
+    + (SELECT count(*) FROM reminders          WHERE assign_user_id = p_id)
+    + (SELECT count(*) FROM project_requests   WHERE sales_user_id  = p_id)
+    + (SELECT count(*) FROM project_requests   WHERE assign_user_id = p_id)
+    + (SELECT count(*) FROM project_requests   WHERE requester_id   = p_id)
+    + (SELECT count(*) FROM form_reviews       WHERE sales_user_id  = p_id)
+    + (SELECT count(*) FROM form_reviews       WHERE guest_user_id  = p_id)
+    + (SELECT count(*) FROM progress_projects  WHERE sales_user_id  = p_id)
+    + (SELECT count(*) FROM progress_locations WHERE sales_user_id  = p_id)
+    + (SELECT count(*) FROM progress_locations WHERE pic_user_id    = p_id)
+    --  lewat username - jejak pemakaian yang sesungguhnya
+    + (SELECT count(*) FROM tickets      t, akun a WHERE lower(btrim(t.created_by))     = a.un)
+    + (SELECT count(*) FROM reminders    r, akun a WHERE lower(btrim(r.created_by))     = a.un)
+    + (SELECT count(*) FROM reminders    r, akun a WHERE lower(btrim(r.assigned_to))    = a.un)
+    + (SELECT count(*) FROM form_reviews f, akun a WHERE lower(btrim(f.guest_username)) = a.un);
 $$;
 
 
@@ -181,8 +204,38 @@ DROP FUNCTION jejak_akun(uuid);
 --  ditulis. Ada yang salah orang? Buang satu baris:
 --      DELETE FROM identitas_usulan WHERE nilai = 'Rozaq';
 --  Sudah benar semua? Jalankan sql/identitas-uuid-terapkan.sql.
-SELECT u.tabel, u.kolom, u.nilai, u.jumlah_baris,
-       u.nama_akun, u.cara,
-       (SELECT username FROM users WHERE id = u.user_id) AS username
-FROM identitas_usulan u
-ORDER BY u.jumlah_baris DESC, u.tabel, u.kolom, u.nilai;
+--  Laporan ini juga menyebut yang TIDAK bisa diputuskan otomatis beserta
+--  alasannya. Versi pertama hanya menampilkan yang berhasil, dan akibatnya
+--  satu kebuntuan ("Reka") lewat begitu saja tanpa ada yang menyadarinya
+--  sampai laporan akhir dibandingkan angka per angka. Kegagalan yang diam
+--  lebih berbahaya daripada kegagalan yang berisik.
+SELECT * FROM (
+  SELECT 1 AS urut, u.tabel, u.kolom, u.nilai, u.jumlah_baris,
+         'DISETUJUI' AS status, u.nama_akun AS keterangan, u.cara
+  FROM identitas_usulan u
+
+  UNION ALL
+
+  SELECT 2, s.tabel, s.kolom, s.nilai, s.jumlah_baris,
+         'BELUM DIPUTUSKAN',
+         CASE
+           WHEN n.jml = 0 THEN 'tidak ada calon - biarkan saja'
+           WHEN n.jml > 1 THEN 'calonnya ' || n.jml || ' orang: ' || COALESCE(n.nama,'-')
+                                || ' - pakai setujui_ke() untuk menyebut yang mana'
+           WHEN n.cara_paling = 'awalan kata' THEN 'cocok hanya sebagai awalan kata ('
+                                || COALESCE(n.nama,'-') || ') - buka BAGIAN 4 kalau setuju'
+           ELSE 'calon tunggal (' || COALESCE(n.nama,'-') || ') tapi nama akunnya satu kata'
+         END,
+         n.cara_paling
+  FROM identitas_sisa s
+  LEFT JOIN LATERAL (
+    SELECT count(DISTINCT c.user_id) AS jml,
+           string_agg(DISTINCT c.nama_akun, ' | ') AS nama,
+           string_agg(DISTINCT c.cara, ' | ') AS cara_paling
+    FROM identitas_calon c
+    WHERE c.tabel = s.tabel AND c.kolom = s.kolom AND c.nilai = s.nilai
+  ) n ON true
+  WHERE NOT EXISTS (SELECT 1 FROM identitas_usulan u
+                     WHERE u.tabel = s.tabel AND u.kolom = s.kolom AND u.nilai = s.nilai)
+) r
+ORDER BY urut, jumlah_baris DESC, tabel, kolom, nilai;
