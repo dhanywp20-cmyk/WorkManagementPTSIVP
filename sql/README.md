@@ -117,6 +117,13 @@ SELECT setujui_ke('tickets','sales_name','Rafi''i','ashila');   -- tunjuk sendir
 
 `setujui()` menolak nilai yang calonnya nol atau lebih dari satu, dan
 mengatakan alasannya. `setujui_ke()` untuk yang Anda tahu sendiri jawabannya.
+
+Tidak mau mengetik satu per satu? `identitas-uuid-putuskan.sql` menyetujui
+semuanya sekali Run, dengan aturan yang tertulis di kepalanya: kecocokan kuat
+saja (`kata utuh`, dan `nama akun ada di dalam nilai` bila nama akunnya dua
+kata atau lebih), plus pemilihan otomatis saat dua akun ternyata milik orang
+yang sama - yang jejak pekerjaannya terbanyak yang dipakai. `awalan kata`
+sengaja dibiarkan dikomentari di sana, tinggal dibuka kalau Anda setuju.
 Setelah kotaknya terisi, `identitas-uuid-terapkan.sql` menulis apa yang ada di
 sana dan tidak menebak apa pun; kalau satu nilai menunjuk dua orang, ia
 berhenti tanpa mengubah satu baris pun. Yang tidak Anda setujui tetap kosong
