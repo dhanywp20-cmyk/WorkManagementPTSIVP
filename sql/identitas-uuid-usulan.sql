@@ -8,17 +8,34 @@
 --
 --  Jalankan SETELAH identitas-uuid.sql dan identitas-uuid-lanjutan.sql.
 --
---  Kenapa berkas ini terpisah. Sisa yang belum terpetakan hampir seluruhnya
---  NAMA DEPAN SAJA - "Rozaq", "Febri", "Adel", "Lutfi". Mencocokkan nama depan
---  ke nama lengkap itu tebakan, dan tebakan yang salah akan mengikat pekerjaan
---  seseorang ke orang lain tanpa pernah terlihat dari layar. Jadi berkas ini
---  hanya MENGUSULKAN; yang memutuskan Anda.
+--  Kenapa berkas ini terpisah, dan kenapa ia TIDAK mengisi apa pun sendiri.
 --
---  Aturan usulnya sengaja ketat - sebuah nilai hanya diusulkan bila:
+--  Sisa yang belum terpetakan hampir semuanya nilai satu kata - "Rozaq",
+--  "Adel", "Lutfi", "Nissa". Godaannya adalah menyimpulkan "itu nama depan,
+--  tinggal dicocokkan ke nama lengkapnya". Kesimpulan itu tidak boleh diambil,
+--  karena sebuah nilai satu kata bisa berarti DUA hal yang berbeda:
+--
+--    a. potongan nama seseorang yang PUNYA akun
+--       "Adel"  ->  Adela Diovany
+--
+--    b. nama LENGKAP seseorang yang TIDAK punya akun
+--       "Adel"  ->  orang bernama Adel, titik. Banyak orang memang bernama
+--                   satu kata saja.
+--
+--  Dari sisi basis data, kedua kemungkinan itu terlihat persis sama. Tidak ada
+--  aturan yang bisa memisahkannya - yang tahu cuma orang yang mengenal timnya.
+--  Kalau (b) yang benar dan alat ini memilih (a), pekerjaan seseorang terikat
+--  ke orang lain, dan itu tidak akan pernah terlihat dari layar.
+--
+--  Karena itu `identitas_usulan` lahir KOSONG. Berkas ini hanya menunjukkan
+--  siapa saja calonnya dan seberapa kuat kecocokannya; yang memasukkan usulan
+--  ke dalamnya Anda, satu per satu, lewat setujui().
+--
+--  Aturan pencarian calonnya tetap ketat - sebuah nilai hanya punya calon bila:
 --
 --    a. panjangnya minimal 4 huruf. Nama sependek "Ar" cocok dengan "Arman"
 --       DAN "Rinaldi Ardilas"; alat ini pernah tertipu persis begitu.
---    b. hanya ADA SATU akun yang cocok. Dua calon berarti tidak ada usulan.
+--    b. hanya ADA SATU akun yang cocok. Dua calon berarti tidak ditawarkan.
 --    c. cocoknya di batas kata, bukan di tengah kata. Tanpa aturan ini
 --       "Febriana" akan dianggap mirip akun bernama "Ria", karena
 --       Feb-ria-na memang memuat huruf r-i-a. Itu kebetulan, bukan kemiripan.
@@ -27,15 +44,22 @@
 --  tulisan yang sama.
 --
 --  CARA PAKAI
---    1. Jalankan berkas ini. Baca laporannya.
---    2. Buang usulan yang Anda tidak setujui:
---         DELETE FROM identitas_usulan WHERE nilai = 'Febri';
---    3. Tambahkan yang alat ini tidak bisa tebak tapi Anda tahu jawabannya:
---         INSERT INTO identitas_usulan (tabel, kolom, nilai, user_id, nama_akun)
---         SELECT 'tickets', 'sales_name', 'Rafi''i', id, full_name
---         FROM users WHERE username = 'ashila';
+--    1. Jalankan berkas ini. Baca laporannya - kolom `calon` dan `cara`.
+--    2. Setujui yang menurut Anda benar, satu per satu:
+--         SELECT setujui('Rozaq');
+--         SELECT setujui('Dhany Wahyu (Remote Bagas POC)');
+--       Kalau satu nilai muncul di beberapa tabel dan Anda hanya mau salah
+--       satunya, sebutkan tabel & kolomnya:
+--         SELECT setujui('tickets', 'sales_name', 'Lutfi');
+--    3. Yang alat ini tidak bisa tebak tapi Anda tahu jawabannya, tunjuk akunnya
+--       langsung lewat username:
+--         SELECT setujui_ke('tickets', 'sales_name', 'Rafi''i', 'ashila');
 --    4. Periksa sekali lagi:  SELECT * FROM identitas_usulan;
+--       Salah setuju? Buang:  DELETE FROM identitas_usulan WHERE nilai = 'Adel';
 --    5. Jalankan sql/identitas-uuid-terapkan.sql.
+--
+--  Yang TIDAK Anda setujui akan tetap kosong uuid-nya, dan itu bukan masalah -
+--  baris tanpa uuid tetap bekerja lewat nama persis seperti sebelumnya.
 --
 --  Membatalkan: selama BELUM menjalankan berkas terapkan, tidak ada yang
 --  berubah - cukup DROP TABLE identitas_usulan.
@@ -116,34 +140,135 @@ CREATE TABLE identitas_calon AS
        );
 
 
--- ─── Usulan: HANYA yang calonnya tepat satu ─────────────────────────────────
+-- ─── Kotak usulan - sengaja KOSONG ──────────────────────────────────────────
+--  Dulu tabel ini diisi otomatis dengan semua calon tunggal. Itu keliru: ia
+--  memutuskan bahwa nilai satu kata pasti potongan nama seseorang yang punya
+--  akun, padahal bisa saja itu nama lengkap orang yang tidak punya akun.
+--  Sekarang ia menunggu Anda.
 DROP TABLE IF EXISTS identitas_usulan;
-CREATE TABLE identitas_usulan AS
-  SELECT c.tabel, c.kolom, c.nilai, c.jumlah_baris, c.user_id, c.nama_akun, c.cara
-  FROM identitas_calon c
-  WHERE (SELECT count(DISTINCT c2.user_id) FROM identitas_calon c2
-          WHERE c2.tabel = c.tabel AND c2.kolom = c.kolom AND c2.nilai = c.nilai) = 1;
+CREATE TABLE identitas_usulan (
+  tabel        text NOT NULL,
+  kolom        text NOT NULL,
+  nilai        text NOT NULL,
+  jumlah_baris bigint,
+  user_id      uuid NOT NULL,
+  nama_akun    text,
+  cara         text
+);
 
 DROP FUNCTION rapi(text);
+
+
+-- ─── setujui() - memasukkan satu keputusan Anda ke kotak usulan ─────────────
+--
+--  Hanya menerima nilai yang calonnya TEPAT SATU. Kalau calonnya nol atau
+--  lebih dari satu, ia menolak dan mengatakan alasannya - bukan diam.
+
+CREATE OR REPLACE FUNCTION setujui(p_tabel text, p_kolom text, p_nilai text)
+RETURNS text LANGUAGE plpgsql AS $fn$
+DECLARE jml int; nama text;
+BEGIN
+  SELECT count(DISTINCT user_id), string_agg(DISTINCT nama_akun, ' | ')
+    INTO jml, nama
+  FROM identitas_calon
+  WHERE tabel = p_tabel AND kolom = p_kolom AND nilai = p_nilai;
+
+  IF jml = 0 THEN
+    RETURN format('DITOLAK: %s.%s = %L tidak punya calon. Pakai setujui_ke() '
+                  'kalau Anda tahu sendiri akunnya.', p_tabel, p_kolom, p_nilai);
+  ELSIF jml > 1 THEN
+    RETURN format('DITOLAK: %s.%s = %L punya %s calon (%s). Pakai setujui_ke() '
+                  'untuk menyebut yang mana.', p_tabel, p_kolom, p_nilai, jml, nama);
+  END IF;
+
+  DELETE FROM identitas_usulan
+   WHERE tabel = p_tabel AND kolom = p_kolom AND nilai = p_nilai;
+  INSERT INTO identitas_usulan (tabel, kolom, nilai, jumlah_baris, user_id, nama_akun, cara)
+  SELECT DISTINCT tabel, kolom, nilai, jumlah_baris, user_id, nama_akun, cara
+  FROM identitas_calon
+  WHERE tabel = p_tabel AND kolom = p_kolom AND nilai = p_nilai;
+
+  RETURN format('OK: %s.%s = %L -> %s', p_tabel, p_kolom, p_nilai, nama);
+END $fn$;
+
+--  Bentuk pendek: menyetujui nilai itu di SEMUA tabel & kolom tempat ia muncul.
+--  Berguna karena nama yang sama sering muncul di Ticketing dan Reminder
+--  sekaligus, dan orangnya sudah pasti sama.
+CREATE OR REPLACE FUNCTION setujui(p_nilai text)
+RETURNS SETOF text LANGUAGE plpgsql AS $fn$
+DECLARE r record;
+BEGIN
+  FOR r IN SELECT DISTINCT tabel, kolom FROM identitas_calon WHERE nilai = p_nilai
+  LOOP
+    RETURN NEXT setujui(r.tabel, r.kolom, p_nilai);
+  END LOOP;
+  IF NOT FOUND THEN
+    RETURN NEXT format('DITOLAK: %L tidak punya calon di tabel mana pun.', p_nilai);
+  END IF;
+END $fn$;
+
+--  Menunjuk akunnya sendiri lewat username - untuk yang alat ini tidak bisa
+--  tebak, atau yang calonnya lebih dari satu dan Anda tahu yang mana.
+--  Tidak dibatasi daftar calon: keputusan Anda mengalahkan tebakan alat.
+CREATE OR REPLACE FUNCTION setujui_ke(p_tabel text, p_kolom text, p_nilai text, p_username text)
+RETURNS text LANGUAGE plpgsql AS $fn$
+DECLARE u record; ada bigint;
+BEGIN
+  SELECT id, full_name INTO u FROM users
+   WHERE lower(btrim(username)) = lower(btrim(p_username));
+  IF u.id IS NULL THEN
+    RETURN format('DITOLAK: tidak ada akun dengan username %L.', p_username);
+  END IF;
+
+  SELECT jumlah_baris INTO ada FROM identitas_sisa
+   WHERE tabel = p_tabel AND kolom = p_kolom AND nilai = p_nilai;
+  IF ada IS NULL THEN
+    RETURN format('DITOLAK: %s.%s = %L tidak ada di daftar yang belum terpetakan. '
+                  'Salah ketik, atau baris itu sudah punya uuid.', p_tabel, p_kolom, p_nilai);
+  END IF;
+
+  DELETE FROM identitas_usulan
+   WHERE tabel = p_tabel AND kolom = p_kolom AND nilai = p_nilai;
+  INSERT INTO identitas_usulan (tabel, kolom, nilai, jumlah_baris, user_id, nama_akun, cara)
+  VALUES (p_tabel, p_kolom, p_nilai, ada, u.id, u.full_name, 'ditetapkan manual');
+
+  RETURN format('OK: %s.%s = %L -> %s (%s baris)', p_tabel, p_kolom, p_nilai, u.full_name, ada);
+END $fn$;
 
 
 -- ─── LAPORAN ────────────────────────────────────────────────────────────────
 --  Query terakhir, supaya sekali Run langsung terlihat hasilnya.
 --
 --  Cara baca `putusan`:
---    USUL - periksa lalu terapkan   Satu calon. Sudah masuk identitas_usulan.
---                                   Baca nama_akun-nya: kalau salah orang,
---                                   DELETE baris itu sebelum menerapkan.
---    RAGU - lebih dari satu calon   Alat ini menolak memilihkan. Biasanya
---                                   karena ada dua akun untuk orang yang sama;
---                                   gabungkan akunnya, lalu ulangi.
---    TIDAK ADA AKUNNYA              Namanya tidak menyerupai akun mana pun.
---                                   Biarkan saja - baris tanpa uuid tetap
---                                   bekerja lewat nama seperti sebelumnya.
+--    ADA 1 CALON       Alat ini menemukan satu akun yang cocok - itu TAWARAN,
+--                      bukan kesimpulan. Kalau menurut Anda benar orangnya:
+--                        SELECT setujui('<nilai>');
+--                      Kalau nilai itu ternyata nama lengkap orang lain yang
+--                      tidak punya akun, biarkan saja. Tidak perlu apa-apa.
+--    ADA BEBERAPA      Dua calon atau lebih. Alat ini menolak memilihkan.
+--                      Sebutkan sendiri: setujui_ke(tabel, kolom, nilai,
+--                      username). Kalau sebabnya satu orang punya dua akun,
+--                      lebih baik gabungkan akunnya lalu ulangi dari awal.
+--    TANPA CALON       Tidak menyerupai akun mana pun. Biarkan - besar
+--                      kemungkinan ini catatan dari masa platform ini masih
+--                      Ticketing saja, dan orangnya memang tidak pernah punya
+--                      akun. Baris tanpa uuid tetap bekerja lewat nama.
+--    SUDAH ANDA SETUJUI  Sudah masuk kotak usulan, menunggu berkas terapkan.
+--
+--  `cara` menyebut seberapa kuat kecocokannya:
+--    kata utuh                     nilai adalah satu kata penuh di nama akun
+--                                  (Rozaq di Muhammad Rozaq)
+--    nama akun ada di dalam nilai  nama akun utuh ada di dalam nilai
+--                                  (Dhany Wahyu di "Dhany Wahyu (Remote ...)")
+--    awalan kata                   nilai hanya AWALAN sebuah kata
+--                                  (Adel -> Adela Diovany). Ini yang paling
+--                                  perlu Anda periksa: "Adel" juga bisa nama
+--                                  lengkap orang yang tidak punya akun.
 SELECT s.tabel, s.kolom, s.nilai, s.jumlah_baris,
-       CASE WHEN n.jml = 1 THEN 'USUL - periksa lalu terapkan'
-            WHEN n.jml > 1 THEN 'RAGU - lebih dari satu calon'
-            ELSE 'TIDAK ADA AKUNNYA' END AS putusan,
+       CASE WHEN u.sudah THEN 'SUDAH ANDA SETUJUI'
+            WHEN n.jml = 1 THEN 'ADA 1 CALON - setujui sendiri kalau benar'
+            WHEN n.jml > 1 THEN 'ADA BEBERAPA CALON - sebut yang mana'
+            ELSE 'TANPA CALON - biarkan' END AS putusan,
        (SELECT string_agg(DISTINCT c.nama_akun, ' | ' ORDER BY c.nama_akun)
           FROM identitas_calon c
          WHERE c.tabel = s.tabel AND c.kolom = s.kolom AND c.nilai = s.nilai) AS calon,
@@ -157,5 +282,9 @@ LEFT JOIN LATERAL (
   SELECT count(DISTINCT c.user_id) AS jml FROM identitas_calon c
    WHERE c.tabel = s.tabel AND c.kolom = s.kolom AND c.nilai = s.nilai
 ) n ON true
+LEFT JOIN LATERAL (
+  SELECT true AS sudah FROM identitas_usulan iu
+   WHERE iu.tabel = s.tabel AND iu.kolom = s.kolom AND iu.nilai = s.nilai LIMIT 1
+) u ON true
 ORDER BY (CASE WHEN n.jml = 1 THEN 1 WHEN n.jml > 1 THEN 2 ELSE 3 END),
          s.jumlah_baris DESC, s.tabel, s.kolom, s.nilai;

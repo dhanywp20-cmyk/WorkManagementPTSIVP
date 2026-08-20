@@ -97,16 +97,29 @@ dimiliki dua akun tetap tidak ditebak; laporan di akhir berkas mendaftarkannya
 lengkap dengan alasannya. Aman diulang - setiap UPDATE hanya menyentuh baris
 yang uuid-nya masih kosong.
 
-Sisanya - nama depan saja, ejaan yang berbeda - ditangani sepasang berkas
-yang memisahkan tebakan dari keputusan. `identitas-uuid-usulan.sql` hanya
-MENGUSULKAN: ia mendaftar nilai yang belum terpetakan, mencari calon akunnya
-dengan pencocokan di batas kata (minimal 4 huruf, dan hanya bila calonnya
-tepat satu), lalu memberi tahu seberapa kuat kecocokannya - `kata utuh` hampir
-pasti benar, `awalan kata` masih perlu Anda benarkan. Anda buang usulan yang
-salah, tambahkan yang alat itu tidak bisa tebak, baru jalankan
-`identitas-uuid-terapkan.sql`. Berkas terapkan menulis apa yang ada di tabel
-usulan dan tidak menebak apa pun sendiri; kalau satu nilai diusulkan ke dua
-orang, ia berhenti dan tidak mengubah satu baris pun.
+Sisanya ditangani sepasang berkas yang memisahkan tebakan dari keputusan.
+`identitas-uuid-usulan.sql` mencari calon akun untuk tiap nilai yang belum
+terpetakan - pencocokan di batas kata, minimal 4 huruf, dan hanya ditawarkan
+bila calonnya tepat satu - lalu menyebut seberapa kuat kecocokannya
+(`kata utuh`, `awalan kata`, `nama akun ada di dalam nilai`).
+
+Kotak usulannya lahir **kosong**, dan itu disengaja. Nilai satu kata seperti
+"Adel" bisa berarti potongan nama Adela Diovany, bisa juga nama lengkap orang
+yang tidak punya akun - banyak orang memang bernama satu kata. Dari sisi basis
+data keduanya terlihat sama persis, jadi tidak ada aturan yang boleh
+memutuskannya. Anda yang menyetujui, satu per satu:
+
+```sql
+SELECT setujui('Rozaq');                                        -- calon tunggal
+SELECT setujui_ke('tickets','sales_name','Rafi''i','ashila');   -- tunjuk sendiri
+```
+
+`setujui()` menolak nilai yang calonnya nol atau lebih dari satu, dan
+mengatakan alasannya. `setujui_ke()` untuk yang Anda tahu sendiri jawabannya.
+Setelah kotaknya terisi, `identitas-uuid-terapkan.sql` menulis apa yang ada di
+sana dan tidak menebak apa pun; kalau satu nilai menunjuk dua orang, ia
+berhenti tanpa mengubah satu baris pun. Yang tidak Anda setujui tetap kosong
+uuid-nya dan tetap bekerja lewat nama.
 
 **Urutan menjalankannya tidak mengikat.** Aplikasi mencoba menulis kolom uuid,
 dan kalau basis datanya belum punya kolom itu, ia mengulang tanpa kolom uuid
