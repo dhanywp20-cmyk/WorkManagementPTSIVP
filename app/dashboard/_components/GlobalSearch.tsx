@@ -58,23 +58,14 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
   const debounce  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
-   * Cakupan pencarian
-   *
-   * BUG yang ditutup di sini: sebelumnya penyaringan hanya punya cabang untuk
-   * PTS Supervisor dan Sales Supervisor. Sales BIASA - role guest tanpa jabatan
-   * supervisor, yang jumlahnya paling banyak - tidak masuk cabang mana pun,
-   * sehingga LOLOS DARI SELURUH PENYARINGAN dan bisa melihat tiket, jadwal,
-   * serta project milik sales lain lewat kotak pencarian.
-   *
-   * Aturan sekarang:
-   *   admin · superadmin · team   seluruh data, tanpa batas
+   * Cakupan pencarian:
+   *   admin / superadmin / team   seluruh data, tanpa batas
    *   sales supervisor            divisi & bawahannya
    *   sales biasa                 HANYA yang mencatat namanya
    *
-   * Penyaringan dilakukan DI QUERY (lihat batasiLingkup), bukan setelah data
-   * tiba. Menyaring setelah tiba berarti data sales lain
-   * sudah sampai di browser dan terbaca lewat DevTools - untuk daftar
-   * pelanggan dan nilai project, itu kebocoran yang sesungguhnya.
+   * Penyaringan WAJIB dilakukan di query (lihat batasiLingkup), bukan setelah
+   * data tiba. Menyaring setelah tiba berarti daftar pelanggan dan nilai
+   * project milik sales lain sudah sampai di browser dan terbaca dari DevTools.
    */
   const isAdmin  = ['admin','superadmin'].includes(currentUser.role?.toLowerCase() ?? '');
   /** Orang dalam PTS: admin, superadmin, dan seluruh role team. */

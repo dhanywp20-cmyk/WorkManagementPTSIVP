@@ -13,13 +13,8 @@ export const THEME = {
 } as const;
 
 /**
- * Palet "console" - kertas netral bertekstur satu warna, satu aksen (THEME
- * di atas), dan warna status terpisah dari aksen. Menggantikan pola foto
- * latar + kartu kaca-buram: itulah yang membuat layar sebelumnya terasa
- * ramai dan tidak proporsional - foto ikut bersaing dengan data, dan setiap
- * elemen (badge/tombol/header) memakai gradasi sekaligus sehingga tidak ada
- * satu pun yang terasa "utama". Angka & tanggal dipakai bersama fontMono di
- * bawah supaya kolomnya sejajar (font-variant-numeric: tabular-nums).
+ * Palet "console": kertas netral satu warna, satu aksen (THEME di atas), dan
+ * warna status yang terpisah dari aksen supaya tidak saling bersaing.
  */
 export const PALETTE = {
   paper: '#f3f6f7',
@@ -255,16 +250,10 @@ export const STATUS_PIE_COLOR: Record<ProjectStatus, string> = {
 // Helper
 
 /**
- * Progres sebuah lokasi - DIHITUNG dari komposisi status komponennya, bukan
- * diisi manual. Selesai dihitung penuh, Proses setengah, Pending & Stuck nol -
- * masing-masing dikalikan bobot kepentingan komponen (`weight`, DEFAULT 1 di
- * DB) sebelum dirata-ratakan, sehingga komponen yang lebih kritis menyumbang
- * lebih banyak ke persentase.
- *
- * `weight` opsional pada parameter: komponen tanpa bobot eksplisit dianggap 1,
- * sehingga lokasi lama (sebelum kolom weight ada) menghasilkan angka IDENTIK
- * dengan rata-rata biasa sebelumnya.
- * Lokasi tanpa komponen = 0% (belum ada yang bisa diukur).
+ * Progres sebuah lokasi, DIHITUNG dari komposisi status komponennya dan bukan
+ * diisi manual: Selesai penuh, Proses setengah, Pending & Stuck nol, masing
+ * masing dikali `weight` sebelum dirata-ratakan. Komponen tanpa bobot dianggap
+ * 1; lokasi tanpa komponen 0%.
  */
 export function computeProgress(components: { state: ComponentState; weight?: number }[]): number {
   if (components.length === 0) return 0;
@@ -304,12 +293,9 @@ export function stateBreakdown(components: { state: ComponentState }[]): StateBr
 }
 
 /**
- * Rata-rata progres seluruh lokasi. Dibulatkan ke bilangan bulat agar cocok
- * dengan angka yang ditampilkan di kartu ringkasan.
- *
- * Parameter sengaja struktural (bukan ProgressLocation[] penuh) - dipakai
- * juga oleh halaman listing yang hanya menarik kolom `progress` per lokasi
- * (lihat projectHealth di bawah).
+ * Rata-rata progres seluruh lokasi, dibulatkan agar cocok dengan kartu
+ * ringkasan. Parameternya struktural, bukan ProgressLocation[] penuh, supaya
+ * halaman listing yang hanya menarik kolom `progress` bisa ikut memakainya.
  */
 export function averageProgress(locations: { progress: number }[]): number {
   if (locations.length === 0) return 0;
@@ -355,12 +341,9 @@ function diffDays(a: string, b: string): number {
 }
 
 /**
- * Status jadwal sebuah proyek/lokasi. Dihitung saat tampil, bukan disimpan -
- * status "overtime" berubah sendiri seiring hari berjalan, jadi menyimpannya
- * di kolom akan selalu basi kecuali ada job harian.
- *
- * `status === 'done'` menang atas segalanya: pekerjaan yang sudah selesai tidak
- * pantas ditandai terlambat walau tanggal targetnya sudah lewat.
+ * Status jadwal proyek/lokasi. Dihitung saat tampil, bukan disimpan: "overtime"
+ * berubah sendiri seiring hari berjalan, jadi kolom tersimpan akan selalu basi
+ * tanpa job harian. `status === 'done'` menang atas segalanya.
  */
 export function timelineInfo(
   item: { start_date: string | null; target_date: string | null; status: ProjectStatus },
@@ -550,14 +533,10 @@ export const PIE_PALETTE = [
 export interface PieSlice { label: string; value: number; color: string }
 
 /**
- * Progres tiap PIC - RATA-RATA progres seluruh lokasi yang dia pegang (bukan
- * jumlah lokasinya), diurutkan dari yang tertinggi. PIC dengan beberapa lokasi
- * dirata-ratakan supaya yang memegang banyak site tidak otomatis terlihat lebih
- * besar.
- *
- * Catatan: nilainya persentase, jadi MENJUMLAHKAN slice tidak bermakna - pemakai
- * komponen wajib mengisi centerValue sendiri (lihat ProjectDetailView).
- * Lokasi tanpa PIC dikelompokkan "Belum ada PIC" agar tidak hilang diam-diam.
+ * Progres tiap PIC: RATA-RATA lokasi yang dia pegang, bukan jumlahnya, supaya
+ * pemegang banyak site tidak otomatis terlihat lebih besar. Nilainya
+ * persentase, jadi menjumlahkan slice tidak bermakna dan pemakai komponen
+ * wajib mengisi centerValue sendiri. Lokasi tanpa PIC masuk "Belum ada PIC".
  */
 export function picBreakdown(locations: ProgressLocation[]): PieSlice[] {
   const group = new Map<string, number[]>();
@@ -692,11 +671,8 @@ export function shareUrl(token: string): string {
 
 /**
  * Hak edit PENUH Project Progress: buat/hapus proyek & lokasi, sunting rekap
- * isu. Admin & superadmin, ATAU akun Team PTS dengan toggle "Full Access"
- * aktif (lihat lib/constants.ts hasFullAccess & sql/user-full-access-toggle.sql).
- *
- * teamType & accessLevel opsional - pemanggil lama yang cuma kirim role
- * (mis. cek admin murni) tetap jalan seperti sebelumnya.
+ * isu. Admin & superadmin, atau akun Team PTS dengan toggle "Full Access"
+ * aktif (lihat lib/constants.ts hasFullAccess).
  */
 export function canEditProjectProgress(
   role: string | null | undefined,
@@ -733,13 +709,10 @@ export function resolveVisibility(
 }
 
 /**
- * Apakah user ini adalah Sales yang tercatat pada lokasi tersebut.
- *
- * Sebelumnya role `sales` sepenuhnya read-only di Project Progress. Karena Item
- * Komponen kini sengaja dikosongkan saat auto-insert dan harus diisi menyusul,
- * Sales diberi akses tulis TERBATAS: hanya komponen, dan hanya pada lokasi yang
- * mencatat namanya. Jadwal, status lokasi, PIC, struktur proyek, dan rekap isu
- * tetap milik admin.
+ * Apakah user ini Sales yang tercatat pada lokasi tersebut. Sales punya akses
+ * tulis TERBATAS: hanya Item Komponen, dan hanya di lokasi yang mencatat
+ * namanya. Jadwal, status lokasi, PIC, struktur proyek, dan rekap isu tetap
+ * milik admin.
  */
 export function isSalesOfLocation(
   location: { sales_name: string | null }, fullName: string | null | undefined,

@@ -3,34 +3,19 @@ import crypto from 'crypto';
 /**
  * lib/db-token.ts - penerbit JWT untuk PostgREST (server-only).
  *
- * Kenapa ada
  * Platform ini tidak memakai Supabase Auth; sesinya custom (bcrypt + tabel
- * user_sessions + cookie httpOnly). Akibatnya di dalam policy RLS,
- * auth.uid() selalu NULL - basis data tidak punya cara mengenali siapa yang
- * bertanya. Itu sebabnya semua policy yang ada terpaksa berbunyi USING (true).
- *
- * Token di sini menutup celah itu: login yang sudah berjalan di server
- * sekalian menerbitkan JWT bertanda tangan SUPABASE_JWT_SECRET, berisi
- * identitas user. PostgREST memverifikasinya, lalu policy bisa membaca
- * klaimnya dan menulis syarat sungguhan:
+ * user_sessions + cookie httpOnly), jadi auth.uid() di dalam policy RLS selalu
+ * NULL dan policy terpaksa berbunyi USING (true). Login menerbitkan JWT
+ * bertanda tangan SUPABASE_JWT_SECRET berisi identitas user; PostgREST
+ * memverifikasinya dan policy bisa menulis syarat sungguhan:
  *
  *     USING (sales_name = request.jwt.claims ->> 'username')
  *
- * Kenapa role-nya 'anon', bukan 'authenticated'
- * Ini keputusan yang paling menentukan di berkas ini, jadi ditulis eksplisit.
- *
- * Klaim `role` menetapkan role Postgres yang menjalankan query. Sebagian besar
- * policy yang sudah ada terpasang untuk role `anon` - dan beberapa tabel
- * (audit_trail, incentive_*, kpi_global_settings, notifications, project_*)
- * HANYA punya policy untuk `anon`, tanpa padanan `public`.
- *
- * Menerbitkan role 'authenticated' akan membuat query berjalan sebagai role
- * lain, sehingga policy `anon` itu tidak lagi berlaku dan tabel-tabel tersebut
- * langsung tertutup - aplikasi rusak seketika.
- *
- * Dengan role 'anon', perilaku hari ini TIDAK BERUBAH sama sekali. Yang
- * bertambah hanyalah klaim identitas yang kini tersedia di dalam policy. Itu
- * membuat pengetatan bisa dikerjakan bertahap per tabel, bukan sekali putus.
+ * Klaim `role` sengaja 'anon', bukan 'authenticated'. Klaim itu menetapkan
+ * role Postgres yang menjalankan query, dan beberapa tabel (audit_trail,
+ * incentive_*, kpi_global_settings, notifications, project_*) HANYA punya
+ * policy untuk `anon`. Menerbitkan role lain membuat tabel-tabel itu tertutup
+ * seketika. JANGAN diubah tanpa memindahkan policy-nya lebih dulu.
  */
 
 const SECRET = process.env.SUPABASE_JWT_SECRET ?? '';

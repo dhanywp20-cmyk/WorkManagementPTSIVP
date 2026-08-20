@@ -34,16 +34,10 @@ import {
 
 // Ikon garis
 /**
- * Emoji dipakai sebagai ikon di banyak tempat, dan itu punya tiga masalah nyata:
- * bentuknya berbeda-beda di tiap sistem operasi (Windows, Android, iOS
- * menggambar  dengan gaya yang sama sekali lain), ukuran & posisi vertikalnya
- * tidak bisa dikendalikan CSS sehingga sering tidak sejajar dengan teks di
- * sebelahnya, dan warnanya tetap walau teks di sekitarnya berubah.
- *
- * Ikon garis di bawah memakai `currentColor`, jadi selalu selaras dengan warna
- * label induknya, ukurannya diatur lewat class, dan tampil identik di semua
- * perangkat. `aria-hidden` karena ikon ini hanya penguat visual - labelnya
- * sudah ditulis di sebelahnya, jadi pembaca layar tidak perlu menyebutkannya.
+ * Ikon garis pengganti emoji: memakai `currentColor` sehingga selaras dengan
+ * warna label induknya, ukurannya diatur lewat class, dan bentuknya sama di
+ * semua sistem operasi. `aria-hidden` karena labelnya sudah ditulis di
+ * sebelahnya.
  */
 const ICON_SHAPES: Record<string, React.ReactNode> = {
   search:   <><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" /></>,
@@ -105,15 +99,10 @@ function TicketingSystemInner() {
   const [approvalTicket, setApprovalTicket] = useState<Ticket | null>(null);
   const [approvalAssignee, setApprovalAssignee] = useState("");
   /**
-   * Pilihan handler PER TICKET di modal approval, dikunci id ticket.
-   *
-   * Sebelumnya seluruh baris di modal berbagi SATU pasang state
-   * (approvalTicket + approvalAssignee). Modal itu menampilkan semua ticket
-   * "Waiting Approval" sekaligus, jadi satu nilai bersama untuk banyak baris
-   * membuat pilihan bisa bocor antar-ticket begitu state-nya tertinggal -
-   * dan itu berujung ticket ke-assign ke orang yang salah. Dengan peta
-   * per-id, tiap baris memegang pilihannya sendiri dan tidak mungkin
-   * tertukar.
+   * Pilihan handler PER TICKET di modal approval, dikunci id ticket. Modal
+   * menampilkan semua ticket "Waiting Approval" sekaligus, jadi satu state
+   * bersama untuk banyak baris akan membuat pilihan bocor antar-ticket dan
+   * ticket ke-assign ke orang yang salah.
    */
   const [approvalAssignees, setApprovalAssignees] = useState<Record<string, string>>({});
   /** Id ticket yang sedang diproses - mencegah klik ganda pada baris yang sama. */
@@ -1031,13 +1020,10 @@ function TicketingSystemInner() {
   };
 
   /**
-   * Beres-beres setelah SATU ticket selesai diproses di modal approval.
-   *
-   * Modal sengaja TIDAK ditutup selama masih ada ticket lain yang menunggu:
-   * sebelumnya modal langsung tertutup tiap kali satu ticket di-approve,
-   * sehingga admin harus membukanya lagi berulang kali saat antre banyak.
-   * Pilihan handler ticket yang baru selesai ikut dibuang supaya tidak ada
-   * sisa yang bisa terbawa ke ticket berikutnya.
+   * Beres-beres setelah SATU ticket selesai diproses di modal approval. Modal
+   * sengaja tidak ditutup selama masih ada ticket lain yang menunggu, dan
+   * pilihan handler ticket yang baru selesai dibuang supaya tidak terbawa ke
+   * ticket berikutnya.
    */
   const selesaikanSatuApproval = (ticketId: string) => {
     setApprovalAssignees(prev => {
@@ -2394,13 +2380,11 @@ function TicketingSystemInner() {
   const canManageTickets = canApproveAssign;
 
   /**
-   * Field ticket yang boleh dibetulkan admin lewat panel Edit Detail.
-   *
-   * Sengaja TIDAK memuat assign_name / routing_status / assigned_supervisor_id:
-   * ketiganya milik bagian Re-route, yang punya syarat sendiri (lihat
-   * bolehReroute) dan efek samping sendiri (WA ke penerima baru). Kalau ikut
-   * di sini, mengetik nama di kotak teks bisa memindahkan pekerjaan orang
-   * tanpa ada yang diberi tahu.
+   * Field ticket yang boleh dibetulkan admin lewat panel Edit Detail. Sengaja
+   * TIDAK memuat assign_name / routing_status / assigned_supervisor_id:
+   * ketiganya milik bagian Re-route yang punya syarat (bolehReroute) dan efek
+   * samping sendiri (WA ke penerima baru). Kalau ikut di sini, mengetik nama
+   * di kotak teks bisa memindahkan pekerjaan orang tanpa ada yang diberi tahu.
    */
   const TICKET_ADMIN_FIELDS: AdminField[] = [
     { key: 'project_name',   label: 'Nama Project',    span: 2 },
@@ -3418,18 +3402,11 @@ function TicketingSystemInner() {
                     <div className="flex items-center">
                       {(["Pending","Call","Onsite","In Progress","Solved"] as const).map((step, idx, arr) => {
                         const order = ["Pending","Call","Onsite","In Progress","Solved"];
-                        /* Posisi diambil dari langkah TERJAUH yang pernah dicapai,
-                           bukan semata status sekarang.
-
-                           "Pending Action" dan "Pending Check" tidak ada di daftar
-                           ini, jadi indexOf mengembalikan -1 dan SELURUH langkah
-                           tampak belum tercapai - ticket yang sudah melewati Call
-                           dan In Progress terlihat mundur ke titik awal begitu
-                           di-set Pending Action. Padahal pekerjaannya tidak hilang;
-                           yang terjadi cuma menunggu sesuatu.
-
-                           Riwayat aktivitas menyimpan tiap perpindahan status, jadi
-                           dari situlah langkah terjauhnya dibaca. */
+                        /* Posisi diambil dari langkah TERJAUH yang pernah dicapai menurut riwayat
+                           aktivitas, bukan status sekarang. "Pending Action" dan
+                           "Pending Check" tidak ada di daftar ini, jadi memakai status
+                           sekarang akan membuat ticket yang sudah jauh terlihat mundur
+                           ke titik awal. */
                         const dariRiwayat = (selectedTicket.activity_logs ?? [])
                           .map(l => order.indexOf(l.new_status))
                           .filter(i => i >= 0);

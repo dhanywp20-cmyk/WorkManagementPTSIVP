@@ -109,21 +109,11 @@ export function checkSessionOrRedirect(): boolean {
 /**
  * Perbarui token PostgREST bila sudah dekat kedaluwarsa.
  *
- * Kenapa perlu
- * Token dan sesi browser sama-sama berumur 6 jam, tapi diperpanjang oleh hal
- * yang berbeda. setSession() dipanggil di beberapa layar untuk menyegarkan
- * profil user, dan panggilan itu MENGULANG hitungan mundur sesi dari nol -
- * sementara tokennya tidak ikut diterbitkan ulang.
- *
- * Akibatnya sesi di browser bisa terlihat masih segar padahal tokennya sudah
- * lewat batas. Aplikasi tetap mengira user login, tapi PostgREST menolak
- * SETIAP query dengan galat JWT - termasuk saat membuat ticket. Gejalanya
- * membingungkan justru karena tidak ada yang tampak kedaluwarsa dari sisi user.
- *
- * Pemantau di bawah menutup celah itu dengan memperbarui token dari
- * /api/auth/session (yang selalu menerbitkan token baru selama cookie masih
- * sah), jadi masa berlaku token tidak lagi bergantung pada layar mana yang
- * kebetulan dibuka.
+ * Token dan sesi browser sama-sama berumur 6 jam tapi diperpanjang oleh hal
+ * berbeda: setSession() mengulang hitungan mundur sesi dari nol tanpa ikut
+ * menerbitkan token baru. Tanpa pemantau ini, sesi bisa terlihat segar
+ * sementara PostgREST menolak setiap query dengan galat JWT, dan dari sisi
+ * user tidak ada tanda apa pun bahwa sesinya bermasalah.
  */
 export async function refreshDbTokenIfNeeded(ambangMenit = 30): Promise<void> {
   const exp = dbTokenExpiryMs();

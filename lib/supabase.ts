@@ -2,11 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 
 /**
  * Token PostgREST milik user yang sedang login (lihat lib/db-token.ts).
- *
- * Disimpan di module scope + sessionStorage, bukan di React state, karena
- * klien Supabase di bawah adalah singleton yang diimpor oleh ratusan berkas.
- * Menaruhnya di sini membuat seluruh query ikut membawa identitas user tanpa
- * satu pun pemanggilan perlu diubah.
+ * Disimpan di module scope + sessionStorage, bukan React state, karena klien
+ * Supabase di bawah adalah singleton yang diimpor ratusan berkas.
  */
 const TOKEN_KEY = 'ivp_db_token';
 
@@ -14,13 +11,10 @@ let dbToken: string | null =
   typeof window !== 'undefined' ? window.sessionStorage.getItem(TOKEN_KEY) : null;
 
 /**
- * Pasang / hapus token. Dipanggil saat login berhasil dan saat sesi
- * dipulihkan dari cookie (lihat lib/auth.ts).
- *
- * Dibaca ulang dari sessionStorage saat modul dimuat supaya query yang jalan
- * paling awal setelah refresh halaman tetap membawa identitas - tanpa itu,
- * query pertama akan berangkat sebagai anonim dan tertolak begitu policy
- * diperketat.
+ * Pasang / hapus token. Dipanggil saat login berhasil dan saat sesi dipulihkan
+ * dari cookie (lihat lib/auth.ts). Nilainya dibaca ulang dari sessionStorage
+ * saat modul dimuat supaya query paling awal setelah refresh halaman tetap
+ * membawa identitas, bukan berangkat sebagai anonim.
  */
 export function setDbToken(token: string | null): void {
   dbToken = token;
@@ -35,12 +29,10 @@ export function getDbToken(): string | null {
 }
 
 /**
- * Kapan token kedaluwarsa (epoch ms), dibaca dari klaim `exp`.
- *
- * Payload JWT hanya di-base64, jadi bisa dibaca tanpa rahasia apa pun. Yang
- * dibaca di sini SEMATA waktu kedaluwarsa untuk menjadwalkan pembaruan -
- * keabsahan tanda tangannya tetap diverifikasi PostgREST di server, bukan di
- * sini. Mengembalikan null bila token tidak ada atau bentuknya tak terbaca.
+ * Kapan token kedaluwarsa (epoch ms), dibaca dari klaim `exp`. Yang dibaca di
+ * sini SEMATA waktu kedaluwarsa untuk menjadwalkan pembaruan; keabsahan tanda
+ * tangannya tetap diverifikasi PostgREST. Null bila token tidak ada atau
+ * bentuknya tak terbaca.
  */
 export function dbTokenExpiryMs(): number | null {
   if (!dbToken) return null;
@@ -56,21 +48,10 @@ export function dbTokenExpiryMs(): number | null {
 }
 
 /**
- * fetch yang menyelipkan Authorization pada tiap permintaan.
- *
- * Ini jalur yang didukung resmi (opsi global.fetch) dan satu-satunya cara
- * menyisipkan token yang BERUBAH-UBAH ke klien singleton - opsi global.headers
- * hanya dibaca sekali saat klien dibuat, jadi tidak bisa dipakai di sini.
- *
- * Tanpa token, permintaan berangkat memakai anon key seperti sebelumnya.
- */
-/**
- * Perbarui token dari /api/auth/session (yang menerbitkan token baru selama
- * cookie sesi masih sah). Dipakai dua tempat: penjaga di fetchWithToken bawah,
- * dan pemantau sesi berkala di lib/auth.ts.
- *
- * Tinggal di berkas INI, bukan di lib/auth.ts, supaya fetchWithToken bisa
- * memakainya tanpa impor melingkar (auth.ts sudah mengimpor berkas ini).
+ * Perbarui token dari /api/auth/session, yang menerbitkan token baru selama
+ * cookie sesi masih sah. Dipakai penjaga di fetchWithToken dan pemantau sesi
+ * berkala di lib/auth.ts. Tinggal di berkas ini supaya fetchWithToken bisa
+ * memakainya tanpa impor melingkar.
  */
 let pembaruanBerjalan: Promise<void> | null = null;
 
@@ -94,20 +75,14 @@ export function refreshDbToken(): Promise<void> {
 }
 
 /**
- * fetch yang menyelipkan Authorization pada tiap permintaan.
+ * fetch yang menyelipkan Authorization pada tiap permintaan. Opsi global.fetch
+ * adalah satu-satunya cara menyisipkan token yang BERUBAH-UBAH ke klien
+ * singleton; global.headers hanya dibaca sekali saat klien dibuat.
  *
- * Ini jalur yang didukung resmi (opsi global.fetch) dan satu-satunya cara
- * menyisipkan token yang BERUBAH-UBAH ke klien singleton - opsi global.headers
- * hanya dibaca sekali saat klien dibuat, jadi tidak bisa dipakai di sini.
- *
- * Sebelum mengirim, token yang sudah lewat batas waktu DIPERBARUI dulu.
- * Tanpa ini, token basi tetap dikirim dan PostgREST menolak setiap query
- * dengan galat JWT - termasuk saat membuat ticket - padahal dari sisi user
- * tidak ada tanda apa pun bahwa sesinya bermasalah. Penjagaannya diletakkan
- * di sini, bukan di tiap halaman, karena hanya sebagian halaman yang memasang
- * pemantau sesi; di lapisan ini SEMUA modul ikut terlindungi.
- *
- * Tanpa token sama sekali, permintaan berangkat memakai anon key seperti dulu.
+ * Token yang lewat batas waktu diperbarui dulu sebelum dikirim. Penjagaannya
+ * ada di lapisan ini, bukan di tiap halaman, supaya semua modul terlindungi -
+ * hanya sebagian halaman yang memasang pemantau sesi. Tanpa token, permintaan
+ * berangkat memakai anon key.
  */
 const fetchWithToken: typeof fetch = async (input, init) => {
   if (dbToken) {
@@ -140,16 +115,10 @@ export const supabaseServices = createClient(
 );
 
 /**
- * Apakah konfigurasi dua basis data ini masuk akal.
- *
- * Yang paling berbahaya adalah URL keduanya SAMA: di keadaan itu setiap
- * "mirror ke Services DB" sebenarnya menulis balik ke basis data yang sama,
- * jadi seluruh alur tampak berhasil padahal tidak ada yang menyeberang. Di
- * lokal hal itu wajar (satu instance dipakai untuk dua-duanya), tapi di
- * produksi artinya alur lintas organisasi diam-diam mati.
- *
- * Dipakai dua tempat: peringatan konsol saat dev, dan laporan kesiapan di
- * /api/auth/db-token-check yang hanya bisa dibaca admin.
+ * Apakah konfigurasi dua basis data ini masuk akal. Yang paling berbahaya
+ * adalah URL keduanya SAMA: setiap mirror ke Services DB menulis balik ke
+ * basis data yang sama, sehingga alur lintas organisasi tampak berhasil
+ * padahal tidak ada yang menyeberang. Wajar di lokal, fatal di produksi.
  */
 export function periksaKonfigurasiServices(): {
   urlSama: boolean;

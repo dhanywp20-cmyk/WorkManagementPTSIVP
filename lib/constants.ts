@@ -21,16 +21,7 @@ export const BRAND = {
 } as const;
 
 // Z-Index Standar
-/**
- * Skala z-index tinggal di lib/z-index.ts.
- *
- * Dulu ada salinan kedua di berkas ini dengan angka BERBEDA untuk nama yang
- * sama (modal 100 vs 100, tapi toast 200 vs 10000). Selama tiap halaman masih
- * terkurung stacking context sendiri, selisih itu tidak pernah ketahuan -
- * begitu kurungannya dibongkar, dua tangga yang bersaing langsung menghasilkan
- * popup yang tampil di belakang popup lain. Satu sumber saja, supaya tidak
- * terulang.
- */
+/** Skala z-index tinggal di lib/z-index.ts - satu sumber, jangan disalin. */
 export { Z } from './z-index';
 
 // Role Helpers
@@ -74,31 +65,20 @@ export function isAdminOrSupervisor(user: CurrentUser | null): boolean {
 }
 
 /**
- * Bentuk minimal yang dibutuhkan hasFullAccess() - SENGAJA bukan CurrentUser
- * langsung. Modul lain (Learning Center, Piket Showroom, dst) masing-masing
- * punya `User`/`currentUser` bertipe lokal sendiri (pola yang sudah dipakai
- * di seluruh platform ini, lihat CLAUDE.md/audit modul); mensyaratkan
- * CurrentUser persis akan menolak semuanya karena field opsionalnya sedikit
- * berbeda (mis. `jabatan?: string | null` vs `string | undefined`). Bentuk
- * struktural longgar ini kompatibel dengan tipe User apa pun di platform.
+ * Bentuk minimal yang dibutuhkan hasFullAccess(), sengaja struktural dan bukan
+ * CurrentUser. Tiap modul punya tipe `User` lokalnya sendiri dengan field
+ * opsional yang sedikit berbeda; bentuk longgar ini menerima semuanya.
  */
 type AccessCheckUser = { role?: string | null; team_type?: string | null; access_level?: string | null } | null | undefined;
 
 /**
- * Akses PENUH setara admin di modul DATA (Piket Showroom, Learning Center,
- * KPI Team, Form Review, Ticketing, Reminder Schedule, Daily Report, Unit
- * Movement, Project Progress) - BUKAN hak kelola akun (itu tetap admin/
- * superadmin saja lewat /api/admin/users).
+ * Akses PENUH setara admin di modul DATA - BUKAN hak kelola akun, yang tetap
+ * milik admin/superadmin lewat /api/admin/users.
  *
- * Sengaja BUKAN ditebak dari jabatan ('Manager', dst) - itu rapuh, harus
- * diubah di kode tiap kali struktur organisasi berubah. Sebagai gantinya,
- * admin men-toggle kolom users.access_level ('full'/'guest') per akun lewat
- * Admin Panel (lib/admin-users.ts adminSetAccessLevel). Toggle ini HANYA
- * berlaku untuk role='team' - sesuai desain platform: dibuat untuk Team PTS
- * mengelola timnya sendiri, bukan untuk Guest/Sales/Marketing mengelola tim
- * lain, jadi access_level='full' pada akun non-team diabaikan.
- *
- * Lihat sql/user-full-access-toggle.sql untuk skema & alasan lengkap.
+ * Sengaja tidak ditebak dari jabatan; admin men-toggle users.access_level
+ * ('full'/'guest') per akun lewat Admin Panel. Toggle itu HANYA berlaku untuk
+ * role='team', jadi access_level='full' pada akun non-team diabaikan. Lihat
+ * sql/user-full-access-toggle.sql.
  */
 export function hasFullAccess(user: AccessCheckUser): boolean {
   if (!user) return false;

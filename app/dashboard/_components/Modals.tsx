@@ -18,18 +18,11 @@ import {
 import { ConfirmDialog, type ConfirmState, Username, ModalPortal, formatUsername} from '@/components/shared';
 
 /**
- * Sebar perubahan nama/username user ke semua snapshot di tabel terkait,
- * lewat SQL function propagate_user_rename.
- *
- * Tiga hasil yang mungkin, dan ketiganya berbeda artinya bagi admin:
- *   ok       - semua tabel ikut terbarui
- *   sebagian - sebagian tabel gagal, sisanya berhasil (fungsi SQL-nya kini
- *              menangkap galat per tabel dan meneruskan ke tabel berikutnya,
- *              jadi keadaan ini nyata dan perlu disebut apa adanya)
- *   gagal    - panggilan RPC-nya sendiri yang gagal, tidak ada yang tersebar
- *
- * Akun sendiri SUDAH tersimpan sebelum fungsi ini dipanggil; apa pun hasilnya
- * di sini tidak membatalkan penyimpanan itu.
+ * Sebar perubahan nama/username user ke semua snapshot di tabel terkait, lewat
+ * SQL function propagate_user_rename. Tiga hasil yang berbeda artinya bagi
+ * admin: ok (semua tabel terbarui), sebagian (fungsi SQL menangkap galat per
+ * tabel lalu lanjut), gagal (RPC-nya sendiri gagal, tidak ada yang tersebar).
+ * Akun sendiri sudah tersimpan sebelum fungsi ini dipanggil.
  */
 type HasilSebar = { taraf: 'ok' | 'sebagian' | 'gagal'; pesan: string };
 
@@ -616,13 +609,10 @@ const KOLOM_PROFIL_DASAR =
   'id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type';
 
 /**
- * Ambil profil user, dengan jalur mundur bila kolom tambahan belum ada.
- *
- * created_at dan access_level dipakai kartu "Bergabung Sejak" dan "Level
- * Akses". Keduanya bisa belum ada di basis data yang migrasinya belum
- * dijalankan - dan PostgREST menolak SELURUH query kalau satu kolom saja tak
- * dikenal, bukan cuma kolom itu. Tanpa jalur mundur ini, satu kolom yang
- * hilang membuat seluruh halaman Profil kosong.
+ * Ambil profil user, dengan jalur mundur bila created_at / access_level belum
+ * ada di basis data. PostgREST menolak SELURUH query kalau satu kolom saja tak
+ * dikenal, jadi tanpa jalur mundur satu kolom yang hilang mengosongkan seluruh
+ * halaman Profil.
  */
 async function ambilProfil(id: string) {
   const lengkap = await supabase.from('users')
@@ -3739,16 +3729,12 @@ export function UserManagementInline() {
               (orgChildren['__root__'] || []).forEach(r => walk(r, 0));
 
               /**
-               * Siapa yang TIDAK muncul di pohon sama sekali.
-               *
-               * Penelusuran berangkat dari __root__, yaitu orang tanpa atasan.
-               * Rantai yang melingkar (A atasan B, B atasan A) tidak pernah
-               * tersambung ke akar mana pun, jadi anggotanya lenyap dari layar
-               * tanpa pesan apa pun - bukan membeku, tapi justru lebih sulit
-               * disadari. Yang hilang begini juga tidak masuk rekap siapa pun.
-               *
-               * Dihitung tanpa filter pencarian, supaya peringatannya tidak
-               * ikut menghilang saat daftar sedang disaring.
+               * Siapa yang TIDAK muncul di pohon sama sekali. Penelusuran
+               * berangkat dari orang tanpa atasan, jadi rantai yang melingkar
+               * (A atasan B, B atasan A) tidak tersambung ke akar mana pun dan
+               * anggotanya lenyap dari layar tanpa pesan. Dihitung tanpa
+               * filter pencarian supaya peringatannya tidak ikut hilang saat
+               * daftar sedang disaring.
                */
               const tampilSemua = new Set<string>();
               const walkAll = (u: User) => {

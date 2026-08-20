@@ -831,13 +831,9 @@ export default function ProjectProgressPage() {
 // Editor detail (lokasi / komponen / isu)
 
 /**
- * Editor memakai DRAFT LOKAL. Semua perubahan hanya mengubah state di memori;
- * tidak ada penulisan ke database sampai tombol "Simpan Perubahan" ditekan.
- *
- * Ini sengaja: versi sebelumnya menyimpan tiap kali field kehilangan fokus lalu
- * memuat ulang seluruh detail, sehingga komponen ter-mount ulang dan tampilan
- * berkedip di tengah pengetikan.
- *
+ * Editor memakai DRAFT LOKAL: perubahan hanya mengubah state di memori sampai
+ * "Simpan Perubahan" ditekan. Menyimpan tiap kali field kehilangan fokus
+ * memaksa detail dimuat ulang, dan tampilan berkedip di tengah pengetikan.
  * Baris baru diberi id sementara berawalan "new-" supaya saat simpan bisa
  * dipisahkan antara INSERT dan UPDATE.
  */
@@ -1044,20 +1040,12 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
     }
     setSaving(true);
 
-    /* Riwayat perubahan (audit_trail). Dua hal yang membuat pencatatan ini
-       tidak bisa ditempel begitu saja di setiap .update():
-       1. Ini penyimpanan diff, bukan autosave per field - satu tekan
-          "Simpan" bisa membawa banyak lokasi & komponen sekaligus, sebagian
-          benar-benar berubah, sebagian cuma ikut terkirim ulang. Tanpa
-          membandingkan ke data ASLI (before-save, dari `detail` yang dimuat
-          sebelum draft disunting), setiap simpan akan mencatat SEMUA baris
-          sebagai "berubah" walau isinya sama persis.
-       2. logAudit tidak boleh pernah menggagalkan simpan utama - makanya
-          setiap pemanggilan diberi .catch(() => {}) sendiri, konsisten
-          dengan cara modul lain (ticketing, dll) memakainya.
-       Sengaja HANYA status/state yang dibandingkan (bukan label/foto/catatan):
-       itulah yang diminta - "kapan status-nya berubah" - dan itulah satu-
-       satunya field yang benar-benar menentukan progres proyek. */
+    /* Riwayat perubahan (audit_trail). Ini penyimpanan diff, bukan autosave per
+       field: satu tekan "Simpan" membawa banyak lokasi & komponen sekaligus,
+       sebagian benar-benar berubah dan sebagian cuma ikut terkirim ulang, jadi
+       pembandingnya WAJIB data asli sebelum draft disunting. Hanya status yang
+       dibandingkan - itulah satu-satunya field yang menentukan progres. Tiap
+       logAudit diberi .catch() sendiri supaya tidak pernah menggagalkan simpan. */
     const oleh = { user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '' };
     const origLoc = new Map(detail.locations.map(l => [l.id, l]));
     const origComp = new Map(detail.components.map(c => [c.id, c]));

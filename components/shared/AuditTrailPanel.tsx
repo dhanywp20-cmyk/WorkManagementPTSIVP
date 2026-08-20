@@ -6,15 +6,8 @@ import { supabase } from '@/lib/supabase';
 /**
  * components/shared/AuditTrailPanel.tsx - riwayat perubahan sebuah record.
  *
- * logAudit() dipanggil dari 14 berkas di seluruh platform, tapi sampai
- * komponen ini ada hanya SATU layar yang pernah membacanya kembali
- * (analytics-dashboard). Praktisnya audit trail berstatus tulis-saja: setiap
- * perubahan tercatat rapi, dan ketika muncul pertanyaan "siapa yang mengubah
- * ini?" jawabannya ada di basis data tapi tidak terjangkau dari layar mana pun
- * yang relevan.
- *
- * Panel ini menutup jarak itu: pasang di modal detail, sebutkan target_id-nya,
- * dan riwayatnya muncul di tempat pertanyaannya lahir.
+ * Pasang di modal detail, sebutkan target_id-nya, dan riwayat yang dicatat
+ * logAudit() muncul di tempat pertanyaan "siapa yang mengubah ini?" lahir.
  */
 
 export interface AuditEntry {
@@ -103,25 +96,17 @@ export function AuditTrailPanel({
    */
   sembunyikanBilaKosong?: boolean;
   /**
-   * Baris pembuatan yang DITURUNKAN dari record itu sendiri, bukan dari
-   * audit_trail.
-   *
-   * logAudit baru mencatat pembuatan sejak perbaikan terakhir, sehingga record
-   * lama tidak punya baris "dibuat" dan riwayatnya seolah dimulai dari tengah.
-   * Padahal datanya sudah tersimpan sejak awal di kolom created_at &
-   * created_by/sales_name - tinggal ditampilkan.
-   *
-   * Ditempatkan paling bawah (paling tua) dan tidak digandakan bila
-   * audit_trail ternyata sudah memuat baris create-nya sendiri.
+   * Baris pembuatan yang DITURUNKAN dari kolom created_at & created_by record
+   * itu sendiri, untuk record lama yang belum punya baris "dibuat" di
+   * audit_trail. Ditempatkan paling bawah dan tidak digandakan bila
+   * audit_trail ternyata sudah memuatnya.
    */
   awal?: { oleh: string | null; waktu: string | null; keterangan?: string } | null;
   /**
-   * Peristiwa lain yang DITURUNKAN dari record, untuk record lama yang
-   * terjadi sebelum logAudit mencatat peristiwa itu.
-   *
-   * Tiap entri hanya disisipkan bila audit_trail belum memuat aksi yang sama -
-   * jadi begitu pencatatan sungguhan masuk, turunan ini menyingkir sendiri dan
-   * tidak pernah menggandakan.
+   * Peristiwa lain yang DITURUNKAN dari record, untuk masa sebelum logAudit
+   * mencatatnya. Tiap entri hanya disisipkan bila audit_trail belum memuat
+   * aksi yang sama, jadi turunan ini menyingkir sendiri begitu catatan
+   * sungguhan masuk.
    */
   turunan?: { aksi: string; oleh: string | null; waktu: string | null; keterangan?: string }[];
   /**
@@ -132,21 +117,16 @@ export function AuditTrailPanel({
    */
   kompak?: boolean;
   /**
-   * 'horizontal' menggambar alur MENDATAR ala "Alur Request" (lingkaran
-   * bercentang tersambung garis, kiri = paling lama  kanan = terbaru),
-   * dengan status/aksi sebagai label dan TANGGAL di bawahnya - bukan nama
-   * orang, karena yang ingin diketahui di sini adalah kapan status berubah,
-   * bukan siapa. Default 'vertikal' tetap dipakai untuk riwayat yang
-   * memuat detail lengkap (nilai lamabaru, catatan, siapa).
+   * 'horizontal' menggambar alur mendatar ala "Alur Request": label status
+   * dengan TANGGAL di bawahnya, bukan nama orang. Default 'vertikal' dipakai
+   * untuk riwayat berdetail lengkap (nilai lama/baru, catatan, siapa).
    */
   arah?: 'vertikal' | 'horizontal';
   /**
-   * Data siap-pakai - dipakai halaman yang TIDAK BOLEH menyentuh supabase
-   * langsung (mis. ProjectDetailView, karena juga dirender di halaman share
-   * publik tanpa session). Saat diisi, panel TIDAK PERNAH melakukan fetch
-   * sendiri - hanya menyaring `data` (yang sudah diambil pemanggilnya, lewat
-   * server route atau query lain) menurut `targetId`. Diasumsikan sudah
-   * difilter modul-nya oleh pemanggil.
+   * Data siap-pakai untuk halaman yang TIDAK BOLEH menyentuh supabase langsung
+   * (mis. ProjectDetailView, yang juga dirender di halaman share publik tanpa
+   * session). Saat diisi, panel tidak pernah fetch sendiri; ia hanya menyaring
+   * `data` menurut `targetId` dan menganggapnya sudah difilter per modul.
    */
   data?: AuditEntry[];
 }) {
@@ -214,16 +194,11 @@ export function AuditTrailPanel({
   for (const t of turunan) {
     if (!t.waktu || aksiTercatat.has(t.aksi)) continue;
     /**
-     * Baris turunan diturunkan dari kolom seperti `updated_at`, yang menyimpan
-     * waktu perubahan TERAKHIR - bukan waktu peristiwa itu sendiri. Akibatnya
-     * baris turunan bisa tampak terjadi SESUDAH peristiwa yang sebenarnya
-     * menyusulnya: sebuah jadwal yang di-assign lalu ditandai selesai akan
-     * menampilkan "Di-assign" di atas "Status berubah  done", seolah alurnya
-     * berhenti di assign padahal sudah selesai.
-     *
-     * Baris turunan memang hanya ada untuk menambal masa sebelum pencatatan
-     * sungguhan berjalan, jadi tempatnya selalu SEBELUM catatan asli pertama.
-     * Waktunya dibatasi ke situ bila tebakannya melewati batas itu.
+     * Baris turunan memakai kolom seperti `updated_at`, yang menyimpan waktu
+     * perubahan TERAKHIR dan bukan waktu peristiwanya, sehingga bisa tampak
+     * terjadi sesudah peristiwa yang menyusulnya. Karena turunan hanya
+     * menambal masa sebelum pencatatan sungguhan berjalan, waktunya dibatasi
+     * agar selalu sebelum catatan asli pertama.
      */
     let waktu = t.waktu;
     if (catatanAsliTerawal && waktu >= catatanAsliTerawal) {

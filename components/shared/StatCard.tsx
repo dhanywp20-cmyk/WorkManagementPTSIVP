@@ -1,31 +1,20 @@
 'use client';
 
 /**
- * Kartu ringkasan angka (Total / Pending / Selesai / dst) yang dipakai di
- * hampir semua modul.
+ * Kartu ringkasan angka (Total / Pending / Selesai / dst) untuk semua modul.
  *
- * Sebelumnya tiap modul menyalin markup-nya sendiri: kotak gradien jenuh
- * dengan angka putih. Dua masalah muncul dari situ. Pertama, deretan kartu
- * gradien berdiri sejajar dan sama-sama menuntut perhatian, sehingga tidak ada
- * hierarki dan angka antar-kartu justru sulit dibandingkan. Kedua, karena
- * disalin per modul, gayanya perlahan menyimpang satu sama lain.
- *
- * Komponen ini menyatukannya: permukaan putih, angka gelap, dan warna dipakai
- * sebagai PENANDA kategori lewat pita tipis di tepi kiri - bukan untuk mengecat
- * seluruh kartu. Hanya kartu yang sedang dipakai sebagai filter yang
- * ditonjolkan.
+ * Permukaan putih dengan angka gelap; warna hanya dipakai sebagai penanda
+ * kategori lewat pita tipis di tepi kiri, bukan untuk mengecat seluruh kartu.
+ * Hanya kartu yang sedang dipakai sebagai filter yang ditonjolkan, supaya
+ * deretannya punya hierarki dan angkanya mudah dibandingkan.
  */
 
 import React from 'react';
 
 /**
- * Campur warna dengan putih dan kembalikan warna SOLID.
- *
- * Penting: latar kartu aktif TIDAK boleh memakai rgba semi-transparan.
- * Halaman-halaman modul memakai foto sebagai latar, dan warna tembus pandang
- * membuat foto itu terlihat menembus kartu - hasilnya terlihat seperti kaca
- * buram dan angkanya jadi sulit dibaca. Dengan mencampur ke putih di sini,
- * warnanya tetap lembut tapi kartunya benar-benar pekat.
+ * Campur warna dengan putih dan kembalikan warna SOLID. Latar kartu aktif
+ * tidak boleh rgba semi-transparan: halaman modul memakai foto sebagai latar,
+ * dan foto yang menembus kartu membuat angkanya sulit dibaca.
  */
 function campurPutih(hex: string, kadar: number): string {
   const h = hex.replace('#', '');

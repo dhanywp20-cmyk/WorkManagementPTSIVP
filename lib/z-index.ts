@@ -1,27 +1,12 @@
 /**
  * Skala z-index terpusat - SATU tangga untuk seluruh platform.
  *
- * Kenapa ini perlu ada
- * Sebelumnya ada dua skala yang bersaing (lib/z-index.ts dan Z di
- * lib/constants.ts) dengan angka berbeda untuk nama yang sama, ditambah
- * puluhan angka lepas di JSX: 100, 110, 120, 150, 200, 210, 220, 300, 9990,
- * 9995, 9996, 9998, 9999, 20000, 99999.
+ * Halaman tidak lagi membungkus isinya dengan `relative z-10`, jadi semua
+ * overlay kini dibandingkan di stacking context yang sama, termasuk yang
+ * di-portal ke <body>. Angkanya karena itu harus konsisten lintas berkas.
  *
- * Angka-angka liar itu SELAMA INI tidak menimbulkan masalah bukan karena
- * benar, tapi karena tiap halaman membungkus isinya dengan `relative z-10`.
- * Pembungkus itu membentuk stacking context, jadi z-index di dalamnya hanya
- * dibandingkan sesama isi halaman - tidak pernah bertemu overlay dari halaman
- * atau komponen lain. Begitu satu overlay lolos ke <body> (lewat portal),
- * perbandingannya jadi lintas-liga dan urutannya kacau: modal z-[110] muncul
- * DI BELAKANG modal z-[100] yang di-portal.
- *
- * Pembungkus `relative z-10` sudah dibongkar (lihat komentar di tiap halaman),
- * jadi sekarang SEMUA overlay dibandingkan di liga yang sama. Karena itu
- * angkanya harus konsisten lintas berkas - dan itulah gunanya berkas ini.
- *
- * Aturan pakai
- * Jangan menulis angka z-index baru di JSX. Ambil dari sini, supaya urutan
- * tumpukan bisa dibaca dari NAMA, bukan ditebak dari besarnya angka.
+ * Aturan pakai: jangan menulis angka z-index baru di JSX. Ambil dari sini,
+ * supaya urutan tumpukan bisa dibaca dari nama, bukan ditebak dari angka.
  *
  * Urutan dari bawah ke atas:
  */

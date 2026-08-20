@@ -160,13 +160,8 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const isSuperAdmin = role === 'superadmin';
   const isAdmin = role === 'admin';
   /**
-   * Boleh membetulkan data & mengalihkan pekerjaan: admin/superadmin, atau
-   * akun Team PTS yang diberi Full Access lewat Admin Panel.
-   *
-   * Sebelumnya tombol Edit hanya muncul untuk NON-PTS (sisi Sales). Artinya
-   * admin - yang justru paling sering diminta membetulkan data - sama sekali
-   * tidak punya jalan lewat platform, dan terpaksa mengeditnya langsung di
-   * Supabase.
+   * Boleh membetulkan data & mengalihkan pekerjaan: admin/superadmin, atau akun
+   * Team PTS yang diberi Full Access lewat Admin Panel.
    */
   const bisaKelolaRequest = isAdmin || isSuperAdmin || hasFullAccess(currentUser as never);
 

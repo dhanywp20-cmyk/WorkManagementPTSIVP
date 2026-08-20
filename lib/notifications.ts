@@ -1,27 +1,9 @@
 /**
- * lib/notifications.ts
- * In-app notification system for Work Management Platform
+ * lib/notifications.ts - notifikasi in-app.
  *
- * Usage:
- *   import { createNotification, createNotificationForAdmins } from '@/lib/notifications';
- *
- *   // Notify a specific user:
- *   await createNotification({
- *     user_id: 'user-uuid',
- *     type: 'ticket',
- *     title: 'Tiket baru ditugaskan ke kamu',
- *     body: 'Tiket #123 - PT Jaya Abadi menunggu penanganan',
- *     action_url: '/ticketing',
- *     ref_id: ticket.id,
- *   });
- *
- *   // Notify all admins:
- *   await createNotificationForAdmins({
- *     type: 'user',
- *     title: 'User baru menunggu approval',
- *     body: 'Ahmad Fauzi (Sales IVP) baru mendaftar',
- *     action_url: '/dashboard',
- *   });
+ * createNotification() untuk satu user (butuh user_id, type, title, body, dan
+ * opsional action_url + ref_id); createNotificationForAdmins() menyebar ke
+ * seluruh admin dengan bentuk yang sama tanpa user_id.
  */
 
 import { supabase } from '@/lib/supabase';

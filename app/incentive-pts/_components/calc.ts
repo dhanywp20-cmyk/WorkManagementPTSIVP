@@ -139,15 +139,10 @@ export function getSupervisorTeamForPic(picName: string): 'wahyu' | 'yoga' | nul
 }
 
 /**
- * Pembagian mengikuti SKEMA yang dapat diatur admin
- *
- * Angka pembagian tidak lagi ditulis di sini. Ia dibaca dari
- * lib/incentive-scheme.ts (tabel incentive_scheme_settings) supaya perubahan
- * kebijakan cukup dilakukan lewat layar Pengaturan - tanpa menyunting rumus di
- * beberapa tempat lalu berharap tidak ada yang terlewat.
- *
- * Fungsi lama tetap dipertahankan namanya agar seluruh pemanggil tidak perlu
- * diubah; yang berganti hanya isinya.
+ * Pembagian mengikuti SKEMA yang diatur admin. Angka porsinya tidak ditulis di
+ * sini melainkan dibaca dari lib/incentive-scheme.ts (tabel
+ * incentive_scheme_settings), supaya perubahan kebijakan cukup dilakukan lewat
+ * layar Pengaturan.
  */
 export function calculateStandardScheme(
   sk: SkemaInsentif,
@@ -299,18 +294,14 @@ export async function fetchVisibleSplits(projectId?: string): Promise<{ data: In
 }
 
 /**
- * Siapa saja yang tercatat membantu troubleshooting proyek ini.
+ * Siapa saja yang tercatat membantu troubleshooting proyek ini. Yang dibaca
+ * tetap catatan Troubleshooting di Reminder Schedule; hanya rentang waktunya
+ * yang disaring.
  *
- * @param bastDate     tanggal BAST - awal jendela penilaian
- * @param jendelaBulan lama jendela penilaian (bulan). Kebijakan menyebut satu
- *                     tahun: bantuan yang datang setelah jendela itu lewat
- *                     tidak lagi mengubah porsi proyek ini, karena porsinya
- *                     sudah dianggap final. Nilainya diatur admin di layar
- *                     Skema Pembagian, bukan dipatok di sini.
- *                     0 = tanpa batas waktu (perilaku lama).
- *
- * Reminder Schedule TIDAK diubah untuk ini - yang dibaca tetap catatan
- * Troubleshooting yang sudah ada, hanya rentang waktunya yang disaring.
+ * @param bastDate     tanggal BAST, awal jendela penilaian
+ * @param jendelaBulan lama jendela penilaian dalam bulan, diatur admin di
+ *                     layar Skema Pembagian. Bantuan setelah jendela lewat
+ *                     tidak lagi mengubah porsi. 0 = tanpa batas waktu.
  */
 export async function fetchSupportFromTickets(
   projectName: string,

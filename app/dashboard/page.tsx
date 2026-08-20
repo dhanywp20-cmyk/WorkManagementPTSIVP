@@ -138,14 +138,9 @@ export default function Dashboard() {
   const [adminPanelTab, setAdminPanelTab] = useState<'settings' | 'userManagement' | 'picBrand'>('settings');
   /**
    * Dua antrean yang menunggu tindakan admin, sengaja DIPISAH karena
-   * diselesaikan di tempat yang berbeda:
-   *   pendingUsers     Admin Panel  User Management
-   *   pendingRequests  Request Schedule (BUKAN Admin Panel)
-   *
-   * Sebelumnya keduanya dijumlahkan jadi satu badge di ikon Admin Panel, jadi
-   * request jadwal baru memunculkan angka merah di tempat yang tidak memuat
-   * request itu sama sekali - mengklik badge membuka panel yang tidak ada
-   * kaitannya.
+   * diselesaikan di tempat berbeda: pendingUsers di Admin Panel > User
+   * Management, pendingRequests di Request Schedule. Menjumlahkannya jadi satu
+   * badge membuat angka merah muncul di panel yang tidak memuat antreannya.
    */
   const [pendingUsers, setPendingUsers] = useState(0);
   const [pendingRequests, setPendingRequests] = useState(0);
@@ -278,23 +273,12 @@ export default function Dashboard() {
       // dashboard home (widget adaptif); tidak lagi auto-lompat ke menu pertama.
       autoNavigatedRef.current = true; // matikan auto-navigate useEffect
 
-      /* Perpindahan ke dashboard SENGAJA ditunda sebentar supaya animasi
-         penutupnya (lc-bongkar, lihat globals.css) sempat jalan: tombol jadi
-         tanda centang, lalu halaman login dibongkar - kartu form terangkat,
-         isi panel kiri lepas satu per satu, kedua panel terbelah.
-
-         1500ms = panjang animasi terakhir yang selesai (panel terbelah: jeda
-         270ms + durasi 1230ms). Kalau angka ini lebih pendek dari itu, halaman
-         login dilepas dari DOM di tengah gerakan dan pembongkarannya terpotong.
-         Jadi angka ini WAJIB ikut berubah setiap durasi di globals.css diubah -
-         keduanya menggambarkan hal yang sama dari dua sisi.
-
-         Jujur soal biayanya: ini MENAMBAH waktu, bukan menyembunyikan waktu
-         tunggu yang sudah ada - kerangka dashboard sebenarnya tampil hampir
-         seketika. Yang membuatnya masih pantas: hanya dibayar saat orang
-         benar-benar menekan tombol login, sedangkan membuka ulang halaman
-         dengan sesi yang masih hidup langsung masuk dashboard tanpa melewati
-         halaman login sama sekali. */
+      /* Perpindahan ke dashboard ditunda supaya animasi penutup (lc-bongkar di
+         globals.css) sempat jalan sampai habis. 1500ms = jeda 270ms + durasi
+         1230ms milik animasi terakhir; angka ini WAJIB ikut berubah setiap
+         durasi di globals.css diubah, kalau tidak halaman login dilepas dari
+         DOM di tengah gerakan. Penundaan ini hanya dibayar saat orang benar
+         benar menekan tombol login. */
       setMasukBerhasil(true);
       const pakaiAnimasi = typeof window !== 'undefined'
         && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;

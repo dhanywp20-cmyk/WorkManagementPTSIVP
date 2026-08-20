@@ -1,23 +1,9 @@
 /**
- * lib/audit.ts
- * Audit trail logging for Work Management Platform
+ * lib/audit.ts - pencatatan audit trail.
  *
- * Usage:
- *   import { logAudit } from '@/lib/audit';
- *
- *   await logAudit({
- *     user_id: currentUser.id,
- *     user_name: currentUser.full_name,
- *     action: 'approve',
- *     module: 'reminder',
- *     target_id: reminder.id,
- *     target_name: reminder.project_name,
- *     old_value: 'pending',
- *     new_value: 'in_progress',
- *   });
- *
- * IMPORTANT: logAudit never throws - failures are silently swallowed.
- * This ensures audit logging never breaks the main user flow.
+ * logAudit() menerima pelaku (user_id, user_name), aksi, modul, sasaran
+ * (target_id, target_name), serta nilai lama dan baru. Fungsi ini TIDAK PERNAH
+ * melempar: kegagalan pencatatan tidak boleh memutus alur utama user.
  */
 
 import { supabase } from '@/lib/supabase';

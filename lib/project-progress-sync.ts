@@ -2,35 +2,25 @@ import { supabase } from './supabase';
 import { logAudit } from './audit';
 
 /**
- * lib/project-progress-sync.ts - jembatan Reminder Schedule  Project Progress.
+ * lib/project-progress-sync.ts - jembatan Reminder Schedule ke Project Progress.
  *
- * SATU ARAH SAJA. Nilai yang disalin adalah SNAPSHOT saat reminder dibuat.
- * Setelah itu kedua sisi berdiri sendiri: menyunting draft di Project Progress
- * tidak menulis balik ke reminder, dan menyunting reminder tidak memperbarui
- * draft. Ini disengaja - progres lapangan sering menyimpang dari rencana awal,
- * dan menimpanya otomatis akan menghapus pekerjaan admin.
+ * SATU ARAH SAJA, dan yang disalin adalah snapshot saat reminder dibuat.
+ * Sesudah itu kedua sisi berdiri sendiri: progres lapangan sering menyimpang
+ * dari rencana awal, dan menimpanya otomatis akan menghapus pekerjaan admin.
  *
- * Pemetaan field (dicek langsung dari skema, bukan asumsi):
- *   reminders.project_name    ("Nama Project*")    progress_projects.name
- *   reminders.address         ("Lokasi Project*")  HANYA syarat pemicu, TIDAK disalin
- *   reminders.sales_name       sales_name  (proyek & lokasi)
- *   reminders.sales_division   sales_division
- *   reminders.assign_name           progress_locations.pic
- *   reminders.progress_start_date   progress_locations.start_date
- *   reminders.progress_target_date  progress_locations.target_date
+ * Pemetaan field:
+ *   reminders.project_name          -> progress_projects.name
+ *   reminders.address               -> hanya syarat pemicu, TIDAK disalin
+ *   reminders.sales_name            -> sales_name (proyek & lokasi)
+ *   reminders.sales_division        -> sales_division
+ *   reminders.assign_name           -> progress_locations.pic
+ *   reminders.progress_start_date   -> progress_locations.start_date
+ *   reminders.progress_target_date  -> progress_locations.target_date
  *
- * progress_locations.name SENGAJA dibiarkan kosong meski reminder.address
- * terisi - "Lokasi Project" di form Reminder itu alamat kunjungan, belum
- * tentu sama dengan nama lokasi kerja yang dipakai tim lapangan di Project
- * Progress (mis. per lantai/gedung/area). Diisi manual di sana, judul
- * project di atasnya tetap ikut nama project seperti biasa.
- *
- * due_date TIDAK dipakai sebagai target selesai - itu tanggal kunjungan
- * (sekaligus titik mulai garansi), bukan rentang pengerjaan. Timeline diisi
- * terpisah di form Reminder; bila dikosongkan, draft lahir tanpa jadwal dan
- * diisi menyusul di Project Progress.
- *
- * Item Komponen SENGAJA dikosongkan - tidak ada komponen yang dibuat di sini.
+ * progress_locations.name dan Item Komponen sengaja dibiarkan kosong dan diisi
+ * manual: "Lokasi Project" di form Reminder itu alamat kunjungan, belum tentu
+ * sama dengan nama lokasi kerja tim lapangan. due_date juga bukan target
+ * selesai melainkan tanggal kunjungan sekaligus titik mulai garansi.
  */
 
 /** Kategori reminder yang memicu pembuatan draft. */

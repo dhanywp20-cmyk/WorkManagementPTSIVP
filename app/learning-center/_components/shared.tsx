@@ -149,13 +149,9 @@ export function GradingStatusBadge({ attempt }: { attempt: { grading_status?: st
 }
 
 /**
- * Kotak pencarian.
- *
- * Lebarnya dulu dipatok w-64 tanpa pengecualian. Di layar ponsel patokan itu
- * lebih lebar daripada ruang yang tersisa di baris header, sehingga judul di
- * sebelahnya terhimpit sampai satu kata per baris dan sisanya terdorong keluar
- * layar. Sekarang ia mengisi baris sendiri di layar sempit dan baru memakai
- * lebar tetap saat ruangnya memang ada.
+ * Kotak pencarian. Mengisi baris sendiri di layar sempit dan baru memakai
+ * lebar tetap saat ruangnya ada - lebar tetap di ponsel menghimpit judul di
+ * sebelahnya sampai satu kata per baris.
  */
 export function SearchInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
@@ -209,15 +205,10 @@ export async function generateWithGemini(prompt: string, pdfFile?: File | null):
 }
 
 /**
- * Minta AI menilai SATU jawaban essay terhadap kunci referensi - dipakai
- * TeamPage sebagai SARAN awal (bukan skor final) supaya admin sebisa mungkin
- * tinggal konfirmasi, bukan menilai semuanya dari nol. Skor final tetap
- * manual_score yang admin simpan sendiri (lihat lc_answers.ai_score vs
- * manual_score di sql/learning-center-ai-grading.sql).
- *
- * Melempar Error kalau AI gagal/keluaran tidak bisa dibaca - pemanggil wajib
- * menangkapnya dan tetap membiarkan admin menilai manual (AI tidak boleh
- * memblokir alur penilaian sama sekali).
+ * Minta AI menilai SATU jawaban essay terhadap kunci referensi, dipakai
+ * TeamPage sebagai saran awal. Skor final tetap manual_score yang admin simpan
+ * sendiri. Melempar Error bila AI gagal; pemanggil wajib menangkapnya dan
+ * tetap membiarkan admin menilai manual - AI tidak boleh memblokir penilaian.
  */
 export async function gradeEssayWithAI(
   question: string, modelAnswer: string | null | undefined, studentAnswer: string,

@@ -1,17 +1,12 @@
 'use client';
 
 /**
- * components/shared/Charts.tsx - grafik yang bisa dipakai SEMUA modul.
+ * components/shared/Charts.tsx - grafik deret waktu yang dipakai semua modul.
  *
- * Sebelumnya keempat komponen di berkas ini hidup di dalam app/kpi-team/, dan
- * MiniSpark bahkan disalin tiga kali - dua di antaranya dideklarasikan di DALAM
- * fungsi komponen, sehingga dibuat ulang setiap render dan memaksa React
- * melepas-pasang seluruh subtree-nya.
- *
- * Sampai berkas ini ada, satu-satunya grafik bersama adalah MiniPieChart. Pie
- * hanya bisa menjawab "komposisi sekarang berapa persen" - bukan pertanyaan
- * yang paling sering ditanyakan: MEMBAIK ATAU MEMBURUK? Itu butuh deret waktu,
- * dan deret waktu itulah yang disediakan di sini.
+ * MiniPieChart hanya menjawab "komposisi sekarang berapa persen". Pertanyaan
+ * yang lebih sering muncul adalah membaik atau memburuk, dan itu butuh deret
+ * waktu - yang disediakan di sini. Deklarasikan komponen di level modul, jangan
+ * di dalam fungsi render, supaya React tidak melepas-pasang subtree tiap render.
  */
 
 // Sparkline
@@ -134,15 +129,10 @@ export function DonutChart({
 // Pembanding periode
 
 /**
- * Selisih terhadap periode sebelumnya, dalam persen.
- *
- * Ini yang membuat sebuah angka bermakna: "82%" tidak memberi tahu apa pun
- * sampai diketahui bulan lalu berapa. Sengaja disediakan bersama grafik supaya
- * dipasang berbarengan.
- *
- * `lowerIsBetter` untuk metrik yang justru bagus kalau turun - waktu respons,
- * jumlah tiket terlambat, keluhan. Tanpa itu, penurunan yang bagus akan
- * diwarnai merah.
+ * Selisih terhadap periode sebelumnya, dalam persen - "82%" tidak berarti apa
+ * pun sampai diketahui bulan lalu berapa. `lowerIsBetter` untuk metrik yang
+ * justru bagus kalau turun (waktu respons, tiket terlambat, keluhan); tanpa
+ * itu penurunan yang bagus akan diwarnai merah.
  */
 export function TrendBadge({
   delta, lowerIsBetter = false, suffix = '%',

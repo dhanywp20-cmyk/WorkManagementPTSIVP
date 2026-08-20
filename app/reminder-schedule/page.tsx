@@ -157,14 +157,10 @@ function ReminderSchedulePageInner() {
   const [supervisorAssignSaving, setSupervisorAssignSaving] = useState(false);
 
   /**
-   * Buat draft Project Progress dari reminder yang BARU dibuat.
-   *
-   * Hanya untuk reminder baru - TIDAK ADA backfill untuk reminder/proyek lama,
-   * karena progres lampau tidak terekam dan draft kosong justru menyesatkan.
-   *
-   * Sengaja tidak ditunggu (void) dan tidak pernah melempar error: membuat
-   * reminder adalah aksi utama user, integrasi ini pelengkap. Kegagalannya
-   * hanya diberitahukan sebagai info, bukan menggagalkan penyimpanan reminder.
+   * Buat draft Project Progress dari reminder yang BARU dibuat. Tidak ada
+   * backfill untuk reminder lama - progres lampau tidak terekam, dan draft
+   * kosong justru menyesatkan. Sengaja tidak ditunggu dan tidak pernah
+   * melempar: kegagalannya hanya info, bukan pembatal penyimpanan reminder.
    */
   const syncNewRemindersToProgress = async (rows: ReminderSnapshot[]) => {
     if (rows.length === 0) return;
@@ -2053,17 +2049,11 @@ jangan lupa peralatan & Semangat💪🏼
   };
 
   /**
-   * Semua yang MENUNGGU TINDAKAN saya - bukan cuma yang saya kerjakan sendiri.
-   *
-   * Sebelumnya lonceng ini hanya menghitung `assigned_to === username`, yaitu
-   * item yang sudah ditugaskan ke saya SEBAGAI PELAKSANA. Item yang menunggu
-   * saya yang MENUGASKAN atau MENYETUJUI punya assigned_to kosong - jadi tidak
-   * pernah terhitung sama sekali. Akibatnya lonceng bisa menampilkan "1 aktif"
-   * padahal ada beberapa request lain yang justru sedang menunggu saya
-   * bertindak; satu-satunya cara menemukannya adalah menyisir daftar manual.
-   *
-   * Tiap baris membawa alasannya, supaya dari lonceng saja sudah jelas apa yang
-   * diminta - bukan cuma bahwa ada sesuatu.
+   * Semua yang MENUNGGU TINDAKAN saya, bukan cuma yang saya kerjakan sendiri.
+   * Item yang menunggu saya menugaskan atau menyetujui punya assigned_to
+   * kosong, jadi menghitung `assigned_to === username` saja akan melewatkannya
+   * sama sekali. Tiap baris membawa alasannya, supaya dari lonceng sudah jelas
+   * apa yang diminta.
    */
   const perluAksiSaya: { r: Reminder; alasan: string; warna: string }[] = (() => {
     if (!currentUser) return [];

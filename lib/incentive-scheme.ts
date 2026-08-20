@@ -3,18 +3,11 @@ import { supabase } from './supabase';
 /**
  * Skema pembagian insentif project - DATA, bukan kode.
  *
- * Kenapa begini
- * Angka pembagian sebelumnya ditulis langsung di dalam rumus (65/15/10/10,
- * faktor 0.85 untuk Remote, potongan Installer 15%). Setiap kali kebijakannya
- * berubah - dan kebijakan insentif memang berubah - seseorang harus menyunting
- * rumus di beberapa tempat sekaligus, membangun ulang aplikasi, lalu berharap
- * tidak ada satu tempat pun yang terlewat. Itu sudah terbukti sekali: potongan
- * Installer hidup di empat tempat berbeda di dalam satu berkas.
- *
- * Sekarang seluruh angkanya disimpan sebagai satu baris JSON yang disunting
- * dari layar Pengaturan. Menambah peran baru (mis. Installer Cabang kembali
- * diberi porsi) cukup menambah satu baris di layar - tidak ada kode yang
- * perlu disentuh, dan tidak ada tempat yang bisa ketinggalan.
+ * Seluruh angka porsi disimpan sebagai satu baris JSON di tabel
+ * incentive_scheme_settings dan disunting dari layar Pengaturan. Menambah
+ * peran baru - mis. Installer Cabang kembali diberi porsi - cukup menambah
+ * satu baris di layar itu; tidak ada rumus di kode yang perlu disentuh, jadi
+ * tidak ada tempat yang bisa ketinggalan saat kebijakan berubah.
  */
 
 /** Peran yang dikenal bawaan. Peran baru boleh memakai kunci apa pun. */

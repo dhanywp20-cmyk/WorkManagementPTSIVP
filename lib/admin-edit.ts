@@ -1,15 +1,8 @@
 /**
- * Perkakas bersama untuk panel "Edit Detail & Re-route" milik admin.
- *
- * Dipakai Ticketing, Request Schedule, dan Request Design Project. Ketiganya
- * punya bentuk data yang berbeda, tapi tiga hal ini persis sama di semuanya:
- * menentukan apa yang berubah, menuliskannya ke audit trail, dan
- * memberitahukannya lewat WA.
- *
- * Alasan panel ini ada: sebelumnya satu-satunya cara membetulkan data yang
- * salah adalah mengeditnya langsung di Supabase. Itu berarti tidak ada jejak
- * siapa yang mengubah apa, dan orang yang menangani pekerjaannya tidak pernah
- * diberi tahu bahwa datanya berubah.
+ * Perkakas bersama untuk panel "Edit Detail & Re-route" milik admin, dipakai
+ * Ticketing, Request Schedule, dan Request Design Project. Bentuk datanya
+ * berbeda-beda, tapi tiga hal ini sama di ketiganya: menentukan apa yang
+ * berubah, menuliskannya ke audit trail, dan memberitahukannya lewat WA.
  */
 
 export type AdminFieldType = 'text' | 'textarea' | 'tel' | 'date' | 'time' | 'number' | 'select';
