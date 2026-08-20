@@ -2,9 +2,9 @@
 --  RLS lingkup project - tickets, reminders, project_requests, notifications
 -- ============================================================================
 --
---  JANGAN JALANKAN SEKALIGUS. Berkas ini disusun sebagai LIMA bagian yang
---  dijalankan pada hari yang berbeda, dan bagian 2 adalah simulasi yang tidak
---  mengubah apa pun. Urutannya bukan formalitas: tiga tabel di bawah adalah
+--  Bagian 1 dan 2 AMAN dijalankan sekaligus: keduanya cuma membuat fungsi dan
+--  menampilkan laporan, tanpa menyentuh satu policy pun. Bagian 3 yang
+--  menyalakan policy, dan itu satu tabel per hari. Urutannya bukan formalitas: tiga tabel di bawah adalah
 --  tabel paling sibuk di platform, dan policy yang keliru membuat modulnya
 --  tampak KOSONG bagi orang yang sedang bekerja.
 --
@@ -98,78 +98,88 @@ GRANT EXECUTE ON FUNCTION
   TO anon, authenticated;
 
 
--- ─── BAGIAN 2. SIMULASI - jalankan ini dulu, beberapa hari ──────────────────
---  TIDAK mengubah apa pun. Untuk tiap akun, hitung berapa baris yang akan
---  TERLIHAT dan berapa yang akan HILANG bila policy di bagian 3 dinyalakan.
+-- ─── BAGIAN 2. PEMERIKSAAN - tidak mengubah apa pun ────────────────────────
+--  Menjawab satu pertanyaan: kalau policy di bagian 3 dinyalakan, ADAKAH orang
+--  yang membuka modulnya lalu menemukannya KOSONG?
 --
---  Yang dicari: baris "hilang" yang bukan nol pada akun yang memang berhak.
---  Kalau ada, JANGAN lanjut - berarti ada jalur kepemilikan yang belum
---  tertampung di boleh_lihat_project(), dan menyalakan policy akan
---  menghilangkan pekerjaan orang dari layarnya.
+--  Yang dicari BUKAN "berapa baris yang hilang" - bagi Sales, kehilangan baris
+--  milik orang lain memang tujuannya. Yang berbahaya adalah akun yang berakhir
+--  melihat NOL baris padahal ia punya pekerjaan di sana.
 --
---  Dijalankan dari SQL Editor (service_role), jadi ia membaca seluruh baris
---  lalu menilainya sendiri - bukan bergantung pada klaim JWT.
-CREATE OR REPLACE FUNCTION simulasi_lingkup(nama_tabel text)
-RETURNS TABLE (
-  akun text, peran text, terlihat bigint, hilang bigint
-)
-LANGUAGE plpgsql STABLE AS $$
-DECLARE
-  kolom_dibuat text;
+--  Penyebab paling sering: nama tidak sama persis. Policy mencocokkan
+--  sales_name dengan full_name akun. Kalau tiket tercatat atas nama "Dedi K."
+--  sementara akunnya bernama "Dedi Kurnia", tidak ada yang cocok - dan orang
+--  itu kehilangan seluruh pekerjaannya dari layar tanpa pesan apa pun.
+--
+--  Kolom `nama_mirip` menghitung baris yang menyebut nama depan akun tapi
+--  tidak sama persis. Kalau `akan_terlihat` nol SEKALIGUS `nama_mirip` lebih
+--  dari nol, itu tanda kuat ada ketidakcocokan penulisan nama - dan HARUS
+--  dibereskan di data lebih dulu, sebelum policy dinyalakan.
+DROP FUNCTION IF EXISTS simulasi_lingkup(text);
+
+CREATE OR REPLACE FUNCTION periksa_lingkup(nama_tabel text)
+RETURNS TABLE (tabel text, akun text, peran text, akan_terlihat bigint,
+               nama_mirip bigint, penilaian text)
+LANGUAGE plpgsql STABLE AS $fn$
+DECLARE kolom_dibuat text;
 BEGIN
+  --  created_by tidak ada di semua tabel; kalau kolomnya tak dikenal, seluruh
+  --  query gagal, jadi keberadaannya diperiksa dulu.
   kolom_dibuat := CASE WHEN EXISTS (
     SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = nama_tabel AND column_name = 'created_by'
+    WHERE table_schema='public' AND table_name=nama_tabel AND column_name='created_by'
   ) THEN 't.created_by' ELSE 'NULL::text' END;
 
   RETURN QUERY EXECUTE format($f$
-    SELECT
-      u.full_name::text,
-      u.role::text,
-      count(*) FILTER (WHERE
-        u.role IN ('admin','superadmin','team')
-        OR t.sales_name = u.full_name
-        OR %s = u.username
-        OR (t.sales_division IS NOT NULL AND t.sales_division = ANY (
-              CASE WHEN u.is_internal_sales IS NOT TRUE THEN ARRAY[]::text[]
-                   ELSE ARRAY(
-                     SELECT DISTINCT d FROM (
-                       SELECT m.sales_division AS d FROM division_ivp_mappings m WHERE m.ivp_id = u.id
-                       UNION SELECT u.sales_division
-                     ) x WHERE d IS NOT NULL AND d <> ''
-                   ) END))
-      ),
-      count(*) FILTER (WHERE NOT (
-        u.role IN ('admin','superadmin','team')
-        OR t.sales_name = u.full_name
-        OR %s = u.username
-        OR (t.sales_division IS NOT NULL AND t.sales_division = ANY (
-              CASE WHEN u.is_internal_sales IS NOT TRUE THEN ARRAY[]::text[]
-                   ELSE ARRAY(
-                     SELECT DISTINCT d FROM (
-                       SELECT m.sales_division AS d FROM division_ivp_mappings m WHERE m.ivp_id = u.id
-                       UNION SELECT u.sales_division
-                     ) x WHERE d IS NOT NULL AND d <> ''
-                   ) END))
-      ))
-    FROM users u CROSS JOIN %I t
-    GROUP BY u.full_name, u.role
-    ORDER BY 4 DESC, 1
-  $f$, kolom_dibuat, kolom_dibuat, nama_tabel);
+    WITH hitung AS (
+      SELECT u.full_name::text AS akun, u.role::text AS peran,
+        count(*) FILTER (WHERE
+          u.role IN ('admin','superadmin','team')
+          OR t.sales_name = u.full_name
+          OR %s = u.username
+          OR (t.sales_division IS NOT NULL AND t.sales_division = ANY (
+                CASE WHEN u.is_internal_sales IS NOT TRUE THEN ARRAY[]::text[]
+                     ELSE ARRAY(SELECT DISTINCT d FROM (
+                       SELECT m.sales_division AS d FROM division_ivp_mappings m WHERE m.ivp_id=u.id
+                       UNION SELECT u.sales_division) x WHERE d IS NOT NULL AND d <> '') END))
+        ) AS terlihat,
+        count(*) FILTER (WHERE
+          t.sales_name IS DISTINCT FROM u.full_name
+          AND t.sales_name ILIKE '%%' || split_part(u.full_name, ' ', 1) || '%%'
+        ) AS mirip
+      FROM users u CROSS JOIN %I t
+      GROUP BY u.full_name, u.role, u.id, u.username, u.is_internal_sales, u.sales_division
+    )
+    SELECT %L::text, akun, peran, terlihat, mirip,
+      CASE
+        WHEN peran IN ('admin','superadmin','team') THEN 'orang dalam - lihat semua'
+        WHEN terlihat > 0                           THEN 'aman'
+        WHEN mirip > 0                              THEN 'PERIKSA - nol baris, tapi ada ' || mirip || ' baris bernama mirip'
+        ELSE                                             'nol baris, dan memang tidak ada yang bernama mirip'
+      END
+    FROM hitung
+    ORDER BY (CASE WHEN peran IN ('admin','superadmin','team') THEN 2
+                   WHEN terlihat = 0 AND mirip > 0 THEN 0 ELSE 1 END), akun
+  $f$, kolom_dibuat, nama_tabel, nama_tabel);
 END;
-$$;
+$fn$;
 
---  Jalankan SATU query di bawah ini - jangan dipecah tiga. Supabase SQL
---  Editor hanya menampilkan hasil query TERAKHIR bila satu berkas berisi
---  beberapa query, jadi dua pemeriksaan pertama akan jalan tanpa pernah
---  terlihat. Baca kolom "hilang": harus nol pada akun yang memang berhak.
+--  Laporan untuk ketiga tabel sekaligus. Sengaja query TERAKHIR di berkas ini
+--  supaya sekali Run langsung keluar tabelnya - Supabase SQL Editor hanya
+--  menampilkan hasil query terakhir, jadi laporan yang ditulis sebagai
+--  komentar akan tampak "Success. No rows returned".
 --
--- SELECT 'tickets' AS tabel, * FROM simulasi_lingkup('tickets')
--- UNION ALL
--- SELECT 'reminders', * FROM simulasi_lingkup('reminders')
--- UNION ALL
--- SELECT 'project_requests', * FROM simulasi_lingkup('project_requests')
--- ORDER BY hilang DESC, tabel, akun;
+--  Baris paling atas adalah yang paling perlu diperiksa.
+--  UNION dibungkus subquery: ORDER BY di atas UNION hanya menerima nama kolom,
+--  bukan ekspresi seperti LIKE.
+SELECT * FROM (
+  SELECT * FROM periksa_lingkup('tickets')
+  UNION ALL
+  SELECT * FROM periksa_lingkup('reminders')
+  UNION ALL
+  SELECT * FROM periksa_lingkup('project_requests')
+) r
+ORDER BY (penilaian LIKE 'PERIKSA%') DESC, tabel, akun;
 
 
 -- ─── BAGIAN 3. Menyalakan policy - SATU TABEL PER HARI ──────────────────────
@@ -242,13 +252,16 @@ $$;
 -- ALTER TABLE notifications    DISABLE ROW LEVEL SECURITY;
 
 
--- ─── Pemeriksaan akhir ──────────────────────────────────────────────────────
-SELECT c.relname AS tabel,
-       c.relrowsecurity AS rls_aktif,
-       (SELECT count(*) FROM pg_policies p
-        WHERE p.schemaname = 'public' AND p.tablename = c.relname) AS jumlah_policy
-FROM pg_class c
-JOIN pg_namespace n ON n.oid = c.relnamespace
-WHERE n.nspname = 'public'
-  AND c.relname IN ('tickets', 'reminders', 'project_requests', 'notifications')
-ORDER BY c.relname;
+-- ─── Pemeriksaan sesudah bagian 3 ──────────────────────────────────────────
+--  Sengaja BUKAN query aktif. Kalau ditaruh sebagai query terakhir, dialah yang
+--  tampil di Supabase SQL Editor dan laporan di bagian 2 tidak pernah terlihat.
+--  Jalankan terpisah setelah menyalakan policy:
+--
+--    SELECT c.relname AS tabel,
+--           c.relrowsecurity AS rls_aktif,
+--           (SELECT count(*) FROM pg_policies p
+--            WHERE p.schemaname = 'public' AND p.tablename = c.relname) AS jumlah_policy
+--    FROM pg_class c
+--    WHERE c.relnamespace = 'public'::regnamespace
+--      AND c.relname IN ('tickets','reminders','project_requests','notifications')
+--    ORDER BY c.relname;
