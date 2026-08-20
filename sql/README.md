@@ -70,6 +70,9 @@ diambil orang luar - bukan apa yang seharusnya.
 | `unlock-credentials-rls.sql` | Pembatalan darurat untuk yang di atas. Tidak perlu deploy ulang |
 | `lock-users-privileged-columns.sql` | Trigger yang membekukan kolom `role`, `team_type`, `allowed_menus`, `allow_incentive_input`, `access_level` dari anon. Tanpa ini, siapa pun yang punya anon key bisa menaikkan dirinya jadi admin |
 | `lock-incentive-splits-rls.sql` | Menyembunyikan "siapa dapat berapa" dari anon |
+| `rapikan-policy.sql` | Membuang 28 policy kembar (nol izin berubah) dan menjadikan `audit_trail` hanya-tambah |
+| `tutup-tabel-terlewat.sql` | Tiga tabel yang RLS-nya belum pernah menyala: `progress_actions`, `kpi_snapshot_members`, `picket_holidays` |
+| `rls-lingkup-project.sql` | Menyiapkan RLS untuk tickets, reminders, project_requests, notifications. Simulasi dulu, policy masih komentar |
 | `rls-project-progress.sql` | Menyalakan RLS berbasis klaim JWT. Jalankan HANYA setelah `/api/auth/db-token-check` menjawab siap |
 
 ### Skema & fitur - satu kali jalan, sudah diterapkan

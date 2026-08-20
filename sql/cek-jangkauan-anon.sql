@@ -81,31 +81,35 @@ FROM (
   --   TERBUKA PENUH  RLS mati. Anon bisa baca & tulis seisi tabel. Ini keadaan
   --                  bawaan Postgres - tabel baru selalu begini, bukan sesuatu
   --                  yang perlu dilakukan seseorang.
-  --   TERBUKA POLICY RLS aktif tapi semua policy-nya USING (true). Hasilnya
-  --                  sama saja dengan terbuka penuh; terlihat aman di daftar
-  --                  policy, padahal tidak menyaring apa pun.
+  --   TERBUKA POLICY RLS aktif tapi ADA policy USING (true). Cukup satu:
+  --                  policy permissive di-OR-kan, jadi satu policy tanpa
+  --                  syarat membatalkan seluruh policy bersyarat di tabel yang
+  --                  sama. Terlihat aman di daftar policy, padahal tidak
+  --                  menyaring apa pun.
   --   TERSARING      RLS aktif dengan policy bersyarat. Inilah yang dituju.
   --   TERTUTUP       RLS aktif tanpa policy. Hanya service_role yang masuk.
   SELECT
     CASE
-      WHEN NOT c.relrowsecurity                                  THEN 3
-      WHEN COALESCE(p.jumlah,0) > 0
-       AND COALESCE(p.polos,0) = COALESCE(p.jumlah,0)            THEN 4
-      WHEN COALESCE(p.jumlah,0) = 0                              THEN 6
-      ELSE                                                            5
+      WHEN NOT c.relrowsecurity      THEN 3
+      WHEN COALESCE(p.polos,0)  > 0  THEN 4
+      WHEN COALESCE(p.jumlah,0) = 0  THEN 6
+      ELSE                                5
     END,
     'C. Tabel lain',
     c.relname,
     CASE
-      WHEN NOT c.relrowsecurity                                  THEN 'TERBUKA PENUH'
-      WHEN COALESCE(p.jumlah,0) = 0                              THEN 'TERTUTUP'
-      WHEN COALESCE(p.polos,0) = COALESCE(p.jumlah,0)            THEN 'TERBUKA POLICY'
-      ELSE                                                            'TERSARING'
+      WHEN NOT c.relrowsecurity      THEN 'TERBUKA PENUH'
+      WHEN COALESCE(p.jumlah,0) = 0  THEN 'TERTUTUP'
+      WHEN COALESCE(p.polos,0)  > 0  THEN 'TERBUKA POLICY'
+      ELSE                                'TERSARING'
     END,
     CASE
       WHEN NOT c.relrowsecurity     THEN 'anon bisa baca & tulis seisi tabel'
       WHEN COALESCE(p.jumlah,0) = 0 THEN 'hanya service_role yang bisa masuk'
       WHEN p.perintah IS NULL       THEN p.jumlah || ' policy, semuanya bersyarat'
+      WHEN p.polos < p.jumlah       THEN p.jumlah || ' policy; terbuka tanpa syarat untuk: '
+                                         || p.perintah
+                                         || ' - policy bersyarat di tabel ini TIDAK berlaku'
       ELSE p.jumlah || ' policy; terbuka tanpa syarat untuk: ' || p.perintah
     END
   FROM pg_class c

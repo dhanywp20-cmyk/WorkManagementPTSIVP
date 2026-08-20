@@ -108,6 +108,38 @@ CREATE POLICY audit_trail_baca ON audit_trail
 --  butuh identitas, dan ada di bagian 3.
 
 
+-- ─── BAGIAN 2b. form_reviews - policy bersyarat yang sedang dibatalkan ──────
+--  Temuan dari sql/cek-jangkauan-anon.sql: form_reviews punya TIGA policy -
+--  dua tanpa syarat ("allow_all" untuk public dan "anon_all_form_reviews"
+--  untuk anon), dan satu bersyarat.
+--
+--  Policy permissive di Postgres di-OR-kan, jadi yang paling longgar menang.
+--  Artinya policy bersyarat itu ADA tapi tidak pernah berlaku: seseorang sudah
+--  menulis aturan penyaringan yang benar untuk Form Review, dan satu policy
+--  sisa membatalkannya diam-diam.
+--
+--  Sudah diuji di Postgres: dengan policy tanpa syarat terpasang, anon membaca
+--  baris milik orang lain. Begitu policy itu dibuang, policy bersyarat mulai
+--  bekerja dan jumlah yang terbaca jadi nol.
+--
+--  Bagian 1 di atas sudah membuang "anon_all_form_reviews" - itu aman karena
+--  "allow_all" masih menutupinya, jadi tidak ada yang berubah.
+--
+--  Membuang "allow_all" BELUM boleh dilakukan sekarang, karena policy
+--  bersyarat yang tersisa belum diketahui isinya. Kalau ia hanya mengatur
+--  SELECT, maka menyimpan Form Review langsung berhenti bekerja.
+--
+--  Jalankan query ini dulu, lalu kirimkan hasilnya:
+--
+--    SELECT policyname, cmd, roles, qual, with_check
+--    FROM pg_policies
+--    WHERE schemaname = 'public' AND tablename = 'form_reviews'
+--    ORDER BY policyname;
+--
+--  Setelah isi policy bersyaratnya terlihat, baris di bawah ini bisa dibuka:
+-- DROP POLICY IF EXISTS "allow_all" ON form_reviews;
+
+
 -- ─── BAGIAN 3. Menunggu token identitas - JANGAN dijalankan dulu ────────────
 --  Semua di bawah memakai jwt_claim() dari sql/rls-project-progress.sql.
 --  Syaratnya sama seperti sql/rls-lingkup-project.sql: /api/auth/db-token-check
