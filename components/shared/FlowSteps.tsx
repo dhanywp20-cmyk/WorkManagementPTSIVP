@@ -1,20 +1,12 @@
 'use client';
 
 /**
- * components/shared/FlowSteps.tsx - diagram tahapan untuk alur bertahap.
+ * components/shared/FlowSteps.tsx - diagram tahapan untuk alur bertahap seperti
+ * routing_status Request Schedule: Sales External mengajukan, Sales Internal
+ * meneruskan, Admin assign, Team mengerjakan, selesai.
  *
- * Request Schedule punya alur paling bercabang di seluruh platform: Sales
- * External mengajukan, Sales Internal meneruskan, Admin assign, Team
- * mengerjakan, lalu selesai. Alur itu tidak pernah tergambar di mana pun - ia
- * hanya hidup di kolom routing_status yang punya tiga nilai, dan di kepala
- * orang yang membangunnya.
- *
- * Akibat nyatanya sudah terbukti: tahap Sales Internal sempat terlewat saat
- * menambahkan Timeline, justru karena tidak ada satu layar pun yang
- * menampilkan bahwa tahap itu ada.
- *
- * Komponen ini menjawab tiga pertanyaan sekaligus, tanpa perlu dibaca:
- *   sudah sampai mana · sedang menunggu siapa · masih ada berapa tahap lagi
+ * Menjawab tiga pertanyaan sekaligus tanpa perlu dibaca: sudah sampai mana,
+ * sedang menunggu siapa, dan masih ada berapa tahap lagi.
  */
 
 export interface FlowStep {
@@ -70,13 +62,10 @@ export function FlowSteps({
         </p>
       )}
 
-      {/* Seluruh tahapan HARUS muat tanpa digeser.
-          Sebelumnya ada minWidth 5.5rem per tahap; di dalam panel selebar
-          max-w-sm itu memaksa scroll ke kanan, dan tahap terakhir — justru
-          yang paling ingin dilihat, "Selesai" — tersembunyi di luar layar.
-          Diagram alur yang perlu digeser dulu kehilangan gunanya.
-
-          Kini tiap tahap berbagi lebar sama rata dan labelnya boleh melipat. */}
+      {/* Seluruh tahapan HARUS muat tanpa digeser: tiap tahap berbagi lebar
+          sama rata dan labelnya boleh melipat. Lebar minimum per tahap memaksa
+          scroll di panel sempit, dan tahap terakhir - yang paling ingin
+          dilihat - justru yang tersembunyi di luar layar. */}
       <div>
         <div className="flex items-start">
           {steps.map((s, i) => {

@@ -30,6 +30,7 @@ import {
   ViewIconBtn, DeleteIconBtn,
   FlowchartIconBtn, PrintIconBtn, ApproveIconBtn, ReopenIconBtn, OverdueIconBtn,
   Toast, PageHeader, ConfirmDialog, type ConfirmState, ErrorState, StatCard,
+  MobileListCard, MobileCardBadge,
 } from "@/components/shared";
 
 // Ikon garis
@@ -2904,43 +2905,41 @@ function TicketingSystemInner() {
               <>
               {/* ── MOBILE: Card view (hidden on md+) ── */}
               <div className="md:hidden divide-y divide-gray-100">
-                {paginatedTickets.map((ticket, index) => {
+                {paginatedTickets.map((ticket) => {
                   const overdue = isTicketOverdue(ticket);
                   const overdueSetting = getOverdueSetting(ticket.id);
                   const isActiveOverdue = overdue && ticket.status !== "Solved";
                   return (
-                    <div key={ticket.id}
-                      className={`px-4 py-3.5 ${isActiveOverdue ? 'bg-red-50/60 border-l-4 border-l-red-400' : 'border-l-4 border-l-transparent'}`}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            {isActiveOverdue && <Ico name="alert" className="w-3.5 h-3.5 text-red-500 shrink-0" />}
-                            <p className="font-bold text-sm text-gray-800 leading-tight">{ticket.project_name}</p>
-                          </div>
-                          {ticket.address && (
-                            <p className="text-[10px] text-gray-400 mt-0.5 truncate flex items-center gap-1"><Ico name="pin" className="w-3 h-3 shrink-0" />{ticket.address.split(',')[0]}</p>
-                          )}
-                          <p className="text-[10px] text-gray-400 mt-0.5">{ticket.created_at ? formatDateTime(ticket.created_at) : '—'}</p>
-                        </div>
-                        <div className="flex flex-col items-end gap-1 shrink-0">
-                          <span className={`px-2 py-0.5 text-[10px] font-bold rounded ${ticket.status === "Waiting Approval" ? statusColors["Waiting Approval"] : statusColors[ticket.status] || statusColors["Pending"]}`}>
-                            {ticket.status === "Waiting Approval" ? "⏳ Waiting" : ticket.status}
-                          </span>
-                          {overdue && (
-                            <span className={`px-2 py-0.5 text-[10px] font-bold rounded ${ticket.status === "Solved" ? "bg-purple-100 text-purple-800 border-purple-400" : statusColors["Overdue"]}`}>
-                              {ticket.status === "Solved" ? "⚠️ Overdue" : "🚨 Overdue"}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2.5 text-xs">
-                        <div className="truncate"><span className="text-gray-400">Issue: </span><span className="text-gray-700 font-medium">{ticket.issue_case}</span></div>
-                        <div className="truncate"><span className="text-gray-400">Handler: </span><span className="text-gray-700 font-medium">{ticket.assign_name || '—'}</span></div>
-                        {ticket.product && <div className="truncate"><span className="text-gray-400">Product: </span><span className="text-indigo-600 font-semibold">{ticket.product}</span></div>}
-                        {ticket.sales_name && <div className="truncate"><span className="text-gray-400">Sales: </span><span className="text-gray-700 font-medium">{ticket.sales_name}</span></div>}
-                        {ticket.sn_unit && <div className="col-span-2 truncate"><span className="text-gray-400">SN: </span><span className="text-gray-600">{ticket.sn_unit}</span></div>}
-                      </div>
-                      <div className="flex items-center gap-1.5 mt-3 flex-wrap">
+                    <MobileListCard
+                      key={ticket.id}
+                      highlight={isActiveOverdue}
+                      accent={isActiveOverdue ? "#f87171" : undefined}
+                      titlePrefix={isActiveOverdue ? <Ico name="alert" className="w-3.5 h-3.5 text-red-500 shrink-0" /> : undefined}
+                      title={ticket.project_name}
+                      meta={<>
+                        {ticket.address && (
+                          <p className="truncate flex items-center gap-1"><Ico name="pin" className="w-3 h-3 shrink-0" />{ticket.address.split(',')[0]}</p>
+                        )}
+                        <p>{ticket.created_at ? formatDateTime(ticket.created_at) : '—'}</p>
+                      </>}
+                      badges={<>
+                        <MobileCardBadge className={ticket.status === "Waiting Approval" ? statusColors["Waiting Approval"] : statusColors[ticket.status] || statusColors["Pending"]}>
+                          {ticket.status === "Waiting Approval" ? "⏳ Waiting" : ticket.status}
+                        </MobileCardBadge>
+                        {overdue && (
+                          <MobileCardBadge className={ticket.status === "Solved" ? "bg-purple-100 text-purple-800 border-purple-400" : statusColors["Overdue"]}>
+                            {ticket.status === "Solved" ? "⚠️ Overdue" : "🚨 Overdue"}
+                          </MobileCardBadge>
+                        )}
+                      </>}
+                      fields={[
+                        { label: "Issue",   value: ticket.issue_case },
+                        { label: "Handler", value: ticket.assign_name || '—' },
+                        { label: "Product", value: ticket.product, valueClass: "text-indigo-600 font-semibold", hide: !ticket.product },
+                        { label: "Sales",   value: ticket.sales_name, hide: !ticket.sales_name },
+                        { label: "SN",      value: ticket.sn_unit, span2: true, valueClass: "text-gray-600", hide: !ticket.sn_unit },
+                      ]}
+                      actions={<>
                         <ViewIconBtn onClick={() => { setSelectedTicket(ticket); setShowTicketDetailPopup(true); }} title="Detail" />
                         <FlowchartIconBtn onClick={() => { setSummaryTicket(ticket); setShowActivitySummary(true); }} />
                         <PrintIconBtn onClick={() => exportToPDF(ticket)} />
@@ -2956,8 +2955,8 @@ function TicketingSystemInner() {
                         {canManageTickets && (
                           <OverdueIconBtn onClick={() => { setOverdueTargetTicket(ticket); const existing = getOverdueSetting(ticket.id); setOverdueForm({ due_hours: existing?.due_hours ? String(existing.due_hours) : "48" }); setShowOverdueSetting(true); }} active={!!overdueSetting} />
                         )}
-                      </div>
-                    </div>
+                      </>}
+                    />
                   );
                 })}
                 {/* Mobile pagination */}
