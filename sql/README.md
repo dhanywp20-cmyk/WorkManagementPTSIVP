@@ -55,6 +55,7 @@ beberapa `SELECT`.
 | `cek-jangkauan-anon.sql` | Tabel mana saja yang bisa dibaca/ditulis dengan anon key dari browser |
 | `cek-rls.sql`, `cek-policy.sql` | Keadaan RLS & daftar policy |
 | `cek-kesiapan-rls.sql` | Apakah aman menyalakan RLS Project Progress |
+| `cek-nama-tidak-cocok.sql` | Kenapa sebuah akun akan melihat nol baris - menunjukkan nama aslinya di data |
 | `diagnose-top-performers.sql` | Kenapa Top Performers kosong |
 | `storage-audit.sql` | Berkas boros yang menghabiskan kuota & egress |
 
