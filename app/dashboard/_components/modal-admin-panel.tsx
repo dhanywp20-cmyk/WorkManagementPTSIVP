@@ -134,7 +134,6 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
   );
 }
 
-// KpiRosterInline
 export function KpiRosterInline() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);

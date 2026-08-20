@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { supabase, User, fmtDate, ScoreBadge, SearchInput, GradingStatusBadge } from './shared';
 import { UserAnswerReview } from './TeamPage';
 
-// Donut Chart
 function DonutChart({ segments, size = 68, strokeWidth = 10, label = '' }: {
   segments: { value: number; color: string }[];
   size?: number; strokeWidth?: number; label?: string;

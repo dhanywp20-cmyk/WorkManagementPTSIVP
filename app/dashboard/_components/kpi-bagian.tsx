@@ -236,7 +236,6 @@ export function AuditRow({ entry }: { entry: AuditEntry }) {
   );
 }
 
-// Scope badge
 export function ScopeBadge({ scope }: { scope: Scope }) {
   const cfg = {
     admin:     { label: 'Semua Data',         color: '#be123c', icon: '👑' },

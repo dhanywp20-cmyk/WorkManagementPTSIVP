@@ -14,7 +14,6 @@ import { logAudit } from '@/lib/audit';
 import { createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { hasFullAccess } from '@/lib/constants';
 
-// Spinner
 function Spinner() {
   return (
     <div className="flex items-center justify-center py-24">
@@ -26,7 +25,6 @@ function Spinner() {
   );
 }
 
-// Avatar
 function Avatar({ name, size = 32 }: { name: string; size?: number }) {
   const cols = ['#3b82f6','#8b5cf6','#ec4899','#10b981','#f59e0b','#ef4444'];
   const bg = cols[name.charCodeAt(0) % cols.length];
@@ -39,7 +37,6 @@ function Avatar({ name, size = 32 }: { name: string; size?: number }) {
   );
 }
 
-// StatusBadge
 function StatusBadge({ status }: { status: TechNote['status'] }) {
   const cfg = STATUS_CONFIG[status];
   const bgMap: Record<string,string> = {
@@ -132,7 +129,6 @@ const KATEGORI_FOLDER = [
 
 type KategoriFolder = (typeof KATEGORI_FOLDER)[number]['value'];
 
-// Folder Sidebar
 function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManage }:{
   folders: TechNoteFolder[]; technotes: TechNote[];
   selected: string | null; onSelect: (id: string | null) => void;
@@ -223,7 +219,6 @@ function HistoryTimeline({ history }: { history: TechNoteHistory[] }) {
   );
 }
 
-// Modal
 function Modal({ open, onClose, title, width=560, children }:{
   open:boolean; onClose:()=>void; title:string; width?:number; children:React.ReactNode;
 }) {

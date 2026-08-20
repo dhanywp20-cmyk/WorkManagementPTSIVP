@@ -160,7 +160,6 @@ function SalesDrop({ value, division, guests, onChange }: { value: string; divis
   );
 }
 
-// Toast
 function Toast({ t }: { t: { type: 'success' | 'error'; msg: string } | null }) {
   if (!t) return null;
   return (
@@ -436,7 +435,6 @@ export default function DailyReportPage() {
     });
   }, [allRows, searchProject, filterStatus, filterCategory, filterHandler, filterDivision, filterProduct]);
 
-  // Stats
   const stats = useMemo(() => {
     const total = allRows.length;
     const pending = allRows.filter(r => ['pending', 'in progress', 'proses'].includes(r.status.toLowerCase())).length;
@@ -561,7 +559,6 @@ export default function DailyReportPage() {
 
   if (!appReady) return <LoadingScreen />;
 
-  // FORM MODAL
   const FormModal = () => {
     if (!formOpen) return null;
     const targetUser = isAdmin ? teamUsers.find(u => u.id === formUserId) : currentUser;

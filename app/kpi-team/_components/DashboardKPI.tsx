@@ -303,7 +303,6 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
   );
 }
 
-// Scope badge
 function ScopeBadge({ scope }: { scope: Scope }) {
   const cfg = {
     admin:     { label: 'Semua Data',         color: '#be123c', icon: '👑' },

@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { supabase, User, fmtDate, ScoreBadge, SearchInput } from './shared';
 import { StatCardGrid, ModalPortal } from '@/components/shared';
 
-// Donut Chart
 function DonutChart({ segments, size = 68, strokeWidth = 10, label = '' }: {
   segments: { value: number; color: string }[];
   size?: number; strokeWidth?: number; label?: string;

@@ -10,7 +10,6 @@ import { MiniPieChart } from '@/components/shared';
 
 export { InfoLine } from '@/components/shared';
 
-// Status Donut Card
 export function StatusDonutCard({
   data, total, onSliceClick, title, icon,
 }: {
@@ -30,7 +29,6 @@ export function StatusDonutCard({
   );
 }
 
-// Sales Division Donut Card
 export function SalesDivisionDonutCard({
   data, total, onSliceClick, activeDivision,
 }: {
@@ -50,7 +48,6 @@ export function SalesDivisionDonutCard({
   );
 }
 
-// Product Donut Card
 export function ProductDonutCard({
   data, total, onSliceClick, activeProduct,
 }: {
