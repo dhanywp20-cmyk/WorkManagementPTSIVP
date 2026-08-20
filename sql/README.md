@@ -88,6 +88,15 @@ Backfill-nya sengaja menolak menebak: baris hanya dipetakan bila namanya
 cocok persis dengan TEPAT SATU akun. Nama yang dimiliki dua orang dibiarkan
 kosong dan tetap bekerja lewat pencocokan nama.
 
+`identitas-uuid-lanjutan.sql` adalah putaran keduanya, dijalankan setelah yang
+di atas. Ia mengejar sisa yang tahap 1-2 tinggalkan lewat tiga jalur: menyalin
+identitas lewat tautan baris (`reminder_id`, `source_reminder_id` - bukan
+tebakan, itu baris yang sama), menyamakan huruf besar-kecil & spasi, dan
+mengenali nilai yang ternyata username. Ejaan yang berbeda dan nama yang
+dimiliki dua akun tetap tidak ditebak; laporan di akhir berkas mendaftarkannya
+lengkap dengan alasannya. Aman diulang - setiap UPDATE hanya menyentuh baris
+yang uuid-nya masih kosong.
+
 **Urutan menjalankannya tidak mengikat.** Aplikasi mencoba menulis kolom uuid,
 dan kalau basis datanya belum punya kolom itu, ia mengulang tanpa kolom uuid
 (`cobaIdentitas` di `lib/identitas.ts`). Jadi men-deploy kode lebih dulu tidak
