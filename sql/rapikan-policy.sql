@@ -7,11 +7,11 @@
 --  besarnya kembar - satu tabel bisa punya lima policy yang mengizinkan hal
 --  yang persis sama.
 --
---  Tiga bagian, dan HANYA dua yang pertama boleh dijalankan sekarang:
+--  Isinya:
 --    1. Membuang policy kembar. Tidak mengubah siapa boleh apa sama sekali.
---    2. audit_trail jadi hanya-tambah. Aman hari ini, tidak butuh token.
---    3. Pengetatan yang BARU BOLEH dijalankan setelah token identitas terbukti
---       sampai ke basis data. Masih berupa komentar.
+--    2. audit_trail jadi hanya-tambah. Tidak butuh token identitas.
+--    3. Pengetatan berbasis identitas, masih berupa komentar - dibuka satu per
+--       satu supaya tiap layar bisa diuji sendiri sesudahnya.
 -- ============================================================================
 
 
@@ -108,77 +108,22 @@ CREATE POLICY audit_trail_baca ON audit_trail
 --  butuh identitas, dan ada di bagian 3.
 
 
--- ─── BAGIAN 2b. form_reviews - penyaringan yang tidak pernah menyaring ─────
---  form_reviews punya tiga policy, dan KETIGANYA tidak menyaring apa pun:
---
---    allow_all              ALL     public   USING (true)
---    anon_all_form_reviews  ALL     anon     USING (true)
---    guest_own_reviews      SELECT  public   USING (
---                                      (guest_fullname = klaim 'username')
---                                      OR true )
---
---  Yang ketiga itu yang perlu diperhatikan. Sekilas ia terbaca sebagai aturan
---  "guest hanya melihat review miliknya", tapi ujungnya `OR true`, dan
---  X OR true selalu benar - syarat di sebelah kirinya tidak pernah menentukan
---  apa pun. Ditambah lagi kolom yang dibandingkan salah: guest_fullname berisi
---  NAMA LENGKAP, sementara yang dibandingkan klaim `username`. Jadi seandainya
---  `OR true` dibuang pun, syaratnya tetap tidak akan pernah cocok dan Form
---  Review justru kosong untuk semua guest.
---
---  Penyaringan yang sebenarnya hari ini SEPENUHNYA dikerjakan aplikasi
---  (app/form-review/page.tsx: guest_username.eq.<username> atau
---  sales_name.eq.<full name>). Siapa pun yang memanggil PostgREST langsung
---  dengan anon key melewatinya.
---
---  Blok di bawah memindahkan aturan itu ke basis data. JANGAN dijalankan
---  sebelum dua hal dipastikan:
---    1. Project Progress masih menampilkan data dengan normal. Modul itu sudah
---       memakai klaim JWT, jadi kalau ia normal berarti token identitas benar
---       benar sampai ke basis data.
---    2. Anda siap menguji Form Review langsung sesudahnya - sebagai admin,
---       sebagai anggota tim, dan sebagai satu akun guest.
---
---  Perhatikan bahwa membuang allow_all TANPA menambah policy tulis akan
---  membuat menyimpan bintang berhenti bekerja: guest memang menulis ke tabel
---  ini, bukan cuma membaca.
---
--- DROP POLICY IF EXISTS "allow_all"         ON form_reviews;
--- DROP POLICY IF EXISTS "guest_own_reviews" ON form_reviews;
--- DROP POLICY IF EXISTS fr_baca            ON form_reviews;
--- DROP POLICY IF EXISTS fr_tulis           ON form_reviews;
---
--- --  Terlihat oleh orang dalam PTS, oleh guest yang diminta menilai, dan oleh
--- --  sales yang namanya tercantum. Sama persis dengan penyaringan di halaman.
--- CREATE POLICY fr_baca ON form_reviews
---   FOR SELECT TO anon, authenticated
---   USING (
---     lingkup_semua()
---     OR guest_username = jwt_claim('username')
---     OR sales_name     = jwt_full_name()
---   );
---
--- --  Menulis: orang dalam PTS, dan guest pada barisnya sendiri - dialah yang
--- --  memberi bintang. Sales yang namanya tercantum sengaja TIDAK ikut; ia
--- --  boleh melihat penilaian atas dirinya, bukan mengubahnya.
--- CREATE POLICY fr_tulis ON form_reviews
---   FOR ALL TO anon, authenticated
---   USING (lingkup_semua() OR guest_username = jwt_claim('username'))
---   WITH CHECK (lingkup_semua() OR guest_username = jwt_claim('username'));
---
---  Membatalkan bila Form Review bermasalah:
---    DROP POLICY IF EXISTS fr_baca ON form_reviews;
---    DROP POLICY IF EXISTS fr_tulis ON form_reviews;
---    CREATE POLICY "allow_all" ON form_reviews FOR ALL TO public
---      USING (true) WITH CHECK (true);
+-- ─── BAGIAN 2b. form_reviews - pindah ke berkas sendiri ────────────────────
+--  Ketiga policy form_reviews ternyata tidak menyaring apa pun, termasuk yang
+--  sekilas terlihat bersyarat: ujungnya `OR true`. Perbaikannya mengubah
+--  perilaku sungguhan dan perlu diuji dengan tiga akun berbeda sesudahnya,
+--  jadi ia berdiri sendiri di sql/rls-form-reviews.sql - lengkap dengan
+--  pembatalannya.
 
-
--- ─── BAGIAN 3. Menunggu token identitas - JANGAN dijalankan dulu ────────────
+-- ─── BAGIAN 3. Pengetatan berbasis identitas ────────────────────────────────
 --  Semua di bawah memakai jwt_claim() dari sql/rls-project-progress.sql.
---  Syaratnya sama seperti sql/rls-lingkup-project.sql: /api/auth/db-token-check
---  harus menjawab siap:true, dan semua orang sudah logout-login sekali.
+--  Syaratnya: Project Progress masih menampilkan data dengan normal. Modul itu
+--  sudah memakai klaim JWT, jadi kalau ia normal berarti token identitas benar
+--  benar sampai ke basis data.
 --
---  Kalau dijalankan sebelum itu, klaimnya kosong, syaratnya selalu salah, dan
---  layar yang bersangkutan berhenti bekerja untuk SEMUA orang.
+--  Masih berupa komentar karena tiap blok mengubah perilaku satu layar, dan
+--  masing-masing perlu dibuka serta diuji satu per satu - bukan karena
+--  syaratnya belum terpenuhi.
 
 -- --- 3a. incentive_scheme_settings - porsi pembagian insentif ---
 --  Satu baris JSON yang menentukan siapa dapat berapa persen. Sekarang siapa

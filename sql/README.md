@@ -72,6 +72,7 @@ diambil orang luar - bukan apa yang seharusnya.
 | `lock-incentive-splits-rls.sql` | Menyembunyikan "siapa dapat berapa" dari anon |
 | `rapikan-policy.sql` | Membuang 28 policy kembar (nol izin berubah) dan menjadikan `audit_trail` hanya-tambah |
 | `tutup-tabel-terlewat.sql` | Tiga tabel yang RLS-nya belum pernah menyala: `progress_actions`, `kpi_snapshot_members`, `picket_holidays` |
+| `rls-form-reviews.sql` | Memindahkan penyaringan Form Review dari aplikasi ke basis data. Ketiga policy lamanya tidak menyaring apa pun - yang terlihat bersyarat pun berujung `OR true` |
 | `rls-lingkup-project.sql` | Menyiapkan RLS untuk tickets, reminders, project_requests, notifications. Simulasi dulu, policy masih komentar |
 | `rls-project-progress.sql` | Menyalakan RLS berbasis klaim JWT. Jalankan HANYA setelah `/api/auth/db-token-check` menjawab siap |
 
