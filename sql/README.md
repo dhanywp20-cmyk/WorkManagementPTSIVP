@@ -56,6 +56,7 @@ beberapa `SELECT`.
 | `cek-rls.sql`, `cek-policy.sql` | Keadaan RLS & daftar policy |
 | `cek-kesiapan-rls.sql` | Apakah aman menyalakan RLS Project Progress |
 | `cek-nama-tidak-cocok.sql` | Kenapa sebuah akun akan melihat nol baris - menunjukkan nama aslinya di data |
+| `cek-akun-kembar.sql` | Dua akun untuk satu orang - menunjukkan jejak masing-masing supaya bisa dipilih dengan alasan |
 | `diagnose-top-performers.sql` | Kenapa Top Performers kosong |
 | `storage-audit.sql` | Berkas boros yang menghabiskan kuota & egress |
 
