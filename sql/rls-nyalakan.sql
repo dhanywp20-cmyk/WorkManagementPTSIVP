@@ -113,15 +113,56 @@ BEGIN
 END $fn$;
 
 
+-- ─── syarat_siap() - memastikan fondasinya ada SEBELUM menyalakan ──────────
+--
+--  Policy di bawah memanggil lima fungsi yang dibuat berkas LAIN: jwt_claim
+--  dan jwt_full_name dari rls-project-progress.sql, lalu jwt_user_id,
+--  lingkup_semua, dan lingkup_divisi dari rls-lingkup-project.sql.
+--
+--  Kalau salah satunya belum ada, penyalaan berhenti DI TENGAH: RLS sudah
+--  menyala, policy lama sudah dibuang, tapi policy penggantinya gagal dibuat.
+--  Tabelnya jadi tertutup rapat - pada tabel yang dipakai tim sepanjang hari.
+--
+--  Karena itu syaratnya ditanyakan langsung ke katalog basis data, bukan
+--  dipercayakan pada catatan penerapan. Catatan bisa keliru; katalog tidak.
+CREATE OR REPLACE FUNCTION syarat_siap()
+RETURNS TABLE (fungsi text, ada boolean)
+LANGUAGE sql STABLE AS $$
+  SELECT f, EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+                     WHERE n.nspname = 'public' AND p.proname = f)
+  --  boleh_lihat_baris ikut diperiksa walau dibuat berkas INI juga. Sebabnya:
+  --  kalau berkas ini dijalankan saat fondasinya belum ada, pembuatan fungsi
+  --  itu GAGAL - Postgres memvalidasi badan fungsi SQL saat CREATE. Berkasnya
+  --  tetap selesai, syarat_siap() nanti menjawab lengkap begitu fondasi
+  --  dipasang, tapi boleh_lihat_baris-nya masih tidak ada, dan policy-nya akan
+  --  gagal dibuat setelah policy lama terlanjur dibuang. Obatnya: jalankan
+  --  ulang berkas ini setelah fondasinya lengkap.
+  FROM unnest(ARRAY['jwt_claim','jwt_full_name','jwt_user_id',
+                    'lingkup_semua','lingkup_divisi','boleh_lihat_baris']) AS f;
+$$;
+
+
 -- ─── nyalakan_rls / matikan_rls ─────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION nyalakan_rls(nama_tabel text)
 RETURNS text
 LANGUAGE plpgsql AS $fn$
-DECLARE bekas text;
+DECLARE bekas text; kurang text;
 BEGIN
   IF nama_tabel NOT IN ('notifications','tickets','reminders','project_requests') THEN
     RAISE EXCEPTION 'Tabel % tidak dikenal. Pilihannya: notifications, tickets, reminders, project_requests.', nama_tabel;
   END IF;
+
+  --  Diperiksa SEBELUM apa pun disentuh. Berhenti di sini tidak meninggalkan
+  --  jejak sama sekali; berhenti setelah policy lama dibuang meninggalkan
+  --  tabel yang tertutup bagi semua orang.
+  SELECT string_agg(fungsi, ', ') INTO kurang FROM syarat_siap() WHERE NOT ada;
+  IF kurang IS NOT NULL THEN
+    RAISE EXCEPTION
+      'Fondasi belum lengkap - fungsi ini belum ada: %. Jalankan '
+      'sql/rls-project-progress.sql lalu sql/rls-lingkup-project.sql bagian 1, '
+      'kemudian JALANKAN ULANG berkas ini. TIDAK ADA yang diubah.', kurang;
+  END IF;
+
   bekas := buang_policy_lama(nama_tabel);
 
   IF nama_tabel = 'notifications' THEN
@@ -220,4 +261,15 @@ $$;
 --  Query terakhir, supaya sekali Run langsung terlihat keadaannya sekarang.
 --  Semua baris `rls_menyala = false` berarti berkas ini baru menyiapkan alat,
 --  dan belum ada satu pun tabel yang berubah perilakunya - memang begitu.
-SELECT * FROM keadaan_rls();
+--
+--  Baris `fondasi:` di atas menjawab pertanyaan yang menentukan: apakah kelima
+--  fungsi yang dipakai policy sudah ada. Kalau ada yang BELUM ADA,
+--  nyalakan_rls() akan menolak jalan - dan itu jawaban dari katalog basis
+--  data, bukan dari catatan penerapan yang bisa keliru.
+SELECT 'fondasi: ' || fungsi AS tabel,
+       ada AS rls_menyala,
+       NULL::bigint AS jumlah_policy,
+       CASE WHEN ada THEN 'siap' ELSE 'BELUM ADA - jalankan berkas fondasinya dulu' END AS policy_terpasang
+FROM syarat_siap()
+UNION ALL
+SELECT tabel, rls_menyala, jumlah_policy, policy_terpasang FROM keadaan_rls();
