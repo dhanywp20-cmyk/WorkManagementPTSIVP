@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
-import { ListEmptyState, AuditTrailPanel, ModalPortal, AdminEditFields } from '@/components/shared';
+import { ListEmptyState, AuditTrailPanel, ModalPortal, AdminEditFields, FlowSteps } from '@/components/shared';
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase, supabaseServices } from "@/lib/supabase";
 import { setSession, clearSession, getSession } from "@/lib/auth";
@@ -3770,6 +3770,44 @@ function TicketingSystemInner() {
                     );
                   })()}
                 </div>
+
+                {/* Alur tiket - diagram yang sama dengan Request Schedule dan
+                    Request Design Project. Ticketing satu-satunya yang belum
+                    memakainya, jadi pembacanya harus menyimpulkan sendiri sudah
+                    sampai mana sebuah tiket, dari daftar riwayat.
+
+                    Tahap "Ke Services" hanya disisipkan bila tiketnya memang
+                    pernah dilimpahkan. Dasarnya ringkasPenanganan(), helper yang
+                    sama yang dipakai layar View Ticket dan lembar cetak - supaya
+                    ketiganya tidak pernah menjawab berbeda untuk tiket yang sama. */}
+                <div className="mb-5">
+                  {(() => {
+                    const t = summaryTicket;
+                    const ringkas = ringkasPenanganan(t);
+                    const pembuat = users.find(u => u.username === t.created_by);
+                    const sudahAssign = !!(t.assign_name && t.assign_name.trim() !== "");
+                    const menungguSupervisor = t.routing_status === "supervisor_assign";
+                    const selesai = t.status === "Solved" || t.status === "Completed";
+                    const batal   = t.status === "Rejected" || t.status === "Cancelled";
+
+                    const tahap = [
+                      { label: "Diajukan",   pelaku: t.sales_name || pembuat?.full_name || t.created_by || "Sales" },
+                      { label: "Di-assign",  pelaku: menungguSupervisor ? "Supervisor" : "Admin" },
+                      { label: "Dikerjakan", pelaku: ringkas.handlerPTS || t.assign_name || "Team PTS" },
+                      ...(ringkas.keServices
+                        ? [{ label: "Ke Services", pelaku: t.services_status || "Team Services" }]
+                        : []),
+                      { label: "Selesai",    pelaku: ringkas.keServices ? "Services" : "Team PTS" },
+                    ];
+
+                    //  0 diajukan · 1 menunggu assign · 2 dikerjakan · ... · terakhir selesai
+                    //  tahap.length berarti seluruh alur tuntas (indeks di luar daftar)
+                    const aktif = selesai ? tahap.length : sudahAssign ? 2 : 1;
+
+                    return <FlowSteps judul="Alur Tiket" aktif={aktif} dibatalkan={batal} steps={tahap} />;
+                  })()}
+                </div>
+
                 <div className="flex flex-wrap gap-2 mb-5 p-3 rounded-xl text-xs" style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)" }}>
                   <span className="flex items-center gap-1"><span className="text-gray-500">👤 Handler:</span><span className="font-bold">{summaryTicket.assign_name || "-"}</span></span><span className="text-gray-300">|</span>
                   <span className="flex items-center gap-1"><span className="text-gray-500">📅 Dibuat:</span><span className="font-bold">{summaryTicket.created_at ? formatDateTime(summaryTicket.created_at) : "-"}</span></span><span className="text-gray-300">|</span>
