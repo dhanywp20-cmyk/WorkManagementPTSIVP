@@ -125,6 +125,38 @@ END $fn$;
 --
 --  Karena itu syaratnya ditanyakan langsung ke katalog basis data, bukan
 --  dipercayakan pada catatan penerapan. Catatan bisa keliru; katalog tidak.
+--
+--  syarat_tipe() memeriksa hal yang berbeda dan sama pentingnya: apakah TIPE
+--  kolomnya sesuai dengan yang diandaikan policy. Di basis data ini ada dua
+--  kolom yang menyimpan id sebagai TEXT, bukan uuid - notifications.user_id
+--  dan project_requests.requester_id. Membandingkannya dengan jwt_user_id()
+--  yang bertipe uuid membuat CREATE POLICY gagal, dan gagalnya terjadi setelah
+--  policy lama dibuang. Penjagaan keberadaan fungsi tidak menangkap ini:
+--  fungsinya ada, tipenya yang tidak cocok.
+CREATE OR REPLACE FUNCTION syarat_tipe()
+RETURNS TABLE (kolom text, tipe_sekarang text, tipe_diharapkan text, cocok boolean)
+LANGUAGE sql STABLE AS $$
+  SELECT h.k, COALESCE(c.data_type, '(kolomnya tidak ada)'), h.t,
+         COALESCE(c.data_type, '') = h.t
+  FROM (VALUES
+    ('notifications.user_id',            'text'),
+    ('project_requests.requester_id',    'text'),
+    ('tickets.sales_user_id',            'uuid'),
+    ('tickets.assign_user_id',           'uuid'),
+    ('reminders.sales_user_id',          'uuid'),
+    ('reminders.assign_user_id',         'uuid'),
+    ('reminders.internal_sales_id',      'uuid'),
+    ('reminders.internal_sales_id_2',    'uuid'),
+    ('project_requests.sales_user_id',   'uuid'),
+    ('project_requests.assign_user_id',  'uuid'),
+    ('project_requests.internal_sales_id','uuid')
+  ) AS h(k, t)
+  LEFT JOIN information_schema.columns c
+    ON c.table_schema = 'public'
+   AND c.table_name  = split_part(h.k, '.', 1)
+   AND c.column_name = split_part(h.k, '.', 2);
+$$;
+
 CREATE OR REPLACE FUNCTION syarat_siap()
 RETURNS TABLE (fungsi text, ada boolean)
 LANGUAGE sql STABLE AS $$
@@ -163,6 +195,16 @@ BEGIN
       'kemudian JALANKAN ULANG berkas ini. TIDAK ADA yang diubah.', kurang;
   END IF;
 
+  --  Tipe kolom diperiksa juga. Policy yang membandingkan text dengan uuid
+  --  gagal dibuat, dan gagalnya setelah policy lama dibuang.
+  SELECT string_agg(kolom || ' (' || tipe_sekarang || ', diharapkan ' || tipe_diharapkan || ')', '; ')
+    INTO kurang FROM syarat_tipe() WHERE NOT cocok;
+  IF kurang IS NOT NULL THEN
+    RAISE EXCEPTION
+      'Tipe kolom tidak sesuai yang diandaikan policy: %. Policy-nya perlu '
+      'disesuaikan lebih dulu. TIDAK ADA yang diubah.', kurang;
+  END IF;
+
   bekas := buang_policy_lama(nama_tabel);
 
   IF nama_tabel = 'notifications' THEN
@@ -170,8 +212,14 @@ BEGIN
     --  Notifikasi milik satu orang dan tidak punya alur bercabang. Karena itu
     --  tabel ini didahulukan: ia pembuktian paling murah bahwa token identitas
     --  benar-benar sampai ke basis data.
+    --  jwt_claim('sub'), BUKAN jwt_user_id(). Kolom notifications.user_id
+    --  bertipe text di basis data ini, sementara jwt_user_id() mengembalikan
+    --  uuid - Postgres tidak punya operator untuk membandingkan keduanya, dan
+    --  CREATE POLICY-nya gagal. Kegagalannya terjadi SETELAH policy lama
+    --  dibuang, jadi akibatnya bukan "tidak ada yang berubah" melainkan tabel
+    --  notifikasi tertutup untuk semua orang.
     CREATE POLICY nt_own ON notifications FOR ALL TO anon, authenticated
-      USING (user_id = jwt_user_id() OR lingkup_semua())
+      USING (user_id = jwt_claim('sub') OR lingkup_semua())
       WITH CHECK (true);
     RETURN 'notifications: RLS menyala, nt_own dipasang. ' || bekas;
 
@@ -213,7 +261,9 @@ BEGIN
     CREATE POLICY pr_select ON project_requests FOR SELECT TO anon, authenticated
       USING (
         boleh_lihat_baris(sales_user_id, sales_name, sales_division, NULL)
-        OR requester_id       = jwt_user_id()
+        --  requester_id bertipe text di basis data ini, bukan uuid - sebab
+        --  yang sama seperti notifications.user_id di atas.
+        OR requester_id       = jwt_claim('sub')
         OR assign_user_id     = jwt_user_id()
         OR assign_name        = jwt_full_name()
         OR internal_sales_id  = jwt_user_id()
