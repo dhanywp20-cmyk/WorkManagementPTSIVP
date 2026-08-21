@@ -76,12 +76,20 @@ export async function POST(request: NextRequest) {
 
     const otpHash = hashOTP(String(otp).trim());
 
+    //  ilike, bukan eq: OTP yang dibuat SEBELUM penyeragaman huruf tersimpan
+    //  memakai ejaan persis dari tabel users. Mencarinya dengan eq lowercase
+    //  membuat kode yang benar pun tidak ketemu barisnya, dan orangnya
+    //  kehabisan cara untuk masuk kembali. maybeSingle supaya baris kembar
+    //  peninggalan tidak melempar galat.
+    const kunci = String(username).trim().toLowerCase();
     const { data: otpRecord } = await supabase
       .from('password_reset_otps')
       .select('id, expires_at, used')
-      .eq('username', username.trim().toLowerCase())
+      .ilike('username', kunci)
       .eq('otp_hash', otpHash)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (!otpRecord) {
       await catatSalah();
@@ -100,8 +108,8 @@ export async function POST(request: NextRequest) {
     const { data: user } = await supabase
       .from('users')
       .select('id')
-      .eq('username', username.trim().toLowerCase())
-      .single();
+      .ilike('username', kunci)
+      .maybeSingle();
 
     if (!user) {
       return NextResponse.json({ error: 'User tidak ditemukan.' }, { status: 404 });
