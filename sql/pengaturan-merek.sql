@@ -36,6 +36,10 @@
 --
 --      SELECT * FROM keadaan_app_settings();
 --
+--  Berkas ini JUGA membuat bucket penyimpanan `merek-files` untuk logo dan
+--  gambar latar - lihat bagian 6 di bawah. Bagian itu berjalan sendiri saat
+--  berkas dijalankan, tidak perlu perintah tambahan.
+--
 --  SYARAT: sql/rls-lingkup-project.sql sudah jalan - lingkup_semua() dari sana.
 -- ============================================================================
 
@@ -144,3 +148,53 @@ LANGUAGE sql STABLE AS $$
   WHERE key IN ('merek', 'sales_divisions')
   ORDER BY key;
 $$;
+
+
+-- 6. Bucket penyimpanan logo & gambar latar
+
+--  Logo dan gambar latar diunggah dari Admin Panel, bukan diketik URL-nya.
+--  Bucket ini publik: halaman login harus bisa memuat logo SEBELUM ada yang
+--  masuk, jadi tidak ada identitas apa pun untuk diperiksa saat gambarnya
+--  diminta.
+--
+--  Selama bucket ini belum ada, lib/merek.ts menjatuhkan unggahan ke
+--  `project-files` yang sudah dipakai platform - jadi tombol Unggah tetap
+--  berfungsi walau bagian ini belum dijalankan. Bucket sendiri tetap lebih
+--  baik: berkas merek tidak tercampur dengan lampiran project, sehingga
+--  audit storage bisa memisahkan keduanya.
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'merek-files', 'merek-files', true,
+  8 * 1024 * 1024,
+  ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml', 'image/gif']
+)
+ON CONFLICT (id) DO UPDATE
+  SET public             = EXCLUDED.public,
+      file_size_limit    = EXCLUDED.file_size_limit,
+      allowed_mime_types = EXCLUDED.allowed_mime_types;
+
+--  Membaca terbuka, menulis butuh identitas orang dalam - syarat yang sama
+--  dengan menulis pengaturannya sendiri. Tanpa policy tulis, tombol Unggah
+--  akan gagal diam-diam: RLS storage.objects menyala secara bawaan di
+--  Supabase, jadi bucket tanpa policy = tidak ada yang bisa menaruh berkas.
+DROP POLICY IF EXISTS merek_baca   ON storage.objects;
+DROP POLICY IF EXISTS merek_tulis  ON storage.objects;
+DROP POLICY IF EXISTS merek_ganti  ON storage.objects;
+DROP POLICY IF EXISTS merek_hapus  ON storage.objects;
+
+CREATE POLICY merek_baca ON storage.objects
+  FOR SELECT TO anon, authenticated
+  USING (bucket_id = 'merek-files');
+
+CREATE POLICY merek_tulis ON storage.objects
+  FOR INSERT TO anon, authenticated
+  WITH CHECK (bucket_id = 'merek-files' AND boleh_tulis_pengaturan());
+
+CREATE POLICY merek_ganti ON storage.objects
+  FOR UPDATE TO anon, authenticated
+  USING (bucket_id = 'merek-files' AND boleh_tulis_pengaturan())
+  WITH CHECK (bucket_id = 'merek-files' AND boleh_tulis_pengaturan());
+
+CREATE POLICY merek_hapus ON storage.objects
+  FOR DELETE TO anon, authenticated
+  USING (bucket_id = 'merek-files' AND boleh_tulis_pengaturan());

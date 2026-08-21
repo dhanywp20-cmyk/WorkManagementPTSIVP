@@ -7,6 +7,7 @@ import { adminUpdateUser } from '@/lib/admin-users';
 import { PRODUCT_TYPES } from '@/app/reminder-schedule/_components/shared';
 import { User, SALES_DIVISIONS, JabatanType, JABATAN_CONFIG, JABATAN_CC_RULES } from './shared';
 import { useDivisiSales } from '@/lib/merek';
+import { DivisiSalesInline } from './divisi-sales';
 import { ConfirmDialog, type ConfirmState, Username, ModalPortal } from '@/components/shared';
 
 import { maskPhone } from './modal-bersama';
@@ -643,7 +644,7 @@ export function UserManagementInline() {
   const [saving, setSaving] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; msg: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<'org' | 'atasan' | 'ivp' | 'product' | 'user_cc'>('org');
+  const [activeTab, setActiveTab] = useState<'org' | 'atasan' | 'ivp' | 'product' | 'user_cc' | 'divisi'>('org');
   const [orgFilter, setOrgFilter] = useState<'all' | 'Sales' | 'Marketing' | 'PTS'>('all');
   const [orgSelectedId, setOrgSelectedId] = useState('');
   const [orgSearch, setOrgSearch] = useState('');
@@ -937,6 +938,12 @@ export function UserManagementInline() {
         </button>
         <button onClick={() => setActiveTab('user_cc')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'user_cc' ? 'border-teal-500 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           🏷️ CC per User ({userSupMaps.length})
+        </button>
+        {/* Divisi Sales ada DI SINI, bukan di pengaturan tampilan: yang
+            mengurusnya orang yang sama dengan yang mengurus akun, dan divisi
+            baru berarti sesuatu lewat akun yang memakainya. */}
+        <button onClick={() => setActiveTab('divisi')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'divisi' ? 'border-teal-500 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+          🏷️ Divisi Sales
         </button>
       </div>
 
@@ -1385,6 +1392,13 @@ export function UserManagementInline() {
                     )}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* ══ TAB DIVISI SALES ══ */}
+            {activeTab === 'divisi' && (
+              <div className="p-5">
+                <DivisiSalesInline />
               </div>
             )}
 

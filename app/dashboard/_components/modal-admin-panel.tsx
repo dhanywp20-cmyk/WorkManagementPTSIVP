@@ -43,7 +43,7 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
     },
     {
       key: 'merek',
-      label: 'Merek & Divisi',
+      label: 'Dashboard Setting',
       icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>,
       color: '#7e22ce', activeBg: 'rgba(147,51,234,0.1)', activeBorder: 'rgba(147,51,234,0.4)', activeText: '#7e22ce',
     },
@@ -115,7 +115,7 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
                 {activeSection === 'userManagement' && 'Mapping Atasan, IVP & MVI Account & CC per User'}
                 {activeSection === 'picBrand' && 'Mapping Brand PIC per divisi & produk'}
                 {activeSection === 'kpiRoster' && 'Pilih anggota tim yang masuk dalam penilaian KPI'}
-                {activeSection === 'merek' && 'Logo, nama, warna tampilan & daftar divisi sales'}
+                {activeSection === 'merek' && 'Logo, nama, warna header & tampilan halaman login'}
               </p>
             </div>
             <button aria-label="Tutup" onClick={onClose}

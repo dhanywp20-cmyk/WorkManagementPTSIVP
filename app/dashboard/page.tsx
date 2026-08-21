@@ -22,7 +22,7 @@ import GlobalSearch from './_components/GlobalSearch';
 import PermissionAwareDashboard from './_components/widgets/PermissionAwareDashboard';
 import OnboardingTour, { JelajahiButton } from './_components/OnboardingTour';
 import { notifyNewUserRegistration } from '@/lib/notifications';
-import { useDivisiSales, useMerek, warnaTembus } from '@/lib/merek';
+import { useDivisiSales, useMerek, gradasiPanelLogin, angkaTembus } from '@/lib/merek';
 import SessionExpiryBanner from '@/app/_components/SessionExpiryBanner';
 import { ModalPortal, LogoMerek } from '@/components/shared';
 
@@ -749,7 +749,7 @@ export default function Dashboard() {
       <div className={`${masukBerhasil ? 'lc-bongkar' : ''} flex bg-cover bg-center bg-fixed`} style={{ minHeight: '100dvh', backgroundImage: `url(${merek.gambarLatar})` }}>
         {/* ── LEFT: panel branding (desktop) — overlay merah transparan, gambar tembus dari bg penuh ── */}
         <div className={`hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 text-white overflow-hidden ${masukBerhasil ? 'lc-bongkar-kiri' : ''}`}
-          style={{ background: `linear-gradient(135deg, ${warnaTembus(merek.warnaUtama2, 0.82)}, ${warnaTembus(merek.warnaUtama2, 0.86)})` }}>
+          style={{ background: gradasiPanelLogin(merek) }}>
           <div className="flex items-center gap-2.5">
             <LogoMerek ukuran="lg" gaya="tembus" />
             <span className="text-lg font-bold tracking-tight">{merek.namaPlatform} <span className="font-normal text-white/75">· {merek.namaPortal}</span></span>
@@ -769,7 +769,7 @@ export default function Dashboard() {
         {/* ── RIGHT: panel form — overlay PUTIH transparan di atas bg penuh (biar tidak
             contrast), form dlm kartu frosted ── */}
         <div className={`relative overflow-hidden flex-1 flex items-center justify-center p-4 sm:p-8 ${masukBerhasil ? 'lc-bongkar-kanan' : ''}`}
-          style={{ background: 'rgba(255,255,255,0.55)' }}>
+          style={{ background: `rgba(255,255,255,${angkaTembus(merek.tembusKanan, 0.55)})` }}>
           <div
             key={putaranAnim}
             className={`lc-kartu ${

@@ -24,6 +24,7 @@ import { supabase } from './supabase';
 // Merek
 
 export interface Merek {
+  // ── Dashboard: header di dalam platform ──
   /** Judul besar di header, mis. "Work Management Platform". */
   namaPlatform: string;
   /** Versi pendek untuk layar sempit, mis. "WM Platform". */
@@ -32,16 +33,29 @@ export interface Merek {
   namaPortal: string;
   /** Baris kecil di bawah judul, mis. "IndoVisual Professional Tools". */
   namaPerusahaan: string;
-  /** URL logo. Kosong = pakai ikon gedung bawaan. */
+  /** Logo, diisi lewat unggahan (unggahBerkasMerek). Kosong = ikon bawaan. */
   logoUrl: string;
-  /** Warna utama - kotak logo, tombol, aksen fokus. */
+  /** Warna utama - kotak logo, tombol, pranala. */
   warnaUtama: string;
-  /** Warna kedua untuk gradasi kotak logo. */
+  /** Warna kedua untuk gradasi kotak logo & tombol. */
   warnaUtama2: string;
   /** Warna label portal di header. */
   warnaAksen: string;
-  /** Gambar latar halaman login. */
+
+  // ── Halaman login ──
+  //  Punya warna sendiri, sengaja tidak menumpang warna dashboard: panel kiri
+  //  login duduk di atas foto, jadi warna yang enak di sana belum tentu enak
+  //  dipakai sebagai warna tombol di dalam platform - dan sebaliknya.
+  /** Gambar latar halaman login, diisi lewat unggahan. */
   gambarLatar: string;
+  /** Warna panel kiri login, awal gradasi. */
+  warnaLogin: string;
+  /** Warna panel kiri login, akhir gradasi. */
+  warnaLogin2: string;
+  /** Kepekatan panel kiri menutupi foto: '0' tembus penuh, '1' menutup rapat. */
+  tembusLogin: string;
+  /** Kepekatan kabut putih di sisi kanan, tempat kartu login berdiri. */
+  tembusKanan: string;
   /** Kalimat sambutan besar di panel kiri login. */
   judulLogin: string;
   /** Kalimat penjelas di bawahnya. */
@@ -57,10 +71,21 @@ export const MEREK_BAWAAN: Merek = {
   warnaUtama: '#e11d48',
   warnaUtama2: '#be123c',
   warnaAksen: '#c8861d',
+
   gambarLatar: '/IVP_Background.png',
+  warnaLogin: '#be123c',
+  warnaLogin2: '#881337',
+  tembusLogin: '0.84',
+  tembusKanan: '0.55',
   judulLogin: 'Portal Manajemen Kerja Tim PTS',
   subjudulLogin: 'Request schedule, ticket troubleshooting, design project & piket showroom — dalam satu platform yang rapi.',
 };
+
+/** Field yang dipakai halaman login - dipakai Admin Panel untuk mengelompokkan. */
+export const FIELD_LOGIN = [
+  'gambarLatar', 'warnaLogin', 'warnaLogin2', 'tembusLogin', 'tembusKanan',
+  'judulLogin', 'subjudulLogin',
+] as const satisfies readonly (keyof Merek)[];
 
 /** Kunci baris di app_settings. Satu baris, isinya JSON. */
 export const KUNCI_MEREK = 'merek';
@@ -204,6 +229,27 @@ export function warnaTembus(hex: string, alfa: number): string {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alfa})`;
 }
 
+/**
+ * Baca angka kepekatan yang disimpan sebagai teks.
+ *
+ * Nilainya datang dari <input>, jadi bisa berupa apa saja - termasuk kosong
+ * atau salah ketik. Yang di luar 0..1 dikembalikan ke nilai bawaan, bukan
+ * dipakai apa adanya: kepekatan 5 membuat panel kirinya menutup rapat dan
+ * fotonya hilang sama sekali.
+ */
+export function angkaTembus(nilai: string, bawaan: number): number {
+  const n = Number.parseFloat(nilai);
+  return Number.isFinite(n) && n >= 0 && n <= 1 ? n : bawaan;
+}
+
+/** Gradasi panel kiri halaman login, sesuai warna & kepekatan yang diatur. */
+export function gradasiPanelLogin(m: Merek): string {
+  const a = angkaTembus(m.tembusLogin, 0.84);
+  // Ujung kedua dibuat sedikit lebih pekat, seperti aslinya - gradasi yang
+  // rata terasa datar di atas foto.
+  return `linear-gradient(135deg, ${warnaTembus(m.warnaLogin, Math.min(1, a - 0.02))}, ${warnaTembus(m.warnaLogin2, Math.min(1, a + 0.02))})`;
+}
+
 /** Rapikan daftar divisi: buang yang kosong, buang kembar, pertahankan urutan. */
 export function rapikanDivisi(isi: unknown): string[] {
   if (!Array.isArray(isi)) return [];
@@ -267,6 +313,74 @@ export async function divisiTerpakai(): Promise<Record<string, number>> {
     if (d) hitung[d] = (hitung[d] ?? 0) + 1;
   }
   return hitung;
+}
+
+// Unggahan berkas
+
+/**
+ * Bucket tempat logo & gambar latar disimpan.
+ *
+ * `merek-files` dibuat oleh sql/pengaturan-merek.sql. Selama berkas SQL itu
+ * belum dijalankan bucket-nya belum ada, jadi unggahan jatuh ke `project-files`
+ * yang sudah dipakai platform - dengan begitu tombol Unggah tetap berfungsi
+ * hari ini, bukan menunggu satu langkah SQL lebih dulu.
+ */
+const BUCKET_MEREK = 'merek-files';
+const BUCKET_CADANGAN = 'project-files';
+
+/** Batas ukuran berkas yang diterima. */
+const BATAS_LOGO = 2 * 1024 * 1024;
+const BATAS_LATAR = 8 * 1024 * 1024;
+
+/**
+ * Unggah logo atau gambar latar, kembalikan URL publiknya.
+ *
+ * Logo TIDAK dikompres. compressImage() menyandi ulang jadi JPEG, dan JPEG
+ * tidak punya lapisan tembus pandang - logo dengan latar transparan akan
+ * pulang membawa kotak putih di belakangnya. Gambar latar aman dikompres:
+ * ia memang foto, dan ukuran aslinya dari kamera bisa berkali lipat dari yang
+ * dibutuhkan layar.
+ */
+export async function unggahBerkasMerek(
+  berkas: File,
+  jenis: 'logo' | 'latar',
+): Promise<{ url: string | null; error: string | null }> {
+  if (!berkas.type.startsWith('image/')) {
+    return { url: null, error: 'Berkasnya harus gambar (PNG, JPG, SVG, atau WebP).' };
+  }
+  const batas = jenis === 'logo' ? BATAS_LOGO : BATAS_LATAR;
+  if (berkas.size > batas) {
+    return { url: null, error: `Ukurannya ${(berkas.size / 1048576).toFixed(1)}MB, batasnya ${batas / 1048576}MB.` };
+  }
+
+  let siap = berkas;
+  if (jenis === 'latar') {
+    try {
+      const { compressImage } = await import('./image-compress');
+      siap = await compressImage(berkas, { maxDim: 2400, quality: 0.82 });
+    } catch { /* kompresi gagal - unggah aslinya, lebih baik besar daripada tidak jadi */ }
+  }
+
+  const ext = (siap.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+  // Nama diacak, bukan nama asli: mengunggah "logo.png" dua kali tidak boleh
+  // saling menimpa, dan berkas lama harus tetap utuh selama masih dirujuk
+  // oleh peramban yang sudah menyimpannya di cache.
+  const nama = `merek/${jenis}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+  for (const bucket of [BUCKET_MEREK, BUCKET_CADANGAN]) {
+    const { error } = await supabase.storage.from(bucket)
+      .upload(nama, siap, { cacheControl: '31536000', upsert: false, contentType: siap.type });
+    if (!error) {
+      return { url: supabase.storage.from(bucket).getPublicUrl(nama).data.publicUrl, error: null };
+    }
+    // Bucket belum ada - coba yang berikutnya. Galat lain (kuota, izin) tidak
+    // akan hilang dengan pindah bucket, jadi langsung dilaporkan.
+    const pesan = (error.message || '').toLowerCase();
+    if (!pesan.includes('not found') && !pesan.includes('bucket')) {
+      return { url: null, error: error.message };
+    }
+  }
+  return { url: null, error: 'Tidak ada bucket penyimpanan yang bisa dipakai. Jalankan sql/pengaturan-merek.sql.' };
 }
 
 // Jembatan React
