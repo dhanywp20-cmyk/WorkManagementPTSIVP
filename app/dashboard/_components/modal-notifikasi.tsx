@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
 import { hasFullAccess } from '@/lib/constants';
+import { isAssignablePTSTeam } from '@/lib/teams';
 
 import { User, NotificationItem, NotifBellProps } from './shared';
 
@@ -121,10 +122,25 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
   const roleLC = (currentUser.role ?? '').trim().toLowerCase();
   const teamType = (currentUser.team_type ?? '').trim();
   const isTeamServices = roleLC === 'team' && teamType === 'Team Services';
-  const isTeamPTS = roleLC === 'team' && teamType === 'Team PTS IVP';
+  /**
+   * Tim PTS yang MENGERJAKAN tiket, request design, dan form review.
+   * Daftarnya diambil dari lib/teams.ts - sumber yang sama dengan dropdown
+   * "assign ke tim" di ketiga platform itu, supaya siapa yang bisa ditugaskan
+   * dan siapa yang dapat lonceng notifikasinya tidak pernah berbeda.
+   *
+   * Sebelumnya nilai ini dipatok 'Team PTS IVP' saja, sehingga Team PTS MVI -
+   * yang sama-sama ditugaskan pekerjaan - tidak pernah mendapat lonceng Ticket,
+   * Require, maupun Review. Polanya sekarang sama, yang beda hanya isinya.
+   */
+  const isTeamPTS = roleLC === 'team' && isAssignablePTSTeam(teamType);
+  /**
+   * Team PTS UMP tidak ikut ketiga platform itu - pekerjaannya di Piket
+   * Showroom, dan lib/teams.ts memang tidak memasukkannya ke daftar assign.
+   * Loncengnya disembunyikan karena memang tidak akan pernah ada isinya, bukan
+   * karena haknya dicabut.
+   */
   const isTeamPTS_UMP = roleLC === 'team' && teamType === 'Team PTS UMP';
-  const isTeamPTS_MVI = roleLC === 'team' && teamType === 'Team PTS MVI';
-  const isTeamPTS_SubGroup = isTeamPTS_UMP || isTeamPTS_MVI;
+  const isTeamPTS_SubGroup = isTeamPTS_UMP;
   // isAdmin di sini dipakai sebagai "lihat SEMUA notifikasi" (bukan hak kelola
   // akun) - jadi ikut diperluas ke akun Team PTS dengan toggle "Full Access"
   // aktif (lihat lib/constants.ts hasFullAccess), mis. Manager PTS.
