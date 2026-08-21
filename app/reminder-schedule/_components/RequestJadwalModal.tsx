@@ -138,11 +138,11 @@ export function RequestJadwalModal({
         </div>
 
         {/* Tiga kolom menyamping — pola yang sama dengan form Reminder & Ticket. */}
-        <div className="flex-1 min-h-0 overflow-y-auto xl:overflow-hidden">
-          <div className="p-4 grid grid-cols-1 xl:grid-cols-3 gap-4 xl:h-full xl:overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto satulayar:overflow-hidden">
+          <div className="p-4 grid grid-cols-1 satulayar:grid-cols-3 gap-4 satulayar:h-full satulayar:overflow-hidden">
 
           {/* ── Kolom 1: siapa & project apa ── */}
-          <div className="space-y-3 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
 
           {/* Info requester */}
           <div
@@ -265,7 +265,7 @@ export function RequestJadwalModal({
           </div>
 
           {/* ── Kolom 2: jenis pekerjaan & waktu ── */}
-          <div className="space-y-3 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
           {/* Kategori */}
           <div>
             <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
@@ -405,7 +405,7 @@ export function RequestJadwalModal({
           {/* Tambah Hari Lain — mini calendar multi-select. Disembunyikan di HP
              (layar sempit → tampilan bertumpuk); hanya muncul di layar sm: ke atas.
              Di HP user cukup submit 1 tanggal (Tanggal Usulan di atas). */}
-          <div className="hidden xl:block">
+          <div className="hidden satulayar:block">
             <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Tambah Hari Lain (Opsional)
             </label>
@@ -415,7 +415,7 @@ export function RequestJadwalModal({
           </div>
 
           {/* ── Kolom 3: PIC, catatan & alur ── */}
-          <div className="space-y-3 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
           {/* PIC */}
           <div className="grid grid-cols-1 gap-4">
             <div>

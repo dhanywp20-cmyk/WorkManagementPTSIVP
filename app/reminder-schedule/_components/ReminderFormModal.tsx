@@ -88,11 +88,11 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
             Di layar sempit (<xl) tetap satu kolom: memaksa tiga kolom di layar
             kecil hanya memindahkan gulirnya jadi ke samping, yang lebih buruk. */}
-        <div className="flex-1 min-h-0 overflow-y-auto xl:overflow-hidden">
-          <div className="p-4 grid grid-cols-1 xl:grid-cols-3 gap-4 xl:h-full xl:overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto satulayar:overflow-hidden">
+          <div className="p-4 grid grid-cols-1 satulayar:grid-cols-3 gap-4 satulayar:h-full satulayar:overflow-hidden">
 
           {/* ── Kolom 1: apa & siapa ── */}
-          <div className="space-y-3 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
           <SectionHeader icon="📋" title="Informasi Jadwal" />
 
           <FormField label="Nama Project*">
@@ -229,7 +229,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
           </div>
 
           {/* ── Kolom 2: kapan ── */}
-          <div className="space-y-3 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
           <SectionHeader icon="🗓️" title="Waktu & Jadwal" />
 
           <FormField label="Pengulangan">
@@ -371,7 +371,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
           </div>
 
           {/* ── Kolom 3: konteks project ── */}
-          <div className="space-y-3 xl:overflow-y-auto xl:pr-2 xl:min-h-0">
+          <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
           <SectionHeader icon="🏢" title="Informasi Project" />
 
           <FormField label="Product / Unit (Opsional)">

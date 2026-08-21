@@ -2479,11 +2479,22 @@ Hubungi Admin untuk info lebih lanjut.
                     </div>
                   );
                 })()}
-                <div className="p-5 space-y-5">
+                {/* Kartu detail disusun dua kolom di layar lebar, bukan satu deret
+                    memanjang ke bawah - mengikuti tata letak satu layar yang sudah
+                    dipakai form pembuatannya. Sebelumnya membaca satu request
+                    berarti menggulir melewati lima kartu penuh.
+
+                    Ambangnya `satulayar`, sama seperti form pembuatan: yang
+                    menentukan bukan lebar saja tapi juga alat penunjuknya, supaya
+                    zoom Chrome tidak menjatuhkannya jadi satu kolom.
+
+                    items-start supaya kartu pendek tidak ikut meregang mengikuti
+                    kartu Source & Peripheral yang paling tinggi. */}
+                <div className="p-5 grid grid-cols-1 satulayar:grid-cols-2 gap-5 items-start [&>*]:min-w-0">
 
                   {/* Assigned PTS — "in_progress" nudge */}
                   {isTeamPTS && selectedRequest.status === 'approved' && selectedRequest.assign_name === currentUser.full_name && (
-                    <div className="rounded-xl px-4 py-3 flex items-center gap-3"
+                    <div className="rounded-xl px-4 py-3 flex items-center gap-3 satulayar:col-span-2"
                       style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.25)' }}>
                       <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -2556,7 +2567,7 @@ Hubungi Admin untuk info lebih lanjut.
 
                     return (<>
                   {/* Project Info — form style */}
-                  <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
+                  <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm satulayar:col-span-2">
                     <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
                       <span className="w-7 h-7 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">📁</span>
                       Informasi Project
@@ -2682,6 +2693,14 @@ Hubungi Admin untuk info lebih lanjut.
                     <div className="space-y-4">
                       <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Source</label><ChipDisplay items={[...(dr.source||[]), dr.source_other]} /></div>
 
+                      {/* Enam pilihan Yes/No dalam SATU grid dua kolom.
+                          Sebelumnya sebagian menumpuk penuh dan hanya Wallplate +
+                          Tabletop yang dua kolom, sehingga Tabletop berdiri
+                          sendirian di kanan sementara kirinya berderet penuh -
+                          terbaca seperti ada isian yang hilang, padahal tidak.
+                          items-start supaya kartu yang punya rincian lanjutan
+                          tidak menarik tinggi pasangannya. */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 items-start">
                       {/* Camera */}
                       <div>
                         <YNDisplay value={dr.camera_conference||'No'} label="Camera Conference" />
@@ -2704,16 +2723,16 @@ Hubungi Admin untuk info lebih lanjut.
                         )}
                       </div>
 
-                      {/* Wallplate + Tabletop — 2 col */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <YNDisplay value={dr.wallplate_input||'No'} label="Wallplate Input" />
-                          {dr.wallplate_input === 'Yes' && <div className="ml-4 pl-4 border-l-2 border-teal-200 mt-1"><p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">{dr.wallplate_jumlah||'—'}</p></div>}
-                        </div>
-                        <div>
-                          <YNDisplay value={dr.tabletop_input||'No'} label="Tabletop Input" />
-                          {dr.tabletop_input === 'Yes' && <div className="ml-4 pl-4 border-l-2 border-teal-200 mt-1"><p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">{dr.tabletop_jumlah||'—'}</p></div>}
-                        </div>
+                      {/* Wallplate */}
+                      <div>
+                        <YNDisplay value={dr.wallplate_input||'No'} label="Wallplate Input" />
+                        {dr.wallplate_input === 'Yes' && <div className="ml-4 pl-4 border-l-2 border-teal-200 mt-1"><p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">{dr.wallplate_jumlah||'—'}</p></div>}
+                      </div>
+
+                      {/* Tabletop */}
+                      <div>
+                        <YNDisplay value={dr.tabletop_input||'No'} label="Tabletop Input" />
+                        {dr.tabletop_input === 'Yes' && <div className="ml-4 pl-4 border-l-2 border-teal-200 mt-1"><p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">{dr.tabletop_jumlah||'—'}</p></div>}
                       </div>
 
                       {/* Wireless */}
@@ -2736,6 +2755,7 @@ Hubungi Admin untuk info lebih lanjut.
                           </div>
                         )}
                       </div>
+                      </div>
                     </div>
                   </div>
 
@@ -2757,7 +2777,7 @@ Hubungi Admin untuk info lebih lanjut.
                   })()}
 
                   {/* Attachments Panel — prominent */}
-                  <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
+                  <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm satulayar:col-span-2">
                     {(() => {
                       // Scope file ke room tab yang lagi aktif - pakai konvensi prefix
                       // "[roomN]" yang sudah ada di nama file (lihat getFileRoomIdx).

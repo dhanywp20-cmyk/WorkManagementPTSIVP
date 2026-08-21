@@ -207,16 +207,16 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
         {/* Tiga kolom menyamping — pola yang sama dengan form Request Schedule.
             Di bawah xl tetap satu kolom; memaksa tiga kolom di layar kecil hanya
             memindahkan gulirnya jadi ke samping. */}
-        <div className="flex-1 min-h-0 overflow-y-auto xl:overflow-hidden">
-          {/* TANPA xl:h-full — modal Ticket menyesuaikan tingginya dengan isi.
+        <div className="flex-1 min-h-0 overflow-y-auto satulayar:overflow-hidden">
+          {/* TANPA satulayar:h-full — modal Ticket menyesuaikan tingginya dengan isi.
               Field-nya jauh lebih sedikit daripada form Reminder; dipaksa
               setinggi layar, dua pertiga bawahnya jadi kotak kosong yang tidak
               mengerjakan apa-apa. Batas atasnya tetap max-h-full, jadi kalau
               isinya panjang ia berhenti di tepi layar dan kolomnya menggulir. */}
-          <div className="p-5 grid grid-cols-1 xl:grid-cols-3 gap-5">
+          <div className="p-5 grid grid-cols-1 satulayar:grid-cols-3 gap-5">
 
           {/* ── Kolom 1: ticket ini tentang apa ── */}
-          <div className="space-y-4 xl:pr-2 xl:min-h-0">
+          <div className="space-y-4 satulayar:pr-2 satulayar:min-h-0">
           {/* Section: Informasi Ticket */}
           <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "rgba(0,0,0,0.1)" }}>
             <span className="text-lg">🎫</span>
@@ -406,7 +406,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           </div>
 
           {/* ── Kolom 2: barang & keluhannya ── */}
-          <div className="space-y-4 xl:pr-2 xl:min-h-0">
+          <div className="space-y-4 satulayar:pr-2 satulayar:min-h-0">
           <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
             <span className="text-sm">📦</span>
             <h3 className="text-sm font-bold tracking-wide text-slate-700">Product &amp; Issue</h3>
@@ -492,7 +492,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           </div>
 
           {/* ── Kolom 3: penugasan & lampiran ── */}
-          <div className="space-y-4 xl:pr-2 xl:min-h-0">
+          <div className="space-y-4 satulayar:pr-2 satulayar:min-h-0">
           <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
             <span className="text-sm">🎯</span>
             <h3 className="text-sm font-bold tracking-wide text-slate-700">Penugasan &amp; Lampiran</h3>

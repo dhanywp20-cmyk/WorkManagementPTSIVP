@@ -802,10 +802,10 @@ export function NewFormModal({
             ruangan dengan puluhan isian perangkat; dipaksa selebar sepertiga
             layar, tab-nya berdesakan dan justru lebih sulit dipakai daripada
             saat harus digulir. Info project yang ringkas cukup di kolom kiri. */}
-        <div className="flex-1 min-h-0 overflow-y-auto xl:overflow-hidden bg-gray-50">
-          <div className="p-5 grid grid-cols-1 xl:grid-cols-3 gap-4 xl:h-full xl:overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto satulayar:overflow-hidden bg-gray-50">
+          <div className="p-5 grid grid-cols-1 satulayar:grid-cols-3 gap-4 satulayar:h-full satulayar:overflow-hidden">
 
-          <div className="xl:col-span-1 space-y-4 xl:overflow-y-auto xl:pr-1 xl:min-h-0">
+          <div className="satulayar:col-span-1 space-y-4 satulayar:overflow-y-auto satulayar:pr-1 satulayar:min-h-0">
 
           {/* ── Project Info ── */}
           <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
@@ -887,7 +887,7 @@ export function NewFormModal({
 
           </div>
 
-          <div className="xl:col-span-2 space-y-4 xl:overflow-y-auto xl:pr-1 xl:min-h-0">
+          <div className="satulayar:col-span-2 space-y-4 satulayar:overflow-y-auto satulayar:pr-1 satulayar:min-h-0">
           {/* ── Room Tab Navigator ── */}
           <div className="bg-white/95 rounded-2xl border-2 border-teal-200 shadow-sm overflow-hidden">
             {/* Tab bar */}
