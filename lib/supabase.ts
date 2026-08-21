@@ -18,9 +18,31 @@ let dbToken: string | null =
  */
 export function setDbToken(token: string | null): void {
   dbToken = token;
+  pasangTokenRealtime(token);
   if (typeof window === 'undefined') return;
   if (token) window.sessionStorage.setItem(TOKEN_KEY, token);
   else window.sessionStorage.removeItem(TOKEN_KEY);
+}
+
+/**
+ * Realtime memakai WebSocket, BUKAN fetch - jadi override global.fetch di bawah
+ * tidak menyentuhnya sama sekali. Tanpa baris ini soketnya berangkat hanya
+ * membawa anon key, tanpa klaim identitas.
+ *
+ * Selama RLS mati itu tidak terasa: semua baris lolos, semua perubahan sampai.
+ * Begitu RLS menyala di tickets & reminders (dua tabel yang ikut publication
+ * `supabase_realtime`), Realtime ikut mengecek izin SELECT per baris - dan
+ * soket tanpa klaim tidak berhak melihat apa pun, sehingga halaman berhenti
+ * menyegarkan diri sendiri. Yang dikirim ke sini token yang sama dengan yang
+ * dipakai PostgREST, sehingga penyaringannya juga sama persis.
+ */
+function pasangTokenRealtime(token: string | null): void {
+  if (typeof window === 'undefined') return;
+  try {
+    supabase.realtime.setAuth(token);
+  } catch {
+    /* soket belum siap - percobaan berikutnya (login/refresh token) memasangnya */
+  }
 }
 
 /** Token yang sedang dipakai - dibaca pemantau sesi untuk tahu kapan harus diperbarui. */
@@ -101,6 +123,11 @@ export const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   { global: { fetch: fetchWithToken } },
 );
+
+// Token yang dipulihkan dari sessionStorage di atas belum lewat setDbToken,
+// jadi Realtime-nya dipasang di sini - sesudah klien ada. Tanpa ini, tab yang
+// di-refresh berlangganan tanpa identitas sampai token diperbarui.
+pasangTokenRealtime(dbToken);
 
 /**
  * Basis data Services - TERPISAH dari basis data utama.
