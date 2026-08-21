@@ -24,8 +24,32 @@ export interface Perubahan {
   ke: string;
 }
 
-/** Ubah nilai apa pun jadi teks yang enak dibaca manusia di audit & WA. */
+/**
+ * Penanda tujuan "alihkan ke Supervisor" pada dropdown assign, bentuknya
+ * `SUP::<id>::<nama>`. Ini nilai INTERNAL <option> - id-nya dipakai mengisi
+ * assigned_supervisor_id, bukan untuk dibaca manusia.
+ */
+export const PENANDA_SUPERVISOR = 'SUP::';
+
+/** Baca penanda supervisor jadi id + nama. Null bila nilainya bukan penanda. */
+export function bacaTujuanSupervisor(nilai: unknown): { id: string; nama: string } | null {
+  if (typeof nilai !== 'string' || !nilai.startsWith(PENANDA_SUPERVISOR)) return null;
+  const bagian = nilai.split('::');
+  // Nama sengaja disambung kembali: kalau suatu saat ada nama bertanda '::',
+  // yang terpotong hanya id-nya, bukan namanya.
+  return { id: bagian[1] ?? '', nama: bagian.slice(2).join('::') };
+}
+
+/**
+ * Ubah nilai apa pun jadi teks yang enak dibaca manusia di audit & WA.
+ *
+ * Penanda `SUP::<id>::<nama>` diterjemahkan ke namanya. Tanpa ini, uuid mentah
+ * ikut tercetak di Riwayat Perubahan yang dibaca Sales dan tim - membocorkan
+ * pengenal internal sekaligus membuat catatannya tidak terbaca.
+ */
 function jadikanTeks(v: unknown): string {
+  const sup = bacaTujuanSupervisor(v);
+  if (sup) return `${sup.nama || 'Supervisor'} (Supervisor)`;
   if (v === null || v === undefined || v === '') return '(kosong)';
   if (typeof v === 'boolean') return v ? 'ya' : 'tidak';
   return String(v);
@@ -46,6 +70,12 @@ export function bandingkan(
 ): Perubahan[] {
   const hasil: Perubahan[] = [];
   for (const f of fields) {
+    // Field yang TIDAK ikut form ini dilewati. Tidak ikut form berarti tidak
+    // pernah dikirim ke database, jadi nilainya di sana tetap seperti semula -
+    // mencatatnya sebagai "→ (kosong)" akan melaporkan perubahan yang tidak
+    // pernah terjadi. Dikosongkan sungguhan tetap terbaca, karena <input>
+    // mengirim string kosong, bukan menghilangkan kuncinya.
+    if (!(f.key in baru) || baru[f.key] === undefined) continue;
     const a = lama[f.key];
     const b = baru[f.key];
     const sa = a === null || a === undefined ? '' : String(a);

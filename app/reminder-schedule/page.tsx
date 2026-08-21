@@ -568,10 +568,17 @@ function ReminderSchedulePageInner() {
 
     if (editingReminder) {
       // Catat APA yang berubah, bukan sekadar bahwa ada perubahan.
+      // Saat dialihkan ke Supervisor, `assigned_to` dikeluarkan dari perbandingan:
+      // yang tersimpan di database adalah string kosong (Supervisor-lah yang
+      // menentukan pelaksana), bukan nilai dropdown-nya, dan tujuannya sudah
+      // disebut di awal catatan. Membandingkannya hanya menghasilkan baris yang
+      // mengulang - atau, kalau tidak diterjemahkan, membocorkan penanda internal.
+      const bandingkanDengan = { ...(formData as unknown as Record<string, unknown>) };
+      if (alihKeSupervisor) delete bandingkanDengan.assigned_to;
       const perubahanEdit = bandingkan(
         REMINDER_FIELDS,
         editingReminder as unknown as Record<string, unknown>,
-        formData as unknown as Record<string, unknown>,
+        bandingkanDengan,
       );
       logAudit({
         user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
@@ -1139,6 +1146,13 @@ function ReminderSchedulePageInner() {
       controller_automation_brand: r.controller_automation_brand ?? null,
       pic_type: r.pic_type ?? 'standard', pic_id: r.pic_id ?? null,
       incentive_value: r.incentive_value ?? 0, bast_date: r.bast_date ?? null,
+      // Tiga field ini PUNYA input di form, tapi dulu tidak pernah dimuat saat
+      // menyunting: rentang pengerjaan tampil kosong padahal terisi, dan tipe
+      // produk harus dipilih ulang hanya untuk lolos validasi simpan. Catatan
+      // auditnya pun ikut salah - lihat komentar di lib/admin-edit.ts.
+      progress_start_date: r.progress_start_date ?? '',
+      progress_target_date: r.progress_target_date ?? '',
+      product_type: r.product_type ?? '',
     });
     setDetailReminder(null);
     setShowFormModal(true);
