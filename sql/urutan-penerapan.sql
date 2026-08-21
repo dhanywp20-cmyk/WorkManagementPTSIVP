@@ -38,6 +38,13 @@
 --      ditandai satu per satu:
 --        SELECT tandai('nama-berkas.sql');
 --
+--    GOLONGAN `pembatalan` JANGAN PERNAH dijalankan berurutan bersama yang
+--    lain. Isinya pembatalan darurat - unlock-credentials-rls.sql MEMBUKA
+--    KEMBALI akses anon ke user_credentials, user_sessions, login_attempts,
+--    dan password_reset_otps. Menjalankannya "karena statusnya BELUM" berarti
+--    membuka tabel kredensial platform. Statusnya sengaja ditulis
+--    JANGAN JALANKAN, bukan BELUM.
+--
 --    Basis data BARU (lingkungan kedua, tenant baru):
 --      1. Jalankan Supabase CLI dulu - supabase/migrations/ adalah fondasinya.
 --      2. Jalankan berkas golongan `skema` di bawah SESUAI URUTAN, satu per
@@ -72,7 +79,7 @@ INSERT INTO sql_diterapkan (berkas, urutan, golongan) VALUES
   ('propagate-user-rename.sql', 3, 'skema'),
   ('piket-produk-lain.sql', 4, 'skema'),
   ('lock-credentials-rls.sql', 5, 'keamanan'),
-  ('unlock-credentials-rls.sql', 6, 'keamanan'),
+  ('unlock-credentials-rls.sql', 6, 'pembatalan'),
   ('lock-users-privileged-columns.sql', 7, 'keamanan'),
   ('lock-incentive-splits-rls.sql', 8, 'keamanan'),
   ('routing-pipeline-phase1.sql', 9, 'skema'),
@@ -116,7 +123,8 @@ INSERT INTO sql_diterapkan (berkas, urutan, golongan) VALUES
   ('identitas-uuid-usulan.sql', 47, 'identitas'),
   ('cek-akun-kembar.sql', 48, 'periksa'),
   ('identitas-uuid-putuskan.sql', 49, 'identitas'),
-  ('rls-nyalakan.sql', 50, 'keamanan')
+  ('rls-nyalakan.sql', 50, 'keamanan'),
+  ('urutan-penerapan.sql', 51, 'periksa')
 ON CONFLICT (berkas) DO UPDATE
   SET urutan = EXCLUDED.urutan, golongan = EXCLUDED.golongan;
 
@@ -136,6 +144,12 @@ BEGIN
             COALESCE((SELECT max(urutan) FROM sql_diterapkan), 0) + 1,
             'tambahan', now(), ket);
     RETURN nama_berkas || ': dicatat sebagai berkas tambahan, ditandai diterapkan.';
+  END IF;
+  IF (SELECT golongan FROM sql_diterapkan WHERE berkas = nama_berkas) = 'pembatalan' THEN
+    --  Berkas pembatalan bukan sesuatu yang "diterapkan". Menandainya akan
+    --  membuatnya tampak seperti langkah normal yang sudah dilewati, padahal
+    --  ia justru membuka kembali apa yang ditutup berkas lain.
+    RETURN nama_berkas || ': DITOLAK - ini berkas pembatalan darurat, bukan langkah penerapan.';
   END IF;
   UPDATE sql_diterapkan
      SET diterapkan_pada = now(), catatan = COALESCE(ket, catatan)
@@ -176,10 +190,12 @@ END $fn$;
 --    BELUM          perlu dijalankan - urut dari atas
 --    alat baca      tidak perlu dijalankan, aman kapan saja
 SELECT urutan, golongan, berkas,
-       CASE WHEN golongan = 'periksa'            THEN 'alat baca'
+       CASE WHEN golongan = 'pembatalan'         THEN 'JANGAN JALANKAN - darurat saja'
+            WHEN golongan = 'periksa'            THEN 'alat baca'
             WHEN diterapkan_pada IS NOT NULL     THEN 'sudah'
             ELSE                                      'BELUM' END AS status,
        diterapkan_pada, catatan
 FROM sql_diterapkan
-ORDER BY (CASE WHEN golongan='periksa' THEN 2
+ORDER BY (CASE WHEN golongan='pembatalan' THEN 3
+               WHEN golongan='periksa' THEN 2
                WHEN diterapkan_pada IS NULL THEN 0 ELSE 1 END), urutan;

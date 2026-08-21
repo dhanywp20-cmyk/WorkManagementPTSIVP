@@ -68,6 +68,7 @@ beberapa `SELECT`.
 | `cek-nama-tidak-cocok.sql` | Kenapa sebuah akun akan melihat nol baris - menunjukkan nama aslinya di data |
 | `cek-akun-kembar.sql` | Dua akun untuk satu orang - menunjukkan jejak masing-masing supaya bisa dipilih dengan alasan |
 | `urutan-penerapan.sql` | Berkas mana sudah dijalankan di basis data ini, dan urutan untuk basis data baru |
+| `tandai-produksi.sql` | Sekali jalan di produksi: menandai yang terbukti sudah dijalankan, menyisakan yang benar-benar menunggu |
 | `diagnose-top-performers.sql` | Kenapa Top Performers kosong |
 | `storage-audit.sql` | Berkas boros yang menghabiskan kuota & egress |
 
