@@ -9,13 +9,14 @@ import { StripInfo } from './modal-bersama';
 import { AccountSettingsInline } from './modal-akun';
 import { UserManagementInline } from './modal-user';
 import { BrandPicSettingInline } from './modal-brand-pic';
+import { MerekSettingInline } from './modal-merek';
 
 // AdminPanelModal (unified: Settings + User Management + PIC Brand)
 
 export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
-  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster'>(initialTab);
+  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek'>(initialTab);
 
-  const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster'; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
+  const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek'; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
     {
       key: 'settings',
       label: 'Account Settings',
@@ -39,6 +40,12 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
       label: 'KPI Roster',
       icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
       color: '#0369a1', activeBg: 'rgba(3,105,161,0.1)', activeBorder: 'rgba(3,105,161,0.4)', activeText: '#0369a1',
+    },
+    {
+      key: 'merek',
+      label: 'Merek & Divisi',
+      icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>,
+      color: '#7e22ce', activeBg: 'rgba(147,51,234,0.1)', activeBorder: 'rgba(147,51,234,0.4)', activeText: '#7e22ce',
     },
   ];
 
@@ -108,6 +115,7 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
                 {activeSection === 'userManagement' && 'Mapping Atasan, IVP & MVI Account & CC per User'}
                 {activeSection === 'picBrand' && 'Mapping Brand PIC per divisi & produk'}
                 {activeSection === 'kpiRoster' && 'Pilih anggota tim yang masuk dalam penilaian KPI'}
+                {activeSection === 'merek' && 'Logo, nama, warna tampilan & daftar divisi sales'}
               </p>
             </div>
             <button aria-label="Tutup" onClick={onClose}
@@ -126,6 +134,7 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
             {activeSection === 'userManagement' && <UserManagementInline />}
             {activeSection === 'picBrand' && <BrandPicSettingInline />}
             {activeSection === 'kpiRoster' && <KpiRosterInline />}
+            {activeSection === 'merek' && <MerekSettingInline />}
           </div>
         </div>
       </div>

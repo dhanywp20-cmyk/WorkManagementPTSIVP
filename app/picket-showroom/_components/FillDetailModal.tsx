@@ -1,11 +1,12 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useDivisiSales } from '@/lib/merek';
 import { ModalPortal } from '@/components/shared';
 import {
   PiketRow, KegiatanEntry, JenisKegiatan, UserRow, ProdukLain,
   DAY_COLOR, JENIS_KEGIATAN_LIST, KEGIATAN_COLORS,
-  KEBUTUHAN_LIST, PRODUK_LIST, SALES_DIVISIONS, TEAM_LABEL,
+  KEBUTUHAN_LIST, PRODUK_LIST, TEAM_LABEL,
 } from './shared';
 
 interface KFEntry {
@@ -17,6 +18,7 @@ interface KFEntry {
 const emptyKF=():KFEntry=>({jenis_kegiatan:'Demo Product',jam_mulai:'09:00',jam_selesai:'10:00',produk:[],produk_lain:[],tamu_instansi:'',nama_sales:'',sales_division:'',kebutuhan:[],keterangan:'',team_rnd:''});
 
 export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;onClose:()=>void;onSaved:()=>void;currentUser?:any}) {
+  const daftarDivisi = useDivisiSales();
   const [entries,setEntries]=useState<KFEntry[]>([emptyKF()]);
   const [loadingE,setLoadingE]=useState(true);
   const [ptUsers,setPtUsers]=useState<(UserRow&{id:string;full_name:string})[]>([]);
@@ -230,7 +232,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                         <select aria-label="— Pilih Division —" value={entry.sales_division} onChange={e=>upd(idx,{sales_division:e.target.value})}
                           className="w-full rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
                           <option value="">— Pilih Division —</option>
-                          {SALES_DIVISIONS.map(d=><option key={d} value={d}>{d}</option>)}
+                          {daftarDivisi.map(d=><option key={d} value={d}>{d}</option>)}
                         </select>
                       </div>
                     </div>

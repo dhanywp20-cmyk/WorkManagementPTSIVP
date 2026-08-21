@@ -7,7 +7,8 @@ import { logAudit } from '@/lib/audit';
 
 import { createNotification } from '@/lib/notifications';
 
-import { User, SALES_DIVISIONS, JABATAN_LIST, JABATAN_CONFIG, ALL_MENU_KEYS, DEFAULT_MENU_KEYS } from './shared';
+import { User, JABATAN_LIST, JABATAN_CONFIG, ALL_MENU_KEYS, DEFAULT_MENU_KEYS } from './shared';
+import { useDivisiSales } from '@/lib/merek';
 import { ConfirmDialog, type ConfirmState, Username, ModalPortal } from '@/components/shared';
 
 import { propagateUserRename, pesanSebar, sendWelcomeWA } from './modal-bersama';
@@ -17,6 +18,7 @@ interface AccountSettingsModalProps {
 }
 
 export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
+  const daftarDivisi = useDivisiSales();
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [activeTab, setActiveTab] = useState<'list' | 'add'>('list');
@@ -369,7 +371,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                             <select aria-label="-- Pilih {editDivisi} Division --" value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
                               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                               <option value="">-- Pilih {editDivisi} Division --</option>
-                              {SALES_DIVISIONS.map(div => <option key={div} value={div}>{div}</option>)}
+                              {daftarDivisi.map(div => <option key={div} value={div}>{div}</option>)}
                             </select>
                           </div>
                         )}
@@ -498,7 +500,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                     <select aria-label="-- Pilih {newUser.divisi} Division --" value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
                       className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
                       <option value="">-- Pilih {newUser.divisi} Division --</option>
-                      {SALES_DIVISIONS.map(div => <option key={div} value={div}>{div}</option>)}
+                      {daftarDivisi.map(div => <option key={div} value={div}>{div}</option>)}
                     </select>
                   </div>
                 )}
@@ -531,6 +533,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
 }
 
 export function AccountSettingsInline() {
+  const daftarDivisi = useDivisiSales();
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [activeTab, setActiveTab] = useState<'list' | 'add' | 'pending'>('list');
@@ -844,7 +847,7 @@ export function AccountSettingsInline() {
                       <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division</label>
                       <select aria-label="-- Pilih Divisi Sales --" value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
-                        <option value="">-- Pilih Divisi Sales --</option>{SALES_DIVISIONS.map(div => <option key={div} value={div}>{div}</option>)}
+                        <option value="">-- Pilih Divisi Sales --</option>{daftarDivisi.map(div => <option key={div} value={div}>{div}</option>)}
                       </select>
                     </div>
                   )}
@@ -994,7 +997,7 @@ export function AccountSettingsInline() {
                   <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division *</label>
                   <select aria-label="-- Pilih Sales Division --" value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
-                    <option value="">-- Pilih Sales Division --</option>{SALES_DIVISIONS.map(div => <option key={div} value={div}>{div}</option>)}
+                    <option value="">-- Pilih Sales Division --</option>{daftarDivisi.map(div => <option key={div} value={div}>{div}</option>)}
                   </select>
                 </div>
               )}

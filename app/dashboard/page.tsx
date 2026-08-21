@@ -7,7 +7,7 @@ import { setSession, clearSession, getSession, startSessionWatcher } from '@/lib
 import { isAdmin as checkIsAdmin, hasFullAccess, SESSION_DURATION_MS } from '@/lib/constants';
 import {
   User, MenuItem, NotificationItem,
-  SALES_DIVISIONS, JABATAN_LIST, JabatanType, JABATAN_CONFIG, JABATAN_CC_RULES,
+  JABATAN_LIST, JabatanType, JABATAN_CONFIG, JABATAN_CC_RULES,
   ALL_MENU_KEYS, ALL_MENU_LABELS, ROLE_BADGE,
   NotifBellProps, AdminPanelModalProps,
   DISPLAY_BRANDS_DB, MIDDLEWARE_BRANDS_DB, BrandPicMappingDB,
@@ -22,11 +22,14 @@ import GlobalSearch from './_components/GlobalSearch';
 import PermissionAwareDashboard from './_components/widgets/PermissionAwareDashboard';
 import OnboardingTour, { JelajahiButton } from './_components/OnboardingTour';
 import { notifyNewUserRegistration } from '@/lib/notifications';
+import { useDivisiSales, useMerek, warnaTembus } from '@/lib/merek';
 import SessionExpiryBanner from '@/app/_components/SessionExpiryBanner';
-import { ModalPortal } from '@/components/shared';
+import { ModalPortal, LogoMerek } from '@/components/shared';
 
 export default function Dashboard() {
   const router = useRouter();
+  const daftarDivisi = useDivisiSales();
+  const merek = useMerek();
   // Guard: ensure auto-navigation to first menu only happens ONCE per login session
   // (prevents race-condition re-fires when currentUser/showSidebar update multiple times)
   const autoNavigatedRef = useRef(false);
@@ -743,26 +746,24 @@ export default function Dashboard() {
       {/* Seluruh isi halaman login ada di dalam bungkus ini supaya bisa dihisap
           masuk ke koper sebagai satu benda. Lapisan kopernya SENGAJA di luar —
           kalau ikut di dalam, kopernya akan menghisap dirinya sendiri. */}
-      <div className={`${masukBerhasil ? 'lc-bongkar' : ''} flex bg-cover bg-center bg-fixed`} style={{ minHeight: '100dvh', backgroundImage: 'url(/IVP_Background.png)' }}>
+      <div className={`${masukBerhasil ? 'lc-bongkar' : ''} flex bg-cover bg-center bg-fixed`} style={{ minHeight: '100dvh', backgroundImage: `url(${merek.gambarLatar})` }}>
         {/* ── LEFT: panel branding (desktop) — overlay merah transparan, gambar tembus dari bg penuh ── */}
         <div className={`hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 text-white overflow-hidden ${masukBerhasil ? 'lc-bongkar-kiri' : ''}`}
-          style={{ background: 'linear-gradient(135deg, rgba(190,18,60,0.82), rgba(136,19,55,0.86))' }}>
+          style={{ background: `linear-gradient(135deg, ${warnaTembus(merek.warnaUtama2, 0.82)}, ${warnaTembus(merek.warnaUtama2, 0.86)})` }}>
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center backdrop-blur">
-              <svg aria-hidden="true" focusable="false" className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-            </div>
-            <span className="text-lg font-bold tracking-tight">Work Management <span className="font-normal text-white/75">· PTS Portal</span></span>
+            <LogoMerek ukuran="lg" gaya="tembus" />
+            <span className="text-lg font-bold tracking-tight">{merek.namaPlatform} <span className="font-normal text-white/75">· {merek.namaPortal}</span></span>
           </div>
           <div className="max-w-md">
-            <h1 className="text-4xl font-black leading-tight mb-4">Portal Manajemen<br />Kerja Tim PTS</h1>
-            <p className="text-white/85 text-base leading-relaxed mb-8">Request schedule, ticket troubleshooting, design project &amp; piket showroom — dalam satu platform yang rapi.</p>
+            <h1 className="text-4xl font-black leading-tight mb-4">{merek.judulLogin}</h1>
+            <p className="text-white/85 text-base leading-relaxed mb-8">{merek.subjudulLogin}</p>
             <div className="flex flex-wrap gap-2.5">
               {[['🗓️', 'Request Schedule'], ['🎫', 'Ticket Troubleshooting'], ['🏗️', 'Design Project'], ['🏪', 'Piket Showroom']].map(([ic, l]) => (
                 <span key={l} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/12 backdrop-blur text-sm font-semibold border border-white/15">{ic} {l}</span>
               ))}
             </div>
           </div>
-          <p className="text-white/55 text-xs">© 2026 IndoVisual Professional Tools</p>
+          <p className="text-white/55 text-xs">© 2026 {merek.namaPerusahaan}</p>
         </div>
 
         {/* ── RIGHT: panel form — overlay PUTIH transparan di atas bg penuh (biar tidak
@@ -779,10 +780,8 @@ export default function Dashboard() {
             <div className="mb-8">
               {/* Logo kecil — hanya mobile (di desktop logo ada di panel kiri) */}
               <div className="flex lg:hidden items-center gap-2.5 mb-6">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-rose-600 to-rose-700 flex items-center justify-center shadow-lg">
-                  <svg aria-hidden="true" focusable="false" className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-                </div>
-                <span className="text-lg font-bold text-slate-800">Work Management <span className="text-slate-400 font-normal">· PTS Portal</span></span>
+                <LogoMerek ukuran="lg" />
+                <span className="text-lg font-bold text-slate-800">{merek.namaPlatform} <span className="text-slate-400 font-normal">· {merek.namaPortal}</span></span>
               </div>
               <h2 className="text-3xl font-bold text-slate-800 tracking-tight">{showRegister ? 'Buat Akun Baru' : 'Selamat Datang'}</h2>
               <p className="text-slate-500 text-sm mt-1.5">{showRegister ? 'Lengkapi data untuk mendaftar. Akun akan diverifikasi admin.' : 'Masuk ke akun Anda untuk melanjutkan'}</p>
@@ -807,7 +806,8 @@ export default function Dashboard() {
                     {loginErr}
                   </div>
                 )}
-                <button onClick={handleLogin} disabled={loginLoading || masukBerhasil} className="w-full bg-gradient-to-r from-rose-600 to-rose-700 text-white py-3.5 rounded-xl hover:from-rose-700 hover:to-rose-800 font-bold shadow-lg transition-all tracking-wide text-sm mt-2 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                <button onClick={handleLogin} disabled={loginLoading || masukBerhasil} className="w-full text-white py-3.5 rounded-xl font-bold shadow-lg transition-all tracking-wide text-sm mt-2 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:opacity-90"
+                  style={{ background: `linear-gradient(to right, ${merek.warnaUtama}, ${merek.warnaUtama2})` }}>
                   {masukBerhasil ? (
                     <>
                       {/* Kepastian bahwa passwordnya benar — inilah yang orang
@@ -827,7 +827,7 @@ export default function Dashboard() {
                 <p className="text-center text-xs text-slate-400 pt-1">
                   Belum punya akun? <button onClick={() => pindahForm(true)} className="text-indigo-600 font-bold hover:underline">Daftar di sini</button>
                   <span className="mx-2 text-slate-300">|</span>
-                  <button onClick={() => { setShowForgot(true); setForgotStep('request'); setForgotMsg(null); }} className="text-rose-500 font-bold hover:underline">Lupa Password?</button>
+                  <button onClick={() => { setShowForgot(true); setForgotStep('request'); setForgotMsg(null); }} className="font-bold hover:underline" style={{ color: merek.warnaUtama }}>Lupa Password?</button>
                 </p>
               </div>
             )}
@@ -839,7 +839,7 @@ export default function Dashboard() {
                     <div className="text-5xl mb-4">✅</div>
                     <h3 className="font-bold text-slate-800 text-lg mb-2">Pendaftaran Berhasil!</h3>
                     <p className="text-slate-500 text-sm mb-4">Akun kamu akan diverifikasi oleh admin. Kamu akan dihubungi setelah akun diaktifkan.</p>
-                    <button onClick={() => pindahForm(false)} className="bg-rose-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-rose-700 transition-all">Kembali ke Login</button>
+                    <button onClick={() => pindahForm(false)} className="text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all hover:opacity-90" style={{ background: merek.warnaUtama }}>Kembali ke Login</button>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -899,7 +899,7 @@ export default function Dashboard() {
                             <select value={registerForm.sales_division} onChange={e => setRegisterForm({ ...registerForm, sales_division: e.target.value })}
                               className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
                               <option value="">-- Pilih {registerForm.divisi} Division --</option>
-                              {SALES_DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                              {daftarDivisi.map(d => <option key={d} value={d}>{d}</option>)}
                             </select>
                           </div>
                         )}
@@ -926,7 +926,7 @@ export default function Dashboard() {
                       {registerLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                       📝 Daftar Akun
                     </button>
-                    <p className="text-center text-xs text-slate-400">Sudah punya akun? <button onClick={() => pindahForm(false)} className="text-rose-600 font-bold hover:underline">Login</button></p>
+                    <p className="text-center text-xs text-slate-400">Sudah punya akun? <button onClick={() => pindahForm(false)} className="font-bold hover:underline" style={{ color: merek.warnaUtama }}>Login</button></p>
                   </div>
                 )}
               </div>
@@ -955,7 +955,7 @@ export default function Dashboard() {
                     placeholder="Email / Username" onKeyDown={e => e.key === 'Enter' && handleForgotRequest()}
                     className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none" />
                   <button onClick={handleForgotRequest} disabled={forgotLoading}
-                    className="w-full bg-rose-600 text-white py-2.5 rounded-xl font-bold text-sm hover:bg-rose-700 disabled:opacity-60 transition-all">
+                    className="w-full text-white py-2.5 rounded-xl font-bold text-sm disabled:opacity-60 transition-all hover:opacity-90" style={{ background: merek.warnaUtama }}>
                     {forgotLoading ? 'Mengirim...' : 'Kirim Kode OTP'}
                   </button>
                 </div>
@@ -975,7 +975,7 @@ export default function Dashboard() {
                     <button onClick={() => { setForgotStep('request'); setForgotMsg(null); }}
                       className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold hover:bg-slate-200 transition-all">Kembali</button>
                     <button onClick={handleForgotVerify} disabled={forgotLoading}
-                      className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white text-sm font-bold hover:bg-rose-700 disabled:opacity-60 transition-all">
+                      className="flex-1 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-60 transition-all hover:opacity-90" style={{ background: merek.warnaUtama }}>
                       {forgotLoading ? 'Menyimpan...' : 'Reset Password'}
                     </button>
                   </div>
@@ -1001,21 +1001,18 @@ export default function Dashboard() {
         <div className="flex items-center justify-between gap-2 md:gap-4">
           {/* LEFT: Logo */}
           <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
-            <div className="w-9 h-9 md:w-12 md:h-12 bg-gradient-to-br from-rose-600 to-rose-700 rounded-xl shadow-md flex items-center justify-center flex-shrink-0">
-              <svg aria-hidden="true" focusable="false" className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            </div>
+            <LogoMerek ukuran="sm" className="md:hidden" />
+            <LogoMerek ukuran="md" className="hidden md:flex" />
             <div>
               <div className="flex items-center gap-1.5 md:gap-2.5">
                 <h1 className="text-sm md:text-xl font-bold text-slate-800 tracking-tight leading-tight">
-                  <span className="hidden sm:inline">Work Management Platform</span>
-                  <span className="sm:hidden">WM Platform</span>
+                  <span className="hidden sm:inline">{merek.namaPlatform}</span>
+                  <span className="sm:hidden">{merek.namaPlatformSingkat}</span>
                 </h1>
                 <span className="hidden sm:inline text-slate-300 font-light">|</span>
-                <span className="hidden sm:inline text-xs md:text-sm font-bold tracking-wide" style={{ color: '#c8861d' }}>PTS Portal</span>
+                <span className="hidden sm:inline text-xs md:text-sm font-bold tracking-wide" style={{ color: merek.warnaAksen }}>{merek.namaPortal}</span>
               </div>
-              <p className="text-slate-500 text-[10px] md:text-xs font-medium mt-0.5 hidden sm:block">IndoVisual Professional Tools</p>
+              <p className="text-slate-500 text-[10px] md:text-xs font-medium mt-0.5 hidden sm:block">{merek.namaPerusahaan}</p>
             </div>
           </div>
 

@@ -6,6 +6,7 @@ import { adminUpdateUser } from '@/lib/admin-users';
 
 import { PRODUCT_TYPES } from '@/app/reminder-schedule/_components/shared';
 import { User, SALES_DIVISIONS, JabatanType, JABATAN_CONFIG, JABATAN_CC_RULES } from './shared';
+import { useDivisiSales } from '@/lib/merek';
 import { ConfirmDialog, type ConfirmState, Username, ModalPortal } from '@/components/shared';
 
 import { maskPhone } from './modal-bersama';
@@ -64,7 +65,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
     u.role?.toLowerCase() === 'guest' && u.jabatan && ATASAN_JABATAN.includes(u.jabatan as JabatanType)
   );
   const ivpUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && ['IVP', 'MVI', 'MLDS'].includes(u.sales_division ?? ''));
-  const nonIvpDivisions = SALES_DIVISIONS.filter(d => d !== 'IVP');
+  const nonIvpDivisions = useDivisiSales().filter(d => d !== 'IVP');
 
   // Users eligible for CC mapping (non-IVP guest with jabatan set)
   const ccEligibleUsers = allUsers.filter(u =>
@@ -695,7 +696,7 @@ export function UserManagementInline() {
   const ivpUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && ['IVP', 'MVI', 'MLDS'].includes(u.sales_division ?? ''));
   const mviUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.sales_division === 'MVI');
   const salesHandleUsers = [...ivpUsers, ...mviUsers];
-  const nonIvpDivisions = SALES_DIVISIONS.filter(d => d !== 'IVP' && d !== 'MVI');
+  const nonIvpDivisions = useDivisiSales().filter(d => d !== 'IVP' && d !== 'MVI');
   // Grup non-Sales (tim internal / IVP) yang juga bisa dipetakan atasan-nya
   const INTERNAL_GROUPS = ['PTS', 'IVP'];
   const ccEligibleUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.jabatan && u.sales_division && u.sales_division !== 'IVP' && u.sales_division !== 'MVI').sort((a, b) => (JABATAN_CONFIG[a.jabatan as JabatanType]?.tier ?? 0) - (JABATAN_CONFIG[b.jabatan as JabatanType]?.tier ?? 0));

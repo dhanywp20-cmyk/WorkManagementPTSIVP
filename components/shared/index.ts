@@ -35,3 +35,5 @@ export { AdminEditFields } from './AdminEditFields';
 // Tombol penutup form. Satu tempat supaya label "Submit Form" tidak menyimpang
 // lagi jadi "Save Ticket"/"Tambah Reminder" di modul yang berbeda.
 export { BatalButton, SubmitFormButton } from './FormActions';
+// Logo & identitas merek (bisa diubah dari Admin Panel - lihat lib/merek.ts).
+export { LogoMerek } from './LogoMerek';

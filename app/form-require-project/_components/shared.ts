@@ -250,12 +250,19 @@ export async function fetchWACCTargets(
   return targets;
 }
 
-export const SALES_DIVISIONS = [
-  'IVP', 'MVI', 'MLDS', 'HAVS', 'Enterprise', 'DEC', 'ICS', 'POJ', 'VOJ', 'LOCOS',
-  'VISIONMEDIA', 'UMP', 'BISOL', 'KIMS', 'IDC', 'IOCMEDAN', 'IOCPekanbaru',
-  'IOCBandung', 'IOCJATENG', 'IOCSEMARANG', 'POSSurabaya', 'IOCSurabaya',
-  'IOCBali', 'SGP', 'SGP 1', 'SGP 2', 'OSS',
-] as const;
+/**
+ * Daftar divisi sales - HANYA nilai bawaan, bukan lagi sumber kebenaran.
+ *
+ * Daftar yang benar-benar berlaku disimpan di database dan dibaca lewat
+ * useDivisiSales() (lihat lib/merek.ts), supaya divisi baru bisa ditambahkan
+ * dari Admin Panel tanpa deploy. Nama ini dipertahankan untuk pemakaian di
+ * luar React dan sebagai cadangan saat pengaturannya belum termuat.
+ *
+ * Sebelumnya daftar yang sama disalin di lima berkas shared.ts: menambah satu
+ * divisi berarti menyunting kelimanya, dan satu yang terlewat membuat divisi
+ * itu muncul di sebagian menu saja.
+ */
+export { DIVISI_BAWAAN as SALES_DIVISIONS } from '@/lib/merek';
 
 export const DISPLAY_BRANDS = ['Microvision', 'Philips', 'Panasonic', 'Newline', 'Promethean', 'Maxhub', 'Ledman', 'Taniled', 'Vivitek'] as const;
 export const MIDDLEWARE_BRANDS = ['Tricolor', 'Wyrestorm', 'Extron', 'Crestron', 'AVCiT', 'Brightsign', 'Cue'] as const;
