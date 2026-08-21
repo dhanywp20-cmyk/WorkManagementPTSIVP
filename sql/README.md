@@ -75,7 +75,8 @@ diambil orang luar - bukan apa yang seharusnya.
 | `rapikan-policy.sql` | Membuang 28 policy kembar (nol izin berubah) dan menjadikan `audit_trail` hanya-tambah |
 | `tutup-tabel-terlewat.sql` | Tiga tabel yang RLS-nya belum pernah menyala: `progress_actions`, `kpi_snapshot_members`, `picket_holidays` |
 | `rls-form-reviews.sql` | Memindahkan penyaringan Form Review dari aplikasi ke basis data. Ketiga policy lamanya tidak menyaring apa pun - yang terlihat bersyarat pun berujung `OR true` |
-| `rls-lingkup-project.sql` | Menyiapkan RLS untuk tickets, reminders, project_requests, notifications. Simulasi dulu, policy masih komentar |
+| `rls-lingkup-project.sql` | Menyiapkan fungsi lingkup + simulasi siapa akan melihat nol baris. Bagian 3-nya sudah digantikan `rls-nyalakan.sql` |
+| `rls-nyalakan.sql` | Menyalakan RLS empat tabel tersibuk, satu perintah per tabel: `SELECT nyalakan_rls('tickets')`. Membatalkan: `SELECT matikan_rls('tickets')` |
 | `rls-project-progress.sql` | Menyalakan RLS berbasis klaim JWT. Jalankan HANYA setelah `/api/auth/db-token-check` menjawab siap |
 
 ### Identitas UUID
