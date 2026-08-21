@@ -13,6 +13,16 @@ Jangan memindahkan berkas dari `sql/` ke `supabase/migrations/`. CLI akan
 menganggapnya migrasi baru dan menjalankannya ulang di basis data yang isinya
 sudah ada.
 
+**Mana yang sudah jalan di sebuah basis data?** Untuk `supabase/migrations/`,
+CLI mencatatnya sendiri. Untuk `sql/`, jalankan `urutan-penerapan.sql` sekali -
+ia membuat tabel `sql_diterapkan` berisi seluruh berkas beserta urutan
+sebenarnya (diambil dari riwayat git, jadi bukan tebakan). Di basis data yang
+platformnya sudah berjalan: `SELECT tandai_semua_skema();`. Sesudah itu tiap
+berkas baru ditandai satu per satu: `SELECT tandai('nama-berkas.sql');`.
+
+Tanpa catatan itu, membangun lingkungan kedua berarti menebak berkas mana yang
+sudah masuk - dan itulah yang membuat "create tenant lalu migrate" mustahil.
+
 ## Peringatan: awalan nomor ganda di `supabase/migrations/`
 
 Lima nomor dipakai dua kali:
@@ -57,6 +67,7 @@ beberapa `SELECT`.
 | `cek-kesiapan-rls.sql` | Apakah aman menyalakan RLS Project Progress |
 | `cek-nama-tidak-cocok.sql` | Kenapa sebuah akun akan melihat nol baris - menunjukkan nama aslinya di data |
 | `cek-akun-kembar.sql` | Dua akun untuk satu orang - menunjukkan jejak masing-masing supaya bisa dipilih dengan alasan |
+| `urutan-penerapan.sql` | Berkas mana sudah dijalankan di basis data ini, dan urutan untuk basis data baru |
 | `diagnose-top-performers.sql` | Kenapa Top Performers kosong |
 | `storage-audit.sql` | Berkas boros yang menghabiskan kuota & egress |
 
