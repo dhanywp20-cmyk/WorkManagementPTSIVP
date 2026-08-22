@@ -21,7 +21,6 @@ import {
 import GlobalSearch from './_components/GlobalSearch';
 import PermissionAwareDashboard from './_components/widgets/PermissionAwareDashboard';
 import OnboardingTour, { JelajahiButton } from './_components/OnboardingTour';
-import { notifyNewUserRegistration } from '@/lib/notifications';
 import { useDivisiSales, useMerek, gradasiPanelLogin, angkaTembus } from '@/lib/merek';
 import SessionExpiryBanner from '@/app/_components/SessionExpiryBanner';
 import { ModalPortal, LogoMerek } from '@/components/shared';
@@ -350,35 +349,36 @@ export default function Dashboard() {
 
     setRegisterLoading(true);
     try {
-      const { data: existing } = await supabase.from('users').select('id').eq('username', username.trim().toLowerCase()).maybeSingle();
-      if (existing) { setRegisterErr('Email sudah terdaftar. Gunakan email lain.'); setRegisterLoading(false); return; }
-      const { data: newUser, error } = await supabase.from('users').insert([{
-        full_name: full_name.trim(),
-        username: username.trim().toLowerCase(),
-        role: 'guest',
-        team_type: 'Pending Approval',
-        sales_division: requestedDivision,
-        jabatan: registerForm.jabatan.trim() || null,
-        phone_number: registerForm.phone_number.trim() || null,
-        allowed_menus: [],
-      }]).select('id').single();
-      if (error) throw error;
-      // Simpan password via server route (hash + insert ke user_credentials di server,
-      // supaya browser tak perlu menulis ke tabel kredensial).
-      if (newUser?.id) {
-        const credRes = await fetch('/api/auth/set-credential', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: newUser.id, password }),
-        });
-        if (!credRes.ok) {
-          const j = await credRes.json().catch(() => ({}));
-          throw new Error(j.error || 'Gagal menyimpan password.');
-        }
+      // Seluruh pendaftaran dikerjakan di server - lihat /api/auth/register.
+      //
+      // Sebelumnya peramban memeriksa username ganda lalu menulis sendiri ke
+      // tabel users. Keduanya menuntut tabel itu terbuka untuk pengunjung yang
+      // belum login, dan "terbuka" berlaku untuk SELURUH tabel: siapa pun yang
+      // memegang anon key bisa membaca 74 akun beserta nama, username, dan
+      // nomor teleponnya. Username di sini adalah pengenal login, jadi daftar
+      // itu sekaligus menyerahkan daftar sasaran yang lengkap.
+      const daftarRes = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: full_name.trim(),
+          username: username.trim().toLowerCase(),
+          password,
+          sales_division: requestedDivision,
+          jabatan: registerForm.jabatan.trim() || null,
+          phone_number: registerForm.phone_number.trim() || null,
+        }),
+      });
+      const hasilDaftar = await daftarRes.json().catch(() => ({}));
+      if (!daftarRes.ok) {
+        setRegisterErr(hasilDaftar.error || 'Pendaftaran gagal.');
+        setRegisterLoading(false);
+        return;
       }
+      // Pemberitahuan ke admin ikut dikerjakan /api/auth/register - versi
+      // lamanya di sini harus membaca tabel users tanpa token untuk mencari
+      // siapa adminnya, persis pembacaan yang sedang ditutup.
       setRegisterSuccess(true);
-      // Notify all admins of new pending user
-      notifyNewUserRegistration(full_name.trim(), newUser?.id ?? '').catch(() => {});
       setRegisterForm({ full_name: '', username: '', password: '', confirm_password: '', divisi: '', pts_type: '', sales_division: '', jabatan: '', phone_number: '' });
     } catch (err: any) {
       setRegisterErr('Registrasi gagal: ' + err.message);

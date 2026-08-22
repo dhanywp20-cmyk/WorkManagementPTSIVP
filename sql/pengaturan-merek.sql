@@ -224,3 +224,43 @@ CREATE POLICY merek_ganti ON storage.objects
 CREATE POLICY merek_hapus ON storage.objects
   FOR DELETE TO anon, authenticated
   USING (bucket_id = 'merek-files' AND boleh_tulis_pengaturan());
+
+
+-- 7. Penjaga: rahasia tidak boleh masuk ke app_settings
+
+--  DITEMUKAN DI PRODUKSI: baris `fonnte_token` berisi token gateway WhatsApp
+--  dalam teks polos, di tabel yang policy lamanya `USING (true)`. Diuji
+--  sebagai role anon tanpa token: tokennya terbaca utuh. Anon key ikut
+--  terkirim ke peramban setiap kali halaman dibuka.
+--
+--  Menutup pembacaannya (bagian 2) saja tidak cukup. Baris rahasia berikutnya
+--  akan tersimpan diam-diam dan baru ketahuan saat ada yang memeriksa lagi.
+--  Karena itu ditolak di pintu masuk, dengan pesan yang menyebut tempat yang
+--  benar - bukan sekadar 'ditolak'.
+CREATE OR REPLACE FUNCTION tolak_rahasia_di_pengaturan()
+RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+  IF kunci_rahasia(NEW.key) THEN
+    RAISE EXCEPTION
+      'app_settings bukan tempat menyimpan rahasia. Kunci "%" ditolak. Simpan token/secret sebagai environment variable Edge Function atau Vercel.',
+      NEW.key
+      USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NEW;
+END $$;
+
+DROP TRIGGER IF EXISTS trg_tolak_rahasia_pengaturan ON public.app_settings;
+CREATE TRIGGER trg_tolak_rahasia_pengaturan
+  BEFORE INSERT OR UPDATE ON public.app_settings
+  FOR EACH ROW EXECUTE FUNCTION tolak_rahasia_di_pengaturan();
+
+--  Baris yang sudah terlanjur ada dibuang. Tidak ada satu baris kode pun yang
+--  membacanya: Edge Function swift-responder mengambil tokennya dari
+--  Deno.env FONNTE_TOKEN.
+--
+--      DELETE FROM app_settings WHERE key = 'fonnte_token';   -- sudah dijalankan
+--
+--  CATATAN: menutup pembacaan TIDAK membatalkan token yang sudah terlanjur
+--  terbuka. Tokennya wajib dirotasi di Fonnte, lalu FONNTE_TOKEN di secret
+--  Edge Function diperbarui.

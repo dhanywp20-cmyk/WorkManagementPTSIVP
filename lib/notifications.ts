@@ -133,16 +133,18 @@ export async function fetchUnreadNotifs(userId: string): Promise<{
 // Use these instead of constructing payloads manually.
 
 /** Notify when a new user registers and waits for approval */
-export async function notifyNewUserRegistration(userName: string, userId: string): Promise<void> {
-  await createNotificationForAdmins({
-    type: 'user',
-    title: `👥 User baru menunggu approval`,
-    body: `${userName} baru mendaftar dan menunggu aktivasi akun.`,
-    action_url: '/dashboard',
-    ref_id: userId,
-    created_by: userName,
-  });
-}
+/**
+ * DIPINDAH ke /api/auth/register.
+ *
+ * Versi lamanya dipanggil dari peramban sesudah registrasi, jadi ia harus
+ * membaca tabel `users` TANPA token untuk mencari siapa saja adminnya -
+ * pembacaan yang justru sedang ditutup karena membuka seluruh daftar akun
+ * beserta nomor teleponnya kepada siapa pun yang memegang anon key.
+ *
+ * Sengaja tidak disisakan sebagai pembungkus tipis: pemanggil lama
+ * membungkusnya dengan catch kosong, jadi kalau ia tetap ada dan diam-diam
+ * mengembalikan nol admin, tidak akan ada yang menyadarinya.
+ */
 
 /** Notify when a ticket is assigned to someone */
 export async function notifyTicketAssigned(
