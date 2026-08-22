@@ -350,7 +350,14 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                   <input aria-label="Cari modul..." value={cariIzin} onChange={e => setCariIzin(e.target.value)}
                     placeholder="🔍 Cari modul..."
                     className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-rose-200" />
-                  <div className="flex flex-wrap gap-1.5 max-h-64 overflow-y-auto">
+                  {/* TANPA max-h: halaman ini sudah menggulir sebagai satu blok
+                      (bungkusnya flex-1 overflow-y-auto di induk - lihat
+                      className pembungkus modal). Kotak setinggi 256px yang
+                      menggulir sendiri DI DALAM halaman yang sudah menggulir
+                      menyembunyikan chip tanpa penanda apa pun - diuji dengan
+                      14 modul aktif: badge menunjukkan "14" tapi hanya 9 chip
+                      yang terlihat, 128px sisanya tersembunyi begitu saja. */}
+                  <div className="flex flex-wrap gap-1.5">
                     {menuTersaring.length === 0 ? (
                       <p className="text-xs text-slate-400 py-2">Tidak ada modul yang cocok.</p>
                     ) : menuTersaring.map(k => {
