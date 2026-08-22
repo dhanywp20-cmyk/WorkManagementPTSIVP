@@ -1306,7 +1306,13 @@ export function UserManagementInline() {
                     <input aria-label="Cari nama sales..." value={internalSearch} onChange={e => setInternalSearch(e.target.value)} placeholder="Cari nama sales..."
                       className="w-full pl-9 pr-3 py-2 border border-sky-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-sky-200 bg-white" />
                   </div>
-                  <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+                  {/* TANPA max-h di sini: tab ini sudah menggulir sebagai satu blok
+                      (bungkusnya flex-1 overflow-y-auto di induk). Kotak
+                      setinggi 256px yang menggulir sendiri DI DALAM blok yang
+                      juga menggulir berarti dua scrollbar bertumpuk - dan
+                      508px konten tersembunyi di baliknya, terukur langsung:
+                      scrollHeight - clientHeight = 508px pada max-h-64 ini. */}
+                  <div className="space-y-1.5 pr-1">
                     {allUsers.filter(u => (u.role || '').toLowerCase() === 'guest' && (!internalSearch || u.full_name?.toLowerCase().includes(internalSearch.toLowerCase()))).map(u => (
                       <div key={u.id} className="flex items-center justify-between bg-white border border-sky-100 rounded-lg px-3 py-2">
                         <div className="min-w-0">
@@ -1326,18 +1332,23 @@ export function UserManagementInline() {
             )}
 
             {activeTab === 'user_cc' && (
-              <div className="p-5 space-y-4">
+              /* flex-1 + min-h-0: isinya MENGISI tinggi panel, dan daftar di
+                 dalamnya yang menggulir - bukan kotak setinggi 320px yang
+                 menggulir sendiri sementara 178px di bawahnya kosong
+                 menganga. Terukur sebelum perbaikan: kotak 320px memuat isi
+                 634px, jadi separuh daftarnya tersembunyi padahal ruangnya ada. */
+              <div className="flex-1 min-h-0 flex flex-col p-5 gap-4">
                 {/* Search user */}
-                <div className="relative">
+                <div className="relative flex-shrink-0">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
                   <input aria-label="Cari nama user..." type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari nama user..."
                     className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all" />
                 </div>
-                <div className="grid grid-cols-2 gap-5">
+                <div className="flex-1 min-h-0 grid grid-cols-2 gap-5">
                   {/* Left: user list */}
-                  <div>
-                    <p className="text-xs font-bold text-slate-600 mb-2 uppercase tracking-widest">Pilih User</p>
-                    <div className="space-y-1 max-h-80 overflow-y-auto pr-1">
+                  <div className="flex flex-col min-h-0">
+                    <p className="text-xs font-bold text-slate-600 mb-2 uppercase tracking-widest flex-shrink-0">Pilih User</p>
+                    <div className="space-y-1 flex-1 min-h-0 overflow-y-auto pr-1">
                       {ccEligibleUsers.filter(u => !searchQuery || u.full_name?.toLowerCase().includes(searchQuery.toLowerCase())).map(u => {
                         const cfg = u.jabatan ? JABATAN_CONFIG[u.jabatan as JabatanType] : null;
                         const isSelected = selectedCCUserId === u.id;
@@ -1360,17 +1371,17 @@ export function UserManagementInline() {
                     </div>
                   </div>
                   {/* Right: CC targets */}
-                  <div>
+                  <div className="flex flex-col min-h-0">
                     {selectedUserObj ? (
                       <>
-                        <p className="text-xs font-bold text-slate-600 mb-2 uppercase tracking-widest">CC Targets untuk {selectedUserObj.full_name}</p>
+                        <p className="text-xs font-bold text-slate-600 mb-2 uppercase tracking-widest flex-shrink-0">CC Targets untuk {selectedUserObj.full_name}</p>
                         {autoSuggested.length > 0 && (
                           <button onClick={() => setCcChecked(new Set(autoSuggested))}
                             className="mb-2 px-3 py-1.5 text-xs font-bold rounded-lg bg-teal-50 border border-teal-200 text-teal-700 hover:bg-teal-100 transition-all">
                             ✨ Auto-suggest ({autoSuggested.length})
                           </button>
                         )}
-                        <div className="space-y-1 max-h-64 overflow-y-auto pr-1 mb-3">
+                        <div className="space-y-1 flex-1 min-h-0 overflow-y-auto pr-1 mb-3">
                           {potentialCCTargets.map(target => {
                             const cfg = target.jabatan ? JABATAN_CONFIG[target.jabatan as JabatanType] : null;
                             const isChecked = ccChecked.has(target.id);
@@ -1390,13 +1401,15 @@ export function UserManagementInline() {
                           })}
                         </div>
                         <button onClick={handleSaveUserCC} disabled={ccSaving}
-                          className="w-full py-2.5 bg-teal-600 text-white rounded-lg text-sm font-bold hover:bg-teal-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                          className="w-full py-2.5 bg-teal-600 text-white rounded-lg text-sm font-bold hover:bg-teal-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 flex-shrink-0">
                           {ccSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                           💾 Simpan CC Mapping
                         </button>
                       </>
                     ) : (
-                      <div className="flex items-center justify-center h-40 text-slate-400 text-sm">← Pilih user untuk setting CC</div>
+                      <div className="flex-1 min-h-0 flex items-center justify-center rounded-xl border border-dashed border-slate-200 text-slate-400 text-sm">
+                        ← Pilih user untuk setting CC
+                      </div>
                     )}
                   </div>
                 </div>
