@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
+import { DonutChart } from '@/components/shared';
 import { User } from './shared';
 import { KPIData, KPITeamMember, KPITeamState, AuditEntry, Scope, STATUS_COLORS, CATEGORY_COLORS, todayStr, dayOfWeek, monthStart, getMonday, HBarChart, AuditRow, ScopeBadge } from './kpi-bagian';
 
@@ -478,41 +479,6 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
   }
 
   // Full DonutChart (same as LC)
-  function DonutChart({ segments, size = 68, strokeWidth = 10, label = '' }: {
-    segments: { value: number; color: string }[]; size?: number; strokeWidth?: number; label?: string;
-  }) {
-    const r = (size - strokeWidth) / 2;
-    const circ = 2 * Math.PI * r;
-    const total = segments.reduce((s, seg) => s + seg.value, 0);
-    if (total === 0) return (
-      <div style={{ width: size, height: size }} className="flex items-center justify-center flex-shrink-0">
-        <span className="text-[10px] text-slate-300 font-bold">—</span>
-      </div>
-    );
-    let cumBefore = 0;
-    return (
-      <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
-        <svg aria-hidden="true" focusable="false" width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} />
-          {segments.map((seg, i) => {
-            const dash = (seg.value / total) * circ;
-            const offset = -(cumBefore / total) * circ;
-            cumBefore += seg.value;
-            return (
-              <circle key={i} cx={size/2} cy={size/2} r={r} fill="none" stroke={seg.color}
-                strokeWidth={strokeWidth} strokeDasharray={`${dash} ${circ - dash}`} strokeDashoffset={offset} />
-            );
-          })}
-        </svg>
-        {label && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-[11px] font-black text-slate-700">{label}</span>
-          </div>
-        )}
-      </div>
-    );
-  }
-
   // MiniBar: horizontal progress bar
   function MiniBar({ value, max, color='#3b82f6', h=4 }: { value:number; max:number; color?:string; h?:number }) {
     const pct = max>0 ? Math.min(100,(value/max)*100) : 0;

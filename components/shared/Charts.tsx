@@ -86,18 +86,27 @@ export function MonthBarChart({
  * dalam kartu yang sudah punya keterangannya.
  */
 export function DonutChart({
-  segments, size = 56, label,
+  segments, size = 68, strokeWidth = 10, label = '',
 }: {
-  segments: { value: number; color: string }[]; size?: number; label?: string;
+  segments: { value: number; color: string }[];
+  size?: number;
+  /**
+   * Tebal cincin. Dulu dipaku 8 di berkas ini dan TIDAK bisa diatur - itulah
+   * sebabnya lima berkas lain menyalin ulang komponen ini alih-alih memakainya,
+   * lalu masing-masing berjalan sendiri. Sekarang bisa diatur, jadi tidak ada
+   * lagi alasan menyalin.
+   */
+  strokeWidth?: number;
+  label?: string;
 }) {
-  const sw = 8, r = (size - sw) / 2, circ = 2 * Math.PI * r;
+  const r = (size - strokeWidth) / 2, circ = 2 * Math.PI * r;
   const total = segments.reduce((s, x) => s + x.value, 0);
 
   if (!total) {
     return (
       <div style={{ width: size, height: size }}
         className="flex items-center justify-center flex-shrink-0">
-        <span className="text-[9px] text-slate-300">—</span>
+        <span className="text-[10px] text-slate-300 font-bold">—</span>
       </div>
     );
   }
@@ -106,20 +115,20 @@ export function DonutChart({
   return (
     <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
       <svg aria-hidden="true" focusable="false" width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#f1f5f9" strokeWidth={sw} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} />
         {segments.map((seg, i) => {
           const dash = (seg.value / total) * circ;
           const offset = -(cum / total) * circ;
           cum += seg.value;
           return (
             <circle key={i} cx={size / 2} cy={size / 2} r={r} fill="none" stroke={seg.color}
-              strokeWidth={sw} strokeDasharray={`${dash} ${circ - dash}`} strokeDashoffset={offset} />
+              strokeWidth={strokeWidth} strokeDasharray={`${dash} ${circ - dash}`} strokeDashoffset={offset} />
           );
         })}
       </svg>
       {label && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-[10px] font-black text-slate-700">{label}</span>
+          <span className="text-[11px] font-black text-slate-700">{label}</span>
         </div>
       )}
     </div>
