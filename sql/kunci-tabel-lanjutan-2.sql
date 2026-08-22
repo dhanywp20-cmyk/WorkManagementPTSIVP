@@ -163,12 +163,19 @@ CREATE POLICY lcr_hapus ON lc_answer_records FOR DELETE TO anon, authenticated
 --  approved selalu terlihat semua orang, dan lingkup_semua() menutup sisanya.
 ALTER TABLE tech_notes ENABLE ROW LEVEL SECURITY;
 SELECT buang_policy_lama('tech_notes');
+--  jwt_claim('sub') <> '' di depan BUKAN hiasan. Tanpa itu, syarat
+--  `status = 'approved'` berlaku juga untuk pengunjung yang belum login -
+--  diuji di replika lokal: anon tanpa klaim apa pun melihat 1 dari 3 note.
+--  Tech note berisi dokumentasi teknis internal; ia memang dibagikan ke
+--  seluruh orang dalam, bukan ke seluruh internet.
 CREATE POLICY tn_baca ON tech_notes FOR SELECT TO anon, authenticated
   USING (
-    lingkup_semua()
-    OR jwt_claim('user_role') = 'supervisor'
-    OR status = 'approved'
-    OR author_id::text = jwt_claim('sub')
+    jwt_claim('sub') <> '' AND (
+      lingkup_semua()
+      OR jwt_claim('user_role') = 'supervisor'
+      OR status = 'approved'
+      OR author_id::text = jwt_claim('sub')
+    )
   );
 --  Buat baru: siapa saja yang login boleh mengajukan tech note.
 CREATE POLICY tn_buat ON tech_notes FOR INSERT TO anon, authenticated
@@ -235,13 +242,22 @@ CREATE POLICY ps_tulis ON piket_schedules FOR ALL TO anon, authenticated
 --  dituju fitur ini. Karena itu tulis memakai syarat YANG SAMA dengan baca -
 --  mengetatkannya ke lingkup_semua() saja adalah perubahan perilaku
 --  tersendiri, sengaja tidak dilakukan di sini.
+--  Syarat jwt_claim('sub') <> '' ditulis EKSPLISIT di sini, walau
+--  boleh_lihat_project() sudah ditambal di sql/kunci-tabel-lanjutan.sql
+--  bagian 4b. Sengaja sabuk dan bretel: baris `lingkup_semua()` di sebelah
+--  kanan OR tidak lewat fungsi yang ditambal itu, dan tabel ini punya baris
+--  ber-nama kosong dalam jumlah nyata - itulah yang membuat kebocorannya
+--  ketahuan waktu diuji (anon melihat 1 dari 4 baris).
 ALTER TABLE piket_tamu_detail ENABLE ROW LEVEL SECURITY;
 SELECT buang_policy_lama('piket_tamu_detail');
 CREATE POLICY ptd_baca ON piket_tamu_detail FOR SELECT TO anon, authenticated
-  USING (boleh_lihat_project(nama_sales, sales_division) OR lingkup_semua());
+  USING (jwt_claim('sub') <> ''
+         AND (boleh_lihat_project(nama_sales, sales_division) OR lingkup_semua()));
 CREATE POLICY ptd_tulis ON piket_tamu_detail FOR ALL TO anon, authenticated
-  USING      (boleh_lihat_project(nama_sales, sales_division) OR lingkup_semua())
-  WITH CHECK (boleh_lihat_project(nama_sales, sales_division) OR lingkup_semua());
+  USING      (jwt_claim('sub') <> ''
+              AND (boleh_lihat_project(nama_sales, sales_division) OR lingkup_semua()))
+  WITH CHECK (jwt_claim('sub') <> ''
+              AND (boleh_lihat_project(nama_sales, sales_division) OR lingkup_semua()));
 
 
 -- ─── 9. daily_report_team_entries ───────────────────────────────────────────

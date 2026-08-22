@@ -140,6 +140,61 @@ BEGIN
 END $$;
 
 
+-- ─── 4b. Menambal kebocoran "nama kosong" pada fungsi lingkup ──────────────
+--
+--  TEMUAN dari pengujian di replika lokal, dan ini menyangkut policy yang
+--  SUDAH BERJALAN DI PRODUKSI - bukan hanya berkas ini.
+--
+--  boleh_lihat_project() dan boleh_lihat_baris() menyaring lewat baris:
+--
+--      OR nama_sales = jwt_full_name()
+--
+--  Untuk pengunjung yang BELUM LOGIN, jwt_full_name() mengembalikan string
+--  kosong - bukan NULL, karena jwt_claim() sudah membungkusnya COALESCE(...,'').
+--  Jadi pada setiap baris yang sales_name-nya kebetulan '' (bukan NULL,
+--  melainkan kosong - hal yang biasa terjadi pada data lama atau baris yang
+--  dibuat lewat impor), syaratnya berbunyi '' = '' dan bernilai BENAR.
+--
+--  Akibatnya: siapa pun yang memegang anon key, TANPA login sama sekali,
+--  bisa membaca baris-baris bernama kosong di tickets, reminders,
+--  project_requests, dan piket_tamu_detail. Diuji di replika: anon melihat
+--  tepat 1 dari 4 baris piket_tamu_detail - yang nama_sales-nya ''.
+--
+--  Tambalannya satu baris: haruskan ada identitas dulu. Ini pengetatan
+--  MURNI - tidak ada pengguna sah yang kehilangan akses, karena setiap
+--  pengguna sah selalu membawa klaim `sub`, dan route server memakai
+--  service_role yang melewati RLS sepenuhnya.
+CREATE OR REPLACE FUNCTION boleh_lihat_project(
+  nama_sales text, divisi text, dibuat_oleh text DEFAULT NULL
+)
+RETURNS boolean
+LANGUAGE sql STABLE AS $$
+  SELECT jwt_claim('sub') <> '' AND (
+    lingkup_semua()
+    OR nama_sales   = jwt_full_name()
+    OR dibuat_oleh  = jwt_claim('username')
+    OR (divisi IS NOT NULL AND divisi = ANY (lingkup_divisi()))
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION boleh_lihat_baris(
+  sales_uuid uuid, nama_sales text, divisi text, dibuat_oleh text
+)
+RETURNS boolean
+LANGUAGE sql STABLE AS $$
+  SELECT jwt_claim('sub') <> '' AND (
+    lingkup_semua()
+    OR (sales_uuid IS NOT NULL AND sales_uuid = jwt_user_id())
+    OR nama_sales  = jwt_full_name()
+    OR dibuat_oleh = jwt_claim('username')
+    OR (divisi IS NOT NULL AND divisi = ANY (lingkup_divisi()))
+  );
+$$;
+
+GRANT EXECUTE ON FUNCTION boleh_lihat_project(text, text, text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION boleh_lihat_baris(uuid, text, text, text) TO anon, authenticated;
+
+
 -- ─── 5. tickets / reminders / project_requests - kunci HAPUS ────────────────
 --  sql/rls-nyalakan.sql menyalakan RLS di ketiganya dengan baca tersaring
 --  tapi INSERT/UPDATE/DELETE sengaja USING (true) - dan itu argumennya
@@ -186,6 +241,22 @@ GRANT EXECUTE ON FUNCTION boleh_hapus_reminder() TO anon, authenticated;
 --  mencakup toggle "Full Access" pada akun team biasa. Ditulis begini
 --  (bukan dihilangkan) supaya begitu klaimnya ditambahkan, hak hapus ikut
 --  berlaku tanpa perlu menyunting policy lagi.
+
+--  ENABLE ROW LEVEL SECURITY di ketiganya WAJIB disebut di sini, walau
+--  sql/rls-nyalakan.sql sudah menyalakannya di produksi lewat nyalakan_rls().
+--
+--  Kenapa: rancangan pertama berkas ini hanya membuat policy dan mengandalkan
+--  RLS "kan sudah menyala". Diuji di replika lokal, hasilnya seluruh policy
+--  DELETE di bawah TIDAK BERLAKU SAMA SEKALI - anon tetap bisa menghapus
+--  tiket siapa pun - karena di replika itu RLS-nya memang belum menyala.
+--  Policy pada tabel yang RLS-nya mati diabaikan Postgres tanpa satu pun
+--  peringatan. Di produksi mungkin tidak terasa, tapi di basis data kedua
+--  (lingkungan staging, tenant baru, restore dari backup) berkas ini akan
+--  memasang penjagaan yang tampak benar di daftar policy padahal tidak
+--  menjaga apa-apa. Satu baris ini yang membedakan.
+ALTER TABLE tickets          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reminders        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE project_requests ENABLE ROW LEVEL SECURITY;
 
 SELECT buang_policy_lama('tickets');
 CREATE POLICY tk_select ON tickets FOR SELECT TO anon, authenticated
