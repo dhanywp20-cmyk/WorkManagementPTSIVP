@@ -114,9 +114,17 @@ const AnalyticsNativeWidget: React.FC<WidgetProps> = ({ user }) => (
 );
 
 // WIDGET: Team Monitoring Hari Ini (Team/Admin).
+interface Anggota {
+  id: string; name: string; reported: boolean; active: number;
+  jabatan: string; atasanId: string | null;
+}
+
+// WIDGET: Team Monitoring Hari Ini (Team/Admin).
 const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
   const [loading, setLoading] = useState(true);
-  const [rows, setRows] = useState<{ id: string; name: string; reported: boolean; active: number }[]>([]);
+  const [rows, setRows] = useState<Anggota[]>([]);
+  /** Nama & jabatan tiap atasan, dipakai sebagai judul kelompok. */
+  const [atasan, setAtasan] = useState<Record<string, { nama: string; jabatan: string }>>({});
 
   useEffect(() => {
     let alive = true;
@@ -124,7 +132,11 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
       try {
         const today = todayStr();
         const [{ data: team }, { data: reports }, { data: rems }] = await Promise.all([
-          supabase.from('users').select('id, username, full_name, team_type').eq('role', 'team')
+          //  atasan_id & jabatan ikut diambil supaya daftarnya bisa disusun
+          //  mengikuti struktur organisasi, bukan sekadar urutan abjad.
+          //  Keduanya dari users (sql/user-hierarchy-atasan.sql) - satu sumber
+          //  kebenaran yang sama dipakai Incentive PTS.
+          supabase.from('users').select('id, username, full_name, team_type, jabatan, atasan_id').eq('role', 'team')
             .in('team_type', [...ASSIGNABLE_PTS_TEAMS]),  // IVP & MVI saja (UMP hanya utk Piket Showroom)
           supabase.from('daily_reports').select('user_id').eq('report_date', today),
           supabase.from('reminders').select('assigned_to').eq('due_date', today).neq('status', 'done').neq('status', 'cancelled'),
@@ -132,11 +144,23 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
         const reported = new Set((reports ?? []).map((r: any) => r.user_id));
         const activeBy: Record<string, number> = {};
         (rems ?? []).forEach((r: any) => { if (r.assigned_to) activeBy[r.assigned_to] = (activeBy[r.assigned_to] ?? 0) + 1; });
-        const list = (team ?? []).map((m: any) => ({
-          id: m.id as string, name: m.full_name as string, reported: reported.has(m.id), active: activeBy[m.username] ?? 0,
-        })).sort((a: { reported: boolean; active: number }, b: { reported: boolean; active: number }) =>
-          Number(a.reported) - Number(b.reported) || b.active - a.active);
-        if (alive) setRows(list);
+        const list: Anggota[] = (team ?? []).map((m: any) => ({
+          id: m.id as string, name: m.full_name as string, reported: reported.has(m.id),
+          active: activeBy[m.username] ?? 0,
+          jabatan: (m.jabatan as string) ?? '', atasanId: (m.atasan_id as string) ?? null,
+        })).sort((a: Anggota, b: Anggota) => Number(a.reported) - Number(b.reported) || b.active - a.active);
+
+        //  Atasan boleh siapa saja - termasuk Manager di luar daftar team PTS
+        //  di atas (mis. role admin). Karena itu namanya diambil terpisah,
+        //  bukan dicari di dalam `list`; kalau tidak, kelompoknya muncul
+        //  tanpa nama untuk atasan yang bukan anggota team.
+        const idAtasan = Array.from(new Set(list.map(m => m.atasanId).filter(Boolean))) as string[];
+        let peta: Record<string, { nama: string; jabatan: string }> = {};
+        if (idAtasan.length) {
+          const { data: bos } = await supabase.from('users').select('id, full_name, jabatan').in('id', idAtasan);
+          (bos ?? []).forEach((b: any) => { peta[b.id] = { nama: b.full_name ?? '—', jabatan: b.jabatan ?? '' }; });
+        }
+        if (alive) { setRows(list); setAtasan(peta); }
       } catch { /* silent */ }
       if (alive) setLoading(false);
     })();
@@ -151,17 +175,50 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
   const pct = total > 0 ? Math.round((sudah / total) * 100) : 0;
   const belumList = rows.filter(r => !r.reported);
 
+  //  Susun per atasan. Tanpa ini daftarnya cuma deretan nama tanpa keterangan
+  //  siapa membawahi siapa - dan itu yang membuatnya sulit dibaca saat
+  //  anggotanya banyak.
+  //
+  //  Yang atasannya belum diisi di Struktur Organisasi tidak dibuang, tapi
+  //  dikumpulkan di kelompok terakhir. Membuangnya akan menyembunyikan orang
+  //  yang justru belum lapor - persis kebalikan dari guna widget ini.
+  const kelompok = (() => {
+    const peta = new Map<string, { kunci: string; nama: string; jabatan: string; anggota: Anggota[] }>();
+    for (const m of belumList) {
+      const kunci = m.atasanId ?? '(tanpa-atasan)';
+      if (!peta.has(kunci)) {
+        const bos = m.atasanId ? atasan[m.atasanId] : undefined;
+        peta.set(kunci, {
+          kunci,
+          nama: bos?.nama ?? 'Belum diatur atasannya',
+          jabatan: bos?.jabatan ?? '',
+          anggota: [],
+        });
+      }
+      peta.get(kunci)!.anggota.push(m);
+    }
+    //  Kelompok terbesar dulu; "belum diatur" selalu paling belakang supaya
+    //  tidak menyela struktur yang sudah benar.
+    return Array.from(peta.values()).sort((a, b) =>
+      Number(a.kunci === '(tanpa-atasan)') - Number(b.kunci === '(tanpa-atasan)')
+      || b.anggota.length - a.anggota.length
+      || a.nama.localeCompare(b.nama));
+  })();
+
   return (
     <WidgetCard title="Team Monitoring Hari Ini" icon="🧭" accent="#0891b2"
       onSeeAll={() => openMenu('daily-report')} seeAllLabel="Daily Report">
       {total === 0 ? (
         <EmptyState text="Belum ada anggota Team PTS terdaftar." />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[190px_1fr] gap-x-5 gap-y-3">
           {/* Kiri: ringkasan angka + progress */}
           <div>
             <StatPills items={[
-              { label: 'Total Team', value: total, color: '#0891b2' },
+              //  'Total', bukan 'Total Team': kolom kiri kini 190px, dan pada
+              //  grid 3 pil itu menyisakan ~42px per pil - 'Total Team' pecah jadi
+              //  dua baris di sana. Judul widget sudah menyebut Team.
+              { label: 'Total', value: total, color: '#0891b2' },
               { label: 'Sudah', value: sudah, color: '#16a34a' },
               { label: 'Belum', value: belum, color: belum > 0 ? '#ea580c' : '#94a3b8' },
             ]} />
@@ -172,24 +229,47 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
               <span className="text-[11px] font-bold text-slate-600">{pct}% update</span>
             </div>
           </div>
-          {/* Kanan: daftar yang belum daily report (multi-kolom) */}
-          <div>
+          {/* Kanan: yang belum daily report, dikelompokkan per atasan */}
+          <div className="min-w-0">
             {belumList.length === 0 ? (
               <div className="text-xs font-semibold text-green-600 flex items-center h-full min-h-[60px]">🎉 Semua tim sudah update Daily Report hari ini!</div>
             ) : (
               <>
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Belum Daily Report ({belumList.length})</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-3 gap-y-0.5">
-                  {belumList.map(r => (
-                    <button key={r.id} onClick={() => openMenu('daily-report')}
-                      className="flex items-center gap-2 py-1.5 px-1.5 hover:bg-slate-50 rounded-lg transition-colors text-left">
-                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: r.active > 0 ? '#dc2626' : '#f59e0b' }} />
-                      <span className="text-xs font-semibold text-slate-700 truncate flex-1">{r.name}</span>
-                      {r.active > 0 && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
-                          style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}>{r.active} aktif</span>
-                      )}
-                    </button>
+                {/*
+                  flex-wrap, BUKAN grid berkolom tetap. Grid `xl:grid-cols-3`
+                  yang lama membagi seluruh lebar kartu jadi tiga kolom sama
+                  besar, jadi tiga nama pendek pun terlempar sampai ke tepi
+                  kanan dan menyisakan jarak kosong yang lebar di antaranya.
+                  Dengan flex-wrap tiap kelompok selebar isinya sendiri lalu
+                  membungkus ke bawah - ruang yang dipakai mengikuti panjang
+                  nama, bukan lebar layar.
+                */}
+                <div className="flex flex-wrap gap-x-5 gap-y-2.5">
+                  {kelompok.map(g => (
+                    <div key={g.kunci} className="min-w-0">
+                      <div className="flex items-baseline gap-1.5 mb-0.5 pl-0.5">
+                        <span className="text-[10px] font-bold text-slate-500 truncate max-w-[160px]">{g.nama}</span>
+                        {g.jabatan && (
+                          <span className="text-[9px] font-semibold text-slate-400 flex-shrink-0">{g.jabatan}</span>
+                        )}
+                        <span className="text-[9px] font-bold text-slate-300 flex-shrink-0">{g.anggota.length}</span>
+                      </div>
+                      {/* garis tepi kiri = penanda "ini bawahannya" */}
+                      <div className="border-l-2 border-slate-200 pl-1.5 ml-0.5">
+                        {g.anggota.map(r => (
+                          <button key={r.id} onClick={() => openMenu('daily-report')}
+                            className="flex items-center gap-1.5 py-0.5 px-1 w-full hover:bg-slate-50 rounded-md transition-colors text-left">
+                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: r.active > 0 ? '#dc2626' : '#f59e0b' }} />
+                            <span className="text-[11px] font-semibold text-slate-700 truncate max-w-[150px]">{r.name}</span>
+                            {r.active > 0 && (
+                              <span className="text-[9px] font-bold px-1 py-px rounded-full flex-shrink-0"
+                                style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}>{r.active}</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </>
