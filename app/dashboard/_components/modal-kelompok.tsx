@@ -1,0 +1,212 @@
+'use client';
+import React, { useEffect, useState } from 'react';
+import {
+  Kelompok, JenisKelompok, Lonceng, SEMUA_LONCENG, LABEL_LONCENG,
+  KELOMPOK_BAWAAN, semuaKelompok, muatKelompok, simpanKelompok, kelompokTerpakai,
+} from '@/lib/kelompok';
+
+const LABEL_JENIS: Record<JenisKelompok, string> = {
+  pts: 'Team PTS', services: 'Services', marketing: 'Marketing', sales: 'Sales',
+};
+
+/**
+ * Bagian "Kelompok & Notifikasi" pada Admin Panel.
+ *
+ * Satu tabel: baris = kelompok, kolom = lonceng. Bentuk ini dipilih karena
+ * pertanyaan yang biasanya muncul bukan "apa hak kelompok X" melainkan "siapa
+ * saja yang dapat lonceng Review" - dan itu terbaca sekali lihat kalau
+ * disusun sebagai tabel, bukan sebagai daftar kartu.
+ */
+export function KelompokSettingInline() {
+  const [daftar, setDaftar] = useState<Kelompok[]>([]);
+  const [terpakai, setTerpakai] = useState<Record<string, number>>({});
+  const [namaBaru, setNamaBaru] = useState('');
+  const [menyimpan, setMenyimpan] = useState(false);
+  const [kabar, setKabar] = useState<{ jenis: 'ok' | 'gagal'; teks: string } | null>(null);
+  const [siap, setSiap] = useState(false);
+
+  const beritahu = (jenis: 'ok' | 'gagal', teks: string) => {
+    setKabar({ jenis, teks });
+    setTimeout(() => setKabar(null), 5000);
+  };
+
+  useEffect(() => {
+    void muatKelompok().then(() => { setDaftar(semuaKelompok()); setSiap(true); });
+    void kelompokTerpakai().then(setTerpakai);
+  }, []);
+
+  const ubah = (nama: string, patch: Partial<Kelompok>) =>
+    setDaftar(d => d.map(k => (k.nama === nama ? { ...k, ...patch } : k)));
+
+  const geserLonceng = (nama: string, l: Lonceng) =>
+    setDaftar(d => d.map(k => k.nama !== nama ? k : {
+      ...k,
+      lonceng: k.lonceng.includes(l) ? k.lonceng.filter(x => x !== l) : [...k.lonceng, l],
+    }));
+
+  const tambah = () => {
+    const inti = namaBaru.trim();
+    if (!inti) return;
+    // Nama yang disimpan HARUS sama persis dengan nilai users.team_type -
+    // itulah yang dicocokkan seluruh platform. Awalan "Team PTS " ditambahkan
+    // di sini supaya admin cukup mengetik "SBY", bukan menghafal bentuk penuhnya.
+    const nama = /^team /i.test(inti) ? inti : `Team PTS ${inti}`;
+    if (daftar.some(k => k.nama.toLowerCase() === nama.toLowerCase())) {
+      beritahu('gagal', `"${nama}" sudah ada.`);
+      return;
+    }
+    setDaftar(d => [...d, {
+      nama, label: nama.replace(/^Team /i, ''), jenis: 'pts',
+      ditugaskan: true, aktif: true, lonceng: [...SEMUA_LONCENG],
+    }]);
+    setNamaBaru('');
+  };
+
+  const hapus = (k: Kelompok) => {
+    const jumlah = terpakai[k.nama] ?? 0;
+    if (jumlah > 0) { beritahu('gagal', `"${k.label}" masih dipakai ${jumlah} akun. Pindahkan akunnya dulu.`); return; }
+    setDaftar(d => d.filter(x => x.nama !== k.nama));
+  };
+
+  const simpan = async () => {
+    setMenyimpan(true);
+    const { error } = await simpanKelompok(daftar);
+    setMenyimpan(false);
+    if (error) beritahu('gagal', 'Gagal menyimpan: ' + error);
+    else beritahu('ok', 'Tersimpan. Lonceng ikut berubah tanpa perlu deploy.');
+  };
+
+  if (!siap) return <div className="p-6 text-sm text-slate-400">Memuat pengaturan…</div>;
+
+  return (
+    <div className="h-full overflow-y-auto p-4 sm:p-6 space-y-5">
+      {kabar && (
+        <div className="rounded-xl px-4 py-3 text-sm font-semibold"
+          style={kabar.jenis === 'ok'
+            ? { background: 'rgba(16,185,129,0.1)', color: '#047857', border: '1px solid rgba(16,185,129,0.35)' }
+            : { background: 'rgba(239,68,68,0.1)', color: '#b91c1c', border: '1px solid rgba(239,68,68,0.35)' }}>
+          {kabar.teks}
+        </div>
+      )}
+
+      <div className="rounded-2xl border border-slate-200 overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
+          <h3 className="font-bold text-slate-800 text-sm">Kelompok & Hak Lonceng</h3>
+          <p className="text-slate-500 text-xs mt-0.5">
+            Centang lonceng yang boleh dilihat tiap kelompok. Admin & Full Access selalu melihat semuanya.
+          </p>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-[10px] font-bold tracking-widest uppercase text-slate-400 border-b border-slate-100">
+                <th className="text-left px-4 py-2.5">Kelompok</th>
+                <th className="text-left px-3 py-2.5">Jenis</th>
+                <th className="text-center px-3 py-2.5" title="Ikut dropdown assign di Ticketing, Request Schedule, Request Design Project">Bisa&nbsp;Ditugaskan</th>
+                {SEMUA_LONCENG.map(l => (
+                  <th key={l} className="text-center px-3 py-2.5 whitespace-nowrap">
+                    {LABEL_LONCENG[l].ikon} {LABEL_LONCENG[l].label}
+                  </th>
+                ))}
+                <th className="px-3 py-2.5" />
+              </tr>
+            </thead>
+            <tbody>
+              {daftar.map(k => {
+                const jumlah = terpakai[k.nama] ?? 0;
+                const bawaan = KELOMPOK_BAWAAN.some(b => b.nama === k.nama);
+                return (
+                  <tr key={k.nama || '(sales)'} className="border-b border-slate-50 last:border-0">
+                    <td className="px-4 py-2.5">
+                      <p className="font-bold text-slate-800">{k.label}</p>
+                      <p className="text-[11px] text-slate-400 font-mono">
+                        {k.nama || '(tanpa team_type)'}
+                        {jumlah > 0 && <span className="ml-1.5 font-sans font-bold">· {jumlah} akun</span>}
+                      </p>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span className="text-xs font-semibold text-slate-500">{LABEL_JENIS[k.jenis]}</span>
+                    </td>
+                    <td className="px-3 py-2.5 text-center">
+                      <Centang aktif={k.ditugaskan} label={`${k.label} bisa ditugaskan`}
+                        onKlik={() => ubah(k.nama, { ditugaskan: !k.ditugaskan })} />
+                    </td>
+                    {SEMUA_LONCENG.map(l => (
+                      <td key={l} className="px-3 py-2.5 text-center">
+                        <Centang aktif={k.lonceng.includes(l)} label={`${k.label} lonceng ${LABEL_LONCENG[l].label}`}
+                          onKlik={() => geserLonceng(k.nama, l)} />
+                      </td>
+                    ))}
+                    <td className="px-3 py-2.5 text-right">
+                      {!bawaan && (
+                        <button type="button" onClick={() => hapus(k)}
+                          className="text-[11px] font-bold text-slate-400 hover:text-rose-600 transition-all">
+                          Hapus
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="p-4 border-t border-slate-100 space-y-3">
+          <div>
+            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">Tambah Kelompok PTS</label>
+            <div className="flex gap-2">
+              <input value={namaBaru} onChange={e => setNamaBaru(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); tambah(); } }}
+                placeholder="mis. SBY — jadi &quot;Team PTS SBY&quot;"
+                className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-slate-400 bg-white" />
+              <button type="button" onClick={tambah}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-white flex-shrink-0 hover:opacity-90 transition-all"
+                style={{ background: 'linear-gradient(135deg,#7e22ce,#6b21a8)' }}>
+                Tambah
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
+              Namanya harus sama persis dengan isi kolom <span className="font-mono">team_type</span> di akun —
+              itulah yang dicocokkan seluruh platform. Awalan &quot;Team PTS &quot; ditambahkan otomatis.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            <p className="text-[11px] text-slate-400 mr-auto">Kelompok yang masih dipakai akun tidak bisa dihapus.</p>
+            <button type="button" onClick={() => setDaftar(KELOMPOK_BAWAAN)}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all">
+              Kembalikan ke bawaan
+            </button>
+            <button type="button" onClick={simpan} disabled={menyimpan || daftar.length === 0}
+              className="px-4 py-2 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50 hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg,#7e22ce,#6b21a8)' }}>
+              {menyimpan ? 'Menyimpan…' : 'Simpan'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <p className="text-[11px] text-slate-400 leading-relaxed">
+        Kelompok yang tidak bisa ditugaskan tetap punya loncengnya sendiri — Team PTS UMP misalnya, yang
+        pekerjaannya di Piket Showroom, hanya perlu lonceng Reminder. Siapa yang membawahi kelompok mana
+        diatur terpisah di User Management → Lingkup Manager.
+      </p>
+    </div>
+  );
+}
+
+function Centang({ aktif, label, onKlik }: { aktif: boolean; label: string; onKlik: () => void }) {
+  return (
+    <button type="button" onClick={onKlik} role="checkbox" aria-checked={aktif} aria-label={label}
+      className="w-5 h-5 rounded-md border transition-all inline-flex items-center justify-center"
+      style={aktif
+        ? { background: '#7e22ce', borderColor: '#7e22ce', color: '#fff' }
+        : { background: '#fff', borderColor: '#cbd5e1', color: 'transparent' }}>
+      <svg aria-hidden="true" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+      </svg>
+    </button>
+  );
+}

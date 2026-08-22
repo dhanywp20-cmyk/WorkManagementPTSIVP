@@ -3,7 +3,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
 import { hasFullAccess } from '@/lib/constants';
-import { isAssignablePTSTeam } from '@/lib/teams';
+import {
+  loncengTampil, useKelompok, useLingkupManager, lingkupSaya, namaKelompokPTS,
+  type Lonceng,
+} from '@/lib/kelompok';
 
 import { User, NotificationItem, NotifBellProps } from './shared';
 
@@ -121,38 +124,60 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
 
   const roleLC = (currentUser.role ?? '').trim().toLowerCase();
   const teamType = (currentUser.team_type ?? '').trim();
-  const isTeamServices = roleLC === 'team' && teamType === 'Team Services';
-  /**
-   * Tim PTS yang MENGERJAKAN tiket, request design, dan form review.
-   * Daftarnya diambil dari lib/teams.ts - sumber yang sama dengan dropdown
-   * "assign ke tim" di ketiga platform itu, supaya siapa yang bisa ditugaskan
-   * dan siapa yang dapat lonceng notifikasinya tidak pernah berbeda.
-   *
-   * Sebelumnya nilai ini dipatok 'Team PTS IVP' saja, sehingga Team PTS MVI -
-   * yang sama-sama ditugaskan pekerjaan - tidak pernah mendapat lonceng Ticket,
-   * Require, maupun Review. Polanya sekarang sama, yang beda hanya isinya.
-   */
-  const isTeamPTS = roleLC === 'team' && isAssignablePTSTeam(teamType);
-  /**
-   * Team PTS UMP tidak ikut ketiga platform itu - pekerjaannya di Piket
-   * Showroom, dan lib/teams.ts memang tidak memasukkannya ke daftar assign.
-   * Loncengnya disembunyikan karena memang tidak akan pernah ada isinya, bukan
-   * karena haknya dicabut.
-   */
-  const isTeamPTS_UMP = roleLC === 'team' && teamType === 'Team PTS UMP';
-  const isTeamPTS_SubGroup = isTeamPTS_UMP;
   // isAdmin di sini dipakai sebagai "lihat SEMUA notifikasi" (bukan hak kelola
   // akun) - jadi ikut diperluas ke akun Team PTS dengan toggle "Full Access"
   // aktif (lihat lib/constants.ts hasFullAccess), mis. Manager PTS.
   const isAdmin = ['admin', 'superadmin'].includes(roleLC) || hasFullAccess(currentUser);
-  const isPTS  = isAdmin || isTeamPTS;
+
+  /**
+   * Lonceng mana yang tampil - dibaca dari pengaturan kelompok di Admin Panel,
+   * bukan dari deretan syarat yang menyebut nama kelompok satu per satu.
+   *
+   * Bentuk lama itulah yang membuat Team PTS MVI tidak pernah mendapat lonceng
+   * Ticket, Require, dan Review: namanya memang tidak pernah disebut, dan
+   * tidak ada tempat untuk memperbaikinya selain menyunting kode. Sekarang
+   * kelompok baru cukup didaftarkan sekali beserta hak loncengnya.
+   *
+   * useKelompok() ikut dipanggil supaya lonceng dirender ulang begitu
+   * pengaturannya termuat - tanpa itu, hak yang baru disimpan baru terlihat
+   * setelah halaman dibuka ulang.
+   */
+  useKelompok();
+  const bolehLonceng = (l: Lonceng) => loncengTampil({ peranAdmin: isAdmin, teamType, lonceng: l });
+  const bolehTiket = bolehLonceng('tiket');
+  const bolehRequire = bolehLonceng('require');
+  const bolehJadwal = bolehLonceng('jadwal');
+  const bolehReview = bolehLonceng('review');
+
+  /**
+   * Kelompok yang dibawahi akun ini. Akun yang TIDAK dipetakan di Admin Panel
+   * mendapat seluruh kelompok, jadi selama belum ada satu pun pemetaan,
+   * penyaringan di bawah tidak mengubah apa pun.
+   *
+   * Yang disaring hanya daftar milik akun berjangkauan luas (admin / Full
+   * Access). Anggota tim biasa sudah tersaring lebih dulu oleh namanya
+   * sendiri, jadi lingkup tidak menambah apa-apa di sana.
+   */
+  useLingkupManager();
+  const lingkupKu = lingkupSaya(currentUser.id);
+  const batasiLingkup = isAdmin && lingkupKu.length < namaKelompokPTS().length;
+  // Dependensi berupa TEKS, bukan lariknya. lingkupSaya() membuat larik baru
+  // tiap render; memakainya langsung sebagai dependensi membuat fetchAll
+  // dibuat ulang tiap render, dan effect yang bergantung padanya berputar
+  // tanpa henti - satu query ke database tiap kali komponen dirender.
+  const kunciLingkup = lingkupKu.join('|');
 
   const fetchAll = useCallback(async () => {
     let assignedName: string = currentUser.full_name;
     let memberTeamType: string = teamType;
+    /** Nama pelaksana -> kelompoknya. Dipakai menyaring menurut lingkup. */
+    const kelompokDariNama = new Map<string, string>();
     try {
       const { data: allMembers } = await supabase.from('team_members').select('name, team_type, username');
       if (allMembers && allMembers.length > 0) {
+        for (const m of allMembers as any[]) {
+          if (m?.name && m?.team_type) kelompokDariNama.set(String(m.name).trim().toLowerCase(), String(m.team_type));
+        }
         const found = (allMembers as any[]).find(m =>
           (m.username ?? '').toLowerCase().trim() === currentUser.username.toLowerCase().trim()
         );
@@ -160,6 +185,33 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         if (found?.team_type) memberTeamType = found.team_type;
       }
     } catch { /* fallback */ }
+    // users melengkapi team_members: sebagian orang hanya ada di salah satunya,
+    // dan nama yang tidak ketemu kelompoknya akan lolos penyaringan di bawah.
+    try {
+      const { data: semuaAkun } = await supabase.from('users').select('full_name, team_type').eq('role', 'team');
+      for (const u of (semuaAkun ?? []) as any[]) {
+        const n = String(u?.full_name ?? '').trim().toLowerCase();
+        if (n && u?.team_type && !kelompokDariNama.has(n)) kelompokDariNama.set(n, String(u.team_type));
+      }
+    } catch { /* fallback */ }
+
+    /**
+     * Saring menurut lingkup kelompok yang dibawahi akun ini.
+     *
+     * Akun tanpa pemetaan mendapat SELURUH kelompok, jadi baris ini tidak
+     * mengubah apa pun sampai ada Manager yang benar-benar dipetakan - lihat
+     * lingkupSaya() di lib/kelompok.ts.
+     *
+     * Nama yang TIDAK ketemu kelompoknya sengaja dibiarkan lolos: lebih baik
+     * seorang Manager melihat satu baris yang bukan bagiannya daripada
+     * kehilangan pekerjaan timnya sendiri hanya karena namanya berbeda tipis
+     * antara users dan team_members.
+     */
+    const dalamLingkup = (nama?: string | null): boolean => {
+      if (!batasiLingkup) return true;
+      const k = kelompokDariNama.get(String(nama ?? '').trim().toLowerCase());
+      return !k || lingkupKu.includes(k);
+    };
 
     // Nama-nama yang mungkin dipakai sebagai assign_name di berbagai tabel
     // (cover perbedaan nama di team_members vs nama asli user)
@@ -169,7 +221,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
     try {
       if (isAdmin) {
         const { data } = await supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at').neq('status', 'Solved').order('created_at', { ascending: false }).limit(50);
-        setTicketNotifs((data ?? []).map((t: any) => ({ id: t.id, type: 'ticket' as const, title: t.project_name, subtitle: `${t.status} · ${t.issue_case}`, time: t.created_at, url: '/ticketing', internalUrl: '/ticketing', menuTitle: 'Ticket Troubleshooting' })));
+        setTicketNotifs((data ?? []).filter((t: any) => dalamLingkup(t.assign_name)).map((t: any) => ({ id: t.id, type: 'ticket' as const, title: t.project_name, subtitle: `${t.status} · ${t.issue_case}`, time: t.created_at, url: '/ticketing', internalUrl: '/ticketing', menuTitle: 'Ticket Troubleshooting' })));
       } else if (roleLC === 'guest') {
         const isIVPUser = currentUser.sales_division === 'IVP';
         if (isIVPUser) {
@@ -239,11 +291,11 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
       if (isAdmin) {
         // Admin/superadmin: semua request aktif
         const { data } = await excludeDone(
-          supabase.from('project_requests').select('id, project_name, status, sales_name, created_at')
+          supabase.from('project_requests').select('id, project_name, status, sales_name, assign_name, created_at')
         ).order('created_at', { ascending: false }).limit(50);
-        setRequireNotifs((data ?? []).map(toRequireNotif));
+        setRequireNotifs((data ?? []).filter((r: any) => dalamLingkup(r.assign_name)).map(toRequireNotif));
 
-      } else if (isPTS && !isAdmin) {
+      } else if (roleLC === 'team' && bolehRequire && !isAdmin) {
         // Team PTS: request yang di-assign ke mereka (cek dua nama: dari team_members DAN full_name login)
         // Ini fix utama: assign_name bisa pakai nama team_members ATAU currentUser.full_name
         // + request yang di-route ke user ini sbg Supervisor (perlu di-assign lanjut).
@@ -364,12 +416,12 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         // Admin: semua reminder aktif (tidak done/cancelled)
         const { data } = await supabase
           .from('reminders')
-          .select('id, project_name, category, due_date, status, assigned_to, sales_name, sales_division, routing_status, created_at')
+          .select('id, project_name, category, due_date, status, assigned_to, assign_name, sales_name, sales_division, routing_status, created_at')
           .neq('status', 'done')
           .neq('status', 'cancelled')
           .order('due_date', { ascending: true })
           .limit(30);
-        setReminderNotifs((data ?? []).map((r: any) => ({
+        setReminderNotifs((data ?? []).filter((r: any) => dalamLingkup(r.assign_name)).map((r: any) => ({
           id: r.id,
           type: 'reminder' as const,
           title: r.project_name,
@@ -471,9 +523,9 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
           .order('created_at', { ascending: false }).limit(50);
         const pending = (data ?? []).filter((r: any) =>
           !r.grade_product_knowledge && !r.grade_product_knowledge_bast && !r.grade_training_customer
-        );
+        ).filter((r: any) => dalamLingkup(r.assign_name));
         setReviewNotifs(pending.map((r: any) => ({ id: r.id, type: 'require' as const, title: r.project_name, subtitle: `⭐ ${r.reminder_category} · ${r.sales_name}`, time: r.created_at, url: '/form-review', internalUrl: '/form-review', menuTitle: 'Form Review Demo & BAST' })));
-      } else if (isTeamPTS && !isTeamServices) {
+      } else if (roleLC === 'team' && bolehReview) {
         // Team PTS: review yang di-assign ke mereka dan belum di-grade
         const { data } = await supabase.from('form_reviews').select('id, project_name, reminder_category, sales_name, created_at, grade_product_knowledge, grade_product_knowledge_bast, grade_training_customer').in('assign_name', namesToCheck).order('created_at', { ascending: false }).limit(30);
         const pending = (data ?? []).filter((r: any) =>
@@ -513,7 +565,11 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         menuTitle: 'Notifikasi',
       })));
     } catch { /* notifications table might not exist yet — fail silently */ }
-  }, [currentUser, isAdmin, roleLC, teamType]);
+    // Keempat izin ikut jadi dependensi: kalau tidak, pengaturan lonceng yang
+    // baru disimpan akan mengubah tombolnya tapi tidak isinya.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser, isAdmin, roleLC, teamType, bolehTiket, bolehRequire, bolehJadwal, bolehReview, batasiLingkup, kunciLingkup]);
 
   useEffect(() => {
     fetchAll();
@@ -575,20 +631,20 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
       {/* Individual bells — hidden on small mobile (summary badge is enough) */}
       <div className="hidden sm:flex items-center gap-1">
         {/* Ticket */}
-        {!isTeamPTS_SubGroup && (isAdmin || roleLC === 'team' || roleLC === 'team_pts' || roleLC === 'guest' || roleLC === 'sales') && (
+        {bolehTiket && (
           <NotifBell icon="🎫" label="Ticket" count={ticketNotifs.length} color="#be123c" bgColor="rgba(254,205,211,0.6)" borderColor="#fda4af" dotColor="#e11d48" items={ticketNotifs} onItemClick={handleClick} />
         )}
         {/* Require */}
-        {!isTeamPTS_SubGroup && (isAdmin || roleLC === 'team' || roleLC === 'team_pts' || roleLC === 'guest' || roleLC === 'sales') && (
+        {bolehRequire && (
           <NotifBell icon="🏗️" label="Require" count={requireNotifs.length} color="#7e22ce" bgColor="rgba(233,213,255,0.6)" borderColor="#c4b5fd" dotColor="#9333ea" items={requireNotifs} onItemClick={handleClick} />
         )}
         {/* Reminder — semua Team PTS (IVP/UMP/MVI), bukan cuma IVP, supaya Supervisor
             tim mana pun tetap dapat badge "perlu di-assign" (routing pipeline). */}
-        {(isAdmin || roleLC === 'team' || roleLC === 'guest' || roleLC === 'sales') && (
+        {bolehJadwal && (
           <NotifBell icon="🗓️" label="Reminder" count={reminderNotifs.length} color="#0e7490" bgColor="rgba(207,250,254,0.6)" borderColor="#67e8f9" dotColor="#0891b2" items={reminderNotifs} onItemClick={handleClick} />
         )}
         {/* Review */}
-        {!isTeamPTS_SubGroup && (isAdmin || (isTeamPTS && !isTeamServices) || roleLC === 'guest' || roleLC === 'sales') && (
+        {bolehReview && (
           <NotifBell icon="⭐" label="Review" count={reviewNotifs.length} color="#b45309" bgColor="rgba(254,243,199,0.6)" borderColor="#fcd34d" dotColor="#d97706" items={reviewNotifs} onItemClick={handleClick} />
         )}
         {/* Personal notifications included in totalCount but no separate bell — summary badge is enough */}
