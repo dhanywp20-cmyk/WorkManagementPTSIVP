@@ -2,51 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── IVP Brand Design Tokens ─────────────────────────────────────────────── */
+/* ── Token desain ─────────────────────────────────────────────────────────
+   Warna merek TIDAK lagi ditulis di sini. Sumbernya lib/merek.ts, yang
+   membacanya dari database dan memasangnya sebagai --merek-* di <html>
+   (lihat tulisWarnaKeCSS). Blok --ivp-brand yang dulu ada di sini memakai
+   merah rose yang dipatok, sehingga menjadi sumber warna KEDUA di samping
+   database - dan dua sumber warna berarti cepat atau lambat keduanya berbeda.
+
+   Skala z-index juga tidak di sini. Sumbernya lib/z-index.ts. Blok --z-*
+   yang dulu ada di sini memberi --z-modal: 100, sementara lib/z-index.ts
+   memberi overlay: 1000 untuk lapisan yang sama - selisih sepuluh kali lipat
+   antara dua tangga yang seharusnya satu. Ketiga kelas yang memakainya
+   (.ivp-modal-overlay, .ivp-modal-top-overlay, .ivp-toast) tidak dipakai satu
+   pun di JSX, jadi keduanya dibuang bersama tanpa mengubah tampilan apa pun.
+
+   Nilai ukuran (radius, bayangan, jarak, tipografi) ada di lib/desain.ts.
+   ───────────────────────────────────────────────────────────────────────── */
 :root {
-  /* Brand color — rose-600 sebagai standar di SEMUA modul */
-  --ivp-brand:        #e11d48;
-  --ivp-brand-dark:   #be123c;
-  --ivp-brand-light:  #f43f5e;
-  --ivp-brand-hover:  #9f1239;
-  --ivp-brand-tint:   #fff1f2;
-  --ivp-brand-border: #fecdd3;
-
-  /* Z-index standar — jangan pakai angka arbitrary */
-  --z-dropdown: 40;
-  --z-sticky:   50;
-  --z-modal:    100;
-  --z-modal-top:110;
-  --z-toast:    200;
-  --z-tooltip:  300;
-}
-
-/* Utility classes brand */
-.ivp-btn-primary {
-  background: linear-gradient(135deg, var(--ivp-brand), var(--ivp-brand-dark));
-  color: white;
-  border: none;
-}
-.ivp-btn-primary:hover {
-  background: linear-gradient(135deg, var(--ivp-brand-dark), var(--ivp-brand-hover));
-}
-.ivp-modal-overlay {
-  position: fixed; inset: 0;
-  z-index: var(--z-modal);
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center; padding: 1rem;
-}
-.ivp-modal-top-overlay {
-  position: fixed; inset: 0;
-  z-index: var(--z-modal-top);
-  background: rgba(0,0,0,0.65);
-  backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center; padding: 1rem;
-}
-.ivp-toast {
-  position: fixed; top: 1rem; right: 1rem;
-  z-index: var(--z-toast);
+  /* Nilai awal; ditimpa lib/merek.ts begitu pengaturannya termuat. Ditulis di
+     sini supaya CSS yang memakainya tetap punya warna sebelum JavaScript
+     jalan - bukan sebagai sumber kebenaran. */
+  --merek-utama:        #e11d48;
+  --merek-utama-2:      #be123c;
+  --merek-aksen:        #c8861d;
+  --merek-utama-tembus: rgba(225, 29, 72, 0.1);
 }
 
 /* ── Prevent white background flash on zoom/scale ───────────────────────── */

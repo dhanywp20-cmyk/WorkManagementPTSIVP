@@ -4,21 +4,21 @@ export const SESSION_DURATION_MS = 6 * 60 * 60 * 1000;
 
 // Brand Colors
 /**
- * Token warna brand IVP - gunakan ini di semua modul, jangan hardcode hex/tailwind class.
- * Tailwind class alias ada di tailwind.config (jika sudah setup),
- * atau gunakan CSS variable --ivp-brand-* via globals.css.
+ * DIPINDAH. Warna merek sekarang datang dari database lewat lib/merek.ts dan
+ * bisa diganti tiap organisasi dari Admin Panel -> Dashboard Setting.
+ *
+ * Konstanta BRAND yang dulu di sini memakai merah rose yang dipatok, jadi ia
+ * menjadi sumber warna KEDUA di samping database. Ia sudah tidak dipakai satu
+ * tempat pun saat dibuang - tapi dibiarkan berdiri berarti cepat atau lambat
+ * ada kode baru yang memakainya dan diam-diam mengabaikan pengaturan merek.
+ *
+ * Yang harus dipakai sekarang:
+ *   - Warna MEREK  : useMerek() dari lib/merek.ts, atau var(--merek-utama).
+ *   - Warna MAKNA  : WARNA / gayaWarna() dari lib/desain.ts. Hijau tetap
+ *                    berarti berhasil dan merah tetap berarti bahaya di mana
+ *                    pun platform ini dipasang, jadi keduanya sengaja TIDAK
+ *                    ikut bisa diganti.
  */
-export const BRAND = {
-  /** Warna utama brand - rose-600 */
-  primary:      '#e11d48',
-  primaryDark:  '#be123c',
-  primaryLight: '#f43f5e',
-  /** Hover / active state */
-  hover:        '#9f1239',
-  /** Background tint ringan */
-  tint:         '#fff1f2',
-  tintBorder:   '#fecdd3',
-} as const;
 
 // Z-Index Standar
 /** Skala z-index tinggal di lib/z-index.ts - satu sumber, jangan disalin. */

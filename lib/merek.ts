@@ -134,6 +134,11 @@ function tulisSimpanan(kunci: string, nilai: unknown): void {
 }
 
 let merekSekarang: Merek = { ...MEREK_BAWAAN, ...(bacaSimpanan<Partial<Merek>>(SIMPAN_MEREK) ?? {}) };
+// Dipasang sedini mungkin supaya CSS tidak sempat memakai warna bawaan lebih
+// dulu lalu berkedip ke warna merek saat pemuatan selesai.
+if (typeof document !== 'undefined') {
+  queueMicrotask(() => tulisWarnaKeCSS());
+}
 let divisiSekarang: string[] = bacaSimpanan<string[]>(SIMPAN_DIVISI) ?? DIVISI_BAWAAN;
 
 /** Merek yang sedang berlaku. Selalu lengkap - field yang tidak diatur diisi bawaan. */
@@ -184,6 +189,7 @@ export function muatMerek(): Promise<void> {
           // pernah diisi tetap punya nilai, tidak berubah jadi string kosong.
           merekSekarang = { ...MEREK_BAWAAN, ...bersihkanMerek(isi as Partial<Merek>) };
           tulisSimpanan(SIMPAN_MEREK, merekSekarang);
+          tulisWarnaKeCSS();
           beriTahuPendengar();
         } else if (baris.key === KUNCI_DIVISI) {
           const bersih = rapikanDivisi(isi);
@@ -281,6 +287,7 @@ export async function simpanMerek(baru: Merek): Promise<{ error: string | null }
   if (error) return { error: error.message };
   merekSekarang = { ...MEREK_BAWAAN, ...ringkas };
   tulisSimpanan(SIMPAN_MEREK, merekSekarang);
+  tulisWarnaKeCSS();
   beriTahuPendengar();
   return { error: null };
 }
@@ -381,6 +388,27 @@ export async function unggahBerkasMerek(
     }
   }
   return { url: null, error: 'Tidak ada bucket penyimpanan yang bisa dipakai. Jalankan sql/pengaturan-merek.sql.' };
+}
+
+// Jembatan ke CSS
+
+/**
+ * Tuliskan warna merek sebagai CSS custom property di <html>.
+ *
+ * Tanpa ini, warna merek hanya bisa dipakai lewat `style={{}}` di komponen
+ * React - dan itu menutup pintu bagi CSS biasa, pseudo-element, dan keadaan
+ * seperti :hover / :focus-visible yang tidak punya padanan inline.
+ *
+ * Menggantikan --ivp-brand di app/globals.css, yang nilainya dipatok merah
+ * rose dan karenanya menjadi sumber warna KEDUA di samping database.
+ */
+export function tulisWarnaKeCSS(m: Merek = merekSekarang): void {
+  if (typeof document === 'undefined') return;
+  const akar = document.documentElement;
+  akar.style.setProperty('--merek-utama', m.warnaUtama);
+  akar.style.setProperty('--merek-utama-2', m.warnaUtama2);
+  akar.style.setProperty('--merek-aksen', m.warnaAksen);
+  akar.style.setProperty('--merek-utama-tembus', warnaTembus(m.warnaUtama, 0.1));
 }
 
 // Jembatan React

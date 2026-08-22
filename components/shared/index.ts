@@ -37,3 +37,5 @@ export { AdminEditFields } from './AdminEditFields';
 export { BatalButton, SubmitFormButton } from './FormActions';
 // Logo & identitas merek (bisa diubah dari Admin Panel - lihat lib/merek.ts).
 export { LogoMerek } from './LogoMerek';
+// Kerangka modal baku - lihat komentar di Modal.tsx sebelum membuat popup baru.
+export { Modal, TombolModal, type ModalProps } from './Modal';
