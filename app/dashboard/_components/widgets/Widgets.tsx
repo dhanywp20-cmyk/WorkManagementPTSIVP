@@ -179,28 +179,46 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
   //  siapa membawahi siapa - dan itu yang membuatnya sulit dibaca saat
   //  anggotanya banyak.
   //
-  //  Yang atasannya belum diisi di Struktur Organisasi tidak dibuang, tapi
-  //  dikumpulkan di kelompok terakhir. Membuangnya akan menyembunyikan orang
-  //  yang justru belum lapor - persis kebalikan dari guna widget ini.
+  //  Orang yang TIDAK punya atasan adalah puncak struktur (Manager/Direktur),
+  //  bukan data yang belum diisi. Melabelinya "Belum diatur atasannya" salah,
+  //  dan tampak makin janggal karena ia biasanya sudah muncul di sebelahnya
+  //  sebagai kepala kelompoknya sendiri - jadi namanya seolah tampil dua kali
+  //  dengan dua arti berbeda.
+  //
+  //  Maka: kalau ia memang kepala sebuah kelompok di daftar ini, tandai saja
+  //  JUDUL kelompoknya (titik di sebelah namanya) - tidak perlu kelompok
+  //  terpisah. Yang benar-benar yatim (tanpa atasan DAN tanpa bawahan yang
+  //  belum lapor) tetap ditampilkan di kelompok "Lainnya"; membuangnya akan
+  //  menyembunyikan orang yang justru belum lapor - persis kebalikan dari
+  //  guna widget ini, dan akan membuat angka di lencana tidak cocok dengan
+  //  jumlah nama yang terlihat.
   const kelompok = (() => {
-    const peta = new Map<string, { kunci: string; nama: string; jabatan: string; anggota: Anggota[] }>();
+    const punyaBawahan = new Set(belumList.map(m => m.atasanId).filter(Boolean) as string[]);
+    const peta = new Map<string, {
+      kunci: string; nama: string; jabatan: string; anggota: Anggota[]; ketuaBelumLapor: boolean;
+    }>();
+
+    const ambil = (kunci: string, nama: string, jabatan: string) => {
+      if (!peta.has(kunci)) peta.set(kunci, { kunci, nama, jabatan, anggota: [], ketuaBelumLapor: false });
+      return peta.get(kunci)!;
+    };
+
     for (const m of belumList) {
-      const kunci = m.atasanId ?? '(tanpa-atasan)';
-      if (!peta.has(kunci)) {
-        const bos = m.atasanId ? atasan[m.atasanId] : undefined;
-        peta.set(kunci, {
-          kunci,
-          nama: bos?.nama ?? 'Belum diatur atasannya',
-          jabatan: bos?.jabatan ?? '',
-          anggota: [],
-        });
+      if (m.atasanId) {
+        const bos = atasan[m.atasanId];
+        ambil(m.atasanId, bos?.nama ?? '—', bos?.jabatan ?? '').anggota.push(m);
+      } else if (punyaBawahan.has(m.id)) {
+        //  Dia sendiri kepala kelompok di daftar ini - cukup tandai judulnya.
+        ambil(m.id, m.name, m.jabatan).ketuaBelumLapor = true;
+      } else {
+        ambil('(lainnya)', 'Lainnya', '').anggota.push(m);
       }
-      peta.get(kunci)!.anggota.push(m);
     }
-    //  Kelompok terbesar dulu; "belum diatur" selalu paling belakang supaya
-    //  tidak menyela struktur yang sudah benar.
+
+    //  Kelompok terbesar dulu; "Lainnya" selalu paling belakang supaya tidak
+    //  menyela struktur yang sudah benar.
     return Array.from(peta.values()).sort((a, b) =>
-      Number(a.kunci === '(tanpa-atasan)') - Number(b.kunci === '(tanpa-atasan)')
+      Number(a.kunci === '(lainnya)') - Number(b.kunci === '(lainnya)')
       || b.anggota.length - a.anggota.length
       || a.nama.localeCompare(b.nama));
   })();
@@ -249,11 +267,23 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
                   {kelompok.map(g => (
                     <div key={g.kunci} className="min-w-0">
                       <div className="flex items-baseline gap-1.5 mb-0.5 pl-0.5">
-                        <span className="text-[10px] font-bold text-slate-500 truncate max-w-[160px]">{g.nama}</span>
+                        {/*
+                          Titik oranye di judul = ketua kelompoknya sendiri yang
+                          belum lapor. Ini menggantikan kelompok "Belum diatur
+                          atasannya" yang dulu memuat orang-orang puncak struktur
+                          dan karena itu salah label.
+                        */}
+                        {g.ketuaBelumLapor && (
+                          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 self-center" style={{ background: '#f59e0b' }}
+                            title="Belum daily report" />
+                        )}
+                        <span className={`text-[10px] font-bold truncate max-w-[160px] ${g.ketuaBelumLapor ? 'text-amber-600' : 'text-slate-500'}`}>{g.nama}</span>
                         {g.jabatan && (
                           <span className="text-[9px] font-semibold text-slate-400 flex-shrink-0">{g.jabatan}</span>
                         )}
-                        <span className="text-[9px] font-bold text-slate-300 flex-shrink-0">{g.anggota.length}</span>
+                        {g.anggota.length > 0 && (
+                          <span className="text-[9px] font-bold text-slate-300 flex-shrink-0">{g.anggota.length}</span>
+                        )}
                       </div>
                       {/* garis tepi kiri = penanda "ini bawahannya" */}
                       <div className="border-l-2 border-slate-200 pl-1.5 ml-0.5">

@@ -540,8 +540,15 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
           {tab==='kpi' && (
             <div className="space-y-3">
 
-              {/* ── ROW 1: Piket + Ticket dalam 1 baris ── */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/*
+                Empat kartu modul dalam SATU grid, bukan dua baris berisi dua.
+                Dua baris membuat tiap kartu selebar setengah layar, dan pada
+                layar lebar isinya - bilah mendatar dengan angka di ujung -
+                jadi mayoritas track kosong. Dengan xl:grid-cols-4 keempatnya
+                sejajar, tingginya berkurang separuh, dan bilahnya menyempit
+                sendiri mengikuti lebar kartu.
+              */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
 
                 {/* PIKET SHOWROOM */}
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-3">
@@ -626,10 +633,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                     </div>
                   )}
                 </div>
-              </div>
 
-              {/* ── ROW 2: Reminder + Unit Movement ── */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
                 {/* Request Schedule */}
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-3">
