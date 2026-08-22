@@ -2,7 +2,7 @@
 import React from 'react';
 import { supabase } from '@/lib/supabase';
 
-import { sendWANotif } from '@/lib/wa';
+import { kirimNotifikasi } from '@/lib/notifikasi/router';
 
 /**
  * Sebar perubahan nama/username user ke semua snapshot di tabel terkait, lewat
@@ -46,9 +46,21 @@ export function pesanSebar(h: HasilSebar): string {
   return `Akun tersimpan, tapi sebar nama ke data terkait gagal: ${h.pesan}`;
 }
 
-// WA selamat datang saat akun baru dibuat - dipakai kedua handleAddUser di
-// bawah (list lama & baru). Fire-and-forget lewat swift-responder (satu-satunya
-// jalur WA di platform ini), tidak boleh menggagalkan alur create-akun.
+/**
+ * WA selamat datang saat akun baru dibuat - dipakai kedua handleAddUser di
+ * bawah (list lama & baru). Fire-and-forget, tidak boleh menggagalkan alur
+ * create-akun.
+ *
+ * TITIK PERTAMA yang dipindah ke notification engine (lib/notifikasi) - lihat
+ * komentar panjang di lib/notifikasi/router.ts untuk kenapa 47 titik WA
+ * lainnya BELUM ikut dipindah. Ini dipilih sebagai bukti pola karena kecil,
+ * berdiri sendiri, dan pesannya mudah dibandingkan sebelum/sesudah - bukan
+ * karena paling penting.
+ *
+ * Isi pesan PERSIS SAMA dengan sebelum dipindah - hanya jalur pengirimannya
+ * yang berubah, dari sendWANotif() langsung menjadi lewat router yang sama
+ * dengan event lain.
+ */
 export function sendWelcomeWA(phone: string | null | undefined, fullName: string, username: string, password: string) {
   if (!phone) return;
   const msg =
@@ -58,7 +70,10 @@ export function sendWelcomeWA(phone: string | null | undefined, fullName: string
     `🔑 Password: ${password}\n\n` +
     `Silakan login & segera ganti password kamu.\n` +
     `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
-  sendWANotif({ type: 'reminder_wa', target: phone, message: msg }).catch(() => {});
+  void kirimNotifikasi({
+    event: 'system.account_created',
+    whatsapp: { penerima: [{ nama: fullName, telepon: phone }], pesan: msg },
+  });
 }
 
 export function maskPhone(phone?: string): string {
