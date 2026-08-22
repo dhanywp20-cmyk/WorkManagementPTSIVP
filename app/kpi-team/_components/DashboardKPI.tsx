@@ -143,6 +143,25 @@ const CATEGORY_COLORS: Record<string, string> = {
   'Training': '#f59e0b', 'Internal': '#6b7280',
 };
 
+/**
+ * Potong daftar ke N teratas + satu baris "Lainnya" yang menjumlahkan
+ * sisanya - dipakai SEKALI untuk donat DAN legenda di sampingnya, supaya
+ * keduanya selalu menjelaskan data yang sama persis.
+ *
+ * Ditemukan lewat pengukuran, bukan tebakan: byStatus bisa berisi sampai
+ * 9 status tiket berbeda (lihat STATUS_COLORS), byCategory sampai 7+
+ * kategori reminder. Sebelum ada ini, donatnya memplot SEMUA irisan
+ * sementara legenda di sampingnya dipotong ke 6 teratas - sisanya jadi
+ * warna di lingkaran tanpa keterangan apa pun di sebelahnya.
+ */
+function batasDenganLainnya<T extends { count: number }>(
+  daftar: T[], n: number, buatLainnya: (sisaCount: number) => T,
+): T[] {
+  if (daftar.length <= n) return daftar;
+  const sisa = daftar.slice(n).reduce((s, d) => s + d.count, 0);
+  return [...daftar.slice(0, n), buatLainnya(sisa)];
+}
+
 const SEVERITY_STYLE = {
   info:     { bg: 'rgba(59,130,246,0.06)',  border: 'rgba(59,130,246,0.18)',  dot: '#3b82f6', text: '#1e40af' },
   warn:     { bg: 'rgba(245,158,11,0.07)',  border: 'rgba(245,158,11,0.22)',  dot: '#d97706', text: '#92400e' },
@@ -802,12 +821,14 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                     ))}
                   </div>
                   {/* Donut + status list */}
-                  {!loading&&kpi&&kpi.tickets.byStatus.length>0&&(
+                  {!loading&&kpi&&kpi.tickets.byStatus.length>0&&(()=>{
+                    const statusRingkas = batasDenganLainnya(kpi.tickets.byStatus, 6, count=>({status:'Lainnya',count,color:'#94a3b8'}));
+                    return (
                     <div className="flex items-start gap-3">
-                      <DonutChart segments={kpi.tickets.byStatus.map(s=>({value:s.count,color:s.color}))}
+                      <DonutChart segments={statusRingkas.map(s=>({value:s.count,color:s.color}))}
                         size={80} strokeWidth={10} label={`${kpi.tickets.total}`}/>
                       <div className="flex-1 min-w-0 space-y-1">
-                        {kpi.tickets.byStatus.slice(0,6).map(s=>(
+                        {statusRingkas.map(s=>(
                           <div key={s.status} className="flex items-center gap-1.5">
                             <div className="w-2 h-2 rounded-full flex-shrink-0" style={{background:s.color}}/>
                             <span className="text-[10px] text-slate-500 flex-shrink-0" style={{width:'6.5rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{s.status}</span>
@@ -823,7 +844,8 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                         </div>
                       </div>
                     </div>
-                  )}
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -851,12 +873,14 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                     ))}
                   </div>
                   {/* Donut + category bar list */}
-                  {!loading&&kpi&&kpi.reminders.byCategory.length>0&&(
+                  {!loading&&kpi&&kpi.reminders.byCategory.length>0&&(()=>{
+                    const kategoriRingkas = batasDenganLainnya(kpi.reminders.byCategory, 6, count=>({cat:'Lainnya',count,color:'#94a3b8'}));
+                    return (
                     <div className="flex items-start gap-3">
-                      <DonutChart segments={kpi.reminders.byCategory.map(c=>({value:c.count,color:c.color}))}
+                      <DonutChart segments={kategoriRingkas.map(c=>({value:c.count,color:c.color}))}
                         size={80} strokeWidth={10} label={`${kpi.reminders.total}`}/>
                       <div className="flex-1 min-w-0 space-y-1">
-                        {kpi.reminders.byCategory.slice(0,6).map(c=>(
+                        {kategoriRingkas.map(c=>(
                           <div key={c.cat} className="flex items-center gap-1.5">
                             <div className="w-2 h-2 rounded-full flex-shrink-0" style={{background:c.color}}/>
                             <span className="text-[10px] text-slate-500 flex-shrink-0" style={{width:'6.5rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{c.cat}</span>
@@ -875,7 +899,8 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                         </div>
                       </div>
                     </div>
-                  )}
+                    );
+                  })()}
                 </div>
 
                 {/* UNIT MOVEMENT + PENGGUNA (admin) / hanya unit (pts_sup) */}
