@@ -67,3 +67,20 @@ INSERT INTO activity_logs (ticket_id, action) VALUES
 INSERT INTO incentive_scheme_settings (scheme, updated_by) VALUES ('{"versi":2}','adminuser');
 INSERT INTO kpi_global_settings (id, settings) VALUES (1, '{"bobot":1}');
 INSERT INTO team_members (name, team_type, username) VALUES ('Tim Biasa','PTS IVP','timbiasa');
+
+-- Data untuk sql/kunci-tabel-lanjutan-3.sql
+INSERT INTO daily_reports (id, report_date, user_id, user_name) VALUES
+ ('a1a00001-0000-0000-0000-000000000001','2026-01-01','44444444-4444-4444-4444-444444444444','Sales A'),
+ ('a1a00001-0000-0000-0000-000000000002','2026-01-01','55555555-5555-5555-5555-555555555555','Sales B');
+INSERT INTO brand_pic_mappings (brand_name, pic_user_id) VALUES ('Merek X','44444444-4444-4444-4444-444444444444');
+INSERT INTO product_team_map (product_type, team_types) VALUES ('Display', ARRAY['PTS IVP']);
+INSERT INTO pts_team_mappings (staff_user_id, supervisor_user_id) VALUES
+ ('44444444-4444-4444-4444-444444444444','33333333-3333-3333-3333-333333333333');
+INSERT INTO incentive_tranches (id, project_id, tranche_number, status) VALUES
+ ('a2a00001-0000-0000-0000-000000000001','bbbbbbb1-0000-0000-0000-000000000001',1,'pending');
+INSERT INTO late_ticket_links (parent_project_id, ticket_value) VALUES
+ ('bbbbbbb1-0000-0000-0000-000000000001', 1000);
+-- anak dari piket_tamu_detail milik Sales A
+INSERT INTO piket_produk_lain (kegiatan_id, nama, watt) VALUES
+ ('88800001-0000-0000-0000-000000000001','Produk A', 50),
+ ('88800001-0000-0000-0000-000000000002','Produk B', 60);

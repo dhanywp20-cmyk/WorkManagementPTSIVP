@@ -126,7 +126,8 @@ INSERT INTO sql_diterapkan (berkas, urutan, golongan) VALUES
   ('rls-nyalakan.sql', 50, 'keamanan'),
   ('urutan-penerapan.sql', 51, 'periksa'),
   ('kunci-tabel-lanjutan.sql', 52, 'keamanan'),
-  ('kunci-tabel-lanjutan-2.sql', 53, 'keamanan')
+  ('kunci-tabel-lanjutan-2.sql', 53, 'keamanan'),
+  ('kunci-tabel-lanjutan-3.sql', 54, 'keamanan')
 ON CONFLICT (berkas) DO UPDATE
   SET urutan = EXCLUDED.urutan, golongan = EXCLUDED.golongan;
 

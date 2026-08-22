@@ -151,3 +151,29 @@ SELECT 'INSERT project_messages' AS percobaan,
   uji_tulis(:salesA, 'INSERT INTO project_messages (request_id, sender_id, message) VALUES (''ccccccc1-0000-0000-0000-000000000001'',''44444444-4444-4444-4444-444444444444'',''sah'')') AS "A ke project A (sah)",
   uji_tulis(:salesA, 'INSERT INTO project_messages (request_id, sender_id, message) VALUES (''ccccccc1-0000-0000-0000-000000000002'',''44444444-4444-4444-4444-444444444444'',''nyelonong'')') AS "A ke project B",
   uji_tulis(:salesA, 'INSERT INTO project_messages (request_id, sender_id, message) VALUES (''ccccccc1-0000-0000-0000-000000000001'',''55555555-5555-5555-5555-555555555555'',''memalsukan'')') AS "A mengaku B";
+
+\echo ''
+\echo '════════ G. Tujuh tabel yang tadinya belum tersentuh ════════'
+SELECT 'daily_reports' AS tabel,
+  uji_baca(:anon,  'SELECT count(*) FROM daily_reports') AS "baca anon",
+  uji_baca(:salesA,'SELECT count(*) FROM daily_reports') AS "baca Sales A",
+  uji_tulis(:salesB,'UPDATE daily_reports SET user_name=''x'' WHERE id=''a1a00001-0000-0000-0000-000000000001''') AS "B ubah punya A",
+  uji_tulis(:salesA,'UPDATE daily_reports SET user_name=''x'' WHERE id=''a1a00001-0000-0000-0000-000000000001''') AS "A ubah punya A"
+UNION ALL SELECT 'brand_pic_mappings',
+  uji_baca(:anon,'SELECT count(*) FROM brand_pic_mappings'), uji_baca(:salesA,'SELECT count(*) FROM brand_pic_mappings'),
+  uji_tulis(:tim, 'DELETE FROM brand_pic_mappings'), uji_tulis(:admin,'DELETE FROM brand_pic_mappings')
+UNION ALL SELECT 'product_team_map',
+  uji_baca(:anon,'SELECT count(*) FROM product_team_map'), uji_baca(:salesA,'SELECT count(*) FROM product_team_map'),
+  uji_tulis(:tim, 'DELETE FROM product_team_map'), uji_tulis(:admin,'DELETE FROM product_team_map')
+UNION ALL SELECT 'pts_team_mappings(baca saja)',
+  uji_baca(:anon,'SELECT count(*) FROM pts_team_mappings'), uji_baca(:salesA,'SELECT count(*) FROM pts_team_mappings'),
+  uji_tulis(:admin,'DELETE FROM pts_team_mappings'), uji_tulis(:admin,'UPDATE pts_team_mappings SET staff_user_id=NULL')
+UNION ALL SELECT 'incentive_tranches',
+  uji_baca(:anon,'SELECT count(*) FROM incentive_tranches'), uji_baca(:salesA,'SELECT count(*) FROM incentive_tranches'),
+  uji_tulis(:salesA,'UPDATE incentive_tranches SET status=''paid'''), uji_tulis(:admin,'UPDATE incentive_tranches SET status=''paid''')
+UNION ALL SELECT 'late_ticket_links(baca saja)',
+  uji_baca(:anon,'SELECT count(*) FROM late_ticket_links'), uji_baca(:salesA,'SELECT count(*) FROM late_ticket_links'),
+  uji_tulis(:admin,'DELETE FROM late_ticket_links'), uji_tulis(:admin,'UPDATE late_ticket_links SET ticket_value=1')
+UNION ALL SELECT 'piket_produk_lain(ikut induk)',
+  uji_baca(:anon,'SELECT count(*) FROM piket_produk_lain'), uji_baca(:salesA,'SELECT count(*) FROM piket_produk_lain'),
+  uji_tulis(:salesA,'DELETE FROM piket_produk_lain'), uji_tulis(:admin,'DELETE FROM piket_produk_lain');

@@ -77,6 +77,7 @@ psql -q -d uji -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO anon, auth
 echo "▶ menerapkan berkas keamanan yang diuji"
 psql -v ON_ERROR_STOP=1 -q -d uji -f "$REPO/sql/kunci-tabel-lanjutan.sql"   > /dev/null
 psql -v ON_ERROR_STOP=1 -q -d uji -f "$REPO/sql/kunci-tabel-lanjutan-2.sql" > /dev/null
+psql -v ON_ERROR_STOP=1 -q -d uji -f "$REPO/sql/kunci-tabel-lanjutan-3.sql" > /dev/null
 
 echo "▶ mengisi data uji"
 psql -v ON_ERROR_STOP=1 -q -d uji -f "$UJI/02-seed.sql"

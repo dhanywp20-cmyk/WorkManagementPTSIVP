@@ -102,7 +102,8 @@ CREATE TABLE piket_tamu_detail (
 CREATE TABLE picket_holidays (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), tanggal date);
 
 CREATE TABLE daily_reports (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), report_date date, username text);
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), report_date date, username text,
+  user_id uuid, user_name text, created_by text);
 CREATE TABLE daily_report_team_entries (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   report_date date, entered_by text, member_name text, activity text);
@@ -125,6 +126,23 @@ CREATE TABLE form_reviews (
 CREATE TABLE movement_logs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   created_by text, nama_luar text, nama_pts text);
+
+CREATE TABLE brand_pic_mappings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  brand_type text, brand_name text, pic_user_id uuid, pic_user_name text);
+CREATE TABLE product_team_map (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), product_type text, team_types text[]);
+CREATE TABLE pts_team_mappings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), staff_user_id uuid, supervisor_user_id uuid);
+CREATE TABLE incentive_tranches (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id uuid, tranche_number int, percentage numeric, payment_year int, status text);
+CREATE TABLE late_ticket_links (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  late_ticket_id uuid, parent_project_id uuid, ticket_value numeric, is_sunset boolean);
+CREATE TABLE piket_produk_lain (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  kegiatan_id uuid, piket_id uuid, nama text, watt numeric);
 
 -- progress_* dipakai fungsi fondasi
 CREATE TABLE progress_projects   (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), sales_name text);
