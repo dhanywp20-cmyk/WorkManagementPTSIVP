@@ -55,6 +55,19 @@
 --  jadwal WA harian, tanpa pesan galat yang menjelaskan sebabnya.
 --
 --  Yang benar-benar ditutup adalah anon tanpa token, guest, dan sales.
+--  Kunci yang isinya rahasia dan TIDAK boleh terbaca dari peramban.
+--
+--  Dicocokkan dari namanya, bukan dari daftar tetap: kunci rahasia berikutnya
+--  hampir pasti bernama *_token / *_secret / *_key juga, dan daftar tetap
+--  berarti yang baru lolos diam-diam sampai ada yang memeriksanya lagi.
+CREATE OR REPLACE FUNCTION kunci_rahasia(k text)
+RETURNS boolean
+LANGUAGE sql IMMUTABLE AS $$
+  SELECT k ~* '(token|secret|api_?key|password|credential)';
+$$;
+
+GRANT EXECUTE ON FUNCTION kunci_rahasia(text) TO anon, authenticated;
+
 CREATE OR REPLACE FUNCTION boleh_tulis_pengaturan()
 RETURNS boolean
 LANGUAGE sql STABLE AS $$
@@ -89,9 +102,22 @@ BEGIN
 
   ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 
-  --  Baca: terbuka. Halaman login membacanya tanpa token.
+  --  Baca: terbuka, KECUALI baris rahasia.
+  --
+  --  Halaman login membaca merek sebelum ada yang masuk, jadi pembacaan
+  --  memang harus terbuka. Tapi "terbuka" tidak boleh berarti SELURUH isi
+  --  tabel: ditemukan baris `fonnte_token` berisi token WhatsApp dalam teks
+  --  polos, dan dengan policy lama (Allow all) siapa pun yang memegang anon
+  --  key - yang ikut terkirim ke peramban setiap kali halaman dibuka - bisa
+  --  membacanya. Diuji sebagai role anon tanpa token: tokennya terbaca utuh.
+  --
+  --  Karena itu kunci yang namanya menandakan rahasia disaring di sini juga,
+  --  bukan hanya diandalkan pada "jangan simpan rahasia di sini". Yang butuh
+  --  rahasia itu adalah Edge Function, dan ia memakai service_role yang
+  --  melewati RLS - jadi penyaringan ini tidak memutus jalur mana pun.
   CREATE POLICY as_baca ON public.app_settings
-    FOR SELECT TO anon, authenticated USING (true);
+    FOR SELECT TO anon, authenticated
+    USING (NOT kunci_rahasia(key));
 
   --  Tulis: per perintah, TANPA `FOR ALL`. `FOR ALL` di Postgres mencakup
   --  SELECT juga, jadi satu policy FOR ALL akan ikut mengatur pembacaan dan
