@@ -33,7 +33,7 @@
  * perbandingan pesan sebelum/sesudah setiap kali - bukan sekaligus.
  */
 
-import { cariEvent } from './katalog';
+import { bacaPengaturan, kanalUntuk, type Kanal } from './pengaturan';
 import { createNotification, type NotifPayload } from '@/lib/notifications';
 import { sendWA } from '@/lib/wa';
 
@@ -46,22 +46,28 @@ export interface PermintaanNotifikasi {
   inApp?: Omit<NotifPayload, 'type'> & { type?: NotifPayload['type'] };
   /** Isi untuk kanal WhatsApp. Dilewati kalau event ini tidak memakai WhatsApp. */
   whatsapp?: { penerima: PenerimaWA[]; pesan: string; jenisWA?: string };
+  /**
+   * Isi untuk kanal Telegram. `chatId` boleh dikosongkan - kalau begitu
+   * dipakai tujuan bawaan dari Admin Panel. Kalau keduanya kosong, kanal ini
+   * dilewati diam-diam, bukan dianggap gagal: belum diatur bukan kesalahan.
+   */
+  telegram?: { pesan: string; chatId?: string };
 }
 
 export interface HasilNotifikasi {
   inApp: { dicoba: boolean; error?: string };
   whatsapp: { dicoba: number; gagal: number };
+  telegram: { dicoba: boolean; error?: string };
 }
 
 /**
- * Kanal yang aktif untuk satu event.
- *
- * Sekarang hanya membaca bawaanKanal dari katalog. Titik sambung untuk
- * Phase 6 (Admin Panel -> Notifications, per-event override) ada di sini:
- * baca dulu pengaturan tersimpan, jatuh balik ke bawaan kalau belum ada.
+ * Kanal yang aktif untuk satu event - kini dari pengaturan Admin Panel,
+ * bukan lagi hanya bawaan di katalog. Kalau pengaturannya belum pernah
+ * disimpan, kanalUntuk() jatuh balik ke bawaanKanal, jadi perilakunya sama
+ * persis seperti sebelum berkas pengaturan ada.
  */
-function kanalAktif(eventKey: string): Array<'in_app' | 'whatsapp'> {
-  return cariEvent(eventKey)?.bawaanKanal ?? ['in_app', 'whatsapp'];
+async function kanalAktif(eventKey: string): Promise<Kanal[]> {
+  return kanalUntuk(eventKey, await bacaPengaturan());
 }
 
 /**
@@ -73,8 +79,10 @@ function kanalAktif(eventKey: string): Array<'in_app' | 'whatsapp'> {
  * pemanggil yang peduli bisa memeriksa tanpa try/catch.
  */
 export async function kirimNotifikasi(req: PermintaanNotifikasi): Promise<HasilNotifikasi> {
-  const kanal = kanalAktif(req.event);
-  const hasil: HasilNotifikasi = { inApp: { dicoba: false }, whatsapp: { dicoba: 0, gagal: 0 } };
+  const kanal = await kanalAktif(req.event);
+  const hasil: HasilNotifikasi = {
+    inApp: { dicoba: false }, whatsapp: { dicoba: 0, gagal: 0 }, telegram: { dicoba: false },
+  };
 
   if (kanal.includes('in_app') && req.inApp) {
     hasil.inApp.dicoba = true;
@@ -92,6 +100,28 @@ export async function kirimNotifikasi(req: PermintaanNotifikasi): Promise<HasilN
       penerimaSah.map(p => sendWA(p.telepon as string, req.whatsapp!.pesan, req.whatsapp!.jenisWA ?? 'reminder_wa')),
     );
     hasil.whatsapp.gagal = kirimSemua.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok)).length;
+  }
+
+  if (kanal.includes('telegram') && req.telegram) {
+    //  Tujuan: yang disebut pemanggil, kalau tidak ada pakai bawaan Admin
+    //  Panel. Kalau dua-duanya kosong, lewati - tanpa mencatat kegagalan.
+    const chatId = req.telegram.chatId || (await bacaPengaturan()).telegramChatId;
+    if (chatId) {
+      hasil.telegram.dicoba = true;
+      try {
+        //  Lewat route server, BUKAN api.telegram.org langsung: tokennya tidak
+        //  boleh sampai ke peramban. Lihat app/api/notifikasi/telegram/route.ts.
+        const r = await fetch('/api/notifikasi/telegram', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chatId, pesan: req.telegram.pesan }),
+        });
+        const j = await r.json() as { ok?: boolean; alasan?: string };
+        if (!j?.ok) hasil.telegram.error = j?.alasan ?? 'gagal kirim';
+      } catch (e) {
+        hasil.telegram.error = e instanceof Error ? e.message : String(e);
+      }
+    }
   }
 
   return hasil;
