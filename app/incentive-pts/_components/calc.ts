@@ -185,9 +185,11 @@ export function calculateManagerPicScheme(
   dhanyUserId: string,
   dhanyUserName: string,
   installerName?: string | null,
+  assignedSupports: { user_id: string; user_name: string }[] = [],
 ): SplitResult[] {
   return hitungManagerSebagaiPic(
     sk, pool, modePenyelesaian === 'remote', dhanyUserId, dhanyUserName, installerName,
+    assignedSupports.map(s => ({ peran: 'support', user_id: s.user_id, user_name: s.user_name })),
   ) as SplitResult[];
 }
 
@@ -204,7 +206,13 @@ export function calculateIncentiveSplits(
   if (pool <= 0) return [];
 
   if (project.pic_type === 'manager_pic') {
-    return calculateManagerPicScheme(sk, pool, project.mode_penyelesaian, managerUserId, managerUserName, project.installer_name);
+    //  assignedSupports IKUT diteruskan. Tanpa ini, seluruh perbaikan
+    //  "Manager-as-PIC boleh berbagi dengan Support" berhenti di layar
+    //  pengaturan dan tidak pernah sampai ke pembayaran.
+    return calculateManagerPicScheme(
+      sk, pool, project.mode_penyelesaian, managerUserId, managerUserName,
+      project.installer_name, assignedSupports,
+    );
   }
 
   return calculateStandardScheme(

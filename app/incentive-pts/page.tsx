@@ -39,7 +39,9 @@ function calcHandlerSplit(sk: SkemaInsentif | null, p: IncentiveProjectRow): { p
   const pctInstaller = persenInstaller(sk, remote);
   const faktor = (100 - pctInstaller) / 100;
   if (p.pic_type === 'manager_pic') {
-    const pct = (sk.managerSebagaiPic.pic ?? 100) * faktor;
+    //  Ringkasan kartu memakai keadaan "ada Troubleshooting" - itu keadaan
+    //  yang paling sering terjadi sepanjang 3 tahun masa pencairan.
+    const pct = (sk.managerSebagaiPic.adaSupport.pic ?? 100) * faktor;
     return { pct, amt: Math.round((pool * pct) / 100) };
   }
   const pctPic = sk.porsi.find(x => x.peran === 'pic')?.persen ?? 0;

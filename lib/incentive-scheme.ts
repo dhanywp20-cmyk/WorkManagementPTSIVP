@@ -61,8 +61,26 @@ export interface SkemaInsentif {
    */
   hangusSupervisorKe: string;
 
-  /** Pembagian saat Manager sendiri yang menjadi PIC. Peta peran  persen. */
-  managerSebagaiPic: Record<string, number>;
+  /**
+   * Pembagian saat Manager sendiri yang menjadi PIC.
+   *
+   * DUA keadaan, sama seperti skema standar - dan ini yang dulu tidak ada.
+   * Bentuk lamanya satu peta saja ({ pic: 100 }), jadi Manager selalu menerima
+   * seluruh pool APA PUN yang terjadi sesudahnya. Padahal proyek yang
+   * ditangani Manager tetap butuh Troubleshooting di tahun-tahun berikutnya,
+   * dan orang yang mengerjakannya tidak mendapat apa-apa - sementara pada
+   * proyek biasa mereka dapat. Dua perlakuan berbeda untuk pekerjaan yang
+   * sama persis.
+   *
+   * Sekarang tahun yang ADA Troubleshooting-nya memakai `adaSupport`, dan
+   * tahun yang tidak ada memakai `tanpaSupport`. Keduanya harus berjumlah 100.
+   */
+  managerSebagaiPic: {
+    /** Ada Support di tahun itu, mis. { pic: 85, support: 15 }. */
+    adaSupport: Record<string, number>;
+    /** Tidak ada Support di tahun itu, mis. { pic: 100 }. */
+    tanpaSupport: Record<string, number>;
+  };
 
   /**
    * Installer ikut mendapat pembagian atau tidak.
@@ -158,7 +176,10 @@ export const SKEMA_BAWAAN: SkemaInsentif = {
   tanpaSupport: { pic: 80, supervisor: 10, manager: 10 },
   jendelaSupportBulan: 12,
   hangusSupervisorKe: 'manager',
-  managerSebagaiPic: { pic: 100 },
+  //  Bawaan: sama-sama 100% ke Manager, PERSIS seperti perilaku lama - supaya
+  //  memasang perubahan ini tidak mengubah pembayaran siapa pun sampai admin
+  //  memang memutuskan memberi porsi Support.
+  managerSebagaiPic: { adaSupport: { pic: 100 }, tanpaSupport: { pic: 100 } },
   //  Proposal Bagian B: Installer daerah 15%, HANYA mode Remote, dibayar
   //  penuh di tahun pertama (mengambil porsi Tahap 3).
   installerAktif: true,
@@ -279,8 +300,15 @@ export function periksaSkema(sk: SkemaInsentif): MasalahSkema[] {
     if (!kunci.includes(k)) masalah.push({ bidang: 'tanpaSupport', pesan: `Peran "${k}" tidak ada di daftar porsi.` });
   }
 
-  const totalMgr = bulat(Object.values(sk.managerSebagaiPic).reduce((t, n) => t + (n || 0), 0));
-  if (totalMgr !== 100) masalah.push({ bidang: 'managerSebagaiPic', pesan: `Total skema Manager-sebagai-PIC ${totalMgr}% — harus tepat 100%.` });
+  for (const [nama, peta] of [
+    ['ada support', sk.managerSebagaiPic.adaSupport],
+    ['tanpa support', sk.managerSebagaiPic.tanpaSupport],
+  ] as const) {
+    const total = bulat(Object.values(peta ?? {}).reduce((t, n) => t + (n || 0), 0));
+    if (total !== 100) {
+      masalah.push({ bidang: 'managerSebagaiPic', pesan: `Manager-sebagai-PIC (${nama}) ${total}% — harus tepat 100%.` });
+    }
+  }
 
   if (sk.installerRemotePersen < 0 || sk.installerRemotePersen >= 100) {
     masalah.push({ bidang: 'installer', pesan: 'Porsi Installer harus 0–99%.' });
@@ -355,6 +383,27 @@ export function periksaSkema(sk: SkemaInsentif): MasalahSkema[] {
 
 // Baca / simpan
 
+/**
+ * Baca managerSebagaiPic dari bentuk LAMA maupun BARU.
+ *
+ * Bentuk lama = satu peta datar ({ pic: 100 }). Bentuk baru = dua keadaan.
+ * Baris lama disalin ke KEDUA keadaan, jadi perilakunya persis sama seperti
+ * sebelumnya - tidak ada proyek yang mendadak dibayar berbeda karena
+ * strukturnya berubah. Admin yang memutuskan kapan keduanya dibedakan.
+ */
+function bacaManagerPic(raw: unknown): SkemaInsentif['managerSebagaiPic'] {
+  const r = raw as Partial<SkemaInsentif['managerSebagaiPic']> & Record<string, unknown>;
+  if (r && typeof r === 'object' && ('adaSupport' in r || 'tanpaSupport' in r)) {
+    return {
+      adaSupport: (r.adaSupport as Record<string, number>) ?? SKEMA_BAWAAN.managerSebagaiPic.adaSupport,
+      tanpaSupport: (r.tanpaSupport as Record<string, number>) ?? SKEMA_BAWAAN.managerSebagaiPic.tanpaSupport,
+    };
+  }
+  const datar = (r as Record<string, number> | null | undefined);
+  if (datar && Object.keys(datar).length) return { adaSupport: { ...datar }, tanpaSupport: { ...datar } };
+  return SKEMA_BAWAAN.managerSebagaiPic;
+}
+
 /** Gabungkan hasil baca dengan bawaan supaya kolom baru tidak bernilai undefined. */
 function rapikan(raw: unknown): SkemaInsentif {
   const r = (raw ?? {}) as Partial<SkemaInsentif>;
@@ -364,7 +413,7 @@ function rapikan(raw: unknown): SkemaInsentif {
     tanpaSupport: r.tanpaSupport ?? SKEMA_BAWAAN.tanpaSupport,
     jendelaSupportBulan: r.jendelaSupportBulan ?? SKEMA_BAWAAN.jendelaSupportBulan,
     hangusSupervisorKe: r.hangusSupervisorKe ?? SKEMA_BAWAAN.hangusSupervisorKe,
-    managerSebagaiPic: r.managerSebagaiPic ?? SKEMA_BAWAAN.managerSebagaiPic,
+    managerSebagaiPic: bacaManagerPic(r.managerSebagaiPic),
     //  Skema yang tersimpan SEBELUM saklar ini ada tidak punya installerAktif.
     //  Jatuhnya TIDAK boleh ke bawaan (false): baris lama yang porsinya sudah
     //  diisi > 0 akan diam-diam berhenti membayar Installer pada perhitungan
@@ -580,19 +629,39 @@ export function hitungManagerSebagaiPic(
   managerId: string,
   managerNama: string,
   namaInstaller?: string | null,
+  /**
+   * Orang yang menangani Troubleshooting pada tahun pencairan ini.
+   *
+   * Dulu tidak ada parameter ini sama sekali, jadi Manager-sebagai-PIC selalu
+   * menerima seluruh pool - termasuk pada tahun ke-2 dan ke-3 ketika timnya
+   * yang mengerjakan Troubleshooting-nya. Pada proyek biasa orang yang sama
+   * mendapat porsi Support; pada proyek Manager mereka tidak. Perlakuan yang
+   * berbeda untuk pekerjaan yang sama persis.
+   */
+  penerimaSupport: PenerimaPeran[] = [],
 ): HasilBagi[] {
   if (pool <= 0) return [];
   const pctInstaller = persenInstaller(sk, remote);
   const faktor = (100 - pctInstaller) / 100;
-  const hasil: HasilBagi[] = Object.entries(sk.managerSebagaiPic)
-    .filter(([, p]) => (p || 0) > 0)
-    .map(([peran, p]) => ({
-      role: peran,
-      user_id: managerId,
-      user_name: managerNama,
-      percentage: (p || 0) * faktor,
-      amount: 0,
-    }));
+
+  const adaSupport = penerimaSupport.length > 0;
+  const peta = adaSupport ? sk.managerSebagaiPic.adaSupport : sk.managerSebagaiPic.tanpaSupport;
+
+  const hasil: HasilBagi[] = [];
+  for (const [peran, p] of Object.entries(peta)) {
+    const persen = (p || 0) * faktor;
+    if (persen <= 0) continue;
+    if (peran === 'support') {
+      //  Porsi Support dibagi rata ke semua yang menangani tahun itu - sama
+      //  seperti skema standar, supaya tidak ada dua aturan untuk satu hal.
+      for (const o of penerimaSupport) {
+        hasil.push({ role: 'support', user_id: o.user_id, user_name: o.user_name,
+          percentage: persen / penerimaSupport.length, amount: 0 });
+      }
+      continue;
+    }
+    hasil.push({ role: peran, user_id: managerId, user_name: managerNama, percentage: persen, amount: 0 });
+  }
   if (pctInstaller > 0) {
     hasil.push({
       role: 'installer', user_id: '',

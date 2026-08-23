@@ -462,16 +462,45 @@ export function SchemeTab({ olehNama, notify }: {
               ))}
             </select>
           </div>
-          <div>
-            <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">
-                Manager sebagai PIC — porsi PIC (%)
-              </label>
-              <TotalPersen nilai={Object.values(sk.managerSebagaiPic).reduce((t, n) => t + (n || 0), 0)} />
+          {/*
+            Manager sebagai PIC kini punya DUA keadaan, sama seperti skema
+            standar. Sebelumnya cuma satu angka, jadi Manager selalu menerima
+            seluruh pool - termasuk pada tahun ke-2 dan ke-3 ketika timnya yang
+            mengerjakan Troubleshooting-nya, dan mereka tidak dapat apa-apa.
+          */}
+          <div className="sm:col-span-2">
+            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+              Manager sebagai PIC — porsi per tahun pencairan
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {([
+                ['adaSupport', 'Ada Troubleshooting di tahun itu'],
+                ['tanpaSupport', 'Tidak ada Troubleshooting'],
+              ] as const).map(([kunciPeta, judul]) => {
+                const peta = sk.managerSebagaiPic[kunciPeta];
+                const total = Object.values(peta).reduce((t, n) => t + (n || 0), 0);
+                return (
+                  <div key={kunciPeta} className="rounded-xl border border-gray-100 bg-gray-50/60 p-2.5">
+                    <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">{judul}</span>
+                      <TotalPersen nilai={total} />
+                    </div>
+                    {[{ k: 'pic', l: 'Manager (sebagai PIC)' }, { k: 'support', l: 'Tim Support' }].map(b => (
+                      <div key={b.k} className="flex items-center gap-2 mb-1.5 last:mb-0">
+                        <span className="text-xs text-gray-600 flex-1 truncate">{b.l}</span>
+                        <div className="relative w-20 flex-shrink-0">
+                          <input type="number" min={0} max={100} step="0.01" value={peta[b.k] ?? 0}
+                            onChange={e => ubah({ managerSebagaiPic: { ...sk.managerSebagaiPic,
+                              [kunciPeta]: { ...peta, [b.k]: parseFloat(e.target.value) || 0 } } })}
+                            aria-label={`Manager sebagai PIC — ${b.l} (${judul})`} className={`${inputKecil} pr-6`} />
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400" aria-hidden="true">%</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
             </div>
-            <input type="number" min={0} max={100} value={sk.managerSebagaiPic.pic ?? 100}
-              onChange={e => ubah({ managerSebagaiPic: { pic: parseFloat(e.target.value) || 0 } })}
-              aria-label="Porsi Manager sebagai PIC" className={inputKecil} />
           </div>
         </div>
       </div>
@@ -574,7 +603,7 @@ export function SchemeTab({ olehNama, notify }: {
         <div className="px-4 sm:px-5 pb-5">
           <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
             <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500 mb-1.5">Manager sebagai PIC</p>
-            {hitungManagerSebagaiPic(sk, CONTOH, false, 'm', 'Manager (PIC)').map((h, i) => (
+            {hitungManagerSebagaiPic(sk, CONTOH, false, 'm', 'Manager (PIC)', null, [{ peran: 'support', user_id: 's1', user_name: 'Support A' }]).map((h, i) => (
               <div key={i} className="flex items-center justify-between text-xs py-0.5">
                 <span className="text-gray-600">{h.user_name}</span>
                 <span className="font-semibold text-gray-800">{h.percentage.toFixed(2).replace(/\.00$/, '')}% · {rp(h.amount)}</span>
