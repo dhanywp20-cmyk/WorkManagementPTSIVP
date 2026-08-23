@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { sendWA } from '@/lib/wa';
 
 // Placeholder default saat Sales request tanpa isi notes - BUKAN catatan asli,
@@ -239,7 +240,7 @@ export async function resolveSupervisorsForProductType(productType: string | nul
  */
 export async function fetchManagerTargets(): Promise<{ id: string; full_name: string; phone_number: string | null }[]> {
   const [{ data: mgrSetting }, { data: fullAccessTeam }] = await Promise.all([
-    supabase.from('app_settings').select('value').eq('key', 'manager_user_id').maybeSingle(),
+    supabase.from('app_settings').select('value').eq('key', KUNCI_PENGATURAN.MANAGER).maybeSingle(),
     supabase.from('users').select('id, full_name, phone_number').eq('role', 'team').eq('access_level', 'full'),
   ]);
   const targets = new Map<string, { id: string; full_name: string; phone_number: string | null }>();

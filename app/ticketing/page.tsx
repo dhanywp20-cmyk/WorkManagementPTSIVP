@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
+import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { ListEmptyState, AuditTrailPanel, ModalPortal, AdminEditFields, FlowSteps } from '@/components/shared';
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase, supabaseServices } from "@/lib/supabase";
@@ -260,7 +261,7 @@ function TicketingSystemInner() {
 
   const loadReminderSchedule = async () => {
     try {
-      const { data } = await supabase.from("app_settings").select("value").eq("key", "reminder_schedule").single();
+      const { data } = await supabase.from("app_settings").select("value").eq("key", KUNCI_PENGATURAN.JADWAL_REMINDER).single();
       if (data?.value) setReminderSchedule(data.value);
     } catch (e) {}
   };
@@ -286,7 +287,7 @@ function TicketingSystemInner() {
       if (reminderSchedule.frequency === "weekdays") dayOfWeek = "1-5";
       else if (reminderSchedule.frequency === "custom" && reminderSchedule.custom_days.length > 0) dayOfWeek = reminderSchedule.custom_days.join(",");
       const { error } = await supabase.rpc("update_reminder_cron", { p_hour_wib: hour, p_minute: minute, p_day_of_week: dayOfWeek, p_active: reminderSchedule.active });
-      await supabase.from("app_settings").upsert({ key: "reminder_schedule", value: reminderSchedule }, { onConflict: "key" });
+      await supabase.from("app_settings").upsert({ key: KUNCI_PENGATURAN.JADWAL_REMINDER, value: reminderSchedule }, { onConflict: "key" });
       if (error) {
         const utcHour = (hour - 7 + 24) % 24;
         const cronExpr = `${minute} ${utcHour} * * ${dayOfWeek}`;
@@ -857,7 +858,7 @@ function TicketingSystemInner() {
             ((fullAccess as any[]) ?? []).forEach(u => { if (!approvers.find(a => a.id === u.id)) approvers.push(u); });
           } catch { }
           try {
-            const { data: mgrSetting } = await supabase.from("app_settings").select("value").eq("key", "manager_user_id").maybeSingle();
+            const { data: mgrSetting } = await supabase.from("app_settings").select("value").eq("key", KUNCI_PENGATURAN.MANAGER).maybeSingle();
             const managerId = mgrSetting?.value ? String(mgrSetting.value).replace(/^"|"$/g, "") : "";
             if (managerId && !approvers.find(a => a.id === managerId)) {
               const { data: mgr } = await supabase.from("users").select("id, phone_number, full_name").eq("id", managerId).maybeSingle();

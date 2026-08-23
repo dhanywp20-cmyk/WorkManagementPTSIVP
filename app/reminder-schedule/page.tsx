@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
+import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { hitungReviewMenggantung } from '@/lib/form-review-gate';
@@ -282,7 +283,7 @@ function ReminderSchedulePageInner() {
   // Load Manager PTS (app_settings.manager_user_id) - dia berhak approve & assign
   // di tahap admin_review walau role-nya 'team' (Manager, bukan admin).
   useEffect(() => {
-    supabase.from('app_settings').select('value').eq('key', 'manager_user_id').maybeSingle()
+    supabase.from('app_settings').select('value').eq('key', KUNCI_PENGATURAN.MANAGER).maybeSingle()
       .then((res: { data: { value: unknown } | null }) => { const v = res.data?.value; if (v) setManagerUserId(String(v).replace(/^"|"$/g, '')); });
   }, []);
 

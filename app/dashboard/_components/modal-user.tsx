@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { supabase } from '@/lib/supabase';
 
 import { adminUpdateUser } from '@/lib/admin-users';
@@ -674,7 +675,7 @@ export function UserManagementInline() {
       supabase.from('users').select('id, atasan_id'),
       // Routing pipeline (Fase 1) - tahan-error bila tabel/setting belum ada.
       supabase.from('product_team_map').select('id,product_type,team_types').order('product_type'),
-      supabase.from('app_settings').select('value').eq('key', 'manager_user_id').maybeSingle(),
+      supabase.from('app_settings').select('value').eq('key', KUNCI_PENGATURAN.MANAGER).maybeSingle(),
       // Flag Internal/External Sales - tahan-error bila kolom belum ada.
       supabase.from('users').select('id, is_internal_sales'),
     ]);
@@ -813,7 +814,7 @@ export function UserManagementInline() {
   const handleSaveManager = async () => {
     if (!managerUserId) { notify('error', 'Pilih akun Manager.'); return; }
     setSavingMgr(true);
-    const { error } = await supabase.from('app_settings').upsert({ key: 'manager_user_id', value: managerUserId }, { onConflict: 'key' });
+    const { error } = await supabase.from('app_settings').upsert({ key: KUNCI_PENGATURAN.MANAGER, value: managerUserId }, { onConflict: 'key' });
     if (error) notify('error', 'Gagal: ' + error.message);
     else notify('success', 'Akun Manager disimpan!');
     setSavingMgr(false);
