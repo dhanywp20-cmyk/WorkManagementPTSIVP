@@ -110,7 +110,7 @@ export function SchemeTab({ olehNama, notify }: {
     hitungPembagian(sk, CONTOH, remote, contohPenerima, adaSupport, spvJadiPic, 'Installer Cabang');
 
   return (
-    <div className="space-y-3 max-w-6xl">
+    <div className="space-y-3">
       {/* ── Kepala ── */}
       <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
         <h2 className="font-bold text-gray-800 text-base">🧮 Skema Pembagian Insentif</h2>
@@ -133,7 +133,7 @@ export function SchemeTab({ olehNama, notify }: {
         Pencairan dan Pratinjau - mengambil dua kolom lewat col-span, sehingga
         tidak ada slot menggantung.
       */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+      <div className="grid grid-flow-row-dense grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-3 items-start">
 
       {/* ── Porsi normal ── */}
       <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
@@ -313,7 +313,7 @@ export function SchemeTab({ olehNama, notify }: {
       </div>
 
       {/* ── Tahapan pencairan ── */}
-      <div className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <h3 className="font-bold text-gray-800 text-sm">Tahapan Pencairan Tim PTS</h3>
           <TotalPersen nilai={totalTranche} />
@@ -348,7 +348,7 @@ export function SchemeTab({ olehNama, notify }: {
       </div>
 
       {/* ── Pratinjau ── */}
-      <div className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div className="lg:col-span-2 2xl:col-span-3 rounded-2xl border border-gray-200 bg-white overflow-hidden">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
           <h3 className="font-bold text-gray-800 text-sm">Pratinjau — pool {rp(CONTOH)}</h3>
           <p className="text-[11px] text-gray-400">Dihitung dengan mesin yang sama seperti proses pencairan sesungguhnya.</p>
@@ -417,8 +417,75 @@ export function SchemeTab({ olehNama, notify }: {
         </div>
       </div>
 
+      {/*
+        Pola pembagian saat Installer aktif.
+
+        Angka-angka ini TIDAK bisa disunting sendiri, dan itu disengaja. Ia
+        diturunkan dari Porsi Normal / Tanpa Support di atas dikali (100 -
+        porsi Installer)%. Kalau dijadikan isian tersendiri, akan ada EMPAT
+        tabel yang masing-masing harus dijaga berjumlah 100% - dan begitu
+        salah satunya diubah tanpa yang lain, platform membayar angka yang
+        tidak sama dengan dokumen tanpa ada yang memberi tahu.
+
+        Jadi yang bisa diatur tetap satu tempat (porsi dasar + porsi
+        Installer), sementara panel ini memperlihatkan hasilnya supaya tidak
+        perlu dihitung di kepala. Dihitung dengan mesin yang SAMA dengan
+        proses pencairan sesungguhnya.
+      */}
+      {persenInstaller(sk, true) > 0 && (
+        <div className="lg:col-span-2 2xl:col-span-3 rounded-2xl border border-blue-200 bg-blue-50/40 overflow-hidden">
+          <div className="px-4 sm:px-5 py-3 border-b border-blue-100">
+            <h3 className="font-bold text-gray-800 text-sm">🔧 Pola Pembagian saat Installer Aktif</h3>
+            <p className="text-[11px] text-gray-500 leading-relaxed">
+              Porsi Installer <strong>{persenInstaller(sk, true)}%</strong> dipotong dari pool lebih dulu;
+              sisa <strong>{(100 - persenInstaller(sk, true)).toFixed(2).replace(/\.00$/, '')}%</strong> dibagi
+              ke Tim PTS menurut porsi di atas. Angka di bawah dihitung otomatis — ubah porsi dasarnya
+              dan ini ikut berubah.
+            </p>
+          </div>
+          <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+            {([
+              ['Ada Support PTS di tahun itu', pratinjau(true, true, false),
+                'Porsi Support dibagi rata ke semua yang menangani Troubleshooting pada tahun bersangkutan.'],
+              ['TIDAK ada Support PTS di tahun itu', pratinjau(true, false, false),
+                'Memakai angka "Bila Tidak Ada Support" di atas, lalu dikali sisa pool. Porsi Support diserap sesuai pengaturan itu — untuk tahun itu saja; tahun lain dinilai ulang sendiri.'],
+            ] as const).map(([judul, hasil, ket]) => {
+              const totalPct = hasil.reduce((n, h) => n + h.percentage, 0);
+              const pas = Math.abs(totalPct - 100) < 0.01;
+              return (
+                <div key={judul} className="rounded-xl border border-blue-100 bg-white overflow-hidden">
+                  <p className="px-3 py-2 text-[11px] font-black uppercase tracking-widest text-blue-700 bg-blue-50">{judul}</p>
+                  <div className="divide-y divide-gray-50">
+                    {hasil.map((h, i) => (
+                      <div key={i} className="flex items-center justify-between px-3 py-1.5 text-xs gap-2">
+                        <span className={`truncate ${h.role === 'installer' ? 'font-bold text-blue-700' : 'text-gray-600'}`}>
+                          {h.role === 'installer' ? '🔧 ' : ''}{h.user_name}
+                        </span>
+                        <span className="font-semibold text-gray-800 whitespace-nowrap">
+                          {h.percentage.toFixed(2).replace(/\.00$/, '')}% · {rp(h.amount)}
+                        </span>
+                      </div>
+                    ))}
+                    {!hasil.length && <p className="px-3 py-3 text-xs text-gray-400 italic">Belum ada porsi.</p>}
+                  </div>
+                  <p className={`px-3 py-1.5 text-xs font-bold ${pas ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'}`}>
+                    Total {totalPct.toFixed(2).replace(/\.00$/, '')}%
+                  </p>
+                  <p className="px-3 py-2 text-[10px] text-gray-400 leading-relaxed border-t border-gray-50">{ket}</p>
+                </div>
+              );
+            })}
+          </div>
+          <p className="px-4 sm:px-5 pb-4 text-[11px] text-gray-500 leading-relaxed">
+            Contoh nominal memakai pool {rp(CONTOH)}. Installer dibayar
+            {sk.installerBayarDiMuka ? ' penuh di tahun pertama' : ' mengikuti tahapan seperti Tim PTS'};
+            porsi Tim PTS tetap dipecah ke Tahapan Pencairan.
+          </p>
+        </div>
+      )}
+
       {/* ── Tarif kelayakan ── */}
-      <div className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div className="lg:col-span-2 2xl:col-span-3 rounded-2xl border border-gray-200 bg-white overflow-hidden">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <div>
             <h3 className="font-bold text-gray-800 text-sm">📐 Tarif Kelayakan Proyek</h3>
@@ -476,7 +543,7 @@ export function SchemeTab({ olehNama, notify }: {
       </div>
 
       {/* ── Riwayat versi skema ── */}
-      <div className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
           <h3 className="font-bold text-gray-800 text-sm">🕘 Riwayat Skema</h3>
           <p className="text-[11px] text-gray-400 leading-relaxed">
