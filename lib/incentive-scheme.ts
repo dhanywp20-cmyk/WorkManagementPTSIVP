@@ -27,34 +27,6 @@ export interface PorsiPeran {
   bagiRata: boolean;
 }
 
-/**
- * Satu baris tarif kelayakan (Proposal Bab II).
- *
- * Sebelumnya seluruh bab ini hidup di luar platform: admin menghitung sendiri
- * "1% dari HPP" lalu mengetik hasilnya. Akibatnya nominal pool tidak punya
- * jejak asal - kalau Finance bertanya "kenapa proyek ini Rp 5 juta?",
- * jawabannya tidak ada di mana pun kecuali di kepala orang yang mengetiknya.
- *
- * Ditaruh di dalam skema (bukan tabel sendiri) karena alasannya sama dengan
- * porsi peran: tarifnya kebijakan yang berubah-ubah, dan ia harus ikut
- * dibekukan bersama skema saat proyek dihitung.
- */
-export interface TarifKelayakan {
-  /** Kunci tetap, dipakai menyimpan pilihan pada proyek. */
-  kunci: string;
-  label: string;
-  /**
-   * 'persen' = nilai% dari dasar yang diisi admin (HPP proyek / HPP produk).
-   * 'flat'   = nominal tetap, dasar tidak dipakai.
-   * 'tidak'  = tidak berhak insentif; pool selalu 0.
-   */
-  jenis: 'persen' | 'flat' | 'tidak';
-  /** Persen bila 'persen'; rupiah bila 'flat'; diabaikan bila 'tidak'. */
-  nilai: number;
-  /** Keterangan dasar hitung, mis. "HPP Proyek". Hanya untuk dibaca manusia. */
-  basis: string;
-}
-
 export interface TahapPencairan {
   nomor: number;
   persen: number;
@@ -159,19 +131,6 @@ export interface SkemaInsentif {
   /** Tahapan pencairan untuk Tim PTS. Harus berjumlah 100. */
   tranche: TahapPencairan[];
 
-  /**
-   * Tarif kelayakan proyek (Proposal Bab II). Menentukan BESAR pool, bukan
-   * pembagiannya. Boleh kosong - artinya nominal diisi manual seperti dulu.
-   */
-  tarif: TarifKelayakan[];
-}
-
-/** Hitung pool dari tarif + dasar (HPP). Satu-satunya tempat rumusnya ditulis. */
-export function hitungPool(tarif: TarifKelayakan | undefined, dasar: number): number {
-  if (!tarif) return 0;
-  if (tarif.jenis === 'tidak') return 0;
-  if (tarif.jenis === 'flat') return Math.round(tarif.nilai || 0);
-  return Math.round(((dasar || 0) * (tarif.nilai || 0)) / 100);
 }
 
 /**
@@ -219,16 +178,6 @@ export const SKEMA_BAWAAN: SkemaInsentif = {
     adaSupport:   { pic: 55.25, support: 12.75, supervisor: 8.5, manager: 8.5, installer: 15 },
     tanpaSupport: { pic: 68,    supervisor: 8.5, manager: 8.5,   installer: 15 },
   },
-  //  Proposal Bab II - tabel "Kategori Proyek / % / Basis Hitung".
-  tarif: [
-    { kunci: 'full_system',   label: 'Full System (Controller + Display + Matrix)', jenis: 'persen', nilai: 1,       basis: 'HPP Proyek' },
-    { kunci: 'matrix_ctrl',   label: 'Sistem dengan Matrix Switching & Controller', jenis: 'persen', nilai: 1,       basis: 'HPP Proyek' },
-    { kunci: 'ifp_projectbase', label: 'IFP / Signage — Project Base puluhan unit', jenis: 'persen', nilai: 0.5,     basis: 'HPP Proyek' },
-    { kunci: 'videowall_9',   label: 'Videowall — lebih dari 9 unit',               jenis: 'persen', nilai: 0.5,     basis: 'HPP Proyek' },
-    { kunci: 'cue_only',      label: 'Cue System only (tanpa produk IVP lain)',     jenis: 'persen', nilai: 5,       basis: 'HPP Cue System' },
-    { kunci: 'led_sendingbox',label: 'LED Videotron (Sending Box)',                 jenis: 'flat',   nilai: 500_000, basis: 'Flat per proyek' },
-    { kunci: 'tanpa_integrasi', label: 'IFP / Signage / Videowall tanpa integrasi', jenis: 'tidak',  nilai: 0,       basis: 'Tidak berhak' },
-  ],
 };
 
 /**
@@ -427,9 +376,6 @@ function rapikan(raw: unknown): SkemaInsentif {
     installerHanyaRemote: r.installerHanyaRemote ?? SKEMA_BAWAAN.installerHanyaRemote,
     installerBayarDiMuka: r.installerBayarDiMuka ?? SKEMA_BAWAAN.installerBayarDiMuka,
     tranche: Array.isArray(r.tranche) && r.tranche.length ? r.tranche : SKEMA_BAWAAN.tranche,
-    //  Skema tersimpan SEBELUM tarif ada tidak punya kolom ini. Jatuh ke
-    //  bawaan supaya layar nominal punya pilihan, bukan daftar kosong.
-    tarif: Array.isArray(r.tarif) && r.tarif.length ? r.tarif : SKEMA_BAWAAN.tarif,
     //  Skema lama tidak punya kolom ini. Jatuh ke bawaan yang saklarnya MATI,
     //  jadi perilakunya persis seperti sebelumnya - tidak ada proyek yang
     //  mendadak dibayar dengan angka lain karena penambahan kolom.

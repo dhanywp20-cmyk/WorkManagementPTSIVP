@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import {
   SkemaInsentif, PorsiPeran, SKEMA_BAWAAN, periksaSkema, simpanSkema, ambilSkema,
   hitungPembagian, hitungManagerSebagaiPic, persenInstaller,
-  riwayatSkema, labelSkema, hitungPool, type VersiSkema, type TarifKelayakan,
+  riwayatSkema, labelSkema, type VersiSkema,
 } from '@/lib/incentive-scheme';
 
 const rp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
@@ -39,6 +39,32 @@ function TotalPersen({ nilai }: { nilai: number }) {
         ? `Total ${bulat}% ✓`
         : `Total ${bulat}% — ${selisih > 0 ? `lebih ${selisih}` : `kurang ${Math.abs(selisih)}`}%`}
     </span>
+  );
+}
+
+/**
+ * Satu seksi bernomor dengan garis aksen di kiri judulnya.
+ *
+ * Gunanya jenjang: tanpa ini seluruh halaman berupa kartu putih seragam, dan
+ * mata tidak punya petunjuk mana yang pokok dan mana yang pelengkap. Nomor
+ * urut juga membuat halamannya bisa dirujuk lisan ("lihat seksi 2") - berguna
+ * saat menjelaskan skema ke Finance lewat telepon.
+ */
+function Seksi({ no, judul, ket, warna, children }: {
+  no: string; judul: string; ket: string; warna: string; children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl bg-slate-50/70 border border-slate-200/70 p-3 sm:p-4">
+      <div className="flex items-start gap-2.5 mb-3">
+        <span className="flex-shrink-0 w-6 h-6 rounded-lg text-white text-[11px] font-black flex items-center justify-center mt-0.5"
+          style={{ background: warna }} aria-hidden="true">{no}</span>
+        <div className="min-w-0">
+          <h3 className="font-bold text-gray-800 text-sm leading-tight">{judul}</h3>
+          <p className="text-[11px] text-gray-500 leading-relaxed mt-0.5">{ket}</p>
+        </div>
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -125,18 +151,27 @@ export function SchemeTab({ olehNama, notify }: {
         </p>
       </div>
 
-      {/*
-        DUA KOLOM untuk bagian pengaturan.
-        Isinya kolom-kolom sempit (nama peran, kunci, satu angka persen), jadi
-        satu bagian per baris selebar layar menyisakan separuh kanan kosong di
-        hampir setiap baris. Bagian yang isinya memang melebar - Tahapan
-        Pencairan dan Pratinjau - mengambil dua kolom lewat col-span, sehingga
-        tidak ada slot menggantung.
-      */}
-      <div className="grid grid-flow-row-dense grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-3 items-start">
 
+      {/*
+        TATA LETAK BERSEKSI, bukan sembilan kartu mengambang dalam satu grid.
+
+        Bentuk lama menaruh semuanya sebagai kartu putih seragam di satu grid
+        rapat. Akibatnya tidak ada jenjang sama sekali: "Porsi Normal" terlihat
+        sama pentingnya dengan "Riwayat Skema", dan hal-hal yang saling
+        bergantung - setelan Installer dengan akibatnya pada porsi Remote -
+        terpisah jauh oleh kartu yang tidak berhubungan.
+
+        Sekarang tiap seksi punya judul dengan garis aksen dan keterangan
+        singkat, lalu kartunya duduk DI DALAM seksi itu. Yang berpasangan
+        diletakkan berdampingan dengan items-stretch supaya tingginya sama -
+        itu yang membuat barisannya rata, bukan kebetulan panjang isinya.
+      */}
+
+      <Seksi no="1" judul="Pembagian Porsi" warna="#e11d48"
+        ket="Dasar seluruh perhitungan. Dua sisi dari satu keputusan: ada Support yang membantu, atau tidak ada.">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
       {/* ── Porsi normal ── */}
-      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden h-full flex flex-col">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <div>
             <h3 className="font-bold text-gray-800 text-sm">Porsi Normal</h3>
@@ -177,9 +212,8 @@ export function SchemeTab({ olehNama, notify }: {
           </p>
         </div>
       </div>
-
       {/* ── Tanpa support ── */}
-      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden h-full flex flex-col">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <div>
             <h3 className="font-bold text-gray-800 text-sm">Bila Tidak Ada Support yang Membantu</h3>
@@ -223,41 +257,14 @@ export function SchemeTab({ olehNama, notify }: {
           </div>
         </div>
       </div>
-
-      {/* ── Aturan khusus ── */}
-      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-        <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
-          <h3 className="font-bold text-gray-800 text-sm">Aturan Khusus</h3>
         </div>
-        <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1">
-              Supervisor merangkap PIC → porsinya dialihkan ke
-            </label>
-            <select value={sk.hangusSupervisorKe} onChange={e => ubah({ hangusSupervisorKe: e.target.value })}
-              aria-label="Tujuan porsi Supervisor yang hangus" className={inputKecil}>
-              <option value="">— hangus, tanpa penerima —</option>
-              {sk.porsi.filter(p => p.peran !== 'supervisor').map(p => (
-                <option key={p.peran} value={p.peran}>{p.label}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">
-                Manager sebagai PIC — porsi PIC (%)
-              </label>
-              <TotalPersen nilai={Object.values(sk.managerSebagaiPic).reduce((t, n) => t + (n || 0), 0)} />
-            </div>
-            <input type="number" min={0} max={100} value={sk.managerSebagaiPic.pic ?? 100}
-              onChange={e => ubah({ managerSebagaiPic: { pic: parseFloat(e.target.value) || 0 } })}
-              aria-label="Porsi Manager sebagai PIC" className={inputKecil} />
-          </div>
-        </div>
-      </div>
+      </Seksi>
 
+      <Seksi no="2" judul="Installer &amp; Mode Remote" warna="#2563eb"
+        ket="Dinaikkan ke sini karena porsi Remote adalah AKIBAT langsung dari setelan Installer — keduanya harus terbaca bersamaan.">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,22rem)_1fr] gap-3 items-stretch">
       {/* ── Installer Cabang ── */}
-      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden h-full flex flex-col">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <div>
             <h3 className="font-bold text-gray-800 text-sm">🔧 Pembagian untuk Installer</h3>
@@ -311,112 +318,6 @@ export function SchemeTab({ olehNama, notify }: {
           </div>
         )}
       </div>
-
-      {/* ── Tahapan pencairan ── */}
-      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-        <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
-          <h3 className="font-bold text-gray-800 text-sm">Tahapan Pencairan Tim PTS</h3>
-          <TotalPersen nilai={totalTranche} />
-          <button type="button"
-            onClick={() => ubah({ tranche: [...sk.tranche, { nomor: sk.tranche.length + 1, persen: 0, tahunKe: sk.tranche.length + 1 }] })}
-            className="px-3 py-1.5 rounded-lg text-xs font-bold border-2 border-rose-200 text-rose-600 hover:bg-rose-50 transition-all">
-            + Tahap
-          </button>
-        </div>
-        <div className="p-4 sm:p-5 space-y-2">
-          {sk.tranche.map((t, i) => (
-            <div key={i} className="grid grid-cols-12 gap-2 items-center">
-              <span className="col-span-3 sm:col-span-2 text-xs font-bold text-gray-600">Tahap {t.nomor}</span>
-              <div className="col-span-4 sm:col-span-3">
-                <input type="number" min={0} max={100} step="0.01" value={t.persen}
-                  onChange={e => ubah({ tranche: sk.tranche.map((x, j) => j === i ? { ...x, persen: parseFloat(e.target.value) || 0 } : x) })}
-                  aria-label={`Persentase tahap ${t.nomor}`} className={inputKecil} />
-              </div>
-              <div className="col-span-4 sm:col-span-3">
-                <input type="number" min={0} value={t.tahunKe}
-                  onChange={e => ubah({ tranche: sk.tranche.map((x, j) => j === i ? { ...x, tahunKe: parseInt(e.target.value) || 0 } : x) })}
-                  aria-label={`Tahun ke berapa untuk tahap ${t.nomor}`} className={inputKecil} />
-              </div>
-              <span className="col-span-1 text-[11px] text-gray-400">thn</span>
-              <button type="button" onClick={() => ubah({ tranche: sk.tranche.filter((_, j) => j !== i) })}
-                aria-label={`Hapus tahap ${t.nomor}`}
-                className="col-span-1 text-rose-400 hover:text-rose-600 text-lg leading-none">×</button>
-            </div>
-          ))}
-          <p className="text-[11px] text-gray-400 pt-1">Kolom kedua = persen, kolom ketiga = dicairkan pada tahun BAST + N.</p>
-        </div>
-      </div>
-
-      {/* ── Pratinjau ── */}
-      <div className="lg:col-span-2 2xl:col-span-3 rounded-2xl border border-gray-200 bg-white overflow-hidden">
-        <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
-          <h3 className="font-bold text-gray-800 text-sm">Pratinjau — pool {rp(CONTOH)}</h3>
-          <p className="text-[11px] text-gray-400">Dihitung dengan mesin yang sama seperti proses pencairan sesungguhnya.</p>
-        </div>
-        <div className="p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {([
-            ['Ada support (2 orang)', pratinjau(false, true, false)],
-            ['Tanpa support aktif',   pratinjau(false, false, false)],
-            ['Supervisor jadi PIC',   pratinjau(false, true, true)],
-          ] as const).map(([judul, hasil]) => {
-            const total = hasil.reduce((n, h) => n + h.amount, 0);
-            const totalPct = hasil.reduce((n, h) => n + h.percentage, 0);
-            const pas = Math.abs(total - CONTOH) <= 2;
-            return (
-              <div key={judul} className="rounded-xl border border-gray-100 overflow-hidden">
-                <p className="px-3 py-2 text-[11px] font-bold uppercase tracking-widest text-gray-500 bg-gray-50">{judul}</p>
-                <div className="divide-y divide-gray-50">
-                  {hasil.map((h, i) => (
-                    <div key={i} className="flex items-center justify-between px-3 py-1.5 text-xs">
-                      <span className="text-gray-600 truncate">{h.user_name}</span>
-                      <span className="text-gray-800 font-semibold whitespace-nowrap">
-                        {h.percentage.toFixed(2).replace(/\.00$/, '')}% · {rp(h.amount)}
-                      </span>
-                    </div>
-                  ))}
-                  {!hasil.length && <p className="px-3 py-3 text-xs text-gray-400 italic">Belum ada porsi.</p>}
-                </div>
-                <p className={`px-3 py-2 text-xs font-bold ${pas ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'}`}>
-                  Total {totalPct.toFixed(2).replace(/\.00$/, '')}% · {rp(total)}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-        {/*
-          Syaratnya persenInstaller(), bukan installerRemotePersen > 0. Angkanya
-          bisa tersimpan > 0 sementara saklarnya dimatikan - dan pratinjau yang
-          memperlihatkan porsi Installer padahal hitungannya memberi nol persis
-          jenis selisih yang membuat orang percaya pada angka yang salah.
-        */}
-        {persenInstaller(sk, true) > 0 && (
-          <div className="px-4 sm:px-5 pb-5">
-            <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-amber-700 mb-1.5">
-                {sk.installerHanyaRemote ? 'Mode Remote (ada porsi Installer)' : 'Dengan porsi Installer'}
-              </p>
-              {pratinjau(true, true, false).map((h, i) => (
-                <div key={i} className="flex items-center justify-between text-xs py-0.5">
-                  <span className="text-amber-900/80">{h.user_name}</span>
-                  <span className="font-semibold text-amber-900">{h.percentage.toFixed(2).replace(/\.00$/, '')}% · {rp(h.amount)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        <div className="px-4 sm:px-5 pb-5">
-          <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500 mb-1.5">Manager sebagai PIC</p>
-            {hitungManagerSebagaiPic(sk, CONTOH, false, 'm', 'Manager (PIC)').map((h, i) => (
-              <div key={i} className="flex items-center justify-between text-xs py-0.5">
-                <span className="text-gray-600">{h.user_name}</span>
-                <span className="font-semibold text-gray-800">{h.percentage.toFixed(2).replace(/\.00$/, '')}% · {rp(h.amount)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/*
         Pola pembagian saat Installer aktif.
 
@@ -433,7 +334,7 @@ export function SchemeTab({ olehNama, notify }: {
         proses pencairan sesungguhnya.
       */}
       {persenInstaller(sk, true) > 0 && (
-        <div className="lg:col-span-2 2xl:col-span-3 rounded-2xl border border-blue-200 bg-blue-50/40 overflow-hidden">
+        <div className="rounded-xl border border-blue-200 bg-blue-50/40 overflow-hidden h-full flex flex-col">
           <div className="px-4 sm:px-5 py-3 border-b border-blue-100 flex items-start justify-between gap-3 flex-wrap">
             <div className="min-w-0">
             <h3 className="font-bold text-gray-800 text-sm">🔧 Pola Pembagian saat Installer Aktif</h3>
@@ -537,67 +438,157 @@ export function SchemeTab({ olehNama, notify }: {
           </p>
         </div>
       )}
+        </div>
+      </Seksi>
 
-      {/* ── Tarif kelayakan ── */}
-      <div className="lg:col-span-2 2xl:col-span-3 rounded-2xl border border-gray-200 bg-white overflow-hidden">
-        <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
+      <Seksi no="3" judul="Aturan Khusus &amp; Pencairan" warna="#7c3aed"
+        ket="Perkecualian saat peran merangkap, dan jadwal pencairannya.">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
+      {/* ── Aturan khusus ── */}
+      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden h-full flex flex-col">
+        <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
+          <h3 className="font-bold text-gray-800 text-sm">Aturan Khusus</h3>
+        </div>
+        <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <h3 className="font-bold text-gray-800 text-sm">📐 Tarif Kelayakan Proyek</h3>
-            <p className="text-[11px] text-gray-400">
-              Menentukan BESAR pool, bukan pembagiannya. Dipakai saat mengisi nominal proyek.
-            </p>
+            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1">
+              Supervisor merangkap PIC → porsinya dialihkan ke
+            </label>
+            <select value={sk.hangusSupervisorKe} onChange={e => ubah({ hangusSupervisorKe: e.target.value })}
+              aria-label="Tujuan porsi Supervisor yang hangus" className={inputKecil}>
+              <option value="">— hangus, tanpa penerima —</option>
+              {sk.porsi.filter(p => p.peran !== 'supervisor').map(p => (
+                <option key={p.peran} value={p.peran}>{p.label}</option>
+              ))}
+            </select>
           </div>
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">
+                Manager sebagai PIC — porsi PIC (%)
+              </label>
+              <TotalPersen nilai={Object.values(sk.managerSebagaiPic).reduce((t, n) => t + (n || 0), 0)} />
+            </div>
+            <input type="number" min={0} max={100} value={sk.managerSebagaiPic.pic ?? 100}
+              onChange={e => ubah({ managerSebagaiPic: { pic: parseFloat(e.target.value) || 0 } })}
+              aria-label="Porsi Manager sebagai PIC" className={inputKecil} />
+          </div>
+        </div>
+      </div>
+      {/* ── Tahapan pencairan ── */}
+      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden h-full flex flex-col">
+        <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
+          <h3 className="font-bold text-gray-800 text-sm">Tahapan Pencairan Tim PTS</h3>
+          <TotalPersen nilai={totalTranche} />
           <button type="button"
-            onClick={() => ubah({ tarif: [...sk.tarif, { kunci: '', label: 'Kategori Baru', jenis: 'persen', nilai: 0, basis: 'HPP Proyek' }] })}
+            onClick={() => ubah({ tranche: [...sk.tranche, { nomor: sk.tranche.length + 1, persen: 0, tahunKe: sk.tranche.length + 1 }] })}
             className="px-3 py-1.5 rounded-lg text-xs font-bold border-2 border-rose-200 text-rose-600 hover:bg-rose-50 transition-all">
-            + Tambah Kategori
+            + Tahap
           </button>
         </div>
         <div className="p-4 sm:p-5 space-y-2">
-          {sk.tarif.map((t, i) => {
-            const ubahTarif = (patch: Partial<TarifKelayakan>) =>
-              ubah({ tarif: sk.tarif.map((x, j) => (j === i ? { ...x, ...patch } : x)) });
+          {sk.tranche.map((t, i) => (
+            <div key={i} className="grid grid-cols-12 gap-2 items-center">
+              <span className="col-span-3 sm:col-span-2 text-xs font-bold text-gray-600">Tahap {t.nomor}</span>
+              <div className="col-span-4 sm:col-span-3">
+                <input type="number" min={0} max={100} step="0.01" value={t.persen}
+                  onChange={e => ubah({ tranche: sk.tranche.map((x, j) => j === i ? { ...x, persen: parseFloat(e.target.value) || 0 } : x) })}
+                  aria-label={`Persentase tahap ${t.nomor}`} className={inputKecil} />
+              </div>
+              <div className="col-span-4 sm:col-span-3">
+                <input type="number" min={0} value={t.tahunKe}
+                  onChange={e => ubah({ tranche: sk.tranche.map((x, j) => j === i ? { ...x, tahunKe: parseInt(e.target.value) || 0 } : x) })}
+                  aria-label={`Tahun ke berapa untuk tahap ${t.nomor}`} className={inputKecil} />
+              </div>
+              <span className="col-span-1 text-[11px] text-gray-400">thn</span>
+              <button type="button" onClick={() => ubah({ tranche: sk.tranche.filter((_, j) => j !== i) })}
+                aria-label={`Hapus tahap ${t.nomor}`}
+                className="col-span-1 text-rose-400 hover:text-rose-600 text-lg leading-none">×</button>
+            </div>
+          ))}
+          <p className="text-[11px] text-gray-400 pt-1">Kolom kedua = persen, kolom ketiga = dicairkan pada tahun BAST + N.</p>
+        </div>
+      </div>
+        </div>
+      </Seksi>
+
+      <Seksi no="4" judul="Pratinjau" warna="#0891b2"
+        ket="Dihitung dengan mesin yang sama seperti proses pencairan sesungguhnya.">
+      {/* ── Pratinjau ── */}
+      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+        <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
+          <h3 className="font-bold text-gray-800 text-sm">Pratinjau — pool {rp(CONTOH)}</h3>
+          <p className="text-[11px] text-gray-400">Dihitung dengan mesin yang sama seperti proses pencairan sesungguhnya.</p>
+        </div>
+        <div className="p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {([
+            ['Ada support (2 orang)', pratinjau(false, true, false)],
+            ['Tanpa support aktif',   pratinjau(false, false, false)],
+            ['Supervisor jadi PIC',   pratinjau(false, true, true)],
+          ] as const).map(([judul, hasil]) => {
+            const total = hasil.reduce((n, h) => n + h.amount, 0);
+            const totalPct = hasil.reduce((n, h) => n + h.percentage, 0);
+            const pas = Math.abs(total - CONTOH) <= 2;
             return (
-              <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                <input value={t.label} onChange={e => ubahTarif({ label: e.target.value })}
-                  aria-label={`Nama kategori ${i + 1}`} placeholder="Nama kategori"
-                  className={`${inputKecil} col-span-12 sm:col-span-4`} />
-                <input value={t.kunci} onChange={e => ubahTarif({ kunci: e.target.value.trim().toLowerCase().replace(/\s+/g, '_') })}
-                  aria-label={`Kunci kategori ${i + 1}`} placeholder="kunci"
-                  className={`${inputKecil} col-span-5 sm:col-span-2 font-mono text-xs`} />
-                <select value={t.jenis} onChange={e => ubahTarif({ jenis: e.target.value as TarifKelayakan['jenis'] })}
-                  aria-label={`Jenis tarif ${i + 1}`} className={`${inputKecil} col-span-4 sm:col-span-2`}>
-                  <option value="persen">% dari dasar</option>
-                  <option value="flat">Flat (Rp)</option>
-                  <option value="tidak">Tidak berhak</option>
-                </select>
-                <input type="number" min={0} step="0.01" value={t.nilai} disabled={t.jenis === 'tidak'}
-                  onChange={e => ubahTarif({ nilai: parseFloat(e.target.value) || 0 })}
-                  aria-label={`Nilai tarif ${i + 1}`}
-                  className={`${inputKecil} col-span-3 sm:col-span-2 disabled:bg-gray-50 disabled:text-gray-300`} />
-                <input value={t.basis} onChange={e => ubahTarif({ basis: e.target.value })}
-                  aria-label={`Basis hitung ${i + 1}`} placeholder="HPP Proyek"
-                  className={`${inputKecil} col-span-11 sm:col-span-1 text-xs`} />
-                <button type="button" onClick={() => ubah({ tarif: sk.tarif.filter((_, j) => j !== i) })}
-                  aria-label={`Hapus kategori ${t.label}`}
-                  className="col-span-1 text-rose-400 hover:text-rose-600 text-lg leading-none">×</button>
+              <div key={judul} className="rounded-xl border border-gray-100 overflow-hidden">
+                <p className="px-3 py-2 text-[11px] font-bold uppercase tracking-widest text-gray-500 bg-gray-50">{judul}</p>
+                <div className="divide-y divide-gray-50">
+                  {hasil.map((h, i) => (
+                    <div key={i} className="flex items-center justify-between px-3 py-1.5 text-xs">
+                      <span className="text-gray-600 truncate">{h.user_name}</span>
+                      <span className="text-gray-800 font-semibold whitespace-nowrap">
+                        {h.percentage.toFixed(2).replace(/\.00$/, '')}% · {rp(h.amount)}
+                      </span>
+                    </div>
+                  ))}
+                  {!hasil.length && <p className="px-3 py-3 text-xs text-gray-400 italic">Belum ada porsi.</p>}
+                </div>
+                <p className={`px-3 py-2 text-xs font-bold ${pas ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'}`}>
+                  Total {totalPct.toFixed(2).replace(/\.00$/, '')}% · {rp(total)}
+                </p>
               </div>
             );
           })}
-          {/*
-            Contoh nominal dicetak dari rumus yang SAMA dengan yang dipakai
-            layar Input Nominal. Kalau di sini memakai rumusnya sendiri, ia
-            bisa menampilkan angka yang tidak pernah benar-benar tersimpan.
-          */}
-          <p className="text-[11px] text-gray-400 pt-1 leading-relaxed">
-            Contoh dasar Rp 500.000.000 → {sk.tarif.filter(t => t.jenis !== 'tidak').slice(0, 4)
-              .map(t => `${t.label.split(' ')[0]} ${rp(hitungPool(t, 500_000_000))}`).join(' · ')}
-          </p>
+        </div>
+        {/*
+          Syaratnya persenInstaller(), bukan installerRemotePersen > 0. Angkanya
+          bisa tersimpan > 0 sementara saklarnya dimatikan - dan pratinjau yang
+          memperlihatkan porsi Installer padahal hitungannya memberi nol persis
+          jenis selisih yang membuat orang percaya pada angka yang salah.
+        */}
+        {persenInstaller(sk, true) > 0 && (
+          <div className="px-4 sm:px-5 pb-5">
+            <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-amber-700 mb-1.5">
+                {sk.installerHanyaRemote ? 'Mode Remote (ada porsi Installer)' : 'Dengan porsi Installer'}
+              </p>
+              {pratinjau(true, true, false).map((h, i) => (
+                <div key={i} className="flex items-center justify-between text-xs py-0.5">
+                  <span className="text-amber-900/80">{h.user_name}</span>
+                  <span className="font-semibold text-amber-900">{h.percentage.toFixed(2).replace(/\.00$/, '')}% · {rp(h.amount)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="px-4 sm:px-5 pb-5">
+          <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500 mb-1.5">Manager sebagai PIC</p>
+            {hitungManagerSebagaiPic(sk, CONTOH, false, 'm', 'Manager (PIC)').map((h, i) => (
+              <div key={i} className="flex items-center justify-between text-xs py-0.5">
+                <span className="text-gray-600">{h.user_name}</span>
+                <span className="font-semibold text-gray-800">{h.percentage.toFixed(2).replace(/\.00$/, '')}% · {rp(h.amount)}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
+      </Seksi>
 
+      <Seksi no="5" judul="Riwayat Skema" warna="#64748b"
+        ket="Tiap penyimpanan membuat versi baru — versi lama tidak ditimpa.">
       {/* ── Riwayat versi skema ── */}
-      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden h-full flex flex-col">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
           <h3 className="font-bold text-gray-800 text-sm">🕘 Riwayat Skema</h3>
           <p className="text-[11px] text-gray-400 leading-relaxed">
@@ -629,8 +620,7 @@ export function SchemeTab({ olehNama, notify }: {
           )}
         </div>
       </div>
-
-      </div>
+      </Seksi>
 
       {/* ── Simpan ── */}
       {masalah.length > 0 && (
