@@ -434,7 +434,8 @@ export function SchemeTab({ olehNama, notify }: {
       */}
       {persenInstaller(sk, true) > 0 && (
         <div className="lg:col-span-2 2xl:col-span-3 rounded-2xl border border-blue-200 bg-blue-50/40 overflow-hidden">
-          <div className="px-4 sm:px-5 py-3 border-b border-blue-100">
+          <div className="px-4 sm:px-5 py-3 border-b border-blue-100 flex items-start justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
             <h3 className="font-bold text-gray-800 text-sm">🔧 Pola Pembagian saat Installer Aktif</h3>
             <p className="text-[11px] text-gray-500 leading-relaxed">
               Porsi Installer <strong>{persenInstaller(sk, true)}%</strong> dipotong dari pool lebih dulu;
@@ -442,7 +443,59 @@ export function SchemeTab({ olehNama, notify }: {
               ke Tim PTS menurut porsi di atas. Angka di bawah dihitung otomatis — ubah porsi dasarnya
               dan ini ikut berubah.
             </p>
+            </div>
+            <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer flex-shrink-0">
+              <input type="checkbox" checked={sk.porsiRemote.aktif}
+                onChange={e => ubah({ porsiRemote: { ...sk.porsiRemote, aktif: e.target.checked } })}
+                aria-label="Atur porsi Remote sendiri" />
+              Atur sendiri
+            </label>
           </div>
+          {sk.porsiRemote.aktif ? (
+            /*
+              DIATUR SENDIRI. Angkanya dipakai apa adanya oleh mesin hitung -
+              tidak dikali apa pun. Baris Installer ikut di dalam tabel supaya
+              yang terbaca admin adalah pembagian utuh yang berjumlah 100%,
+              bukan angka yang masih harus dikalikan sendiri di kepala.
+            */
+            <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {([
+                ['adaSupport', 'Ada Support PTS di tahun itu'],
+                ['tanpaSupport', 'TIDAK ada Support PTS di tahun itu'],
+              ] as const).map(([kunciPeta, judul]) => {
+                const peta = sk.porsiRemote[kunciPeta];
+                const total = Object.values(peta).reduce((t, n) => t + (n || 0), 0);
+                const barisPeran = [...sk.porsi.map(p => ({ k: p.peran, l: p.label })), { k: 'installer', l: '🔧 Installer' }];
+                return (
+                  <div key={kunciPeta} className="rounded-xl border border-blue-100 bg-white p-3">
+                    <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                      <p className="text-[11px] font-black uppercase tracking-widest text-blue-700">{judul}</p>
+                      <TotalPersen nilai={total} />
+                    </div>
+                    <div className="space-y-1.5">
+                      {barisPeran.map(b => (
+                        <div key={b.k} className="flex items-center gap-2">
+                          <span className="text-xs text-gray-600 flex-1 truncate">{b.l}</span>
+                          <div className="relative w-24 flex-shrink-0">
+                            <input type="number" min={0} max={100} step="0.01" value={peta[b.k] ?? 0}
+                              onChange={e => ubah({ porsiRemote: { ...sk.porsiRemote,
+                                [kunciPeta]: { ...peta, [b.k]: parseFloat(e.target.value) || 0 } } })}
+                              aria-label={`Porsi Remote ${b.l} (${judul})`} className={`${inputKecil} pr-6`} />
+                            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400" aria-hidden="true">%</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              <p className="md:col-span-2 text-[11px] text-gray-500 leading-relaxed">
+                Angka ini dipakai <strong>apa adanya</strong> — tidak dikali apa pun, dan porsi Installer
+                diambil dari baris di tabel ini, bukan dari kolom &quot;Porsi Installer&quot; di atas.
+                Kedua tabel wajib berjumlah tepat 100% sebelum bisa disimpan.
+              </p>
+            </div>
+          ) : (
           <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
             {([
               ['Ada Support PTS di tahun itu', pratinjau(true, true, false),
@@ -476,6 +529,7 @@ export function SchemeTab({ olehNama, notify }: {
               );
             })}
           </div>
+          )}
           <p className="px-4 sm:px-5 pb-4 text-[11px] text-gray-500 leading-relaxed">
             Contoh nominal memakai pool {rp(CONTOH)}. Installer dibayar
             {sk.installerBayarDiMuka ? ' penuh di tahun pertama' : ' mengikuti tahapan seperti Tim PTS'};

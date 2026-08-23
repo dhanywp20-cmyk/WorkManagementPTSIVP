@@ -130,6 +130,32 @@ export interface SkemaInsentif {
    */
   installerBayarDiMuka: boolean;
 
+  /**
+   * Porsi khusus mode REMOTE, diatur sendiri - bukan diturunkan.
+   *
+   * Bawaannya `aktif: false`, dan saat itu porsi Remote dihitung otomatis:
+   * porsi dasar dikali sisa pool sesudah dipotong Installer (mis. 65% x 85%
+   * = 55,25%). Itu perilaku yang sesuai proposal dan tidak bisa berjumlah
+   * salah, karena angkanya turunan.
+   *
+   * `aktif: true` mengambil alih sepenuhnya: yang dipakai angka di bawah,
+   * apa adanya. Berguna kalau kelak kebijakan Remote tidak lagi sekadar
+   * "porsi normal dikali sisa" - mis. Supervisor dapat porsi lebih besar
+   * saat Remote karena beban koordinasinya bertambah.
+   *
+   * KEDUA peta HARUS memuat baris `installer` dan berjumlah tepat 100.
+   * Installer ikut di dalam tabel - bukan dipotong lebih dulu - supaya yang
+   * dibaca admin adalah pembagian utuh satu layar, bukan angka yang masih
+   * harus dikalikan sendiri di kepala.
+   */
+  porsiRemote: {
+    aktif: boolean;
+    /** Ada Support PTS di tahun itu. Termasuk 'installer'. Total 100. */
+    adaSupport: Record<string, number>;
+    /** Tidak ada Support PTS di tahun itu. Termasuk 'installer'. Total 100. */
+    tanpaSupport: Record<string, number>;
+  };
+
   /** Tahapan pencairan untuk Tim PTS. Harus berjumlah 100. */
   tranche: TahapPencairan[];
 
@@ -185,6 +211,14 @@ export const SKEMA_BAWAAN: SkemaInsentif = {
     { nomor: 2, persen: 35, tahunKe: 2 },
     { nomor: 3, persen: 15, tahunKe: 3 },
   ],
+  //  Angkanya = turunan proposal (65/15/10/10 x 85% + Installer 15). Diisi
+  //  supaya saat saklarnya dinyalakan admin tidak mulai dari nol, melainkan
+  //  dari keadaan yang persis sama dengan yang sedang berlaku.
+  porsiRemote: {
+    aktif: false,
+    adaSupport:   { pic: 55.25, support: 12.75, supervisor: 8.5, manager: 8.5, installer: 15 },
+    tanpaSupport: { pic: 68,    supervisor: 8.5, manager: 8.5,   installer: 15 },
+  },
   //  Proposal Bab II - tabel "Kategori Proyek / % / Basis Hitung".
   tarif: [
     { kunci: 'full_system',   label: 'Full System (Controller + Display + Matrix)', jenis: 'persen', nilai: 1,       basis: 'HPP Proyek' },
@@ -302,6 +336,29 @@ export function periksaSkema(sk: SkemaInsentif): MasalahSkema[] {
   if (sk.installerRemotePersen < 0 || sk.installerRemotePersen >= 100) {
     masalah.push({ bidang: 'installer', pesan: 'Porsi Installer harus 0–99%.' });
   }
+  /*
+    Peta Remote yang diatur sendiri ikut wajib 100% - dan wajib SENDIRI-SENDIRI,
+    bukan gabungan. Kalau hanya totalnya yang diperiksa, satu peta boleh 110%
+    asal yang lain 90%, dan yang salah cuma muncul pada proyek yang kebetulan
+    memakai peta itu.
+  */
+  if (sk.porsiRemote?.aktif) {
+    for (const [nama, peta] of [
+      ['ada support', sk.porsiRemote.adaSupport],
+      ['tanpa support', sk.porsiRemote.tanpaSupport],
+    ] as const) {
+      const total = bulat(Object.values(peta ?? {}).reduce((t, n) => t + (n || 0), 0));
+      if (total !== 100) {
+        masalah.push({ bidang: 'porsiRemote', pesan: `Porsi Remote (${nama}) ${total}% — harus tepat 100%.` });
+      }
+      for (const k of Object.keys(peta ?? {})) {
+        if (k !== 'installer' && !kunci.includes(k)) {
+          masalah.push({ bidang: 'porsiRemote', pesan: `Porsi Remote (${nama}): peran "${k}" tidak ada di daftar porsi.` });
+        }
+      }
+    }
+  }
+
   //  Saklar menyala tapi porsinya 0 adalah setengah jalan: layarnya berkata
   //  "Installer ikut", hitungannya memberi nol. Salah satunya harus dibetulkan
   //  sebelum disimpan, dan mana yang dimaksud hanya orangnya yang tahu.
@@ -373,6 +430,10 @@ function rapikan(raw: unknown): SkemaInsentif {
     //  Skema tersimpan SEBELUM tarif ada tidak punya kolom ini. Jatuh ke
     //  bawaan supaya layar nominal punya pilihan, bukan daftar kosong.
     tarif: Array.isArray(r.tarif) && r.tarif.length ? r.tarif : SKEMA_BAWAAN.tarif,
+    //  Skema lama tidak punya kolom ini. Jatuh ke bawaan yang saklarnya MATI,
+    //  jadi perilakunya persis seperti sebelumnya - tidak ada proyek yang
+    //  mendadak dibayar dengan angka lain karena penambahan kolom.
+    porsiRemote: r.porsiRemote ?? SKEMA_BAWAAN.porsiRemote,
   };
 }
 
@@ -497,12 +558,35 @@ export function hitungPembagian(
 
   // Porsi Installer dipotong dari pool LEBIH DULU; sisanya baru dibagi menurut
   // skema. Dengan begitu total selalu 100% berapa pun porsi Installer diset.
-  const pctInstaller = persenInstaller(sk, remote);
-  const faktor = (100 - pctInstaller) / 100;
+  /*
+    Dua jalur, dan yang menentukan hanya satu saklar.
 
-  const dasar: Record<string, number> = adaSupport
-    ? Object.fromEntries(sk.porsi.map(p => [p.peran, p.persen]))
-    : { ...sk.tanpaSupport };
+    TURUNAN (porsiRemote.aktif = false, bawaan): porsi dasar dikali sisa pool
+    sesudah dipotong Installer. Tidak bisa berjumlah salah karena angkanya
+    memang turunan.
+
+    DIATUR SENDIRI (aktif = true): peta Remote dipakai apa adanya, termasuk
+    baris 'installer' yang ada di dalamnya. Tidak ada pengalian, dan porsi
+    Installer diambil dari peta itu - bukan dari installerRemotePersen -
+    supaya yang membayar persis angka yang terbaca di layar.
+  */
+  const pakaiPetaRemote = remote && sk.porsiRemote?.aktif === true;
+
+  const dasar: Record<string, number> = pakaiPetaRemote
+    ? { ...(adaSupport ? sk.porsiRemote.adaSupport : sk.porsiRemote.tanpaSupport) }
+    : adaSupport
+      ? Object.fromEntries(sk.porsi.map(p => [p.peran, p.persen]))
+      : { ...sk.tanpaSupport };
+
+  //  Installer dikeluarkan dari peta supaya tidak ikut perulangan peran di
+  //  bawah - ia tidak punya baris penerima, jadi akan terlewat begitu saja
+  //  dan porsinya hilang tanpa jejak.
+  const pctInstaller = pakaiPetaRemote
+    ? Math.max(0, Math.min(99, dasar.installer || 0))
+    : persenInstaller(sk, remote);
+  if (pakaiPetaRemote) delete dasar.installer;
+
+  const faktor = pakaiPetaRemote ? 1 : (100 - pctInstaller) / 100;
 
   // Supervisor merangkap PIC: porsi koordinasinya dialihkan, bukan dibayar dua kali.
   if (supervisorJadiPic && dasar.supervisor) {
