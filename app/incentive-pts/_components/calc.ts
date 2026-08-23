@@ -295,19 +295,54 @@ export async function fetchVisibleSplits(projectId?: string): Promise<{ data: In
 }
 
 /**
- * Siapa saja yang tercatat membantu troubleshooting proyek ini. Yang dibaca
- * tetap catatan Troubleshooting di Reminder Schedule; hanya rentang waktunya
- * yang disaring.
+ * Jendela penilaian Support untuk SATU tahap pencairan.
  *
- * @param bastDate     tanggal BAST, awal jendela penilaian
- * @param jendelaBulan lama jendela penilaian dalam bulan, diatur admin di
- *                     layar Skema Pembagian. Bantuan setelah jendela lewat
- *                     tidak lagi mengubah porsi. 0 = tanpa batas waktu.
+ * KENAPA PER TAHAP, BUKAN SEKALI DI BAST
+ *
+ * Porsi Support bukan hadiah sekali jadi yang ditentukan pada hari BAST - ia
+ * imbalan atas pendampingan yang berjalan terus. Siapa pun yang menangani
+ * Troubleshooting pada tahun berjalan ikut mendapat bagian pada pencairan
+ * tahun itu; tahun berikutnya dinilai ulang, dan yang menangani boleh orang
+ * yang sama atau orang lain.
+ *
+ * Perhitungan lama memakai SATU daftar untuk seluruh tahun - diambil sekali
+ * dengan batas BAST + 12 bulan, lalu dipakai ulang di tahap 2 dan 3. Akibatnya
+ * orang yang membantu di tahun kedua tidak pernah dapat apa-apa, sementara
+ * orang yang membantu sekali di tahun pertama terus dibayar sampai tahun
+ * ketiga. Dua-duanya salah, dan keduanya diam-diam.
+ *
+ * Batas tahap pertama sengaja TIDAK punya awal: catatan Troubleshooting yang
+ * dibuat sebelum BAST (saat proyek masih berjalan) tetap ikut dihitung di
+ * tahap pertama. Tahap berikutnya barulah berupa rentang tertutup satu tahun.
+ */
+export function jendelaSupportTahap(
+  bastDate: string | null | undefined,
+  tahunKe: number,
+): { dari: string | null; sampai: string | null } {
+  if (!bastDate || tahunKe < 1) return { dari: null, sampai: null };
+  const tgl = (tambahTahun: number) => {
+    const d = new Date(bastDate);
+    d.setFullYear(d.getFullYear() + tambahTahun);
+    return d.toISOString().slice(0, 10);
+  };
+  return {
+    dari: tahunKe === 1 ? null : tgl(tahunKe - 1),
+    sampai: tgl(tahunKe),
+  };
+}
+
+/**
+ * Siapa saja yang tercatat membantu Troubleshooting proyek ini dalam sebuah
+ * rentang tanggal. Yang dibaca tetap catatan Troubleshooting di Reminder
+ * Schedule; hanya rentang waktunya yang disaring.
+ *
+ * Rentangnya dibuat setengah terbuka - `dari` inklusif, `sampai` inklusif pada
+ * tanggalnya - dan pemanggilnya memakai jendelaSupportTahap() supaya batas
+ * antar tahun tidak ditulis ulang di beberapa tempat lalu menyimpang.
  */
 export async function fetchSupportFromTickets(
   projectName: string,
-  bastDate?: string | null,
-  jendelaBulan = 0,
+  rentang?: { dari?: string | null; sampai?: string | null },
 ): Promise<{ data: { user_id: string; user_name: string }[]; error: unknown }> {
   let q = supabase
     .from('reminders')
@@ -316,11 +351,8 @@ export async function fetchSupportFromTickets(
     .eq('project_name', projectName)
     .eq('status', 'done');
 
-  if (bastDate && jendelaBulan > 0) {
-    const batas = new Date(bastDate);
-    batas.setMonth(batas.getMonth() + jendelaBulan);
-    q = q.lte('due_date', batas.toISOString().slice(0, 10));
-  }
+  if (rentang?.dari)   q = q.gt('due_date', rentang.dari);
+  if (rentang?.sampai) q = q.lte('due_date', rentang.sampai);
 
   const { data, error } = await q;
   const seen = new Set<string>();
@@ -407,7 +439,17 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
     const projManagerId   = mgrUp?.id || managerUserId;
     const projManagerName = mgrUp?.full_name || managerUserName;
 
-    const { data: supports } = await fetchSupportFromTickets(project.project_name, project.bast_date, sk.jendelaSupportBulan);
+    /*
+      Support dinilai untuk TAHAP INI saja, bukan sekali untuk seluruh proyek.
+      tahunKe diambil dari jadwal tahapan; kalau nomornya tidak ditemukan
+      (skema berubah sesudah tahapan dibuat), jatuh ke selisih tahun pembayaran
+      terhadap tahun BAST - keduanya menghasilkan angka yang sama pada jadwal
+      normal, dan yang kedua tetap masuk akal saat jadwalnya sudah berubah.
+    */
+    const tahunKe = sk.tranche.find(t => t.nomor === tranche.tranche_number)?.tahunKe
+      ?? Math.max(1, (tranche.payment_year || 0) - new Date(project.bast_date || '').getFullYear());
+    const rentangSupport = jendelaSupportTahap(project.bast_date, tahunKe);
+    const { data: supports } = await fetchSupportFromTickets(project.project_name, rentangSupport);
     const splits = calculateIncentiveSplits(
       sk, project, projManagerId, projManagerName,
       supervisorUserId, supervisorUserName,

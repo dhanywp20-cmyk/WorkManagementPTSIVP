@@ -191,14 +191,27 @@ export function SchemeTab({ olehNama, notify }: {
                 aria-label={`Porsi ${p.label} tanpa support`} className={inputKecil} />
             </div>
           ))}
-          <div className="sm:col-span-3">
-            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1">
-              Jendela penilaian support (bulan sejak BAST)
-            </label>
-            <input type="number" min={0} value={sk.jendelaSupportBulan}
-              onChange={e => ubah({ jendelaSupportBulan: parseInt(e.target.value) || 0 })}
-              aria-label="Jendela penilaian support dalam bulan"
-              className={`${inputKecil} sm:max-w-[200px]`} />
+          {/*
+            Isian "Jendela penilaian support (bulan)" DIHAPUS dari sini.
+
+            Jendelanya kini mengikuti jadwal Tahapan Pencairan di bawah: Support
+            dinilai ulang tiap tahun pencairan, jadi tahun ke-2 memakai rentang
+            tahun ke-2, dan seterusnya. Angkanya sudah ditentukan tahapan, jadi
+            isian ini tidak lagi berpengaruh pada apa pun.
+
+            Dihapus, bukan dibiarkan: kotak isian yang tidak menyambung ke mana
+            pun lebih berbahaya daripada tidak ada - admin akan mengubahnya,
+            tidak terjadi apa-apa, dan tidak ada yang menjelaskan kenapa.
+          */}
+          <div className="sm:col-span-3 rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
+            <p className="text-[11px] text-sky-800 leading-relaxed">
+              <strong>Support dinilai per tahun pencairan.</strong> Yang menangani ticket
+              Troubleshooting pada tahun berjalan ikut dibagi pada pencairan tahun itu — tahun
+              berikutnya dinilai ulang, dan yang menangani boleh orang yang sama atau berbeda.
+              Bila suatu tahun tidak ada Troubleshooting sama sekali, porsi Support tahun itu
+              memakai angka <strong>tanpa support</strong> di atas. Rentang tiap tahun mengikuti
+              Tahapan Pencairan di bawah.
+            </p>
           </div>
         </div>
       </div>

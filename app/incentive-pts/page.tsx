@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import {
   IncentiveProjectRow, IncentiveTranche, IncentiveSplit, LateTicketLink,
-  fetchIncentiveProjects, fetchTranches, fetchVisibleSplits, fetchSupportFromTickets, fetchLateTickets,
+  fetchIncentiveProjects, fetchTranches, fetchVisibleSplits, fetchSupportFromTickets, jendelaSupportTahap, fetchLateTickets,
   insertTranches, insertSplits, processYearlyBatch,
   calculateIncentiveSplits, validateSplitTotal, generateTranches, findUpline, resolveUserId, OrgUser,
   ambilSkema, persenInstaller, type SkemaInsentif,
@@ -76,7 +76,14 @@ export default function IncentivePTSPage() {
   const [detailProject, setDetailProject] = useState<IncentiveProjectRow | null>(null);
   const [detailSplits, setDetailSplits] = useState<IncentiveSplit[]>([]);
   const [detailTranches, setDetailTranches] = useState<IncentiveTranche[]>([]);
-  const [detailSupports, setDetailSupports] = useState<{ user_id: string; user_name: string }[]>([]);
+  /**
+   * Support per TAHUN pencairan, bukan satu daftar untuk seluruh proyek.
+   * Yang menangani Troubleshooting di tahun berjalan ikut dapat bagian pada
+   * pencairan tahun itu - tahun berikutnya dinilai ulang dari awal.
+   */
+  const [detailSupports, setDetailSupports] = useState<
+    { tahunKe: number; dari: string | null; sampai: string | null; orang: { user_id: string; user_name: string }[] }[]
+  >([]);
 
   const [nominalProject, setNominalProject] = useState<IncentiveProjectRow | null>(null);
   const [nominalValue, setNominalValue] = useState('');
@@ -146,14 +153,22 @@ export default function IncentivePTSPage() {
 
   async function openProjectDetail(p: IncentiveProjectRow) {
     setDetailProject(p);
-    const [splitsRes, tranchesRes, supportsRes] = await Promise.all([
+    //  Tahun-tahun yang dinilai diambil dari jadwal tahapan itu sendiri, bukan
+    //  angka 3 yang ditulis tangan - kalau tahapannya kelak jadi 2 atau 4 tahun,
+    //  daftar ini ikut tanpa disentuh.
+    const tahunDinilai = Array.from(new Set((skema?.tranche ?? []).map(t => t.tahunKe))).sort((a, b) => a - b);
+    const [splitsRes, tranchesRes, ...supportsPerTahun] = await Promise.all([
       fetchVisibleSplits(p.id),
       supabase.from('incentive_tranches').select('*').eq('project_id', p.id).order('tranche_number'),
-      fetchSupportFromTickets(p.project_name, p.bast_date, skema?.jendelaSupportBulan ?? 0),
+      ...tahunDinilai.map(th => fetchSupportFromTickets(p.project_name, jendelaSupportTahap(p.bast_date, th))),
     ]);
     setDetailSplits(splitsRes.data || []);
     setDetailTranches((tranchesRes.data || []) as IncentiveTranche[]);
-    setDetailSupports(supportsRes.data || []);
+    setDetailSupports(tahunDinilai.map((th, i) => ({
+      tahunKe: th,
+      ...jendelaSupportTahap(p.bast_date, th),
+      orang: supportsPerTahun[i]?.data || [],
+    })));
   }
 
   async function handleSaveNominal() {
@@ -868,7 +883,11 @@ export default function IncentivePTSPage() {
                 const supervisorId   = (supUser?.id        || '') as string;
                 const supervisorName = (supUser?.full_name || 'Supervisor') as string;
                 const displayProject: IncentiveProjectRow = { ...detailProject, incentive_value: effectivePool, mode_penyelesaian: effectiveMode };
-                const splits = calculateIncentiveSplits(skema!, displayProject, managerId, managerName, supervisorId, supervisorName, detailSupports);
+                //  Pratinjau memakai Support TAHUN PERTAMA - komposisinya berbeda tiap
+                //  tahun, jadi satu angka gabungan tidak akan pernah benar untuk
+                //  tahun mana pun. Rinciannya ada di daftar per tahun di bawah.
+                const supportTahun1 = detailSupports.find(x => x.tahunKe === 1)?.orang ?? [];
+                const splits = calculateIncentiveSplits(skema!, displayProject, managerId, managerName, supervisorId, supervisorName, supportTahun1);
                 if (!splits.length) return null;
                 // Privasi: non-privileged (selain Admin & yang ditunjuk input nominal)
                 // hanya melihat bagiannya sendiri - bukan total pool / bagian orang lain.
@@ -982,16 +1001,40 @@ export default function IncentivePTSPage() {
               </div>
 
               <div>
-                <h3 className="text-sm font-bold text-gray-700 mb-1">👥 Support (Auto dari Ticket Troubleshooting)</h3>
-                {detailSupports.length === 0
-                  ? <p className="text-xs text-gray-400 italic">Belum ada ticket Troubleshooting selesai untuk project ini.</p>
-                  : detailSupports.map(s => (
-                    <div key={s.user_id} className="flex items-center justify-between rounded-lg px-4 py-2 bg-gray-50 mb-1">
-                      <span className="text-sm text-gray-700">{s.user_name || s.user_id}</span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold text-violet-700 bg-violet-50 border border-violet-200">Troubleshooting</span>
-                    </div>
-                  ))
-                }
+                <h3 className="text-sm font-bold text-gray-700 mb-1">👥 Support per Tahun Pencairan</h3>
+                <p className="text-[11px] text-gray-400 mb-2 leading-relaxed">
+                  Diambil otomatis dari ticket <strong>Troubleshooting</strong> yang selesai pada tahun
+                  bersangkutan. Tiap tahun dinilai ulang — yang menangani boleh orang yang sama atau berbeda,
+                  dan yang tidak menangani di tahun itu tidak ikut dibayar untuk tahun itu.
+                </p>
+                <div className="space-y-2">
+                  {detailSupports.map(th => {
+                    const rentang = th.dari
+                      ? `${new Date(th.dari).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })} → ${th.sampai ? new Date(th.sampai).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}`
+                      : `s.d. ${th.sampai ? new Date(th.sampai).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'} (termasuk sebelum BAST)`;
+                    return (
+                      <div key={th.tahunKe} className="rounded-xl border border-gray-100 overflow-hidden">
+                        <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-gray-50 flex-wrap">
+                          <span className="text-[11px] font-black uppercase tracking-widest text-gray-500">Tahun {th.tahunKe}</span>
+                          <span className="text-[10px] text-gray-400">{rentang}</span>
+                        </div>
+                        {th.orang.length === 0 ? (
+                          //  Bukan sekadar "kosong": tanpa Support di tahun itu, porsinya
+                          //  jatuh ke PIC menurut skema "tanpa support" - dan itu perlu
+                          //  terbaca supaya angkanya tidak terlihat seperti salah hitung.
+                          <p className="text-[11px] text-gray-400 italic px-3 py-2">
+                            Tidak ada Troubleshooting selesai di tahun ini — porsi Support tahun ini diserap PIC.
+                          </p>
+                        ) : th.orang.map(s => (
+                          <div key={`${th.tahunKe}-${s.user_id}`} className="flex items-center justify-between px-3 py-1.5 border-t border-gray-50">
+                            <span className="text-sm text-gray-700">{s.user_name || s.user_id}</span>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold text-violet-700 bg-violet-50 border border-violet-200">Troubleshooting</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
