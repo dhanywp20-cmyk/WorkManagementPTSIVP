@@ -30,6 +30,7 @@ import {
   type Kanal, type PengaturanNotifikasi,
 } from '@/lib/notifikasi/pengaturan';
 import { KATALOG_EVENT, type KategoriEvent } from '@/lib/notifikasi/katalog';
+import { PENYEDIA_WA, penyediaWA } from '@/lib/notifikasi/penyedia-wa';
 
 const JUDUL_KATEGORI: Record<KategoriEvent, string> = {
   ticket: 'Ticket', approval: 'Approval', assignment: 'Assignment',
@@ -203,6 +204,7 @@ export function IntegrasiInline() {
   };
 
   const kategori = Array.from(new Set(KATALOG_EVENT.map(e => e.kategori)));
+  const spWA = penyediaWA(p.waPenyedia);
 
   return (
     <div className="space-y-4">
@@ -219,53 +221,104 @@ export function IntegrasiInline() {
             </div>
           ))}
         </div>
-        <p className="text-[10px] text-slate-400 mt-1.5 leading-relaxed">
-          Saklar di sini berlaku menyeluruh: kanal yang dimatikan tidak akan dipakai event mana pun,
-          berapa pun centang di tabel bawah.
-          {' '}<b>In-App</b> = lonceng notifikasi di dalam platform ini sendiri — pemberitahuan yang
-          muncul saat orangnya membuka Work Management, tanpa keluar ke WhatsApp atau Telegram.
-          Ia tidak butuh token apa pun.
-        </p>
-        {/*
-          Keterangan ini ada karena tanpa ia, halaman ini berbohong: admin
-          mematikan centang WhatsApp untuk satu event, tidak terjadi apa-apa,
-          dan tidak ada yang menjelaskan kenapa. Lebih baik menyebutkan
-          batasnya daripada membiarkan saklar yang tidak menyambung ke mana-mana.
-        */}
-        <div className="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-2">
-          <p className="text-[10px] text-amber-800 leading-relaxed">
-            <b>Yang sudah berlaku &amp; yang belum.</b> Saklar induk <b>WhatsApp</b> di atas berlaku
-            untuk <b>seluruh</b> pengiriman WA di platform (48 titik) — dimatikan berarti benar-benar
-            berhenti. Sedangkan centang <b>per-event</b> di tabel bawah baru berlaku untuk event yang
-            pengirimannya sudah dipindah ke notification engine; sisanya masih mengikuti saklar induk
-            saja. Pemindahannya bertahap dan disengaja: 48 titik itu dipakai tim setiap hari, dan satu
-            yang diam-diam salah berarti seseorang tidak tahu ada tiket untuknya.
-          </p>
-        </div>
       </div>
 
-      {/* ── WhatsApp ── */}
+      {/* ── WhatsApp: penyedia bisa dipilih, tidak terpaku satu gateway ── */}
       <div className="rounded-xl border border-slate-200 p-3">
-        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">WhatsApp (Fonnte)</div>
-        <BlokToken
-          judul="Token Fonnte" kunci="whatsapp.token" status={rahasia['whatsapp.token']}
-          onSimpan={n => simpanRahasia('whatsapp.token', n)}
-          onHapus={() => hapusRahasia('whatsapp.token')}
-          petunjuk={<>Ambil di dashboard Fonnte → Device → Token. Tersimpan terenkripsi di sisi server dan tidak pernah dikirim balik ke peramban.</>} />
+        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">WhatsApp</div>
+
+        {/*
+          Pemilih penyedia. Formulir di bawahnya dibangun dari definisi di
+          lib/notifikasi/penyedia-wa.ts, jadi menambah penyedia baru cukup
+          menambah satu entri di sana - tidak ada kolom yang ditulis tangan
+          di berkas ini.
+        */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+          {PENYEDIA_WA.map(sp => {
+            const dipilih = p.waPenyedia === sp.key;
+            return (
+              <button key={sp.key} type="button"
+                onClick={() => ubah(x => ({ ...x, waPenyedia: sp.key }))}
+                className="text-left rounded-xl border-2 px-2.5 py-2 transition-colors"
+                style={{
+                  borderColor: dipilih ? '#16a34a' : '#e2e8f0',
+                  background: dipilih ? '#16a34a0d' : 'transparent',
+                }}>
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <span className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ background: dipilih ? '#16a34a' : '#cbd5e1' }} />
+                  <span className="text-[11px] font-bold text-slate-700 leading-tight">{sp.label}</span>
+                  {sp.resmi && (
+                    <span className="text-[8px] font-black px-1 py-px rounded bg-sky-100 text-sky-700 flex-shrink-0">RESMI</span>
+                  )}
+                </div>
+                <p className="text-[9px] text-slate-400 leading-snug">{sp.ringkas}</p>
+              </button>
+            );
+          })}
+        </div>
+
+        {/*
+          Catatan penyedia hanya muncul kalau ada, dan sengaja ditaruh SEBELUM
+          kolom isiannya: batasan seperti jendela 24 jam Cloud API menentukan
+          apakah penyedia itu cocok sama sekali, jadi admin harus membacanya
+          sebelum menghabiskan waktu menempel token.
+        */}
+        {spWA.catatan && (
+          <div className="rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-2 mb-2">
+            <p className="text-[10px] text-amber-800 leading-relaxed">{spWA.catatan}</p>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          {spWA.kolom.map(kol => kol.rahasia ? (
+            <BlokToken key={kol.kunci}
+              judul={kol.label} kunci={kol.kunci} status={rahasia[kol.kunci]}
+              onSimpan={n => simpanRahasia(kol.kunci, n)}
+              onHapus={() => hapusRahasia(kol.kunci)}
+              petunjuk={<>{kol.petunjuk} Tersimpan di sisi server dan tidak pernah dikirim balik ke peramban.</>} />
+          ) : (
+            <div key={kol.kunci}>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">{kol.label}</label>
+              <input
+                value={p.waConfig[kol.kunci] ?? ''} placeholder={kol.placeholder}
+                onChange={e => ubah(x => ({ ...x, waConfig: { ...x.waConfig, [kol.kunci]: e.target.value } }))}
+                className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-green-400" />
+              <p className="text-[9px] text-slate-400 mt-1 leading-relaxed">{kol.petunjuk}</p>
+            </div>
+          ))}
+        </div>
+
         <label className="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">Nomor tujuan untuk pesan tes</label>
         <input value={waTujuan} onChange={e => setWaTujuan(e.target.value)} placeholder="mis. 6281234567890"
           className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-green-400" />
         <div className="flex flex-wrap gap-2 mt-2">
-          <button type="button" onClick={() => uji('whatsapp', 'cek')} disabled={ujiJalan !== null}
-            className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50">
-            {ujiJalan === 'whatsapp-cek' ? 'Mengecek…' : 'Tes Koneksi'}
-          </button>
+          {/*
+            Tes Koneksi disembunyikan untuk penyedia yang memang tidak
+            punya cara mengeceknya (webhook kustom) - menampilkan tombol yang
+            pasti menjawab "tidak didukung" hanya membuang waktu admin.
+          */}
+          {spWA.bisaCek && (
+            <button type="button" onClick={() => uji('whatsapp', 'cek')} disabled={ujiJalan !== null}
+              className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50">
+              {ujiJalan === 'whatsapp-cek' ? 'Mengecek…' : 'Tes Koneksi'}
+            </button>
+          )}
           <button type="button" onClick={() => uji('whatsapp', 'kirim')} disabled={ujiJalan !== null || !waTujuan.trim()}
             className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-white disabled:opacity-50"
             style={{ background: '#16a34a' }}>
             {ujiJalan === 'whatsapp-kirim' ? 'Mengirim…' : 'Kirim Pesan Tes'}
           </button>
         </div>
+        {/*
+          Perpindahan penyedia baru berlaku sesudah Simpan: route servernya
+          membaca app_settings, bukan state layar ini. Tanpa keterangan ini
+          admin akan menekan Tes Koneksi lebih dulu dan mengira penyedia
+          barunya rusak, padahal yang diuji masih penyedia yang lama.
+        */}
+        <p className="text-[9px] text-slate-400 mt-1.5">
+          Tekan <b>Simpan</b> di bawah dulu setelah berpindah penyedia — tes memakai penyedia yang tersimpan.
+        </p>
       </div>
 
       {/* ── Telegram ── */}

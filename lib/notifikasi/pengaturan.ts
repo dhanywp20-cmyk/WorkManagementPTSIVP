@@ -24,6 +24,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { KATALOG_EVENT } from './katalog';
+import type { PenyediaWA } from './penyedia-wa';
 
 export type Kanal = 'in_app' | 'whatsapp' | 'telegram';
 
@@ -40,6 +41,14 @@ export interface PengaturanNotifikasi {
   telegramChatId: string;
   /** event key -> daftar kanal. Yang tidak tercantum memakai bawaanKanal. */
   perEvent: Record<string, Kanal[]>;
+  /** Gateway WhatsApp yang dipakai. Lihat lib/notifikasi/penyedia-wa.ts. */
+  waPenyedia: PenyediaWA;
+  /**
+   * Isian penyedia WA yang BUKAN rahasia (id nomor telepon, url webhook).
+   * Yang rahasia tidak pernah lewat sini - ia ke tabel rahasia_integrasi,
+   * karena app_settings terbaca oleh siapa pun yang memegang anon key.
+   */
+  waConfig: Record<string, string>;
 }
 
 const KUNCI = 'notifikasi.kanal';
@@ -52,6 +61,11 @@ export const BAWAAN: PengaturanNotifikasi = {
   aktif: { in_app: true, whatsapp: true, telegram: false },
   telegramChatId: '',
   perEvent: {},
+  //  Fonnte sebagai bawaan bukan preferensi, melainkan keadaan hari ini:
+  //  itulah gateway yang sedang melayani produksi. Bawaan apa pun yang lain
+  //  akan membuat pemasangan berkas ini diam-diam mengubah jalur pengiriman.
+  waPenyedia: 'fonnte',
+  waConfig: {},
 };
 
 /** Kanal yang berlaku untuk sebuah event, sesudah saklar induk diterapkan. */
@@ -78,6 +92,8 @@ export async function bacaPengaturan(paksa = false): Promise<PengaturanNotifikas
         aktif: { ...BAWAAN.aktif, ...(j.aktif ?? {}) },
         telegramChatId: j.telegramChatId ?? '',
         perEvent: j.perEvent ?? {},
+        waPenyedia: j.waPenyedia ?? BAWAAN.waPenyedia,
+        waConfig: j.waConfig ?? {},
       };
       return cache;
     }

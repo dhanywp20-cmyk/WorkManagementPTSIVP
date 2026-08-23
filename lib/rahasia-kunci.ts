@@ -11,6 +11,11 @@
  * yang lolos penjaga admin bisa menjejali tabel rahasia dengan baris sembarang.
  */
 
-export const KUNCI_RAHASIA = ['whatsapp.token', 'telegram.bot_token'] as const;
+export const KUNCI_RAHASIA = [
+  'whatsapp.token',          // Fonnte
+  'whatsapp.meta_token',     // WhatsApp Cloud API (resmi Meta)
+  'whatsapp.kustom_token',   // webhook penyedia lain
+  'telegram.bot_token',
+] as const;
 
 export type KunciRahasia = typeof KUNCI_RAHASIA[number];

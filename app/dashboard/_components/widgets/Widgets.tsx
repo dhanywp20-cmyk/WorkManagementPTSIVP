@@ -138,23 +138,22 @@ function KartuPerforma({ r }: { r: RingkasanPerforma }) {
     <div>
       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Ringkasan Performa</div>
       {/*
-        3 kolom x 2 baris, dan tiap ubin MENUMPUK ke bawah (ikon+angka di
-        atas, label di bawahnya) - bukan sebaris ikon|label|angka.
-        Dua percobaan sebelumnya salah dengan cara yang berlawanan: grid
-        6-kolom membentang panjang ke samping, lalu tumpukan 1-kolom jadi
-        tiang tinggi kurus yang memotong labelnya sendiri jadi "REMINDER
-        OV...". Bentuk ubin memecah label ke dua baris, jadi 'Reminder
-        Overdue' muat utuh di lebar ~92px tanpa dipotong.
-        Hasilnya blok ~300x110px - kira-kira setinggi daftar namanya, jadi
-        keduanya berdampingan rapi alih-alih satu jangkung sendirian.
+        3 kolom x 2 baris, tiap ubin menumpuk ke bawah (ikon, angka, lalu
+        label) - bukan sebaris ikon|label|angka.
+        Tiga percobaan sebelumnya salah bergantian ke dua arah: grid 6-kolom
+        membentang panjang ke samping; tumpukan 1-kolom jadi tiang tinggi
+        kurus yang memotong labelnya sendiri jadi "REMINDER OV..."; lalu
+        blok 300px tetap yang menyisakan ruang mati selebar dirinya sendiri
+        di sebelah kanan. Yang benar: 3x2 dan MENGIKUTI lebar kolomnya
+        (1fr dari pemanggil), jadi ubinnya melar mengisi ruang yang ada.
       */}
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-3 gap-2">
         {item.map(m => (
-          <div key={m.label} className="rounded-lg px-1 py-1.5 text-center border border-slate-100"
+          <div key={m.label} className="rounded-xl px-2 py-2 text-center border border-slate-100"
             style={{ background: `${m.warna}0d` }}>
-            <div className="text-[11px] leading-none mb-0.5">{m.ikon}</div>
-            <div className="text-[12px] font-black leading-none whitespace-nowrap" style={{ color: m.warna }}>{m.nilai}</div>
-            <div className="text-[8px] font-bold text-slate-400 uppercase leading-tight mt-1">{m.label}</div>
+            <div className="text-xs leading-none mb-1">{m.ikon}</div>
+            <div className="text-sm font-black leading-none whitespace-nowrap" style={{ color: m.warna }}>{m.nilai}</div>
+            <div className="text-[9px] font-bold text-slate-400 uppercase leading-tight mt-1 truncate">{m.label}</div>
           </div>
         ))}
       </div>
@@ -289,18 +288,19 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
       ) : (
         // TIGA kolom di layar lebar: stat, nama, performa.
         //
-        // Kolom nama SENGAJA dibatasi minmax(0,44rem), BUKAN 1fr. Dengan 1fr
-        // ia menyerap seluruh sisa lebar kartu, jadi meski isinya cuma tiga
-        // kelompok nama, Performa tetap terdorong sampai menempel tepi kanan
-        // dan menyisakan jurang kosong di tengah. justify-start menahan
-        // ketiganya berkumpul di kiri supaya Performa berdiri tepat di
-        // sebelah daftar namanya. Di layar sempit ketiganya turun bertumpuk.
+        // Kolom nama dibatasi minmax(0,44rem), BUKAN 1fr. Dengan 1fr ia
+        // menyerap seluruh sisa lebar kartu, jadi meski isinya cuma tiga
+        // kelompok nama, Performa terdorong sampai menempel tepi kanan dan
+        // menyisakan jurang kosong di tengah. Batasnya diukur, bukan dikira:
+        // pada 34rem daftar namanya membungkus jadi dua baris dan berlubang,
+        // pada 44rem kelompoknya muat dalam satu baris.
         //
-        // Batas 44rem dipilih dengan diukur, bukan dikira: pada 34rem daftar
-        // nama membungkus jadi dua baris dan menyisakan lubang di tengah,
-        // sedangkan 44rem memuat kelompok-kelompoknya dalam satu baris dan
-        // memangkas sisa kosong di kanan kartu dari 462px jadi 302px.
-        <div className="grid grid-cols-1 lg:grid-cols-[190px_minmax(0,44rem)_auto] lg:justify-start gap-x-5 gap-y-3">
+        // Sisa lebarnya diberikan ke Performa lewat 1fr - bukan disisakan
+        // kosong. Percobaan sebelumnya memakunya 300px dan itu salah dari
+        // arah sebaliknya: bloknya jadi pulau sempit dengan ruang mati
+        // selebar 300px di kanannya. 1fr membuat ubinnya melebar mengisi
+        // apa pun yang tersedia, jadi proporsinya ikut lebar kartu.
+        <div className="grid grid-cols-1 lg:grid-cols-[190px_minmax(0,44rem)_1fr] gap-x-5 gap-y-3">
           {/* Kiri: ringkasan angka + progress */}
           <div>
             <StatPills items={[
@@ -389,7 +389,7 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
             pemisah visual saat ketiganya turun jadi bertumpuk.
           */}
           {adminPenuh && performa && (
-            <div className="lg:w-[300px] mt-3 lg:mt-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+            <div className="min-w-0 mt-3 lg:mt-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
               <KartuPerforma r={performa} />
             </div>
           )}

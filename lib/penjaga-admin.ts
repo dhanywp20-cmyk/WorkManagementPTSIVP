@@ -34,7 +34,15 @@ export type HasilPenjaga =
 /** Peran yang boleh menyentuh pengaturan sistem. */
 const PERAN_ADMIN = ['admin', 'superadmin'];
 
-export async function pastikanAdmin(req: NextRequest): Promise<HasilPenjaga> {
+/**
+ * Memastikan pemanggilnya orang yang sudah masuk - siapa pun perannya.
+ *
+ * Dipakai route yang boleh dijalankan pengguna biasa tapi tidak boleh terbuka
+ * ke publik, mis. pengiriman notifikasi WhatsApp: seluruh tim memicunya lewat
+ * pekerjaan sehari-hari, tapi tanpa penjaga ini ia jadi alat kirim WA gratis
+ * bagi siapa pun yang menemukan alamatnya.
+ */
+export async function pastikanMasuk(req: NextRequest): Promise<HasilPenjaga> {
   const token = req.cookies.get('ivp_session')?.value;
   if (!token) return { ok: false, status: 401, alasan: 'Belum masuk.' };
 
@@ -59,9 +67,17 @@ export async function pastikanAdmin(req: NextRequest): Promise<HasilPenjaga> {
     .single();
 
   if (!user) return { ok: false, status: 401, alasan: 'Akun tidak ditemukan.' };
-  if (!PERAN_ADMIN.includes((user.role ?? '').toLowerCase())) {
+  return { ok: true, user: user as Pemanggil };
+}
+
+export async function pastikanAdmin(req: NextRequest): Promise<HasilPenjaga> {
+  //  Perannya diperiksa SESUDAH sesinya, dan dibaca ulang dari tabel users -
+  //  bukan dari klaim token - supaya pencabutan hak admin berlaku seketika.
+  const masuk = await pastikanMasuk(req);
+  if (!masuk.ok) return masuk;
+
+  if (!PERAN_ADMIN.includes((masuk.user.role ?? '').toLowerCase())) {
     return { ok: false, status: 403, alasan: 'Hanya admin yang boleh mengubah pengaturan ini.' };
   }
-
-  return { ok: true, user: user as Pemanggil };
+  return masuk;
 }

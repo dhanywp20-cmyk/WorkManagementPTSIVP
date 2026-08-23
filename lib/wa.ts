@@ -47,7 +47,7 @@ async function waMenyala(): Promise<boolean> {
   }
 }
 
-// Internal: POST mentah ke Edge Function swift-responder.
+// Internal: POST mentah ke Edge Function swift-responder (jalur Fonnte).
 async function postSwift(body: Record<string, unknown>): Promise<unknown> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -61,6 +61,44 @@ async function postSwift(body: Record<string, unknown>): Promise<unknown> {
     body: JSON.stringify(body),
   });
   return res.json();
+}
+
+/**
+ * Kirim lewat jalur yang sesuai dengan penyedia yang dipilih admin.
+ *
+ * KENAPA PERCABANGANNYA DI SINI
+ *
+ * Edge Function `swift-responder` punya Fonnte tertanam di dalamnya - ia tidak
+ * bisa mengirim lewat Cloud API resmi maupun webhook kustom. Jadi begitu admin
+ * berpindah penyedia, permintaannya harus lewat route server sendiri
+ * (/api/notifikasi/whatsapp/kirim) yang membaca token penyedia baru itu.
+ *
+ * Selama penyedianya Fonnte - keadaan hari ini - jalurnya PERSIS seperti
+ * sebelumnya: Edge Function yang sama, bentuk permintaan yang sama. Tidak ada
+ * satu pun dari 48 titik pengiriman yang berubah perilakunya sampai seseorang
+ * benar-benar menekan pindah penyedia di Admin Panel.
+ *
+ * Gagal membaca penyedia = ANGGAP FONNTE, sejalan dengan bawaan di
+ * lib/notifikasi/pengaturan.ts: pengaturan yang tidak terbaca tidak boleh
+ * membelokkan pengiriman ke jalur yang belum tentu terkonfigurasi.
+ */
+async function kirimLewatPenyedia(
+  body: Record<string, unknown>,
+): Promise<{ ok?: boolean; reason?: string }> {
+  let penyedia: string = 'fonnte';
+  try { penyedia = (await bacaPengaturan()).waPenyedia ?? 'fonnte'; } catch { /* tetap fonnte */ }
+
+  if (penyedia === 'fonnte') {
+    return (await postSwift(body)) as { ok?: boolean; reason?: string };
+  }
+
+  const res = await fetch('/api/notifikasi/whatsapp/kirim', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ target: body.target, message: body.message }),
+  });
+  return await res.json() as { ok?: boolean; reason?: string };
 }
 
 /**
