@@ -1074,78 +1074,14 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                       : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data produk</p>}
                 </div>
 
-                {/* Reminder per Kategori - dua kolom: ada donat + 9 baris kategori */}
-                <div className="sm:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
-                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">🗂️ Reminder per Kategori</h3>
-                  {loading?<div className="h-28 rounded animate-pulse bg-slate-100"/>:(
-                    <div className="flex items-start gap-5">
-                      <div className="flex-shrink-0">
-                      <DonutChart size={80} strokeWidth={10}
-                          segments={(kpi?.reminders.byCategory??[]).map(c=>({value:c.count,color:c.color}))}
-                          label={`${kpi?.reminders.total??0}`}/>
-                      </div>
-                      <div className="space-y-1.5 flex-1 min-w-0">
-                        {(kpi?.reminders.byCategory??[]).map(c=>(
-                          <div key={c.cat} className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background:c.color }}/>
-                            <span className="text-[11px] text-slate-600 font-medium flex-shrink-0" style={{width:'9rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{c.cat}</span>
-                            <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{background:'#f1f5f9',minWidth:16}}>
-                              <div className="h-full rounded-full" style={{width:`${(kpi?.reminders.total??0)>0?(c.count/(kpi?.reminders.total??1))*100:0}%`,background:c.color}}/>
-                            </div>
-                            <span className="text-[11px] font-black text-slate-700 flex-shrink-0 w-5 text-right">{c.count}</span>
-                          </div>
-                        ))}
-                        <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between">
-                          <span className="text-[11px] text-slate-400">Done rate</span>
-                          <span className="text-[11px] font-black text-emerald-600">
-                            {kpi && kpi.reminders.total>0?Math.round((kpi.reminders.done/kpi.reminders.total)*100):0}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                {/* Reminder per Produk - dua kolom: nama produk panjang + baris kategori bersarang */}
-                <div className="sm:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
-                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">🏷️ Reminder per Produk</h3>
-                  {loading?<div className="h-28 rounded animate-pulse bg-slate-100"/>:(
-                    (kpi?.reminders.byProduct??[]).length === 0
-                      ? <p className="text-sm text-center py-8 text-slate-400">Tidak ada data produk</p>
-                      : <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1" style={{scrollbarWidth:'thin'}}>
-                          {(kpi?.reminders.byProduct??[]).map(p=>{
-                            const total = p.byCategory.reduce((s,c)=>s+c.count,0);
-                            return (
-                              <div key={p.product} className="rounded-xl border border-slate-100 bg-slate-50/60 p-2.5">
-                                {/* Produk header */}
-                                <div className="flex items-center justify-between mb-1.5">
-                                  <span className="text-[11px] font-bold text-slate-700 leading-snug" style={{maxWidth:'85%',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.product}</span>
-                                  <span className="text-[11px] font-black text-slate-500 flex-shrink-0 ml-1">{total}</span>
-                                </div>
-                                {/* Kategori: satu per baris */}
-                                <div className="space-y-1">
-                                  {p.byCategory.map(c=>{
-                                    const col = CATEGORY_COLORS[c.cat]||'#64748b';
-                                    return (
-                                      <div key={c.cat} className="flex items-center gap-1.5">
-                                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{background:col}}/>
-                                        <span className="text-[10px] text-slate-500 flex-shrink-0" style={{width:'8rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{c.cat}</span>
-                                        <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{background:`${col}20`,minWidth:12}}>
-                                          <div className="h-full rounded-full" style={{width:`${total>0?(c.count/total)*100:0}%`,background:col}}/>
-                                        </div>
-                                        <span className="text-[10px] font-bold flex-shrink-0 w-4 text-right" style={{color:col}}>{c.count}</span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                  )}
-                </div>
-
-                {/* Trend bulanan - dua kolom: 12 batang butuh lebar */}
-                <div className="sm:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
+                {/*
+                  Trend selebar grid. Sesudah tiga kartu duplikat dihapus,
+                  sisanya Handler(1) + Divisi(1) + Produk(2) = baris pertama
+                  penuh; Trend dengan 2 kolom akan menyisakan dua slot
+                  menggantung di baris kedua. Empat kolom mengisinya, dan 12
+                  batang bulan memang paling terbaca pada lebar penuh.
+                */}
+                <div className="sm:col-span-2 xl:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">📈 Trend Ticket Bulanan {new Date().getFullYear()}</h3>
                 {loading ? <div className="h-32 rounded animate-pulse bg-slate-100"/> : (
                   kpi?.tickets.monthlyTickets?.some(v => v > 0) ? (() => {
@@ -1193,30 +1129,6 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 )}
               </div>
 
-                {/* Ringkasan Performa - dua kolom: isinya grid 6 metrik sendiri */}
-                <div className="sm:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">⚡ Ringkasan Performa</h3>
-                {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:(
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    {[
-                      {label:'Avg. Resolusi Ticket',value:`${kpi?.tickets.avgResolutionDays??0} hari`,color:'#ef4444',icon:'⏱️'},
-                      {label:'Solved Hari Ini',value:`${kpi?.tickets.resolvedToday??0} ticket`,color:'#10b981',icon:'✅'},
-                      {label:'Reminder Overdue',value:`${kpi?.reminders.overdueCount??0} jadwal`,color:'#f59e0b',icon:'🔴'},
-                      {label:'Piket Terisi Minggu Ini',value:`${kpi?.piket.weekFilled??0}/${kpi?.piket.weekTotal??6} hari`,color:'#6366f1',icon:'🏪'},
-                      {label:'Tamu Showroom Hari Ini',value:`${kpi?.piket.kegiatanToday??0} orang`,color:'#0891b2',icon:'👤'},
-                      ...(scope.kind==='admin'?[{label:'LC Avg. Skor',value:`${kpi?.learning.avgScore??0} poin`,color:'#8b5cf6',icon:'🎓'}]:[]),
-                    ].map(m=>(
-                      <div key={m.label} className="flex items-center gap-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
-                        <span className="text-xl">{m.icon}</span>
-                        <div>
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{m.label}</div>
-                          <div className="text-sm font-black" style={{ color:m.color }}>{m.value}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                </div>
               </div>
             </div>
           )}
