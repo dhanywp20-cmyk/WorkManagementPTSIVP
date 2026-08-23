@@ -306,15 +306,63 @@ export async function ambilSkema(): Promise<SkemaInsentif> {
   }
 }
 
+/**
+ * Simpan skema sebagai VERSI BARU - baris lama tidak ditimpa.
+ *
+ * Dulu fungsi ini melakukan UPDATE pada satu-satunya baris pengaturan, jadi
+ * angka sebelumnya lenyap begitu disimpan. Untuk pengaturan tampilan itu tidak
+ * masalah; untuk aturan pembagian uang itu menghapus bukti. Sebuah proyek
+ * dihitung tiga kali dalam tiga tahun, dan tanpa baris lamanya tidak ada cara
+ * menjelaskan kenapa tahap 1 berbeda dari tahap 2.
+ *
+ * ambilSkema() sudah mengambil baris TERBARU, jadi menambah baris tidak
+ * mengubah apa pun soal skema mana yang berlaku - hanya menyimpan jejaknya.
+ */
 export async function simpanSkema(sk: SkemaInsentif, olehNama: string): Promise<{ error: string | null }> {
   const masalah = periksaSkema(sk);
   if (masalah.length) return { error: masalah.map(m => m.pesan).join(' ') };
-  const { data } = await supabase.from('incentive_scheme_settings').select('id').limit(1).maybeSingle();
-  const baris = { scheme: sk as unknown as Record<string, unknown>, updated_at: new Date().toISOString(), updated_by: olehNama };
-  const res = (data as { id?: string } | null)?.id
-    ? await supabase.from('incentive_scheme_settings').update(baris).eq('id', (data as { id: string }).id)
-    : await supabase.from('incentive_scheme_settings').insert(baris);
-  return { error: res.error?.message ?? null };
+  const { error } = await supabase.from('incentive_scheme_settings').insert({
+    scheme: sk as unknown as Record<string, unknown>,
+    updated_at: new Date().toISOString(),
+    updated_by: olehNama,
+  });
+  return { error: error?.message ?? null };
+}
+
+export interface VersiSkema {
+  id: string;
+  scheme: SkemaInsentif;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+/** Riwayat perubahan skema, terbaru dulu. */
+export async function riwayatSkema(batas = 20): Promise<VersiSkema[]> {
+  try {
+    const { data } = await supabase
+      .from('incentive_scheme_settings')
+      .select('id, scheme, updated_at, updated_by')
+      .order('updated_at', { ascending: false })
+      .limit(batas);
+    return ((data ?? []) as { id: string; scheme: unknown; updated_at: string; updated_by: string | null }[])
+      .map(r => ({ id: r.id, scheme: rapikan(r.scheme), updated_at: r.updated_at, updated_by: r.updated_by }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Penanda skema untuk dicetak di rekap ke Finance.
+ *
+ * Tanpa ini, rekap hanya berisi nominal - dan setahun kemudian tidak ada yang
+ * bisa memastikan angka itu dihitung dengan aturan yang mana.
+ */
+export function labelSkema(sk: SkemaInsentif, tanggal?: string, oleh?: string | null): string {
+  const porsi = sk.porsi.map(p => `${p.peran}${p.persen}`).join('/');
+  const tgl = tanggal
+    ? new Date(tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+    : '';
+  return [`Skema v${sk.versi}`, porsi, tgl, oleh].filter(Boolean).join(' · ');
 }
 
 // Perhitungan

@@ -5,7 +5,7 @@ import { saveAs } from 'file-saver';
 import {
   IncentiveProjectRow, IncentiveSplit, IncentiveTranche,
   SplitResult, formatRupiah, formatPct,
-  calculateIncentiveSplits, findUpline, resolveUserId, OrgUser, ambilSkema,
+  calculateIncentiveSplits, findUpline, resolveUserId, OrgUser, ambilSkema, labelSkema,
 } from './calc';
 
 const NAVY = '1B3A6B';
@@ -41,6 +41,11 @@ interface ExportData {
 export async function exportPengajuanIncentive(data: ExportData) {
   const { year, projects, splits, tranches, managerName, directorName } = data;
 
+  //  Skema yang berlaku, dibaca sekali - hanya untuk dicetak sebagai penanda
+  //  di kepala rekap. Angka nominalnya sendiri berasal dari splits yang sudah
+  //  tersimpan, bukan dihitung ulang di sini.
+  const sk = await ambilSkema();
+
   const wb = new ExcelJS.Workbook();
   wb.creator = 'Work Management PTS IVP';
   wb.created = new Date();
@@ -56,6 +61,22 @@ export async function exportPengajuanIncentive(data: ExportData) {
   titleCell.value = `Pengajuan Incentive Project-Project IVP Tahun ${year}`;
   titleCell.font = { bold: true, size: 14, name: 'Arial' };
   titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.mergeCells(row, 1, row, 10);
+  row += 1;
+
+  /*
+    Penanda skema dicetak di rekap.
+
+    Tanpa ini rekap hanya berisi nominal, dan setahun kemudian tidak ada yang
+    bisa memastikan angka itu dihitung dengan aturan yang mana - terutama
+    sesudah porsinya diubah. Satu baris ini membuat tiap lembar rekap membawa
+    buktinya sendiri, sehingga perbedaan antar tahun ketahuan saat rekap
+    dibuat, bukan setahun kemudian saat ditanya Finance.
+  */
+  const skemaCell = ws.getCell(row, 1);
+  skemaCell.value = `Dihitung dengan: ${labelSkema(sk)}`;
+  skemaCell.font = { italic: true, size: 9, name: 'Arial', color: { argb: '666666' } };
+  skemaCell.alignment = { horizontal: 'center' };
   ws.mergeCells(row, 1, row, 10);
   row += 2;
 

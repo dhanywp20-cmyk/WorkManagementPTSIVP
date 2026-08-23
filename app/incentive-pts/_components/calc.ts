@@ -1,11 +1,11 @@
 import { supabase } from '@/lib/supabase';
 import {
   SkemaInsentif, PenerimaPeran, hitungPembagian, hitungManagerSebagaiPic, ambilSkema,
-  persenInstaller, bagikanTepat,
+  persenInstaller, bagikanTepat, labelSkema,
 } from '@/lib/incentive-scheme';
 
 export type { SkemaInsentif };
-export { ambilSkema, persenInstaller, bagikanTepat };
+export { ambilSkema, persenInstaller, bagikanTepat, labelSkema };
 
 // Types
 
@@ -45,6 +45,9 @@ export interface IncentiveTranche {
   paid_at: string | null;
   created_at: string;
   project?: IncentiveProjectRow;
+  /** Salinan skema saat tahapan ini dibuat. Lihat sql/incentive-skema-versi.sql. */
+  scheme_snapshot?: SkemaInsentif | null;
+  scheme_label?: string | null;
 }
 
 export interface IncentiveSplit {
@@ -370,14 +373,30 @@ export async function fetchLateTickets(parentProjectId?: string) {
   return { data: (data || []) as LateTicketLink[], error };
 }
 
+/**
+ * Buat tahapan pencairan DAN bekukan skema yang dipakai ke tiap barisnya.
+ *
+ * Skemanya disalin di sini - bukan dibaca ulang saat pencairan - karena satu
+ * proyek dicairkan tiga kali dalam tiga tahun. Tanpa salinan ini, mengubah
+ * porsi di tahun ke-2 akan membuat tahap 2 & 3 memakai angka baru sementara
+ * tahap 1 sudah dibayar dengan angka lama, dan selisihnya tidak bisa
+ * dijelaskan ke Finance yang sudah menerima rekap tahap 1.
+ *
+ * Yang membeku adalah aturan pada saat proyek SELESAI - itu kebijakan yang
+ * berlaku ketika pekerjaannya dikerjakan, jadi itu pula yang seharusnya
+ * membayarnya sampai lunas.
+ */
 export async function insertTranches(sk: SkemaInsentif, projectId: string, bastDate: string, modePenyelesaian?: 'onsite' | 'remote' | null) {
   const tranches = generateTranches(sk, projectId, bastDate, modePenyelesaian);
+  const label = labelSkema(sk, new Date().toISOString(), null);
   const rows = tranches.map(t => ({
     project_id: projectId,
     tranche_number: t.tranche_number,
     percentage: t.percentage,
     payment_year: t.payment_year,
     status: 'pending',
+    scheme_snapshot: sk as unknown as Record<string, unknown>,
+    scheme_label: label,
   }));
   return supabase.from('incentive_tranches').insert(rows);
 }
@@ -410,10 +429,20 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
 
   if (fetchErr || !dueTranches) return { error: fetchErr, processed: 0 };
 
-  // Skema dibaca SEKALI di depan: seluruh proyek dalam satu batch harus dihitung
-  // dengan aturan yang sama persis. Membacanya per proyek membuka celah setengah
-  // batch memakai aturan lama bila admin menyimpan perubahan di tengah proses.
-  const sk = await ambilSkema();
+  /*
+    Skema TERKINI dibaca sekali di depan, TAPI ia hanya cadangan.
+
+    Yang dipakai menghitung tiap tahapan adalah salinan skema yang dibekukan
+    pada tahapan itu sendiri (scheme_snapshot). Satu proyek dicairkan tiga kali
+    dalam tiga tahun; kalau tiap pencairan membaca skema terkini, mengubah
+    porsi di tahun ke-2 akan membayar tahap 2 & 3 dengan angka yang berbeda
+    dari tahap 1 yang sudah lunas - tanpa jejak bahwa keduanya berbeda.
+
+    Cadangan ini dipakai hanya untuk tahapan yang dibuat SEBELUM pembekuan ada
+    (salinannya null). Perilakunya sama seperti sebelumnya, jadi baris lama
+    tidak mendadak gagal diproses.
+  */
+  const skTerkini = await ambilSkema();
 
   // Baca hierarki dari Struktur Organisasi (users.atasan_id + jabatan).
   // Fallback transisi: pts_team_mappings bila atasan_id belum dipetakan.
@@ -427,6 +456,9 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
   for (const tranche of dueTranches) {
     const project = tranche.project as unknown as IncentiveProjectRow;
     if (!project) { errors.push(`Tranche ${tranche.id}: project not found`); continue; }
+
+    //  Skema yang membayar tahapan ini = yang dibekukan saat tahapan dibuat.
+    const sk = (tranche.scheme_snapshot as SkemaInsentif | null) ?? skTerkini;
     if (!project.mode_penyelesaian) { errors.push(`Project "${project.project_name}": mode_penyelesaian kosong`); continue; }
 
     // Manager & Supervisor dari pohon atasan PIC (Struktur Organisasi)

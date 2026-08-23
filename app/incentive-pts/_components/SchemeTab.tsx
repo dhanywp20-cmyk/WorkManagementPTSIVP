@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import {
   SkemaInsentif, PorsiPeran, SKEMA_BAWAAN, periksaSkema, simpanSkema, ambilSkema,
   hitungPembagian, hitungManagerSebagaiPic, persenInstaller,
+  riwayatSkema, labelSkema, type VersiSkema,
 } from '@/lib/incentive-scheme';
 
 const rp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
@@ -48,8 +49,10 @@ export function SchemeTab({ olehNama, notify }: {
   const [sk, setSk] = useState<SkemaInsentif | null>(null);
   const [awal, setAwal] = useState<string>('');
   const [menyimpan, setMenyimpan] = useState(false);
+  const [riwayat, setRiwayat] = useState<VersiSkema[]>([]);
 
-  useEffect(() => { ambilSkema().then(x => { setSk(x); setAwal(JSON.stringify(x)); }); }, []);
+  const muatRiwayat = () => riwayatSkema(10).then(setRiwayat);
+  useEffect(() => { ambilSkema().then(x => { setSk(x); setAwal(JSON.stringify(x)); }); muatRiwayat(); }, []);
 
   if (!sk) return <div className="py-16 text-center text-sm text-gray-400">Memuat skema…</div>;
 
@@ -82,7 +85,8 @@ export function SchemeTab({ olehNama, notify }: {
     setMenyimpan(false);
     if (error) { notify('error', error); return; }
     setAwal(JSON.stringify(sk));
-    notify('success', 'Skema pembagian tersimpan. Perhitungan berikutnya memakai angka ini.');
+    await muatRiwayat();
+    notify('success', 'Skema tersimpan sebagai versi baru. Proyek yang tahapannya sudah dibuat tetap memakai skema lamanya.');
   };
 
   // Pratinjau: memakai mesin hitung yang SAMA dengan proses sebenarnya
@@ -406,6 +410,40 @@ export function SchemeTab({ olehNama, notify }: {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* ── Riwayat versi skema ── */}
+      <div className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white overflow-hidden">
+        <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
+          <h3 className="font-bold text-gray-800 text-sm">🕘 Riwayat Skema</h3>
+          <p className="text-[11px] text-gray-400 leading-relaxed">
+            Tiap penyimpanan membuat versi baru — versi lama tidak ditimpa. Proyek yang tahapannya
+            sudah dibuat tetap dibayar memakai skema yang berlaku saat itu, jadi mengubah porsi di
+            sini tidak pernah mengubah proyek yang sedang berjalan.
+          </p>
+        </div>
+        <div className="p-4 sm:p-5">
+          {riwayat.length === 0 ? (
+            <p className="text-xs text-gray-400 italic">Belum ada versi tersimpan.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {riwayat.map((v, i) => (
+                <div key={v.id} className="flex items-center justify-between gap-3 rounded-lg border border-gray-100 px-3 py-2 flex-wrap">
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold text-gray-700">{labelSkema(v.scheme)}</span>
+                    {i === 0 && (
+                      <span className="ml-2 text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">BERLAKU</span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                    {new Date(v.updated_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    {v.updated_by ? ` · ${v.updated_by}` : ''}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
