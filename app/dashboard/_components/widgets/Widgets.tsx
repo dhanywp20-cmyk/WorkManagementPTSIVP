@@ -21,6 +21,7 @@ import {
 } from '@/app/picket-showroom/_components/shared';
 import { AnalyticsPlatform } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 import { ASSIGNABLE_PTS_TEAMS } from '@/lib/teams';
+import { ambilRingkasanPerforma, type RingkasanPerforma } from '@/lib/ringkasan-performa';
 
 // Kontrak widget
 
@@ -119,12 +120,62 @@ interface Anggota {
   jabatan: string; atasanId: string | null;
 }
 
+/**
+ * Enam angka Ringkasan Performa, ditempatkan di ruang kosong sebelah kanan
+ * Team Monitoring. Angkanya dari lib/ringkasan-performa.ts - satu-satunya
+ * tempat rumusnya ditulis, supaya tidak ada dua definisi untuk angka yang sama.
+ */
+function KartuPerforma({ r }: { r: RingkasanPerforma }) {
+  const item = [
+    { label: 'Avg. Resolusi', nilai: `${r.avgResolusiHari} hari`,              warna: '#ef4444', ikon: '⏱️' },
+    { label: 'Solved Hari Ini', nilai: `${r.solvedHariIni} ticket`,            warna: '#10b981', ikon: '✅' },
+    { label: 'Reminder Overdue', nilai: `${r.reminderOverdue} jadwal`,         warna: '#f59e0b', ikon: '🔴' },
+    { label: 'Piket Minggu Ini', nilai: `${r.piketTerisi}/${r.piketTotal} hari`, warna: '#6366f1', ikon: '🏪' },
+    { label: 'Tamu Hari Ini', nilai: `${r.tamuHariIni} orang`,                 warna: '#0891b2', ikon: '👤' },
+    { label: 'LC Avg. Skor', nilai: `${r.lcAvgSkor} poin`,                     warna: '#8b5cf6', ikon: '🎓' },
+  ];
+  return (
+    <div>
+      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Ringkasan Performa</div>
+      {/*
+        Kolomnya bertambah mengikuti lebar layar sampai ENAM - keenamnya
+        sejajar dalam satu baris di layar lebar.
+        Dugaan awal saya sebaliknya: tiga kolom, karena enam sejajar dikira
+        akan terjepit. Diukur di 1500px, yang terjadi justru kebalikannya -
+        tiga kolom membuat tiap kartu selebar ~400px dengan ruang kosong
+        besar di dalamnya, persis pemborosan ruang yang sedang dibereskan.
+        Di layar sempit tetap turun ke tiga lalu dua, jadi tidak ada yang
+        terjepit di sana.
+      */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-1.5">
+        {item.map(m => (
+          <div key={m.label} className="flex items-center gap-1.5 bg-slate-50 rounded-lg px-2 py-1.5 border border-slate-100">
+            <span className="text-sm flex-shrink-0">{m.ikon}</span>
+            <div className="min-w-0">
+              <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate">{m.label}</div>
+              <div className="text-[11px] font-black truncate" style={{ color: m.warna }}>{m.nilai}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // WIDGET: Team Monitoring Hari Ini (Team/Admin).
-const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
+const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Anggota[]>([]);
   /** Nama & jabatan tiap atasan, dipakai sebagai judul kelompok. */
   const [atasan, setAtasan] = useState<Record<string, { nama: string; jabatan: string }>>({});
+  /**
+   * Ringkasan performa HANYA untuk admin. Angkanya lingkup seluruh platform
+   * tanpa saringan per-supervisor; untuk admin itu memang benar, sedangkan
+   * Supervisor PTS tetap memakai kartu lama di tab Analytics yang sudah
+   * menyaring ke anggota timnya. Lihat catatan di lib/ringkasan-performa.ts.
+   */
+  const adminPenuh = ['admin', 'superadmin'].includes((user?.role ?? '').toLowerCase());
+  const [performa, setPerforma] = useState<RingkasanPerforma | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -161,11 +212,18 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
           (bos ?? []).forEach((b: any) => { peta[b.id] = { nama: b.full_name ?? '—', jabatan: b.jabatan ?? '' }; });
         }
         if (alive) { setRows(list); setAtasan(peta); }
+        //  Dimuat terpisah dari daftar tim: kalau salah satunya gagal,
+        //  yang lain tetap tampil - widget setengah terisi jauh lebih
+        //  berguna daripada widget kosong.
+        if (adminPenuh) {
+          try { const rp = await ambilRingkasanPerforma(); if (alive) setPerforma(rp); }
+          catch { /* diam - bagian daftar tim tetap tampil */ }
+        }
       } catch { /* silent */ }
       if (alive) setLoading(false);
     })();
     return () => { alive = false; };
-  }, []);
+  }, [adminPenuh]);
 
   if (loading) return <WidgetCard title="Team Monitoring Hari Ini" icon="🧭" accent="#0891b2"><Loading /></WidgetCard>;
 
@@ -303,6 +361,17 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
                   ))}
                 </div>
               </>
+            )}
+            {/*
+              Ringkasan performa DI BAWAH daftar nama, masih di kolom kanan -
+              bukan kolom ketiga. Daftar nama lebarnya mengikuti isi dan bisa
+              pendek; memaksanya jadi tiga kolom akan mengembalikan ruang
+              kosong yang baru saja dihilangkan.
+            */}
+            {adminPenuh && performa && (
+              <div className="mt-3 pt-3 border-t border-slate-100">
+                <KartuPerforma r={performa} />
+              </div>
             )}
           </div>
         </div>

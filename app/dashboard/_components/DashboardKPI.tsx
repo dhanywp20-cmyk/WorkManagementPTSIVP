@@ -1552,7 +1552,17 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                 </div>
               </div>
 
-              {/* Performa Resolusi */}
+              {/*
+                Ringkasan Performa - SEMBUNYI untuk admin.
+                Untuk admin, keenam angka ini sudah tampil di widget Team
+                Monitoring paling atas (mengisi ruang kosong di sebelah kanan),
+                dihitung lib/ringkasan-performa.ts. Menampilkannya lagi di sini
+                berarti angka yang sama muncul dua kali di satu halaman.
+                Supervisor PTS TETAP memakai kartu ini: angkanya sudah
+                tersaring ke anggota timnya lewat scope, sesuatu yang tidak
+                dilakukan versi widget.
+              */}
+              {scope.kind !== 'admin' && (
               <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">⚡ Ringkasan Performa</h3>
                 {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:(
@@ -1563,7 +1573,13 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                       {label:'Reminder Overdue',value:`${kpi?.reminders.overdueCount??0} jadwal`,color:'#f59e0b',icon:'🔴'},
                       {label:'Piket Terisi Minggu Ini',value:`${kpi?.piket.weekFilled??0}/${kpi?.piket.weekTotal??6} hari`,color:'#6366f1',icon:'🏪'},
                       {label:'Tamu Showroom Hari Ini',value:`${kpi?.piket.kegiatanToday??0} orang`,color:'#0891b2',icon:'👤'},
-                      ...(scope.kind==='admin'?[{label:'LC Avg. Skor',value:`${kpi?.learning.avgScore??0} poin`,color:'#8b5cf6',icon:'🎓'}]:[]),
+                      //  Baris 'LC Avg. Skor' dulu ada di sini dengan syarat
+                      //  scope.kind==='admin'. Kartunya kini TIDAK tampil untuk
+                      //  admin sama sekali, jadi baris itu mustahil muncul -
+                      //  TypeScript yang menunjukkannya. Untuk admin, angka LC
+                      //  ada di widget Team Monitoring; yang membaca kartu ini
+                      //  hanya Supervisor PTS, dan mereka memang tidak
+                      //  mendapatkannya sejak semula.
                     ].map(m=>(
                       <div key={m.label} className="flex items-center gap-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
                         <span className="text-xl">{m.icon}</span>
@@ -1576,6 +1592,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
                   </div>
                 )}
               </div>
+              )}
             </div>
           )}
 
