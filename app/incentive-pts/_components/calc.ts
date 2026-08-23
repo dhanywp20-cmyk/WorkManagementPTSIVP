@@ -1,11 +1,11 @@
 import { supabase } from '@/lib/supabase';
 import {
   SkemaInsentif, PenerimaPeran, hitungPembagian, hitungManagerSebagaiPic, ambilSkema,
-  persenInstaller, bagikanTepat, labelSkema,
+  persenInstaller, bagikanTepat, labelSkema, hitungPool,
 } from '@/lib/incentive-scheme';
 
 export type { SkemaInsentif };
-export { ambilSkema, persenInstaller, bagikanTepat, labelSkema };
+export { ambilSkema, persenInstaller, bagikanTepat, labelSkema, hitungPool };
 
 // Types
 
@@ -22,6 +22,10 @@ export interface IncentiveProjectRow {
   pic_id: string | null;
   domain_owner: string | null;
   mode_penyelesaian: 'onsite' | 'remote' | null;
+  /** Kategori tarif kelayakan yang dipilih. null = nominal diisi manual. */
+  incentive_tarif_kunci?: string | null;
+  /** Dasar hitung nominal (umumnya HPP proyek). */
+  incentive_dasar_hpp?: number | null;
   installer_name: string | null;
   installer_daerah: string | null;
   bast_date: string | null;

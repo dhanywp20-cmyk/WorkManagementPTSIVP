@@ -8,7 +8,7 @@ import {
   fetchIncentiveProjects, fetchTranches, fetchVisibleSplits, fetchSupportFromTickets, jendelaSupportTahap, fetchLateTickets,
   insertTranches, insertSplits, processYearlyBatch,
   calculateIncentiveSplits, validateSplitTotal, generateTranches, findUpline, resolveUserId, OrgUser,
-  ambilSkema, persenInstaller, type SkemaInsentif,
+  ambilSkema, persenInstaller, hitungPool, type SkemaInsentif,
   formatRupiah, formatPct,
   ROLE_LABELS, TRANCHE_STATUS,
 } from './_components/calc';
@@ -88,6 +88,10 @@ export default function IncentivePTSPage() {
   const [nominalProject, setNominalProject] = useState<IncentiveProjectRow | null>(null);
   const [nominalValue, setNominalValue] = useState('');
   const [savingNominal, setSavingNominal] = useState(false);
+  /** Kategori tarif & dasar hitungnya - lihat modal Input Nominal. */
+  const [tarifKunci, setTarifKunci] = useState('');
+  const [dasarHpp, setDasarHpp]     = useState('');
+  const tarifTerpilih = (skema?.tarif ?? []).find(t => t.kunci === tarifKunci);
 
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generateProject, setGenerateProject] = useState<IncentiveProjectRow | null>(null);
@@ -200,10 +204,17 @@ export default function IncentivePTSPage() {
       return;
     }
 
-    const { error } = await supabase.from('reminders').update({ incentive_value: Number(nominalValue), updated_at: new Date().toISOString() }).eq('id', nominalProject.id);
+    const { error } = await supabase.from('reminders').update({
+      incentive_value: Number(nominalValue),
+      //  Jejak asal nominal. null saat diisi manual - itu keadaan yang sah,
+      //  dan menyimpan kunci kosong justru berpura-pura ada dasarnya.
+      incentive_tarif_kunci: tarifKunci || null,
+      incentive_dasar_hpp: tarifKunci && dasarHpp ? Number(dasarHpp) : null,
+      updated_at: new Date().toISOString(),
+    }).eq('id', nominalProject.id);
     if (error) { notify('error', 'Gagal: ' + error.message); setSavingNominal(false); return; }
     notify('success', `Nominal ${formatRupiah(Number(nominalValue))} berhasil disimpan!`);
-    setSavingNominal(false); setNominalProject(null); setNominalValue('');
+    setSavingNominal(false); setNominalProject(null); setNominalValue(''); setTarifKunci(''); setDasarHpp('');
     loadAll();
   }
 
@@ -460,7 +471,7 @@ export default function IncentivePTSPage() {
                       </button>
                       {showNominal && (
                         <button aria-label="Input Nominal" disabled={tranches.some(t => t.project_id === p.id)}
-                        onClick={() => { setNominalProject(p); setNominalValue(String(p.incentive_value || '')); }}
+                        onClick={() => { setNominalProject(p); setNominalValue(String(p.incentive_value || '')); setTarifKunci(p.incentive_tarif_kunci || ''); setDasarHpp(String(p.incentive_dasar_hpp || '')); }}
                         title={tranches.some(t => t.project_id === p.id) ? 'Nominal terkunci — tahapan pencairan sudah dibuat' : 'Input Nominal'}
                         className="inline-flex items-center justify-center w-7 h-7 rounded-lg border bg-white border-slate-200 text-rose-500 hover:bg-rose-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white">
                           <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -577,7 +588,7 @@ export default function IncentivePTSPage() {
                               <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                             </button>
                             {canInputNominal(currentUser) && (
-                              <button aria-label="Input Nominal" onClick={() => { setNominalProject(p); setNominalValue(String(p.incentive_value || '')); }}
+                              <button aria-label="Input Nominal" onClick={() => { setNominalProject(p); setNominalValue(String(p.incentive_value || '')); setTarifKunci(p.incentive_tarif_kunci || ''); setDasarHpp(String(p.incentive_dasar_hpp || '')); }}
                                 title="Input Nominal"
                                 className="inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all bg-white border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-300 hover:shadow-sm">
                                 <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -788,6 +799,53 @@ export default function IncentivePTSPage() {
                 </div>
               )}
 
+              {/*
+                Kategori tarif + dasar HPP.
+                Nominalnya tetap boleh diketik langsung - proyek yang tidak
+                cocok dengan kategori mana pun tidak boleh jadi buntu. Tapi
+                kalau kategorinya dipilih, nominalnya dihitung sistem dan
+                ketiga angkanya (kategori, HPP, hasil) tersimpan bersama,
+                sehingga asal-usulnya bisa dicocokkan ulang kapan saja.
+              */}
+              <div>
+                <label className="block text-xs font-bold mb-1.5 text-gray-500 uppercase tracking-widest">Kategori Tarif (Proposal Bab II)</label>
+                <select value={tarifKunci}
+                  onChange={e => {
+                    const k = e.target.value;
+                    setTarifKunci(k);
+                    const t = (skema?.tarif ?? []).find(x => x.kunci === k);
+                    if (t) setNominalValue(String(hitungPool(t, Number(dasarHpp) || 0)));
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-rose-400">
+                  <option value="">— isi nominal manual —</option>
+                  {(skema?.tarif ?? []).map(t => (
+                    <option key={t.kunci} value={t.kunci}>
+                      {t.label} · {t.jenis === 'persen' ? `${t.nilai}%` : t.jenis === 'flat' ? formatRupiah(t.nilai) : 'tidak berhak'}
+                    </option>
+                  ))}
+                </select>
+                {tarifTerpilih?.jenis === 'persen' && (
+                  <div className="mt-2">
+                    <label className="block text-[11px] font-bold mb-1 text-gray-500 uppercase tracking-widest">{tarifTerpilih.basis} (Rp)</label>
+                    <input type="number" min={0} value={dasarHpp}
+                      onChange={e => {
+                        setDasarHpp(e.target.value);
+                        setNominalValue(String(hitungPool(tarifTerpilih, Number(e.target.value) || 0)));
+                      }}
+                      className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-rose-400"
+                      placeholder="Contoh: 500000000" />
+                    <p className="text-[11px] text-gray-400 mt-1">
+                      {tarifTerpilih.nilai}% × {formatRupiah(Number(dasarHpp) || 0)} = <strong className="text-gray-600">{formatRupiah(hitungPool(tarifTerpilih, Number(dasarHpp) || 0))}</strong>
+                    </p>
+                  </div>
+                )}
+                {tarifTerpilih?.jenis === 'tidak' && (
+                  <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-2 mt-2 leading-relaxed">
+                    Kategori ini <strong>tidak berhak insentif</strong> menurut proposal. Nominalnya 0.
+                  </p>
+                )}
+              </div>
+
               {/* Nominal */}
               <div>
                 <label className="block text-xs font-bold mb-1.5 text-gray-500 uppercase tracking-widest">Nilai Incentive (Rp) *</label>
@@ -809,7 +867,7 @@ export default function IncentivePTSPage() {
               </div>
             </div>
             <div className="flex gap-3 px-5 pb-5">
-              <button onClick={() => { setNominalProject(null); setNominalValue(''); }} className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-gray-500 border border-gray-200 hover:bg-gray-50">Batal</button>
+              <button onClick={() => { setNominalProject(null); setNominalValue(''); setTarifKunci(''); setDasarHpp(''); }} className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-gray-500 border border-gray-200 hover:bg-gray-50">Batal</button>
               <button onClick={handleSaveNominal} disabled={savingNominal}
                 className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-50" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
                 {savingNominal && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}

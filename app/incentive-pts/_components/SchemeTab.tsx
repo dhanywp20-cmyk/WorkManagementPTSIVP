@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import {
   SkemaInsentif, PorsiPeran, SKEMA_BAWAAN, periksaSkema, simpanSkema, ambilSkema,
   hitungPembagian, hitungManagerSebagaiPic, persenInstaller,
-  riwayatSkema, labelSkema, type VersiSkema,
+  riwayatSkema, labelSkema, hitungPool, type VersiSkema, type TarifKelayakan,
 } from '@/lib/incentive-scheme';
 
 const rp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
@@ -414,6 +414,64 @@ export function SchemeTab({ olehNama, notify }: {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* ── Tarif kelayakan ── */}
+      <div className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white overflow-hidden">
+        <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 className="font-bold text-gray-800 text-sm">📐 Tarif Kelayakan Proyek</h3>
+            <p className="text-[11px] text-gray-400">
+              Menentukan BESAR pool, bukan pembagiannya. Dipakai saat mengisi nominal proyek.
+            </p>
+          </div>
+          <button type="button"
+            onClick={() => ubah({ tarif: [...sk.tarif, { kunci: '', label: 'Kategori Baru', jenis: 'persen', nilai: 0, basis: 'HPP Proyek' }] })}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold border-2 border-rose-200 text-rose-600 hover:bg-rose-50 transition-all">
+            + Tambah Kategori
+          </button>
+        </div>
+        <div className="p-4 sm:p-5 space-y-2">
+          {sk.tarif.map((t, i) => {
+            const ubahTarif = (patch: Partial<TarifKelayakan>) =>
+              ubah({ tarif: sk.tarif.map((x, j) => (j === i ? { ...x, ...patch } : x)) });
+            return (
+              <div key={i} className="grid grid-cols-12 gap-2 items-center">
+                <input value={t.label} onChange={e => ubahTarif({ label: e.target.value })}
+                  aria-label={`Nama kategori ${i + 1}`} placeholder="Nama kategori"
+                  className={`${inputKecil} col-span-12 sm:col-span-4`} />
+                <input value={t.kunci} onChange={e => ubahTarif({ kunci: e.target.value.trim().toLowerCase().replace(/\s+/g, '_') })}
+                  aria-label={`Kunci kategori ${i + 1}`} placeholder="kunci"
+                  className={`${inputKecil} col-span-5 sm:col-span-2 font-mono text-xs`} />
+                <select value={t.jenis} onChange={e => ubahTarif({ jenis: e.target.value as TarifKelayakan['jenis'] })}
+                  aria-label={`Jenis tarif ${i + 1}`} className={`${inputKecil} col-span-4 sm:col-span-2`}>
+                  <option value="persen">% dari dasar</option>
+                  <option value="flat">Flat (Rp)</option>
+                  <option value="tidak">Tidak berhak</option>
+                </select>
+                <input type="number" min={0} step="0.01" value={t.nilai} disabled={t.jenis === 'tidak'}
+                  onChange={e => ubahTarif({ nilai: parseFloat(e.target.value) || 0 })}
+                  aria-label={`Nilai tarif ${i + 1}`}
+                  className={`${inputKecil} col-span-3 sm:col-span-2 disabled:bg-gray-50 disabled:text-gray-300`} />
+                <input value={t.basis} onChange={e => ubahTarif({ basis: e.target.value })}
+                  aria-label={`Basis hitung ${i + 1}`} placeholder="HPP Proyek"
+                  className={`${inputKecil} col-span-11 sm:col-span-1 text-xs`} />
+                <button type="button" onClick={() => ubah({ tarif: sk.tarif.filter((_, j) => j !== i) })}
+                  aria-label={`Hapus kategori ${t.label}`}
+                  className="col-span-1 text-rose-400 hover:text-rose-600 text-lg leading-none">×</button>
+              </div>
+            );
+          })}
+          {/*
+            Contoh nominal dicetak dari rumus yang SAMA dengan yang dipakai
+            layar Input Nominal. Kalau di sini memakai rumusnya sendiri, ia
+            bisa menampilkan angka yang tidak pernah benar-benar tersimpan.
+          */}
+          <p className="text-[11px] text-gray-400 pt-1 leading-relaxed">
+            Contoh dasar Rp 500.000.000 → {sk.tarif.filter(t => t.jenis !== 'tidak').slice(0, 4)
+              .map(t => `${t.label.split(' ')[0]} ${rp(hitungPool(t, 500_000_000))}`).join(' · ')}
+          </p>
         </div>
       </div>
 
