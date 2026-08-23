@@ -8,6 +8,7 @@ import {
   PRODUCT_TYPES,
 } from './shared';
 import { FormField, SectionHeader, MultiDatePicker, ModalPortal, BatalButton, SubmitFormButton } from '@/components/shared';
+import { BRAND_OPTIONS } from '@/lib/brand-routing';
 
 export type ReminderForm = Omit<Reminder, 'id' | 'created_at' | 'created_by' | 'wa_sent_h1'>;
 export type BulkTarget = 'none' | 'ivp' | 'mvi' | 'ump';
@@ -50,6 +51,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
   function handleSubmit() {
     if (!formData.product_type) { setErr('Pilih tipe produk dulu (LED / LCD·Middleware / LED & LCD).'); return; }
+    if (!formData.brand) { setErr('Pilih Brand dulu (MVI / IVP / Kedua Brand) — menentukan Finance mana yang boleh melihat nominalnya.'); return; }
     setErr('');
     onSubmit();
   }
@@ -148,6 +150,39 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                       ? { borderColor: '#e11d48', background: 'rgba(225,29,72,0.1)', color: '#e11d48' }
                       : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }}>
                     {pt}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/*
+            BRAND — sisi admin.
+
+            Kolom reminders.brand sudah lama ada dan diisi lewat Request Jadwal
+            dari sisi Sales, tapi form admin ini TIDAK PERNAH menanyakannya.
+            Akibatnya setiap jadwal yang dibuat langsung oleh admin tersimpan
+            tanpa brand - dan begitu daftar Incentive disaring per brand untuk
+            memisahkan data dua orang Finance, proyek-proyek itu tidak terbaca
+            milik siapa pun lalu hilang dari kedua daftar.
+
+            Wajib diisi, bukan opsional: brand yang kosong bukan keadaan yang
+            berarti "belum tahu" - ia berarti proyeknya tidak akan terlihat.
+          */}
+          <div>
+            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+              Brand * <span className="normal-case text-slate-500 font-medium tracking-normal">(menentukan Finance mana yang boleh melihat nominalnya)</span>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {BRAND_OPTIONS.map(opt => {
+                const sel = formData.brand === opt.value;
+                return (
+                  <button key={opt.value} type="button" onClick={() => { fd({ brand: opt.value }); setErr(''); }}
+                    className="px-3 py-3 rounded-xl border-2 text-center text-sm font-bold transition-all leading-tight"
+                    style={sel
+                      ? { borderColor: '#2563eb', background: 'rgba(37,99,235,0.1)', color: '#1d4ed8' }
+                      : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }}>
+                    {opt.value === 'MVI' ? '🏠 ' : opt.value === 'IVP' ? '🌐 ' : '🏠🌐 '}{opt.label}
                   </button>
                 );
               })}

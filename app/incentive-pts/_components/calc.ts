@@ -18,6 +18,8 @@ export interface IncentiveProjectRow {
   status: string;
   requires_controller_automation: boolean;
   controller_automation_brand: string | null;
+  /** 'MVI' | 'IVP' | 'BOTH' — menentukan petugas Finance mana yang boleh melihatnya. */
+  brand?: string | null;
   pic_type: 'standard' | 'manager_pic';
   pic_id: string | null;
   domain_owner: string | null;

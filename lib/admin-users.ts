@@ -41,6 +41,21 @@ export async function adminSetIncentiveInput(userId: string, value: boolean): Pr
 }
 
 /**
+ * Tetapkan lingkup brand seorang petugas input nominal insentif.
+ *
+ * null = tanpa batas (melihat semua brand). 'MVI' / 'IVP' = hanya brand itu;
+ * proyek "Kedua Brand" tetap terlihat oleh keduanya karena memang milik
+ * bersama.
+ *
+ * Lewat route server, bukan tulis langsung: nominal insentif adalah data
+ * kredensial, dan yang menentukan siapa boleh melihat apa tidak boleh bisa
+ * diubah dari peramban oleh siapa pun yang memegang anon key.
+ */
+export async function adminSetIncentiveBrandScope(userId: string, value: string | null): Promise<Res> {
+  return call({ action: 'setIncentiveBrandScope', userId, value });
+}
+
+/**
  * Toggle "Full Access" - akses setara admin di modul data (Piket Showroom,
  * Learning Center, KPI Team, Form Review, Ticketing, Reminder Schedule, Daily
  * Report, Unit Movement, Project Progress) untuk akun Team PTS tertentu.

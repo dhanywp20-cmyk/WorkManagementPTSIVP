@@ -13,13 +13,31 @@ import {
   ROLE_LABELS, TRANCHE_STATUS,
 } from './_components/calc';
 import { exportPengajuanIncentive, exportSummaryIncentive } from './_components/exportPengajuan';
-import { adminSetIncentiveInput } from '@/lib/admin-users';
+import { adminSetIncentiveInput, adminSetIncentiveBrandScope } from '@/lib/admin-users';
 import { MobileListCard, MobileCardBadge, ModalPortal } from '@/components/shared';
 import { SchemeTab } from './_components/SchemeTab';
 
 void insertSplits; void validateSplitTotal;
 
-interface CurrentUser { id?: string; username?: string; full_name?: string; role?: string; team_type?: string; allow_incentive_input?: boolean; [k: string]: unknown; }
+interface CurrentUser { id?: string; username?: string; full_name?: string; role?: string; team_type?: string; allow_incentive_input?: boolean; incentive_brand_scope?: string | null; [k: string]: unknown; }
+
+/**
+ * Proyek ini boleh dilihat oleh petugas dengan lingkup brand tertentu?
+ *
+ * Lingkup kosong = tanpa batas (admin, dan petugas yang belum ditetapkan
+ * lingkupnya). Proyek "BOTH" terlihat oleh KEDUA petugas - ia memang milik
+ * bersama, dan menyembunyikannya dari salah satu justru membuat proyeknya
+ * tidak terinput sama sekali.
+ *
+ * Proyek tanpa brand juga ditampilkan, bukan disembunyikan: kalau ada yang
+ * lolos tanpa brand, itu harus KELIHATAN supaya bisa dibetulkan - bukan
+ * lenyap dari kedua daftar tanpa ada yang tahu.
+ */
+function bolehLihatBrand(lingkup: string | null | undefined, brandProyek: string | null | undefined): boolean {
+  if (!lingkup) return true;
+  if (!brandProyek) return true;
+  return brandProyek === lingkup || brandProyek === 'BOTH';
+}
 
 function isAdmin(u: CurrentUser | null) { const r = (u?.role || '').toLowerCase(); return r === 'admin' || r === 'superadmin'; }
 function canInputNominal(u: CurrentUser | null) { return isAdmin(u) || !!u?.allow_incentive_input; }
@@ -106,8 +124,8 @@ export default function IncentivePTSPage() {
     // muncul dashboard-di-dalam-dashboard (layer dobel). Konsisten dgn modul lain.
     if (!u) { const target = window.top !== window ? window.top : window; if (target) target.location.href = '/dashboard'; return; }
     setCurrentUser(u);
-    supabase.from('users').select('allow_incentive_input').eq('username', u.username as string).single().then(({ data }: { data: { allow_incentive_input: boolean } | null }) => {
-      if (data) setCurrentUser(prev => prev ? { ...prev, allow_incentive_input: data.allow_incentive_input } : prev);
+    supabase.from('users').select('allow_incentive_input, incentive_brand_scope').eq('username', u.username as string).single().then(({ data }: { data: { allow_incentive_input: boolean; incentive_brand_scope: string | null } | null }) => {
+      if (data) setCurrentUser(prev => prev ? { ...prev, allow_incentive_input: data.allow_incentive_input, incentive_brand_scope: data.incentive_brand_scope } : prev);
     });
     loadAll().then(() => setAppReady(true));
     const cleanup = startSessionWatcher();
@@ -129,7 +147,7 @@ export default function IncentivePTSPage() {
     if (splitRes.data) setAllSplits(splitRes.data);
     if (lateRes.data) setLateTickets(lateRes.data);
     const [usersRes, ptsTeamRes, orgRes] = await Promise.all([
-      supabase.from('users').select('id, username, full_name, role, team_type, allow_incentive_input, jabatan').order('full_name'),
+      supabase.from('users').select('id, username, full_name, role, team_type, allow_incentive_input, incentive_brand_scope, jabatan').order('full_name'),
       supabase.from('pts_team_mappings').select('staff_user_id, supervisor_user_id'),
       // Query terpisah & tahan-error: atasan_id dari Struktur Organisasi
       supabase.from('users').select('id, atasan_id'),
@@ -300,6 +318,23 @@ export default function IncentivePTSPage() {
     if (detailProject) openProjectDetail(detailProject);
   }
 
+  /** Kata kunci pencarian di Pengaturan Akses. */
+  const [cariUser, setCariUser] = useState('');
+
+  /**
+   * Tetapkan lingkup brand seorang petugas.
+   *
+   * Lewat route admin yang sama dengan toggle izin - kolom hak akses tidak
+   * boleh ditulis langsung dari peramban, karena siapa pun yang memegang anon
+   * key bisa memanggilnya.
+   */
+  async function handleSetBrandScope(userId: string, scope: string | null) {
+    const { error } = await adminSetIncentiveBrandScope(userId, scope);
+    if (error) { notify('error', 'Gagal: ' + error); return; }
+    setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, incentive_brand_scope: scope } : u));
+    notify('success', scope ? `Lingkup diset ke ${scope}.` : 'Lingkup dilepas — petugas ini melihat semua brand.');
+  }
+
   async function handleToggleAllowInput(userId: string, current: boolean) {
     const { error } = await adminSetIncentiveInput(userId, !current);
     if (error) { notify('error', error.message); return; }
@@ -337,7 +372,16 @@ export default function IncentivePTSPage() {
   };
   const filteredProjects = projects.filter(p =>
     (!searchProject || p.project_name.toLowerCase().includes(searchProject.toLowerCase()) || (p.assign_name || '').toLowerCase().includes(searchProject.toLowerCase()))
-  ).filter(p => canSeeAll || userInProject(p));
+  ).filter(p => canSeeAll || userInProject(p))
+    /*
+      Saringan lingkup brand. Dua petugas Finance tidak boleh saling melihat
+      nominal proyek yang bukan urusannya - nominal insentif adalah data
+      kredensial, bukan sekadar angka.
+
+      Admin (lingkupnya kosong) tetap melihat semuanya; ia memang yang
+      menunjuk keduanya dan yang merekap ke Finance.
+    */
+    .filter(p => bolehLihatBrand(currentUser?.incentive_brand_scope, p.brand));
   const uniqueYears = [...new Set(tranches.map(t => t.payment_year))].sort();
   const filteredTranches = tranches.filter(t => !filterYear || t.payment_year === filterYear);
   const totalPool = projects.filter(p => (p.incentive_value || 0) > 0).reduce((s, p) => s + (p.incentive_value || 0), 0);
@@ -523,6 +567,20 @@ export default function IncentivePTSPage() {
                         <td className={cellCls}>
                           <p className="text-sm font-medium text-gray-700">{p.assign_name || '—'}</p>
                           {p.pic_type === 'manager_pic' && <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 mt-0.5 inline-block">Manager PIC</span>}
+                          {/*
+                            Lencana brand. Dua petugas Finance memakai daftar
+                            yang sudah tersaring, jadi lencana ini bukan sekadar
+                            hiasan - ia yang menjelaskan KENAPA sebuah proyek
+                            ada di daftarnya, dan kenapa yang lain tidak.
+                          */}
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border mt-0.5 ml-1 inline-block ${
+                            p.brand === 'MVI'  ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                            : p.brand === 'IVP' ? 'text-blue-700 bg-blue-50 border-blue-200'
+                            : p.brand === 'BOTH' ? 'text-violet-700 bg-violet-50 border-violet-200'
+                            : 'text-rose-700 bg-rose-50 border-rose-200'}`}>
+                            {p.brand === 'MVI' ? '🏠 MVI' : p.brand === 'IVP' ? '🌐 IVP'
+                              : p.brand === 'BOTH' ? '🏠🌐 Kedua' : '⚠️ tanpa brand'}
+                          </span>
                         </td>
                         <td className={cellCls}>
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-purple-100 text-purple-700 border border-purple-200">{p.category}</span>
@@ -735,24 +793,69 @@ export default function IncentivePTSPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200" style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.05))' }}>
               <h2 className="font-bold text-gray-800">⚙️ Akses Input Nominal Incentive</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Pilih user marketing yang boleh mengisi nominal. Admin selalu bisa mengisi.</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Pilih siapa yang boleh mengisi nominal, dan <strong>brand mana</strong> yang boleh ia lihat.
+                Admin selalu bisa mengisi dan selalu melihat semua.
+              </p>
+              {/*
+                Pencarian. Daftar ini berisi seluruh user guest & team - pada
+                perusahaan sebesar ini menggulirnya untuk menemukan dua orang
+                Finance jauh lebih lambat daripada mengetik namanya.
+              */}
+              <input value={cariUser} onChange={e => setCariUser(e.target.value)}
+                placeholder="🔍 Cari nama atau username…" aria-label="Cari pengguna"
+                className="mt-3 w-full sm:max-w-xs text-xs px-3 py-2 rounded-lg border border-gray-200 bg-white outline-none focus:ring-2 focus:ring-indigo-300" />
             </div>
             <div className="divide-y divide-gray-100">
-              {allUsers.filter(u => u.role === 'guest' || u.role === 'team').map(u => (
-                <div key={u.id as string} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">{u.full_name as string}</p>
-                    <p className="text-xs text-gray-400">{u.username as string} · {u.role as string}{u.team_type ? ` · ${u.team_type}` : ''}</p>
+              {(() => {
+                const q = cariUser.trim().toLowerCase();
+                const daftar = allUsers
+                  .filter(u => u.role === 'guest' || u.role === 'team')
+                  .filter(u => !q
+                    || ((u.full_name as string) || '').toLowerCase().includes(q)
+                    || ((u.username as string) || '').toLowerCase().includes(q));
+                if (daftar.length === 0) {
+                  return <p className="px-5 py-4 text-sm text-gray-500 italic">
+                    {q ? `Tidak ada pengguna cocok dengan "${cariUser}".` : 'Tidak ada user guest/team.'}
+                  </p>;
+                }
+                return daftar.map(u => (
+                  <div key={u.id as string} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-gray-50 transition-colors flex-wrap">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-700">{u.full_name as string}</p>
+                      <p className="text-xs text-gray-500">{u.username as string} · {u.role as string}{u.team_type ? ` · ${u.team_type}` : ''}</p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/*
+                        Pemilih lingkup hanya muncul untuk yang SUDAH diizinkan.
+                        Menetapkan lingkup pada orang yang belum boleh mengisi
+                        tidak berarti apa-apa, dan menampilkannya hanya membuat
+                        daftar ini penuh kontrol yang tidak berakibat.
+                      */}
+                      {!!u.allow_incentive_input && (
+                        <div className="flex items-center gap-1" role="group" aria-label={`Lingkup brand ${u.full_name as string}`}>
+                          {([['MVI', '🏠 MVI'], ['IVP', '🌐 IVP'], [null, 'Semua']] as const).map(([nilai, label]) => {
+                            const aktif = (u.incentive_brand_scope ?? null) === nilai;
+                            return (
+                              <button key={label} onClick={() => handleSetBrandScope(u.id as string, nilai)}
+                                title={nilai ? `Hanya proyek brand ${nilai} (proyek Kedua Brand tetap terlihat)` : 'Melihat semua brand'}
+                                className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-all ${aktif
+                                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                  : 'border-gray-200 bg-white text-gray-500 hover:border-indigo-300'}`}>
+                                {label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <button onClick={() => handleToggleAllowInput(u.id as string, !!u.allow_incentive_input)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${u.allow_incentive_input ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-rose-300'}`}>
+                        {u.allow_incentive_input ? '✅ Diizinkan' : 'Izinkan'}
+                      </button>
+                    </div>
                   </div>
-                  <button onClick={() => handleToggleAllowInput(u.id as string, !!u.allow_incentive_input)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${u.allow_incentive_input ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-rose-300'}`}>
-                    {u.allow_incentive_input ? '✅ Diizinkan' : 'Izinkan'}
-                  </button>
-                </div>
-              ))}
-              {allUsers.filter(u => u.role === 'guest' || u.role === 'team').length === 0 && (
-                <p className="px-5 py-4 text-sm text-gray-400 italic">Tidak ada user guest/team.</p>
-              )}
+                ));
+              })()}
             </div>
           </div>
         )}
