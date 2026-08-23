@@ -8,7 +8,7 @@ import {
   fetchIncentiveProjects, fetchTranches, fetchVisibleSplits, fetchSupportFromTickets, fetchLateTickets,
   insertTranches, insertSplits, processYearlyBatch,
   calculateIncentiveSplits, validateSplitTotal, generateTranches, findUpline, resolveUserId, OrgUser,
-  ambilSkema, type SkemaInsentif,
+  ambilSkema, persenInstaller, type SkemaInsentif,
   formatRupiah, formatPct,
   ROLE_LABELS, TRANCHE_STATUS,
 } from './_components/calc';
@@ -36,7 +36,7 @@ function calcHandlerSplit(sk: SkemaInsentif | null, p: IncentiveProjectRow): { p
   const pool = p.incentive_value || 0;
   if (!pool || !p.mode_penyelesaian || !sk) return null;
   const remote = p.mode_penyelesaian === 'remote';
-  const pctInstaller = remote ? Math.max(0, Math.min(99, sk.installerRemotePersen || 0)) : 0;
+  const pctInstaller = persenInstaller(sk, remote);
   const faktor = (100 - pctInstaller) / 100;
   if (p.pic_type === 'manager_pic') {
     const pct = (sk.managerSebagaiPic.pic ?? 100) * faktor;

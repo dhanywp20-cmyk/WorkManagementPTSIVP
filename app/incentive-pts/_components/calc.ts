@@ -1,10 +1,11 @@
 import { supabase } from '@/lib/supabase';
 import {
   SkemaInsentif, PenerimaPeran, hitungPembagian, hitungManagerSebagaiPic, ambilSkema,
+  persenInstaller,
 } from '@/lib/incentive-scheme';
 
 export type { SkemaInsentif };
-export { ambilSkema };
+export { ambilSkema, persenInstaller };
 
 // Types
 
@@ -236,7 +237,7 @@ export function generateTranches(
 ): { tranche_number: number; percentage: number; payment_year: number }[] {
   const baseYear = new Date(bastDate).getFullYear();
   const installerDiMuka =
-    modePenyelesaian === 'remote' && (sk.installerRemotePersen || 0) > 0 && sk.installerBayarDiMuka;
+    persenInstaller(sk, modePenyelesaian === 'remote') > 0 && sk.installerBayarDiMuka;
   const terakhir = sk.tranche.length ? Math.max(...sk.tranche.map(t => t.nomor)) : 0;
   return sk.tranche.map(t => ({
     tranche_number: t.nomor,
@@ -421,8 +422,7 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
     // sisanya sebanding dengan persentase tahap itu. Cara ini membuat jumlahnya
     // tetap tepat berapa pun angka yang disetel admin, bukan hanya saat porsi
     // Installer kebetulan sama dengan persentase tahap terakhir.
-    const pctInstaller = project.mode_penyelesaian === 'remote'
-      ? Math.max(0, Math.min(99, sk.installerRemotePersen || 0)) : 0;
+    const pctInstaller = persenInstaller(sk, project.mode_penyelesaian === 'remote');
     const tahapTerakhir = sk.tranche.length ? Math.max(...sk.tranche.map(t => t.nomor)) : 0;
     const installerAmbilTahapTerakhir = pctInstaller > 0 && sk.installerBayarDiMuka;
     const tahapTim = sk.tranche.filter(t => !installerAmbilTahapTerakhir || t.nomor !== tahapTerakhir);

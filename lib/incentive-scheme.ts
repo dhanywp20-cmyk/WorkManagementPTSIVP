@@ -65,14 +65,41 @@ export interface SkemaInsentif {
   managerSebagaiPic: Record<string, number>;
 
   /**
-   * Porsi Installer Cabang pada proyek mode REMOTE, dalam persen dari pool.
-   * 0 = Installer tidak mendapat porsi (nama & daerahnya TETAP dicatat untuk
-   * keperluan rekam jejak - pencatatan itu tidak bergantung pada angka ini).
-   * Bila > 0, seluruh porsi lain diperkecil sebanding agar totalnya tetap 100.
+   * Installer ikut mendapat pembagian atau tidak.
+   *
+   * Saklar TERSENDIRI, bukan sekadar "persennya 0". Keduanya memang berakibat
+   * sama pada hitungan, tapi maknanya berbeda dan itu terbaca di layar:
+   * porsi 0 dengan saklar menyala berarti "Installer ikut, angkanya belum
+   * diisi" - keadaan yang keliru dan diberitahukan periksaSkema. Tanpa
+   * saklarnya, kekeliruan itu tidak bisa dibedakan dari kebijakan yang memang
+   * meniadakan porsi Installer.
+   *
+   * Nama & daerah Installer TETAP dicatat dari Request Schedule apa pun nilai
+   * ini - pencatatan rekam jejak tidak bergantung pada pembagian uang.
+   */
+  installerAktif: boolean;
+
+  /**
+   * Porsi Installer dalam persen dari pool. Porsinya dipotong dari pool LEBIH
+   * DULU, sisanya baru dibagi menurut skema - jadi total selalu 100 berapa pun
+   * angka ini.
    */
   installerRemotePersen: number;
 
-  /** Installer dibayar penuh di muka, tidak mengikuti tahapan pencairan. */
+  /**
+   * Porsi Installer hanya berlaku pada proyek mode REMOTE.
+   *
+   * true = perilaku yang berjalan selama ini. false = Installer mendapat
+   * porsinya pada proyek mana pun. Dijadikan pilihan, bukan dipaku, karena
+   * "remote saja" adalah kebijakan - dan kebijakan yang dipaku di kode
+   * berarti harus deploy ulang setiap kali atasan mengubahnya.
+   */
+  installerHanyaRemote: boolean;
+
+  /**
+   * Installer dibayar PENUH di tahun pertama, tidak ikut dibagi ke tahapan
+   * pencairan bertahun-tahun seperti Tim PTS.
+   */
   installerBayarDiMuka: boolean;
 
   /** Tahapan pencairan untuk Tim PTS. Harus berjumlah 100. */
@@ -95,7 +122,9 @@ export const SKEMA_BAWAAN: SkemaInsentif = {
   jendelaSupportBulan: 12,
   hangusSupervisorKe: 'manager',
   managerSebagaiPic: { pic: 100 },
+  installerAktif: false,
   installerRemotePersen: 0,
+  installerHanyaRemote: true,
   installerBayarDiMuka: true,
   tranche: [
     { nomor: 1, persen: 50, tahunKe: 1 },
@@ -103,6 +132,25 @@ export const SKEMA_BAWAAN: SkemaInsentif = {
     { nomor: 3, persen: 15, tahunKe: 3 },
   ],
 };
+
+/**
+ * Porsi Installer yang BERLAKU untuk sebuah proyek, sesudah saklar & lingkupnya
+ * diterapkan. Satu-satunya tempat aturan ini ditulis.
+ *
+ * Sebelumnya ungkapan `remote ? Math.max(0, Math.min(99, sk.installerRemotePersen)) : 0`
+ * tersalin di empat berkas - hitungPembagian, hitungManagerSebagaiPic,
+ * generateTranches, dan halaman Incentive PTS. Menambah saklar aktif/nonaktif
+ * ke bentuk seperti itu berarti empat kesempatan untuk melewatkan satu, dan
+ * yang terlewat tidak akan gagal terang-terangan: ia cuma membayar Installer
+ * di satu layar dan tidak di layar lain.
+ */
+export function persenInstaller(sk: SkemaInsentif, remote: boolean): number {
+  if (!sk.installerAktif) return 0;
+  if (sk.installerHanyaRemote && !remote) return 0;
+  //  Dibatasi 0-99, bukan 0-100: porsi 100% menyisakan 0 untuk seluruh Tim
+  //  PTS, dan itu hampir pasti salah ketik, bukan kebijakan.
+  return Math.max(0, Math.min(99, sk.installerRemotePersen || 0));
+}
 
 // Pemeriksaan
 
@@ -139,6 +187,15 @@ export function periksaSkema(sk: SkemaInsentif): MasalahSkema[] {
   if (sk.installerRemotePersen < 0 || sk.installerRemotePersen >= 100) {
     masalah.push({ bidang: 'installer', pesan: 'Porsi Installer harus 0–99%.' });
   }
+  //  Saklar menyala tapi porsinya 0 adalah setengah jalan: layarnya berkata
+  //  "Installer ikut", hitungannya memberi nol. Salah satunya harus dibetulkan
+  //  sebelum disimpan, dan mana yang dimaksud hanya orangnya yang tahu.
+  if (sk.installerAktif && (sk.installerRemotePersen || 0) <= 0) {
+    masalah.push({
+      bidang: 'installer',
+      pesan: 'Installer dinyalakan tapi porsinya 0% — isi porsinya, atau matikan saklarnya.',
+    });
+  }
   if (sk.jendelaSupportBulan < 0) masalah.push({ bidang: 'jendela', pesan: 'Jendela penilaian support tidak boleh negatif.' });
 
   const totalTranche = bulat(sk.tranche.reduce((t, x) => t + (x.persen || 0), 0));
@@ -160,7 +217,15 @@ function rapikan(raw: unknown): SkemaInsentif {
     jendelaSupportBulan: r.jendelaSupportBulan ?? SKEMA_BAWAAN.jendelaSupportBulan,
     hangusSupervisorKe: r.hangusSupervisorKe ?? SKEMA_BAWAAN.hangusSupervisorKe,
     managerSebagaiPic: r.managerSebagaiPic ?? SKEMA_BAWAAN.managerSebagaiPic,
+    //  Skema yang tersimpan SEBELUM saklar ini ada tidak punya installerAktif.
+    //  Jatuhnya TIDAK boleh ke bawaan (false): baris lama yang porsinya sudah
+    //  diisi > 0 akan diam-diam berhenti membayar Installer pada perhitungan
+    //  berikutnya, dan tidak ada yang tahu sampai seseorang memeriksa rekap.
+    //  Jadi keaktifannya disimpulkan dari porsinya - itu memang satu-satunya
+    //  penanda yang tersedia di baris lama.
+    installerAktif: r.installerAktif ?? (r.installerRemotePersen ?? 0) > 0,
     installerRemotePersen: r.installerRemotePersen ?? SKEMA_BAWAAN.installerRemotePersen,
+    installerHanyaRemote: r.installerHanyaRemote ?? SKEMA_BAWAAN.installerHanyaRemote,
     installerBayarDiMuka: r.installerBayarDiMuka ?? SKEMA_BAWAAN.installerBayarDiMuka,
     tranche: Array.isArray(r.tranche) && r.tranche.length ? r.tranche : SKEMA_BAWAAN.tranche,
   };
@@ -238,7 +303,7 @@ export function hitungPembagian(
 
   // Porsi Installer dipotong dari pool LEBIH DULU; sisanya baru dibagi menurut
   // skema. Dengan begitu total selalu 100% berapa pun porsi Installer diset.
-  const pctInstaller = remote ? Math.max(0, Math.min(99, sk.installerRemotePersen || 0)) : 0;
+  const pctInstaller = persenInstaller(sk, remote);
   const faktor = (100 - pctInstaller) / 100;
 
   const dasar: Record<string, number> = adaSupport
@@ -297,7 +362,7 @@ export function hitungManagerSebagaiPic(
   namaInstaller?: string | null,
 ): HasilBagi[] {
   if (pool <= 0) return [];
-  const pctInstaller = remote ? Math.max(0, Math.min(99, sk.installerRemotePersen || 0)) : 0;
+  const pctInstaller = persenInstaller(sk, remote);
   const faktor = (100 - pctInstaller) / 100;
   const hasil: HasilBagi[] = Object.entries(sk.managerSebagaiPic)
     .filter(([, p]) => (p || 0) > 0)

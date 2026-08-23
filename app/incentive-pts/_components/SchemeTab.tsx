@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import {
   SkemaInsentif, PorsiPeran, SKEMA_BAWAAN, periksaSkema, simpanSkema, ambilSkema,
-  hitungPembagian, hitungManagerSebagaiPic,
+  hitungPembagian, hitungManagerSebagaiPic, persenInstaller,
 } from '@/lib/incentive-scheme';
 
 const rp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
@@ -12,6 +12,34 @@ const inputKecil = 'w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-
 
 /** Contoh nominal untuk pratinjau - angka bulat supaya mudah dicocokkan manual. */
 const CONTOH = 5_000_000;
+
+/**
+ * Penunjuk total persen yang hidup saat angkanya diketik.
+ *
+ * Kotak merah di bawah halaman sudah menahan skema yang tidak berjumlah 100
+ * agar tidak tersimpan, tapi ia baru terbaca setelah orangnya menggulir ke
+ * bawah - dan ia tidak menyebutkan bagian MANA yang berat sebelah. Lencana ini
+ * duduk tepat di judul tiap bagian dan menyebutkan selisihnya, jadi
+ * ketidakseimbangan terlihat pada ketikan yang membuatnya, bukan di ujung
+ * halaman beberapa gulir kemudian.
+ */
+function TotalPersen({ nilai }: { nilai: number }) {
+  const bulat = Math.round(nilai * 100) / 100;
+  const pas = bulat === 100;
+  const selisih = Math.round((bulat - 100) * 100) / 100;
+  return (
+    <span
+      className="text-[11px] font-bold px-2 py-1 rounded-lg whitespace-nowrap"
+      style={{
+        background: pas ? '#dcfce7' : '#ffe4e6',
+        color: pas ? '#15803d' : '#be123c',
+      }}>
+      {pas
+        ? `Total ${bulat}% ✓`
+        : `Total ${bulat}% — ${selisih > 0 ? `lebih ${selisih}` : `kurang ${Math.abs(selisih)}`}%`}
+    </span>
+  );
+}
 
 export function SchemeTab({ olehNama, notify }: {
   olehNama: string;
@@ -28,6 +56,12 @@ export function SchemeTab({ olehNama, notify }: {
   const ubah = (patch: Partial<SkemaInsentif>) => setSk({ ...sk, ...patch });
   const masalah = periksaSkema(sk);
   const berubah = JSON.stringify(sk) !== awal;
+
+  //  Dihitung dari state yang sedang disunting, bukan dari yang tersimpan -
+  //  itu memang gunanya: angkanya bergerak seiring ketikan.
+  const totalPorsi = sk.porsi.reduce((t, p) => t + (p.persen || 0), 0);
+  const totalTanpaSupport = Object.values(sk.tanpaSupport).reduce((t, n) => t + (n || 0), 0);
+  const totalTranche = sk.tranche.reduce((t, x) => t + (x.persen || 0), 0);
 
   const ubahPorsi = (i: number, patch: Partial<PorsiPeran>) =>
     ubah({ porsi: sk.porsi.map((p, j) => (j === i ? { ...p, ...patch } : p)) });
@@ -90,6 +124,7 @@ export function SchemeTab({ olehNama, notify }: {
             <h3 className="font-bold text-gray-800 text-sm">Porsi Normal</h3>
             <p className="text-[11px] text-gray-400">Dipakai bila ada anggota support yang tercatat membantu.</p>
           </div>
+          <TotalPersen nilai={totalPorsi} />
           <button type="button" onClick={tambahPeran}
             className="px-3 py-1.5 rounded-lg text-xs font-bold border-2 border-rose-200 text-rose-600 hover:bg-rose-50 transition-all">
             + Tambah Peran
@@ -127,11 +162,14 @@ export function SchemeTab({ olehNama, notify }: {
 
       {/* ── Tanpa support ── */}
       <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-        <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
-          <h3 className="font-bold text-gray-800 text-sm">Bila Tidak Ada Support yang Membantu</h3>
-          <p className="text-[11px] text-gray-400">
-            Porsi pengganti saat tidak ada anggota support tercatat dalam jendela penilaian.
-          </p>
+        <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 className="font-bold text-gray-800 text-sm">Bila Tidak Ada Support yang Membantu</h3>
+            <p className="text-[11px] text-gray-400">
+              Porsi pengganti saat tidak ada anggota support tercatat dalam jendela penilaian.
+            </p>
+          </div>
+          <TotalPersen nilai={totalTanpaSupport} />
         </div>
         <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
           {sk.porsi.map(p => (
@@ -174,40 +212,80 @@ export function SchemeTab({ olehNama, notify }: {
             </select>
           </div>
           <div>
-            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1">
-              Manager sebagai PIC — porsi PIC (%)
-            </label>
+            <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">
+                Manager sebagai PIC — porsi PIC (%)
+              </label>
+              <TotalPersen nilai={Object.values(sk.managerSebagaiPic).reduce((t, n) => t + (n || 0), 0)} />
+            </div>
             <input type="number" min={0} max={100} value={sk.managerSebagaiPic.pic ?? 100}
               onChange={e => ubah({ managerSebagaiPic: { pic: parseFloat(e.target.value) || 0 } })}
               aria-label="Porsi Manager sebagai PIC" className={inputKecil} />
           </div>
-          <div>
-            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1">
-              Porsi Installer Cabang saat REMOTE (%)
-            </label>
-            <input type="number" min={0} max={99} step="0.01" value={sk.installerRemotePersen}
-              onChange={e => ubah({ installerRemotePersen: parseFloat(e.target.value) || 0 })}
-              aria-label="Porsi Installer Cabang saat remote" className={inputKecil} />
-            <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
-              Isi <strong>0</strong> bila Installer tidak mendapat insentif. Nama & daerah Installer
-              tetap dicatat dari Request Schedule apa pun angkanya — pencatatan itu tidak
-              bergantung pada porsi.
-            </p>
-          </div>
-          <div className="flex items-start pt-5">
-            <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
-              <input type="checkbox" checked={sk.installerBayarDiMuka}
-                onChange={e => ubah({ installerBayarDiMuka: e.target.checked })} />
-              Installer dibayar penuh di muka (tidak ikut tahapan)
-            </label>
-          </div>
         </div>
+      </div>
+
+      {/* ── Installer Cabang ── */}
+      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+        <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 className="font-bold text-gray-800 text-sm">🔧 Pembagian untuk Installer</h3>
+            <p className="text-[11px] text-gray-400">Porsinya dipotong dari pool lebih dulu; sisanya dibagi ke Tim PTS.</p>
+          </div>
+          <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer">
+            <input type="checkbox" checked={sk.installerAktif}
+              onChange={e => ubah({ installerAktif: e.target.checked })}
+              aria-label="Installer ikut mendapat pembagian" />
+            Installer ikut dapat bagian
+          </label>
+        </div>
+
+        {!sk.installerAktif ? (
+          <p className="px-4 sm:px-5 py-4 text-xs text-gray-400 leading-relaxed">
+            Installer <strong>tidak</strong> mendapat porsi insentif. Nama & daerahnya tetap dicatat
+            dari Request Schedule — pencatatan rekam jejak tidak bergantung pada pembagian uang.
+          </p>
+        ) : (
+          <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1">
+                Porsi Installer (%)
+              </label>
+              <input type="number" min={0} max={99} step="0.01" value={sk.installerRemotePersen}
+                onChange={e => ubah({ installerRemotePersen: parseFloat(e.target.value) || 0 })}
+                aria-label="Porsi Installer" className={inputKecil} />
+              <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
+                Sisa <strong>{(100 - (sk.installerRemotePersen || 0)).toFixed(2).replace(/\.00$/, '')}%</strong> dibagi
+                ke Tim PTS menurut Porsi Normal di atas. Totalnya tetap 100% berapa pun angka ini.
+              </p>
+            </div>
+            <div className="space-y-3">
+              <label className="flex items-start gap-2 text-xs text-gray-600 cursor-pointer">
+                <input type="checkbox" className="mt-0.5" checked={sk.installerBayarDiMuka}
+                  onChange={e => ubah({ installerBayarDiMuka: e.target.checked })} />
+                <span>
+                  <strong>Dibayar penuh di tahun pertama.</strong> Porsi Installer tidak ikut dipecah
+                  ke tahapan bertahun-tahun seperti Tim PTS.
+                </span>
+              </label>
+              <label className="flex items-start gap-2 text-xs text-gray-600 cursor-pointer">
+                <input type="checkbox" className="mt-0.5" checked={sk.installerHanyaRemote}
+                  onChange={e => ubah({ installerHanyaRemote: e.target.checked })} />
+                <span>
+                  <strong>Hanya proyek REMOTE.</strong> Lepas centang ini bila Installer berhak atas
+                  porsinya pada proyek mana pun, termasuk onsite.
+                </span>
+              </label>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Tahapan pencairan ── */}
       <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <h3 className="font-bold text-gray-800 text-sm">Tahapan Pencairan Tim PTS</h3>
+          <TotalPersen nilai={totalTranche} />
           <button type="button"
             onClick={() => ubah({ tranche: [...sk.tranche, { nomor: sk.tranche.length + 1, persen: 0, tahunKe: sk.tranche.length + 1 }] })}
             className="px-3 py-1.5 rounded-lg text-xs font-bold border-2 border-rose-200 text-rose-600 hover:bg-rose-50 transition-all">
@@ -274,10 +352,18 @@ export function SchemeTab({ olehNama, notify }: {
             );
           })}
         </div>
-        {sk.installerRemotePersen > 0 && (
+        {/*
+          Syaratnya persenInstaller(), bukan installerRemotePersen > 0. Angkanya
+          bisa tersimpan > 0 sementara saklarnya dimatikan - dan pratinjau yang
+          memperlihatkan porsi Installer padahal hitungannya memberi nol persis
+          jenis selisih yang membuat orang percaya pada angka yang salah.
+        */}
+        {persenInstaller(sk, true) > 0 && (
           <div className="px-4 sm:px-5 pb-5">
             <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-amber-700 mb-1.5">Mode Remote (ada porsi Installer)</p>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-amber-700 mb-1.5">
+                {sk.installerHanyaRemote ? 'Mode Remote (ada porsi Installer)' : 'Dengan porsi Installer'}
+              </p>
               {pratinjau(true, true, false).map((h, i) => (
                 <div key={i} className="flex items-center justify-between text-xs py-0.5">
                   <span className="text-amber-900/80">{h.user_name}</span>
@@ -303,7 +389,9 @@ export function SchemeTab({ olehNama, notify }: {
       {/* ── Simpan ── */}
       {masalah.length > 0 && (
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4">
-          <p className="text-xs font-bold text-rose-700 mb-1.5">Skema belum bisa disimpan:</p>
+          <p className="text-xs font-bold text-rose-700 mb-1.5">
+            ⚠️ Skema belum seimbang — belum bisa disimpan:
+          </p>
           <ul className="text-xs text-rose-600 space-y-0.5 list-disc pl-4">
             {masalah.map((m, i) => <li key={i}>{m.pesan}</li>)}
           </ul>
