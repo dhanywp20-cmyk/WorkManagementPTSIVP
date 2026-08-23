@@ -208,7 +208,16 @@ export function bagikanTepat(pool: number, persenTiap: number[]): number[] {
 
 // Pemeriksaan
 
-export interface MasalahSkema { bidang: string; pesan: string }
+export interface MasalahSkema {
+  bidang: string;
+  pesan: string;
+  /**
+   * true = tidak menghalangi penyimpanan. Dipakai untuk hal yang perhitungannya
+   * tetap benar tapi berpotensi menyimpang dari dokumen kebijakan - keputusan
+   * mana yang benar ada di manusia, bukan di validasi.
+   */
+  peringatan?: boolean;
+}
 
 /**
  * Periksa skema sebelum disimpan.
@@ -255,6 +264,33 @@ export function periksaSkema(sk: SkemaInsentif): MasalahSkema[] {
   const totalTranche = bulat(sk.tranche.reduce((t, x) => t + (x.persen || 0), 0));
   if (totalTranche !== 100) masalah.push({ bidang: 'tranche', pesan: `Total tahapan pencairan ${totalTranche}% — harus tepat 100%.` });
   if (!sk.tranche.length) masalah.push({ bidang: 'tranche', pesan: 'Minimal ada satu tahapan pencairan.' });
+
+  /*
+    Installer "dibayar di muka" bekerja dengan cara MENGAMBIL tahap terakhir
+    seutuhnya. Kalau porsinya tidak sama dengan persentase tahap itu, sistem
+    tetap menghitung - porsi Tim PTS dibagi ulang ke tahap sisanya secara
+    proporsional, dan totalnya tetap 100%. Jadi ini BUKAN galat.
+
+    Tapi dokumen proposal menyatakan keduanya sama ("Installer mengambil porsi
+    Tahap 3, 15%"). Begitu angkanya dibuat berbeda, platform dan dokumen
+    berbeda tanpa ada yang memberi tahu - dan yang membaca dokumen akan
+    menghitung sendiri lalu mendapat angka lain. Karena itu diperingatkan,
+    bukan ditolak: yang salah bisa saja dokumennya, dan itu keputusan manusia.
+  */
+  if (sk.installerAktif && sk.installerBayarDiMuka && sk.tranche.length) {
+    const terakhir = sk.tranche.reduce((a, b) => (b.nomor > a.nomor ? b : a));
+    const pctInst = bulat(sk.installerRemotePersen || 0);
+    const pctTahap = bulat(terakhir.persen || 0);
+    if (pctInst > 0 && pctInst !== pctTahap) {
+      masalah.push({
+        bidang: 'installer',
+        peringatan: true,
+        pesan: `Porsi Installer ${pctInst}% berbeda dari Tahap ${terakhir.nomor} (${pctTahap}%). `
+          + 'Perhitungan tetap benar dan total tetap 100% — porsi Tim PTS dibagi ulang ke tahap sisanya. '
+          + 'Tapi proposal menyebut keduanya sama, jadi samakan salah satunya bila dokumen ikut berlaku.',
+      });
+    }
+  }
 
   return masalah;
 }
@@ -319,8 +355,9 @@ export async function ambilSkema(): Promise<SkemaInsentif> {
  * mengubah apa pun soal skema mana yang berlaku - hanya menyimpan jejaknya.
  */
 export async function simpanSkema(sk: SkemaInsentif, olehNama: string): Promise<{ error: string | null }> {
-  const masalah = periksaSkema(sk);
-  if (masalah.length) return { error: masalah.map(m => m.pesan).join(' ') };
+  //  Peringatan tidak menahan penyimpanan - hanya galat sungguhan yang menahan.
+  const galat = periksaSkema(sk).filter(m => !m.peringatan);
+  if (galat.length) return { error: galat.map(m => m.pesan).join(' ') };
   const { error } = await supabase.from('incentive_scheme_settings').insert({
     scheme: sk as unknown as Record<string, unknown>,
     updated_at: new Date().toISOString(),

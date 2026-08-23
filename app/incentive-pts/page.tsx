@@ -175,6 +175,31 @@ export default function IncentivePTSPage() {
     if (!nominalProject) return;
     if (!nominalValue || Number(nominalValue) <= 0) { notify('error', 'Nominal incentive harus > 0'); return; }
     setSavingNominal(true);
+
+    /*
+      Nominal DIKUNCI begitu tahapan pencairan dibuat.
+
+      Tahapan menyimpan persentase, bukan rupiah - nominalnya dihitung dari
+      incentive_value pada saat pencairan. Jadi mengubah nominal sesudah Tahap 1
+      cair membuat Tahap 2 & 3 dihitung dari pool yang BERBEDA dengan yang
+      dipakai Tahap 1, dan jumlah seluruh tahapan tidak lagi sama dengan pool
+      mana pun. Tidak ada galat yang muncul; yang terjadi cuma rekap tahun
+      berikutnya tidak bisa dicocokkan dengan rekap tahun sebelumnya.
+
+      Diperiksa ke database, bukan ke state layar, karena tahapan bisa saja
+      baru dibuat orang lain sesudah layar ini dimuat.
+    */
+    const { data: adaTahapan } = await supabase
+      .from('incentive_tranches').select('id').eq('project_id', nominalProject.id).limit(1);
+    if (adaTahapan && adaTahapan.length > 0) {
+      notify('error',
+        'Nominal terkunci — tahapan pencairan untuk proyek ini sudah dibuat. '
+        + 'Mengubahnya membuat tahapan berikutnya dihitung dari pool yang berbeda dengan tahap yang sudah cair. '
+        + 'Hapus tahapannya lebih dulu bila nominalnya memang keliru.');
+      setSavingNominal(false);
+      return;
+    }
+
     const { error } = await supabase.from('reminders').update({ incentive_value: Number(nominalValue), updated_at: new Date().toISOString() }).eq('id', nominalProject.id);
     if (error) { notify('error', 'Gagal: ' + error.message); setSavingNominal(false); return; }
     notify('success', `Nominal ${formatRupiah(Number(nominalValue))} berhasil disimpan!`);
@@ -434,7 +459,10 @@ export default function IncentivePTSPage() {
                         <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                       </button>
                       {showNominal && (
-                        <button aria-label="Input Nominal" onClick={() => { setNominalProject(p); setNominalValue(String(p.incentive_value || '')); }} title="Input Nominal" className="inline-flex items-center justify-center w-7 h-7 rounded-lg border bg-white border-slate-200 text-rose-500 hover:bg-rose-50">
+                        <button aria-label="Input Nominal" disabled={tranches.some(t => t.project_id === p.id)}
+                        onClick={() => { setNominalProject(p); setNominalValue(String(p.incentive_value || '')); }}
+                        title={tranches.some(t => t.project_id === p.id) ? 'Nominal terkunci — tahapan pencairan sudah dibuat' : 'Input Nominal'}
+                        className="inline-flex items-center justify-center w-7 h-7 rounded-lg border bg-white border-slate-200 text-rose-500 hover:bg-rose-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white">
                           <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </button>
                       )}

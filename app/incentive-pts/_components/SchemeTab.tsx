@@ -57,7 +57,11 @@ export function SchemeTab({ olehNama, notify }: {
   if (!sk) return <div className="py-16 text-center text-sm text-gray-400">Memuat skema…</div>;
 
   const ubah = (patch: Partial<SkemaInsentif>) => setSk({ ...sk, ...patch });
-  const masalah = periksaSkema(sk);
+  //  Galat MENAHAN penyimpanan; peringatan hanya memberi tahu. Dipisah supaya
+  //  tombol Simpan tidak terkunci oleh hal yang perhitungannya sebenarnya benar.
+  const semuaMasalah = periksaSkema(sk);
+  const masalah = semuaMasalah.filter(m => !m.peringatan);
+  const peringatan = semuaMasalah.filter(m => m.peringatan);
   const berubah = JSON.stringify(sk) !== awal;
 
   //  Dihitung dari state yang sedang disunting, bukan dari yang tersimpan -
@@ -457,6 +461,16 @@ export function SchemeTab({ olehNama, notify }: {
           </p>
           <ul className="text-xs text-rose-600 space-y-0.5 list-disc pl-4">
             {masalah.map((m, i) => <li key={i}>{m.pesan}</li>)}
+          </ul>
+        </div>
+      )}
+      {peringatan.length > 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="text-xs font-bold text-amber-800 mb-1.5">
+            Boleh disimpan, tapi perlu Anda ketahui:
+          </p>
+          <ul className="text-xs text-amber-700 space-y-1 list-disc pl-4 leading-relaxed">
+            {peringatan.map((m, i) => <li key={i}>{m.pesan}</li>)}
           </ul>
         </div>
       )}
