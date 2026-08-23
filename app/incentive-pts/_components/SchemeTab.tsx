@@ -54,13 +54,16 @@ function Seksi({ no, judul, ket, warna, children }: {
   no: string; judul: string; ket: string; warna: string; children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl bg-slate-50/70 border border-slate-200/70 p-3 sm:p-4">
+    // bg-slate-100 SOLID, bukan /70. Halaman ini berlatar foto gedung; latar
+    // tembus pandang membuat teks keterangan duduk langsung di atas foto, dan
+    // rasio kontras di atas foto tidak bisa dijamin berapa pun warna teksnya.
+    <section className="rounded-2xl bg-slate-100 border border-slate-200 p-3 sm:p-4">
       <div className="flex items-start gap-2.5 mb-3">
         <span className="flex-shrink-0 w-6 h-6 rounded-lg text-white text-[11px] font-black flex items-center justify-center mt-0.5"
           style={{ background: warna }} aria-hidden="true">{no}</span>
         <div className="min-w-0">
           <h3 className="font-bold text-gray-800 text-sm leading-tight">{judul}</h3>
-          <p className="text-[11px] text-gray-500 leading-relaxed mt-0.5">{ket}</p>
+          <p className="text-[11px] text-gray-600 leading-relaxed mt-0.5">{ket}</p>
         </div>
       </div>
       {children}
@@ -80,7 +83,7 @@ export function SchemeTab({ olehNama, notify }: {
   const muatRiwayat = () => riwayatSkema(10).then(setRiwayat);
   useEffect(() => { ambilSkema().then(x => { setSk(x); setAwal(JSON.stringify(x)); }); muatRiwayat(); }, []);
 
-  if (!sk) return <div className="py-16 text-center text-sm text-gray-400">Memuat skema…</div>;
+  if (!sk) return <div className="py-16 text-center text-sm text-gray-500">Memuat skema…</div>;
 
   const ubah = (patch: Partial<SkemaInsentif>) => setSk({ ...sk, ...patch });
   //  Galat MENAHAN penyimpanan; peringatan hanya memberi tahu. Dipisah supaya
@@ -175,7 +178,7 @@ export function SchemeTab({ olehNama, notify }: {
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <div>
             <h3 className="font-bold text-gray-800 text-sm">Porsi Normal</h3>
-            <p className="text-[11px] text-gray-400">Dipakai bila ada anggota support yang tercatat membantu.</p>
+            <p className="text-[11px] text-gray-500">Dipakai bila ada anggota support yang tercatat membantu.</p>
           </div>
           <TotalPersen nilai={totalPorsi} />
           <button type="button" onClick={tambahPeran}
@@ -196,7 +199,7 @@ export function SchemeTab({ olehNama, notify }: {
                 <input type="number" min={0} max={100} step="0.01" value={p.persen}
                   onChange={e => ubahPorsi(i, { persen: parseFloat(e.target.value) || 0 })}
                   aria-label={`Persentase ${p.label}`} className={`${inputKecil} pr-6`} />
-                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400" aria-hidden="true">%</span>
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500" aria-hidden="true">%</span>
               </div>
               <label className="col-span-2 flex items-center gap-1.5 text-[11px] text-gray-600 cursor-pointer">
                 <input type="checkbox" checked={p.bagiRata} onChange={e => ubahPorsi(i, { bagiRata: e.target.checked })} />
@@ -206,7 +209,7 @@ export function SchemeTab({ olehNama, notify }: {
                 className="col-span-1 text-rose-400 hover:text-rose-600 text-lg leading-none">×</button>
             </div>
           ))}
-          <p className="text-[11px] text-gray-400 pt-1">
+          <p className="text-[11px] text-gray-500 pt-1">
             <strong>bagi rata</strong> = porsi dibagi rata ke semua orang yang memegang peran itu
             (mis. beberapa anggota support). Tanpa centang, porsi jatuh ke satu orang.
           </p>
@@ -217,7 +220,7 @@ export function SchemeTab({ olehNama, notify }: {
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <div>
             <h3 className="font-bold text-gray-800 text-sm">Bila Tidak Ada Support yang Membantu</h3>
-            <p className="text-[11px] text-gray-400">
+            <p className="text-[11px] text-gray-500">
               Porsi pengganti saat tidak ada anggota support tercatat dalam jendela penilaian.
             </p>
           </div>
@@ -268,7 +271,7 @@ export function SchemeTab({ olehNama, notify }: {
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <div>
             <h3 className="font-bold text-gray-800 text-sm">🔧 Pembagian untuk Installer</h3>
-            <p className="text-[11px] text-gray-400">Porsinya dipotong dari pool lebih dulu; sisanya dibagi ke Tim PTS.</p>
+            <p className="text-[11px] text-gray-500">Porsinya dipotong dari pool lebih dulu; sisanya dibagi ke Tim PTS.</p>
           </div>
           <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer">
             <input type="checkbox" checked={sk.installerAktif}
@@ -279,7 +282,7 @@ export function SchemeTab({ olehNama, notify }: {
         </div>
 
         {!sk.installerAktif ? (
-          <p className="px-4 sm:px-5 py-4 text-xs text-gray-400 leading-relaxed">
+          <p className="px-4 sm:px-5 py-4 text-xs text-gray-500 leading-relaxed">
             Installer <strong>tidak</strong> mendapat porsi insentif. Nama & daerahnya tetap dicatat
             dari Request Schedule — pencatatan rekam jejak tidak bergantung pada pembagian uang.
           </p>
@@ -292,7 +295,7 @@ export function SchemeTab({ olehNama, notify }: {
               <input type="number" min={0} max={99} step="0.01" value={sk.installerRemotePersen}
                 onChange={e => ubah({ installerRemotePersen: parseFloat(e.target.value) || 0 })}
                 aria-label="Porsi Installer" className={inputKecil} />
-              <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
+              <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
                 Sisa <strong>{(100 - (sk.installerRemotePersen || 0)).toFixed(2).replace(/\.00$/, '')}%</strong> dibagi
                 ke Tim PTS menurut Porsi Normal di atas. Totalnya tetap 100% berapa pun angka ini.
               </p>
@@ -334,7 +337,7 @@ export function SchemeTab({ olehNama, notify }: {
         proses pencairan sesungguhnya.
       */}
       {persenInstaller(sk, true) > 0 && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50/40 overflow-hidden h-full flex flex-col">
+        <div className="rounded-xl border border-blue-200 bg-blue-50 overflow-hidden h-full flex flex-col">
           <div className="px-4 sm:px-5 py-3 border-b border-blue-100 flex items-start justify-between gap-3 flex-wrap">
             <div className="min-w-0">
             <h3 className="font-bold text-gray-800 text-sm">🔧 Pola Pembagian saat Installer Aktif</h3>
@@ -382,7 +385,7 @@ export function SchemeTab({ olehNama, notify }: {
                               onChange={e => ubah({ porsiRemote: { ...sk.porsiRemote,
                                 [kunciPeta]: { ...peta, [b.k]: parseFloat(e.target.value) || 0 } } })}
                               aria-label={`Porsi Remote ${b.l} (${judul})`} className={`${inputKecil} pr-6`} />
-                            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400" aria-hidden="true">%</span>
+                            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500" aria-hidden="true">%</span>
                           </div>
                         </div>
                       ))}
@@ -420,12 +423,12 @@ export function SchemeTab({ olehNama, notify }: {
                         </span>
                       </div>
                     ))}
-                    {!hasil.length && <p className="px-3 py-3 text-xs text-gray-400 italic">Belum ada porsi.</p>}
+                    {!hasil.length && <p className="px-3 py-3 text-xs text-gray-500 italic">Belum ada porsi.</p>}
                   </div>
                   <p className={`px-3 py-1.5 text-xs font-bold ${pas ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'}`}>
                     Total {totalPct.toFixed(2).replace(/\.00$/, '')}%
                   </p>
-                  <p className="px-3 py-2 text-[10px] text-gray-400 leading-relaxed border-t border-gray-50">{ket}</p>
+                  <p className="px-3 py-2 text-[10px] text-gray-500 leading-relaxed border-t border-gray-50">{ket}</p>
                 </div>
               );
             })}
@@ -493,7 +496,7 @@ export function SchemeTab({ olehNama, notify }: {
                             onChange={e => ubah({ managerSebagaiPic: { ...sk.managerSebagaiPic,
                               [kunciPeta]: { ...peta, [b.k]: parseFloat(e.target.value) || 0 } } })}
                             aria-label={`Manager sebagai PIC — ${b.l} (${judul})`} className={`${inputKecil} pr-6`} />
-                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400" aria-hidden="true">%</span>
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500" aria-hidden="true">%</span>
                         </div>
                       </div>
                     ))}
@@ -529,13 +532,13 @@ export function SchemeTab({ olehNama, notify }: {
                   onChange={e => ubah({ tranche: sk.tranche.map((x, j) => j === i ? { ...x, tahunKe: parseInt(e.target.value) || 0 } : x) })}
                   aria-label={`Tahun ke berapa untuk tahap ${t.nomor}`} className={inputKecil} />
               </div>
-              <span className="col-span-1 text-[11px] text-gray-400">thn</span>
+              <span className="col-span-1 text-[11px] text-gray-500">thn</span>
               <button type="button" onClick={() => ubah({ tranche: sk.tranche.filter((_, j) => j !== i) })}
                 aria-label={`Hapus tahap ${t.nomor}`}
                 className="col-span-1 text-rose-400 hover:text-rose-600 text-lg leading-none">×</button>
             </div>
           ))}
-          <p className="text-[11px] text-gray-400 pt-1">Kolom kedua = persen, kolom ketiga = dicairkan pada tahun BAST + N.</p>
+          <p className="text-[11px] text-gray-500 pt-1">Kolom kedua = persen, kolom ketiga = dicairkan pada tahun BAST + N.</p>
         </div>
       </div>
         </div>
@@ -547,7 +550,7 @@ export function SchemeTab({ olehNama, notify }: {
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
           <h3 className="font-bold text-gray-800 text-sm">Pratinjau — pool {rp(CONTOH)}</h3>
-          <p className="text-[11px] text-gray-400">Dihitung dengan mesin yang sama seperti proses pencairan sesungguhnya.</p>
+          <p className="text-[11px] text-gray-500">Dihitung dengan mesin yang sama seperti proses pencairan sesungguhnya.</p>
         </div>
         <div className="p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
           {([
@@ -570,7 +573,7 @@ export function SchemeTab({ olehNama, notify }: {
                       </span>
                     </div>
                   ))}
-                  {!hasil.length && <p className="px-3 py-3 text-xs text-gray-400 italic">Belum ada porsi.</p>}
+                  {!hasil.length && <p className="px-3 py-3 text-xs text-gray-500 italic">Belum ada porsi.</p>}
                 </div>
                 <p className={`px-3 py-2 text-xs font-bold ${pas ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'}`}>
                   Total {totalPct.toFixed(2).replace(/\.00$/, '')}% · {rp(total)}
@@ -620,7 +623,7 @@ export function SchemeTab({ olehNama, notify }: {
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden h-full flex flex-col">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
           <h3 className="font-bold text-gray-800 text-sm">🕘 Riwayat Skema</h3>
-          <p className="text-[11px] text-gray-400 leading-relaxed">
+          <p className="text-[11px] text-gray-500 leading-relaxed">
             Tiap penyimpanan membuat versi baru — versi lama tidak ditimpa. Proyek yang tahapannya
             sudah dibuat tetap dibayar memakai skema yang berlaku saat itu, jadi mengubah porsi di
             sini tidak pernah mengubah proyek yang sedang berjalan.
@@ -628,7 +631,7 @@ export function SchemeTab({ olehNama, notify }: {
         </div>
         <div className="p-4 sm:p-5">
           {riwayat.length === 0 ? (
-            <p className="text-xs text-gray-400 italic">Belum ada versi tersimpan.</p>
+            <p className="text-xs text-gray-500 italic">Belum ada versi tersimpan.</p>
           ) : (
             <div className="space-y-1.5">
               {riwayat.map((v, i) => (
@@ -639,7 +642,7 @@ export function SchemeTab({ olehNama, notify }: {
                       <span className="ml-2 text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">BERLAKU</span>
                     )}
                   </div>
-                  <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                  <span className="text-[10px] text-gray-500 whitespace-nowrap">
                     {new Date(v.updated_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
                     {v.updated_by ? ` · ${v.updated_by}` : ''}
                   </span>
