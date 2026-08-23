@@ -721,8 +721,15 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
           {tab==='analytics' && (
             <div className="space-y-3">
 
-              {/* ── ROW 1: Piket + Ticket dalam 1 baris ── */}
-              <div className="grid grid-cols-2 gap-3">
+              {/*
+                Empat kartu modul dalam SATU grid, bukan dua baris berisi dua.
+                grid-cols-2 tetap (tanpa breakpoint) membuat tiap kartu
+                setengah layar penuh untuk isi yang sedikit (beberapa angka +
+                donut kecil) - persis keluhan "terlalu lega". lg:grid-cols-4
+                menyusun keempatnya sejajar begitu ada ruang; sm:grid-cols-2
+                jadi jembatan di layar sedang sebelum turun ke 1 kolom.
+              */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 
                 {/* PIKET SHOWROOM */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
@@ -812,10 +819,6 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                     );
                   })()}
                 </div>
-              </div>
-
-              {/* ── ROW 2: Reminder + Unit Movement ── */}
-              <div className="grid grid-cols-2 gap-3">
 
                 {/* REMINDER SCHEDULE */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
