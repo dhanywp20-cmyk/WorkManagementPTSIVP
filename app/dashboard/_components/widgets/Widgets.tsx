@@ -138,23 +138,19 @@ function KartuPerforma({ r }: { r: RingkasanPerforma }) {
     <div>
       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Ringkasan Performa</div>
       {/*
-        Kolomnya bertambah mengikuti lebar layar sampai ENAM - keenamnya
-        sejajar dalam satu baris di layar lebar.
-        Dugaan awal saya sebaliknya: tiga kolom, karena enam sejajar dikira
-        akan terjepit. Diukur di 1500px, yang terjadi justru kebalikannya -
-        tiga kolom membuat tiap kartu selebar ~400px dengan ruang kosong
-        besar di dalamnya, persis pemborosan ruang yang sedang dibereskan.
-        Di layar sempit tetap turun ke tiga lalu dua, jadi tidak ada yang
-        terjepit di sana.
+        Ditumpuk VERTIKAL sebagai kolom SENDIRI di sebelah kanan, bukan grid
+        horizontal di bawah daftar nama. Percobaan pertama (grid 6 kolom lalu
+        3 kolom) sama-sama membentang ke samping dan memakan lebar yang
+        justru sedang dihemat - keduanya salah arah. Ditumpuk ke bawah,
+        lebarnya mengikuti kolom sempit yang diberi pemanggilnya
+        (grid-cols-[...auto] di TeamMonitoringWidget), bukan melebar sendiri.
       */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-1.5">
+      <div className="flex flex-col gap-1">
         {item.map(m => (
-          <div key={m.label} className="flex items-center gap-1.5 bg-slate-50 rounded-lg px-2 py-1.5 border border-slate-100">
-            <span className="text-sm flex-shrink-0">{m.ikon}</span>
-            <div className="min-w-0">
-              <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate">{m.label}</div>
-              <div className="text-[11px] font-black truncate" style={{ color: m.warna }}>{m.nilai}</div>
-            </div>
+          <div key={m.label} className="flex items-center gap-1.5 bg-slate-50 rounded-lg px-2 py-1 border border-slate-100">
+            <span className="text-xs flex-shrink-0">{m.ikon}</span>
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide flex-1 truncate">{m.label}</span>
+            <span className="text-[11px] font-black flex-shrink-0 whitespace-nowrap" style={{ color: m.warna }}>{m.nilai}</span>
           </div>
         ))}
       </div>
@@ -287,7 +283,14 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
       {total === 0 ? (
         <EmptyState text="Belum ada anggota Team PTS terdaftar." />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[190px_1fr] gap-x-5 gap-y-3">
+        // TIGA kolom di layar lebar - stat, nama, performa - bukan performa
+        // ditumpuk di bawah nama dalam kolom yang sama. Itu percobaan
+        // pertama saya, dan hasilnya kartunya jadi tinggi ke bawah alih-alih
+        // memakai lebar yang tersisa di kanan - persis yang diminta dibetulkan.
+        // Kolom performa auto (selebar isinya, ~170px) supaya kolom nama di
+        // tengah tetap dapat ruang paling besar. Di layar sempit ketiganya
+        // turun jadi satu kolom bertumpuk.
+        <div className="grid grid-cols-1 lg:grid-cols-[190px_1fr_auto] gap-x-5 gap-y-3">
           {/* Kiri: ringkasan angka + progress */}
           <div>
             <StatPills items={[
@@ -335,23 +338,30 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
                           <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 self-center" style={{ background: '#f59e0b' }}
                             title="Belum daily report" />
                         )}
-                        <span className={`text-[10px] font-bold truncate max-w-[160px] ${g.ketuaBelumLapor ? 'text-amber-600' : 'text-slate-500'}`}>{g.nama}</span>
+                        {/* Judul kelompok naik dari text-[10px]: keluhannya nama terlalu kecil, dan judul induknya harus tetap lebih tegas dari nama anggotanya. */}
+                        <span className={`text-[11px] font-bold truncate max-w-[170px] ${g.ketuaBelumLapor ? 'text-amber-600' : 'text-slate-500'}`}>{g.nama}</span>
                         {g.jabatan && (
-                          <span className="text-[9px] font-semibold text-slate-400 flex-shrink-0">{g.jabatan}</span>
+                          <span className="text-[10px] font-semibold text-slate-400 flex-shrink-0">{g.jabatan}</span>
                         )}
                         {g.anggota.length > 0 && (
-                          <span className="text-[9px] font-bold text-slate-300 flex-shrink-0">{g.anggota.length}</span>
+                          <span className="text-[10px] font-bold text-slate-300 flex-shrink-0">{g.anggota.length}</span>
                         )}
                       </div>
                       {/* garis tepi kiri = penanda "ini bawahannya" */}
                       <div className="border-l-2 border-slate-200 pl-1.5 ml-0.5">
                         {g.anggota.map(r => (
                           <button key={r.id} onClick={() => openMenu('daily-report')}
-                            className="flex items-center gap-1.5 py-0.5 px-1 w-full hover:bg-slate-50 rounded-md transition-colors text-left">
+                            className="flex items-center gap-1.5 py-1 px-1 w-full hover:bg-slate-50 rounded-md transition-colors text-left">
                             <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: r.active > 0 ? '#dc2626' : '#f59e0b' }} />
-                            <span className="text-[11px] font-semibold text-slate-700 truncate max-w-[150px]">{r.name}</span>
+                            {/*
+                              Nama anggota - INI yang dikeluhkan terlalu kecil.
+                              text-[11px] -> text-[13px], dan max-w ikut
+                              diperlebar supaya nama yang lebih besar tidak
+                              lebih cepat kepotong "...".
+                            */}
+                            <span className="text-[13px] font-semibold text-slate-700 truncate max-w-[170px]">{r.name}</span>
                             {r.active > 0 && (
-                              <span className="text-[9px] font-bold px-1 py-px rounded-full flex-shrink-0"
+                              <span className="text-[10px] font-bold px-1 py-px rounded-full flex-shrink-0"
                                 style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}>{r.active}</span>
                             )}
                           </button>
@@ -362,18 +372,17 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
                 </div>
               </>
             )}
-            {/*
-              Ringkasan performa DI BAWAH daftar nama, masih di kolom kanan -
-              bukan kolom ketiga. Daftar nama lebarnya mengikuti isi dan bisa
-              pendek; memaksanya jadi tiga kolom akan mengembalikan ruang
-              kosong yang baru saja dihilangkan.
-            */}
-            {adminPenuh && performa && (
-              <div className="mt-3 pt-3 border-t border-slate-100">
-                <KartuPerforma r={performa} />
-              </div>
-            )}
           </div>
+          {/*
+            Kolom KETIGA, bukan ditumpuk di bawah daftar nama. mt-3
+            border-t di layar sempit (satu kolom) supaya masih ada
+            pemisah visual saat ketiganya turun jadi bertumpuk.
+          */}
+          {adminPenuh && performa && (
+            <div className="lg:w-[168px] mt-3 lg:mt-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+              <KartuPerforma r={performa} />
+            </div>
+          )}
         </div>
       )}
     </WidgetCard>
