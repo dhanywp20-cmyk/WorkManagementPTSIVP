@@ -10,9 +10,10 @@
  * ikut terkirim ke setiap pengunjung, dan siapa pun yang membuka DevTools bisa
  * memakai bot itu sesukanya.
  *
- * Karena itu tokennya tinggal di TELEGRAM_BOT_TOKEN (variabel lingkungan sisi
- * server, tidak berawalan NEXT_PUBLIC_ sehingga tidak ikut ter-bundle) dan
- * hanya berkas ini yang menyentuhnya.
+ * Tokennya dibaca lewat bacaRahasia() - dari tabel rahasia_integrasi yang
+ * diatur admin di Admin Panel, dengan variabel lingkungan TELEGRAM_BOT_TOKEN
+ * sebagai cadangan. Keduanya hanya ada di sisi server; tidak ada jalur yang
+ * mengirimkannya ke peramban.
  *
  * Sama seperti WhatsApp: kegagalan kirim TIDAK boleh menggagalkan alur utama.
  * Route ini selalu menjawab 200 dengan { ok: false, alasan } saat gagal,
@@ -21,8 +22,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { bacaRahasia } from '@/lib/rahasia-server';
+import { pastikanAdmin } from '@/lib/penjaga-admin';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 /** Jawaban seragam. Selalu 200 - lihat catatan di atas. */
 function jawab(ok: boolean, alasan?: string, tambahan?: Record<string, unknown>) {
@@ -30,10 +34,9 @@ function jawab(ok: boolean, alasan?: string, tambahan?: Record<string, unknown>)
 }
 
 export async function POST(req: NextRequest) {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const token = await bacaRahasia('telegram.bot_token');
   if (!token) {
-    return jawab(false, 'TELEGRAM_BOT_TOKEN belum diatur di lingkungan server. '
-      + 'Isi di Vercel -> Settings -> Environment Variables, lalu deploy ulang.');
+    return jawab(false, 'Token bot Telegram belum diisi. Isi di Admin Panel → Integrations.');
   }
 
   let body: { chatId?: string; pesan?: string; aksi?: string };
@@ -47,6 +50,12 @@ export async function POST(req: NextRequest) {
   //  mengirim pesan ke siapa pun. Dipakai tombol "Tes Koneksi" supaya admin
   //  bisa memastikan tokennya benar tanpa mengganggu grup.
   if (body.aksi === 'cek') {
+    //  Hanya aksi tes yang dijaga admin. Pengiriman biasa dipanggil router
+    //  notifikasi atas nama user mana pun yang memicu kejadiannya - menjaga
+    //  yang itu dengan penjaga admin akan mematikan seluruh notifikasi
+    //  Telegram untuk semua orang selain admin.
+    const jaga = await pastikanAdmin(req);
+    if (!jaga.ok) return NextResponse.json({ ok: false, alasan: jaga.alasan }, { status: jaga.status });
     try {
       const r = await fetch(`https://api.telegram.org/bot${token}/getMe`);
       const j = await r.json() as { ok?: boolean; result?: { username?: string }; description?: string };

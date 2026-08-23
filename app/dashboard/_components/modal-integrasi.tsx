@@ -4,13 +4,24 @@
  * Admin Panel -> Integrations. Mengatur kanal notifikasi (In-App, WhatsApp,
  * Telegram) dan event mana lewat kanal mana.
  *
- * TOKEN TIDAK DIATUR DI SINI, dan itu disengaja. app_settings punya trigger
- * yang MENOLAK kunci bernama token/secret/api_key/password/credential
- * (sql/pengaturan-merek.sql) - dipasang setelah token gateway WhatsApp
- * ditemukan tersimpan di sana dalam bentuk terbaca, di tabel yang bisa dibaca
- * siapa pun pemegang anon key. Jadi halaman ini hanya mengatur hal yang tidak
- * memberi akses kalau bocor; tokennya tetap di secret server, dan halaman ini
- * menunjukkan tempatnya alih-alih menyediakan kolom isian palsu.
+ * TOKEN DIATUR DI SINI, tapi TIDAK LEWAT app_settings.
+ *
+ * app_settings dibaca lewat PostgREST memakai anon key, dan anon key ikut
+ * ter-bundle ke setiap peramban - siapa pun bisa mengambilnya dari DevTools
+ * lalu membaca tabelnya langsung, tanpa lewat halaman ini dan tanpa perlu
+ * jadi admin. Menu yang disembunyikan tidak menghalangi apa pun. Persis
+ * begitulah token WhatsApp sebelumnya terbaca.
+ *
+ * Karena itu token tinggal di tabel rahasia_integrasi, yang RLS-nya menyala
+ * TANPA policy sama sekali - anon ditolak seluruhnya, hanya service_role di
+ * sisi server yang bisa masuk (sql/rahasia-integrasi.sql). Halaman ini
+ * menyentuhnya lewat /api/integrasi/rahasia, yang memeriksa cookie sesi
+ * pemanggil ke tabel user_sessions sebelum melakukan apa pun.
+ *
+ * Akibatnya yang penting: nilai token TIDAK PERNAH dikirim balik ke peramban.
+ * Yang tampil di layar cuma penanda seperti "…4f2a". Membuka DevTools,
+ * memeriksa Network, atau membaca state React tidak akan menemukan tokennya -
+ * memang tidak pernah sampai ke sana.
  */
 
 import { useEffect, useState } from 'react';
@@ -36,13 +47,109 @@ function Saklar({ aktif, onKlik, warna }: { aktif: boolean; onKlik: () => void; 
   );
 }
 
+interface StatusRahasia {
+  terisi: boolean; penanda?: string; diperbarui?: string; oleh?: string;
+}
+
+/**
+ * Satu blok pengaturan token. Kolom isiannya SELALU berangkat kosong - yang
+ * tersimpan diwakili penanda di sebelahnya. Menampilkan nilai tersimpan di
+ * kolom isian berarti mengirimkannya ke peramban, dan itu membatalkan seluruh
+ * maksud tabel rahasia_integrasi.
+ */
+function BlokToken({
+  judul, kunci, status, petunjuk, onSimpan, onHapus,
+}: {
+  judul: string; kunci: string; status?: StatusRahasia; petunjuk: React.ReactNode;
+  onSimpan: (nilai: string) => Promise<void>; onHapus: () => Promise<void>;
+}) {
+  const [nilai, setNilai] = useState('');
+  const [sibuk, setSibuk] = useState(false);
+
+  return (
+    <div className="rounded-lg border border-slate-200 p-2.5 bg-slate-50/60">
+      <div className="flex items-center gap-2 mb-1.5">
+        <span className="text-[11px] font-bold text-slate-600 flex-1">{judul}</span>
+        {status?.terisi ? (
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700">
+            terisi {status.penanda}
+          </span>
+        ) : (
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">belum diisi</span>
+        )}
+      </div>
+      <div className="flex gap-1.5">
+        <input
+          type="password" value={nilai} onChange={e => setNilai(e.target.value)}
+          placeholder={status?.terisi ? 'isi untuk mengganti…' : 'tempel token di sini'}
+          autoComplete="new-password"
+          className="flex-1 min-w-0 text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-sky-400" />
+        <button type="button" disabled={sibuk || !nilai.trim()}
+          onClick={async () => { setSibuk(true); await onSimpan(nilai.trim()); setNilai(''); setSibuk(false); }}
+          className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-white bg-slate-700 hover:bg-slate-800 disabled:opacity-40 flex-shrink-0">
+          Simpan
+        </button>
+        {status?.terisi && (
+          <button type="button" disabled={sibuk}
+            onClick={async () => { setSibuk(true); await onHapus(); setSibuk(false); }}
+            className="text-[11px] font-bold px-2 py-1.5 rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-40 flex-shrink-0">
+            Hapus
+          </button>
+        )}
+      </div>
+      {status?.terisi && status.diperbarui && (
+        <div className="text-[9px] text-slate-400 mt-1">
+          Diperbarui {new Date(status.diperbarui).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+          {status.oleh ? ` oleh ${status.oleh}` : ''}
+        </div>
+      )}
+      <p className="text-[9px] text-slate-400 mt-1 leading-relaxed">{petunjuk}</p>
+    </div>
+  );
+}
+
 export function IntegrasiInline() {
   const [p, setP] = useState<PengaturanNotifikasi | null>(null);
   const [simpan, setSimpan] = useState(false);
   const [pesan, setPesan] = useState<{ tipe: 'ok' | 'gagal'; teks: string } | null>(null);
-  const [ujiJalan, setUjiJalan] = useState<'cek' | 'kirim' | null>(null);
+  const [ujiJalan, setUjiJalan] = useState<string | null>(null);
+  const [rahasia, setRahasia] = useState<Record<string, StatusRahasia>>({});
+  const [waTujuan, setWaTujuan] = useState('');
 
-  useEffect(() => { bacaPengaturan(true).then(setP); }, []);
+  const muatRahasia = async () => {
+    try {
+      const r = await fetch('/api/integrasi/rahasia', { credentials: 'include' });
+      const j = await r.json() as { ok?: boolean; status?: Record<string, StatusRahasia> };
+      if (j?.ok && j.status) setRahasia(j.status);
+    } catch { /* diam - blok token akan tampil "belum diisi" */ }
+  };
+
+  useEffect(() => { bacaPengaturan(true).then(setP); muatRahasia(); }, []);
+
+  const simpanRahasia = async (kunci: string, nilai: string) => {
+    try {
+      const r = await fetch('/api/integrasi/rahasia', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kunci, nilai }),
+      });
+      const j = await r.json() as { ok?: boolean; alasan?: string };
+      setPesan(j?.ok ? { tipe: 'ok', teks: 'Token tersimpan.' }
+                     : { tipe: 'gagal', teks: j?.alasan ?? 'Gagal menyimpan token.' });
+      if (j?.ok) await muatRahasia();
+    } catch { setPesan({ tipe: 'gagal', teks: 'Tidak bisa menghubungi server.' }); }
+  };
+
+  const hapusRahasia = async (kunci: string) => {
+    try {
+      const r = await fetch(`/api/integrasi/rahasia?kunci=${encodeURIComponent(kunci)}`,
+        { method: 'DELETE', credentials: 'include' });
+      const j = await r.json() as { ok?: boolean; alasan?: string };
+      setPesan(j?.ok ? { tipe: 'ok', teks: 'Token dihapus.' }
+                     : { tipe: 'gagal', teks: j?.alasan ?? 'Gagal menghapus.' });
+      if (j?.ok) await muatRahasia();
+    } catch { setPesan({ tipe: 'gagal', teks: 'Tidak bisa menghubungi server.' }); }
+  };
 
   if (!p) return <div className="text-xs text-slate-400 py-8 text-center">Memuat…</div>;
 
@@ -69,19 +176,26 @@ export function IntegrasiInline() {
                   : { tipe: 'gagal', teks: r.pesan ?? 'Gagal menyimpan.' });
   };
 
-  const ujiTelegram = async (aksi: 'cek' | 'kirim') => {
-    setUjiJalan(aksi); setPesan(null);
+  const uji = async (kanal: 'telegram' | 'whatsapp', aksi: 'cek' | 'kirim') => {
+    const tanda = `${kanal}-${aksi}`;
+    setUjiJalan(tanda); setPesan(null);
     try {
-      const r = await fetch('/api/notifikasi/telegram', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(aksi === 'cek'
-          ? { aksi: 'cek' }
-          : { chatId: p.telegramChatId, pesan: '✅ Tes dari Work Management — integrasi Telegram berhasil.' }),
+      const isi = kanal === 'telegram'
+        ? (aksi === 'cek' ? { aksi: 'cek' }
+           : { chatId: p.telegramChatId, pesan: '✅ Tes dari Work Management — integrasi Telegram berhasil.' })
+        : (aksi === 'cek' ? { aksi: 'cek' }
+           : { target: waTujuan, pesan: '✅ Tes dari Work Management — integrasi WhatsApp berhasil.' });
+      const r = await fetch(`/api/notifikasi/${kanal}`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(isi),
       });
-      const j = await r.json() as { ok?: boolean; alasan?: string; bot?: string };
-      setPesan(j?.ok
-        ? { tipe: 'ok', teks: aksi === 'cek' ? `Bot tersambung: @${j.bot}` : 'Pesan tes terkirim.' }
-        : { tipe: 'gagal', teks: j?.alasan ?? 'Gagal.' });
+      const j = await r.json() as { ok?: boolean; alasan?: string; bot?: string; perangkat?: string };
+      const berhasil = aksi === 'cek'
+        ? (kanal === 'telegram' ? `Bot tersambung: @${j.bot}` : `Perangkat tersambung: ${j.perangkat}`)
+        : 'Pesan tes terkirim.';
+      setPesan(j?.ok ? { tipe: 'ok', teks: berhasil }
+                     : { tipe: 'gagal', teks: j?.alasan ?? 'Gagal.' });
     } catch {
       setPesan({ tipe: 'gagal', teks: 'Tidak bisa menghubungi server.' });
     }
@@ -108,40 +222,59 @@ export function IntegrasiInline() {
         <p className="text-[10px] text-slate-400 mt-1.5 leading-relaxed">
           Saklar di sini berlaku menyeluruh: kanal yang dimatikan tidak akan dipakai event mana pun,
           berapa pun centang di tabel bawah.
+          {' '}<b>In-App</b> = lonceng notifikasi di dalam platform ini sendiri — pemberitahuan yang
+          muncul saat orangnya membuka Work Management, tanpa keluar ke WhatsApp atau Telegram.
+          Ia tidak butuh token apa pun.
         </p>
+      </div>
+
+      {/* ── WhatsApp ── */}
+      <div className="rounded-xl border border-slate-200 p-3">
+        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">WhatsApp (Fonnte)</div>
+        <BlokToken
+          judul="Token Fonnte" kunci="whatsapp.token" status={rahasia['whatsapp.token']}
+          onSimpan={n => simpanRahasia('whatsapp.token', n)}
+          onHapus={() => hapusRahasia('whatsapp.token')}
+          petunjuk={<>Ambil di dashboard Fonnte → Device → Token. Tersimpan terenkripsi di sisi server dan tidak pernah dikirim balik ke peramban.</>} />
+        <label className="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">Nomor tujuan untuk pesan tes</label>
+        <input value={waTujuan} onChange={e => setWaTujuan(e.target.value)} placeholder="mis. 6281234567890"
+          className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-green-400" />
+        <div className="flex flex-wrap gap-2 mt-2">
+          <button type="button" onClick={() => uji('whatsapp', 'cek')} disabled={ujiJalan !== null}
+            className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50">
+            {ujiJalan === 'whatsapp-cek' ? 'Mengecek…' : 'Tes Koneksi'}
+          </button>
+          <button type="button" onClick={() => uji('whatsapp', 'kirim')} disabled={ujiJalan !== null || !waTujuan.trim()}
+            className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-white disabled:opacity-50"
+            style={{ background: '#16a34a' }}>
+            {ujiJalan === 'whatsapp-kirim' ? 'Mengirim…' : 'Kirim Pesan Tes'}
+          </button>
+        </div>
       </div>
 
       {/* ── Telegram ── */}
       <div className="rounded-xl border border-slate-200 p-3">
         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">Telegram</div>
-        <label className="block text-[11px] font-semibold text-slate-600 mb-1">Chat ID tujuan bawaan</label>
+        <BlokToken
+          judul="Token bot" kunci="telegram.bot_token" status={rahasia['telegram.bot_token']}
+          onSimpan={n => simpanRahasia('telegram.bot_token', n)}
+          onHapus={() => hapusRahasia('telegram.bot_token')}
+          petunjuk={<>Buat bot lewat @BotFather di Telegram, lalu tempel token yang diberikannya. Jangan lupa undang bot itu ke grup tujuan.</>} />
+        <label className="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">Chat ID tujuan bawaan</label>
         <input value={p.telegramChatId} placeholder="mis. -1001234567890"
           onChange={e => ubah(x => ({ ...x, telegramChatId: e.target.value }))}
           className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-sky-400" />
         <div className="flex flex-wrap gap-2 mt-2">
-          <button type="button" onClick={() => ujiTelegram('cek')} disabled={ujiJalan !== null}
+          <button type="button" onClick={() => uji('telegram', 'cek')} disabled={ujiJalan !== null}
             className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50">
-            {ujiJalan === 'cek' ? 'Mengecek…' : 'Tes Koneksi'}
+            {ujiJalan === 'telegram-cek' ? 'Mengecek…' : 'Tes Koneksi'}
           </button>
-          <button type="button" onClick={() => ujiTelegram('kirim')} disabled={ujiJalan !== null || !p.telegramChatId.trim()}
+          <button type="button" onClick={() => uji('telegram', 'kirim')} disabled={ujiJalan !== null || !p.telegramChatId.trim()}
             className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-white disabled:opacity-50"
             style={{ background: '#0088cc' }}>
-            {ujiJalan === 'kirim' ? 'Mengirim…' : 'Kirim Pesan Tes'}
+            {ujiJalan === 'telegram-kirim' ? 'Mengirim…' : 'Kirim Pesan Tes'}
           </button>
         </div>
-        {/*
-          Kolom token sengaja TIDAK disediakan - lihat catatan di kepala berkas.
-          Menyediakannya akan mengundang admin menyimpan rahasia di tabel yang
-          terbaca publik, dan trigger basis data akan menolaknya - jadi kolom
-          itu hanya akan jadi kolom yang selalu gagal.
-        */}
-        <p className="text-[10px] text-slate-400 mt-2 leading-relaxed">
-          Token bot <b>tidak diatur di sini</b>. Ia rahasia, dan tabel pengaturan platform ini
-          terbaca oleh siapa pun yang membuka halaman — karena itu basis datanya menolak
-          menyimpan rahasia. Isi <code className="bg-slate-100 px-1 rounded">TELEGRAM_BOT_TOKEN</code> di
-          Vercel → Settings → Environment Variables, lalu deploy ulang. Setelah itu tombol
-          Tes Koneksi di atas akan menjawab nama bot-nya.
-        </p>
       </div>
 
       {/* ── Matriks event x kanal ── */}
