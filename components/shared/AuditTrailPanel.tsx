@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { bersihkanPenandaSupervisor } from '@/lib/admin-edit';
 
 /**
  * components/shared/AuditTrailPanel.tsx - riwayat perubahan sebuah record.
@@ -321,14 +322,23 @@ export function AuditTrailPanel({
 
                   {adaPerubahanNilai && (
                     <p className={kompak ? "text-[9px] text-slate-500 mt-0.5 break-words" : "text-[11px] text-slate-500 mt-0.5 break-words"}>
-                      {e.old_value && <span className="line-through opacity-60">{e.old_value}</span>}
+                      {e.old_value && <span className="line-through opacity-60">{bersihkanPenandaSupervisor(e.old_value)}</span>}
                       {e.old_value && e.new_value && <span className="mx-1 text-slate-300">→</span>}
-                      {e.new_value && <span className="font-medium text-slate-700">{e.new_value}</span>}
+                      {e.new_value && <span className="font-medium text-slate-700">{bersihkanPenandaSupervisor(e.new_value)}</span>}
                     </p>
                   )}
 
+                  {/*
+                    bersihkanPenandaSupervisor() dijalankan di SINI, saat
+                    ditampilkan - bukan hanya diandalkan dari jalur tulis.
+                    Baris yang sudah tersimpan sebelum jalur tulisnya
+                    diperbaiki tetap membawa "SUP::<uuid>::<nama>" mentah di
+                    kolom notes; menulis ulang kode yang MENULIS tidak
+                    membersihkan yang SUDAH tersimpan. Ini juga jaring
+                    pengaman untuk jalur tulis lain yang belum ketahuan.
+                  */}
                   {e.notes && !kompak && (
-                    <p className="text-[11px] text-slate-400 mt-0.5 break-words">{e.notes}</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5 break-words">{bersihkanPenandaSupervisor(e.notes)}</p>
                   )}
 
                   <p className={kompak ? "text-[9px] text-slate-400 mt-0.5" : "text-[10px] text-slate-400 mt-0.5"}

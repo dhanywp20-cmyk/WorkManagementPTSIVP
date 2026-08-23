@@ -41,6 +41,39 @@ export function bacaTujuanSupervisor(nilai: unknown): { id: string; nama: string
 }
 
 /**
+ * Ganti setiap kemunculan `SUP::<uuid>::<nama>` DI MANA PUN di dalam sebuah
+ * teks dengan `<nama> (Supervisor)`.
+ *
+ * KENAPA INI PERLU, PADAHAL PENULISANNYA SUDAH DIPERBAIKI
+ *
+ * Baris audit_trail yang SUDAH TERSIMPAN sebelum perbaikan itu tetap membawa
+ * teks mentahnya - memperbaiki kode yang menulis tidak menulis ulang baris
+ * lama. Dan menulis ulang seluruh riwayat baris lama berisiko sendiri:
+ * mengubah bukti yang sudah tercatat.
+ *
+ * Jadi pembersihannya dipindah ke titik yang aman disentuh berkali-kali:
+ * SAAT DITAMPILKAN. Sekali fungsi ini dipasang di panel yang menampilkan
+ * notes/old_value/new_value, baris lama maupun baru sama-sama bersih -
+ * dan kalau suatu saat ada jalur tulis lain yang terlewat menerjemahkan
+ * penandanya, gejalanya tidak akan pernah sampai ke layar.
+ *
+ * Regex-nya sengaja BUKAN dijangkarkan ke awal string (beda dari
+ * bacaTujuanSupervisor di atas): penanda ini muncul DI TENGAH kalimat, mis.
+ * "Ditugaskan ke: (kosong) -> SUP::uuid::Nama". [^;\n]+ (RAKUS, bukan malas)
+ * mengambil nama SAMPAI ';' atau baris baru - format catatan menyambung
+ * beberapa perubahan dengan '; ', jadi itu batas amannya.
+ *
+ * Diuji sungguhan sebelum dipasang: kuantifier malas (+?) yang dicoba
+ * pertama kali TERBUKTI SALAH - tanpa apa pun sesudah grupnya untuk memaksa
+ * perluasan, ia berhenti sesudah SATU huruf ("Y" dari "Yoga KS"), bukan
+ * nama lengkapnya. Rakus (+) mengambil sebanyak mungkin dalam batas kelas
+ * karakternya, dan itu yang benar di sini.
+ */
+export function bersihkanPenandaSupervisor(teks: string): string {
+  return teks.replace(/SUP::[0-9a-fA-F-]+::([^;\n]+)/g, (_cocok, nama: string) => `${nama.trim()} (Supervisor)`);
+}
+
+/**
  * Ubah nilai apa pun jadi teks yang enak dibaca manusia di audit & WA.
  *
  * Penanda `SUP::<id>::<nama>` diterjemahkan ke namanya. Tanpa ini, uuid mentah
