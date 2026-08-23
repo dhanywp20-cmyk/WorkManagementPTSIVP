@@ -107,23 +107,35 @@ export interface SkemaInsentif {
 }
 
 /**
- * Nilai bawaan = kebijakan yang berlaku saat ini (Proposal Insentif 2026,
- * opsi tanpa porsi Installer). Dipakai bila baris pengaturan belum ada.
+ * Nilai bawaan = angka pada Proposal Insentif PTS IVP & MVI 2026.
+ *
+ * Sebelumnya bawaan di sini (50/20/15/15) TIDAK sama dengan proposal
+ * (65/15/10/10) - dua sumber kebenaran untuk satu kebijakan. Disamakan supaya
+ * tombol "Kembalikan ke bawaan" berarti "kembali ke angka proposal", bukan
+ * ke angka yang tidak pernah disetujui siapa pun.
+ *
+ * CATATAN PENTING: baris yang SUDAH tersimpan di incentive_scheme_settings
+ * menang atas nilai di sini. Mengubah berkas ini TIDAK mengubah perhitungan
+ * yang sedang berjalan - itu harus dilakukan dari layar Skema Pembagian.
+ * Disengaja: kebijakan uang tidak boleh berubah diam-diam karena deploy.
  */
 export const SKEMA_BAWAAN: SkemaInsentif = {
-  versi: 2,
+  versi: 3,
   porsi: [
-    { peran: 'pic',        label: 'PIC Proyek',                 persen: 50, bagiRata: true  },
-    { peran: 'support',    label: 'Tim Support (Troubleshooting)', persen: 20, bagiRata: true  },
-    { peran: 'supervisor', label: 'Supervisor',                 persen: 15, bagiRata: true  },
-    { peran: 'manager',    label: 'Manager',                    persen: 15, bagiRata: false },
+    { peran: 'pic',        label: 'PIC Proyek',                   persen: 65, bagiRata: true  },
+    { peran: 'support',    label: 'Tim Support (Troubleshooting)', persen: 15, bagiRata: true  },
+    { peran: 'supervisor', label: 'Supervisor',                   persen: 10, bagiRata: true  },
+    { peran: 'manager',    label: 'Manager',                      persen: 10, bagiRata: false },
   ],
-  tanpaSupport: { pic: 60, supervisor: 20, manager: 20 },
+  //  Proposal: porsi Support diserap PIC -> PIC 80, Supervisor 10, Manager 10.
+  tanpaSupport: { pic: 80, supervisor: 10, manager: 10 },
   jendelaSupportBulan: 12,
   hangusSupervisorKe: 'manager',
   managerSebagaiPic: { pic: 100 },
-  installerAktif: false,
-  installerRemotePersen: 0,
+  //  Proposal Bagian B: Installer daerah 15%, HANYA mode Remote, dibayar
+  //  penuh di tahun pertama (mengambil porsi Tahap 3).
+  installerAktif: true,
+  installerRemotePersen: 15,
   installerHanyaRemote: true,
   installerBayarDiMuka: true,
   tranche: [

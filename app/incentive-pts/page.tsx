@@ -796,6 +796,33 @@ export default function IncentivePTSPage() {
                 </div>
               </div>
 
+              {/*
+                Controller Automation yang dipilih di Reminder Schedule.
+                Datanya SUDAH tersimpan sejak dulu (requires_controller_automation
+                + controller_automation_brand) dan sudah tampil sebagai lencana di
+                kartu daftar - tapi hilang begitu detailnya dibuka. Padahal justru
+                di sinilah ia dibutuhkan: brand Controller-lah yang menjelaskan
+                kenapa sebuah proyek jatuh ke skema Manager-sebagai-PIC (Extron /
+                Wyrestorm biasanya ditangani langsung Manager), jadi tanpa
+                keterangan ini pembagiannya terlihat seperti keputusan tanpa sebab.
+              */}
+              <div className="rounded-xl p-3 border border-emerald-100 bg-emerald-50/60">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">⚡ Controller Automation</p>
+                  {detailProject.requires_controller_automation ? (
+                    <span className="text-[11px] font-black px-2 py-0.5 rounded-lg bg-emerald-600 text-white">
+                      {detailProject.controller_automation_brand?.toUpperCase() || 'YA'}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-slate-100 text-slate-500">Tidak dipakai</span>
+                  )}
+                </div>
+                <p className="text-[10px] text-emerald-700/70 mt-1 leading-relaxed">
+                  Dipilih saat pembuatan Request Schedule dan ikut tercatat pada proyek ini.
+                  {detailProject.pic_type === 'manager_pic' && ' Proyek ini memakai skema Manager-sebagai-PIC karena handler-nya berjabatan Manager.'}
+                </p>
+              </div>
+
               {/* Pembagian Incentive — auto-calculated, selalu tampil */}
               {(() => {
                 const pool = detailProject.incentive_value || 0;

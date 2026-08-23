@@ -102,7 +102,7 @@ export function SchemeTab({ olehNama, notify }: {
     hitungPembagian(sk, CONTOH, remote, contohPenerima, adaSupport, spvJadiPic, 'Installer Cabang');
 
   return (
-    <div className="space-y-4 max-w-5xl">
+    <div className="space-y-3 max-w-6xl">
       {/* ── Kepala ── */}
       <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
         <h2 className="font-bold text-gray-800 text-base">🧮 Skema Pembagian Insentif</h2>
@@ -116,6 +116,16 @@ export function SchemeTab({ olehNama, notify }: {
           diproses tidak dihitung ulang — angkanya sudah menjadi catatan pembayaran.
         </p>
       </div>
+
+      {/*
+        DUA KOLOM untuk bagian pengaturan.
+        Isinya kolom-kolom sempit (nama peran, kunci, satu angka persen), jadi
+        satu bagian per baris selebar layar menyisakan separuh kanan kosong di
+        hampir setiap baris. Bagian yang isinya memang melebar - Tahapan
+        Pencairan dan Pratinjau - mengambil dua kolom lewat col-span, sehingga
+        tidak ada slot menggantung.
+      */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
 
       {/* ── Porsi normal ── */}
       <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
@@ -282,7 +292,7 @@ export function SchemeTab({ olehNama, notify }: {
       </div>
 
       {/* ── Tahapan pencairan ── */}
-      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white overflow-hidden">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <h3 className="font-bold text-gray-800 text-sm">Tahapan Pencairan Tim PTS</h3>
           <TotalPersen nilai={totalTranche} />
@@ -317,7 +327,7 @@ export function SchemeTab({ olehNama, notify }: {
       </div>
 
       {/* ── Pratinjau ── */}
-      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white overflow-hidden">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
           <h3 className="font-bold text-gray-800 text-sm">Pratinjau — pool {rp(CONTOH)}</h3>
           <p className="text-[11px] text-gray-400">Dihitung dengan mesin yang sama seperti proses pencairan sesungguhnya.</p>
@@ -384,6 +394,8 @@ export function SchemeTab({ olehNama, notify }: {
             ))}
           </div>
         </div>
+      </div>
+
       </div>
 
       {/* ── Simpan ── */}
