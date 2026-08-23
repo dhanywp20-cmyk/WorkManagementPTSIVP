@@ -226,8 +226,14 @@ LANGUAGE sql STABLE AS $$
     jwt_claim('user_role') IN ('admin', 'superadmin')
     OR jwt_claim('access_level') = 'full'
     OR EXISTS (
+      --  value bertipe JSONB di produksi, berisi JSON string - bukan text.
+      --  `s.value = jwt_claim('sub')` gagal dengan "operator does not exist:
+      --  jsonb = text", dan `s.value::text` pun keliru karena hasilnya masih
+      --  membawa tanda kutip ("f7d4..."). #>> '{}' mengambil isinya sebagai
+      --  teks polos. Ketahuan saat diterapkan ke produksi: replika uji lokal
+      --  memakai kolom text, jadi perbedaan tipe ini tidak muncul di sana.
       SELECT 1 FROM app_settings s
-      WHERE s.key = 'manager_user_id' AND s.value = jwt_claim('sub')
+      WHERE s.key = 'manager_user_id' AND s.value #>> '{}' = jwt_claim('sub')
     );
 $$;
 

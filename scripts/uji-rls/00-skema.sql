@@ -14,7 +14,10 @@ CREATE TABLE users (
   allowed_menus text[], phone_number text, jabatan text
 );
 
-CREATE TABLE app_settings (key text PRIMARY KEY, value text);
+--  value JSONB, sama seperti produksi. Sempat text di sini, dan itu
+--  menyembunyikan bug nyata: policy yang membandingkannya dengan text
+--  lolos di replika tapi ditolak Postgres di produksi.
+CREATE TABLE app_settings (key text PRIMARY KEY, value jsonb);
 
 CREATE TABLE division_ivp_mappings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

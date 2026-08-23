@@ -9,7 +9,7 @@ INSERT INTO users (id, username, full_name, role, sales_division, is_internal_sa
 
 -- Dhany sebagai manager_user_id (override lama)
 INSERT INTO app_settings (key, value) VALUES
- ('manager_user_id','33333333-3333-3333-3333-333333333333');
+ ('manager_user_id', to_jsonb('33333333-3333-3333-3333-333333333333'::text));
 
 INSERT INTO division_ivp_mappings (sales_division, ivp_id) VALUES
  ('DIV-A','66666666-6666-6666-6666-666666666666');
