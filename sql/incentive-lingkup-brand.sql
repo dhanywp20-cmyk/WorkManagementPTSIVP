@@ -13,6 +13,13 @@
 -- memang milik bersama, jadi menyembunyikannya dari salah satu justru membuat
 -- proyeknya tidak terinput sama sekali.
 --
+-- Pada proyek BOTH, kedua petugas berunding lebih dulu lalu SALAH SATU
+-- memasukkan nominal gabungannya. Tetap satu kolom nominal, satu angka, satu
+-- pool - bukan dua setoran yang dijumlahkan sistem. Kalau tiap brand punya
+-- kolomnya sendiri, jumlah pool proyek jadi bergantung pada apakah keduanya
+-- sudah sempat mengisi, dan tahapan pencairan bisa terlanjur dibuat di atas
+-- angka yang baru separuh.
+--
 -- NULL = tanpa batas (melihat semua). Itu keadaan admin, dan juga keadaan
 -- petugas lama yang sudah terlanjur diizinkan sebelum kolom ini ada -
 -- perilakunya tidak berubah sampai admin benar-benar menetapkan lingkupnya.

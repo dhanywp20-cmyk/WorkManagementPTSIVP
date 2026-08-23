@@ -33,9 +33,10 @@
 --
 --    Basis data yang SUDAH berjalan (produksi):
 --        SELECT tandai_semua_skema();
---      Menandai ke-27 berkas skema sebagai sudah diterapkan sekaligus -
---      platformnya jalan, jadi memang sudah. Sesudah itu tiap berkas BARU
---      ditandai satu per satu:
+--      Menandai berkas skema LAMA (urutan <= 58) sebagai sudah diterapkan
+--      sekaligus - platformnya jalan, jadi memang sudah. Berkas yang lebih
+--      baru daripada itu sengaja TIDAK ikut tertandai; ditandai satu per satu
+--      setelah benar-benar dijalankan:
 --        SELECT tandai('nama-berkas.sql');
 --
 --    GOLONGAN `pembatalan` JANGAN PERNAH dijalankan berurutan bersama yang
@@ -131,7 +132,14 @@ INSERT INTO sql_diterapkan (berkas, urutan, golongan) VALUES
   ('kunci-tabel-lanjutan-4.sql', 55, 'keamanan'),
   ('rahasia-integrasi.sql', 56, 'keamanan'),
   ('tutup-view-definer.sql', 57, 'keamanan'),
-  ('paku-search-path.sql', 58, 'keamanan')
+  ('paku-search-path.sql', 58, 'keamanan'),
+  ('tandai-produksi.sql', 59, 'periksa'),
+  ('periksa-menyeluruh.sql', 60, 'periksa'),
+  ('pengaturan-merek.sql', 61, 'keamanan'),
+  ('kunci-tabel-users.sql', 62, 'keamanan'),
+  ('incentive-skema-versi.sql', 63, 'skema'),
+  ('incentive-lingkup-brand.sql', 64, 'skema'),
+  ('incentive-skema-proposal-2026.sql', 65, 'skema')
 ON CONFLICT (berkas) DO UPDATE
   SET urutan = EXCLUDED.urutan, golongan = EXCLUDED.golongan;
 
@@ -175,7 +183,18 @@ END $fn$;
 --  Untuk basis data yang platformnya SUDAH berjalan. Hanya golongan `skema` -
 --  golongan lain memang belum tentu pernah dijalankan, dan menandainya
 --  borongan akan menyembunyikan yang benar-benar belum.
-CREATE OR REPLACE FUNCTION tandai_semua_skema()
+-- Penandaan borongan SEKALI PAKAI untuk basis data yang platformnya sudah
+-- berjalan. Batas urutannya disengaja: fungsi ini hanya boleh menyentuh
+-- berkas yang sudah ada di repo pada saat produksi dinyatakan "sudah jalan".
+--
+-- Tanpa batas itu, tiap berkas BARU yang didaftarkan di atas akan ikut
+-- tertandai begitu seseorang menjalankan ulang fungsi ini - padahal berkasnya
+-- belum pernah dijalankan. Catatan yang salah lebih buruk daripada tidak ada
+-- catatan: yang pertama membuat orang berhenti memeriksa.
+--
+-- Berkas baru ditandai satu per satu SETELAH benar-benar dijalankan:
+--     SELECT tandai('incentive-skema-versi.sql');
+CREATE OR REPLACE FUNCTION tandai_semua_skema(batas_urutan int DEFAULT 58)
 RETURNS text
 LANGUAGE plpgsql AS $fn$
 DECLARE n int;
@@ -183,9 +202,12 @@ BEGIN
   UPDATE sql_diterapkan
      SET diterapkan_pada = now(),
          catatan = COALESCE(catatan, 'ditandai borongan - platform sudah berjalan')
-   WHERE golongan = 'skema' AND diterapkan_pada IS NULL;
+   WHERE golongan = 'skema'
+     AND diterapkan_pada IS NULL
+     AND urutan <= batas_urutan;
   GET DIAGNOSTICS n = ROW_COUNT;
-  RETURN n || ' berkas skema ditandai diterapkan.';
+  RETURN n || ' berkas skema (urutan <= ' || batas_urutan || ') ditandai diterapkan. '
+           || 'Berkas di atas batas itu tandai satu per satu dengan tandai().';
 END $fn$;
 
 
