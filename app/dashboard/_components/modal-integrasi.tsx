@@ -226,6 +226,22 @@ export function IntegrasiInline() {
           muncul saat orangnya membuka Work Management, tanpa keluar ke WhatsApp atau Telegram.
           Ia tidak butuh token apa pun.
         </p>
+        {/*
+          Keterangan ini ada karena tanpa ia, halaman ini berbohong: admin
+          mematikan centang WhatsApp untuk satu event, tidak terjadi apa-apa,
+          dan tidak ada yang menjelaskan kenapa. Lebih baik menyebutkan
+          batasnya daripada membiarkan saklar yang tidak menyambung ke mana-mana.
+        */}
+        <div className="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-2">
+          <p className="text-[10px] text-amber-800 leading-relaxed">
+            <b>Yang sudah berlaku &amp; yang belum.</b> Saklar induk <b>WhatsApp</b> di atas berlaku
+            untuk <b>seluruh</b> pengiriman WA di platform (48 titik) — dimatikan berarti benar-benar
+            berhenti. Sedangkan centang <b>per-event</b> di tabel bawah baru berlaku untuk event yang
+            pengirimannya sudah dipindah ke notification engine; sisanya masih mengikuti saklar induk
+            saja. Pemindahannya bertahap dan disengaja: 48 titik itu dipakai tim setiap hari, dan satu
+            yang diam-diam salah berarti seseorang tidak tahu ada tiket untuknya.
+          </p>
+        </div>
       </div>
 
       {/* ── WhatsApp ── */}
