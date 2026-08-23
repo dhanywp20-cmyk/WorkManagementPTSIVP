@@ -1,11 +1,11 @@
 import { supabase } from '@/lib/supabase';
 import {
   SkemaInsentif, PenerimaPeran, hitungPembagian, hitungManagerSebagaiPic, ambilSkema,
-  persenInstaller,
+  persenInstaller, bagikanTepat,
 } from '@/lib/incentive-scheme';
 
 export type { SkemaInsentif };
-export { ambilSkema, persenInstaller };
+export { ambilSkema, persenInstaller, bagikanTepat };
 
 // Types
 
@@ -432,19 +432,26 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
     let tranchePool: number;
 
     if (installerAmbilTahapTerakhir && tranche.tranche_number === tahapTerakhir) {
-      tranchePool = (pool * pctInstaller) / 100;
+      tranchePool = Math.round((pool * pctInstaller) / 100);
       trancheSplits = [{
         role: 'installer', user_id: '',
         user_name: project.installer_name || 'Installer Cabang',
-        percentage: pctInstaller, amount: Math.round(tranchePool),
+        percentage: pctInstaller, amount: tranchePool,
       }];
     } else {
       // Bagian tahap ini terhadap seluruh porsi Tim PTS.
       const bagian = (tranche.percentage || 0) / totalTahapTim;
-      tranchePool = pool * ((100 - pctInstaller) / 100) * bagian;
-      trancheSplits = splits
-        .filter(s => s.role !== 'installer')
-        .map(s => ({ ...s, amount: Math.round(s.amount * bagian) }));
+      //  Pool tahap ini DIBULATKAN dulu. Sebelumnya ia dibiarkan pecahan
+      //  (mis. 13.259.488,50) lalu dibandingkan dengan jumlah rupiah bulat -
+      //  perbandingan yang tidak pernah bisa pas, dan itulah sebab separuh
+      //  tranche ditolak "split total mismatch" padahal angkanya benar.
+      tranchePool = Math.round(pool * ((100 - pctInstaller) / 100) * bagian);
+      const timSaja = splits.filter(s => s.role !== 'installer');
+      //  Dibagi habis ke sesama anggota tim: persentase dinormalkan ke porsi
+      //  tim (bukan ke pool penuh) supaya jumlahnya persis tranchePool.
+      const totalPctTim = timSaja.reduce((n, s) => n + s.percentage, 0) || 1;
+      const rupiahTahap = bagikanTepat(tranchePool, timSaja.map(s => (s.percentage / totalPctTim) * 100));
+      trancheSplits = timSaja.map((s, i) => ({ ...s, amount: rupiahTahap[i] }));
     }
 
     const validation = validateSplitTotal(trancheSplits, tranchePool);

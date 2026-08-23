@@ -170,6 +170,25 @@ export default function IncentivePTSPage() {
   async function handleGenerateTranches() {
     if (!generateProject?.bast_date) { notify('error', 'BAST belum ada — isi saat Handler klik Completed di Reminder Schedule!'); return; }
     setGenerating(true);
+
+    /*
+      Penjaga duplikat. Tanpa ini, menekan tombolnya dua kali - atau dua orang
+      menekannya bersamaan - menghasilkan DUA set tahapan untuk proyek yang
+      sama, dan batch pencairan akan membayar keduanya. Tidak ada yang gagal,
+      tidak ada galat; uangnya saja keluar dua kali.
+
+      Diperiksa ke database, bukan ke state layar: state hanya tahu apa yang
+      dimuat terakhir kali, sedangkan yang berbahaya justru tranche yang baru
+      saja dibuat orang lain.
+    */
+    const { data: sudahAda } = await supabase
+      .from('incentive_tranches').select('id').eq('project_id', generateProject.id).limit(1);
+    if (sudahAda && sudahAda.length > 0) {
+      notify('error', 'Tahapan untuk proyek ini sudah pernah dibuat. Hapus dulu yang lama bila ingin dibuat ulang.');
+      setGenerating(false); setShowGenerateModal(false); setGenerateProject(null);
+      return;
+    }
+
     const { error } = await insertTranches(skema!, generateProject.id, generateProject.bast_date, generateProject.mode_penyelesaian);
     if (error) { notify('error', 'Gagal: ' + error.message); } else { notify('success', 'Tranche berhasil di-generate!'); }
     setGenerating(false); setShowGenerateModal(false); setGenerateProject(null);

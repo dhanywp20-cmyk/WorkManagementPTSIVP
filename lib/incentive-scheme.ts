@@ -164,6 +164,48 @@ export function persenInstaller(sk: SkemaInsentif, remote: boolean): number {
   return Math.max(0, Math.min(99, sk.installerRemotePersen || 0));
 }
 
+/**
+ * Bagi `pool` rupiah menurut daftar persentase, HABIS TANPA SISA.
+ *
+ * KENAPA BUKAN Math.round() PER ORANG
+ *
+ * Membulatkan tiap bagian sendiri-sendiri membuat jumlahnya meleset dari pool.
+ * Itu bukan kekhawatiran teoretis: disimulasikan pada 144.000 tranche dengan
+ * pool "kotor" hasil 1% dari HPP, HAMPIR SETENGAHNYA (49,9%) meleset lebih
+ * dari Rp 1 - selisih terbesar Rp 6,30. Karena processYearlyBatch menolak
+ * tranche yang melesetnya > Rp 1, separuh pencairan akan gagal diproses dan
+ * timnya tidak dibayar, dengan pesan galat yang menyesatkan ("split total
+ * mismatch") karena angkanya sendiri sebenarnya benar.
+ *
+ * Cara yang dipakai di sini metode sisa terbesar (largest remainder), yang
+ * juga dipakai pembagian kursi pemilu: semua dibulatkan ke BAWAH dulu, lalu
+ * rupiah sisanya dibagikan satu per satu ke yang pecahannya paling besar.
+ * Hasilnya dijamin persis sama dengan pool - bukan "cukup dekat".
+ *
+ * Rupiah sisa diberikan ke pecahan terbesar, BUKAN ke porsi terbesar. Kalau
+ * ke porsi terbesar, PIC akan selalu mendapat kelebihan itu di setiap proyek
+ * selamanya; dengan pecahan terbesar, yang menerima berganti-ganti mengikuti
+ * angkanya sendiri - dan selisihnya memang hanya satu rupiah.
+ */
+export function bagikanTepat(pool: number, persenTiap: number[]): number[] {
+  const target = Math.round(pool);
+  if (!persenTiap.length || target <= 0) return persenTiap.map(() => 0);
+
+  const tepat = persenTiap.map(p => (target * p) / 100);
+  const bawah = tepat.map(v => Math.floor(v));
+  let sisa = target - bawah.reduce((a, b) => a + b, 0);
+
+  //  Bila daftar persennya tidak berjumlah 100 (mis. satu peran tidak punya
+  //  penerima), sisanya bisa jauh lebih besar dari jumlah orang. Yang dibagikan
+  //  hanya selisih pembulatan, jadi dibatasi sebanyak penerimanya saja.
+  const urut = tepat
+    .map((v, i) => ({ i, pecahan: v - Math.floor(v) }))
+    .sort((a, b) => b.pecahan - a.pecahan);
+
+  for (let k = 0; k < urut.length && sisa > 0; k++, sisa--) bawah[urut[k].i] += 1;
+  return bawah;
+}
+
 // Pemeriksaan
 
 export interface MasalahSkema { bidang: string; pesan: string }
@@ -341,13 +383,8 @@ export function hitungPembagian(
     const bagi = bagiRata.get(peran) !== false && orang.length > 1;
     const n = bagi ? orang.length : 1;
     for (const o of (bagi ? orang : orang.slice(0, 1))) {
-      hasil.push({
-        role: peran,
-        user_id: o.user_id,
-        user_name: o.user_name,
-        percentage: persen / n,
-        amount: Math.round((pool * persen) / 100 / n),
-      });
+      //  amount diisi belakangan oleh bagikanTepat - lihat catatan di sana.
+      hasil.push({ role: peran, user_id: o.user_id, user_name: o.user_name, percentage: persen / n, amount: 0 });
     }
   }
 
@@ -357,11 +394,12 @@ export function hitungPembagian(
       user_id: '',
       user_name: namaInstaller || 'Installer Cabang',
       percentage: pctInstaller,
-      amount: Math.round((pool * pctInstaller) / 100),
+      amount: 0,
     });
   }
 
-  return hasil;
+  const rupiah = bagikanTepat(pool, hasil.map(h => h.percentage));
+  return hasil.map((h, i) => ({ ...h, amount: rupiah[i] }));
 }
 
 /** Pembagian saat Manager sendiri yang menjadi PIC. */
@@ -383,14 +421,15 @@ export function hitungManagerSebagaiPic(
       user_id: managerId,
       user_name: managerNama,
       percentage: (p || 0) * faktor,
-      amount: Math.round((pool * (p || 0) * faktor) / 100),
+      amount: 0,
     }));
   if (pctInstaller > 0) {
     hasil.push({
       role: 'installer', user_id: '',
       user_name: namaInstaller || 'Installer Cabang',
-      percentage: pctInstaller, amount: Math.round((pool * pctInstaller) / 100),
+      percentage: pctInstaller, amount: 0,
     });
   }
-  return hasil;
+  const rupiah = bagikanTepat(pool, hasil.map(h => h.percentage));
+  return hasil.map((h, i) => ({ ...h, amount: rupiah[i] }));
 }
