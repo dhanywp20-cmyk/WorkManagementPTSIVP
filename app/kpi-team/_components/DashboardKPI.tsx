@@ -280,14 +280,24 @@ function SectionHeader({ icon, title, sub, right }: { icon:string; title:string;
   );
 }
 
+/**
+ * Bar mendatar ringkas.
+ *
+ * Bilahnya SENGAJA tipis (h-2.5, bukan h-4). Isi kartu ini sering cuma dua
+ * atau tiga baris - mis. "Ticket Open per Handler" yang berisi dua orang
+ * dengan satu tiket masing-masing. Bilah setebal 16px untuk data seperti itu
+ * memakan sepertiga baris dashboard hanya untuk memberi tahu dua angka yang
+ * sama besar, dan dua bilah sama panjang memang tidak menyampaikan apa pun -
+ * yang dibaca orang di sana adalah angkanya, bukan panjangnya.
+ */
 function HBarChart({ data, color, maxItems=6 }: { data:{label:string;value:number}[]; color:string; maxItems?:number }) {
   const top = data.slice(0, maxItems), max = Math.max(...top.map(d=>d.value), 1);
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1">
       {top.map((d,i) => (
         <div key={i} className="flex items-center gap-2">
           <span className="text-[11px] flex-shrink-0 text-right" style={{ color:'rgba(0,0,0,0.55)', width:'7rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{d.label}</span>
-          <div className="flex-1 h-4 rounded-full overflow-hidden" style={{ background:'rgba(0,0,0,0.06)' }}>
+          <div className="flex-1 h-2.5 rounded-full overflow-hidden" style={{ background:'rgba(0,0,0,0.06)' }}>
             <div className="h-full rounded-full transition-all duration-700"
               style={{ width:`${(d.value/max)*100}%`, background:color, opacity:0.85-i*0.07 }}/>
           </div>
@@ -998,17 +1008,14 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                       </>
                     )}
                   </div>
-                  {/* Spark bar: simple pass vs fail visual */}
-                  {!loading&&kpi&&kpi.learning.totalSessions>0&&(
-                    <div className="mt-2 pt-2 border-t border-slate-100">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-400 w-10 flex-shrink-0">Lulus</span>
-                        <MiniBar value={kpi.learning.completedSessions} max={kpi.learning.totalSessions} color="#10b981" h={5}/>
-                        <span className="text-sm text-slate-400 w-10 flex-shrink-0">Tidak</span>
-                        <MiniBar value={kpi.learning.totalSessions-kpi.learning.completedSessions} max={kpi.learning.totalSessions} color="#ef4444" h={5}/>
-                      </div>
-                    </div>
-                  )}
+                  {/*
+                    Bilah "Lulus / Tidak" DIHAPUS, bukan dikecilkan.
+                    Angkanya sudah dikatakan dua kali persis di atasnya: donat
+                    Pass Rate (79%) dan keterangan "15✓ · 4✗" di bawahnya.
+                    Bilah ketiga selebar kartu untuk rasio yang sama tidak
+                    menambah apa-apa selain satu baris kosong - dan baris itu
+                    yang membuat kartunya terasa lega tanpa isi.
+                  */}
                 </div>
               )}
 
@@ -1018,28 +1025,35 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
 
           {/* ══════════ TAB ANALYTICS — KPI Live Charts ══════════ */}
           {tab==='analytics'&&(
-            <div className="space-y-6">
+            <div className="space-y-3">
               {/* ── ROW A: 3-col Ticket charts ── */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/*
+                items-start: tiap kartu setinggi ISINYA SENDIRI. Tanpa ini grid
+                meregangkan semuanya setinggi kartu tertinggi - "Ticket Open per
+                Handler" yang cuma berisi dua nama ikut setinggi "Ticket per
+                Produk" yang berisi enam, dan selisihnya jadi ruang kosong yang
+                tidak pernah terisi apa pun.
+              */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
                 {/* Handler */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">🎫 Ticket Open per Handler</h3>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">🎫 Ticket Open per Handler</h3>
                   {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
                     kpi?.tickets.byHandler.length
                       ? <HBarChart data={kpi.tickets.byHandler.map(h=>({label:h.name.split(' ')[0],value:h.count}))} color="#ef4444"/>
                       : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data</p>}
                 </div>
                 {/* Divisi */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">🏢 Ticket per Divisi</h3>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">🏢 Ticket per Divisi</h3>
                   {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
                     kpi?.tickets.byDivision.length
                       ? <HBarChart data={kpi.tickets.byDivision.map(d=>({label:d.div,value:d.count}))} color="#6366f1"/>
                       : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data</p>}
                 </div>
                 {/* Product */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">📦 Ticket per Produk</h3>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">📦 Ticket per Produk</h3>
                   {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
                     kpi?.tickets.byProduct?.length
                       ? <HBarChart data={kpi.tickets.byProduct.map(p=>({label:p.product,value:p.count}))} color="#0891b2"/>
@@ -1048,9 +1062,9 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               </div>
 
               {/* ── ROW B: Reminder Kategori + Reminder per Produk ── */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">🗂️ Reminder per Kategori</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">🗂️ Reminder per Kategori</h3>
                   {loading?<div className="h-28 rounded animate-pulse bg-slate-100"/>:(
                     <div className="flex items-start gap-5">
                       <div className="flex-shrink-0">
@@ -1080,8 +1094,8 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                   )}
                 </div>
                 {/* Reminder per Produk */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">🏷️ Reminder per Produk</h3>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">🏷️ Reminder per Produk</h3>
                   {loading?<div className="h-28 rounded animate-pulse bg-slate-100"/>:(
                     (kpi?.reminders.byProduct??[]).length === 0
                       ? <p className="text-sm text-center py-8 text-slate-400">Tidak ada data produk</p>
@@ -1120,8 +1134,8 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               </div>
 
               {/* ── Trend Ticket Bulanan ── */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">📈 Trend Ticket Bulanan {new Date().getFullYear()}</h3>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">📈 Trend Ticket Bulanan {new Date().getFullYear()}</h3>
                 {loading ? <div className="h-32 rounded animate-pulse bg-slate-100"/> : (
                   kpi?.tickets.monthlyTickets?.some(v => v > 0) ? (() => {
                     const MN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
@@ -1131,9 +1145,9 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                     const curMonth = new Date().getMonth();
                     return (
                       <div>
-                        <div className="flex items-end gap-1" style={{height: 120}}>
+                        <div className="flex items-end gap-1" style={{height: 78}}>
                           {data.map((v, i) => {
-                            const hPct = Math.round((v / max) * 108);
+                            const hPct = Math.round((v / max) * 70);
                             const isCur = i === curMonth;
                             return (
                               <div key={i} className="flex-1 flex flex-col items-center gap-0.5 group cursor-default" title={`${MN[i]}: ${v} ticket`}>
@@ -1169,8 +1183,8 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               </div>
 
               {/* Performa Resolusi */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">⚡ Ringkasan Performa</h3>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">⚡ Ringkasan Performa</h3>
                 {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:(
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     {[
@@ -1216,7 +1230,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 // For reminders we use kpi.reminders.byCategory total as flat (no monthly breakdown yet)
                 const maxVal = Math.max(...ticketsByMonth, ...lcByMonth, 1);
                 return (
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
                     <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                       <h3 className="text-sm font-bold uppercase tracking-widest text-slate-500">📅 Aktivitas Bulanan {year}</h3>
                       <div className="flex items-center gap-4 text-sm">
@@ -1255,7 +1269,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               {/* Module summary comparison */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Tickets */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5 space-y-3">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#fee2e2'}}>🎫</div>
                     <span className="text-sm font-black uppercase tracking-widest text-slate-500">Ticketing</span>
@@ -1273,7 +1287,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                   ))}
                 </div>
                 {/* Reminders */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5 space-y-3">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#ede9fe'}}>📅</div>
                     <span className="text-sm font-black uppercase tracking-widest text-slate-500">Reminder</span>
@@ -1291,7 +1305,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                   ))}
                 </div>
                 {/* Learning Center */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5 space-y-3">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#ede9fe'}}>🎓</div>
                     <span className="text-sm font-black uppercase tracking-widest text-slate-500">Learning Center</span>
