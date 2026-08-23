@@ -1026,7 +1026,15 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
           {/* ══════════ TAB ANALYTICS — KPI Live Charts ══════════ */}
           {tab==='analytics'&&(
             <div className="space-y-3">
-              {/* ── ROW A: 3-col Ticket charts ── */}
+              {/*
+                SATU grid untuk seluruh tab, bukan baris-3 lalu baris-2 lalu
+                dua kartu selebar layar. Campuran itulah yang membuatnya tidak
+                pernah terlihat rapi: tiap baris punya lebar kartu sendiri,
+                jadi tepi kirinya berbaris tapi tepi kanannya tidak.
+                Empat kolom menyamakan lebar dasarnya; kartu yang isinya
+                memang butuh ruang (Reminder, Trend, Ringkasan) mengambil dua
+                kolom lewat col-span, sehingga tetap kelipatan lebar yang sama.
+              */}
               {/*
                 items-start: tiap kartu setinggi ISINYA SENDIRI. Tanpa ini grid
                 meregangkan semuanya setinggi kartu tertinggi - "Ticket Open per
@@ -1034,7 +1042,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 Produk" yang berisi enam, dan selisihnya jadi ruang kosong yang
                 tidak pernah terisi apa pun.
               */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 items-start">
                 {/* Handler */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">🎫 Ticket Open per Handler</h3>
@@ -1051,19 +1059,23 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                       ? <HBarChart data={kpi.tickets.byDivision.map(d=>({label:d.div,value:d.count}))} color="#6366f1"/>
                       : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data</p>}
                 </div>
-                {/* Product */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
+                {/*
+                  Produk dua kolom: labelnya yang paling panjang di baris ini
+                  ("Philips 55BDL2105X", "Microvision MV-U55…"), DAN 1+1+2
+                  menggenapkan baris pertama jadi empat. Tanpa itu tersisa satu
+                  slot kosong di ujung kanan - lubang yang justru jadi keluhan
+                  awalnya.
+                */}
+                <div className="sm:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">📦 Ticket per Produk</h3>
                   {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
                     kpi?.tickets.byProduct?.length
                       ? <HBarChart data={kpi.tickets.byProduct.map(p=>({label:p.product,value:p.count}))} color="#0891b2"/>
                       : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data produk</p>}
                 </div>
-              </div>
 
-              {/* ── ROW B: Reminder Kategori + Reminder per Produk ── */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
+                {/* Reminder per Kategori - dua kolom: ada donat + 9 baris kategori */}
+                <div className="sm:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">🗂️ Reminder per Kategori</h3>
                   {loading?<div className="h-28 rounded animate-pulse bg-slate-100"/>:(
                     <div className="flex items-start gap-5">
@@ -1093,8 +1105,8 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                     </div>
                   )}
                 </div>
-                {/* Reminder per Produk */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
+                {/* Reminder per Produk - dua kolom: nama produk panjang + baris kategori bersarang */}
+                <div className="sm:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">🏷️ Reminder per Produk</h3>
                   {loading?<div className="h-28 rounded animate-pulse bg-slate-100"/>:(
                     (kpi?.reminders.byProduct??[]).length === 0
@@ -1131,10 +1143,9 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                         </div>
                   )}
                 </div>
-              </div>
 
-              {/* ── Trend Ticket Bulanan ── */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
+                {/* Trend bulanan - dua kolom: 12 batang butuh lebar */}
+                <div className="sm:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">📈 Trend Ticket Bulanan {new Date().getFullYear()}</h3>
                 {loading ? <div className="h-32 rounded animate-pulse bg-slate-100"/> : (
                   kpi?.tickets.monthlyTickets?.some(v => v > 0) ? (() => {
@@ -1182,8 +1193,8 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 )}
               </div>
 
-              {/* Performa Resolusi */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
+                {/* Ringkasan Performa - dua kolom: isinya grid 6 metrik sendiri */}
+                <div className="sm:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">⚡ Ringkasan Performa</h3>
                 {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:(
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -1205,6 +1216,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                     ))}
                   </div>
                 )}
+                </div>
               </div>
             </div>
           )}
