@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from './shared';
 import { ModalPortal } from '@/components/shared';
+import { cariReminderByNama } from '@/lib/cari-reminder';
 import { hitungLingkupProject, filterLingkup, type LingkupProject } from '@/lib/project-scope';
 
 // Types
@@ -258,16 +259,33 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
     // 2. Reminders
     if (bolehModul('reminder-schedule')) try {
+      // Nama project dicari LEBIH DULU dan sendirian.
+      //
+      // Sebelumnya project_name, title, category, assign_name, sales_name, dan
+      // address disatukan dalam satu .or(). Enam kolom hidup-mati bersama: satu
+      // saja yang bermasalah - `title` adalah kolom peninggalan - dan PostgREST
+      // menolak seluruh kueri, termasuk pencarian nama yang tidak bersalah.
+      // Galatnya lalu dibuang oleh destructuring `{ data: rData }`, sehingga
+      // kegagalan total tampil sama persis dengan "tidak ada hasil".
+      const KOLOM_REMINDER =
+        'id, project_name, title, category, due_date, assign_name, sales_name, sales_division, status';
+      const namaRes = await cariReminderByNama<any>(q, KOLOM_REMINDER, 20,
+        kueri => (tanpaBatas ? kueri : batasiLingkup(lingkup, kueri, ['sales_name', 'created_by'])));
+      if (namaRes.error) console.error('[search] reminders (nama):', namaRes.error.message);
+
+      // Kolom pendukung menyusul sebagai kueri terpisah - boleh gagal tanpa
+      // menjatuhkan pencarian nama.
       let qr = supabase.from('reminders')
-        .select('id, project_name, title, category, due_date, assign_name, sales_name, sales_division, status')
-        // title ikut dicari: nama project data lama tersimpan di sana, dan
-        // aplikasi memang menampilkan `project_name || title`. Tanpa ini
-        // project lama tidak pernah muncul di pencarian.
-        .or(`project_name.ilike.%${q}%,title.ilike.%${q}%,category.ilike.%${q}%,assign_name.ilike.%${q}%,sales_name.ilike.%${q}%,address.ilike.%${q}%`)
+        .select(KOLOM_REMINDER)
+        .or(`category.ilike.%${q}%,assign_name.ilike.%${q}%,sales_name.ilike.%${q}%,address.ilike.%${q}%`)
         .order('created_at', { ascending: false }).limit(20);
       if (!tanpaBatas) qr = batasiLingkup(lingkup, qr, ['sales_name', 'created_by']);
-      const { data: rData } = await qr;
-      let reminders = (rData ?? []) as any[];
+      const { data: rData, error: rErr } = await qr;
+      if (rErr) console.error('[search] reminders (pendukung):', rErr.message);
+
+      const terlihat = new Set<string>();
+      let reminders = [...namaRes.data, ...((rData ?? []) as any[])]
+        .filter((r: any) => !terlihat.has(String(r.id)) && terlihat.add(String(r.id)));
 
       if (tanpaBatas) {
         // tanpa batas

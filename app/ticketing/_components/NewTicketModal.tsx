@@ -7,6 +7,7 @@ import { SalesPicker, ModalPortal, BatalButton, SubmitFormButton } from '@/compo
 import { BRAND_OPTIONS, type Brand } from '@/lib/brand-routing';
 import { hasFullAccess } from '@/lib/constants';
 import { hitungLingkupProject, filterLingkup } from '@/lib/project-scope';
+import { cariReminderByNama } from '@/lib/cari-reminder';
 
 export interface NewTicketForm {
   project_name: string;
@@ -82,6 +83,8 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
   const [reminderSearching, setReminderSearching] = useState(false);
   /** Apakah pencarian terakhir benar-benar dipersempit ke divisi si pencari. */
   const [pencarianDibatasi, setPencarianDibatasi] = useState(false);
+  /** Pesan galat kueri pencarian, bila basis data menolaknya. */
+  const [galatCari, setGalatCari] = useState<string | null>(null);
   const [selectedReminder, setSelectedReminder] = useState<ReminderRef | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -96,14 +99,6 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     if (!q.trim()) { setReminderResults([]); return; }
     setReminderSearching(true);
     const lingkup = await hitungLingkupProject(currentUser as never);
-    const cocokNama = `project_name.ilike.%${q}%,title.ilike.%${q}%`;
-
-    // Reminders: SEMUA kategori. Membatasi ke Konfigurasi & Training membuat
-    // project yang tercatat di kategori lain seolah tidak pernah ada.
-    let qr = supabase
-      .from('reminders')
-      .select('id, project_name, title, address, sales_name, sales_division, product, pic_name, pic_phone, category, assign_name')
-      .or(cocokNama);
 
     // Tickets: project yang pernah punya ticket
     // Tabel ini sebelumnya tidak ikut dicari sama sekali. Padahal project yang
@@ -112,16 +107,30 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     let qt = supabase
       .from('tickets')
       .select('id, project_name, address, sales_name, sales_division, product, customer_phone, assign_name')
-      .ilike('project_name', `%${q}%`);
+      .ilike('project_name', `%${q.trim().replace(/([%_\\])/g, '\\$1')}%`);
 
     const filter = filterLingkup(lingkup);
     setPencarianDibatasi(!!filter);
-    if (filter) { qr = qr.or(filter); qt = qt.or(filter); }
+    if (filter) { qt = qt.or(filter); }
 
+    // Reminders: SEMUA kategori, lewat lib/cari-reminder.ts. Pencarian nama
+    // dipisah dari pencarian kolom peninggalan `title` di sana - lihat catatan
+    // panjang di berkas itu: menggabungkan keduanya membuat satu kolom yang
+    // bermasalah menjatuhkan seluruh pencarian, dan jatuhnya tampil sebagai
+    // "project tidak ditemukan", bukan sebagai galat.
     const [rRes, tRes] = await Promise.all([
-      qr.order('created_at', { ascending: false }).limit(15),
+      cariReminderByNama<ReminderRef>(
+        q,
+        'id, project_name, title, address, sales_name, sales_division, product, pic_name, pic_phone, category, assign_name',
+        15,
+        kueri => (filter ? (kueri as { or(f: string): typeof kueri }).or(filter) : kueri),
+      ),
       qt.order('created_at', { ascending: false }).limit(15),
     ]);
+
+    // Galat TIDAK ditelan. Pencarian yang ditolak basis data dan pencarian yang
+    // memang nihil terlihat sama persis dari luar, dan yang pertama menyesatkan.
+    setGalatCari(rRes.error?.message ?? (tRes.error ? tRes.error.message : null));
 
     const hasil: ReminderRef[] = [];
     const sudah = new Set<string>();
@@ -309,7 +318,17 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                   mencari tanpa batas adalah keterangan yang salah - ia
                   mengirim orang mengejar penyebab yang tidak ada, padahal
                   jawabannya cuma "nama itu memang belum tercatat". */}
-              {!reminderSearching && reminderQuery.trim().length >= 2 && reminderResults.length === 0 && (
+              {/* Kueri ditolak basis data - ini BUKAN "tidak ditemukan".
+                  Pesannya ditampilkan apa adanya supaya penyebabnya bisa
+                  dibaca, bukan ditebak dari layar yang tampak kosong. */}
+              {!reminderSearching && galatCari && (
+                <p className="mt-1.5 text-[11px] text-red-700 bg-red-50 border border-red-200 rounded-lg px-2 py-1.5 leading-snug">
+                  Pencarian gagal dijalankan, jadi daftar di bawah belum tentu lengkap.
+                  Tunjukkan pesan ini ke Admin: <span className="font-mono">{galatCari}</span>
+                </p>
+              )}
+
+              {!reminderSearching && !galatCari && reminderQuery.trim().length >= 2 && reminderResults.length === 0 && (
                 <p className="mt-1.5 text-[11px] text-slate-600 leading-snug">
                   {pencarianDibatasi ? (
                     <>
