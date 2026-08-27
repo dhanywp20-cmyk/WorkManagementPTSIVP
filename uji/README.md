@@ -54,4 +54,11 @@ masing-masing harus tetap berjumlah 100% dan tepat sebesar pool, plus satu
 kasus kendali: PIC dan Supervisor orang berbeda — barisnya tidak boleh ikut
 terhapus.
 
+Aturan kedua yang dijaga berkas ini: PIC yang menangani sendiri
+Troubleshooting proyeknya tidak menerima porsi Support di atas porsi PIC-nya.
+Diuji tiga bentuk: hanya PIC yang menangani (beralih ke skema tanpa support),
+PIC bersama orang lain (yang lain dapat porsi PENUH, bukan dibagi dengan PIC),
+dan satu orang yang sekaligus PIC + Supervisor + penangan Troubleshooting —
+ia tetap hanya muncul sekali.
+
     npx tsx uji/supervisor-jadi-pic.ts

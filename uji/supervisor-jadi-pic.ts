@@ -58,5 +58,38 @@ const D = tampil('Kendali — PIC Pandu, Supervisor Yoga (orang berbeda)',
 cek(D.r.find(s => s.role === 'supervisor')?.percentage === 15, 'Supervisor tetap dapat 15%');
 cek(D.r.find(s => s.role === 'manager')?.percentage === 8, 'Manager tetap 8%');
 
+
+// ── PIC menangani sendiri Troubleshooting-nya ──────────────────────────────
+// Yoga PIC, dan Yoga juga yang menangani ticket. Ia TIDAK boleh menerima
+// porsi Support di atas porsi PIC-nya.
+sk.hangusSupervisorKe = 'manager';
+const E = tampil('PIC Pandu, dan yang menangani Troubleshooting Pandu sendiri',
+  calculateStandardScheme(sk, POOL, 'onsite', '', 'Pandu Kusuma Adji', 'u-dhany', 'Dhany Wahyu',
+    'u-yoga', 'Yoga KS', [{ user_id: 'pandu', user_name: 'Pandu Kusuma Adji' }]));
+cek(!E.r.some(s => s.role === 'support'), 'Tidak ada baris Support — PIC tidak dobel');
+cek(E.r.filter(s => s.user_name === 'Pandu Kusuma Adji').length === 1, 'Pandu muncul sekali saja');
+cek(E.r.find(s => s.role === 'pic')?.percentage === 55, 'Beralih ke skema tanpa support: PIC 55%');
+cek(Math.abs(E.tot - POOL) <= 1 && Math.abs(E.pct - 100) < 0.01, 'Tetap 100% / Rp 1.000.000');
+
+const F = tampil('PIC Pandu; yang menangani Pandu SENDIRI + Ferdinan (orang lain)',
+  calculateStandardScheme(sk, POOL, 'onsite', '', 'Pandu Kusuma Adji', 'u-dhany', 'Dhany Wahyu',
+    'u-yoga', 'Yoga KS', [
+      { user_id: 'pandu', user_name: 'Pandu Kusuma Adji' },
+      { user_id: 'ferdinan', user_name: 'Ferdinan Agustinus' },
+    ]));
+const sup = F.r.filter(s => s.role === 'support');
+cek(sup.length === 1 && sup[0].user_name === 'Ferdinan Agustinus',
+    'Hanya Ferdinan yang dapat porsi Support — Pandu disaring');
+cek(sup[0]?.percentage === 17, 'Ferdinan dapat 17% PENUH, bukan dibagi dua dengan PIC');
+cek(F.r.find(s => s.role === 'pic')?.percentage === 60, 'PIC tetap 60% (skema ada support)');
+cek(Math.abs(F.tot - POOL) <= 1 && Math.abs(F.pct - 100) < 0.01, 'Tetap 100% / Rp 1.000.000');
+
+// Supervisor merangkap PIC DAN menangani sendiri Troubleshooting-nya.
+const G = tampil('Yoga = PIC + Supervisor + penangan Troubleshooting (tiga-tiganya)',
+  calculateStandardScheme(sk, POOL, 'onsite', '', 'Yoga KS', 'u-dhany', 'Dhany Wahyu',
+    'u-yoga', 'Yoga KS', [{ user_id: 'u-yoga', user_name: 'Yoga KS' }]));
+cek(G.r.filter(s => s.user_name === 'Yoga KS').length === 1, 'Yoga tetap muncul SEKALI saja');
+cek(Math.abs(G.tot - POOL) <= 1 && Math.abs(G.pct - 100) < 0.01, 'Tetap 100% / Rp 1.000.000');
+
 console.log(gagal === 0 ? '\nLULUS' : `\n${gagal} GAGAL`);
 process.exit(gagal ? 1 : 0);

@@ -184,10 +184,19 @@ export default function IncentivePTSPage() {
     ]);
     setDetailSplits(splitsRes.data || []);
     setDetailTranches((tranchesRes.data || []) as IncentiveTranche[]);
+    //  PIC dikeluarkan dari daftar yang DITAMPILKAN, bukan cuma dari yang
+    //  dibayar. Mesin hitung sudah membuangnya (lihat tanpaPic di calc.ts);
+    //  kalau layar ini tetap menampilkannya, orang membaca "Yoga dapat porsi
+    //  Support" padahal tidak - dan selisih antara yang terlihat dan yang
+    //  dibayar adalah hal terakhir yang boleh terjadi di layar nominal.
+    const rapikan = (v: string) => (v ?? '').normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
+    const picPenunjuk = new Set([rapikan(p.assign_name || ''), rapikan(p.assigned_to || ''), rapikan(p.pic_id || '')].filter(Boolean));
     setDetailSupports(tahunDinilai.map((th, i) => ({
       tahunKe: th,
       ...jendelaSupportTahap(p.bast_date, th),
-      orang: supportsPerTahun[i]?.data || [],
+      orang: (supportsPerTahun[i]?.data || [])
+        .filter((o: { user_id: string; user_name: string }) =>
+          !picPenunjuk.has(rapikan(o.user_id)) && !picPenunjuk.has(rapikan(o.user_name))),
     })));
   }
 

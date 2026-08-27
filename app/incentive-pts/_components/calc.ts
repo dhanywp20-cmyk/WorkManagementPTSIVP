@@ -145,6 +145,44 @@ export function getSupervisorTeamForPic(picName: string): 'wahyu' | 'yoga' | nul
 }
 
 /**
+ * Apakah dua penunjuk ini mengarah ke orang yang sama.
+ *
+ * Dicocokkan lewat id ATAU nama, karena satu orang bisa masuk lewat dua jalur
+ * dengan penunjuk yang berbeda bentuk: username dari jalur reminder, nama
+ * lengkap dari jalur ticket, uuid dari Struktur Organisasi.
+ */
+function orangSama(a: string | null | undefined, b: string | null | undefined): boolean {
+  const rapikan = (v: string) => v.normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
+  const x = rapikan(a ?? ''), y = rapikan(b ?? '');
+  return !!x && !!y && x === y;
+}
+
+/**
+ * Buang PIC dari daftar Tim Support.
+ *
+ * PIC yang menangani sendiri Troubleshooting proyeknya TIDAK mendapat porsi
+ * Support di atas porsi PIC-nya. Porsi PIC sudah mencakup tanggung jawab atas
+ * proyek itu; membayarnya lagi lewat slot Support berarti satu orang menerima
+ * dua bagian untuk satu proyek - persis seperti Supervisor yang merangkap PIC.
+ *
+ * Yang dicari daftar Support adalah ORANG LAIN yang ikut membantu. Bila di
+ * suatu tahun ternyata hanya PIC sendiri yang menangani, tahun itu dihitung
+ * sebagai "tanpa support" dan porsinya diserap PIC lewat skema tanpaSupport -
+ * bukan diberikan dua kali.
+ */
+function tanpaPic(
+  supports: { user_id: string; user_name: string }[],
+  picUserId: string,
+  picUserName: string,
+): { user_id: string; user_name: string }[] {
+  return supports.filter(s =>
+    !orangSama(s.user_id, picUserId) &&
+    !orangSama(s.user_name, picUserName) &&
+    !orangSama(s.user_id, picUserName) &&
+    !orangSama(s.user_name, picUserId));
+}
+
+/**
  * Pembagian mengikuti SKEMA yang diatur admin. Angka porsinya tidak ditulis di
  * sini melainkan dibaca dari lib/incentive-scheme.ts (tabel
  * incentive_scheme_settings), supaya perubahan kebijakan cukup dilakukan lewat
@@ -171,15 +209,14 @@ export function calculateStandardScheme(
   // kosong dan perbandingannya selalu gagal. Akibatnya orang yang sama muncul
   // DUA KALI pada satu proyek - sebagai PIC dan sebagai Supervisor - lalu
   // dibayar dua kali, persis yang hendak dicegah baris ini.
-  const samaOrang = (a: string, b: string) => {
-    const rapikan = (v: string) => v.normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
-    return !!a && !!b && rapikan(a) === rapikan(b);
-  };
   const supervisorJadiPic =
-    samaOrang(picUserId, supervisorUserId) || samaOrang(picUserName, supervisorUserName);
+    orangSama(picUserId, supervisorUserId) || orangSama(picUserName, supervisorUserName);
+
+  // PIC tidak boleh ikut menerima porsi Support - lihat tanpaPic().
+  const support = tanpaPic(assignedSupports, picUserId, picUserName);
 
   const penerima: PenerimaPeran[] = [{ peran: 'pic', user_id: picUserId, user_name: picUserName }];
-  for (const s of assignedSupports) penerima.push({ peran: 'support', user_id: s.user_id, user_name: s.user_name });
+  for (const s of support) penerima.push({ peran: 'support', user_id: s.user_id, user_name: s.user_name });
   if (supervisorUserId && !supervisorJadiPic) {
     penerima.push({ peran: 'supervisor', user_id: supervisorUserId, user_name: supervisorUserName });
   }
@@ -187,7 +224,7 @@ export function calculateStandardScheme(
 
   return hitungPembagian(
     sk, pool, modePenyelesaian === 'remote', penerima,
-    assignedSupports.length > 0, supervisorJadiPic, installerName,
+    support.length > 0, supervisorJadiPic, installerName,
   ) as SplitResult[];
 }
 
@@ -201,9 +238,15 @@ export function calculateManagerPicScheme(
   installerName?: string | null,
   assignedSupports: { user_id: string; user_name: string }[] = [],
 ): SplitResult[] {
+  // Aturan yang sama berlaku di sini: Manager yang menangani sendiri
+  // Troubleshooting proyeknya tidak menerima porsi Support di atas porsi
+  // PIC-nya. Tanpa penyaringan ini, Manager-as-PIC yang turun tangan sendiri
+  // akan muncul dua kali - sebagai PIC dan sebagai Support.
+  const support = tanpaPic(assignedSupports, dhanyUserId, dhanyUserName);
+
   return hitungManagerSebagaiPic(
     sk, pool, modePenyelesaian === 'remote', dhanyUserId, dhanyUserName, installerName,
-    assignedSupports.map(s => ({ peran: 'support', user_id: s.user_id, user_name: s.user_name })),
+    support.map(s => ({ peran: 'support', user_id: s.user_id, user_name: s.user_name })),
   ) as SplitResult[];
 }
 
