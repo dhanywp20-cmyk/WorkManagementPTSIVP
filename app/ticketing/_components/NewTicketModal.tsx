@@ -80,6 +80,8 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
   const [reminderQuery, setReminderQuery] = useState('');
   const [reminderResults, setReminderResults] = useState<ReminderRef[]>([]);
   const [reminderSearching, setReminderSearching] = useState(false);
+  /** Apakah pencarian terakhir benar-benar dipersempit ke divisi si pencari. */
+  const [pencarianDibatasi, setPencarianDibatasi] = useState(false);
   const [selectedReminder, setSelectedReminder] = useState<ReminderRef | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -113,6 +115,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
       .ilike('project_name', `%${q}%`);
 
     const filter = filterLingkup(lingkup);
+    setPencarianDibatasi(!!filter);
     if (filter) { qr = qr.or(filter); qt = qt.or(filter); }
 
     const [rRes, tRes] = await Promise.all([
@@ -125,7 +128,12 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     const tambah = (r: ReminderRef) => {
       // Satu project bisa muncul di kedua tabel - disatukan berdasarkan nama +
       // alamat supaya daftarnya tidak memuat baris kembar yang membingungkan.
-      const kunci = `${(r.project_name || r.title || '').trim().toLowerCase()}|${(r.address || '').trim().toLowerCase()}`;
+      // Spasinya ikut diratakan: "Jl.Parangtritis" dan "Jl. Parangtritis"
+      // adalah alamat yang sama, dan tanpa perataan ini keduanya lolos sebagai
+      // dua pilihan identik - lalu orang memilih salah satunya secara acak,
+      // yang berarti nama project pada ticket ikut jadi acak.
+      const rapikan = (v: string) => v.normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
+      const kunci = `${rapikan(r.project_name || r.title || '')}|${rapikan(r.address || '')}`;
       if (sudah.has(kunci)) return;
       sudah.add(kunci);
       hasil.push(r);
@@ -294,12 +302,29 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                   Hasil kosong bisa berarti project-nya memang tidak ada, ATAU
                   ada tapi milik divisi lain sehingga di luar lingkup pencari.
                   Tanpa keterangan ini keduanya terlihat sama, dan orang akan
-                  mengira sistemnya yang rusak. */}
+                  mengira sistemnya yang rusak.
+
+                  Keterangannya dibedakan menurut lingkup yang BENAR-BENAR
+                  dipakai. Menyebut "hanya divisi kamu" kepada akun yang justru
+                  mencari tanpa batas adalah keterangan yang salah - ia
+                  mengirim orang mengejar penyebab yang tidak ada, padahal
+                  jawabannya cuma "nama itu memang belum tercatat". */}
               {!reminderSearching && reminderQuery.trim().length >= 2 && reminderResults.length === 0 && (
-                <p className="mt-1.5 text-[11px] text-slate-400 leading-snug">
-                  Tidak ada project bernama &quot;{reminderQuery.trim()}&quot; dalam jangkauan akun kamu.
-                  Pencarian hanya mencakup project divisi kamu — kalau project ini milik divisi lain,
-                  minta Admin atau Team PTS yang membuatkan ticket-nya.
+                <p className="mt-1.5 text-[11px] text-slate-600 leading-snug">
+                  {pencarianDibatasi ? (
+                    <>
+                      Tidak ada project bernama &quot;{reminderQuery.trim()}&quot; dalam jangkauan akun kamu.
+                      Pencarian hanya mencakup project divisi kamu — kalau project ini milik divisi lain,
+                      minta Admin atau Team PTS yang membuatkan ticket-nya.
+                    </>
+                  ) : (
+                    <>
+                      Tidak ada project bernama &quot;{reminderQuery.trim()}&quot;. Akun kamu mencari ke
+                      SELURUH divisi, jadi kemungkinan besar namanya memang belum tercatat di Reminder
+                      Schedule maupun Ticketing — coba potongan nama yang lebih pendek, atau isi sebagai
+                      Project Baru.
+                    </>
+                  )}
                 </p>
               )}
 

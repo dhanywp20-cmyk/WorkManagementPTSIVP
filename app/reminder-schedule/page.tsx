@@ -522,9 +522,25 @@ function ReminderSchedulePageInner() {
       // tercatat dipertahankan - ia hasil penetapan sebelumnya, dan menebak
       // ulang dari nama justru membuang keterangan yang lebih pasti.
       const namaSalesTetap = (formData.sales_name ?? '').trim() === (editingReminder.sales_name ?? '').trim();
-      const payload = { ...formData, assign_name: assignee?.full_name ?? formData.assigned_to,
+      // progressTimelinePayload() WAJIB ikut di jalur sunting, bukan cuma di
+      // jalur buat-baru. Saat form dibuka, progress_start_date/target diisi
+      // `r.xxx ?? ''` - jadi reminder yang tanggal progress-nya NULL memberi
+      // string kosong, dan string kosong dikirim apa adanya ke kolom bertipe
+      // date: "invalid input syntax for type date". Seluruh penyuntingan gagal,
+      // termasuk yang tidak menyentuh tanggal sama sekali.
+      // Fungsi ini juga yang mengosongkan tanggal ketika kategorinya berganti
+      // ke kategori yang bukan pemicu Project Progress.
+      const payload = { ...formData, ...progressTimelinePayload(),
+        assign_name: assignee?.full_name ?? formData.assigned_to,
         sales_user_id: namaSalesTetap ? (editingReminder.sales_user_id ?? salesUserId) : salesUserId,
-        assign_user_id: assignee?.id ?? null, created_by: currentUser?.username ?? 'system', updated_at: new Date().toISOString() };
+        assign_user_id: assignee?.id ?? null,
+        // created_by TIDAK ditimpa. Ia menjawab siapa yang MEMBUAT jadwal ini,
+        // dan menyuntingnya tidak mengubah jawaban itu. Sebelumnya kolom ini
+        // diisi ulang dengan penyunting, sehingga satu suntingan admin
+        // menghapus jejak pembuat aslinya - sekaligus, bila kelak RLS
+        // dinyalakan untuk reminders, memindahkan kepemilikan barisnya.
+        created_by: editingReminder.created_by ?? currentUser?.username ?? 'system',
+        updated_at: new Date().toISOString() };
       if (alihKeSupervisor) {
         const [, supId] = alihKeSupervisor;
         Object.assign(payload, {

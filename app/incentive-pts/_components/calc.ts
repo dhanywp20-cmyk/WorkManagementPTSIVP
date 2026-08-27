@@ -346,22 +346,53 @@ export function jendelaSupportTahap(
 
 /**
  * Siapa saja yang tercatat membantu Troubleshooting proyek ini dalam sebuah
- * rentang tanggal. Yang dibaca tetap catatan Troubleshooting di Reminder
- * Schedule; hanya rentang waktunya yang disaring.
+ * rentang tanggal.
+ *
+ * SUMBERNYA `reminders` berkategori Troubleshooting yang berstatus selesai -
+ * BUKAN tabel `tickets`. Ticket bukan bukti seseorang mengerjakan sesuatu; ia
+ * baru laporan masalah. Yang menjadi bukti adalah jadwal Troubleshooting yang
+ * dipegang seseorang dan ditutup selesai - dan itu memang otomatis dibuat dari
+ * Ticketing begitu ticket dijadwalkan Onsite (lihat app/ticketing/page.tsx).
+ * Ticket yang tidak pernah dijadwalkan tidak menghasilkan porsi Support, dan
+ * itu disengaja.
  *
  * Rentangnya dibuat setengah terbuka - `dari` inklusif, `sampai` inklusif pada
  * tanggalnya - dan pemanggilnya memakai jendelaSupportTahap() supaya batas
  * antar tahun tidak ditulis ulang di beberapa tempat lalu menyimpang.
  */
+/**
+ * Samakan bentuk nama proyek sebelum dibandingkan.
+ *
+ * Pencocokannya DULU memakai persamaan persis (`.eq`), dan itu diam-diam
+ * merugikan tim. Catatan Troubleshooting lahir dari nama yang DIKETIK ULANG
+ * orang - lewat Ticketing, atau manual ketika pencarian "Project Existing"
+ * tidak menemukan proyeknya. "BPKP ICT TIMUR", "BPKP ICT Timur", dan
+ * "BPKP  ICT Timur " adalah proyek yang sama bagi manusia, tetapi tiga nilai
+ * berbeda bagi `.eq` - dan ketika tidak cocok, porsi Tim Support tahun itu
+ * bukan tampil sebagai kesalahan, melainkan menghilang tanpa suara: skemanya
+ * beralih ke "tanpa support" dan porsinya diserap PIC.
+ *
+ * Uang tidak boleh bergantung pada spasi ganda atau huruf kapital.
+ */
+function samakanNamaProyek(v: string): string {
+  return v.normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
 export async function fetchSupportFromTickets(
   projectName: string,
   rentang?: { dari?: string | null; sampai?: string | null },
 ): Promise<{ data: { user_id: string; user_name: string }[]; error: unknown }> {
+  const dicari = samakanNamaProyek(projectName ?? '');
+  if (!dicari) return { data: [], error: null };
+
+  // Penyaringan nama dilakukan di sini, bukan di kueri, karena PostgREST tidak
+  // bisa menormalkan spasi di sisi basis data. Yang diambil hanya baris
+  // Troubleshooting yang SUDAH selesai di rentang tahun bersangkutan, jadi
+  // jumlahnya kecil - bukan seluruh tabel.
   let q = supabase
     .from('reminders')
-    .select('assigned_to, assign_name')
+    .select('assigned_to, assign_name, project_name')
     .eq('category', 'Troubleshooting')
-    .eq('project_name', projectName)
     .eq('status', 'done');
 
   if (rentang?.dari)   q = q.gt('due_date', rentang.dari);
@@ -369,8 +400,11 @@ export async function fetchSupportFromTickets(
 
   const { data, error } = await q;
   const seen = new Set<string>();
-  const rows = (data || []) as { assigned_to: string | null; assign_name: string | null }[];
+  const rows = (data || []) as {
+    assigned_to: string | null; assign_name: string | null; project_name: string | null;
+  }[];
   const unique = rows
+    .filter(r => samakanNamaProyek(r.project_name ?? '') === dicari)
     .filter(r => r.assigned_to && !seen.has(r.assigned_to) && seen.add(r.assigned_to))
     .map(r => ({ user_id: r.assigned_to as string, user_name: r.assign_name || '' }));
   return { data: unique, error };
