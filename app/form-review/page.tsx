@@ -1011,7 +1011,7 @@ export default function FormReviewPage() {
           </div>
 
           {/* Mini Pie Charts */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-zoom-in anim-d160">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 animate-zoom-in anim-d160">
             <MiniPieChart data={categoryPieData} title="Kategori Kegiatan" icon="📋"
               activeFilter={filterReviewCat !== 'all' ? filterReviewCat : null}
               onSliceClick={label => setFilterReviewCat(prev => (prev === label ? 'all' : label as any))} />

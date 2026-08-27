@@ -363,7 +363,7 @@ function UnitMovementPageInner() {
         )}
 
         {/* Pie Charts */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-zoom-in anim-d160">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 animate-zoom-in anim-d160">
           <MiniPieChart data={statusPieData} title="Status Barang" icon="📦"
             activeFilter={filterStatus!=='All'?filterStatus:null}
             onSliceClick={l=>setFilterStatus(p=>p===l?'All':l as any)}/>

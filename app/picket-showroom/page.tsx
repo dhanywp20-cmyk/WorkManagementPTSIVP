@@ -345,7 +345,7 @@ function PiketShowroomPageInner() {
             <TamuSummaryCards allRows={allRows} kegiatanList={kegiatanList} selectedYear={summaryYear} selectedMonth={summaryMonth} onYearChange={setSummaryYear} onMonthChange={setSummaryMonth}/>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 animate-zoom-in anim-d160">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 animate-zoom-in anim-d160">
             <MiniPieChart data={instansiPie} title="Tamu per Instansi" icon="🏢" activeFilter={filterInstansi} onSliceClick={l=>setFilterInstansi(filterInstansi===l?null:l)}/>
             <MiniPieChart data={kgTypePie} title="Jenis Kegiatan" icon="📋" activeFilter={filterKegiatan} onSliceClick={l=>setFilterKegiatan(filterKegiatan===l?null:l)}/>
             <MiniPieChart data={produkPie} title="Penggunaan Produk" icon="📦" activeFilter={null} onSliceClick={()=>{}}/>

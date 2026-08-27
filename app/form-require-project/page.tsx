@@ -1569,7 +1569,7 @@ Hubungi Admin untuk info lebih lanjut.
         </div>
 
         {/* Charts - guest sees handler + product, PTS sees all 3 */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-zoom-in anim-d160">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 animate-zoom-in anim-d160">
           {isPTS ? (
             <>
               <MiniPieChart data={statusPieData} title="Status Distribution" icon="🥧"

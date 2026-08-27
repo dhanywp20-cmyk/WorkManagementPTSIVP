@@ -59,7 +59,7 @@ export function MiniPieChart({
   });
 
   return (
-    <div className="rounded-2xl p-4 flex flex-col gap-3"
+    <div className="rounded-2xl p-2.5 sm:p-4 flex flex-col gap-2 sm:gap-3"
       style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)', backdropFilter: 'blur(10px)' }}>
       <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">{icon} {title}</p>
       {/* justify-center + lebar maksimum pada legenda: sebelumnya legenda memakai
@@ -79,7 +79,14 @@ export function MiniPieChart({
           Dengan flex-wrap + lebar minimum, legenda TURUN ke bawah donat begitu
           tidak muat di sampingnya, bukan menghilang. */}
       <div className="flex flex-wrap items-center justify-center gap-3">
-        <svg aria-hidden="true" focusable="false" width="120" height="120" viewBox="0 0 120 120" className="flex-shrink-0">
+        {/* Ukuran donat MENGECIL di layar sempit. Atribut width/height tetap
+            120 sebagai cadangan bila CSS tidak termuat; kelas Tailwind di
+            bawahnya yang menentukan ukuran sebenarnya - CSS menang atas
+            atribut. Tanpa ini, donat 120px + legenda 150px tidak muat pada
+            kartu selebar ~132px (dua kolom di ponsel 360px), dan yang
+            menjorok keluar akan membuat halamannya bisa digeser ke samping. */}
+        <svg aria-hidden="true" focusable="false" width="120" height="120" viewBox="0 0 120 120"
+          className="flex-shrink-0 w-[92px] h-[92px] sm:w-[120px] sm:h-[120px]">
           {slices.map((s) => (
             s.isFullCircle ? (
               <g key={s.i} style={{ cursor: onSliceClick ? 'pointer' : 'default' }}
@@ -101,7 +108,7 @@ export function MiniPieChart({
           <text x="60" y="57" textAnchor="middle" fontSize="16" fontWeight="800" fill="#1e293b">{centerValue ?? total}</text>
           <text x="60" y="70" textAnchor="middle" fontSize="7" fill="#94a3b8" fontWeight="600">{centerLabel ?? 'TOTAL'}</text>
         </svg>
-        <div className="flex flex-col gap-1.5 flex-1 basis-[150px] min-w-[150px] max-w-[210px] max-h-[120px] overflow-y-auto">
+        <div className="flex flex-col gap-1.5 flex-1 basis-[110px] min-w-[110px] sm:basis-[150px] sm:min-w-[150px] max-w-[210px] max-h-[120px] overflow-y-auto">
           {slices.map((s) => {
             const isActive = activeFilter === s.label;
             return (

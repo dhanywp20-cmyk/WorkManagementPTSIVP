@@ -155,7 +155,7 @@ export function ProjectDetailView({ detail, maxKolomLokasi = 2 }: {
       )}
 
       {/* ── Empat pie: status lokasi, jadwal, beban PIC, komponen bermasalah ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-2.5">
         <MiniPieChart data={pieData} title="Distribusi Status Lokasi" icon="📍" />
         <MiniPieChart data={picSlices} title="Progres per PIC Team" icon="👷"
           centerValue={`${avg}%`} centerLabel="RATA-RATA" valueSuffix="%" />

@@ -891,7 +891,7 @@ export default function DailyReportPage() {
             tanpa titik henti - semua halaman lain sudah grid-cols-1 md:...
             Di ponsel itu berarti empat kolom selebar ~80px, dan di situlah
             legendanya terhimpit habis. */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
           <MiniPieChart
             data={catPieData} title="Kegiatan / Kategori" icon="🖥️"
             activeFilter={filterCategory}
