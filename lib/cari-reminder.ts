@@ -5,55 +5,78 @@ import { supabase } from './supabase';
  *
  * KENAPA BERKAS INI ADA
  *
- * Dua tempat mencari project dengan cara yang sama persis - pencarian "Project
+ * Dua tempat mencari project dengan cara yang sama - pencarian "Project
  * Existing" di Create Ticket, dan Global Search di dashboard - dan keduanya
- * memakai satu kueri gabungan:
+ * dulu memakai satu kueri gabungan:
  *
+ *     .select('id, project_name, title, ...')
  *     .or(`project_name.ilike.%q%,title.ilike.%q%`)
  *
- * `title` adalah kolom peninggalan: nama project data lama tersimpan di sana,
- * dan seluruh aplikasi menampilkan `project_name || title`. Menyertakannya
- * memang benar secara maksud - tetapi menaruhnya di dalam SATU kueri bersama
- * `project_name` membuat keduanya hidup-mati bersama. Bila kolom itu tidak ada
- * di basis data, atau tipenya tidak bisa di-ilike, PostgREST menolak SELURUH
- * kueri - termasuk bagian project_name yang sebenarnya tidak bermasalah.
+ * `title` disebut dua kali di sana, dan di basis data ini kolom itu TIDAK ADA:
  *
- * Yang membuatnya berbahaya bukan kegagalannya, melainkan BENTUK kegagalannya:
- * kedua pemanggil membuang `error` dan hanya memakai `data`. Kueri yang ditolak
- * menghasilkan data kosong, dan data kosong tampil sebagai "project tidak
- * ditemukan" - kalimat yang salah tetapi masuk akal, sehingga orang mencari
- * penyebabnya pada nama project, bukan pada pencariannya.
+ *     column reminders.title does not exist
+ *
+ * Satu kolom yang tidak ada membuat PostgREST menolak SELURUH kueri, termasuk
+ * pencarian project_name yang tidak bersalah. Jadi pencarian project di dua
+ * layar itu tidak pernah mengembalikan satu baris pun dari tabel reminders -
+ * yang muncul hanya hasil dari tabel tickets, yang kuerinya tidak menyebut
+ * `title`.
+ *
+ * Yang membuatnya bertahan lama bukan kegagalannya, melainkan BENTUK
+ * kegagalannya: kedua pemanggil membuang `error` dan hanya memakai `data`.
+ * Kueri yang ditolak menghasilkan data kosong, dan data kosong tampil sebagai
+ * "project tidak ditemukan" - kalimat yang salah tetapi masuk akal, sehingga
+ * orang mencari penyebabnya pada nama project, bukan pada pencariannya.
  *
  * Akibatnya berlanjut ke uang: ketika project tidak ketemu, orang mengetik
- * namanya manual, nama itu menyimpang, dan porsi Tim Support pada Incentive
- * tidak pernah tercocokkan.
+ * namanya manual, nama itu menyimpang dari nama di Reminder Schedule, dan
+ * porsi Tim Support pada Incentive dicocokkan lewat nama.
  *
- * Karena itu pencariannya dipecah: `project_name` berdiri sendiri dan HARUS
- * berhasil, `title` menyusul sebagai kueri terpisah yang boleh gagal tanpa
- * menyeret yang lain. Galat kueri utama dikembalikan, bukan ditelan.
+ * ATURAN BERKAS INI
+ *
+ *   1. Kueri UTAMA hanya menyentuh kolom yang pasti ada. Ia tidak boleh bisa
+ *      dijatuhkan oleh kolom opsional mana pun.
+ *   2. `title` dicari lewat kueri TERPISAH yang boleh gagal sendirian. Sekali
+ *      basis data bilang kolomnya tidak ada, ia tidak dicoba lagi - bukan
+ *      dicoba ulang tiap ketukan tombol.
+ *   3. Galat kueri utama DIKEMBALIKAN, tidak ditelan.
  */
 
-/** Bagian `%_` di dalam pola LIKE harus dilucuti supaya tidak jadi wildcard. */
+/** Bagian `%_\` di dalam pola LIKE harus dilucuti supaya tidak jadi wildcard. */
 function polaAman(q: string): string {
   return `%${q.trim().replace(/([%_\\])/g, '\\$1')}%`;
+}
+
+/**
+ * Apakah kolom `title` bisa dicari di basis data ini.
+ *
+ * null = belum pernah dicoba. false = basis data sudah bilang tidak ada, jadi
+ * berhenti bertanya. Disimpan di tingkat modul supaya jawabannya berlaku untuk
+ * seluruh sesi: tanpa ini, tiap ketukan tombol mengirim satu kueri yang sudah
+ * pasti ditolak, lalu mencetak galatnya ke konsol berulang-ulang.
+ */
+let titleBisaDicari: boolean | null = null;
+
+/** Kode Postgres untuk "kolom tidak ada" - undefined_column. */
+function kolomTidakAda(pesan: string): boolean {
+  return /does not exist/i.test(pesan);
 }
 
 export interface HasilCariReminder<T> {
   data: T[];
   /**
    * Galat kueri UTAMA saja. Kegagalan pencarian kolom `title` sengaja tidak
-   * dilaporkan - kolom itu opsional, dan mengabarkan ketiadaannya sebagai galat
-   * hanya akan menakuti tanpa ada yang bisa diperbuat.
+   * dilaporkan ke sini - kolom itu opsional, dan mengabarkan ketiadaannya
+   * sebagai galat hanya menakuti tanpa ada yang bisa diperbuat.
    */
   error: { message: string } | null;
-  /** true bila kolom `title` tidak bisa dicari, jadi project data lama terlewat. */
-  titleTerlewat: boolean;
 }
 
 /**
  * Cari reminder yang namanya memuat `q`.
  *
- * @param kolom  daftar kolom yang diambil - pemanggil butuh bentuk berbeda.
+ * @param kolom  kolom yang diambil. JANGAN menyertakan `title` di sini - lihat
+ *               aturan 1 di atas; kolom opsional ditangani berkas ini sendiri.
  * @param batas  jumlah maksimum baris per kueri.
  */
 export async function cariReminderByNama<T = Record<string, unknown>>(
@@ -67,47 +90,47 @@ export async function cariReminderByNama<T = Record<string, unknown>>(
    * lingkupnya dengan cara berbeda (filterLingkup di Ticketing, batasiLingkup
    * di Global Search), dan memaksakan satu bentuk string membuat salah satunya
    * harus menuliskan ulang aturannya - yaitu cara paling mudah membuat dua
-   * aturan yang perlahan menyimpang.
+   * aturan keamanan yang perlahan menyimpang.
    *
    * WAJIB diisi. Melewatkannya berarti memperlihatkan project seluruh divisi.
    */
   terapkanLingkup: <Q>(kueri: Q) => Q,
 ): Promise<HasilCariReminder<T>> {
+  if (!q.trim()) return { data: [], error: null };
   const pola = polaAman(q);
-  if (!q.trim()) return { data: [], error: null, titleTerlewat: false };
 
-  const bangun = (kolomNama: string) => terapkanLingkup(
+  const bangun = (kolomNama: string, kolomAmbil: string) => terapkanLingkup(
     supabase
       .from('reminders')
-      .select(kolom)
+      .select(kolomAmbil)
       .ilike(kolomNama, pola)
       .order('created_at', { ascending: false })
       .limit(batas),
   );
 
-  const utama = await bangun('project_name');
+  // Kueri utama - hanya kolom yang diminta pemanggil, tanpa tambahan apa pun.
+  const utama = await bangun('project_name', kolom);
 
-  // Kueri kedua khusus kolom peninggalan. Dipisah supaya penolakan di sini
-  // tidak menghapus hasil kueri utama.
-  const legacy = await bangun('title');
-
-  const gabung = [
-    ...((utama.data ?? []) as unknown as T[]),
-    ...((legacy.data ?? []) as unknown as T[]),
-  ];
+  // Kueri peninggalan. Dilewati begitu diketahui kolomnya tidak ada.
+  let barisLegacy: unknown[] = [];
+  if (titleBisaDicari !== false) {
+    const legacy = await bangun('title', `${kolom}, title`);
+    if (legacy.error) {
+      if (kolomTidakAda(legacy.error.message)) titleBisaDicari = false;
+    } else {
+      titleBisaDicari = true;
+      barisLegacy = legacy.data ?? [];
+    }
+  }
 
   // Satu baris bisa lolos di kedua kueri (project_name DAN title memuat q).
   const sudah = new Set<string>();
-  const unik = gabung.filter(r => {
+  const unik = [...((utama.data ?? []) as unknown[]), ...barisLegacy].filter(r => {
     const id = String((r as { id?: unknown }).id ?? '');
     if (!id || sudah.has(id)) return false;
     sudah.add(id);
     return true;
-  });
+  }) as T[];
 
-  return {
-    data: unik,
-    error: utama.error ? { message: utama.error.message } : null,
-    titleTerlewat: !!legacy.error,
-  };
+  return { data: unik, error: utama.error ? { message: utama.error.message } : null };
 }

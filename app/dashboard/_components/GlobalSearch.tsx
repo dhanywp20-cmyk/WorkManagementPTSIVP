@@ -267,8 +267,11 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       // menolak seluruh kueri, termasuk pencarian nama yang tidak bersalah.
       // Galatnya lalu dibuang oleh destructuring `{ data: rData }`, sehingga
       // kegagalan total tampil sama persis dengan "tidak ada hasil".
+      // `title` TIDAK disebut di sini. Kolom itu tidak ada di basis data ini,
+      // dan menyebutnya membuat seluruh kueri ditolak. Pencariannya ditangani
+      // lib/cari-reminder.ts lewat kueri terpisah yang boleh gagal sendirian.
       const KOLOM_REMINDER =
-        'id, project_name, title, category, due_date, assign_name, sales_name, sales_division, status';
+        'id, project_name, category, due_date, assign_name, sales_name, sales_division, status';
       const namaRes = await cariReminderByNama<any>(q, KOLOM_REMINDER, 20,
         kueri => (tanpaBatas ? kueri : batasiLingkup(lingkup, kueri, ['sales_name', 'created_by'])));
       if (namaRes.error) console.error('[search] reminders (nama):', namaRes.error.message);

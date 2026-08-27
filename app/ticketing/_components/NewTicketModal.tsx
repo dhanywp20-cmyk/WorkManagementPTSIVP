@@ -113,15 +113,16 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     setPencarianDibatasi(!!filter);
     if (filter) { qt = qt.or(filter); }
 
-    // Reminders: SEMUA kategori, lewat lib/cari-reminder.ts. Pencarian nama
-    // dipisah dari pencarian kolom peninggalan `title` di sana - lihat catatan
-    // panjang di berkas itu: menggabungkan keduanya membuat satu kolom yang
-    // bermasalah menjatuhkan seluruh pencarian, dan jatuhnya tampil sebagai
-    // "project tidak ditemukan", bukan sebagai galat.
+    // Reminders: SEMUA kategori, lewat lib/cari-reminder.ts.
+    //
+    // Daftar kolom di bawah sengaja TIDAK memuat `title`. Kolom itu tidak ada
+    // di basis data ini - menyebutnya, walau cuma di daftar select, membuat
+    // PostgREST menolak seluruh kueri dengan "column reminders.title does not
+    // exist", dan penolakan itu tampil sebagai "project tidak ditemukan".
     const [rRes, tRes] = await Promise.all([
       cariReminderByNama<ReminderRef>(
         q,
-        'id, project_name, title, address, sales_name, sales_division, product, pic_name, pic_phone, category, assign_name',
+        'id, project_name, address, sales_name, sales_division, product, pic_name, pic_phone, category, assign_name',
         15,
         kueri => (filter ? (kueri as { or(f: string): typeof kueri }).or(filter) : kueri),
       ),
