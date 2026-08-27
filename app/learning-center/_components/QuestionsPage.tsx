@@ -42,6 +42,8 @@ export function QuestionsPage({ user }: { user: User }) {
     correct_answer: 'A', difficulty: 'medium' as 'easy' | 'medium' | 'hard',
     material_id: '', batch_name: '',
     question_type: 'abcd' as 'abcd' | 'essay', model_answer: '',
+    /** Hanya berarti untuk soal essay - lihat sql/learning-center-essay-gambar.sql. */
+    answer_format: 'text' as 'text' | 'image',
   });
   const [genCount, setGenCount] = useState(10);
   const [genDiff, setGenDiff] = useState<'easy' | 'medium' | 'hard' | 'mixed'>('mixed');
@@ -296,14 +298,18 @@ export function QuestionsPage({ user }: { user: User }) {
     const payload = newQ.question_type === 'essay'
       ? { question: newQ.question, material_id: newQ.material_id, batch_name: newQ.batch_name,
           difficulty: newQ.difficulty, question_type: 'essay', model_answer: newQ.model_answer,
+          answer_format: newQ.answer_format ?? 'text',
           option_a: '', option_b: '', option_c: '', option_d: '', correct_answer: null }
-      : { ...newQ, question_type: 'abcd' };
+      // answer_format sengaja TIDAK dikirim untuk soal abcd - kolomnya memang
+      // tidak berarti di sana, dan mengirim nilai yang tak bermakna hanya
+      // membuat orang berikutnya mengira ia dipakai.
+      : { ...newQ, question_type: 'abcd', answer_format: undefined };
     const { error } = await supabase.from('lc_questions').insert([{
       ...payload, materi_name: mat?.materi_name ?? '', created_by: user.id,
     }]);
     if (error) { setDialog({ type: 'error', message: 'Error: ' + error.message }); return; }
     setShowAddManual(false);
-    setNewQ({ question: '', option_a: '', option_b: '', option_c: '', option_d: '', correct_answer: 'A', difficulty: 'medium', material_id: '', batch_name: '', question_type: 'abcd', model_answer: '' });
+    setNewQ({ question: '', option_a: '', option_b: '', option_c: '', option_d: '', correct_answer: 'A', difficulty: 'medium', material_id: '', batch_name: '', question_type: 'abcd', model_answer: '', answer_format: 'text' });
     load();
     setDialog({ type: 'success', message: 'Soal berhasil ditambahkan!' });
   };
@@ -514,6 +520,37 @@ export function QuestionsPage({ user }: { user: User }) {
               placeholder="Tulis pertanyaan di sini..." />
           </div>
           {newQ.question_type === 'essay' ? (
+            <>
+            <div>
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                Bentuk Jawaban Peserta
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { v: 'text',  ikon: '⌨️', judul: 'Diketik',      ket: 'Peserta mengetik jawabannya' },
+                  { v: 'image', ikon: '📷', judul: 'Foto Gambar', ket: 'Digambar di kertas lalu difoto' },
+                ] as const).map(o => {
+                  const aktif = (newQ.answer_format ?? 'text') === o.v;
+                  return (
+                    <button key={o.v} type="button"
+                      onClick={() => setNewQ(p => ({ ...p, answer_format: o.v }))}
+                      className={`text-left px-3 py-2.5 rounded-xl border transition-all ${
+                        aktif ? 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-300'
+                              : 'bg-white border-slate-200 hover:border-emerald-200'}`}>
+                      <div className="text-sm font-bold text-slate-700">{o.ikon} {o.judul}</div>
+                      <div className="text-[11px] text-slate-500 leading-snug mt-0.5">{o.ket}</div>
+                    </button>
+                  );
+                })}
+              </div>
+              {(newQ.answer_format ?? 'text') === 'image' && (
+                <p className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-2.5 py-1.5 mt-2 leading-relaxed">
+                  Peserta akan diminta mengunggah foto. Fotonya dikecilkan di perangkat peserta
+                  sebelum dikirim, jadi tidak memberatkan kuota — foto 5 MB dari kamera ponsel
+                  menjadi sekitar 250 KB.
+                </p>
+              )}
+            </div>
             <div>
               <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
                 Kunci / Referensi Jawaban
@@ -523,6 +560,7 @@ export function QuestionsPage({ user }: { user: User }) {
                 rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 resize-none"
                 placeholder="Contoh jawaban ideal / poin-poin kunci penilaian..." />
             </div>
+            </>
           ) : (['a', 'b', 'c', 'd'] as const).map(opt => (
             <div key={opt} className="flex items-center gap-2">
               <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 ${newQ.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{opt.toUpperCase()}</span>

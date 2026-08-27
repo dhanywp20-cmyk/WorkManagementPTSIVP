@@ -46,6 +46,13 @@ export interface Question {
   // Essay addition (non-breaking; defaults to 'abcd' for all existing rows)
   question_type?: 'abcd' | 'essay';
   model_answer?: string | null; // kunci/referensi jawaban essay, untuk bantu admin menilai manual
+  /**
+   * Bentuk jawaban yang diminta soal essay.
+   *   'text'  diketik peserta (bawaan, perilaku lama)
+   *   'image' peserta menggambar di kertas, difoto, lalu diunggah
+   * Diabaikan untuk soal abcd. Lihat sql/learning-center-essay-gambar.sql.
+   */
+  answer_format?: 'text' | 'image';
 }
 
 export interface QuizSession {
@@ -95,6 +102,10 @@ export interface AnswerRecord {
   is_correct: boolean;
   // Essay addition
   essay_text?: string | null;
+  /** Gambar jawaban ukuran penuh - hanya dimuat saat penilai membukanya. */
+  answer_image_url?: string | null;
+  /** Pratinjau kecil untuk daftar penilaian. Dipisah demi menekan egress. */
+  answer_thumb_url?: string | null;
   manual_score?: number | null; // 0-100 per soal - SKOR FINAL, diisi/dikoreksi admin
   // AI grading addition - SARAN saja, tidak pernah jadi skor final sendiri
   ai_score?: number | null;

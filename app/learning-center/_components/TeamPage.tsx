@@ -190,7 +190,30 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                       <div className="ml-10 space-y-3">
                         <div className="bg-white rounded-xl border border-slate-200 p-3">
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Jawaban Peserta</p>
-                          <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{ans?.essay_text?.trim() || <span className="italic text-slate-400">Tidak dijawab</span>}</p>
+                          {ans?.answer_thumb_url ? (
+                            /*
+                              Yang dimuat daftar ini PRATINJAU-nya, bukan gambar
+                              penuh. Satu sesi bisa berisi puluhan jawaban; kalau
+                              masing-masing memuat berkas 250 KB hanya untuk
+                              ditampilkan sebesar perangko, satu kali buka daftar
+                              sudah menghabiskan berpuluh megabyte - dan itu
+                              terulang tiap kali halamannya dibuka. Gambar penuh
+                              baru diunduh ketika penilai benar-benar mengkliknya.
+                            */
+                            <a href={ans.answer_image_url ?? ans.answer_thumb_url}
+                              target="_blank" rel="noopener noreferrer"
+                              className="inline-block group" title="Klik untuk membuka gambar ukuran penuh">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={ans.answer_thumb_url} alt="Jawaban bergambar peserta"
+                                loading="lazy"
+                                className="w-40 h-40 object-cover rounded-lg border border-slate-200 group-hover:border-slate-400 transition-all" />
+                              <span className="block text-[11px] font-semibold text-slate-500 group-hover:text-slate-700 mt-1">
+                                🔍 Buka ukuran penuh
+                              </span>
+                            </a>
+                          ) : (
+                            <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{ans?.essay_text?.trim() || <span className="italic text-slate-400">Tidak dijawab</span>}</p>
+                          )}
                         </div>
                         {q.model_answer && (
                           <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-3">
@@ -233,9 +256,18 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                             {/* Tanpa keterangan ini, admin melihat kolom nilai kosong tanpa
                                 saran AI dan tidak tahu apakah AI-nya rusak atau memang tidak
                                 ada yang bisa dinilai. */}
-                            {!ans?.essay_text?.trim() && (
+                            {!ans?.essay_text?.trim() && !ans?.answer_thumb_url && (
                               <p className="text-xs text-slate-500 italic">
                                 🤖 Penilaian AI dilewati — peserta tidak menuliskan jawaban untuk soal ini. Isi nilai manual bila perlu.
+                              </p>
+                            )}
+                            {/* Jawaban bergambar dinilai manusia. AI di sini hanya
+                                membandingkan TEKS dengan kunci referensi - ia tidak
+                                melihat gambarnya sama sekali, jadi nilai apa pun yang
+                                ia berikan akan menyesatkan. */}
+                            {ans?.answer_thumb_url && (
+                              <p className="text-xs text-slate-500 italic">
+                                🖐️ Jawaban berupa gambar — dinilai manual. Buka gambarnya di atas, lalu isi nilai di bawah.
                               </p>
                             )}
                             <div className="flex items-center gap-3">

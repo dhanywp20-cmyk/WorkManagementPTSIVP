@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase, User, Question, QuizSession, QuizAttempt, SearchInput, AppDialog, DialogState } from './shared';
+import { compressImage } from '@/lib/image-compress';
 
 function QuizPlayer({ session, user, attempt, onDone }: {
   session: QuizSession; user: User; attempt: QuizAttempt; onDone: () => void;
@@ -9,6 +10,8 @@ function QuizPlayer({ session, user, attempt, onDone }: {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [savedAnswers, setSavedAnswers] = useState<Record<string, string>>({});
+  /** Pratinjau gambar jawaban per soal - yang ditampilkan, bukan gambar penuhnya. */
+  const [gambarJawaban, setGambarJawaban] = useState<Record<string, string>>({});
   const [current, setCurrent] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState<{ score: number; correct: number; passed: boolean; pendingReview?: boolean } | null>(null);
@@ -35,8 +38,15 @@ function QuizPlayer({ session, user, attempt, onDone }: {
       // essay); ABCD menyimpan pilihannya di answer (essay_text selalu null).
       // Membaca .answer saja untuk keduanya membuat quiz essay yang dilanjutkan
       // tampil kosong walau jawabannya sudah tersimpan.
-      (data ?? []).forEach((a: any) => { map[a.question_id] = a.essay_text || a.answer; });
-      setSavedAnswers(map); setAnswers(map);
+      // Jawaban bergambar disimpan sebagai tautan, bukan teks. Tanpa baris
+      // ketiga ini, quiz bergambar yang dilanjutkan akan tampil BELUM
+      // dijawab walau fotonya sudah terunggah - lalu peserta mengunggah ulang.
+      const gbr: Record<string, string> = {};
+      (data ?? []).forEach((a: any) => {
+        map[a.question_id] = a.essay_text || a.answer_image_url || a.answer;
+        if (a.answer_thumb_url) gbr[a.question_id] = a.answer_thumb_url;
+      });
+      setSavedAnswers(map); setAnswers(map); setGambarJawaban(gbr);
     };
     loadAnswers();
   }, []);
@@ -67,6 +77,72 @@ function QuizPlayer({ session, user, attempt, onDone }: {
     document.addEventListener('visibilitychange', onVisChange);
     return () => document.removeEventListener('visibilitychange', onVisChange);
   }, [submitted]);
+
+  /**
+   * Unggah foto jawaban untuk soal essay bertipe gambar.
+   *
+   * HEMAT KUOTA - dua hal yang dikerjakan di perangkat peserta, sebelum apa
+   * pun menyentuh jaringan:
+   *
+   *   1. Fotonya dikecilkan. Kamera ponsel menghasilkan 3-8 MB pada 4000px,
+   *      padahal yang dibutuhkan penilai cuma bisa membaca coretan di kertas.
+   *      1600px pada mutu 0.75 menghasilkan sekitar 250 KB - turun 95%.
+   *   2. Dibuat DUA berkas: gambar penuh dan pratinjau 320px. Daftar
+   *      penilaian hanya memuat pratinjaunya. Pada satu sesi berisi 30
+   *      jawaban, itu bedanya mengunduh 450 KB atau 7 MB setiap kali daftar
+   *      penilaian dibuka.
+   *
+   * Peserta di lapangan sering memakai kuota pribadi, jadi penghematan ini
+   * bukan cuma soal tagihan Supabase.
+   */
+  const [unggah, setUnggah] = useState<string | null>(null);
+
+  const handleUploadGambar = async (questionId: string, file: File): Promise<boolean> => {
+    if (!file.type.startsWith('image/')) {
+      setDialog({ type: 'error', title: 'Bukan gambar', message: 'Pilih berkas foto (JPG/PNG).' });
+      return false;
+    }
+    setUnggah(questionId);
+    try {
+      const [penuh, kecil] = await Promise.all([
+        compressImage(file, { maxDim: 1600, quality: 0.75 }),
+        compressImage(file, { maxDim: 320, quality: 0.6 }),
+      ]);
+      const dasar = `${attempt.id}/${questionId}-${crypto.randomUUID()}`;
+      const [u1, u2] = await Promise.all([
+        supabase.storage.from('learning-answers').upload(`${dasar}.jpg`, penuh, { cacheControl: '31536000', upsert: false }),
+        supabase.storage.from('learning-answers').upload(`${dasar}-thumb.jpg`, kecil, { cacheControl: '31536000', upsert: false }),
+      ]);
+      if (u1.error || u2.error) throw new Error(u1.error?.message || u2.error?.message);
+
+      const urlPenuh = supabase.storage.from('learning-answers').getPublicUrl(`${dasar}.jpg`).data.publicUrl;
+      const urlKecil = supabase.storage.from('learning-answers').getPublicUrl(`${dasar}-thumb.jpg`).data.publicUrl;
+
+      const isi = { answer_image_url: urlPenuh, answer_thumb_url: urlKecil, answered_at: new Date().toISOString() };
+      const sudahAda = savedAnswers[questionId] !== undefined;
+      const { error } = sudahAda
+        ? await supabase.from('lc_answers').update(isi)
+            .eq('attempt_id', attempt.id).eq('question_id', questionId)
+        : await supabase.from('lc_answers').insert([{
+            attempt_id: attempt.id, user_id: user.id, quiz_session_id: session.id,
+            question_id: questionId, answer: '', essay_text: null, is_correct: false, ...isi,
+          }]);
+      if (error) throw new Error(error.message);
+
+      setGambarJawaban(p => ({ ...p, [questionId]: urlKecil }));
+      setSavedAnswers(p => ({ ...p, [questionId]: urlPenuh }));
+      setAnswers(p => ({ ...p, [questionId]: urlPenuh }));
+      setUnggah(null);
+      return true;
+    } catch (e) {
+      setUnggah(null);
+      setDialog({
+        type: 'error', title: 'Gagal mengunggah',
+        message: e instanceof Error ? e.message : 'Coba lagi, atau periksa koneksi.',
+      });
+      return false;
+    }
+  };
 
   /** true kalau tersimpan, false kalau gagal (dan sudah ditampilkan ke user). */
   const handleAnswer = async (questionId: string, answer: string): Promise<boolean> => {
@@ -318,7 +394,56 @@ function QuizPlayer({ session, user, attempt, onDone }: {
               <p className="text-base font-semibold text-slate-800 leading-relaxed">{q.question}</p>
             </div>
             <div className="space-y-3">
-              {isEssay ? (
+              {isEssay && q.answer_format === 'image' ? (
+                /* Jawaban berupa foto - untuk soal merancang yang paling wajar
+                   digambar tangan. Yang ditampilkan setelah unggah adalah
+                   PRATINJAU kecilnya, bukan gambar penuh: peserta sudah tahu
+                   apa yang ia foto, jadi mengunduh ulang versi besar hanya
+                   menghabiskan kuotanya sendiri. */
+                <div className="space-y-3">
+                  {gambarJawaban[q.id] ? (
+                    <div className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-3">
+                      <div className="flex items-start gap-3">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={gambarJawaban[q.id]} alt="Pratinjau jawaban kamu"
+                          className="w-24 h-24 object-cover rounded-lg border border-emerald-200 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-emerald-700">✓ Foto jawaban tersimpan</p>
+                          <p className="text-[11px] text-emerald-600 leading-relaxed mt-0.5">
+                            Boleh diganti selama quiz belum dikumpulkan.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-5 text-center">
+                      <p className="text-3xl mb-1">📷</p>
+                      <p className="text-sm font-semibold text-slate-600">Belum ada foto jawaban</p>
+                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                        Gambar jawabanmu di kertas, lalu foto dan unggah di sini.
+                      </p>
+                    </div>
+                  )}
+                  <label className={`block w-full text-center px-4 py-3 rounded-xl font-bold text-sm cursor-pointer transition-all ${
+                    unggah === q.id ? 'bg-slate-200 text-slate-500 cursor-wait'
+                                    : 'bg-slate-800 text-white hover:bg-slate-700'}`}>
+                    {unggah === q.id ? 'Mengunggah…' : gambarJawaban[q.id] ? 'Ganti Foto' : 'Ambil / Pilih Foto'}
+                    <input type="file" accept="image/*" capture="environment" className="hidden"
+                      disabled={unggah !== null}
+                      onChange={e => {
+                        const f = e.target.files?.[0];
+                        // Nilai input dikosongkan supaya memilih berkas yang SAMA
+                        // dua kali tetap memicu onChange - kalau tidak, unggah
+                        // ulang setelah gagal terasa seperti tombolnya rusak.
+                        e.target.value = '';
+                        if (f) void handleUploadGambar(q.id, f);
+                      }} />
+                  </label>
+                  <p className="text-[11px] text-slate-400 text-center leading-relaxed">
+                    Foto dikecilkan otomatis di perangkatmu sebelum dikirim, jadi hemat kuota.
+                  </p>
+                </div>
+              ) : isEssay ? (
                 <textarea
                   key={q.id}
                   defaultValue={answers[q.id] ?? savedAnswers[q.id] ?? ''}
