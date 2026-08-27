@@ -421,19 +421,46 @@ function ReminderSchedulePageInner() {
     mengabaikannya, dan lama-lama tombol yang benar-benar penting ikut
     diabaikan.
   */
-  const bisaMasukIncentive = (r: Reminder): boolean =>
+  /**
+   * Jadwal ini termasuk yang dihitung Incentive PTS?
+   *
+   * Tombol Sync tampil pada SETIAP jadwal yang memenuhi syarat, bukan hanya
+   * yang sedang dikeluarkan. Semula saya batasi ke yang dikeluarkan saja
+   * dengan alasan "tombol yang tidak mengubah apa-apa akan diabaikan" -
+   * tetapi akibatnya tombolnya tidak pernah terlihat sama sekali sampai ada
+   * yang dikeluarkan lebih dulu, sehingga tidak ada cara menemukannya. Tombol
+   * yang tidak bisa ditemukan lebih buruk daripada tombol yang kadang
+   * bekerjanya cuma memastikan.
+   */
+  const layakIncentive = (r: Reminder): boolean =>
     (INCENTIVE_CATEGORIES as readonly string[]).includes(r.category)
-    && r.status === 'done'
-    && r.incentive_excluded === true;
+    && r.status === 'done';
+
+  const diluarIncentive = (r: Reminder): boolean => r.incentive_excluded === true;
 
   const [syncing, setSyncing] = useState<string | null>(null);
 
   async function syncKeIncentive(r: Reminder) {
+    const memangDiluar = diluarIncentive(r);
     setSyncing(r.id);
     const { error } = await supabase.from('reminders')
       .update({ incentive_excluded: false }).eq('id', r.id);
     setSyncing(null);
-    if (error) { notify('error', 'Gagal sync: ' + error.message); return; }
+    if (error) {
+      // Kolomnya belum dipasang - sebut berkas SQL-nya, jangan biarkan orang
+      // menebak dari pesan basis data yang mentah.
+      notify('error', /does not exist/i.test(error.message)
+        ? 'Fitur ini belum aktif — Admin perlu menjalankan sql/incentive-keluarkan-proyek.sql lebih dulu.'
+        : 'Gagal sync: ' + error.message);
+      return;
+    }
+    if (!memangDiluar) {
+      // Tidak ada yang berubah; katakan apa adanya, jangan mengaku memperbaiki
+      // sesuatu yang memang sudah benar.
+      notify('success', `"${r.project_name}" memang sudah masuk daftar Incentive PTS.`);
+      await fetchRemindersQuiet();
+      return;
+    }
     void logAudit({
       user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
       module: 'reminder-schedule', action: 'update',
@@ -3752,11 +3779,16 @@ jangan lupa peralatan & Semangat💪🏼
                               {currentUser?.id === r.assigned_supervisor_id && r.routing_status === 'supervisor_assign' && (
                                 <ApproveIconBtn onClick={() => openSupervisorAssign(r, group)} title="Assign Tim" pulse />
                               )}
-                              {(isAdmin || isManager) && bisaMasukIncentive(r) && (
+                              {(isAdmin || isManager) && layakIncentive(r) && (
                                 <button aria-label={`Sync ${r.project_name} ke Incentive PTS`}
                                   onClick={() => syncKeIncentive(r)} disabled={syncing === r.id}
-                                  title="Project ini sedang dikeluarkan dari Incentive PTS — klik untuk memasukkannya kembali"
-                                  className="w-7 h-7 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 rounded-lg flex items-center justify-center transition-all disabled:opacity-50">
+                                  title={diluarIncentive(r)
+                                    ? 'Sedang DI LUAR Incentive PTS — klik untuk memasukkannya kembali'
+                                    : 'Sudah masuk Incentive PTS — klik untuk memastikan ulang'}
+                                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all disabled:opacity-50 border ${
+                                    diluarIncentive(r)
+                                      ? 'bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white border-amber-300'
+                                      : 'bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border-emerald-200'}`}>
                                   {syncing === r.id
                                     ? <div className="w-3.5 h-3.5 border-2 border-emerald-400/30 border-t-emerald-600 rounded-full animate-spin" />
                                     : <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>}
@@ -4016,11 +4048,16 @@ jangan lupa peralatan & Semangat💪🏼
                                     {currentUser?.id === group[0].assigned_supervisor_id && group[0].routing_status === 'supervisor_assign' && (
                                       <ApproveIconBtn onClick={() => openSupervisorAssign(group[0], group)} title="Assign Tim" pulse />
                                     )}
-                                    {(isAdmin || isManager) && bisaMasukIncentive(group[0]) && (
+                                    {(isAdmin || isManager) && layakIncentive(group[0]) && (
                                       <button aria-label={`Sync ${group[0].project_name} ke Incentive PTS`}
                                         onClick={() => syncKeIncentive(group[0])} disabled={syncing === group[0].id}
-                                        title="Project ini sedang dikeluarkan dari Incentive PTS — klik untuk memasukkannya kembali"
-                                        className="w-7 h-7 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 rounded-lg flex items-center justify-center transition-all disabled:opacity-50">
+                                        title={diluarIncentive(group[0])
+                                          ? 'Sedang DI LUAR Incentive PTS — klik untuk memasukkannya kembali'
+                                          : 'Sudah masuk Incentive PTS — klik untuk memastikan ulang'}
+                                        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all disabled:opacity-50 border ${
+                                          diluarIncentive(group[0])
+                                            ? 'bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white border-amber-300'
+                                            : 'bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border-emerald-200'}`}>
                                         {syncing === group[0].id
                                           ? <div className="w-3.5 h-3.5 border-2 border-emerald-400/30 border-t-emerald-600 rounded-full animate-spin" />
                                           : <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>}

@@ -340,19 +340,59 @@ export function generateTranches(
 // ulang supaya pemanggil lama tidak perlu diubah.
 export { INCENTIVE_CATEGORIES };
 
+/**
+ * Apakah kolom `incentive_excluded` sudah ada di basis data ini.
+ *
+ * null = belum diketahui. Disimpan di tingkat modul supaya jawabannya berlaku
+ * untuk sisa sesi, bukan ditanyakan ulang tiap kali daftar dimuat.
+ */
+let kolomKeluarkanAda: boolean | null = null;
+
+/**
+ * Daftar proyek insentif.
+ *
+ * PENYARINGAN "dikeluarkan" DIBUAT TAHAN bila kolomnya belum dipasang.
+ *
+ * Ini bukan kehati-hatian yang berlebihan - persis inilah yang terjadi. Saat
+ * penyaring `.not('incentive_excluded', ...)` pertama kali dipasang, kolomnya
+ * belum ada di produksi; PostgREST menolak SELURUH kueri, dan daftar Incentive
+ * tampil KOSONG. Bukan pesan galat, bukan daftar sebagian - kosong, seolah
+ * tidak ada satu pun proyek. Kode aplikasi dan skema basis data tidak pernah
+ * mendarat pada detik yang sama, jadi jeda di antaranya harus tetap bisa
+ * dipakai bekerja.
+ *
+ * Bila kolomnya memang belum ada, daftarnya tetap tampil utuh - hanya fitur
+ * "keluarkan" yang belum berfungsi, dan itu memang belum dipasang.
+ */
 export async function fetchIncentiveProjects() {
-  const { data, error } = await supabase
+  const dasar = () => supabase
     .from('reminders')
     .select('*')
     .in('category', INCENTIVE_CATEGORIES as unknown as string[])
     .eq('status', 'done')
-    // Proyek yang sengaja dikeluarkan dari perhitungan insentif - lihat
-    // sql/incentive-keluarkan-proyek.sql. `not.is.true` DIPILIH karena ia juga
-    // meloloskan baris NULL; `neq.true` tidak, dan itu akan menyembunyikan
-    // seluruh proyek lama yang kolomnya belum pernah diisi.
-    .not('incentive_excluded', 'is', true)
     .order('due_date', { ascending: false });
-  return { data: (data || []) as IncentiveProjectRow[], error };
+
+  if (kolomKeluarkanAda !== false) {
+    // `not.is.true` DIPILIH karena ia juga meloloskan baris NULL; `neq.true`
+    // tidak, dan itu akan menyembunyikan seluruh proyek lama yang kolomnya
+    // belum pernah diisi.
+    const r = await dasar().not('incentive_excluded', 'is', true);
+    if (!r.error) {
+      kolomKeluarkanAda = true;
+      return { data: (r.data || []) as IncentiveProjectRow[], error: r.error };
+    }
+    if (!/does not exist/i.test(r.error.message)) {
+      // Galat lain - jangan disembunyikan di balik percobaan kedua.
+      return { data: [] as IncentiveProjectRow[], error: r.error };
+    }
+    kolomKeluarkanAda = false;
+    console.warn(
+      '[incentive] kolom incentive_excluded belum ada - daftar ditampilkan utuh. ' +
+      'Jalankan sql/incentive-keluarkan-proyek.sql untuk mengaktifkan fitur "keluarkan dari Incentive".');
+  }
+
+  const r2 = await dasar();
+  return { data: (r2.data || []) as IncentiveProjectRow[], error: r2.error };
 }
 
 /**
