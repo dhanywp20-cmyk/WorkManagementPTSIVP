@@ -453,9 +453,9 @@ export function SchemeTab({ olehNama, notify }: {
           <h3 className="font-bold text-gray-800 text-sm">Aturan Khusus</h3>
         </div>
         <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1">
-              Supervisor merangkap PIC → porsinya dialihkan ke
+          <div className="sm:col-span-2">
+            <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-1">
+              Supervisor merangkap PIC → porsi koordinasinya dialihkan ke
             </label>
             <select value={sk.hangusSupervisorKe} onChange={e => ubah({ hangusSupervisorKe: e.target.value })}
               aria-label="Tujuan porsi Supervisor yang hangus" className={inputKecil}>
@@ -464,6 +464,30 @@ export function SchemeTab({ olehNama, notify }: {
                 <option key={p.peran} value={p.peran}>{p.label}</option>
               ))}
             </select>
+            {/*
+              Akibat pilihan ini ditampilkan sebagai ANGKA, bukan dibiarkan
+              dibayangkan. Aturan ini yang paling sulit dinilai benar-salahnya
+              dari nama pilihannya saja: "dialihkan ke Manager" dan "dialihkan
+              ke PIC" terdengar sama netral, padahal selisihnya belasan persen
+              dari pool dan jatuh ke orang yang berbeda.
+            */}
+            {(() => {
+              const spv = sk.porsi.find(p => p.peran === 'supervisor')?.persen ?? 0;
+              const tujuan = sk.hangusSupervisorKe;
+              const label = sk.porsi.find(p => p.peran === tujuan)?.label;
+              const asal = sk.porsi.find(p => p.peran === tujuan)?.persen ?? 0;
+              return (
+                <p className="mt-1.5 text-[11px] text-violet-800 bg-violet-50 border border-violet-200 rounded-lg px-2.5 py-1.5 leading-relaxed">
+                  Baris <strong>Supervisor hilang</strong> dari pembagian — orang yang sama tidak dibayar
+                  dua kali.{' '}
+                  {tujuan && label
+                    ? <>Porsinya <strong>{spv}%</strong> pindah ke <strong>{label}</strong>, sehingga peran itu
+                        menerima <strong>{asal}% + {spv}% = {asal + spv}%</strong> pada proyek tersebut.</>
+                    : <>Porsinya <strong>{spv}%</strong> tidak diberikan ke siapa pun — sisa porsi lain
+                        dinaikkan sebanding supaya totalnya tetap 100%.</>}
+                </p>
+              );
+            })()}
           </div>
           {/*
             Manager sebagai PIC kini punya DUA keadaan, sama seperti skema

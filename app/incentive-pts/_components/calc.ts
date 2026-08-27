@@ -164,7 +164,19 @@ export function calculateStandardScheme(
   installerName?: string | null,
 ): SplitResult[] {
   // Supervisor merangkap PIC - porsinya dialihkan, bukan dibayar dua kali.
-  const supervisorJadiPic = supervisorUserId !== '' && picUserId === supervisorUserId;
+  //
+  // Dicocokkan lewat id ATAU nama. Sebelumnya id saja, dan itu nyaris tidak
+  // pernah cocok: reminders.pic_id umumnya kosong (kolomnya baru ditambahkan
+  // migrasi Incentive dan tidak diisi alur normal), sehingga picUserId ikut
+  // kosong dan perbandingannya selalu gagal. Akibatnya orang yang sama muncul
+  // DUA KALI pada satu proyek - sebagai PIC dan sebagai Supervisor - lalu
+  // dibayar dua kali, persis yang hendak dicegah baris ini.
+  const samaOrang = (a: string, b: string) => {
+    const rapikan = (v: string) => v.normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
+    return !!a && !!b && rapikan(a) === rapikan(b);
+  };
+  const supervisorJadiPic =
+    samaOrang(picUserId, supervisorUserId) || samaOrang(picUserName, supervisorUserName);
 
   const penerima: PenerimaPeran[] = [{ peran: 'pic', user_id: picUserId, user_name: picUserName }];
   for (const s of assignedSupports) penerima.push({ peran: 'support', user_id: s.user_id, user_name: s.user_name });
@@ -203,6 +215,15 @@ export function calculateIncentiveSplits(
   supervisorUserId: string,
   supervisorUserName: string,
   assignedSupports: { user_id: string; user_name: string }[],
+  /**
+   * Id PIC yang SUDAH diselesaikan pemanggil lewat resolveUserId().
+   *
+   * Wajib diteruskan. Sebelumnya fungsi ini memakai project.pic_id mentah,
+   * padahal pemanggil sudah bersusah payah menyelesaikannya dari assigned_to
+   * dan assign_name - hasilnya dibuang, dan penjagaan "Supervisor merangkap
+   * PIC" jadi tidak pernah aktif.
+   */
+  picUserIdTerselesaikan?: string,
 ): SplitResult[] {
   const pool = project.incentive_value || 0;
   if (pool <= 0) return [];
@@ -219,7 +240,7 @@ export function calculateIncentiveSplits(
 
   return calculateStandardScheme(
     sk, pool, project.mode_penyelesaian,
-    project.pic_id || '', project.assign_name || '',
+    picUserIdTerselesaikan || project.pic_id || '', project.assign_name || '',
     managerUserId, managerUserName,
     supervisorUserId, supervisorUserName,
     assignedSupports, project.installer_name,
@@ -435,7 +456,22 @@ export async function fetchSupportFromTickets(
     .select('id, project_name, reminder_id, status, date, assign_name, activity_logs(handler_username, handler_name, new_status, created_at)')
     .eq('status', 'Solved');
 
-  const [rRes, tRes] = await Promise.all([qr, qt]);
+  // Tabel tickets hanya menyimpan NAMA handler-nya, sedangkan jalur reminder
+  // menghasilkan username. Tanpa pemetaan ini satu orang yang sama bisa masuk
+  // dua kali - sekali sebagai username, sekali sebagai nama - lalu porsi
+  // Support dibagi ke dua "orang" yang sebenarnya satu.
+  const qu = supabase.from('users').select('username, full_name');
+
+  const [rRes, tRes, uRes] = await Promise.all([qr, qt, qu]);
+
+  const petaNama = new Map<string, string>();
+  for (const u of (uRes.data ?? []) as { username: string | null; full_name: string | null }[]) {
+    const n = samakanNamaProyek(u.full_name ?? '');
+    if (n && u.username) petaNama.set(n, u.username);
+  }
+  /** Username milik sebuah nama lengkap; namanya sendiri bila tidak dikenali. */
+  const usernameDariNama = (nama: string | null | undefined): string =>
+    petaNama.get(samakanNamaProyek(nama ?? '')) ?? (nama ?? '');
 
   const hasil: { user_id: string; user_name: string }[] = [];
   const sudah = new Set<string>();
@@ -474,14 +510,18 @@ export async function fetchSupportFromTickets(
       : tanggalSaja(t.date);
     if (!didalamRentang(tglSelesai, rentang)) continue;
 
-    if (jejakSolved.length) {
-      for (const a of jejakSolved) tambah(a.handler_username, a.handler_name || t.assign_name);
-    } else {
-      // Tanpa catatan aktivitas, yang diketahui hanya namanya. user_id dibiarkan
-      // memakai nama itu - sama seperti baris reminder lama yang assigned_to-nya
-      // masih berupa nama, bukan username.
-      tambah(t.assign_name, t.assign_name);
-    }
+    // YANG DIBAYAR ADALAH HANDLER TICKET, BUKAN YANG MENGKLIK "Solved".
+    //
+    // Catatan aktivitas menyimpan handler_username, yaitu akun yang menekan
+    // tombolnya. Di lapangan itu sering Admin: teknisi melapor lewat telepon
+    // atau grup, lalu Admin yang menutupkan ticketnya. Memakai nilai itu
+    // membuat porsi Support jatuh ke "Admin" - orang yang tidak mengerjakan
+    // apa pun - sementara teknisi yang menangani tidak dibayar.
+    //
+    // Catatan aktivitas tetap dipakai untuk menjawab KAPAN selesainya, karena
+    // untuk pertanyaan itu ia memang sumber yang tepat. Yang diambil darinya
+    // hanya tanggal, bukan orangnya.
+    tambah(usernameDariNama(t.assign_name), t.assign_name);
   }
 
   return { data: hasil, error: rRes.error ?? tRes.error };
@@ -607,6 +647,7 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
       sk, project, projManagerId, projManagerName,
       supervisorUserId, supervisorUserName,
       (supports || []).map(s => ({ user_id: s.user_id, user_name: s.user_name || '' })),
+      picId,
     );
 
     const pool = project.incentive_value || 0;

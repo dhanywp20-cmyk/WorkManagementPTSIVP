@@ -41,3 +41,17 @@ jendelanya tumpang tindih, satu orang dibayar dua kali untuk pekerjaan yang
 sama.
 
     node uji/tahun-support.mjs
+
+## supervisor-jadi-pic.ts
+
+Orang yang sama tidak boleh dibayar dua kali dalam satu proyek. Diuji dengan
+kasus nyata BPKP ICT Timur: Yoga KS tercatat sebagai PIC sekaligus Supervisor,
+dan `pic_id` proyeknya kosong — keadaan yang membuat penjagaan lama tidak
+pernah aktif.
+
+Ikut diuji ketiga pilihan `hangusSupervisorKe` (hangus / ke Manager / ke PIC),
+masing-masing harus tetap berjumlah 100% dan tepat sebesar pool, plus satu
+kasus kendali: PIC dan Supervisor orang berbeda — barisnya tidak boleh ikut
+terhapus.
+
+    npx tsx uji/supervisor-jadi-pic.ts

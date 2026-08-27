@@ -1023,7 +1023,7 @@ export default function IncentivePTSPage() {
                 //  tahun, jadi satu angka gabungan tidak akan pernah benar untuk
                 //  tahun mana pun. Rinciannya ada di daftar per tahun di bawah.
                 const supportTahun1 = detailSupports.find(x => x.tahunKe === 1)?.orang ?? [];
-                const splits = calculateIncentiveSplits(skema!, displayProject, managerId, managerName, supervisorId, supervisorName, supportTahun1);
+                const splits = calculateIncentiveSplits(skema!, displayProject, managerId, managerName, supervisorId, supervisorName, supportTahun1, picId);
                 if (!splits.length) return null;
                 // Privasi: non-privileged (selain Admin & yang ditunjuk input nominal)
                 // hanya melihat bagiannya sendiri - bukan total pool / bagian orang lain.

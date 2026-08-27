@@ -482,7 +482,7 @@ export async function exportSummaryIncentive(data: {
     const effectivePool = hasNominal ? p.incentive_value : 1_000_000;
     const effectiveMode = p.mode_penyelesaian || 'onsite';
     const displayProject = { ...p, incentive_value: effectivePool, mode_penyelesaian: effectiveMode };
-    const splits = calculateIncentiveSplits(sk, displayProject, projManagerId, projManagerName, supervisorId, supervisorName, projectSupports);
+    const splits = calculateIncentiveSplits(sk, displayProject, projManagerId, projManagerName, supervisorId, supervisorName, projectSupports, picId);
     const isEstimate = !hasNominal || !p.mode_penyelesaian;
 
     // Akumulasi total per orang - hanya project final (ada nominal & mode), pakai amount asli
