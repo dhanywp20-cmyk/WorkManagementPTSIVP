@@ -23,6 +23,7 @@ import { getAdminClient } from '@/lib/supabase-admin';
 const CADANGAN_ENV: Record<string, string | undefined> = {
   'whatsapp.token':     process.env.FONNTE_TOKEN,
   'telegram.bot_token': process.env.TELEGRAM_BOT_TOKEN,
+  'ai.gemini_token':    process.env.GEMINI_API_KEY,
 };
 
 /**

@@ -1,7 +1,17 @@
+/**
+ * Proksi pembuat soal AI.
+ *
+ * Token, nama model, arahan topik, dan suhu TIDAK lagi terpaku di berkas ini -
+ * semuanya dibaca saat permintaan datang, dari tabel yang diatur Admin Panel.
+ * Lihat lib/ai-pengaturan.ts untuk alasan tiap-tiapnya.
+ *
+ * Tokennya sengaja tetap di sisi server. Ia tidak boleh pernah sampai ke
+ * peramban: kunci Google AI Studio yang bocor bisa dipakai siapa pun sampai
+ * kuotanya habis, dan tagihannya tetap atas nama pemilik kunci.
+ */
 import { NextRequest, NextResponse } from 'next/server';
-
-const GEMINI_KEY = process.env.GEMINI_API_KEY ?? '';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+import { bacaRahasia } from '@/lib/rahasia-server';
+import { ambilPengaturanAI } from '@/lib/ai-pengaturan';
 
 const MAX_BODY_BYTES = 4_000_000;
 
@@ -11,8 +21,16 @@ function errJson(message: string, status: number) {
 
 export async function POST(request: NextRequest) {
   try {
-    if (!GEMINI_KEY) {
-      return errJson('AI service tidak tersedia (GEMINI_API_KEY belum diset di server).', 503);
+    const [token, setelan] = await Promise.all([
+      bacaRahasia('ai.gemini_token'),
+      ambilPengaturanAI(),
+    ]);
+
+    if (!token) {
+      return errJson(
+        'Pembuat soal AI belum aktif. Admin dapat mengisi Token AI di Admin Panel → Integrations.',
+        503,
+      );
     }
 
     // Batasi ukuran body - endpoint sudah butuh session (middleware), tapi cegah
@@ -40,22 +58,55 @@ export async function POST(request: NextRequest) {
     if (b.systemInstruction) payload.systemInstruction = b.systemInstruction;
     if (b.safetySettings)    payload.safetySettings     = b.safetySettings;
 
-    const res = await fetch(GEMINI_URL, {
+    // Suhu dari pengaturan, KECUALI bila pemanggil sudah menentukan sendiri -
+    // sebagian alur (mis. merapikan teks) memang butuh suhu tetap.
+    const gc = (payload.generationConfig ?? {}) as Record<string, unknown>;
+    if (gc.temperature === undefined) {
+      payload.generationConfig = { ...gc, temperature: setelan.suhu };
+    }
+
+    /*
+      Arahan topik DITAMBAHKAN di belakang instruksi aplikasi, bukan
+      menggantinya. Aturan bentuk keluaran - JSON, jumlah opsi, bahasa - tetap
+      dipegang aplikasi, sehingga arahan yang keliru tidak bisa membuat
+      jawabannya gagal diurai dan seluruh pembuat soal berhenti.
+    */
+    if (setelan.arahan.trim()) {
+      const si = payload.systemInstruction as { parts?: { text?: string }[] } | undefined;
+      const arahan = { text: `\n\nARAHAN TAMBAHAN DARI ADMIN:\n${setelan.arahan.trim()}` };
+      payload.systemInstruction = si?.parts
+        ? { ...si, parts: [...si.parts, arahan] }
+        : { parts: [arahan] };
+    }
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${setelan.model}:generateContent`;
+    const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      // Token dikirim lewat header, bukan query string. Alamat lengkap berikut
+      // query-nya ikut tercatat di log perantara; header tidak.
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': token },
       body: JSON.stringify(payload),
     });
     const data = await res.json();
     if (!res.ok) {
       // Log detail asli ke server log (nggak keliatan user, tapi kebaca di Vercel logs)
       // supaya gampang di-debug kalau Gemini balikin error yang shape-nya nggak terduga.
-      console.error('[api/ai/generate] Gemini error', res.status, JSON.stringify(data));
+      console.error('[api/ai/generate] Gemini error', res.status, setelan.model, JSON.stringify(data));
       // generativelanguage.googleapis.com KADANG membungkus error dalam array
       // ([{error:{...}}], bukan {error:{...}}). Klien hanya membaca
       // data.error.message, jadi bentuknya diratakan di sini supaya alasan
       // yang dikirim Gemini tidak berubah jadi pesan generik.
       const normalized = Array.isArray(data) ? data[0] : data;
       if (normalized?.error?.message) {
+        // Model yang salah ketik / sudah dihentikan adalah kekeliruan
+        // pengaturan, bukan kegagalan AI - sebutkan supaya jelas ke mana
+        // harus dibetulkan.
+        if (res.status === 404) {
+          return errJson(
+            `Model "${setelan.model}" tidak ditemukan. Betulkan di Admin Panel → Integrations → Pembuat Soal AI.`,
+            404,
+          );
+        }
         return NextResponse.json(normalized, { status: res.status });
       }
       return errJson(

@@ -74,3 +74,14 @@ kembali terlewat seperti sebelumnya, dan agar yang memang tidak boleh ikut
 (PTS UMP, Team Services, Sales, akun admin) tetap di luar.
 
     npx tsx uji/kelompok-daily-report.ts
+
+## pengaturan-ai.mjs
+
+Nama model dari Admin Panel ikut masuk ke ALAMAT yang dipanggil server, jadi
+isiannya tidak boleh bisa mengubah alamat itu. Diuji delapan bentuk isian yang
+menyimpang — termasuk yang menyisipkan query string berisi kunci lain dan yang
+memanjat direktori — semuanya harus jatuh kembali ke model bawaan.
+
+Ikut dijaga: suhu dijepit ke rentang 0–2, dan arahan dipotong di 4000 karakter.
+
+    node uji/pengaturan-ai.mjs

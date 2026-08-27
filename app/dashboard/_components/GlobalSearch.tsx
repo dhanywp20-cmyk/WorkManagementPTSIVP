@@ -546,16 +546,31 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     return acc;
   }, {} as Record<ResultType, number>);
 
+  /*
+    Tombolnya BERTULISAN, tidak hanya berikon.
+
+    Ikon kaca pembesar sendirian mengandalkan orang menebak - dan pencarian ini
+    menjangkau sebelas modul sekaligus, jadi yang tidak tahu keberadaannya
+    kehilangan jalan pintas paling berguna di platform. Kata "Pencarian"
+    ditampilkan mulai lebar sm; di layar tersempit ia menyusut kembali jadi
+    ikon saja karena bilah atasnya memang sudah padat, dan aria-label tetap
+    menyebutkannya untuk pembaca layar.
+
+    Pintasan ⌘K ikut ditulis - itu satu-satunya tempat orang bisa
+    mengetahuinya tanpa diberi tahu lisan.
+  */
   if (!open) return (
-    <button aria-label="Cari platform... (⌘K)" onClick={() => setOpen(true)}
-      className="flex items-center justify-center w-10 h-10 rounded-xl transition-all hover:shadow-md"
+    <button aria-label="Pencarian semua platform (Ctrl+K)" onClick={() => setOpen(true)}
+      className="flex items-center justify-center gap-1.5 h-10 w-10 sm:w-auto sm:px-3 rounded-xl transition-all hover:shadow-md"
       style={{ background: 'rgba(15,23,42,0.06)', border: '1.5px solid rgba(15,23,42,0.12)', color: '#475569' }}
       onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(15,23,42,0.12)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(15,23,42,0.22)'; }}
       onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(15,23,42,0.06)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(15,23,42,0.12)'; }}
-      title="Cari platform... (⌘K)">
-      <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      title="Pencarian semua platform (Ctrl+K)">
+      <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
+      <span className="hidden sm:inline text-sm font-bold text-slate-600 whitespace-nowrap">Pencarian</span>
+      <kbd className="hidden lg:inline text-[10px] font-bold text-slate-400 border border-slate-300 rounded px-1 py-0.5 leading-none">⌘K</kbd>
     </button>
   );
 

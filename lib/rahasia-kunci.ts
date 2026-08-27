@@ -16,6 +16,7 @@ export const KUNCI_RAHASIA = [
   'whatsapp.meta_token',     // WhatsApp Cloud API (resmi Meta)
   'whatsapp.kustom_token',   // webhook penyedia lain
   'telegram.bot_token',
+  'ai.gemini_token',         // Google AI Studio - pembuat soal Learning Center
 ] as const;
 
 export type KunciRahasia = typeof KUNCI_RAHASIA[number];

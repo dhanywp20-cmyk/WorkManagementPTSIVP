@@ -29,6 +29,7 @@ import {
   KANAL, bacaPengaturan, simpanPengaturan, kanalUntuk,
   type Kanal, type PengaturanNotifikasi,
 } from '@/lib/notifikasi/pengaturan';
+import { ambilPengaturanAI, simpanPengaturanAI, AI_BAWAAN, type PengaturanAI } from '@/lib/ai-pengaturan';
 import { KATALOG_EVENT, type KategoriEvent } from '@/lib/notifikasi/katalog';
 import { PENYEDIA_WA, penyediaWA } from '@/lib/notifikasi/penyedia-wa';
 
@@ -116,6 +117,8 @@ export function IntegrasiInline() {
   const [ujiJalan, setUjiJalan] = useState<string | null>(null);
   const [rahasia, setRahasia] = useState<Record<string, StatusRahasia>>({});
   const [waTujuan, setWaTujuan] = useState('');
+  /* Pengaturan pembuat soal AI - lihat lib/ai-pengaturan.ts. */
+  const [ai, setAi] = useState<PengaturanAI>(AI_BAWAAN);
 
   const muatRahasia = async () => {
     try {
@@ -125,7 +128,7 @@ export function IntegrasiInline() {
     } catch { /* diam - blok token akan tampil "belum diisi" */ }
   };
 
-  useEffect(() => { bacaPengaturan(true).then(setP); muatRahasia(); }, []);
+  useEffect(() => { bacaPengaturan(true).then(setP); muatRahasia(); ambilPengaturanAI().then(setAi); }, []);
 
   const simpanRahasia = async (kunci: string, nilai: string) => {
     try {
@@ -171,10 +174,13 @@ export function IntegrasiInline() {
 
   const simpanSekarang = async () => {
     setSimpan(true);
-    const r = await simpanPengaturan(p);
+    // Keduanya disimpan sekaligus. Tombol Simpan yang hanya menyimpan sebagian
+    // isi layar adalah cara paling mudah kehilangan pengaturan tanpa sadar.
+    const [r, rAi] = await Promise.all([simpanPengaturan(p), simpanPengaturanAI(ai)]);
     setSimpan(false);
-    setPesan(r.ok ? { tipe: 'ok', teks: 'Pengaturan tersimpan.' }
-                  : { tipe: 'gagal', teks: r.pesan ?? 'Gagal menyimpan.' });
+    const gagal = !r.ok ? r.pesan : !rAi.ok ? rAi.pesan : null;
+    setPesan(gagal ? { tipe: 'gagal', teks: gagal }
+                   : { tipe: 'ok', teks: 'Pengaturan tersimpan.' });
   };
 
   const uji = async (kanal: 'telegram' | 'whatsapp', aksi: 'cek' | 'kirim') => {
@@ -343,6 +349,49 @@ export function IntegrasiInline() {
             style={{ background: '#0088cc' }}>
             {ujiJalan === 'telegram-kirim' ? 'Mengirim…' : 'Kirim Pesan Tes'}
           </button>
+        </div>
+      </div>
+
+      {/* ── Pembuat Soal AI (Learning Center) ── */}
+      <div className="rounded-xl border border-slate-200 p-3">
+        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">
+          Pembuat Soal AI · Learning Center
+        </div>
+        <BlokToken
+          judul="Token AI" kunci="ai.gemini_token" status={rahasia['ai.gemini_token']}
+          onSimpan={n => simpanRahasia('ai.gemini_token', n)}
+          onHapus={() => hapusRahasia('ai.gemini_token')}
+          petunjuk={<>Ambil dari Google AI Studio (aistudio.google.com → Get API key). Token disimpan di server dan tidak pernah dikirim ke peramban.</>} />
+
+        <label className="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">Model</label>
+        <input value={ai.model} placeholder="gemini-2.5-flash"
+          onChange={e => setAi(x => ({ ...x, model: e.target.value }))}
+          className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-sky-400" />
+        <p className="text-[9px] text-slate-400 mt-1">
+          Nama model bisa diganti tanpa deploy — berguna saat Google menghentikan model lama.
+        </p>
+
+        <label className="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">
+          Arahan topik untuk AI <span className="font-normal text-slate-400">(opsional)</span>
+        </label>
+        <textarea value={ai.arahan} rows={4}
+          onChange={e => setAi(x => ({ ...x, arahan: e.target.value }))}
+          placeholder={'Contoh:\nUtamakan topik konfigurasi videowall, kalibrasi warna, dan troubleshooting sinyal HDMI/HDBaseT.\nHindari pertanyaan tentang sejarah merek atau harga.\nGunakan istilah teknis yang dipakai di lapangan.'}
+          className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-sky-400 leading-relaxed" />
+        <p className="text-[9px] text-slate-400 mt-1">
+          Ditambahkan pada instruksi AI, bukan menggantinya — aturan bentuk soal tetap dipegang platform,
+          jadi arahan yang keliru tidak bisa merusak hasilnya.
+        </p>
+
+        <label className="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">
+          Variasi soal <span className="font-normal text-slate-400">({ai.suhu.toFixed(1)})</span>
+        </label>
+        <input type="range" min={0} max={2} step={0.1} value={ai.suhu}
+          aria-label="Variasi soal"
+          onChange={e => setAi(x => ({ ...x, suhu: Number(e.target.value) }))}
+          className="w-full accent-sky-500" />
+        <div className="flex justify-between text-[9px] text-slate-400">
+          <span>0 — taat pada materi</span><span>2 — banyak variasi</span>
         </div>
       </div>
 
