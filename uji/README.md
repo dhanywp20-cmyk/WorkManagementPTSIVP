@@ -66,3 +66,11 @@ campuran Supervisor + Manager + satu orang luar. Pada semua kasus totalnya
 tetap tepat 100% dan tepat sebesar pool.
 
     npx tsx uji/supervisor-jadi-pic.ts
+
+## kelompok-daily-report.ts
+
+Siapa yang pekerjaannya terangkum di Daily Report. Menjaga agar PTS MVI tidak
+kembali terlewat seperti sebelumnya, dan agar yang memang tidak boleh ikut
+(PTS UMP, Team Services, Sales, akun admin) tetap di luar.
+
+    npx tsx uji/kelompok-daily-report.ts

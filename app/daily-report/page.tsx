@@ -23,6 +23,7 @@ import {
 
 import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
+import { namaKelompokPTSDitugaskan, useKelompokPTSDitugaskan } from '@/lib/kelompok';
 
 import {
   FormField, SectionHeaderSmall, LoadingScreen, ListEmptyState, Username, ModalPortal } from '@/components/shared';
@@ -175,6 +176,16 @@ export default function DailyReportPage() {
   const [appReady, setAppReady]       = useState(false);
   const [currentUser, setCurrentUser] = useState<TeamUser | null>(null);
   const [teamUsers, setTeamUsers]     = useState<TeamUser[]>([]);
+  /**
+   * Judul grafik mengikuti kelompok yang benar-benar dirangkum. Menuliskan
+   * "Team PTS IVP" di sana - seperti sebelumnya - membuat grafik yang berisi
+   * dua kelompok mengaku berisi satu, dan itu jenis kekeliruan yang tidak akan
+   * pernah dilaporkan siapa pun karena tampak wajar.
+   */
+  const kelompokPTS = useKelompokPTSDitugaskan();
+  const judulKelompokPTS = kelompokPTS.length === 1
+    ? kelompokPTS[0].nama
+    : `Team PTS (${kelompokPTS.map(k => k.label).join(' & ')})`;
   const [guestUsers, setGuestUsers]   = useState<GuestUser[]>([]);
 
   // Live data (dari reminder + ticket platform, tanpa perlu submit dulu)
@@ -240,9 +251,27 @@ export default function DailyReportPage() {
     return () => clearInterval(iv);
   }, []);
 
+  /**
+   * Anggota tim yang pekerjaannya dirangkum di layar ini.
+   *
+   * Kelompoknya diambil dari lib/kelompok.ts, BUKAN ditulis di sini.
+   * Sebelumnya baris ini berbunyi `team_type === 'Team PTS IVP'` - satu nama
+   * kelompok yang terpaku di kode - sehingga seluruh anggota Team PTS MVI
+   * tidak pernah masuk daftar. Akibatnya ticket dan reminder mereka tidak
+   * pernah terangkum di Daily Report, dan namanya juga tidak bisa dipilih.
+   * Judul halaman ini sendiri sudah lama berbunyi "PTS IVP & MVI".
+   *
+   * Kegagalannya tidak bersuara: layarnya tampil normal, hanya isinya separuh.
+   *
+   * Dengan namaKelompokPTS(), menambah kelompok PTS baru lewat Admin Panel
+   * langsung ikut terangkum tanpa menyunting berkas ini lagi.
+   */
   const loadTeamUsers = async () => {
     const { data } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,allowed_menus').order('full_name');
-    if (data) setTeamUsers(data.filter((u: TeamUser) => u.team_type === 'Team PTS IVP' && u.role !== 'admin' && u.role !== 'superadmin'));
+    if (!data) return;
+    const kelompokPTS = namaKelompokPTSDitugaskan();
+    setTeamUsers(data.filter((u: TeamUser) =>
+      kelompokPTS.includes(u.team_type ?? '') && u.role !== 'admin' && u.role !== 'superadmin'));
   };
   const loadGuestUsers = async () => {
     const { data } = await supabase.from('users').select('id,username,full_name,role,phone_number,sales_division').eq('role', 'guest').order('full_name');
@@ -865,7 +894,7 @@ export default function DailyReportPage() {
             onSliceClick={label => setFilterCategory(filterCategory === label ? null : label)}
           />
           <MiniPieChart
-            data={handlerPieData} title="Team PTS IVP" icon="👥"
+            data={handlerPieData} title={judulKelompokPTS} icon="👥"
             activeFilter={filterHandler}
             onSliceClick={label => setFilterHandler(filterHandler === label ? null : label)}
           />

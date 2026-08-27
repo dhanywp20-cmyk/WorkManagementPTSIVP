@@ -132,6 +132,23 @@ export function namaKelompokPTS(): string[] { return kelompokPTS().map(k => k.na
 /** Kelompok yang ikut daftar "assign ke tim". */
 export function kelompokDitugaskan(): Kelompok[] { return semuaKelompok().filter(k => k.ditugaskan); }
 
+/**
+ * Kelompok PTS yang MENERIMA penugasan - irisan dua sifat di atas.
+ *
+ * Inilah kelompok yang pekerjaannya benar-benar terangkum di Daily Report dan
+ * layar sejenis. Berbeda dari kelompokPTS(), yang juga memuat PTS UMP:
+ * kelompok itu aktif tetapi sengaja tidak ditugaskan, jadi memasukkannya cuma
+ * menambah baris kosong pada rekap harian.
+ */
+export function kelompokPTSDitugaskan(): Kelompok[] {
+  return kelompokPTS().filter(k => k.ditugaskan);
+}
+
+/** Nama team_type kelompok PTS yang menerima penugasan. */
+export function namaKelompokPTSDitugaskan(): string[] {
+  return kelompokPTSDitugaskan().map(k => k.nama);
+}
+
 /** Cari kelompok dari nilai team_type. Sales dikenali lewat string kosong. */
 export function cariKelompok(teamType?: string | null): Kelompok | null {
   const t = (teamType ?? '').trim();
@@ -323,4 +340,5 @@ function pakai<T>(ambil: () => T): T {
 
 export function useKelompok(): Kelompok[] { return pakai(semuaKelompok); }
 export function useKelompokPTS(): Kelompok[] { return pakai(kelompokPTS); }
+export function useKelompokPTSDitugaskan(): Kelompok[] { return pakai(kelompokPTSDitugaskan); }
 export function useLingkupManager(): LingkupManager { return pakai(lingkupManager); }
