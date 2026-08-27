@@ -887,7 +887,11 @@ export default function DailyReportPage() {
         </div>
 
         {/* ── Charts row ── */}
-        <div className="grid grid-cols-4 gap-4">
+        {/* Satu-satunya grafik di platform ini yang dulu memakai grid-cols-4
+            tanpa titik henti - semua halaman lain sudah grid-cols-1 md:...
+            Di ponsel itu berarti empat kolom selebar ~80px, dan di situlah
+            legendanya terhimpit habis. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <MiniPieChart
             data={catPieData} title="Kegiatan / Kategori" icon="🖥️"
             activeFilter={filterCategory}

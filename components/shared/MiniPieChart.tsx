@@ -66,8 +66,19 @@ export function MiniPieChart({
           flex-1 tanpa batas, sehingga ia melahap SELURUH sisa lebar kartu dan
           mendorong donat menempel ke tepi kiri. Pada kartu lebar dengan legenda
           pendek, donat jadi terlihat tidak center. Dengan legenda dibatasi,
-          pasangan donat+legenda mengambang di tengah kartu. */}
-      <div className="flex items-center justify-center gap-3">
+          pasangan donat+legenda mengambang di tengah kartu.
+
+          flex-wrap DITAMBAHKAN, dan itu bukan sekadar kerapian. Bersama
+          `min-w-0` pada legenda, susunan satu baris membuat legenda bisa
+          menyusut sampai NOL ketika kartunya sempit - donatnya tetap 120px
+          karena ukurannya tetap, jadi yang mengalah selalu teksnya. Terukur:
+          pada kartu selebar 78px dan 108px legendanya benar-benar 0px, dan
+          pada 180px pun hanya 14px. Yang tampak di layar cuma lingkaran warna
+          tanpa keterangan - grafik yang tidak bisa dibaca.
+
+          Dengan flex-wrap + lebar minimum, legenda TURUN ke bawah donat begitu
+          tidak muat di sampingnya, bukan menghilang. */}
+      <div className="flex flex-wrap items-center justify-center gap-3">
         <svg aria-hidden="true" focusable="false" width="120" height="120" viewBox="0 0 120 120" className="flex-shrink-0">
           {slices.map((s) => (
             s.isFullCircle ? (
@@ -90,7 +101,7 @@ export function MiniPieChart({
           <text x="60" y="57" textAnchor="middle" fontSize="16" fontWeight="800" fill="#1e293b">{centerValue ?? total}</text>
           <text x="60" y="70" textAnchor="middle" fontSize="7" fill="#94a3b8" fontWeight="600">{centerLabel ?? 'TOTAL'}</text>
         </svg>
-        <div className="flex flex-col gap-1.5 flex-1 min-w-0 max-w-[210px] max-h-[120px] overflow-y-auto">
+        <div className="flex flex-col gap-1.5 flex-1 basis-[150px] min-w-[150px] max-w-[210px] max-h-[120px] overflow-y-auto">
           {slices.map((s) => {
             const isActive = activeFilter === s.label;
             return (
