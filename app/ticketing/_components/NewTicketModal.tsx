@@ -78,6 +78,20 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     .map(u => ({ id: u.id, full_name: u.full_name, sales_division: u.sales_division ?? null }));
 
   const [projectType, setProjectType] = useState<'new' | 'existing'>('new');
+  /*
+    Pemilihan tipe project didahulukan, sebelum form terlihat.
+
+    Sebelumnya form langsung terbuka dengan "Project Baru" terpilih, dan
+    pemilihnya cuma sepasang tombol di tengah halaman. Akibatnya orang mengetik
+    nama project manual padahal projectnya sudah ada di Request Schedule - lalu
+    namanya menyimpang sedikit, dan tautan ke jadwal aslinya tidak pernah
+    terbentuk. Itulah yang membuat porsi Tim Support pada Incentive tidak
+    tercocokkan, karena pencocokannya bertumpu pada tautan dan nama itu.
+
+    Menanyakannya lebih dulu membuat pilihan yang benar jadi pilihan yang
+    paling mudah, bukan yang harus diingat.
+  */
+  const [pilihTipe, setPilihTipe] = useState(true);
   const [reminderQuery, setReminderQuery] = useState('');
   const [reminderResults, setReminderResults] = useState<ReminderRef[]>([]);
   const [reminderSearching, setReminderSearching] = useState(false);
@@ -198,6 +212,60 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
       setForm({ ...form, project_name: '', address: '', sales_name: '', sales_division: '', product: '', customer_phone: '', assign_name: '', reminder_id: null });
     }
   };
+
+  if (pilihTipe) return (
+    <ModalPortal>
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+        style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(3px)' }}>
+        <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden"
+          role="dialog" aria-modal="true" aria-labelledby="judul-tipe-project">
+          <div className="px-5 py-4 text-white" style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)' }}>
+            <h3 id="judul-tipe-project" className="font-bold text-base">🎫 Ticket Troubleshooting Baru</h3>
+            <p className="text-[12px] text-white/80 mt-0.5">Project-nya sudah pernah dikerjakan, atau baru?</p>
+          </div>
+          <div className="p-4 space-y-2.5">
+            <button type="button"
+              onClick={() => { switchProjectType('existing'); setPilihTipe(false); }}
+              className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-red-400 hover:bg-red-50/50 transition-all">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl flex-shrink-0">🔍</span>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-slate-800">Project yang sudah ada</p>
+                  <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5">
+                    Pernah dikonfigurasi atau di-training dan tercatat di Request Schedule.
+                    Cari namanya — alamat, PIC, produk, dan sales otomatis terisi.
+                  </p>
+                  <p className="text-[11px] font-semibold text-emerald-700 mt-1.5">
+                    ✓ Disarankan — ticket tertaut ke jadwal aslinya
+                  </p>
+                </div>
+              </div>
+            </button>
+            <button type="button"
+              onClick={() => { switchProjectType('new'); setPilihTipe(false); }}
+              className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-400 hover:bg-slate-50 transition-all">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl flex-shrink-0">✏️</span>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-slate-800">Project baru</p>
+                  <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5">
+                    Belum pernah masuk Request Schedule. Seluruh detailnya diisi manual,
+                    tanpa referensi.
+                  </p>
+                </div>
+              </div>
+            </button>
+          </div>
+          <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+            <button type="button" onClick={onClose}
+              className="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 bg-white border border-slate-300 hover:bg-slate-100">
+              Batal
+            </button>
+          </div>
+        </div>
+      </div>
+    </ModalPortal>
+  );
 
   return (
   <ModalPortal>

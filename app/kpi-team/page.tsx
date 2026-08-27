@@ -9,6 +9,7 @@ import { PageHeader, MobileListCard, MobileCardBadge, MiniSpark, ListEmptyState 
 import { notifyKPIAlert } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
+import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok';
 import { KPIUser, KPIMember, KPISettings, DEFAULT_KPI_SETTINGS, KPIPeriodSnapshot, Scope, PeriodKey, SortKey, SortDir, PERIODS, PERIOD_EMOJI, TEAM_COLORS, STATUS_COLORS, MN, KPI_COLOR, fmt, getPeriodRange } from './_components/shared';
 import { exportKPIExcel } from './_components/ekspor-kpi';
 import { DrillModal, ProgressBar } from './_components/DrillModal';
@@ -71,9 +72,17 @@ export default function KPITeamPage() {
   useEffect(() => {
     if (!currentUser) return;
     (async () => {
+      /*
+        Pemetaan kelompok DIMUAT LEBIH DULU, dan itu bukan kerapian.
+        lingkupSaya() membaca keadaan di dalam lib/kelompok.ts; selama
+        muatKelompok() belum pernah dipanggil, isinya masih nilai bawaan -
+        yaitu SELURUH kelompok PTS. Penyaringan di bawah akan berjalan tanpa
+        menyaring apa pun, dan kebocorannya kembali persis seperti semula.
+      */
+      await muatKelompok();
       const role    = currentUser.role?.toLowerCase() ?? '';
       const jabatan = currentUser.jabatan ?? '';
-      const PTS_TYPES = ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MVI'];
+      const PTS_TYPES = namaKelompokPTS();
       // Admin/superadmin ATAU akun Team PTS dengan toggle "Full Access" aktif
       // (lihat lib/constants.ts hasFullAccess) - lihat seluruh tim, bukan cuma
       // KPI-nya sendiri atau tim satu jenis PTS saja seperti Supervisor.
@@ -286,7 +295,22 @@ export default function KPITeamPage() {
         if (scope.kind === 'pts_sup') {
           mQ = mQ.eq('role', 'team').eq('team_type', scope.ptsTeamType ?? '');
         } else {
-          mQ = mQ.in('team_type', ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MVI']).eq('role', 'team');
+          /*
+            Kelompok yang boleh dilihat akun ini, BUKAN seluruh kelompok PTS.
+
+            Sebelumnya ketiga nama kelompok ditulis langsung di sini, jadi
+            siapa pun yang lolos ke cabang ini melihat semuanya - termasuk
+            Manager PTS IVP yang tidak membawahi PTS UMP sama sekali. Nilai
+            KPI seseorang adalah penilaian atas dirinya; ia tidak semestinya
+            terbaca oleh atasan dari kelompok lain.
+
+            lingkupSaya() mengembalikan SELURUH kelompok PTS bila akunnya
+            belum dipetakan - itu disengaja di lib/kelompok.ts, supaya
+            menyalakan fitur ini tidak mendadak mengosongkan layar semua
+            Manager sebelum satu pun pemetaan dibuat. Pemetaannya diatur di
+            Admin Panel -> Kelompok & Notifikasi.
+          */
+          mQ = mQ.in('team_type', lingkupSaya(currentUser?.id)).eq('role', 'team');
         }
       }
       const { data: mData } = await mQ;
@@ -609,7 +633,10 @@ export default function KPITeamPage() {
           ) : kpiFiltered.length === 0 ? (
             <p className="text-center py-10 text-slate-400 text-sm">Tidak ada anggota dengan KPI aktif. Aktifkan kpi_enabled di user management.</p>
           ) : (() => {
-            const teams = ['Team PTS IVP', 'Team PTS MVI', 'Team PTS UMP'];
+            // Urutan & isinya mengikuti lingkup akun ini - lihat catatan di
+            // pemuatan anggota. Kelompok di luar lingkup tidak pernah sampai
+            // ke kpiFiltered, jadi baris ini hanya menentukan urutan tampil.
+            const teams = lingkupSaya(currentUser?.id);
             const rows = filterTeam === 'all'
               ? teams.map(tt => ({ tt, ms: kpiFiltered.filter(m => m.team_type === tt) })).filter(r => r.ms.length > 0)
               : [{ tt: filterTeam, ms: kpiFiltered }];
@@ -983,7 +1010,10 @@ export default function KPITeamPage() {
               ) : kpiFiltered.length === 0 ? (
                 <p className="text-center py-10 text-slate-400 text-sm">Tidak ada anggota dengan KPI aktif. Aktifkan kpi_enabled di user management.</p>
               ) : (() => {
-                const teams = ['Team PTS IVP', 'Team PTS MVI', 'Team PTS UMP'];
+                // Urutan & isinya mengikuti lingkup akun ini - lihat catatan di
+            // pemuatan anggota. Kelompok di luar lingkup tidak pernah sampai
+            // ke kpiFiltered, jadi baris ini hanya menentukan urutan tampil.
+            const teams = lingkupSaya(currentUser?.id);
                 const rows = filterTeam === 'all'
                   ? teams.map(tt => ({ tt, ms: kpiFiltered.filter(m => m.team_type === tt) })).filter(r => r.ms.length > 0)
                   : [{ tt: filterTeam, ms: kpiFiltered }];

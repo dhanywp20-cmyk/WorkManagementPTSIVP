@@ -43,12 +43,41 @@ export async function GET(req: NextRequest) {
   const db = getAdminClient();
   const { data } = await db.from('rahasia_integrasi').select('kunci, nilai, diperbarui_pada, diperbarui_oleh');
 
-  const status: Record<string, { terisi: boolean; penanda?: string; diperbarui?: string; oleh?: string }> = {};
-  for (const k of KUNCI_RAHASIA) status[k] = { terisi: false };
+  /*
+    Token yang masih berasal dari variabel lingkungan ikut dilaporkan.
+
+    Tanpa ini, kunci yang sebenarnya AKTIF - dipasang di Vercel sejak sebelum
+    layar ini ada - tampil sebagai "belum diisi". Admin lalu mengira fiturnya
+    mati, padahal ia berjalan; atau lebih buruk, mengisi ulang token baru
+    padahal yang lama masih dipakai dan sah.
+
+    Nilainya TIDAK ikut dikirim - hanya keterangan bahwa ia ada. Titik ujung
+    ini memang dijaga admin, tetapi token tetap tidak punya alasan meninggalkan
+    server.
+  */
+  const CADANGAN_ENV: Record<string, string | undefined> = {
+    'whatsapp.token':     process.env.FONNTE_TOKEN,
+    'telegram.bot_token': process.env.TELEGRAM_BOT_TOKEN,
+    'ai.gemini_token':    process.env.GEMINI_API_KEY,
+  };
+
+  const status: Record<string, {
+    terisi: boolean; penanda?: string; diperbarui?: string; oleh?: string; dariEnv?: boolean;
+  }> = {};
+  for (const k of KUNCI_RAHASIA) {
+    status[k] = CADANGAN_ENV[k]
+      ? { terisi: true, dariEnv: true, penanda: samarkan(CADANGAN_ENV[k] as string) }
+      : { terisi: false };
+  }
   for (const r of data ?? []) {
     if (!sah(r.kunci)) continue;
+    // Baris di basis data MENIMPA cadangan env - itu memang urutan yang
+    // dipakai bacaRahasia() saat mengirim, jadi layarnya harus menunjukkan
+    // yang sama. Layar yang menampilkan token berbeda dari yang benar-benar
+    // dipakai lebih menyesatkan daripada tidak menampilkan apa pun.
     status[r.kunci] = {
       terisi: true,
+      dariEnv: false,
       penanda: samarkan(r.nilai as string),
       diperbarui: r.diperbarui_pada as string,
       oleh: (r.diperbarui_oleh as string) ?? undefined,

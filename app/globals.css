@@ -378,3 +378,15 @@ html {
   .lc-bongkar-kanan,
   .lc-dasbor-muncul { animation: none; clip-path: none; }
 }
+
+/* Panel geser dari kanan - dipakai panel "Event → Kanal" di Integrations.
+   Dihormati prefers-reduced-motion: gerakan menyamping selebar layar adalah
+   jenis animasi yang paling mengganggu bagi yang sensitif terhadapnya. */
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+.animate-slide-in-right { animation: slide-in-right 0.22s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-in-right { animation: none; }
+}

@@ -51,6 +51,8 @@ function Saklar({ aktif, onKlik, warna }: { aktif: boolean; onKlik: () => void; 
 
 interface StatusRahasia {
   terisi: boolean; penanda?: string; diperbarui?: string; oleh?: string;
+  /** true = nilainya masih berasal dari variabel lingkungan, belum dari Admin Panel. */
+  dariEnv?: boolean;
 }
 
 /**
@@ -72,7 +74,16 @@ function BlokToken({
     <div className="rounded-lg border border-slate-200 p-2.5 bg-slate-50/60">
       <div className="flex items-center gap-2 mb-1.5">
         <span className="text-[11px] font-bold text-slate-600 flex-1">{judul}</span>
-        {status?.terisi ? (
+        {/* Tiga keadaan, bukan dua. Token yang masih berasal dari variabel
+            lingkungan itu AKTIF - menampilkannya sebagai "belum diisi" membuat
+            admin mengira fiturnya mati, lalu mengisi ulang token baru padahal
+            yang lama masih dipakai dan sah. */}
+        {status?.terisi && status.dariEnv ? (
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-700"
+            title="Nilai bawaan dari variabel lingkungan server. Sudah aktif — isi di sini hanya bila ingin menggantinya.">
+            bawaan {status.penanda}
+          </span>
+        ) : status?.terisi ? (
           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700">
             terisi {status.penanda}
           </span>
@@ -83,7 +94,8 @@ function BlokToken({
       <div className="flex gap-1.5">
         <input
           type="password" value={nilai} onChange={e => setNilai(e.target.value)}
-          placeholder={status?.terisi ? 'isi untuk mengganti…' : 'tempel token di sini'}
+          placeholder={status?.dariEnv ? 'pakai bawaan server — isi untuk menggantinya…'
+                       : status?.terisi ? 'isi untuk mengganti…' : 'tempel token di sini'}
           autoComplete="new-password"
           className="flex-1 min-w-0 text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-sky-400" />
         <button type="button" disabled={sibuk || !nilai.trim()}
@@ -91,7 +103,11 @@ function BlokToken({
           className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-white bg-slate-700 hover:bg-slate-800 disabled:opacity-40 flex-shrink-0">
           Simpan
         </button>
-        {status?.terisi && (
+        {/* Hapus hanya untuk nilai yang memang TERSIMPAN di basis data.
+            Token bawaan dari variabel lingkungan tidak bisa dihapus dari sini -
+            tombolnya akan tampak berhasil lalu tokennya tetap ada, dan itu
+            jenis kebohongan kecil yang membuat orang berhenti percaya layar. */}
+        {status?.terisi && !status.dariEnv && (
           <button type="button" disabled={sibuk}
             onClick={async () => { setSibuk(true); await onHapus(); setSibuk(false); }}
             className="text-[11px] font-bold px-2 py-1.5 rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-40 flex-shrink-0">
@@ -117,6 +133,8 @@ export function IntegrasiInline() {
   const [ujiJalan, setUjiJalan] = useState<string | null>(null);
   const [rahasia, setRahasia] = useState<Record<string, StatusRahasia>>({});
   const [waTujuan, setWaTujuan] = useState('');
+  /** Panel geser Event -> Kanal. Tertutup secara bawaan - lihat catatan di dekat panelnya. */
+  const [bukaMatriks, setBukaMatriks] = useState(false);
   /* Pengaturan pembuat soal AI - lihat lib/ai-pengaturan.ts. */
   const [ai, setAi] = useState<PengaturanAI>(AI_BAWAAN);
 
@@ -216,7 +234,16 @@ export function IntegrasiInline() {
     <div className="space-y-4">
       {/* ── Saklar induk per kanal ── */}
       <div>
-        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">Kanal</div>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Kanal</div>
+          {/* Pintu ke pengaturan per kejadian, ditaruh berdampingan dengan
+              saklar induknya - di situlah orang sedang memikirkan kanal, jadi
+              di situ pula pertanyaan "kejadian mana saja?" muncul. */}
+          <button type="button" onClick={() => setBukaMatriks(true)}
+            className="ml-auto text-[10px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 whitespace-nowrap">
+            ⚙️ Atur Event → Kanal ({KATALOG_EVENT.length})
+          </button>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {KANAL.map(k => (
             <div key={k.key} className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5">
@@ -395,69 +422,110 @@ export function IntegrasiInline() {
         </div>
       </div>
 
-      {/* ── Matriks event x kanal ── */}
-      <div>
-        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">
-          Event → Kanal ({KATALOG_EVENT.length})
-        </div>
-        <div className="rounded-xl border border-slate-200 overflow-hidden">
-          <div className="grid grid-cols-[1fr_auto] gap-2 px-3 py-1.5 bg-slate-50 border-b border-slate-200">
-            <span className="text-[9px] font-bold text-slate-400 uppercase">Kejadian</span>
-            <span className="flex gap-3">
-              {KANAL.map(k => (
-                <span key={k.key} className="text-[9px] font-bold uppercase w-[52px] text-center" style={{ color: k.warna }}>{k.label}</span>
-              ))}
-            </span>
-          </div>
-          <div className="max-h-[320px] overflow-y-auto">
-            {kategori.map(kat => (
-              <div key={kat}>
-                <div className="px-3 py-1 bg-slate-50/70 text-[9px] font-bold text-slate-400 uppercase tracking-wide sticky top-0">
-                  {JUDUL_KATEGORI[kat]}
-                </div>
-                {KATALOG_EVENT.filter(e => e.kategori === kat).map(e => {
-                  const berlaku = kanalUntuk(e.key, p);
-                  const dipilih = p.perEvent[e.key] ?? (e.bawaanKanal as Kanal[]);
-                  return (
-                    <div key={e.key} className="grid grid-cols-[1fr_auto] gap-2 items-center px-3 py-1.5 border-b border-slate-100 last:border-0">
-                      <div className="min-w-0">
-                        <div className="text-[11px] font-semibold text-slate-700 truncate">{e.label}</div>
-                        {/*
-                          Kalau sebuah event mencentang kanal yang saklar
-                          induknya mati, centangnya tetap tersimpan tapi tidak
-                          berlaku. Tanpa keterangan ini admin akan mengira
-                          notifikasinya terkirim padahal tidak.
-                        */}
-                        {dipilih.length > 0 && berlaku.length === 0 && (
-                          <div className="text-[9px] text-amber-600 font-semibold">kanalnya dimatikan di atas — tidak terkirim</div>
-                        )}
-                      </div>
-                      <span className="flex gap-3">
-                        {KANAL.map(k => {
-                          const on = dipilih.includes(k.key);
-                          return (
-                            <button key={k.key} type="button" onClick={() => toggleEvent(e.key, k.key)}
-                              className="w-[52px] flex justify-center" aria-label={`${e.label} - ${k.label}`}>
-                              <span className="w-4 h-4 rounded border-2 flex items-center justify-center transition-colors"
-                                style={{
-                                  borderColor: on ? k.warna : '#cbd5e1',
-                                  background: on ? k.warna : 'transparent',
-                                  opacity: on && !p.aktif[k.key] ? 0.4 : 1,
-                                }}>
-                                {on && <span className="text-white text-[9px] font-black leading-none">✓</span>}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </span>
-                    </div>
-                  );
-                })}
+      {/* ── Matriks event x kanal - panel geser ────────────────────────────
+          Dipindah keluar dari alur utama. Dua puluh dua baris tabel di tengah
+          layar pengaturan membuat hal yang paling sering disentuh - token dan
+          saklar kanal - terdorong jauh ke atas, dan yang jarang disentuh
+          justru menguasai layar. Sekarang ia muncul dari kanan hanya saat
+          diminta, dan layar di belakangnya tetap terbaca. */}
+      {bukaMatriks && (
+        <div className="fixed inset-0 z-[210] flex justify-end"
+          style={{ background: 'rgba(15,23,42,0.45)' }}
+          onClick={() => setBukaMatriks(false)}>
+          <div onClick={ev => ev.stopPropagation()} role="dialog" aria-modal="true"
+            aria-label="Pengaturan Event ke Kanal"
+            className="h-full w-full max-w-[520px] bg-white shadow-2xl flex flex-col animate-slide-in-right">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-200 flex-shrink-0">
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-slate-700">Event → Kanal</h3>
+                <p className="text-[11px] text-slate-500">
+                  {KATALOG_EVENT.length} kejadian · centang kanal yang dipakai tiap kejadian
+                </p>
               </div>
-            ))}
+              <button type="button" onClick={() => setBukaMatriks(false)} aria-label="Tutup"
+                className="ml-auto w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+            {/* ── Matriks event x kanal ── */}
+            <div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">
+                Event → Kanal ({KATALOG_EVENT.length})
+              </div>
+              <div className="rounded-xl border border-slate-200 overflow-hidden">
+                <div className="grid grid-cols-[1fr_auto] gap-2 px-3 py-1.5 bg-slate-50 border-b border-slate-200">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase">Kejadian</span>
+                  <span className="flex gap-3">
+                    {KANAL.map(k => (
+                      <span key={k.key} className="text-[9px] font-bold uppercase w-[52px] text-center" style={{ color: k.warna }}>{k.label}</span>
+                    ))}
+                  </span>
+                </div>
+                <div className="max-h-[320px] overflow-y-auto">
+                  {kategori.map(kat => (
+                    <div key={kat}>
+                      <div className="px-3 py-1 bg-slate-50/70 text-[9px] font-bold text-slate-400 uppercase tracking-wide sticky top-0">
+                        {JUDUL_KATEGORI[kat]}
+                      </div>
+                      {KATALOG_EVENT.filter(e => e.kategori === kat).map(e => {
+                        const berlaku = kanalUntuk(e.key, p);
+                        const dipilih = p.perEvent[e.key] ?? (e.bawaanKanal as Kanal[]);
+                        return (
+                          <div key={e.key} className="grid grid-cols-[1fr_auto] gap-2 items-center px-3 py-1.5 border-b border-slate-100 last:border-0">
+                            <div className="min-w-0">
+                              <div className="text-[11px] font-semibold text-slate-700 truncate">{e.label}</div>
+                              {/*
+                                Kalau sebuah event mencentang kanal yang saklar
+                                induknya mati, centangnya tetap tersimpan tapi tidak
+                                berlaku. Tanpa keterangan ini admin akan mengira
+                                notifikasinya terkirim padahal tidak.
+                              */}
+                              {dipilih.length > 0 && berlaku.length === 0 && (
+                                <div className="text-[9px] text-amber-600 font-semibold">kanalnya dimatikan di atas — tidak terkirim</div>
+                              )}
+                            </div>
+                            <span className="flex gap-3">
+                              {KANAL.map(k => {
+                                const on = dipilih.includes(k.key);
+                                return (
+                                  <button key={k.key} type="button" onClick={() => toggleEvent(e.key, k.key)}
+                                    className="w-[52px] flex justify-center" aria-label={`${e.label} - ${k.label}`}>
+                                    <span className="w-4 h-4 rounded border-2 flex items-center justify-center transition-colors"
+                                      style={{
+                                        borderColor: on ? k.warna : '#cbd5e1',
+                                        background: on ? k.warna : 'transparent',
+                                        opacity: on && !p.aktif[k.key] ? 0.4 : 1,
+                                      }}>
+                                      {on && <span className="text-white text-[9px] font-black leading-none">✓</span>}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            </div>
+            <div className="px-4 py-3 border-t border-slate-200 bg-slate-50 flex-shrink-0">
+              {/* Tombol Simpan yang sama, bukan tombol kedua: pengaturan ini
+                  ikut tersimpan bersama sisanya, jadi dua tombol berbeda hanya
+                  akan membuat orang menebak mana yang berlaku. */}
+              <button type="button" onClick={async () => { await simpanSekarang(); setBukaMatriks(false); }}
+                disabled={simpan}
+                className="w-full text-xs font-bold px-4 py-2.5 rounded-lg text-white disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)' }}>
+                {simpan ? 'Menyimpan…' : 'Simpan & Tutup'}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="flex items-center gap-3">
         <button type="button" onClick={simpanSekarang} disabled={simpan}
