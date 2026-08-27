@@ -11,6 +11,7 @@ import { isAssignablePTSTeam } from '@/lib/teams';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { notifyReminderApproved, createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
+import { INCENTIVE_CATEGORIES } from '@/lib/incentive-scheme';
 import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField } from '@/lib/admin-edit';
 import { syncRemindersToProjectProgress, triggersProjectProgress, type ReminderSnapshot } from '@/lib/project-progress-sync';
 import { compressImage } from '@/lib/image-compress';
@@ -406,6 +407,44 @@ function ReminderSchedulePageInner() {
   };
 
   // CRUD
+
+  /*
+    Kembalikan project ke daftar Incentive PTS.
+
+    Pasangan dari tombol "Keluarkan dari Incentive" di sana. Daftar Incentive
+    diturunkan dari halaman ini - kategori Konfigurasi / Konfigurasi & Training
+    / Training yang berstatus selesai - jadi satu-satunya yang bisa menahannya
+    adalah penanda `incentive_excluded`. Tombol ini melepas penanda itu.
+
+    Sengaja HANYA muncul pada jadwal yang memang sedang dikeluarkan. Tombol
+    yang selalu terlihat tetapi tidak mengubah apa pun mengajari orang untuk
+    mengabaikannya, dan lama-lama tombol yang benar-benar penting ikut
+    diabaikan.
+  */
+  const bisaMasukIncentive = (r: Reminder): boolean =>
+    (INCENTIVE_CATEGORIES as readonly string[]).includes(r.category)
+    && r.status === 'done'
+    && r.incentive_excluded === true;
+
+  const [syncing, setSyncing] = useState<string | null>(null);
+
+  async function syncKeIncentive(r: Reminder) {
+    setSyncing(r.id);
+    const { error } = await supabase.from('reminders')
+      .update({ incentive_excluded: false }).eq('id', r.id);
+    setSyncing(null);
+    if (error) { notify('error', 'Gagal sync: ' + error.message); return; }
+    void logAudit({
+      user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
+      module: 'reminder-schedule', action: 'update',
+      target_id: r.id, target_name: r.project_name,
+      old_value: 'dikeluarkan dari Incentive',
+      new_value: 'ikut dihitung di Incentive',
+      notes: 'Dikembalikan lewat tombol Sync ke Incentive PTS',
+    });
+    notify('success', `"${r.project_name}" kembali masuk daftar Incentive PTS.`);
+    await fetchRemindersQuiet();
+  }
 
   const handleSave = async () => {
     if (!formData.project_name.trim())            { notify('error', 'Nama project wajib diisi!');  return; }
@@ -3640,6 +3679,15 @@ jangan lupa peralatan & Semangat💪🏼
                                 {r.address && <p className="text-[10px] text-gray-400 mt-0.5 truncate">📍 {r.address.split(',')[0]}</p>}
                                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                                   <span className="text-[10px] font-semibold text-indigo-600">{(CATEGORY_CONFIG[r.category] ?? { icon: '📁' }).icon} {r.category}</span>
+                                  {/* Tanpa lencana ini, tombol sync hijau muncul tanpa
+                                      keterangan apa pun dan orang harus menebak apa
+                                      bedanya baris ini dari yang lain. */}
+                                  {r.incentive_excluded === true && (
+                                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded"
+                                      title="Sengaja dikeluarkan dari perhitungan Incentive PTS. Jadwalnya tetap tercatat di sini.">
+                                      ⛔ di luar Incentive
+                                    </span>
+                                  )}
                                   {r.product && <span className="text-[10px] text-indigo-500 font-medium">{r.product}</span>}
                                 </div>
                               </div>
@@ -3703,6 +3751,16 @@ jangan lupa peralatan & Semangat💪🏼
                               )}
                               {currentUser?.id === r.assigned_supervisor_id && r.routing_status === 'supervisor_assign' && (
                                 <ApproveIconBtn onClick={() => openSupervisorAssign(r, group)} title="Assign Tim" pulse />
+                              )}
+                              {(isAdmin || isManager) && bisaMasukIncentive(r) && (
+                                <button aria-label={`Sync ${r.project_name} ke Incentive PTS`}
+                                  onClick={() => syncKeIncentive(r)} disabled={syncing === r.id}
+                                  title="Project ini sedang dikeluarkan dari Incentive PTS — klik untuk memasukkannya kembali"
+                                  className="w-7 h-7 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 rounded-lg flex items-center justify-center transition-all disabled:opacity-50">
+                                  {syncing === r.id
+                                    ? <div className="w-3.5 h-3.5 border-2 border-emerald-400/30 border-t-emerald-600 rounded-full animate-spin" />
+                                    : <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>}
+                                </button>
                               )}
                               {(isAdmin || isManager) && (
                                 <DeleteIconBtn onClick={() => openDeleteModal(r)} title="Hapus" />
@@ -3957,6 +4015,16 @@ jangan lupa peralatan & Semangat💪🏼
                                     {/* Assign Tim — Supervisor yg di-route, wajib assign anggota/diri sendiri */}
                                     {currentUser?.id === group[0].assigned_supervisor_id && group[0].routing_status === 'supervisor_assign' && (
                                       <ApproveIconBtn onClick={() => openSupervisorAssign(group[0], group)} title="Assign Tim" pulse />
+                                    )}
+                                    {(isAdmin || isManager) && bisaMasukIncentive(group[0]) && (
+                                      <button aria-label={`Sync ${group[0].project_name} ke Incentive PTS`}
+                                        onClick={() => syncKeIncentive(group[0])} disabled={syncing === group[0].id}
+                                        title="Project ini sedang dikeluarkan dari Incentive PTS — klik untuk memasukkannya kembali"
+                                        className="w-7 h-7 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 rounded-lg flex items-center justify-center transition-all disabled:opacity-50">
+                                        {syncing === group[0].id
+                                          ? <div className="w-3.5 h-3.5 border-2 border-emerald-400/30 border-t-emerald-600 rounded-full animate-spin" />
+                                          : <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>}
+                                      </button>
                                     )}
                                     {/* Hapus — admin only */}
                                     {(isAdmin || isManager) && (

@@ -61,6 +61,8 @@ export interface Reminder {
   pic_id?: string | null;
   incentive_value?: number;
   bast_date?: string | null;
+  /** true = sengaja dikeluarkan dari Incentive PTS; jadwalnya tetap di sini. */
+  incentive_excluded?: boolean | null;
   product_type?: string; // tipe produk utk routing pipeline (dipilih saat request)
   batch_id?: string | null; // grup reminder yang dibuat sekaligus dari 1 submission multi-tanggal
   routing_status?: string | null;      // 'internal_review' | 'admin_review' | 'supervisor_assign' | null (lama)

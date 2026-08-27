@@ -6,6 +6,7 @@ import { getSession, startSessionWatcher } from '@/lib/auth';
 import {
   IncentiveProjectRow, IncentiveTranche, IncentiveSplit, LateTicketLink,
   fetchIncentiveProjects, fetchTranches, fetchVisibleSplits, fetchSupportFromTickets, jendelaSupportTahap, fetchLateTickets,
+  setProyekDikeluarkan, tahapanSudahJalan,
   insertTranches, insertSplits, processYearlyBatch,
   calculateIncentiveSplits, validateSplitTotal, generateTranches, findUpline, resolveUserId, OrgUser,
   ambilSkema, persenInstaller, type SkemaInsentif,
@@ -15,6 +16,8 @@ import {
 import { exportPengajuanIncentive, exportSummaryIncentive } from './_components/exportPengajuan';
 import { adminSetIncentiveInput, adminSetIncentiveBrandScope } from '@/lib/admin-users';
 import { MobileListCard, MobileCardBadge, ModalPortal } from '@/components/shared';
+import { bolehKelolaIncentive } from '@/lib/kelompok';
+import { logAudit } from '@/lib/audit';
 import { SchemeTab } from './_components/SchemeTab';
 
 void insertSplits; void validateSplitTotal;
@@ -207,6 +210,75 @@ export default function IncentivePTSPage() {
         .filter((o: { user_id: string; user_name: string }) =>
           !picPenunjuk.has(rapikan(o.user_id)) && !picPenunjuk.has(rapikan(o.user_name))),
     })));
+  }
+
+  /*
+    Mengeluarkan proyek dari daftar Incentive.
+
+    "Hapus" di sini TIDAK menghapus jadwalnya. Daftar Incentive diturunkan dari
+    Request Schedule, jadi menghapus barisnya berarti ikut menghapus riwayat
+    pekerjaan yang tidak bersalah - padahal yang ingin dibatalkan cuma
+    perhitungan insentifnya. Yang berubah hanya penanda `incentive_excluded`,
+    dan Request Schedule punya tombol untuk mengembalikannya.
+  */
+  const bolehHapus = bolehKelolaIncentive(currentUser as never);
+  const [pilihHapus, setPilihHapus] = useState<Set<string>>(new Set());
+  const [konfirmHapus, setKonfirmHapus] = useState<IncentiveProjectRow[] | null>(null);
+  const [menghapus, setMenghapus] = useState(false);
+
+  const togglePilih = (id: string) => setPilihHapus(prev => {
+    const n = new Set(prev);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    return n;
+  });
+
+  async function mintaKonfirmasiHapus(target: IncentiveProjectRow[]) {
+    if (!target.length) return;
+    /*
+      Tahapan yang sudah diproses / dibayar MENGUNCI proyeknya.
+
+      Rekap yang sudah diterima Finance memuat proyek ini. Kalau proyeknya
+      hilang dari platform, angka pada rekap itu tidak bisa dijelaskan lagi -
+      dan yang paling merepotkan, tidak ada yang tahu selisihnya berasal dari
+      mana. Diperiksa ke basis data, bukan ke daftar di layar, karena layar
+      bisa tertinggal dari keadaan sebenarnya.
+    */
+    const { data: terkunci } = await tahapanSudahJalan(target.map(p => p.id));
+    if (terkunci.length) {
+      const idTerkunci = new Set(terkunci.map(t => t.project_id));
+      const nama = target.filter(p => idTerkunci.has(p.id)).map(p => p.project_name);
+      notify('error',
+        `Tidak bisa dikeluarkan — tahapan pencairannya sudah diproses/dibayar: ${nama.join(', ')}. ` +
+        'Batalkan dulu tahapannya bila memang keliru.');
+      return;
+    }
+    setKonfirmHapus(target);
+  }
+
+  async function jalankanHapus() {
+    if (!konfirmHapus) return;
+    setMenghapus(true);
+    const ids = konfirmHapus.map(p => p.id);
+    const { error } = await setProyekDikeluarkan(ids, true);
+    setMenghapus(false);
+    if (error) { notify('error', 'Gagal mengeluarkan: ' + error.message); return; }
+
+    // Dicatat satu per satu, bukan sebagai satu baris "3 project dikeluarkan":
+    // yang perlu bisa ditelusuri kelak adalah proyek MANA, bukan berapa banyak.
+    for (const p of konfirmHapus) {
+      void logAudit({
+        user_id: (currentUser?.id as string) ?? '', user_name: (currentUser?.full_name as string) ?? '',
+        module: 'incentive-pts', action: 'update',
+        target_id: p.id, target_name: p.project_name,
+        old_value: 'ikut dihitung di Incentive',
+        new_value: 'dikeluarkan dari Incentive (jadwal tetap ada)',
+        notes: 'Dikeluarkan lewat tombol Hapus di daftar Incentive PTS',
+      });
+    }
+    setKonfirmHapus(null);
+    setPilihHapus(new Set());
+    notify('success', `${ids.length} project dikeluarkan dari Incentive. Jadwalnya tetap ada di Request Schedule.`);
+    await loadAll();
   }
 
   async function handleSaveNominal() {
@@ -482,6 +554,23 @@ export default function IncentivePTSPage() {
                       {exporting ? <div className="w-3 h-3 border-2 border-emerald-400/30 border-t-emerald-500 rounded-full animate-spin" /> : '📊'} Export Summary
                     </button>
                   )}
+                  {/* Tombol massal hanya muncul saat ada yang dipilih - tombol
+                      hapus yang selalu terlihat mengundang klik tanpa maksud. */}
+                  {bolehHapus && pilihHapus.size > 0 && (
+                    <>
+                      <span className="px-2 py-1.5 rounded-lg text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200">
+                        {pilihHapus.size} dipilih
+                      </span>
+                      <button onClick={() => setPilihHapus(new Set())}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50">
+                        Batal pilih
+                      </button>
+                      <button onClick={() => mintaKonfirmasiHapus(filteredProjects.filter(p => pilihHapus.has(p.id)))}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-red-600 border border-red-700 hover:bg-red-700 flex items-center gap-1.5">
+                        🗑️ Keluarkan dari Incentive
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
               <p className="text-xs text-gray-400">
@@ -558,7 +647,7 @@ export default function IncentivePTSPage() {
                     {canInputNominal(currentUser) && <th className="px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[150px]">Nominal</th>}
                     {canInputNominal(currentUser) && <th className="px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[145px]">Bagian Handler</th>}
                     <th className={`${thCls} w-[90px] text-center`}>Tranche</th>
-                    <th className={`${thCls} w-[100px] text-center`}>Aksi</th>
+                    <th className={`${thCls} ${bolehHapus ? 'w-[130px]' : 'w-[100px]'} text-center`}>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -670,6 +759,20 @@ export default function IncentivePTSPage() {
                                 className="inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all bg-white border-slate-200 text-blue-500 hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm">
                                 <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                               </button>
+                            )}
+                            {bolehHapus && (
+                              <>
+                                <button aria-label={`Keluarkan ${p.project_name} dari Incentive`}
+                                  onClick={() => mintaKonfirmasiHapus([p])} title="Keluarkan dari Incentive"
+                                  className="inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all bg-white border-slate-200 text-red-500 hover:bg-red-50 hover:border-red-300 hover:shadow-sm">
+                                  <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                                <input type="checkbox" checked={pilihHapus.has(p.id)}
+                                  onChange={() => togglePilih(p.id)}
+                                  aria-label={`Pilih ${p.project_name}`}
+                                  title="Pilih untuk dikeluarkan bersama yang lain"
+                                  className="w-4 h-4 self-center accent-red-600 cursor-pointer" />
+                              </>
                             )}
                           </div>
                         </td>
@@ -1256,6 +1359,69 @@ export default function IncentivePTSPage() {
                 className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-50" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
                 {batchProcessing && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                 Proses Sekarang
+              </button>
+            </div>
+          </div>
+        </div>
+      </ModalPortal>
+      )}
+
+      {/* ── Konfirmasi keluarkan dari Incentive ──────────────────────────────
+          Dialognya menyebut apa yang HILANG dan apa yang TETAP. Kalimat
+          "Yakin hapus?" saja membuat orang menebak-nebak seberapa jauh
+          akibatnya, dan pada layar yang menyangkut nominal, menebak adalah
+          hal yang paling ingin dihindari. Nama proyeknya ikut ditulis satu
+          per satu supaya salah pilih ketahuan sebelum tombolnya ditekan. */}
+      {konfirmHapus && (
+      <ModalPortal>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(3px)' }}
+          onClick={() => !menghapus && setKonfirmHapus(null)}>
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()} role="dialog" aria-modal="true"
+            aria-labelledby="judul-konfirmasi-hapus">
+            <div className="px-5 py-4 bg-red-600 text-white">
+              <h3 id="judul-konfirmasi-hapus" className="font-bold text-base">
+                Keluarkan {konfirmHapus.length} project dari Incentive?
+              </h3>
+            </div>
+            <div className="p-5 space-y-3">
+              <ul className="max-h-40 overflow-y-auto space-y-1 rounded-lg bg-slate-50 border border-slate-200 p-2.5">
+                {konfirmHapus.map(p => (
+                  <li key={p.id} className="text-sm text-slate-700 truncate" title={p.project_name}>
+                    • {p.project_name}
+                    {(p.incentive_value || 0) > 0 && (
+                      <span className="ml-1 text-[11px] font-bold text-emerald-600">
+                        {formatRupiah(p.incentive_value || 0)}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <div className="text-[13px] leading-relaxed space-y-1.5">
+                <p className="text-red-700">
+                  <strong>Yang hilang:</strong> project tidak lagi muncul di daftar Incentive PTS
+                  dan tidak ikut dihitung pembagiannya.
+                </p>
+                <p className="text-emerald-700">
+                  <strong>Yang tetap:</strong> jadwalnya di Request Schedule, beserta seluruh
+                  riwayat dan catatan aktivitasnya — tidak ada yang dihapus.
+                </p>
+                <p className="text-slate-600">
+                  Bisa dikembalikan kapan saja lewat tombol <strong>Sync ke Incentive</strong>
+                  {' '}di Request Schedule.
+                </p>
+              </div>
+            </div>
+            <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+              <button onClick={() => setKonfirmHapus(null)} disabled={menghapus}
+                className="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 disabled:opacity-50">
+                Batal
+              </button>
+              <button onClick={jalankanHapus} disabled={menghapus}
+                className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 flex items-center gap-2">
+                {menghapus && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                Ya, keluarkan
               </button>
             </div>
           </div>

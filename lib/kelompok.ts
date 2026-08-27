@@ -149,6 +149,30 @@ export function namaKelompokPTSDitugaskan(): string[] {
   return kelompokPTSDitugaskan().map(k => k.nama);
 }
 
+/**
+ * Boleh mengeluarkan / memasukkan kembali proyek ke daftar Incentive PTS.
+ *
+ * Admin dan superadmin, ditambah Manager kelompok PTS mana pun - IVP maupun
+ * MVI. Jabatannya dibaca dari Struktur Organisasi, bukan dari daftar nama di
+ * kode: kalau Manager-nya berganti, haknya ikut berpindah tanpa deploy.
+ *
+ * SENGAJA tidak mengunci ke satu kelompok tertentu. Mengikat hak pada nama
+ * kelompok adalah pola yang sudah dua kali menimbulkan masalah di platform ini
+ * - lonceng notifikasi Team PTS MVI, lalu rekap Daily Report - keduanya
+ * bermula dari satu nama kelompok yang tertulis di kode lalu terlewat.
+ */
+export function bolehKelolaIncentive(u: {
+  role?: string | null; jabatan?: string | null; team_type?: string | null;
+} | null | undefined): boolean {
+  if (!u) return false;
+  const r = (u.role ?? '').toLowerCase();
+  if (r === 'admin' || r === 'superadmin') return true;
+  const timPTS = r === 'team' || r === 'team_pts';
+  return timPTS
+    && (u.jabatan ?? '') === 'Manager'
+    && namaKelompokPTS().includes(u.team_type ?? '');
+}
+
 /** Cari kelompok dari nilai team_type. Sales dikenali lewat string kosong. */
 export function cariKelompok(teamType?: string | null): Kelompok | null {
   const t = (teamType ?? '').trim();

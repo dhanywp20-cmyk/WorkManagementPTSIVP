@@ -1,6 +1,17 @@
 import { supabase } from './supabase';
 
 /**
+ * Kategori Request Schedule yang menghasilkan proyek insentif.
+ *
+ * Tinggal di sini, bukan di modul Incentive, karena Request Schedule juga
+ * membutuhkannya - untuk tombol "Sync ke Incentive". Menaruhnya di modul
+ * Incentive akan memaksa halaman jadwal menarik seluruh mesin hitung insentif
+ * hanya demi sebuah daftar tiga kata.
+ */
+export const INCENTIVE_CATEGORIES = ['Konfigurasi', 'Konfigurasi & Training', 'Training'] as const;
+
+
+/**
  * Skema pembagian insentif project - DATA, bukan kode.
  *
  * Seluruh angka porsi disimpan sebagai satu baris JSON di tabel

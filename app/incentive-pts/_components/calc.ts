@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import {
   SkemaInsentif, PenerimaPeran, hitungPembagian, hitungManagerSebagaiPic, ambilSkema,
-  persenInstaller, bagikanTepat, labelSkema,
+  persenInstaller, bagikanTepat, labelSkema, INCENTIVE_CATEGORIES,
 } from '@/lib/incentive-scheme';
 
 export type { SkemaInsentif };
@@ -20,6 +20,8 @@ export interface IncentiveProjectRow {
   controller_automation_brand: string | null;
   /** 'MVI' | 'IVP' | 'BOTH' — menentukan petugas Finance mana yang boleh melihatnya. */
   brand?: string | null;
+  /** true = sengaja dikeluarkan dari perhitungan insentif; jadwalnya tetap ada. */
+  incentive_excluded?: boolean | null;
   pic_type: 'standard' | 'manager_pic';
   pic_id: string | null;
   domain_owner: string | null;
@@ -334,16 +336,55 @@ export function generateTranches(
 
 // DB Helpers
 
-export const INCENTIVE_CATEGORIES = ['Konfigurasi', 'Konfigurasi & Training', 'Training'] as const;
+// Dipindah ke lib/incentive-scheme.ts - lihat catatan di sana. Di-ekspor
+// ulang supaya pemanggil lama tidak perlu diubah.
+export { INCENTIVE_CATEGORIES };
 
 export async function fetchIncentiveProjects() {
   const { data, error } = await supabase
     .from('reminders')
     .select('*')
-    .in('category', ['Konfigurasi', 'Konfigurasi & Training', 'Training'])
+    .in('category', INCENTIVE_CATEGORIES as unknown as string[])
     .eq('status', 'done')
+    // Proyek yang sengaja dikeluarkan dari perhitungan insentif - lihat
+    // sql/incentive-keluarkan-proyek.sql. `not.is.true` DIPILIH karena ia juga
+    // meloloskan baris NULL; `neq.true` tidak, dan itu akan menyembunyikan
+    // seluruh proyek lama yang kolomnya belum pernah diisi.
+    .not('incentive_excluded', 'is', true)
     .order('due_date', { ascending: false });
   return { data: (data || []) as IncentiveProjectRow[], error };
+}
+
+/**
+ * Keluarkan / masukkan kembali proyek ke daftar Incentive PTS.
+ *
+ * Yang berubah hanya penanda; jadwalnya di Request Schedule tidak disentuh.
+ * Pemeriksaan "tahapan sudah diproses" dilakukan pemanggil sebelum sampai ke
+ * sini, karena pesannya perlu menyebut proyek yang mana.
+ */
+export async function setProyekDikeluarkan(ids: string[], keluar: boolean) {
+  if (!ids.length) return { error: null };
+  const { error } = await supabase
+    .from('reminders')
+    .update({ incentive_excluded: keluar })
+    .in('id', ids);
+  return { error };
+}
+
+/**
+ * Tahapan pencairan yang UANGNYA SUDAH BERJALAN untuk sekumpulan proyek.
+ *
+ * Dipakai menolak penghapusan: rekap yang sudah diterima Finance tidak boleh
+ * kehilangan proyeknya, karena angka di rekap itu jadi tidak bisa dijelaskan.
+ */
+export async function tahapanSudahJalan(projectIds: string[]) {
+  if (!projectIds.length) return { data: [] as { project_id: string; status: string }[], error: null };
+  const { data, error } = await supabase
+    .from('incentive_tranches')
+    .select('project_id, status')
+    .in('project_id', projectIds)
+    .in('status', ['processed', 'paid']);
+  return { data: (data || []) as { project_id: string; status: string }[], error };
 }
 
 export async function fetchTranches(filters?: { payment_year?: number; status?: string }) {
