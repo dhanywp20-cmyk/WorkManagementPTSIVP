@@ -28,3 +28,16 @@ untuk membuka daftar pelanggan divisi lain.
 Membuktikan pembatas lingkup benar-benar terpasang di SETIAP kueri yang
 dibuat cariReminderByNama(), bukan cuma di salah satunya, dan bahwa
 project_name tidak lagi digabung sekueri dengan kolom peninggalan `title`.
+
+## tahun-support.mjs
+
+Tanggal selesainya sebuah Troubleshooting jatuh di tahun pencairan yang mana.
+Diuji dengan kasus nyata (BAST 09 Feb 2026) plus kasus batas: tepat di ulang
+tahun BAST, sehari sesudahnya, sebelum BAST, dan lewat 3 tahun.
+
+Yang paling penting di sini: 1.600 tanggal berturut-turut diperiksa untuk
+memastikan tidak ada tanggal yang masuk ke DUA tahun sekaligus. Kalau
+jendelanya tumpang tindih, satu orang dibayar dua kali untuk pekerjaan yang
+sama.
+
+    node uji/tahun-support.mjs

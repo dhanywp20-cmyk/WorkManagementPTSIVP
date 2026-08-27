@@ -180,7 +180,7 @@ export default function IncentivePTSPage() {
     const [splitsRes, tranchesRes, ...supportsPerTahun] = await Promise.all([
       fetchVisibleSplits(p.id),
       supabase.from('incentive_tranches').select('*').eq('project_id', p.id).order('tranche_number'),
-      ...tahunDinilai.map(th => fetchSupportFromTickets(p.project_name, jendelaSupportTahap(p.bast_date, th))),
+      ...tahunDinilai.map(th => fetchSupportFromTickets(p, jendelaSupportTahap(p.bast_date, th))),
     ]);
     setDetailSplits(splitsRes.data || []);
     setDetailTranches((tranchesRes.data || []) as IncentiveTranche[]);
@@ -1138,10 +1138,13 @@ export default function IncentivePTSPage() {
 
               <div>
                 <h3 className="text-sm font-bold text-gray-700 mb-1">👥 Support per Tahun Pencairan</h3>
-                <p className="text-[11px] text-gray-400 mb-2 leading-relaxed">
-                  Diambil otomatis dari ticket <strong>Troubleshooting</strong> yang selesai pada tahun
-                  bersangkutan. Tiap tahun dinilai ulang — yang menangani boleh orang yang sama atau berbeda,
-                  dan yang tidak menangani di tahun itu tidak ikut dibayar untuk tahun itu.
+                <p className="text-[11px] text-gray-600 mb-2 leading-relaxed">
+                  Diambil otomatis dari <strong>ticket Troubleshooting yang berstatus Solved</strong> dan dari
+                  <strong> jadwal Troubleshooting yang ditutup selesai</strong> — keduanya dibaca, karena
+                  Troubleshooting memang tercatat di dua tempat. Yang menentukan tahunnya adalah tanggal
+                  pekerjaan itu <strong>selesai</strong>, bukan tanggal dilaporkan. Tiap tahun dinilai ulang:
+                  yang menangani boleh orang yang sama atau berbeda, dan yang tidak menangani di tahun itu
+                  tidak ikut dibayar untuk tahun itu.
                 </p>
                 <div className="space-y-2">
                   {detailSupports.map(th => {
@@ -1159,7 +1162,7 @@ export default function IncentivePTSPage() {
                           //  jatuh ke PIC menurut skema "tanpa support" - dan itu perlu
                           //  terbaca supaya angkanya tidak terlihat seperti salah hitung.
                           <p className="text-[11px] text-gray-400 italic px-3 py-2">
-                            Tidak ada Troubleshooting selesai di tahun ini — porsi Support tahun ini diserap PIC.
+                            Belum ada Troubleshooting yang selesai di tahun ini — porsi Support tahun ini diserap PIC.
                           </p>
                         ) : th.orang.map(s => (
                           <div key={`${th.tahunKe}-${s.user_id}`} className="flex items-center justify-between px-3 py-1.5 border-t border-gray-50">

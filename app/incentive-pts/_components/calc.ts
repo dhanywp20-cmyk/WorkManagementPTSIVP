@@ -345,22 +345,6 @@ export function jendelaSupportTahap(
 }
 
 /**
- * Siapa saja yang tercatat membantu Troubleshooting proyek ini dalam sebuah
- * rentang tanggal.
- *
- * SUMBERNYA `reminders` berkategori Troubleshooting yang berstatus selesai -
- * BUKAN tabel `tickets`. Ticket bukan bukti seseorang mengerjakan sesuatu; ia
- * baru laporan masalah. Yang menjadi bukti adalah jadwal Troubleshooting yang
- * dipegang seseorang dan ditutup selesai - dan itu memang otomatis dibuat dari
- * Ticketing begitu ticket dijadwalkan Onsite (lihat app/ticketing/page.tsx).
- * Ticket yang tidak pernah dijadwalkan tidak menghasilkan porsi Support, dan
- * itu disengaja.
- *
- * Rentangnya dibuat setengah terbuka - `dari` inklusif, `sampai` inklusif pada
- * tanggalnya - dan pemanggilnya memakai jendelaSupportTahap() supaya batas
- * antar tahun tidak ditulis ulang di beberapa tempat lalu menyimpang.
- */
-/**
  * Samakan bentuk nama proyek sebelum dibandingkan.
  *
  * Pencocokannya DULU memakai persamaan persis (`.eq`), dan itu diam-diam
@@ -378,36 +362,129 @@ function samakanNamaProyek(v: string): string {
   return v.normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
+/** Ambil bagian tanggal (YYYY-MM-DD) dari nilai tanggal apa pun bentuknya. */
+function tanggalSaja(v: string | null | undefined): string {
+  return (v ?? '').slice(0, 10);
+}
+
+function didalamRentang(tgl: string, rentang?: { dari?: string | null; sampai?: string | null }): boolean {
+  if (!tgl) return false;
+  if (rentang?.dari   && !(tgl > rentang.dari))   return false;
+  if (rentang?.sampai && !(tgl <= rentang.sampai)) return false;
+  return true;
+}
+
+interface BarisAktivitas {
+  handler_username: string | null;
+  handler_name: string | null;
+  new_status: string | null;
+  created_at: string | null;
+}
+
+/**
+ * Siapa saja yang tercatat membantu Troubleshooting proyek ini dalam sebuah
+ * rentang tanggal.
+ *
+ * DUA SUMBER, karena Troubleshooting memang tercatat di dua tempat:
+ *
+ *   1. `reminders` berkategori Troubleshooting berstatus selesai - jadwal yang
+ *      dipegang seseorang lalu ditutup.
+ *   2. `tickets` berstatus Solved - ticket yang benar-benar diselesaikan.
+ *
+ * Sebelumnya HANYA sumber 1 yang dibaca, dengan alasan "ticket bukan bukti
+ * mengerjakan, ia baru laporan masalah". Alasan itu keliru untuk ticket yang
+ * sudah Solved: menutupnya adalah pekerjaan, dan orang yang menutupnya sudah
+ * tercatat namanya. Akibat kekeliruan itu, ticket yang diselesaikan tanpa
+ * pernah dijadwalkan Onsite tidak menghasilkan porsi Support sama sekali -
+ * dan seperti biasa, hilangnya tanpa pesan apa pun: skema beralih ke "tanpa
+ * support" dan porsinya diserap PIC.
+ *
+ * TANGGAL YANG DIPAKAI untuk menentukan tahun pencairan adalah tanggal ticket
+ * itu SELESAI (catatan aktivitas yang menaikkan statusnya ke Solved), bukan
+ * tanggal ticket dibuat. Ticket yang dilaporkan Desember tahun ke-1 dan baru
+ * selesai Januari tahun ke-2 adalah pekerjaan tahun ke-2.
+ *
+ * PENCOCOKAN PROYEK memakai reminder_id lebih dulu - itu tautan yang pasti,
+ * dibuat saat ticket dipilih lewat "Project Existing". Nama proyek hanya
+ * cadangan, untuk ticket lama yang dibuat sebelum penautan itu ada.
+ *
+ * Rentangnya setengah terbuka - `dari` eksklusif, `sampai` inklusif - dan
+ * pemanggilnya memakai jendelaSupportTahap() supaya batas antar tahun tidak
+ * ditulis ulang di beberapa tempat lalu menyimpang.
+ */
 export async function fetchSupportFromTickets(
-  projectName: string,
+  proyek: { id?: string | null; project_name: string },
   rentang?: { dari?: string | null; sampai?: string | null },
 ): Promise<{ data: { user_id: string; user_name: string }[]; error: unknown }> {
-  const dicari = samakanNamaProyek(projectName ?? '');
+  const dicari = samakanNamaProyek(proyek?.project_name ?? '');
   if (!dicari) return { data: [], error: null };
 
-  // Penyaringan nama dilakukan di sini, bukan di kueri, karena PostgREST tidak
-  // bisa menormalkan spasi di sisi basis data. Yang diambil hanya baris
-  // Troubleshooting yang SUDAH selesai di rentang tahun bersangkutan, jadi
-  // jumlahnya kecil - bukan seluruh tabel.
-  let q = supabase
+  // Penyaringan nama dilakukan di sisi aplikasi, bukan di kueri, karena
+  // PostgREST tidak bisa menormalkan spasi di sisi basis data. Yang diambil
+  // hanya baris yang sudah selesai, jadi jumlahnya kecil - bukan seluruh tabel.
+  let qr = supabase
     .from('reminders')
     .select('assigned_to, assign_name, project_name')
     .eq('category', 'Troubleshooting')
     .eq('status', 'done');
+  if (rentang?.dari)   qr = qr.gt('due_date', rentang.dari);
+  if (rentang?.sampai) qr = qr.lte('due_date', rentang.sampai);
 
-  if (rentang?.dari)   q = q.gt('due_date', rentang.dari);
-  if (rentang?.sampai) q = q.lte('due_date', rentang.sampai);
+  const qt = supabase
+    .from('tickets')
+    .select('id, project_name, reminder_id, status, date, assign_name, activity_logs(handler_username, handler_name, new_status, created_at)')
+    .eq('status', 'Solved');
 
-  const { data, error } = await q;
-  const seen = new Set<string>();
-  const rows = (data || []) as {
+  const [rRes, tRes] = await Promise.all([qr, qt]);
+
+  const hasil: { user_id: string; user_name: string }[] = [];
+  const sudah = new Set<string>();
+  const tambah = (user_id: string | null | undefined, user_name: string | null | undefined) => {
+    const id = (user_id ?? '').trim();
+    if (!id || sudah.has(id)) return;
+    sudah.add(id);
+    hasil.push({ user_id: id, user_name: user_name || '' });
+  };
+
+  // Sumber 1 - jadwal Troubleshooting yang ditutup selesai.
+  for (const r of (rRes.data ?? []) as {
     assigned_to: string | null; assign_name: string | null; project_name: string | null;
-  }[];
-  const unique = rows
-    .filter(r => samakanNamaProyek(r.project_name ?? '') === dicari)
-    .filter(r => r.assigned_to && !seen.has(r.assigned_to) && seen.add(r.assigned_to))
-    .map(r => ({ user_id: r.assigned_to as string, user_name: r.assign_name || '' }));
-  return { data: unique, error };
+  }[]) {
+    if (samakanNamaProyek(r.project_name ?? '') !== dicari) continue;
+    tambah(r.assigned_to, r.assign_name);
+  }
+
+  // Sumber 2 - ticket yang diselesaikan.
+  for (const t of (tRes.data ?? []) as {
+    id: string; project_name: string | null; reminder_id: string | null;
+    date: string | null; assign_name: string | null; activity_logs: BarisAktivitas[] | null;
+  }[]) {
+    const cocok = (proyek.id && t.reminder_id === proyek.id)
+      || samakanNamaProyek(t.project_name ?? '') === dicari;
+    if (!cocok) continue;
+
+    const catatan = t.activity_logs ?? [];
+    const jejakSolved = catatan.filter(a => (a.new_status ?? '').toLowerCase() === 'solved');
+
+    // Tanggal selesai diambil dari catatan aktivitas. Bila ticket lama tidak
+    // punya catatan itu, tanggal ticket dipakai sebagai perkiraan terbaik -
+    // lebih baik daripada mengabaikan pekerjaannya sama sekali.
+    const tglSelesai = jejakSolved.length
+      ? jejakSolved.map(a => tanggalSaja(a.created_at)).sort().at(-1) ?? ''
+      : tanggalSaja(t.date);
+    if (!didalamRentang(tglSelesai, rentang)) continue;
+
+    if (jejakSolved.length) {
+      for (const a of jejakSolved) tambah(a.handler_username, a.handler_name || t.assign_name);
+    } else {
+      // Tanpa catatan aktivitas, yang diketahui hanya namanya. user_id dibiarkan
+      // memakai nama itu - sama seperti baris reminder lama yang assigned_to-nya
+      // masih berupa nama, bukan username.
+      tambah(t.assign_name, t.assign_name);
+    }
+  }
+
+  return { data: hasil, error: rRes.error ?? tRes.error };
 }
 
 export async function fetchLateTickets(parentProjectId?: string) {
@@ -525,7 +602,7 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
     const tahunKe = sk.tranche.find(t => t.nomor === tranche.tranche_number)?.tahunKe
       ?? Math.max(1, (tranche.payment_year || 0) - new Date(project.bast_date || '').getFullYear());
     const rentangSupport = jendelaSupportTahap(project.bast_date, tahunKe);
-    const { data: supports } = await fetchSupportFromTickets(project.project_name, rentangSupport);
+    const { data: supports } = await fetchSupportFromTickets(project, rentangSupport);
     const splits = calculateIncentiveSplits(
       sk, project, projManagerId, projManagerName,
       supervisorUserId, supervisorUserName,
