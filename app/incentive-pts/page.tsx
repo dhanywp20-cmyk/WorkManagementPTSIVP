@@ -184,13 +184,22 @@ export default function IncentivePTSPage() {
     ]);
     setDetailSplits(splitsRes.data || []);
     setDetailTranches((tranchesRes.data || []) as IncentiveTranche[]);
-    //  PIC dikeluarkan dari daftar yang DITAMPILKAN, bukan cuma dari yang
-    //  dibayar. Mesin hitung sudah membuangnya (lihat tanpaPic di calc.ts);
-    //  kalau layar ini tetap menampilkannya, orang membaca "Yoga dapat porsi
-    //  Support" padahal tidak - dan selisih antara yang terlihat dan yang
-    //  dibayar adalah hal terakhir yang boleh terjadi di layar nominal.
+    //  PIC, Supervisor, dan Manager dikeluarkan dari daftar yang DITAMPILKAN,
+    //  bukan cuma dari yang dibayar. Mesin hitung sudah membuangnya (lihat
+    //  tanpaPeranTetap di calc.ts); kalau layar ini tetap menampilkannya, orang
+    //  membaca "Yoga dapat porsi Support" padahal tidak - dan selisih antara
+    //  yang terlihat dan yang dibayar adalah hal terakhir yang boleh terjadi
+    //  di layar nominal.
     const rapikan = (v: string) => (v ?? '').normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
-    const picPenunjuk = new Set([rapikan(p.assign_name || ''), rapikan(p.assigned_to || ''), rapikan(p.pic_id || '')].filter(Boolean));
+    const orgList = allUsers as unknown as OrgUser[];
+    const picIdDetail = resolveUserId((p.pic_id || p.assigned_to) as string, p.assign_name, orgList);
+    const supDetail = findUpline(picIdDetail, 'Supervisor', orgList);
+    const mgrDetail = findUpline(picIdDetail, 'Manager', orgList);
+    const picPenunjuk = new Set([
+      p.assign_name, p.assigned_to, p.pic_id, picIdDetail,
+      supDetail?.id, supDetail?.full_name,
+      mgrDetail?.id, mgrDetail?.full_name,
+    ].filter(Boolean).map(v => rapikan(String(v))));
     setDetailSupports(tahunDinilai.map((th, i) => ({
       tahunKe: th,
       ...jendelaSupportTahap(p.bast_date, th),

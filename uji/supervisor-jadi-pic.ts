@@ -91,5 +91,37 @@ const G = tampil('Yoga = PIC + Supervisor + penangan Troubleshooting (tiga-tigan
 cek(G.r.filter(s => s.user_name === 'Yoga KS').length === 1, 'Yoga tetap muncul SEKALI saja');
 cek(Math.abs(G.tot - POOL) <= 1 && Math.abs(G.pct - 100) < 0.01, 'Tetap 100% / Rp 1.000.000');
 
+
+// ── Supervisor & Manager juga tidak boleh terdeteksi sebagai Support ───────
+// Menangani Troubleshooting anak buah MEMANG tugas mereka, dan itulah yang
+// dibayar porsi koordinasi. Mendeteksinya lagi sebagai Support = dobel.
+const H = tampil('PIC Pandu; yang menangani Troubleshooting justru Supervisor Yoga',
+  calculateStandardScheme(sk, POOL, 'onsite', '', 'Pandu Kusuma Adji', 'u-dhany', 'Dhany Wahyu',
+    'u-yoga', 'Yoga KS', [{ user_id: 'u-yoga', user_name: 'Yoga KS' }]));
+cek(!H.r.some(s => s.role === 'support'), 'Supervisor tidak terdeteksi sebagai Support');
+cek(H.r.filter(s => s.user_name === 'Yoga KS').length === 1, 'Yoga muncul sekali (hanya sebagai Supervisor)');
+cek(H.r.find(s => s.role === 'supervisor')?.percentage === 30, 'Yoga dapat porsi Supervisor skema tanpa-support (30%)');
+cek(Math.abs(H.tot - POOL) <= 1 && Math.abs(H.pct - 100) < 0.01, 'Tetap 100% / Rp 1.000.000');
+
+const I = tampil('PIC Pandu; yang menangani Manager Dhany sendiri',
+  calculateStandardScheme(sk, POOL, 'onsite', '', 'Pandu Kusuma Adji', 'u-dhany', 'Dhany Wahyu',
+    'u-yoga', 'Yoga KS', [{ user_id: 'u-dhany', user_name: 'Dhany Wahyu' }]));
+cek(!I.r.some(s => s.role === 'support'), 'Manager tidak terdeteksi sebagai Support');
+cek(I.r.filter(s => s.user_name === 'Dhany Wahyu').length === 1, 'Dhany muncul sekali (hanya sebagai Manager)');
+cek(Math.abs(I.tot - POOL) <= 1 && Math.abs(I.pct - 100) < 0.01, 'Tetap 100% / Rp 1.000.000');
+
+const J = tampil('Campuran: Supervisor Yoga + Manager Dhany + Ferdinan (orang luar)',
+  calculateStandardScheme(sk, POOL, 'onsite', '', 'Pandu Kusuma Adji', 'u-dhany', 'Dhany Wahyu',
+    'u-yoga', 'Yoga KS', [
+      { user_id: 'u-yoga',   user_name: 'Yoga KS' },
+      { user_id: 'u-dhany',  user_name: 'Dhany Wahyu' },
+      { user_id: 'ferdinan', user_name: 'Ferdinan Agustinus' },
+    ]));
+const supJ = J.r.filter(s => s.role === 'support');
+cek(supJ.length === 1 && supJ[0].user_name === 'Ferdinan Agustinus',
+    'Hanya Ferdinan yang dapat Support — Supervisor & Manager disaring');
+cek(supJ[0]?.percentage === 17, 'Ferdinan dapat 17% PENUH, tidak dibagi bertiga');
+cek(Math.abs(J.tot - POOL) <= 1 && Math.abs(J.pct - 100) < 0.01, 'Tetap 100% / Rp 1.000.000');
+
 console.log(gagal === 0 ? '\nLULUS' : `\n${gagal} GAGAL`);
 process.exit(gagal ? 1 : 0);

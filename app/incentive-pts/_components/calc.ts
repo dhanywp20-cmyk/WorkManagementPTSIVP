@@ -158,28 +158,33 @@ function orangSama(a: string | null | undefined, b: string | null | undefined): 
 }
 
 /**
- * Buang PIC dari daftar Tim Support.
+ * Buang orang yang SUDAH punya porsi tetap di proyek ini dari daftar Support.
  *
- * PIC yang menangani sendiri Troubleshooting proyeknya TIDAK mendapat porsi
- * Support di atas porsi PIC-nya. Porsi PIC sudah mencakup tanggung jawab atas
- * proyek itu; membayarnya lagi lewat slot Support berarti satu orang menerima
- * dua bagian untuk satu proyek - persis seperti Supervisor yang merangkap PIC.
+ * Porsi Support adalah untuk ORANG LAIN yang ikut membantu - di luar rantai
+ * tanggung jawab yang memang sudah dibayar lewat perannya sendiri:
  *
- * Yang dicari daftar Support adalah ORANG LAIN yang ikut membantu. Bila di
- * suatu tahun ternyata hanya PIC sendiri yang menangani, tahun itu dihitung
- * sebagai "tanpa support" dan porsinya diserap PIC lewat skema tanpaSupport -
- * bukan diberikan dua kali.
+ *   PIC         porsinya sudah mencakup tanggung jawab atas proyek itu.
+ *   Supervisor  menangani Troubleshooting anak buahnya MEMANG tugasnya, dan
+ *               itulah yang dibayar porsi koordinasi 15%.
+ *   Manager     sama, lewat porsi Manager.
+ *
+ * Membayar mereka lagi lewat slot Support berarti satu orang menerima dua
+ * bagian dari satu pool untuk pekerjaan yang sama.
+ *
+ * Bila di suatu tahun ternyata tidak ada seorang pun di luar ketiganya yang
+ * menangani, tahun itu dihitung sebagai "tanpa support" dan porsinya
+ * dibagikan lewat skema tanpaSupport - bukan diberikan dua kali.
  */
-function tanpaPic(
+function tanpaPeranTetap(
   supports: { user_id: string; user_name: string }[],
-  picUserId: string,
-  picUserName: string,
+  ...penunjuk: (string | null | undefined)[]
 ): { user_id: string; user_name: string }[] {
-  return supports.filter(s =>
-    !orangSama(s.user_id, picUserId) &&
-    !orangSama(s.user_name, picUserName) &&
-    !orangSama(s.user_id, picUserName) &&
-    !orangSama(s.user_name, picUserId));
+  const dipakai = penunjuk.filter(Boolean) as string[];
+  // Id dan nama saling disilang: satu orang bisa masuk daftar Support lewat
+  // username (jalur reminder) sementara di sini dikenal lewat nama lengkap
+  // (jalur ticket), atau sebaliknya.
+  return supports.filter(s => !dipakai.some(d =>
+    orangSama(s.user_id, d) || orangSama(s.user_name, d)));
 }
 
 /**
@@ -212,8 +217,12 @@ export function calculateStandardScheme(
   const supervisorJadiPic =
     orangSama(picUserId, supervisorUserId) || orangSama(picUserName, supervisorUserName);
 
-  // PIC tidak boleh ikut menerima porsi Support - lihat tanpaPic().
-  const support = tanpaPic(assignedSupports, picUserId, picUserName);
+  // PIC, Supervisor, dan Manager tidak ikut menerima porsi Support - masing
+  // masing sudah dibayar lewat porsi perannya sendiri. Lihat tanpaPeranTetap().
+  const support = tanpaPeranTetap(assignedSupports,
+    picUserId, picUserName,
+    supervisorUserId, supervisorUserName,
+    managerUserId, managerUserName);
 
   const penerima: PenerimaPeran[] = [{ peran: 'pic', user_id: picUserId, user_name: picUserName }];
   for (const s of support) penerima.push({ peran: 'support', user_id: s.user_id, user_name: s.user_name });
@@ -242,7 +251,7 @@ export function calculateManagerPicScheme(
   // Troubleshooting proyeknya tidak menerima porsi Support di atas porsi
   // PIC-nya. Tanpa penyaringan ini, Manager-as-PIC yang turun tangan sendiri
   // akan muncul dua kali - sebagai PIC dan sebagai Support.
-  const support = tanpaPic(assignedSupports, dhanyUserId, dhanyUserName);
+  const support = tanpaPeranTetap(assignedSupports, dhanyUserId, dhanyUserName);
 
   return hitungManagerSebagaiPic(
     sk, pool, modePenyelesaian === 'remote', dhanyUserId, dhanyUserName, installerName,
