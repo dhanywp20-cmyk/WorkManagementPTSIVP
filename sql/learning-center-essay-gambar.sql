@@ -51,7 +51,54 @@ COMMENT ON COLUMN lc_answers.answer_image_url IS
 COMMENT ON COLUMN lc_answers.answer_thumb_url IS
   'Pratinjau 320px untuk daftar penilaian. Dipisah demi menekan egress - lihat catatan di berkas ini.';
 
--- ─── 3. Periksa hasilnya ───────────────────────────────────────────────────
+-- ─── 4. Bucket penyimpanan gambar jawaban ──────────────────────────────────
+--
+-- Dibuat lewat SQL, bukan lewat Dashboard → Storage → New bucket. Bukan karena
+-- lebih cepat, tapi karena langkah yang hanya ada di UI adalah langkah yang
+-- terlewat: seluruh berkas ini bisa dijalankan lalu tampak selesai, sementara
+-- unggahan tetap gagal di lapangan tanpa satu pun pesan yang menunjuk ke bucket
+-- yang belum ada.
+
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'learning-answers', 'learning-answers', TRUE,
+  -- 5 MB. Kompresi sudah dilakukan di peramban (hasilnya ~250 KB), jadi batas
+  -- ini bukan ukuran yang diharapkan - ini jaring pengaman bila kompresinya
+  -- gagal dan berkas mentah dari kamera ponsel yang terkirim.
+  5242880,
+  ARRAY['image/jpeg', 'image/webp', 'image/png']
+)
+ON CONFLICT (id) DO UPDATE
+  SET public             = EXCLUDED.public,
+      file_size_limit    = EXCLUDED.file_size_limit,
+      allowed_mime_types = EXCLUDED.allowed_mime_types;
+
+-- ─── 5. Siapa boleh apa ────────────────────────────────────────────────────
+--
+-- BACA: publik. Bucket-nya memang publik - lihat alasannya di bawah.
+--
+-- TULIS: siapa pun yang sesinya sah. Peserta quiz bisa sales, teknisi, atau
+-- siapa saja; membatasinya ke peran tertentu berarti sebagian peserta tidak
+-- bisa menjawab soalnya sama sekali.
+--
+-- UBAH & HAPUS: tidak diberikan ke peserta sama sekali. Aplikasi mengunggah
+-- dengan nama berkas baru tiap kali (uuid acak, upsert:false), jadi mengganti
+-- jawaban tidak butuh izin menimpa - dan tanpa izin itu, satu peserta tidak
+-- bisa menghapus atau menukar jawaban peserta lain. Pengurus tetap bisa
+-- membereskan lewat Dashboard, yang memakai service key.
+
+DROP POLICY IF EXISTS jawaban_gambar_baca  ON storage.objects;
+DROP POLICY IF EXISTS jawaban_gambar_tulis ON storage.objects;
+
+CREATE POLICY jawaban_gambar_baca ON storage.objects
+  FOR SELECT TO anon, authenticated
+  USING (bucket_id = 'learning-answers');
+
+CREATE POLICY jawaban_gambar_tulis ON storage.objects
+  FOR INSERT TO anon, authenticated
+  WITH CHECK (bucket_id = 'learning-answers' AND jwt_claim('user_id') <> '');
+
+-- ─── 6. Periksa hasilnya ───────────────────────────────────────────────────
 SELECT
   (SELECT COUNT(*) FROM information_schema.columns
      WHERE table_name = 'lc_questions' AND column_name = 'answer_format')    AS kolom_format,
@@ -59,22 +106,18 @@ SELECT
      WHERE table_name = 'lc_answers' AND column_name = 'answer_image_url')   AS kolom_gambar,
   (SELECT COUNT(*) FROM information_schema.columns
      WHERE table_name = 'lc_answers' AND column_name = 'answer_thumb_url')   AS kolom_thumb,
-  (SELECT COUNT(*) FROM lc_questions WHERE question_type = 'essay')          AS soal_essay;
+  (SELECT COUNT(*) FROM storage.buckets WHERE id = 'learning-answers')       AS bucket,
+  (SELECT COUNT(*) FROM pg_policies WHERE schemaname = 'storage'
+     AND tablename = 'objects' AND policyname LIKE 'jawaban_gambar%')        AS kebijakan;
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- BUCKET STORAGE
+-- KENAPA BUCKET-NYA PUBLIK
 --
--- Jawaban bergambar disimpan di bucket `learning-answers`. Buat lewat
--- Dashboard → Storage → New bucket bila belum ada:
---
---   Name    : learning-answers
---   Public  : YA
---
--- Public dipilih dengan sadar, mengikuti bucket lain di platform ini
--- (project-files, review-photos). Alasannya: tautan bertanda tangan harus
--- diperbarui berkala, dan tiap pembaruan itu sendiri satu permintaan ke
--- Supabase - persis yang sedang kita hemat. Yang tersimpan di sini adalah
--- coretan rancangan pada kertas, bukan data pribadi maupun nominal.
+-- Mengikuti bucket lain di platform ini (project-files, review-photos).
+-- Alasannya: tautan bertanda tangan harus diperbarui berkala, dan tiap
+-- pembaruan itu sendiri satu permintaan ke Supabase - persis yang sedang kita
+-- hemat. Yang tersimpan di sini adalah coretan rancangan pada kertas, bukan
+-- data pribadi maupun nominal.
 --
 -- Nama berkasnya memuat uuid acak, jadi tidak bisa ditebak dari luar.
 -- ═══════════════════════════════════════════════════════════════════════════

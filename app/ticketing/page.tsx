@@ -2723,8 +2723,17 @@ function TicketingSystemInner() {
                           </td>
                           <td className="px-3 py-3 align-middle">
                             {ticket.product && (
+                              /*
+                                text-left BUKAN gaya bawaan di sini: peramban memberi
+                                <button> text-align:center, jadi begitu nama produk
+                                cukup panjang untuk turun ke baris kedua, teksnya
+                                menengah sendiri sementara seluruh kolom lain rata
+                                kiri. Baris pendek tidak terlihat salah karena
+                                tombolnya sepas isinya - yang panjang yang membuka
+                                perbedaannya.
+                              */
                               <button onClick={() => { setProductFilter(prev => prev === ticket.product ? null : (ticket.product ?? null)); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }}
-                                className="mt-1 text-[12px] font-semibold px-1.5 py-0.5 rounded break-words leading-tight transition-all inline-block"
+                                className="text-left text-[12px] font-semibold px-1.5 py-0.5 rounded break-words leading-tight transition-all inline-block"
                                 style={{ background: productFilter === ticket.product ? '#6366f1' : '#eef2ff', color: productFilter === ticket.product ? 'white' : '#4338ca' }}>
                                 📦 {ticket.product}
                               </button>
