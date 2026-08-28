@@ -126,14 +126,26 @@ export async function POST(request: NextRequest) {
         if (res.status === 429) {
           return errJson(
             penilai
-              ? `Jatah harian model "${setelan.model}" habis. Nilai manual dulu — saran AI memang tidak pernah jadi nilai akhir. Untuk menaikkan jatah: Admin Panel → Integrations, ganti ke model berjatah lebih besar, atau isi Token AI Koreksi dengan kunci dari proyek Google terpisah.`
-              : `Jatah harian model "${setelan.model}" habis. Coba lagi besok, atau ganti modelnya di Admin Panel → Integrations.`,
+              /*
+                Kalimat pertamanya menyebut bahwa jatah dihitung PER MODEL.
+                Tanpa itu orang menyimpulkan "AI-nya habis hari ini" lalu
+                berhenti - padahal model lain di daftar yang sama masih punya
+                jatah penuh, dan pemilihnya ada tepat di layar yang sedang ia
+                lihat.
+              */
+              ? `Jatah harian model "${setelan.model}" habis. Jatah dihitung per model, jadi pilih model lain di daftar "Penilai AI" di atas — jatahnya masih utuh. Model ringan (flash-lite) biasanya paling longgar. Bisa juga nilai manual: saran AI memang tidak pernah jadi nilai akhir.`
+              : `Jatah harian model "${setelan.model}" habis. Jatah dihitung per model — pilih model lain di Admin Panel → Integrations, jatahnya terpisah. Model ringan (flash-lite) biasanya paling longgar.`,
             429,
           );
         }
         if (res.status === 404) {
           return errJson(
-            `Model "${setelan.model}" tidak ditemukan. Betulkan di Admin Panel → Integrations → Pembuat Soal AI.`,
+            // 404 dan 429 sering tertukar dalam benak orang, padahal obatnya
+            // berbeda: yang ini nama modelnya memang tidak ada - menunggu besok
+            // tidak akan menolong.
+            `Model "${setelan.model}" tidak ada pada token ini (bukan soal jatah habis). ` +
+            `Pilih dari daftar model ${penilai ? 'di bilah "Penilai AI"' : 'di Admin Panel → Integrations'} — ` +
+            `daftarnya dibaca langsung dari Google, jadi isinya pasti tersedia.`,
             404,
           );
         }
