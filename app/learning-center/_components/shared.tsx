@@ -233,6 +233,23 @@ export async function generateWithGemini(
   return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 }
 
+export interface ModelAI { id: string; nama: string }
+
+/**
+ * Daftar model yang benar-benar tersedia untuk kunci yang terpasang.
+ *
+ * Ditanyakan ke Google, tidak ditulis di kode. Daftar tertutup di kode selalu
+ * berakhir sama: nama yang ditebak ternyata tidak ada pada kunci ini, dan
+ * kekeliruannya baru ketahuan saat seseorang menekan "Nilai" - dengan pesan
+ * 404 yang tidak menyebut nama mana yang salah.
+ */
+export async function ambilDaftarModel(profil?: 'penilai'): Promise<ModelAI[]> {
+  const res = await fetch(`/api/ai/model${profil ? `?profil=${profil}` : ''}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message ?? 'Gagal membaca daftar model.');
+  return (data?.model ?? []) as ModelAI[];
+}
+
 export interface SoalDinilai {
   id: string;
   question: string;

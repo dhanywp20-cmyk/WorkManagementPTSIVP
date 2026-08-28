@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { ListEmptyState } from '@/components/shared';
-import { supabase, User, Question, QuizAttempt, DIFF_COLOR, fmtDate, ScoreBadge, SearchInput, BtnView, GradingStatusBadge, AppDialog, DialogState, gradeEssayWithAI, gradeEssaysBatchWithAI, type SoalDinilai } from './shared';
-import { ambilPengaturanPenilai } from '@/lib/ai-pengaturan';
+import { supabase, User, Question, QuizAttempt, DIFF_COLOR, fmtDate, ScoreBadge, SearchInput, BtnView, GradingStatusBadge, AppDialog, DialogState, gradeEssayWithAI, gradeEssaysBatchWithAI, type SoalDinilai, ambilDaftarModel, type ModelAI } from './shared';
+import { ambilPengaturanPenilai, simpanPengaturanPenilai, PENILAI_BAWAAN, type PengaturanPenilai } from '@/lib/ai-pengaturan';
+import { hasFullAccess } from '@/lib/constants';
 import { getSession } from '@/lib/auth';
 
 function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
@@ -33,13 +34,54 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
   const [aiScores, setAiScores] = useState<Record<string, number>>({});
   /** Sedang menilai seluruh essay peserta ini sekaligus. */
   const [menilaiBorongan, setMenilaiBorongan] = useState(false);
-  /** Penilaian otomatis saat halaman dibuka - MATI kecuali admin menyalakannya. */
-  const [penilaiOtomatis, setPenilaiOtomatis] = useState(false);
+  /*
+    Pengaturan penilai dipegang di layar ini, bukan hanya di Admin Panel.
+
+    Mengganti model adalah hal yang dilakukan JUSTRU saat menilai - biasanya
+    setelah melihat pesan "jatah habis" atau hasil yang meleset. Menyuruh orang
+    keluar ke Admin Panel pada saat itu berarti meninggalkan daftar jawaban yang
+    sedang dikerjakan, lalu mencari jalan kembali ke peserta yang sama.
+
+    Yang TIDAK ikut pindah ke sini: tokennya. Ia tidak punya alasan muncul di
+    layar penilaian, dan layar ini bisa dibuka orang yang bukan pengurus.
+  */
+  const [setelanPenilai, setSetelanPenilai] = useState<PengaturanPenilai>(PENILAI_BAWAAN);
+  const [daftarModel, setDaftarModel] = useState<ModelAI[]>([]);
+  const [galatModel, setGalatModel] = useState('');
+  const bolehAturModel = isAdminView && hasFullAccess(getSession<User>() ?? {});
 
   useEffect(() => {
-    // Dibaca sekali; kalau gagal, tetap mati - itu sisi yang aman.
-    ambilPengaturanPenilai().then(p => setPenilaiOtomatis(p.otomatis)).catch(() => {});
+    // Kalau gagal, penilaian otomatis tetap mati - itu sisi yang aman.
+    ambilPengaturanPenilai().then(setSetelanPenilai).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!bolehAturModel) return;
+    /*
+      Daftarnya ditanyakan ke Google, bukan ditulis di kode. Nama model berbeda
+      antar kunci dan antar wilayah, dan diganti tanpa pemberitahuan - daftar
+      tertutup di kode akan menawarkan nama yang tidak ada, dan kekeliruannya
+      baru ketahuan saat tombol Nilai ditekan.
+    */
+    ambilDaftarModel('penilai')
+      .then(m => { setDaftarModel(m); setGalatModel(''); })
+      .catch(e => setGalatModel(e instanceof Error ? e.message : 'Gagal membaca daftar model.'));
+  }, [bolehAturModel]);
+
+  const penilaiOtomatis = setelanPenilai.otomatis;
+
+  /** Simpan model pilihan sebagai bawaan baru - berlaku untuk penilai berikutnya juga. */
+  const gantiModel = async (model: string) => {
+    const bersih = model.trim();
+    if (!bersih || bersih === setelanPenilai.model) return;
+    const baru = { ...setelanPenilai, model: bersih };
+    setSetelanPenilai(baru);                       // tampak seketika
+    const r = await simpanPengaturanPenilai(baru);
+    if (!r.ok) {
+      setDialog({ type: 'error', title: 'Model gagal disimpan', message: r.pesan ?? 'Coba lagi.' });
+      ambilPengaturanPenilai().then(setSetelanPenilai).catch(() => {});
+    }
+  };
 
   useEffect(() => {
     supabase.from('lc_quiz_attempts')
@@ -240,6 +282,81 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
           <button onClick={() => setSelectedAttempt(null)}
             className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all flex items-center gap-2">← Kembali</button>
         </div>
+
+        {/*
+          Bilah penilai AI - menempel di bawah judul yang juga sticky.
+
+          Mengganti model adalah hal yang dilakukan JUSTRU saat menilai:
+          biasanya setelah melihat "jatah habis" atau hasil yang meleset.
+          Menyuruh orang keluar ke Admin Panel pada saat itu berarti
+          meninggalkan daftar jawaban yang sedang dikerjakan, lalu mencari jalan
+          kembali ke peserta yang sama.
+
+          Hanya muncul untuk yang boleh membuka Admin Panel - layar ini bisa
+          dibuka penilai yang bukan pengurus, dan model yang dipakai bersama
+          bukan miliknya untuk diubah.
+        */}
+        {bolehAturModel && questions.some(q => q.question_type === 'essay') && (
+          <div className="flex items-center gap-2 flex-wrap px-4 sm:px-8 py-2 border-b sticky top-[64px] sm:top-[84px] z-10"
+            style={{ background: '#faf7ff', borderColor: '#ede9fe' }}>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-violet-600 whitespace-nowrap">
+              Penilai AI
+            </span>
+
+            {daftarModel.length > 0 ? (
+              <select value={setelanPenilai.model} onChange={e => gantiModel(e.target.value)}
+                aria-label="Model AI penilai"
+                className="text-xs font-semibold text-indigo-800 bg-white border border-violet-200 rounded-lg px-2 py-1.5 max-w-[260px] outline-none focus:border-violet-400">
+                {/*
+                  Model tersimpan yang TIDAK ada di daftar tetap ditampilkan.
+                  Tanpa ini, model yang sudah dihentikan Google diam-diam
+                  tergantikan oleh baris pertama daftar - dan pemakainya mengira
+                  itulah yang selama ini terpakai.
+                */}
+                {!daftarModel.some(m => m.id === setelanPenilai.model) && (
+                  <option value={setelanPenilai.model}>{setelanPenilai.model} — tidak ada di daftar</option>
+                )}
+                {daftarModel.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
+              </select>
+            ) : galatModel ? (
+              /*
+                Daftar gagal dimuat - baru di sinilah isian ketik manual muncul.
+                Bukan sebagai jalur utama: mengetik nama model adalah cara paling
+                mudah salah, dan salahnya baru ketahuan saat tombol Nilai ditekan.
+                Tapi tanpa jalan apa pun, kunci yang bermasalah membuat penilaian
+                terkunci pada model yang mungkin justru sedang habis jatahnya.
+              */
+              <>
+                <input defaultValue={setelanPenilai.model}
+                  onBlur={e => gantiModel(e.target.value)}
+                  aria-label="Nama model AI penilai"
+                  className="text-xs font-semibold text-indigo-800 bg-white border border-amber-300 rounded-lg px-2 py-1.5 w-[220px] outline-none focus:border-violet-400" />
+                <span className="text-[10px] text-amber-700 max-w-[380px] leading-snug">
+                  Daftar model tidak bisa dibaca ({galatModel}) — ketik nama modelnya.
+                </span>
+              </>
+            ) : (
+              <span className="text-[11px] text-violet-400">memuat daftar model…</span>
+            )}
+
+            <label className="flex items-center gap-1.5 cursor-pointer ml-1">
+              <input type="checkbox" checked={setelanPenilai.otomatis}
+                onChange={async e => {
+                  const baru = { ...setelanPenilai, otomatis: e.target.checked };
+                  setSetelanPenilai(baru);
+                  await simpanPengaturanPenilai(baru);
+                }}
+                className="w-3.5 h-3.5 rounded accent-violet-600" />
+              <span className="text-[11px] font-semibold text-violet-700 whitespace-nowrap">Nilai otomatis</span>
+            </label>
+
+            <span className="flex-1 min-w-[4px]" />
+            <span className="text-[10px] text-violet-400 whitespace-nowrap">
+              tersimpan sebagai bawaan
+            </span>
+          </div>
+        )}
+
         <div className="p-4 sm:p-8">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8">
             {[

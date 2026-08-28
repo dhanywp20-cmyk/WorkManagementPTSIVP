@@ -39,6 +39,80 @@ const JUDUL_KATEGORI: Record<KategoriEvent, string> = {
   reminder: 'Reminder', schedule: 'Jadwal', project: 'Project', system: 'Sistem',
 };
 
+/*
+  Pemilih model - daftarnya DITANYAKAN ke Google, tidak ditulis di kode.
+
+  Sebelumnya ini isian teks bebas. Nama model yang salah tidak gagal saat
+  disimpan; ia gagal nanti, saat seseorang menekan tombol AI, dengan pesan 404
+  yang tidak menyebut nama mana yang keliru. Daftar model juga berbeda antar
+  kunci dan antar wilayah, jadi daftar tertutup di kode pun akan menawarkan
+  nama yang tidak ada pada kunci ini.
+
+  Isian teks tetap ada, tapi hanya bila daftarnya tidak bisa dibaca - tanpa
+  jalan apa pun, token yang bermasalah membuat modelnya terkunci.
+*/
+function PilihModel({ nilai, profil, onGanti, warna }: {
+  nilai: string;
+  profil?: 'penilai';
+  onGanti: (m: string) => void;
+  warna: 'sky' | 'violet';
+}) {
+  const [daftar, setDaftar] = useState<{ id: string; nama: string }[]>([]);
+  const [galat, setGalat] = useState('');
+  const [memuat, setMemuat] = useState(true);
+
+  useEffect(() => {
+    let batal = false;
+    fetch(`/api/ai/model${profil ? `?profil=${profil}` : ''}`)
+      .then(async r => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d?.error?.message ?? 'Gagal membaca daftar model.');
+        return d;
+      })
+      .then(d => { if (!batal) { setDaftar(d?.model ?? []); setGalat(''); } })
+      .catch(e => { if (!batal) setGalat(e instanceof Error ? e.message : 'Gagal membaca daftar model.'); })
+      .finally(() => { if (!batal) setMemuat(false); });
+    return () => { batal = true; };
+  }, [profil]);
+
+  const fokus = warna === 'violet' ? 'focus:border-violet-400' : 'focus:border-sky-400';
+
+  if (memuat) return <p className="text-[11px] text-slate-400 py-2">Memuat daftar model…</p>;
+
+  if (daftar.length === 0) {
+    return (
+      <>
+        <input value={nilai} onChange={e => onGanti(e.target.value)}
+          aria-label="Nama model AI"
+          className={`w-full text-xs px-2.5 py-2 rounded-lg border border-amber-300 focus:outline-none ${fokus}`} />
+        <p className="text-[9px] text-amber-700 mt-1 leading-relaxed">
+          Daftar model tidak bisa dibaca{galat ? ` (${galat})` : ''} — ketik nama modelnya.
+          Periksa tokennya lebih dulu; nama yang salah baru ketahuan saat AI dipakai.
+        </p>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <select value={nilai} onChange={e => onGanti(e.target.value)}
+        aria-label="Model AI"
+        className={`w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none ${fokus}`}>
+        {/* Model tersimpan yang tidak ada di daftar tetap ditampilkan - kalau
+            tidak, ia diam-diam tergantikan baris pertama dan pemakainya
+            mengira itulah yang selama ini terpakai. */}
+        {nilai && !daftar.some(m => m.id === nilai) && (
+          <option value={nilai}>{nilai} — tidak ada di daftar</option>
+        )}
+        {daftar.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
+      </select>
+      <p className="text-[9px] text-slate-400 mt-1">
+        {daftar.length} model tersedia untuk token ini — dibaca langsung dari Google, jadi tidak pernah basi.
+      </p>
+    </>
+  );
+}
+
 function Saklar({ aktif, onKlik, warna }: { aktif: boolean; onKlik: () => void; warna: string }) {
   return (
     <button type="button" onClick={onKlik} role="switch" aria-checked={aktif}
@@ -393,12 +467,7 @@ export function IntegrasiInline() {
           petunjuk={<>Ambil dari Google AI Studio (aistudio.google.com → Get API key). Token disimpan di server dan tidak pernah dikirim ke peramban.</>} />
 
         <label className="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">Model</label>
-        <input value={ai.model} placeholder="gemini-2.5-flash"
-          onChange={e => setAi(x => ({ ...x, model: e.target.value }))}
-          className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-sky-400" />
-        <p className="text-[9px] text-slate-400 mt-1">
-          Nama model bisa diganti tanpa deploy — berguna saat Google menghentikan model lama.
-        </p>
+        <PilihModel nilai={ai.model} warna="sky" onGanti={m => setAi(x => ({ ...x, model: m }))} />
 
         <label className="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">
           Arahan topik untuk AI <span className="font-normal text-slate-400">(opsional)</span>
@@ -442,12 +511,12 @@ export function IntegrasiInline() {
           petunjuk={<>Kosongkan untuk memakai Token AI pembuat soal. Isi dengan kunci dari <b>proyek Google terpisah</b> supaya penilaian borongan tidak menghabiskan jatah pembuat soal.</>} />
 
         <label className="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">Model penilai</label>
-        <input value={penilai.model} placeholder={PENILAI_BAWAAN.model}
-          onChange={e => setPenilai(x => ({ ...x, model: e.target.value }))}
-          className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-violet-400" />
+        <PilihModel nilai={penilai.model} profil="penilai" warna="violet"
+          onGanti={m => setPenilai(x => ({ ...x, model: m }))} />
         <p className="text-[9px] text-slate-400 mt-1">
-          Boleh berbeda dari model pembuat soal. Untuk menilai, model kelas ringan sudah memadai —
-          hasilnya hanya saran yang tetap dikoreksi penilai, sedangkan jatah hariannya jauh lebih besar.
+          Boleh berbeda dari model pembuat soal — untuk menilai, model kelas ringan berjatah besar
+          sudah memadai, karena hasilnya hanya saran yang tetap dikoreksi penilai.
+          Bisa juga diganti langsung dari layar penilaian.
         </p>
 
         <label className="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">

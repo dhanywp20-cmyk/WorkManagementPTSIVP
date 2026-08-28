@@ -119,3 +119,18 @@ model yang menyisipkan pemisah jalur ditolak; dan token koreksi yang kosong
 jatuh ke token pembuat soal alih-alih mematikan penilaian.
 
     node uji/profil-ai.mjs
+
+## daftar-model.mjs
+
+Pengolahan daftar model dari Google jadi pilihan di layar. Ada karena satu
+kekeliruan yang terulang: nama model DITEBAK, tidak diperiksa —
+`gemini-2.5-flash-lite` dipilih sebagai bawaan penilai tanpa dicek, ternyata
+tidak ada pada kunci yang dipakai, dan penilaian gagal 404 untuk semua orang.
+
+Yang dijaga: model penyematan dan pembuat gambar tidak ikut tampil (memilihnya
+gagal dengan pesan yang tidak nyambung); awalan `models/` dibuang; daftarnya
+terurut; jawaban Google yang cacat tidak meledak; dan model tersimpan yang
+sudah hilang dari daftar tetap terdeteksi, supaya tidak diam-diam tergantikan
+baris pertama.
+
+    node uji/daftar-model.mjs

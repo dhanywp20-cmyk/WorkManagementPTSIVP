@@ -88,10 +88,20 @@ export interface PengaturanPenilai extends PengaturanAI {
 }
 
 export const PENILAI_BAWAAN: PengaturanPenilai = {
-  // Flash-Lite: jatah harian gratisnya jauh lebih longgar daripada Flash, dan
-  // untuk membandingkan jawaban dengan kunci referensi itu sudah memadai -
-  // hasilnya toh hanya SARAN yang tetap dikoreksi penilai manusia.
-  model: 'gemini-2.5-flash-lite',
+  /*
+    Bawaannya SAMA dengan pembuat soal, dan itu disengaja.
+
+    Sebelumnya di sini tertulis 'gemini-2.5-flash-lite' - dipilih karena
+    jatahnya lebih longgar. Nama itu DITEBAK, tidak diperiksa, dan ternyata
+    tidak ada pada kunci yang dipakai: penilaian gagal 404 untuk semua orang.
+
+    Nama model bukan sesuatu yang boleh ditebak. Daftar model berbeda antar
+    kunci, antar wilayah, dan berubah tanpa pemberitahuan. Karena itu nilai di
+    sini hanya nama yang sudah terbukti jalan di pemasangan ini, dan pilihan
+    sebenarnya diambil dari daftar yang DITANYAKAN ke Google - lihat
+    /api/ai/model.
+  */
+  model: 'gemini-2.5-flash',
   arahan: '',
   suhu: 0.2,   // menilai butuh taat pada kunci, bukan variasi
   otomatis: false,
