@@ -27,6 +27,15 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
   // setinggi 13rem sampai ketemu.
   const [cariAnggota, setCariAnggota] = useState('');
   const [cariDivisi, setCariDivisi]   = useState('');
+  /*
+    Pencarian untuk modal Assign Ulang dipisah dari form Buat Sesi di atas.
+    Keduanya memilih dari daftar yang sama, tapi berbagi satu kotak pencarian
+    berarti membuka Assign Ulang menampilkan daftar yang sudah tersaring oleh
+    kata kunci yang diketik di layar lain - anggota yang "hilang" tanpa
+    penjelasan, padahal ia hanya tersaring.
+  */
+  const [cariAnggotaUlang, setCariAnggotaUlang] = useState('');
+  const [cariDivisiUlang, setCariDivisiUlang]   = useState('');
   const [search, setSearch] = useState('');
   const [dialog, setDialog] = useState<DialogState>(null);
 
@@ -203,6 +212,11 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
       open_at  : '',
       close_at : '',
     });
+    // Kata kunci dari pembukaan sebelumnya ikut dikosongkan bersama pilihannya.
+    // Kalau tidak, modal terbuka dengan daftar yang sudah tersaring tanpa ada
+    // yang mengetik apa pun - dan anggota yang tidak muncul akan dikira tidak
+    // terdaftar, bukan tersaring.
+    setCariAnggotaUlang(''); setCariDivisiUlang('');
     setShowReassign(true);
   };
 
@@ -848,9 +862,19 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                 )}
 
                 {reassignForm.target_mode === 'division' && (
+                  <div>
+                  <input aria-label="Cari divisi..." value={cariDivisiUlang} onChange={e => setCariDivisiUlang(e.target.value)}
+                    placeholder="🔍 Cari divisi..."
+                    className="w-full mb-2 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400" />
                   <div className="border border-slate-200 rounded-xl p-3 space-y-1 max-h-44 overflow-y-auto">
                     {uniqueDivisions.length === 0 && <p className="text-xs text-slate-400 text-center py-3">Tidak ada sales division ditemukan</p>}
-                    {uniqueDivisions.map(div => {
+                    {uniqueDivisions
+                      // Divisi terpilih tetap tampil walau tidak cocok kata kunci -
+                      // alasan yang sama dengan daftar anggota di bawah.
+                      .filter(div => !cariDivisiUlang.trim()
+                        || reassignForm.target_divisions.includes(div)
+                        || div.toLowerCase().includes(cariDivisiUlang.trim().toLowerCase()))
+                      .map(div => {
                       const checked = reassignForm.target_divisions.includes(div);
                       const count = teamUsers.filter(u => (u as any).sales_division === div).length;
                       return (
@@ -864,12 +888,31 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                       );
                     })}
                   </div>
+                  </div>
                 )}
 
                 {reassignForm.target_mode === 'user' && (
+                  <div>
+                  <input aria-label="Cari nama, role, atau jabatan..." value={cariAnggotaUlang} onChange={e => setCariAnggotaUlang(e.target.value)}
+                    placeholder="🔍 Cari nama, role, atau jabatan..."
+                    className="w-full mb-2 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" />
                   <div className="border border-slate-200 rounded-xl p-3 max-h-48 overflow-y-auto space-y-1">
                     {teamUsers.length === 0 && <p className="text-xs text-slate-400 text-center py-4">Tidak ada user ditemukan</p>}
-                    {teamUsers.map(u => {
+                    {(() => {
+                      const q = cariAnggotaUlang.trim().toLowerCase();
+                      // Yang SUDAH dicentang selalu ikut tampil walau tidak cocok
+                      // dengan kata kunci - kalau tidak, pilihan yang sudah dibuat
+                      // seolah hilang begitu kata kuncinya diganti, dan mudah
+                      // dikira ikut terhapus.
+                      const tampil = q
+                        ? teamUsers.filter(u =>
+                            reassignForm.target_user_ids.includes(u.id) ||
+                            `${u.full_name ?? ''} ${u.role ?? ''} ${u.jabatan ?? ''}`.toLowerCase().includes(q))
+                        : teamUsers;
+                      if (tampil.length === 0) {
+                        return <p className="text-xs text-slate-400 text-center py-4">Tidak ada yang cocok dengan &quot;{cariAnggotaUlang}&quot;</p>;
+                      }
+                      return tampil.map(u => {
                       const checked = reassignForm.target_user_ids.includes(u.id);
                       return (
                         <label key={u.id} className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all ${checked ? 'bg-indigo-50 border border-indigo-200' : 'hover:bg-slate-50 border border-transparent'}`}>
@@ -885,7 +928,9 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                           </div>
                         </label>
                       );
-                    })}
+                      });
+                    })()}
+                  </div>
                   </div>
                 )}
 

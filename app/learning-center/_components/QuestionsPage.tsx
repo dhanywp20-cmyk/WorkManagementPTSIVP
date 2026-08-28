@@ -37,6 +37,18 @@ export function QuestionsPage({ user }: { user: User }) {
   const [selectedMat, setSelectedMat] = useState<string>('');
   const [showGenerate, setShowGenerate] = useState(false);
   const [showAddManual, setShowAddManual] = useState(false);
+  /*
+    Menambah soal LANGSUNG ke grup yang sedang dibuka, bukan lewat tombol
+    "Tambah Manual" di kepala halaman.
+
+    Keduanya menambah satu soal, tapi titik berangkatnya berbeda dan itu yang
+    menentukan bedanya. Dari kepala halaman, materi dan nama grupnya belum
+    diketahui - keduanya harus dipilih dan diketik ulang, dan salah ketik satu
+    huruf pada nama grup diam-diam melahirkan grup kedua yang tampak sama.
+    Dari dalam grupnya, keduanya sudah pasti. Karena itu tombol lama tidak
+    diubah maupun dihilangkan: ia dipakai ketika grupnya memang belum ada.
+  */
+  const [modeGrup, setModeGrup] = useState(false);
   const [newQ, setNewQ] = useState({
     question: '', option_a: '', option_b: '', option_c: '', option_d: '',
     correct_answer: 'A', difficulty: 'medium' as 'easy' | 'medium' | 'hard',
@@ -308,11 +320,40 @@ export function QuestionsPage({ user }: { user: User }) {
       ...payload, materi_name: mat?.materi_name ?? '', created_by: user.id,
     }]);
     if (error) { setDialog({ type: 'error', message: 'Error: ' + error.message }); return; }
-    setShowAddManual(false);
-    setNewQ({ question: '', option_a: '', option_b: '', option_c: '', option_d: '', correct_answer: 'A', difficulty: 'medium', material_id: '', batch_name: '', question_type: 'abcd', model_answer: '', answer_format: 'text' });
+    if (modeGrup) {
+      /*
+        Form dibiarkan terbuka, dan hanya isi soalnya yang dikosongkan. Materi,
+        grup, tipe, dan tingkat kesulitannya tetap - orang yang menambah satu
+        soal ke sebuah grup hampir selalu menambah beberapa sekaligus, dan
+        menutup form lalu memintanya memilih materi dan mengetik nama grup yang
+        sama berulang kali adalah cara paling mudah melahirkan grup kembar
+        akibat salah ketik.
+      */
+      setNewQ(p => ({ ...p, ...KOSONG_SOAL }));
+    } else {
+      setShowAddManual(false);
+      setNewQ({ question: '', option_a: '', option_b: '', option_c: '', option_d: '', correct_answer: 'A', difficulty: 'medium', material_id: '', batch_name: '', question_type: 'abcd', model_answer: '', answer_format: 'text' });
+    }
     load();
     setDialog({ type: 'success', message: 'Soal berhasil ditambahkan!' });
   };
+
+  const KOSONG_SOAL = {
+    question: '', option_a: '', option_b: '', option_c: '', option_d: '',
+    correct_answer: 'A', model_answer: '',
+  } as const;
+
+  /** Buka form tambah soal dengan materi & grup yang sudah terkunci dari konteks. */
+  const bukaTambahDiGrup = (materialId: string, batchKey: string) => {
+    setNewQ({
+      ...KOSONG_SOAL, difficulty: 'medium', question_type: 'abcd', answer_format: 'text',
+      material_id: materialId, batch_name: batchKey,
+    });
+    setModeGrup(true);
+    setShowAddManual(true);
+  };
+
+  const tutupTambahManual = () => { setShowAddManual(false); setModeGrup(false); };
 
   const goBack = () => {
     if (selectedSubFolder) { setSelectedSubFolder(null); return; }
@@ -489,10 +530,35 @@ export function QuestionsPage({ user }: { user: User }) {
   <ModalPortal>
     <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
       <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-full overflow-y-auto" style={{ background: '#ffffff' }}>
-        <h3 className="font-bold text-slate-800 mb-1 text-base sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-slate-100">➕ Tambah Soal Manual</h3>
-        <p className="text-xs text-slate-400 mb-4">
+        <h3 className="font-bold text-slate-800 mb-1 text-base sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-slate-100">
+          {modeGrup ? '➕ Tambah Soal ke Grup' : '➕ Tambah Soal Manual'}
+        </h3>
+        <p className="text-xs text-slate-400 mb-3">
           {newQ.question_type === 'essay' ? 'Isi pertanyaan essay dan (opsional) kunci jawaban referensi untuk membantu penilaian manual nanti.' : 'Isi semua field, klik tombol "✓ Benar" untuk menandai jawaban yang benar.'}
         </p>
+        {/*
+          Tujuan penyimpanannya dibaca dari isian yang berlaku SEKARANG, bukan
+          dari grup yang tadi diklik. Kedua isian di bawah tetap bisa diubah,
+          dan keterangan yang membeku pada nilai awal akan menyebut grup yang
+          bukan tempat soalnya benar-benar mendarat.
+        */}
+        {modeGrup && (
+          <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5">
+            <p className="text-[11px] font-bold text-emerald-800 uppercase tracking-widest mb-0.5">Disimpan ke</p>
+            <p className="text-[13px] text-emerald-900 leading-snug">
+              <span className="font-bold">
+                {materials.find(m => m.id === newQ.material_id)?.materi_name ?? '— materi belum dipilih —'}
+              </span>
+              {' · '}
+              {newQ.batch_name.trim()
+                ? <span className="font-bold">📌 {newQ.batch_name}</span>
+                : <span className="italic">Tanpa Grup</span>}
+            </p>
+            <p className="text-[11px] text-emerald-700 mt-1 leading-relaxed">
+              Form tetap terbuka setelah disimpan, jadi soal berikutnya bisa langsung diketik.
+            </p>
+          </div>
+        )}
         <div className="flex items-center gap-2 mb-4">
           <span className="text-xs font-bold text-slate-600 uppercase tracking-widest mr-1">Tipe Soal</span>
           {(['abcd', 'essay'] as const).map(t => (
@@ -597,8 +663,10 @@ export function QuestionsPage({ user }: { user: User }) {
             className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow transition-all">
             💾 Simpan Soal
           </button>
-          <button onClick={() => setShowAddManual(false)}
-            className="px-5 py-2.5 bg-slate-100 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-all">Batal</button>
+          <button onClick={tutupTambahManual}
+            className="px-5 py-2.5 bg-slate-100 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-all">
+            {modeGrup ? 'Selesai' : 'Batal'}
+          </button>
         </div>
       </div>
     </div>
@@ -1223,6 +1291,26 @@ export function QuestionsPage({ user }: { user: User }) {
                                   </div>
                                 </div>
                               ))}
+
+                              {/*
+                                Tombol tambah diletakkan di BAWAH daftar, bukan
+                                di kepala grup bersama tombol Hapus. Di sanalah
+                                mata berhenti setelah membaca soal terakhir,
+                                dan di sana pula soal barunya akan muncul -
+                                jaraknya nol antara niat dan tempat hasilnya
+                                terlihat. Menaruhnya di kepala berarti menekan
+                                tombol di satu ujung lalu mencari hasilnya di
+                                ujung yang lain.
+                              */}
+                              <button type="button"
+                                onClick={() => bukaTambahDiGrup(mat.id, batchKey)}
+                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed text-xs font-bold transition-all hover:bg-white"
+                                style={{ borderColor: bc.border, color: bc.text, background: bc.bg }}>
+                                <svg aria-hidden="true" focusable="false" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                                </svg>
+                                Tambah soal ke {batchKey ? `"${batchKey}"` : 'grup ini'}
+                              </button>
                             </div>
                           )}
                         </div>
