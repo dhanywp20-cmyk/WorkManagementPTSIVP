@@ -403,40 +403,84 @@ export function QuestionsPage({ user }: { user: User }) {
     && Object.prototype.hasOwnProperty.call(questions[0], 'urutan');
 
   /*
-    Simpan urutan baru satu grup.
+    Penyusunan ulang ditahan dulu di layar, tidak langsung dikirim.
 
-    Aturan nomornya ada di lib/urutan-soal.ts - logika murni, diuji terpisah
-    di uji/urutan-soal.mjs. Yang tersisa di sini hanya urusan jaringan dan
-    tampilan.
+    Menyusun urutan itu pekerjaan yang berlangsung: soal ke-7 naik empat
+    tingkat berarti empat kali tekan, dan menyimpan tiap tekanan berarti empat
+    perjalanan ke database untuk satu keputusan yang belum selesai diambil.
+    Menahannya juga berarti salah tekan bisa dibatalkan - selama belum
+    disimpan, tidak ada apa pun di database yang berubah.
+
+    Kunci petanya sama dengan kunci buka-tutup grup, jadi tiap grup punya
+    rancangannya sendiri dan menyusun satu grup tidak mengganggu yang lain.
+    Isinya daftar id, bukan nomor - nomornya baru dihitung saat disimpan,
+    supaya rancangan yang tertinggal tidak pernah menyimpan angka basi.
   */
-  const simpanUrutan = async (daftarBaru: Question[]) => {
-    const perubahan = perubahanUrutan(daftarBaru);
-    if (perubahan.length === 0) return;
+  const [urutanDraf, setUrutanDraf] = useState<Record<string, string[]>>({});
+  const [menyimpanUrutan, setMenyimpanUrutan] = useState<string | null>(null);
 
-    // Digeser di layar lebih dulu supaya tombolnya terasa seketika; kalau
-    // penyimpanannya gagal, load() di bawah mengembalikan keadaan sebenarnya.
-    const peta = new Map(perubahan.map(x => [x.id, x.urutan]));
-    setQuestions(prev => prev.map(q => peta.has(q.id) ? { ...q, urutan: peta.get(q.id)! } : q));
+  /**
+   * Susunan yang TAMPIL untuk satu grup: rancangan bila ada, kalau tidak
+   * susunan tersimpan.
+   *
+   * Soal yang belum ada di rancangan - misalnya baru ditambahkan saat
+   * rancangannya masih terbuka - diletakkan di ekor, bukan dibuang. Tanpa itu
+   * soal yang baru saja disimpan akan hilang dari layar sampai halamannya
+   * dimuat ulang.
+   */
+  const susunanTampil = (kunci: string, grup: Question[]): Question[] => {
+    const draf = urutanDraf[kunci];
+    if (!draf) return grup;
+    const peta = new Map(grup.map(q => [q.id, q]));
+    const terurut = draf.map(id => peta.get(id)).filter((q): q is Question => !!q);
+    const sisa = grup.filter(q => !draf.includes(q.id));
+    return [...terurut, ...sisa];
+  };
 
+  /** Geser satu soal di dalam rancangan grupnya. Belum menyentuh database. */
+  const geserSoal = (kunci: string, grup: Question[], idx: number, arah: -1 | 1) => {
+    const baru = geser(grup, idx, arah);
+    if (!baru) return;
+    setUrutanDraf(p => ({ ...p, [kunci]: baru.map(q => q.id) }));
+  };
+
+  const buangDraf = (kunci: string) =>
+    setUrutanDraf(p => { const n = { ...p }; delete n[kunci]; return n; });
+
+  /*
+    Simpan rancangan satu grup - sekali tekan, sekali kirim.
+
+    Aturan nomornya ada di lib/urutan-soal.ts (logika murni, diuji di
+    uji/urutan-soal.ts). Hanya baris yang nomornya berubah yang dikirim, jadi
+    menggeser satu soal di grup berisi 45 soal tetap beberapa permintaan saja,
+    bukan 45.
+  */
+  const simpanUrutan = async (kunci: string, susunan: Question[]) => {
+    const perubahan = perubahanUrutan(susunan);
+    if (perubahan.length === 0) { buangDraf(kunci); return; }
+
+    setMenyimpanUrutan(kunci);
     const hasil: { error: { message: string } | null }[] = await Promise.all(perubahan.map(x =>
       supabase.from('lc_questions').update({ urutan: x.urutan }).eq('id', x.id)
     ));
+    setMenyimpanUrutan(null);
+
     const gagal = hasil.find(r => r.error)?.error;
     if (gagal) {
+      // Rancangannya sengaja TIDAK dibuang saat gagal - susunan yang tadi
+      // disusun tetap di layar supaya bisa dicoba simpan lagi tanpa menyusun
+      // ulang dari awal.
       setDialog({
         type: 'error', title: 'Urutan gagal disimpan',
         message: /urutan/i.test(gagal.message)
           ? 'Kolom urutan belum ada di database. Jalankan sql/learning-center-urutan-soal.sql lebih dulu.'
           : 'Error: ' + gagal.message,
       });
-      load();
+      return;
     }
-  };
-
-  /** Geser satu soal ke atas (-1) atau ke bawah (+1) di dalam grupnya. */
-  const geserSoal = (grup: Question[], idx: number, arah: -1 | 1) => {
-    const baru = geser(grup, idx, arah);
-    if (baru) simpanUrutan(baru);
+    buangDraf(kunci);
+    load();
+    setDialog({ type: 'success', message: `Urutan ${perubahan.length} soal berhasil disimpan.` });
   };
 
   const goBack = () => {
@@ -1264,7 +1308,7 @@ export function QuestionsPage({ user }: { user: User }) {
                   {/* Batch sub-groups — collapsible accordion */}
                   <div className="space-y-2 pl-3 border-l-2" style={{ borderColor: matColor.icon + '40' }}>
                     {batchKeys.map((batchKey, batchIdx) => {
-                      const batchQs = qs.filter(q => (q.batch_name ?? '') === batchKey).sort(bandingkanUrutan);
+                      const batchTersimpan = qs.filter(q => (q.batch_name ?? '') === batchKey).sort(bandingkanUrutan);
                       const BATCH_COLORS = [
                         { bg: '#f5f3ff', border: '#ddd6fe', text: '#6d28d9', dot: '#8b5cf6', hdr: '#ede9fe' },
                         { bg: '#ecfdf5', border: '#a7f3d0', text: '#065f46', dot: '#10b981', hdr: '#d1fae5' },
@@ -1276,6 +1320,10 @@ export function QuestionsPage({ user }: { user: User }) {
                       const bc = BATCH_COLORS[batchIdx % BATCH_COLORS.length];
                       const expandKey = `${mat.id}__${batchKey || '__none__'}`;
                       const isExpanded = expandedBatches.has(expandKey);
+                      // Yang dirender adalah rancangan bila grup ini sedang disusun.
+                      const batchQs = susunanTampil(expandKey, batchTersimpan);
+                      const adaDraf = !!urutanDraf[expandKey];
+                      const sedangMenyimpan = menyimpanUrutan === expandKey;
                       const easyN  = batchQs.filter(q => q.difficulty === 'easy').length;
                       const medN   = batchQs.filter(q => q.difficulty === 'medium').length;
                       const hardN  = batchQs.filter(q => q.difficulty === 'hard').length;
@@ -1304,6 +1352,13 @@ export function QuestionsPage({ user }: { user: User }) {
                               <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white border" style={{ color: bc.text, borderColor: bc.border }}>
                                 {batchQs.length} soal
                               </span>
+                              {/* Rancangan tetap hidup walau grupnya ditutup. Tanda ini
+                                  yang mencegahnya terlupakan di balik grup yang terlipat. */}
+                              {adaDraf && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                                  ● Urutan belum disimpan
+                                </span>
+                              )}
                               {/* Difficulty mini-chips */}
                               <div className="flex gap-1">
                                 {easyN > 0  && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: DIFF_BG.easy,   color: DIFF_TEXT.easy,   border: `1px solid ${DIFF_BORDER.easy}` }}>  Mudah {easyN}</span>}
@@ -1336,6 +1391,33 @@ export function QuestionsPage({ user }: { user: User }) {
                           {/* ── Question cards — only rendered when expanded ── */}
                           {isExpanded && (
                             <div className="p-3 space-y-2" style={{ background: '#fafafa' }}>
+                              {/*
+                                Bilah ini hanya muncul saat ada yang digeser, dan
+                                menempel di atas daftar (sticky) - untuk grup
+                                berisi 45 soal, tombol simpan yang ikut tergulir
+                                ke luar layar berarti orang menyusun urutan lalu
+                                kehilangan cara menyimpannya.
+                              */}
+                              {adaDraf && (
+                                <div className="sticky top-0 z-20 -mx-3 -mt-3 mb-1 px-3 py-2.5 flex items-center gap-2 flex-wrap border-b"
+                                  style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
+                                  <span className="text-[11px] font-bold text-amber-900 flex-1 min-w-[140px] leading-snug">
+                                    Urutan diubah — belum disimpan.
+                                  </span>
+                                  <button type="button" disabled={sedangMenyimpan}
+                                    onClick={() => buangDraf(expandKey)}
+                                    className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-all disabled:opacity-50">
+                                    Batalkan
+                                  </button>
+                                  <button type="button" disabled={sedangMenyimpan}
+                                    onClick={() => simpanUrutan(expandKey, batchQs)}
+                                    className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow transition-all disabled:opacity-60 flex items-center gap-1.5">
+                                    {sedangMenyimpan
+                                      ? <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />Menyimpan...</>
+                                      : <>💾 Simpan Urutan</>}
+                                  </button>
+                                </div>
+                              )}
                               {batchQs.map((q, idx) => (
                                 <div key={q.id} className="flex rounded-xl overflow-hidden border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all">
                                   <div style={{
@@ -1366,7 +1448,7 @@ export function QuestionsPage({ user }: { user: User }) {
                                       <div className="flex flex-col gap-0.5">
                                         <button type="button" aria-label={`Naikkan soal ${idx + 1}`}
                                           title="Naikkan" disabled={idx === 0}
-                                          onClick={() => geserSoal(batchQs, idx, -1)}
+                                          onClick={() => geserSoal(expandKey, batchQs, idx, -1)}
                                           className="w-6 h-5 rounded flex items-center justify-center text-slate-400 bg-white/70 border border-slate-200 transition-all enabled:hover:text-slate-700 enabled:hover:bg-white disabled:opacity-25 disabled:cursor-not-allowed">
                                           <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
@@ -1374,7 +1456,7 @@ export function QuestionsPage({ user }: { user: User }) {
                                         </button>
                                         <button type="button" aria-label={`Turunkan soal ${idx + 1}`}
                                           title="Turunkan" disabled={idx === batchQs.length - 1}
-                                          onClick={() => geserSoal(batchQs, idx, 1)}
+                                          onClick={() => geserSoal(expandKey, batchQs, idx, 1)}
                                           className="w-6 h-5 rounded flex items-center justify-center text-slate-400 bg-white/70 border border-slate-200 transition-all enabled:hover:text-slate-700 enabled:hover:bg-white disabled:opacity-25 disabled:cursor-not-allowed">
                                           <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />

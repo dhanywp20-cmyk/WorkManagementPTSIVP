@@ -31,6 +31,14 @@
 -- mengelompokkan soal yang serumpun - bukan untuk menentukan urutan yang
 -- dilihat peserta.
 --
+-- ── PENYIMPANANNYA SEKALI TEKAN ────────────────────────────────────────────
+--
+-- Tombol panah di layar hanya menggeser rancangan; tidak ada yang ditulis ke
+-- tabel ini sampai tombol "Simpan Urutan" ditekan. Menyusun urutan adalah
+-- pekerjaan yang berlangsung - menaikkan soal ke-7 empat tingkat berarti empat
+-- kali tekan - dan menyimpan tiap tekanan berarti empat perjalanan ke database
+-- untuk satu keputusan yang belum selesai diambil.
+--
 -- Aman dijalankan berulang. Jalankan di Supabase SQL Editor.
 -- ═══════════════════════════════════════════════════════════════════════════
 
