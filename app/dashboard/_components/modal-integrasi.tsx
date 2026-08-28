@@ -579,14 +579,26 @@ export function IntegrasiInline() {
                 ✕
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4">
+            {/*
+              Tiga lapis flex dengan min-h-0 di tiap lapisnya, supaya daftarnya
+              memakai SELURUH tinggi panel dan menggulir sendiri.
+
+              min-h-0 bukan hiasan: anak flex bawaannya min-height:auto, artinya
+              ia menolak menyusut lebih kecil dari isinya. Tanpa itu, lapis yang
+              di dalam tidak pernah dapat tinggi terbatas, jadi tidak pernah
+              menggulir - dan pembatas tingginya terpaksa ditulis sebagai angka
+              tetap. Itulah yang dulu terjadi di sini: max-h-[320px], yang
+              berarti daftarnya berhenti di sepertiga layar sementara dua per
+              tiga sisanya kosong, berapa pun tinggi layarnya.
+            */}
+            <div className="flex-1 min-h-0 p-4 flex flex-col">
             {/* ── Matriks event x kanal ── */}
-            <div>
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">
+            <div className="flex flex-col min-h-0 flex-1">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2 flex-shrink-0">
                 Event → Kanal ({KATALOG_EVENT.length})
               </div>
-              <div className="rounded-xl border border-slate-200 overflow-hidden">
-                <div className="grid grid-cols-[1fr_auto] gap-2 px-3 py-1.5 bg-slate-50 border-b border-slate-200">
+              <div className="rounded-xl border border-slate-200 overflow-hidden flex flex-col min-h-0 flex-1">
+                <div className="grid grid-cols-[1fr_auto] gap-2 px-3 py-1.5 bg-slate-50 border-b border-slate-200 flex-shrink-0">
                   <span className="text-[9px] font-bold text-slate-400 uppercase">Kejadian</span>
                   <span className="flex gap-3">
                     {KANAL.map(k => (
@@ -594,7 +606,7 @@ export function IntegrasiInline() {
                     ))}
                   </span>
                 </div>
-                <div className="max-h-[320px] overflow-y-auto">
+                <div className="flex-1 min-h-0 overflow-y-auto">
                   {kategori.map(kat => (
                     <div key={kat}>
                       <div className="px-3 py-1 bg-slate-50/70 text-[9px] font-bold text-slate-400 uppercase tracking-wide sticky top-0">
