@@ -11,7 +11,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { bacaRahasia } from '@/lib/rahasia-server';
-import { ambilPengaturanAI } from '@/lib/ai-pengaturan';
+import { ambilPengaturanAI, ambilPengaturanPenilai } from '@/lib/ai-pengaturan';
 
 const MAX_BODY_BYTES = 4_000_000;
 
@@ -21,18 +21,6 @@ function errJson(message: string, status: number) {
 
 export async function POST(request: NextRequest) {
   try {
-    const [token, setelan] = await Promise.all([
-      bacaRahasia('ai.gemini_token'),
-      ambilPengaturanAI(),
-    ]);
-
-    if (!token) {
-      return errJson(
-        'Pembuat soal AI belum aktif. Admin dapat mengisi Token AI di Admin Panel → Integrations.',
-        503,
-      );
-    }
-
     // Batasi ukuran body - endpoint sudah butuh session (middleware), tapi cegah
     // penyalahgunaan sebagai proxy gratis dengan payload besar.
     const raw = await request.text();
@@ -53,6 +41,34 @@ export async function POST(request: NextRequest) {
     if (!b || typeof b !== 'object' || !Array.isArray(b.contents)) {
       return errJson('Format permintaan tidak valid.', 400);
     }
+    /*
+      Dua pekerjaan, dua jatah.
+
+      Membuat soal dijalankan sesekali; menilai dijalankan sekali untuk tiap
+      jawaban tiap peserta. Dengan satu token bersama, penilaian borongan
+      menghabiskan jatah harian dan pembuat soal ikut mati - padahal keduanya
+      tidak berhubungan. Profil menentukan token DAN model yang dipakai.
+
+      Token penilai yang kosong jatuh ke token pembuat soal, jadi pemasangan
+      yang sudah ada tetap berjalan tanpa diubah apa pun.
+    */
+    const penilai = b.profil === 'penilai';
+    const [tokenKhusus, tokenUmum, setelan] = await Promise.all([
+      penilai ? bacaRahasia('ai.gemini_token_koreksi') : Promise.resolve(null),
+      bacaRahasia('ai.gemini_token'),
+      penilai ? ambilPengaturanPenilai() : ambilPengaturanAI(),
+    ]);
+    const token = tokenKhusus || tokenUmum;
+
+    if (!token) {
+      return errJson(
+        penilai
+          ? 'Penilai AI belum aktif. Admin dapat mengisi Token AI Koreksi di Admin Panel → Integrations.'
+          : 'Pembuat soal AI belum aktif. Admin dapat mengisi Token AI di Admin Panel → Integrations.',
+        503,
+      );
+    }
+
     const payload: Record<string, unknown> = { contents: b.contents };
     if (b.generationConfig)  payload.generationConfig  = b.generationConfig;
     if (b.systemInstruction) payload.systemInstruction = b.systemInstruction;
@@ -101,6 +117,20 @@ export async function POST(request: NextRequest) {
         // Model yang salah ketik / sudah dihentikan adalah kekeliruan
         // pengaturan, bukan kegagalan AI - sebutkan supaya jelas ke mana
         // harus dibetulkan.
+        /*
+          Jatah habis. Pesan asli Google panjang dan berisi tiga tautan
+          dokumentasi - yang tidak satu pun memberi tahu penilai di depan layar
+          apa yang bisa ia lakukan sekarang. Diganti kalimat yang menyebut
+          pilihan nyatanya.
+        */
+        if (res.status === 429) {
+          return errJson(
+            penilai
+              ? `Jatah harian model "${setelan.model}" habis. Nilai manual dulu — saran AI memang tidak pernah jadi nilai akhir. Untuk menaikkan jatah: Admin Panel → Integrations, ganti ke model berjatah lebih besar, atau isi Token AI Koreksi dengan kunci dari proyek Google terpisah.`
+              : `Jatah harian model "${setelan.model}" habis. Coba lagi besok, atau ganti modelnya di Admin Panel → Integrations.`,
+            429,
+          );
+        }
         if (res.status === 404) {
           return errJson(
             `Model "${setelan.model}" tidak ditemukan. Betulkan di Admin Panel → Integrations → Pembuat Soal AI.`,

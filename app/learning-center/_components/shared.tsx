@@ -201,7 +201,11 @@ export async function fileToBase64(f: File): Promise<string> {
   });
 }
 
-export async function generateWithGemini(prompt: string, pdfFile?: File | null): Promise<string> {
+export async function generateWithGemini(
+  prompt: string, pdfFile?: File | null,
+  /** 'penilai' memakai token & model penilai; selain itu pembuat soal. */
+  profil?: 'penilai',
+): Promise<string> {
   const parts: any[] = [];
   if (pdfFile) {
     const base64 = await fileToBase64(pdfFile);
@@ -213,7 +217,12 @@ export async function generateWithGemini(prompt: string, pdfFile?: File | null):
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
+      // Suhu sengaja TIDAK diisi di sini - server yang mengisinya dari
+      // pengaturan profil yang bersangkutan. Menilai butuh suhu rendah supaya
+      // taat pada kunci; membuat soal butuh sedikit variasi. Memaksakan satu
+      // angka dari sini membuat pengaturan itu tidak berlaku.
+      generationConfig: { maxOutputTokens: 8192 },
+      ...(profil ? { profil } : {}),
     }),
   });
   if (!res.ok) {
@@ -222,6 +231,75 @@ export async function generateWithGemini(prompt: string, pdfFile?: File | null):
   }
   const data = await res.json();
   return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+}
+
+export interface SoalDinilai {
+  id: string;
+  question: string;
+  modelAnswer?: string | null;
+  studentAnswer: string;
+}
+
+/**
+ * Menilai SELURUH jawaban essay satu peserta dalam SATU panggilan.
+ *
+ * Sebelumnya tiap soal satu panggilan. Untuk satu peserta dengan 5 soal essay
+ * itu 5 permintaan; untuk satu sesi berisi 30 peserta, 150 - sementara jatah
+ * harian gratis Gemini 2.5 Flash hanya puluhan. Jadi penilaian borongan bukan
+ * "lebih cepat", melainkan satu-satunya bentuk yang muat di paket gratis sama
+ * sekali.
+ *
+ * Yang membuat penggabungan ini aman: tiap soal dinilai terhadap kunci
+ * referensinya masing-masing, dan AI diminta mengembalikan satu entri per id
+ * soal. Soal yang tidak terjawab AI - karena keluarannya terpotong atau
+ * idnya salah - dikembalikan sebagai tidak-ada, bukan sebagai nol. Nol berarti
+ * "sudah dinilai dan jawabannya salah"; itu keliru dan bisa terlanjur
+ * dikonfirmasi penilai yang buru-buru.
+ */
+export async function gradeEssaysBatchWithAI(
+  daftar: SoalDinilai[],
+): Promise<Record<string, { score: number; feedback: string }>> {
+  if (daftar.length === 0) return {};
+
+  const blok = daftar.map((d, i) => `--- SOAL ${i + 1} ---
+ID: ${d.id}
+PERTANYAAN: ${d.question}
+${d.modelAnswer ? `KUNCI REFERENSI: ${d.modelAnswer}` : '(Tidak ada kunci referensi - nilai berdasar kelayakan & kelengkapan secara umum.)'}
+JAWABAN PESERTA: ${d.studentAnswer || '(kosong / tidak dijawab)'}`).join('\n\n');
+
+  const prompt = `Kamu adalah asisten penilai kuis internal perusahaan. Nilai SETIAP jawaban essay berikut secara OBJEKTIF terhadap kunci referensinya masing-masing. Nilai kesesuaian ISI, bukan kemiripan kata demi kata - peserta yang memahami konsep yang sama dengan kalimatnya sendiri tetap dinilai benar.
+
+${blok}
+
+Balas HANYA dengan JSON array valid, tanpa markdown, tanpa teks lain. Satu entri untuk SETIAP id di atas, dengan urutan yang sama:
+[{"id":"<id soal persis seperti di atas>","score":<angka 0-100>,"feedback":"<1-2 kalimat alasan singkat dalam Bahasa Indonesia>"}]`;
+
+  const raw = await generateWithGemini(prompt, null, 'penilai');
+  const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Keluaran AI tidak berupa JSON yang valid.');
+  }
+  if (!Array.isArray(parsed)) throw new Error('Keluaran AI bukan daftar penilaian.');
+
+  const sah = new Set(daftar.map(d => d.id));
+  const hasil: Record<string, { score: number; feedback: string }> = {};
+  for (const baris of parsed as { id?: unknown; score?: unknown; feedback?: unknown }[]) {
+    const id = typeof baris?.id === 'string' ? baris.id : '';
+    // Hanya id yang memang dikirim yang diterima. Tanpa saringan ini, id yang
+    // dikarang AI bisa menempelkan nilai pada soal yang tidak ikut dinilai.
+    if (!sah.has(id)) continue;
+    const skor = Number(baris.score);
+    if (!Number.isFinite(skor)) continue;
+    hasil[id] = {
+      score: Math.max(0, Math.min(100, Math.round(skor))),
+      feedback: typeof baris.feedback === 'string' ? baris.feedback : '',
+    };
+  }
+  return hasil;
 }
 
 /**
@@ -245,7 +323,7 @@ ${studentAnswer || '(kosong / tidak dijawab)'}
 Balas HANYA dengan JSON valid persis format ini, tanpa markdown, tanpa teks lain:
 {"score": <angka 0-100>, "feedback": "<1-2 kalimat alasan singkat dalam Bahasa Indonesia>"}`;
 
-  const raw = await generateWithGemini(prompt);
+  const raw = await generateWithGemini(prompt, null, 'penilai');
   // Gemini kadang membungkus JSON dalam code fence ```json ... ``` walau
   // sudah diminta "tanpa markdown" - dibersihkan dulu sebelum parse.
   const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');

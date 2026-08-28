@@ -26,6 +26,26 @@ import { supabase } from './supabase';
 
 export const KUNCI_AI = 'ai.pembuat_soal';
 
+/*
+  Penilai jawaban essay punya pengaturannya SENDIRI, terpisah dari pembuat soal.
+
+  Bukan sekadar kerapian. Kedua pekerjaan ini berbeda bentuk pemakaiannya, dan
+  perbedaan itu langsung menabrak batas paket gratis:
+
+    Pembuat soal   dijalankan sesekali - satu panggilan menghasilkan 10 soal.
+    Penilai        dijalankan sekali untuk TIAP jawaban TIAP peserta.
+
+  Satu sesi berisi 30 peserta dan 5 soal essay berarti 150 panggilan, sedangkan
+  jatah harian gratis Gemini 2.5 Flash hanya puluhan permintaan. Dengan satu
+  pengaturan bersama, penilaian yang boros memaksa pembuat soal ikut memakai
+  model yang sama, dan kehabisan jatah di satu sisi mematikan sisi lainnya.
+
+  Terpisah, penilai bisa dipasangi model berjatah besar (mis. seri Flash-Lite)
+  sementara pembuat soal tetap memakai model terbaik - karena mutu soal jauh
+  lebih penting daripada mutu satu saran nilai yang tetap dikoreksi manusia.
+*/
+export const KUNCI_AI_PENILAI = 'ai.penilai';
+
 export interface PengaturanAI {
   /**
    * Nama model. Dibiarkan bebas teks, bukan daftar tertutup: daftar model
@@ -49,6 +69,49 @@ export const AI_BAWAAN: PengaturanAI = {
   arahan: '',
   suhu: 0.7,
 };
+
+export interface PengaturanPenilai extends PengaturanAI {
+  /**
+   * Menilai otomatis begitu halaman penilaian dibuka.
+   *
+   * MATI secara bawaan, dan itu perubahan yang disengaja dari perilaku
+   * sebelumnya. Dulu membuka satu peserta langsung menembak AI sekali per soal
+   * essay - jadi sekadar MELIHAT jawaban orang menghabiskan jatah, bahkan
+   * ketika penilainya sudah tahu nilainya dan hanya ingin membacanya. Dengan
+   * jatah harian yang cuma puluhan permintaan, beberapa kali buka-tutup
+   * halaman sudah cukup untuk menghabiskannya.
+   *
+   * Sekarang penilaian dimulai kalau diminta - dan sekali diminta, seluruh
+   * jawaban satu peserta dinilai dalam SATU panggilan.
+   */
+  otomatis: boolean;
+}
+
+export const PENILAI_BAWAAN: PengaturanPenilai = {
+  // Flash-Lite: jatah harian gratisnya jauh lebih longgar daripada Flash, dan
+  // untuk membandingkan jawaban dengan kunci referensi itu sudah memadai -
+  // hasilnya toh hanya SARAN yang tetap dikoreksi penilai manusia.
+  model: 'gemini-2.5-flash-lite',
+  arahan: '',
+  suhu: 0.2,   // menilai butuh taat pada kunci, bukan variasi
+  otomatis: false,
+};
+
+export function rapikanPengaturanPenilai(isi: unknown): PengaturanPenilai {
+  const dasar = rapikanPengaturanAI(isi);
+  const r = (isi ?? {}) as Partial<PengaturanPenilai>;
+  const adaModel = typeof r.model === 'string' && /^[A-Za-z0-9._-]{1,80}$/.test(r.model.trim());
+  const adaSuhu  = Number.isFinite(Number(r.suhu));
+  return {
+    // Bawaan penilai BUKAN bawaan pembuat soal - jadi nilai yang tidak diisi
+    // jatuh ke bawaannya sendiri, bukan ke model pembuat soal yang jatahnya
+    // lebih sempit.
+    model:  adaModel ? dasar.model : PENILAI_BAWAAN.model,
+    arahan: dasar.arahan,
+    suhu:   adaSuhu ? dasar.suhu : PENILAI_BAWAAN.suhu,
+    otomatis: r.otomatis === true,
+  };
+}
 
 export function rapikanPengaturanAI(isi: unknown): PengaturanAI {
   const r = (isi ?? {}) as Partial<PengaturanAI>;
@@ -79,6 +142,32 @@ export async function ambilPengaturanAI(): Promise<PengaturanAI> {
   } catch {
     // Tabelnya belum ada / tidak terbaca - jalan dengan bawaan, jangan meledak.
     return AI_BAWAAN;
+  }
+}
+
+/** Baca pengaturan penilai essay. Dipakai sisi klien maupun server. */
+export async function ambilPengaturanPenilai(): Promise<PengaturanPenilai> {
+  try {
+    const { data } = await supabase
+      .from('app_settings').select('value').eq('key', KUNCI_AI_PENILAI).maybeSingle();
+    const mentah = (data as { value?: unknown } | null)?.value;
+    const isi = typeof mentah === 'string' ? JSON.parse(mentah) : mentah;
+    return rapikanPengaturanPenilai(isi);
+  } catch {
+    return PENILAI_BAWAAN;
+  }
+}
+
+/** Simpan pengaturan penilai essay. Hanya dipanggil layar admin. */
+export async function simpanPengaturanPenilai(p: PengaturanPenilai): Promise<{ ok: boolean; pesan?: string }> {
+  try {
+    const bersih = rapikanPengaturanPenilai(p);
+    const { error } = await supabase.from('app_settings')
+      .upsert({ key: KUNCI_AI_PENILAI, value: JSON.stringify(bersih) }, { onConflict: 'key' });
+    if (error) return { ok: false, pesan: error.message };
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, pesan: e instanceof Error ? e.message : 'gagal menyimpan' };
   }
 }
 

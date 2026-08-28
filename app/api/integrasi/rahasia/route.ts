@@ -59,6 +59,14 @@ export async function GET(req: NextRequest) {
     'whatsapp.token':     process.env.FONNTE_TOKEN,
     'telegram.bot_token': process.env.TELEGRAM_BOT_TOKEN,
     'ai.gemini_token':    process.env.GEMINI_API_KEY,
+    /*
+      'ai.gemini_token_koreksi' SENGAJA tidak punya cadangan env.
+
+      Menjatuhkannya ke GEMINI_API_KEY akan membuatnya tampak "terisi" padahal
+      isinya token yang sama dengan pembuat soal - persis pemisahan yang hendak
+      dicapai, hilang tanpa terlihat. Dibiarkan kosong, statusnya jujur, dan
+      route AI tetap memakai token pembuat soal sebagai cadangan.
+    */
   };
 
   const status: Record<string, {

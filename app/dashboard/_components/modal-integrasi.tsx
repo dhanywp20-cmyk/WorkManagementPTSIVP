@@ -29,7 +29,8 @@ import {
   KANAL, bacaPengaturan, simpanPengaturan, kanalUntuk,
   type Kanal, type PengaturanNotifikasi,
 } from '@/lib/notifikasi/pengaturan';
-import { ambilPengaturanAI, simpanPengaturanAI, AI_BAWAAN, type PengaturanAI } from '@/lib/ai-pengaturan';
+import { ambilPengaturanAI, simpanPengaturanAI, AI_BAWAAN, type PengaturanAI,
+  ambilPengaturanPenilai, simpanPengaturanPenilai, PENILAI_BAWAAN, type PengaturanPenilai } from '@/lib/ai-pengaturan';
 import { KATALOG_EVENT, type KategoriEvent } from '@/lib/notifikasi/katalog';
 import { PENYEDIA_WA, penyediaWA } from '@/lib/notifikasi/penyedia-wa';
 
@@ -137,6 +138,7 @@ export function IntegrasiInline() {
   const [bukaMatriks, setBukaMatriks] = useState(false);
   /* Pengaturan pembuat soal AI - lihat lib/ai-pengaturan.ts. */
   const [ai, setAi] = useState<PengaturanAI>(AI_BAWAAN);
+  const [penilai, setPenilai] = useState<PengaturanPenilai>(PENILAI_BAWAAN);
 
   const muatRahasia = async () => {
     try {
@@ -146,7 +148,7 @@ export function IntegrasiInline() {
     } catch { /* diam - blok token akan tampil "belum diisi" */ }
   };
 
-  useEffect(() => { bacaPengaturan(true).then(setP); muatRahasia(); ambilPengaturanAI().then(setAi); }, []);
+  useEffect(() => { bacaPengaturan(true).then(setP); muatRahasia(); ambilPengaturanAI().then(setAi); ambilPengaturanPenilai().then(setPenilai); }, []);
 
   const simpanRahasia = async (kunci: string, nilai: string) => {
     try {
@@ -194,7 +196,7 @@ export function IntegrasiInline() {
     setSimpan(true);
     // Keduanya disimpan sekaligus. Tombol Simpan yang hanya menyimpan sebagian
     // isi layar adalah cara paling mudah kehilangan pengaturan tanpa sadar.
-    const [r, rAi] = await Promise.all([simpanPengaturan(p), simpanPengaturanAI(ai)]);
+    const [r, rAi] = await Promise.all([simpanPengaturan(p), simpanPengaturanAI(ai), simpanPengaturanPenilai(penilai)]);
     setSimpan(false);
     const gagal = !r.ok ? r.pesan : !rAi.ok ? rAi.pesan : null;
     setPesan(gagal ? { tipe: 'gagal', teks: gagal }
@@ -420,6 +422,67 @@ export function IntegrasiInline() {
         <div className="flex justify-between text-[9px] text-slate-400">
           <span>0 — taat pada materi</span><span>2 — banyak variasi</span>
         </div>
+      </div>
+
+      {/* ── Penilai Jawaban Essay ──────────────────────────────────────────
+          Terpisah dari pembuat soal karena bentuk pemakaiannya berbeda jauh.
+          Membuat soal dijalankan sesekali - satu panggilan menghasilkan 10
+          soal. Menilai dijalankan sekali untuk tiap jawaban tiap peserta: satu
+          sesi berisi 30 peserta dan 5 soal essay sudah 150 panggilan, sementara
+          jatah harian gratis hanya puluhan permintaan. Dengan satu token
+          bersama, penilaian yang boros mematikan pembuat soal juga. */}
+      <div className="rounded-xl border border-violet-200 bg-violet-50/40 p-3">
+        <div className="text-[10px] font-bold text-violet-500 uppercase tracking-wide mb-2">
+          Penilai Jawaban Essay · Learning Center
+        </div>
+        <BlokToken
+          judul="Token AI Koreksi" kunci="ai.gemini_token_koreksi" status={rahasia['ai.gemini_token_koreksi']}
+          onSimpan={n => simpanRahasia('ai.gemini_token_koreksi', n)}
+          onHapus={() => hapusRahasia('ai.gemini_token_koreksi')}
+          petunjuk={<>Kosongkan untuk memakai Token AI pembuat soal. Isi dengan kunci dari <b>proyek Google terpisah</b> supaya penilaian borongan tidak menghabiskan jatah pembuat soal.</>} />
+
+        <label className="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">Model penilai</label>
+        <input value={penilai.model} placeholder={PENILAI_BAWAAN.model}
+          onChange={e => setPenilai(x => ({ ...x, model: e.target.value }))}
+          className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-violet-400" />
+        <p className="text-[9px] text-slate-400 mt-1">
+          Boleh berbeda dari model pembuat soal. Untuk menilai, model kelas ringan sudah memadai —
+          hasilnya hanya saran yang tetap dikoreksi penilai, sedangkan jatah hariannya jauh lebih besar.
+        </p>
+
+        <label className="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">
+          Arahan penilaian <span className="font-normal text-slate-400">(opsional)</span>
+        </label>
+        <textarea value={penilai.arahan} rows={3}
+          onChange={e => setPenilai(x => ({ ...x, arahan: e.target.value }))}
+          placeholder={'Contoh:\nHargai jawaban yang benar secara konsep walau istilahnya tidak baku.\nJangan mengurangi nilai karena ejaan atau tanda baca.\nJawaban singkat yang tepat sasaran tetap bernilai penuh.'}
+          className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-violet-400 leading-relaxed" />
+
+        <label className="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">
+          Ketaatan pada kunci <span className="font-normal text-slate-400">({penilai.suhu.toFixed(1)})</span>
+        </label>
+        <input type="range" min={0} max={2} step={0.1} value={penilai.suhu}
+          aria-label="Ketaatan penilaian pada kunci referensi"
+          onChange={e => setPenilai(x => ({ ...x, suhu: Number(e.target.value) }))}
+          className="w-full accent-violet-500" />
+        <div className="flex justify-between text-[9px] text-slate-400">
+          <span>0 — taat pada kunci</span><span>2 — longgar</span>
+        </div>
+
+        <label className="flex items-start gap-2 mt-3 cursor-pointer">
+          <input type="checkbox" checked={penilai.otomatis}
+            onChange={e => setPenilai(x => ({ ...x, otomatis: e.target.checked }))}
+            className="mt-0.5 w-4 h-4 rounded accent-violet-600 flex-shrink-0" />
+          <span className="text-[11px] leading-snug text-slate-600">
+            <b>Nilai otomatis saat halaman penilaian dibuka</b>
+            <span className="block text-[9px] text-slate-400 mt-0.5">
+              Mati secara bawaan. Bila dinyalakan, sekadar <em>membuka</em> jawaban seorang peserta
+              sudah memakai jatah — termasuk saat penilai hanya ingin membacanya. Dengan jatah harian
+              yang terbatas, beberapa kali buka-tutup halaman sudah cukup menghabiskannya.
+              Tombol <b>Nilai Semua Essay</b> di layar penilaian tetap tersedia kapan pun.
+            </span>
+          </span>
+        </label>
       </div>
 
       {/* ── Matriks event x kanal - panel geser ────────────────────────────

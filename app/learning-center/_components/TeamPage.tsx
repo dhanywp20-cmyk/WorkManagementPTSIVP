@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { ListEmptyState } from '@/components/shared';
-import { supabase, User, Question, QuizAttempt, DIFF_COLOR, fmtDate, ScoreBadge, SearchInput, BtnView, GradingStatusBadge, AppDialog, DialogState, gradeEssayWithAI } from './shared';
+import { supabase, User, Question, QuizAttempt, DIFF_COLOR, fmtDate, ScoreBadge, SearchInput, BtnView, GradingStatusBadge, AppDialog, DialogState, gradeEssayWithAI, gradeEssaysBatchWithAI, type SoalDinilai } from './shared';
+import { ambilPengaturanPenilai } from '@/lib/ai-pengaturan';
 import { getSession } from '@/lib/auth';
 
 function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
@@ -30,6 +31,15 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
   /** Skor saran AI, disimpan terpisah dari manualScores supaya admin bisa melihat
       angka asli dari AI walau ia sudah menimpanya dengan nilai sendiri. */
   const [aiScores, setAiScores] = useState<Record<string, number>>({});
+  /** Sedang menilai seluruh essay peserta ini sekaligus. */
+  const [menilaiBorongan, setMenilaiBorongan] = useState(false);
+  /** Penilaian otomatis saat halaman dibuka - MATI kecuali admin menyalakannya. */
+  const [penilaiOtomatis, setPenilaiOtomatis] = useState(false);
+
+  useEffect(() => {
+    // Dibaca sekali; kalau gagal, tetap mati - itu sisi yang aman.
+    ambilPengaturanPenilai().then(p => setPenilaiOtomatis(p.otomatis)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     supabase.from('lc_quiz_attempts')
@@ -80,17 +90,94 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
     setAiScores(aiScoreMap);
     setLoadingDetail(false);
 
-    // Otomatis minta AI menilai essay yang BELUM pernah dinilai (manual maupun
-    // AI) - supaya admin buka halaman ini dan skornya sudah terisi, tinggal
-    // konfirmasi atau koreksi. Essay tanpa jawaban (Tidak dijawab) dilewati.
-    if (isAdminView) {
-      for (const q of orderedQs) {
-        if (q.question_type !== 'essay') continue;
-        if (scoreMap[q.id] !== undefined || feedbackMap[q.id]) continue;
-        const a = (ans ?? []).find((x: any) => x.question_id === q.id);
-        const text = a?.essay_text?.trim();
-        if (text) runAiGrading(attempt.id, q, text);
+    /*
+      Penilaian otomatis saat halaman dibuka sekarang HARUS dinyalakan dulu.
+
+      Dulu ini berjalan selalu, dan satu panggilan AI ditembakkan per soal
+      essay. Membuka satu peserta berisi 5 essay berarti 5 permintaan - jadi
+      sekadar MELIHAT jawaban orang menghabiskan jatah, bahkan ketika
+      penilainya sudah tahu nilainya dan cuma ingin membacanya. Dengan jatah
+      harian gratis yang hanya puluhan permintaan, beberapa kali buka-tutup
+      halaman sudah cukup menghabiskannya - dan itu persis yang terjadi.
+
+      Kalaupun dinyalakan, sekarang seluruh essay dinilai dalam SATU panggilan,
+      bukan satu per soal.
+    */
+    if (isAdminView && penilaiOtomatis) {
+      const belum = orderedQs
+        .filter(q => q.question_type === 'essay')
+        .filter(q => scoreMap[q.id] === undefined && !feedbackMap[q.id])
+        .map(q => ({ q, teks: (ans ?? []).find((x: any) => x.question_id === q.id)?.essay_text?.trim() }))
+        .filter((x): x is { q: Question; teks: string } => !!x.teks);
+      if (belum.length > 0) void nilaiBorongan(attempt.id, belum.map(x => x.q), ans ?? []);
+    }
+  };
+
+  /*
+    Nilai SELURUH essay satu peserta dalam satu panggilan.
+
+    Satu peserta 5 essay: 5 permintaan jadi 1. Satu sesi 30 peserta: 150 jadi
+    30. Itu bukan penghematan yang enak dimiliki - jatah harian gratis Gemini
+    2.5 Flash hanya puluhan permintaan, jadi bentuk lama memang tidak pernah
+    bisa menyelesaikan satu sesi pun.
+
+    Kegagalan AI tidak pernah menghalangi penilaian manual; itu tetap berlaku.
+  */
+  const nilaiBorongan = async (attemptId: string, daftarSoal: Question[], jawaban: any[]) => {
+    const bahan: SoalDinilai[] = daftarSoal
+      .filter(q => q.question_type === 'essay')
+      .map(q => ({
+        id: q.id,
+        question: q.question,
+        modelAnswer: q.model_answer,
+        studentAnswer: (jawaban.find((x: any) => x.question_id === q.id)?.essay_text ?? '').trim(),
+      }))
+      .filter(x => x.studentAnswer.length > 0);
+    if (bahan.length === 0) {
+      setDialog({ type: 'error', message: 'Tidak ada jawaban essay bertulisan yang bisa dinilai AI.' });
+      return;
+    }
+
+    setMenilaiBorongan(true);
+    setAiGradingIds(new Set(bahan.map(b => b.id)));
+    setAiError({});
+    try {
+      const hasil = await gradeEssaysBatchWithAI(bahan);
+      const idHasil = Object.keys(hasil);
+      if (idHasil.length === 0) throw new Error('AI tidak mengembalikan penilaian satu pun.');
+
+      setAiFeedback(p => ({ ...p, ...Object.fromEntries(idHasil.map(i => [i, hasil[i].feedback])) }));
+      setAiScores(p => ({ ...p, ...Object.fromEntries(idHasil.map(i => [i, hasil[i].score])) }));
+      // Tidak menimpa nilai yang sudah diketik penilai sambil menunggu.
+      setManualScores(p => {
+        const n = { ...p };
+        for (const i of idHasil) if (n[i] === undefined) n[i] = String(hasil[i].score);
+        return n;
+      });
+      await Promise.all(idHasil.map(i =>
+        supabase.from('lc_answers')
+          .update({ ai_score: hasil[i].score, ai_feedback: hasil[i].feedback })
+          .eq('attempt_id', attemptId).eq('question_id', i)
+      ));
+
+      /*
+        Soal yang tidak terjawab AI ditandai, bukan didiamkan. Membiarkannya
+        kosong membuatnya tampak sama dengan soal yang memang belum giliran
+        dinilai, dan penilai akan menunggu sesuatu yang tidak akan datang.
+      */
+      const tertinggal = bahan.filter(b => !hasil[b.id]);
+      if (tertinggal.length > 0) {
+        setAiError(p => ({
+          ...p,
+          ...Object.fromEntries(tertinggal.map(t => [t.id, 'AI melewati soal ini - nilai manual.'])),
+        }));
       }
+    } catch (e) {
+      const pesan = e instanceof Error ? e.message : 'AI gagal menilai.';
+      setAiError(Object.fromEntries(bahan.map(b => [b.id, pesan])));
+    } finally {
+      setAiGradingIds(new Set());
+      setMenilaiBorongan(false);
     }
   };
 
@@ -337,7 +424,22 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
               {/* pr-14 pada tombol simpan: memberi jarak dari tombol melayang "Jelajahi
                   Platform" di tepi kanan-bawah, supaya tombol simpan tidak tertutup. */}
               {isAdminView && questions.some(q => q.question_type === 'essay') && (
-                <div className="sticky bottom-4 flex justify-end pr-14">
+                <div className="sticky bottom-4 flex justify-end items-center gap-2 pr-14">
+                  {/*
+                    Satu tombol untuk SELURUH essay peserta ini - satu panggilan
+                    AI, bukan satu per soal. Sengaja diletakkan bersebelahan
+                    dengan Simpan Nilai karena urutan kerjanya memang begitu:
+                    minta saran, periksa, lalu simpan. Penilaian tetap bisa
+                    diselesaikan tanpa menekannya sama sekali.
+                  */}
+                  <button type="button" disabled={menilaiBorongan || savingGrade}
+                    onClick={() => selectedAttempt && nilaiBorongan(selectedAttempt.id, questions, answerDetails)}
+                    title="Menilai semua jawaban essay peserta ini dalam satu permintaan ke AI"
+                    className="px-4 py-3 bg-white hover:bg-violet-50 text-violet-700 text-sm font-bold rounded-xl shadow-lg border border-violet-200 transition-all disabled:opacity-60 flex items-center gap-2">
+                    {menilaiBorongan
+                      ? <><span className="w-4 h-4 border-2 border-violet-200 border-t-violet-600 rounded-full animate-spin" />Menilai...</>
+                      : <>🤖 Nilai Semua Essay</>}
+                  </button>
                   <button onClick={handleSaveManualGrade} disabled={savingGrade}
                     className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-lg transition-all disabled:opacity-60 flex items-center gap-2">
                     {savingGrade ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Menyimpan...</> : '💾 Simpan Nilai Essay'}

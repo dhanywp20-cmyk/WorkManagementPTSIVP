@@ -108,3 +108,14 @@ pemasangan — jaringan putus, sesi kedaluwarsa — tidak ikut tertelan jadi
 kalimat generik.
 
     node uji/galat-unggah.mjs
+
+## profil-ai.mjs
+
+Pemisahan profil AI pembuat soal dan penilai essay. Yang dijaga: bawaan penilai
+TIDAK ikut jatuh ke model pembuat soal (jatah hariannya jauh lebih sempit, dan
+warisan diam-diam itu justru menghapus pemisahan yang ingin dicapai); suhu 0
+tidak dikira nilai kosong; `otomatis` hanya menyala untuk boolean true; nama
+model yang menyisipkan pemisah jalur ditolak; dan token koreksi yang kosong
+jatuh ke token pembuat soal alih-alih mematikan penilaian.
+
+    node uji/profil-ai.mjs
