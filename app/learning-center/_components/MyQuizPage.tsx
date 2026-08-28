@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase, User, Question, QuizSession, QuizAttempt, SearchInput, AppDialog, DialogState } from './shared';
+import { ModalPortal } from '@/components/shared';
 import { compressImage } from '@/lib/image-compress';
 
 function QuizPlayer({ session, user, attempt, onDone }: {
@@ -21,6 +22,31 @@ function QuizPlayer({ session, user, attempt, onDone }: {
   const tabSwitchesRef = useRef(0);
   const [showReview, setShowReview] = useState(false);
   const [dialog, setDialog] = useState<DialogState>(null);
+  /** Konfirmasi keluar sebelum quiz dikumpulkan. */
+  const [konfirmasiKeluar, setKonfirmasiKeluar] = useState(false);
+
+  /*
+    Minta induk menaikkan iframe-nya ke seluruh layar selama quiz berjalan.
+
+    Modal yang dibuat DI DALAM iframe hanya menutupi area iframe; sidebar dan
+    bilah atas tetap terlihat dan tetap bisa diklik. Untuk quiz berbatas waktu
+    itu bukan sekadar soal tampilan - satu klik menu di luar sana mengganti isi
+    iframe, dan pengerjaan yang sedang berjalan hilang di tengah jalan.
+
+    Pesannya diabaikan begitu saja bila halaman ini dibuka langsung (bukan di
+    dalam iframe), jadi tidak ada cabang khusus yang perlu ditulis.
+  */
+  useEffect(() => {
+    const kirim = (tipe: 'IFRAME_MODAL_OPEN' | 'IFRAME_MODAL_CLOSE') => {
+      try {
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: tipe, modul: 'learning-quiz' }, window.location.origin);
+        }
+      } catch { /* induk beda asal - abaikan, layar tetap berfungsi */ }
+    };
+    kirim('IFRAME_MODAL_OPEN');
+    return () => kirim('IFRAME_MODAL_CLOSE');
+  }, []);
   const startTime = useRef(Date.now());
 
   useEffect(() => {
@@ -359,32 +385,75 @@ function QuizPlayer({ session, user, attempt, onDone }: {
   const isUrgent = timeLeft !== null && timeLeft < 60;
 
   return (
+    <ModalPortal>
     <>
-    <div className="flex h-full" style={{ background: '#f1f5f9' }}>
+    {/*
+      Quiz menempati SELURUH layar, bukan sekadar area modul.
+
+      Dua alasan, dan keduanya soal keadilan pengerjaan. Pertama, waktu sedang
+      berjalan - apa pun yang menarik perhatian keluar dari soal merugikan
+      peserta. Kedua, sidebar dan bilah atas yang masih terlihat bisa diklik,
+      dan satu klik menu mengganti isi iframe sehingga pengerjaan hilang di
+      tengah jalan. Induknya diminta menaikkan iframe ke layar penuh lewat
+      postMessage (lihat useEffect di atas); lapisan di sini yang menutup
+      sisanya bila halaman dibuka langsung.
+    */}
+    <div className="fixed inset-0 z-[250] flex" style={{ background: '#f1f5f9' }}>
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-3 border-b border-slate-200 flex-shrink-0" style={{ background: '#ffffff' }}>
-          <div className="flex items-center gap-4 min-w-0">
-            <div className="min-w-0">
-              <h2 className="font-bold text-slate-900 text-sm truncate">{session.session_name}</h2>
-              <p className="text-xs text-slate-400">{answered}/{questions.length} dijawab</p>
-            </div>
+        <div className="flex items-center gap-2 px-3 sm:px-6 py-2.5 sm:py-3 border-b border-slate-200 flex-shrink-0" style={{ background: '#ffffff' }}>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-bold text-slate-900 text-[13px] sm:text-sm truncate">{session.session_name}</h2>
+            <p className="text-[11px] sm:text-xs text-slate-400">{answered}/{questions.length} dijawab</p>
           </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
             {timeLeft !== null && (
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-black text-sm tabular-nums ${isUrgent ? 'bg-rose-600 text-white animate-pulse' : 'bg-slate-100 text-slate-700'}`}>
+              <div className={`flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg font-black text-[13px] sm:text-sm tabular-nums ${isUrgent ? 'bg-rose-600 text-white animate-pulse' : 'bg-slate-100 text-slate-700'}`}>
                 ⏱ {fmtTimer(timeLeft)}
               </div>
             )}
             <button onClick={() => handleSubmit(false)}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-lg shadow transition-all">
+              className="px-3 sm:px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-[13px] sm:text-sm font-bold rounded-lg shadow transition-all">
               Submit
+            </button>
+            {/* Tutup TIDAK langsung keluar - lihat dialog konfirmasi di bawah.
+                Menutup quiz berbatas waktu tanpa peringatan berarti kehilangan
+                kesempatan mengerjakan, dan itu tidak bisa dibatalkan. */}
+            <button onClick={() => setKonfirmasiKeluar(true)} aria-label="Tutup quiz"
+              title="Tutup quiz"
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all flex-shrink-0">
+              <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
         </div>
         <div className="h-1 bg-slate-200 flex-shrink-0">
           <div className="h-1 bg-slate-700 transition-all duration-300" style={{ width: `${progress}%` }} />
         </div>
-        <div className="flex-1 overflow-y-auto px-6 py-8">
+        {/* Navigasi soal versi ponsel. Panel di kanan disembunyikan di layar
+            sempit (hidden sm:flex), dan tanpa penggantinya peserta hanya bisa
+            maju-mundur satu per satu - menengok kembali soal nomor 3 dari soal
+            nomor 18 berarti delapan belas kali ketuk. */}
+        <div className="sm:hidden flex-shrink-0 border-b border-slate-200 bg-white overflow-x-auto">
+          <div className="flex gap-1.5 px-3 py-2 w-max">
+            {questions.map((_, i) => {
+              const ans = answers[questions[i].id] ?? savedAnswers[questions[i].id];
+              const isActive = i === current;
+              return (
+                <button key={i} onClick={() => setCurrent(i)}
+                  aria-label={`Soal ${i + 1}${ans ? ' (sudah dijawab)' : ''}`}
+                  aria-current={isActive ? 'true' : undefined}
+                  className={`w-8 h-8 rounded-lg text-[11px] font-bold flex-shrink-0 transition-all
+                    ${isActive ? 'bg-slate-800 text-white shadow-md'
+                      : ans ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                            : 'bg-slate-100 text-slate-500'}`}>
+                  {i + 1}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-5 sm:py-8">
           <div className="max-w-2xl mx-auto">
             <div className="flex items-center justify-between mb-5">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Soal {current + 1} / {questions.length}</span>
@@ -516,7 +585,51 @@ function QuizPlayer({ session, user, attempt, onDone }: {
       </div>
     </div>
     {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
+
+    {/* Konfirmasi keluar. Menutup quiz berbatas waktu tanpa peringatan berarti
+        kehilangan kesempatan mengerjakan, dan itu tidak bisa dibatalkan.
+        Jawaban yang SUDAH tersimpan tetap ada - itu disebut supaya orang tidak
+        mengira semuanya hilang, lalu memaksakan diri melanjutkan padahal
+        keadaannya tidak memungkinkan. */}
+    {konfirmasiKeluar && (
+      <div className="fixed inset-0 z-[260] flex items-center justify-center p-4"
+        style={{ background: 'rgba(15,23,42,0.6)' }}
+        onClick={() => setKonfirmasiKeluar(false)}>
+        <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl overflow-hidden"
+          onClick={e => e.stopPropagation()} role="dialog" aria-modal="true"
+          aria-labelledby="judul-keluar-quiz">
+          <div className="px-5 py-4 bg-rose-600 text-white">
+            <h3 id="judul-keluar-quiz" className="font-bold text-base">Keluar dari quiz?</h3>
+          </div>
+          <div className="p-5 space-y-2 text-[13px] leading-relaxed">
+            <p className="text-slate-700">
+              Jawaban yang sudah kamu isi <strong>tetap tersimpan</strong> — {answered} dari {questions.length} soal.
+            </p>
+            {timeLeft !== null && (
+              <p className="text-rose-700">
+                Tetapi <strong>waktunya terus berjalan</strong> ({fmtTimer(timeLeft)} tersisa) dan tidak
+                berhenti saat kamu keluar.
+              </p>
+            )}
+            <p className="text-slate-500">
+              Quiz baru dinilai setelah kamu menekan <strong>Submit</strong>.
+            </p>
+          </div>
+          <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+            <button onClick={() => setKonfirmasiKeluar(false)}
+              className="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 bg-white border border-slate-300 hover:bg-slate-100">
+              Lanjut Mengerjakan
+            </button>
+            <button onClick={() => { setKonfirmasiKeluar(false); onDone(); }}
+              className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-rose-600 hover:bg-rose-700">
+              Ya, Keluar
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     </>
+    </ModalPortal>
   );
 }
 

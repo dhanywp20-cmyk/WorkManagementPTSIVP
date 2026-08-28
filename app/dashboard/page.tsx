@@ -148,6 +148,20 @@ export default function Dashboard() {
   const [pendingRequests, setPendingRequests] = useState(0);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [iframeLoading, setIframeLoading] = useState(false);
+  /*
+    Modul di dalam iframe minta layar penuh - dipakai saat peserta sedang
+    mengerjakan Quiz.
+
+    Modal yang dibuat DI DALAM iframe hanya bisa menutupi area iframe-nya; di
+    luar itu sidebar dan bilah atas tetap terlihat, dan tombol-tombolnya tetap
+    bisa diklik. Untuk quiz berbatas waktu itu bukan sekadar soal tampilan:
+    satu klik menu di luar sana mengganti isi iframe, dan pengerjaannya hilang
+    di tengah jalan.
+
+    Jadi iframe-nya sendiri yang dinaikkan ke seluruh layar, atas permintaan
+    modul di dalamnya lewat postMessage.
+  */
+  const [layarPenuh, setLayarPenuh] = useState(false);
 
   const [visibleMenuItems, setVisibleMenuItems] = useState<MenuItem[]>([]);
 
@@ -476,13 +490,31 @@ export default function Dashboard() {
     }, 150);
   };
 
+  /*
+    Turunkan lagi dari layar penuh begitu isi iframe-nya berganti.
+
+    Pesan IFRAME_MODAL_CLOSE dikirim modul saat komponennya dilepas - dan itu
+    tidak selalu sempat terjadi: bila induk mengganti alamat iframe (mis. dari
+    notifikasi), dokumen di dalamnya dibuang tanpa sempat berpamitan. Tanpa
+    penurunan di sini, layar penuh menempel pada halaman berikutnya dan
+    sidebar tidak bisa dijangkau lagi.
+  */
+  useEffect(() => { setLayarPenuh(false); }, [iframeUrl, showTicketing]);
+
   // postMessage bridge
   // Receives CC_NAVIGATE messages from Command Center iframe and routes to the
   // matching menu item, so Quick Access buttons in Command Center work seamlessly.
   useEffect(() => {
     const handleMsg = (e: MessageEvent) => {
       if (!e.data) return;
-      if (e.data.type === 'IFRAME_MODAL_OPEN' || e.data.type === 'IFRAME_MODAL_CLOSE') return;
+      // Permintaan layar penuh dari modul di dalam iframe. Hanya dilayani bila
+      // asalnya sama - pesan dari halaman lain tidak boleh bisa menutupi
+      // seluruh layar pengguna.
+      if (e.data.type === 'IFRAME_MODAL_OPEN' || e.data.type === 'IFRAME_MODAL_CLOSE') {
+        if (e.origin !== window.location.origin) return;
+        setLayarPenuh(e.data.type === 'IFRAME_MODAL_OPEN');
+        return;
+      }
       if (e.data.type !== 'CC_NAVIGATE') return;
       const url: string = e.data.url ?? '';
       if (!url) return;
@@ -1692,7 +1724,9 @@ export default function Dashboard() {
                 <PermissionAwareDashboard currentUser={currentUser} openMenu={openMenuByKey} openUrl={handleNotifNavigate} />
               </div>
             ) : showTicketing ? (
-              <div className="w-full h-full overflow-auto relative">
+              <div className={layarPenuh
+                ? 'fixed inset-0 z-[300] bg-white overflow-hidden'
+                : 'w-full h-full overflow-auto relative'}>
                 {iframeLoading && (
                   <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-4">
@@ -1710,7 +1744,9 @@ export default function Dashboard() {
                 />
               </div>
             ) : iframeUrl ? (
-              <div className="w-full h-full overflow-auto relative">
+              <div className={layarPenuh
+                ? 'fixed inset-0 z-[300] bg-white overflow-hidden'
+                : 'w-full h-full overflow-auto relative'}>
                 {iframeLoading && (
                   <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-4">
