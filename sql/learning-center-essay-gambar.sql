@@ -81,6 +81,14 @@ ON CONFLICT (id) DO UPDATE
 -- siapa saja; membatasinya ke peran tertentu berarti sebagian peserta tidak
 -- bisa menjawab soalnya sama sekali.
 --
+-- Tanda "sesinya sah" itu jwt_claim('sub') - BUKAN 'user_id'. Token yang
+-- ditandatangani aplikasi ini (lib/db-token.ts) hanya memuat: sub, role, aud,
+-- iat, exp, username, user_role, full_name, sales_division. Klaim yang tidak
+-- ada tidak menghasilkan galat; jwt_claim() mengembalikan string kosong, jadi
+-- syaratnya selalu salah dan SETIAP unggahan ditolak dengan pesan "new row
+-- violates row-level security policy" yang tidak menyebut sebabnya sama
+-- sekali. Seluruh kebijakan lain di platform ini memakai 'sub' - ikuti itu.
+--
 -- UBAH & HAPUS: tidak diberikan ke peserta sama sekali. Aplikasi mengunggah
 -- dengan nama berkas baru tiap kali (uuid acak, upsert:false), jadi mengganti
 -- jawaban tidak butuh izin menimpa - dan tanpa izin itu, satu peserta tidak
@@ -96,7 +104,7 @@ CREATE POLICY jawaban_gambar_baca ON storage.objects
 
 CREATE POLICY jawaban_gambar_tulis ON storage.objects
   FOR INSERT TO anon, authenticated
-  WITH CHECK (bucket_id = 'learning-answers' AND jwt_claim('user_id') <> '');
+  WITH CHECK (bucket_id = 'learning-answers' AND jwt_claim('sub') <> '');
 
 -- ─── 6. Periksa hasilnya ───────────────────────────────────────────────────
 SELECT

@@ -96,3 +96,15 @@ grup; dan setelah berkali-kali digeser nomornya tetap 1..n tanpa bolong,
 kembar, atau soal yang hilang.
 
     npx tsx uji/urutan-soal.ts
+
+## galat-unggah.mjs
+
+Penerjemahan galat unggah jawaban bergambar. Peserta melihat pesan ini di
+tengah quiz berbatas waktu, jadi yang dijaga: teks mentah Postgres tidak sampai
+apa adanya ("new row violates row-level security policy" terbaca seperti "kamu
+tidak berhak", padahal artinya pemasangannya belum lengkap); galat pemasangan
+menyebut berkas SQL mana yang perlu dijalankan; dan galat yang BUKAN soal
+pemasangan — jaringan putus, sesi kedaluwarsa — tidak ikut tertelan jadi
+kalimat generik.
+
+    node uji/galat-unggah.mjs

@@ -5,6 +5,37 @@ import { supabase, User, Question, QuizSession, QuizAttempt, SearchInput, AppDia
 import { ModalPortal } from '@/components/shared';
 import { compressImage } from '@/lib/image-compress';
 
+/*
+  Menerjemahkan galat unggah Supabase jadi kalimat yang bisa ditindaklanjuti.
+
+  Peserta quiz melihat pesan ini di tengah pengerjaan berbatas waktu. "new row
+  violates row-level security policy" tidak memberi tahu dia maupun pengurusnya
+  apa yang harus dilakukan - dan yang lebih buruk, ia terbaca seperti "kamu
+  tidak berhak", padahal artinya pemasangannya belum lengkap. Orang lalu
+  mencoba lagi berkali-kali, dan waktunya habis untuk sesuatu yang tidak akan
+  pernah berhasil sampai ada yang menjalankan satu berkas SQL.
+*/
+function terjemahkanGalatUnggah(pesan?: string): string {
+  const p = pesan ?? 'Gagal mengunggah.';
+  if (/row-level security|violates row/i.test(p)) {
+    return 'Penyimpanan gambar belum diizinkan di server. Ini bukan kesalahan kamu — '
+      + 'hubungi admin untuk menjalankan sql/perbaikan-unggah-jawaban-gambar.sql. '
+      + 'Jawaban lain yang sudah kamu isi tetap tersimpan.';
+  }
+  if (/bucket not found|not found/i.test(p)) {
+    return 'Tempat penyimpanan gambar belum dibuat di server. Hubungi admin — '
+      + 'jalankan sql/learning-center-essay-gambar.sql.';
+  }
+  if (/exceeded the maximum allowed size|payload too large|413/i.test(p)) {
+    return 'Fotonya terlalu besar walau sudah dikecilkan. Coba foto ulang dari jarak '
+      + 'lebih dekat, atau potong bagian yang tidak perlu.';
+  }
+  if (/mime type|not supported/i.test(p)) {
+    return 'Jenis berkasnya tidak didukung. Pakai foto biasa (JPG atau PNG).';
+  }
+  return p;
+}
+
 function QuizPlayer({ session, user, attempt, onDone }: {
   session: QuizSession; user: User; attempt: QuizAttempt; onDone: () => void;
 }) {
@@ -139,7 +170,7 @@ function QuizPlayer({ session, user, attempt, onDone }: {
         supabase.storage.from('learning-answers').upload(`${dasar}.jpg`, penuh, { cacheControl: '31536000', upsert: false }),
         supabase.storage.from('learning-answers').upload(`${dasar}-thumb.jpg`, kecil, { cacheControl: '31536000', upsert: false }),
       ]);
-      if (u1.error || u2.error) throw new Error(u1.error?.message || u2.error?.message);
+      if (u1.error || u2.error) throw new Error(terjemahkanGalatUnggah(u1.error?.message || u2.error?.message));
 
       const urlPenuh = supabase.storage.from('learning-answers').getPublicUrl(`${dasar}.jpg`).data.publicUrl;
       const urlKecil = supabase.storage.from('learning-answers').getPublicUrl(`${dasar}-thumb.jpg`).data.publicUrl;
