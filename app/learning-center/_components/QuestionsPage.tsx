@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ModalPortal } from '@/components/shared';
+import { bandingkanUrutan, perubahanUrutan, geser, nomorBerikutnya } from '@/lib/urutan-soal';
 import {
   supabase, User, Material, Question, FolderNode,
   buildFolderTree, DIFF_COLOR, SearchInput,
@@ -237,7 +238,24 @@ export function QuestionsPage({ user }: { user: User }) {
             difficulty: q.difficulty ?? 'medium', created_by: user.id,
           }));
       setGenStatus('💾 Menyimpan soal ke database...');
-      const { error } = await supabase.from('lc_questions').insert(rows);
+      /*
+        Nomor urut diberikan mengikuti urutan keluaran AI, disambung dari nomor
+        terakhir di grup itu.
+
+        Ini bukan sekadar kerapian. Satu angkatan generate disisipkan dalam SATU
+        perintah, jadi created_at seluruh barisnya sama persis - tanpa nomor,
+        urutan tampilnya tidak tertentu dan bisa berubah tiap kali daftarnya
+        dimuat. Soal nomor 1 yang dirancang sebagai pembuka bisa muncul di
+        tengah, dan tidak ada yang bisa dipakai untuk membetulkannya.
+      */
+      const nomorMulai = kolomUrutanAda
+        ? nomorBerikutnya(questions.filter(q => q.material_id === selectedMat
+            && (q.batch_name ?? '') === batchName.trim())) - 1
+        : 0;
+      const barisFinal = kolomUrutanAda
+        ? (rows as Record<string, unknown>[]).map((r, i) => ({ ...r, urutan: nomorMulai + i + 1 }))
+        : rows;
+      const { error } = await supabase.from('lc_questions').insert(barisFinal);
       if (error) throw error;
       // Track Gemini usage in localStorage
       const today = new Date().toISOString().slice(0, 10);
@@ -316,8 +334,19 @@ export function QuestionsPage({ user }: { user: User }) {
       // tidak berarti di sana, dan mengirim nilai yang tak bermakna hanya
       // membuat orang berikutnya mengira ia dipakai.
       : { ...newQ, question_type: 'abcd', answer_format: undefined };
+    /*
+      Soal baru diberi nomor di EKOR grupnya. Tanpa ini ia masuk tanpa nomor,
+      dan soal tanpa nomor jatuh ke pengurutan created_at - artinya begitu
+      grupnya diatur ulang sekali, posisi soal-soal baru ikut bergeser tanpa
+      ada yang menggesernya.
+    */
+    const nomorBaru = kolomUrutanAda
+      ? nomorBerikutnya(questions.filter(q => q.material_id === newQ.material_id
+          && (q.batch_name ?? '') === (newQ.batch_name ?? '')))
+      : undefined;
     const { error } = await supabase.from('lc_questions').insert([{
       ...payload, materi_name: mat?.materi_name ?? '', created_by: user.id,
+      ...(nomorBaru === undefined ? {} : { urutan: nomorBaru }),
     }]);
     if (error) { setDialog({ type: 'error', message: 'Error: ' + error.message }); return; }
     if (modeGrup) {
@@ -354,6 +383,61 @@ export function QuestionsPage({ user }: { user: User }) {
   };
 
   const tutupTambahManual = () => { setShowAddManual(false); setModeGrup(false); };
+
+  /*
+    Apakah kolom `urutan` sudah ada di database.
+
+    Diintip dari baris yang sudah termuat, bukan dari kueri terpisah:
+    PostgREST menghilangkan kunci untuk kolom yang tidak ada, sementara kolom
+    yang ada tapi belum diisi tetap muncul sebagai null. Bedanya itu yang
+    dipakai - dan cara ini tidak menambah satu pun permintaan.
+
+    Yang sengaja TIDAK dilakukan: menaruh .order('urutan') pada kueri
+    pemuatannya. Kalau kolomnya belum ada, seluruh kueri ditolak dan daftarnya
+    tampil KOSONG - persis kegagalan diam-diam yang pernah membuat daftar
+    Incentive mendadak kosong sebelum SQL-nya dijalankan. Pengurutan dikerjakan
+    di sisi klien, jadi tanpa kolomnya pun daftarnya tetap utuh; yang hilang
+    hanya tombol pengaturnya.
+  */
+  const kolomUrutanAda = questions.length > 0
+    && Object.prototype.hasOwnProperty.call(questions[0], 'urutan');
+
+  /*
+    Simpan urutan baru satu grup.
+
+    Aturan nomornya ada di lib/urutan-soal.ts - logika murni, diuji terpisah
+    di uji/urutan-soal.mjs. Yang tersisa di sini hanya urusan jaringan dan
+    tampilan.
+  */
+  const simpanUrutan = async (daftarBaru: Question[]) => {
+    const perubahan = perubahanUrutan(daftarBaru);
+    if (perubahan.length === 0) return;
+
+    // Digeser di layar lebih dulu supaya tombolnya terasa seketika; kalau
+    // penyimpanannya gagal, load() di bawah mengembalikan keadaan sebenarnya.
+    const peta = new Map(perubahan.map(x => [x.id, x.urutan]));
+    setQuestions(prev => prev.map(q => peta.has(q.id) ? { ...q, urutan: peta.get(q.id)! } : q));
+
+    const hasil: { error: { message: string } | null }[] = await Promise.all(perubahan.map(x =>
+      supabase.from('lc_questions').update({ urutan: x.urutan }).eq('id', x.id)
+    ));
+    const gagal = hasil.find(r => r.error)?.error;
+    if (gagal) {
+      setDialog({
+        type: 'error', title: 'Urutan gagal disimpan',
+        message: /urutan/i.test(gagal.message)
+          ? 'Kolom urutan belum ada di database. Jalankan sql/learning-center-urutan-soal.sql lebih dulu.'
+          : 'Error: ' + gagal.message,
+      });
+      load();
+    }
+  };
+
+  /** Geser satu soal ke atas (-1) atau ke bawah (+1) di dalam grupnya. */
+  const geserSoal = (grup: Question[], idx: number, arah: -1 | 1) => {
+    const baru = geser(grup, idx, arah);
+    if (baru) simpanUrutan(baru);
+  };
 
   const goBack = () => {
     if (selectedSubFolder) { setSelectedSubFolder(null); return; }
@@ -926,6 +1010,23 @@ export function QuestionsPage({ user }: { user: User }) {
         <div className="max-w-5xl mx-auto space-y-6">
         {showGenerate && generatePanelJSX}
 
+        {/*
+          Tombol pengatur urutan disembunyikan bila kolomnya belum ada, dan
+          fitur yang hilang tanpa keterangan lebih membingungkan daripada
+          fitur yang belum ada sama sekali - orang akan mencarinya, mengira
+          dirinya salah lihat. Sebutkan apa yang kurang dan di mana
+          membetulkannya.
+        */}
+        {questions.length > 0 && !kolomUrutanAda && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5">
+            <p className="text-xs text-amber-900 leading-relaxed">
+              <strong>Pengaturan urutan soal belum aktif.</strong> Jalankan{' '}
+              <code className="px-1 py-0.5 rounded bg-amber-100 font-mono text-[11px]">sql/learning-center-urutan-soal.sql</code>{' '}
+              di Supabase, lalu muat ulang halaman ini — tombol panah naik/turun akan muncul di tiap soal.
+            </p>
+          </div>
+        )}
+
         {/* Subfolder grid */}
         {subFolders.length > 0 && !selectedSubFolder && (
           <div>
@@ -1163,7 +1264,7 @@ export function QuestionsPage({ user }: { user: User }) {
                   {/* Batch sub-groups — collapsible accordion */}
                   <div className="space-y-2 pl-3 border-l-2" style={{ borderColor: matColor.icon + '40' }}>
                     {batchKeys.map((batchKey, batchIdx) => {
-                      const batchQs = qs.filter(q => (q.batch_name ?? '') === batchKey);
+                      const batchQs = qs.filter(q => (q.batch_name ?? '') === batchKey).sort(bandingkanUrutan);
                       const BATCH_COLORS = [
                         { bg: '#f5f3ff', border: '#ddd6fe', text: '#6d28d9', dot: '#8b5cf6', hdr: '#ede9fe' },
                         { bg: '#ecfdf5', border: '#a7f3d0', text: '#065f46', dot: '#10b981', hdr: '#d1fae5' },
@@ -1241,7 +1342,7 @@ export function QuestionsPage({ user }: { user: User }) {
                                     width: 48, background: DIFF_BG[q.difficulty] ?? '#f8fafc',
                                     borderRight: `1px solid ${DIFF_BORDER[q.difficulty] ?? '#e2e8f0'}`,
                                     flexShrink: 0, display: 'flex', flexDirection: 'column',
-                                    alignItems: 'center', paddingTop: 18,
+                                    alignItems: 'center', paddingTop: 18, gap: 4,
                                   }}>
                                     <div style={{
                                       width: 28, height: 28, borderRadius: 8,
@@ -1249,6 +1350,38 @@ export function QuestionsPage({ user }: { user: User }) {
                                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                                       color: '#fff', fontSize: 12, fontWeight: 900,
                                     }}>{idx + 1}</div>
+                                    {/*
+                                      Panah, bukan seret-lepas. Seret-lepas lebih
+                                      luwes di tetikus, tapi di layar sentuh ia
+                                      berebut dengan gulir halaman - menahan lalu
+                                      menggeser soal ke luar layar adalah gerakan
+                                      yang sama dengan menggulir daftarnya. Panah
+                                      bekerja sama di keduanya, dan bisa dijangkau
+                                      lewat papan ketik.
+
+                                      Hanya muncul bila kolomnya sudah ada; tanpa
+                                      itu tombolnya akan selalu gagal saat ditekan.
+                                    */}
+                                    {kolomUrutanAda && batchQs.length > 1 && (
+                                      <div className="flex flex-col gap-0.5">
+                                        <button type="button" aria-label={`Naikkan soal ${idx + 1}`}
+                                          title="Naikkan" disabled={idx === 0}
+                                          onClick={() => geserSoal(batchQs, idx, -1)}
+                                          className="w-6 h-5 rounded flex items-center justify-center text-slate-400 bg-white/70 border border-slate-200 transition-all enabled:hover:text-slate-700 enabled:hover:bg-white disabled:opacity-25 disabled:cursor-not-allowed">
+                                          <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
+                                          </svg>
+                                        </button>
+                                        <button type="button" aria-label={`Turunkan soal ${idx + 1}`}
+                                          title="Turunkan" disabled={idx === batchQs.length - 1}
+                                          onClick={() => geserSoal(batchQs, idx, 1)}
+                                          className="w-6 h-5 rounded flex items-center justify-center text-slate-400 bg-white/70 border border-slate-200 transition-all enabled:hover:text-slate-700 enabled:hover:bg-white disabled:opacity-25 disabled:cursor-not-allowed">
+                                          <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                    )}
                                   </div>
                                   <div style={{ flex: 1, padding: '14px 18px' }}>
                                     {q.question_type === 'essay' && (

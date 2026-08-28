@@ -43,6 +43,15 @@ export interface Question {
   difficulty: 'easy' | 'medium' | 'hard';
   batch_name?: string | null;
   created_at: string;
+  /**
+   * Urutan tampil di dalam satu (material_id, batch_name).
+   *
+   * `undefined` berarti kolomnya belum ada di database - berbeda dengan `null`
+   * yang berarti kolomnya ada tapi baris ini belum pernah diurutkan. Bedanya
+   * dipakai: yang pertama membuat tombol pengatur urutan disembunyikan, yang
+   * kedua tidak. Lihat sql/learning-center-urutan-soal.sql.
+   */
+  urutan?: number | null;
   // Essay addition (non-breaking; defaults to 'abcd' for all existing rows)
   question_type?: 'abcd' | 'essay';
   model_answer?: string | null; // kunci/referensi jawaban essay, untuk bantu admin menilai manual

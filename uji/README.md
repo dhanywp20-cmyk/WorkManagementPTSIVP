@@ -85,3 +85,14 @@ memanjat direktori — semuanya harus jatuh kembali ke model bawaan.
 Ikut dijaga: suhu dijepit ke rentang 0–2, dan arahan dipotong di 4000 karakter.
 
     node uji/pengaturan-ai.mjs
+
+## urutan-soal.ts
+
+Aturan urutan soal di Bank Soal (lib/urutan-soal.ts). Yang dijaga: soal yang
+sudah diatur tangan tidak terselip oleh soal baru; pemasangan yang SQL-nya
+belum dijalankan tetap memakai urutan lama (created_at menurun) alih-alih
+berubah sendiri; menukar dua soal hanya menulis DUA baris, bukan seluruh isi
+grup; dan setelah berkali-kali digeser nomornya tetap 1..n tanpa bolong,
+kembar, atau soal yang hilang.
+
+    npx tsx uji/urutan-soal.ts
