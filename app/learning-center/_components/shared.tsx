@@ -205,6 +205,12 @@ export async function generateWithGemini(
   prompt: string, pdfFile?: File | null,
   /** 'penilai' memakai token & model penilai; selain itu pembuat soal. */
   profil?: 'penilai',
+  /**
+   * Paksa memakai model ini, mengabaikan yang tersimpan. Dipakai fitur
+   * "Bandingkan 2 model" - dua panggilan berbeda model tanpa satu pun mengubah
+   * pengaturan, supaya perbandingannya tidak meninggalkan jejak.
+   */
+  model?: string,
 ): Promise<string> {
   const parts: any[] = [];
   if (pdfFile) {
@@ -223,6 +229,7 @@ export async function generateWithGemini(
       // angka dari sini membuat pengaturan itu tidak berlaku.
       generationConfig: { maxOutputTokens: 8192 },
       ...(profil ? { profil } : {}),
+      ...(model ? { model } : {}),
     }),
   });
   if (!res.ok) {

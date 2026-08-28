@@ -7,7 +7,7 @@ import {
   supabase, User, Material, Question, FolderNode,
   buildFolderTree, DIFF_COLOR, SearchInput,
   generateWithGemini, fileToBase64, AppDialog, DialogState,
-  BtnEdit, BtnDelete,
+  BtnEdit, BtnDelete, ambilDaftarModel, type ModelAI,
 } from './shared';
 
 // Folder color palette
@@ -63,6 +63,38 @@ export function QuestionsPage({ user }: { user: User }) {
   // Tipe soal untuk panel Generate AI - soal essay tidak dicampur dengan ABCD dalam satu batch generate
   const [genType, setGenType] = useState<'abcd' | 'essay'>('abcd');
   const [batchName, setBatchName] = useState('');
+
+  /*
+    Bandingkan dua model pada materi yang sama.
+
+    Ada karena pertanyaan "model mana yang lebih baik untuk soal saya" tidak
+    bisa dijawab dari spesifikasi. Model yang unggul di tolok ukur umum belum
+    tentu unggul pada materi teknis AV berbahasa Indonesia - dan satu-satunya
+    cara tahu adalah melihat keluarannya berdampingan pada materi yang benar-
+    benar dipakai.
+
+    Pembuat soal jalan sesekali, jadi dua panggilan sekali coba tidak
+    mengganggu jatah - berbeda dengan penilaian, di mana jumlah panggilan
+    justru menjadi soal utamanya.
+  */
+  const [modeBanding, setModeBanding] = useState(false);
+  const [modelBandingA, setModelBandingA] = useState('');
+  const [modelBandingB, setModelBandingB] = useState('');
+  const [daftarModelGen, setDaftarModelGen] = useState<ModelAI[]>([]);
+  interface SisiBanding { model: string; rows: Record<string, unknown>[]; galat: string }
+  const [hasilBanding, setHasilBanding] = useState<{ a: SisiBanding; b: SisiBanding } | null>(null);
+
+  useEffect(() => {
+    ambilDaftarModel()
+      .then(m => {
+        setDaftarModelGen(m);
+        // Isian awal: dua model teratas yang berbeda, supaya tombolnya langsung
+        // bisa ditekan tanpa memilih apa pun dulu.
+        if (m.length > 0) { setModelBandingA(p => p || m[0].id); }
+        if (m.length > 1) { setModelBandingB(p => p || m[1].id); }
+      })
+      .catch(() => { /* daftar gagal - mode banding disembunyikan, lihat render */ });
+  }, []);
   const [genExtraPrompt, setGenExtraPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
   const [genStatus, setGenStatus] = useState('');
@@ -167,13 +199,17 @@ export function QuestionsPage({ user }: { user: User }) {
       )
     : visibleQuestions;
 
-  const handleGenerate = async () => {
-    if (!selectedMat) { setDialog({ type: 'error', message: 'Pilih materi terlebih dahulu!' }); return; }
+  /**
+   * Panggil AI sekali dan kembalikan baris soal siap simpan.
+   *
+   * Dipisah dari penyimpanannya supaya bisa dipanggil DUA kali dengan model
+   * berbeda tanpa satu pun menyentuh database - itu inti fitur banding: yang
+   * kalah tidak boleh meninggalkan jejak apa pun.
+   */
+  const hasilkanSoal = async (modelPaksa?: string): Promise<Record<string, unknown>[]> => {
+    if (!selectedMat) throw new Error('Pilih materi terlebih dahulu!');
     const mat = materials.find(m => m.id === selectedMat);
-    if (!pdfFile && !mat?.content_text) { setDialog({ type: 'error', message: 'Upload PDF materi atau pastikan materi sudah punya konten teks.' }); return; }
-    setGenerating(true);
-    setGenStatus('Menghubungi Gemini AI...');
-    try {
+    if (!pdfFile && !mat?.content_text) throw new Error('Upload PDF materi atau pastikan materi sudah punya konten teks.');
       const diffInstruction = genDiff === 'mixed'
         ? 'Buat soal dengan campuran tingkat kesulitan: easy, medium, dan hard secara merata.'
         : `Semua soal tingkat kesulitan: ${genDiff}.`;
@@ -184,7 +220,7 @@ export function QuestionsPage({ user }: { user: User }) {
         ? `Kamu adalah instruktur training profesional. ${pdfFile ? 'Berdasarkan dokumen PDF yang dilampirkan' : 'Berdasarkan materi berikut'}, buat tepat ${genCount} soal essay (uraian, bukan pilihan ganda) dalam Bahasa Indonesia yang menuntut jawaban penjelasan/analisis, bukan sekadar satu kata.\n${diffInstruction}${extraInstruction}\n${!pdfFile && mat?.content_text ? `\nMATERI:\n${mat.content_text.slice(0, 30000)}` : ''}\n\nOUTPUT RULE: Balas HANYA dengan JSON array murni. Tidak boleh ada teks, penjelasan, atau markdown di luar array. Mulai langsung dengan [ dan akhiri dengan ].\n[\n  {\n    "question": "Pertanyaan essay lengkap?",\n    "model_answer": "Contoh/kunci jawaban ideal sebagai referensi penilaian manual admin",\n    "difficulty": "easy"\n  }\n]`
         : `Kamu adalah instruktur training profesional. ${pdfFile ? 'Berdasarkan dokumen PDF yang dilampirkan' : 'Berdasarkan materi berikut'}, buat tepat ${genCount} soal pilihan ganda (A, B, C, D) dalam Bahasa Indonesia.\n${diffInstruction}${extraInstruction}\n${!pdfFile && mat?.content_text ? `\nMATERI:\n${mat.content_text.slice(0, 30000)}` : ''}\n\nOUTPUT RULE: Balas HANYA dengan JSON array murni. Tidak boleh ada teks, penjelasan, atau markdown di luar array. Mulai langsung dengan [ dan akhiri dengan ].\n[\n  {\n    "question": "Pertanyaan lengkap?",\n    "option_a": "Jawaban A",\n    "option_b": "Jawaban B",\n    "option_c": "Jawaban C",\n    "option_d": "Jawaban D",\n    "correct_answer": "A",\n    "difficulty": "easy"\n  }\n]`;
       setGenStatus(pdfFile ? '📄 Mengirim PDF ke Gemini...' : '🧠 Generating soal...');
-      const text = await generateWithGemini(prompt, pdfFile ?? null);
+      const text = await generateWithGemini(prompt, pdfFile ?? null, undefined, modelPaksa);
       setGenStatus('⚙️ Memproses hasil...');
 
       // Robust JSON extraction
@@ -237,6 +273,13 @@ export function QuestionsPage({ user }: { user: User }) {
             correct_answer: (q.correct_answer ?? 'A').toUpperCase(), question_type: 'abcd',
             difficulty: q.difficulty ?? 'medium', created_by: user.id,
           }));
+    return rows as Record<string, unknown>[];
+  };
+
+  /** Simpan baris hasil AI ke database. Dipakai mode biasa maupun pemenang banding. */
+  const simpanHasil = async (rows: Record<string, unknown>[]) => {
+    try {
+      setGenerating(true);
       setGenStatus('💾 Menyimpan soal ke database...');
       /*
         Nomor urut diberikan mengikuti urutan keluaran AI, disambung dari nomor
@@ -266,14 +309,65 @@ export function QuestionsPage({ user }: { user: User }) {
       setPdfFile(null);
       if (pdfRef.current) pdfRef.current.value = '';
       setBatchName(''); setGenExtraPrompt('');
-      setShowGenerate(false); setGenStatus(''); load();
+      setShowGenerate(false); setGenStatus(''); setHasilBanding(null); load();
       setDialog({ type: 'success', title: 'Generate Selesai', message: `${rows.length} soal berhasil digenerate dan disimpan!${batchName.trim() ? ` (Batch: ${batchName.trim()})` : ''}` });
     } catch (err: any) {
-      setDialog({ type: 'error', title: 'Generate Gagal', message: 'Gagal generate: ' + (err.message ?? String(err)) });
+      setDialog({ type: 'error', title: 'Gagal Menyimpan', message: err.message ?? String(err) });
       setGenStatus('');
     }
     setGenerating(false);
   };
+
+  /** Mode biasa: satu model, langsung disimpan - persis seperti sebelumnya. */
+  const handleGenerate = async () => {
+    setGenerating(true);
+    setGenStatus('Menghubungi Gemini AI...');
+    try {
+      const rows = await hasilkanSoal();
+      await simpanHasil(rows);
+    } catch (err: any) {
+      setDialog({ type: 'error', title: 'Generate Gagal', message: 'Gagal generate: ' + (err.message ?? String(err)) });
+      setGenStatus('');
+      setGenerating(false);
+    }
+  };
+
+  /*
+    Mode banding: materi yang sama, dua model, hasilnya berdampingan.
+
+    Keduanya dijalankan BERSAMAAN, bukan berurutan - menunggu dua kali secara
+    bergantian membuat orang menyerah sebelum melihat hasilnya. Dan keduanya
+    dijalankan dengan prompt yang sama persis: kalau salah satunya diberi
+    kelonggaran berbeda, yang dibandingkan bukan lagi modelnya.
+
+    TIDAK ADA yang disimpan sampai satu sisi dipilih. Perbandingan yang
+    menyimpan dua-duanya bukan perbandingan - itu cuma menggandakan soal.
+  */
+  const handleBanding = async () => {
+    const a = modelBandingA.trim();
+    const b = modelBandingB.trim();
+    if (!a || !b) { setDialog({ type: 'error', message: 'Pilih dua model dulu.' }); return; }
+    if (a === b) { setDialog({ type: 'error', message: 'Pilih dua model yang BERBEDA - membandingkan model dengan dirinya sendiri tidak memberi tahu apa pun.' }); return; }
+
+    setGenerating(true);
+    setHasilBanding(null);
+    setGenStatus(`Menjalankan ${a} dan ${b} bersamaan...`);
+    try {
+      const [ra, rb] = await Promise.allSettled([hasilkanSoal(a), hasilkanSoal(b)]);
+      setGenStatus('');
+      setGenerating(false);
+      // Satu sisi gagal bukan alasan membuang sisi yang berhasil - yang berhasil
+      // tetap bisa dipakai, dan kegagalannya disebutkan apa adanya.
+      setHasilBanding({
+        a: { model: a, rows: ra.status === 'fulfilled' ? ra.value : [], galat: ra.status === 'rejected' ? String(ra.reason?.message ?? ra.reason) : '' },
+        b: { model: b, rows: rb.status === 'fulfilled' ? rb.value : [], galat: rb.status === 'rejected' ? String(rb.reason?.message ?? rb.reason) : '' },
+      });
+    } catch (err: any) {
+      setGenStatus(''); setGenerating(false);
+      setDialog({ type: 'error', title: 'Banding Gagal', message: err.message ?? String(err) });
+    }
+  };
+
 
   const handleDelete = (id: string) => {
     setDialog({
@@ -636,18 +730,131 @@ export function QuestionsPage({ user }: { user: User }) {
           </div>
         </div>
       </div>
+      {/* ── Mode: satu model, atau bandingkan dua ──────────────────────────
+          Saklarnya hanya muncul bila daftar model bisa dibaca. Menawarkan
+          perbandingan yang pasti gagal karena modelnya tidak bisa dipilih
+          hanya membuang waktu orang. */}
+      {daftarModelGen.length > 1 && (
+        <div className="mb-4 rounded-xl border border-slate-200 overflow-hidden">
+          <div className="flex">
+            {([
+              { v: false, judul: '1 Model', ket: 'langsung disimpan' },
+              { v: true,  judul: 'Bandingkan 2 Model', ket: 'pilih hasilnya dulu' },
+            ] as const).map(o => (
+              <button key={String(o.v)} type="button"
+                onClick={() => { setModeBanding(o.v); setHasilBanding(null); }}
+                aria-pressed={modeBanding === o.v}
+                className={`flex-1 px-3 py-2 text-left transition-all ${
+                  modeBanding === o.v ? 'bg-violet-600 text-white' : 'bg-white text-slate-600 hover:bg-violet-50'}`}>
+                <div className="text-xs font-bold">{o.judul}</div>
+                <div className={`text-[10px] ${modeBanding === o.v ? 'text-violet-100' : 'text-slate-400'}`}>{o.ket}</div>
+              </button>
+            ))}
+          </div>
+
+          {modeBanding && (
+            <div className="p-3 bg-violet-50/50 border-t border-slate-200">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {([
+                  { lbl: 'Model A', val: modelBandingA, set: setModelBandingA },
+                  { lbl: 'Model B', val: modelBandingB, set: setModelBandingB },
+                ] as const).map(m => (
+                  <div key={m.lbl}>
+                    <label className="block text-[10px] font-bold text-violet-600 uppercase tracking-wide mb-1">{m.lbl}</label>
+                    <select value={m.val} onChange={e => m.set(e.target.value)}
+                      className="w-full text-xs px-2.5 py-2 rounded-lg border border-violet-200 bg-white outline-none focus:border-violet-400">
+                      {daftarModelGen.map(x => <option key={x.id} value={x.id}>{x.id}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-violet-700 mt-2 leading-relaxed">
+                Materi, jumlah soal, tingkat kesulitan, dan arahan yang sama dikirim ke keduanya —
+                jadi yang berbeda benar-benar hanya modelnya. <b>Tidak ada yang disimpan</b> sampai
+                Anda memilih salah satu hasilnya.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       {genStatus && (
         <div className="mb-4 flex items-center gap-2 text-sm text-violet-700 bg-violet-100 border border-violet-200 rounded-xl px-4 py-2.5 font-medium">
           <span className="w-4 h-4 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin flex-shrink-0" />
           {genStatus}
         </div>
       )}
+
+      {/* ── Hasil banding: berdampingan, dan HANYA satu yang bisa disimpan ── */}
+      {hasilBanding && (
+        <div className="mb-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {([hasilBanding.a, hasilBanding.b] as const).map((sisi, i) => (
+              <div key={i} className="rounded-xl border border-slate-200 overflow-hidden flex flex-col bg-white">
+                <div className="px-3 py-2 border-b border-slate-200 flex items-center gap-2 flex-wrap"
+                  style={{ background: i === 0 ? '#eef2ff' : '#f0fdf4' }}>
+                  <span className="text-[10px] font-black uppercase tracking-wider"
+                    style={{ color: i === 0 ? '#4338ca' : '#15803d' }}>{i === 0 ? 'Model A' : 'Model B'}</span>
+                  <span className="text-[11px] font-bold text-slate-700 truncate">{sisi.model}</span>
+                  <span className="ml-auto text-[10px] font-semibold text-slate-500">
+                    {sisi.galat ? '—' : `${sisi.rows.length} soal`}
+                  </span>
+                </div>
+
+                <div className="p-2 space-y-1.5 max-h-[340px] overflow-y-auto flex-1">
+                  {sisi.galat ? (
+                    <p className="text-xs text-rose-600 p-2 leading-relaxed">{sisi.galat}</p>
+                  ) : sisi.rows.map((r, j) => (
+                    <div key={j} className="rounded-lg border border-slate-100 bg-slate-50/70 p-2">
+                      <p className="text-[11.5px] font-semibold text-slate-800 leading-snug">
+                        {j + 1}. {String(r.question ?? '')}
+                      </p>
+                      {r.question_type === 'essay' ? (
+                        r.model_answer ? <p className="text-[10.5px] text-indigo-700 mt-1 leading-snug">Kunci: {String(r.model_answer)}</p> : null
+                      ) : (
+                        <div className="grid grid-cols-2 gap-1 mt-1.5">
+                          {(['a', 'b', 'c', 'd'] as const).map(o => {
+                            const benar = r.correct_answer === o.toUpperCase();
+                            return (
+                              <div key={o} className={`text-[10px] px-1.5 py-1 rounded border leading-snug ${
+                                benar ? 'border-emerald-300 bg-emerald-50 text-emerald-800 font-semibold'
+                                      : 'border-slate-200 bg-white text-slate-500'}`}>
+                                <b>{o.toUpperCase()}.</b> {String((r as Record<string, unknown>)[`option_${o}`] ?? '')}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="p-2 border-t border-slate-100">
+                  <button type="button" disabled={generating || !!sisi.galat || sisi.rows.length === 0}
+                    onClick={() => simpanHasil(sisi.rows)}
+                    className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-40"
+                    style={{ background: i === 0 ? '#4f46e5' : '#16a34a' }}>
+                    💾 Simpan hasil {i === 0 ? 'Model A' : 'Model B'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button type="button" onClick={() => setHasilBanding(null)}
+            className="mt-2 text-[11px] text-slate-500 underline">
+            Buang keduanya, coba lagi
+          </button>
+        </div>
+      )}
+
       <div className="flex gap-3">
-        <button onClick={handleGenerate} disabled={generating}
+        <button onClick={modeBanding ? handleBanding : handleGenerate} disabled={generating}
           className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60 flex items-center gap-2">
-          {generating ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generating...</> : '✨ Generate Sekarang'}
+          {generating
+            ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{modeBanding ? 'Membandingkan...' : 'Generating...'}</>
+            : (modeBanding ? '⚖️ Bandingkan Sekarang' : '✨ Generate Sekarang')}
         </button>
-        <button onClick={() => { setShowGenerate(false); setPdfFile(null); setGenStatus(''); setBatchName(''); setGenExtraPrompt(''); if (pdfRef.current) pdfRef.current.value = ''; }}
+        <button onClick={() => { setShowGenerate(false); setPdfFile(null); setGenStatus(''); setBatchName(''); setGenExtraPrompt(''); setHasilBanding(null); if (pdfRef.current) pdfRef.current.value = ''; }}
           className="px-5 py-2.5 bg-white text-slate-600 text-sm font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all">Batal</button>
       </div>
     </div>

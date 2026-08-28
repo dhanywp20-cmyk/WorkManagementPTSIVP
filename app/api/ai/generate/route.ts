@@ -69,6 +69,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    /*
+      Model boleh ditentukan per permintaan - dipakai fitur "Bandingkan 2
+      model", yang menjalankan materi yang sama pada dua model sekaligus tanpa
+      mengubah pengaturan tersimpan.
+
+      Divalidasi dengan pola yang SAMA seperti model dari pengaturan, dan bukan
+      karena kerapian: nilainya masuk ke URL yang dipanggil server. Tanpa
+      saringan ini, isian dari peramban bisa mengubah alamat yang dituju.
+      Nilai yang tidak lolos diabaikan, bukan ditolak - permintaannya tetap
+      jalan memakai model tersimpan.
+    */
+    const modelPermintaan = typeof b.model === 'string' && /^[A-Za-z0-9._-]{1,80}$/.test(b.model.trim())
+      ? b.model.trim() : '';
+    const model = modelPermintaan || setelan.model;
+
     const payload: Record<string, unknown> = { contents: b.contents };
     if (b.generationConfig)  payload.generationConfig  = b.generationConfig;
     if (b.systemInstruction) payload.systemInstruction = b.systemInstruction;
@@ -95,7 +110,7 @@ export async function POST(request: NextRequest) {
         : { parts: [arahan] };
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${setelan.model}:generateContent`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
     const res = await fetch(url, {
       method: 'POST',
       // Token dikirim lewat header, bukan query string. Alamat lengkap berikut
@@ -107,7 +122,7 @@ export async function POST(request: NextRequest) {
     if (!res.ok) {
       // Log detail asli ke server log (nggak keliatan user, tapi kebaca di Vercel logs)
       // supaya gampang di-debug kalau Gemini balikin error yang shape-nya nggak terduga.
-      console.error('[api/ai/generate] Gemini error', res.status, setelan.model, JSON.stringify(data));
+      console.error('[api/ai/generate] Gemini error', res.status, model, JSON.stringify(data));
       // generativelanguage.googleapis.com KADANG membungkus error dalam array
       // ([{error:{...}}], bukan {error:{...}}). Klien hanya membaca
       // data.error.message, jadi bentuknya diratakan di sini supaya alasan
@@ -133,8 +148,8 @@ export async function POST(request: NextRequest) {
                 jatah penuh, dan pemilihnya ada tepat di layar yang sedang ia
                 lihat.
               */
-              ? `Jatah harian model "${setelan.model}" habis. Jatah dihitung per model, jadi pilih model lain di daftar "Penilai AI" di atas — jatahnya masih utuh. Model ringan (flash-lite) biasanya paling longgar. Bisa juga nilai manual: saran AI memang tidak pernah jadi nilai akhir.`
-              : `Jatah harian model "${setelan.model}" habis. Jatah dihitung per model — pilih model lain di Admin Panel → Integrations, jatahnya terpisah. Model ringan (flash-lite) biasanya paling longgar.`,
+              ? `Jatah harian model "${model}" habis. Jatah dihitung per model, jadi pilih model lain di daftar "Penilai AI" di atas — jatahnya masih utuh. Model ringan (flash-lite) biasanya paling longgar. Bisa juga nilai manual: saran AI memang tidak pernah jadi nilai akhir.`
+              : `Jatah harian model "${model}" habis. Jatah dihitung per model — pilih model lain di Admin Panel → Integrations, jatahnya terpisah. Model ringan (flash-lite) biasanya paling longgar.`,
             429,
           );
         }
@@ -143,7 +158,7 @@ export async function POST(request: NextRequest) {
             // 404 dan 429 sering tertukar dalam benak orang, padahal obatnya
             // berbeda: yang ini nama modelnya memang tidak ada - menunggu besok
             // tidak akan menolong.
-            `Model "${setelan.model}" tidak ada pada token ini (bukan soal jatah habis). ` +
+            `Model "${model}" tidak ada pada token ini (bukan soal jatah habis). ` +
             `Pilih dari daftar model ${penilai ? 'di bilah "Penilai AI"' : 'di Admin Panel → Integrations'} — ` +
             `daftarnya dibaca langsung dari Google, jadi isinya pasti tersedia.`,
             404,

@@ -134,3 +134,17 @@ sudah hilang dari daftar tetap terdeteksi, supaya tidak diam-diam tergantikan
 baris pertama.
 
     node uji/daftar-model.mjs
+
+## banding-model.mjs
+
+Fitur "Bandingkan 2 model" di panel Generate AI. Yang paling dijaga: nama model
+yang dikirim peramban masuk ke ALAMAT yang dipanggil server, jadi delapan bentuk
+menyimpang diuji — termasuk yang memanjat direktori, menyisipkan query string
+berisi kunci lain, dan menempelkan alamat host lain — semuanya harus jatuh
+kembali ke model tersimpan, bukan ditolak (permintaannya tetap jalan).
+
+Ikut dijaga: membandingkan model dengan dirinya sendiri ditolak (dua panggilan
+untuk tidak memberi tahu apa pun), dan kegagalan satu model tidak membuang hasil
+model satunya — yang berhasil tetap bisa disimpan.
+
+    node uji/banding-model.mjs
