@@ -812,7 +812,14 @@ export default function IncentivePTSPage() {
               ) : filteredProjects.map((p) => {
                 const hasNominal = (p.incentive_value || 0) > 0;
                 const handlerSplit = calcHandlerSplit(skema, p);
-                const projTranches = tranches.filter(t => t.project_id === p.id);
+                //  Diurutkan ulang di sini - fetchTranches() mengurutkan lewat
+                //  payment_year (dipakai tab Tahapan Pencairan mengelompokkan per
+                //  tahun), bukan tranche_number. Kalau dua tahapan kebetulan
+                //  bertahun sama (mis. gara-gara data lama yang salah), badge di
+                //  sini bisa tampil "T1 T3 T2" - urutan tampilan proyek per
+                //  proyek harus tetap T1 T2 T3 apa pun urutan hasil fetch-nya.
+                const projTranches = tranches.filter(t => t.project_id === p.id)
+                  .sort((a, b) => a.tranche_number - b.tranche_number);
                 const showNominal = canInputNominal(currentUser);
                 return (
                   <MobileListCard
@@ -894,7 +901,10 @@ export default function IncentivePTSPage() {
                     const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-rose-50/30';
                     const cellCls = `border border-gray-200 px-3 py-2.5 ${rowBg}`;
                     const hasNominal = (p.incentive_value || 0) > 0;
-                    const projTranches = tranches.filter(t => t.project_id === p.id);
+                    //  Lihat catatan di baris kartu mobile di atas - fetchTranches()
+                    //  mengurutkan lewat payment_year, bukan tranche_number.
+                    const projTranches = tranches.filter(t => t.project_id === p.id)
+                      .sort((a, b) => a.tranche_number - b.tranche_number);
                     const handlerSplit = calcHandlerSplit(skema, p);
                     return (
                       <tr key={p.id} className="hover:bg-rose-50/60 transition-colors group">

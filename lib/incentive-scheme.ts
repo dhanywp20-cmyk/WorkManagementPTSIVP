@@ -361,6 +361,25 @@ export function periksaSkema(sk: SkemaInsentif): MasalahSkema[] {
   const totalTranche = bulat(sk.tranche.reduce((t, x) => t + (x.persen || 0), 0));
   if (totalTranche !== 100) masalah.push({ bidang: 'tranche', pesan: `Total tahapan pencairan ${totalTranche}% — harus tepat 100%.` });
   if (!sk.tranche.length) masalah.push({ bidang: 'tranche', pesan: 'Minimal ada satu tahapan pencairan.' });
+  /*
+    Dua tahapan dengan "Tahun ke-" yang sama diam-diam membuat generateTranches()
+    menulis payment_year yang SAMA untuk keduanya - satu tahun pencairan hilang,
+    dan tahapan yang seharusnya jatuh di tahun terakhir malah tercatat di tahun
+    yang sudah dipakai tahapan lain. Ini nyata terjadi: baris "Tahun ke-" bisa
+    tertinggal dari cara lama (sebelum porsi Installer dipindah jadi baris
+    tambahan, bukan mengambil alih tahap terakhir) tanpa ada yang menyadarinya
+    sampai tahapannya sudah tergenerate salah.
+  */
+  const tahunKeList = sk.tranche.map(x => x.tahunKe);
+  if (new Set(tahunKeList).size !== tahunKeList.length) {
+    masalah.push({
+      bidang: 'tranche',
+      pesan: 'Ada dua tahapan dengan "Tahun ke-" yang sama — satu tahun pencairan akan hilang. Tiap tahapan harus punya "Tahun ke-" berbeda.',
+    });
+  }
+  if (sk.tranche.some(x => x.tahunKe < 1)) {
+    masalah.push({ bidang: 'tranche', pesan: '"Tahun ke-" tiap tahapan minimal 1.' });
+  }
 
   /*
     TIDAK ADA LAGI syarat "porsi Installer harus sama dengan tahap terakhir".
