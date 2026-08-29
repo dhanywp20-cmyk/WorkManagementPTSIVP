@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -84,6 +84,76 @@ function ReminderSchedulePageInner() {
     sebelumnya: Reminder[];
     lanjut: (grup: string | null) => void;
   } | null>(null);
+
+  /*
+    Lapis 4 - mencari project SEBELUM form dibuka, bukan mengetiknya lalu
+    berharap platform mendeteksi kecocokan belakangan.
+
+    Pola yang sama seperti Create Ticket: pilih "Project yang sudah ada" /
+    "Project baru" lebih dulu. Kalau sudah ada, cari dan pilih - form yang
+    muncul SESUDAHNYA sudah terisi (alamat, PIC, produk, sales, brand),
+    tinggal menentukan kategori dan tanggal pekerjaan baru ini.
+
+    Karena project-nya sudah dipastikan sama lewat pencarian ini - bukan
+    ditebak dari kecocokan nama belakangan - pertanyaan "kelanjutan atau
+    terpisah?" (Lapis 1) tidak ditanyakan lagi untuk jalur ini. Menanyakannya
+    dua kali untuk jawaban yang sama hanya mengulang yang sudah dikatakan.
+  */
+  const [langkahBuat, setLangkahBuat] = useState<'pilih' | 'cari' | null>(null);
+  const [carianProyek, setCarianProyek] = useState('');
+  const [praPilihProyek, setPraPilihProyek] = useState<Reminder | null>(null);
+  /**
+   * Seluruh jadwal lama untuk project yang dipilih lewat Lapis 4 - dipakai
+   * resolveGrupInsentif saat menyimpan, dan ditampilkan sebagai ringkasan.
+   * null berarti jadwal ini TIDAK melalui Lapis 4 (project baru, atau sunting).
+   */
+  const [proyekLamaTerpilih, setProyekLamaTerpilih] = useState<Reminder[] | null>(null);
+
+  /** Daftar project yang pernah tercatat, satu baris wakil (terbaru) per nama. */
+  const daftarProyekLama = useMemo(() => {
+    const peta = new Map<string, Reminder>();
+    for (const r of reminders) {
+      const n = normalkanNama(r.project_name);
+      if (!n) continue;
+      const ada = peta.get(n);
+      if (!ada || (r.created_at ?? '') > (ada.created_at ?? '')) peta.set(n, r);
+    }
+    return [...peta.values()].sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
+  }, [reminders]);
+
+  const hasilCarianProyek = useMemo(() => {
+    const q = carianProyek.trim().toLowerCase();
+    if (!q) return daftarProyekLama.slice(0, 20);
+    return daftarProyekLama
+      .filter(r => (r.project_name ?? '').toLowerCase().includes(q))
+      .slice(0, 20);
+  }, [daftarProyekLama, carianProyek]);
+
+  const mulaiBuatReminder = () => {
+    setEditingReminder(null); setFormData(emptyForm); setExtraDates([]);
+    setProyekLamaTerpilih(null); setPraPilihProyek(null); setCarianProyek('');
+    setLangkahBuat('pilih');
+  };
+
+  const konfirmasiProyekLama = () => {
+    if (!praPilihProyek) return;
+    const n = normalkanNama(praPilihProyek.project_name);
+    const sebatch = reminders.filter(r => normalkanNama(r.project_name) === n);
+    setFormData(prev => ({
+      ...prev,
+      project_name: praPilihProyek.project_name || '',
+      address: praPilihProyek.address ?? '',
+      sales_name: praPilihProyek.sales_name ?? '',
+      sales_division: praPilihProyek.sales_division ?? '',
+      product: praPilihProyek.product ?? '',
+      pic_name: praPilihProyek.pic_name ?? '',
+      pic_phone: praPilihProyek.pic_phone ?? '',
+      brand: praPilihProyek.brand ?? prev.brand,
+    }));
+    setProyekLamaTerpilih(sebatch);
+    setLangkahBuat(null);
+    setShowFormModal(true);
+  };
 
   // Filters - extended with team handler & category
   const [filterStatus, setFilterStatus]     = useState<Status | 'all'>('all');
@@ -499,6 +569,25 @@ function ReminderSchedulePageInner() {
    * satu permintaan tambahan tiap kali orang menekan Simpan adalah pemborosan
    * yang tidak perlu.
    */
+  /**
+   * Pakai kelompok yang sudah ada di antara `sumber`, atau buat baru dan tandai
+   * seluruh baris `sumber` dengannya.
+   *
+   * Dipakai dua tempat: tombol "Satu proyek yang sama" di langkah 4-pertanyaan
+   * (Lapis 1), dan pemilihan project lewat pencarian saat membuat jadwal baru
+   * (Lapis 4). Satu fungsi, supaya dua jalan menuju kesimpulan yang sama tidak
+   * bisa diam-diam menghasilkan aturan yang berbeda.
+   */
+  const resolveGrupInsentif = async (sumber: Reminder[]): Promise<string> => {
+    const adaGrup = sumber.find(r => r.incentive_group_id)?.incentive_group_id;
+    const grup = adaGrup ?? crypto.randomUUID();
+    if (!adaGrup) {
+      const idLama = sumber.map(r => r.id);
+      await supabase.from('reminders').update({ incentive_group_id: grup }).in('id', idLama);
+    }
+    return grup;
+  };
+
   const cariProyekSerupa = (nama: string, kategori: string): Reminder[] => {
     if (!(INCENTIVE_CATEGORIES as readonly string[]).includes(kategori)) return [];
     const n = normalkanNama(nama);
@@ -548,8 +637,24 @@ function ReminderSchedulePageInner() {
       jadwal kategori insentif, tanyakan hubungannya. Pertanyaannya muncul
       SEKALI - grupInsentif yang sudah terisi (atau dijawab "terpisah") membuat
       alur ini lanjut tanpa bertanya lagi.
+
+      TIDAK ditanyakan bila project-nya sudah dipilih lewat pencarian Lapis 4
+      (proyekLamaTerpilih terisi) - saat itu hubungannya sudah dipastikan lewat
+      pencarian, bukan ditebak dari kecocokan nama. Menanyakannya lagi hanya
+      mengulang jawaban yang sudah diberikan. Kelompoknya tetap diresolve di
+      sini, bukan saat menekan "OK, Isi Form" - supaya kategori pekerjaan yang
+      BARU (yang baru diketahui sekarang, setelah form diisi) yang menentukan
+      apakah penggabungan ini relevan sama sekali.
     */
     if (!editingReminder && grupInsentif === undefined) {
+      if (proyekLamaTerpilih) {
+        const relevan = (INCENTIVE_CATEGORIES as readonly string[]).includes(formData.category)
+          ? proyekLamaTerpilih.filter(r => (INCENTIVE_CATEGORIES as readonly string[]).includes(r.category))
+          : [];
+        const grup = relevan.length > 0 ? await resolveGrupInsentif([...relevan]) : null;
+        void handleSave(grup);
+        return;
+      }
       const serupa = cariProyekSerupa(formData.project_name, formData.category);
       if (serupa.length > 0) {
         setTanyaLanjutan({
@@ -908,6 +1013,7 @@ function ReminderSchedulePageInner() {
     setEditingReminder(null);
     setFormData(emptyForm);
     setExtraDates([]);
+    setProyekLamaTerpilih(null);
     fetchRemindersQuiet();
   };
 
@@ -1687,7 +1793,7 @@ function ReminderSchedulePageInner() {
     }
     if (canAddReminder) {
       pintasanTerpakai.current = true;
-      setEditingReminder(null); setFormData(emptyForm); setExtraDates([]); setShowFormModal(true);
+      mulaiBuatReminder();
     }
   }, [searchParams, currentUser, isGuest, jumlahReviewSiap, pendingReviewCount, canAddReminder]);
 
@@ -2850,19 +2956,7 @@ jangan lupa peralatan & Semangat💪🏼
                   className="px-4 py-2 rounded-lg text-sm font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50">
                   Pekerjaan terpisah
                 </button>
-                <button onClick={() => {
-                    // Pakai kelompok yang sudah ada bila jadwal sebelumnya sudah
-                    // pernah digabungkan - kalau tidak, proyek yang sama akan
-                    // terpecah jadi dua kelompok berbeda.
-                    const adaGrup = tanyaLanjutan.sebelumnya.find(r => r.incentive_group_id)?.incentive_group_id;
-                    const grup = adaGrup ?? crypto.randomUUID();
-                    if (!adaGrup) {
-                      // Jadwal lama ikut ditandai, kalau tidak ia tetap berdiri sendiri.
-                      const idLama = tanyaLanjutan.sebelumnya.map(r => r.id);
-                      void supabase.from('reminders').update({ incentive_group_id: grup }).in('id', idLama);
-                    }
-                    tanyaLanjutan.lanjut(grup);
-                  }}
+                <button onClick={async () => tanyaLanjutan.lanjut(await resolveGrupInsentif(tanyaLanjutan.sebelumnya))}
                   className="px-4 py-2 rounded-lg text-sm font-bold text-white"
                   style={{ background: '#0891b2' }}>
                   Satu proyek yang sama
@@ -2873,9 +2967,160 @@ jangan lupa peralatan & Semangat💪🏼
         </ModalPortal>
       )}
 
+      {/*
+        Lapis 4, langkah 'pilih': ditanyakan sebelum form terlihat sama sekali,
+        seperti Create Ticket. Menunda pertanyaan ini sampai form terbuka
+        berarti orang sudah mulai mengetik sebelum tahu ada jalan yang lebih
+        cepat.
+      */}
+      {langkahBuat === 'pilih' && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+            style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(3px)' }}>
+            <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden"
+              role="dialog" aria-modal="true" aria-labelledby="judul-tipe-reminder">
+              <div className="px-5 py-4 text-white" style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)' }}>
+                <h3 id="judul-tipe-reminder" className="font-bold text-base">📅 Reminder Baru</h3>
+                <p className="text-[12px] text-white/80 mt-0.5">Project-nya sudah pernah dijadwalkan, atau baru?</p>
+              </div>
+              <div className="p-4 space-y-2.5">
+                <button type="button" onClick={() => setLangkahBuat('cari')}
+                  className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-cyan-400 hover:bg-cyan-50/50 transition-all">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl flex-shrink-0">🔍</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-slate-800">Project yang sudah ada</p>
+                      <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5">
+                        Pernah dijadwalkan sebelumnya. Cari namanya — alamat, PIC, produk, sales,
+                        dan brand otomatis terisi. Tinggal tentukan kategori dan tanggal pekerjaan ini.
+                      </p>
+                      <p className="text-[11px] font-semibold text-emerald-700 mt-1.5">
+                        ✓ Disarankan — insentifnya tergabung dengan jadwal lama, tidak terhitung ganda
+                      </p>
+                    </div>
+                  </div>
+                </button>
+                <button type="button"
+                  onClick={() => { setLangkahBuat(null); setProyekLamaTerpilih(null); setShowFormModal(true); }}
+                  className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-400 hover:bg-slate-50 transition-all">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl flex-shrink-0">✏️</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-slate-800">Project baru</p>
+                      <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5">
+                        Belum pernah tercatat. Seluruh detailnya diisi manual.
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+              <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+                <button type="button" onClick={() => setLangkahBuat(null)}
+                  className="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 bg-white border border-slate-300 hover:bg-slate-100">
+                  Batal
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
+      {/*
+        Lapis 4, langkah 'cari': tahap sendiri yang ringan, hanya kotak cari dan
+        hasilnya - bukan bagian dari form besar. Form penuh baru terbuka
+        SETELAH satu project dikonfirmasi lewat "OK, Isi Form", jadi begitu
+        form itu terlihat, ia sudah terisi. Diambil dari `reminders` yang sudah
+        termuat di halaman ini (sudah dibatasi lingkup pengguna), bukan kueri
+        baru - tidak ada permintaan tambahan ke server untuk menampilkan
+        pencarian ini.
+      */}
+      {langkahBuat === 'cari' && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+            style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(3px)' }}>
+            <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col"
+              style={{ maxHeight: '85vh' }} role="dialog" aria-modal="true" aria-labelledby="judul-cari-reminder">
+              <div className="px-5 py-4 text-white flex items-center gap-3" style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)' }}>
+                <button type="button" aria-label="Kembali"
+                  onClick={() => { setLangkahBuat('pilih'); setPraPilihProyek(null); setCarianProyek(''); }}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-white/10">
+                  <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <div className="min-w-0">
+                  <h3 id="judul-cari-reminder" className="font-bold text-base">🔍 Cari Project yang Sudah Ada</h3>
+                  <p className="text-[12px] text-white/80 mt-0.5">Ketik nama project, pilih dari hasilnya, lalu konfirmasi.</p>
+                </div>
+              </div>
+
+              <div className="p-4 flex-1 overflow-y-auto min-h-0">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                  <input type="text" autoFocus value={carianProyek}
+                    onChange={e => { setCarianProyek(e.target.value); setPraPilihProyek(null); }}
+                    placeholder="Ketik nama project untuk mencari..."
+                    className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 border border-slate-200" />
+                </div>
+
+                {hasilCarianProyek.length === 0 && (
+                  <p className="mt-2 text-[11px] text-slate-500 leading-snug">
+                    {carianProyek.trim()
+                      ? <>Tidak ada project bernama &quot;{carianProyek.trim()}&quot; dalam jangkauan akun kamu. Coba potongan nama yang lebih pendek, atau tekan Kembali dan pilih Project Baru.</>
+                      : 'Belum ada project tercatat.'}
+                  </p>
+                )}
+
+                {hasilCarianProyek.length > 0 && (
+                  <div className="mt-2 rounded-xl border overflow-hidden" style={{ borderColor: 'rgba(8,145,178,0.25)' }}>
+                    {hasilCarianProyek.map(r => {
+                      const disorot = praPilihProyek?.id === r.id;
+                      const jumlahJadwal = reminders.filter(x => normalkanNama(x.project_name) === normalkanNama(r.project_name)).length;
+                      return (
+                        <button key={r.id} type="button" onClick={() => setPraPilihProyek(r)}
+                          className="w-full text-left px-4 py-3 transition-colors border-b last:border-b-0 flex flex-col gap-0.5"
+                          style={{ borderColor: 'rgba(0,0,0,0.06)', background: disorot ? 'rgba(8,145,178,0.08)' : 'white' }}>
+                          <span className="flex items-center gap-2">
+                            {disorot && <span className="text-cyan-700 flex-shrink-0">✓</span>}
+                            <span className="text-sm font-bold text-slate-800">{r.project_name}</span>
+                          </span>
+                          <span className="text-xs text-slate-500 flex gap-3 flex-wrap">
+                            <span className="font-semibold text-cyan-700">{jumlahJadwal} jadwal tercatat</span>
+                            {r.address && <span>📍 {r.address.slice(0, 50)}{r.address.length > 50 ? '…' : ''}</span>}
+                            {r.sales_name && <span>👤 {r.sales_name}</span>}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center flex-shrink-0">
+                <span className="text-[11px] text-slate-500">
+                  {praPilihProyek ? `Dipilih: ${praPilihProyek.project_name}` : 'Belum ada yang dipilih'}
+                </span>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setLangkahBuat(null)}
+                    className="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 bg-white border border-slate-300 hover:bg-slate-100">
+                    Batal
+                  </button>
+                  <button type="button" onClick={konfirmasiProyekLama} disabled={!praPilihProyek}
+                    className="px-4 py-2 rounded-lg text-sm font-bold text-white transition-all disabled:opacity-40"
+                    style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)' }}>
+                    OK, Isi Form →
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
       {showFormModal && (
         <ReminderFormModal
           editingReminder={editingReminder}
+          jumlahJadwalLama={proyekLamaTerpilih?.length ?? 0}
           formData={formData as ReminderForm}
           setFormData={setFormData as (data: ReminderForm) => void}
           saving={saving}
@@ -2885,7 +3130,7 @@ jangan lupa peralatan & Semangat💪🏼
           onBulkTargetChange={setBulkTarget}
           extraDates={extraDates}
           onExtraDatesChange={setExtraDates}
-          onClose={() => { setShowFormModal(false); setEditingReminder(null); setFormData(emptyForm); setBulkTarget('none'); setExtraDates([]); }}
+          onClose={() => { setShowFormModal(false); setEditingReminder(null); setFormData(emptyForm); setBulkTarget('none'); setExtraDates([]); setProyekLamaTerpilih(null); }}
           onSubmit={() => handleSave()}
           supervisorUsers={(isAdmin || isManager) ? teamUsers.filter(u => u.jabatan === 'Supervisor') : []}
           canAssignSelf={isAdmin || isManager}
@@ -3681,7 +3926,7 @@ jangan lupa peralatan & Semangat💪🏼
           </button>
 
           {canAddReminder && view === 'list' && (
-            <button onClick={() => { setEditingReminder(null); setFormData(emptyForm); setExtraDates([]); setShowFormModal(true); }}
+            <button onClick={mulaiBuatReminder}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90"
               style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', boxShadow: '0 4px 14px rgba(8,145,178,0.4)' }}>
               <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>

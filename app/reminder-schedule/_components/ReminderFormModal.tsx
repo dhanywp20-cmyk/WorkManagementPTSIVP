@@ -39,9 +39,15 @@ interface Props {
    */
   canAssignSelf?: boolean;
   selfUser?: { username: string; full_name: string } | null;
+  /**
+   * Jumlah jadwal lama untuk project ini, bila form dibuka lewat pencarian
+   * "Project yang sudah ada" (Lapis 4). undefined/0 = tidak lewat jalur itu -
+   * form baru biasa, atau sedang menyunting.
+   */
+  jumlahJadwalLama?: number;
 }
 
-export function ReminderFormModal({ editingReminder, formData, setFormData, saving, teamUsers, guestUsers, bulkTarget, onBulkTargetChange, extraDates, onExtraDatesChange, onClose, onSubmit, canAssignSelf, selfUser, supervisorUsers = []}: Props) {
+export function ReminderFormModal({ editingReminder, formData, setFormData, saving, teamUsers, guestUsers, bulkTarget, onBulkTargetChange, extraDates, onExtraDatesChange, onClose, onSubmit, canAssignSelf, selfUser, supervisorUsers = [], jumlahJadwalLama = 0 }: Props) {
   const [guestSearch, setGuestSearch] = useState('');
   const [guestDropdownOpen, setGuestDropdownOpen] = useState(false);
   const [err, setErr] = useState('');
@@ -96,6 +102,25 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
           {/* ── Kolom 1: apa & siapa ── */}
           <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
           <SectionHeader icon="📋" title="Informasi Jadwal" />
+
+          {/*
+            Ringkasan "sudah terisi dari project lama" - hanya muncul lewat
+            jalur pencarian Lapis 4. Tanpa ini, kolom-kolom yang tiba-tiba
+            terisi begitu form terbuka terlihat seperti keajaiban, bukan hasil
+            dari pilihan yang baru saja dibuat.
+          */}
+          {jumlahJadwalLama > 0 && (
+            <div className="rounded-xl px-3.5 py-2.5" style={{ background: 'rgba(8,145,178,0.08)', border: '1px solid rgba(8,145,178,0.25)' }}>
+              <p className="text-[12px] font-bold" style={{ color: '#0e7490' }}>
+                ✓ Detail diisi dari project yang sudah ada
+              </p>
+              <p className="text-[11px] mt-0.5 leading-relaxed" style={{ color: '#155e75' }}>
+                {jumlahJadwalLama} jadwal sebelumnya tercatat untuk project ini. Insentif jadwal ini
+                akan tergabung dengan yang lama, tidak terhitung sebagai proyek baru.
+                Tinggal tentukan kategori dan tanggal pekerjaan ini di bawah.
+              </p>
+            </div>
+          )}
 
           <FormField label="Nama Project*">
             <input value={formData.project_name} onChange={e => fd({ project_name: e.target.value })}

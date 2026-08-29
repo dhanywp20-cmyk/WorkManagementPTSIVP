@@ -176,3 +176,13 @@ diam-diam soal aturan yang menentukan uang.
 
     npx tsx uji/kelompok-insentif.ts
 
+
+## Catatan: alur pencarian "Project yang sudah ada"
+
+Perubahan pada NewTicketModal.tsx (Ticketing) dan halaman Reminder Schedule -
+memisahkan pemilihan project jadi tahap pencarian tersendiri sebelum form besar
+terbuka - bersifat alur/tampilan (state machine tiga langkah: pilih -> cari ->
+form), tidak menambah logika murni baru selain memakai ulang
+`resolveGrupInsentif` yang sudah diuji lewat `kelompok-insentif.ts`. Diverifikasi
+lewat type-check dan build penuh; belum diuji langsung di peramban oleh agent -
+coba dulu sebelum dipakai tim.
