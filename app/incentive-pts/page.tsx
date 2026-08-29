@@ -9,6 +9,7 @@ import {
   deteksiKandidatGabung, satukanProyek, type KandidatGabung,
   setProyekDikeluarkan, tahapanSudahJalan,
   insertTranches, insertSplits, processYearlyBatch,
+  batalkanBatchTahun, hapusTahapanProyek,
   calculateIncentiveSplits, validateSplitTotal, generateTranches, findUpline, resolveUserId, OrgUser,
   ambilSkema, persenInstaller, type SkemaInsentif,
   formatRupiah, formatPct,
@@ -115,6 +116,19 @@ export default function IncentivePTSPage() {
 
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generateProject, setGenerateProject] = useState<IncentiveProjectRow | null>(null);
+
+  /*
+    PEMBATALAN - dua tingkat, dua keadaan terpisah.
+
+    Keduanya memakai konfirmasi KETIK ULANG, bukan sekadar tombol "Ya". Aksi
+    yang menghapus baris uang tidak boleh bisa diselesaikan dengan satu klik
+    refleks di dialog yang tampilannya sama dengan dialog lain.
+  */
+  const [batalBatch, setBatalBatch] = useState<number | null>(null);
+  const [ketikBatalBatch, setKetikBatalBatch] = useState('');
+  const [hapusTahapan, setHapusTahapan] = useState<IncentiveProjectRow | null>(null);
+  const [ketikHapusTahapan, setKetikHapusTahapan] = useState('');
+  const [membatalkan, setMembatalkan] = useState(false);
   const [generating, setGenerating] = useState(false);
 
   const [exporting, setExporting] = useState(false);
@@ -406,6 +420,52 @@ export default function IncentivePTSPage() {
     setBatchProcessing(false); setBatchConfirm(false); loadAll();
   }
 
+  /** Batalkan hasil Process Batch satu tahun. Yang sudah Paid tidak disentuh. */
+  async function jalankanBatalBatch() {
+    if (batalBatch === null) return;
+    setMembatalkan(true);
+    const hasil = await batalkanBatchTahun(batalBatch);
+    setMembatalkan(false);
+    if (hasil.error) { notify('error', 'Gagal membatalkan: ' + hasil.error.message); return; }
+    void logAudit({
+      user_id: (currentUser?.id as string) ?? '', user_name: (currentUser?.full_name as string) ?? '',
+      module: 'incentive', action: 'delete',
+      target_name: `Batch ${batalBatch}`,
+      old_value: `${hasil.jumlah} tahapan processed`,
+      new_value: `${hasil.jumlah} tahapan kembali pending`,
+      notes: `Pembatalan Process Batch ${batalBatch}. Baris pembagiannya dihapus. `
+        + `${hasil.dilewati} tahapan berstatus Paid tidak disentuh.`,
+    });
+    notify(hasil.jumlah > 0 ? 'success' : 'error',
+      hasil.jumlah > 0
+        ? `Batch ${batalBatch} dibatalkan: ${hasil.jumlah} tahapan kembali Pending`
+          + (hasil.dilewati ? `, ${hasil.dilewati} dilewati karena sudah Paid.` : '.')
+        : `Tidak ada yang bisa dibatalkan di ${batalBatch}`
+          + (hasil.dilewati ? ` — ${hasil.dilewati} tahapan sudah berstatus Paid.` : '.'));
+    setBatalBatch(null); setKetikBatalBatch('');
+    loadAll();
+  }
+
+  /** Hapus seluruh tahapan satu proyek supaya bisa dibuat ulang. */
+  async function jalankanHapusTahapan() {
+    if (!hapusTahapan) return;
+    setMembatalkan(true);
+    const hasil = await hapusTahapanProyek(hapusTahapan.id);
+    setMembatalkan(false);
+    if (hasil.error) { notify('error', hasil.error.message); return; }
+    void logAudit({
+      user_id: (currentUser?.id as string) ?? '', user_name: (currentUser?.full_name as string) ?? '',
+      module: 'incentive', action: 'delete',
+      target_id: hapusTahapan.id, target_name: hapusTahapan.project_name ?? '',
+      old_value: `${hasil.jumlah} tahapan pencairan`,
+      new_value: 'tanpa tahapan',
+      notes: 'Tahapan dihapus lewat tombol Hapus Tahapan — nominal proyek kembali bisa disunting.',
+    });
+    notify('success', `${hasil.jumlah} tahapan "${hapusTahapan.project_name}" dihapus. Nominal terbuka lagi.`);
+    setHapusTahapan(null); setKetikHapusTahapan('');
+    loadAll();
+  }
+
   async function handleExport() {
     setExporting(true);
     try {
@@ -514,7 +574,24 @@ export default function IncentivePTSPage() {
     */
     .filter(p => bolehLihatBrand(currentUser?.incentive_brand_scope, p.brand));
   const uniqueYears = [...new Set(tranches.map(t => t.payment_year))].sort();
-  const filteredTranches = tranches.filter(t => !filterYear || t.payment_year === filterYear);
+  /*
+    Tahun yang dipilih HARUS salah satu yang benar-benar ada tahapannya.
+
+    Sebelumnya filterYear bermula dari tahun berjalan (mis. 2026) sementara
+    daftar pilihannya berisi tahun pencairan (2027, 2028, 2029). Sebuah
+    <select> yang nilainya tidak cocok dengan satu pun <option> menampilkan
+    option PERTAMA - jadi layar tertulis "2027" padahal keadaan sebenarnya
+    masih 2026. Akibatnya tabel kosong, tombolnya berbunyi "Process Batch
+    2026", dan menekannya memproses tahun yang memang tidak punya tahapan:
+    tidak ada galat, tidak ada hasil, dan tidak ada petunjuk kenapa.
+
+    Dirapikan di sini, bukan di useEffect, supaya tahun yang dipakai menyaring
+    dan yang tercetak di tombol selalu sama dengan yang terbaca di layar.
+  */
+  const tahunAktif = uniqueYears.includes(filterYear)
+    ? filterYear
+    : (uniqueYears[0] ?? filterYear);
+  const filteredTranches = tranches.filter(t => t.payment_year === tahunAktif);
   const totalPool = projects.filter(p => (p.incentive_value || 0) > 0).reduce((s, p) => s + (p.incentive_value || 0), 0);
   const pendingNominal = projects.filter(p => !(p.incentive_value || 0)).length;
   const pendingTranche = tranches.filter(t => t.status === 'pending').length;
@@ -710,6 +787,15 @@ export default function IncentivePTSPage() {
                           <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                         </button>
                       )}
+                      {isAdmin(currentUser) && projTranches.length > 0
+                        && !projTranches.some(t => t.status === 'paid') && (
+                        <button aria-label={`Hapus tahapan ${p.project_name}`}
+                          onClick={() => { setHapusTahapan(p); setKetikHapusTahapan(''); }}
+                          title="Hapus tahapan pencairan (nominal terbuka lagi)"
+                          className="inline-flex items-center justify-center w-7 h-7 rounded-lg border bg-white border-amber-200 text-amber-600 hover:bg-amber-50">
+                          <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a4 4 0 110 8h-1m-9-8l4-4m-4 4l4 4" /></svg>
+                        </button>
+                      )}
                     </>}
                   />
                 );
@@ -843,6 +929,20 @@ export default function IncentivePTSPage() {
                                 <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                               </button>
                             )}
+                            {/*
+                              Jalan kembali dari Generate Tranche. Muncul hanya
+                              bila tahapannya memang ada DAN belum ada yang Paid -
+                              tahap yang sudah dibayar tidak boleh dihapus dari layar.
+                              */}
+                              {isAdmin(currentUser) && projTranches.length > 0
+                              && !projTranches.some(t => t.status === 'paid') && (
+                              <button aria-label={`Hapus tahapan ${p.project_name}`}
+                                onClick={() => { setHapusTahapan(p); setKetikHapusTahapan(''); }}
+                                title="Hapus tahapan pencairan (nominal terbuka lagi)"
+                                className="inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all bg-white border-amber-200 text-amber-600 hover:bg-amber-50 hover:border-amber-400 hover:shadow-sm">
+                                <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a4 4 0 110 8h-1m-9-8l4-4m-4 4l4 4" /></svg>
+                              </button>
+                              )}
                             {bolehHapus && (
                               <>
                                 <button aria-label={`Keluarkan ${p.project_name} dari Incentive`}
@@ -886,7 +986,7 @@ export default function IncentivePTSPage() {
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex gap-2 items-center">
                 <label className="text-xs font-bold text-gray-500">Tahun:</label>
-                <select value={filterYear} onChange={e => setFilterYear(Number(e.target.value))}
+                <select value={tahunAktif} onChange={e => setFilterYear(Number(e.target.value))}
                   className="px-3 py-2 rounded-lg text-sm border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-rose-400">
                   {uniqueYears.map(y => <option key={y} value={y}>{y}</option>)}
                   {uniqueYears.length === 0 && <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>}
@@ -894,14 +994,27 @@ export default function IncentivePTSPage() {
               </div>
               <div className="flex gap-2">
                 {isAdmin(currentUser) && (
-                  <button onClick={() => { setBatchYear(filterYear); setBatchConfirm(true); }}
+                  <button onClick={() => { setBatchYear(tahunAktif); setBatchConfirm(true); }}
                     className="px-4 py-2 rounded-xl text-sm font-bold text-white hover:opacity-90" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
-                    🚀 Process Batch {filterYear}
+                    🚀 Process Batch {tahunAktif}
+                  </button>
+                )}
+                {/*
+                  Jalan kembali dari Process Batch. Sengaja ditaruh bersebelahan
+                  dengan tombol yang dibatalkannya - kalau tersembunyi di layar
+                  lain, orang yang baru saja salah pencet tidak akan menemukannya
+                  saat justru paling dibutuhkan.
+                */}
+                {isAdmin(currentUser) && filteredTranches.some(t => t.status === 'processed') && (
+                  <button onClick={() => { setBatalBatch(tahunAktif); setKetikBatalBatch(''); }}
+                    title={`Kembalikan tahapan ${tahunAktif} dari Processed ke Pending`}
+                    className="px-4 py-2 rounded-xl text-sm font-bold border-2 border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100">
+                    ↩️ Batalkan Batch {tahunAktif}
                   </button>
                 )}
                 <button onClick={handleExport} disabled={exporting}
                   className="px-4 py-2 rounded-xl text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 flex items-center gap-2" style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}>
-                  {exporting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '📄'} Export {filterYear}
+                  {exporting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '📄'} Export {tahunAktif}
                 </button>
               </div>
             </div>
@@ -919,7 +1032,7 @@ export default function IncentivePTSPage() {
                     {filteredTranches.length === 0 ? (
                       <tr><td colSpan={7} className="px-4 py-12 text-center border border-gray-200">
                         <p className="text-3xl mb-2">📅</p>
-                        <p className="text-gray-500 font-medium">Tidak ada tranche untuk tahun {filterYear}</p>
+                        <p className="text-gray-500 font-medium">Tidak ada tranche untuk tahun {tahunAktif}</p>
                       </td></tr>
                     ) : filteredTranches.map((t, idx) => {
                       const st = TRANCHE_STATUS[t.status] || TRANCHE_STATUS.pending;
@@ -1393,20 +1506,50 @@ export default function IncentivePTSPage() {
             <h3 className="text-lg font-bold text-gray-800 mb-4">⚡ Generate Tranche</h3>
             <p className="text-sm text-gray-500 mb-1">Project: <strong className="text-gray-800">{generateProject.project_name}</strong></p>
             <p className="text-sm text-gray-500 mb-4">BAST: <strong>{generateProject.bast_date}</strong> · Pool: <strong className="text-emerald-600">{formatRupiah(generateProject.incentive_value || 0)}</strong></p>
-            <div className="space-y-2 mb-6">
-              {generateTranches(skema!, generateProject.id, generateProject.bast_date!, generateProject.mode_penyelesaian).map(t => {
-                const isInstallerT3 = t.tranche_number === 3 && generateProject.mode_penyelesaian === 'remote';
-                return (
-                  <div key={t.tranche_number} className="flex justify-between rounded-lg px-4 py-2.5 border border-gray-100" style={{ background: isInstallerT3 ? 'rgba(245,158,11,0.07)' : 'rgb(249,250,251)' }}>
-                    <div>
-                      <span className="text-sm font-bold text-gray-700">Tranche {t.tranche_number}</span>
-                      {isInstallerT3 && <span className="ml-2 text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Installer (upfront)</span>}
-                    </div>
-                    <span className="text-sm text-gray-500">{t.percentage}% · Bayar {t.payment_year} · {formatRupiah(Math.round((generateProject.incentive_value || 0) * t.percentage / 100))}</span>
-                  </div>
-                );
-              })}
-            </div>
+            {/*
+              Pratinjau memisahkan porsi Tim PTS dan porsi Installer, karena
+              keduanya memang dibayar dengan cara berbeda: Tim PTS dipecah
+              menurut tahapan, Installer lunas sekali di tahap pertama.
+              Sebelumnya baris ini menampilkan pool x persen tahap begitu saja -
+              angka yang tidak pernah benar untuk proyek Remote, sebab porsi
+              Installer sudah dipotong lebih dulu dari pool Tim PTS.
+            */}
+            {(() => {
+              const pool = generateProject.incentive_value || 0;
+              const pctInst = persenInstaller(skema!, generateProject.mode_penyelesaian === 'remote');
+              const poolTim = pool * ((100 - pctInst) / 100);
+              const daftar = generateTranches(skema!, generateProject.id, generateProject.bast_date!, generateProject.mode_penyelesaian);
+              const tahapPertama = daftar.length ? Math.min(...daftar.map(t => t.tranche_number)) : 1;
+              return (
+                <div className="space-y-2 mb-6">
+                  {daftar.map(t => {
+                    const installerDiSini = pctInst > 0 && skema!.installerBayarDiMuka && t.tranche_number === tahapPertama;
+                    return (
+                      <div key={t.tranche_number} className="rounded-lg px-4 py-2.5 border border-gray-100" style={{ background: 'rgb(249,250,251)' }}>
+                        <div className="flex justify-between items-baseline gap-2 flex-wrap">
+                          <span className="text-sm font-bold text-gray-700">Tahap {t.tranche_number} · Bayar {t.payment_year}</span>
+                          <span className="text-sm text-gray-500">
+                            Tim PTS {t.percentage}% · {formatRupiah(Math.round(poolTim * t.percentage / 100))}
+                          </span>
+                        </div>
+                        {installerDiSini && (
+                          <div className="flex justify-between items-baseline gap-2 flex-wrap mt-1 pt-1 border-t border-gray-100">
+                            <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">+ Installer — lunas sekali</span>
+                            <span className="text-sm text-amber-700 font-bold">{pctInst}% · {formatRupiah(Math.round(pool * pctInst / 100))}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {pctInst > 0 && (
+                    <p className="text-[11px] text-gray-500 leading-relaxed pt-1">
+                      Porsi Installer {pctInst}% dipotong dari pool lebih dulu; sisa {100 - pctInst}% milik Tim PTS
+                      itulah yang dipecah {daftar.map(t => `${t.percentage}%`).join(' / ')} selama {daftar.length} tahun.
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
             <div className="flex gap-3">
               <button onClick={() => { setShowGenerateModal(false); setGenerateProject(null); }} className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-gray-500 border border-gray-200 hover:bg-gray-50">Batal</button>
               <button onClick={handleGenerateTranches} disabled={generating}
@@ -1433,8 +1576,20 @@ export default function IncentivePTSPage() {
                 ? <p className="text-sm font-bold text-rose-600 mb-3">📋 {cnt} tranche siap diproses</p>
                 : <p className="text-sm font-bold text-amber-600 mb-3">⚠️ Tidak ada tranche pending untuk tahun {batchYear}. Pastikan tranche sudah di-generate terlebih dahulu.</p>;
             })()}
-            <div className="px-4 py-3 rounded-xl mb-4 bg-red-50 border border-red-200">
-              <p className="text-xs font-bold text-red-600">⚠️ Aksi ini tidak bisa di-undo.</p>
+            {/*
+              Dulu tertulis "tidak bisa di-undo". Sekarang bisa - ada tombol
+              "Batalkan Batch" di sebelah tombol ini - dan menakut-nakuti dengan
+              hal yang tidak lagi benar membuat orang enggan menguji fiturnya
+              sama sekali. Yang tetap tidak bisa ditarik cuma tahap yang sudah
+              berstatus Paid, dan itulah yang disebutkan.
+            */}
+            <div className="px-4 py-3 rounded-xl mb-4 bg-amber-50 border border-amber-200">
+              <p className="text-xs font-bold text-amber-700 mb-1">↩️ Bisa dibatalkan.</p>
+              <p className="text-[11px] text-amber-700 leading-relaxed">
+                Setelah diproses, tombol <strong>Batalkan Batch {batchYear}</strong> akan muncul untuk
+                mengembalikan tahapan ini ke Pending. Yang sudah bertanda <strong>Paid</strong> tidak
+                ikut bisa dibatalkan — status itu berarti uangnya sudah keluar.
+              </p>
             </div>
             <div className="flex gap-3">
               <button onClick={() => setBatchConfirm(false)} className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-gray-500 border border-gray-200 hover:bg-gray-50">Batal</button>
@@ -1448,6 +1603,118 @@ export default function IncentivePTSPage() {
         </div>
       </ModalPortal>
       )}
+
+      {/* ─── MODAL: Batalkan Batch satu tahun ─── */}
+      {batalBatch !== null && (() => {
+        const bisa = tranches.filter(t => t.payment_year === batalBatch && t.status === 'processed').length;
+        const paid = tranches.filter(t => t.payment_year === batalBatch && t.status === 'paid').length;
+        const kunci = `BATALKAN ${batalBatch}`;
+        return (
+        <ModalPortal>
+          <div role="dialog" aria-modal="true" aria-labelledby="judul-batal-batch"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1200] p-4"
+            onClick={e => { if (e.target === e.currentTarget) { setBatalBatch(null); setKetikBatalBatch(''); } }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-amber-200">
+              <h3 id="judul-batal-batch" className="text-lg font-bold text-gray-800 mb-2">↩️ Batalkan Batch {batalBatch}</h3>
+              <p className="text-sm text-gray-500 mb-3">
+                Baris pembagian hasil batch tahun ini dihapus, dan tahapannya kembali ke
+                status <strong>Pending</strong> supaya bisa diproses ulang.
+              </p>
+              <div className="rounded-xl border border-gray-100 bg-gray-50 divide-y divide-gray-100 mb-3 text-sm">
+                <div className="flex justify-between px-3 py-2">
+                  <span className="text-gray-600">Dikembalikan ke Pending</span>
+                  <strong className="text-amber-700">{bisa} tahapan</strong>
+                </div>
+                <div className="flex justify-between px-3 py-2">
+                  <span className="text-gray-600">Dilewati (sudah Paid)</span>
+                  <strong className={paid ? 'text-emerald-700' : 'text-gray-400'}>{paid} tahapan</strong>
+                </div>
+              </div>
+              <p className="text-[11px] text-gray-500 leading-relaxed mb-3">
+                Tahapannya sendiri TIDAK dihapus — hanya hasil pemrosesannya. Nominal proyek
+                tetap terkunci. Untuk menghapus tahapan, pakai tombol ↩️ di baris proyeknya.
+              </p>
+              <label className="block text-xs font-bold text-gray-600 mb-1">
+                Ketik <span className="font-mono text-amber-700">{kunci}</span> untuk melanjutkan
+              </label>
+              <input type="text" value={ketikBatalBatch} autoFocus
+                onChange={e => setKetikBatalBatch(e.target.value)}
+                placeholder={kunci}
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-amber-400" />
+              <div className="flex gap-3">
+                <button onClick={() => { setBatalBatch(null); setKetikBatalBatch(''); }}
+                  className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-gray-500 border border-gray-200 hover:bg-gray-50">Tutup</button>
+                <button onClick={jalankanBatalBatch}
+                  disabled={membatalkan || ketikBatalBatch.trim().toUpperCase() !== kunci || bisa === 0}
+                  className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-40"
+                  style={{ background: 'linear-gradient(135deg,#d97706,#b45309)' }}>
+                  {membatalkan && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                  Batalkan
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+        );
+      })()}
+
+      {/* ─── MODAL: Hapus tahapan satu proyek ─── */}
+      {hapusTahapan && (() => {
+        const punya = tranches.filter(t => t.project_id === hapusTahapan.id);
+        const paid = punya.filter(t => t.status === 'paid').length;
+        const kunci = 'HAPUS TAHAPAN';
+        return (
+        <ModalPortal>
+          <div role="dialog" aria-modal="true" aria-labelledby="judul-hapus-tahapan"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1200] p-4"
+            onClick={e => { if (e.target === e.currentTarget) { setHapusTahapan(null); setKetikHapusTahapan(''); } }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-amber-200">
+              <h3 id="judul-hapus-tahapan" className="text-lg font-bold text-gray-800 mb-2">↩️ Hapus Tahapan Pencairan</h3>
+              <p className="text-sm text-gray-500 mb-1">Project: <strong className="text-gray-800">{hapusTahapan.project_name}</strong></p>
+              <p className="text-sm text-gray-500 mb-3">
+                {punya.length} tahapan berikut pembagiannya akan dihapus. Sesudah itu
+                nominal pool bisa disunting lagi dan tahapannya dibuat ulang.
+              </p>
+              {paid > 0 ? (
+                <div className="px-4 py-3 rounded-xl mb-4 bg-red-50 border border-red-200">
+                  <p className="text-xs font-bold text-red-600">
+                    Ditolak — {paid} tahapan sudah berstatus Paid. Tahap yang uangnya sudah keluar
+                    tidak boleh dihapus dari sini; itu perkara koreksi pembukuan.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="px-4 py-3 rounded-xl mb-3 bg-amber-50 border border-amber-200">
+                    <p className="text-[11px] text-amber-700 leading-relaxed">
+                      Yang dihapus hanya tahapan &amp; pembagiannya. Data proyeknya sendiri —
+                      nominal, BAST, mode, PIC — tidak disentuh.
+                    </p>
+                  </div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1">
+                    Ketik <span className="font-mono text-amber-700">{kunci}</span> untuk melanjutkan
+                  </label>
+                  <input type="text" value={ketikHapusTahapan} autoFocus
+                    onChange={e => setKetikHapusTahapan(e.target.value)}
+                    placeholder={kunci}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                </>
+              )}
+              <div className="flex gap-3">
+                <button onClick={() => { setHapusTahapan(null); setKetikHapusTahapan(''); }}
+                  className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-gray-500 border border-gray-200 hover:bg-gray-50">Tutup</button>
+                <button onClick={jalankanHapusTahapan}
+                  disabled={membatalkan || paid > 0 || ketikHapusTahapan.trim().toUpperCase() !== kunci}
+                  className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-40"
+                  style={{ background: 'linear-gradient(135deg,#d97706,#b45309)' }}>
+                  {membatalkan && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                  Hapus Tahapan
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+        );
+      })()}
 
       {/* ── Konfirmasi keluarkan dari Incentive ──────────────────────────────
           Dialognya menyebut apa yang HILANG dan apa yang TETAP. Kalimat

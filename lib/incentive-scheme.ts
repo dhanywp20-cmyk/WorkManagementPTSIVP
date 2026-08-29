@@ -363,31 +363,14 @@ export function periksaSkema(sk: SkemaInsentif): MasalahSkema[] {
   if (!sk.tranche.length) masalah.push({ bidang: 'tranche', pesan: 'Minimal ada satu tahapan pencairan.' });
 
   /*
-    Installer "dibayar di muka" bekerja dengan cara MENGAMBIL tahap terakhir
-    seutuhnya. Kalau porsinya tidak sama dengan persentase tahap itu, sistem
-    tetap menghitung - porsi Tim PTS dibagi ulang ke tahap sisanya secara
-    proporsional, dan totalnya tetap 100%. Jadi ini BUKAN galat.
+    TIDAK ADA LAGI syarat "porsi Installer harus sama dengan tahap terakhir".
 
-    Tapi dokumen proposal menyatakan keduanya sama ("Installer mengambil porsi
-    Tahap 3, 15%"). Begitu angkanya dibuat berbeda, platform dan dokumen
-    berbeda tanpa ada yang memberi tahu - dan yang membaca dokumen akan
-    menghitung sendiri lalu mendapat angka lain. Karena itu diperingatkan,
-    bukan ditolak: yang salah bisa saja dokumennya, dan itu keputusan manusia.
+    Peringatan itu ada selama Installer dibayar dengan cara mengambil alih
+    tahap terakhir. Cara itu sudah diganti: porsi Installer kini dititipkan
+    sebagai baris tambahan di tahap PERTAMA, dan seluruh tahapan tetap milik
+    Tim PTS. Jadi porsi Installer boleh berapa pun tanpa mengganggu jadwal
+    pencairan siapa pun, dan tidak ada lagi yang perlu disamakan.
   */
-  if (sk.installerAktif && sk.installerBayarDiMuka && sk.tranche.length) {
-    const terakhir = sk.tranche.reduce((a, b) => (b.nomor > a.nomor ? b : a));
-    const pctInst = bulat(sk.installerRemotePersen || 0);
-    const pctTahap = bulat(terakhir.persen || 0);
-    if (pctInst > 0 && pctInst !== pctTahap) {
-      masalah.push({
-        bidang: 'installer',
-        peringatan: true,
-        pesan: `Porsi Installer ${pctInst}% berbeda dari Tahap ${terakhir.nomor} (${pctTahap}%). `
-          + 'Perhitungan tetap benar dan total tetap 100% — porsi Tim PTS dibagi ulang ke tahap sisanya. '
-          + 'Tapi proposal menyebut keduanya sama, jadi samakan salah satunya bila dokumen ikut berlaku.',
-      });
-    }
-  }
 
   return masalah;
 }

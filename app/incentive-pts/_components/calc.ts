@@ -325,10 +325,19 @@ export function validateSplitTotal(splits: SplitResult[], pool: number): { valid
 /**
  * Tahapan pencairan diambil dari skema, bukan dipatok di sini.
  *
- * Pengecualian yang tetap ada: bila Installer Cabang memang diberi porsi DAN
- * disetel dibayar di muka, tahap terakhir dipindah ke tahun pertama - sebab
- * itulah tahap yang menampung porsinya. Bila porsi Installer 0 (keadaan saat
- * ini), tidak ada yang perlu dipindah dan seluruh tahap berjalan normal.
+ * TAHAPAN INI MILIK TIM PTS. Installer TIDAK punya tahapnya sendiri.
+ *
+ * Bentuk sebelumnya memindahkan tahap TERAKHIR ke tahun pertama supaya tahap
+ * itu bisa dipakai menampung porsi Installer. Akibatnya, pada proyek Remote,
+ * Tim PTS hanya dibayar dua kali (tahap 1 dan 2) dan tahun ketiga hilang -
+ * padahal yang dibayar penuh di muka hanyalah porsi Installer, bukan porsi
+ * siapa pun di Tim PTS.
+ *
+ * Sekarang seluruh tahap tetap pada tahunnya masing-masing (BAST + tahunKe),
+ * dan porsi Installer dititipkan sebagai BARIS TAMBAHAN di tahap pertama -
+ * lihat processYearlyBatch. Jadi tiap orang di Tim PTS tetap menerima
+ * porsinya sendiri yang dipecah 50/35/15 selama tiga tahun, sementara
+ * Installer menerima 15% miliknya sekali lunas di tahun pertama.
  */
 export function generateTranches(
   sk: SkemaInsentif,
@@ -336,14 +345,12 @@ export function generateTranches(
   bastDate: string,
   modePenyelesaian?: 'onsite' | 'remote' | null,
 ): { tranche_number: number; percentage: number; payment_year: number }[] {
+  void modePenyelesaian;
   const baseYear = new Date(bastDate).getFullYear();
-  const installerDiMuka =
-    persenInstaller(sk, modePenyelesaian === 'remote') > 0 && sk.installerBayarDiMuka;
-  const terakhir = sk.tranche.length ? Math.max(...sk.tranche.map(t => t.nomor)) : 0;
   return sk.tranche.map(t => ({
     tranche_number: t.nomor,
     percentage: t.persen,
-    payment_year: baseYear + (installerDiMuka && t.nomor === terakhir ? 1 : t.tahunKe),
+    payment_year: baseYear + t.tahunKe,
   }));
 }
 
@@ -854,43 +861,68 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
 
     const pool = project.incentive_value || 0;
 
-    // Porsi Installer & tahapan pencairan
-    // Bila Installer Cabang diberi porsi DAN disetel dibayar di muka, tahap
-    // terakhir menampung porsinya utuh dan porsi Tim PTS dibagi ke tahap
-    // sisanya sebanding dengan persentase tahap itu. Cara ini membuat jumlahnya
-    // tetap tepat berapa pun angka yang disetel admin, bukan hanya saat porsi
-    // Installer kebetulan sama dengan persentase tahap terakhir.
+    /*
+      PORSI INSTALLER vs TAHAPAN TIM PTS - dua hal yang berbeda.
+
+      Tim PTS: porsi tiap orang dipecah menurut tahapan (50/35/15), jadi
+      seseorang yang porsinya Rp 500.000 menerima 250rb, 175rb, lalu 75rb -
+      tiga tahun berturut-turut.
+
+      Installer: 15% miliknya dibayar LUNAS sekali, di tahap pertama. Ia tidak
+      ikut dipecah tiga tahun. Karena itu porsinya dititipkan sebagai baris
+      tambahan pada tahap pertama, BUKAN dengan mengambil alih tahap terakhir
+      seperti sebelumnya - cara lama itu menghapus pencairan tahun ketiga
+      untuk seluruh Tim PTS, bukan hanya untuk Installer.
+
+      Bila `installerBayarDiMuka` dimatikan, Installer diperlakukan sama
+      seperti Tim PTS: porsinya ikut dipecah ke tiap tahap.
+    */
     const pctInstaller = persenInstaller(sk, project.mode_penyelesaian === 'remote');
-    const tahapTerakhir = sk.tranche.length ? Math.max(...sk.tranche.map(t => t.nomor)) : 0;
-    const installerAmbilTahapTerakhir = pctInstaller > 0 && sk.installerBayarDiMuka;
-    const tahapTim = sk.tranche.filter(t => !installerAmbilTahapTerakhir || t.nomor !== tahapTerakhir);
-    const totalTahapTim = tahapTim.reduce((n, t) => n + (t.persen || 0), 0) || 100;
+    const tahapPertama = sk.tranche.length ? Math.min(...sk.tranche.map(t => t.nomor)) : 1;
+    const installerDiMuka = pctInstaller > 0 && sk.installerBayarDiMuka;
+    const totalTahapTim = sk.tranche.reduce((n, t) => n + (t.persen || 0), 0) || 100;
 
-    let trancheSplits: SplitResult[];
-    let tranchePool: number;
+    // Bagian tahap ini terhadap seluruh porsi Tim PTS (mis. 50/100).
+    const bagian = (tranche.percentage || 0) / totalTahapTim;
 
-    if (installerAmbilTahapTerakhir && tranche.tranche_number === tahapTerakhir) {
-      tranchePool = Math.round((pool * pctInstaller) / 100);
-      trancheSplits = [{
-        role: 'installer', user_id: '',
-        user_name: project.installer_name || 'Installer Cabang',
-        percentage: pctInstaller, amount: tranchePool,
-      }];
-    } else {
-      // Bagian tahap ini terhadap seluruh porsi Tim PTS.
-      const bagian = (tranche.percentage || 0) / totalTahapTim;
-      //  Pool tahap ini DIBULATKAN dulu. Sebelumnya ia dibiarkan pecahan
-      //  (mis. 13.259.488,50) lalu dibandingkan dengan jumlah rupiah bulat -
-      //  perbandingan yang tidak pernah bisa pas, dan itulah sebab separuh
-      //  tranche ditolak "split total mismatch" padahal angkanya benar.
-      tranchePool = Math.round(pool * ((100 - pctInstaller) / 100) * bagian);
-      const timSaja = splits.filter(s => s.role !== 'installer');
-      //  Dibagi habis ke sesama anggota tim: persentase dinormalkan ke porsi
-      //  tim (bukan ke pool penuh) supaya jumlahnya persis tranchePool.
-      const totalPctTim = timSaja.reduce((n, s) => n + s.percentage, 0) || 1;
-      const rupiahTahap = bagikanTepat(tranchePool, timSaja.map(s => (s.percentage / totalPctTim) * 100));
-      trancheSplits = timSaja.map((s, i) => ({ ...s, amount: rupiahTahap[i] }));
+    const timSaja = splits.filter(s => s.role !== 'installer');
+    const totalPctTim = timSaja.reduce((n, s) => n + s.percentage, 0) || 1;
+
+    // Rupiah "ideal" (masih pecahan) tiap penerima pada tahap ini.
+    const poolTimTahap = pool * ((100 - pctInstaller) / 100) * bagian;
+    const komponen: { split: SplitResult; ideal: number }[] = timSaja.map(s => ({
+      split: s,
+      ideal: poolTimTahap * (s.percentage / totalPctTim),
+    }));
+
+    if (pctInstaller > 0) {
+      const idealInstaller = installerDiMuka
+        ? (tranche.tranche_number === tahapPertama ? (pool * pctInstaller) / 100 : 0)
+        : pool * (pctInstaller / 100) * bagian;
+      if (idealInstaller > 0) {
+        komponen.push({
+          split: {
+            role: 'installer', user_id: '',
+            user_name: project.installer_name || 'Installer Cabang',
+            percentage: pctInstaller, amount: 0,
+          },
+          ideal: idealInstaller,
+        });
+      }
     }
+
+    //  Pool tahap ini DIBULATKAN dulu. Sebelumnya ia dibiarkan pecahan
+    //  (mis. 13.259.488,50) lalu dibandingkan dengan jumlah rupiah bulat -
+    //  perbandingan yang tidak pernah bisa pas, dan itulah sebab separuh
+    //  tranche ditolak "split total mismatch" padahal angkanya benar.
+    const tranchePool = Math.round(komponen.reduce((n, k) => n + k.ideal, 0));
+    //  Dibagi habis: persentase dinormalkan ke pool TAHAP INI (bukan ke pool
+    //  proyek) supaya jumlah seluruh baris persis sama dengan tranchePool.
+    const rupiahTahap = bagikanTepat(
+      tranchePool,
+      komponen.map(k => (tranchePool > 0 ? (k.ideal / tranchePool) * 100 : 0)),
+    );
+    const trancheSplits: SplitResult[] = komponen.map((k, i) => ({ ...k.split, amount: rupiahTahap[i] }));
 
     const validation = validateSplitTotal(trancheSplits, tranchePool);
     if (!validation.valid) {
@@ -906,6 +938,106 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
   }
 
   return { processed, errors, total: dueTranches.length };
+}
+
+// Pembatalan (rollback)
+
+/*
+  DUA PEMBATALAN, DUA TINGKAT - dan keduanya menolak menyentuh yang sudah Paid.
+
+  Ini ada supaya seluruh alur insentif bisa diuji tanpa mempertaruhkan data
+  yang sudah jadi. Tanpa jalan kembali, satu kali salah pencet pada Process
+  Batch akan meninggalkan baris pembagian yang tidak bisa dicabut, dan
+  satu-satunya cara membersihkannya adalah menghapus baris lewat SQL langsung
+  di produksi - persis keadaan yang paling mudah membuat celaka.
+
+  YANG SUDAH `paid` TIDAK PERNAH BISA DIBATALKAN dari sini. Status itu berarti
+  uangnya sudah keluar; membatalkannya di layar tidak menarik uang itu kembali,
+  ia hanya membuat catatan platform tidak lagi cocok dengan yang benar-benar
+  terjadi. Bila memang ada kekeliruan pada tahap yang sudah dibayar, itu
+  perkara koreksi pembukuan, bukan tombol.
+*/
+
+export interface HasilPembatalan {
+  /** Jumlah tahapan yang dikembalikan / dihapus. */
+  jumlah: number;
+  /** Tahapan yang DILEWATI karena sudah berstatus paid. */
+  dilewati: number;
+  error: { message: string } | null;
+}
+
+/**
+ * Batalkan hasil Process Batch satu tahun: hapus baris pembagian yang dibuat
+ * batch itu, lalu kembalikan tahapannya dari `processed` ke `pending`.
+ *
+ * Tahapannya sendiri TIDAK dihapus - yang dibatalkan hanya pemrosesannya,
+ * sehingga batch tahun itu bisa dijalankan ulang setelah datanya dibetulkan.
+ */
+export async function batalkanBatchTahun(paymentYear: number): Promise<HasilPembatalan> {
+  const { data: semua, error: bacaErr } = await supabase
+    .from('incentive_tranches')
+    .select('id, status')
+    .eq('payment_year', paymentYear);
+  if (bacaErr) return { jumlah: 0, dilewati: 0, error: bacaErr };
+
+  const baris = (semua ?? []) as { id: string; status: string }[];
+  const bisa = baris.filter(t => t.status === 'processed');
+  const dilewati = baris.filter(t => t.status === 'paid').length;
+  if (bisa.length === 0) return { jumlah: 0, dilewati, error: null };
+
+  const ids = bisa.map(t => t.id);
+
+  //  Pembagian dihapus LEBIH DULU. Kalau urutannya dibalik dan penghapusan
+  //  split gagal, tahapannya sudah terlanjur jadi `pending` sementara baris
+  //  pembagiannya masih ada - menjalankan batch lagi akan menambah set kedua
+  //  di atas yang lama, dan orang dibayar dua kali.
+  const { error: hapusErr } = await supabase.from('incentive_splits').delete().in('tranche_id', ids);
+  if (hapusErr) return { jumlah: 0, dilewati, error: hapusErr };
+
+  const { error: ubahErr } = await supabase
+    .from('incentive_tranches')
+    .update({ status: 'pending', processed_at: null })
+    .in('id', ids);
+  if (ubahErr) return { jumlah: 0, dilewati, error: ubahErr };
+
+  return { jumlah: bisa.length, dilewati, error: null };
+}
+
+/**
+ * Hapus SELURUH tahapan pencairan satu proyek, berikut pembagiannya.
+ *
+ * Dipakai bila tahapannya memang ter-generate keliru - mis. nominal pool salah,
+ * atau skemanya baru dibetulkan sesudah tahapan dibuat. Sesudah ini, nominal
+ * proyek terbuka lagi untuk disunting dan tahapannya bisa dibuat ulang.
+ */
+export async function hapusTahapanProyek(projectId: string): Promise<HasilPembatalan> {
+  const { data: semua, error: bacaErr } = await supabase
+    .from('incentive_tranches')
+    .select('id, status')
+    .eq('project_id', projectId);
+  if (bacaErr) return { jumlah: 0, dilewati: 0, error: bacaErr };
+
+  const baris = (semua ?? []) as { id: string; status: string }[];
+  const sudahDibayar = baris.filter(t => t.status === 'paid').length;
+  if (sudahDibayar > 0) {
+    return {
+      jumlah: 0, dilewati: sudahDibayar,
+      error: { message: `Proyek ini punya ${sudahDibayar} tahapan berstatus Paid — tahapannya tidak boleh dihapus.` },
+    };
+  }
+  if (baris.length === 0) return { jumlah: 0, dilewati: 0, error: null };
+
+  const ids = baris.map(t => t.id);
+  //  Split dihapus lewat project_id, bukan hanya tranche_id: baris pembagian
+  //  yang tranche_id-nya null (dibuat sebelum tahapan ada) juga ikut, kalau
+  //  tidak ia tertinggal sebagai yatim yang tetap terhitung di rekap.
+  const { error: hapusSplit } = await supabase.from('incentive_splits').delete().eq('project_id', projectId);
+  if (hapusSplit) return { jumlah: 0, dilewati: 0, error: hapusSplit };
+
+  const { error: hapusTr } = await supabase.from('incentive_tranches').delete().in('id', ids);
+  if (hapusTr) return { jumlah: 0, dilewati: 0, error: hapusTr };
+
+  return { jumlah: baris.length, dilewati: 0, error: null };
 }
 
 // Formatting
