@@ -3090,8 +3090,8 @@ jangan lupa peralatan & Semangat💪🏼
                       </p>
                       <p className="text-[11px] font-semibold text-emerald-700 mt-1.5">
                         {buatUntukGuest
-                          ? '✓ Disarankan — kalau serah-terimanya nanti satu BAST dengan yang lama, insentif tim tidak terhitung dua kali. Hanya project Anda sendiri yang tampil di pencarian.'
-                          : '✓ Disarankan — kalau serah-terimanya nanti satu BAST dengan jadwal lama, insentifnya otomatis tergabung, tidak terhitung ganda'}
+                          ? '✓ Disarankan — kalau serah-terimanya nanti satu BAST dengan yang lama. Hanya project Anda sendiri yang tampil di pencarian.'
+                          : '✓ Disarankan — kalau serah-terimanya nanti satu BAST dengan jadwal lama'}
                       </p>
                     </div>
                   </div>
