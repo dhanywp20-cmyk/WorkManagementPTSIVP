@@ -614,6 +614,20 @@ export async function exportSummaryIncentive(data: {
     tiap catatan menemukan tahunnya sendiri.
   */
   const akumulasi: { nama: string; peran: string; jumlah: number; bastYear: number }[] = [];
+  /**
+   * SETIAP orang yang muncul di Tabel 1 - termasuk yang seluruh proyeknya
+   * masih "belum input" nominal.
+   *
+   * `akumulasi` di atas sengaja hanya mencatat proyek yang sudah final
+   * (nominalnya nyata, bukan pool contoh 1 juta) - itu benar untuk RUPIAH-nya.
+   * Tapi kalau daftar NAMA di rekap bawah juga diturunkan dari situ saja,
+   * orang yang seluruh proyeknya masih "belum input" tidak akan pernah
+   * muncul di rekap sama sekali - padahal dia tetap PIC/Support/dst yang sah,
+   * cuma nominalnya belum final. Peta ini memastikan semua nama tetap
+   * tercatat; jumlahnya baru diisi dari `akumulasi` (nol kalau memang belum
+   * ada proyek yang final).
+   */
+  const semuaNama = new Map<string, Set<string>>();
 
   const wb = new ExcelJS.Workbook();
   wb.creator = 'Work Management PTS IVP';
@@ -705,7 +719,17 @@ export async function exportSummaryIncentive(data: {
     const splits = calculateIncentiveSplits(sk, displayProject, projManagerId, projManagerName, supervisorId, supervisorName, projectSupports, picId);
     const isEstimate = !hasNominal || !p.mode_penyelesaian;
 
-    // Akumulasi total per orang - hanya project final (ada nominal & mode), pakai amount asli
+    // Setiap orang yang tampil di proyek ini tercatat, apa pun status nominalnya.
+    for (const s of splits) {
+      const nm = s.user_name || '—';
+      const peranOrang = semuaNama.get(nm) ?? new Set<string>();
+      peranOrang.add(s.role);
+      semuaNama.set(nm, peranOrang);
+    }
+
+    // Akumulasi RUPIAH per orang - hanya project final (ada nominal & mode).
+    // Pool contoh (1 juta) pada proyek "belum input" tidak boleh ikut
+    // dijumlah - itu bukan uang sungguhan, cuma alat bantu menunjukkan persen.
     if (!isEstimate && p.bast_date) {
       const bastYear = new Date(p.bast_date).getFullYear();
       for (const s of splits) {
@@ -844,7 +868,9 @@ export async function exportSummaryIncentive(data: {
   ws.mergeCells(row, 1, row, 10);
   row++;
   const rpSub = ws.getCell(row, 1);
-  rpSub.value = 'Akumulasi seluruh project dgn nominal & mode final (estimasi tidak dihitung). '
+  rpSub.value = 'SEMUA nama yang muncul di Tabel 1 tercatat di sini. Nominalnya diakumulasi hanya dari '
+    + 'project yang nominal & mode-nya sudah final (estimasi tidak dihitung) - nama yang seluruh '
+    + 'project-nya masih "belum input" tetap tampil, dengan total Rp 0 dan keterangan di sebelah namanya. '
     + 'Nominal tiap orang dipecah ke tahun pencairannya menurut Tahapan Pencairan; '
     + 'Installer dibayar 100% di tahun pertama.';
   rpSub.font = { italic: true, size: 9, name: 'Arial', color: { argb: '888888' } };
@@ -885,6 +911,23 @@ export async function exportSummaryIncentive(data: {
       }
     }
     perOrangTahun.set(nama, ember);
+  }
+
+  /*
+    Nama yang belum masuk `perOrangTahun` sama sekali - berarti SELURUH
+    proyeknya masih "belum input" nominal - tetap ditambahkan, dengan total
+    Rp 0. Tanpa ini nama itu diam-diam hilang dari rekap: bukan karena
+    porsinya memang nol, tapi karena nominal proyeknya belum diisi Admin.
+    Dua keadaan yang beda dan tidak boleh terlihat sama - satu berarti "belum
+    ada uang untuk dihitung", satu lagi berarti "orang ini memang tidak
+    berhak". Ditandai `belumFinal` supaya baris nol-nya dijelaskan, bukan
+    dikira kesalahan hitung.
+  */
+  const namaBelumFinal = new Set<string>();
+  for (const [nama, peranSet] of semuaNama) {
+    if (perOrangTahun.has(nama)) continue;
+    perOrangTahun.set(nama, { nama, peran: new Set(peranSet), tahun: new Map(), total: 0 });
+    namaBelumFinal.add(nama);
   }
 
   const tahunUrut = [...tahunSet].sort((a, b) => a - b);
@@ -963,11 +1006,13 @@ export async function exportSummaryIncentive(data: {
     const hiasi = (c: ExcelJS.Cell) => { c.border = thinBorder(); if (selang) c.fill = isiSelang; };
     const hanyaInstaller = o.peran.size === 1 && o.peran.has('installer');
 
+    const belumFinal = namaBelumFinal.has(o.nama);
     const cNm = ws.getCell(row, 1);
     const daftarPeran = [...o.peran].sort((a, b) => (urutPeran[a] ?? 9) - (urutPeran[b] ?? 9))
       .map(r => ROLE_JUDUL[r] ?? r).join(', ');
-    cNm.value = `${o.nama}  (${daftarPeran}${hanyaInstaller ? ' — 100% pencairan tahun pertama' : ''})`;
-    cNm.font = dataFont();
+    cNm.value = `${o.nama}  (${daftarPeran}${hanyaInstaller ? ' — 100% pencairan tahun pertama' : ''}`
+      + `${belumFinal ? ' — seluruh proyeknya belum diisi nominal' : ''})`;
+    cNm.font = belumFinal ? { ...dataFont(), italic: true, color: { argb: '999999' } } : dataFont();
     cNm.alignment = { vertical: 'middle', wrapText: true };
     hiasi(cNm);
     ws.mergeCells(row, 1, row, 2);
@@ -1012,7 +1057,7 @@ export async function exportSummaryIncentive(data: {
   const pEnd = row - 1;
 
   if (orangUrut.length === 0) {
-    ws.getCell(row, 1).value = '(Belum ada project dengan nominal & mode final)';
+    ws.getCell(row, 1).value = '(Belum ada project sama sekali)';
     ws.getCell(row, 1).font = { ...dataFont(), italic: true, color: { argb: '999999' } };
     ws.mergeCells(row, 1, row, kolTotal);
     row++;
