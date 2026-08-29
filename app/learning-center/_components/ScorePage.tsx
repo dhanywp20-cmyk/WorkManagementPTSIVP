@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase, User, fmtDate, ScoreBadge, SearchInput, GradingStatusBadge } from './shared';
 import { DonutChart } from '@/components/shared';
 import { UserAnswerReview } from './TeamPage';
+import { isSalesGuest } from '@/lib/constants';
+import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
@@ -15,25 +17,50 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 
 // Personal Dashboard
 export function ScorePage({ user }: { user: User }) {
+  const guest = isSalesGuest({ role: user.role });
   const [attempts, setAttempts]       = useState<any[]>([]);
   const [rankings, setRankings]       = useState<any[]>([]);
+  const [peringkat, setPeringkat]     = useState<HasilPeringkat | null>(null);
   const [viewingAttempt, setViewingAttempt] = useState<any | null>(null);
   const [search, setSearch]           = useState('');
 
   useEffect(() => {
     const load = async () => {
-      const [myRes, allRes] = await Promise.all([
-        supabase.from('lc_quiz_attempts')
-          .select('*, lc_quiz_sessions(session_name, passing_grade, materi_name, question_ids)')
-          .eq('user_id', user.id).eq('is_submitted', true)
-          .order('submitted_at', { ascending: false }),
-        // '*' disengaja - lihat catatan di AdminDashboard: menyebut
-        // grading_status eksplisit membuat query gagal total sebelum migrasi.
-        supabase.from('lc_quiz_attempts')
-          .select('*, users(full_name, role)')
-          .eq('is_submitted', true),
-      ]);
+      const myRes = await supabase.from('lc_quiz_attempts')
+        .select('*, lc_quiz_sessions(session_name, passing_grade, materi_name, question_ids)')
+        .eq('user_id', user.id).eq('is_submitted', true)
+        .order('submitted_at', { ascending: false });
       setAttempts(myRes.data ?? []);
+
+      /*
+        Guest/Sales lewat /api/learning-center/rank (server-side, aman) -
+        BUKAN query lintas-peserta di sini. Dua alasan sekaligus:
+
+        1. RLS lca_milik (sql/kunci-tabel-lanjutan-2.sql) menahan role
+           guest/sales membaca baris siapa pun selain dirinya sendiri, jadi
+           query lintas-peserta di bawah ini SELALU kembali kosong untuk
+           mereka - itulah sebab Top Performers tampak "belum ada data"
+           padahal peserta lain jelas ada.
+        2. Kalaupun RLS-nya longgar, mengirim nama & skor SELURUH peserta ke
+           browser lalu menyamarkannya dengan CSS blur() bukan proteksi
+           sungguhan - DevTools/Network tab tetap membongkarnya. Route
+           /api/learning-center/rank menghitung di server dan hanya
+           mengembalikan ANGKA milik pemanggil sendiri.
+
+        Team/Admin (lingkup_semua() di RLS) tetap lewat jalur lama di bawah -
+        mereka memang berhak melihat rekan setimnya, dan itu bukan yang
+        dilaporkan bermasalah.
+      */
+      if (guest) {
+        setPeringkat(await ambilPeringkatSaya());
+        return;
+      }
+
+      // '*' disengaja - lihat catatan di AdminDashboard: menyebut
+      // grading_status eksplisit membuat query gagal total sebelum migrasi.
+      const allRes = await supabase.from('lc_quiz_attempts')
+        .select('*, users(full_name, role)')
+        .eq('is_submitted', true);
 
       if (allRes.data) {
         const myRole = user.role?.toLowerCase() ?? '';
@@ -56,7 +83,7 @@ export function ScorePage({ user }: { user: User }) {
       }
     };
     load();
-  }, [user.id]);
+  }, [user.id, guest]);
 
   // computed
   const gradedAttempts = attempts.filter((a: any) => a.grading_status !== 'pending_review');
@@ -67,9 +94,12 @@ export function ScorePage({ user }: { user: User }) {
   const scoreMid   = gradedAttempts.filter((a: any) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length;
   const scoreLow   = gradedAttempts.filter((a: any) => (a.score ?? 0) < 60).length;
   const passPct    = total > 0 ? Math.round(passed / total * 100) : 0;
-  const myRank     = rankings.findIndex(r => r.uid === user.id) + 1; // 1-based, 0 = not found
-  const rankPct    = rankings.length > 0 && myRank > 0
-    ? Math.round((rankings.length - myRank + 1) / rankings.length * 100) : 0;
+  //  Guest/Sales: peringkat dari server (peringkat.globalRank). Team/Admin:
+  //  dari tabel rankings yang mereka boleh lihat sendiri.
+  const myRank     = guest ? (peringkat?.globalRank ?? 0) : rankings.findIndex(r => r.uid === user.id) + 1;
+  const rankTotal  = guest ? peringkat?.globalTotal ?? 0 : rankings.length;
+  const rankPct    = rankTotal > 0 && myRank > 0
+    ? Math.round((rankTotal - myRank + 1) / rankTotal * 100) : 0;
 
   const filtered = search
     ? attempts.filter(a =>
@@ -100,10 +130,10 @@ export function ScorePage({ user }: { user: User }) {
     { title: 'Distribusi Nilai', sub: `≥80: ${scoreGood} · 60–79: ${scoreMid} · <60: ${scoreLow}`, label: `${total}`,
       segments: [{ value: scoreGood, color: '#3b82f6' }, { value: scoreMid, color: '#f59e0b' }, { value: scoreLow, color: '#ef4444' }] },
     { title: 'Posisi Top',
-      sub: rankings.length > 0 && myRank > 0 ? `#${myRank} dari ${rankings.length} peserta` : 'Belum ada data',
+      sub: rankTotal > 0 && myRank > 0 ? `#${myRank} dari ${rankTotal} peserta` : 'Belum ada data',
       label: rankPct > 0 ? `${rankPct}%` : '—',
-      segments: rankings.length > 0 && myRank > 0
-        ? [{ value: rankings.length - myRank + 1, color: '#6366f1' }, { value: myRank - 1, color: '#e0e7ff' }]
+      segments: rankTotal > 0 && myRank > 0
+        ? [{ value: rankTotal - myRank + 1, color: '#6366f1' }, { value: myRank - 1, color: '#e0e7ff' }]
         : [{ value: 1, color: '#e0e7ff' }] },
   ];
 
@@ -152,62 +182,100 @@ export function ScorePage({ user }: { user: User }) {
               </div>
             </div>
 
-            {/* Right: Leaderboard with user's row highlighted */}
+            {/* Right: Peringkat, bentuknya berbeda menurut siapa yang melihat.
+
+                Guest/Sales: dua kartu ANGKA SAJA (Global + Divisi), diambil
+                dari /api/learning-center/rank. Tidak ada tabel nama peserta
+                lain sama sekali - server tidak pernah mengirim nama/skor
+                mereka ke sini, jadi tidak ada yang perlu "disembunyikan" di
+                sisi klien lagi.
+
+                Team/Admin: tabel lama tetap seperti semula - mereka memang
+                berhak melihat sesama rekan setim (RLS lingkup_semua()
+                mengizinkan), dan ini bukan yang dilaporkan bermasalah. */}
             <div>
-              <SectionHeader>🏆 Top Performers — {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Semua'}</SectionHeader>
-              <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
-                <table className="w-full text-sm table-zebra" style={{ minWidth: '300px' }}>
-                  <thead className="border-b border-slate-200 bg-slate-50">
-                    <tr>
-                      <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-10">#</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Nama</th>
-                      <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Avg</th>
-                      <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Lulus</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {rankings.map((r, i) => {
-                      const isMe = r.uid === user.id;
-                      // Mask name: show only initials for other participants
-                      const maskedName = r.name.split(' ').map((w: string) => w[0] + '***').join(' ');
-                      return (
-                        <tr key={r.uid} className={`stagger-item ${isMe ? 'bg-indigo-50 border-l-[3px] border-indigo-400' : 'hover:bg-slate-50'}`}>
-                          <td className={`px-4 py-3 text-center font-black text-sm ${isMe ? 'text-indigo-600' : 'text-slate-300'}`}>
-                            {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              {isMe ? (
-                                <span className="font-semibold text-sm text-indigo-700">{r.name}</span>
-                              ) : (
-                                <span className="font-semibold text-sm text-slate-400 select-none" style={{ filter: 'blur(4px)', userSelect: 'none' }}>
-                                  {maskedName}
-                                </span>
-                              )}
-                              {isMe && (
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-indigo-100 text-indigo-600 rounded-full border border-indigo-200">KAMU</span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <span className={`text-xs font-bold ${r.avg >= 80 ? 'text-emerald-600' : r.avg >= 60 ? 'text-amber-600' : 'text-rose-600'}`}>
-                              {r.avg.toFixed(0)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${r.passed > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
-                              {r.passed}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {rankings.length === 0 && (
-                      <tr><td colSpan={4} className="text-center py-8 text-slate-400 text-sm">Belum ada data</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <SectionHeader>🏆 Peringkat — {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Semua'}</SectionHeader>
+              {guest ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5 text-center">
+                    <div className="text-2xl mb-1">🏆</div>
+                    <div className="text-2xl font-black text-indigo-700">
+                      {peringkat?.globalRank ? `#${peringkat.globalRank}` : '—'}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {peringkat?.globalTotal ? `dari ${peringkat.globalTotal} peserta ${user.role}` : 'Belum ada data'}
+                    </p>
+                  </div>
+                  <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5 text-center">
+                    <div className="text-2xl mb-1">🏢</div>
+                    <div className="text-2xl font-black text-indigo-700">
+                      {peringkat?.divisiRank ? `#${peringkat.divisiRank}` : '—'}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {peringkat?.divisi
+                        ? (peringkat.divisiTotal ? `dari ${peringkat.divisiTotal} peserta divisi ${peringkat.divisi}` : `Belum ada peserta lain di divisi ${peringkat.divisi}`)
+                        : 'Divisi belum diset di profil kamu'}
+                    </p>
+                  </div>
+                  <p className="sm:col-span-2 text-[11px] text-slate-400 text-center leading-relaxed px-2">
+                    Hanya peringkatmu sendiri yang ditampilkan — nama dan nilai peserta lain tidak dibagikan.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+                  <table className="w-full text-sm table-zebra" style={{ minWidth: '300px' }}>
+                    <thead className="border-b border-slate-200 bg-slate-50">
+                      <tr>
+                        <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-10">#</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Nama</th>
+                        <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Avg</th>
+                        <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Lulus</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {rankings.map((r, i) => {
+                        const isMe = r.uid === user.id;
+                        // Mask name: show only initials for other participants
+                        const maskedName = r.name.split(' ').map((w: string) => w[0] + '***').join(' ');
+                        return (
+                          <tr key={r.uid} className={`stagger-item ${isMe ? 'bg-indigo-50 border-l-[3px] border-indigo-400' : 'hover:bg-slate-50'}`}>
+                            <td className={`px-4 py-3 text-center font-black text-sm ${isMe ? 'text-indigo-600' : 'text-slate-300'}`}>
+                              {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                {isMe ? (
+                                  <span className="font-semibold text-sm text-indigo-700">{r.name}</span>
+                                ) : (
+                                  <span className="font-semibold text-sm text-slate-400 select-none" style={{ filter: 'blur(4px)', userSelect: 'none' }}>
+                                    {maskedName}
+                                  </span>
+                                )}
+                                {isMe && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.5 bg-indigo-100 text-indigo-600 rounded-full border border-indigo-200">KAMU</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className={`text-xs font-bold ${r.avg >= 80 ? 'text-emerald-600' : r.avg >= 60 ? 'text-amber-600' : 'text-rose-600'}`}>
+                                {r.avg.toFixed(0)}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${r.passed > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                                {r.passed}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {rankings.length === 0 && (
+                        <tr><td colSpan={4} className="text-center py-8 text-slate-400 text-sm">Belum ada data</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         )}

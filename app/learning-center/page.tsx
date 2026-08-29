@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getSession, setSession } from '@/lib/auth';
-import { hasFullAccess } from '@/lib/constants';
+import { hasFullAccess, isSalesGuest } from '@/lib/constants';
 import { User, AdminView, TeamView } from './_components/shared';
 import { AdminDashboard } from './_components/AdminDashboard';
 import { MateriPage } from './_components/MateriPage';
@@ -69,8 +69,16 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
   // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
   // (lihat lib/constants.ts hasFullAccess).
   const isAdmin = hasFullAccess(currentUser);
+  /*
+    Guest/Sales membuka Learning Center bukan untuk mengerjakan quiz sesering
+    Team - kebutuhan mereka lebih ke "bagaimana skor saya sejauh ini". Tab
+    'my-quiz' sebagai bawaan cocok untuk Team (sering mengerjakan quiz baru),
+    tapi untuk Guest/Sales itu berarti selalu dua klik jauhnya dari yang
+    paling ingin mereka lihat pertama kali. Team tidak berubah - hanya
+    Guest/Sales yang mendarat di 'score' begitu halaman ini terbuka.
+  */
   const [adminView, setAdminView] = useState<AdminView>('dashboard');
-  const [teamView, setTeamView] = useState<TeamView>('my-quiz');
+  const [teamView, setTeamView] = useState<TeamView>(isSalesGuest({ role: currentUser.role }) ? 'score' : 'my-quiz');
   const [loading, setLoading] = useState(false);
   const [contentKey, setContentKey] = useState(0);
   // Sesi yang mau langsung dibuka di tab Laporan - diisi lewat tombol "Lihat

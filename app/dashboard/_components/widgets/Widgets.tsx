@@ -22,6 +22,8 @@ import {
 import { AnalyticsPlatform } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 import { ASSIGNABLE_PTS_TEAMS } from '@/lib/teams';
 import { ambilRingkasanPerforma, type RingkasanPerforma } from '@/lib/ringkasan-performa';
+import { isSalesGuest } from '@/lib/constants';
+import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
 
 // Kontrak widget
 
@@ -448,16 +450,16 @@ function AnalyticStat({ accent, label, value, subs }: {
 function PintasanBuat({ label, warna, onClick }: { label: string; warna: string; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className="flex items-center gap-2 px-3 py-2 rounded-xl text-white font-bold text-xs transition-all hover:scale-[1.02] text-left"
+      className="flex-1 min-w-0 flex items-center gap-2 px-3 py-2 rounded-xl text-white font-bold text-xs transition-all hover:scale-[1.02] text-left"
       style={{ background: warna, boxShadow: `0 4px 14px ${warna}59` }}>
       <span className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.22)' }}>
         <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
         </svg>
       </span>
-      <span className="leading-tight whitespace-nowrap">
+      <span className="leading-tight min-w-0 truncate">
         <span className="block opacity-80 text-[9px] font-semibold">Buat</span>
-        <span className="block">{label}</span>
+        <span className="block truncate">{label}</span>
       </span>
     </button>
   );
@@ -552,10 +554,12 @@ const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openUrl }) => {
               memutuskan boleh atau tidak — mis. Request Schedule tetap menahan
               Sales yang masih punya form review belum dinilai. Dashboard tidak
               ikut memutuskan, supaya aturannya tidak ada dua salinan. */}
-          {/* Seukuran isinya dan rata kiri, bukan melebar memenuhi frame:
-              tombol selebar layar membuat aksi terasa seberat seluruh kartu,
-              padahal ia cuma pintasan. */}
-          <div className="flex flex-wrap gap-2 mt-3">
+          {/* Lebar SAMA RATA (flex-1 di tiap tombol, bukan flex-wrap bebas):
+              sebelumnya tiap tombol selebar teksnya sendiri, jadi "Design
+              Project" jauh lebih lebar daripada "Ticket" dan barisnya
+              terlihat pincang. Disamakan supaya tiga tombol ini terbaca
+              sebagai satu kelompok aksi yang setara, bukan tiga ukuran acak. */}
+          <div className="flex gap-2 mt-3">
             {showSchedule && (
               <PintasanBuat label="Request Schedule" warna="#0891b2"
                 onClick={() => openUrl('/reminder-schedule?buat=1', 'Request Schedule')} />
@@ -575,18 +579,95 @@ const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openUrl }) => {
   );
 };
 
-// WIDGET: Learning (menu learning-center) - CTA ringkas.
-const LearningWidget: React.FC<WidgetProps> = ({ openMenu }) => (
-  <WidgetCard title="Learning Center" icon="🎓" accent="#4338ca">
-    <div className="flex flex-col items-center justify-center h-full text-center gap-2 py-2">
-      <div className="text-3xl">🎓</div>
-      <p className="text-[11px] text-slate-500 leading-snug px-2">Training, quiz online & materi pengembangan tim.</p>
-      <button onClick={() => openMenu('learning-center')}
-        className="mt-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-[1.03]"
-        style={{ background: 'linear-gradient(135deg,#4338ca,#6366f1)' }}>Buka Learning →</button>
+/**
+ * Satu baris angka - dipakai untuk rekap nilai & peringkat di LearningWidget.
+ * `sub` opsional untuk keterangan singkat ("dari 12 peserta").
+ */
+function BarisAngka({ icon, label, value, sub }: { icon: string; label: string; value: string; sub?: string }) {
+  return (
+    <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-indigo-50/70 border border-indigo-100">
+      <span className="text-lg flex-shrink-0" aria-hidden="true">{icon}</span>
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] text-indigo-400 font-semibold leading-none">{label}</div>
+        <div className="text-sm font-black text-indigo-800 leading-tight mt-0.5">
+          {value}{sub && <span className="text-[10px] font-medium text-indigo-400 ml-1">{sub}</span>}
+        </div>
+      </div>
     </div>
-  </WidgetCard>
-);
+  );
+}
+
+// WIDGET: Learning (menu learning-center).
+//
+// Untuk Guest/Sales, kartu ini bukan cuma CTA - ditambahkan rekap nilai &
+// peringkat sendiri (Global + Divisi), supaya mereka tidak perlu membuka
+// Learning Center hanya untuk tahu "skor saya berapa, peringkat saya berapa".
+// Peringkatnya diambil lewat /api/learning-center/rank (lib/learning-rank.ts) -
+// server yang menghitung, bukan klien menarik data seluruh peserta lalu
+// menyamarkannya sendiri. Lihat catatan keamanan di route itu.
+//
+// Team (non-analytics) TETAP kartu CTA sederhana seperti semula - permintaan
+// ini eksplisit soal pengalaman Guest, bukan Team.
+const LearningWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
+  const guest = isSalesGuest({ role: user.role });
+  const [milikSaya, setMilikSaya] = useState<{ total: number; avg: number } | null>(null);
+  const [peringkat, setPeringkat] = useState<HasilPeringkat | null>(null);
+  const [loading, setLoading] = useState(guest);
+
+  useEffect(() => {
+    if (!guest) return;
+    let alive = true;
+    (async () => {
+      const [attRes, rank] = await Promise.all([
+        supabase.from('lc_quiz_attempts').select('score, grading_status')
+          .eq('user_id', user.id).eq('is_submitted', true),
+        ambilPeringkatSaya(),
+      ]);
+      if (!alive) return;
+      const dinilai = ((attRes.data ?? []) as { score: number | null; grading_status: string | null }[])
+        .filter(a => a.grading_status !== 'pending_review');
+      setMilikSaya({
+        total: dinilai.length,
+        avg: dinilai.length ? dinilai.reduce((s, a) => s + (a.score ?? 0), 0) / dinilai.length : 0,
+      });
+      setPeringkat(rank);
+      setLoading(false);
+    })();
+    return () => { alive = false; };
+  }, [guest, user.id]);
+
+  return (
+    <WidgetCard title="Learning Center" icon="🎓" accent="#4338ca">
+      {!guest ? (
+        <div className="flex flex-col items-center justify-center h-full text-center gap-2 py-2">
+          <div className="text-3xl">🎓</div>
+          <p className="text-[11px] text-slate-500 leading-snug px-2">Training, quiz online &amp; materi pengembangan tim.</p>
+          <button onClick={() => openMenu('learning-center')}
+            className="mt-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-[1.03]"
+            style={{ background: 'linear-gradient(135deg,#4338ca,#6366f1)' }}>Buka Learning →</button>
+        </div>
+      ) : loading ? <Loading /> : (
+        <div className="flex flex-col gap-2.5 h-full">
+          <div className="grid grid-cols-2 gap-2">
+            <BarisAngka icon="📝" label="Quiz Diikuti" value={String(milikSaya?.total ?? 0)} />
+            <BarisAngka icon="📊" label="Rata-rata Skor" value={(milikSaya?.avg ?? 0).toFixed(0)} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <BarisAngka icon="🏆" label="Peringkat Global"
+              value={peringkat?.globalRank ? `#${peringkat.globalRank}` : '—'}
+              sub={peringkat?.globalTotal ? `dari ${peringkat.globalTotal}` : undefined} />
+            <BarisAngka icon="🏢" label={peringkat?.divisi ? `Divisi ${peringkat.divisi}` : 'Peringkat Divisi'}
+              value={peringkat?.divisiRank ? `#${peringkat.divisiRank}` : '—'}
+              sub={peringkat?.divisiTotal ? `dari ${peringkat.divisiTotal}` : (peringkat?.divisi ? undefined : 'Divisi belum diset')} />
+          </div>
+          <button onClick={() => openMenu('learning-center')}
+            className="mt-auto px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-[1.02] self-start"
+            style={{ background: 'linear-gradient(135deg,#4338ca,#6366f1)' }}>Buka Learning →</button>
+        </div>
+      )}
+    </WidgetCard>
+  );
+};
 
 // WIDGET: Piket Showroom - siapa PIC piket hari ini + minggu ini.
 // Muncul utk SEMUA role (info penting bersama: Sales/Marketing perlu tahu PIC).
