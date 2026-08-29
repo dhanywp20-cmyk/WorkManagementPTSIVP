@@ -524,6 +524,69 @@ export interface HasilBagi {
 }
 
 /**
+ * Peta porsi yang BERLAKU untuk sebuah proyek, sesudah saklar Remote diterapkan.
+ *
+ * SATU-SATUNYA tempat aturan "pakai tabel Remote atau turunkan dari Onsite?"
+ * ditulis. Dulu aturan ini hanya hidup di dalam hitungPembagian, sementara
+ * layar daftar proyek menghitung bagian PIC-nya sendiri dari `sk.porsi` dikali
+ * sisa pool - jalur yang TIDAK pernah melihat tabel Remote. Akibatnya, pada
+ * proyek Remote yang tabelnya diatur sendiri, layar menulis 51% (60 x 0,85)
+ * sementara yang benar-benar dibayar 40%. Dua angka untuk satu hal, dan yang
+ * salah justru yang dibaca orang tiap hari.
+ *
+ * @returns `dasar`        peta peran -> persen, TANPA baris installer
+ * @returns `pctInstaller` porsi Installer yang berlaku
+ * @returns `faktor`       pengali untuk `dasar` (1 bila memakai tabel Remote,
+ *                         sebab angkanya sudah final; (100-installer)/100 bila
+ *                         diturunkan dari porsi Onsite)
+ */
+export function petaPorsiBerlaku(
+  sk: SkemaInsentif,
+  remote: boolean,
+  adaSupport: boolean,
+): { dasar: Record<string, number>; pctInstaller: number; faktor: number } {
+  const pakaiPetaRemote = remote && sk.porsiRemote?.aktif === true;
+
+  const dasar: Record<string, number> = pakaiPetaRemote
+    ? { ...(adaSupport ? sk.porsiRemote.adaSupport : sk.porsiRemote.tanpaSupport) }
+    : adaSupport
+      ? Object.fromEntries(sk.porsi.map(p => [p.peran, p.persen]))
+      : { ...sk.tanpaSupport };
+
+  //  Installer dikeluarkan dari peta supaya tidak ikut perulangan peran di
+  //  pemanggil - ia tidak punya baris penerima, jadi akan terlewat begitu saja
+  //  dan porsinya hilang tanpa jejak.
+  const pctInstaller = pakaiPetaRemote
+    ? Math.max(0, Math.min(99, dasar.installer || 0))
+    : persenInstaller(sk, remote);
+  if (pakaiPetaRemote) delete dasar.installer;
+
+  return { dasar, pctInstaller, faktor: pakaiPetaRemote ? 1 : (100 - pctInstaller) / 100 };
+}
+
+/**
+ * Porsi seorang PIC dalam persen dari pool, untuk RINGKASAN di layar daftar.
+ *
+ * Memakai petaPorsiBerlaku yang sama dengan mesin pembayaran, jadi angka di
+ * kartu tidak bisa lagi berbeda dari angka yang benar-benar dibayarkan.
+ */
+export function persenPicBerlaku(
+  sk: SkemaInsentif,
+  remote: boolean,
+  adaSupport: boolean,
+  managerSebagaiPic = false,
+): number {
+  const { dasar, faktor } = petaPorsiBerlaku(sk, remote, adaSupport);
+  if (managerSebagaiPic) {
+    //  Manager-sebagai-PIC punya petanya sendiri; porsi Installer tetap
+    //  dipotong lebih dulu, persis seperti hitungManagerSebagaiPic.
+    const peta = adaSupport ? sk.managerSebagaiPic.adaSupport : sk.managerSebagaiPic.tanpaSupport;
+    return (peta.pic ?? 100) * ((100 - persenInstaller(sk, remote)) / 100);
+  }
+  return (dasar.pic || 0) * faktor;
+}
+
+/**
  * Hitung pembagian satu proyek berdasarkan skema.
  *
  * @param pool          nilai insentif proyek (rupiah)
@@ -559,23 +622,7 @@ export function hitungPembagian(
     Installer diambil dari peta itu - bukan dari installerRemotePersen -
     supaya yang membayar persis angka yang terbaca di layar.
   */
-  const pakaiPetaRemote = remote && sk.porsiRemote?.aktif === true;
-
-  const dasar: Record<string, number> = pakaiPetaRemote
-    ? { ...(adaSupport ? sk.porsiRemote.adaSupport : sk.porsiRemote.tanpaSupport) }
-    : adaSupport
-      ? Object.fromEntries(sk.porsi.map(p => [p.peran, p.persen]))
-      : { ...sk.tanpaSupport };
-
-  //  Installer dikeluarkan dari peta supaya tidak ikut perulangan peran di
-  //  bawah - ia tidak punya baris penerima, jadi akan terlewat begitu saja
-  //  dan porsinya hilang tanpa jejak.
-  const pctInstaller = pakaiPetaRemote
-    ? Math.max(0, Math.min(99, dasar.installer || 0))
-    : persenInstaller(sk, remote);
-  if (pakaiPetaRemote) delete dasar.installer;
-
-  const faktor = pakaiPetaRemote ? 1 : (100 - pctInstaller) / 100;
+  const { dasar, pctInstaller, faktor } = petaPorsiBerlaku(sk, remote, adaSupport);
 
   // Supervisor merangkap PIC: porsi koordinasinya dialihkan, bukan dibayar dua kali.
   if (supervisorJadiPic && dasar.supervisor) {

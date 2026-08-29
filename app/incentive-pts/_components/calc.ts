@@ -2,11 +2,11 @@ import { supabase } from '@/lib/supabase';
 import { gabungkanProyek } from '@/lib/kelompok-insentif';
 import {
   SkemaInsentif, PenerimaPeran, hitungPembagian, hitungManagerSebagaiPic, ambilSkema,
-  persenInstaller, bagikanTepat, labelSkema, INCENTIVE_CATEGORIES,
+  persenInstaller, persenPicBerlaku, petaPorsiBerlaku, bagikanTepat, labelSkema, INCENTIVE_CATEGORIES,
 } from '@/lib/incentive-scheme';
 
 export type { SkemaInsentif };
-export { ambilSkema, persenInstaller, bagikanTepat, labelSkema };
+export { ambilSkema, persenInstaller, persenPicBerlaku, petaPorsiBerlaku, bagikanTepat, labelSkema };
 
 // Types
 
@@ -877,7 +877,21 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
       Bila `installerBayarDiMuka` dimatikan, Installer diperlakukan sama
       seperti Tim PTS: porsinya ikut dipecah ke tiap tahap.
     */
-    const pctInstaller = persenInstaller(sk, project.mode_penyelesaian === 'remote');
+    /*
+      Persentase diambil dari `splits` - hasil hitungPembagian - BUKAN dihitung
+      ulang di sini.
+
+      Sebelumnya porsi Installer dibaca lewat persenInstaller(), yang hanya
+      melihat kolom "Porsi Installer". Padahal saat tabel Porsi Remote diatur
+      sendiri, porsi Installer yang berlaku diambil dari BARIS installer di
+      tabel itu. Kalau keduanya disetel berbeda, pool Tim PTS dipotong dengan
+      satu angka sementara Installer dibayar dengan angka lain - jumlahnya
+      tidak lagi sama dengan pool, dan seluruh tranche ditolak "split total
+      mismatch". Membaca dari splits menghapus kemungkinan itu: yang memotong
+      dan yang membayar kini sumbernya sama persis.
+    */
+    const barisInstaller = splits.find(s => s.role === 'installer');
+    const pctInstaller = barisInstaller?.percentage ?? 0;
     const tahapPertama = sk.tranche.length ? Math.min(...sk.tranche.map(t => t.nomor)) : 1;
     const installerDiMuka = pctInstaller > 0 && sk.installerBayarDiMuka;
     const totalTahapTim = sk.tranche.reduce((n, t) => n + (t.persen || 0), 0) || 100;
@@ -886,13 +900,13 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
     const bagian = (tranche.percentage || 0) / totalTahapTim;
 
     const timSaja = splits.filter(s => s.role !== 'installer');
-    const totalPctTim = timSaja.reduce((n, s) => n + s.percentage, 0) || 1;
 
-    // Rupiah "ideal" (masih pecahan) tiap penerima pada tahap ini.
-    const poolTimTahap = pool * ((100 - pctInstaller) / 100) * bagian;
+    //  Rupiah "ideal" (masih pecahan) tiap penerima pada tahap ini: porsinya
+    //  sendiri terhadap pool, lalu dipecah menurut tahapan. Inilah kebijakannya
+    //  apa adanya - "porsi Anda Rp 500.000, dibayar 50/35/15 selama 3 tahun".
     const komponen: { split: SplitResult; ideal: number }[] = timSaja.map(s => ({
       split: s,
-      ideal: poolTimTahap * (s.percentage / totalPctTim),
+      ideal: pool * (s.percentage / 100) * bagian,
     }));
 
     if (pctInstaller > 0) {
@@ -902,9 +916,12 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
       if (idealInstaller > 0) {
         komponen.push({
           split: {
-            role: 'installer', user_id: '',
-            user_name: project.installer_name || 'Installer Cabang',
-            percentage: pctInstaller, amount: 0,
+            ...(barisInstaller ?? {
+              role: 'installer', user_id: '',
+              user_name: project.installer_name || 'Installer Cabang',
+              percentage: pctInstaller,
+            }),
+            amount: 0,
           },
           ideal: idealInstaller,
         });

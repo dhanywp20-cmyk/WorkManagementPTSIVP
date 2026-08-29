@@ -15,7 +15,7 @@
   kepada orang yang dibayar.
 */
 
-import { type SkemaInsentif } from '../lib/incentive-scheme';
+import { type SkemaInsentif, persenPicBerlaku, petaPorsiBerlaku } from '../lib/incentive-scheme';
 import { generateTranches } from '../app/incentive-pts/_components/calc';
 
 let lulus = 0, gagal = 0;
@@ -43,7 +43,14 @@ const SKEMA: SkemaInsentif = {
   installerRemotePersen: 15,
   installerHanyaRemote: true,
   installerBayarDiMuka: true,
-  porsiRemote: { aktif: false, adaSupport: {}, tanpaSupport: {} },
+  //  Tabel Porsi Remote AKTIF, dengan angka proposal Bagian B - persis seperti
+  //  keadaan produksi. Sebelum uji ini ada, jalur inilah yang tidak pernah
+  //  diperiksa, dan di situlah layar daftar menampilkan 51% alih-alih 40%.
+  porsiRemote: {
+    aktif: true,
+    adaSupport:   { pic: 40, support: 15, supervisor: 20, manager: 10, installer: 15 },
+    tanpaSupport: { pic: 55, support: 0,  supervisor: 20, manager: 10, installer: 15 },
+  },
   tranche: [
     { nomor: 1, persen: 50, tahunKe: 1 },
     { nomor: 2, persen: 35, tahunKe: 2 },
@@ -133,6 +140,44 @@ console.log('\n5. Onsite tidak terpengaruh sama sekali');
   const pic = [50, 35, 15].map(p => rupiahTahap(pool, 60, 0, p));
   sama('PIC 60% -> 1.500.000 / 1.050.000 / 450.000', pic, [1_500_000, 1_050_000, 450_000]);
   sama('PIC total = 60% pool', pic[0] + pic[1] + pic[2], 3_000_000);
+}
+
+console.log('\n6. Tabel Porsi Remote yang diatur sendiri DIHORMATI layar & mesin bayar');
+{
+  //  Bug yang ditemukan lewat screenshot UIN Pekalongan: kartu daftar proyek
+  //  menulis 51% (porsi Onsite 60 x 0,85) padahal tabel Remote menetapkan 40%.
+  //  Layar menghitung sendiri lewat sk.porsi, jalur yang tidak pernah melihat
+  //  porsiRemote. Sekarang keduanya lewat petaPorsiBerlaku yang sama.
+  const pctPicRemote = persenPicBerlaku(SKEMA, true, true);
+  sama('PIC Remote = 40% (tabel Remote), BUKAN 51%', pctPicRemote, 40);
+
+  const pctPicOnsite = persenPicBerlaku(SKEMA, false, true);
+  sama('PIC Onsite tetap 60%', pctPicOnsite, 60);
+
+  //  Rp 2.000.000 - persis pool UIN Pekalongan di layar.
+  sama('Bagian PIC dari pool Rp 2.000.000', Math.round(2_000_000 * pctPicRemote / 100), 800_000);
+
+  //  Porsi Installer diambil dari BARIS di tabel Remote, bukan dari kolom
+  //  "Porsi Installer". Saat keduanya berbeda, yang menang harus tabelnya.
+  const beda: SkemaInsentif = {
+    ...SKEMA,
+    installerRemotePersen: 25,          // kolom lama sengaja dibuat berbeda
+    porsiRemote: { ...SKEMA.porsiRemote },
+  };
+  sama('Installer diambil dari tabel Remote (15), bukan kolom (25)',
+    petaPorsiBerlaku(beda, true, true).pctInstaller, 15);
+
+  //  Faktor pengali = 1 saat tabel Remote dipakai: angkanya sudah final,
+  //  tidak boleh dikali sisa pool sekali lagi (itulah asal 51%).
+  sama('Tabel Remote tidak dikali apa pun', petaPorsiBerlaku(SKEMA, true, true).faktor, 1);
+
+  //  Tanpa Support: porsi Support diserap PIC -> 55%, sesuai tabel kedua.
+  sama('Remote tanpa Support: PIC 55%', persenPicBerlaku(SKEMA, true, false), 55);
+
+  //  Seluruh tabel tetap berjumlah 100.
+  const peta = petaPorsiBerlaku(SKEMA, true, true);
+  const totalTim = Object.values(peta.dasar).reduce((a, b) => a + b, 0);
+  sama('Tim PTS + Installer = 100%', totalTim + peta.pctInstaller, 100);
 }
 
 console.log(`\n${gagal === 0 ? 'SEMUA LULUS' : 'ADA YANG GAGAL'} — ${lulus} lulus, ${gagal} gagal\n`);

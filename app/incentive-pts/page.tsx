@@ -11,7 +11,7 @@ import {
   insertTranches, insertSplits, processYearlyBatch,
   batalkanBatchTahun, hapusTahapanProyek,
   calculateIncentiveSplits, validateSplitTotal, generateTranches, findUpline, resolveUserId, OrgUser,
-  ambilSkema, persenInstaller, type SkemaInsentif,
+  ambilSkema, persenInstaller, persenPicBerlaku, petaPorsiBerlaku, type SkemaInsentif,
   formatRupiah, formatPct,
   ROLE_LABELS, TRANCHE_STATUS,
 } from './_components/calc';
@@ -58,17 +58,22 @@ function canInputNominal(u: CurrentUser | null) { return isAdmin(u) || !!u?.allo
 function calcHandlerSplit(sk: SkemaInsentif | null, p: IncentiveProjectRow): { pct: number; amt: number } | null {
   const pool = p.incentive_value || 0;
   if (!pool || !p.mode_penyelesaian || !sk) return null;
-  const remote = p.mode_penyelesaian === 'remote';
-  const pctInstaller = persenInstaller(sk, remote);
-  const faktor = (100 - pctInstaller) / 100;
-  if (p.pic_type === 'manager_pic') {
-    //  Ringkasan kartu memakai keadaan "ada Troubleshooting" - itu keadaan
-    //  yang paling sering terjadi sepanjang 3 tahun masa pencairan.
-    const pct = (sk.managerSebagaiPic.adaSupport.pic ?? 100) * faktor;
-    return { pct, amt: Math.round((pool * pct) / 100) };
-  }
-  const pctPic = sk.porsi.find(x => x.peran === 'pic')?.persen ?? 0;
-  const pct = pctPic * faktor;
+  /*
+    Angkanya diambil dari petaPorsiBerlaku - fungsi yang sama dengan yang
+    dipakai mesin pembayaran.
+
+    Sebelumnya baris ini menghitung sendiri: porsi PIC dari `sk.porsi` dikali
+    sisa pool sesudah Installer. Perhitungan itu tidak pernah melihat tabel
+    Porsi Remote, jadi pada proyek Remote yang tabelnya diatur sendiri, kartu
+    menulis 51% (60 x 0,85) padahal yang dibayar 40%. Layar dan pembayaran
+    tidak boleh punya dua rumus untuk satu angka.
+
+    Ringkasan memakai keadaan "ada Troubleshooting" - keadaan yang paling
+    sering terjadi sepanjang 3 tahun masa pencairan.
+  */
+  const pct = persenPicBerlaku(
+    sk, p.mode_penyelesaian === 'remote', true, p.pic_type === 'manager_pic',
+  );
   return { pct, amt: Math.round((pool * pct) / 100) };
 }
 
@@ -1516,7 +1521,12 @@ export default function IncentivePTSPage() {
             */}
             {(() => {
               const pool = generateProject.incentive_value || 0;
-              const pctInst = persenInstaller(skema!, generateProject.mode_penyelesaian === 'remote');
+              //  Lewat petaPorsiBerlaku, bukan persenInstaller: saat tabel Porsi
+              //  Remote diatur sendiri, porsi Installer diambil dari baris di
+              //  tabel itu - bukan dari kolom "Porsi Installer".
+              const pctInst = petaPorsiBerlaku(
+                skema!, generateProject.mode_penyelesaian === 'remote', true,
+              ).pctInstaller;
               const poolTim = pool * ((100 - pctInst) / 100);
               const daftar = generateTranches(skema!, generateProject.id, generateProject.bast_date!, generateProject.mode_penyelesaian);
               const tahapPertama = daftar.length ? Math.min(...daftar.map(t => t.tranche_number)) : 1;
