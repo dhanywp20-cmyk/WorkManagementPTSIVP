@@ -42,6 +42,11 @@ export interface ReminderSnapshot {
   /** Timeline pengerjaan yang ditetapkan di form Reminder. Boleh kosong. */
   progress_start_date: string | null;
   progress_target_date: string | null;
+  /**
+   * Pengikat jadwal multi-tanggal: lima hari berturut-turut = lima baris
+   * reminder dengan batch_id sama, tapi SATU kunjungan - jadi satu lokasi.
+   */
+  batch_id?: string | null;
 }
 
 export interface SyncActor {
@@ -73,7 +78,33 @@ export async function syncRemindersToProjectProgress(
 ): Promise<SyncOutcome> {
   const out: SyncOutcome = { created: 0, skipped: 0, errors: [] };
 
-  const relevan = reminders.filter(r => triggersProjectProgress(r.category) && r.id);
+  const semuaRelevan = reminders.filter(r => triggersProjectProgress(r.category) && r.id);
+
+  /*
+    Satu jadwal multi-tanggal = SATU lokasi, bukan lima.
+
+    Jadwal 5 hari berturut-turut tersimpan sebagai lima baris reminder yang
+    diikat batch_id. Tanpa penggabungan ini, sinkronisasi membuat LIMA lokasi
+    draft untuk satu kunjungan yang sama - dan karena progres proyek dihitung
+    rata-rata seluruh lokasinya, empat lokasi hampa itu langsung menekan
+    persentasenya ke bawah tanpa ada pekerjaan yang benar-benar tertinggal.
+
+    Baris pertama tiap batch yang dipakai: ia membawa tanggal MULAI, dan lokasi
+    draft memang menanyakan kapan pekerjaan dimulai.
+  */
+  const sudahDipakai = new Set<string>();
+  const relevan = semuaRelevan.filter(r => {
+    if (!r.batch_id) return true;
+    // Kunci batch + penangan: satu batch bisa berisi lebih dari satu orang
+    // (form jadwal mengalikan daftar orang dengan daftar tanggal). Yang perlu
+    // dilipat hanya hari-harinya, bukan orangnya.
+    const kunci = `${r.batch_id}::${r.assign_name ?? ''}`;
+    if (sudahDipakai.has(kunci)) return false;
+    sudahDipakai.add(kunci);
+    return true;
+  });
+  out.skipped += semuaRelevan.length - relevan.length;
+
   if (relevan.length === 0) return out;
 
   try {

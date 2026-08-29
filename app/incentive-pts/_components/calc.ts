@@ -22,6 +22,12 @@ export interface IncentiveProjectRow {
   brand?: string | null;
   /** true = sengaja dikeluarkan dari perhitungan insentif; jadwalnya tetap ada. */
   incentive_excluded?: boolean | null;
+  /**
+   * Pengikat jadwal multi-tanggal: lima hari berturut-turut = lima baris
+   * reminder dengan batch_id yang sama, tapi SATU proyek insentif.
+   * Lihat gabungkanPerBatch().
+   */
+  batch_id?: string | null;
   pic_type: 'standard' | 'manager_pic';
   pic_id: string | null;
   domain_owner: string | null;
@@ -364,6 +370,50 @@ let kolomKeluarkanAda: boolean | null = null;
  * Bila kolomnya memang belum ada, daftarnya tetap tampil utuh - hanya fitur
  * "keluarkan" yang belum berfungsi, dan itu memang belum dipasang.
  */
+/**
+ * Satu jadwal multi-tanggal = SATU proyek insentif.
+ *
+ * Jadwal 5 hari berturut-turut tersimpan sebagai lima baris reminder (satu per
+ * tanggal) yang diikat batch_id. Tanpa penggabungan ini, satu pekerjaan
+ * Konfigurasi 2 hari muncul sebagai DUA proyek di Incentive - dan karena tiap
+ * proyek punya pool nominalnya sendiri, itu berarti insentifnya terhitung dua
+ * kali. Bukan tampilan yang keliru: uangnya yang keliru.
+ *
+ * Yang dipertahankan adalah baris dengan due_date PALING AKHIR. Untuk pekerjaan
+ * berhari-hari, tanggal selesai itulah yang menentukan jendela tahun insentif
+ * dan yang cocok dengan tanggal BAST - bukan hari pertama tim berangkat.
+ *
+ * Baris tanpa batch_id dibiarkan apa adanya: ia memang jadwal sehari.
+ */
+export function gabungkanPerBatch<T extends {
+  id: string; batch_id?: string | null; due_date?: string | null; assigned_to?: string | null;
+}>(baris: T[]): T[] {
+  const terpilih = new Map<string, T>();
+  const hasil: T[] = [];
+  for (const r of baris) {
+    if (!r.batch_id) { hasil.push(r); continue; }
+    /*
+      Kuncinya batch + PENANGAN, bukan batch saja.
+
+      Satu batch bisa berisi lebih dari satu orang: form jadwal mengalikan
+      daftar orang dengan daftar tanggal, dan seluruh hasilnya memakai batch_id
+      yang sama. Menggabung hanya per batch akan menjatuhkan penangan kedua -
+      dan di layar insentif itu berarti seseorang kehilangan haknya tanpa ada
+      yang menyadarinya. Yang perlu dilipat cuma hari-harinya.
+    */
+    const kunci = `${r.batch_id}::${r.assigned_to ?? ''}`;
+    const ada = terpilih.get(kunci);
+    if (!ada) { terpilih.set(kunci, r); continue; }
+    // Tanggal terakhir menang; kalau seri, id yang stabil supaya urutannya
+    // tidak berubah-ubah antar pemuatan.
+    const lebihBaru = (r.due_date ?? '') > (ada.due_date ?? '')
+      || ((r.due_date ?? '') === (ada.due_date ?? '') && r.id < ada.id);
+    if (lebihBaru) terpilih.set(kunci, r);
+  }
+  return [...hasil, ...terpilih.values()]
+    .sort((a, b) => (b.due_date ?? '').localeCompare(a.due_date ?? ''));
+}
+
 export async function fetchIncentiveProjects() {
   const dasar = () => supabase
     .from('reminders')
@@ -379,7 +429,7 @@ export async function fetchIncentiveProjects() {
     const r = await dasar().not('incentive_excluded', 'is', true);
     if (!r.error) {
       kolomKeluarkanAda = true;
-      return { data: (r.data || []) as IncentiveProjectRow[], error: r.error };
+      return { data: gabungkanPerBatch((r.data || []) as IncentiveProjectRow[]), error: r.error };
     }
     if (!/does not exist/i.test(r.error.message)) {
       // Galat lain - jangan disembunyikan di balik percobaan kedua.
@@ -392,7 +442,7 @@ export async function fetchIncentiveProjects() {
   }
 
   const r2 = await dasar();
-  return { data: (r2.data || []) as IncentiveProjectRow[], error: r2.error };
+  return { data: gabungkanPerBatch((r2.data || []) as IncentiveProjectRow[]), error: r2.error };
 }
 
 /**

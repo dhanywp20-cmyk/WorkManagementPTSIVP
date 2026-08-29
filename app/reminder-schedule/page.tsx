@@ -813,19 +813,49 @@ function ReminderSchedulePageInner() {
   };
 
   const handleStatusChange = async (id: string, status: Status, photoUrl?: string) => {
+    const sebelum = reminders.find(r => r.id === id);
+
+    /*
+      Satu jadwal multi-tanggal = SATU pekerjaan, bukan lima.
+
+      Jadwal 5 hari berturut-turut tersimpan sebagai lima baris (satu per
+      tanggal) yang diikat batch_id. Daftar sudah menggabungkannya jadi satu
+      baris - lihat groupedReminders - tapi penandaan statusnya dulu hanya
+      mengenai satu baris. Akibatnya penangan harus menekan "Completed" lima
+      kali untuk satu pekerjaan yang sudah selesai, dan sebelum tekanan kelima
+      jadwalnya masih tampak menggantung.
+
+      Yang lebih merugikan ada di hilirnya: Incentive Project membaca baris
+      reminder, jadi satu pekerjaan Konfigurasi 2 hari terhitung DUA proyek.
+
+      Sekarang seluruh baris sebatch diperbarui sekaligus. Tidak ada layar yang
+      bisa menunjuk satu tanggal saja - daftarnya memang sudah satu baris -
+      jadi tidak ada perilaku yang hilang karenanya.
+    */
     const updatePayload: Record<string, unknown> = { status, updated_at: new Date().toISOString() };
     if (photoUrl) updatePayload['completion_photo_url'] = photoUrl;
-    const { error } = await supabase.from('reminders').update(updatePayload).eq('id', id);
+    const sebatch = sebelum?.batch_id
+      ? reminders.filter(r => r.batch_id === sebelum.batch_id)
+      : [];
+    const { error } = sebelum?.batch_id
+      ? await supabase.from('reminders').update(updatePayload).eq('batch_id', sebelum.batch_id)
+      : await supabase.from('reminders').update(updatePayload).eq('id', id);
     if (error) { notify('error', 'Gagal update status.'); return; }
-    const sebelum = reminders.find(r => r.id === id);
     logAudit({
       user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
       action: 'status_change', module: 'reminder',
       target_id: id, target_name: sebelum?.project_name ?? '',
       old_value: sebelum?.status, new_value: status,
-      notes: photoUrl ? 'Disertai foto penyelesaian' : undefined,
+      // Jumlah tanggal ikut dicatat: tanpa itu, catatan audit untuk jadwal
+      // lima hari tidak bisa dibedakan dari jadwal sehari.
+      notes: [
+        photoUrl ? 'Disertai foto penyelesaian' : '',
+        sebatch.length > 1 ? `Berlaku untuk ${sebatch.length} tanggal dalam jadwal ini` : '',
+      ].filter(Boolean).join(' · ') || undefined,
     }).catch(() => {});
-    notify('success', 'Status diperbarui!');
+    notify('success', sebatch.length > 1
+      ? `Status diperbarui untuk ${sebatch.length} tanggal sekaligus.`
+      : 'Status diperbarui!');
     // WA ke handler saat status Done
     if (status === 'done') {
       try {

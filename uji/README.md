@@ -148,3 +148,23 @@ untuk tidak memberi tahu apa pun), dan kegagalan satu model tidak membuang hasil
 model satunya — yang berhasil tetap bisa disimpan.
 
     node uji/banding-model.mjs
+
+## gabung-batch.ts
+
+Satu jadwal multi-tanggal = satu proyek insentif. Jadwal 5 hari berturut-turut
+tersimpan sebagai lima baris reminder yang diikat `batch_id`; tanpa penggabungan
+ini satu pekerjaan Konfigurasi 2 hari terhitung DUA proyek di Incentive, dan
+karena tiap proyek punya pool nominalnya sendiri, insentifnya ikut terhitung dua
+kali.
+
+Yang paling dijaga justru arah sebaliknya: satu batch bisa berisi lebih dari
+satu penangan (form jadwal mengalikan daftar orang dengan daftar tanggal), dan
+menggabung hanya per batch akan menjatuhkan penangan kedua — di layar insentif
+itu berarti seseorang kehilangan haknya tanpa ada yang menyadarinya.
+
+Ikut dijaga: yang dipertahankan adalah tanggal TERAKHIR (itu yang menentukan
+jendela tahun insentif dan cocok dengan tanggal BAST), baris tanpa `batch_id`
+tidak saling menelan, dan urutan masukan tidak mengubah hasil.
+
+    npx tsx uji/gabung-batch.ts
+
