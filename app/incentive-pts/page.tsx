@@ -11,6 +11,7 @@ import {
   insertTranches, insertSplits, processYearlyBatch,
   batalkanBatchTahun, hapusTahapanProyek,
   calculateIncentiveSplits, validateSplitTotal, generateTranches, findUpline, resolveUserId, OrgUser,
+  fetchOrgUsers, type SplitResult,
   ambilSkema, persenInstaller, persenPicBerlaku, petaPorsiBerlaku, type SkemaInsentif,
   formatRupiah, formatPct,
   ROLE_LABELS, TRANCHE_STATUS,
@@ -474,13 +475,71 @@ export default function IncentivePTSPage() {
   async function handleExport() {
     setExporting(true);
     try {
-      const yt = tranches.filter(t => t.payment_year === filterYear && (t.status === 'processed' || t.status === 'paid'));
-      const yids = new Set(yt.map(t => t.project_id));
+      /*
+        Proyek yang MASUK rekap = yang punya tahapan jatuh tempo tahun ini,
+        APA PUN statusnya.
+
+        Sebelumnya hanya status processed/paid yang diambil. Akibatnya, selama
+        Process Batch belum dijalankan - keadaan yang normal saat rekap sedang
+        disusun - berkasnya keluar berisi judul dan kepala tabel saja, tanpa
+        satu baris pun dan tanpa penjelasan apa pun. Yang masih Pending kini
+        ikut, ditandai di kolom Status.
+      */
+      const ytTahun = tranches.filter(t => t.payment_year === tahunAktif);
+      const yids = new Set(ytTahun.map(t => t.project_id));
       const yp = projects.filter(p => yids.has(p.id));
-      const ys = allSplits.filter(s => !!yt.find(t => t.id === s.tranche_id));
+
+      //  SELURUH tahapan proyek-proyek itu, bukan hanya yang tahun ini -
+      //  tabel kedua memerlukannya untuk memetakan uang ke tiga tahun.
+      const ytSemua = tranches.filter(t => yids.has(t.project_id));
+      const ys = allSplits.filter(s => yids.has(s.project_id));
+
+      /*
+        Proyeksi untuk proyek yang belum punya baris pembagian tersimpan.
+        Dihitung dengan mesin yang sama seperti Process Batch, memakai
+        Struktur Organisasi dan daftar Support tahun berjalan - jadi angkanya
+        bukan taksiran kasar, melainkan hasil yang sama dengan yang akan
+        tersimpan nanti bila skemanya tidak berubah.
+      */
+      const adaTersimpan = new Set(ys.map(s => s.project_id));
+      const perluProyeksi = yp.filter(p => !adaTersimpan.has(p.id));
+      const splitsProyeksi = new Map<string, SplitResult[]>();
+      if (perluProyeksi.length > 0) {
+        const orgUsers = await fetchOrgUsers();
+        for (const p of perluProyeksi) {
+          if (!p.mode_penyelesaian || !(p.incentive_value || 0)) continue;
+          const picId = resolveUserId(p.pic_id || p.assigned_to, p.assign_name, orgUsers);
+          const supUp = findUpline(picId, 'Supervisor', orgUsers);
+          const mgrUp = findUpline(picId, 'Manager', orgUsers);
+          const tahapPertama = ytSemua
+            .filter(t => t.project_id === p.id)
+            .sort((a, b) => a.tranche_number - b.tranche_number)[0];
+          const tahunKe = skema?.tranche.find(t => t.nomor === tahapPertama?.tranche_number)?.tahunKe ?? 1;
+          const { data: sup } = await fetchSupportFromTickets(p, jendelaSupportTahap(p.bast_date, tahunKe));
+          splitsProyeksi.set(p.id, calculateIncentiveSplits(
+            skema!, p,
+            mgrUp?.id || '', mgrUp?.full_name || 'Manager',
+            supUp?.id || '', supUp?.full_name || 'Supervisor',
+            (sup || []).map(s => ({ user_id: s.user_id, user_name: s.user_name || '' })),
+            picId,
+          ));
+        }
+      }
+
+      if (yp.length === 0) {
+        notify('error', `Tidak ada project dengan tahapan jatuh tempo ${tahunAktif}. `
+          + 'Generate tahapan lebih dulu di tab Projects (tombol ⚡).');
+        setExporting(false);
+        return;
+      }
+
       const { data: dhany } = await supabase.from('users').select('full_name').ilike('full_name', '%dhany%').limit(1).single();
-      await exportPengajuanIncentive({ year: filterYear, projects: yp, splits: ys, tranches: yt, managerName: (dhany?.full_name || 'Dhany Widya Putra') as string, directorName: 'Director PT. IVP' });
-      notify('success', `Export ${filterYear} berhasil!`);
+      await exportPengajuanIncentive({
+        year: tahunAktif, projects: yp, splits: ys, tranches: ytSemua, splitsProyeksi,
+        managerName: (dhany?.full_name || 'Dhany Widya Putra') as string, directorName: 'Director PT. IVP',
+      });
+      notify('success', `Export ${tahunAktif} berhasil — ${yp.length} project`
+        + (perluProyeksi.length ? `, ${perluProyeksi.length} masih proyeksi (belum Process Batch).` : '.'));
     } catch (err: unknown) { notify('error', 'Export gagal: ' + (err as Error).message); }
     setExporting(false);
   }
@@ -1051,7 +1110,39 @@ export default function IncentivePTSPage() {
                           <td className="px-3 py-2.5 border border-gray-200 text-sm text-gray-700">{t.project?.assign_name || '—'}</td>
                           <td className="px-3 py-2.5 border border-gray-200"><span className="px-2 py-1 rounded-lg text-xs font-bold bg-gray-100 text-gray-600">T{t.tranche_number}</span></td>
                           <td className="px-3 py-2.5 border border-gray-200 font-bold text-gray-700">{t.percentage}%</td>
-                          <td className="px-3 py-2.5 border border-gray-200 text-gray-600">{t.payment_year}</td>
+                          <td className="px-3 py-2.5 border border-gray-200 text-gray-600">
+                            {/*
+                              Tahun bayar dibandingkan dengan yang SEHARUSNYA
+                              menurut skema: tahun BAST + tahunKe tahap itu.
+
+                              Perlu ditandai karena tahapan lama tidak ikut
+                              berubah ketika aturannya diperbaiki - baris yang
+                              dibuat sebelum perbaikan tetap membawa tahun
+                              lamanya, dan dari layar ia terlihat sama sahnya
+                              dengan baris yang benar. Selisih seperti ini
+                              memindahkan uang antar tahun anggaran, jadi lebih
+                              baik terlihat mencolok daripada rapi tapi keliru.
+                            */}
+                            {(() => {
+                              const bast = t.project?.bast_date;
+                              const tahunKe = skema?.tranche.find(x => x.nomor === t.tranche_number)?.tahunKe;
+                              const seharusnya = bast && tahunKe != null
+                                ? new Date(bast).getFullYear() + tahunKe : null;
+                              const menyimpang = seharusnya != null && seharusnya !== t.payment_year;
+                              return (
+                                <span className="flex items-center gap-1.5 flex-wrap">
+                                  <span className={menyimpang ? 'font-bold text-amber-700' : ''}>{t.payment_year}</span>
+                                  {menyimpang && (
+                                    <span title={`Menurut skema seharusnya ${seharusnya} (BAST ${bast} + tahun ke-${tahunKe}). `
+                                      + 'Tahapan ini kemungkinan dibuat sebelum aturannya diperbaiki — hapus tahapannya lalu Generate ulang.'}
+                                      className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 whitespace-nowrap cursor-help">
+                                      ⚠ harusnya {seharusnya}
+                                    </span>
+                                  )}
+                                </span>
+                              );
+                            })()}
+                          </td>
                           <td className="px-3 py-2.5 border border-gray-200"><span className="px-2.5 py-1 rounded-full text-[11px] font-bold" style={{ background: st.bg, color: st.color }}>{st.icon} {st.label}</span></td>
                           <td className="px-3 py-2.5 border border-gray-200">
                             {t.status === 'processed' && isAdmin(currentUser) && (
