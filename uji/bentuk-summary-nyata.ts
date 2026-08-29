@@ -1,0 +1,205 @@
+/*
+  UJI: bentuk berkas Export Summary yang SUNGGUHAN.
+
+  Bukan tiruan logika seperti uji lain di folder ini - ini memanggil
+  bangunWorkbookSummary() yang dipakai tombol "Export Summary" itu sendiri,
+  menulis hasilnya ke .xlsx, lalu membacanya kembali. Jadi kalau tata letaknya
+  meleset dari contoh yang diminta, uji ini yang gagal - bukan pengguna yang
+  harus mengunduh manual lalu melapor lagi.
+
+  Data contohnya sengaja meniru berkas contoh: 5 proyek, dua di antaranya
+  ber-Installer, satu tanpa nominal ("belum input").
+
+    npx tsx uji/bentuk-summary-nyata.ts [--simpan <path>]
+
+  --simpan menuliskan berkasnya ke path itu untuk diperiksa mata sendiri.
+*/
+import ExcelJS from 'exceljs';
+import { bangunWorkbookSummary } from '../app/incentive-pts/_components/exportPengajuan';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+// Supabase & file-saver tidak pernah tersentuh: bangunWorkbookSummary menerima
+// skema sebagai argumen dan mengembalikan workbook, tidak mengunduh apa pun.
+process.env.NEXT_PUBLIC_SUPABASE_URL ||= 'https://x.supabase.co';
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||= 'dummy';
+process.env.NEXT_PUBLIC_SUPABASE_SERVICES_URL ||= 'https://y.supabase.co';
+process.env.NEXT_PUBLIC_SUPABASE_SERVICES_ANON_KEY ||= 'dummy';
+
+let lulus = 0, gagal = 0;
+function ok(nama: string, syarat: boolean, ket = '') {
+  if (syarat) { lulus++; console.log(`  ok    ${nama}`); }
+  else { gagal++; console.log(`  GAGAL ${nama}${ket ? ' — ' + ket : ''}`); }
+}
+
+const SKEMA = {
+  versi: 3,
+  porsi: [
+    { peran: 'pic', label: 'PIC Proyek', persen: 65, bagiRata: true },
+    { peran: 'support', label: 'Tim Support', persen: 15, bagiRata: true },
+    { peran: 'supervisor', label: 'Supervisor', persen: 10, bagiRata: true },
+    { peran: 'manager', label: 'Manager', persen: 10, bagiRata: false },
+  ],
+  tanpaSupport: { pic: 55, supervisor: 30, manager: 15 },
+  jendelaSupportBulan: 12,
+  hangusSupervisorKe: 'manager',
+  managerSebagaiPic: { adaSupport: { pic: 100 }, tanpaSupport: { pic: 100 } },
+  installerAktif: true, installerRemotePersen: 15,
+  installerHanyaRemote: true, installerBayarDiMuka: true,
+  tranche: [
+    { nomor: 1, persen: 50, tahunKe: 1 },
+    { nomor: 2, persen: 35, tahunKe: 2 },
+    { nomor: 3, persen: 15, tahunKe: 3 },
+  ],
+  porsiRemote: { aktif: false, adaSupport: {}, tanpaSupport: {} },
+};
+
+const users = [
+  { id: 'u-dhany', full_name: 'Dhany Wahyu', jabatan: 'Manager', atasan_id: null },
+  { id: 'u-yoga', full_name: 'Yoga KS', jabatan: 'Supervisor', atasan_id: 'u-dhany' },
+  { id: 'u-taufik', full_name: 'Taufik wahyudi', jabatan: 'Supervisor', atasan_id: 'u-dhany' },
+  { id: 'u-ferdinan', full_name: 'Ferdinan Agustinus', jabatan: 'Staff', atasan_id: 'u-yoga' },
+  { id: 'u-ade', full_name: 'Ade Rachmatullah', jabatan: 'Staff', atasan_id: 'u-taufik' },
+];
+
+const proyek = (o: Record<string, any>) => ({
+  id: o.id, project_name: o.nama, category: 'Konfigurasi', assigned_to: o.picId,
+  assign_name: o.picNama, status: 'done', requires_controller_automation: false,
+  controller_automation_brand: null, pic_type: 'standard' as const, pic_id: o.picId,
+  domain_owner: null, mode_penyelesaian: o.mode, installer_name: o.installer ?? null,
+  installer_daerah: o.daerah ?? null, bast_date: o.bast, incentive_value: o.nominal,
+  sales_name: '', sales_division: '', address: '', product: '',
+  created_at: '2026-01-01', due_date: o.bast ?? '2026-01-01',
+});
+
+const projects = [
+  proyek({ id: 'p1', nama: 'Korlantas TMC Soreang', picId: 'u-taufik', picNama: 'Taufik wahyudi', mode: 'remote', bast: '2026-01-15', nominal: 500000, installer: 'Ridwan Gunawan', daerah: 'Jakarta' }),
+  proyek({ id: 'p2', nama: 'Solitaire Billiard & Bar', picId: 'u-ferdinan', picNama: 'Ferdinan Agustinus', mode: 'onsite', bast: '2026-02-20', nominal: 2000000 }),
+  proyek({ id: 'p3', nama: 'UIN Pekalongan', picId: 'u-ade', picNama: 'Ade Rachmatullah', mode: 'remote', bast: '2026-06-22', nominal: 2000000, installer: 'Pras', daerah: 'Jogja' }),
+  proyek({ id: 'p4', nama: 'BPKP ICT Timur', picId: 'u-yoga', picNama: 'Yoga KS', mode: 'onsite', bast: '2026-02-09', nominal: 1000000 }),
+  proyek({ id: 'p5', nama: 'OCS Indonesia', picId: 'u-ade', picNama: 'Ade Rachmatullah', mode: 'onsite', bast: null, nominal: 0 }),
+];
+
+async function main() {
+  const wb = await bangunWorkbookSummary({
+    projects, allUsers: users, supportsMap: new Map(),
+    managerName: 'Dhany Wahyu', managerUserId: 'u-dhany',
+  }, SKEMA);
+
+  const simpanIdx = process.argv.indexOf('--simpan');
+  const target = simpanIdx > -1 ? process.argv[simpanIdx + 1] : path.join(os.tmpdir(), `summary-${Date.now()}.xlsx`);
+  await wb.xlsx.writeFile(target);
+
+  const wb2 = new ExcelJS.Workbook();
+  await wb2.xlsx.readFile(target);
+  const ws = wb2.getWorksheet('Summary Incentive PTS');
+  if (!ws) throw new Error('Worksheet "Summary Incentive PTS" tidak ditemukan');
+  const teks = (r: number, c: number) => String(ws.getCell(r, c).value ?? '');
+  /** Cari baris pertama yang kolom B-nya memuat potongan teks ini. */
+  const cariBaris = (potongan: string) => {
+    for (let r = 1; r <= ws.rowCount; r++) if (teks(r, 2).includes(potongan)) return r;
+    return -1;
+  };
+
+  console.log('\n1. Judul memuat tahun pembayaran');
+  {
+    const judul = teks(2, 2);
+    ok('Judul ada', judul.startsWith('Summary Incentive PTS IVP'), judul);
+    ok('Judul memuat "Tahun"', judul.includes('Tahun'), judul);
+    //  BAST 2026 + tahapan 1/2/3 -> dibayar 2027..2029.
+    ok('Rentang tahunnya 2027–2029', judul.includes('2027') && judul.includes('2029'), judul);
+  }
+
+  console.log('\n2. Ketiga tabel ada, dengan judul persis seperti contoh');
+  {
+    ok('Tabel 1 "List Project"', cariBaris('1. List Project') > 0);
+    ok('Tabel 2 "Summary Total per Anggota Team PTS"', cariBaris('2. Summary Total per Anggota Team PTS') > 0);
+    ok('Tabel 3 "Nilai Pengajuan Incentive per Tahun"', cariBaris('3. Nilai Pengajuan Incentive per Tahun') > 0);
+    ok('Urutannya 1 -> 2 -> 3',
+      cariBaris('1. List Project') < cariBaris('2. Summary Total per Anggota Team PTS')
+      && cariBaris('2. Summary Total per Anggota Team PTS') < cariBaris('3. Nilai Pengajuan Incentive per Tahun'));
+  }
+
+  console.log('\n3. Kepala Tabel 1 - tiap peran punya kolom Nama/%/Rp sendiri');
+  {
+    const r = cariBaris('1. List Project') + 1;   // baris kepala pertama
+    ok('Kolom dasar No/Project/Mode/BAST/Nominal',
+      teks(r, 2) === 'No' && teks(r, 3) === 'Project' && teks(r, 4) === 'Mode'
+      && teks(r, 5) === 'BAST' && teks(r, 6) === 'Nominal (Rp)');
+    ok('Grup PIC di kolom G', teks(r, 7) === 'PIC');
+    ok('Grup Support di kolom J', teks(r, 10) === 'Support');
+    ok('Grup Supervisor di kolom M', teks(r, 13) === 'Supervisor');
+    ok('Grup Manager di kolom P', teks(r, 16) === 'Manager');
+    ok('Grup Installer di kolom S', teks(r, 19) === 'Installer');
+    const sub = r + 1;
+    ok('Sub-kepala PIC: Nama/%/Rp',
+      teks(sub, 7) === 'Nama' && teks(sub, 8) === '%' && teks(sub, 9) === 'Rp');
+    ok('Sub-kepala Installer: Nama/Lokasi/%/Rp',
+      teks(sub, 19) === 'Nama' && teks(sub, 20) === 'Lokasi'
+      && teks(sub, 21) === '%' && teks(sub, 22) === 'Rp');
+  }
+
+  console.log('\n4. Tema warna sesuai contoh');
+  {
+    const r = cariBaris('1. List Project') + 1;
+    ok('Kepala tabel navy 1F3864', (ws.getCell(r, 2).fill as any)?.fgColor?.argb === '1F3864');
+    ok('Sub-kepala biru 2E5395', (ws.getCell(r + 1, 8).fill as any)?.fgColor?.argb === '2E5395');
+  }
+
+  console.log('\n5. Isi Tabel 1 benar');
+  {
+    const awal = cariBaris('1. List Project') + 3;
+    ok('Proyek pertama Korlantas', teks(awal, 3) === 'Korlantas TMC Soreang');
+    ok('Nominalnya 500.000', ws.getCell(awal, 6).value === 500000);
+    ok('PIC-nya Taufik wahyudi', teks(awal, 7) === 'Taufik wahyudi');
+    ok('Installer-nya Ridwan Gunawan', teks(awal, 19) === 'Ridwan Gunawan');
+    ok('Lokasi installer Jakarta', teks(awal, 20) === 'Jakarta');
+    //  Proyek tanpa nominal ditandai, bukan diam-diam nol.
+    const rOcs = (() => { for (let r = 1; r <= ws.rowCount; r++) if (teks(r, 3).includes('OCS')) return r; return -1; })();
+    ok('Proyek tanpa nominal ditandai "belum input"', teks(rOcs, 6) === 'belum input');
+  }
+
+  console.log('\n6. TOTAL & GRAND TOTAL terisi (bukan sel kosong)');
+  {
+    const rTotal = cariBaris('TOTAL');
+    const cTotal = ws.getCell(rTotal, 6);
+    //  4 proyek bernominal: 500rb + 2jt + 2jt + 1jt = 5,5jt (OCS belum input).
+    ok('TOTAL Tabel 1 = 5.500.000', cTotal.result === 5500000, String(cTotal.result));
+
+    let gtCount = 0;
+    for (let r = 1; r <= ws.rowCount; r++) if (teks(r, 2) === 'GRAND TOTAL') gtCount++;
+    ok('Ada dua GRAND TOTAL (Tabel 2 & 3)', gtCount === 2, String(gtCount));
+  }
+
+  console.log('\n7. Installer tidak ikut Tabel 2 (bukan Team PTS), tapi ada di Tabel 3');
+  {
+    const r2 = cariBaris('2. Summary Total per Anggota Team PTS');
+    const r3 = cariBaris('3. Nilai Pengajuan Incentive per Tahun');
+    let installerDiT2 = false;
+    for (let r = r2; r < r3; r++) if (teks(r, 2).includes('Ridwan')) installerDiT2 = true;
+    ok('Ridwan (installer) TIDAK ada di Tabel 2', !installerDiT2);
+
+    let installerDiT3 = false;
+    for (let r = r3; r <= ws.rowCount; r++) if (teks(r, 2).includes('Ridwan')) installerDiT3 = true;
+    ok('Ridwan ADA di Tabel 3', installerDiT3);
+  }
+
+  console.log('\n8. Tanda tangan & tanggal ada');
+  {
+    let adaTanggal = false, adaTtd = false;
+    for (let r = 1; r <= ws.rowCount; r++) {
+      if (teks(r, 2).startsWith('Jakarta,')) adaTanggal = true;
+      if (teks(r, 2) === 'Di buat oleh,') adaTtd = true;
+    }
+    ok('Baris tanggal "Jakarta, ..."', adaTanggal);
+    ok('Blok tanda tangan "Di buat oleh,"', adaTtd);
+  }
+
+  if (simpanIdx > -1) console.log(`\nBerkas disimpan: ${target}`);
+  else fs.unlinkSync(target);
+
+  console.log(`\n${gagal === 0 ? 'SEMUA LULUS' : 'ADA GAGAL'} — ${lulus} lulus, ${gagal} gagal\n`);
+  process.exit(gagal === 0 ? 0 : 1);
+}
+
+main();

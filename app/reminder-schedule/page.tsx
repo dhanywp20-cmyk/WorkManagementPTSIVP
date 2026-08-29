@@ -1327,7 +1327,7 @@ function ReminderSchedulePageInner() {
     // Manager-as-PIC berlaku otomatis - tidak perlu dipilih manual.
     const { data: handlerUser } = await supabase.from('users').select('jabatan').eq('username', snap.assigned_to).maybeSingle();
     const autoPicType: 'standard' | 'manager_pic' = handlerUser?.jabatan === 'Manager' ? 'manager_pic' : 'standard';
-    await supabase.from('reminders').update({
+    const isiPenyelesaian = {
       mode_penyelesaian: modeVal,
       installer_name: modeVal === 'remote' ? installerNameVal : null,
       installer_daerah: modeVal === 'remote' ? installerDaerahVal : null,
@@ -1337,7 +1337,27 @@ function ReminderSchedulePageInner() {
       requires_controller_automation: requiresControllerAuto,
       controller_automation_brand: requiresControllerAuto ? controllerBrand : null,
       pic_type: autoPicType,
-    }).eq('id', reminderId);
+    };
+    /*
+      Ditulis ke SELURUH baris sebatch, bukan hanya baris yang sedang dibuka.
+
+      Jadwal berhari-hari tersimpan sebagai beberapa baris yang diikat batch_id,
+      dan penandaan statusnya memang sudah mengenai semuanya (lihat
+      handleStatusChange). Tapi BAST/mode/installer dulu hanya menempel di SATU
+      baris - baris yang kebetulan dibuka dari daftar, yaitu tanggal paling
+      AWAL. Sementara itu layar Incentive memilih wakil proyeknya lewat
+      gabungkanProyek(), yang sengaja mengambil tanggal paling AKHIR (lihat
+      lib/kelompok-insentif.ts) - baris yang justru tidak pernah diisi.
+
+      Akibatnya proyek dari jadwal multi-tanggal muncul di Incentive dengan
+      BAST "Belum diisi" walau formulirnya sudah diisi lengkap, dan tombol
+      Generate Tahapan tidak pernah muncul karena syaratnya adalah adanya BAST.
+      Satu pekerjaan = satu tanggal BAST, jadi seluruh barisnya harus membawa
+      keterangan yang sama - bukan hanya salah satunya.
+    */
+    await (snap.batch_id
+      ? supabase.from('reminders').update(isiPenyelesaian).eq('batch_id', snap.batch_id)
+      : supabase.from('reminders').update(isiPenyelesaian).eq('id', reminderId));
     setShowModeModal(false);
     setSavingMode(false);
     await handleStatusChange(reminderId, 'done', pendingPhotoUrl);

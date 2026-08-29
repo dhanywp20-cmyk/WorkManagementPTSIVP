@@ -6,6 +6,7 @@ import {
   IncentiveProjectRow, IncentiveSplit, IncentiveTranche,
   SplitResult, formatRupiah, formatPct,
   calculateIncentiveSplits, findUpline, resolveUserId, OrgUser, ambilSkema, labelSkema,
+  type SkemaInsentif,
 } from './calc';
 
 const NAVY = '1B3A6B';
@@ -627,16 +628,27 @@ export async function exportPengajuanIncentive(data: ExportData) {
   Installer TIDAK ikut dipecah ke tahapan: porsinya lunas 100% di tahun
   pertama proyeknya, ditandai kuning dan keterangan di sebelah namanya.
 */
-export async function exportSummaryIncentive(data: {
+export interface DataSummary {
   projects: IncentiveProjectRow[];
   allUsers: { id?: string; full_name?: string; jabatan?: string; atasan_id?: string | null }[];
   supportsMap: Map<string, { user_id: string; user_name: string }[]>;
   managerName: string;
   managerUserId: string;
-}) {
+}
+
+/**
+ * Susun workbook-nya saja - TANPA menyentuh basis data dan tanpa mengunduh.
+ *
+ * Dipisah dari exportSummaryIncentive supaya bentuk berkasnya bisa diperiksa
+ * di luar peramban: skema diteruskan sebagai argumen (bukan dibaca sendiri
+ * lewat Supabase) dan hasilnya dikembalikan (bukan langsung disimpan lewat
+ * saveAs). Tanpa pemisahan ini satu-satunya cara memastikan tata letaknya
+ * benar adalah mengunduh manual lalu membukanya - yang berarti tidak pernah
+ * ada yang memeriksanya secara otomatis. Lihat uji/bentuk-summary-nyata.mjs.
+ */
+export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif) {
   const { projects, allUsers, supportsMap, managerName, managerUserId } = data;
   const orgList = allUsers as unknown as OrgUser[];
-  const sk = await ambilSkema();
   const tahapUrut = [...sk.tranche].sort((a, b) => a.nomor - b.nomor);
   const totalPersenTahap = tahapUrut.reduce((n, t) => n + (t.persen || 0), 0) || 100;
 
@@ -788,7 +800,7 @@ export async function exportSummaryIncentive(data: {
     : ` Tahun ${tahunUrut[0]}–${tahunUrut[tahunUrut.length - 1]}`;
 
   // ── Judul ──────────────────────────────────────────────────────────────
-  const cTitle = ws.getCell(row, 1);
+  const cTitle = ws.getCell(row, KOL.no);
   cTitle.value = `Summary Incentive PTS IVP — Semua Project${sufiksTahun}`;
   cTitle.font = { bold: true, size: 14, name: 'Arial' };
   cTitle.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -796,14 +808,14 @@ export async function exportSummaryIncentive(data: {
   ws.getRow(row).height = 22;
   row += 1;
 
-  const cGen = ws.getCell(row, 1);
+  const cGen = ws.getCell(row, KOL.no);
   cGen.value = `Generated: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} · Dibuat oleh: ${managerName}`;
   cGen.font = { italic: true, size: 9, name: 'Arial', color: { argb: '666666' } };
   ws.mergeCells(row, KOL.no, row, KOL_TERAKHIR);
   row += 2;
 
   // ── TABEL 1 — List Project ───────────────────────────────────────────
-  const cJudul1 = ws.getCell(row, 1);
+  const cJudul1 = ws.getCell(row, KOL.no);
   cJudul1.value = '1. List Project';
   cJudul1.font = { bold: true, size: 12, name: 'Arial' };
   ws.mergeCells(row, KOL.no, row, KOL_TERAKHIR);
@@ -940,7 +952,7 @@ export async function exportSummaryIncentive(data: {
   for (let c = KOL.picNama; c <= KOL_TERAKHIR; c++) { const x = ws.getCell(row, c); x.fill = fillWarna(TOTAL_FILL); x.border = thinBorder(); }
   row += 1;
 
-  const cFoot1 = ws.getCell(row, 1);
+  const cFoot1 = ws.getCell(row, KOL.no);
   cFoot1.value = '* Kolom % dan Rp tiap peran dihitung otomatis dari Nominal (Rp) × %. Baris "belum input" berarti nominal proyek belum diisi Admin - '
     + 'persen & rupiahnya tidak dihitung sampai diisi. Installer tercatat di sini tapi TIDAK termasuk Team PTS - lihat Tabel 2 & 3.';
   cFoot1.font = { italic: true, size: 8, name: 'Arial', color: { argb: '808080' } };
@@ -950,7 +962,7 @@ export async function exportSummaryIncentive(data: {
   row += 2;
 
   // ── TABEL 2 — Summary Total per Anggota Team PTS ─────────────────────
-  const cJudul2 = ws.getCell(row, 1);
+  const cJudul2 = ws.getCell(row, KOL.no);
   cJudul2.value = '2. Summary Total per Anggota Team PTS (PIC / Support / Supervisor / Manager)';
   cJudul2.font = { bold: true, size: 12, name: 'Arial' };
   ws.mergeCells(row, KOL.no, row, KOL_TERAKHIR);
@@ -999,13 +1011,13 @@ export async function exportSummaryIncentive(data: {
   row += 2;
 
   // ── TABEL 3 — Nilai Pengajuan Incentive per Tahun ────────────────────
-  const cJudul3 = ws.getCell(row, 1);
+  const cJudul3 = ws.getCell(row, KOL.no);
   cJudul3.value = '3. Nilai Pengajuan Incentive per Tahun';
   cJudul3.font = { bold: true, size: 12, name: 'Arial' };
   ws.mergeCells(row, KOL.no, row, KOL_TERAKHIR);
   row += 1;
 
-  const cFoot3 = ws.getCell(row, 1);
+  const cFoot3 = ws.getCell(row, KOL.no);
   const labelTahap = tahapUrut.map(t => `${t.persen}% (thn ke-${t.tahunKe})`).join(' / ');
   cFoot3.value = `Team PTS dipecah per Tahapan Pencairan: ${labelTahap}, dihitung dari BAST masing-masing proyek - `
     + 'bukan tahun kalender yang sama untuk semua orang. Installer dibayar 100% di tahun pertama proyeknya, tidak ikut dipecah.';
@@ -1177,6 +1189,13 @@ export async function exportSummaryIncentive(data: {
 
   ws.views = [{ state: 'frozen', ySplit: kepalaB, xSplit: 0 }];
 
+  return wb;
+}
+
+/** Baca skema, susun workbook-nya, lalu unduh. Dipanggil tombol Export Summary. */
+export async function exportSummaryIncentive(data: DataSummary) {
+  const sk = await ambilSkema();
+  const wb = await bangunWorkbookSummary(data, sk);
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   saveAs(blob, `Summary_Incentive_PTS_IVP_${new Date().toISOString().split('T')[0]}.xlsx`);

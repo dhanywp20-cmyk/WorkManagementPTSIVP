@@ -112,5 +112,53 @@ console.log('\n8. Baris yatim (user tidak ditemukan / role null) tidak ikut & ti
   sama('Baris yatim tidak ikut peer group', hasil.globalTotal, 1);
 }
 
+
+/*
+  PAPAN PERINGKAT - penyamaran nama terjadi di SERVER, bukan lewat blur() CSS.
+
+  Ini bagian yang paling mudah salah dan paling mahal kalau salah: kalau nama
+  asli ikut terkirim lalu "disembunyikan" di sisi tampilan, ia tetap terbaca
+  utuh oleh siapa pun yang membuka Network tab - dan tidak ada satu pun
+  pengujian tampilan yang akan menangkapnya. Yang diuji di sini karena itu
+  bukan tampilannya, melainkan ISI data yang keluar dari hitungPeringkat.
+*/
+console.log('\n9. Papan peringkat: hanya nama SENDIRI yang asli');
+{
+  const rows: BarisAttempt[] = [
+    { user_id: 'u1', score: 90, grading_status: null, role: 'guest', sales_division: 'Jakarta', full_name: 'Ana Pertama', passed: true,  tab_switches: 0 },
+    { user_id: 'u2', score: 80, grading_status: null, role: 'guest', sales_division: 'Jakarta', full_name: 'Budi Kedua',  passed: true,  tab_switches: 2 },
+    { user_id: 'u3', score: 70, grading_status: null, role: 'guest', sales_division: 'Bandung', full_name: 'Cakra Ketiga',passed: false, tab_switches: 0 },
+  ];
+  const h = hitungPeringkat(rows, { id: 'u2', role: 'guest', sales_division: 'Jakarta' });
+
+  ok('Papan memuat seluruh peserta sekelompok', h.papan.length === 3);
+  ok('Baris sendiri bernama asli', h.papan.find(p => p.aku)?.nama === 'Budi Kedua');
+  ok('Baris sendiri ditandai aku=true tepat satu', h.papan.filter(p => p.aku).length === 1);
+
+  const namaLain = h.papan.filter(p => !p.aku).map(p => p.nama);
+  ok('Nama peserta lain TIDAK ada yang asli',
+    !namaLain.includes('Ana Pertama') && !namaLain.includes('Cakra Ketiga'), namaLain.join(', '));
+  ok('Nama peserta lain berbentuk "Peserta #N"', namaLain.every(n => /^Peserta #\d+$/.test(n)));
+
+  //  Penjagaan paling penting: nama asli siapa pun selain pemanggil tidak
+  //  boleh muncul DI MANA PUN pada hasil - termasuk lewat field yang
+  //  ditambahkan belakangan tanpa sadar ikut membawa nama.
+  const semuaTeks = JSON.stringify(h);
+  ok('Nama asli peserta lain tidak bocor di seluruh hasil',
+    !semuaTeks.includes('Ana Pertama') && !semuaTeks.includes('Cakra Ketiga'));
+
+  ok('Urutan papan menurun menurut skor', h.papan.map(p => p.rank).join() === '1,2,3');
+  ok('Angka peserta lain tetap dikirim (papan tanpa angka tidak ada gunanya)',
+    h.papan[0].avg === 90 && h.papan[0].quiz === 1);
+  ok('Jumlah lulus ikut terhitung', h.papan.find(p => p.aku)?.lulus === 1);
+  ok('Flag pindah-tab ikut terhitung', h.papan.find(p => p.aku)?.flags === 2);
+}
+
+console.log('\n10. Papan kosong tidak meledak');
+{
+  const h = hitungPeringkat([], { id: 'u1', role: 'guest', sales_division: null });
+  ok('Papan kosong, bukan undefined', Array.isArray(h.papan) && h.papan.length === 0);
+}
+
 console.log(`\n${gagal === 0 ? 'SEMUA LULUS' : 'ADA GAGAL'} — ${lulus} lulus, ${gagal} gagal\n`);
 process.exit(gagal === 0 ? 0 : 1);

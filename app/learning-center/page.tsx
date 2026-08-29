@@ -70,15 +70,15 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
   // (lihat lib/constants.ts hasFullAccess).
   const isAdmin = hasFullAccess(currentUser);
   /*
-    Guest/Sales membuka Learning Center bukan untuk mengerjakan quiz sesering
-    Team - kebutuhan mereka lebih ke "bagaimana skor saya sejauh ini". Tab
-    'my-quiz' sebagai bawaan cocok untuk Team (sering mengerjakan quiz baru),
-    tapi untuk Guest/Sales itu berarti selalu dua klik jauhnya dari yang
-    paling ingin mereka lihat pertama kali. Team tidak berubah - hanya
-    Guest/Sales yang mendarat di 'score' begitu halaman ini terbuka.
+    'Nilai Saya' adalah tab pertama untuk SEMUA peserta - Team maupun
+    Guest/Sales. Pertanyaan yang dibawa orang saat membuka Learning Center
+    hampir selalu "bagaimana nilai saya sejauh ini", bukan "quiz apa yang
+    belum saya kerjakan"; yang kedua tetap sejauh satu klik. Sebelumnya
+    hanya Guest/Sales yang mendarat di sini sementara Team masih ke
+    'my-quiz' - dua perilaku berbeda untuk kebutuhan yang sama.
   */
   const [adminView, setAdminView] = useState<AdminView>('dashboard');
-  const [teamView, setTeamView] = useState<TeamView>(isSalesGuest({ role: currentUser.role }) ? 'score' : 'my-quiz');
+  const [teamView, setTeamView] = useState<TeamView>('score');
   const [loading, setLoading] = useState(false);
   const [contentKey, setContentKey] = useState(0);
   // Sesi yang mau langsung dibuka di tab Laporan - diisi lewat tombol "Lihat
@@ -211,11 +211,14 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
 }
 
 function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView) => void }) {
+  //  'Nilai Saya' sengaja PALING KIRI - urutan tab ini menentukan apa yang
+  //  dilihat orang lebih dulu, dan yang paling sering dicari saat membuka
+  //  Learning Center adalah nilainya sendiri, bukan daftar quiz.
   const items: { key: TeamView; icon: string; label: string }[] = [
+    { key: 'score', icon: '🏆', label: 'Nilai Saya' },
     { key: 'my-quiz', icon: '📝', label: 'My Quiz' },
     { key: 'materi', icon: '📚', label: 'Materi' },
     { key: 'history', icon: '🕐', label: 'Riwayat' },
-    { key: 'score', icon: '🏆', label: 'Nilai Saya' },
   ];
   return (
     <div style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(16px)', borderBottom: '3px solid #dc2626' }}
