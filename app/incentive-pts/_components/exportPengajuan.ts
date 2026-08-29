@@ -29,6 +29,26 @@ function dataFont(size = 10): Partial<ExcelJS.Font> {
   return { name: 'Arial', size };
 }
 
+/**
+ * Sel `SUM()` yang MEMBAWA hasilnya sendiri, bukan formula kosong.
+ *
+ * Baris Total sebelumnya cuma menulis `{ formula: 'SUM(...)' }`, tanpa nilai
+ * cache. Itu sah menurut format .xlsx - Excel dan Google Sheets menghitung
+ * ulang begitu berkas dibuka - tapi banyak pembaca .xlsx ringan (pratinjau di
+ * aplikasi file manager, viewer di dalam aplikasi chat, sebagian aplikasi
+ * mobile) hanya menampilkan CACHE-nya apa adanya tanpa menjalankan mesin
+ * formula. Tanpa cache, itu berarti sel yang tampak kosong - persis keluhan
+ * "TOTAL dan GRAND TOTAL masih kosong".
+ *
+ * `result` di sini dihitung di JavaScript dari angka yang SAMA yang menulisi
+ * baris-baris di atasnya, jadi formula-nya tetap ada untuk diperiksa manual
+ * di Excel/Sheets, sementara viewer yang tidak menghitung ulang pun langsung
+ * menampilkan angka yang benar.
+ */
+function sumCell(formula: string, result: number): { formula: string; result: number } {
+  return { formula, result };
+}
+
 interface ExportData {
   year: number;
   projects: IncentiveProjectRow[];
@@ -326,7 +346,10 @@ export async function exportPengajuanIncentive(data: ExportData) {
   cTotLabel.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
 
   const cTotPool = ws.getCell(barisTotal, 3);
-  cTotPool.value = { formula: `SUM(C${barisDataAwal}:C${barisDataAkhir})` };
+  cTotPool.value = sumCell(
+    `SUM(C${barisDataAwal}:C${barisDataAkhir})`,
+    projects.reduce((n, p) => n + (p.incentive_value || 0), 0),
+  );
   cTotPool.numFmt = '"Rp" #,##0';
   cTotPool.font = { ...dataFont(11), bold: true };
   cTotPool.alignment = { horizontal: 'right', vertical: 'middle' };
@@ -334,14 +357,15 @@ export async function exportPengajuanIncentive(data: ExportData) {
   cTotPool.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
 
   let kt = KOL_DASAR + 1;
-  for (const _o of orang) {
+  for (const o of orang) {
     const kosong = ws.getCell(barisTotal, kt);
     kosong.border = thinBorder();
     kosong.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
 
     const huruf = getColLetter(kt + 1);
     const cJml = ws.getCell(barisTotal, kt + 1);
-    cJml.value = { formula: `SUM(${huruf}${barisDataAwal}:${huruf}${barisDataAkhir})` };
+    const totalOrang = projects.reduce((n, p) => n + (porsiPenuh.get(p.id)?.get(o.nama)?.rupiah ?? 0), 0);
+    cJml.value = sumCell(`SUM(${huruf}${barisDataAwal}:${huruf}${barisDataAkhir})`, totalOrang);
     cJml.numFmt = '"Rp" #,##0';
     cJml.font = { ...dataFont(11), bold: true };
     cJml.alignment = { horizontal: 'right', vertical: 'middle' };
@@ -504,14 +528,15 @@ export async function exportPengajuanIncentive(data: ExportData) {
   ws.mergeCells(row, 1, row, 2);
 
   let kj = 3;
-  for (const _th of tahunUrut) {
+  for (const th of tahunUrut) {
     const kosong = ws.getCell(row, kj);
     kosong.border = thinBorder();
     kosong.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
 
     const huruf = getColLetter(kj + 1);
     const cJ = ws.getCell(row, kj + 1);
-    cJ.value = { formula: `SUM(${huruf}${baris2Awal}:${huruf}${baris2Akhir})` };
+    const totalTahun = orang.reduce((n, o) => n + (perTahun.get(o.nama)?.get(th) ?? 0), 0);
+    cJ.value = sumCell(`SUM(${huruf}${baris2Awal}:${huruf}${baris2Akhir})`, totalTahun);
     cJ.numFmt = '#,##0';
     cJ.font = { ...dataFont(), bold: true };
     cJ.alignment = { horizontal: 'right', vertical: 'middle' };
@@ -756,7 +781,8 @@ export async function exportSummaryIncentive(data: {
   ws.getCell(totRow, 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
   ws.getCell(totRow, 1).border = thinBorder();
   ws.mergeCells(totRow, 1, totRow, KOL_NOMINAL);
-  ws.getCell(totRow, KOL_NOMINAL + 1).value = { formula: `SUM(E${dataStart}:E${dataEnd})` };
+  const totalNominal = projects.reduce((n, p) => n + ((p.incentive_value || 0) > 0 ? p.incentive_value : 0), 0);
+  ws.getCell(totRow, KOL_NOMINAL + 1).value = sumCell(`SUM(E${dataStart}:E${dataEnd})`, totalNominal);
   ws.getCell(totRow, KOL_NOMINAL + 1).numFmt = '#,##0';
   ws.getCell(totRow, KOL_NOMINAL + 1).font = { bold: true, size: 10, name: 'Arial' };
   ws.getCell(totRow, KOL_NOMINAL + 1).alignment = { horizontal: 'right', vertical: 'middle' };
@@ -965,14 +991,15 @@ export async function exportSummaryIncentive(data: {
   ws.getCell(gRow, 2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
 
   let kg = 3;
-  for (const _th of tahunUrut) {
+  for (const th of tahunUrut) {
     const kosong = ws.getCell(gRow, kg);
     kosong.border = thinBorder();
     kosong.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
 
     const huruf = getColLetter(kg + 1);
     const cJ = ws.getCell(gRow, kg + 1);
-    cJ.value = orangUrut.length ? { formula: `SUM(${huruf}${pStart}:${huruf}${pEnd})` } : 0;
+    const totalTahunGrand = orangUrut.reduce((n, o) => n + (o.tahun.get(th) ?? 0), 0);
+    cJ.value = orangUrut.length ? sumCell(`SUM(${huruf}${pStart}:${huruf}${pEnd})`, totalTahunGrand) : 0;
     cJ.numFmt = '#,##0';
     cJ.font = { bold: true, size: 10, name: 'Arial' };
     cJ.alignment = { horizontal: 'right', vertical: 'middle' };
@@ -982,7 +1009,8 @@ export async function exportSummaryIncentive(data: {
   }
   const hurufTot = getColLetter(kolTotal);
   const cGT = ws.getCell(gRow, kolTotal);
-  cGT.value = orangUrut.length ? { formula: `SUM(${hurufTot}${pStart}:${hurufTot}${pEnd})` } : 0;
+  const grandTotal = orangUrut.reduce((n, o) => n + o.total, 0);
+  cGT.value = orangUrut.length ? sumCell(`SUM(${hurufTot}${pStart}:${hurufTot}${pEnd})`, grandTotal) : 0;
   cGT.numFmt = '#,##0';
   cGT.font = { bold: true, size: 10, name: 'Arial' };
   cGT.alignment = { horizontal: 'right', vertical: 'middle' };
