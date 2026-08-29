@@ -5,7 +5,7 @@ import { saveAs } from 'file-saver';
 import {
   IncentiveProjectRow, IncentiveSplit, IncentiveTranche,
   SplitResult, formatRupiah, formatPct,
-  calculateIncentiveSplits, findUpline, resolveUserId, OrgUser, ambilSkema, labelSkema,
+  calculateIncentiveSplits, findUpline, resolveUserId, OrgUser, ambilSkema, labelSkema, TRANCHE_STATUS,
   type SkemaInsentif,
 } from './calc';
 
@@ -75,521 +75,535 @@ const ROLE_JUDUL: Record<string, string> = {
 };
 
 /*
-  REKAP PENGAJUAN INSENTIF - bentuknya mengikuti dokumen yang selama ini
-  dipakai ke Finance, bukan bentuk yang paling mudah dihasilkan program.
+  TEMA & KERANGKA KOLOM BERSAMA untuk KEDUA berkas ekspor.
 
-  Dua tabel, dan keduanya menjawab pertanyaan yang berbeda:
-
-    Tabel 1  "siapa berhak berapa dari proyek mana"  - porsi PENUH tiap orang
-             atas tiap proyek, tanpa memandang tahun. Kolom Kontrol di ujung
-             kanan menjumlahkan persennya; kalau bukan 100% berarti ada porsi
-             yang tidak menemukan penerimanya, dan itu harus ketahuan di
-             lembar ini juga - bukan setahun kemudian saat ditanya Finance.
-
-    Tabel 2  "kapan uang itu keluar" - porsi penuh tadi dipecah menurut
-             Tahapan Pencairan (50/35/15) ke tahun pembayarannya masing-masing.
-             Installer TIDAK ikut dipecah: porsinya lunas sekali di tahun
-             pertama, dan di kolom tahun berikutnya ia bernilai nol.
-
-  ANGKANYA TIDAK DIHITUNG ULANG DI SINI. `percentage` pada incentive_splits
-  adalah porsi terhadap POOL PROYEK (mis. PIC 60), bukan terhadap satu tahap -
-  jadi porsi penuh seseorang = pool x percentage, dan nilai per tahun = porsi
-  penuh itu x persentase tahap. Dengan begitu rekap tahun ke-2 memakai angka
-  yang sama persis dengan rekap tahun ke-1, karena keduanya berasal dari
-  baris pembagian yang sama, bukan dari dua perhitungan yang kebetulan mirip.
+  "Pengajuan Incentive" (per tahun tahapan) dan "Summary Incentive" (seluruh
+  proyek) adalah dokumen yang sama bentuknya, beda cakupannya saja - jadi
+  warna, lebar kolom, dan susunan kepala tabelnya ditulis SEKALI di sini.
+  Sebelumnya keduanya punya salinan sendiri dan sudah terlanjur menyimpang
+  jauh: yang satu memakai satu pasang kolom per ORANG (melebar tak terkendali
+  begitu timnya bertambah), yang satu lagi per PERAN. Dua salinan aturan
+  tampilan yang sama adalah cara paling mudah membuat dua berkas yang
+  seharusnya kembar jadi tidak bisa dibandingkan.
 */
-export async function exportPengajuanIncentive(data: ExportData) {
+const NAVY_HDR = '1F3864';
+const SUB_HDR = '2E5395';
+const TOTAL_FILL = 'D9E1F2';
+const INSTALLER_FILL = 'FFF2CC';
+const RUPIAH_FMT = '#,##0;(#,##0);"-"';   // dash untuk nol - bukan sekadar kosong
+
+const putih = (): Partial<ExcelJS.Font> => ({ bold: true, color: { argb: 'FFFFFF' }, size: 10, name: 'Arial' });
+const fillWarna = (hex: string): ExcelJS.Fill => ({ type: 'pattern', pattern: 'solid', fgColor: { argb: hex } });
+
+/**
+ * Kolom A sengaja dibiarkan sempit sebagai spasi tepi - isi mulai kolom B,
+ * menyamai contoh yang dipakai Finance, bukan menempel ke tepi kertas.
+ */
+const KOL = {
+  no: 2, project: 3, mode: 4, bast: 5, nominal: 6,
+  picNama: 7, picPct: 8, picRp: 9,
+  suppNama: 10, suppPct: 11, suppRp: 12,
+  supvNama: 13, supvPct: 14, supvRp: 15,
+  mgrNama: 16, mgrPct: 17, mgrRp: 18,
+  instNama: 19, instLokasi: 20, instPct: 21, instRp: 22,
+};
+const KOL_TERAKHIR = KOL.instRp; // 22 = V
+
+function aturLebarKolom(ws: ExcelJS.Worksheet) {
+  ws.getColumn(1).width = 3;
+  ws.getColumn(KOL.no).width = 5;
+  ws.getColumn(KOL.project).width = 30;
+  ws.getColumn(KOL.mode).width = 10;
+  ws.getColumn(KOL.bast).width = 13;
+  ws.getColumn(KOL.nominal).width = 15;
+  for (const c of [KOL.picNama, KOL.suppNama, KOL.supvNama, KOL.mgrNama, KOL.instNama]) ws.getColumn(c).width = 17;
+  for (const c of [KOL.picPct, KOL.suppPct, KOL.supvPct, KOL.mgrPct, KOL.instPct]) ws.getColumn(c).width = 7;
+  for (const c of [KOL.picRp, KOL.suppRp, KOL.supvRp, KOL.mgrRp, KOL.instRp]) ws.getColumn(c).width = 14;
+  ws.getColumn(KOL.instLokasi).width = 12;
+}
+
+/** Satu penerima porsi pada sebuah proyek, sudah siap dicetak. */
+export interface PeranEkspor {
+  user_id: string; user_name: string; role: string; percentage: number; amount: number;
+}
+
+/**
+ * Dua baris kepala Tabel "List Project": baris atas nama peran (digabung),
+ * baris bawah Nama/%/Rp. Installer punya satu kolom ekstra (Lokasi).
+ */
+function tulisKepalaListProject(
+  ws: ExcelJS.Worksheet, kepalaA: number, kepalaB: number,
+  label: { nominal: string; mode?: string; bast?: string },
+) {
+  const HDR_DASAR: [number, string][] = [
+    [KOL.no, 'No'], [KOL.project, 'Project'],
+    [KOL.mode, label.mode ?? 'Mode'], [KOL.bast, label.bast ?? 'BAST'],
+    [KOL.nominal, label.nominal],
+  ];
+  for (const [kolom, teks] of HDR_DASAR) {
+    const c = ws.getCell(kepalaA, kolom);
+    c.value = teks; c.font = putih(); c.fill = fillWarna(NAVY_HDR);
+    c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    c.border = thinBorder();
+    ws.mergeCells(kepalaA, kolom, kepalaB, kolom);
+  }
+  const GRUP: [string, number, number][] = [
+    ['PIC', KOL.picNama, KOL.picRp], ['Support', KOL.suppNama, KOL.suppRp],
+    ['Supervisor', KOL.supvNama, KOL.supvRp], ['Manager', KOL.mgrNama, KOL.mgrRp],
+  ];
+  for (const [label, awal, akhir] of GRUP) {
+    const c = ws.getCell(kepalaA, awal);
+    c.value = label; c.font = putih(); c.fill = fillWarna(NAVY_HDR);
+    c.alignment = { horizontal: 'center', vertical: 'middle' };
+    c.border = thinBorder();
+    ws.mergeCells(kepalaA, awal, kepalaA, akhir);
+    for (const [off, sub] of [[0, 'Nama'], [1, '%'], [2, 'Rp']] as [number, string][]) {
+      const x = ws.getCell(kepalaB, awal + off);
+      x.value = sub; x.font = putih(); x.fill = fillWarna(SUB_HDR);
+      x.alignment = { horizontal: 'center', vertical: 'middle' }; x.border = thinBorder();
+    }
+  }
+  const cInst = ws.getCell(kepalaA, KOL.instNama);
+  cInst.value = 'Installer'; cInst.font = putih(); cInst.fill = fillWarna(NAVY_HDR);
+  cInst.alignment = { horizontal: 'center', vertical: 'middle' }; cInst.border = thinBorder();
+  ws.mergeCells(kepalaA, KOL.instNama, kepalaA, KOL.instRp);
+  for (const [off, sub] of [[0, 'Nama'], [1, 'Lokasi'], [2, '%'], [3, 'Rp']] as [number, string][]) {
+    const x = ws.getCell(kepalaB, KOL.instNama + off);
+    x.value = sub; x.font = putih(); x.fill = fillWarna(SUB_HDR);
+    x.alignment = { horizontal: 'center', vertical: 'middle' }; x.border = thinBorder();
+  }
+}
+
+/**
+ * Kepala tabel rekap per orang.
+ *
+ * Kolom Nama & Peran DIGABUNG melintasi beberapa kolom, dan itu bukan hiasan:
+ * tabel ini berbagi kisi kolom dengan Tabel 1 di atasnya, yang kolom B-nya
+ * selebar 5 karakter karena di sana isinya cuma nomor urut. Tanpa penggabungan,
+ * nama seperti "Ade Rachmatullah" terlipat satu-dua huruf per baris - persis
+ * keluhan "nama jadi tertumpuk, tidak proporsional" - dan tinggi barisnya ikut
+ * membengkak. Melebarkan kolom B bukan jalan keluar: itu akan membuat kolom
+ * "No" Tabel 1 jadi lebar tanpa alasan.
+ */
+function tulisKepalaPerOrang(ws: ExcelJS.Worksheet, baris: number, judulKolom: [string, number, number][]) {
+  for (const [teks, awal, akhir] of judulKolom) {
+    const c = ws.getCell(baris, awal);
+    c.value = teks; c.font = putih(); c.fill = fillWarna(NAVY_HDR);
+    c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    for (let k = awal; k <= akhir; k++) {
+      const x = ws.getCell(baris, k);
+      x.fill = fillWarna(NAVY_HDR); x.border = thinBorder();
+    }
+    if (akhir > awal) ws.mergeCells(baris, awal, baris, akhir);
+  }
+}
+
+/** Rentang kolom rekap per orang - dipakai kedua berkas supaya bentuknya sama. */
+const KOL_REKAP = {
+  nama:   [KOL.no, KOL.project] as [number, number],        // B:C - cukup untuk nama panjang
+  peran:  [KOL.mode, KOL.bast] as [number, number],         // D:E
+  jumlah: [KOL.nominal, KOL.nominal] as [number, number],   // F
+  total:  [KOL.picNama, KOL.picRp] as [number, number],     // G:I
+};
+
+/** Tulis satu sel gabungan berisi teks, dengan garis tepi di seluruh rentangnya. */
+function selGabung(
+  ws: ExcelJS.Worksheet, baris: number, rentang: [number, number],
+  nilai: ExcelJS.CellValue, gaya?: { font?: Partial<ExcelJS.Font>; isi?: string; rata?: 'left' | 'right' | 'center' },
+) {
+  const [awal, akhir] = rentang;
+  for (let k = awal; k <= akhir; k++) {
+    const x = ws.getCell(baris, k);
+    x.border = thinBorder();
+    if (gaya?.isi) x.fill = fillWarna(gaya.isi);
+  }
+  if (akhir > awal) ws.mergeCells(baris, awal, baris, akhir);
+  const c = ws.getCell(baris, awal);
+  c.value = nilai;
+  c.font = gaya?.font ?? dataFont();
+  c.alignment = { vertical: 'middle', horizontal: gaya?.rata ?? 'left', wrapText: true };
+  return c;
+}
+
+/*
+  REKAP PENGAJUAN INSENTIF SATU TAHUN.
+
+  Bentuknya SENGAJA sama persis dengan Summary Incentive - kepala tabel,
+  warna, dan susunan kolomnya datang dari helper yang sama (tulisKepalaListProject,
+  tulisKepalaPerOrang, selGabung). Bedanya cuma cakupan: Summary memuat seluruh
+  proyek dengan porsi penuh tiap orang, sedangkan berkas ini hanya memuat
+  tahapan yang jatuh tempo pada SATU tahun anggaran, dengan rupiah sebesar
+  tahapan tahun itu saja.
+
+  Bentuk sebelumnya berbeda sama sekali: satu pasang kolom (%, Rp) untuk TIAP
+  ORANG, berjajar ke kanan. Dua masalahnya nyata, bukan selera. Pertama,
+  lebarnya tumbuh mengikuti jumlah anggota tim - tujuh orang sudah memakan
+  kolom A sampai S, dan tim yang bertambah membuatnya tidak bisa dicetak.
+  Kedua, dua berkas yang dibaca berdampingan oleh orang yang sama jadi tidak
+  bisa dibandingkan baris per baris, padahal keduanya menjelaskan uang yang
+  sama dari sudut berbeda.
+
+  ANGKANYA TIDAK DIHITUNG ULANG bila tahapannya sudah diproses: yang dipakai
+  adalah baris incentive_splits milik tahapan tahun itu - persis rupiah yang
+  tercatat akan dibayarkan. Proyek yang tahapannya masih Pending belum punya
+  baris tersimpan, jadi angkanya diproyeksikan dengan mesin yang sama seperti
+  Process Batch dan ditandai "(proyeksi)" supaya tidak tertukar dengan yang
+  sudah pasti.
+*/
+/**
+ * Susun workbook-nya saja - tanpa membaca basis data, tanpa mengunduh.
+ * Dipisah dengan alasan yang sama seperti bangunWorkbookSummary: supaya tata
+ * letaknya bisa diperiksa otomatis di luar peramban.
+ */
+export async function bangunWorkbookPengajuan(data: ExportData, sk: SkemaInsentif) {
   const { year, projects, splits, tranches, managerName, directorName, splitsProyeksi } = data;
 
-  const sk = await ambilSkema();
+  const tahapUrut = [...sk.tranche].sort((a, b) => a.nomor - b.nomor);
+  const totalPersenTahap = tahapUrut.reduce((n, t) => n + (t.persen || 0), 0) || 100;
 
   const wb = new ExcelJS.Workbook();
   wb.creator = 'Work Management PTS IVP';
   wb.created = new Date();
-
-  const ws = wb.addWorksheet('Pengajuan Incentive', {
+  const ws = wb.addWorksheet(`Pengajuan ${year}`, {
     pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1 },
   });
+  aturLebarKolom(ws);
 
   /*
-    Porsi PENUH tiap orang atas tiap proyek.
+    Satu baris per proyek yang punya tahapan jatuh tempo tahun ini.
 
-    Disaring per (proyek, orang, peran) karena satu proyek dicairkan beberapa
-    kali: bila tahap 1 dan tahap 2 sama-sama sudah diproses, orang yang sama
-    muncul dua kali dengan percentage yang identik. Menjumlahkannya akan
-    melipatgandakan porsinya.
+    Rupiah tiap orang diambil menurut urutan kepercayaan: baris pembagian yang
+    SUDAH tersimpan untuk tahapan tahun ini lebih dulu; kalau belum ada, porsi
+    penuh (dari splits proyek atau proyeksi) dipecah menurut persentase tahapan
+    tahun ini. Installer diperlakukan terpisah - porsinya lunas di tahap
+    pertama, jadi ia hanya muncul pada tahun tahap pertama itu.
   */
-  type Penerima = { nama: string; peran: string };
-  const porsiPenuh = new Map<string, Map<string, { peran: string; persen: number; rupiah: number }>>();
-  const orangSet = new Map<string, Penerima>();
-  /** Proyek yang angkanya masih PROYEKSI, bukan hasil Process Batch. */
-  const proyeksi = new Set<string>();
+  type BarisProyek = {
+    p: IncentiveProjectRow;
+    pool: number;
+    status: string;
+    proyeksi: boolean;
+    tahapNomor: number;
+    persenTahap: number;
+    pic: PeranEkspor[]; support: PeranEkspor[]; supervisor: PeranEkspor[];
+    manager: PeranEkspor[]; installer: PeranEkspor[];
+  };
 
+  const daftar: BarisProyek[] = [];
   for (const p of projects) {
-    const perOrang = new Map<string, { peran: string; persen: number; rupiah: number }>();
+    const tahapTahunIni = tranches.find(t => t.project_id === p.id && t.payment_year === year);
+    if (!tahapTahunIni) continue;
 
-    /*
-      Baris pembagian yang TERSIMPAN selalu menang.
-
-      Yang tersimpan adalah hasil Process Batch - dihitung dengan skema yang
-      dibekukan saat itu, dan itulah yang sudah/akan dibayarkan. Menghitung
-      ulang di sini berisiko menghasilkan angka lain bila skemanya sempat
-      berubah, dan rekap yang berbeda dari yang dibayar lebih buruk daripada
-      rekap yang tidak ada.
-
-      Bila belum ada (tahapannya masih Pending), dipakai proyeksi yang
-      dihitung dari skema yang berlaku sekarang. Rekapnya tetap bisa dibaca
-      dan diperiksa sebelum batch dijalankan - hanya saja tiap barisnya
-      ditandai di kolom Status, supaya tidak ada yang mengira angka proyeksi
-      adalah angka yang sudah final.
-    */
-    const tersimpan = splits.filter(s => s.project_id === p.id);
-    const dipakai: { role: string; user_name: string; user_id: string; percentage: number }[] =
-      tersimpan.length > 0
-        ? tersimpan
-        : (splitsProyeksi?.get(p.id) ?? []).map(s => ({
-            role: s.role, user_name: s.user_name, user_id: s.user_id, percentage: s.percentage,
-          }));
-    if (tersimpan.length === 0 && dipakai.length > 0) proyeksi.add(p.id);
-
-    for (const s of dipakai) {
-      const nama = s.user_name || s.user_id;
-      if (!nama) continue;
-      if (perOrang.has(nama)) continue;          // sudah tercatat dari tahap lain
-      const persen = s.percentage || 0;
-      perOrang.set(nama, {
-        peran: s.role,
-        persen,
-        rupiah: Math.round(((p.incentive_value || 0) * persen) / 100),
-      });
-      if (!orangSet.has(nama)) orangSet.set(nama, { nama, peran: s.role });
-    }
-    porsiPenuh.set(p.id, perOrang);
-  }
-
-  const orang = Array.from(orangSet.values());
-
-  /** Status pencairan satu proyek, dibaca dari tahapannya. */
-  function statusProyek(projectId: string): string {
-    const t = tranches.filter(x => x.project_id === projectId);
-    if (t.length === 0) return 'Belum ada tahapan';
-    if (t.every(x => x.status === 'paid')) return 'Paid';
-    if (t.some(x => x.status === 'paid')) return 'Sebagian Paid';
-    if (t.some(x => x.status === 'processed')) return 'Processed';
-    return 'Pending';
-  }
-
-  let row = 1;
-  const KOL_DASAR = 4;                  // No | Nama Project | Final Incentive | Status
-  const kolKontrol = KOL_DASAR + orang.length * 2 + 1;
-  const kolTerakhir = Math.max(kolKontrol, 8);
-
-  // Judul
-  const titleCell = ws.getCell(row, 1);
-  titleCell.value = `Pengajuan Incentive Project-Project IVP Tahun ${year}`;
-  titleCell.font = { bold: true, size: 14, name: 'Arial' };
-  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  ws.mergeCells(row, 1, row, kolTerakhir);
-  row += 1;
-
-  const introCell = ws.getCell(row, 1);
-  introCell.value = 'Saya yang bertanda tangan di bawah ini, ingin mengajukan pengeluaran Incentive '
-    + `Project-project IVP Tahun ${year} dengan dasar perhitungan sebagai berikut :`;
-  introCell.font = dataFont(10);
-  introCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-  ws.mergeCells(row, 1, row, kolTerakhir);
-  row += 1;
-
-  /*
-    Penanda skema dicetak di rekap.
-
-    Tanpa ini rekap hanya berisi nominal, dan setahun kemudian tidak ada yang
-    bisa memastikan angka itu dihitung dengan aturan yang mana - terutama
-    sesudah porsinya diubah. Satu baris ini membuat tiap lembar rekap membawa
-    buktinya sendiri.
-  */
-  const skemaCell = ws.getCell(row, 1);
-  skemaCell.value = `Dihitung dengan: ${labelSkema(sk)}`;
-  skemaCell.font = { italic: true, size: 9, name: 'Arial', color: { argb: '666666' } };
-  skemaCell.alignment = { horizontal: 'center' };
-  ws.mergeCells(row, 1, row, kolTerakhir);
-  row += 2;
-
-  // TABEL 1 - porsi penuh per proyek
-  const barisKepala = row;
-  ws.getRow(barisKepala).height = 20;
-  ws.getRow(barisKepala + 1).height = 18;
-
-  const kepalaDasar = ['No', 'Nama Project', 'Final Incentive', 'Status'];
-  kepalaDasar.forEach((h, i) => {
-    const c = ws.getCell(barisKepala, i + 1);
-    c.value = h;
-    c.font = headerFont();
-    c.fill = headerFill();
-    c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-    c.border = thinBorder();
-    ws.mergeCells(barisKepala, i + 1, barisKepala + 1, i + 1);
-  });
-
-  let kol = KOL_DASAR + 1;
-  for (const o of orang) {
-    const label = ROLE_JUDUL[o.peran] ?? o.peran;
-    const cGrup = ws.getCell(barisKepala, kol);
-    cGrup.value = `${o.nama}\n(${label})`;
-    cGrup.font = headerFont();
-    cGrup.fill = headerFill();
-    cGrup.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-    cGrup.border = thinBorder();
-    ws.mergeCells(barisKepala, kol, barisKepala, kol + 1);
-
-    for (const [offset, teks] of [[0, '%'], [1, 'Rp']] as [number, string][]) {
-      const c = ws.getCell(barisKepala + 1, kol + offset);
-      c.value = teks;
-      c.font = headerFont(9);
-      c.fill = headerFill();
-      c.alignment = { horizontal: 'center', vertical: 'middle' };
-      c.border = thinBorder();
-    }
-    kol += 2;
-  }
-
-  const cKontrol = ws.getCell(barisKepala, kolKontrol);
-  cKontrol.value = 'Kontrol';
-  cKontrol.font = headerFont(9);
-  cKontrol.fill = headerFill();
-  cKontrol.alignment = { horizontal: 'center', vertical: 'middle' };
-  cKontrol.border = thinBorder();
-  ws.mergeCells(barisKepala, kolKontrol, barisKepala + 1, kolKontrol);
-
-  row = barisKepala + 2;
-  const barisDataAwal = row;
-
-  projects.forEach((p, idx) => {
-    const selang = idx % 2 === 1;
-    const isiSelang: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT_GRAY } };
-    const hiasi = (c: ExcelJS.Cell) => { c.border = thinBorder(); if (selang) c.fill = isiSelang; };
-
-    const cNo = ws.getCell(row, 1);
-    cNo.value = idx + 1;
-    cNo.font = dataFont();
-    cNo.alignment = { horizontal: 'center', vertical: 'middle' };
-    hiasi(cNo);
-
-    const cNama = ws.getCell(row, 2);
-    cNama.value = p.project_name;
-    cNama.font = dataFont();
-    cNama.alignment = { vertical: 'middle', wrapText: true };
-    hiasi(cNama);
-
-    const cPool = ws.getCell(row, 3);
-    cPool.value = p.incentive_value || 0;
-    cPool.numFmt = '"Rp" #,##0';
-    cPool.font = { ...dataFont(), bold: true };
-    cPool.alignment = { horizontal: 'right', vertical: 'middle' };
-    hiasi(cPool);
-
-    const st = statusProyek(p.id);
-    const cSt = ws.getCell(row, 4);
-    cSt.value = proyeksi.has(p.id) ? `${st} (proyeksi)` : st;
-    cSt.font = { ...dataFont(9), italic: proyeksi.has(p.id),
-      color: { argb: st === 'Paid' ? '107C41' : proyeksi.has(p.id) ? 'B45309' : '1F4E79' } };
-    cSt.alignment = { horizontal: 'center', vertical: 'middle' };
-    hiasi(cSt);
-
-    const perOrang = porsiPenuh.get(p.id);
-    let k = KOL_DASAR + 1;
-    let totalPersen = 0;
-    for (const o of orang) {
-      const bagian = perOrang?.get(o.nama);
-      totalPersen += bagian?.persen ?? 0;
-
-      const cPct = ws.getCell(row, k);
-      cPct.value = bagian ? bagian.persen / 100 : null;
-      cPct.numFmt = '0.0%';
-      cPct.font = dataFont();
-      cPct.alignment = { horizontal: 'center', vertical: 'middle' };
-      hiasi(cPct);
-
-      const cRp = ws.getCell(row, k + 1);
-      cRp.value = bagian ? bagian.rupiah : null;
-      cRp.numFmt = '"Rp" #,##0';
-      cRp.font = dataFont();
-      cRp.alignment = { horizontal: 'right', vertical: 'middle' };
-      hiasi(cRp);
-
-      k += 2;
-    }
-
-    //  Kontrol: 100% berarti seluruh pool menemukan penerimanya. Diberi warna
-    //  merah bila tidak, sebab selisihnya adalah uang yang tidak dibayarkan
-    //  ke siapa pun - dan itu jauh lebih mudah diperbaiki sekarang.
-    const cK = ws.getCell(row, kolKontrol);
-    cK.value = totalPersen / 100;
-    cK.numFmt = '0%';
-    cK.font = Math.abs(totalPersen - 100) < 0.5
-      ? { ...dataFont(9), bold: true }
-      : { ...dataFont(9), bold: true, color: { argb: 'C00000' } };
-    cK.alignment = { horizontal: 'center', vertical: 'middle' };
-    hiasi(cK);
-
-    row++;
-  });
-  const barisDataAkhir = row - 1;
-
-  // Total Finance
-  const barisTotal = row;
-  const cTotLabel = ws.getCell(barisTotal, 1);
-  cTotLabel.value = 'Total Finance';
-  cTotLabel.font = { ...dataFont(11), bold: true };
-  cTotLabel.alignment = { horizontal: 'right', vertical: 'middle' };
-  ws.mergeCells(barisTotal, 1, barisTotal, 2);
-  cTotLabel.border = thinBorder();
-  cTotLabel.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
-
-  const cTotPool = ws.getCell(barisTotal, 3);
-  cTotPool.value = sumCell(
-    `SUM(C${barisDataAwal}:C${barisDataAkhir})`,
-    projects.reduce((n, p) => n + (p.incentive_value || 0), 0),
-  );
-  cTotPool.numFmt = '"Rp" #,##0';
-  cTotPool.font = { ...dataFont(11), bold: true };
-  cTotPool.alignment = { horizontal: 'right', vertical: 'middle' };
-  cTotPool.border = thinBorder();
-  cTotPool.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
-
-  let kt = KOL_DASAR + 1;
-  for (const o of orang) {
-    const kosong = ws.getCell(barisTotal, kt);
-    kosong.border = thinBorder();
-    kosong.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
-
-    const huruf = getColLetter(kt + 1);
-    const cJml = ws.getCell(barisTotal, kt + 1);
-    const totalOrang = projects.reduce((n, p) => n + (porsiPenuh.get(p.id)?.get(o.nama)?.rupiah ?? 0), 0);
-    cJml.value = sumCell(`SUM(${huruf}${barisDataAwal}:${huruf}${barisDataAkhir})`, totalOrang);
-    cJml.numFmt = '"Rp" #,##0';
-    cJml.font = { ...dataFont(11), bold: true };
-    cJml.alignment = { horizontal: 'right', vertical: 'middle' };
-    cJml.border = thinBorder();
-    cJml.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
-    kt += 2;
-  }
-  const cStTot = ws.getCell(barisTotal, 4);
-  cStTot.border = thinBorder();
-  cStTot.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
-  const cKTot = ws.getCell(barisTotal, kolKontrol);
-  cKTot.border = thinBorder();
-  cKTot.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
-  row += 2;
-
-  if (proyeksi.size > 0) {
-    const cCatatan = ws.getCell(row, 1);
-    cCatatan.value = `Catatan: ${proyeksi.size} project bertanda "(proyeksi)" belum melewati Process Batch — `
-      + 'angkanya dihitung dari skema yang berlaku saat berkas ini dibuat dan masih bisa berubah. '
-      + 'Jalankan Process Batch untuk membekukannya.';
-    cCatatan.font = { ...dataFont(9), italic: true, color: { argb: 'B45309' } };
-    cCatatan.alignment = { wrapText: true, vertical: 'top' };
-    ws.mergeCells(row, 1, row, kolTerakhir);
-    ws.getRow(row).height = 26;
-    row += 2;
-  }
-
-  // TABEL 2 - kapan uangnya keluar
-  const cJudul2 = ws.getCell(row, 1);
-  cJudul2.value = 'Dan berikut adalah nilai pengajuan Incentive :';
-  cJudul2.font = { ...dataFont(10), bold: true };
-  ws.mergeCells(row, 1, row, kolTerakhir);
-  row += 1;
-
-  /*
-    Uang tiap orang per TAHUN PEMBAYARAN.
-
-    Dihitung dari porsi penuh (tabel 1) dikali persentase tahapan, lalu
-    dijatuhkan ke payment_year tahapan itu. Tahunnya diambil dari tahapan yang
-    benar-benar ada di basis data - bukan dari "tahun + 1, +2, +3" yang ditulis
-    tangan - supaya rekap tetap benar bila jadwal tahapannya kelak diubah.
-
-    Installer dikecualikan: porsinya lunas di tahun pertama, tidak dipecah.
-  */
-  const perTahun = new Map<string, Map<number, number>>();
-  const tahunSet = new Set<number>();
-  const installerLunasDiMuka = sk.installerBayarDiMuka;
-
-  for (const p of projects) {
-    const tahapProyek = tranches
+    const pool = p.incentive_value || 0;
+    const persenTahap = tahapTahunIni.percentage || 0;
+    const tahapPertama = tranches
       .filter(t => t.project_id === p.id)
-      .sort((a, b) => a.tranche_number - b.tranche_number);
-    if (tahapProyek.length === 0) continue;
-    const tahunPertama = tahapProyek[0].payment_year;
-    const totalPersenTahap = tahapProyek.reduce((n, t) => n + (t.percentage || 0), 0) || 100;
+      .sort((a, b) => a.tranche_number - b.tranche_number)[0];
+    const tahunPertamaProyek = tahapPertama?.tranche_number === tahapTahunIni.tranche_number;
 
-    const perOrang = porsiPenuh.get(p.id);
-    if (!perOrang) continue;
+    //  1) Baris tersimpan milik tahapan tahun ini - paling tepercaya.
+    const tersimpan = splits.filter(s => s.tranche_id === tahapTahunIni.id);
+    let orang: PeranEkspor[];
+    let proyeksi = false;
 
-    for (const [nama, bagian] of perOrang) {
-      const ember = perTahun.get(nama) ?? new Map<number, number>();
-
-      if (bagian.peran === 'installer' && installerLunasDiMuka) {
-        tahunSet.add(tahunPertama);
-        ember.set(tahunPertama, (ember.get(tahunPertama) ?? 0) + bagian.rupiah);
-      } else {
-        for (const t of tahapProyek) {
-          tahunSet.add(t.payment_year);
-          const nilai = Math.round((bagian.rupiah * (t.percentage || 0)) / totalPersenTahap);
-          ember.set(t.payment_year, (ember.get(t.payment_year) ?? 0) + nilai);
-        }
-      }
-      perTahun.set(nama, ember);
+    if (tersimpan.length > 0) {
+      orang = tersimpan.map(s => ({
+        user_id: s.user_id, user_name: s.user_name, role: s.role,
+        percentage: s.percentage, amount: s.amount,
+      }));
+    } else {
+      /*
+        2) Belum diproses - dipecah dari porsi PENUH. Porsi penuh diambil dari
+        baris pembagian proyek yang mana pun (percentage-nya terhadap pool,
+        bukan terhadap tahap, jadi baris tahap mana pun memberi angka yang
+        sama), atau dari proyeksi bila proyek ini belum punya baris sama sekali.
+      */
+      proyeksi = true;
+      const penuh = splitsProyeksi?.get(p.id)
+        ?? dedupPorsiPenuh(splits.filter(s => s.project_id === p.id));
+      orang = penuh.map(s => {
+        const porsiPenuh = (pool * (s.percentage || 0)) / 100;
+        const installerLunasDiMuka = s.role === 'installer' && sk.installerBayarDiMuka;
+        const amount = installerLunasDiMuka
+          ? (tahunPertamaProyek ? porsiPenuh : 0)
+          : (porsiPenuh * persenTahap) / totalPersenTahap;
+        return {
+          user_id: s.user_id, user_name: s.user_name, role: s.role,
+          percentage: s.percentage, amount: Math.round(amount),
+        };
+      }).filter(s => s.amount > 0);
     }
+
+    daftar.push({
+      p, pool, status: tahapTahunIni.status, proyeksi,
+      tahapNomor: tahapTahunIni.tranche_number, persenTahap,
+      pic: orang.filter(s => s.role === 'pic'),
+      support: orang.filter(s => s.role === 'support'),
+      supervisor: orang.filter(s => s.role === 'supervisor'),
+      manager: orang.filter(s => s.role === 'manager'),
+      installer: orang.filter(s => s.role === 'installer'),
+    });
   }
 
-  const tahunUrut = Array.from(tahunSet).sort((a, b) => a - b);
-  //  Persentase tahap per tahun, untuk kolom "%" - diambil dari tahapan mana
-  //  pun yang jatuh di tahun itu; jadwalnya sama untuk semua proyek dalam satu
-  //  rekap, jadi satu contoh sudah mewakili.
-  const persenTahun = new Map<number, number>();
-  for (const t of tranches) {
-    if (!persenTahun.has(t.payment_year)) persenTahun.set(t.payment_year, t.percentage || 0);
-  }
+  let row = 2;
 
-  const kepala2A = row, kepala2B = row + 1;
-  const cNamaHdr = ws.getCell(kepala2A, 1);
-  cNamaHdr.value = 'Nama';
-  cNamaHdr.font = headerFont();
-  cNamaHdr.fill = headerFill();
-  cNamaHdr.alignment = { horizontal: 'center', vertical: 'middle' };
-  cNamaHdr.border = thinBorder();
-  ws.mergeCells(kepala2A, 1, kepala2B, 2);
-
-  let k2 = 3;
-  for (const th of tahunUrut) {
-    const cTh = ws.getCell(kepala2A, k2);
-    cTh.value = `dibayarkan tahun ${th}`;
-    cTh.font = headerFont();
-    cTh.fill = headerFill();
-    cTh.alignment = { horizontal: 'center', vertical: 'middle' };
-    cTh.border = thinBorder();
-    ws.mergeCells(kepala2A, k2, kepala2A, k2 + 1);
-
-    for (const [offset, teks] of [[0, '%'], [1, 'amount']] as [number, string][]) {
-      const c = ws.getCell(kepala2B, k2 + offset);
-      c.value = teks;
-      c.font = headerFont(9);
-      c.fill = headerFill();
-      c.alignment = { horizontal: 'center', vertical: 'middle' };
-      c.border = thinBorder();
-    }
-    k2 += 2;
-  }
-  row = kepala2B + 1;
-  const baris2Awal = row;
-
-  for (const o of orang) {
-    const ember = perTahun.get(o.nama);
-    const cNm = ws.getCell(row, 1);
-    cNm.value = `${o.nama}${o.peran === 'installer' ? ' (Installer)' : ''}`;
-    cNm.font = dataFont();
-    cNm.alignment = { vertical: 'middle' };
-    cNm.border = thinBorder();
-    ws.mergeCells(row, 1, row, 2);
-
-    let kk = 3;
-    for (const th of tahunUrut) {
-      const nilai = ember?.get(th) ?? 0;
-
-      const cPct = ws.getCell(row, kk);
-      //  Installer selalu 100% di tahun ia dibayar - porsinya tidak dipecah,
-      //  jadi memakai persentase tahap di sini akan salah tulis.
-      cPct.value = nilai === 0 ? null
-        : (o.peran === 'installer' && installerLunasDiMuka ? 1 : (persenTahun.get(th) ?? 0) / 100);
-      cPct.numFmt = '0%';
-      cPct.font = dataFont(9);
-      cPct.alignment = { horizontal: 'center', vertical: 'middle' };
-      cPct.border = thinBorder();
-
-      const cAmt = ws.getCell(row, kk + 1);
-      cAmt.value = nilai || null;
-      cAmt.numFmt = '#,##0';
-      cAmt.font = dataFont();
-      cAmt.alignment = { horizontal: 'right', vertical: 'middle' };
-      cAmt.border = thinBorder();
-
-      kk += 2;
-    }
-    row++;
-  }
-  const baris2Akhir = row - 1;
-
-  const cTot2 = ws.getCell(row, 1);
-  cTot2.value = 'Total';
-  cTot2.font = { ...dataFont(), bold: true };
-  cTot2.alignment = { horizontal: 'right', vertical: 'middle' };
-  cTot2.border = thinBorder();
-  cTot2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
-  ws.mergeCells(row, 1, row, 2);
-
-  let kj = 3;
-  for (const th of tahunUrut) {
-    const kosong = ws.getCell(row, kj);
-    kosong.border = thinBorder();
-    kosong.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
-
-    const huruf = getColLetter(kj + 1);
-    const cJ = ws.getCell(row, kj + 1);
-    const totalTahun = orang.reduce((n, o) => n + (perTahun.get(o.nama)?.get(th) ?? 0), 0);
-    cJ.value = sumCell(`SUM(${huruf}${baris2Awal}:${huruf}${baris2Akhir})`, totalTahun);
-    cJ.numFmt = '#,##0';
-    cJ.font = { ...dataFont(), bold: true };
-    cJ.alignment = { horizontal: 'right', vertical: 'middle' };
-    cJ.border = thinBorder();
-    cJ.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
-    kj += 2;
-  }
-  row += 2;
-
-  // Tanda tangan
-  const kota = 'Jakarta';
-  const tgl = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-  ws.getCell(row, 1).value = `${kota}, ${tgl}`;
-  ws.getCell(row, 1).font = dataFont();
+  // ── Judul ──────────────────────────────────────────────────────────────
+  const cTitle = ws.getCell(row, KOL.no);
+  cTitle.value = `Pengajuan Incentive Project-Project IVP Tahun ${year}`;
+  cTitle.font = { bold: true, size: 14, name: 'Arial' };
+  cTitle.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.mergeCells(row, KOL.no, row, KOL_TERAKHIR);
+  ws.getRow(row).height = 22;
   row += 1;
 
-  const kolomTtd: [number, string][] = [[1, 'Di buat oleh'], [4, 'Diperiksa Oleh'], [7, 'Menyetujui']];
-  for (const [c, teks] of kolomTtd) {
-    ws.getCell(row, c).value = teks;
-    ws.getCell(row, c).font = dataFont();
-  }
-  row += 4;
+  const cSub = ws.getCell(row, KOL.no);
+  cSub.value = `Saya yang bertanda tangan di bawah ini mengajukan pengeluaran Incentive Project-project IVP Tahun ${year}, `
+    + 'dengan dasar perhitungan sebagai berikut:';
+  cSub.font = { italic: true, size: 10, name: 'Arial', color: { argb: '555555' } };
+  cSub.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.mergeCells(row, KOL.no, row, KOL_TERAKHIR);
+  row += 1;
 
-  const namaTtd: [number, string, string][] = [
-    [1, managerName, 'Manager PTS IVP'],
-    [4, '', 'Finance'],
-    [7, directorName, 'Director'],
-  ];
-  for (const [c, nama, jabatan] of namaTtd) {
-    if (nama) {
-      ws.getCell(row, c).value = `(${nama})`;
-      ws.getCell(row, c).font = { ...dataFont(), bold: true };
+  const cGen = ws.getCell(row, KOL.no);
+  cGen.value = `Dihitung dengan: ${labelSkema(sk, new Date().toISOString(), null)} · `
+    + `Dibuat: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+  cGen.font = { italic: true, size: 9, name: 'Arial', color: { argb: '888888' } };
+  cGen.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.mergeCells(row, KOL.no, row, KOL_TERAKHIR);
+  row += 2;
+
+  // ── TABEL 1 — Project yang dicairkan tahun ini ────────────────────────
+  const cJudul1 = ws.getCell(row, KOL.no);
+  cJudul1.value = `1. Project yang Dicairkan Tahun ${year}`;
+  cJudul1.font = { bold: true, size: 12, name: 'Arial' };
+  ws.mergeCells(row, KOL.no, row, KOL_TERAKHIR);
+  row += 1;
+
+  const kepalaA = row, kepalaB = row + 1;
+  tulisKepalaListProject(ws, kepalaA, kepalaB,
+    { nominal: `Pencairan ${year} (Rp)`, mode: 'Tahap', bast: 'Status' });
+  row = kepalaB + 1;
+  const dataAwal = row;
+
+  /** Sel Nama/%/Rp satu peran - bentuknya sama dengan Summary. */
+  function tulisPeran(r: number, kolNama: number, orang: PeranEkspor[]) {
+    const cNama = ws.getCell(r, kolNama);
+    const cPct = ws.getCell(r, kolNama + 1);
+    const cRp = ws.getCell(r, kolNama + 2);
+    [cNama, cPct, cRp].forEach(c => { c.border = thinBorder(); c.font = dataFont(); });
+    cPct.numFmt = '0.0%'; cPct.alignment = { horizontal: 'center', vertical: 'middle' };
+    cRp.numFmt = RUPIAH_FMT; cRp.alignment = { horizontal: 'right', vertical: 'middle' };
+    cNama.alignment = { vertical: 'middle', wrapText: true };
+    if (orang.length === 0) { cNama.value = '—'; return; }
+    if (orang.length === 1) {
+      cNama.value = orang[0].user_name;
+      cPct.value = orang[0].percentage / 100;
+      cRp.value = orang[0].amount;
+      return;
     }
-    ws.getCell(row + 1, c).value = jabatan;
+    cNama.value = orang.map(o => `${o.user_name} (${o.percentage.toFixed(1)}%)`).join('\n');
+    cRp.value = orang.reduce((n, o) => n + o.amount, 0);
+  }
+
+  daftar.forEach((b, idx) => {
+    const r = dataAwal + idx;
+    const cNo = ws.getCell(r, KOL.no); cNo.value = idx + 1; cNo.border = thinBorder();
+    cNo.alignment = { horizontal: 'center', vertical: 'middle' }; cNo.font = dataFont();
+
+    const cProj = ws.getCell(r, KOL.project); cProj.value = b.p.project_name; cProj.border = thinBorder();
+    cProj.alignment = { vertical: 'middle', wrapText: true }; cProj.font = dataFont();
+
+    //  Kolom Mode dipakai menampilkan TAHAP KE BERAPA - pada berkas per tahun,
+    //  itulah keterangan yang menentukan besarnya pencairan, bukan onsite/remote.
+    const cTahap = ws.getCell(r, KOL.mode);
+    cTahap.value = `T${b.tahapNomor} · ${b.persenTahap}%`;
+    cTahap.border = thinBorder(); cTahap.alignment = { horizontal: 'center', vertical: 'middle' };
+    cTahap.font = dataFont();
+
+    const cStatus = ws.getCell(r, KOL.bast);
+    cStatus.value = b.proyeksi ? `${TRANCHE_STATUS[b.status]?.label ?? b.status} (proyeksi)` : (TRANCHE_STATUS[b.status]?.label ?? b.status);
+    cStatus.border = thinBorder(); cStatus.alignment = { vertical: 'middle', wrapText: true };
+    cStatus.font = b.proyeksi
+      ? { ...dataFont(9), italic: true, color: { argb: 'B45309' } }
+      : dataFont(9);
+
+    const totalBaris = [...b.pic, ...b.support, ...b.supervisor, ...b.manager, ...b.installer]
+      .reduce((n, o) => n + o.amount, 0);
+    const cNom = ws.getCell(r, KOL.nominal);
+    cNom.value = totalBaris;
+    cNom.numFmt = RUPIAH_FMT; cNom.border = thinBorder();
+    cNom.alignment = { horizontal: 'right', vertical: 'middle' };
+    cNom.font = { ...dataFont(), bold: true };
+
+    tulisPeran(r, KOL.picNama, b.pic);
+    tulisPeran(r, KOL.suppNama, b.support);
+    tulisPeran(r, KOL.supvNama, b.supervisor);
+    tulisPeran(r, KOL.mgrNama, b.manager);
+
+    const cIN = ws.getCell(r, KOL.instNama), cIL = ws.getCell(r, KOL.instLokasi);
+    const cIP = ws.getCell(r, KOL.instPct), cIR = ws.getCell(r, KOL.instRp);
+    [cIN, cIL, cIP, cIR].forEach(c => { c.border = thinBorder(); c.font = dataFont(); });
+    cIP.numFmt = '0.0%'; cIP.alignment = { horizontal: 'center', vertical: 'middle' };
+    cIR.numFmt = RUPIAH_FMT; cIR.alignment = { horizontal: 'right', vertical: 'middle' };
+    cIN.alignment = { vertical: 'middle', wrapText: true };
+    if (b.installer.length === 0) { cIN.value = '—'; }
+    else {
+      cIN.value = b.installer[0].user_name;
+      cIL.value = b.p.installer_daerah || '—';
+      cIP.value = b.installer[0].percentage / 100;
+      cIR.value = b.installer.reduce((n, o) => n + o.amount, 0);
+    }
+  });
+  const dataAkhir = dataAwal + daftar.length - 1;
+  row = daftar.length ? dataAkhir + 1 : dataAwal;
+
+  if (daftar.length === 0) {
+    selGabung(ws, row, [KOL.no, KOL_TERAKHIR], `Tidak ada tahapan yang jatuh tempo di tahun ${year}.`,
+      { font: { ...dataFont(), italic: true, color: { argb: '999999' } }, rata: 'center' });
+    row += 1;
+  }
+
+  // TOTAL
+  selGabung(ws, row, [KOL.no, KOL.bast], 'TOTAL FINANCE',
+    { font: { ...dataFont(), bold: true }, isi: TOTAL_FILL, rata: 'right' });
+  const totalSemua = daftar.reduce((n, b) =>
+    n + [...b.pic, ...b.support, ...b.supervisor, ...b.manager, ...b.installer].reduce((m, o) => m + o.amount, 0), 0);
+  const cTotNom = ws.getCell(row, KOL.nominal);
+  cTotNom.value = daftar.length
+    ? sumCell(`SUM(${getColLetter(KOL.nominal)}${dataAwal}:${getColLetter(KOL.nominal)}${dataAkhir})`, totalSemua)
+    : 0;
+  cTotNom.numFmt = RUPIAH_FMT; cTotNom.font = { ...dataFont(), bold: true }; cTotNom.fill = fillWarna(TOTAL_FILL);
+  cTotNom.border = thinBorder(); cTotNom.alignment = { horizontal: 'right', vertical: 'middle' };
+  for (let c = KOL.picNama; c <= KOL_TERAKHIR; c++) {
+    const x = ws.getCell(row, c); x.fill = fillWarna(TOTAL_FILL); x.border = thinBorder();
+  }
+  row += 1;
+
+  const adaProyeksi = daftar.filter(b => b.proyeksi).length;
+  if (adaProyeksi > 0) {
+    selGabung(ws, row, [KOL.no, KOL_TERAKHIR],
+      `Catatan: ${adaProyeksi} project bertanda "(proyeksi)" belum melewati Process Batch — angkanya dihitung dari skema `
+      + 'yang berlaku saat berkas ini dibuat dan masih bisa berubah. Jalankan Process Batch untuk membekukannya.',
+      { font: { italic: true, size: 8, name: 'Arial', color: { argb: 'B45309' } } });
+    ws.getRow(row).height = 20;
+    row += 1;
+  }
+  row += 1;
+
+  // ── TABEL 2 — Rekap per orang untuk tahun ini ─────────────────────────
+  const cJudul2 = ws.getCell(row, KOL.no);
+  cJudul2.value = `2. Nilai Pengajuan per Orang — Tahun ${year}`;
+  cJudul2.font = { bold: true, size: 12, name: 'Arial' };
+  ws.mergeCells(row, KOL.no, row, KOL_TERAKHIR);
+  row += 1;
+
+  const urutPeran: Record<string, number> = { manager: 0, supervisor: 1, pic: 2, support: 3, installer: 4 };
+  const roleLabel = (r: string) => ROLE_JUDUL[r] ?? r;
+  const perOrang = new Map<string, { nama: string; peran: Set<string>; jumlah: number; total: number }>();
+  for (const b of daftar) {
+    for (const o of [...b.pic, ...b.support, ...b.supervisor, ...b.manager, ...b.installer]) {
+      const nm = o.user_name || '—';
+      const e = perOrang.get(nm) ?? { nama: nm, peran: new Set<string>(), jumlah: 0, total: 0 };
+      e.peran.add(o.role); e.jumlah += 1; e.total += o.amount;
+      perOrang.set(nm, e);
+    }
+  }
+  const orangUrut = [...perOrang.values()].sort((a, b) => {
+    const pa = Math.min(...[...a.peran].map(r => urutPeran[r] ?? 9));
+    const pb = Math.min(...[...b.peran].map(r => urutPeran[r] ?? 9));
+    return pa - pb || a.nama.localeCompare(b.nama, 'id');
+  });
+
+  tulisKepalaPerOrang(ws, row, [
+    ['Nama', ...KOL_REKAP.nama], ['Peran', ...KOL_REKAP.peran],
+    ['Jumlah Project', ...KOL_REKAP.jumlah], [`Diterima ${year} (Rp)`, ...KOL_REKAP.total],
+  ] as [string, number, number][]);
+  row += 1;
+  const t2Awal = row;
+  orangUrut.forEach(o => {
+    const hanyaInstaller = o.peran.size === 1 && o.peran.has('installer');
+    const isi = hanyaInstaller ? INSTALLER_FILL : undefined;
+    selGabung(ws, row, KOL_REKAP.nama, o.nama, { isi });
+    selGabung(ws, row, KOL_REKAP.peran,
+      [...o.peran].sort((a, b) => (urutPeran[a] ?? 9) - (urutPeran[b] ?? 9)).map(roleLabel).join(', '), { isi });
+    selGabung(ws, row, KOL_REKAP.jumlah, o.jumlah, { rata: 'center', isi });
+    const cT = selGabung(ws, row, KOL_REKAP.total, o.total,
+      { rata: 'right', font: { ...dataFont(), bold: true }, isi });
+    cT.numFmt = RUPIAH_FMT;
+    row += 1;
+  });
+  const t2Akhir = row - 1;
+  if (orangUrut.length === 0) {
+    selGabung(ws, row, [KOL_REKAP.nama[0], KOL_REKAP.total[1]], '(Belum ada penerima di tahun ini)',
+      { font: { ...dataFont(), italic: true, color: { argb: '999999' } } });
+    row += 1;
+  }
+  selGabung(ws, row, [KOL_REKAP.nama[0], KOL_REKAP.jumlah[1]], 'GRAND TOTAL',
+    { font: { ...dataFont(), bold: true }, isi: TOTAL_FILL, rata: 'right' });
+  const cGT = selGabung(ws, row, KOL_REKAP.total,
+    orangUrut.length
+      ? sumCell(`SUM(${getColLetter(KOL_REKAP.total[0])}${t2Awal}:${getColLetter(KOL_REKAP.total[0])}${t2Akhir})`,
+        orangUrut.reduce((n, o) => n + o.total, 0))
+      : 0,
+    { font: { ...dataFont(), bold: true }, isi: TOTAL_FILL, rata: 'right' });
+  cGT.numFmt = RUPIAH_FMT;
+  row += 1;
+
+  selGabung(ws, row, [KOL_REKAP.nama[0], KOL_REKAP.total[1]],
+    'Installer ditandai kuning — porsinya dibayar 100% sekali di tahun pertama proyeknya, tidak dipecah per tahapan.',
+    { font: { italic: true, size: 8, name: 'Arial', color: { argb: '808080' } } });
+  row += 3;
+
+  // ── Tanggal & tanda tangan ────────────────────────────────────────────
+  ws.getCell(row, KOL.no).value = `Jakarta, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+  ws.getCell(row, KOL.no).font = dataFont();
+  row += 2;
+
+  const ttdKolom = [KOL.no, KOL.suppNama, KOL.mgrNama];
+  const ttdLabel = ['Di buat oleh,', 'Diperiksa Oleh,', 'Menyetujui,'];
+  ttdKolom.forEach((c, i) => { ws.getCell(row, c).value = ttdLabel[i]; ws.getCell(row, c).font = dataFont(); });
+  row += 4;
+  const ttdNama = [managerName, '', directorName];
+  const ttdJabatan = ['Manager PTS IVP', 'Finance', 'Director'];
+  ttdKolom.forEach((c, i) => {
+    ws.getCell(row, c).value = ttdNama[i] ? `( ${ttdNama[i]} )` : '(                    )';
+    ws.getCell(row, c).font = ttdNama[i] ? { ...dataFont(), bold: true, underline: true } : dataFont();
+    ws.getCell(row + 1, c).value = ttdJabatan[i];
     ws.getCell(row + 1, c).font = { ...dataFont(), italic: true };
-  }
+  });
 
-  // Lebar kolom
-  ws.getColumn(1).width = 5;
-  ws.getColumn(2).width = 34;
-  ws.getColumn(3).width = 18;
-  ws.getColumn(4).width = 16;
-  for (let c = KOL_DASAR + 1; c < kolKontrol; c++) {
-    ws.getColumn(c).width = (c - KOL_DASAR) % 2 === 1 ? 8 : 16;
-  }
-  ws.getColumn(kolKontrol).width = 9;
+  ws.views = [{ state: 'frozen', ySplit: kepalaB, xSplit: 0 }];
 
-  ws.views = [{ state: 'frozen', ySplit: barisKepala + 1, xSplit: 0 }];
+  return wb;
+}
 
+/** Baca skema, susun workbook-nya, lalu unduh. Dipanggil tombol Export tahun berjalan. */
+export async function exportPengajuanIncentive(data: ExportData) {
+  const sk = await ambilSkema();
+  const wb = await bangunWorkbookPengajuan(data, sk);
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  saveAs(blob, `Pengajuan_Incentive_PTS_IVP_${year}.xlsx`);
+  saveAs(blob, `Pengajuan_Incentive_PTS_IVP_${data.year}.xlsx`);
+}
+
+/**
+ * Porsi PENUH tiap orang, satu baris per (orang, peran).
+ *
+ * Satu proyek dicairkan beberapa kali, jadi bila tahap 1 dan 2 sama-sama
+ * sudah diproses, orang yang sama muncul dua kali dengan percentage yang
+ * identik - menjumlahkannya akan melipatgandakan porsinya.
+ */
+function dedupPorsiPenuh(baris: IncentiveSplit[]): PeranEkspor[] {
+  const unik = new Map<string, PeranEkspor>();
+  for (const s of baris) {
+    const k = `${s.user_id || s.user_name}::${s.role}`;
+    if (unik.has(k)) continue;
+    unik.set(k, {
+      user_id: s.user_id, user_name: s.user_name, role: s.role,
+      percentage: s.percentage, amount: 0,
+    });
+  }
+  return [...unik.values()];
 }
 
 // Summary Export (semua project, split dihitung on-the-fly)
@@ -659,37 +673,7 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
     pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1 },
   });
 
-  // Warna tema - disalin dari contoh yang diberikan.
-  const NAVY_HDR = '1F3864';
-  const SUB_HDR = '2E5395';
-  const TOTAL_FILL = 'D9E1F2';
-  const INSTALLER_FILL = 'FFF2CC';
-  const putih = (): Partial<ExcelJS.Font> => ({ bold: true, color: { argb: 'FFFFFF' }, size: 10, name: 'Arial' });
-  const fillWarna = (hex: string): ExcelJS.Fill => ({ type: 'pattern', pattern: 'solid', fgColor: { argb: hex } });
-  const RUPIAH_FMT = '#,##0;(#,##0);"-"';   // dash untuk nol - bukan sekadar kosong
-
-  // Kolom A dibiarkan sebagai spasi tepi (lebar kecil), isi mulai kolom B -
-  // menyamai contoh yang diberikan, bukan menempel ke tepi kiri kertas.
-  const KOL = {
-    no: 2, project: 3, mode: 4, bast: 5, nominal: 6,
-    picNama: 7, picPct: 8, picRp: 9,
-    suppNama: 10, suppPct: 11, suppRp: 12,
-    supvNama: 13, supvPct: 14, supvRp: 15,
-    mgrNama: 16, mgrPct: 17, mgrRp: 18,
-    instNama: 19, instLokasi: 20, instPct: 21, instRp: 22,
-  };
-  const KOL_TERAKHIR = KOL.instRp; // 22 = V
-
-  ws.getColumn(1).width = 3;
-  ws.getColumn(KOL.no).width = 5;
-  ws.getColumn(KOL.project).width = 30;
-  ws.getColumn(KOL.mode).width = 10;
-  ws.getColumn(KOL.bast).width = 13;
-  ws.getColumn(KOL.nominal).width = 14;
-  for (const c of [KOL.picNama, KOL.suppNama, KOL.supvNama, KOL.mgrNama, KOL.instNama]) ws.getColumn(c).width = 17;
-  for (const c of [KOL.picPct, KOL.suppPct, KOL.supvPct, KOL.mgrPct, KOL.instPct]) ws.getColumn(c).width = 7;
-  for (const c of [KOL.picRp, KOL.suppRp, KOL.supvRp, KOL.mgrRp, KOL.instRp]) ws.getColumn(c).width = 13;
-  ws.getColumn(KOL.instLokasi).width = 12;
+  aturLebarKolom(ws);
 
   let row = 2;
 
@@ -969,45 +953,44 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   row += 1;
 
   const roleLabel = (r: string) => r === 'pic' ? 'PIC' : r === 'support' ? 'Support' : r === 'supervisor' ? 'Supervisor' : 'Manager';
-  const HDR2: [number, string][] = [[KOL.no, 'Nama'], [KOL.project, 'Role'], [KOL.mode, 'Jumlah Project'], [KOL.bast, 'Total Nominal (Rp)']];
-  for (const [kolom, teks] of HDR2) {
-    const c = ws.getCell(row, kolom);
-    c.value = teks; c.font = putih(); c.fill = fillWarna(NAVY_HDR);
-    c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }; c.border = thinBorder();
-  }
+  tulisKepalaPerOrang(ws, row, [
+    ['Nama', ...KOL_REKAP.nama], ['Role', ...KOL_REKAP.peran],
+    ['Jumlah Project', ...KOL_REKAP.jumlah], ['Total Nominal (Rp)', ...KOL_REKAP.total],
+  ] as [string, number, number][]);
   row += 1;
   const t2Awal = row;
   orangUrut.forEach(o => {
     const belumFinal = namaBelumFinal.has(o.nama);
-    const cN = ws.getCell(row, KOL.no); cN.value = o.nama; cN.border = thinBorder();
-    cN.alignment = { vertical: 'middle', wrapText: true };
-    cN.font = belumFinal ? { ...dataFont(), italic: true, color: { argb: '999999' } } : dataFont();
-    const cR = ws.getCell(row, KOL.project);
-    cR.value = [...o.peran].sort((a, b) => (urutPeran[a] ?? 9) - (urutPeran[b] ?? 9)).map(roleLabel).join(', ');
-    cR.border = thinBorder(); cR.font = dataFont(); cR.alignment = { vertical: 'middle' };
-    const cJ = ws.getCell(row, KOL.mode); cJ.value = o.jumlah; cJ.border = thinBorder();
-    cJ.alignment = { horizontal: 'center', vertical: 'middle' }; cJ.font = dataFont();
-    const cT = ws.getCell(row, KOL.bast); cT.value = o.total; cT.numFmt = RUPIAH_FMT; cT.border = thinBorder();
-    cT.alignment = { horizontal: 'right', vertical: 'middle' }; cT.font = { ...dataFont(), bold: true };
-    if (belumFinal) { cJ.font = { ...dataFont(), color: { argb: '999999' } }; cT.font = { ...dataFont(), bold: true, color: { argb: '999999' } }; }
+    const fontNama = belumFinal ? { ...dataFont(), italic: true, color: { argb: '999999' } } : dataFont();
+    selGabung(ws, row, KOL_REKAP.nama, o.nama, { font: fontNama });
+    selGabung(ws, row, KOL_REKAP.peran,
+      [...o.peran].sort((a, b) => (urutPeran[a] ?? 9) - (urutPeran[b] ?? 9)).map(roleLabel).join(', '));
+    selGabung(ws, row, KOL_REKAP.jumlah, o.jumlah, {
+      rata: 'center',
+      font: belumFinal ? { ...dataFont(), color: { argb: '999999' } } : dataFont(),
+    });
+    const cT = selGabung(ws, row, KOL_REKAP.total, o.total, {
+      rata: 'right',
+      font: belumFinal ? { ...dataFont(), bold: true, color: { argb: '999999' } } : { ...dataFont(), bold: true },
+    });
+    cT.numFmt = RUPIAH_FMT;
     row += 1;
   });
   const t2Akhir = row - 1;
   if (orangUrut.length === 0) {
-    ws.getCell(row, KOL.no).value = '(Belum ada project)';
-    ws.getCell(row, KOL.no).font = { ...dataFont(), italic: true, color: { argb: '999999' } };
-    ws.mergeCells(row, KOL.no, row, KOL.bast);
+    selGabung(ws, row, [KOL_REKAP.nama[0], KOL_REKAP.total[1]], '(Belum ada project)',
+      { font: { ...dataFont(), italic: true, color: { argb: '999999' } } });
     row += 1;
   }
-  const cGT2 = ws.getCell(row, KOL.no);
-  cGT2.value = 'GRAND TOTAL'; cGT2.font = { ...dataFont(), bold: true }; cGT2.fill = fillWarna(TOTAL_FILL); cGT2.border = thinBorder();
-  ws.mergeCells(row, KOL.no, row, KOL.mode);
-  for (let c = KOL.no + 1; c <= KOL.mode; c++) { const x = ws.getCell(row, c); x.fill = fillWarna(TOTAL_FILL); x.border = thinBorder(); }
-  const cGT2v = ws.getCell(row, KOL.bast);
-  cGT2v.value = orangUrut.length ? sumCell(`SUM(${getColLetter(KOL.bast)}${t2Awal}:${getColLetter(KOL.bast)}${t2Akhir})`,
-    orangUrut.reduce((n, o) => n + o.total, 0)) : 0;
-  cGT2v.numFmt = RUPIAH_FMT; cGT2v.font = { ...dataFont(), bold: true }; cGT2v.fill = fillWarna(TOTAL_FILL);
-  cGT2v.border = thinBorder(); cGT2v.alignment = { horizontal: 'right', vertical: 'middle' };
+  selGabung(ws, row, [KOL_REKAP.nama[0], KOL_REKAP.jumlah[1]], 'GRAND TOTAL',
+    { font: { ...dataFont(), bold: true }, isi: TOTAL_FILL, rata: 'right' });
+  const cGT2v = selGabung(ws, row, KOL_REKAP.total,
+    orangUrut.length
+      ? sumCell(`SUM(${getColLetter(KOL_REKAP.total[0])}${t2Awal}:${getColLetter(KOL_REKAP.total[0])}${t2Akhir})`,
+        orangUrut.reduce((n, o) => n + o.total, 0))
+      : 0,
+    { font: { ...dataFont(), bold: true }, isi: TOTAL_FILL, rata: 'right' });
+  cGT2v.numFmt = RUPIAH_FMT;
   row += 2;
 
   // ── TABEL 3 — Nilai Pengajuan Incentive per Tahun ────────────────────
@@ -1028,14 +1011,26 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   row += 1;
 
   const k3A = row, k3B = row + 1;
-  const cNamaH = ws.getCell(k3A, KOL.no); cNamaH.value = 'Nama'; cNamaH.font = putih(); cNamaH.fill = fillWarna(NAVY_HDR);
+  const cNamaH = ws.getCell(k3A, KOL_REKAP.nama[0]); cNamaH.value = 'Nama'; cNamaH.font = putih(); cNamaH.fill = fillWarna(NAVY_HDR);
   cNamaH.alignment = { horizontal: 'center', vertical: 'middle' }; cNamaH.border = thinBorder();
-  ws.mergeCells(k3A, KOL.no, k3B, KOL.no);
-  const cPeranH = ws.getCell(k3A, KOL.project); cPeranH.value = 'Peran'; cPeranH.font = putih(); cPeranH.fill = fillWarna(NAVY_HDR);
-  cPeranH.alignment = { horizontal: 'center', vertical: 'middle' }; cPeranH.border = thinBorder();
-  ws.mergeCells(k3A, KOL.project, k3B, KOL.project);
+  //  Nama & Peran memakai rentang yang SAMA dengan Tabel 2 (B:C dan D:E) -
+  //  lihat alasannya di tulisKepalaPerOrang: kolom B sendirian terlalu sempit
+  //  untuk nama orang, dan melebarkannya akan merusak kolom "No" di Tabel 1.
+  for (let k = KOL_REKAP.nama[0]; k <= KOL_REKAP.nama[1]; k++) {
+    const x = ws.getCell(k3A, k); x.fill = fillWarna(NAVY_HDR); x.border = thinBorder();
+    const y = ws.getCell(k3B, k); y.fill = fillWarna(NAVY_HDR); y.border = thinBorder();
+  }
+  ws.mergeCells(k3A, KOL_REKAP.nama[0], k3B, KOL_REKAP.nama[1]);
+  for (let k = KOL_REKAP.peran[0]; k <= KOL_REKAP.peran[1]; k++) {
+    const x = ws.getCell(k3A, k); x.fill = fillWarna(NAVY_HDR); x.border = thinBorder();
+    const y = ws.getCell(k3B, k); y.fill = fillWarna(NAVY_HDR); y.border = thinBorder();
+  }
+  const cPeranH = ws.getCell(k3A, KOL_REKAP.peran[0]);
+  cPeranH.value = 'Peran'; cPeranH.font = putih();
+  cPeranH.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.mergeCells(k3A, KOL_REKAP.peran[0], k3B, KOL_REKAP.peran[1]);
 
-  let kh = KOL.mode;
+  let kh = KOL_REKAP.peran[1] + 1;
   for (const th of tahunUrut) {
     const c = ws.getCell(k3A, kh);
     c.value = `dibayarkan tahun ${th}`; c.font = putih(); c.fill = fillWarna(NAVY_HDR);
@@ -1060,15 +1055,14 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
 
   orangUrut.forEach(o => {
     const belumFinal = namaBelumFinal.has(o.nama);
-    const cN = ws.getCell(row, KOL.no); cN.value = o.nama; cN.border = thinBorder();
-    cN.alignment = { vertical: 'middle', wrapText: true };
-    cN.font = belumFinal ? { ...dataFont(), italic: true, color: { argb: '999999' } } : dataFont();
-    const cR = ws.getCell(row, KOL.project);
-    cR.value = [...o.peran].sort((a, b) => (urutPeran[a] ?? 9) - (urutPeran[b] ?? 9)).map(roleLabel).join(', ');
-    cR.border = thinBorder(); cR.font = dataFont(); cR.alignment = { vertical: 'middle' };
+    selGabung(ws, row, KOL_REKAP.nama, o.nama, {
+      font: belumFinal ? { ...dataFont(), italic: true, color: { argb: '999999' } } : dataFont(),
+    });
+    selGabung(ws, row, KOL_REKAP.peran,
+      [...o.peran].sort((a, b) => (urutPeran[a] ?? 9) - (urutPeran[b] ?? 9)).map(roleLabel).join(', '));
 
     const ember = perOrangTahun.get(o.nama);
-    let kk = KOL.mode;
+    let kk = KOL_REKAP.peran[1] + 1;
     const kolomAmount: number[] = [];
     for (const th of tahunUrut) {
       const nilai = ember?.get(th) ?? 0;
@@ -1094,16 +1088,12 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   // Baris Installer - kuning, satu tahun terisi (100%), sisanya kosong.
   installerList.forEach(inst => {
     const r = row;
-    ws.getRow(r).height = 30;
-    const cN = ws.getCell(r, KOL.no);
-    cN.value = `${inst.nama}${inst.lokasi ? ' · ' + inst.lokasi : ''}  (Installer — 100% pencairan tahun pertama)`;
-    cN.font = dataFont(); cN.fill = fillWarna(INSTALLER_FILL); cN.border = thinBorder();
-    cN.alignment = { vertical: 'middle', wrapText: true };
-    const cR = ws.getCell(r, KOL.project);
-    cR.value = 'Installer'; cR.font = dataFont(); cR.fill = fillWarna(INSTALLER_FILL); cR.border = thinBorder();
-    cR.alignment = { vertical: 'middle' };
+    selGabung(ws, r, KOL_REKAP.nama,
+      `${inst.nama}${inst.lokasi ? ' · ' + inst.lokasi : ''} (100% di tahun pertama)`,
+      { isi: INSTALLER_FILL });
+    selGabung(ws, r, KOL_REKAP.peran, 'Installer', { isi: INSTALLER_FILL });
 
-    let kk = KOL.mode; let kolAmt = -1;
+    let kk = KOL_REKAP.peran[1] + 1; let kolAmt = -1;
     for (const th of tahunUrut) {
       const cPct = ws.getCell(r, kk); const cAmt = ws.getCell(r, kk + 1);
       cPct.fill = fillWarna(INSTALLER_FILL); cAmt.fill = fillWarna(INSTALLER_FILL);
@@ -1123,17 +1113,14 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   const t3Akhir = row - 1;
 
   if (orangUrut.length === 0 && installerList.length === 0) {
-    ws.getCell(row, KOL.no).value = '(Belum ada project dengan nominal & mode final)';
-    ws.getCell(row, KOL.no).font = { ...dataFont(), italic: true, color: { argb: '999999' } };
-    ws.mergeCells(row, KOL.no, row, kolTotal3);
+    selGabung(ws, row, [KOL_REKAP.nama[0], kolTotal3], '(Belum ada project dengan nominal & mode final)',
+      { font: { ...dataFont(), italic: true, color: { argb: '999999' } } });
     row += 1;
   }
 
-  const cGT3 = ws.getCell(row, KOL.no);
-  cGT3.value = 'GRAND TOTAL'; cGT3.font = { ...dataFont(), bold: true }; cGT3.fill = fillWarna(TOTAL_FILL); cGT3.border = thinBorder();
-  ws.mergeCells(row, KOL.no, row, KOL.project);
-  const cGT3b = ws.getCell(row, KOL.project); cGT3b.fill = fillWarna(TOTAL_FILL); cGT3b.border = thinBorder();
-  let kg = KOL.mode;
+  selGabung(ws, row, [KOL_REKAP.nama[0], KOL_REKAP.peran[1]], 'GRAND TOTAL',
+    { font: { ...dataFont(), bold: true }, isi: TOTAL_FILL, rata: 'right' });
+  let kg = KOL_REKAP.peran[1] + 1;
   for (const _th of tahunUrut) {
     const cKosong = ws.getCell(row, kg); cKosong.fill = fillWarna(TOTAL_FILL); cKosong.border = thinBorder();
     const kolAmt = kg + 1;

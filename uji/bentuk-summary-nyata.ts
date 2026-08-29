@@ -15,7 +15,7 @@
   --simpan menuliskan berkasnya ke path itu untuk diperiksa mata sendiri.
 */
 import ExcelJS from 'exceljs';
-import { bangunWorkbookSummary } from '../app/incentive-pts/_components/exportPengajuan';
+import { bangunWorkbookSummary, bangunWorkbookPengajuan } from '../app/incentive-pts/_components/exportPengajuan';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -194,6 +194,82 @@ async function main() {
     ok('Baris tanggal "Jakarta, ..."', adaTanggal);
     ok('Blok tanda tangan "Di buat oleh,"', adaTtd);
   }
+
+  // ── Ekspor Pengajuan per tahun: pola harus SAMA dengan Summary ──────────
+  const tranches = [
+    { id: 't1', project_id: 'p1', tranche_number: 1, percentage: 50, payment_year: 2027, status: 'pending' },
+    { id: 't2', project_id: 'p1', tranche_number: 2, percentage: 35, payment_year: 2028, status: 'pending' },
+    { id: 't3', project_id: 'p2', tranche_number: 1, percentage: 50, payment_year: 2027, status: 'pending' },
+  ] as any[];
+
+  const wbP = await bangunWorkbookPengajuan({
+    year: 2027,
+    projects: projects.filter(p => p.id === 'p1' || p.id === 'p2') as any,
+    splits: [], tranches,
+    managerName: 'Dhany Wahyu', directorName: 'Director PT. IVP',
+    splitsProyeksi: new Map([
+      ['p1', [
+        { role: 'pic', user_id: 'u-taufik', user_name: 'Taufik wahyudi', percentage: 55, amount: 275000 },
+        { role: 'manager', user_id: 'u-dhany', user_name: 'Dhany Wahyu', percentage: 30, amount: 150000 },
+        { role: 'installer', user_id: '', user_name: 'Ridwan Gunawan', percentage: 15, amount: 75000 },
+      ]],
+      ['p2', [
+        { role: 'pic', user_id: 'u-ferdinan', user_name: 'Ferdinan Agustinus', percentage: 55, amount: 1100000 },
+        { role: 'manager', user_id: 'u-dhany', user_name: 'Dhany Wahyu', percentage: 15, amount: 300000 },
+      ]],
+    ]) as any,
+  } as any, SKEMA);
+
+  const targetP = simpanIdx > -1 ? target.replace(/\.xlsx$/, '-Pengajuan2027.xlsx')
+    : path.join(os.tmpdir(), `pengajuan-${Date.now()}.xlsx`);
+  await wbP.xlsx.writeFile(targetP);
+  const wbP2 = new ExcelJS.Workbook();
+  await wbP2.xlsx.readFile(targetP);
+  const wsP = wbP2.getWorksheet('Pengajuan 2027');
+  if (!wsP) throw new Error('Worksheet "Pengajuan 2027" tidak ditemukan');
+  const teksP = (r: number, c: number) => String(wsP.getCell(r, c).value ?? '');
+  const cariP = (potongan: string) => {
+    for (let r = 1; r <= wsP.rowCount; r++) if (teksP(r, 2).includes(potongan)) return r;
+    return -1;
+  };
+
+  console.log('\n9. Ekspor Pengajuan per tahun memakai POLA yang sama');
+  {
+    ok('Judul menyebut tahunnya', teksP(2, 2).includes('Tahun 2027'), teksP(2, 2));
+    const rh = cariP('1. Project yang Dicairkan') + 1;
+    ok('Kepala kolom dasar sama posisinya dengan Summary',
+      teksP(rh, 2) === 'No' && teksP(rh, 3) === 'Project');
+    //  Kolom 4 & 5 dipakai ulang untuk keterangan yang relevan di berkas per
+    //  tahun - judulnya HARUS ikut berubah, bukan tetap "Mode"/"BAST"
+    //  sementara isinya tahap & status.
+    ok('Kolom 4 berjudul "Tahap" (bukan "Mode")', teksP(rh, 4) === 'Tahap', teksP(rh, 4));
+    ok('Kolom 5 berjudul "Status" (bukan "BAST")', teksP(rh, 5) === 'Status', teksP(rh, 5));
+    ok('Grup peran di kolom yang SAMA dengan Summary',
+      teksP(rh, 7) === 'PIC' && teksP(rh, 10) === 'Support'
+      && teksP(rh, 13) === 'Supervisor' && teksP(rh, 16) === 'Manager' && teksP(rh, 19) === 'Installer');
+    ok('Sub-kepala Nama/%/Rp sama', teksP(rh + 1, 7) === 'Nama' && teksP(rh + 1, 8) === '%' && teksP(rh + 1, 9) === 'Rp');
+    ok('Tema navy sama', (wsP.getCell(rh, 2).fill as any)?.fgColor?.argb === '1F3864');
+    ok('Ada tabel rekap per orang', cariP('2. Nilai Pengajuan per Orang') > 0);
+  }
+
+  console.log('\n10. Hanya tahapan tahun itu yang masuk, dengan rupiah tahap itu');
+  {
+    const awal = cariP('1. Project yang Dicairkan') + 3;
+    //  p1 & p2 sama-sama punya T1 di 2027; T2 milik p1 (2028) tidak boleh ikut.
+    ok('Dua project masuk (keduanya punya tahapan 2027)',
+      teksP(awal, 3) === 'Korlantas TMC Soreang' && teksP(awal + 1, 3) === 'Solitaire Billiard & Bar');
+    ok('Kolom tahap menyebut T1 50%', teksP(awal, 4).includes('T1') && teksP(awal, 4).includes('50'));
+    //  Tim PTS: 50% dari porsi penuh. PIC p1 porsi penuh 275.000 -> 137.500.
+    ok('PIC dibayar sebesar tahapan tahun ini (50%)', wsP.getCell(awal, 9).value === 137500,
+      String(wsP.getCell(awal, 9).value));
+    //  Installer lunas 100% di tahap pertama - tidak ikut dipecah.
+    ok('Installer lunas penuh di tahun pertama', wsP.getCell(awal, 22).value === 75000,
+      String(wsP.getCell(awal, 22).value));
+    ok('Baris "(proyeksi)" ditandai', teksP(awal, 5).includes('proyeksi'), teksP(awal, 5));
+  }
+
+  if (simpanIdx > -1) console.log(`Berkas pengajuan disimpan: ${targetP}`);
+  else fs.unlinkSync(targetP);
 
   if (simpanIdx > -1) console.log(`\nBerkas disimpan: ${target}`);
   else fs.unlinkSync(target);
