@@ -394,15 +394,34 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             </FormField>
           </div>
 
-          {/* Mini calendar multi-select — disembunyikan di HP (tampilan bertumpuk),
-             hanya muncul di layar sm: ke atas. */}
-          {!editingReminder && (
-            <div className="hidden sm:block">
-              <FormField label="Tambah Hari Lain (Opsional)">
-                <MultiDatePicker dates={extraDates} onChange={onExtraDatesChange} accentColor="#0891b2" />
-              </FormField>
-            </div>
-          )}
+          {/*
+            Pemilih multi-tanggal berlaku saat MENYUNTING juga, bukan hanya saat
+            membuat.
+
+            Dulu ia disembunyikan di mode sunting, dan itu menutup satu-satunya
+            jalan untuk mengubah rentang hari sebuah jadwal: jadwal 5 hari yang
+            perlu digeser jadi 4 atau 6 hari hanya bisa dibereskan dengan
+            menghapus seluruhnya lalu membuat ulang - yang memutus tautan ke
+            ticket, form review, dan tahapan insentif yang menunjuk baris lama.
+
+            Tanggal yang sudah ada dimuat lebih dulu di openEdit, jadi yang
+            tampil di sini adalah rentang sebenarnya, bukan kalender kosong.
+
+            Tetap hidden di HP: kalendernya bertumpuk dan tidak terpakai di
+            lebar itu. Tanggal utama di atas tetap bisa diubah dari mana saja.
+          */}
+          <div className="hidden sm:block">
+            <FormField label={editingReminder ? 'Hari Lain dalam Jadwal Ini' : 'Tambah Hari Lain (Opsional)'}>
+              <MultiDatePicker dates={extraDates} onChange={onExtraDatesChange} accentColor="#0891b2" />
+              {editingReminder && (
+                <p className="text-[10px] mt-1.5 leading-relaxed" style={{ color: '#64748b' }}>
+                  {extraDates.length > 0
+                    ? `Jadwal ini berjalan ${extraDates.length + 1} hari. Menghapus tanggal akan membuang jadwal hari itu; menambah tanggal menambah hari baru ke jadwal yang sama.`
+                    : 'Jadwal ini sehari. Menambah tanggal di sini menjadikannya jadwal berhari-hari, bukan jadwal baru yang terpisah.'}
+                </p>
+              )}
+            </FormField>
+          </div>
 
           {editingReminder && (
             <FormField label="Status">
