@@ -198,6 +198,27 @@ function tulisKepalaPerOrang(ws: ExcelJS.Worksheet, baris: number, judulKolom: [
   }
 }
 
+/**
+ * Lebarkan kolom TANPA PERNAH MENGECILKANNYA.
+ *
+ * Tabel 3 (Nilai Pengajuan per Tahun) menaruh kolom tahun-nya di kisi kolom
+ * yang SAMA dengan kolom peran Tabel 1 di atasnya - keduanya berbagi satu
+ * grid kolom worksheet, cuma dipakai di rentang baris yang berbeda. Menimpa
+ * lebar kolom di sana dengan `.width = angka` langsung akan MENGECILKAN
+ * kolom yang sudah diset lebih lebar oleh Tabel 1 (mis. kolom Nominal 15
+ * ditimpa jadi 8) - persis penyebab nominal tampil "########" dan nama
+ * peran tumpang tindih ke baris berikutnya. Fungsi ini hanya boleh melebarkan.
+ */
+function perbesarKolom(ws: ExcelJS.Worksheet, kolom: number, minimal: number) {
+  const c = ws.getColumn(kolom);
+  c.width = Math.max(c.width ?? 0, minimal);
+}
+
+/** Berapa baris yang dibutuhkan sebuah teks kalau dibungkus pada lebar kolom (karakter). */
+function hitungBarisTerbungkus(teks: string, lebarKarakter: number): number {
+  return teks.split('\n').reduce((n, baris) => n + Math.max(1, Math.ceil(baris.length / lebarKarakter)), 0);
+}
+
 /** Rentang kolom rekap per orang - dipakai kedua berkas supaya bentuknya sama. */
 const KOL_REKAP = {
   nama:   [KOL.no, KOL.project] as [number, number],        // B:C - cukup untuk nama panjang
@@ -844,6 +865,13 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   row = kepalaB + 1;
   const dataAwal = row;
 
+  /** Teks yang akan tampil di kolom Nama sebuah peran - dipakai menulis SEL sekaligus menghitung tinggi baris. */
+  function teksNamaPeran(orang: Peran[]): string {
+    if (orang.length === 0) return '—';
+    if (orang.length === 1) return orang[0].user_name;
+    return orang.map(o => `${o.user_name} (${(o.percentage).toFixed(1)}%)`).join('\n');
+  }
+
   /** Sel Nama/%/Rp satu peran. >1 orang -> nama digabung, Rp dijumlah statis (bukan formula). */
   function tulisPeran(r: number, kolNama: number, orang: Peran[], baris: number, pool: number, isEstimate: boolean) {
     const cNama = ws.getCell(r, kolNama);
@@ -853,11 +881,11 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
     cPct.numFmt = '0.0%'; cPct.alignment = { horizontal: 'center', vertical: 'middle' };
     cRp.numFmt = RUPIAH_FMT; cRp.alignment = { horizontal: 'right', vertical: 'middle' };
     cNama.alignment = { vertical: 'middle', wrapText: true };
+    cNama.value = teksNamaPeran(orang);
 
-    if (orang.length === 0) { cNama.value = '—'; return; }
+    if (orang.length === 0) return;
     if (orang.length === 1) {
       const o = orang[0];
-      cNama.value = o.user_name;
       cPct.value = o.percentage / 100;
       const hurufPct = getColLetter(kolNama + 1), hurufPool = getColLetter(KOL.nominal);
       cRp.value = isEstimate ? null
@@ -866,14 +894,33 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
       return;
     }
     // >1 orang pada peran yang sama - digabung, Rp dijumlah (statis, bukan formula).
-    cNama.value = orang.map(o => `${o.user_name} (${(o.percentage).toFixed(1)}%)`).join('\n');
     cRp.value = isEstimate ? null : orang.reduce((n, o) => n + o.amount, 0);
     if (isEstimate) cNama.font = { ...dataFont(), italic: true, color: { argb: 'AAAAAA' } };
   }
 
   daftarProyek.forEach((pr, idx) => {
     const r = dataAwal + idx;
-    ws.getRow(r).height = 18;
+    /*
+      Tinggi baris DIHITUNG dari isinya, bukan angka tetap.
+
+      Sebelumnya setiap baris dipatok 18px berapa pun isinya. Begitu Excel
+      diberi tinggi baris eksplisit, ia BERHENTI menyesuaikan tinggi otomatis
+      untuk baris itu - jadi sel yang teksnya melipat ke baris kedua (nama
+      "Ferdinan Agustinus" di kolom selebar 17 karakter, atau Support berisi
+      lebih dari satu orang) terpotong/tumpang tindih secara visual, persis
+      keluhan "nama jadi tertumpuk". lebarKarakter di bawah mengikuti lebar
+      kolom yang sesungguhnya (KOL) - kalau lebarnya berubah di sana, ukuran
+      di sini ikut menyesuaikan karena keduanya bukan dua angka yang ditulis
+      terpisah.
+    */
+    const kandidat: [string, number][] = [
+      [pr.p.project_name, 30],
+      [teksNamaPeran(pr.pic), 17], [teksNamaPeran(pr.support), 17],
+      [teksNamaPeran(pr.supervisor), 17], [teksNamaPeran(pr.manager), 17],
+      [pr.installer[0]?.user_name ?? '—', 17],
+    ];
+    const barisTerbanyak = Math.max(1, ...kandidat.map(([teks, lebar]) => hitungBarisTerbungkus(teks, lebar)));
+    ws.getRow(r).height = Math.max(22, barisTerbanyak * 14 + 8);
 
     const cNo = ws.getCell(r, KOL.no); cNo.value = idx + 1; cNo.border = thinBorder();
     cNo.alignment = { horizontal: 'center', vertical: 'middle' }; cNo.font = dataFont();
@@ -1041,7 +1088,7 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
       s.value = teks; s.font = putih(); s.fill = fillWarna(SUB_HDR);
       s.alignment = { horizontal: 'center', vertical: 'middle' }; s.border = thinBorder();
     }
-    ws.getColumn(kh).width = 8; ws.getColumn(kh + 1).width = 14;
+    perbesarKolom(ws, kh, 8); perbesarKolom(ws, kh + 1, 14);
     kh += 2;
   }
   const kolTotal3 = kh;
@@ -1049,7 +1096,7 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   cTotH3.value = 'Total'; cTotH3.font = putih(); cTotH3.fill = fillWarna(NAVY_HDR);
   cTotH3.alignment = { horizontal: 'center', vertical: 'middle' }; cTotH3.border = thinBorder();
   ws.mergeCells(k3A, kolTotal3, k3B, kolTotal3);
-  ws.getColumn(kolTotal3).width = 14;
+  perbesarKolom(ws, kolTotal3, 14);
   row = k3B + 1;
   const t3Awal = row;
 

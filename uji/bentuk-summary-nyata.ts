@@ -271,6 +271,32 @@ async function main() {
   if (simpanIdx > -1) console.log(`Berkas pengajuan disimpan: ${targetP}`);
   else fs.unlinkSync(targetP);
 
+  console.log('\n8b. Kolom Tabel 1 tidak tertimpa oleh kolom dinamis Tabel 3');
+  {
+    //  Ini bug nyata yang pernah lolos: Tabel 3 menaruh kolom per-tahun mulai
+    //  dari kolom yang SAMA dengan kolom Nominal/PIC/Support Tabel 1 (mereka
+    //  berbagi satu grid kolom worksheet). Menimpa lebar kolom di sana dengan
+    //  `.width = angka` langsung mengecilkan kolom Tabel 1 yang sudah lebih
+    //  lebar - persis penyebab Nominal tampil "########" dan nama peran
+    //  tumpang tindih.
+    ok('Kolom Nominal (F) tetap >= 15 walau Tabel 3 memakai kolom yang sama',
+      (ws.getColumn(6).width ?? 0) >= 15, String(ws.getColumn(6).width));
+    ok('Kolom Nama PIC (G) tetap >= 17', (ws.getColumn(7).width ?? 0) >= 17, String(ws.getColumn(7).width));
+    ok('Kolom Nama Support (J) tetap >= 17', (ws.getColumn(10).width ?? 0) >= 17, String(ws.getColumn(10).width));
+  }
+
+  console.log('\n8c. Tinggi baris menyesuaikan nama yang panjang - bukan angka tetap');
+  {
+    //  "Taufik wahyudi" (PIC proyek pertama) pas di satu baris pada kolom
+    //  selebar 17 karakter. Baris dengan nama yang melipat ke baris kedua
+    //  harus lebih tinggi daripada baris bernama pendek, kalau tidak ia
+    //  terpotong/tumpang tindih secara visual.
+    const rSatuNama = cariBaris('1. List Project') + 3; // baris data pertama
+    const tinggiSatuBaris = ws.getRow(rSatuNama).height ?? 0;
+    ok('Baris dengan nama pendek punya tinggi wajar (bukan nol/undefined)', tinggiSatuBaris >= 20, String(tinggiSatuBaris));
+    ok('Bukan lagi angka tetap 18px yang terlalu pendek untuk teks berlipat', tinggiSatuBaris !== 18, String(tinggiSatuBaris));
+  }
+
   if (simpanIdx > -1) console.log(`\nBerkas disimpan: ${target}`);
   else fs.unlinkSync(target);
 
