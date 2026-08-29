@@ -44,6 +44,14 @@ interface RequestJadwalModalProps {
   externalSalesUsers?: SalesPickerUser[]; // daftar Sales External utk dropdown SBU
   onClose: () => void;
   onSubmit: (data: JadwalRequest) => Promise<void>;
+  /**
+   * Diisi lewat pencarian "Project Lama Anda" SEBELUM modal ini dibuka -
+   * lihat langkah 'cari' di reminder-schedule/page.tsx. Hanya field yang
+   * masuk akal dibawa dari pekerjaan lama (alamat, PIC, produk, brand);
+   * kategori dan tanggal SENGAJA tidak ikut, karena keduanya milik
+   * pekerjaan BARU yang sedang diajukan.
+   */
+  initial?: Partial<JadwalRequest>;
 }
 
 const inputCls =
@@ -63,6 +71,7 @@ export function RequestJadwalModal({
   externalSalesUsers = [],
   onClose,
   onSubmit,
+  initial,
 }: RequestJadwalModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const [formErr, setFormErr] = useState('');
@@ -86,6 +95,7 @@ export function RequestJadwalModal({
     sbu_name: '',
     sbu_division: '',
     sbu_user_id: null,
+    ...initial,
   });
 
   const f = (patch: Partial<JadwalRequest>) => setForm(prev => ({ ...prev, ...patch }));
@@ -216,6 +226,23 @@ export function RequestJadwalModal({
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/*
+            Ringkasan "sudah terisi dari project lama" - hanya muncul lewat
+            jalur pencarian "Project Lama Anda". Tanpa ini, isian yang
+            tiba-tiba penuh saat modal terbuka terlihat seperti keajaiban.
+          */}
+          {!!initial?.project_name && (
+            <div className="rounded-xl px-3.5 py-2.5" style={{ background: 'rgba(8,145,178,0.08)', border: '1px solid rgba(8,145,178,0.25)' }}>
+              <p className="text-[12px] font-bold" style={{ color: '#0e7490' }}>
+                ✓ Detail diisi dari project Anda sebelumnya
+              </p>
+              <p className="text-[11px] mt-0.5 leading-relaxed" style={{ color: '#155e75' }}>
+                Serah-terima (BAST) request ini akan digabung dengan yang lama saat disetujui admin -
+                tidak terhitung sebagai project baru. Tinggal tentukan kategori dan tanggal di bawah.
+              </p>
             </div>
           )}
 

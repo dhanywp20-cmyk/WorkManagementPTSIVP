@@ -100,6 +100,15 @@ function ReminderSchedulePageInner() {
     dua kali untuk jawaban yang sama hanya mengulang yang sudah dikatakan.
   */
   const [langkahBuat, setLangkahBuat] = useState<'pilih' | 'cari' | null>(null);
+  /**
+   * Tujuan langkah 'pilih'/'cari' saat ini - form admin (ReminderFormModal)
+   * atau request Sales/Guest (RequestJadwalModal). Dua tombol pemicu ("Tambah
+   * Reminder" untuk admin/team, "Request Jadwal" untuk Sales/Guest) berbagi
+   * DUA LANGKAH YANG SAMA - hanya langkah konfirmasinya yang bercabang,
+   * supaya perbaikan pada satu jalur (mis. teks, urutan tombol) otomatis
+   * berlaku untuk keduanya.
+   */
+  const [buatUntukGuest, setBuatUntukGuest] = useState(false);
   const [carianProyek, setCarianProyek] = useState('');
   const [praPilihProyek, setPraPilihProyek] = useState<Reminder | null>(null);
   /**
@@ -108,6 +117,8 @@ function ReminderSchedulePageInner() {
    * null berarti jadwal ini TIDAK melalui Lapis 4 (project baru, atau sunting).
    */
   const [proyekLamaTerpilih, setProyekLamaTerpilih] = useState<Reminder[] | null>(null);
+  /** Isian awal RequestJadwalModal, hasil pilihan Lapis 4 di jalur Sales/Guest. */
+  const [praFillGuest, setPraFillGuest] = useState<Partial<JadwalRequest> | null>(null);
 
   /** Daftar project yang pernah tercatat, satu baris wakil (terbaru) per nama. */
   const daftarProyekLama = useMemo(() => {
@@ -130,15 +141,54 @@ function ReminderSchedulePageInner() {
   }, [daftarProyekLama, carianProyek]);
 
   const mulaiBuatReminder = () => {
+    setBuatUntukGuest(false);
     setEditingReminder(null); setFormData(emptyForm); setExtraDates([]);
-    setProyekLamaTerpilih(null); setPraPilihProyek(null); setCarianProyek('');
+    setProyekLamaTerpilih(null); setPraFillGuest(null); setPraPilihProyek(null); setCarianProyek('');
+    setLangkahBuat('pilih');
+  };
+
+  /**
+   * Pemicu untuk role Sales/Guest - sebelumnya "Request Jadwal" langsung
+   * membuka RequestJadwalModal kosong, tanpa lewat pemilihan tipe project
+   * sama sekali. Sekarang memakai DUA LANGKAH YANG SAMA dengan jalur admin;
+   * yang membedakan hanya `buatUntukGuest`, dipakai di 'pilih' untuk teks dan
+   * di konfirmasiProyekLama untuk menentukan form mana yang dibuka.
+   */
+  const mulaiRequestJadwal = () => {
+    setBuatUntukGuest(true);
+    setProyekLamaTerpilih(null); setPraFillGuest(null); setPraPilihProyek(null); setCarianProyek('');
     setLangkahBuat('pilih');
   };
 
   const konfirmasiProyekLama = () => {
     if (!praPilihProyek) return;
     const n = normalkanNama(praPilihProyek.project_name);
+    // Sengaja dari `reminders` yang SUDAH termuat di halaman ini, bukan kueri
+    // baru. Untuk akun Sales/Guest, fetchRemindersForUser hanya memuat baris
+    // miliknya sendiri (lihat catatan di sana) - jadi daftar ini otomatis
+    // tidak pernah memuat project sales lain, tanpa saringan tambahan di sini.
     const sebatch = reminders.filter(r => normalkanNama(r.project_name) === n);
+    setProyekLamaTerpilih(sebatch);
+    setLangkahBuat(null);
+
+    if (buatUntukGuest) {
+      // JadwalRequest tidak punya sales_name/assign_name - pelakunya sudah
+      // pasti currentUser, jadi tidak perlu (dan tidak boleh) disalin dari
+      // baris lama, yang bisa saja milik Sales External lain yang sedang
+      // di-CC-kan (SBU) ke akun ini.
+      setPraFillGuest({
+        project_name: praPilihProyek.project_name || '',
+        address: praPilihProyek.address ?? '',
+        product: praPilihProyek.product ?? '',
+        pic_name: praPilihProyek.pic_name ?? '',
+        pic_phone: praPilihProyek.pic_phone ?? '',
+        sales_division: praPilihProyek.sales_division || undefined,
+        brand: (praPilihProyek.brand as JadwalRequest['brand']) ?? undefined,
+      });
+      setShowRequestModal(true);
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       project_name: praPilihProyek.project_name || '',
@@ -150,8 +200,6 @@ function ReminderSchedulePageInner() {
       pic_phone: praPilihProyek.pic_phone ?? '',
       brand: praPilihProyek.brand ?? prev.brand,
     }));
-    setProyekLamaTerpilih(sebatch);
-    setLangkahBuat(null);
     setShowFormModal(true);
   };
 
@@ -428,7 +476,18 @@ function ReminderSchedulePageInner() {
 
   // Helper: fetch reminders dengan filter guest - ambil yg sales_name = full_name ATAU created_by = username
   const fetchRemindersForUser = async (activeUser: TeamUser | null): Promise<Reminder[]> => {
-    if (!activeUser || activeUser.role !== 'guest') {
+    /*
+      role === 'sales' dulu TIDAK diperlakukan sama dengan 'guest' di sini,
+      walau di seluruh halaman ini keduanya sudah disatukan sebagai "akun
+      eksternal" (lihat isGuest = role==='guest' || role==='sales'). Akibatnya
+      akun ber-role 'sales' akan jatuh ke cabang tim biasa - yang mengambil
+      SELURUH baris reminders dari server sebelum menyaring, bukan hanya
+      miliknya sendiri. Belum ada akun nyata memakai role ini (diperiksa: tidak
+      ada satu pun tempat yang membuat akun dengan role itu), tapi cabangnya
+      tetap dibetulkan sekarang, sebelum ada yang memakainya.
+    */
+    const perlakukanSebagaiGuest = activeUser?.role === 'guest' || activeUser?.role === 'sales';
+    if (!activeUser || !perlakukanSebagaiGuest) {
       const { data, error } = await supabase.from('reminders').select('*').order('created_at', { ascending: false }).limit(500);
       if (error) throw new Error(error.message);
       const all = (data as Reminder[]) ?? [];
@@ -1784,7 +1843,7 @@ function ReminderSchedulePageInner() {
     if (isGuest) {
       if (!jumlahReviewSiap) return;
       pintasanTerpakai.current = true;
-      if (pendingReviewCount === 0) { setShowRequestModal(true); return; }
+      if (pendingReviewCount === 0) { mulaiRequestJadwal(); return; }
       // Kalau ditahan, katakan sebabnya. Tanpa ini pintasan terasa rusak:
       // halamannya terbuka, tapi form yang dituju tidak pernah muncul.
       setToast({ type: 'error', msg: `Selesaikan dulu ${pendingReviewCount} form review Demo/BAST yang belum dinilai.` });
@@ -1900,11 +1959,27 @@ function ReminderSchedulePageInner() {
     // Grup semua tanggal dari 1 submission - supaya Schedule List menampilkannya
     // sbg 1 baris (bukan N baris identik per tanggal).
     const batchId = allDates.length > 1 ? newBatchId() : null;
+
+    /*
+      Kalau request ini datang dari pencarian "Project Lama Anda"
+      (proyekLamaTerpilih terisi), dan kategorinya sama-sama relevan untuk
+      insentif, tandai langsung dari sini - bukan menunggu Lapis 2 mendeteksinya
+      belakangan di Incentive PTS. Request Sales tidak lewat handleSave (admin),
+      jadi resolusinya perlu diulang di sini; aturannya tetap sama:
+      resolveGrupInsentif satu fungsi bersama, dipakai empat jalur sekarang
+      (Lapis 1, Lapis 4-admin, Lapis 4-guest).
+    */
+    const relevanGuest = proyekLamaTerpilih && (INCENTIVE_CATEGORIES as readonly string[]).includes(data.category)
+      ? proyekLamaTerpilih.filter(r => (INCENTIVE_CATEGORIES as readonly string[]).includes(r.category))
+      : [];
+    const grupInsentifGuest = relevanGuest.length > 0 ? await resolveGrupInsentif([...relevanGuest]) : null;
+
     const payloads = allDates.map(d => ({
       project_name: data.project_name,
       description: data.description,
       address: data.address,
       category: data.category,
+      ...(grupInsentifGuest ? { incentive_group_id: grupInsentifGuest } : {}),
       product_type: data.product_type,
       due_date: d,
       // Usulan rentang pengerjaan dari Sales. Hanya bermakna untuk kategori
@@ -1964,6 +2039,7 @@ function ReminderSchedulePageInner() {
       ? `Request dikirim! Menunggu review ${internalHandlers[0]?.full_name ?? 'Sales Internal'} terlebih dahulu.`
       : (allDates.length > 1 ? `${allDates.length} request jadwal berhasil dikirim! Menunggu approval Admin.` : 'Request jadwal berhasil dikirim! Menunggu approval Admin.'));
     setShowRequestModal(false);
+    setProyekLamaTerpilih(null);
     fetchRemindersQuiet();
 
     // Kirim WA sesuai tahap routing
@@ -2581,7 +2657,8 @@ jangan lupa peralatan & Semangat💪🏼
             externalSalesUsers={guestUsers
               .filter(g => !g.is_internal_sales && g.id !== currentUser.id)
               .map(g => ({ id: g.id, full_name: g.full_name, sales_division: g.sales_division ?? null }))}
-            onClose={() => setShowRequestModal(false)}
+            initial={praFillGuest ?? undefined}
+            onClose={() => { setShowRequestModal(false); setProyekLamaTerpilih(null); setPraFillGuest(null); }}
             onSubmit={handleRequestJadwal}
           />
         )}
@@ -2980,35 +3057,58 @@ jangan lupa peralatan & Semangat💪🏼
             <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden"
               role="dialog" aria-modal="true" aria-labelledby="judul-tipe-reminder">
               <div className="px-5 py-4 text-white" style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)' }}>
-                <h3 id="judul-tipe-reminder" className="font-bold text-base">📅 Reminder Baru</h3>
-                <p className="text-[12px] text-white/80 mt-0.5">Project-nya sudah pernah dijadwalkan, atau baru?</p>
+                <h3 id="judul-tipe-reminder" className="font-bold text-base">
+                  {buatUntukGuest ? '📅 Request Jadwal Baru' : '📅 Reminder Baru'}
+                </h3>
+                <p className="text-[12px] text-white/80 mt-0.5">
+                  {buatUntukGuest ? 'Project-nya sudah pernah Anda ajukan, atau baru?' : 'Project-nya sudah pernah dijadwalkan, atau baru?'}
+                </p>
               </div>
               <div className="p-4 space-y-2.5">
+                {/*
+                  Judulnya sengaja menyebut BAST, bukan sekadar "Project yang
+                  sudah ada" - itu terlalu umum untuk menjelaskan APA yang
+                  sebenarnya digabungkan kalau pilihan ini diambil. Yang
+                  ditanyakan bukan "apakah project ini sudah tercatat" (hampir
+                  selalu ya untuk klien lama), tapi "apakah serah-terima
+                  pekerjaan ini nanti SATU BAST dengan yang sudah ada" - itulah
+                  yang menentukan boleh tidaknya digabung jadi satu pool
+                  insentif.
+                */}
                 <button type="button" onClick={() => setLangkahBuat('cari')}
                   className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-cyan-400 hover:bg-cyan-50/50 transition-all">
                   <div className="flex items-start gap-3">
                     <span className="text-2xl flex-shrink-0">🔍</span>
                     <div className="min-w-0">
-                      <p className="text-sm font-bold text-slate-800">Project yang sudah ada</p>
+                      <p className="text-sm font-bold text-slate-800">
+                        {buatUntukGuest ? 'Project Lama Anda — Satu BAST' : 'Project Lama — Satu BAST'}
+                      </p>
                       <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5">
-                        Pernah dijadwalkan sebelumnya. Cari namanya — alamat, PIC, produk, sales,
-                        dan brand otomatis terisi. Tinggal tentukan kategori dan tanggal pekerjaan ini.
+                        {buatUntukGuest
+                          ? 'Pernah Anda ajukan sebelumnya (mis. sudah Konfigurasi, sekarang tambah Training). Cari namanya — alamat, PIC, dan produk otomatis terisi.'
+                          : 'Pernah dijadwalkan sebelumnya (mis. sudah Konfigurasi, sekarang tambah Training). Cari namanya — alamat, PIC, produk, sales, dan brand otomatis terisi.'}
                       </p>
                       <p className="text-[11px] font-semibold text-emerald-700 mt-1.5">
-                        ✓ Disarankan — insentifnya tergabung dengan jadwal lama, tidak terhitung ganda
+                        {buatUntukGuest
+                          ? '✓ Disarankan — kalau serah-terimanya nanti satu BAST dengan yang lama, insentif tim tidak terhitung dua kali. Hanya project Anda sendiri yang tampil di pencarian.'
+                          : '✓ Disarankan — kalau serah-terimanya nanti satu BAST dengan jadwal lama, insentifnya otomatis tergabung, tidak terhitung ganda'}
                       </p>
                     </div>
                   </div>
                 </button>
                 <button type="button"
-                  onClick={() => { setLangkahBuat(null); setProyekLamaTerpilih(null); setShowFormModal(true); }}
+                  onClick={() => {
+                    setLangkahBuat(null); setProyekLamaTerpilih(null);
+                    if (buatUntukGuest) { setPraFillGuest(null); setShowRequestModal(true); }
+                    else setShowFormModal(true);
+                  }}
                   className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-400 hover:bg-slate-50 transition-all">
                   <div className="flex items-start gap-3">
                     <span className="text-2xl flex-shrink-0">✏️</span>
                     <div className="min-w-0">
-                      <p className="text-sm font-bold text-slate-800">Project baru</p>
+                      <p className="text-sm font-bold text-slate-800">Project Baru</p>
                       <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5">
-                        Belum pernah tercatat. Seluruh detailnya diisi manual.
+                        {buatUntukGuest ? 'Belum pernah Anda ajukan. Seluruh detailnya diisi manual.' : 'Belum pernah tercatat. Seluruh detailnya diisi manual.'}
                       </p>
                     </div>
                   </div>
@@ -3049,8 +3149,14 @@ jangan lupa peralatan & Semangat💪🏼
                   </svg>
                 </button>
                 <div className="min-w-0">
-                  <h3 id="judul-cari-reminder" className="font-bold text-base">🔍 Cari Project yang Sudah Ada</h3>
-                  <p className="text-[12px] text-white/80 mt-0.5">Ketik nama project, pilih dari hasilnya, lalu konfirmasi.</p>
+                  <h3 id="judul-cari-reminder" className="font-bold text-base">
+                    {buatUntukGuest ? '🔍 Cari Project Lama Anda' : '🔍 Cari Project yang Sudah Ada'}
+                  </h3>
+                  <p className="text-[12px] text-white/80 mt-0.5">
+                    {buatUntukGuest
+                      ? 'Hanya project yang pernah Anda ajukan yang muncul di sini.'
+                      : 'Ketik nama project, pilih dari hasilnya, lalu konfirmasi.'}
+                  </p>
                 </div>
               </div>
 
@@ -3066,8 +3172,10 @@ jangan lupa peralatan & Semangat💪🏼
                 {hasilCarianProyek.length === 0 && (
                   <p className="mt-2 text-[11px] text-slate-500 leading-snug">
                     {carianProyek.trim()
-                      ? <>Tidak ada project bernama &quot;{carianProyek.trim()}&quot; dalam jangkauan akun kamu. Coba potongan nama yang lebih pendek, atau tekan Kembali dan pilih Project Baru.</>
-                      : 'Belum ada project tercatat.'}
+                      ? (buatUntukGuest
+                          ? <>Tidak ada project Anda bernama &quot;{carianProyek.trim()}&quot;. Pencarian ini hanya mencakup project yang pernah Anda ajukan sendiri - coba potongan nama yang lebih pendek, atau tekan Kembali dan pilih Project Baru.</>
+                          : <>Tidak ada project bernama &quot;{carianProyek.trim()}&quot; dalam jangkauan akun kamu. Coba potongan nama yang lebih pendek, atau tekan Kembali dan pilih Project Baru.</>)
+                      : (buatUntukGuest ? 'Belum ada project yang pernah Anda ajukan.' : 'Belum ada project tercatat.')}
                   </p>
                 )}
 
@@ -3938,7 +4046,7 @@ jangan lupa peralatan & Semangat💪🏼
           {isGuest && view === 'list' && (
             <div className="flex flex-col items-end gap-1">
               <button
-                onClick={() => { if (pendingReviewCount === 0) setShowRequestModal(true); }}
+                onClick={() => { if (pendingReviewCount === 0) mulaiRequestJadwal(); }}
                 disabled={pendingReviewCount > 0}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all"
                 style={pendingReviewCount > 0
