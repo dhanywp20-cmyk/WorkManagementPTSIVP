@@ -118,19 +118,29 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
           {/* Category picker */}
           <div>
             <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Kategori *</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {/*
+              Kartu kategori dikecilkan dan dijadikan tiga kolom.
+
+              Delapan kartu setinggi 60px dalam dua kolom memakan sekitar 260px
+              - lebih tinggi dari seluruh kolom "Waktu & Jadwal" di sebelahnya -
+              dan itulah yang memaksa kolom kiri menggulir sendiri. Ikon dan
+              teks yang lebih kecil sudah cukup: pilihannya delapan dan
+              namanya berbeda jauh, jadi tidak ada yang perlu dibaca dua kali.
+            */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
               {CATEGORIES.map(cat => {
                 const c = CATEGORY_CONFIG[cat];
                 const sel = formData.category === cat;
                 return (
                   <button key={cat} type="button" onClick={() => fd({ category: cat })}
-                    className="flex items-center gap-3 px-4 py-4 rounded-xl border-2 text-left transition-all"
+                    title={cat}
+                    className="flex items-center gap-1.5 px-2 py-2 rounded-lg border-2 text-left transition-all"
                     style={sel
                       ? { borderColor: c.color, background: c.bg, color: c.color }
                       : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }}>
-                    <span className="text-2xl">{c.icon}</span>
-                    <span className="text-base font-bold leading-tight flex-1">{cat}</span>
-                    {sel && <svg aria-hidden="true" focusable="false" className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                    <span className="text-base leading-none flex-shrink-0">{c.icon}</span>
+                    <span className="text-[11px] font-bold leading-tight flex-1 min-w-0">{cat}</span>
+                    {sel && <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3.5} d="M5 13l4 4L19 7" /></svg>}
                   </button>
                 );
               })}
@@ -145,7 +155,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                 const sel = formData.product_type === pt;
                 return (
                   <button key={pt} type="button" onClick={() => { fd({ product_type: pt }); setErr(''); }}
-                    className="px-3 py-3 rounded-xl border-2 text-center text-sm font-bold transition-all"
+                    className="px-2 py-2 rounded-lg border-2 text-center text-[11px] font-bold transition-all"
                     style={sel
                       ? { borderColor: '#e11d48', background: 'rgba(225,29,72,0.1)', color: '#e11d48' }
                       : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }}>
@@ -178,7 +188,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                 const sel = formData.brand === opt.value;
                 return (
                   <button key={opt.value} type="button" onClick={() => { fd({ brand: opt.value }); setErr(''); }}
-                    className="px-3 py-3 rounded-xl border-2 text-center text-sm font-bold transition-all leading-tight"
+                    className="px-2 py-2 rounded-lg border-2 text-center text-[11px] font-bold transition-all leading-tight"
                     style={sel
                       ? { borderColor: '#2563eb', background: 'rgba(37,99,235,0.1)', color: '#1d4ed8' }
                       : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }}>

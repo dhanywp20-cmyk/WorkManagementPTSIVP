@@ -497,11 +497,10 @@ function ReminderSchedulePageInner() {
     const semuaOrang = [...guestUsers, ...teamUsers];
     const salesUserId = idDariNama(semuaOrang, formData.sales_name);
 
-    // Multi-tanggal: request 1 kali untuk beberapa hari sekaligus (mis. tanggal 1, 2, 3).
-    // Saat editing 1 reminder yang sudah ada, extraDates diabaikan (edit tetap 1 baris).
-    const allDates: string[] = editingReminder
-      ? [formData.due_date]
-      : Array.from(new Set([formData.due_date, ...extraDates].filter(Boolean))).sort();
+    // Multi-tanggal: satu pengiriman untuk beberapa hari sekaligus. Berlaku
+    // saat MEMBUAT maupun MENYUNTING - lihat rekonsiliasi tanggal di bawah.
+    const allDates: string[] = Array.from(
+      new Set([formData.due_date, ...extraDates].filter(Boolean))).sort();
     // Grup semua baris dari 1 submission multi-tanggal - supaya Schedule List
     // menampilkannya sbg 1 baris (bukan N baris identik per tanggal).
     const batchId = (!editingReminder && allDates.length > 1) ? newBatchId() : null;
@@ -614,8 +613,65 @@ function ReminderSchedulePageInner() {
           routing_status: 'supervisor_assign', assigned_supervisor_id: supId,
         });
       }
-      ({ error } = await cobaIdentitas(async pakaiUuid =>
-        await supabase.from('reminders').update(pakaiUuid ? payload : tanpaIdentitas(payload)).eq('id', editingReminder.id)));
+      /*
+        Menyunting jadwal multi-tanggal harus mengenai SELURUH tanggalnya.
+
+        Dulu pembaruan dipatok .eq('id', editingReminder.id), jadi menyunting
+        jadwal lima hari hanya mengubah satu baris - empat hari lainnya tetap
+        membawa produk, kategori, dan penangan yang lama. Daftar menampilkannya
+        sebagai satu baris, jadi ketidakcocokan itu tidak terlihat sampai
+        seseorang membuka detailnya.
+
+        due_date SENGAJA dikeluarkan dari pembaruan bersama: tiap baris punya
+        tanggalnya sendiri, dan menimpanya dengan satu nilai akan meruntuhkan
+        seluruh jadwal ke satu hari.
+      */
+      const sebatchLama = editingReminder.batch_id
+        ? reminders.filter(x => x.batch_id === editingReminder.batch_id)
+        : [editingReminder];
+      const barisLama = [...sebatchLama].sort((a, b) => (a.due_date ?? '').localeCompare(b.due_date ?? ''));
+      const { due_date: _tanggalBersama, ...payloadBersama } = payload as Record<string, unknown>;
+
+      // Jadwal sehari yang kini jadi berhari-hari perlu batch_id; yang sudah
+      // punya tetap memakai miliknya supaya tautan lama tidak putus.
+      const batchSunting = allDates.length > 1
+        ? (editingReminder.batch_id ?? newBatchId())
+        : editingReminder.batch_id ?? null;
+
+      /*
+        Baris lama DIPAKAI ULANG untuk tanggal baru, tidak dihapus lalu dibuat
+        lagi. Id baris inilah yang ditunjuk tickets.reminder_id, form_reviews,
+        dan tahapan insentif - membuat baris baru berarti memutus semuanya
+        hanya karena tanggalnya digeser.
+      */
+      const jumlahDipakai = Math.min(barisLama.length, allDates.length);
+      const galatSunting: string[] = [];
+      for (let i = 0; i < jumlahDipakai; i++) {
+        const r = await cobaIdentitas(async pakaiUuid => {
+          const isi = { ...payloadBersama, due_date: allDates[i], batch_id: batchSunting };
+          return await supabase.from('reminders')
+            .update(pakaiUuid ? isi : tanpaIdentitas(isi as typeof payload))
+            .eq('id', barisLama[i].id);
+        });
+        if (r.error) galatSunting.push(r.error.message);
+      }
+      // Tanggal berkurang: baris sisanya dibuang.
+      const dibuang = barisLama.slice(jumlahDipakai).map(r => r.id);
+      if (dibuang.length > 0) {
+        const r = await supabase.from('reminders').delete().in('id', dibuang);
+        if (r.error) galatSunting.push(r.error.message);
+      }
+      // Tanggal bertambah: baris baru menyusul, tetap satu batch.
+      if (allDates.length > barisLama.length) {
+        const tambahan = allDates.slice(barisLama.length).map(d => ({
+          ...payloadBersama, due_date: d, batch_id: batchSunting,
+        }));
+        const r = await cobaIdentitas(async pakaiUuid =>
+          await supabase.from('reminders')
+            .insert(pakaiUuid ? tambahan : tambahan.map(x => tanpaIdentitas(x as typeof payload))));
+        if (r.error) galatSunting.push(r.error.message);
+      }
+      error = galatSunting.length > 0 ? { message: galatSunting[0] } : null;
     } else {
       const payloads = allDates.map(d => ({
         ...formData,
@@ -1249,9 +1305,33 @@ function ReminderSchedulePageInner() {
 
   const openEdit = (r: Reminder) => {
     setEditingReminder(r);
-    setFormData({ project_name: r.project_name || (r as any).title || '', description: r.description, assigned_to: r.assigned_to, assign_name: r.assign_name ?? '', due_date: r.due_date,
+    /*
+      Tanggal sebatch ikut dimuat ke pemilih multi-tanggal.
+
+      Jadwal 5 hari tersimpan sebagai lima baris ber-batch_id sama. Dulu form
+      sunting hanya membawa tanggal baris yang diklik, jadi jadwal lima hari
+      tampil seolah sehari - dan menyimpannya diam-diam meninggalkan empat
+      baris lain dengan data lama. Yang tampil sekarang seluruh rentangnya,
+      dan tanggalnya memang bisa ditambah atau dikurangi dari sini.
+    */
+    const sebatch = r.batch_id ? reminders.filter(x => x.batch_id === r.batch_id) : [r];
+    const tanggal = Array.from(new Set(sebatch.map(x => x.due_date).filter(Boolean))).sort();
+    setExtraDates(tanggal.slice(1));
+    setFormData({ project_name: r.project_name || (r as any).title || '', description: r.description, assigned_to: r.assigned_to, assign_name: r.assign_name ?? '',
+      // Tanggal utama = yang PALING AWAL di batch, bukan baris yang kebetulan
+      // diklik - supaya rentangnya terbaca urut di pemilih tanggal.
+      due_date: (r.batch_id
+        ? [...new Set(reminders.filter(x => x.batch_id === r.batch_id).map(x => x.due_date).filter(Boolean))].sort()[0]
+        : r.due_date) || r.due_date,
       due_time: r.due_time, priority: r.priority, status: r.status, repeat: r.repeat, category: r.category,
       sales_name: r.sales_name ?? '', sales_division: r.sales_division ?? '', address: r.address ?? '',
+      /*
+        brand DULU tidak ikut dimuat, jadi tiap kali jadwal disunting pilihan
+        Brand kembali kosong - dan karena ia wajib, penyunting terpaksa
+        memilihnya lagi dari ingatan. Salah pilih di situ memindahkan proyeknya
+        ke petugas Finance yang lain.
+      */
+      brand: r.brand ?? undefined,
       pic_name: r.pic_name ?? '', pic_phone: r.pic_phone ?? '', notes: r.notes ?? '', product: r.product ?? '',
       warranty_years: r.warranty_years ?? null, mode_penyelesaian: r.mode_penyelesaian ?? null,
       installer_name: r.installer_name ?? null, installer_daerah: r.installer_daerah ?? null,
