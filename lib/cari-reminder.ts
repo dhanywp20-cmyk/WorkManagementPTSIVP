@@ -79,6 +79,30 @@ export interface HasilCariReminder<T> {
  *               aturan 1 di atas; kolom opsional ditangani berkas ini sendiri.
  * @param batas  jumlah maksimum baris per kueri.
  */
+/**
+ * Reminder TERBARU, tanpa kata kunci - dipakai menampilkan kandidat begitu
+ * langkah pencarian dibuka, sebelum siapa pun mengetik apa pun.
+ *
+ * Sengaja terpisah dari cariReminderByNama(), yang MENOLAK kueri kosong (lihat
+ * alasannya di sana - kueri kosong di sana berarti "belum ada yang dicari").
+ * Di sini kekosongannya justru yang diminta: bukan "cari semuanya", tapi
+ * "tampilkan yang paling baru", dibatasi `batas` baris.
+ *
+ * Kolom `title` TIDAK ikut dicari di sini - daftar terbaru tidak butuh kolom
+ * peninggalan itu, jadi tidak ada alasan menanggung risiko "column does not
+ * exist" yang sama sekali tidak relevan untuk kasus ini.
+ */
+export async function reminderTerbaru<T = Record<string, unknown>>(
+  kolom: string,
+  batas: number,
+  terapkanLingkup: <Q>(kueri: Q) => Q,
+): Promise<HasilCariReminder<T>> {
+  const { data, error } = await terapkanLingkup(
+    supabase.from('reminders').select(kolom).order('created_at', { ascending: false }).limit(batas),
+  );
+  return { data: (data ?? []) as T[], error: error ? { message: error.message } : null };
+}
+
 export async function cariReminderByNama<T = Record<string, unknown>>(
   q: string,
   kolom: string,

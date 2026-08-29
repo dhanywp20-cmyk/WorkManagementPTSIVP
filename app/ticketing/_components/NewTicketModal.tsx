@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User, TeamMember } from './shared';
 import { SalesPicker, ModalPortal, BatalButton, SubmitFormButton } from '@/components/shared';
 import { BRAND_OPTIONS, type Brand } from '@/lib/brand-routing';
 import { hasFullAccess } from '@/lib/constants';
 import { hitungLingkupProject, filterLingkup } from '@/lib/project-scope';
-import { cariReminderByNama } from '@/lib/cari-reminder';
+import { cariReminderByNama, reminderTerbaru } from '@/lib/cari-reminder';
 
 export interface NewTicketForm {
   project_name: string;
@@ -113,7 +113,12 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
    * satu, bukan diturunkan ulang di tiap tempat yang punya pencarian.
    */
   const searchReminders = useCallback(async (q: string) => {
-    if (!q.trim()) { setReminderResults([]); return; }
+    // Kueri kosong BUKAN "tidak ada yang dicari" - dipakai untuk menampilkan
+    // daftar project terbaru begitu langkah 'cari' dibuka, sebelum siapa pun
+    // mengetik apa pun. Tanpa ini, langkah 'cari' membuka kotak kosong yang
+    // menyuruh orang mengetik dulu baru terlihat sesuatu, padahal daftar
+    // project terbaru sudah cukup untuk kebanyakan kasus.
+    const kosong = !q.trim();
     setReminderSearching(true);
     const lingkup = await hitungLingkupProject(currentUser as never);
 
@@ -123,8 +128,10 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     // dan datanya cuma ada di sini kalau ia tidak pernah lewat Request Schedule.
     let qt = supabase
       .from('tickets')
-      .select('id, project_name, address, sales_name, sales_division, product, customer_phone, assign_name')
-      .ilike('project_name', `%${q.trim().replace(/([%_\\])/g, '\\$1')}%`);
+      .select('id, project_name, address, sales_name, sales_division, product, customer_phone, assign_name');
+    if (!kosong) {
+      qt = qt.ilike('project_name', `%${q.trim().replace(/([%_\\])/g, '\\$1')}%`);
+    }
 
     const filter = filterLingkup(lingkup);
     setPencarianDibatasi(!!filter);
@@ -136,14 +143,21 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     // di basis data ini - menyebutnya, walau cuma di daftar select, membuat
     // PostgREST menolak seluruh kueri dengan "column reminders.title does not
     // exist", dan penolakan itu tampil sebagai "project tidak ditemukan".
+    const kolomReminder = 'id, project_name, address, sales_name, sales_division, product, pic_name, pic_phone, category, assign_name';
     const [rRes, tRes] = await Promise.all([
-      cariReminderByNama<ReminderRef>(
-        q,
-        'id, project_name, address, sales_name, sales_division, product, pic_name, pic_phone, category, assign_name',
-        15,
-        kueri => (filter ? (kueri as { or(f: string): typeof kueri }).or(filter) : kueri),
-      ),
-      qt.order('created_at', { ascending: false }).limit(15),
+      kosong
+        ? reminderTerbaru<ReminderRef>(
+            kolomReminder,
+            20,
+            kueri => (filter ? (kueri as { or(f: string): typeof kueri }).or(filter) : kueri),
+          )
+        : cariReminderByNama<ReminderRef>(
+            q,
+            kolomReminder,
+            15,
+            kueri => (filter ? (kueri as { or(f: string): typeof kueri }).or(filter) : kueri),
+          ),
+      qt.order('created_at', { ascending: false }).limit(kosong ? 20 : 15),
     ]);
 
     // Galat TIDAK ditelan. Pencarian yang ditolak basis data dan pencarian yang
@@ -226,6 +240,13 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     selectReminder(praPilih);
     setLangkah('form');
   };
+
+  // Begitu langkah 'cari' dibuka, langsung tampilkan project terbaru - senada
+  // dengan Reminder Schedule, yang menampilkan daftar tanpa menunggu ketikan.
+  useEffect(() => {
+    if (langkah === 'cari') searchReminders('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [langkah]);
 
   if (langkah === 'pilih') return (
     <ModalPortal>
