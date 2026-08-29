@@ -769,7 +769,30 @@ export async function exportSummaryIncentive(data: {
         cell.alignment = { vertical: 'middle', wrapText: true };
       }
     });
-    ws.getRow(row).height = 48;
+
+    /*
+      Tinggi baris DIHITUNG dari isinya, bukan angka tetap.
+
+      Sebelumnya setiap baris dipatok 48px berapa pun isinya - cukup untuk
+      PIC/Manager (nama + persen + nominal = 3 baris), tapi kolom Support bisa
+      berisi beberapa orang sekaligus (satu baris per orang), dan nama yang
+      panjang ikut melipat ke baris kedua di dalam selnya sendiri karena kolom
+      cuma lebar 24 karakter. Begitu jumlah baris riilnya lebih dari yang
+      ditampung 48px, teksnya meluber ke baris proyek berikutnya - persis
+      keluhan "ketumpuk".
+
+      lebarKarakter=24 mengikuti lebar kolom PIC/Support/dst di atas (COLS).
+      Kalau lebar kolomnya kelak diubah, patokan ini ikut disesuaikan di sana.
+    */
+    const lebarKarakter = 24;
+    const hitungBaris = (teks: string): number =>
+      teks.split('\n').reduce((n, baris) => n + Math.max(1, Math.ceil(baris.length / lebarKarakter)), 0);
+    const barisTerbanyak = Math.max(
+      1,
+      hitungBaris(String(rowData[5])), hitungBaris(String(rowData[6])),
+      hitungBaris(String(rowData[7])), hitungBaris(String(rowData[8])), hitungBaris(String(rowData[9])),
+    );
+    ws.getRow(row).height = Math.max(24, barisTerbanyak * 14 + 8);
     row++;
   }
   const dataEnd = row - 1;
@@ -866,6 +889,23 @@ export async function exportSummaryIncentive(data: {
 
   const tahunUrut = [...tahunSet].sort((a, b) => a - b);
 
+  /*
+    Tabel rekap ini berbagi grid kolom yang SAMA dengan Tabel 1 di atasnya
+    (kolom 3 dst - Mode, BAST, Nominal, PIC, Support, ...). Menimpa lebar
+    kolom di sini dengan `.width = angka` akan MENGECILKAN kolom yang sudah
+    diset lebih lebar oleh Tabel 1 - persis penyebab kolom Nominal jadi
+    "########" dan kolom PIC/Support jadi sempit sampai teks-nya tumpang
+    tindih ke baris berikutnya.
+
+    `perbesarKolom` hanya boleh MELEBARKAN, tidak pernah mengecilkan - jadi
+    kolom yang sudah cukup lebar untuk Tabel 1 tetap seperti itu, dan tabel
+    ini hanya melebarkannya lebih jauh kalau memang belum cukup.
+  */
+  function perbesarKolom(kolom: number, minimal: number) {
+    const c = ws.getColumn(kolom);
+    c.width = Math.max(c.width ?? 0, minimal);
+  }
+
   // Kepala tabel: Nama | (per tahun: % + amount) | Total
   const kepA = row, kepB = row + 1;
   const cNamaH = ws.getCell(kepA, 1);
@@ -893,8 +933,8 @@ export async function exportSummaryIncentive(data: {
       c.alignment = { horizontal: 'center', vertical: 'middle' };
       c.border = thinBorder();
     }
-    ws.getColumn(kh).width = 8;
-    ws.getColumn(kh + 1).width = 16;
+    perbesarKolom(kh, 8);
+    perbesarKolom(kh + 1, 16);
     kh += 2;
   }
   const kolTotal = kh;
@@ -905,7 +945,7 @@ export async function exportSummaryIncentive(data: {
   cTotH.alignment = { horizontal: 'center', vertical: 'middle' };
   cTotH.border = thinBorder();
   ws.mergeCells(kepA, kolTotal, kepB, kolTotal);
-  ws.getColumn(kolTotal).width = 18;
+  perbesarKolom(kolTotal, 18);
 
   row = kepB + 1;
   const pStart = row;
