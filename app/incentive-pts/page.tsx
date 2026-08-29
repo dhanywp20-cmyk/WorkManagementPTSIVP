@@ -6,6 +6,7 @@ import { getSession, startSessionWatcher } from '@/lib/auth';
 import {
   IncentiveProjectRow, IncentiveTranche, IncentiveSplit, LateTicketLink,
   fetchIncentiveProjects, fetchTranches, fetchVisibleSplits, fetchSupportFromTickets, jendelaSupportTahap, fetchLateTickets,
+  ambilSumberSupport, supportUntukProyek,
   deteksiKandidatGabung, satukanProyek, type KandidatGabung,
   setProyekDikeluarkan, tahapanSudahJalan,
   insertTranches, insertSplits, processYearlyBatch,
@@ -578,14 +579,32 @@ export default function IncentivePTSPage() {
       const { data: mgr } = await supabase.from('users').select('id, full_name').eq('jabatan', 'Manager').eq('team_type', 'Team PTS IVP').limit(1).single();
       const managerUserId = (mgr?.id || '') as string;
       const managerName   = (mgr?.full_name || 'Manager PTS IVP') as string;
-      // Fetch ALL troubleshooting tickets done in one call
-      const { data: trouble } = await supabase.from('reminders').select('project_name, assigned_to, assign_name').eq('category', 'Troubleshooting').eq('status', 'done');
+      /*
+        Penilaian Support memakai aturan yang SAMA dengan mesin pembayaran.
+
+        Di sini dulu ada salinan sendiri: satu kueri ke `reminders` saja, lalu
+        dikelompokkan dengan project_name apa adanya sebagai kunci. Dua hal
+        yang sudah lama diperbaiki di fetchSupportFromTickets hilang di
+        salinan itu, dan keduanya membuat kolom Support kosong tanpa pesan
+        apa pun:
+
+          1. Ticket yang diselesaikan (tickets berstatus Solved) tidak dibaca
+             sama sekali. Troubleshooting yang ditutup lewat Ticketing - tanpa
+             pernah dijadwalkan ulang sebagai reminder Onsite - karena itu
+             tidak pernah menghasilkan porsi Support.
+          2. Nama proyek dicocokkan persis. "BPKP ICT TIMUR" dan "BPKP ICT
+             Timur" jadi dua kunci berbeda, jadi catatan Troubleshooting-nya
+             tidak pernah bertemu proyeknya.
+
+        Sekarang sumbernya diambil sekali (tiga kueri untuk seluruh proyek,
+        bukan per proyek) lalu dicocokkan dengan fungsi yang sama yang dipakai
+        Process Batch - jadi yang tampil di rekap dan yang dibayar tidak bisa
+        berbeda.
+      */
+      const { data: sumberSupport } = await ambilSumberSupport();
       const supportsMap = new Map<string, { user_id: string; user_name: string }[]>();
-      for (const t of (trouble || []) as { project_name: string; assigned_to: string | null; assign_name: string | null }[]) {
-        if (!t.assigned_to) continue;
-        const arr = supportsMap.get(t.project_name) || [];
-        if (!arr.find(x => x.user_id === t.assigned_to)) arr.push({ user_id: t.assigned_to, user_name: t.assign_name || '' });
-        supportsMap.set(t.project_name, arr);
+      for (const p of projects) {
+        supportsMap.set(p.project_name, supportUntukProyek(sumberSupport, p));
       }
       await exportSummaryIncentive({ projects, allUsers: allUsers as { id?: string; full_name?: string; jabatan?: string; atasan_id?: string | null }[], supportsMap, managerName, managerUserId });
       notify('success', 'Export summary semua project berhasil!');

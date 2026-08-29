@@ -598,6 +598,10 @@ function tanggalSaja(v: string | null | undefined): string {
 }
 
 function didalamRentang(tgl: string, rentang?: { dari?: string | null; sampai?: string | null }): boolean {
+  //  Tanpa batas apa pun, semuanya masuk - termasuk baris yang tanggalnya
+  //  kosong. Ini dipakai rekap "seluruh tahun" (Summary), yang memang tidak
+  //  boleh menjatuhkan pekerjaan hanya karena tanggalnya belum terisi.
+  if (!rentang?.dari && !rentang?.sampai) return true;
   if (!tgl) return false;
   if (rentang?.dari   && !(tgl > rentang.dari))   return false;
   if (rentang?.sampai && !(tgl <= rentang.sampai)) return false;
@@ -642,23 +646,35 @@ interface BarisAktivitas {
  * pemanggilnya memakai jendelaSupportTahap() supaya batas antar tahun tidak
  * ditulis ulang di beberapa tempat lalu menyimpang.
  */
-export async function fetchSupportFromTickets(
-  proyek: { id?: string | null; project_name: string },
-  rentang?: { dari?: string | null; sampai?: string | null },
-): Promise<{ data: { user_id: string; user_name: string }[]; error: unknown }> {
-  const dicari = samakanNamaProyek(proyek?.project_name ?? '');
-  if (!dicari) return { data: [], error: null };
+/** Baris mentah ketiga sumber, diambil SEKALI untuk dipakai banyak proyek. */
+export interface SumberSupport {
+  reminders: { assigned_to: string | null; assign_name: string | null; project_name: string | null; due_date: string | null }[];
+  tickets: {
+    id: string; project_name: string | null; reminder_id: string | null;
+    date: string | null; assign_name: string | null; activity_logs: BarisAktivitas[] | null;
+  }[];
+  /** nama lengkap (dinormalkan) -> username. Lihat catatan di bawah. */
+  petaNama: Map<string, string>;
+}
 
-  // Penyaringan nama dilakukan di sisi aplikasi, bukan di kueri, karena
-  // PostgREST tidak bisa menormalkan spasi di sisi basis data. Yang diambil
-  // hanya baris yang sudah selesai, jadi jumlahnya kecil - bukan seluruh tabel.
-  let qr = supabase
+/**
+ * Ambil ketiga sumber penilaian Support SEKALI SAJA.
+ *
+ * Dipisah dari pencocokannya karena rekap memerlukan jawaban untuk PULUHAN
+ * proyek sekaligus. Memanggil fetchSupportFromTickets() per proyek berarti
+ * tiga kueri dikalikan jumlah proyek - ratusan perjalanan bolak-balik untuk
+ * data yang isinya sama persis. Diambil sekali di sini, dicocokkan di memori.
+ *
+ * Penyaringan tanggal TIDAK dilakukan di kueri (berbeda dengan pemakaian satu
+ * proyek), sebab tiap proyek punya jendela tahunnya sendiri yang dihitung dari
+ * BAST masing-masing. due_date karena itu ikut diambil dan disaring belakangan.
+ */
+export async function ambilSumberSupport(): Promise<{ data: SumberSupport; error: unknown }> {
+  const qr = supabase
     .from('reminders')
-    .select('assigned_to, assign_name, project_name')
+    .select('assigned_to, assign_name, project_name, due_date')
     .eq('category', 'Troubleshooting')
     .eq('status', 'done');
-  if (rentang?.dari)   qr = qr.gt('due_date', rentang.dari);
-  if (rentang?.sampai) qr = qr.lte('due_date', rentang.sampai);
 
   const qt = supabase
     .from('tickets')
@@ -678,6 +694,26 @@ export async function fetchSupportFromTickets(
     const n = samakanNamaProyek(u.full_name ?? '');
     if (n && u.username) petaNama.set(n, u.username);
   }
+
+  return {
+    data: {
+      reminders: (rRes.data ?? []) as SumberSupport['reminders'],
+      tickets: (tRes.data ?? []) as SumberSupport['tickets'],
+      petaNama,
+    },
+    error: rRes.error ?? tRes.error ?? uRes.error,
+  };
+}
+
+/** Siapa yang membantu proyek ini dalam rentang tanggal, dari sumber yang sudah diambil. */
+export function supportUntukProyek(
+  sumber: SumberSupport,
+  proyek: { id?: string | null; project_name: string },
+  rentang?: { dari?: string | null; sampai?: string | null },
+): { user_id: string; user_name: string }[] {
+  const dicari = samakanNamaProyek(proyek?.project_name ?? '');
+  if (!dicari) return [];
+  const { petaNama } = sumber;
   /** Username milik sebuah nama lengkap; namanya sendiri bila tidak dikenali. */
   const usernameDariNama = (nama: string | null | undefined): string =>
     petaNama.get(samakanNamaProyek(nama ?? '')) ?? (nama ?? '');
@@ -691,19 +727,17 @@ export async function fetchSupportFromTickets(
     hasil.push({ user_id: id, user_name: user_name || '' });
   };
 
-  // Sumber 1 - jadwal Troubleshooting yang ditutup selesai.
-  for (const r of (rRes.data ?? []) as {
-    assigned_to: string | null; assign_name: string | null; project_name: string | null;
-  }[]) {
+  // Sumber 1 - jadwal Troubleshooting yang ditutup selesai. Rentangnya
+  // disaring di sini (bukan di kueri) supaya sumbernya bisa dipakai ulang
+  // untuk banyak proyek yang jendela tahunnya berbeda-beda.
+  for (const r of sumber.reminders) {
     if (samakanNamaProyek(r.project_name ?? '') !== dicari) continue;
+    if (!didalamRentang(tanggalSaja(r.due_date), rentang)) continue;
     tambah(r.assigned_to, r.assign_name);
   }
 
   // Sumber 2 - ticket yang diselesaikan.
-  for (const t of (tRes.data ?? []) as {
-    id: string; project_name: string | null; reminder_id: string | null;
-    date: string | null; assign_name: string | null; activity_logs: BarisAktivitas[] | null;
-  }[]) {
+  for (const t of sumber.tickets) {
     const cocok = (proyek.id && t.reminder_id === proyek.id)
       || samakanNamaProyek(t.project_name ?? '') === dicari;
     if (!cocok) continue;
@@ -733,7 +767,23 @@ export async function fetchSupportFromTickets(
     tambah(usernameDariNama(t.assign_name), t.assign_name);
   }
 
-  return { data: hasil, error: rRes.error ?? tRes.error };
+  return hasil;
+}
+
+/**
+ * Siapa saja yang tercatat membantu Troubleshooting SATU proyek.
+ *
+ * Pembungkus tipis di atas ambilSumberSupport + supportUntukProyek, supaya
+ * pemanggil yang memang hanya butuh satu proyek tidak berubah caranya.
+ * Untuk banyak proyek sekaligus, panggil kedua fungsi itu langsung - lihat
+ * catatan hemat kueri di ambilSumberSupport.
+ */
+export async function fetchSupportFromTickets(
+  proyek: { id?: string | null; project_name: string },
+  rentang?: { dari?: string | null; sampai?: string | null },
+): Promise<{ data: { user_id: string; user_name: string }[]; error: unknown }> {
+  const { data: sumber, error } = await ambilSumberSupport();
+  return { data: supportUntukProyek(sumber, proyek, rentang), error };
 }
 
 export async function fetchLateTickets(parentProjectId?: string) {
