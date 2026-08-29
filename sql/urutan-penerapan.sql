@@ -143,7 +143,8 @@ INSERT INTO sql_diterapkan (berkas, urutan, golongan) VALUES
   ('incentive-keluarkan-proyek.sql', 66, 'skema'),
   ('learning-center-essay-gambar.sql', 67, 'skema'),
   ('learning-center-urutan-soal.sql', 68, 'skema'),
-  ('perbaikan-unggah-jawaban-gambar.sql', 69, 'perbaikan')
+  ('perbaikan-unggah-jawaban-gambar.sql', 69, 'perbaikan'),
+  ('incentive-kelompok-proyek.sql', 70, 'skema')
 ON CONFLICT (berkas) DO UPDATE
   SET urutan = EXCLUDED.urutan, golongan = EXCLUDED.golongan;
 

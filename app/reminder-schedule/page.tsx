@@ -9,6 +9,7 @@ import { setSession, clearSession, getSession, startSessionWatcher } from '@/lib
 import { isAdmin as checkIsAdmin, hasFullAccess } from '@/lib/constants';
 import { isAssignablePTSTeam } from '@/lib/teams';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
+import { normalkanNama } from '@/lib/kelompok-insentif';
 import { notifyReminderApproved, createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 import { INCENTIVE_CATEGORIES } from '@/lib/incentive-scheme';
@@ -66,6 +67,23 @@ function ReminderSchedulePageInner() {
   const [showFormModal, setShowFormModal]   = useState(false);
   const [detailReminder, setDetailReminder] = useState<Reminder | null>(null);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
+
+  /*
+    Pertanyaan "kelanjutan proyek yang sama, atau pekerjaan terpisah?"
+
+    Satu proyek sering dikerjakan lewat beberapa jadwal - Konfigurasi Senin,
+    Training tiga hari kemudian. Tanpa ada yang menyatakan hubungannya,
+    Incentive Project membacanya sebagai DUA proyek dengan dua pool nominal.
+
+    Ditanyakan SAAT MEMBUAT, karena di situlah orangnya paling tahu jawabannya.
+    Menebaknya belakangan dari kemiripan nama adalah cara yang paling mudah
+    keliru, dan kekeliruannya tidak terlihat siapa pun.
+  */
+  const [tanyaLanjutan, setTanyaLanjutan] = useState<{
+    nama: string;
+    sebelumnya: Reminder[];
+    lanjut: (grup: string | null) => void;
+  } | null>(null);
 
   // Filters - extended with team handler & category
   const [filterStatus, setFilterStatus]     = useState<Status | 'all'>('all');
@@ -473,7 +491,35 @@ function ReminderSchedulePageInner() {
     await fetchRemindersQuiet();
   }
 
-  const handleSave = async () => {
+  /**
+   * Jadwal kategori insentif yang sudah ada untuk nama proyek ini.
+   *
+   * Dibaca dari daftar yang SUDAH termuat, bukan kueri baru - halaman ini
+   * memang sudah memegang seluruh reminder yang boleh dilihat pengguna, dan
+   * satu permintaan tambahan tiap kali orang menekan Simpan adalah pemborosan
+   * yang tidak perlu.
+   */
+  const cariProyekSerupa = (nama: string, kategori: string): Reminder[] => {
+    if (!(INCENTIVE_CATEGORIES as readonly string[]).includes(kategori)) return [];
+    const n = normalkanNama(nama);
+    if (!n) return [];
+    return reminders.filter(r =>
+      normalkanNama(r.project_name) === n
+      && (INCENTIVE_CATEGORIES as readonly string[]).includes(r.category)
+      && r.status !== 'cancelled');
+  };
+
+  const handleSave = async (argGrup?: string | null) => {
+    /*
+      Hanya string atau null yang diterima sebagai penanda kelompok.
+
+      Fungsi ini dipasang sebagai onSubmit, dan onSubmit dipanggil tanpa
+      argumen - tapi cukup seseorang kelak menyambungkannya ke onClick, dan
+      objek MouseEvent akan masuk ke sini lalu tertulis ke kolom yang
+      menentukan pembagian uang. Penyaring ini murah; kekeliruannya tidak.
+    */
+    const grupInsentif = (typeof argGrup === 'string' || argGrup === null) ? argGrup : undefined;
+
     if (!formData.project_name.trim())            { notify('error', 'Nama project wajib diisi!');  return; }
     if (bulkTarget === 'none' && !formData.assigned_to) { notify('error', 'Pilih anggota team!'); return; }
     if (!formData.due_date)                { notify('error', 'Tanggal wajib diisi!');          return; }
@@ -496,6 +542,24 @@ function ReminderSchedulePageInner() {
     // baris itu tetap bekerja lewat nama, persis seperti sebelum perubahan ini.
     const semuaOrang = [...guestUsers, ...teamUsers];
     const salesUserId = idDariNama(semuaOrang, formData.sales_name);
+
+    /*
+      Sebelum membuat jadwal baru: kalau proyek dengan nama sama sudah punya
+      jadwal kategori insentif, tanyakan hubungannya. Pertanyaannya muncul
+      SEKALI - grupInsentif yang sudah terisi (atau dijawab "terpisah") membuat
+      alur ini lanjut tanpa bertanya lagi.
+    */
+    if (!editingReminder && grupInsentif === undefined) {
+      const serupa = cariProyekSerupa(formData.project_name, formData.category);
+      if (serupa.length > 0) {
+        setTanyaLanjutan({
+          nama: formData.project_name.trim(),
+          sebelumnya: serupa,
+          lanjut: (grup) => { setTanyaLanjutan(null); void handleSave(grup); },
+        });
+        return;
+      }
+    }
 
     // Multi-tanggal: satu pengiriman untuk beberapa hari sekaligus. Berlaku
     // saat MEMBUAT maupun MENYUNTING - lihat rekonsiliasi tanggal di bawah.
@@ -678,6 +742,9 @@ function ReminderSchedulePageInner() {
         due_date: d,
         ...progressTimelinePayload(),
         batch_id: batchId,
+        // Hanya ditulis bila memang dijawab "kelanjutan" - kolomnya boleh NULL,
+        // dan NULL di sini berarti "berdiri sendiri", bukan "belum tahu".
+        ...(grupInsentif ? { incentive_group_id: grupInsentif } : {}),
         assign_name: assignee?.full_name ?? formData.assigned_to,
         sales_user_id: salesUserId,
         assign_user_id: assignee?.id ?? null,
@@ -2744,6 +2811,68 @@ jangan lupa peralatan & Semangat💪🏼
       </ModalPortal>
       )}
 
+      {/*
+        Pertanyaan kelanjutan proyek. Bukan peringatan yang bisa diabaikan:
+        keduanya pilihan yang sah, dan platform tidak punya dasar untuk memilih
+        sendiri. Yang salah bukan "membuat dua jadwal" - itu wajar - melainkan
+        membiarkan hubungannya tidak dinyatakan.
+      */}
+      {tanyaLanjutan && (
+        <ModalPortal>
+          <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1100] flex items-center justify-center p-4"
+            style={{ background: 'rgba(15,23,42,0.55)' }}>
+            <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden">
+              <div className="px-5 py-3.5" style={{ background: '#0891b2', color: '#fff' }}>
+                <h3 className="font-bold text-base">Proyek ini sudah punya jadwal</h3>
+              </div>
+              <div className="p-5 space-y-3 text-[13px] leading-relaxed">
+                <p className="font-bold text-slate-800">{tanyaLanjutan.nama}</p>
+                <div className="rounded-lg bg-slate-50 border border-slate-200 divide-y divide-slate-200 max-h-40 overflow-y-auto">
+                  {tanyaLanjutan.sebelumnya.slice(0, 6).map(r => (
+                    <div key={r.id} className="px-3 py-2 flex justify-between gap-3">
+                      <span className="text-slate-700">{r.category}</span>
+                      <span className="text-slate-500 text-right">{r.assign_name || '-'} · {formatDate(r.due_date)}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-slate-700">Jadwal yang sedang dibuat ini bagian dari proyek yang sama, atau pekerjaan terpisah?</p>
+                <p className="text-[11.5px] text-slate-500">
+                  Kalau satu proyek, keduanya dihitung <b>satu pool insentif</b>. Kalau terpisah,
+                  masing-masing punya poolnya sendiri — pilih ini untuk kontrak yang berbeda.
+                </p>
+              </div>
+              <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row justify-end gap-2">
+                <button onClick={() => setTanyaLanjutan(null)}
+                  className="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 bg-white border border-slate-300 hover:bg-slate-100">
+                  Batal
+                </button>
+                <button onClick={() => tanyaLanjutan.lanjut(null)}
+                  className="px-4 py-2 rounded-lg text-sm font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50">
+                  Pekerjaan terpisah
+                </button>
+                <button onClick={() => {
+                    // Pakai kelompok yang sudah ada bila jadwal sebelumnya sudah
+                    // pernah digabungkan - kalau tidak, proyek yang sama akan
+                    // terpecah jadi dua kelompok berbeda.
+                    const adaGrup = tanyaLanjutan.sebelumnya.find(r => r.incentive_group_id)?.incentive_group_id;
+                    const grup = adaGrup ?? crypto.randomUUID();
+                    if (!adaGrup) {
+                      // Jadwal lama ikut ditandai, kalau tidak ia tetap berdiri sendiri.
+                      const idLama = tanyaLanjutan.sebelumnya.map(r => r.id);
+                      void supabase.from('reminders').update({ incentive_group_id: grup }).in('id', idLama);
+                    }
+                    tanyaLanjutan.lanjut(grup);
+                  }}
+                  className="px-4 py-2 rounded-lg text-sm font-bold text-white"
+                  style={{ background: '#0891b2' }}>
+                  Satu proyek yang sama
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
       {showFormModal && (
         <ReminderFormModal
           editingReminder={editingReminder}
@@ -2757,7 +2886,7 @@ jangan lupa peralatan & Semangat💪🏼
           extraDates={extraDates}
           onExtraDatesChange={setExtraDates}
           onClose={() => { setShowFormModal(false); setEditingReminder(null); setFormData(emptyForm); setBulkTarget('none'); setExtraDates([]); }}
-          onSubmit={handleSave}
+          onSubmit={() => handleSave()}
           supervisorUsers={(isAdmin || isManager) ? teamUsers.filter(u => u.jabatan === 'Supervisor') : []}
           canAssignSelf={isAdmin || isManager}
           selfUser={currentUser ? { username: currentUser.username, full_name: currentUser.full_name } : null}

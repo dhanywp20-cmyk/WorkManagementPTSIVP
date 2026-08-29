@@ -149,22 +149,30 @@ model satunya — yang berhasil tetap bisa disimpan.
 
     node uji/banding-model.mjs
 
-## gabung-batch.ts
+## kelompok-insentif.ts
 
-Satu jadwal multi-tanggal = satu proyek insentif. Jadwal 5 hari berturut-turut
-tersimpan sebagai lima baris reminder yang diikat `batch_id`; tanpa penggabungan
-ini satu pekerjaan Konfigurasi 2 hari terhitung DUA proyek di Incentive, dan
-karena tiap proyek punya pool nominalnya sendiri, insentifnya ikut terhitung dua
-kali.
+Kapan beberapa jadwal dihitung SATU proyek insentif — menggantikan
+`gabung-batch.ts` yang cakupannya kini termuat seluruhnya di sini.
 
-Yang paling dijaga justru arah sebaliknya: satu batch bisa berisi lebih dari
-satu penangan (form jadwal mengalikan daftar orang dengan daftar tanggal), dan
-menggabung hanya per batch akan menjatuhkan penangan kedua — di layar insentif
-itu berarti seseorang kehilangan haknya tanpa ada yang menyadarinya.
+Dua sebab jadwal terbelah, keduanya sah: `batch_id` (satu pengiriman form untuk
+beberapa hari) dan `incentive_group_id` (jadwal terpisah yang ternyata satu
+proyek — Konfigurasi Senin, Training tiga hari kemudian). Tanpa penggabungan,
+tiap pecahan punya pool nominalnya sendiri dan insentifnya terhitung berkali.
 
-Ikut dijaga: yang dipertahankan adalah tanggal TERAKHIR (itu yang menentukan
-jendela tahun insentif dan cocok dengan tanggal BAST), baris tanpa `batch_id`
-tidak saling menelan, dan urutan masukan tidak mengubah hasil.
+Yang paling dijaga adalah hal-hal yang TIDAK boleh terjadi:
 
-    npx tsx uji/gabung-batch.ts
+- satu batch berisi dua penangan tidak boleh melipat jadi satu — di layar
+  insentif itu berarti seseorang kehilangan haknya tanpa ada yang menyadarinya;
+- dua kontrak untuk klien yang sama (BAST berbeda) tidak boleh terdeteksi
+  sebagai kandidat;
+- dua proyek berbeda yang kebetulan serah-terima di hari sama juga tidak;
+- mendeteksi tidak boleh mengubah data apa pun — ia hanya menandai;
+- menggabungkan harus menandai SELURUH baris tiap jadwal, bukan wakilnya saja,
+  kalau tidak duplikatnya muncul lagi saat daftar dimuat ulang.
+
+Lapis pencegahannya (pertanyaan "kelanjutan atau terpisah?" saat jadwal dibuat)
+memakai fungsi yang sama, jadi layar dan basis data tidak bisa menyimpang
+diam-diam soal aturan yang menentukan uang.
+
+    npx tsx uji/kelompok-insentif.ts
 

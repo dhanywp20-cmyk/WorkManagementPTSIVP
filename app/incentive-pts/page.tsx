@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import {
   IncentiveProjectRow, IncentiveTranche, IncentiveSplit, LateTicketLink,
   fetchIncentiveProjects, fetchTranches, fetchVisibleSplits, fetchSupportFromTickets, jendelaSupportTahap, fetchLateTickets,
+  deteksiKandidatGabung, satukanProyek, type KandidatGabung,
   setProyekDikeluarkan, tahapanSudahJalan,
   insertTranches, insertSplits, processYearlyBatch,
   calculateIncentiveSplits, validateSplitTotal, generateTranches, findUpline, resolveUserId, OrgUser,
@@ -222,6 +223,46 @@ export default function IncentivePTSPage() {
     dan Request Schedule punya tombol untuk mengembalikannya.
   */
   const bolehHapus = bolehKelolaIncentive(currentUser as never);
+
+  /*
+    Deteksi jadwal yang KEMUNGKINAN satu proyek - dan berhenti di situ.
+
+    Satu proyek sering dikerjakan lewat beberapa jadwal: Konfigurasi Senin,
+    Training tiga hari kemudian. Keduanya jadwal berbeda dengan kategori
+    berbeda, jadi terbaca sebagai DUA proyek dengan dua pool nominal.
+
+    Yang TIDAK dilakukan: menggabungkannya sendiri. "BPKP Aceh" dan "BPKP Aceh
+    Tahap 2" bisa jadi dua kontrak, dan penggabungan otomatis yang keliru tidak
+    terlihat siapa pun - insentif seseorang berkurang tanpa ada yang tahu.
+    Duplikat yang dibiarkan justru cepat ketahuan, seperti yang sudah terjadi.
+    Untuk data uang, kesalahan yang terlihat lebih baik daripada yang
+    tersembunyi. Jadi platform menandai, orang yang memutuskan.
+
+    Penandanya tanggal BAST, bukan kemiripan nama - lihat lib/kelompok-insentif.ts.
+  */
+  const kandidatGabung = useMemo(() => deteksiKandidatGabung(projects), [projects]);
+  const [konfirmGabung, setKonfirmGabung] = useState<KandidatGabung | null>(null);
+  const [menggabung, setMenggabung] = useState(false);
+
+  async function jalankanGabung() {
+    if (!konfirmGabung) return;
+    setMenggabung(true);
+    const { error } = await satukanProyek(konfirmGabung.anggota);
+    setMenggabung(false);
+    if (error) { notify('error', 'Gagal menggabungkan: ' + error.message); return; }
+    void logAudit({
+      user_id: (currentUser?.id as string) ?? '', user_name: (currentUser?.full_name as string) ?? '',
+      module: 'incentive-pts', action: 'update',
+      target_id: konfirmGabung.anggota[0].id, target_name: konfirmGabung.nama,
+      old_value: `${konfirmGabung.anggota.length} proyek terpisah`,
+      new_value: '1 proyek insentif',
+      notes: `Digabungkan lewat tombol Gabungkan · BAST ${konfirmGabung.bast_date} · kategori: `
+        + konfirmGabung.anggota.map(a => a.category ?? '-').join(', '),
+    });
+    setKonfirmGabung(null);
+    notify('success', `"${konfirmGabung.nama}" kini dihitung sebagai satu proyek.`);
+    await loadAll();
+  }
   const [pilihHapus, setPilihHapus] = useState<Set<string>>(new Set());
   const [konfirmHapus, setKonfirmHapus] = useState<IncentiveProjectRow[] | null>(null);
   const [menghapus, setMenghapus] = useState(false);
@@ -573,6 +614,48 @@ export default function IncentivePTSPage() {
                   )}
                 </div>
               </div>
+
+              {/*
+                Spanduk kandidat gabung. Hanya muncul kalau ada yang terdeteksi,
+                dan hanya untuk yang boleh mengelola insentif.
+
+                Diletakkan di ATAS daftar, bukan sebagai lencana kecil di baris
+                proyeknya: yang perlu diketahui adalah bahwa dua baris berbeda
+                sebenarnya satu, dan itu tidak bisa disampaikan dari dalam salah
+                satu barisnya saja.
+              */}
+              {bolehHapus && kandidatGabung.length > 0 && (
+                <div className="mb-3 rounded-xl border border-amber-300 bg-amber-50 overflow-hidden">
+                  <div className="px-4 py-2.5 border-b border-amber-200">
+                    <p className="text-[13px] font-bold text-amber-900">
+                      {kandidatGabung.length} proyek terdeteksi tercatat lebih dari sekali
+                    </p>
+                    <p className="text-[11px] text-amber-800 leading-relaxed mt-0.5">
+                      Nama proyek dan tanggal BAST-nya sama, tapi jadwalnya terpisah — biasanya
+                      Konfigurasi dan Training yang dijadwalkan di hari berbeda. Selama belum
+                      digabungkan, masing-masing punya pool nominal sendiri.
+                      <b> Periksa dulu:</b> kalau ini memang dua kontrak berbeda, biarkan terpisah.
+                    </p>
+                  </div>
+                  <div className="divide-y divide-amber-200">
+                    {kandidatGabung.map((k, i) => (
+                      <div key={i} className="px-4 py-2.5 flex items-center gap-3 flex-wrap">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[13px] font-bold text-slate-800 truncate">{k.nama}</p>
+                          <p className="text-[11px] text-slate-600">
+                            BAST {k.bast_date} · {k.anggota.length} jadwal ·{' '}
+                            {k.anggota.map(a => `${a.category ?? '-'} (${a.assign_name ?? '-'})`).join(' + ')}
+                          </p>
+                        </div>
+                        <button type="button" onClick={() => setKonfirmGabung(k)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 flex-shrink-0">
+                          Gabungkan
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <p className="text-xs text-gray-400">
                 <span className="font-bold text-gray-600">{filteredProjects.length}</span> project
                 {canInputNominal(currentUser) && (<>
@@ -1372,6 +1455,59 @@ export default function IncentivePTSPage() {
           akibatnya, dan pada layar yang menyangkut nominal, menebak adalah
           hal yang paling ingin dihindari. Nama proyeknya ikut ditulis satu
           per satu supaya salah pilih ketahuan sebelum tombolnya ditekan. */}
+      {/*
+        Konfirmasi gabung. Menyebut akibatnya pada UANG, bukan cuma "yakin?".
+        Yang berubah bukan tampilan: dua pool jadi satu, dan penangan jadwal
+        kedua berpindah dari PIC ke Support - itu keputusan yang harus dibaca
+        sebelum ditekan, bukan sesudahnya.
+      */}
+      {konfirmGabung && (
+        <ModalPortal>
+          <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+            style={{ background: 'rgba(15,23,42,0.55)' }} onClick={() => !menggabung && setKonfirmGabung(null)}>
+            <div onClick={e => e.stopPropagation()}
+              className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden">
+              <div className="px-5 py-3.5 bg-amber-600 text-white">
+                <h3 className="font-bold text-base">Gabungkan jadi satu proyek?</h3>
+              </div>
+              <div className="p-5 space-y-3 text-[13px] leading-relaxed">
+                <p className="font-bold text-slate-800">{konfirmGabung.nama}</p>
+                <div className="rounded-lg bg-slate-50 border border-slate-200 divide-y divide-slate-200">
+                  {konfirmGabung.anggota.map((a, i) => (
+                    <div key={i} className="px-3 py-2 flex justify-between gap-3">
+                      <span className="text-slate-700">{a.category ?? '-'}</span>
+                      <span className="text-slate-500 text-right">{a.assign_name ?? '-'} · {a.due_date}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-slate-700">
+                  Setelah digabung, keduanya dihitung <b>satu proyek dengan satu pool nominal</b>.
+                </p>
+                <p className="text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  Bila penangannya berbeda, yang satu menjadi <b>PIC</b> dan yang lain masuk sebagai{' '}
+                  <b>Support</b> — bagiannya mengecil, tapi tidak hilang. Yang hilang adalah pool
+                  kedua yang memang seharusnya tidak ada.
+                </p>
+                <p className="text-slate-500 text-[12px]">
+                  Kalau ini sebenarnya dua kontrak berbeda, tekan Batal dan biarkan terpisah.
+                </p>
+              </div>
+              <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+                <button onClick={() => setKonfirmGabung(null)} disabled={menggabung}
+                  className="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 disabled:opacity-50">
+                  Batal
+                </button>
+                <button onClick={jalankanGabung} disabled={menggabung}
+                  className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-60 flex items-center gap-2">
+                  {menggabung && <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                  Ya, Gabungkan
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
       {konfirmHapus && (
       <ModalPortal>
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"

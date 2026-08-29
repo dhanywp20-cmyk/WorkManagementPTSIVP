@@ -65,6 +65,15 @@ export interface Reminder {
   incentive_excluded?: boolean | null;
   product_type?: string; // tipe produk utk routing pipeline (dipilih saat request)
   batch_id?: string | null; // grup reminder yang dibuat sekaligus dari 1 submission multi-tanggal
+  /**
+   * Beberapa JADWAL TERPISAH yang ternyata satu proyek insentif - mis.
+   * Konfigurasi Senin dan Training tiga hari kemudian. Berbeda dari batch_id,
+   * yang hanya mengikat baris dari satu pengiriman form.
+   *
+   * NULL berarti "berdiri sendiri", bukan "belum tahu". Hanya diisi oleh
+   * keputusan manusia; lihat lib/kelompok-insentif.ts.
+   */
+  incentive_group_id?: string | null;
   routing_status?: string | null;      // 'internal_review' | 'admin_review' | 'supervisor_assign' | null (lama)
   internal_sales_id?: string | null;   // Sales Internal reviewer utama / reviewer MVI saat brand BOTH
   internal_approved_by?: string | null;

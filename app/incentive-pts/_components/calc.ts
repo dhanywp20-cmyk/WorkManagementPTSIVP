@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { gabungkanProyek } from '@/lib/kelompok-insentif';
 import {
   SkemaInsentif, PenerimaPeran, hitungPembagian, hitungManagerSebagaiPic, ambilSkema,
   persenInstaller, bagikanTepat, labelSkema, INCENTIVE_CATEGORIES,
@@ -28,6 +29,12 @@ export interface IncentiveProjectRow {
    * Lihat gabungkanPerBatch().
    */
   batch_id?: string | null;
+  /**
+   * Beberapa jadwal terpisah yang merupakan SATU proyek (mis. Konfigurasi
+   * Senin + Training tiga hari kemudian). Hanya diisi lewat keputusan manusia -
+   * lihat lib/kelompok-insentif.ts dan sql/incentive-kelompok-proyek.sql.
+   */
+  incentive_group_id?: string | null;
   pic_type: 'standard' | 'manager_pic';
   pic_id: string | null;
   domain_owner: string | null;
@@ -370,48 +377,60 @@ let kolomKeluarkanAda: boolean | null = null;
  * Bila kolomnya memang belum ada, daftarnya tetap tampil utuh - hanya fitur
  * "keluarkan" yang belum berfungsi, dan itu memang belum dipasang.
  */
-/**
- * Satu jadwal multi-tanggal = SATU proyek insentif.
- *
- * Jadwal 5 hari berturut-turut tersimpan sebagai lima baris reminder (satu per
- * tanggal) yang diikat batch_id. Tanpa penggabungan ini, satu pekerjaan
- * Konfigurasi 2 hari muncul sebagai DUA proyek di Incentive - dan karena tiap
- * proyek punya pool nominalnya sendiri, itu berarti insentifnya terhitung dua
- * kali. Bukan tampilan yang keliru: uangnya yang keliru.
- *
- * Yang dipertahankan adalah baris dengan due_date PALING AKHIR. Untuk pekerjaan
- * berhari-hari, tanggal selesai itulah yang menentukan jendela tahun insentif
- * dan yang cocok dengan tanggal BAST - bukan hari pertama tim berangkat.
- *
- * Baris tanpa batch_id dibiarkan apa adanya: ia memang jadwal sehari.
- */
-export function gabungkanPerBatch<T extends {
-  id: string; batch_id?: string | null; due_date?: string | null; assigned_to?: string | null;
-}>(baris: T[]): T[] {
-  const terpilih = new Map<string, T>();
-  const hasil: T[] = [];
-  for (const r of baris) {
-    if (!r.batch_id) { hasil.push(r); continue; }
-    /*
-      Kuncinya batch + PENANGAN, bukan batch saja.
+/*
+  Penggabungan jadwal jadi satu proyek insentif pindah ke lib/kelompok-insentif.ts.
 
-      Satu batch bisa berisi lebih dari satu orang: form jadwal mengalikan
-      daftar orang dengan daftar tanggal, dan seluruh hasilnya memakai batch_id
-      yang sama. Menggabung hanya per batch akan menjatuhkan penangan kedua -
-      dan di layar insentif itu berarti seseorang kehilangan haknya tanpa ada
-      yang menyadarinya. Yang perlu dilipat cuma hari-harinya.
-    */
-    const kunci = `${r.batch_id}::${r.assigned_to ?? ''}`;
-    const ada = terpilih.get(kunci);
-    if (!ada) { terpilih.set(kunci, r); continue; }
-    // Tanggal terakhir menang; kalau seri, id yang stabil supaya urutannya
-    // tidak berubah-ubah antar pemuatan.
-    const lebihBaru = (r.due_date ?? '') > (ada.due_date ?? '')
-      || ((r.due_date ?? '') === (ada.due_date ?? '') && r.id < ada.id);
-    if (lebihBaru) terpilih.set(kunci, r);
+  Sebabnya bukan kerapian: aturannya kini dipakai DUA layar - daftar insentif di
+  sini dan pertanyaan "kelanjutan atau terpisah?" saat jadwal dibuat. Dua salinan
+  aturan uang yang bisa menyimpang diam-diam adalah cara paling mudah membuat
+  layar dan basis data tidak sepakat.
+*/
+export { gabungkanProyek, deteksiKandidatGabung, idUntukDigabung } from '@/lib/kelompok-insentif';
+export type { KandidatGabung } from '@/lib/kelompok-insentif';
+
+/**
+ * Satukan beberapa jadwal jadi satu proyek insentif. Dipanggil tombol
+ * "Gabungkan" - tidak pernah otomatis.
+ *
+ * Yang ditandai BUKAN hanya baris wakilnya. Jadwal 5 hari diwakili satu baris
+ * di layar, tapi kelimanya harus ikut - kalau tidak, empat sisanya tetap
+ * berdiri sendiri dan proyeknya muncul lagi sebagai duplikat begitu daftar
+ * dimuat ulang.
+ *
+ * Penandaannya lewat batch_id, bukan dengan mengambil dulu seluruh barisnya:
+ * satu perintah update per batch, tanpa satu pun pembacaan tambahan.
+ */
+export async function satukanProyek(
+  anggota: { id: string; batch_id?: string | null }[],
+): Promise<{ error: { message: string } | null; grup: string }> {
+  const grup = crypto.randomUUID();
+  const batchIds = [...new Set(anggota.map(a => a.batch_id).filter(Boolean))] as string[];
+  const idLepas = anggota.filter(a => !a.batch_id).map(a => a.id);
+
+  const hasil: { error: { message: string } | null }[] = [];
+  if (batchIds.length > 0) {
+    hasil.push(await supabase.from('reminders')
+      .update({ incentive_group_id: grup }).in('batch_id', batchIds));
   }
-  return [...hasil, ...terpilih.values()]
-    .sort((a, b) => (b.due_date ?? '').localeCompare(a.due_date ?? ''));
+  if (idLepas.length > 0) {
+    hasil.push(await supabase.from('reminders')
+      .update({ incentive_group_id: grup }).in('id', idLepas));
+  }
+  const gagal = hasil.find(r => r.error)?.error ?? null;
+  return { error: gagal, grup };
+}
+
+/**
+ * Batalkan penggabungan.
+ *
+ * Ada karena keputusan soal uang harus bisa dicabut. Menggabungkan dua proyek
+ * yang ternyata memang terpisah akan menghilangkan satu pool - dan tanpa jalan
+ * kembali, satu-satunya cara membetulkannya adalah menyunting basis data
+ * langsung.
+ */
+export async function pisahkanProyek(grup: string) {
+  return await supabase.from('reminders')
+    .update({ incentive_group_id: null }).eq('incentive_group_id', grup);
 }
 
 export async function fetchIncentiveProjects() {
@@ -429,7 +448,7 @@ export async function fetchIncentiveProjects() {
     const r = await dasar().not('incentive_excluded', 'is', true);
     if (!r.error) {
       kolomKeluarkanAda = true;
-      return { data: gabungkanPerBatch((r.data || []) as IncentiveProjectRow[]), error: r.error };
+      return { data: gabungkanProyek((r.data || []) as IncentiveProjectRow[]), error: r.error };
     }
     if (!/does not exist/i.test(r.error.message)) {
       // Galat lain - jangan disembunyikan di balik percobaan kedua.
@@ -442,7 +461,7 @@ export async function fetchIncentiveProjects() {
   }
 
   const r2 = await dasar();
-  return { data: gabungkanPerBatch((r2.data || []) as IncentiveProjectRow[]), error: r2.error };
+  return { data: gabungkanProyek((r2.data || []) as IncentiveProjectRow[]), error: r2.error };
 }
 
 /**
