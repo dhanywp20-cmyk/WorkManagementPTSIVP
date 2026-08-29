@@ -72,7 +72,7 @@ export function hitungPeringkat(
 
 export async function ambilPeringkatSaya(): Promise<HasilPeringkat | null> {
   try {
-    const res = await fetch('/api/learning-center/rank');
+    const res = await fetch('/api/learning-center/rank', { credentials: 'include' });
     if (!res.ok) return null;
     return (await res.json()) as HasilPeringkat;
   } catch {

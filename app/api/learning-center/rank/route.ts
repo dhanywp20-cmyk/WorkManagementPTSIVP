@@ -36,18 +36,36 @@ export async function GET(request: NextRequest) {
 
   const supabase = getAdminClient();
 
-  const { data: rows, error } = await supabase
-    .from('lc_quiz_attempts')
-    .select('user_id, score, grading_status, users(role, sales_division)')
-    .eq('is_submitted', true);
+  /*
+    TANPA embed users(...) - dua kueri terpisah, digabung di JS.
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    Embed (`.select('user_id, score, ..., users(role, sales_division)')`)
+    bergantung pada PostgREST BERHASIL mengenali relasi FK dari
+    lc_quiz_attempts.user_id ke users.id. Di basis data ini relasi itu TIDAK
+    selalu terbaca - kolomnya ada yang sekadar uuid/text tanpa constraint
+    REFERENCES sungguhan (lihat catatan sql/kunci-tabel-lanjutan-2.sql).
+    Saat embed gagal, PostgREST tidak melempar error - ia hanya mengembalikan
+    `users: null` untuk SETIAP baris, lalu `hitungPeringkat` membuang semuanya
+    lewat penyaring `!a.role`, dan peringkat SIAPA PUN jadi kosong tanpa
+    pesan galat apa pun. AdminDashboard.tsx sudah pernah menabrak masalah yang
+    sama persis dan menghindarinya dengan cara ini - polanya disalin dari sana.
+  */
+  const [attRes, usersRes] = await Promise.all([
+    supabase.from('lc_quiz_attempts').select('user_id, score, grading_status').eq('is_submitted', true),
+    supabase.from('users').select('id, role, sales_division'),
+  ]);
 
-  type Penerima = { role: string | null; sales_division: string | null } | { role: string | null; sales_division: string | null }[] | null;
-  type Baris = { user_id: string; score: number | null; grading_status: string | null; users: Penerima };
+  if (attRes.error) return NextResponse.json({ error: attRes.error.message }, { status: 400 });
+  if (usersRes.error) return NextResponse.json({ error: usersRes.error.message }, { status: 400 });
 
-  const diratakan: BarisAttempt[] = ((rows ?? []) as Baris[]).map(a => {
-    const u = Array.isArray(a.users) ? a.users[0] : a.users;
+  const petaUser = new Map<string, { role: string | null; sales_division: string | null }>();
+  for (const u of (usersRes.data ?? []) as { id: string; role: string | null; sales_division: string | null }[]) {
+    petaUser.set(u.id, { role: u.role, sales_division: u.sales_division });
+  }
+
+  type Baris = { user_id: string; score: number | null; grading_status: string | null };
+  const diratakan: BarisAttempt[] = ((attRes.data ?? []) as Baris[]).map(a => {
+    const u = petaUser.get(a.user_id);
     return {
       user_id: a.user_id, score: a.score, grading_status: a.grading_status,
       role: u?.role ?? null, sales_division: u?.sales_division ?? null,
