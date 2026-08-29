@@ -118,6 +118,8 @@ export default function IncentivePTSPage() {
 
   const [nominalProject, setNominalProject] = useState<IncentiveProjectRow | null>(null);
   const [nominalValue, setNominalValue] = useState('');
+  //  BAST bisa dibetulkan dari modal ini - lihat alasannya di modalnya.
+  const [nominalBast, setNominalBast] = useState('');
   const [savingNominal, setSavingNominal] = useState(false);
 
   const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -371,18 +373,43 @@ export default function IncentivePTSPage() {
       return;
     }
 
-    const { error } = await supabase.from('reminders').update({
+    /*
+      BAST ikut disimpan bila diubah - dan ke SELURUH baris sebatch, sama
+      seperti alur penyelesaian di Reminder Schedule. Jadwal berhari-hari
+      tersimpan sebagai beberapa baris; menulis ke satu baris saja meninggalkan
+      sisanya tanpa BAST, dan wakil proyek yang dipilih layar ini (tanggal
+      paling akhir) belum tentu baris yang barusan diperbaiki.
+    */
+    const bastBerubah = (nominalProject.bast_date ?? '') !== nominalBast;
+    const isiSimpan: Record<string, unknown> = {
       incentive_value: Number(nominalValue),
       updated_at: new Date().toISOString(),
-    }).eq('id', nominalProject.id);
+    };
+    if (bastBerubah) isiSimpan.bast_date = nominalBast || null;
+
+    const { error } = await (nominalProject.batch_id
+      ? supabase.from('reminders').update(isiSimpan).eq('batch_id', nominalProject.batch_id)
+      : supabase.from('reminders').update(isiSimpan).eq('id', nominalProject.id));
     if (error) { notify('error', 'Gagal: ' + error.message); setSavingNominal(false); return; }
-    notify('success', `Nominal ${formatRupiah(Number(nominalValue))} berhasil disimpan!`);
-    setSavingNominal(false); setNominalProject(null); setNominalValue('');
+
+    if (bastBerubah) {
+      logAudit({
+        user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
+        action: 'update', module: 'incentive',
+        target_id: nominalProject.id, target_name: nominalProject.project_name,
+        old_value: nominalProject.bast_date ?? '(kosong)', new_value: nominalBast || '(kosong)',
+        notes: 'Tanggal BAST dibetulkan dari layar Incentive',
+      }).catch(() => {});
+    }
+    notify('success', bastBerubah
+      ? `Nominal ${formatRupiah(Number(nominalValue))} & tanggal BAST tersimpan!`
+      : `Nominal ${formatRupiah(Number(nominalValue))} berhasil disimpan!`);
+    setSavingNominal(false); setNominalProject(null); setNominalValue(''); setNominalBast('');
     loadAll();
   }
 
   async function handleGenerateTranches() {
-    if (!generateProject?.bast_date) { notify('error', 'BAST belum ada — isi saat Handler klik Completed di Reminder Schedule!'); return; }
+    if (!generateProject?.bast_date) { notify('error', 'BAST belum ada — isi lewat tombol 💲 Input Nominal pada proyek ini.'); return; }
     setGenerating(true);
 
     /*
@@ -847,7 +874,7 @@ export default function IncentivePTSPage() {
                       </button>
                       {showNominal && (
                         <button aria-label="Input Nominal" disabled={tranches.some(t => t.project_id === p.id)}
-                        onClick={() => { setNominalProject(p); setNominalValue(String(p.incentive_value || '')); }}
+                        onClick={() => { setNominalProject(p); setNominalValue(String(p.incentive_value || '')); setNominalBast((p.bast_date ?? '').slice(0, 10)); }}
                         title={tranches.some(t => t.project_id === p.id) ? 'Nominal terkunci — tahapan pencairan sudah dibuat' : 'Input Nominal'}
                         className="inline-flex items-center justify-center w-7 h-7 rounded-lg border bg-white border-slate-200 text-rose-500 hover:bg-rose-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white">
                           <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -990,7 +1017,7 @@ export default function IncentivePTSPage() {
                               <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                             </button>
                             {canInputNominal(currentUser) && (
-                              <button aria-label="Input Nominal" onClick={() => { setNominalProject(p); setNominalValue(String(p.incentive_value || '')); }}
+                              <button aria-label="Input Nominal" onClick={() => { setNominalProject(p); setNominalValue(String(p.incentive_value || '')); setNominalBast((p.bast_date ?? '').slice(0, 10)); }}
                                 title="Input Nominal"
                                 className="inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all bg-white border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-300 hover:shadow-sm">
                                 <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -1294,15 +1321,36 @@ export default function IncentivePTSPage() {
               <p className="text-xs text-rose-200 mt-0.5 truncate">{nominalProject.project_name}</p>
             </div>
             <div className="p-5 space-y-4">
-              {/* BAST — auto from reminder */}
-              <div className="flex items-start justify-between gap-3 px-4 py-3 rounded-xl bg-gray-50 border border-gray-200">
-                <div>
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-0.5">Tanggal BAST</p>
+              {/*
+                BAST - terisi otomatis saat Handler klik Completed, TAPI tetap
+                bisa dibetulkan di sini.
+
+                Alasannya bukan kelengkapan fitur: status Completed sengaja
+                dikunci di Reminder Schedule ("tidak dapat diubah kembali"), dan
+                formulir Edit-nya tidak punya input BAST sama sekali. Jadi
+                begitu sebuah proyek terlanjur selesai tanpa BAST - mis. jadwal
+                multi-tanggal yang BAST-nya menempel di baris lain, atau jadwal
+                lama dari sebelum modal penyelesaian ada - tidak ada satu pun
+                jalan di layar untuk membetulkannya, dan tombol Generate Tahapan
+                tidak akan pernah muncul karena syaratnya adalah adanya BAST.
+                Satu-satunya jalan keluar tersisa adalah menyunting basis data
+                langsung, dan itu bukan sesuatu yang boleh jadi prosedur normal
+                untuk data yang menentukan pembayaran.
+              */}
+              <div className="px-4 py-3 rounded-xl bg-gray-50 border border-gray-200">
+                <div className="flex items-center justify-between gap-3 mb-1.5">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Tanggal BAST</p>
                   {nominalProject.bast_date
-                    ? <p className="text-sm font-semibold text-gray-800">{new Date(nominalProject.bast_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
-                    : <p className="text-xs text-amber-600 italic">Belum ada — diisi saat Handler klik Completed di Reminder Schedule</p>}
+                    ? <span className="flex-shrink-0 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">Auto ✓</span>
+                    : <span className="flex-shrink-0 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200">Perlu diisi</span>}
                 </div>
-                {nominalProject.bast_date && <span className="flex-shrink-0 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">Auto ✓</span>}
+                <input type="date" value={nominalBast} onChange={e => setNominalBast(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-rose-400" />
+                <p className="text-[11px] text-gray-400 mt-1.5">
+                  {nominalBast
+                    ? <>Tahapan akan jatuh di {new Date(nominalBast).getFullYear() + 1} · {new Date(nominalBast).getFullYear() + 2} · {new Date(nominalBast).getFullYear() + 3}</>
+                    : 'Biasanya terisi sendiri saat Handler klik Completed. Isi di sini kalau kosong — tanpa BAST, tahapan pencairan tidak bisa dibuat.'}
+                </p>
               </div>
 
               {/* Mode info */}
@@ -1340,7 +1388,7 @@ export default function IncentivePTSPage() {
               </div>
             </div>
             <div className="flex gap-3 px-5 pb-5">
-              <button onClick={() => { setNominalProject(null); setNominalValue(''); }} className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-gray-500 border border-gray-200 hover:bg-gray-50">Batal</button>
+              <button onClick={() => { setNominalProject(null); setNominalValue(''); setNominalBast(''); }} className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-gray-500 border border-gray-200 hover:bg-gray-50">Batal</button>
               <button onClick={handleSaveNominal} disabled={savingNominal}
                 className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-50" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
                 {savingNominal && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}

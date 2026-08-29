@@ -5,6 +5,7 @@ import { supabase, User, fmtDate, ScoreBadge, SearchInput, GradingStatusBadge } 
 import { DonutChart } from '@/components/shared';
 import { UserAnswerReview } from './TeamPage';
 import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
+import { isSalesGuest } from '@/lib/constants';
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
@@ -69,6 +70,8 @@ export function ScorePage({ user }: { user: User }) {
   //  Satu sumber untuk semua role: papan dari server, nama peserta lain sudah
   //  disamarkan di sana.
   const papan      = peringkat?.papan ?? [];
+  //  Divisi = sales_division, jadi hanya bermakna untuk Sales/Guest.
+  const pakaiDivisi = isSalesGuest({ role: user.role });
   const myRank     = peringkat?.globalRank ?? 0;
   const rankTotal  = peringkat?.globalTotal ?? 0;
   const rankPct    = rankTotal > 0 && myRank > 0
@@ -166,7 +169,7 @@ export function ScorePage({ user }: { user: User }) {
             <div>
               <SectionHeader>🏆 Peringkat — {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Semua'}</SectionHeader>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <div className={`grid grid-cols-1 ${pakaiDivisi ? 'sm:grid-cols-2' : ''} gap-3 mb-3`}>
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4 text-center">
                   <div className="text-xl mb-0.5">🏆</div>
                   <div className="text-2xl font-black text-indigo-700">{myRank > 0 ? `#${myRank}` : '—'}</div>
@@ -174,6 +177,18 @@ export function ScorePage({ user }: { user: User }) {
                     {rankTotal ? `dari ${rankTotal} peserta ${user.role}` : 'Belum ada data'}
                   </p>
                 </div>
+                {/*
+                  Kartu Divisi HANYA untuk Sales/Guest.
+
+                  "Divisi" di sini adalah sales_division - pembagian wilayah
+                  penjualan. Anggota Team tidak punya dan tidak akan pernah
+                  punya, jadi menampilkan kartunya untuk mereka berarti sebuah
+                  kotak yang selamanya bertuliskan "Divisi belum diset di profil
+                  kamu": terbaca seperti data yang hilang atau profil yang salah
+                  isi, padahal tidak ada yang perlu diperbaiki. Peringkat
+                  globalnya sendiri sudah menjawab pertanyaan mereka.
+                */}
+                {pakaiDivisi && (
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4 text-center">
                   <div className="text-xl mb-0.5">🏢</div>
                   <div className="text-2xl font-black text-indigo-700">
@@ -185,6 +200,7 @@ export function ScorePage({ user }: { user: User }) {
                       : 'Divisi belum diset di profil kamu'}
                   </p>
                 </div>
+                )}
               </div>
 
               <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
