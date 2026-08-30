@@ -70,16 +70,17 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu }) => {
   const kosongSemua = myAction.length === 0 && today.length === 0 && upcoming.length === 0;
 
   if (kosongSemua) {
+    /*
+      Bilah TIPIS, bukan WidgetCard penuh (header ikon+judul+padding besar) -
+      satu kalimat tidak butuh bobot visual sebesar kartu berisi daftar.
+      "Tidak ada jadwal aktif" - bukan "No Data" polos, supaya jelas ini
+      artinya BERSIH (tidak ada tugas menumpuk), bukan data gagal dimuat.
+    */
     return (
-      <WidgetCard title="My Action" icon="🎯" accent="#16a34a">
-        {/*
-          "Tidak ada jadwal aktif" - bukan "No Data" polos, supaya jelas ini
-          artinya BERSIH (tidak ada tugas menumpuk), bukan data gagal dimuat.
-        */}
-        <div className="flex items-center gap-2 text-emerald-700 text-sm font-semibold py-2">
-          <span className="text-lg">🎉</span> Tidak ada tugas aktif yang butuh tindakan saat ini.
-        </div>
-      </WidgetCard>
+      <div className="flex items-center gap-2.5 rounded-xl bg-white/95 backdrop-blur-sm shadow-sm border border-black/5 px-4 py-3">
+        <span className="text-lg flex-shrink-0">🎉</span>
+        <span className="text-sm font-semibold text-emerald-700">Tidak ada tugas aktif yang butuh tindakan saat ini.</span>
+      </div>
     );
   }
 

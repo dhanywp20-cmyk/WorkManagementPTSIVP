@@ -71,26 +71,21 @@ export function Loading() {
 }
 
 /**
- * Pintasan membuat data baru dari dashboard.
- *
- * Ikon kirim yang sama dengan tombol Submit Form di tiap platform, supaya
- * jelas sejak dari dashboard bahwa tombol ini bermuara ke sebuah form - bukan
- * ke tabel.
+ * Chip aksi cepat - PROPORSIONAL: lebar mengikuti isi (bukan flex-1/grid
+ * yang dipaksa melebar), satu baris, ikon kecil. Dipakai flex-wrap supaya
+ * banyak chip merapat sendiri lalu membungkus wajar di layar sempit - beda
+ * dari pendekatan lama (grid tetap + tombol besar) yang membuang banyak
+ * ruang kosong dan tidak proporsional di antara tombolnya.
  */
-export function PintasanBuat({ label, warna, onClick }: { label: string; warna: string; onClick: () => void }) {
+export function QuickActionChip({ label, icon, warna, onClick }: {
+  label: string; icon: string; warna: string; onClick: () => void;
+}) {
   return (
     <button onClick={onClick}
-      className="flex-1 min-w-0 flex items-center gap-2 px-3 py-2 rounded-xl text-white font-bold text-xs transition-all hover:scale-[1.02] text-left"
-      style={{ background: warna, boxShadow: `0 4px 14px ${warna}59` }}>
-      <span className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.22)' }}>
-        <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-        </svg>
-      </span>
-      <span className="leading-tight min-w-0 truncate">
-        <span className="block opacity-80 text-[9px] font-semibold">Buat</span>
-        <span className="block truncate">{label}</span>
-      </span>
+      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white font-bold text-[11px] whitespace-nowrap transition-all hover:brightness-110 hover:scale-[1.03]"
+      style={{ background: warna, boxShadow: `0 2px 8px ${warna}4d` }}>
+      <span aria-hidden="true" className="text-xs leading-none">{icon}</span>
+      <span>{label}</span>
     </button>
   );
 }
