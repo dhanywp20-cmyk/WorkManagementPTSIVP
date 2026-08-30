@@ -24,52 +24,21 @@ import { ASSIGNABLE_PTS_TEAMS } from '@/lib/teams';
 import { ambilRingkasanPerforma, type RingkasanPerforma } from '@/lib/ringkasan-performa';
 import { isSalesGuest } from '@/lib/constants';
 import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
+import { SalesAnalyticsWidget, hasSalesAnalyticsData } from './SalesAnalyticsWidget';
 
-// Kontrak widget
-
-export interface WidgetProps {
-  user: User;
-  openMenu: (key: string) => void;            // buka menu by key (reuse handleMenuClick di page)
-  openUrl: (url: string, title: string) => void; // buka halaman internal full-screen (mis. Analytics)
-}
-
-export type WidgetSize = 'sm' | 'md' | 'lg' | 'full';
-
-export interface WidgetDef {
-  id: string;
-  permission: (u: User) => boolean;
-  priority: number;
-  size: WidgetSize;
-  Component: React.FC<WidgetProps>;
-}
+// Kontrak widget + primitif UI - dipindah ke primitives.tsx supaya widget
+// Work Center (../workcenter/) bisa memakainya tanpa circular import (lihat
+// komentar di primitives.tsx). Diimpor ulang di sini + di-export lagi supaya
+// pemakai lama (PermissionAwareDashboard.tsx) tidak perlu ganti sumber impor.
+import {
+  type WidgetProps, type WidgetSize, type WidgetDef,
+  WidgetCard, EmptyState, Loading,
+} from './primitives';
+export type { WidgetProps, WidgetSize, WidgetDef };
+export { WidgetCard, EmptyState, Loading };
+import WorkQueueSection from '../workcenter/WorkQueueSection';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
-
-// UI primitives
-
-function WidgetCard({ title, icon, accent, children, onSeeAll, seeAllLabel }: {
-  title: string; icon: string; accent: string;
-  children: React.ReactNode; onSeeAll?: () => void; seeAllLabel?: string;
-}) {
-  return (
-    <div className="rounded-2xl bg-white/95 backdrop-blur-sm shadow-lg border border-black/5 p-4 flex flex-col h-full"
-      style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base flex-shrink-0"
-          style={{ background: `${accent}1a`, color: accent }}>{icon}</div>
-        <h3 className="font-bold text-slate-800 text-sm truncate flex-1">{title}</h3>
-        {onSeeAll && (
-          <button onClick={onSeeAll}
-            className="text-[11px] font-semibold px-2 py-1 rounded-lg transition-all hover:scale-[1.03] flex-shrink-0"
-            style={{ background: `${accent}14`, color: accent }}>
-            {seeAllLabel ?? 'Lihat semua'} →
-          </button>
-        )}
-      </div>
-      <div className="flex-1 min-h-0">{children}</div>
-    </div>
-  );
-}
 
 function StatPills({ items }: { items: { label: string; value: number; color: string }[] }) {
   return (
@@ -92,18 +61,6 @@ function MiniRow({ title, sub, tone }: { title: string; sub: string; tone?: stri
         <div className="text-xs font-semibold text-slate-700 truncate">{title}</div>
         <div className="text-[10px] text-slate-400 truncate">{sub}</div>
       </div>
-    </div>
-  );
-}
-
-function EmptyState({ text }: { text: string }) {
-  return <div className="flex items-center justify-center h-full min-h-[60px] text-[11px] text-slate-400 text-center px-2">{text}</div>;
-}
-
-function Loading() {
-  return (
-    <div className="flex items-center justify-center h-full min-h-[80px]">
-      <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.25)', borderTopColor: '#e2a84b' }} />
     </div>
   );
 }
@@ -401,183 +358,6 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
   );
 };
 
-// WIDGET: Analytics Saya (Sales/Marketing) - tema analytics, DATA MILIK SENDIRI.
-// Menggabung 4 platform: Request Schedule, Request Design Project, Form Review BAST,
-// Ticket Troubleshooting. Tiap panel hanya muncul kalau user punya menunya.
-interface SalesAnalytics {
-  schedule: { total: number; active: number; done: number };
-  project: { total: number; pending: number; progress: number; done: number };
-  review: { total: number; demo: number; bast: number };
-  ticket: { total: number; open: number; solved: number };
-}
-
-/**
- * Kartu ini menampilkan satu angka utama PLUS rincian pecahannya, jadi tidak
- * bisa langsung memakai StatCard bersama (yang hanya membawa satu angka).
- * Gayanya disamakan secara manual: permukaan putih, angka gelap, dan warna
- * kategori dipakai sebagai pita tepi - persis seperti StatCard.
- */
-function AnalyticStat({ accent, label, value, subs }: {
-  accent: string; label: string; value: number;
-  subs: { label: string; value: number }[];
-}) {
-  return (
-    <div className="rounded-xl px-3 py-2.5 sm:px-4 sm:py-3.5 relative overflow-hidden"
-      style={{ background: '#ffffff', border: '1px solid rgba(15,23,42,0.10)', boxShadow: '0 1px 2px rgba(15,23,42,0.06)' }}>
-      <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: accent, opacity: 0.55 }} />
-      <div className="text-2xl sm:text-3xl font-black tabular-nums leading-none" style={{ color: '#0f172a' }}>{value}</div>
-      <div className="text-[11px] sm:text-[13px] font-bold mt-1 leading-tight" style={{ color: '#1e293b' }}>{label}</div>
-      <div className="flex gap-2 sm:gap-3 mt-2 sm:mt-2.5">
-        {subs.map((s, i) => (
-          <div key={i}>
-            <div className="text-sm font-black tabular-nums leading-none text-slate-700">{s.value}</div>
-            <div className="text-[9px] text-slate-500 mt-0.5">{s.label}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/**
- * Pintasan membuat data baru dari dashboard.
- *
- * Ikon kirim yang sama dengan tombol Submit Form di tiap platform, supaya
- * jelas sejak dari dashboard bahwa tombol ini bermuara ke sebuah form - bukan
- * ke tabel. Ukurannya sengaja jauh lebih besar daripada tautan teks yang dulu
- * ada di sini: inilah aksi yang paling sering dipakai Sales dari halaman ini.
- */
-function PintasanBuat({ label, warna, onClick }: { label: string; warna: string; onClick: () => void }) {
-  return (
-    <button onClick={onClick}
-      className="flex-1 min-w-0 flex items-center gap-2 px-3 py-2 rounded-xl text-white font-bold text-xs transition-all hover:scale-[1.02] text-left"
-      style={{ background: warna, boxShadow: `0 4px 14px ${warna}59` }}>
-      <span className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.22)' }}>
-        <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-        </svg>
-      </span>
-      <span className="leading-tight min-w-0 truncate">
-        <span className="block opacity-80 text-[9px] font-semibold">Buat</span>
-        <span className="block truncate">{label}</span>
-      </span>
-    </button>
-  );
-}
-
-const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openUrl }) => {
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<SalesAnalytics | null>(null);
-  const showSchedule = hasMenu(user, 'reminder-schedule');
-  const showProject  = hasMenu(user, 'request-design-project');
-  const showReview   = hasMenu(user, 'form-bast');
-  const showTicket   = hasMenu(user, 'ticket-troubleshooting');
-
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        // Scope "data sendiri": cocokkan lewat created_by (username) ATAU nama sales
-        // (full_name) - menangkap request/tiket yg dia buat maupun yg atas namanya.
-        const [remRes, prRes, rvRes, tkRes] = await Promise.all([
-          showSchedule ? supabase.from('reminders').select('status').or(`sales_name.eq.${user.full_name},created_by.eq.${user.username}`) : Promise.resolve({ data: [] }),
-          showProject  ? supabase.from('project_requests').select('status').or(`requester_id.eq.${user.id},ivp_assignee.eq.${user.full_name}`) : Promise.resolve({ data: [] }),
-          showReview   ? supabase.from('form_reviews').select('review_category').or(`guest_username.eq.${user.username},sales_name.eq.${user.full_name}`) : Promise.resolve({ data: [] }),
-          showTicket   ? supabase.from('tickets').select('status').or(`created_by.eq.${user.username},sales_name.eq.${user.full_name}`) : Promise.resolve({ data: [] }),
-        ]);
-        const rem = (remRes.data ?? []) as { status: string }[];
-        const pr  = (prRes.data ?? []) as { status: string }[];
-        const rv  = (rvRes.data ?? []) as { review_category: string }[];
-        const tk  = (tkRes.data ?? []) as { status: string }[];
-        if (alive) setData({
-          schedule: {
-            total: rem.length,
-            active: rem.filter(r => r.status !== 'done' && r.status !== 'cancelled').length,
-            done: rem.filter(r => r.status === 'done').length,
-          },
-          project: {
-            total: pr.length,
-            pending: pr.filter(p => p.status === 'pending').length,
-            progress: pr.filter(p => p.status === 'in_progress' || p.status === 'approved').length,
-            done: pr.filter(p => p.status === 'completed').length,
-          },
-          review: {
-            total: rv.length,
-            demo: rv.filter(r => (r.review_category ?? '').toLowerCase().includes('demo')).length,
-            bast: rv.filter(r => (r.review_category ?? '').toLowerCase().includes('bast')).length,
-          },
-          ticket: {
-            total: tk.length,
-            open: tk.filter(t => t.status !== 'Solved').length,
-            solved: tk.filter(t => t.status === 'Solved').length,
-          },
-        });
-      } catch { /* silent */ }
-      if (alive) setLoading(false);
-    })();
-    return () => { alive = false; };
-  }, [user, showSchedule, showProject, showReview, showTicket]);
-
-  return (
-    <WidgetCard title="Analytics Saya" icon="📊" accent="#c8861d">
-      {loading || !data ? <Loading /> : (
-        <>
-          {/* Dua kolom sejak layar tersempit: satu kolom membuat empat kartu
-              memakan hampir seluruh layar ponsel, sehingga pintasan di bawahnya
-              baru terlihat setelah menggulir jauh. */}
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-3">
-            {showSchedule && (
-              <AnalyticStat accent="#0e7490" label="Request Schedule" value={data.schedule.total}
-                subs={[{ label: 'Aktif', value: data.schedule.active }, { label: 'Selesai', value: data.schedule.done }]} />
-            )}
-            {showProject && (
-              <AnalyticStat accent="#6d28d9" label="Design Project" value={data.project.total}
-                subs={[{ label: 'Pending', value: data.project.pending }, { label: 'Proses', value: data.project.progress }, { label: 'Selesai', value: data.project.done }]} />
-            )}
-            {showReview && (
-              <AnalyticStat accent="#475569" label="Form Review/BAST" value={data.review.total}
-                subs={[{ label: 'Demo', value: data.review.demo }, { label: 'BAST', value: data.review.bast }]} />
-            )}
-            {showTicket && (
-              <AnalyticStat accent="#be123c" label="Ticket" value={data.ticket.total}
-                subs={[{ label: 'Aktif', value: data.ticket.open }, { label: 'Solved', value: data.ticket.solved }]} />
-            )}
-          </div>
-          {/* Batang kategori Request Schedule dihapus: angkanya sudah terbaca
-              utuh di kartu ringkasan tepat di atasnya, jadi ia hanya mengulang
-              hal yang sama dengan bentuk lain dan mendorong pintasan turun.
-
-              ── Pintasan BUAT, bukan pintasan LIHAT ──────────────────────────
-              Tiga tombol ini dulu hanya membuka daftarnya, padahal yang paling
-              sering dituju Sales dari dashboard adalah membuat yang baru.
-              Sekarang tautannya membawa ?buat=1 dan halaman tujuanlah yang
-              memutuskan boleh atau tidak — mis. Request Schedule tetap menahan
-              Sales yang masih punya form review belum dinilai. Dashboard tidak
-              ikut memutuskan, supaya aturannya tidak ada dua salinan. */}
-          {/* Lebar SAMA RATA (flex-1 di tiap tombol, bukan flex-wrap bebas):
-              sebelumnya tiap tombol selebar teksnya sendiri, jadi "Design
-              Project" jauh lebih lebar daripada "Ticket" dan barisnya
-              terlihat pincang. Disamakan supaya tiga tombol ini terbaca
-              sebagai satu kelompok aksi yang setara, bukan tiga ukuran acak. */}
-          <div className="flex gap-2 mt-3">
-            {showSchedule && (
-              <PintasanBuat label="Request Schedule" warna="#0891b2"
-                onClick={() => openUrl('/reminder-schedule?buat=1', 'Request Schedule')} />
-            )}
-            {showProject && (
-              <PintasanBuat label="Design Project" warna="#7c3aed"
-                onClick={() => openUrl('/form-require-project?buat=1', 'Request Design Project')} />
-            )}
-            {showTicket && (
-              <PintasanBuat label="Ticket" warna="#e11d48"
-                onClick={() => openUrl('/ticketing?buat=1', 'Ticket Troubleshooting')} />
-            )}
-          </div>
-        </>
-      )}
-    </WidgetCard>
-  );
-};
 
 /**
  * Satu baris angka - dipakai untuk rekap nilai & peringkat di LearningWidget.
@@ -737,15 +517,31 @@ const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
 
 // WIDGET REGISTRY - metadata deklaratif. Compose di PermissionAwareDashboard.
 export const WIDGETS: WidgetDef[] = [
+  /*
+    WORK CENTER - My Action/Today/Upcoming, PLUS Quick Action Team yang
+    dirender DI DALAM kartu My Action-nya sendiri (lihat WorkQueueSection.tsx).
+    Priority PALING RENDAH (tampil PALING ATAS), untuk SEMUA role yang login -
+    inilah yang menjawab "apa yang harus saya kerjakan sekarang" sebelum
+    statistik apa pun di bawahnya. permission selalu true: widget-nya sendiri
+    yang berempty-state rapi kalau memang tidak ada tugas aktif untuk role
+    itu - lebih jujur daripada widget yang hilang tanpa penjelasan.
+  */
+  { id: 'work-queue',     permission: () => true, priority: 0,   size: 'full', Component: WorkQueueSection },
+  /*
+    Analytics Saya (Sales/Marketing) - tema analytics, DATA SENDIRI, 4 kartu
+    statistik + Quick Action (Request Schedule/Design Project/Ticket/Form
+    Review/Project Progress) dirender DI DALAM kartu ini sendiri, lihat
+    SalesAnalyticsWidget.tsx. Priority 0.5 - tepat di bawah My Action, karena
+    bagi Sales/Guest kartu inilah "frame" Quick Action mereka, jadi harus
+    tampil sedini My Action tampil bagi Team.
+  */
+  { id: 'sales-analytics', permission: (u) => !canAccessAnalytics(u) && hasSalesAnalyticsData(u), priority: 0.5, size: 'full', Component: SalesAnalyticsWidget },
   // Team Monitoring paling atas utk Admin/Team (full width) - jawab "mana report tim".
   { id: 'team-monitoring', permission: canSeeTeamMonitoring, priority: 1, size: 'full', Component: TeamMonitoringWidget },
   // Analytics native (DashboardKPI, tanpa iframe) - tema analytics penuh utk Admin/Team.
   // Sudah memuat Ticket/Reminder/Piket/Unit/Pengguna/Learning  widget di bawah
   // DISEMBUNYIKAN utk role ini (`!canAccessAnalytics`) supaya TIDAK duplikat data.
   { id: 'analytics',       permission: canAccessAnalytics,   priority: 2, size: 'full', Component: AnalyticsNativeWidget },
-  // Analytics Saya (Sales/Marketing) - tema analytics, DATA SENDIRI, 4 platform.
-  // Hanya utk role TANPA analytics global & punya minimal 1 dari 4 menu terkait.
-  { id: 'sales-analytics', permission: (u) => !canAccessAnalytics(u) && (hasMenu(u, 'reminder-schedule') || hasMenu(u, 'request-design-project') || hasMenu(u, 'form-bast') || hasMenu(u, 'ticket-troubleshooting')), priority: 3, size: 'full', Component: SalesAnalyticsWidget },
   // Piket Showroom: role tanpa analytics (Admin/Team sudah lihat piket di dalam analytics).
   { id: 'showroom',        permission: (u) => !canAccessAnalytics(u),               priority: 6, size: 'md', Component: ShowroomWidget },
   { id: 'learning',        permission: (u) => hasMenu(u, 'learning-center')        && !canAccessAnalytics(u), priority: 7, size: 'sm', Component: LearningWidget },
