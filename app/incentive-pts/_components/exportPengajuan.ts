@@ -526,8 +526,13 @@ export async function bangunWorkbookPengajuan(data: ExportData, sk: SkemaInsenti
 
     const totalBaris = [...b.pic, ...b.support, ...b.supervisor, ...b.manager, ...b.installer]
       .reduce((n, o) => n + o.amount, 0);
+    //  RUMUS, bukan angka ketik manual - menjumlah cell Rp orang & Installer
+    //  di BARIS INI SENDIRI, yang semuanya sudah tertulis di kolom-kolom di
+    //  kanan. Kalau salah satu dikoreksi manual di Excel, Nominal ikut
+    //  terhitung ulang, bukan diam dengan angka lama.
+    const selRp = [...kolomOrang.map(k => `${getColLetter(k.awal + 2)}${r}`), `${getColLetter(kolInstRp)}${r}`];
     const cNom = ws.getCell(r, KOL.nominal);
-    cNom.value = totalBaris;
+    cNom.value = sumCell(selRp.join('+'), totalBaris);
     cNom.numFmt = RUPIAH_FMT; cNom.border = thinBorder();
     cNom.alignment = { horizontal: 'right', vertical: 'middle' };
     cNom.font = { ...dataFont(), bold: true };
@@ -624,18 +629,27 @@ export async function bangunWorkbookPengajuan(data: ExportData, sk: SkemaInsenti
     row += 1;
   }
   row += 1;
-  // ── TABEL 2 — Rekap per orang untuk tahun ini ─────────────────────────
+  // ── TABEL 2 — Summary Total per Anggota Team PTS (menyamai Summary Export) ──
+  /*
+    Judul & cakupan disamakan PERSIS dengan Tabel 2 di Summary Export
+    ("Summary Total per Anggota Team PTS (PIC / Support / Supervisor /
+    Manager)") - Installer BUKAN Team PTS, jadi tidak ikut dihitung di sini,
+    persis seperti di Summary. Sebelumnya tabel ini malah mencampur Installer
+    ke dalam daftar Team PTS (ditandai kuning) - itulah salah satu sebab isi
+    kedua berkas terlihat tidak sejalan padahal menjelaskan uang yang sama.
+    Installer tetap ada di kolom Installer pada Tabel 1 di atas.
+  */
   const cJudul2 = ws.getCell(row, KOL.no);
-  cJudul2.value = `2. Nilai Pengajuan per Orang — Tahun ${year}`;
+  cJudul2.value = `2. Summary Total per Anggota Team PTS (PIC / Support / Supervisor / Manager) — Tahun ${year}`;
   cJudul2.font = { bold: true, size: 12, name: 'Arial' };
   ws.mergeCells(row, KOL.no, row, KOL_TERAKHIR);
   row += 1;
 
-  const urutPeran: Record<string, number> = { manager: 0, supervisor: 1, pic: 2, support: 3, installer: 4 };
+  const urutPeran: Record<string, number> = { manager: 0, supervisor: 1, pic: 2, support: 3 };
   const roleLabel = (r: string) => ROLE_JUDUL[r] ?? r;
   const perOrang = new Map<string, { nama: string; peran: Set<string>; jumlah: number; total: number }>();
   for (const b of daftar) {
-    for (const o of [...b.pic, ...b.support, ...b.supervisor, ...b.manager, ...b.installer]) {
+    for (const o of [...b.pic, ...b.support, ...b.supervisor, ...b.manager]) {
       const nm = o.user_name || '—';
       const e = perOrang.get(nm) ?? { nama: nm, peran: new Set<string>(), jumlah: 0, total: 0 };
       e.peran.add(o.role); e.jumlah += 1; e.total += o.amount;
@@ -647,6 +661,9 @@ export async function bangunWorkbookPengajuan(data: ExportData, sk: SkemaInsenti
     const pb = Math.min(...[...b.peran].map(r => urutPeran[r] ?? 9));
     return pa - pb || a.nama.localeCompare(b.nama, 'id');
   });
+  //  Kolom Rp di Tabel 1 milik orang ini - dipakai membangun RUMUS, bukan
+  //  mengetik ulang o.total sebagai angka mati.
+  const kolomOrangByName = new Map(kolomOrang.map(k => [k.nama, k.awal]));
 
   tulisKepalaPerOrang(ws, row, [
     ['Nama', ...KOL_REKAP.nama], ['Peran', ...KOL_REKAP.peran],
@@ -655,14 +672,19 @@ export async function bangunWorkbookPengajuan(data: ExportData, sk: SkemaInsenti
   row += 1;
   const t2Awal = row;
   orangUrut.forEach(o => {
-    const hanyaInstaller = o.peran.size === 1 && o.peran.has('installer');
-    const isi = hanyaInstaller ? INSTALLER_FILL : undefined;
-    selGabung(ws, row, KOL_REKAP.nama, o.nama, { isi });
+    selGabung(ws, row, KOL_REKAP.nama, o.nama);
     selGabung(ws, row, KOL_REKAP.peran,
-      [...o.peran].sort((a, b) => (urutPeran[a] ?? 9) - (urutPeran[b] ?? 9)).map(roleLabel).join(', '), { isi });
-    selGabung(ws, row, KOL_REKAP.jumlah, o.jumlah, { rata: 'center', isi });
-    const cT = selGabung(ws, row, KOL_REKAP.total, o.total,
-      { rata: 'right', font: { ...dataFont(), bold: true }, isi });
+      [...o.peran].sort((a, b) => (urutPeran[a] ?? 9) - (urutPeran[b] ?? 9)).map(roleLabel).join(', '));
+    selGabung(ws, row, KOL_REKAP.jumlah, o.jumlah, { rata: 'center' });
+    //  RUMUS: menjumlah langsung kolom Rp orang ini di Tabel 1 (t1Awal:t1Akhir)
+    //  - bukan angka yang sudah dijumlah di JavaScript lalu diketik ulang.
+    //  Kalau Tabel 1 dikoreksi manual di Excel, angka di sini ikut berubah.
+    const awal = kolomOrangByName.get(o.nama);
+    const nilai = (awal != null && daftar.length)
+      ? sumCell(`SUM(${getColLetter(awal + 2)}${t1Awal}:${getColLetter(awal + 2)}${t1Akhir})`, o.total)
+      : o.total;
+    const cT = selGabung(ws, row, KOL_REKAP.total, nilai,
+      { rata: 'right', font: { ...dataFont(), bold: true } });
     cT.numFmt = RUPIAH_FMT;
     row += 1;
   });
@@ -684,7 +706,8 @@ export async function bangunWorkbookPengajuan(data: ExportData, sk: SkemaInsenti
   row += 1;
 
   selGabung(ws, row, [KOL_REKAP.nama[0], KOL_REKAP.total[1]],
-    'Installer ditandai kuning — porsinya dibayar 100% sekali di tahun pertama proyeknya, tidak dipecah per tahapan.',
+    'Installer tidak termasuk tabel ini — bukan Team PTS. Porsinya ada di kolom Installer pada Tabel 1 di atas, '
+    + 'dibayar terpisah lunas 100% di tahun pertama proyeknya.',
     { font: { italic: true, size: 8, name: 'Arial', color: { argb: '808080' } } });
   row += 3;
 
@@ -870,16 +893,21 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   }
 
   const urutPeran: Record<string, number> = { manager: 0, supervisor: 1, pic: 2, support: 3 };
-  const perOrang = new Map<string, { nama: string; peran: Set<string>; total: number; jumlah: number }>();
+  //  `nilai` menyimpan tiap nominal SEBELUM dijumlah - dipakai membangun
+  //  RUMUS di bawah (bukan mengetik ulang o.total sebagai angka mati). Tidak
+  //  bisa dirujuk sebagai referensi sel Excel: Tabel 1 bisa menggabung lebih
+  //  dari satu orang berperan sama jadi SATU sel teks (lihat teksNamaPeran),
+  //  jadi nominal satu orang belum tentu punya selnya sendiri untuk dirujuk.
+  const perOrang = new Map<string, { nama: string; peran: Set<string>; total: number; jumlah: number; nilai: number[] }>();
   for (const { nama, peran, jumlah } of akumulasi) {
-    const e = perOrang.get(nama) ?? { nama, peran: new Set<string>(), total: 0, jumlah: 0 };
-    e.peran.add(peran); e.total += jumlah; e.jumlah += 1;
+    const e = perOrang.get(nama) ?? { nama, peran: new Set<string>(), total: 0, jumlah: 0, nilai: [] };
+    e.peran.add(peran); e.total += jumlah; e.jumlah += 1; e.nilai.push(jumlah);
     perOrang.set(nama, e);
   }
   const namaBelumFinal = new Set<string>();
   for (const [nama, peranSet] of semuaNamaTim) {
     if (perOrang.has(nama)) continue;
-    perOrang.set(nama, { nama, peran: new Set(peranSet), total: 0, jumlah: 0 });
+    perOrang.set(nama, { nama, peran: new Set(peranSet), total: 0, jumlah: 0, nilai: [] });
     namaBelumFinal.add(nama);
   }
   const orangUrut = [...perOrang.values()].sort((a, b) => {
@@ -1006,8 +1034,14 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
       if (isEstimate) { cNama.font = { ...dataFont(), italic: true, color: { argb: 'AAAAAA' } }; cPct.value = null; }
       return;
     }
-    // >1 orang pada peran yang sama - digabung, Rp dijumlah (statis, bukan formula).
-    cRp.value = isEstimate ? null : orang.reduce((n, o) => n + o.amount, 0);
+    //  >1 orang pada peran yang sama - namanya digabung jadi satu sel (tidak
+    //  ada sel terpisah per orang untuk dirujuk), tapi Rp tetap RUMUS - bukan
+    //  angka mati - dengan menjumlah nominal masing-masing secara eksplisit
+    //  di dalam formula-nya sendiri, supaya tetap bisa diperiksa di Excel.
+    if (!isEstimate) {
+      const total = orang.reduce((n, o) => n + o.amount, 0);
+      cRp.value = sumCell(orang.map(o => String(o.amount)).join('+'), total);
+    }
     if (isEstimate) cNama.font = { ...dataFont(), italic: true, color: { argb: 'AAAAAA' } };
   }
 
@@ -1129,7 +1163,10 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
       rata: 'center',
       font: belumFinal ? { ...dataFont(), color: { argb: '999999' } } : dataFont(),
     });
-    const cT = selGabung(ws, row, KOL_REKAP.total, o.total, {
+    //  RUMUS - menjumlah nominal orang ini secara eksplisit (lihat alasan
+    //  `nilai` tidak bisa jadi referensi sel di komentar deklarasi perOrang).
+    const nilaiTotal = o.nilai.length ? sumCell(o.nilai.join('+'), o.total) : o.total;
+    const cT = selGabung(ws, row, KOL_REKAP.total, nilaiTotal, {
       rata: 'right',
       font: belumFinal ? { ...dataFont(), bold: true, color: { argb: '999999' } } : { ...dataFont(), bold: true },
     });

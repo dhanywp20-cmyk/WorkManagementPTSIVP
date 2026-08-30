@@ -265,11 +265,19 @@ async function main() {
       teksP(rh + 1, kolInst) === 'Nama' && teksP(rh + 1, kolInst + 1) === 'Lokasi'
       && teksP(rh + 1, kolInst + 2) === '%' && teksP(rh + 1, kolInst + 3) === 'Rp');
     ok('Tema navy sama', (wsP.getCell(rh, 2).fill as any)?.fgColor?.argb === '1F3864');
-    ok('Ada tabel rekap per orang (Tabel 2, tidak berubah)', cariP('2. Nilai Pengajuan per Orang') > 0);
+    //  Judul Tabel 2 disamakan PERSIS dengan Summary Export - Installer bukan
+    //  Team PTS, jadi tidak lagi ikut tercampur di tabel rekap per orang ini.
+    const rJudul2 = cariP('Summary Total per Anggota Team PTS');
+    ok('Tabel 2 berjudul sama seperti Summary Export (PIC/Support/Supervisor/Manager)', rJudul2 > 0);
+    ok('Ridwan Gunawan (installer) TIDAK ada di Tabel 2 - bukan Team PTS', (() => {
+      for (let r = rJudul2; r <= rJudul2 + 10; r++) if (teksP(r, 2) === 'Ridwan Gunawan') return false;
+      return true;
+    })());
   }
 
   console.log('\n10. Baris=project benar; total per orang benar lintas project; installer 1 grup kolom tetap');
   {
+    const angka = (v: unknown) => (typeof v === 'object' && v ? (v as any).result : v);
     const rh = cariP('1. Project yang Dicairkan') + 1;
     const kolProject = cariKolomPersis(rh, 'Project');
     const kolNominal = cariKolomPersis(rh, teksP(rh, 6)); // header "Pencairan ... (Rp)"
@@ -310,11 +318,16 @@ async function main() {
     ok('Ferdinan di baris Solitaire = PIC · 550.000 (50% dari 1.100.000)',
       teksP(rSolitaire, kolFerdinan) === 'PIC' && wsP.getCell(rSolitaire, kolFerdinan + 2).value === 550000);
 
-    //  Nominal per baris = jumlah SEMUA peran (termasuk installer) baris itu.
-    ok('Nominal baris Korlantas = 287.500 (137.500 + 75.000 + 75.000 installer)',
-      wsP.getCell(rKorlantas, kolNominal).value === 287500, String(wsP.getCell(rKorlantas, kolNominal).value));
-    ok('Nominal baris Solitaire = 700.000 (550.000 + 150.000, tanpa installer)',
-      wsP.getCell(rSolitaire, kolNominal).value === 700000, String(wsP.getCell(rSolitaire, kolNominal).value));
+    //  Nominal per baris = RUMUS menjumlah kolom Rp orang & Installer di baris
+    //  itu sendiri (bukan angka ketik manual) - lihat "wajib pakai rumus".
+    ok('Nominal baris Korlantas = 287.500 (137.500 + 75.000 + 75.000 installer), lewat RUMUS',
+      angka(wsP.getCell(rKorlantas, kolNominal).value) === 287500
+      && typeof wsP.getCell(rKorlantas, kolNominal).value === 'object',
+      String(angka(wsP.getCell(rKorlantas, kolNominal).value)));
+    ok('Nominal baris Solitaire = 700.000 (550.000 + 150.000, tanpa installer), lewat RUMUS',
+      angka(wsP.getCell(rSolitaire, kolNominal).value) === 700000
+      && typeof wsP.getCell(rSolitaire, kolNominal).value === 'object',
+      String(angka(wsP.getCell(rSolitaire, kolNominal).value)));
 
     //  Installer - SATU grup kolom tetap, bukan ikut berulang per orang; isinya
     //  beda tiap baris/project (Ridwan Gunawan di Korlantas, kosong di Solitaire).
@@ -329,7 +342,6 @@ async function main() {
     //  TOTAL FINANCE: Nominal dijumlah seperti biasa, DAN setiap kolom orang +
     //  Installer ikut dijumlah ke bawah - itulah "lebih mudah summary
     //  penjumlahannya" yang diminta.
-    const angka = (v: unknown) => (typeof v === 'object' && v ? (v as any).result : v);
     ok('TOTAL FINANCE · Nominal = 987.500 (287.500 + 700.000)',
       angka(wsP.getCell(rTotalFinance, kolNominal).value) === 987500,
       String(angka(wsP.getCell(rTotalFinance, kolNominal).value)));
@@ -390,6 +402,32 @@ async function main() {
       angkaG(wsG.getCell(rTotalG, kolSebagaiG + 2).value) === 137500,
       String(angkaG(wsG.getCell(rTotalG, kolSebagaiG + 2).value)));
     fs.unlinkSync(targetG);
+  }
+
+  console.log('\n12. "Wajib pakai rumus" - kolom Total tidak lagi angka ketik manual di Tabel 2 (kedua berkas)');
+  {
+    //  Pengajuan: Total Dhany di Tabel 2 harus RUMUS yang merujuk kolom Rp
+    //  Dhany di Tabel 1 (t1Awal:t1Akhir) - bukan angka 225000 yang diketik ulang.
+    const rJudul2 = cariP('Summary Total per Anggota Team PTS');
+    const rHdr2 = rJudul2 + 1;
+    const kolTotal2 = (() => { for (let c = 1; c <= wsP.columnCount; c++) if (teksP(rHdr2, c).includes('Diterima')) return c; return -1; })();
+    ok('Kolom "Diterima (Rp)" ditemukan di Tabel 2 Pengajuan', kolTotal2 > 0);
+    const rDhany2 = (() => { for (let r = rHdr2; r <= rHdr2 + 10; r++) if (teksP(r, 2) === 'Dhany Wahyu') return r; return -1; })();
+    ok('Dhany ditemukan di Tabel 2 Pengajuan', rDhany2 > 0);
+    const selDhany2 = wsP.getCell(rDhany2, kolTotal2);
+    ok('Total Dhany di Tabel 2 Pengajuan = RUMUS (bukan angka mati)', typeof selDhany2.value === 'object');
+    ok('Hasilnya tetap 225.000, sama seperti TOTAL FINANCE di Tabel 1',
+      (selDhany2.value as any)?.result === 225000, JSON.stringify(selDhany2.value));
+
+    //  Summary: kolom Total per orang juga harus RUMUS.
+    const r2S = cariBaris('2. Summary Total per Anggota Team PTS');
+    const rHdrS = r2S + 1;
+    const kolTotalS = (() => { for (let c = 1; c <= ws.columnCount; c++) if (teks(rHdrS, c).includes('Total Nominal')) return c; return -1; })();
+    ok('Kolom "Total Nominal (Rp)" ditemukan di Tabel 2 Summary', kolTotalS > 0);
+    const rTaufik2 = (() => { for (let r = rHdrS; r <= rHdrS + 10; r++) if (teks(r, 2) === 'Taufik wahyudi') return r; return -1; })();
+    ok('Taufik ditemukan di Tabel 2 Summary', rTaufik2 > 0);
+    const selTaufik2 = ws.getCell(rTaufik2, kolTotalS);
+    ok('Total Taufik di Tabel 2 Summary = RUMUS (bukan angka mati)', typeof selTaufik2.value === 'object');
   }
 
   if (simpanIdx > -1) console.log(`Berkas pengajuan disimpan: ${targetP}`);
