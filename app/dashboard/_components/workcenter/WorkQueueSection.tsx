@@ -7,11 +7,19 @@
  * Ini widget FULL-width paling atas di Work Center (priority 0 di registry),
  * menjawab "apa yang harus saya kerjakan sekarang" sebelum apa pun lain di
  * halaman - sesuai tujuan Work Center: action dulu, statistik belakangan.
+ *
+ * Quick Action untuk role TEAM/ADMIN dirender DI DALAM kartu "My Action" ini
+ * sendiri (di bawah daftar item, mis. di bawah "Daily Report hari ini belum
+ * diisi") - bukan sebagai section terpisah di luar kartu, sesuai permintaan.
+ * Sales/Guest TIDAK mendapat chip di sini - milik mereka ada di dalam kartu
+ * "Analytics Saya" (lihat widgets/SalesAnalyticsWidget.tsx).
  */
 
 import React from 'react';
-import { type WidgetProps, WidgetCard, EmptyState, Loading } from '../widgets/primitives';
+import { type WidgetProps, WidgetCard, EmptyState, Loading, QuickActionChip } from '../widgets/primitives';
+import { isAdminRole, isTeamMember, hasMenu } from '../widgets/permissions';
 import { useWorkQueue, type ActionItem, type Urgency } from './useWorkQueue';
+import type { User } from '../shared';
 
 const URGENCY_DOT: Record<Urgency, string> = { urgent: '#dc2626', pending: '#ea580c', upcoming: '#2563eb' };
 const URGENCY_EMOJI: Record<Urgency, string> = { urgent: '🔴', pending: '🟠', upcoming: '🔵' };
@@ -35,8 +43,38 @@ function ActionRow({ item, onClick, showUrgencyDot = true }: {
   );
 }
 
-const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu }) => {
+interface AksiDef {
+  key: string; label: string; icon: string; warna: string;
+  run: (openMenu: (k: string) => void, openUrl: (url: string, title: string) => void) => void;
+}
+
+const AKSI_TEAM: AksiDef[] = [
+  { key: 'daily-report', label: 'Isi Daily Report', icon: '📈', warna: '#0f766e', run: (openMenu) => openMenu('daily-report') },
+  { key: 'reminder-schedule', label: 'Jadwal Saya', icon: '🗓️', warna: '#0891b2', run: (openMenu) => openMenu('reminder-schedule') },
+  { key: 'ticket-troubleshooting', label: 'Buat Ticket', icon: '🎫', warna: '#e11d48', run: (_openMenu, openUrl) => openUrl('/ticketing?buat=1', 'Ticket Troubleshooting') },
+  { key: 'project-progress', label: 'Project Progress', icon: '📊', warna: '#7c3aed', run: (openMenu) => openMenu('project-progress') },
+  { key: 'picket-showroom', label: 'Piket Showroom', icon: '🏪', warna: '#0d9488', run: (openMenu) => openMenu('picket-showroom') },
+  { key: 'learning-center', label: 'Learning Center', icon: '🎓', warna: '#4338ca', run: (openMenu) => openMenu('learning-center') },
+];
+
+/** Chip Quick Action Team - dirender DI DALAM kartu My Action, di bawah daftar item. */
+function TeamActionChips({ user, openMenu, openUrl }: {
+  user: User; openMenu: (k: string) => void; openUrl: (url: string, title: string) => void;
+}) {
+  const aksi = AKSI_TEAM.filter(a => hasMenu(user, a.key)).slice(0, 6);
+  if (aksi.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-100">
+      {aksi.map(a => (
+        <QuickActionChip key={a.key} label={a.label} icon={a.icon} warna={a.warna} onClick={() => a.run(openMenu, openUrl)} />
+      ))}
+    </div>
+  );
+}
+
+const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) => {
   const { loading, error, myAction, today, upcoming } = useWorkQueue(user);
+  const isTeamSide = isTeamMember(user) || isAdminRole(user);
 
   if (loading) {
     return (
@@ -70,11 +108,24 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu }) => {
   const kosongSemua = myAction.length === 0 && today.length === 0 && upcoming.length === 0;
 
   if (kosongSemua) {
+    //  Role Team tetap dapat kartu My Action (bukan bilah tipis generik) -
+    //  chip Quick Action-nya butuh "frame" itu untuk ditaruh di bawahnya,
+    //  sesuai permintaan letaknya di dalam kartu My Action.
+    if (isTeamSide) {
+      return (
+        <WidgetCard title="My Action" icon="🎯" accent="#16a34a">
+          <div className="flex items-center gap-2 text-emerald-700 text-sm font-semibold">
+            <span className="text-lg">🎉</span> Tidak ada tugas aktif yang butuh tindakan saat ini.
+          </div>
+          <TeamActionChips user={user} openMenu={openMenu} openUrl={openUrl} />
+        </WidgetCard>
+      );
+    }
     /*
-      Bilah TIPIS, bukan WidgetCard penuh (header ikon+judul+padding besar) -
-      satu kalimat tidak butuh bobot visual sebesar kartu berisi daftar.
-      "Tidak ada jadwal aktif" - bukan "No Data" polos, supaya jelas ini
-      artinya BERSIH (tidak ada tugas menumpuk), bukan data gagal dimuat.
+      Sales/Guest: bilah TIPIS, bukan WidgetCard penuh (header ikon+judul+
+      padding besar) - satu kalimat tidak butuh bobot visual sebesar kartu
+      berisi daftar, dan Quick Action mereka toh ada di kartu Analytics Saya,
+      bukan di sini.
     */
     return (
       <div className="flex items-center gap-2.5 rounded-xl bg-white/95 backdrop-blur-sm shadow-sm border border-black/5 px-4 py-3">
@@ -102,6 +153,7 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu }) => {
               ))}
             </>
           )}
+          {isTeamSide && <TeamActionChips user={user} openMenu={openMenu} openUrl={openUrl} />}
         </WidgetCard>
       </div>
 

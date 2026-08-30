@@ -24,6 +24,7 @@ import { ASSIGNABLE_PTS_TEAMS } from '@/lib/teams';
 import { ambilRingkasanPerforma, type RingkasanPerforma } from '@/lib/ringkasan-performa';
 import { isSalesGuest } from '@/lib/constants';
 import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
+import { SalesAnalyticsWidget, hasSalesAnalyticsData } from './SalesAnalyticsWidget';
 
 // Kontrak widget + primitif UI - dipindah ke primitives.tsx supaya widget
 // Work Center (../workcenter/) bisa memakainya tanpa circular import (lihat
@@ -36,7 +37,6 @@ import {
 export type { WidgetProps, WidgetSize, WidgetDef };
 export { WidgetCard, EmptyState, Loading };
 import WorkQueueSection from '../workcenter/WorkQueueSection';
-import QuickActionsSection from '../workcenter/QuickActionsSection';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
 
@@ -518,25 +518,24 @@ const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
 // WIDGET REGISTRY - metadata deklaratif. Compose di PermissionAwareDashboard.
 export const WIDGETS: WidgetDef[] = [
   /*
-    WORK CENTER - My Action/Today/Upcoming + Quick Action. Priority PALING
-    RENDAH (tampil PALING ATAS), untuk SEMUA role yang login - inilah yang
-    menjawab "apa yang harus saya kerjakan sekarang" sebelum statistik apa
-    pun di bawahnya. permission selalu true: widget-nya sendiri yang
-    berempty-state rapi kalau memang tidak ada tugas aktif untuk role itu -
-    lebih jujur daripada widget yang hilang tanpa penjelasan.
+    WORK CENTER - My Action/Today/Upcoming, PLUS Quick Action Team yang
+    dirender DI DALAM kartu My Action-nya sendiri (lihat WorkQueueSection.tsx).
+    Priority PALING RENDAH (tampil PALING ATAS), untuk SEMUA role yang login -
+    inilah yang menjawab "apa yang harus saya kerjakan sekarang" sebelum
+    statistik apa pun di bawahnya. permission selalu true: widget-nya sendiri
+    yang berempty-state rapi kalau memang tidak ada tugas aktif untuk role
+    itu - lebih jujur daripada widget yang hilang tanpa penjelasan.
   */
   { id: 'work-queue',     permission: () => true, priority: 0,   size: 'full', Component: WorkQueueSection },
   /*
-    Quick Action - utk Sales/Marketing (role tanpa canAccessAnalytics), widget
-    ini JUGA merender Analytics Saya (SalesAnalyticsWidget) di tengah, diapit
-    chip aksi kiri/kanan - lihat QuickActionsSection.tsx. Karena itu TIDAK
-    ADA lagi entri registry 'sales-analytics' terpisah di bawah ini (dulu ada,
-    priority 3) - kontennya sama, cuma dirender dari sini supaya benar-benar
-    bisa diapit, bukan berdiri sendiri di baris terpisah. SalesAnalyticsWidget
-    sendiri TIDAK dihapus, tetap komponen yang sama, cuma dipanggil dari
-    tempat berbeda.
+    Analytics Saya (Sales/Marketing) - tema analytics, DATA SENDIRI, 4 kartu
+    statistik + Quick Action (Request Schedule/Design Project/Ticket/Form
+    Review/Project Progress) dirender DI DALAM kartu ini sendiri, lihat
+    SalesAnalyticsWidget.tsx. Priority 0.5 - tepat di bawah My Action, karena
+    bagi Sales/Guest kartu inilah "frame" Quick Action mereka, jadi harus
+    tampil sedini My Action tampil bagi Team.
   */
-  { id: 'quick-actions',  permission: () => true, priority: 0.5, size: 'full', Component: QuickActionsSection },
+  { id: 'sales-analytics', permission: (u) => !canAccessAnalytics(u) && hasSalesAnalyticsData(u), priority: 0.5, size: 'full', Component: SalesAnalyticsWidget },
   // Team Monitoring paling atas utk Admin/Team (full width) - jawab "mana report tim".
   { id: 'team-monitoring', permission: canSeeTeamMonitoring, priority: 1, size: 'full', Component: TeamMonitoringWidget },
   // Analytics native (DashboardKPI, tanpa iframe) - tema analytics penuh utk Admin/Team.

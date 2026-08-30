@@ -6,22 +6,21 @@
  * Schedule, Request Design Project, Form Review BAST, Ticket Troubleshooting.
  * Tiap panel hanya muncul kalau user punya menunya.
  *
- * Dipindah dari Widgets.tsx ke file sendiri supaya bisa dipakai LANGSUNG oleh
- * widget Work Center (QuickActionsSection, layout "kiri-kanan Analytics
- * Saya") tanpa circular import - Widgets.tsx sendiri memuat widget Work
- * Center lewat WIDGETS registry, jadi widget Work Center tidak bisa balik
- * mengimpor apa pun dari Widgets.tsx.
+ * Dipindah dari Widgets.tsx ke file sendiri supaya bisa dipanggil LANGSUNG
+ * oleh Widgets.tsx registry lagi (lihat WIDGETS) tanpa masalah - ini murni
+ * pemisahan file, bukan perubahan cara pakainya.
  *
- * Pintasan "Buat Request Schedule/Design Project/Ticket" yang dulu ada di
- * bawah kartu ini SUDAH DIHAPUS - sekarang jadi tanggung jawab Quick Action
- * di Work Center (chip kiri/kanan kartu ini), supaya tidak ada dua baris
- * tombol yang persis sama artinya tampil dua kali di satu halaman.
+ * Quick Action (Request Schedule/Design Project/Ticket/Form Review/Project
+ * Progress) dirender DI DALAM kartu ini sendiri, di bawah kartu statistik -
+ * bukan di luar/mengapit kartu ini seperti percobaan sebelumnya. Learning
+ * Center SENGAJA tidak ada di sini (beda dari daftar Quick Action Team) -
+ * sesuai permintaan eksplisit.
  */
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { hasMenu } from './permissions';
-import { type WidgetProps, WidgetCard, Loading } from './primitives';
+import { type WidgetProps, WidgetCard, Loading, QuickActionChip } from './primitives';
 
 interface SalesAnalytics {
   schedule: { total: number; active: number; done: number };
@@ -58,13 +57,14 @@ function AnalyticStat({ accent, label, value, subs }: {
   );
 }
 
-export const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user }) => {
+export const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<SalesAnalytics | null>(null);
   const showSchedule = hasMenu(user, 'reminder-schedule');
   const showProject  = hasMenu(user, 'request-design-project');
   const showReview   = hasMenu(user, 'form-bast');
   const showTicket   = hasMenu(user, 'ticket-troubleshooting');
+  const showProgress = hasMenu(user, 'project-progress');
 
   useEffect(() => {
     let alive = true;
@@ -111,36 +111,70 @@ export const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user }) => {
     return () => { alive = false; };
   }, [user, showSchedule, showProject, showReview, showTicket]);
 
+  const adaQuickAction = showSchedule || showProject || showTicket || showReview || showProgress;
+
   return (
     <WidgetCard title="Analytics Saya" icon="📊" accent="#c8861d">
       {loading || !data ? <Loading /> : (
-        // Dua kolom sejak layar tersempit: satu kolom membuat empat kartu
-        // memakan hampir seluruh layar ponsel.
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-3">
-          {showSchedule && (
-            <AnalyticStat accent="#0e7490" label="Request Schedule" value={data.schedule.total}
-              subs={[{ label: 'Aktif', value: data.schedule.active }, { label: 'Selesai', value: data.schedule.done }]} />
+        <>
+          {/* Dua kolom sejak layar tersempit: satu kolom membuat empat kartu
+              memakan hampir seluruh layar ponsel. */}
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-3">
+            {showSchedule && (
+              <AnalyticStat accent="#0e7490" label="Request Schedule" value={data.schedule.total}
+                subs={[{ label: 'Aktif', value: data.schedule.active }, { label: 'Selesai', value: data.schedule.done }]} />
+            )}
+            {showProject && (
+              <AnalyticStat accent="#6d28d9" label="Design Project" value={data.project.total}
+                subs={[{ label: 'Pending', value: data.project.pending }, { label: 'Proses', value: data.project.progress }, { label: 'Selesai', value: data.project.done }]} />
+            )}
+            {showReview && (
+              <AnalyticStat accent="#475569" label="Form Review/BAST" value={data.review.total}
+                subs={[{ label: 'Demo', value: data.review.demo }, { label: 'BAST', value: data.review.bast }]} />
+            )}
+            {showTicket && (
+              <AnalyticStat accent="#be123c" label="Ticket" value={data.ticket.total}
+                subs={[{ label: 'Aktif', value: data.ticket.open }, { label: 'Solved', value: data.ticket.solved }]} />
+            )}
+          </div>
+          {/*
+            Quick Action DI DALAM kartu ini sendiri, bukan mengapit dari luar
+            (percobaan sebelumnya) - chip proporsional (QuickActionChip),
+            bukan tombol lebar seperti PintasanBuat yang lama. Learning
+            Center sengaja tidak ada di sini.
+          */}
+          {adaQuickAction && (
+            <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-100">
+              {showSchedule && (
+                <QuickActionChip label="Request Schedule" icon="🗓️" warna="#0891b2"
+                  onClick={() => openUrl('/reminder-schedule?buat=1', 'Request Schedule')} />
+              )}
+              {showProject && (
+                <QuickActionChip label="Design Project" icon="🏗️" warna="#7c3aed"
+                  onClick={() => openUrl('/form-require-project?buat=1', 'Request Design Project')} />
+              )}
+              {showTicket && (
+                <QuickActionChip label="Buat Ticket" icon="🎫" warna="#e11d48"
+                  onClick={() => openUrl('/ticketing?buat=1', 'Ticket Troubleshooting')} />
+              )}
+              {showReview && (
+                <QuickActionChip label="Form Review" icon="⭐" warna="#475569"
+                  onClick={() => openMenu('form-bast')} />
+              )}
+              {showProgress && (
+                <QuickActionChip label="Project Progress" icon="📊" warna="#0d9488"
+                  onClick={() => openMenu('project-progress')} />
+              )}
+            </div>
           )}
-          {showProject && (
-            <AnalyticStat accent="#6d28d9" label="Design Project" value={data.project.total}
-              subs={[{ label: 'Pending', value: data.project.pending }, { label: 'Proses', value: data.project.progress }, { label: 'Selesai', value: data.project.done }]} />
-          )}
-          {showReview && (
-            <AnalyticStat accent="#475569" label="Form Review/BAST" value={data.review.total}
-              subs={[{ label: 'Demo', value: data.review.demo }, { label: 'BAST', value: data.review.bast }]} />
-          )}
-          {showTicket && (
-            <AnalyticStat accent="#be123c" label="Ticket" value={data.ticket.total}
-              subs={[{ label: 'Aktif', value: data.ticket.open }, { label: 'Solved', value: data.ticket.solved }]} />
-          )}
-        </div>
+        </>
       )}
     </WidgetCard>
   );
 };
 
-/** Sama seperti hasMenu di atas - dipakai QuickActionsSection utk tahu kapan Analytics Saya relevan ditampilkan. */
+/** Dipakai registry Widgets.tsx untuk tahu kapan kartu ini (stat ATAU quick action-nya) relevan ditampilkan. */
 export function hasSalesAnalyticsData(user: Parameters<typeof hasMenu>[0]): boolean {
   return hasMenu(user, 'reminder-schedule') || hasMenu(user, 'request-design-project')
-    || hasMenu(user, 'form-bast') || hasMenu(user, 'ticket-troubleshooting');
+    || hasMenu(user, 'form-bast') || hasMenu(user, 'ticket-troubleshooting') || hasMenu(user, 'project-progress');
 }
