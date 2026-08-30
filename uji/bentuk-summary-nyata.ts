@@ -233,39 +233,87 @@ async function main() {
     return -1;
   };
 
-  console.log('\n9. Ekspor Pengajuan per tahun memakai POLA yang sama');
+  /** Kolom awal grup 3-kolom "Sebagai|%|Rp" milik sebuah project, dicari dari kepala Tabel 1. */
+  const cariKolomProyekP = (barisKepala: number, namaProyek: string): number => {
+    for (let c = 1; c <= wsP.columnCount; c++) {
+      if (String(wsP.getCell(barisKepala, c).value ?? '').includes(namaProyek)) return c;
+    }
+    return -1;
+  };
+
+  console.log('\n9. Ekspor Pengajuan per tahun: Tabel 1 kini baris=ORANG, kolom berulang per project');
   {
     ok('Judul menyebut tahunnya', teksP(2, 2).includes('Tahun 2027'), teksP(2, 2));
-    const rh = cariP('1. Project yang Dicairkan') + 1;
-    ok('Kepala kolom dasar sama posisinya dengan Summary',
-      teksP(rh, 2) === 'No' && teksP(rh, 3) === 'Project');
-    //  Kolom 4 & 5 dipakai ulang untuk keterangan yang relevan di berkas per
-    //  tahun - judulnya HARUS ikut berubah, bukan tetap "Mode"/"BAST"
-    //  sementara isinya tahap & status.
-    ok('Kolom 4 berjudul "Tahap" (bukan "Mode")', teksP(rh, 4) === 'Tahap', teksP(rh, 4));
-    ok('Kolom 5 berjudul "Status" (bukan "BAST")', teksP(rh, 5) === 'Status', teksP(rh, 5));
-    ok('Grup peran di kolom yang SAMA dengan Summary',
-      teksP(rh, 7) === 'PIC' && teksP(rh, 10) === 'Support'
-      && teksP(rh, 13) === 'Supervisor' && teksP(rh, 16) === 'Manager' && teksP(rh, 19) === 'Installer');
-    ok('Sub-kepala Nama/%/Rp sama', teksP(rh + 1, 7) === 'Nama' && teksP(rh + 1, 8) === '%' && teksP(rh + 1, 9) === 'Rp');
+    const rh = cariP('1. Project yang Dicairkan') + 1; // k1A
+    ok('Kepala "Nama" & "Peran" (menyamai Tabel 2)', teksP(rh, 2) === 'Nama' && teksP(rh, 4) === 'Peran');
+    const kolKorlantas = cariKolomProyekP(rh, 'Korlantas TMC Soreang');
+    const kolSolitaire = cariKolomProyekP(rh, 'Solitaire Billiard & Bar');
+    ok('Kedua project punya kolom grupnya sendiri', kolKorlantas > 0 && kolSolitaire > 0 && kolKorlantas !== kolSolitaire);
+    ok('Judul grup project menyebut tahap & persen',
+      teksP(rh, kolKorlantas).includes('T1') && teksP(rh, kolKorlantas).includes('50'));
+    ok('Sub-kepala "Sebagai | % | Rp" di bawah grup project',
+      teksP(rh + 1, kolKorlantas) === 'Sebagai' && teksP(rh + 1, kolKorlantas + 1) === '%' && teksP(rh + 1, kolKorlantas + 2) === 'Rp');
+    ok('Ada kolom "Total" di ujung', (() => {
+      for (let c = 1; c <= wsP.columnCount; c++) if (teksP(rh, c) === 'Total') return true;
+      return false;
+    })());
     ok('Tema navy sama', (wsP.getCell(rh, 2).fill as any)?.fgColor?.argb === '1F3864');
-    ok('Ada tabel rekap per orang', cariP('2. Nilai Pengajuan per Orang') > 0);
+    ok('Ada tabel rekap per orang (Tabel 2, tidak berubah)', cariP('2. Nilai Pengajuan per Orang') > 0);
   }
 
-  console.log('\n10. Hanya tahapan tahun itu yang masuk, dengan rupiah tahap itu');
+  console.log('\n10. Hanya tahapan tahun itu yang masuk; total per orang benar; installer tabel terpisah');
   {
-    const awal = cariP('1. Project yang Dicairkan') + 3;
-    //  p1 & p2 sama-sama punya T1 di 2027; T2 milik p1 (2028) tidak boleh ikut.
-    ok('Dua project masuk (keduanya punya tahapan 2027)',
-      teksP(awal, 3) === 'Korlantas TMC Soreang' && teksP(awal + 1, 3) === 'Solitaire Billiard & Bar');
-    ok('Kolom tahap menyebut T1 50%', teksP(awal, 4).includes('T1') && teksP(awal, 4).includes('50'));
-    //  Tim PTS: 50% dari porsi penuh. PIC p1 porsi penuh 275.000 -> 137.500.
-    ok('PIC dibayar sebesar tahapan tahun ini (50%)', wsP.getCell(awal, 9).value === 137500,
-      String(wsP.getCell(awal, 9).value));
-    //  Installer lunas 100% di tahap pertama - tidak ikut dipecah.
-    ok('Installer lunas penuh di tahun pertama', wsP.getCell(awal, 22).value === 75000,
-      String(wsP.getCell(awal, 22).value));
-    ok('Baris "(proyeksi)" ditandai', teksP(awal, 5).includes('proyeksi'), teksP(awal, 5));
+    const rh = cariP('1. Project yang Dicairkan') + 1;
+    const rData = rh + 2; // baris data pertama (k1B + 1)
+    const kolKorlantas = cariKolomProyekP(rh, 'Korlantas TMC Soreang');
+    const kolSolitaire = cariKolomProyekP(rh, 'Solitaire Billiard & Bar');
+    //  Korlantas (p1) punya DUA tahapan (T1/2027, T2/2028) tapi cuma SATU yang
+    //  jatuh tempo tahun ini - harus muncul sebagai SATU kolom grup, bukan dua.
+    let jumlahGrupSebagai = 0;
+    for (let c = 1; c <= wsP.columnCount; c++) if (teksP(rh + 1, c) === 'Sebagai') jumlahGrupSebagai++;
+    ok('Tepat 2 grup kolom project (bukan 3 - T2/2028 milik p1 tidak ikut)', jumlahGrupSebagai === 2, String(jumlahGrupSebagai));
+
+    //  Urutan orang: Manager (Dhany) dulu, lalu PIC urut abjad (Ferdinan, Taufik).
+    ok('Baris pertama = Dhany Wahyu (Manager)', teksP(rData, 2) === 'Dhany Wahyu', teksP(rData, 2));
+    ok('Baris kedua = Ferdinan Agustinus (PIC, abjad F < T)', teksP(rData + 1, 2) === 'Ferdinan Agustinus', teksP(rData + 1, 2));
+    ok('Baris ketiga = Taufik wahyudi (PIC)', teksP(rData + 2, 2) === 'Taufik wahyudi', teksP(rData + 2, 2));
+
+    //  Dhany: Manager di KEDUA project - porsi penuh 150.000 (p1) & 300.000 (p2),
+    //  masing-masing dipecah 50% (tahap T1) -> 75.000 & 150.000, total 225.000.
+    ok('Dhany di kolom Korlantas = 75.000 (50% dari porsi penuh 150.000)',
+      wsP.getCell(rData, kolKorlantas + 2).value === 75000, String(wsP.getCell(rData, kolKorlantas + 2).value));
+    ok('Dhany di kolom Solitaire = 150.000 (50% dari porsi penuh 300.000)',
+      wsP.getCell(rData, kolSolitaire + 2).value === 150000, String(wsP.getCell(rData, kolSolitaire + 2).value));
+    const kolTotalP = (() => { for (let c = 1; c <= wsP.columnCount; c++) if (teksP(rh, c) === 'Total') return c; return -1; })();
+    ok('Total Dhany = 225.000 (dijumlah dari kedua project, BUKAN dari satu kolom saja)',
+      wsP.getCell(rData, kolTotalP).value === 225000 || (wsP.getCell(rData, kolTotalP).value as any)?.result === 225000,
+      JSON.stringify(wsP.getCell(rData, kolTotalP).value));
+
+    //  Taufik: PIC hanya di Korlantas - kolom Solitaire-nya harus kosong ("—").
+    ok('Taufik di kolom Korlantas = 137.500 (50% dari 275.000)',
+      wsP.getCell(rData + 2, kolKorlantas + 2).value === 137500);
+    ok('Taufik TIDAK terlibat di Solitaire - kolomnya "—", bukan 0 atau kosong tanpa keterangan',
+      teksP(rData + 2, kolSolitaire) === '—');
+
+    //  Installer - tabel kecil terpisah, TIDAK ikut jadi baris di matriks orang.
+    ok('Ridwan Gunawan (installer) TIDAK jadi baris di matriks Team PTS', (() => {
+      for (let r = rData; r <= rData + 2; r++) if (teksP(r, 2) === 'Ridwan Gunawan') return false;
+      return true;
+    })());
+    let rInstJudul = -1, kolInstNama = -1, kolInstRp = -1;
+    for (let r = 1; r <= wsP.rowCount && rInstJudul < 0; r++) {
+      for (let c = 1; c <= wsP.columnCount; c++) {
+        if (String(wsP.getCell(r, c).value ?? '') === 'Nama Installer') { rInstJudul = r; kolInstNama = c; break; }
+      }
+    }
+    ok('Ada tabel Installer terpisah dengan kepala "Nama Installer"', rInstJudul > 0);
+    for (let c = kolInstNama; c <= wsP.columnCount; c++) {
+      if (String(wsP.getCell(rInstJudul, c).value ?? '') === 'Rp') { kolInstRp = c; break; }
+    }
+    const rInstData = rInstJudul + 1;
+    ok('Baris Installer: Ridwan Gunawan, lunas 100% di tahun pertama = 75.000',
+      teksP(rInstData, kolInstNama) === 'Ridwan Gunawan' && wsP.getCell(rInstData, kolInstRp).value === 75000,
+      `${teksP(rInstData, kolInstNama)} / ${wsP.getCell(rInstData, kolInstRp).value}`);
   }
 
   console.log('\n11. Baris incentive_splits GANDA untuk orang & peran yang sama - tidak dobel dicetak/dijumlah');
@@ -299,11 +347,22 @@ async function main() {
       for (let r = 1; r <= wsG.rowCount; r++) if (String(wsG.getCell(r, 2).value ?? '').includes(potongan)) return r;
       return -1;
     };
-    const rG = cariBarisG('1. Project yang Dicairkan') + 3; // baris data pertama Tabel 1
-    const namaSel = String(wsG.getCell(rG, 7).value ?? '');
-    ok('Nama PIC TIDAK tercetak dua kali dalam satu sel', namaSel === 'Taufik wahyudi', namaSel);
-    ok('Rupiah PIC = 137.500 - bukan dijumlah jadi 275.000', wsG.getCell(rG, 9).value === 137500,
-      String(wsG.getCell(rG, 9).value));
+    const rhG = cariBarisG('1. Project yang Dicairkan') + 1; // k1A
+    const rG = rhG + 2; // baris data pertama (satu orang: Taufik)
+    const namaSel = String(wsG.getCell(rG, 2).value ?? '');
+    ok('Nama orang di kolom Nama TIDAK tercetak dua kali', namaSel === 'Taufik wahyudi', namaSel);
+    //  Cari kolom "Sebagai" grup project Korlantas dari kepala tabel.
+    let kolSebagai = -1;
+    for (let c = 1; c <= wsG.columnCount; c++) if (String(wsG.getCell(rhG + 1, c).value ?? '') === 'Sebagai') { kolSebagai = c; break; }
+    ok('Kolom Sebagai ditemukan', kolSebagai > 0);
+    ok('Rupiah PIC di kolom project = 137.500 - bukan dijumlah jadi 275.000',
+      wsG.getCell(rG, kolSebagai + 2).value === 137500, String(wsG.getCell(rG, kolSebagai + 2).value));
+    //  Kolom Total juga harus 137.500, bukan 275.000.
+    let kolTotalG = -1;
+    for (let c = 1; c <= wsG.columnCount; c++) if (String(wsG.getCell(rhG, c).value ?? '') === 'Total') { kolTotalG = c; break; }
+    const totalVal = wsG.getCell(rG, kolTotalG).value as any;
+    const totalAngka = typeof totalVal === 'object' && totalVal ? totalVal.result : totalVal;
+    ok('Kolom Total = 137.500, bukan dijumlah jadi 275.000', totalAngka === 137500, String(totalAngka));
     fs.unlinkSync(targetG);
   }
 
