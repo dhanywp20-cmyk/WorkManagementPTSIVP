@@ -25,51 +25,20 @@ import { ambilRingkasanPerforma, type RingkasanPerforma } from '@/lib/ringkasan-
 import { isSalesGuest } from '@/lib/constants';
 import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
 
-// Kontrak widget
-
-export interface WidgetProps {
-  user: User;
-  openMenu: (key: string) => void;            // buka menu by key (reuse handleMenuClick di page)
-  openUrl: (url: string, title: string) => void; // buka halaman internal full-screen (mis. Analytics)
-}
-
-export type WidgetSize = 'sm' | 'md' | 'lg' | 'full';
-
-export interface WidgetDef {
-  id: string;
-  permission: (u: User) => boolean;
-  priority: number;
-  size: WidgetSize;
-  Component: React.FC<WidgetProps>;
-}
+// Kontrak widget + primitif UI - dipindah ke primitives.tsx supaya widget
+// Work Center (../workcenter/) bisa memakainya tanpa circular import (lihat
+// komentar di primitives.tsx). Diimpor ulang di sini + di-export lagi supaya
+// pemakai lama (PermissionAwareDashboard.tsx) tidak perlu ganti sumber impor.
+import {
+  type WidgetProps, type WidgetSize, type WidgetDef,
+  WidgetCard, EmptyState, Loading, PintasanBuat,
+} from './primitives';
+export type { WidgetProps, WidgetSize, WidgetDef };
+export { WidgetCard, EmptyState, Loading, PintasanBuat };
+import WorkQueueSection from '../workcenter/WorkQueueSection';
+import QuickActionsSection from '../workcenter/QuickActionsSection';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
-
-// UI primitives
-
-function WidgetCard({ title, icon, accent, children, onSeeAll, seeAllLabel }: {
-  title: string; icon: string; accent: string;
-  children: React.ReactNode; onSeeAll?: () => void; seeAllLabel?: string;
-}) {
-  return (
-    <div className="rounded-2xl bg-white/95 backdrop-blur-sm shadow-lg border border-black/5 p-4 flex flex-col h-full"
-      style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base flex-shrink-0"
-          style={{ background: `${accent}1a`, color: accent }}>{icon}</div>
-        <h3 className="font-bold text-slate-800 text-sm truncate flex-1">{title}</h3>
-        {onSeeAll && (
-          <button onClick={onSeeAll}
-            className="text-[11px] font-semibold px-2 py-1 rounded-lg transition-all hover:scale-[1.03] flex-shrink-0"
-            style={{ background: `${accent}14`, color: accent }}>
-            {seeAllLabel ?? 'Lihat semua'} →
-          </button>
-        )}
-      </div>
-      <div className="flex-1 min-h-0">{children}</div>
-    </div>
-  );
-}
 
 function StatPills({ items }: { items: { label: string; value: number; color: string }[] }) {
   return (
@@ -92,18 +61,6 @@ function MiniRow({ title, sub, tone }: { title: string; sub: string; tone?: stri
         <div className="text-xs font-semibold text-slate-700 truncate">{title}</div>
         <div className="text-[10px] text-slate-400 truncate">{sub}</div>
       </div>
-    </div>
-  );
-}
-
-function EmptyState({ text }: { text: string }) {
-  return <div className="flex items-center justify-center h-full min-h-[60px] text-[11px] text-slate-400 text-center px-2">{text}</div>;
-}
-
-function Loading() {
-  return (
-    <div className="flex items-center justify-center h-full min-h-[80px]">
-      <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.25)', borderTopColor: '#e2a84b' }} />
     </div>
   );
 }
@@ -439,32 +396,6 @@ function AnalyticStat({ accent, label, value, subs }: {
   );
 }
 
-/**
- * Pintasan membuat data baru dari dashboard.
- *
- * Ikon kirim yang sama dengan tombol Submit Form di tiap platform, supaya
- * jelas sejak dari dashboard bahwa tombol ini bermuara ke sebuah form - bukan
- * ke tabel. Ukurannya sengaja jauh lebih besar daripada tautan teks yang dulu
- * ada di sini: inilah aksi yang paling sering dipakai Sales dari halaman ini.
- */
-function PintasanBuat({ label, warna, onClick }: { label: string; warna: string; onClick: () => void }) {
-  return (
-    <button onClick={onClick}
-      className="flex-1 min-w-0 flex items-center gap-2 px-3 py-2 rounded-xl text-white font-bold text-xs transition-all hover:scale-[1.02] text-left"
-      style={{ background: warna, boxShadow: `0 4px 14px ${warna}59` }}>
-      <span className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.22)' }}>
-        <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-        </svg>
-      </span>
-      <span className="leading-tight min-w-0 truncate">
-        <span className="block opacity-80 text-[9px] font-semibold">Buat</span>
-        <span className="block truncate">{label}</span>
-      </span>
-    </button>
-  );
-}
-
 const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openUrl }) => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<SalesAnalytics | null>(null);
@@ -737,6 +668,16 @@ const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
 
 // WIDGET REGISTRY - metadata deklaratif. Compose di PermissionAwareDashboard.
 export const WIDGETS: WidgetDef[] = [
+  /*
+    WORK CENTER - My Action/Today/Upcoming + Quick Action. Priority PALING
+    RENDAH (tampil PALING ATAS), untuk SEMUA role yang login - inilah yang
+    menjawab "apa yang harus saya kerjakan sekarang" sebelum statistik apa
+    pun di bawahnya. permission selalu true: widget-nya sendiri yang
+    berempty-state rapi kalau memang tidak ada tugas aktif untuk role itu -
+    lebih jujur daripada widget yang hilang tanpa penjelasan.
+  */
+  { id: 'work-queue',     permission: () => true, priority: 0,   size: 'full', Component: WorkQueueSection },
+  { id: 'quick-actions',  permission: () => true, priority: 0.5, size: 'full', Component: QuickActionsSection },
   // Team Monitoring paling atas utk Admin/Team (full width) - jawab "mana report tim".
   { id: 'team-monitoring', permission: canSeeTeamMonitoring, priority: 1, size: 'full', Component: TeamMonitoringWidget },
   // Analytics native (DashboardKPI, tanpa iframe) - tema analytics penuh utk Admin/Team.
