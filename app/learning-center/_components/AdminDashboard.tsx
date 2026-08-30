@@ -74,7 +74,6 @@ export function AdminDashboard({ user }: { user: User }) {
   const [divisionStats, setDivisionStats] = useState<any[]>([]);
   const [nationalAvg, setNationalAvg] = useState<number | null>(null);
   const [performerDivisionFilter, setPerformerDivisionFilter] = useState<string>('');
-  const [batchPerf, setBatchPerf] = useState<any[]>([]);
 
   const [selectedUser, setSelectedUser] = useState<{ uid: string; name: string } | null>(null);
   const [userAttempts, setUserAttempts] = useState<any[]>([]);
@@ -97,7 +96,7 @@ export function AdminDashboard({ user }: { user: User }) {
       setStats({ materials: mat.count ?? 0, activeTeam: uniqueTeam, sessions: ses.count ?? 0, attempts: att.count ?? 0 });
 
       // Round 2: analytics data in parallel
-      const [recentRes, allAttRes, qListRes, aListRes, usersRes] = await Promise.all([
+      const [recentRes, allAttRes, usersRes] = await Promise.all([
         supabase.from('lc_quiz_attempts')
           .select('*, users(full_name), lc_quiz_sessions(session_name, passing_grade)')
           .eq('is_submitted', true).order('submitted_at', { ascending: false }).limit(50),
@@ -115,8 +114,6 @@ export function AdminDashboard({ user }: { user: User }) {
         //    Query terpisah juga lebih hemat: data user tidak diulang di
         //    setiap baris attempt.
         supabase.from('lc_quiz_attempts').select('*').eq('is_submitted', true),
-        supabase.from('lc_questions').select('id, batch_name'),
-        supabase.from('lc_answers').select('question_id, is_correct'),
         supabase.from('users').select('id, full_name, jabatan, sales_division, team_type, role'),
       ]);
       setRecentAttempts(recentRes.data ?? []);
@@ -211,25 +208,6 @@ export function AdminDashboard({ user }: { user: User }) {
       // Nasional (semua divisi/jabatan digabung) - pembanding gap tiap kelompok
       const allScoresNational = allAtt.map((a: any) => a.score ?? 0);
       setNationalAvg(allScoresNational.length ? allScoresNational.reduce((s: number, n: number) => s + n, 0) / allScoresNational.length : null);
-
-      // Batch/topic performance
-      if (qListRes.data && aListRes.data) {
-        const qBatch: Record<string, string> = {};
-        qListRes.data.forEach((q: any) => { if (q.batch_name) qBatch[q.id] = q.batch_name; });
-        const byBatch: Record<string, { correct: number; total: number }> = {};
-        aListRes.data.forEach((ans: any) => {
-          const bn = qBatch[ans.question_id];
-          if (!bn) return;
-          if (!byBatch[bn]) byBatch[bn] = { correct: 0, total: 0 };
-          byBatch[bn].total++;
-          if (ans.is_correct) byBatch[bn].correct++;
-        });
-        setBatchPerf(Object.entries(byBatch).map(([name, v]) => ({
-          name,
-          pct: v.total > 0 ? Math.round((v.correct / v.total) * 100) : 0,
-          total: v.total, correct: v.correct,
-        })).sort((a, b) => a.pct - b.pct));
-      }
 
       // Per session
       const { data: ss } = await supabase.from('lc_quiz_sessions').select('id, session_name');
@@ -483,105 +461,110 @@ export function AdminDashboard({ user }: { user: User }) {
         </div>
 
         {/* ── Session Statistics ── */}
-        {sessionStats.length > 0 && (
-          <section>
-            <SectionHeader>📈 Statistik Per Sesi Quiz</SectionHeader>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {sessionStats.map((s: any) => (
-                <div key={s.id} className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
-                  <p className="text-sm font-bold text-slate-800 mb-4 leading-snug line-clamp-2">{s.name}</p>
-                  <div className="flex items-start gap-4">
-                    <div className="flex flex-col items-center gap-1">
-                      <DonutChart
-                        segments={[{ value: s.passed, color: '#10b981' }, { value: s.failed, color: '#f43f5e' }]}
-                        label={s.total > 0 ? `${Math.round(s.passed / s.total * 100)}%` : '-'}
-                      />
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Lulus</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-1">
-                      <DonutChart
-                        segments={[
-                          { value: s.scoreGood, color: '#3b82f6' },
-                          { value: s.scoreMid, color: '#f59e0b' },
-                          { value: s.scoreLow, color: '#ef4444' },
-                        ]}
-                        label={s.avg.toFixed(0)}
-                      />
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Nilai</span>
-                    </div>
-                    {s.avgMin !== null && (
-                      <div className="flex flex-col items-center gap-1">
-                        <DonutChart
-                          segments={[
-                            { value: Math.min(s.avgMin, 60), color: '#8b5cf6' },
-                            { value: Math.max(60 - Math.min(s.avgMin, 60), 0), color: '#ede9fe' },
-                          ]}
-                          label={`${Math.round(s.avgMin)}m`}
-                        />
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Waktu</span>
-                      </div>
-                    )}
-                    <div className="flex-1 space-y-1.5 pt-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-slate-400">Peserta</span>
-                        <span className="font-bold text-slate-700">{s.total}</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-slate-400">Avg</span>
-                        <span className={`font-bold ${s.avg >= 80 ? 'text-emerald-600' : s.avg >= 60 ? 'text-amber-600' : 'text-rose-600'}`}>{s.avg.toFixed(1)}</span>
-                      </div>
-                      {s.avgMin !== null && (
-                        <div className="flex justify-between text-xs">
-                          <span className="text-slate-400">Waktu</span>
-                          <span className="font-bold text-violet-600">{s.avgMin.toFixed(0)} mnt</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-4 pt-3 border-t border-slate-100">
-                    <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />{s.passed} lulus</span>
-                    <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-rose-400" />{s.failed} gagal</span>
-                    <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="w-1.5 h-1.5 rounded-full bg-blue-400" />≥80: {s.scoreGood}</span>
-                    <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />60–79: {s.scoreMid}</span>
-                    <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="w-1.5 h-1.5 rounded-full bg-red-400" />&lt;60: {s.scoreLow}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+        {sessionStats.length > 0 && (() => {
+          /*
+            SATU ringkasan gabungan, bukan satu kartu-berisi-3-donut PER SESI
+            seperti sebelumnya - begitu sesi quiz sudah puluhan/ratusan (wajar
+            kalau platform ini sudah jalan lama), grid kartu itu jadi sangat
+            panjang tanpa menambah informasi baru. Angka & donut di sini
+            dijumlah dari sessionStats yang sama persis (tidak query ulang),
+            lalu daftar sesinya sendiri ditaruh di TABEL ringkas di bawahnya -
+            satu baris per sesi, bukan satu kartu besar per sesi.
+          */
+          const totalPeserta = sessionStats.reduce((n: number, s: any) => n + s.total, 0);
+          const totalPassed  = sessionStats.reduce((n: number, s: any) => n + s.passed, 0);
+          const totalFailed  = sessionStats.reduce((n: number, s: any) => n + s.failed, 0);
+          const scoreGood    = sessionStats.reduce((n: number, s: any) => n + s.scoreGood, 0);
+          const scoreMid     = sessionStats.reduce((n: number, s: any) => n + s.scoreMid, 0);
+          const scoreLow     = sessionStats.reduce((n: number, s: any) => n + s.scoreLow, 0);
+          const avgScore     = totalPeserta > 0
+            ? sessionStats.reduce((n: number, s: any) => n + s.avg * s.total, 0) / totalPeserta : 0;
+          const sesiDenganWaktu = sessionStats.filter((s: any) => s.avgMin !== null);
+          const avgMin = sesiDenganWaktu.length
+            ? sesiDenganWaktu.reduce((n: number, s: any) => n + s.avgMin, 0) / sesiDenganWaktu.length : null;
+          const sesiUrut = [...sessionStats].sort((a: any, b: any) => a.avg - b.avg);
 
-        {/* ── Topic / Batch Performance ── */}
-        {batchPerf.length > 0 && (
-          <section>
-            <SectionHeader>🎯 Knowledge Gap per Topik</SectionHeader>
-            <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
-              {batchPerf.map(b => (
-                <div key={b.name}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-semibold text-slate-700 truncate max-w-[55%]">{b.name}</span>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-[10px] text-slate-400">{b.correct}/{b.total} benar</span>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
-                        b.pct >= 80 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        : b.pct >= 60 ? 'bg-amber-50 text-amber-700 border-amber-200'
-                        : 'bg-rose-50 text-rose-700 border-rose-200'
-                      }`}>{b.pct}%</span>
+          return (
+            <section>
+              <SectionHeader>📈 Statistik Per Sesi Quiz</SectionHeader>
+              <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+                <StatCardGrid cols={4} items={[
+                  { label: 'Total Sesi', value: sessionStats.length, accent: '#6366f1' },
+                  { label: 'Total Peserta', value: totalPeserta, accent: '#0ea5e9' },
+                  { label: 'Rata-rata Nilai', value: avgScore.toFixed(1), accent: avgScore >= 80 ? '#10b981' : avgScore >= 60 ? '#f59e0b' : '#f43f5e' },
+                  { label: 'Pass Rate', value: totalPeserta > 0 ? `${Math.round(totalPassed / totalPeserta * 100)}%` : '-', accent: '#10b981' },
+                ]} />
+                <div className="flex flex-wrap items-start gap-8 mt-5 pt-5 border-t border-slate-100">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <DonutChart size={92} strokeWidth={13}
+                      segments={[{ value: totalPassed, color: '#10b981' }, { value: totalFailed, color: '#f43f5e' }]}
+                      label={totalPeserta > 0 ? `${Math.round(totalPassed / totalPeserta * 100)}%` : '-'}
+                    />
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lulus vs Gagal</span>
+                    <div className="flex gap-3">
+                      <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />{totalPassed} lulus</span>
+                      <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-rose-400" />{totalFailed} gagal</span>
                     </div>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2.5">
-                    <div className="h-2.5 rounded-full"
-                      style={{
-                        width: `${b.pct}%`,
-                        background: b.pct >= 80 ? '#10b981' : b.pct >= 60 ? '#f59e0b' : '#f43f5e',
-                      }} />
+                  <div className="flex flex-col items-center gap-1.5">
+                    <DonutChart size={92} strokeWidth={13}
+                      segments={[
+                        { value: scoreGood, color: '#3b82f6' },
+                        { value: scoreMid, color: '#f59e0b' },
+                        { value: scoreLow, color: '#ef4444' },
+                      ]}
+                      label={avgScore.toFixed(0)}
+                    />
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sebaran Nilai</span>
+                    <div className="flex gap-3">
+                      <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="w-1.5 h-1.5 rounded-full bg-blue-400" />≥80: {scoreGood}</span>
+                      <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />60–79: {scoreMid}</span>
+                      <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="w-1.5 h-1.5 rounded-full bg-red-400" />&lt;60: {scoreLow}</span>
+                    </div>
                   </div>
+                  {avgMin !== null && (
+                    <div className="flex flex-col items-center gap-1.5">
+                      <DonutChart size={92} strokeWidth={13}
+                        segments={[
+                          { value: Math.min(avgMin, 60), color: '#8b5cf6' },
+                          { value: Math.max(60 - Math.min(avgMin, 60), 0), color: '#ede9fe' },
+                        ]}
+                        label={`${Math.round(avgMin)}m`}
+                      />
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rata-rata Waktu</span>
+                    </div>
+                  )}
                 </div>
-              ))}
-              <p className="text-[10px] text-slate-400 pt-1">Diurutkan dari topik dengan jawaban benar paling rendah (knowledge gap tertinggi)</p>
-            </div>
-          </section>
-        )}
+                {/* Rincian per sesi - TABEL ringkas (satu baris per sesi), bukan kartu besar per sesi. */}
+                <div className="mt-5 pt-1 overflow-x-auto">
+                  <table className="w-full text-sm table-zebra" style={{ minWidth: '480px' }}>
+                    <thead className="border-b border-slate-200">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sesi</th>
+                        <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Peserta</th>
+                        <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Avg</th>
+                        <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Lulus</th>
+                        <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Waktu</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sesiUrut.map((s: any) => (
+                        <tr key={s.id}>
+                          <td className="px-3 py-2 font-semibold text-slate-700 truncate max-w-[240px]">{s.name}</td>
+                          <td className="px-3 py-2 text-center text-slate-500">{s.total}</td>
+                          <td className={`px-3 py-2 text-center font-bold ${s.avg >= 80 ? 'text-emerald-600' : s.avg >= 60 ? 'text-amber-600' : 'text-rose-600'}`}>{s.avg.toFixed(1)}</td>
+                          <td className="px-3 py-2 text-center text-slate-500">{s.passed}/{s.total}</td>
+                          <td className="px-3 py-2 text-center text-slate-500">{s.avgMin !== null ? `${s.avgMin.toFixed(0)} mnt` : '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <p className="text-[10px] text-slate-400 pt-2">Diurutkan dari nilai rata-rata terendah</p>
+                </div>
+              </div>
+            </section>
+          );
+        })()}
 
         {/* ── Per Divisi / Jabatan Ranking ── */}
         {divisionStats.length > 0 && (
