@@ -17,7 +17,7 @@ import {
   formatRupiah, formatPct,
   ROLE_LABELS, TRANCHE_STATUS,
 } from './_components/calc';
-import { exportPengajuanIncentive, exportSummaryIncentive } from './_components/exportPengajuan';
+import { exportSummaryIncentive } from './_components/exportPengajuan';
 import { adminSetIncentiveInput, adminSetIncentiveBrandScope } from '@/lib/admin-users';
 import { MobileListCard, MobileCardBadge, ModalPortal } from '@/components/shared';
 import { bolehKelolaIncentive } from '@/lib/kelompok';
@@ -591,56 +591,6 @@ export default function IncentivePTSPage() {
     loadAll();
   }
 
-  /**
-   * Export Pengajuan - SATU KOHORT BAST per berkas (lihat komentar besar di
-   * bangunWorkbookPengajuan). `filterBastYear` (filter Tahun BAST di tab
-   * Project) menentukan kohortnya - tombol pemicunya karena itu hidup di
-   * tab Project, bersebelahan dengan Export Summary, bukan lagi di tab
-   * Tahapan Pencairan (yang tahunnya adalah tahun PEMBAYARAN, bisa mencampur
-   * beberapa kohort BAST berbeda dalam satu tahun kalender - persis
-   * pencampuran yang tidak boleh terjadi di berkas ini).
-   */
-  async function handleExport() {
-    if (filterBastYear == null) { notify('error', 'Pilih Tahun BAST dulu di filter atas sebelum Export Pengajuan.'); return; }
-    setExporting(true);
-    try {
-      const tahunBAST = filterBastYear;
-      const yp = projects.filter(p => p.bast_date && new Date(p.bast_date).getFullYear() === tahunBAST);
-      if (yp.length === 0) {
-        notify('error', `Tidak ada project dengan BAST tahun ${tahunBAST}.`);
-        setExporting(false);
-        return;
-      }
-      const yids = new Set(yp.map(p => p.id));
-      //  SELURUH tahapan & baris pembagian kohort ini, bukan cuma satu tahun
-      //  pembayaran - Tabel 3 (Pengajuan Pencairan per Tahap) menampilkan
-      //  Tahap 1/2/3 sekaligus, masing-masing bisa jatuh tempo tahun berbeda.
-      const ytSemua = tranches.filter(t => yids.has(t.project_id));
-      const ys = allSplits.filter(s => yids.has(s.project_id));
-
-      //  Manager & Support memakai sumber yang SAMA dengan Export Summary -
-      //  lihat alasannya di komentar handleExportSummary. Dua jalur terpisah
-      //  untuk data yang sama adalah cara paling gampang membuat kedua
-      //  berkas diam-diam berbeda.
-      const { data: mgr } = await supabase.from('users').select('id, full_name').eq('jabatan', 'Manager').eq('team_type', 'Team PTS IVP').limit(1).single();
-      const managerUserId = (mgr?.id || '') as string;
-      const managerName   = (mgr?.full_name || 'Manager PTS IVP') as string;
-      const { data: sumberSupport } = await ambilSumberSupport();
-      const supportsMap = new Map<string, { user_id: string; user_name: string }[]>();
-      for (const p of yp) {
-        supportsMap.set(p.project_name, supportUntukProyek(sumberSupport, p));
-      }
-
-      await exportPengajuanIncentive({
-        year: tahunBAST, projects: yp, splits: ys, tranches: ytSemua,
-        allUsers: allUsers as { id?: string; full_name?: string; jabatan?: string; atasan_id?: string | null }[],
-        supportsMap, managerUserId, managerName, directorName: 'Director PT. IVP',
-      });
-      notify('success', `Export Pengajuan BAST ${tahunBAST} berhasil — ${yp.length} project.`);
-    } catch (err: unknown) { notify('error', 'Export gagal: ' + (err as Error).message); }
-    setExporting(false);
-  }
-
   async function handleExportSummary() {
     setExporting(true);
     try {
@@ -675,13 +625,22 @@ export default function IncentivePTSPage() {
       for (const p of projects) {
         supportsMap.set(p.project_name, supportUntukProyek(sumberSupport, p));
       }
+      /*
+        Hanya project yang SUDAH masuk pipeline tahapan (Generate Tahapan
+        sudah dijalankan - punya baris incentive_tranches, apa pun statusnya
+        Pending/Processed/Paid) yang diexport - bukan seluruh project
+        berstatus done. Project yang nominalnya belum diisi/belum di-generate
+        bukan laporan pencairan yang bisa diperiksa Finance, cuma pekerjaan
+        yang masih perlu disiapkan Admin di tab Project.
+      */
+      const projectsAktif = projects.filter(p => tranches.some(t => t.project_id === p.id));
       await exportSummaryIncentive({
-        projects, allUsers: allUsers as { id?: string; full_name?: string; jabatan?: string; atasan_id?: string | null }[],
+        projects: projectsAktif, allUsers: allUsers as { id?: string; full_name?: string; jabatan?: string; atasan_id?: string | null }[],
         supportsMap, managerName, managerUserId, year: summaryExportYear,
       });
       notify('success', summaryExportYear != null
-        ? `Export summary tahun ${summaryExportYear} berhasil!`
-        : 'Export summary semua tahun berhasil!');
+        ? `Export summary tahun ${summaryExportYear} berhasil! (${projectsAktif.length} project dengan tahapan aktif)`
+        : `Export summary semua tahun berhasil! (${projectsAktif.length} project dengan tahapan aktif)`);
     } catch (err: unknown) { notify('error', 'Export gagal: ' + (err as Error).message); }
     setExporting(false);
   }
@@ -883,19 +842,6 @@ export default function IncentivePTSPage() {
                       className="px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 flex items-center gap-1.5">
                       {exporting ? <div className="w-3 h-3 border-2 border-emerald-400/30 border-t-emerald-500 rounded-full animate-spin" /> : '📊'} Export Summary
                     </button>
-                    {/*
-                      Beda dari Export Summary: Pengajuan WAJIB satu kohort
-                      BAST (lihat handleExport) - tidak ada pilihan "Semua
-                      Tahun" di sini, jadi tombolnya hanya muncul kalau filter
-                      Tahun BAST di atas sudah dipilih ke tahun tertentu.
-                    */}
-                    {filterBastYear != null && (
-                      <button onClick={handleExport} disabled={exporting}
-                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-white hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5"
-                        style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}>
-                        {exporting ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '📄'} Export Pengajuan {filterBastYear}
-                      </button>
-                    )}
                   </>)}
                   {isAdmin(currentUser) && filterBastYear != null && kandidatBulkGenerate(filterBastYear).length > 0 && (
                     <button onClick={() => setBulkGenerateConfirm(kandidatBulkGenerate(filterBastYear))}
@@ -1254,13 +1200,9 @@ export default function IncentivePTSPage() {
                   </button>
                 )}
                 {/*
-                  Export Pengajuan PINDAH ke tab Project (filter Tahun BAST) -
-                  tahun di sini adalah tahun PEMBAYARAN, yang untuk satu
-                  kohort BAST tetap tiga tahun berbeda (T1/T2/T3). Tombolnya
-                  dulu ada di sini, tapi "Export {tahunAktif}" mengajak
-                  mencampur project dari kohort BAST berbeda yang kebetulan
-                  cair tahun sama - lihat komentar besar di
-                  bangunWorkbookPengajuan untuk alasan itu tidak boleh lagi.
+                  Export dipindah SELURUHNYA ke tab Project ("Export Summary")
+                  - hanya ada satu berkas Excel sekarang, bukan dua yang mirip
+                  tapi tidak sama persis. Lihat handleExportSummary.
                 */}
               </div>
             </div>

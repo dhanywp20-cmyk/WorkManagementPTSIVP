@@ -15,7 +15,7 @@
   --simpan menuliskan berkasnya ke path itu untuk diperiksa mata sendiri.
 */
 import ExcelJS from 'exceljs';
-import { bangunWorkbookSummary, bangunWorkbookPengajuan } from '../app/incentive-pts/_components/exportPengajuan';
+import { bangunWorkbookSummary } from '../app/incentive-pts/_components/exportPengajuan';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -200,155 +200,6 @@ async function main() {
     ok('Blok tanda tangan "Di buat oleh,"', adaTtd);
   }
 
-  // ── Ekspor Pengajuan: SATU KOHORT BAST, 3 tabel ─────────────────────────
-  /*
-    Kohort BAST 2026 = p1..p4 (p5 tanpa BAST, tidak ikut - persis Summary).
-    Tahap 1 project p1 (Korlantas) sudah PROSES (data tersimpan, dua baris
-    identik sengaja disisipkan untuk menguji dedup - lihat bug asli di bawah).
-    Tahap 2 p1 (2028) dan Tahap 1 p2/Solitaire (2027) BELUM diproses -
-    keduanya harus tampil sebagai proyeksi, dipecah dari porsi penuh Tabel 1.
-    p1 tidak punya Tahap 3 sama sekali (belum di-generate) - sub-tabel Tahap
-    3 harus kosong dengan pesan yang jelas, bukan error atau baris kosong.
-  */
-  const cohortProjects = projects.filter(p => ['p1', 'p2', 'p3', 'p4'].includes(p.id as string));
-  const tranchesKohort = [
-    { id: 't1', project_id: 'p1', tranche_number: 1, percentage: 50, payment_year: 2027, status: 'processed' },
-    { id: 't2', project_id: 'p1', tranche_number: 2, percentage: 35, payment_year: 2028, status: 'pending' },
-    { id: 't3', project_id: 'p2', tranche_number: 1, percentage: 50, payment_year: 2027, status: 'pending' },
-  ] as any[];
-  const ANGKA_SENTINEL = 999999; // nilai TERSIMPAN yang mustahil sama dengan hasil proyeksi mana pun - membuktikan Tahap 1 p1 memang membaca baris tersimpan, bukan menghitung ulang.
-  const splitsKohort = [
-    // DUA baris identik untuk Taufik wahyudi (PIC, p1, Tahap 1) - menguji dedup:
-    // bug nyata dari laporan, nama tercetak dua kali DAN rupiahnya ikut dijumlah dobel.
-    { id: 's1', project_id: 'p1', tranche_id: 't1', role: 'pic', user_id: 'u-taufik', user_name: 'Taufik wahyudi', percentage: 55, amount: ANGKA_SENTINEL },
-    { id: 's2', project_id: 'p1', tranche_id: 't1', role: 'pic', user_id: 'u-taufik', user_name: 'Taufik wahyudi', percentage: 55, amount: ANGKA_SENTINEL },
-  ] as any[];
-
-  const wbP = await bangunWorkbookPengajuan({
-    year: 2026, projects: cohortProjects as any, splits: splitsKohort, tranches: tranchesKohort,
-    managerName: 'Dhany Wahyu', directorName: 'Director PT. IVP',
-    allUsers: users, supportsMap: new Map(), managerUserId: 'u-dhany',
-  } as any, SKEMA);
-
-  const targetP = simpanIdx > -1 ? target.replace(/\.xlsx$/, '-PengajuanBAST2026.xlsx')
-    : path.join(os.tmpdir(), `pengajuan-${Date.now()}.xlsx`);
-  await wbP.xlsx.writeFile(targetP);
-  const wbP2 = new ExcelJS.Workbook();
-  await wbP2.xlsx.readFile(targetP);
-  const wsP = wbP2.getWorksheet('Pengajuan BAST 2026');
-  if (!wsP) throw new Error('Worksheet "Pengajuan BAST 2026" tidak ditemukan');
-  const teksP = (r: number, c: number) => String(wsP.getCell(r, c).value ?? '');
-  const angka = (v: unknown) => (typeof v === 'object' && v ? (v as any).result : v);
-  const cariP = (potongan: string, dari = 1) => {
-    for (let r = dari; r <= wsP.rowCount; r++) if (teksP(r, 2).includes(potongan) || teksP(r, 3).includes(potongan)) return r;
-    return -1;
-  };
-  /** Kolom sebuah kepala tabel (baris `barisKepala`) yang nilainya PERSIS `nilai`. */
-  const cariKolomPersis = (barisKepala: number, nilai: string): number => {
-    for (let c = 1; c <= wsP.columnCount; c++) {
-      if (String(wsP.getCell(barisKepala, c).value ?? '') === nilai) return c;
-    }
-    return -1;
-  };
-
-  console.log('\n9. Tabel 1 & 2 Pengajuan - bentuknya IDENTIK dengan Summary Export, cakupannya kohort BAST');
-  {
-    ok('Judul menyebut BAST-nya, bukan tahun pembayaran', teksP(2, 2).includes('BAST 2026'), teksP(2, 2));
-    const r1 = cariP('1. Seluruh Project');
-    ok('Tabel 1 berjudul "Seluruh Project — BAST 2026"', teksP(r1, 2).includes('BAST 2026'));
-    //  Project (bukan orang) - namanya di KOLOM 3 di Summary, cariBaris cuma
-    //  membaca kolom 2 (dipakai untuk nama ORANG di Tabel 2/3), jadi dicari manual.
-    const rProjSummary = (() => { for (let r = 1; r <= ws.rowCount; r++) if (teks(r, 3) === 'Korlantas TMC Soreang') return r; return -1; })();
-    const rProjPengajuan = cariP('Korlantas TMC Soreang');
-    ok('Korlantas ditemukan di Tabel 1 Pengajuan', rProjPengajuan > 0);
-    //  SAMA PERSIS dengan Summary - bukti kedua berkas tidak bisa menyimpang:
-    //  keduanya memanggil hitungDaftarProyekPenuh() yang sama.
-    const kolPoolS = (() => { for (let c = 1; c <= ws.columnCount; c++) if (teks(rProjSummary - 2, c) === 'Nominal (Rp)') return c; return -1; })();
-    const kolPoolP = cariKolomPersis(r1 + 1, 'Nilai Project (Rp)');
-    ok('Nilai Project Korlantas di Pengajuan = Nominal Korlantas di Summary (byte-identik)',
-      ws.getCell(rProjSummary, kolPoolS).value === wsP.getCell(rProjPengajuan, kolPoolP).value,
-      `Summary=${ws.getCell(rProjSummary, kolPoolS).value} Pengajuan=${wsP.getCell(rProjPengajuan, kolPoolP).value}`);
-
-    const r2 = cariP('2. Summary Total per Anggota');
-    ok('Tabel 2 berjudul "Summary Total per Anggota ... BAST 2026"', teksP(r2, 2).includes('BAST 2026'));
-    const rHdr2 = r2 + 1;
-    const kolTotal2 = (() => { for (let c = 1; c <= wsP.columnCount; c++) if (teksP(rHdr2, c).includes('Total Nominal')) return c; return -1; })();
-    ok('Kolom "Total Nominal (Rp)" ditemukan di Tabel 2 Pengajuan (label sama seperti Summary)', kolTotal2 > 0);
-    const rTaufik2 = (() => { for (let r = rHdr2; r <= rHdr2 + 10; r++) if (teksP(r, 2) === 'Taufik wahyudi') return r; return -1; })();
-    ok('Taufik ditemukan di Tabel 2 Pengajuan', rTaufik2 > 0);
-    ok('Total Taufik di Tabel 2 Pengajuan = RUMUS (bukan angka mati)', typeof wsP.getCell(rTaufik2, kolTotal2).value === 'object');
-
-    const r3 = cariP('3. Pengajuan Pencairan per Tahap');
-    ok('Tabel 3 "Pengajuan Pencairan per Tahap" ada, SETELAH Tabel 1 & 2', r3 > r2 && r2 > r1);
-  }
-
-  console.log('\n10. Tabel 3 - tiga sub-tabel per tahap, tersimpan vs proyeksi, dedup, rumus');
-  {
-    const rTahap1 = cariP('Tahap 1 · Pencairan 2027');
-    const rTahap2 = cariP('Tahap 2 · Pencairan 2028');
-    ok('Sub-tabel Tahap 1 berjudul "Pencairan 2027" (payment_year dari tranche tersimpan)', rTahap1 > 0);
-    ok('Sub-tabel Tahap 2 berjudul "Pencairan 2028"', rTahap2 > 0 && rTahap2 > rTahap1);
-
-    //  Tahap 1 p1: data TERSIMPAN (dua baris ganda) - harus pakai ANGKA_SENTINEL,
-    //  BUKAN dijumlah dobel jadi 2x ANGKA_SENTINEL, dan namanya tidak dobel cetak.
-    const rh1 = rTahap1 + 1; // k1A tahap 1 (tanpa catatan proyeksi - Tahap 1 tidak selalu proyeksi)
-    const kolTaufikT1 = cariKolomPersis(rh1, 'Taufik wahyudi');
-    ok('Kolom Taufik ditemukan di Tahap 1', kolTaufikT1 > 0);
-    const rKorlantasT1 = rh1 + 2; // baris data pertama sub-tabel (satu project: Korlantas)
-    ok('Sel Sebagai Taufik "PIC" saja (bukan "PIC, PIC")', teksP(rKorlantasT1, kolTaufikT1) === 'PIC');
-    ok(`Rupiah PIC Taufik Tahap 1 = ${ANGKA_SENTINEL} (data tersimpan, TIDAK dijumlah dobel jadi ${ANGKA_SENTINEL * 2})`,
-      wsP.getCell(rKorlantasT1, kolTaufikT1 + 2).value === ANGKA_SENTINEL,
-      String(wsP.getCell(rKorlantasT1, kolTaufikT1 + 2).value));
-    const cStatusT1 = teksP(rKorlantasT1, 5);
-    ok('Status Tahap 1 Korlantas TIDAK bertanda "(proyeksi)" - data sudah tersimpan/processed',
-      !cStatusT1.includes('proyeksi'), cStatusT1);
-
-    //  Tahap 2 p1: BELUM diproses - proyeksi, dipecah dari porsi penuh Tabel 1
-    //  (BUKAN dari ANGKA_SENTINEL milik Tahap 1 - keduanya sumber berbeda).
-    const catatanTahap2 = teksP(rTahap2 + 1, 2);
-    ok('Catatan "nilai sementara" muncul SEBELUM tabel Tahap 2 (bukan sesudah)',
-      catatanTahap2.includes('sementara') && catatanTahap2.includes('Support'), catatanTahap2);
-    const rh2 = rTahap2 + 2; // ada baris catatan proyeksi sebelum kepala tabel
-    const kolDhanyT2 = cariKolomPersis(rh2, 'Dhany Wahyu');
-    ok('Kolom Dhany (Manager) ditemukan di Tahap 2', kolDhanyT2 > 0);
-    const rKorlantasT2 = rh2 + 2;
-    const cStatusT2 = teksP(rKorlantasT2, 5);
-    ok('Status Tahap 2 Korlantas bertanda "(proyeksi)"', cStatusT2.includes('proyeksi'), cStatusT2);
-    //  Porsi penuh Dhany di Tabel 1 (kolom Manager) x 35% (persen Tahap 2) -
-    //  dibandingkan LANGSUNG ke Tabel 1 Pengajuan, bukan angka hardcode, supaya
-    //  tes ini tetap benar walau SKEMA di atas berubah persentasenya.
-    const kolMgrT1 = cariKolomPersis(cariP('1. Seluruh Project') + 1, 'Manager');
-    const rKorlantasTabel1 = cariP('Korlantas TMC Soreang');
-    const dhanyPenuh = angka(wsP.getCell(rKorlantasTabel1, kolMgrT1 + 2).value);
-    const dhanyTahap2Diharapkan = Math.round((dhanyPenuh * 35) / 100);
-    ok('Rupiah Dhany Tahap 2 = porsi penuh Tabel 1 × 35% (dibulatkan), bukan angka lain',
-      wsP.getCell(rKorlantasT2, kolDhanyT2 + 2).value === dhanyTahap2Diharapkan,
-      `penuh=${dhanyPenuh} diharapkan=${dhanyTahap2Diharapkan} aktual=${wsP.getCell(rKorlantasT2, kolDhanyT2 + 2).value}`);
-
-    //  Tahap 3: BELUM PERNAH di-generate sama sekali (tidak ada baris tranche) -
-    //  sub-tabelnya tetap ada dengan pesan jelas, bukan hilang/error.
-    const rTahap3 = cariP('Tahap 3 · Pencairan');
-    ok('Sub-tabel Tahap 3 tetap ada walau belum ada project yang di-generate', rTahap3 > 0 && rTahap3 > rTahap2);
-    let adaPesanKosong = false;
-    for (let r = rTahap3; r <= rTahap3 + 5; r++) if (teksP(r, 2).includes('Belum ada project')) adaPesanKosong = true;
-    ok('Tahap 3 menampilkan pesan "Belum ada project ... di-generate", bukan baris kosong tanpa keterangan', adaPesanKosong);
-
-    //  TOTAL Tahap 1 - RUMUS, dan Solitaire (p2, Tahap 1 proyeksi) juga ikut
-    //  muncul di sub-tabel yang SAMA dengan Korlantas (satu tahap = satu tabel,
-    //  bukan dipisah per status tersimpan/proyeksi).
-    const rSolitaireT1 = cariP('Solitaire Billiard & Bar', rKorlantasT1);
-    ok('Solitaire (Tahap 1, proyeksi) muncul di sub-tabel Tahap 1 yang sama dengan Korlantas (tersimpan)',
-      rSolitaireT1 > rKorlantasT1 && rSolitaireT1 < rTahap2);
-    const rTotalT1 = cariP('TOTAL', rSolitaireT1);
-    ok('Baris TOTAL Tahap 1 ada tepat sesudah baris project terakhirnya', rTotalT1 === rSolitaireT1 + 1);
-    const kolNominalT1 = cariKolomPersis(rh1, teksP(rh1, 7));
-    ok('TOTAL Tahap 1 kolom Pencairan = RUMUS (bukan angka mati)',
-      typeof wsP.getCell(rTotalT1, kolNominalT1).value === 'object');
-  }
-
-  if (simpanIdx > -1) console.log(`Berkas pengajuan disimpan: ${targetP}`);
-  else fs.unlinkSync(targetP);
-
   console.log('\n8b. Kolom Tabel 1 tidak tertimpa oleh kolom dinamis Tabel 3');
   {
     //  Ini bug nyata yang pernah lolos: Tabel 3 menaruh kolom per-tahun mulai
@@ -373,6 +224,25 @@ async function main() {
     const tinggiSatuBaris = ws.getRow(rSatuNama).height ?? 0;
     ok('Baris dengan nama pendek punya tinggi wajar (bukan nol/undefined)', tinggiSatuBaris >= 20, String(tinggiSatuBaris));
     ok('Bukan lagi angka tetap 18px yang terlalu pendek untuk teks berlipat', tinggiSatuBaris !== 18, String(tinggiSatuBaris));
+  }
+
+  console.log('\n9. Catatan proyeksi Tahap 2 & 3 di bawah Tabel 3 (satu-satunya berkas Excel sekarang)');
+  {
+    //  Bukan penanda per KOLOM (tahun kalender berbeda arti tahap-ke-berapa
+    //  untuk tiap orang, tergantung BAST proyeknya) - dicek sebagai catatan
+    //  teks di bawah GRAND TOTAL Tabel 3, lihat alasannya di kode.
+    let baris = -1;
+    for (let r = 1; r <= ws.rowCount; r++) {
+      if (teks(r, 2).includes('masih PROYEKSI')) { baris = r; break; }
+    }
+    ok('Catatan proyeksi Tahap 2 & 3 ada di bawah Tabel 3', baris > 0);
+    ok('Catatan menyebut alasannya (Support baru bisa mengubah nominal)',
+      baris > 0 && teks(baris, 2).includes('Support'), baris > 0 ? teks(baris, 2) : '(tidak ditemukan)');
+    const rGrandTotal3 = (() => {
+      for (let r = 1; r <= ws.rowCount; r++) if (teks(r, 2) === 'GRAND TOTAL' && r > cariBaris('3. Nilai Pengajuan')) return r;
+      return -1;
+    })();
+    ok('Catatan muncul SESUDAH GRAND TOTAL Tabel 3 (bukan sebelum/di tengah)', baris > rGrandTotal3);
   }
 
   if (simpanIdx > -1) console.log(`\nBerkas disimpan: ${target}`);

@@ -139,6 +139,8 @@ export async function fetchOrgUsers(): Promise<OrgUser[]> {
   return (data || []) as OrgUser[];
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Resolve user id dari kandidat id ATAU nama. reminders.assigned_to belum tentu
 // UUID user - fallback cocokkan via full_name (assign_name) supaya walk-up atasan jalan.
 export function resolveUserId(idCandidate: string | null | undefined, nameCandidate: string | null | undefined, users: OrgUser[]): string {
@@ -148,7 +150,20 @@ export function resolveUserId(idCandidate: string | null | undefined, nameCandid
     const byName = users.find(u => (u.full_name || '').toLowerCase().trim() === nm);
     if (byName) return byName.id;
   }
-  return idCandidate || '';
+  /*
+    Fallback TERAKHIR: idCandidate dipakai apa adanya HANYA kalau memang
+    berbentuk UUID (mis. user asli yang kebetulan belum termuat di `users`).
+
+    Bug nyata: pemanggil sering mengoper `project.pic_id || project.assigned_to`
+    sebagai idCandidate - assigned_to itu USERNAME (mis. "Ferdinan_PTSIVP"),
+    bukan UUID. Kalau pencocokan nama di atas juga gagal (mis. assign_name
+    tidak persis sama dengan full_name di Struktur Organisasi), baris ini dulu
+    mengembalikan username itu apa adanya - lalu meledak saat ditulis ke kolom
+    UUID (incentive_splits.user_id dkk): "invalid input syntax for type uuid".
+    Kosong di sini berarti split tetap tercatat tanpa user_id - jauh lebih
+    aman daripada menulis nilai yang pasti ditolak database.
+  */
+  return (idCandidate && UUID_RE.test(idCandidate)) ? idCandidate : '';
 }
 
 // Deprecated - name-based fallback lama. Hanya dipakai bila Struktur Organisasi belum diisi.
@@ -827,11 +842,25 @@ export async function insertSplits(
   splits: SplitResult[],
   sourceTicketId?: string | null,
 ) {
+  /*
+    incentive_splits.user_id adalah kolom UUID - dan SplitResult.user_id
+    sering datang dari supportUntukProyek(), yang memakai reminders.assigned_to
+    / tickets.handler_username APA ADANYA sebagai "id" (username, mis.
+    "Ferdinan_PTSIVP"), bukan UUID user sungguhan - lihat komentarnya.
+    Menuliskannya langsung membuat Process Batch gagal "invalid input syntax
+    for type uuid" persis di tahap terakhir (sesudah rupiah dihitung benar),
+    dan satu tahapan yang gagal insert TIDAK ditandai processed - jadi
+    amannya dijalankan ulang, bukan setengah tersimpan.
+
+    Bukan UUID -> ditulis NULL, bukan ditolak seluruhnya: user_name tetap
+    tercatat (splitnya tetap bisa diperiksa/dibayar manual), cuma tautan ke
+    tabel users yang kosong untuk baris itu.
+  */
   const rows = splits.map(s => ({
     project_id: projectId,
     tranche_id: trancheId,
     role: s.role,
-    user_id: s.user_id || null,
+    user_id: (s.user_id && UUID_RE.test(s.user_id)) ? s.user_id : null,
     user_name: s.user_name,
     percentage: s.percentage,
     amount: s.amount,
