@@ -105,6 +105,11 @@ async function main() {
     for (let r = 1; r <= ws.rowCount; r++) if (teks(r, 2).includes(potongan)) return r;
     return -1;
   };
+  /** Cari kolom pertama pada satu baris yang nilainya PERSIS teks ini - dipakai kolom per-orang yang posisinya dinamis. */
+  const cariKolom = (baris: number, nilai: string) => {
+    for (let c = 1; c <= ws.columnCount; c++) if (teks(baris, c) === nilai) return c;
+    return -1;
+  };
 
   console.log('\n1. Judul memuat tahun pembayaran');
   {
@@ -125,43 +130,71 @@ async function main() {
       && cariBaris('2. Summary Total per Anggota Team PTS') < cariBaris('3. Nilai Pengajuan Incentive per Tahun'));
   }
 
-  console.log('\n3. Kepala Tabel 1 - tiap peran punya kolom Nama/%/Rp sendiri');
+  console.log('\n3. Kepala Tabel 1 - tiap ORANG (bukan tiap peran) punya kolom Posisi/%/Rp sendiri');
   {
     const r = cariBaris('1. List Project') + 1;   // baris kepala pertama
     ok('Kolom dasar No/Project/Mode/BAST/Nominal',
       teks(r, 2) === 'No' && teks(r, 3) === 'Project' && teks(r, 4) === 'Mode'
       && teks(r, 5) === 'BAST' && teks(r, 6) === 'Nominal (Rp)');
-    ok('Grup PIC di kolom G', teks(r, 7) === 'PIC');
-    ok('Grup Support di kolom J', teks(r, 10) === 'Support');
-    ok('Grup Supervisor di kolom M', teks(r, 13) === 'Supervisor');
-    ok('Grup Manager di kolom P', teks(r, 16) === 'Manager');
-    ok('Grup Installer di kolom S', teks(r, 19) === 'Installer');
+    const kolTaufik = cariKolom(r, 'Taufik wahyudi');
+    ok('Grup kolom bernama "Taufik wahyudi" ada (bukan kolom peran "PIC" tetap)', kolTaufik > 0);
+    const kolInst = cariKolom(r, 'Installer');
+    ok('Grup Installer tetap ada, tidak berubah', kolInst > 0);
     const sub = r + 1;
-    ok('Sub-kepala PIC: Nama/%/Rp',
-      teks(sub, 7) === 'Nama' && teks(sub, 8) === '%' && teks(sub, 9) === 'Rp');
+    ok('Sub-kepala orang: Posisi/%/Rp',
+      teks(sub, kolTaufik) === 'Posisi' && teks(sub, kolTaufik + 1) === '%' && teks(sub, kolTaufik + 2) === 'Rp');
     ok('Sub-kepala Installer: Nama/Lokasi/%/Rp',
-      teks(sub, 19) === 'Nama' && teks(sub, 20) === 'Lokasi'
-      && teks(sub, 21) === '%' && teks(sub, 22) === 'Rp');
+      teks(sub, kolInst) === 'Nama' && teks(sub, kolInst + 1) === 'Lokasi'
+      && teks(sub, kolInst + 2) === '%' && teks(sub, kolInst + 3) === 'Rp');
   }
 
   console.log('\n4. Tema warna sesuai contoh');
   {
     const r = cariBaris('1. List Project') + 1;
+    const kolTaufik = cariKolom(r, 'Taufik wahyudi');
     ok('Kepala tabel navy 1F3864', (ws.getCell(r, 2).fill as any)?.fgColor?.argb === '1F3864');
-    ok('Sub-kepala biru 2E5395', (ws.getCell(r + 1, 8).fill as any)?.fgColor?.argb === '2E5395');
+    ok('Sub-kepala biru 2E5395', (ws.getCell(r + 1, kolTaufik + 1).fill as any)?.fgColor?.argb === '2E5395');
   }
 
   console.log('\n5. Isi Tabel 1 benar');
   {
+    const rKepala = cariBaris('1. List Project') + 1;
+    const kolTaufik = cariKolom(rKepala, 'Taufik wahyudi');
+    const kolInst = cariKolom(rKepala, 'Installer');
+
     const awal = cariBaris('1. List Project') + 3;
     ok('Proyek pertama Korlantas', teks(awal, 3) === 'Korlantas TMC Soreang');
     ok('Nominalnya 500.000', ws.getCell(awal, 6).value === 500000);
-    ok('PIC-nya Taufik wahyudi', teks(awal, 7) === 'Taufik wahyudi');
-    ok('Installer-nya Ridwan Gunawan', teks(awal, 19) === 'Ridwan Gunawan');
-    ok('Lokasi installer Jakarta', teks(awal, 20) === 'Jakarta');
+    ok('Posisi Taufik di proyek ini = PIC', teks(awal, kolTaufik) === 'PIC');
+    ok('Installer-nya Ridwan Gunawan', teks(awal, kolInst) === 'Ridwan Gunawan');
+    ok('Lokasi installer Jakarta', teks(awal, kolInst + 1) === 'Jakarta');
     //  Proyek tanpa nominal ditandai, bukan diam-diam nol.
     const rOcs = (() => { for (let r = 1; r <= ws.rowCount; r++) if (teks(r, 3).includes('OCS')) return r; return -1; })();
     ok('Proyek tanpa nominal ditandai "belum input"', teks(rOcs, 6) === 'belum input');
+  }
+
+  console.log('\n5b. TOTAL per orang - kolom Rp Taufik dijumlah ke bawah, Installer tidak ikut');
+  {
+    const rKepala = cariBaris('1. List Project') + 1;
+    const kolTaufik = cariKolom(rKepala, 'Taufik wahyudi');
+    const kolInst = cariKolom(rKepala, 'Installer');
+    const awal = cariBaris('1. List Project') + 3;
+    const rTotal = cariBaris('TOTAL');
+    //  Konsistensi diri: TOTAL harus sama dengan penjumlahan nyata tiap sel
+    //  Rp Taufik di baris data - bukan angka tebak-tebakan yang rapuh
+    //  terhadap perubahan skema persen.
+    let jumlahNyata = 0;
+    for (let r = awal; r < rTotal; r++) {
+      const v = ws.getCell(r, kolTaufik + 2).value;
+      if (v && typeof v === 'object' && 'result' in (v as object)) jumlahNyata += (v as { result: number }).result;
+      else if (typeof v === 'number') jumlahNyata += v;
+    }
+    ok('Taufik muncul di lebih dari satu proyek (PIC + Supervisor Ade)', jumlahNyata > 0, String(jumlahNyata));
+    const rpTaufikTotal = ws.getCell(rTotal, kolTaufik + 2);
+    ok('TOTAL kolom Rp Taufik terisi rumus SUM', typeof rpTaufikTotal.value === 'object' && rpTaufikTotal.value !== null);
+    ok('TOTAL kolom Rp Taufik = jumlah baris-barisnya',
+      (rpTaufikTotal as any).result === jumlahNyata, `${(rpTaufikTotal as any).result} vs ${jumlahNyata}`);
+    ok('TOTAL kolom Installer kosong (tidak ikut dijumlah di sini)', ws.getCell(rTotal, kolInst + 3).value == null);
   }
 
   console.log('\n6. TOTAL & GRAND TOTAL terisi (bukan sel kosong)');
@@ -203,15 +236,19 @@ async function main() {
   console.log('\n8b. Kolom Tabel 1 tidak tertimpa oleh kolom dinamis Tabel 3');
   {
     //  Ini bug nyata yang pernah lolos: Tabel 3 menaruh kolom per-tahun mulai
-    //  dari kolom yang SAMA dengan kolom Nominal/PIC/Support Tabel 1 (mereka
-    //  berbagi satu grid kolom worksheet). Menimpa lebar kolom di sana dengan
-    //  `.width = angka` langsung mengecilkan kolom Tabel 1 yang sudah lebih
-    //  lebar - persis penyebab Nominal tampil "########" dan nama peran
-    //  tumpang tindih.
+    //  dari kolom yang SAMA dengan kolom Nominal/orang pertama Tabel 1
+    //  (mereka berbagi satu grid kolom worksheet). Menimpa lebar kolom di
+    //  sana dengan `.width = angka` langsung mengecilkan kolom Tabel 1 yang
+    //  sudah lebih lebar - persis penyebab Nominal tampil "########" dan
+    //  Posisi/nama tumpang tindih. perbesarKolom cuma boleh MELEBARKAN.
+    const rKepala = cariBaris('1. List Project') + 1;
+    const kolTaufik = cariKolom(rKepala, 'Taufik wahyudi');
+    const kolInst = cariKolom(rKepala, 'Installer');
     ok('Kolom Nominal (F) tetap >= 15 walau Tabel 3 memakai kolom yang sama',
       (ws.getColumn(6).width ?? 0) >= 15, String(ws.getColumn(6).width));
-    ok('Kolom Nama PIC (G) tetap >= 17', (ws.getColumn(7).width ?? 0) >= 17, String(ws.getColumn(7).width));
-    ok('Kolom Nama Support (J) tetap >= 17', (ws.getColumn(10).width ?? 0) >= 17, String(ws.getColumn(10).width));
+    ok('Kolom Posisi orang pertama tetap >= 12', (ws.getColumn(kolTaufik).width ?? 0) >= 12, String(ws.getColumn(kolTaufik).width));
+    ok('Kolom Rp orang pertama tetap >= 14', (ws.getColumn(kolTaufik + 2).width ?? 0) >= 14, String(ws.getColumn(kolTaufik + 2).width));
+    ok('Kolom Nama Installer tetap >= 17 (grup ini tidak berubah)', (ws.getColumn(kolInst).width ?? 0) >= 17, String(ws.getColumn(kolInst).width));
   }
 
   console.log('\n8c. Tinggi baris menyesuaikan nama yang panjang - bukan angka tetap');
@@ -303,6 +340,34 @@ async function main() {
     //  atas berkas ini (dibuat sebelum year ditambahkan ke DataSummary).
     ok('Tanpa year sama sekali, judul awal (Tabel 1 utama di atas) TIDAK menyebut "Project BAST"',
       !teks(2, 2).includes('Project BAST'), teks(2, 2));
+  }
+
+  console.log('\n14. Filter projectIds + batchYearLabel (tombol Export di Tranche Schedule)');
+  {
+    //  Simulasi tombol Export batch tahun bayar 2027: hanya 2 dari 5 project
+    //  contoh yang "masuk batch" itu (project_id eksplisit), independen dari
+    //  BAST-nya masing-masing - beda sumbu filter dari `year` di atas.
+    const wbBatch = await bangunWorkbookSummary({
+      projects, allUsers: users, supportsMap: new Map(),
+      managerName: 'Dhany Wahyu', managerUserId: 'u-dhany',
+      projectIds: ['p1', 'p4'], batchYearLabel: 2027,
+    }, SKEMA);
+    const targetBatch = path.join(os.tmpdir(), `summary-batch2027-${Date.now()}.xlsx`);
+    await wbBatch.xlsx.writeFile(targetBatch);
+    const wbBacaBatch = new ExcelJS.Workbook();
+    await wbBacaBatch.xlsx.readFile(targetBatch);
+    const wsBatch = wbBacaBatch.getWorksheet('Summary Incentive PTS')!;
+    const teksBatch = (r: number, c: number) => String(wsBatch.getCell(r, c).value ?? '');
+    const judulBatch = teksBatch(2, 2);
+    ok('Judul menyebut "Project Batch Tahun Bayar 2027"', judulBatch.includes('Project Batch Tahun Bayar 2027'), judulBatch);
+    let hitungMasuk = 0, adaYangSeharusnyaTidakMasuk = false;
+    for (let r = 1; r <= wsBatch.rowCount; r++) {
+      if (teksBatch(r, 3) === 'Korlantas TMC Soreang' || teksBatch(r, 3) === 'BPKP ICT Timur') hitungMasuk++;
+      if (teksBatch(r, 3) === 'Solitaire Billiard & Bar' || teksBatch(r, 3) === 'UIN Pekalongan' || teksBatch(r, 3) === 'OCS Indonesia') adaYangSeharusnyaTidakMasuk = true;
+    }
+    ok('Kedua project di projectIds (p1, p4) muncul', hitungMasuk === 2, String(hitungMasuk));
+    ok('Project DI LUAR projectIds tidak ikut tercetak', !adaYangSeharusnyaTidakMasuk);
+    fs.unlinkSync(targetBatch);
   }
 
   console.log(`\n${gagal === 0 ? 'SEMUA LULUS' : 'ADA GAGAL'} — ${lulus} lulus, ${gagal} gagal\n`);

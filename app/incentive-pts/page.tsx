@@ -591,40 +591,48 @@ export default function IncentivePTSPage() {
     loadAll();
   }
 
+  /**
+   * Manager + peta Support yang dipakai KEDUA tombol export (Export Summary
+   * di tab Project, Export Batch di tab Tranche Schedule) - satu sumber,
+   * supaya angka yang tampil di dua berkas tidak pernah diam-diam menyimpang.
+   *
+   * Penilaian Support memakai aturan yang SAMA dengan mesin pembayaran.
+   *
+   * Di sini dulu ada salinan sendiri: satu kueri ke `reminders` saja, lalu
+   * dikelompokkan dengan project_name apa adanya sebagai kunci. Dua hal yang
+   * sudah lama diperbaiki di fetchSupportFromTickets hilang di salinan itu,
+   * dan keduanya membuat kolom Support kosong tanpa pesan apa pun:
+   *
+   *   1. Ticket yang diselesaikan (tickets berstatus Solved) tidak dibaca
+   *      sama sekali. Troubleshooting yang ditutup lewat Ticketing - tanpa
+   *      pernah dijadwalkan ulang sebagai reminder Onsite - karena itu tidak
+   *      pernah menghasilkan porsi Support.
+   *   2. Nama proyek dicocokkan persis. "BPKP ICT TIMUR" dan "BPKP ICT
+   *      Timur" jadi dua kunci berbeda, jadi catatan Troubleshooting-nya
+   *      tidak pernah bertemu proyeknya.
+   *
+   * Sekarang sumbernya diambil sekali (tiga kueri untuk seluruh proyek,
+   * bukan per proyek) lalu dicocokkan dengan fungsi yang sama yang dipakai
+   * Process Batch - jadi yang tampil di rekap dan yang dibayar tidak bisa
+   * berbeda.
+   */
+  async function siapkanDataExport() {
+    // Manager fallback berbasis jabatan (utama tetap dari Struktur Organisasi di export)
+    const { data: mgr } = await supabase.from('users').select('id, full_name').eq('jabatan', 'Manager').eq('team_type', 'Team PTS IVP').limit(1).single();
+    const managerUserId = (mgr?.id || '') as string;
+    const managerName   = (mgr?.full_name || 'Manager PTS IVP') as string;
+    const { data: sumberSupport } = await ambilSumberSupport();
+    const supportsMap = new Map<string, { user_id: string; user_name: string }[]>();
+    for (const p of projects) {
+      supportsMap.set(p.project_name, supportUntukProyek(sumberSupport, p));
+    }
+    return { managerUserId, managerName, supportsMap };
+  }
+
   async function handleExportSummary() {
     setExporting(true);
     try {
-      // Manager fallback berbasis jabatan (utama tetap dari Struktur Organisasi di export)
-      const { data: mgr } = await supabase.from('users').select('id, full_name').eq('jabatan', 'Manager').eq('team_type', 'Team PTS IVP').limit(1).single();
-      const managerUserId = (mgr?.id || '') as string;
-      const managerName   = (mgr?.full_name || 'Manager PTS IVP') as string;
-      /*
-        Penilaian Support memakai aturan yang SAMA dengan mesin pembayaran.
-
-        Di sini dulu ada salinan sendiri: satu kueri ke `reminders` saja, lalu
-        dikelompokkan dengan project_name apa adanya sebagai kunci. Dua hal
-        yang sudah lama diperbaiki di fetchSupportFromTickets hilang di
-        salinan itu, dan keduanya membuat kolom Support kosong tanpa pesan
-        apa pun:
-
-          1. Ticket yang diselesaikan (tickets berstatus Solved) tidak dibaca
-             sama sekali. Troubleshooting yang ditutup lewat Ticketing - tanpa
-             pernah dijadwalkan ulang sebagai reminder Onsite - karena itu
-             tidak pernah menghasilkan porsi Support.
-          2. Nama proyek dicocokkan persis. "BPKP ICT TIMUR" dan "BPKP ICT
-             Timur" jadi dua kunci berbeda, jadi catatan Troubleshooting-nya
-             tidak pernah bertemu proyeknya.
-
-        Sekarang sumbernya diambil sekali (tiga kueri untuk seluruh proyek,
-        bukan per proyek) lalu dicocokkan dengan fungsi yang sama yang dipakai
-        Process Batch - jadi yang tampil di rekap dan yang dibayar tidak bisa
-        berbeda.
-      */
-      const { data: sumberSupport } = await ambilSumberSupport();
-      const supportsMap = new Map<string, { user_id: string; user_name: string }[]>();
-      for (const p of projects) {
-        supportsMap.set(p.project_name, supportUntukProyek(sumberSupport, p));
-      }
+      const { managerUserId, managerName, supportsMap } = await siapkanDataExport();
       /*
         Hanya project yang SUDAH masuk pipeline tahapan (Generate Tahapan
         sudah dijalankan - punya baris incentive_tranches, apa pun statusnya
@@ -641,6 +649,30 @@ export default function IncentivePTSPage() {
       notify('success', summaryExportYear != null
         ? `Export summary tahun ${summaryExportYear} berhasil! (${projectsAktif.length} project dengan tahapan aktif)`
         : `Export summary semua tahun berhasil! (${projectsAktif.length} project dengan tahapan aktif)`);
+    } catch (err: unknown) { notify('error', 'Export gagal: ' + (err as Error).message); }
+    setExporting(false);
+  }
+
+  /**
+   * Export dari tab Tranche Schedule - beda sumbu filter dari Export Summary
+   * di tab Project (yang menyaring lewat BAST). Di sini yang dipilih adalah
+   * TAHUN BAYAR batch (tahunAktif, dropdown "Tahun" di tab ini) - jadi
+   * proyeknya persis yang tampil di tabel tranche tahun itu, apa pun tahun
+   * BAST masing-masing. Penting begitu banyak tahun sudah ke-record: tombol
+   * ini yang dipakai re-export satu batch tahun bayar tertentu saja, tanpa
+   * ikut menyeret proyek dari batch tahun lain.
+   */
+  async function handleExportBatch() {
+    setExporting(true);
+    try {
+      const { managerUserId, managerName, supportsMap } = await siapkanDataExport();
+      const idsBatch = [...new Set(tranches.filter(t => t.payment_year === tahunAktif).map(t => t.project_id))];
+      const projectsBatch = projects.filter(p => idsBatch.includes(p.id));
+      await exportSummaryIncentive({
+        projects: projectsBatch, allUsers: allUsers as { id?: string; full_name?: string; jabatan?: string; atasan_id?: string | null }[],
+        supportsMap, managerName, managerUserId, projectIds: idsBatch, batchYearLabel: tahunAktif,
+      });
+      notify('success', `Export batch tahun bayar ${tahunAktif} berhasil! (${projectsBatch.length} project)`);
     } catch (err: unknown) { notify('error', 'Export gagal: ' + (err as Error).message); }
     setExporting(false);
   }
@@ -1200,10 +1232,20 @@ export default function IncentivePTSPage() {
                   </button>
                 )}
                 {/*
-                  Export dipindah SELURUHNYA ke tab Project ("Export Summary")
-                  - hanya ada satu berkas Excel sekarang, bukan dua yang mirip
-                  tapi tidak sama persis. Lihat handleExportSummary.
+                  Export batch tahun bayar yang lagi aktif di dropdown "Tahun"
+                  atas - beda dari "Export Summary" di tab Project (yang
+                  menyaring lewat BAST). Sengaja ditaruh di sini juga: begitu
+                  platform ini sudah jalan tahunan dan banyak tahun tercatat,
+                  Finance perlu bisa re-export SATU batch tahun bayar tertentu
+                  saja (mis. menjelang Process Batch, atau setelah ada Support
+                  baru terdeteksi) tanpa harus mengutak-atik filter BAST di
+                  tab lain. Lihat handleExportBatch.
                 */}
+                <button onClick={handleExportBatch} disabled={exporting}
+                  title={`Export project pada batch tahun bayar ${tahunAktif} (mengikuti filter Tahun di atas)`}
+                  className="px-3 py-2 rounded-xl text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 flex items-center gap-1.5">
+                  {exporting ? <div className="w-3 h-3 border-2 border-emerald-400/30 border-t-emerald-500 rounded-full animate-spin" /> : '📊'} Export Batch {tahunAktif}
+                </button>
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
