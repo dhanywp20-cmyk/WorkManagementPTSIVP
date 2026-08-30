@@ -451,7 +451,15 @@ export async function bangunWorkbookPengajuan(data: ExportData, sk: SkemaInsenti
   //  Posisi kolom dihitung dulu, sebelum judul ditulis, supaya lebar merge
   //  judul (dan baris "Catatan proyeksi" di bawah nanti) sudah tahu ujung
   //  kanannya - persis pola yang sudah dipakai Tabel 3 di Summary Export.
-  let kh1 = KOL.nominal + 1;
+  //
+  //  kolPool ("Nilai Project (Rp)") adalah DASAR pembanding sebelum tabel ini
+  //  memfilter ke tahapan tahun berjalan saja - tanpa kolom ini, angka
+  //  "Pencairan {year}" tidak punya konteks: pembaca tidak bisa memeriksa
+  //  sendiri apakah 50% dari nilai project sudah benar, karena nilai
+  //  project (pool) itu sendiri tidak pernah tercetak di berkas per-tahun.
+  const kolPool = KOL.nominal;
+  const kolPencairan = KOL.nominal + 1;
+  let kh1 = kolPencairan + 1;
   const kolomOrang: { nama: string; awal: number }[] = [];
   namaOrangUrut.forEach(nama => { kolomOrang.push({ nama, awal: kh1 }); kh1 += 3; });
   const kolInstNama = kh1, kolInstLokasi = kh1 + 1, kolInstPct = kh1 + 2, kolInstRp = kh1 + 3;
@@ -466,7 +474,7 @@ export async function bangunWorkbookPengajuan(data: ExportData, sk: SkemaInsenti
   const k1A = row, k1B = row + 1;
   const HDR_DASAR1: [number, string][] = [
     [KOL.no, 'No'], [KOL.project, 'Project'], [KOL.mode, 'Tahap'],
-    [KOL.bast, 'Status'], [KOL.nominal, `Pencairan ${year} (Rp)`],
+    [KOL.bast, 'Status'], [kolPool, 'Nilai Project (Rp)'], [kolPencairan, `Pencairan ${year} (Rp)`],
   ];
   for (const [kolom, teks] of HDR_DASAR1) {
     const c = ws.getCell(k1A, kolom);
@@ -475,6 +483,7 @@ export async function bangunWorkbookPengajuan(data: ExportData, sk: SkemaInsenti
     ws.getCell(k1B, kolom).fill = fillWarna(NAVY_HDR); ws.getCell(k1B, kolom).border = thinBorder();
     ws.mergeCells(k1A, kolom, k1B, kolom);
   }
+  perbesarKolom(ws, kolPool, 16);
   kolomOrang.forEach(({ nama, awal }) => {
     const c = ws.getCell(k1A, awal);
     c.value = nama; c.font = putih(); c.fill = fillWarna(NAVY_HDR);
@@ -524,6 +533,17 @@ export async function bangunWorkbookPengajuan(data: ExportData, sk: SkemaInsenti
       ? { ...dataFont(9), italic: true, color: { argb: 'B45309' } }
       : dataFont(9);
 
+    //  Nilai Project (pool) - dasar sebelum difilter ke tahapan tahun ini,
+    //  supaya "Pencairan {year}" di sebelahnya bisa diperiksa sendiri kira-
+    //  kira (Nilai Project x Tahap %). Diambil apa adanya dari incentive_value
+    //  proyek - bukan dihitung ulang - sebab inilah angka yang sudah dikunci
+    //  saat Generate Tahapan dijalankan (lihat "Kunci nominal pool").
+    const cPool = ws.getCell(r, kolPool);
+    cPool.value = b.pool;
+    cPool.numFmt = RUPIAH_FMT; cPool.border = thinBorder();
+    cPool.alignment = { horizontal: 'right', vertical: 'middle' };
+    cPool.font = dataFont();
+
     const totalBaris = [...b.pic, ...b.support, ...b.supervisor, ...b.manager, ...b.installer]
       .reduce((n, o) => n + o.amount, 0);
     //  RUMUS, bukan angka ketik manual - menjumlah cell Rp orang & Installer
@@ -531,7 +551,7 @@ export async function bangunWorkbookPengajuan(data: ExportData, sk: SkemaInsenti
     //  kanan. Kalau salah satu dikoreksi manual di Excel, Nominal ikut
     //  terhitung ulang, bukan diam dengan angka lama.
     const selRp = [...kolomOrang.map(k => `${getColLetter(k.awal + 2)}${r}`), `${getColLetter(kolInstRp)}${r}`];
-    const cNom = ws.getCell(r, KOL.nominal);
+    const cNom = ws.getCell(r, kolPencairan);
     cNom.value = sumCell(selRp.join('+'), totalBaris);
     cNom.numFmt = RUPIAH_FMT; cNom.border = thinBorder();
     cNom.alignment = { horizontal: 'right', vertical: 'middle' };
@@ -586,11 +606,22 @@ export async function bangunWorkbookPengajuan(data: ExportData, sk: SkemaInsenti
   // permintaan "lebih mudah summary penjumlahannya".
   selGabung(ws, row, [KOL.no, KOL.bast], 'TOTAL FINANCE',
     { font: { ...dataFont(), bold: true }, isi: TOTAL_FILL, rata: 'right' });
+  //  Nilai Project ikut dijumlah juga (total pool seluruh project yang
+  //  dicairkan tahun ini) - referensi cepat untuk dibandingkan dengan
+  //  Pencairan di sebelahnya.
+  const totalPool = daftar.reduce((n, b) => n + b.pool, 0);
+  const cTotPool = ws.getCell(row, kolPool);
+  cTotPool.value = daftar.length
+    ? sumCell(`SUM(${getColLetter(kolPool)}${t1Awal}:${getColLetter(kolPool)}${t1Akhir})`, totalPool)
+    : 0;
+  cTotPool.numFmt = RUPIAH_FMT; cTotPool.font = { ...dataFont(), bold: true }; cTotPool.fill = fillWarna(TOTAL_FILL);
+  cTotPool.border = thinBorder(); cTotPool.alignment = { horizontal: 'right', vertical: 'middle' };
+
   const totalSemua = daftar.reduce((n, b) =>
     n + [...b.pic, ...b.support, ...b.supervisor, ...b.manager, ...b.installer].reduce((m, o) => m + o.amount, 0), 0);
-  const cTotNom = ws.getCell(row, KOL.nominal);
+  const cTotNom = ws.getCell(row, kolPencairan);
   cTotNom.value = daftar.length
-    ? sumCell(`SUM(${getColLetter(KOL.nominal)}${t1Awal}:${getColLetter(KOL.nominal)}${t1Akhir})`, totalSemua)
+    ? sumCell(`SUM(${getColLetter(kolPencairan)}${t1Awal}:${getColLetter(kolPencairan)}${t1Akhir})`, totalSemua)
     : 0;
   cTotNom.numFmt = RUPIAH_FMT; cTotNom.font = { ...dataFont(), bold: true }; cTotNom.fill = fillWarna(TOTAL_FILL);
   cTotNom.border = thinBorder(); cTotNom.alignment = { horizontal: 'right', vertical: 'middle' };

@@ -245,9 +245,11 @@ async function main() {
   {
     ok('Judul menyebut tahunnya', teksP(2, 2).includes('Tahun 2027'), teksP(2, 2));
     const rh = cariP('1. Project yang Dicairkan') + 1; // k1A
-    ok('Kepala dasar "No/Project/Tahap/Status/Pencairan" - project TETAP di kiri',
+    ok('Kepala dasar "No/Project/Tahap/Status/Nilai Project/Pencairan" - project TETAP di kiri',
       teksP(rh, 2) === 'No' && teksP(rh, 3) === 'Project' && teksP(rh, 4) === 'Tahap'
-      && teksP(rh, 5) === 'Status' && teksP(rh, 6).includes('Pencairan'));
+      && teksP(rh, 5) === 'Status' && teksP(rh, 6).includes('Nilai Project') && teksP(rh, 7).includes('Pencairan'));
+    ok('Nilai Project (dasar sebelum difilter T1) muncul SEBELUM kolom Pencairan',
+      cariKolomPersis(rh, teksP(rh, 6)) < cariKolomPersis(rh, teksP(rh, 7)));
     const kolDhany = cariKolomPersis(rh, 'Dhany Wahyu');
     const kolFerdinan = cariKolomPersis(rh, 'Ferdinan Agustinus');
     const kolTaufik = cariKolomPersis(rh, 'Taufik wahyudi');
@@ -280,7 +282,8 @@ async function main() {
     const angka = (v: unknown) => (typeof v === 'object' && v ? (v as any).result : v);
     const rh = cariP('1. Project yang Dicairkan') + 1;
     const kolProject = cariKolomPersis(rh, 'Project');
-    const kolNominal = cariKolomPersis(rh, teksP(rh, 6)); // header "Pencairan ... (Rp)"
+    const kolPool = cariKolomPersis(rh, 'Nilai Project (Rp)');
+    const kolNominal = cariKolomPersis(rh, teksP(rh, 7)); // header "Pencairan ... (Rp)"
     const kolDhany = cariKolomPersis(rh, 'Dhany Wahyu');
     const kolFerdinan = cariKolomPersis(rh, 'Ferdinan Agustinus');
     const kolTaufik = cariKolomPersis(rh, 'Taufik wahyudi');
@@ -318,6 +321,13 @@ async function main() {
     ok('Ferdinan di baris Solitaire = PIC · 550.000 (50% dari 1.100.000)',
       teksP(rSolitaire, kolFerdinan) === 'PIC' && wsP.getCell(rSolitaire, kolFerdinan + 2).value === 550000);
 
+    //  Nilai Project (pool penuh, DASAR sebelum difilter tahapan tahun ini) -
+    //  bukan sebuah rumus, angka mentah dari incentive_value proyek.
+    ok('Nilai Project Korlantas = 500.000 (pool penuh, bukan yang T1 saja)',
+      wsP.getCell(rKorlantas, kolPool).value === 500000, String(wsP.getCell(rKorlantas, kolPool).value));
+    ok('Nilai Project Solitaire = 2.000.000 (pool penuh)',
+      wsP.getCell(rSolitaire, kolPool).value === 2000000, String(wsP.getCell(rSolitaire, kolPool).value));
+
     //  Nominal per baris = RUMUS menjumlah kolom Rp orang & Installer di baris
     //  itu sendiri (bukan angka ketik manual) - lihat "wajib pakai rumus".
     ok('Nominal baris Korlantas = 287.500 (137.500 + 75.000 + 75.000 installer), lewat RUMUS',
@@ -342,6 +352,9 @@ async function main() {
     //  TOTAL FINANCE: Nominal dijumlah seperti biasa, DAN setiap kolom orang +
     //  Installer ikut dijumlah ke bawah - itulah "lebih mudah summary
     //  penjumlahannya" yang diminta.
+    ok('TOTAL FINANCE · Nilai Project = 2.500.000 (500.000 + 2.000.000, dasar sebelum difilter)',
+      angka(wsP.getCell(rTotalFinance, kolPool).value) === 2500000,
+      String(angka(wsP.getCell(rTotalFinance, kolPool).value)));
     ok('TOTAL FINANCE · Nominal = 987.500 (287.500 + 700.000)',
       angka(wsP.getCell(rTotalFinance, kolNominal).value) === 987500,
       String(angka(wsP.getCell(rTotalFinance, kolNominal).value)));
