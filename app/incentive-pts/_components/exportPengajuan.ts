@@ -836,6 +836,15 @@ export interface DataSummary {
   supportsMap: Map<string, { user_id: string; user_name: string }[]>;
   managerName: string;
   managerUserId: string;
+  /**
+   * Batasi ke proyek yang BAST-nya jatuh di tahun ini saja. `null`/`undefined`
+   * = semua tahun (perilaku lama, tidak berubah). Menyaring proyek MASUKNYA
+   * (bast_date), bukan tahun pembayaran - satu proyek tetap tercatat lunas
+   * 3 tahun berturut, tapi Anda bisa export "proyek yang selesai tahun ini"
+   * saja tanpa membuka file lintas-tahun yang makin besar tiap tahun platform
+   * berjalan.
+   */
+  year?: number | null;
 }
 
 /**
@@ -849,7 +858,13 @@ export interface DataSummary {
  * ada yang memeriksanya secara otomatis. Lihat uji/bentuk-summary-nyata.mjs.
  */
 export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif) {
-  const { projects, allUsers, supportsMap, managerName, managerUserId } = data;
+  const { allUsers, supportsMap, managerName, managerUserId, year: tahunFilter } = data;
+  //  Saring di sini, SEBELUM daftarProyek dibangun - supaya Tabel 1/2/3 dan
+  //  akumulasi per-tahun-pembayaran di bawah semuanya otomatis mengikuti,
+  //  tanpa menyalin ulang logikanya.
+  const projects = tahunFilter == null
+    ? data.projects
+    : data.projects.filter(p => p.bast_date && new Date(p.bast_date).getFullYear() === tahunFilter);
   const orgList = allUsers as unknown as OrgUser[];
   const tahapUrut = [...sk.tranche].sort((a, b) => a.nomor - b.nomor);
   const totalPersenTahap = tahapUrut.reduce((n, t) => n + (t.persen || 0), 0) || 100;
@@ -978,7 +993,8 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
 
   // ── Judul ──────────────────────────────────────────────────────────────
   const cTitle = ws.getCell(row, KOL.no);
-  cTitle.value = `Summary Incentive PTS IVP — Semua Project${sufiksTahun}`;
+  const judulProyek = tahunFilter != null ? `Project BAST ${tahunFilter}` : 'Semua Project';
+  cTitle.value = `Summary Incentive PTS IVP — ${judulProyek}${sufiksTahun}`;
   cTitle.font = { bold: true, size: 14, name: 'Arial' };
   cTitle.alignment = { horizontal: 'center', vertical: 'middle' };
   ws.mergeCells(row, KOL.no, row, KOL_TERAKHIR);
@@ -1411,7 +1427,8 @@ export async function exportSummaryIncentive(data: DataSummary) {
   const wb = await bangunWorkbookSummary(data, sk);
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  saveAs(blob, `Summary_Incentive_PTS_IVP_${new Date().toISOString().split('T')[0]}.xlsx`);
+  const labelTahun = data.year != null ? String(data.year) : 'SemuaTahun';
+  saveAs(blob, `Summary_Incentive_PTS_IVP_${labelTahun}_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 function getColLetter(colNum: number): string {
   let letter = '';

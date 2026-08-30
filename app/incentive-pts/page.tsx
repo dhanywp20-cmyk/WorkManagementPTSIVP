@@ -127,6 +127,21 @@ export default function IncentivePTSPage() {
   const [generateProject, setGenerateProject] = useState<IncentiveProjectRow | null>(null);
 
   /*
+    Filter Tahun BAST pada daftar Project - beda dari `filterYear`/`tahunAktif`
+    di tab Tahapan Pencairan (itu menyaring payment_year milik tahapan yang
+    SUDAH dibuat). Ini menyaring proyek berdasar tahun kapan pekerjaannya
+    selesai (bast_date), supaya daftar tidak makin panjang tiap tahun platform
+    berjalan, dan supaya Generate Tahapan Massal di bawah tahu proyek mana
+    yang termasuk "tahun ini".
+  */
+  const [filterBastYear, setFilterBastYear] = useState<number | null>(null);
+  const [bulkGenerateConfirm, setBulkGenerateConfirm] = useState<IncentiveProjectRow[] | null>(null);
+  const [bulkGenerating, setBulkGenerating] = useState(false);
+  const [bulkGenerateResult, setBulkGenerateResult] =
+    useState<{ tahun: number; berhasil: string[]; gagal: { nama: string; alasan: string }[]; dilewati: string[] } | null>(null);
+  const [summaryExportYear, setSummaryExportYear] = useState<number | null>(null);
+
+  /*
     PEMBATALAN - dua tingkat, dua keadaan terpisah.
 
     Keduanya memakai konfirmasi KETIK ULANG, bukan sekadar tombol "Ya". Aksi
@@ -454,6 +469,65 @@ export default function IncentivePTSPage() {
     loadAll();
   }
 
+  /**
+   * Kandidat untuk Generate Tahapan Massal - proyek di tahun BAST yang
+   * dipilih, yang memenuhi syarat SAMA dengan tombol Generate Tranche satu
+   * per satu (hasNominal, BAST ada, belum punya tahapan). Dipisah dari
+   * jalankanBulkGenerate supaya tombolnya bisa menampilkan jumlah kandidat
+   * SEBELUM diklik, dan supaya modal konfirmasi menunjukkan daftar proyek
+   * yang PERSIS akan diproses.
+   */
+  function kandidatBulkGenerate(tahun: number): IncentiveProjectRow[] {
+    const punyaTahapan = new Set(tranches.map(t => t.project_id));
+    return filteredProjects.filter(p =>
+      p.bast_date && new Date(p.bast_date).getFullYear() === tahun
+      && (p.incentive_value || 0) > 0
+      && !punyaTahapan.has(p.id));
+  }
+
+  /**
+   * Generate Tahapan untuk banyak proyek sekaligus, satu tahun BAST.
+   *
+   * Memanggil insertTranches yang SAMA dipakai tombol satu-per-satu - tidak
+   * ada rumus tahapan kedua. Penjaga duplikatnya juga sama: dicek ulang ke
+   * database tepat sebelum menulis (bukan ke `tranches` di state, yang bisa
+   * saja sudah basi sejak modal konfirmasi dibuka), dan tiap proyek diproses
+   * satu-satu (bukan satu INSERT borongan) supaya satu proyek yang gagal
+   * tidak menggagalkan proyek lain dalam batch yang sama - dan supaya jelas
+   * PROYEK MANA yang gagal, bukan cuma "sebagian gagal".
+   */
+  async function jalankanBulkGenerate() {
+    if (!bulkGenerateConfirm || !bulkGenerateConfirm.length || !skema || filterBastYear == null) return;
+    setBulkGenerating(true);
+    const tahun = filterBastYear;
+    const ids = bulkGenerateConfirm.map(p => p.id);
+    const { data: sudahAdaRows } = await supabase
+      .from('incentive_tranches').select('project_id').in('project_id', ids);
+    const sudahAdaSet = new Set((sudahAdaRows ?? []).map((t: { project_id: string }) => t.project_id));
+
+    const berhasil: string[] = [];
+    const gagal: { nama: string; alasan: string }[] = [];
+    const dilewati: string[] = [];
+    for (const p of bulkGenerateConfirm) {
+      if (sudahAdaSet.has(p.id)) { dilewati.push(p.project_name); continue; }
+      if (!p.bast_date) { gagal.push({ nama: p.project_name, alasan: 'BAST kosong' }); continue; }
+      const { error } = await insertTranches(skema, p.id, p.bast_date, p.mode_penyelesaian);
+      if (error) { gagal.push({ nama: p.project_name, alasan: error.message }); continue; }
+      berhasil.push(p.project_name);
+      void logAudit({
+        user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
+        action: 'create', module: 'incentive-pts',
+        target_id: p.id, target_name: p.project_name,
+        new_value: 'tahapan dibuat',
+        notes: `Dibuat lewat Generate Tahapan Massal · Tahun BAST ${tahun}`,
+      });
+    }
+    setBulkGenerateResult({ tahun, berhasil, gagal, dilewati });
+    setBulkGenerating(false);
+    setBulkGenerateConfirm(null);
+    loadAll();
+  }
+
   async function handleBatchProcess() {
     if (!currentUser) return;
     setBatchProcessing(true);
@@ -623,8 +697,13 @@ export default function IncentivePTSPage() {
       for (const p of projects) {
         supportsMap.set(p.project_name, supportUntukProyek(sumberSupport, p));
       }
-      await exportSummaryIncentive({ projects, allUsers: allUsers as { id?: string; full_name?: string; jabatan?: string; atasan_id?: string | null }[], supportsMap, managerName, managerUserId });
-      notify('success', 'Export summary semua project berhasil!');
+      await exportSummaryIncentive({
+        projects, allUsers: allUsers as { id?: string; full_name?: string; jabatan?: string; atasan_id?: string | null }[],
+        supportsMap, managerName, managerUserId, year: summaryExportYear,
+      });
+      notify('success', summaryExportYear != null
+        ? `Export summary tahun ${summaryExportYear} berhasil!`
+        : 'Export summary semua tahun berhasil!');
     } catch (err: unknown) { notify('error', 'Export gagal: ' + (err as Error).message); }
     setExporting(false);
   }
@@ -699,7 +778,15 @@ export default function IncentivePTSPage() {
       Admin (lingkupnya kosong) tetap melihat semuanya; ia memang yang
       menunjuk keduanya dan yang merekap ke Finance.
     */
-    .filter(p => bolehLihatBrand(currentUser?.incentive_brand_scope, p.brand));
+    .filter(p => bolehLihatBrand(currentUser?.incentive_brand_scope, p.brand))
+    .filter(p => filterBastYear == null
+      || (p.bast_date && new Date(p.bast_date).getFullYear() === filterBastYear));
+  //  Tahun BAST yang benar-benar ada di daftar proyek - sumber pilihan untuk
+  //  filter Project list DAN dropdown tahun Export Summary. Diurutkan turun:
+  //  tahun berjalan/terbaru duluan, itu yang paling sering dicari.
+  const bastYearsProjects = [...new Set(
+    projects.filter(p => p.bast_date).map(p => new Date(p.bast_date as string).getFullYear()),
+  )].sort((a, b) => b - a);
   const uniqueYears = [...new Set(tranches.map(t => t.payment_year))].sort();
   /*
     Tahun yang dipilih HARUS salah satu yang benar-benar ada tahapannya.
@@ -789,14 +876,40 @@ export default function IncentivePTSPage() {
                 <input aria-label="Cari project atau handler..." value={searchProject} onChange={e => setSearchProject(e.target.value)}
                   placeholder="🔍 Cari project atau handler..."
                   className="flex-1 min-w-[180px] max-w-sm px-4 py-2 rounded-lg text-sm outline-none bg-gray-50 border border-gray-200 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-rose-400" />
+                <select aria-label="Filter Tahun BAST" value={filterBastYear ?? ''}
+                  onChange={e => setFilterBastYear(e.target.value === '' ? null : Number(e.target.value))}
+                  className="px-3 py-2 rounded-lg text-sm outline-none bg-gray-50 border border-gray-200 text-gray-700 focus:ring-2 focus:ring-rose-400">
+                  <option value="">📅 Semua Tahun BAST</option>
+                  {bastYearsProjects.map(y => <option key={y} value={y}>Tahun BAST {y}</option>)}
+                </select>
                 <div className="flex items-center gap-2 flex-wrap">
                   {canInputNominal(currentUser) && (
                     <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200">✏️ Kamu bisa input nominal</span>
                   )}
-                  {canInputNominal(currentUser) && (
+                  {canInputNominal(currentUser) && (<>
+                    {/*
+                      Tahun export Summary TERPISAH dari filter Tahun BAST di
+                      atas - filter di atas cuma mengubah tampilan tabel,
+                      sedangkan orang yang lupa mengembalikannya ke "Semua"
+                      sebelum export tidak boleh diam-diam mendapat file yang
+                      lebih kecil dari yang dikira. Defaultnya selalu Semua
+                      Tahun, harus dipilih sendiri kalau memang mau per tahun.
+                    */}
+                    <select aria-label="Tahun Export Summary" value={summaryExportYear ?? ''}
+                      onChange={e => setSummaryExportYear(e.target.value === '' ? null : Number(e.target.value))}
+                      className="px-2.5 py-1.5 rounded-lg text-xs bg-emerald-50 border border-emerald-200 text-emerald-700 outline-none">
+                      <option value="">Semua Tahun</option>
+                      {bastYearsProjects.map(y => <option key={y} value={y}>Tahun {y}</option>)}
+                    </select>
                     <button onClick={handleExportSummary} disabled={exporting}
                       className="px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 flex items-center gap-1.5">
                       {exporting ? <div className="w-3 h-3 border-2 border-emerald-400/30 border-t-emerald-500 rounded-full animate-spin" /> : '📊'} Export Summary
+                    </button>
+                  </>)}
+                  {isAdmin(currentUser) && filterBastYear != null && kandidatBulkGenerate(filterBastYear).length > 0 && (
+                    <button onClick={() => setBulkGenerateConfirm(kandidatBulkGenerate(filterBastYear))}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 flex items-center gap-1.5">
+                      🚀 Generate Tahapan Massal {filterBastYear} ({kandidatBulkGenerate(filterBastYear).length})
                     </button>
                   )}
                   {/* Tombol massal hanya muncul saat ada yang dipilih - tombol
@@ -1762,6 +1875,110 @@ export default function IncentivePTSPage() {
                 className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-50" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
                 {generating && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                 Generate
+              </button>
+            </div>
+          </div>
+        </div>
+      </ModalPortal>
+      )}
+
+      {/* ─── MODAL: Konfirmasi Generate Tahapan Massal ─── */}
+      {bulkGenerateConfirm && (
+      <ModalPortal>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(3px)' }}
+          onClick={() => !bulkGenerating && setBulkGenerateConfirm(null)}>
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()} role="dialog" aria-modal="true"
+            aria-labelledby="judul-bulk-generate">
+            <div className="px-5 py-4 bg-blue-600 text-white">
+              <h3 id="judul-bulk-generate" className="font-bold text-base">
+                🚀 Generate Tahapan untuk {bulkGenerateConfirm.length} project — Tahun BAST {filterBastYear}?
+              </h3>
+            </div>
+            <div className="p-5 space-y-3">
+              <ul className="max-h-52 overflow-y-auto space-y-1 rounded-lg bg-slate-50 border border-slate-200 p-2.5">
+                {bulkGenerateConfirm.map(p => (
+                  <li key={p.id} className="text-sm text-slate-700 truncate" title={p.project_name}>
+                    • {p.project_name}
+                    <span className="ml-1 text-[11px] font-bold text-emerald-600">
+                      {formatRupiah(p.incentive_value || 0)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <div className="text-[13px] leading-relaxed space-y-1.5">
+                <p className="text-slate-600">
+                  Tiap project diproses satu-satu lewat fungsi yang sama dengan tombol{' '}
+                  <strong>Generate Tranche</strong> perorangan — persentase per tahap dan tahun
+                  pembayaran dihitung dari BAST masing-masing project, bukan tanggal hari ini.
+                </p>
+                <p className="text-slate-600">
+                  Project yang <strong>sudah</strong> punya tahapan (dibuat orang lain sesudah
+                  daftar ini dimuat) otomatis dilewati — tidak akan dibuat dobel.
+                </p>
+              </div>
+            </div>
+            <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+              <button onClick={() => setBulkGenerateConfirm(null)} disabled={bulkGenerating}
+                className="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 disabled:opacity-50">
+                Batal
+              </button>
+              <button onClick={jalankanBulkGenerate} disabled={bulkGenerating}
+                className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
+                {bulkGenerating && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                Generate {bulkGenerateConfirm.length} Tahapan
+              </button>
+            </div>
+          </div>
+        </div>
+      </ModalPortal>
+      )}
+
+      {/* ─── MODAL: Hasil Generate Tahapan Massal ─── */}
+      {bulkGenerateResult && (
+      <ModalPortal>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(3px)' }}
+          onClick={() => setBulkGenerateResult(null)}>
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()} role="dialog" aria-modal="true"
+            aria-labelledby="judul-hasil-bulk-generate">
+            <div className="px-5 py-4 bg-slate-800 text-white">
+              <h3 id="judul-hasil-bulk-generate" className="font-bold text-base">
+                Hasil Generate Tahapan Massal {bulkGenerateResult.tahun}
+              </h3>
+            </div>
+            <div className="p-5 space-y-3 max-h-96 overflow-y-auto">
+              {bulkGenerateResult.berhasil.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold text-emerald-700 mb-1">✅ Berhasil ({bulkGenerateResult.berhasil.length})</p>
+                  <ul className="text-[13px] text-slate-600 space-y-0.5">
+                    {bulkGenerateResult.berhasil.map(n => <li key={n}>• {n}</li>)}
+                  </ul>
+                </div>
+              )}
+              {bulkGenerateResult.dilewati.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold text-amber-700 mb-1">⏭️ Dilewati — sudah ada tahapan ({bulkGenerateResult.dilewati.length})</p>
+                  <ul className="text-[13px] text-slate-600 space-y-0.5">
+                    {bulkGenerateResult.dilewati.map(n => <li key={n}>• {n}</li>)}
+                  </ul>
+                </div>
+              )}
+              {bulkGenerateResult.gagal.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold text-red-700 mb-1">❌ Gagal ({bulkGenerateResult.gagal.length})</p>
+                  <ul className="text-[13px] text-slate-600 space-y-0.5">
+                    {bulkGenerateResult.gagal.map(g => <li key={g.nama}>• {g.nama} — {g.alasan}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+              <button onClick={() => setBulkGenerateResult(null)}
+                className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-slate-700 hover:bg-slate-800">
+                Tutup
               </button>
             </div>
           </div>

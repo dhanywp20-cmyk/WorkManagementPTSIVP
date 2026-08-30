@@ -480,6 +480,63 @@ async function main() {
   if (simpanIdx > -1) console.log(`\nBerkas disimpan: ${target}`);
   else fs.unlinkSync(target);
 
+  console.log('\n13. Filter Tahun BAST pada Export Summary (fitur baru)');
+  {
+    //  Kelima proyek contoh semuanya BAST 2026 (p5 tanpa BAST sama sekali).
+    //  Filter ke 2026 harus tetap menampilkan seluruh proyek yang punya BAST -
+    //  filter TIDAK BOLEH diam-diam membuang data yang sebenarnya cocok.
+    const wb2026 = await bangunWorkbookSummary({
+      projects, allUsers: users, supportsMap: new Map(),
+      managerName: 'Dhany Wahyu', managerUserId: 'u-dhany', year: 2026,
+    }, SKEMA);
+    const target2026 = path.join(os.tmpdir(), `summary-2026-${Date.now()}.xlsx`);
+    await wb2026.xlsx.writeFile(target2026);
+    const wbBaca2026 = new ExcelJS.Workbook();
+    await wbBaca2026.xlsx.readFile(target2026);
+    const ws2026 = wbBaca2026.getWorksheet('Summary Incentive PTS')!;
+    const teks2026 = (r: number, c: number) => String(ws2026.getCell(r, c).value ?? '');
+    const judul2026 = teks2026(2, 2);
+    ok('Judul filter 2026 menyebut "Project BAST 2026"', judul2026.includes('Project BAST 2026'), judul2026);
+    let barisProyek2026 = 0;
+    for (let r = 1; r <= ws2026.rowCount; r++) {
+      for (const nama of ['Korlantas TMC Soreang', 'Solitaire Billiard & Bar', 'UIN Pekalongan', 'BPKP ICT Timur']) {
+        if (teks2026(r, 3) === nama) barisProyek2026++;
+      }
+    }
+    ok('Keempat proyek BAST 2026 tetap muncul saat difilter ke 2026', barisProyek2026 === 4, String(barisProyek2026));
+    fs.unlinkSync(target2026);
+
+    //  Filter ke tahun yang TIDAK ADA proyeknya (2099) harus menghasilkan
+    //  Tabel 1 kosong dari proyek - bukti filter benar-benar menyaring, bukan
+    //  cuma mengubah judul sambil tetap mencetak semua data.
+    const wbKosong = await bangunWorkbookSummary({
+      projects, allUsers: users, supportsMap: new Map(),
+      managerName: 'Dhany Wahyu', managerUserId: 'u-dhany', year: 2099,
+    }, SKEMA);
+    const targetKosong = path.join(os.tmpdir(), `summary-2099-${Date.now()}.xlsx`);
+    await wbKosong.xlsx.writeFile(targetKosong);
+    const wbBacaKosong = new ExcelJS.Workbook();
+    await wbBacaKosong.xlsx.readFile(targetKosong);
+    const wsKosong = wbBacaKosong.getWorksheet('Summary Incentive PTS')!;
+    const teksKosong = (r: number, c: number) => String(wsKosong.getCell(r, c).value ?? '');
+    ok('Judul filter 2099 menyebut "Project BAST 2099"', teksKosong(2, 2).includes('Project BAST 2099'), teksKosong(2, 2));
+    let adaProyekAsing = false;
+    for (let r = 1; r <= wsKosong.rowCount; r++) {
+      for (const nama of ['Korlantas TMC Soreang', 'Solitaire Billiard & Bar', 'UIN Pekalongan', 'BPKP ICT Timur', 'OCS Indonesia']) {
+        if (teksKosong(r, 3) === nama) adaProyekAsing = true;
+      }
+    }
+    ok('Tahun 2099 (tidak ada proyeknya) tidak mencetak satu pun proyek dari tahun lain', !adaProyekAsing);
+    fs.unlinkSync(targetKosong);
+
+    //  Tanpa `year` sama sekali (perilaku lama) harus tetap all-years - fitur
+    //  baru tidak boleh mengubah default siapa pun yang belum pakai filternya.
+    //  `ws`/`teks` di sini masih merujuk workbook TANPA filter dari bagian
+    //  atas berkas ini (dibuat sebelum year ditambahkan ke DataSummary).
+    ok('Tanpa year sama sekali, judul awal (Tabel 1 utama di atas) TIDAK menyebut "Project BAST"',
+      !teks(2, 2).includes('Project BAST'), teks(2, 2));
+  }
+
   console.log(`\n${gagal === 0 ? 'SEMUA LULUS' : 'ADA GAGAL'} — ${lulus} lulus, ${gagal} gagal\n`);
   process.exit(gagal === 0 ? 0 : 1);
 }
