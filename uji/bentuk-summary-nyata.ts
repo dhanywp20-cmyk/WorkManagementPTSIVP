@@ -209,6 +209,23 @@ async function main() {
     ok('Ada dua GRAND TOTAL (Tabel 2 & 3)', gtCount === 2, String(gtCount));
   }
 
+  console.log('\n6b. Total Nominal Tabel 2 adalah RUMUS yang MERUJUK sel Rp Tabel 1 - bukan angka mati');
+  {
+    //  Bug yang baru diperbaiki: formula-nya dulu `=300000+125000+0+...`
+    //  (angka yang sudah dijumlah duluan di JavaScript, ditulis ulang sebagai
+    //  angka mati) - bukan `=G5+K12+...` yang benar-benar merujuk sel Tabel 1.
+    //  Kalau seseorang mengoreksi % di Tabel 1, versi lama TIDAK ikut berubah.
+    const r2 = cariBaris('2. Summary Total per Anggota Team PTS');
+    const rTaufik2 = (() => { for (let r = r2; r <= ws.rowCount; r++) if (teks(r, 2) === 'Taufik wahyudi') return r; return -1; })();
+    ok('Baris Taufik ada di Tabel 2', rTaufik2 > 0);
+    const cTotal2 = ws.getCell(rTaufik2, 7); // KOL_REKAP.total = [7,9] (G:I merge) - selGabung menulis value di sel jangkar (kolom 7)
+    const formula2 = String((cTotal2.value as any)?.formula ?? '');
+    ok('Formula-nya memuat referensi sel (huruf+angka), bukan cuma deretan angka',
+      /[A-Z]{1,2}\d+/.test(formula2), formula2);
+    ok('Formula-nya BUKAN cuma penjumlahan angka mati (tidak diawali langsung dengan digit)',
+      !/^\d/.test(formula2), formula2);
+  }
+
   console.log('\n7. Installer tidak ikut Tabel 2 (bukan Team PTS), tapi ada di Tabel 3');
   {
     const r2 = cariBaris('2. Summary Total per Anggota Team PTS');
@@ -280,6 +297,27 @@ async function main() {
       return -1;
     })();
     ok('Catatan muncul SESUDAH GRAND TOTAL Tabel 3 (bukan sebelum/di tengah)', baris > rGrandTotal3);
+  }
+
+  console.log('\n9b. Lebar catatan proyeksi mengikuti Tabel 3 sendiri, bukan lebar penuh berkas (Tabel 1 sekarang jauh lebih lebar)');
+  {
+    //  Bug yang baru diperbaiki: baris catatan ini dulu di-merge selebar
+    //  KOL_TERAKHIR (lebar keseluruhan berkas) - begitu Tabel 1 jadi per-orang
+    //  dan jauh lebih lebar dari Tabel 3, catatan ini melebar jauh melewati
+    //  kolom Tabel 3 sendiri dan terlihat seperti bilah kosong yang salah tempat.
+    let barisCatatan = -1;
+    for (let r = 1; r <= ws.rowCount; r++) if (teks(r, 2).includes('masih PROYEKSI')) { barisCatatan = r; break; }
+    const rHeader3 = cariBaris('3. Nilai Pengajuan Incentive per Tahun') + 1;
+    const kolTotal3 = cariKolom(rHeader3, 'Total');
+    const rHeader1 = cariBaris('1. List Project') + 1;
+    const kolInst = cariKolom(rHeader1, 'Installer');
+    const kolTerakhirTabel1 = kolInst + 3; // kolInst.rp - kolom paling kanan Tabel 1
+    ok('Data uji ini punya Tabel 1 lebih lebar dari Tabel 3 (memverifikasi skenario yang relevan benar-benar diuji)',
+      kolTerakhirTabel1 > kolTotal3 + 2, `Tabel1=${kolTerakhirTabel1} Tabel3=${kolTotal3}`);
+    ok('Kolom terakhir Tabel 3 masih bagian dari sel gabungan catatan',
+      ws.getCell(barisCatatan, kolTotal3).isMerged);
+    ok('Satu kolom SETELAH Tabel 3 berakhir TIDAK ikut tergabung (lebarnya kolTotal3, bukan KOL_TERAKHIR)',
+      !ws.getCell(barisCatatan, kolTotal3 + 1).isMerged);
   }
 
   if (simpanIdx > -1) console.log(`\nBerkas disimpan: ${target}`);

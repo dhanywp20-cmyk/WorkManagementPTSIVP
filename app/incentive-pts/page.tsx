@@ -1204,7 +1204,15 @@ export default function IncentivePTSPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex gap-2 items-center">
-                <label className="text-xs font-bold text-gray-500">Tahun:</label>
+                {/*
+                  "Tahun Bayar", bukan cuma "Tahun" - dropdown ini menyaring
+                  lewat payment_year tranche (kapan UANGNYA cair), BUKAN tahun
+                  BAST proyek. Proyek dengan BAST 2026 wajar muncul di sini
+                  saat "Tahun Bayar: 2027" karena itu tahun Tahap 1-nya cair -
+                  label generik "Tahun" saja gampang disalahsangka sebagai
+                  tahun proyek/BAST.
+                */}
+                <label className="text-xs font-bold text-gray-500">Tahun Bayar:</label>
                 <select value={tahunAktif} onChange={e => setFilterYear(Number(e.target.value))}
                   className="px-3 py-2 rounded-lg text-sm border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-rose-400">
                   {uniqueYears.map(y => <option key={y} value={y}>{y}</option>)}
@@ -1242,9 +1250,9 @@ export default function IncentivePTSPage() {
                   tab lain. Lihat handleExportBatch.
                 */}
                 <button onClick={handleExportBatch} disabled={exporting}
-                  title={`Export project pada batch tahun bayar ${tahunAktif} (mengikuti filter Tahun di atas)`}
+                  title={`Export project pada batch Tahun Bayar ${tahunAktif} (mengikuti dropdown Tahun Bayar di atas) - BUKAN tahun BAST proyeknya`}
                   className="px-3 py-2 rounded-xl text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 flex items-center gap-1.5">
-                  {exporting ? <div className="w-3 h-3 border-2 border-emerald-400/30 border-t-emerald-500 rounded-full animate-spin" /> : '📊'} Export Batch {tahunAktif}
+                  {exporting ? <div className="w-3 h-3 border-2 border-emerald-400/30 border-t-emerald-500 rounded-full animate-spin" /> : '📊'} Export Batch Tahun Bayar {tahunAktif}
                 </button>
               </div>
             </div>
@@ -1262,7 +1270,7 @@ export default function IncentivePTSPage() {
                     {filteredTranches.length === 0 ? (
                       <tr><td colSpan={7} className="px-4 py-12 text-center border border-gray-200">
                         <p className="text-3xl mb-2">📅</p>
-                        <p className="text-gray-500 font-medium">Tidak ada tranche untuk tahun {tahunAktif}</p>
+                        <p className="text-gray-500 font-medium">Tidak ada tranche untuk Tahun Bayar {tahunAktif}</p>
                       </td></tr>
                     ) : filteredTranches.map((t, idx) => {
                       const st = TRANCHE_STATUS[t.status] || TRANCHE_STATUS.pending;

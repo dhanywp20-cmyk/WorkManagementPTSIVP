@@ -360,21 +360,20 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   }
 
   const urutPeran: Record<string, number> = { manager: 0, supervisor: 1, pic: 2, support: 3 };
-  //  `nilai` menyimpan tiap nominal SEBELUM dijumlah - dipakai membangun
-  //  RUMUS di bawah (bukan mengetik ulang o.total sebagai angka mati). Tidak
-  //  bisa dirujuk sebagai referensi sel Excel: Tabel 1 bisa menggabung lebih
-  //  dari satu orang berperan sama jadi SATU sel teks (lihat teksNamaPeran),
-  //  jadi nominal satu orang belum tentu punya selnya sendiri untuk dirujuk.
-  const perOrang = new Map<string, { nama: string; peran: Set<string>; total: number; jumlah: number; nilai: number[] }>();
+  //  `total`/`jumlah` di sini HANYA dipakai untuk pengurutan (orangUrut) dan
+  //  sebagai cache angka `result` di sumCell (lihat selRpByNama di dekat
+  //  Tabel 1 untuk RUMUS sungguhan yang dirujuk Tabel 2 - dibangun belakangan
+  //  dari alamat sel asli, bukan dari array ini).
+  const perOrang = new Map<string, { nama: string; peran: Set<string>; total: number; jumlah: number }>();
   for (const { nama, peran, jumlah } of akumulasi) {
-    const e = perOrang.get(nama) ?? { nama, peran: new Set<string>(), total: 0, jumlah: 0, nilai: [] };
-    e.peran.add(peran); e.total += jumlah; e.jumlah += 1; e.nilai.push(jumlah);
+    const e = perOrang.get(nama) ?? { nama, peran: new Set<string>(), total: 0, jumlah: 0 };
+    e.peran.add(peran); e.total += jumlah; e.jumlah += 1;
     perOrang.set(nama, e);
   }
   const namaBelumFinal = new Set<string>();
   for (const [nama, peranSet] of semuaNamaTim) {
     if (perOrang.has(nama)) continue;
-    perOrang.set(nama, { nama, peran: new Set(peranSet), total: 0, jumlah: 0, nilai: [] });
+    perOrang.set(nama, { nama, peran: new Set(peranSet), total: 0, jumlah: 0 });
     namaBelumFinal.add(nama);
   }
   const orangUrut = [...perOrang.values()].sort((a, b) => {
@@ -416,11 +415,13 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
     Kisi kolom Tabel 1 (per-orang) & lebar keseluruhan berkas - dihitung DI
     SINI, sebelum satu sel pun ditulis, karena keduanya bergantung pada
     orangUrut/tahunUrut yang baru selesai dihitung di atas. kolTotal3
-    (lebar Tabel 3) juga dihitung sekarang, bukan nanti saat Tabel 3 ditulis,
-    supaya KOL_TERAKHIR (dipakai judul & footer di atas Tabel 3) sudah benar
-    sejak baris pertama - bukan cuma selebar Tabel 1, yang jadi terlalu
-    sempit begitu tahun tercatat makin banyak seiring platform ini berjalan
-    tahunan (setiap tahun tambah 2 kolom di Tabel 3).
+    (lebar Tabel 3 sendiri) juga dihitung sekarang, bukan nanti saat Tabel 3
+    ditulis, supaya KOL_TERAKHIR (dipakai judul di paling atas berkas -
+    BUKAN catatan di bawah Tabel 3, yang sengaja memakai kolTotal3 sendiri,
+    lihat komentarnya) sudah benar sejak baris pertama - bukan cuma selebar
+    Tabel 1, yang jadi terlalu sempit begitu tahun tercatat makin banyak
+    seiring platform ini berjalan tahunan (setiap tahun tambah 2 kolom di
+    Tabel 3).
   */
   const kolOrang = orangUrut.map((o, i) => ({
     nama: o.nama,
@@ -541,6 +542,17 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
     if (isEstimate) cPos.font = { ...dataFont(), italic: true, color: { argb: 'AAAAAA' } };
   }
 
+  /*
+    Alamat sel Rp Tabel 1 tiap orang - dikumpulkan SAMBIL menulis baris di
+    bawah, dipakai Tabel 2 supaya "Total Nominal" ORANG ITU adalah RUMUS
+    yang MERUJUK sel-sel Tabel 1 sungguhan (mis. `=G5+G12+K8`), bukan angka
+    yang sudah dijumlah duluan di JavaScript lalu ditulis ulang sebagai
+    angka mati di dalam formula (`=300000+125000+...`). Kalau ada yang
+    mengoreksi % di Tabel 1 langsung di Excel, Total di Tabel 2 ikut
+    berubah sendiri - tidak lagi bisa berbeda dari Tabel 1 tanpa disadari.
+  */
+  const selRpByNama = new Map<string, string[]>();
+
   daftarProyek.forEach((pr, idx) => {
     const r = dataAwal + idx;
     /*
@@ -587,7 +599,16 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
     if (!pr.hasNominal) cNom.value = 'belum input';
 
     for (const ko of kolOrang) {
-      tulisOrang(r, ko.posisi, perananOrang(pr, ko.nama), r, pr.isEstimate);
+      const hasil = perananOrang(pr, ko.nama);
+      tulisOrang(r, ko.posisi, hasil, r, pr.isEstimate);
+      //  Sel Rp ini bisa kosong (proyek estimasi) - itu tidak apa-apa, SUM()
+      //  Excel mengabaikan sel kosong, hasilnya tetap 0 dari sel itu persis
+      //  seperti sebelumnya (proyek estimasi tidak pernah ikut akumulasi).
+      if (hasil.length > 0) {
+        const arr = selRpByNama.get(ko.nama) ?? [];
+        arr.push(`${getColLetter(ko.rp)}${r}`);
+        selRpByNama.set(ko.nama, arr);
+      }
     }
 
     // Installer - 4 kolom (Nama, Lokasi, %, Rp), tidak ikut jadi kolom per-orang di atas.
@@ -674,9 +695,13 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
       rata: 'center',
       font: belumFinal ? { ...dataFont(), color: { argb: '999999' } } : dataFont(),
     });
-    //  RUMUS - menjumlah nominal orang ini secara eksplisit (lihat alasan
-    //  `nilai` tidak bisa jadi referensi sel di komentar deklarasi perOrang).
-    const nilaiTotal = o.nilai.length ? sumCell(o.nilai.join('+'), o.total) : o.total;
+    //  RUMUS yang MERUJUK sel Rp Tabel 1 sungguhan (lihat selRpByNama) -
+    //  bukan angka yang sudah dijumlah duluan lalu ditulis ulang sebagai
+    //  angka mati. Kalau orang ini dari akumulasi lama-lama tidak muncul di
+    //  Tabel 1 sama sekali (semestinya tidak pernah terjadi), jatuh balik ke
+    //  angka JavaScript supaya baris ini tidak kosong tanpa penjelasan.
+    const selRp = selRpByNama.get(o.nama) ?? [];
+    const nilaiTotal = selRp.length ? sumCell(selRp.join('+'), o.total) : o.total;
     const cT = selGabung(ws, row, KOL_REKAP.total, nilaiTotal, {
       rata: 'right',
       font: belumFinal ? { ...dataFont(), bold: true, color: { argb: '999999' } } : { ...dataFont(), bold: true },
@@ -867,8 +892,14 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
     untuk proyek BAST 2026, sekaligus Tahap 2 untuk proyek BAST 2025. Menandai
     "kolom ke-2/ke-3" akan salah untuk sebagian orang, jadi disebut apa
     adanya di sini, bukan dipetakan ke posisi kolom yang keliru.
+
+    Lebar merge-nya sengaja `kolTotal3` (lebar Tabel 3 sendiri), BUKAN
+    KOL_TERAKHIR (lebar keseluruhan berkas, yang sejak Tabel 1 jadi per-orang
+    biasanya JAUH lebih lebar dari Tabel 3) - kalau dipaksa selebar
+    KOL_TERAKHIR, baris catatan ini melebar jauh melewati kolom asli Tabel 3
+    dan terlihat seperti bilah kosong yang salah tempat.
   */
-  selGabung(ws, row, [KOL_REKAP.nama[0], KOL_TERAKHIR], 'Catatan: nilai Tahap 2 & 3 tiap proyek (tahun ke-2/ke-3 sejak BAST-nya '
+  selGabung(ws, row, [KOL_REKAP.nama[0], kolTotal3], 'Catatan: nilai Tahap 2 & 3 tiap proyek (tahun ke-2/ke-3 sejak BAST-nya '
     + 'masing-masing, bukan kolom ke-2/ke-3 di tabel ini) masih PROYEKSI - dihitung dari skema & Support yang terdeteksi saat '
     + 'berkas ini dibuat. Support baru yang terdeteksi sepanjang tahun tersebut bisa mengubah nominalnya. Export ulang menjelang '
     + 'akhir tahun bersangkutan untuk memastikan Support terbaru sudah ikut terhitung sebelum Process Batch dijalankan.',
