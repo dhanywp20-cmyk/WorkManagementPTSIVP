@@ -1376,6 +1376,13 @@ function ReminderSchedulePageInner() {
         sales_name: snap.sales_name,
         sales_division: snap.sales_division,
         due_date: snap.due_date,
+        // bast_date HARUS ikut di sini - baris ini sudah punya BAST-nya
+        // sendiri (bastDateVal, baru saja disimpan ke tabel reminders di
+        // atas). Tanpa baris ini, proyek yang baru di-sync (mis. sesudah
+        // baris incentive_projects lamanya dihapus manual) selalu masuk
+        // dengan BAST kosong walau reminders.bast_date sudah terisi -
+        // itulah kenapa tombol Generate Tahapan tidak pernah muncul.
+        bast_date: bastDateVal,
         handler_name: snap.assign_name ?? '',
         handler_username: snap.assigned_to ?? '',
         backup_names: [],

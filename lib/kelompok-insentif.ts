@@ -60,18 +60,35 @@ export function kunciProyek(r: BarisKelompok): string {
  * satu orang (form mengalikan daftar orang dengan daftar tanggal). Menggabung
  * per batch saja akan menjatuhkan penangan kedua, dan di layar insentif itu
  * berarti seseorang kehilangan haknya tanpa ada yang menyadarinya.
+ *
+ * BAST dipinjam dari baris LAIN dalam kelompok yang sama bila baris wakil ini
+ * sendiri kosong. Ini menutup celah nyata: proyek yang selesai sebelum baris
+ * BAST-nya sempat tersimpan di SELURUH baris batch (lihat handleModeConfirm di
+ * reminder-schedule/page.tsx) bisa kebetulan punya baris wakil (due_date
+ * terakhir) yang bast_date-nya kosong, padahal baris lain di batch/grup yang
+ * sama sudah punya nilainya. Tanpa ini, proyek itu tampak "BAST belum diisi"
+ * selamanya di layar Incentive walau datanya sebenarnya ada.
  */
 export function gabungkanProyek<T extends BarisKelompok>(baris: T[]): T[] {
   const terpilih = new Map<string, T>();
+  const bastTerpinjam = new Map<string, string>();
   for (const r of baris) {
     const k = kunciProyek(r);
     const ada = terpilih.get(k);
-    if (!ada) { terpilih.set(k, r); continue; }
-    const lebihBaru = (r.due_date ?? '') > (ada.due_date ?? '')
-      || ((r.due_date ?? '') === (ada.due_date ?? '') && r.id < ada.id);
-    if (lebihBaru) terpilih.set(k, r);
+    if (!ada) { terpilih.set(k, r); }
+    else {
+      const lebihBaru = (r.due_date ?? '') > (ada.due_date ?? '')
+        || ((r.due_date ?? '') === (ada.due_date ?? '') && r.id < ada.id);
+      if (lebihBaru) terpilih.set(k, r);
+    }
+    if (r.bast_date && !bastTerpinjam.has(k)) bastTerpinjam.set(k, r.bast_date);
   }
   return [...terpilih.values()]
+    .map(r => {
+      if (r.bast_date) return r;
+      const pinjaman = bastTerpinjam.get(kunciProyek(r));
+      return pinjaman ? { ...r, bast_date: pinjaman } : r;
+    })
     .sort((a, b) => (b.due_date ?? '').localeCompare(a.due_date ?? ''));
 }
 

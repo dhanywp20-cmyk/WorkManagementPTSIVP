@@ -137,5 +137,37 @@ console.log('\n4. Hal-hal kecil yang mudah terlewat');
   cek('daftar kosong aman', gabungkanProyek([]).length === 0 && deteksiKandidatGabung([]).length === 0);
 }
 
+console.log('\n5. BAST dipinjam dari baris lain sekelompok bila wakilnya sendiri kosong (kasus Steak 21)');
+{
+  // Baris wakil (due_date terakhir) justru yang tidak pernah kebagian BAST -
+  // persis skenario nyata sebelum perbaikan handleModeConfirm menulis ke
+  // SELURUH baris batch.
+  const hasil = gabungkanProyek([
+    b({ id: 'a', batch_id: 'B1', due_date: '2026-06-15', bast_date: '2026-06-17' }),
+    b({ id: 'b', batch_id: 'B1', due_date: '2026-06-17', bast_date: null }),
+  ]);
+  cek('tetap 1 proyek', hasil.length === 1);
+  cek('BAST dipinjam dari baris lain, bukan tampil kosong',
+    hasil[0].bast_date === '2026-06-17', String(hasil[0].bast_date));
+  cek('baris wakil yang dipakai tetap yang due_date terakhir (id b)',
+    hasil[0].id === 'b');
+}
+{
+  // Kalau memang tidak ada satu pun baris berisi BAST, jangan mengarang.
+  const hasil = gabungkanProyek([
+    b({ id: 'a', batch_id: 'B1', due_date: '2026-06-15', bast_date: null }),
+    b({ id: 'b', batch_id: 'B1', due_date: '2026-06-17', bast_date: null }),
+  ]);
+  cek('tanpa BAST sama sekali tetap kosong, bukan dipaksakan', hasil[0].bast_date == null);
+}
+{
+  // Wakil yang SUDAH punya BAST sendiri tidak boleh ketiban nilai pinjaman.
+  const hasil = gabungkanProyek([
+    b({ id: 'a', batch_id: 'B1', due_date: '2026-06-15', bast_date: '2026-06-15' }),
+    b({ id: 'b', batch_id: 'B1', due_date: '2026-06-17', bast_date: '2026-06-17' }),
+  ]);
+  cek('wakil pakai BAST miliknya sendiri, bukan pinjaman', hasil[0].bast_date === '2026-06-17');
+}
+
 console.log(`\n${gagal === 0 ? 'SEMUA LULUS' : 'ADA YANG GAGAL'} - ${lulus} lulus, ${gagal} gagal\n`);
 process.exit(gagal === 0 ? 0 : 1);
