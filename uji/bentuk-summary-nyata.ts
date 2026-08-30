@@ -52,6 +52,11 @@ const SKEMA = {
     { nomor: 3, persen: 15, tahunKe: 3 },
   ],
   porsiRemote: { aktif: false, adaSupport: {}, tanpaSupport: {} },
+  supervisorSebagaiPic: {
+    aktif: false,
+    remote: { adaSupport: {}, tanpaSupport: {} },
+    onsite: { adaSupport: {}, tanpaSupport: {} },
+  },
 };
 
 const users = [

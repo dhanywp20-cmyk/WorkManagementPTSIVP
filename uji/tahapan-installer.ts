@@ -56,6 +56,11 @@ const SKEMA: SkemaInsentif = {
     { nomor: 2, persen: 35, tahunKe: 2 },
     { nomor: 3, persen: 15, tahunKe: 3 },
   ],
+  supervisorSebagaiPic: {
+    aktif: false,
+    remote: { adaSupport: {}, tanpaSupport: {} },
+    onsite: { adaSupport: {}, tanpaSupport: {} },
+  },
 };
 
 console.log('\n1. Tahun pencairan: BAST 2026 dicairkan 2027 / 2028 / 2029');

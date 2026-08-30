@@ -123,5 +123,67 @@ cek(supJ.length === 1 && supJ[0].user_name === 'Ferdinan Agustinus',
 cek(supJ[0]?.percentage === 17, 'Ferdinan dapat 17% PENUH, tidak dibagi bertiga');
 cek(Math.abs(J.tot - POOL) <= 1 && Math.abs(J.pct - 100) < 0.01, 'Tetap 100% / Rp 1.000.000');
 
+// ── Tabel KHUSUS Supervisor-sebagai-PIC (saklar dinyalakan) ────────────────
+// Sebelumnya porsi Supervisor cuma dipindah ke Manager di atas peta PIC-staff
+// biasa - tidak membedakan Remote/Onsite atau ada/tidaknya Support sama
+// sekali. Angka di bawah dari permintaan pemilik kebijakan sendiri.
+const sk2: SkemaInsentif = {
+  ...sk,
+  supervisorSebagaiPic: {
+    aktif: true,
+    remote: {
+      tanpaSupport: { pic: 55, manager: 25, installer: 20 },
+      adaSupport:   { pic: 50, support: 15, manager: 15, installer: 20 },
+    },
+    onsite: {
+      tanpaSupport: { pic: 70, manager: 30 },
+      adaSupport:   { pic: 60, support: 15, manager: 25 },
+    },
+  },
+};
+
+const K = tampil('[Tabel khusus] Remote, Supervisor=PIC, TANPA support',
+  calculateStandardScheme(sk2, POOL, 'remote', '', 'Yoga KS', 'u-dhany', 'Dhany Wahyu',
+    'u-yoga', 'Yoga KS', []));
+cek(K.r.find(s => s.role === 'pic')?.percentage === 55, 'PIC (Yoga) 55%');
+cek(K.r.find(s => s.role === 'manager')?.percentage === 25, 'Manager 25%');
+cek(K.r.find(s => s.role === 'installer')?.percentage === 20, 'Installer 20%');
+cek(!K.r.some(s => s.role === 'supervisor'), 'Tidak ada baris Supervisor terpisah (Yoga sudah dibayar sebagai PIC)');
+cek(!K.r.some(s => s.role === 'support'), 'Tidak ada baris Support (memang tidak ada yang menangani)');
+cek(Math.abs(K.tot - POOL) <= 1 && Math.abs(K.pct - 100) < 0.01, 'Tetap 100% / Rp 1.000.000');
+
+const L = tampil('[Tabel khusus] Remote, Supervisor=PIC, ADA support (Ferdinan)',
+  calculateStandardScheme(sk2, POOL, 'remote', '', 'Yoga KS', 'u-dhany', 'Dhany Wahyu',
+    'u-yoga', 'Yoga KS', [{ user_id: 'ferdinan', user_name: 'Ferdinan Agustinus' }]));
+cek(L.r.find(s => s.role === 'pic')?.percentage === 50, 'PIC (Yoga) 50%');
+cek(L.r.find(s => s.role === 'support')?.percentage === 15, 'Support (Ferdinan) 15%');
+cek(L.r.find(s => s.role === 'manager')?.percentage === 15, 'Manager 15%');
+cek(L.r.find(s => s.role === 'installer')?.percentage === 20, 'Installer 20%');
+cek(Math.abs(L.tot - POOL) <= 1 && Math.abs(L.pct - 100) < 0.01, 'Tetap 100% / Rp 1.000.000');
+
+const M = tampil('[Tabel khusus] Onsite, Supervisor=PIC, TANPA support',
+  calculateStandardScheme(sk2, POOL, 'onsite', '', 'Yoga KS', 'u-dhany', 'Dhany Wahyu',
+    'u-yoga', 'Yoga KS', []));
+cek(M.r.find(s => s.role === 'pic')?.percentage === 70, 'PIC (Yoga) 70%');
+cek(M.r.find(s => s.role === 'manager')?.percentage === 30, 'Manager 30%');
+cek(!M.r.some(s => s.role === 'installer'), 'Tidak ada Installer (Onsite, tidak ada di tabel onsite)');
+cek(Math.abs(M.tot - POOL) <= 1 && Math.abs(M.pct - 100) < 0.01, 'Tetap 100% / Rp 1.000.000');
+
+const N = tampil('[Tabel khusus] Onsite, Supervisor=PIC, ADA support (Ferdinan)',
+  calculateStandardScheme(sk2, POOL, 'onsite', '', 'Yoga KS', 'u-dhany', 'Dhany Wahyu',
+    'u-yoga', 'Yoga KS', [{ user_id: 'ferdinan', user_name: 'Ferdinan Agustinus' }]));
+cek(N.r.find(s => s.role === 'pic')?.percentage === 60, 'PIC (Yoga) 60%');
+cek(N.r.find(s => s.role === 'support')?.percentage === 15, 'Support (Ferdinan) 15%');
+cek(N.r.find(s => s.role === 'manager')?.percentage === 25, 'Manager 25%');
+cek(Math.abs(N.tot - POOL) <= 1 && Math.abs(N.pct - 100) < 0.01, 'Tetap 100% / Rp 1.000.000');
+
+// Kendali: saklar MATI (sk lama) harus tetap perilaku LAMA - fold ke Manager,
+// tidak boleh diam-diam ikut memakai tabel sk2 di atas.
+const O = tampil('[Saklar MATI] Remote, Supervisor=PIC, TANPA support - perilaku LAMA tetap',
+  calculateStandardScheme(sk, POOL, 'remote', '', 'Yoga KS', 'u-dhany', 'Dhany Wahyu',
+    'u-yoga', 'Yoga KS', []));
+cek(O.r.find(s => s.role === 'pic')?.percentage !== 55, 'PIC BUKAN 55% - saklar mati tidak boleh ikut tabel baru');
+cek(!O.r.some(s => s.role === 'supervisor'), 'Baris Supervisor tetap hilang (dipindah ke Manager seperti biasa)');
+
 console.log(gagal === 0 ? '\nLULUS' : `\n${gagal} GAGAL`);
 process.exit(gagal ? 1 : 0);

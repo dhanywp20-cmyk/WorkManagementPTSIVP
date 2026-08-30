@@ -529,6 +529,81 @@ export function SchemeTab({ olehNama, notify }: {
               })}
             </div>
           </div>
+          {/*
+            Supervisor merangkap PIC PUNYA TABEL SENDIRI bila saklar ini
+            dinyalakan - menanggung DUA peran sekaligus, dengan beban yang
+            berbeda-beda menurut Remote/Onsite dan ada/tidaknya Support.
+            Saklar mati (bawaan) = perilaku LAMA di atas ("dialihkan ke ...").
+          */}
+          <div className="sm:col-span-2 rounded-xl border border-violet-100 bg-violet-50/40 p-2.5">
+            <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+              <span className="text-[10px] font-black uppercase tracking-widest text-violet-700">
+                Supervisor merangkap PIC — tabel porsi tersendiri
+              </span>
+              <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer flex-shrink-0">
+                <input type="checkbox" checked={sk.supervisorSebagaiPic.aktif}
+                  onChange={e => ubah({ supervisorSebagaiPic: { ...sk.supervisorSebagaiPic, aktif: e.target.checked } })}
+                  aria-label="Atur porsi Supervisor-sebagai-PIC sendiri" />
+                Atur sendiri
+              </label>
+            </div>
+            {sk.supervisorSebagaiPic.aktif ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {([
+                    ['remote', 'tanpaSupport', 'Remote — tanpa Support'],
+                    ['remote', 'adaSupport', 'Remote — ada Support'],
+                    ['onsite', 'tanpaSupport', 'Onsite — tanpa Support'],
+                    ['onsite', 'adaSupport', 'Onsite — ada Support'],
+                  ] as const).map(([kunciMode, kunciPeta, judul]) => {
+                    const peta = sk.supervisorSebagaiPic[kunciMode][kunciPeta];
+                    const total = Object.values(peta).reduce((t, n) => t + (n || 0), 0);
+                    //  Installer hanya ditawarkan pada grup Remote - onsite tidak
+                    //  pernah membayar Installer (lihat installerHanyaRemote).
+                    const barisPeran = [
+                      { k: 'pic', l: 'PIC (Supervisor)' },
+                      { k: 'support', l: 'Tim Support' },
+                      { k: 'manager', l: 'Manager' },
+                      ...(kunciMode === 'remote' ? [{ k: 'installer', l: '🔧 Installer' }] : []),
+                    ];
+                    return (
+                      <div key={`${kunciMode}-${kunciPeta}`} className="rounded-xl border border-violet-100 bg-white p-3">
+                        <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                          <p className="text-[11px] font-black uppercase tracking-widest text-violet-700">{judul}</p>
+                          <TotalPersen nilai={total} />
+                        </div>
+                        <div className="space-y-1.5">
+                          {barisPeran.map(b => (
+                            <div key={b.k} className="flex items-center gap-2">
+                              <span className="text-xs text-gray-600 flex-1 truncate">{b.l}</span>
+                              <div className="relative w-20 flex-shrink-0">
+                                <input type="number" min={0} max={100} step="0.01" value={peta[b.k] ?? 0}
+                                  onChange={e => ubah({ supervisorSebagaiPic: { ...sk.supervisorSebagaiPic,
+                                    [kunciMode]: { ...sk.supervisorSebagaiPic[kunciMode],
+                                      [kunciPeta]: { ...peta, [b.k]: parseFloat(e.target.value) || 0 } } } })}
+                                  aria-label={`Supervisor-sebagai-PIC ${b.l} (${judul})`} className={`${inputKecil} pr-6`} />
+                                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500" aria-hidden="true">%</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="mt-2 text-[11px] text-gray-500 leading-relaxed">
+                  Angka ini dipakai <strong>apa adanya</strong> menggantikan porsi PIC-staff-biasa di atas -
+                  bukan menambahnya. Keempat tabel wajib berjumlah tepat 100% sebelum bisa disimpan.
+                </p>
+              </>
+            ) : (
+              <p className="text-[11px] text-violet-800 leading-relaxed">
+                Saklar mati — Supervisor-sebagai-PIC memakai aturan &quot;Aturan Khusus&quot; di atas: porsi
+                koordinasinya <strong>dialihkan ke {sk.porsi.find(p => p.peran === sk.hangusSupervisorKe)?.label ?? '(hangus)'}</strong>,
+                di atas peta PIC-staff-biasa yang sama — tidak dibedakan Remote/Onsite atau ada/tidaknya Support.
+              </p>
+            )}
+          </div>
         </div>
       </div>
       {/* ── Tahapan pencairan ── */}

@@ -160,6 +160,29 @@ export interface SkemaInsentif {
   /** Tahapan pencairan untuk Tim PTS. Harus berjumlah 100. */
   tranche: TahapPencairan[];
 
+  /**
+   * Pembagian KHUSUS saat Supervisor sendiri yang merangkap PIC proyeknya.
+   *
+   * Bawaan LAMA (saklar mati): porsi koordinasi Supervisor sekadar dipindah
+   * ke `hangusSupervisorKe` di atas peta PIC-staff-biasa (sk.porsi/
+   * tanpaSupport) - itu tidak membedakan bahwa Supervisor-sebagai-PIC
+   * menanggung DUA peran sekaligus, dan besarnya beban itu beda lagi antara
+   * Remote/Onsite serta ada/tidaknya Support. Proposal tidak pernah
+   * membedakan ini.
+   *
+   * Saklar `aktif: true` mengambil alih SEPENUHNYA - dipakai apa adanya,
+   * termasuk baris 'installer' bila ada (persis pola porsiRemote). Baris
+   * lama yang belum punya kolom ini otomatis dapat `aktif: false`, jadi
+   * perilakunya SAMA PERSIS seperti sebelum kolom ini ada - tidak ada proyek
+   * yang mendadak dibayar beda karena penambahan fitur.
+   */
+  supervisorSebagaiPic: {
+    aktif: boolean;
+    /** Proyek mode Remote. WAJIB memuat baris 'installer' bila diaktifkan, total 100. */
+    remote: { adaSupport: Record<string, number>; tanpaSupport: Record<string, number> };
+    /** Proyek mode Onsite. Total 100 (biasanya tanpa Installer). */
+    onsite: { adaSupport: Record<string, number>; tanpaSupport: Record<string, number> };
+  };
 }
 
 /**
@@ -209,6 +232,20 @@ export const SKEMA_BAWAAN: SkemaInsentif = {
     aktif: false,
     adaSupport:   { pic: 55.25, support: 12.75, supervisor: 8.5, manager: 8.5, installer: 15 },
     tanpaSupport: { pic: 68,    supervisor: 8.5, manager: 8.5,   installer: 15 },
+  },
+  //  Saklar MATI - baris di bawah baru berlaku begitu admin menyalakannya
+  //  dari layar Skema Pembagian. Angkanya diisi contoh yang diminta (bukan
+  //  0 semua) supaya begitu dinyalakan Admin tidak mulai dari kosong.
+  supervisorSebagaiPic: {
+    aktif: false,
+    remote: {
+      tanpaSupport: { pic: 55, manager: 25, installer: 20 },
+      adaSupport:   { pic: 50, support: 15, manager: 15, installer: 20 },
+    },
+    onsite: {
+      tanpaSupport: { pic: 70, manager: 30 },
+      adaSupport:   { pic: 60, support: 15, manager: 25 },
+    },
   },
 };
 
@@ -347,6 +384,28 @@ export function periksaSkema(sk: SkemaInsentif): MasalahSkema[] {
     }
   }
 
+  //  Tabel Supervisor-sebagai-PIC wajib 100% SENDIRI-SENDIRI juga, dengan
+  //  alasan yang sama seperti porsiRemote - keempat peta ini dipakai pada
+  //  keadaan proyek yang berbeda-beda, jadi total gabungan tidak berarti apa-apa.
+  if (sk.supervisorSebagaiPic?.aktif) {
+    for (const [nama, peta] of [
+      ['remote, tanpa support', sk.supervisorSebagaiPic.remote.tanpaSupport],
+      ['remote, ada support', sk.supervisorSebagaiPic.remote.adaSupport],
+      ['onsite, tanpa support', sk.supervisorSebagaiPic.onsite.tanpaSupport],
+      ['onsite, ada support', sk.supervisorSebagaiPic.onsite.adaSupport],
+    ] as const) {
+      const total = bulat(Object.values(peta ?? {}).reduce((t, n) => t + (n || 0), 0));
+      if (total !== 100) {
+        masalah.push({ bidang: 'supervisorSebagaiPic', pesan: `Supervisor-sebagai-PIC (${nama}) ${total}% — harus tepat 100%.` });
+      }
+      for (const k of Object.keys(peta ?? {})) {
+        if (k !== 'installer' && !kunci.includes(k)) {
+          masalah.push({ bidang: 'supervisorSebagaiPic', pesan: `Supervisor-sebagai-PIC (${nama}): peran "${k}" tidak ada di daftar porsi.` });
+        }
+      }
+    }
+  }
+
   //  Saklar menyala tapi porsinya 0 adalah setengah jalan: layarnya berkata
   //  "Installer ikut", hitungannya memberi nol. Salah satunya harus dibetulkan
   //  sebelum disimpan, dan mana yang dimaksud hanya orangnya yang tahu.
@@ -442,6 +501,10 @@ function rapikan(raw: unknown): SkemaInsentif {
     //  jadi perilakunya persis seperti sebelumnya - tidak ada proyek yang
     //  mendadak dibayar dengan angka lain karena penambahan kolom.
     porsiRemote: r.porsiRemote ?? SKEMA_BAWAAN.porsiRemote,
+    //  Sama seperti porsiRemote: baris lama tidak punya kolom ini, jatuh ke
+    //  bawaan yang saklarnya MATI - hitungPembagian tetap memindah porsi
+    //  Supervisor ke hangusSupervisorKe persis seperti sebelum kolom ini ada.
+    supervisorSebagaiPic: r.supervisorSebagaiPic ?? SKEMA_BAWAAN.supervisorSebagaiPic,
   };
 }
 
@@ -641,14 +704,39 @@ export function hitungPembagian(
     Installer diambil dari peta itu - bukan dari installerRemotePersen -
     supaya yang membayar persis angka yang terbaca di layar.
   */
-  const { dasar, pctInstaller, faktor } = petaPorsiBerlaku(sk, remote, adaSupport);
+  let dasar: Record<string, number>;
+  let pctInstaller: number;
+  let faktor: number;
 
-  // Supervisor merangkap PIC: porsi koordinasinya dialihkan, bukan dibayar dua kali.
-  if (supervisorJadiPic && dasar.supervisor) {
-    const pindah = dasar.supervisor;
-    dasar.supervisor = 0;
-    const tujuan = sk.hangusSupervisorKe;
-    if (tujuan) dasar[tujuan] = (dasar[tujuan] || 0) + pindah;
+  /*
+    Supervisor merangkap PIC PUNYA TABEL SENDIRI bila diaktifkan.
+
+    Bawaan (saklar mati): porsi koordinasi Supervisor sekadar dipindah ke
+    hangusSupervisorKe di atas peta PIC-staff-biasa - itu tidak membedakan
+    bahwa Supervisor-sebagai-PIC menanggung DUA peran sekaligus, dan
+    besarnya beda lagi antara Remote/Onsite serta ada/tidaknya Support.
+
+    Saklar menyala: peta khusus dipakai APA ADANYA (persis pola porsiRemote),
+    termasuk baris 'installer' bila ada di dalamnya - GANTI TOTAL dasar dari
+    petaPorsiBerlaku, bukan menambal di atasnya.
+  */
+  if (supervisorJadiPic && sk.supervisorSebagaiPic?.aktif) {
+    const grup = remote ? sk.supervisorSebagaiPic.remote : sk.supervisorSebagaiPic.onsite;
+    const peta = { ...(adaSupport ? grup.adaSupport : grup.tanpaSupport) };
+    pctInstaller = Math.max(0, Math.min(99, peta.installer || 0));
+    delete peta.installer;
+    dasar = peta;
+    faktor = 1;
+  } else {
+    const berlaku = petaPorsiBerlaku(sk, remote, adaSupport);
+    dasar = berlaku.dasar; pctInstaller = berlaku.pctInstaller; faktor = berlaku.faktor;
+    // Perilaku LAMA: porsi koordinasi Supervisor dialihkan, bukan dibayar dua kali.
+    if (supervisorJadiPic && dasar.supervisor) {
+      const pindah = dasar.supervisor;
+      dasar.supervisor = 0;
+      const tujuan = sk.hangusSupervisorKe;
+      if (tujuan) dasar[tujuan] = (dasar[tujuan] || 0) + pindah;
+    }
   }
 
   const bagiRata = new Map(sk.porsi.map(p => [p.peran, p.bagiRata]));
