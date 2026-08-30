@@ -1396,9 +1396,20 @@ export default function IncentivePTSPage() {
                     {nominalProject.mode_penyelesaian === 'onsite' ? '🏢 Onsite' : '💻 Remote'}
                   </span>
                   <span className="text-xs text-gray-400">
-                    {nominalProject.pic_type === 'manager_pic'
-                      ? `Manager PIC → ${nominalProject.mode_penyelesaian === 'onsite' ? '100%' : '85%'} handler`
-                      : `Standard → ${nominalProject.mode_penyelesaian === 'onsite' ? '60%' : '51%'} handler`}
+                    {/*
+                      Dulu ditulis literal ('100%'/'85%'/'60%'/'51%'), lepas dari skema
+                      yang sedang berlaku - begitu Scheme Setting diubah, angka di sini
+                      diam-diam berbeda dari yang benar-benar dibayar (dihitung
+                      calcHandlerSplit beberapa baris di bawah). Sekarang pakai fungsi
+                      yang sama dengan mesin pembayaran (persenPicBerlaku), dengan
+                      asumsi "ada Troubleshooting" - konvensi yang sama dipakai
+                      calcHandlerSplit di atas untuk ringkasan ini.
+                    */}
+                    {nominalProject.pic_type === 'manager_pic' ? 'Manager PIC → ' : 'Standard → '}
+                    {skema ? formatPct(persenPicBerlaku(
+                      skema, nominalProject.mode_penyelesaian === 'remote', true,
+                      nominalProject.pic_type === 'manager_pic',
+                    )) : '—'} handler
                   </span>
                 </div>
               )}
