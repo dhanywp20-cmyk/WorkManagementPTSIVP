@@ -616,7 +616,22 @@ function ReminderSchedulePageInner() {
       new_value: 'ikut dihitung di Incentive',
       notes: 'Dikembalikan lewat tombol Sync ke Incentive PTS',
     });
-    notify('success', `"${r.project_name}" kembali masuk daftar Incentive PTS.`);
+    /*
+      Sync TIDAK PERNAH menulis bast_date - lihat komentar di atas fungsi ini.
+      Kalau baris yang barusan disinkronkan kebetulan tidak punya BAST sama
+      sekali (proyek lama dari sebelum modal Completed mewajibkan BAST, atau
+      backup-nya kosong di semua baris batch), tombolnya akan langsung hilang
+      lagi setelah loadAll() karena layakIncentive() tidak melihat bast_date -
+      tapi Generate Tahapan di Incentive PTS tetap tidak akan pernah muncul.
+      Tanpa peringatan ini, itu terlihat seperti "sudah beres" padahal masih
+      tertahan - persis yang terjadi pada Steak 21 Gading Serpong.
+    */
+    notify(r.bast_date ? 'success' : 'error',
+      r.bast_date
+        ? `"${r.project_name}" kembali masuk daftar Incentive PTS.`
+        : `"${r.project_name}" kembali masuk daftar Incentive PTS, tapi BAST-nya masih kosong — `
+          + 'tahapan pencairan tidak akan bisa dibuat sampai Tanggal BAST diisi lewat '
+          + '💲 Input Nominal di layar Incentive PTS.');
     await fetchRemindersQuiet();
   }
 
