@@ -488,13 +488,16 @@ export function AdminDashboard({ user }: { user: User }) {
             <section>
               <SectionHeader>📈 Statistik Per Sesi Quiz</SectionHeader>
               <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
-                <StatCardGrid cols={4} items={[
-                  { label: 'Total Sesi', value: sessionStats.length, accent: '#6366f1' },
-                  { label: 'Total Peserta', value: totalPeserta, accent: '#0ea5e9' },
-                  { label: 'Rata-rata Nilai', value: avgScore.toFixed(1), accent: avgScore >= 80 ? '#10b981' : avgScore >= 60 ? '#f59e0b' : '#f43f5e' },
-                  { label: 'Pass Rate', value: totalPeserta > 0 ? `${Math.round(totalPassed / totalPeserta * 100)}%` : '-', accent: '#10b981' },
-                ]} />
-                <div className="flex flex-wrap items-start gap-8 mt-5 pt-5 border-t border-slate-100">
+                {/*
+                  Tanpa StatCardGrid Total Sesi/Peserta/Rata-rata/Pass Rate di
+                  sini - itu duplikat dari "Summary Cards" & "Analytics
+                  Overview" (Pass Rate Global, Distribusi Nilai) yang sudah
+                  ada di atas. Donut di bawah ini tetap ada karena scope-nya
+                  beda: overview di atas itu SELURUH attempt platform,
+                  sedangkan ini KHUSUS sesi quiz yang formal (lc_quiz_sessions),
+                  jadi angkanya bisa berbeda dan tetap relevan dilihat.
+                */}
+                <div className="flex flex-wrap items-start gap-8">
                   <div className="flex flex-col items-center gap-1.5">
                     <DonutChart size={92} strokeWidth={13}
                       segments={[{ value: totalPassed, color: '#10b981' }, { value: totalFailed, color: '#f43f5e' }]}
