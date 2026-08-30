@@ -3840,20 +3840,35 @@ jangan lupa peralatan & Semangat💪🏼
                             ? ` · atas nama Sales ${detailReminder.sales_name}` : '';
                         })(),
                     }}
-                    /* Peristiwa lain yang terjadi SEBELUM logAudit mencatatnya.
-                       Waktunya memakai updated_at - itu satu-satunya jejak waktu
-                       yang tersimpan, jadi disebut apa adanya sebagai perkiraan
-                       alih-alih dikarang persis. Begitu pencatatan sungguhan
-                       masuk, baris turunan ini menyingkir sendiri. */
+                    /*
+                      Peristiwa lain yang terjadi SEBELUM logAudit mencatatnya.
+
+                      Waktunya TIDAK BOLEH memakai updated_at - kolom itu ikut
+                      berubah oleh SUNTINGAN APA PUN pada baris ini, termasuk
+                      yang tidak berhubungan sama sekali (mis. admin mengisi
+                      Tipe Produk atau BAST bertahun-tahun sesudah proyek
+                      selesai). Baris ini dulu memakainya, dan akibatnya sebuah
+                      proyek yang sungguh selesai bulan Juni bisa tiba-tiba
+                      tampil "Ditandai selesai — 2 menit lalu" hanya karena ada
+                      kolom lain yang baru saja disunting - riwayat yang sudah
+                      lama terlihat seolah baru saja terjadi.
+
+                      due_date/bast_date dipakai sebagai gantinya - keduanya
+                      TIDAK berubah akibat suntingan field lain, jadi lebih
+                      dekat ke kapan pekerjaan ini sungguh terjadi. bast_date
+                      diutamakan untuk "selesai" karena itu memang tanggal
+                      serah-terima; due_date dipakai untuk "dikerjakan" karena
+                      penugasan biasanya melekat pada jadwalnya.
+                    */
                     turunan={[
                       ...(detailReminder.assign_name?.trim()
                         ? [{ aksi: 'assign', oleh: detailReminder.assign_name,
-                             waktu: detailReminder.updated_at ?? detailReminder.created_at ?? null,
+                             waktu: detailReminder.due_date ?? detailReminder.created_at ?? null,
                              keterangan: `Dikerjakan ${detailReminder.assign_name} — dari data jadwal` }]
                         : []),
                       ...(detailReminder.status === 'done'
                         ? [{ aksi: 'status_change', oleh: detailReminder.assign_name || null,
-                             waktu: detailReminder.updated_at ?? null,
+                             waktu: detailReminder.bast_date ?? detailReminder.due_date ?? null,
                              keterangan: 'Ditandai selesai — dari data jadwal' }]
                         : []),
                     ]} />

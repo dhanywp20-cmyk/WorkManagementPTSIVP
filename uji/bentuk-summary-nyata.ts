@@ -268,6 +268,45 @@ async function main() {
     ok('Baris "(proyeksi)" ditandai', teksP(awal, 5).includes('proyeksi'), teksP(awal, 5));
   }
 
+  console.log('\n11. Baris incentive_splits GANDA untuk orang & peran yang sama - tidak dobel dicetak/dijumlah');
+  {
+    //  Bug nyata dari laporan: nama tercetak dua kali dalam satu sel
+    //  ("Taufik wahyudi (55.0%)" berulang) DAN rupiahnya ikut dijumlah jadi
+    //  dua kali lipat. Ini terjadi saat incentive_splits punya DUA baris
+    //  identik untuk (tranche_id, user_id, role) yang sama - mis. peninggalan
+    //  dari sebelum unique index ada, atau Process Batch pernah tertekan dua
+    //  kali pada tahapan yang sama.
+    const tranchesGanda = [
+      { id: 'tg1', project_id: 'p1', tranche_number: 1, percentage: 50, payment_year: 2027, status: 'processed' },
+    ] as any[];
+    const splitsGanda = [
+      // DUA baris identik untuk Taufik wahyudi sebagai PIC pada tahapan yang sama.
+      { id: 's1', project_id: 'p1', tranche_id: 'tg1', role: 'pic', user_id: 'u-taufik', user_name: 'Taufik wahyudi', percentage: 55, amount: 137500 },
+      { id: 's2', project_id: 'p1', tranche_id: 'tg1', role: 'pic', user_id: 'u-taufik', user_name: 'Taufik wahyudi', percentage: 55, amount: 137500 },
+    ] as any[];
+    const wbG = await bangunWorkbookPengajuan({
+      year: 2027, projects: projects.filter(p => p.id === 'p1') as any,
+      splits: splitsGanda, tranches: tranchesGanda,
+      managerName: 'Dhany Wahyu', directorName: 'Director PT. IVP',
+    } as any, SKEMA);
+    const targetG = path.join(os.tmpdir(), `pengajuan-ganda-${Date.now()}.xlsx`);
+    await wbG.xlsx.writeFile(targetG);
+    const wbG2 = new ExcelJS.Workbook();
+    await wbG2.xlsx.readFile(targetG);
+    const wsG = wbG2.getWorksheet('Pengajuan 2027');
+    if (!wsG) throw new Error('Worksheet "Pengajuan 2027" (ganda) tidak ditemukan');
+    const cariBarisG = (potongan: string) => {
+      for (let r = 1; r <= wsG.rowCount; r++) if (String(wsG.getCell(r, 2).value ?? '').includes(potongan)) return r;
+      return -1;
+    };
+    const rG = cariBarisG('1. Project yang Dicairkan') + 3; // baris data pertama Tabel 1
+    const namaSel = String(wsG.getCell(rG, 7).value ?? '');
+    ok('Nama PIC TIDAK tercetak dua kali dalam satu sel', namaSel === 'Taufik wahyudi', namaSel);
+    ok('Rupiah PIC = 137.500 - bukan dijumlah jadi 275.000', wsG.getCell(rG, 9).value === 137500,
+      String(wsG.getCell(rG, 9).value));
+    fs.unlinkSync(targetG);
+  }
+
   if (simpanIdx > -1) console.log(`Berkas pengajuan disimpan: ${targetP}`);
   else fs.unlinkSync(targetP);
 

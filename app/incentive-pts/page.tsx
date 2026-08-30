@@ -402,9 +402,26 @@ export default function IncentivePTSPage() {
         notes: 'Tanggal BAST dibetulkan dari layar Incentive',
       }).catch(() => {});
     }
-    notify('success', bastBerubah
-      ? `Nominal ${formatRupiah(Number(nominalValue))} & tanggal BAST tersimpan!`
-      : `Nominal ${formatRupiah(Number(nominalValue))} berhasil disimpan!`);
+    /*
+      Peringatan terpisah kalau BAST TETAP kosong sesudah simpan.
+
+      Tanpa ini, menyimpan nominal pada proyek yang BAST-nya belum diisi
+      terasa berhasil ("Nominal tersimpan!") padahal tombol Generate Tahapan
+      tetap tidak akan muncul - dan tidak ada petunjuk apa pun kenapa. Ini
+      persis yang terjadi pada Steak 21 Gading Serpong: nominalnya diperbarui,
+      kolom BAST di modal ini dibiarkan kosong (mungkin dikira otomatis
+      terisi), lalu Generate Tahapan tetap tidak muncul tanpa pesan yang
+      menjelaskan sebabnya.
+    */
+    const bastMasihKosong = !(nominalBast || nominalProject.bast_date);
+    if (bastMasihKosong) {
+      notify('error', `Nominal ${formatRupiah(Number(nominalValue))} tersimpan, tapi BAST masih kosong — `
+        + 'isi Tanggal BAST di atas dulu, baru tombol Generate Tahapan akan muncul.');
+    } else {
+      notify('success', bastBerubah
+        ? `Nominal ${formatRupiah(Number(nominalValue))} & tanggal BAST tersimpan!`
+        : `Nominal ${formatRupiah(Number(nominalValue))} berhasil disimpan!`);
+    }
     setSavingNominal(false); setNominalProject(null); setNominalValue(''); setNominalBast('');
     loadAll();
   }

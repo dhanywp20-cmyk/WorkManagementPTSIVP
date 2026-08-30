@@ -5,7 +5,7 @@ import { saveAs } from 'file-saver';
 import {
   IncentiveProjectRow, IncentiveSplit, IncentiveTranche,
   SplitResult, formatRupiah, formatPct,
-  calculateIncentiveSplits, findUpline, resolveUserId, OrgUser, ambilSkema, labelSkema, TRANCHE_STATUS,
+  calculateIncentiveSplits, findUpline, resolveUserId, OrgUser, ambilSkema, TRANCHE_STATUS,
   type SkemaInsentif,
 } from './calc';
 
@@ -323,7 +323,25 @@ export async function bangunWorkbookPengajuan(data: ExportData, sk: SkemaInsenti
     const tahunPertamaProyek = tahapPertama?.tranche_number === tahapTahunIni.tranche_number;
 
     //  1) Baris tersimpan milik tahapan tahun ini - paling tepercaya.
-    const tersimpan = splits.filter(s => s.tranche_id === tahapTahunIni.id);
+    //
+    //  DIDEDUP per (orang, peran) - bukan sekadar dipetakan apa adanya.
+    //  Kalau tahapan yang sama pernah diproses dua kali (mis. Process Batch
+    //  tertekan dua kali sebelum ada penjagaan, atau baris lama peninggalan
+    //  sebelum unique index dipasang), incentive_splits menyimpan DUA baris
+    //  untuk orang & peran yang identik. Tanpa dedup ini, nama itu tercetak
+    //  dua kali dalam satu sel ("Taufik wahyudi (55.0%)" berulang) DAN
+    //  rupiahnya ikut DIJUMLAHKAN - melipatgandakan nominal yang tercetak
+    //  padahal orangnya cuma satu. Yang diambil baris PERTAMA saja, bukan
+    //  dijumlah - keduanya toh angka yang sama persis untuk orang yang sama.
+    const tersimpanMentah = splits.filter(s => s.tranche_id === tahapTahunIni.id);
+    const tersimpan = (() => {
+      const unik = new Map<string, IncentiveSplit>();
+      for (const s of tersimpanMentah) {
+        const k = `${s.user_id || s.user_name}::${s.role}`;
+        if (!unik.has(k)) unik.set(k, s);
+      }
+      return [...unik.values()];
+    })();
     let orang: PeranEkspor[];
     let proyeksi = false;
 
@@ -385,13 +403,11 @@ export async function bangunWorkbookPengajuan(data: ExportData, sk: SkemaInsenti
   ws.mergeCells(row, KOL.no, row, KOL_TERAKHIR);
   row += 1;
 
-  const cGen = ws.getCell(row, KOL.no);
-  cGen.value = `Dihitung dengan: ${labelSkema(sk, new Date().toISOString(), null)} · `
-    + `Dibuat: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
-  cGen.font = { italic: true, size: 9, name: 'Arial', color: { argb: '888888' } };
-  cGen.alignment = { horizontal: 'center', vertical: 'middle' };
-  ws.mergeCells(row, KOL.no, row, KOL_TERAKHIR);
-  row += 2;
+  //  Tanpa baris "Dihitung dengan skema ..." - kunci skema (pic60/support17/
+  //  dst) adalah rincian internal, bukan sesuatu yang perlu tercetak di
+  //  lembar yang ditandatangani ke Finance. Tanggal cetak juga sudah jelas
+  //  dari tanggal tanda tangan di kaki berkas.
+  row += 1;
 
   // ── TABEL 1 — Project yang dicairkan tahun ini ────────────────────────
   const cJudul1 = ws.getCell(row, KOL.no);
@@ -1041,20 +1057,14 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   row += 2;
 
   // ── TABEL 3 — Nilai Pengajuan Incentive per Tahun ────────────────────
+  //  Tanpa paragraf penjelasan tahapan di sini - aturannya sudah ada di
+  //  proposal, dan kepala tabelnya sendiri ("dibayarkan tahun N") sudah
+  //  cukup menjawab pertanyaan "uang ini keluar kapan". Minim penjelasan,
+  //  cukup yang ada di tabel.
   const cJudul3 = ws.getCell(row, KOL.no);
   cJudul3.value = '3. Nilai Pengajuan Incentive per Tahun';
   cJudul3.font = { bold: true, size: 12, name: 'Arial' };
   ws.mergeCells(row, KOL.no, row, KOL_TERAKHIR);
-  row += 1;
-
-  const cFoot3 = ws.getCell(row, KOL.no);
-  const labelTahap = tahapUrut.map(t => `${t.persen}% (thn ke-${t.tahunKe})`).join(' / ');
-  cFoot3.value = `Team PTS dipecah per Tahapan Pencairan: ${labelTahap}, dihitung dari BAST masing-masing proyek - `
-    + 'bukan tahun kalender yang sama untuk semua orang. Installer dibayar 100% di tahun pertama proyeknya, tidak ikut dipecah.';
-  cFoot3.font = { italic: true, size: 8, name: 'Arial', color: { argb: '808080' } };
-  cFoot3.alignment = { wrapText: true, vertical: 'top' };
-  ws.mergeCells(row, KOL.no, row, KOL_TERAKHIR);
-  ws.getRow(row).height = 22;
   row += 1;
 
   const k3A = row, k3B = row + 1;
@@ -1135,8 +1145,12 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   // Baris Installer - kuning, satu tahun terisi (100%), sisanya kosong.
   installerList.forEach(inst => {
     const r = row;
-    selGabung(ws, r, KOL_REKAP.nama,
-      `${inst.nama}${inst.lokasi ? ' · ' + inst.lokasi : ''} (100% di tahun pertama)`,
+    //  Tanpa keterangan "100% di tahun pertama" - baris kuning + kolom
+    //  Peran="Installer" sudah cukup menunjukkan bedanya dari Tim PTS, dan
+    //  aturan pembayarannya sendiri sudah ada di proposal. Kepala tabel
+    //  yang minim penjelasan lebih mudah dibaca daripada satu yang
+    //  mengulang apa yang sudah tertulis di tempat lain.
+    selGabung(ws, r, KOL_REKAP.nama, `${inst.nama}${inst.lokasi ? ' · ' + inst.lokasi : '' }`,
       { isi: INSTALLER_FILL });
     selGabung(ws, r, KOL_REKAP.peran, 'Installer', { isi: INSTALLER_FILL });
 
