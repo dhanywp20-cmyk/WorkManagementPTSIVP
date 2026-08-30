@@ -12,7 +12,7 @@ import {
   insertTranches, insertSplits, processYearlyBatch,
   batalkanBatchTahun, hapusTahapanProyek,
   calculateIncentiveSplits, validateSplitTotal, generateTranches, findUpline, resolveUserId, OrgUser,
-  fetchOrgUsers, type SplitResult,
+  fetchOrgUsers,
   ambilSkema, persenInstaller, persenPicBerlaku, petaPorsiBerlaku, type SkemaInsentif,
   formatRupiah, formatPct,
   ROLE_LABELS, TRANCHE_STATUS,
