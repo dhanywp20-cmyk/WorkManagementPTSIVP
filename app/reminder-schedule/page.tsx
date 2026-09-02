@@ -1839,6 +1839,32 @@ function ReminderSchedulePageInner() {
   // Sales Internal reviewer (utama atau kedua utk brand BOTH) di tahap internal_review.
   const isMyReviewStage = (r: Reminder) => r.routing_status === 'internal_review' &&
     (currentUser?.id === r.internal_sales_id || currentUser?.id === r.internal_sales_id_2);
+  /*
+    Boleh EDIT jadwal ini - kebijakan platform: setiap AKTOR yang sungguh
+    bersinggungan dengan jadwal ini boleh membetulkan bagiannya sendiri;
+    Admin & Full Access tanpa batas. Dua aktor:
+
+      1. Sales/pembuat request (sales_name / created_by) - salah ketik data
+         yang ia minta (nama project, catatan, alamat, dsb) harus bisa
+         dibetulkan SENDIRI, bukan minta admin turun tangan atau ubah lewat
+         Supabase langsung.
+      2. Tim yang ditugaskan (assigned_to / assign_name) - mengisi update
+         status/catatan pekerjaan yang ia kerjakan.
+
+    Sebelumnya titik-titik ini (Re-Schedule, Resend Review, Update Status,
+    dan tombol Edit Detail penuh) cuma memeriksa `role === 'team'` atau
+    malah admin-only - SIAPA PUN anggota Team bisa menekan Re-Schedule
+    jadwal orang lain, SEMENTARA pembuat request sendiri maupun tim yang
+    mengerjakannya tidak bisa membetulkan salah ketiknya sendiri kalau bukan
+    admin/Full Access - keduanya salah arah, dan itu sebab "salah assign
+    harus lewat Supabase/admin" yang dikeluhkan.
+  */
+  const bolehEditReminder = (r: Reminder): boolean =>
+    isAdmin || isManager
+    || (!!currentUser?.username && r.assigned_to === currentUser.username)
+    || (!!currentUser?.full_name && r.assign_name === currentUser.full_name)
+    || (!!currentUser?.full_name && r.sales_name === currentUser.full_name)
+    || (!!currentUser?.username && r.created_by === currentUser.username);
   // Boleh approve kalau bagian-nya belum di-approve (reviewer utama vs kedua terpisah).
   const canInternalApprove = (r: Reminder) => {
     if (r.routing_status !== 'internal_review') return false;
@@ -3379,12 +3405,12 @@ jangan lupa peralatan & Semangat💪🏼
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
                         style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white' }}>🎯 Assign Tim</button>
                     )}
-                    {(isAdmin || currentUser?.role === 'team') && detailReminder.status !== 'done' && (
+                    {bolehEditReminder(detailReminder) && detailReminder.status !== 'done' && (
                       <button onClick={() => { setRescheduleTarget(detailReminder); }}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
                         style={{ background: 'linear-gradient(135deg,#d97706,#b45309)', color: 'white' }}>📅 Re-Schedule</button>
                     )}
-                    {(isAdmin || currentUser?.role === 'team') && detailReminder.status === 'done' && detailReminder.sales_name?.trim() && (REVIEW_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category) && (
+                    {bolehEditReminder(detailReminder) && detailReminder.status === 'done' && detailReminder.sales_name?.trim() && (REVIEW_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category) && (
                       <button onClick={() => handleResendFormReview(detailReminder)} disabled={resendingFormReview}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02] disabled:opacity-60"
                         style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', color: 'white' }}>
@@ -3396,7 +3422,13 @@ jangan lupa peralatan & Semangat💪🏼
                         style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: 'white' }}>
                         {sendingWA === detailReminder.id ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '💬'} Kirim WA</button>
                     )}
-                    {(isAdmin || isManager) && (
+                    {/*
+                      Dulu (isAdmin || isManager) saja - Sales pembuat request
+                      maupun Tim yang ditugaskan tidak bisa membetulkan salah
+                      ketiknya sendiri, harus minta admin. Disamakan dengan
+                      bolehEditReminder (lihat catatannya di atas).
+                    */}
+                    {bolehEditReminder(detailReminder) && (
                       <button onClick={() => openEdit(detailReminder)}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
                         style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', color: 'white' }}>✏️ Edit</button>
@@ -3658,7 +3690,7 @@ jangan lupa peralatan & Semangat💪🏼
                     </div>
                   </div>
                 )}
-                {(isAdmin || currentUser?.role === 'team') && detailReminder.assigned_to && (
+                {bolehEditReminder(detailReminder) && detailReminder.assigned_to && (
                 <div>
                   <p className="text-[10px] font-bold tracking-widest uppercase mb-3" style={{ color: '#64748b' }}>Update Status</p>
                   {detailReminder.status === 'done' ? (
@@ -4394,7 +4426,7 @@ jangan lupa peralatan & Semangat💪🏼
                             </div>
                             <div className="flex items-center gap-1.5 mt-3">
                               <ViewIconBtn onClick={() => setDetailReminder(r)} title="Detail" />
-                              {(isAdmin || currentUser?.role === 'team') && r.status !== 'done' && (
+                              {bolehEditReminder(r) && r.status !== 'done' && (
                                 <RescheduleIconBtn onClick={() => setRescheduleTarget(r)} title="Re-Schedule" />
                               )}
                               {canInternalApprove(r) && (
@@ -4660,7 +4692,7 @@ jangan lupa peralatan & Semangat💪🏼
                                     {/* Detail */}
                                     <ViewIconBtn onClick={() => setDetailReminder(group[0])} title="Detail" />
                                     {/* Re-Schedule — semua team PTS & admin bisa lihat */}
-                                    {(isAdmin || currentUser?.role === 'team') && group[0].status !== 'done' && (
+                                    {bolehEditReminder(group[0]) && group[0].status !== 'done' && (
                                       <RescheduleIconBtn onClick={() => setRescheduleTarget(group[0])} title="Re-Schedule" />
                                     )}
                                     {/* Approve & Teruskan — Sales Internal yg di-mapping, wajib duluan sebelum Admin */}
