@@ -17,7 +17,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { pastikanAdmin } from '@/lib/penjaga-admin';
-import { KUNCI_RAHASIA, type KunciRahasia } from '@/lib/rahasia-kunci';
+import { KUNCI_RAHASIA, galatBentukRahasia, type KunciRahasia } from '@/lib/rahasia-kunci';
+import { lupakanRahasia } from '@/lib/rahasia-server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -107,6 +108,13 @@ export async function POST(req: NextRequest) {
   if (!sah(kunci)) return NextResponse.json({ ok: false, alasan: 'Kunci tidak dikenal.' }, { status: 400 });
   if (!nilai)      return NextResponse.json({ ok: false, alasan: 'Nilai kosong.' }, { status: 400 });
 
+  //  Menolak bentuk yang pasti salah SEBELUM tersimpan - lihat catatan
+  //  panjang di lib/rahasia-kunci.ts. Tanpa ini token yang terpotong tersimpan
+  //  mulus, tampil "terisi" di layar, dan baru ketahuan rusak nanti sebagai
+  //  "Not Found" dari Telegram yang tidak menyebut sebabnya.
+  const masalahBentuk = galatBentukRahasia(kunci, nilai);
+  if (masalahBentuk) return NextResponse.json({ ok: false, alasan: masalahBentuk }, { status: 400 });
+
   const db = getAdminClient();
   const { error } = await db.from('rahasia_integrasi').upsert({
     kunci, nilai,
@@ -115,6 +123,11 @@ export async function POST(req: NextRequest) {
   }, { onConflict: 'kunci' });
 
   if (error) return NextResponse.json({ ok: false, alasan: error.message }, { status: 500 });
+  //  Tanpa ini, bacaRahasia() di server yang sama bisa menjawab dari cache
+  //  30 detiknya sendiri saat route notifikasi dipanggil sesaat sesudah
+  //  Simpan - token barunya tersimpan tapi belum "terlihat" oleh pengirim
+  //  pesan sampai cache itu kedaluwarsa sendiri.
+  lupakanRahasia(kunci);
   //  Yang dikembalikan penanda, bukan nilainya - lihat catatan di kepala berkas.
   return NextResponse.json({ ok: true, penanda: samarkan(nilai) });
 }
@@ -129,5 +142,6 @@ export async function DELETE(req: NextRequest) {
   const db = getAdminClient();
   const { error } = await db.from('rahasia_integrasi').delete().eq('kunci', kunci);
   if (error) return NextResponse.json({ ok: false, alasan: error.message }, { status: 500 });
+  lupakanRahasia(kunci);
   return NextResponse.json({ ok: true });
 }

@@ -38,3 +38,32 @@ export const KUNCI_RAHASIA = [
 ] as const;
 
 export type KunciRahasia = typeof KUNCI_RAHASIA[number];
+
+/**
+ * Menolak bentuk yang PASTI salah sebelum sempat tersimpan.
+ *
+ * Kenapa ini perlu: token bot Telegram berbentuk "<id angka>:<kode 35 karakter>".
+ * Menyalinnya dengan klik-dua-kali pada teksnya - cara paling wajar menyalin
+ * dari pesan BotFather - berhenti di tanda ":" di kebanyakan peramban, karena
+ * ":" adalah batas kata. Hasilnya persis separuh token, dan separuh token itu
+ * TERLIHAT SAH (bukan kosong, bukan pendek) sampai dipakai memanggil Telegram
+ * dan gagal dengan "Not Found" - pesan yang tidak menyebut bahwa token itu
+ * sendirilah yang terpotong.
+ *
+ * Diperiksa di sini, bukan cuma di layar, karena route-nya juga bisa dipanggil
+ * langsung - dan karena aturan bentuk sebuah token adalah milik definisinya,
+ * bukan milik satu komponen React yang kebetulan memakainya.
+ */
+export function galatBentukRahasia(kunci: KunciRahasia, nilai: string): string | null {
+  if (kunci === 'telegram.bot_token') {
+    if (/^\d+:[A-Za-z0-9_-]{30,45}$/.test(nilai)) return null;
+    if (!nilai.includes(':')) {
+      return 'Token ini kelihatan terpotong - tidak ada tanda titik dua. '
+        + 'Token bot Telegram berbentuk "8333710505:AAF…", lengkap dengan angka ID bot di depannya. '
+        + 'Klik dua kali pada teks di pesan BotFather sering hanya memilih separuh setelah ":" - '
+        + 'blok manual dari awal sampai akhir baris, atau salin lewat tombol salin bila tersedia.';
+    }
+    return 'Token bot Telegram tidak sesuai format "<angka>:<kode>". Salin ulang seluruh baris dari pesan BotFather.';
+  }
+  return null;
+}

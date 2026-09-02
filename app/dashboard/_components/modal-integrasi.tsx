@@ -670,7 +670,10 @@ export function IntegrasiInline() {
             judul="Token bot" kunci="telegram.bot_token" status={rahasia['telegram.bot_token']}
             onSimpan={n => simpanRahasia('telegram.bot_token', n)}
             onHapus={() => hapusRahasia('telegram.bot_token')}
-            petunjuk={<>Buat bot lewat @BotFather di Telegram, lalu tempel token yang diberikannya. Jangan lupa undang bot itu ke grup tujuan.</>} />
+            petunjuk={<>Buat bot lewat @BotFather di Telegram, lalu tempel token yang diberikannya (bentuknya
+              <span className="font-mono"> 8333710505:AAF…</span>, lengkap dengan angka di depan tanda titik dua -
+              klik dua kali pada teksnya di Telegram sering hanya memilih separuh setelah ":"). Jangan lupa undang
+              bot itu ke grup tujuan.</>} />
 
           {/*
             Isian dan petunjuknya berdampingan. Petunjuk yang ditaruh di bawah
