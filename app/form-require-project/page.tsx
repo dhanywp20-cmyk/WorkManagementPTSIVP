@@ -560,7 +560,12 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         </button>
       )}
       <ViewIconBtn onClick={() => handleOpenDetail(req)} label="Detail" />
-      {(isSuperAdmin || isAdmin) && (
+      {/* Dulu (isSuperAdmin || isAdmin) saja - Full Access (mis. Manager PTS)
+          tidak pernah dapat tombol ini walau RLS-nya (setelah diperbaiki)
+          sudah mengizinkan. Disamakan dengan bisaKelolaRequest supaya
+          "boleh kelola" dan "boleh hapus" tidak jadi dua jawaban berbeda
+          untuk pertanyaan yang sama. */}
+      {bisaKelolaRequest && (
         <DeleteIconBtn onClick={() => { setDeleteModal({ open: true, req }); setDeleteConfirmText(''); }} label="Hapus" />
       )}
     </>

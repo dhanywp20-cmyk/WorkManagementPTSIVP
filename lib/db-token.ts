@@ -37,6 +37,21 @@ export interface DbTokenUser {
   full_name?: string | null;
   role?: string | null;
   sales_division?: string | null;
+  /**
+   * Toggle "Full Access" (lib/constants.ts hasFullAccess). WAJIB ikut di
+   * sini - kolom ini dibaca dari DB oleh route login/session, tapi payload
+   * di bawah dulu TIDAK MENYERTAKANNYA sama sekali. Akibatnya setiap
+   * kebijakan RLS yang memeriksa `jwt_claim('access_level')` (mis.
+   * boleh_hapus_reminder()) selalu membaca string kosong - cabang Full
+   * Access-nya MATI TOTAL, terlepas dari apa yang disetel admin di Kelola
+   * Akun. Reminder Schedule kebetulan tetap jalan untuk satu orang karena
+   * ada jalur cadangan yang memeriksa ID tertunjuk secara manual
+   * (app_settings.manager_user_id) - itu menutupi masalahnya, bukan
+   * memperbaikinya. Modul lain (Ticketing, Design Project) tidak punya
+   * jalur cadangan itu, jadi tombol Hapus tampil tapi diam-diam tidak
+   * pernah benar-benar menghapus untuk siapa pun selain admin.
+   */
+  access_level?: string | null;
 }
 
 /**
@@ -65,6 +80,7 @@ export function issueDbToken(user: DbTokenUser): string | null {
     user_role:      user.role ?? '',
     full_name:      user.full_name ?? '',
     sales_division: user.sales_division ?? '',
+    access_level:   user.access_level ?? '',
   };
 
   const signingInput = `${base64url(JSON.stringify(header))}.${base64url(JSON.stringify(payload))}`;
