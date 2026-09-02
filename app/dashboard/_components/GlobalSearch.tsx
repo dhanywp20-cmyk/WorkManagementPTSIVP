@@ -5,6 +5,7 @@ import { User } from './shared';
 import { ModalPortal } from '@/components/shared';
 import { cariReminderByNama } from '@/lib/cari-reminder';
 import { hitungLingkupProject, filterLingkup, type LingkupProject } from '@/lib/project-scope';
+import { hasFullAccess } from '@/lib/constants';
 
 // Types
 
@@ -112,10 +113,12 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
    *
    * Tanpa penjagaan ini, kotak pencarian jadi pintu belakang: menu-nya tidak
    * ada di sidebar, tapi isinya tetap bisa dibaca dengan mengetikkan kata
-   * kunci. Admin & superadmin melewati allowed_menus sebagaimana di tempat lain.
+   * kunci. Admin, superadmin, dan pemegang Full Access melewati allowed_menus
+   * sebagaimana di sidebar - kalau di sini hanya role admin yang dilewatkan,
+   * pencarian jadi lebih sempit daripada menu yang tampil untuknya.
    */
   const bolehModul = (kunci: string): boolean => {
-    if (isAdmin) return true;
+    if (hasFullAccess(currentUser)) return true;
     const izin = (currentUser as { allowed_menus?: string[] }).allowed_menus;
     if (!izin) return true; // belum diatur = perilaku lama, jangan mendadak menutup
     return izin.includes(kunci);

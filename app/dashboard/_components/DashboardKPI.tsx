@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
+import { hasFullAccess } from '@/lib/constants';
 import { DonutChart } from '@/components/shared';
 import { User } from './shared';
 import { KPIData, KPITeamMember, KPITeamState, AuditEntry, Scope, STATUS_COLORS, CATEGORY_COLORS, todayStr, dayOfWeek, monthStart, getMonday, HBarChart, AuditRow, ScopeBadge } from './kpi-bagian';
@@ -40,7 +41,10 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const jabatan = currentUser.jabatan ?? '';
       const PTS_TYPES = ['Team PTS IVP','Team PTS UMP','Team PTS MVI'];
 
-      if (['admin','superadmin'].includes(role)) {
+      // Full Access ikut scope 'admin' - sama seperti salinan komponen ini di
+      // app/kpi-team/. Tanpa ini pemegang Full Access jatuh ke scope sempit
+      // (atau 'none') dan KPI-nya tampil terpotong.
+      if (['admin','superadmin'].includes(role) || hasFullAccess(currentUser)) {
         setScope({ kind: 'admin' }); setScopeReady(true); return;
       }
 

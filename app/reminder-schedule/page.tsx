@@ -17,6 +17,7 @@ import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField } from 
 import { syncRemindersToProjectProgress, triggersProjectProgress, type ReminderSnapshot } from '@/lib/project-progress-sync';
 import { compressImage } from '@/lib/image-compress';
 import { idDariNama, kutipNilai, tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
+import { kirimTelegramPribadi } from '@/lib/telegram-pribadi';
 
 import {
   Priority, Status, RepeatType, Reminder, TeamUser, GuestUser,
@@ -455,7 +456,7 @@ function ReminderSchedulePageInner() {
   // Berjalan otomatis setiap hari tanpa perlu buka halaman
 
   const fetchTeamUsers = async () => {
-    const { data } = await supabase.from('users').select('id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan').order('full_name');
+    const { data } = await supabase.from('users').select('id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan, telegram_chat_id').order('full_name');
     // Hanya team assignable (IVP/MVI - UMP dikecualikan, lihat lib/teams.ts). Ubah di satu tempat itu utk tambah/kurangi team.
     if (data) setTeamUsers(data.filter((u: TeamUser) => isAssignablePTSTeam(u.team_type) && u.role !== 'admin' && u.role !== 'superadmin'));
   };
@@ -1094,6 +1095,10 @@ function ReminderSchedulePageInner() {
 
       const waResult = await sendFonnteWA(assignee.phone_number, msg, { reminderType: 'new_schedule' });
       if (waResult.ok) notify('success', `WA notifikasi terkirim ke ${assigneeName}!`);
+      // Berdampingan dengan WA, bukan menggantikannya. Diam saja bila
+      // assignee belum menghubungkan Telegram-nya sendiri lewat profil -
+      // itu bukan kegagalan, sama seperti nomor WA yang kosong.
+      void kirimTelegramPribadi(assignee.telegram_chat_id, msg);
     }
 
     setSaving(false);
@@ -1872,7 +1877,9 @@ function ReminderSchedulePageInner() {
     if (currentUser?.id === r.internal_sales_id_2 && !r.internal_approved_at_2) return true;
     return false;
   };
-  const canAddReminder = currentUser?.role === 'admin' || currentUser?.role === 'team';
+  // isAdmin, bukan role === 'admin': superadmin sebelumnya tidak bisa menambah
+  // jadwal sama sekali karena tidak ikut disebut di sini.
+  const canAddReminder = isAdmin || currentUser?.role === 'team';
   const isGuest = currentUser?.role === 'guest' || currentUser?.role === 'sales';
 
   // Cek Form Review menggantung (guest/sales)

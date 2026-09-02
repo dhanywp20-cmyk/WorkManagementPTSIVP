@@ -216,7 +216,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const isNonIVPGuest = role === 'guest' && currentUser.sales_division !== 'IVP';
   // Bisa ubah status in_progress: hanya PTS yang di-assign ke request tsb
   const canSetInProgress = (req: ProjectRequest) =>
-    isPTS && (isAdmin || isSuperAdmin || hasFullAccess(currentUser as never) || req.assign_name === currentUser.full_name);
+    isPTS && (bisaKelolaRequest || req.assign_name === currentUser.full_name);
   // Sales Internal reviewer (utama atau kedua utk brand BOTH) - boleh approve kalau
   // bagian-nya belum di-approve.
   const canInternalApproveProject = (req: ProjectRequest) => {
@@ -568,7 +568,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
           </button>
         </>
       )}
-      {(isAdmin || isSuperAdmin) && req.status === 'pending' && req.routing_status !== 'internal_review' && (
+      {bisaKelolaRequest && req.status === 'pending' && req.routing_status !== 'internal_review' && (
         <>
           <button aria-label="Approve" onClick={() => handleApprove(req)} title="Approve"
             className="w-7 h-7 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 rounded-lg flex items-center justify-center transition-all">
@@ -1640,7 +1640,7 @@ Hubungi Admin untuk info lebih lanjut.
               <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{loading ? '…' : filteredRequests.length}</span>
             </div>
             <div className="flex items-center gap-2 mt-2 sm:mt-0">
-              {(isAdmin || isSuperAdmin) && (
+              {bisaKelolaRequest && (
                 <button onClick={() => { setSelectMode(m => !m); setSelectedIds(new Set()); }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${selectMode ? 'bg-red-50 border-red-300 text-red-600' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
                   {selectMode ? '✕ Batal' : '☑ Select'}
@@ -1743,7 +1743,7 @@ Hubungi Admin untuk info lebih lanjut.
 
           {/* Active filter chips — inside table */}
           {/* Bulk delete bar — admin only, selectMode only */}
-          {selectMode && (isAdmin || isSuperAdmin) && selectedIds.size > 0 && (
+          {selectMode && bisaKelolaRequest && selectedIds.size > 0 && (
             <div className="px-6 py-2.5 flex items-center justify-between border-b border-gray-200" style={{ background: 'rgba(13,148,136,0.07)' }}>
               <span className="text-sm font-bold text-teal-700">{selectedIds.size} request dipilih</span>
               <div className="flex items-center gap-2">
@@ -1878,7 +1878,7 @@ Hubungi Admin untuk info lebih lanjut.
                 <thead>
                   <tr className="border-b-2 border-gray-300" style={{ background: 'rgba(255,255,255,0.97)' }}>
                     <th className="px-2 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide border-r border-gray-200">
-                      {selectMode && (isAdmin || isSuperAdmin)
+                      {selectMode && bisaKelolaRequest
                         ? <input type="checkbox"
                             checked={selectedIds.size === filteredRequests.length && filteredRequests.length > 0}
                             onChange={toggleSelectAll} className="w-4 h-4 rounded accent-teal-600 cursor-pointer" title="Pilih Semua" />
@@ -1905,7 +1905,7 @@ Hubungi Admin untuk info lebih lanjut.
                         className="stagger-item border-b border-gray-200 hover:bg-gray-50 transition-colors"
                         style={{ borderLeft: isToday ? '3px solid #0d9488' : '3px solid transparent' }}>
                         <td className="px-2 py-3 border-r border-gray-200 align-middle text-center" onClick={e => e.stopPropagation()}>
-                          {selectMode && (isAdmin || isSuperAdmin)
+                          {selectMode && bisaKelolaRequest
                             ? <input type="checkbox" checked={selectedIds.has(req.id)}
                                 onChange={() => toggleSelectId(req.id)} className="w-4 h-4 rounded accent-teal-600 cursor-pointer" />
                             : (
@@ -2130,7 +2130,7 @@ Hubungi Admin untuk info lebih lanjut.
                   { value: 'in_progress', label: '🔄 In Progress', color: 'border-blue-300 bg-blue-50 text-blue-700', active: 'border-blue-500 bg-blue-100' },
                   { value: 'completed', label: '🏆 Completed', color: 'border-purple-300 bg-purple-50 text-purple-700', active: 'border-purple-500 bg-purple-100' },
                   // rejected hanya untuk admin/superadmin
-                  ...(isAdmin || isSuperAdmin ? [
+                  ...(bisaKelolaRequest ? [
                     { value: 'approved', label: '✅ Approved', color: 'border-teal-300 bg-teal-50 text-teal-700', active: 'border-teal-500 bg-teal-100' },
                     { value: 'rejected', label: '❌ Rejected', color: 'border-red-300 bg-red-50 text-red-700', active: 'border-red-500 bg-red-100' },
                   ] : []),
@@ -2332,7 +2332,7 @@ Hubungi Admin untuk info lebih lanjut.
                   </>
                 )}
                 {/* Approve/Tolak: hanya admin/superadmin, terkunci selama masih internal_review */}
-                {(isAdmin || isSuperAdmin) && detailIsPending && selectedRequest.routing_status !== 'internal_review' && (
+                {bisaKelolaRequest && detailIsPending && selectedRequest.routing_status !== 'internal_review' && (
                   <>
                     <button onClick={() => { setAssignModal({ open: true, req: selectedRequest }); }}
                       className="bg-emerald-500 hover:bg-emerald-400 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
@@ -2361,8 +2361,8 @@ Hubungi Admin untuk info lebih lanjut.
                     Mulai In Progress
                   </button>
                 )}
-                {/* Status update: admin/superadmin atau PTS yang di-assign */}
-                {isPTS && !detailIsPending && (isAdmin || isSuperAdmin || selectedRequest?.assign_name === currentUser.full_name) && (
+                {/* Status update: admin/superadmin/Full Access, atau PTS yang di-assign */}
+                {isPTS && !detailIsPending && (bisaKelolaRequest || selectedRequest?.assign_name === currentUser.full_name) && (
                   <button onClick={() => { setSelectedNewStatus(''); setStatusUpdateModal({ open: true, req: selectedRequest }); }}
                     className="bg-blue-500 hover:bg-blue-400 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
                     <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
@@ -2382,7 +2382,7 @@ Hubungi Admin untuk info lebih lanjut.
                     Edit
                   </button>
                 )}
-                {(isSuperAdmin || isAdmin) && (
+                {bisaKelolaRequest && (
                   <button onClick={() => { setDeleteModal({ open: true, req: selectedRequest }); setDeleteConfirmText(''); }}
                     className="bg-white/10 hover:bg-red-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-white/20 flex items-center gap-1.5">
                     <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>

@@ -97,6 +97,16 @@ export default function FormReviewPage() {
   const isGuest = currentUser?.role === 'guest';
   const isTeam = currentUser?.role === 'team';
 
+  // Sebelumnya cek isGuest saja - artinya SEMUA akun Guest melihat tombol
+  // Edit di SETIAP baris, bukan cuma review miliknya sendiri. Dipersempit ke
+  // baris yang memang jadi tanggung jawabnya: Guest/Sales yang direview, atau
+  // Team yang meng-handle - pola sama dengan myActivePendingReviews di atas.
+  const bolehEditReview = (r: ReviewForm): boolean =>
+    isAdmin
+    || (!!currentUser?.username && r.guest_username === currentUser.username)
+    || (!!currentUser?.full_name && r.sales_name === currentUser.full_name)
+    || (!!currentUser?.username && r.assigned_to === currentUser.username);
+
   // Init
 
   useEffect(() => {
@@ -790,8 +800,8 @@ export default function FormReviewPage() {
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 pt-1">
-                  {/* Edit hanya untuk admin dan guest (bukan team) */}
-                  {(isAdmin || isGuest) && (
+                  {/* Edit untuk admin/Full Access, atau Guest/Sales/Team yang memang pemilik baris ini */}
+                  {bolehEditReview(detailReview) && (
                     <button onClick={() => openEdit(detailReview)}
                       className="flex-1 text-white py-3 rounded-xl font-bold text-sm transition-all hover:scale-[1.01] flex items-center justify-center gap-2"
                       style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', boxShadow: '0 3px 12px rgba(124,58,237,0.3)' }}>
@@ -1196,7 +1206,7 @@ export default function FormReviewPage() {
                       ]}
                       actions={<>
                         <ViewIconBtn onClick={() => setDetailReview(r)} label="Detail" />
-                        {(isAdmin || isGuest) && <EditIconBtn onClick={() => openEdit(r)} label="Edit" />}
+                        {bolehEditReview(r) && <EditIconBtn onClick={() => openEdit(r)} label="Edit" />}
                         {isAdmin && <DeleteIconBtn onClick={() => openDeleteModal(r)} label="Hapus" />}
                       </>}
                     />
@@ -1311,7 +1321,7 @@ export default function FormReviewPage() {
                           <td className="px-3 py-1 align-middle text-center" onClick={e => e.stopPropagation()}>
                             <ActionGroup>
                               <ViewIconBtn onClick={() => setDetailReview(r)} label="Detail" />
-                              {(isAdmin || isGuest) && (
+                              {bolehEditReview(r) && (
                                 <EditIconBtn onClick={() => openEdit(r)} label="Edit" />
                               )}
                               {isAdmin && (

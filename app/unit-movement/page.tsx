@@ -120,6 +120,16 @@ function UnitMovementPageInner() {
   // (lihat lib/constants.ts hasFullAccess).
   const isAdmin   = hasFullAccess(currentUser);
   const canAddLog = isAdmin || ['team','team_pts','marketing','guest'].includes(currentUser?.role?.toLowerCase()??'');
+  /*
+    Boleh EDIT baris log ini - kebijakan platform: pencatatnya sendiri
+    (created_by) boleh membetulkan salah ketik (SN, tanggal, dsb), Admin/
+    Full Access tanpa batas. Dulu Edit&Hapus SAMA-SAMA cuma isAdmin - orang
+    yang mencatat sendiri tidak bisa membetulkan catatannya, harus lewat
+    admin. Hapus TETAP admin/Full Access saja (isAdmin), sama seperti
+    modul lain.
+  */
+  const bolehEditLog = (log: MovementLog): boolean =>
+    isAdmin || (!!currentUser?.username && log.created_by === currentUser.username);
 
   const availableYears = useMemo(()=>{
     const yrs=new Set<string>(); logs.forEach(l=>{ if(l.tanggal) yrs.add(l.tanggal.substring(0,4)); });
@@ -345,7 +355,7 @@ function UnitMovementPageInner() {
                               </span>
                             : <span className="text-[10px] text-gray-300">—</span>}
                         </td>
-                        {isAdmin && (
+                        {(bolehEditLog(loan)) && (
                           <td className="px-4 py-2.5 text-center">
                             <ActionGroup>
                               <ViewIconBtn onClick={()=>setViewLog(loan)} label="Lihat" />
@@ -452,7 +462,8 @@ function UnitMovementPageInner() {
                   ]}
                   actions={<>
                     <ViewIconBtn onClick={() => setViewLog(log)} label="Lihat" />
-                    {isAdmin && <><EditIconBtn onClick={() => setEditLog(log)} /><DeleteIconBtn onClick={() => setDeleteConfirm(log)} /></>}
+                    {bolehEditLog(log) && <EditIconBtn onClick={() => setEditLog(log)} />}
+                    {isAdmin && <DeleteIconBtn onClick={() => setDeleteConfirm(log)} />}
                   </>}
                 />
               );
@@ -541,10 +552,8 @@ function UnitMovementPageInner() {
                       <td className="px-1 py-3 text-center">
                         <ActionGroup>
                           <ViewIconBtn onClick={()=>setViewLog(log)} label="Lihat" />
-                          {isAdmin&&<>
-                            <EditIconBtn onClick={()=>setEditLog(log)} />
-                            <DeleteIconBtn onClick={()=>setDeleteConfirm(log)} />
-                          </>}
+                          {bolehEditLog(log) && <EditIconBtn onClick={()=>setEditLog(log)} />}
+                          {isAdmin && <DeleteIconBtn onClick={()=>setDeleteConfirm(log)} />}
                         </ActionGroup>
                       </td>
                     </tr>

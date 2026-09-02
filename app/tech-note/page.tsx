@@ -291,6 +291,14 @@ export default function TechNotePage() {
     || ['admin','superadmin','supervisor'].includes(currentUser?.role ?? '');
   const isTeam = !canManage;
 
+  /**
+   * Penulis note sendiri boleh Edit (mis. salah ketik, atau perlu revisi
+   * setelah ditolak) walau bukan canManage - tapi tidak boleh Hapus, itu
+   * tetap khusus canManage sesuai aturan Full Access platform ini.
+   */
+  const bolehEditNote = (n: TechNote): boolean =>
+    canManage || (!!currentUser?.id && n.author_id === currentUser.id);
+
   useEffect(() => {
     const user = getSession<User>();
     if (!user) {
@@ -794,16 +802,20 @@ export default function TechNotePage() {
 
           <HistoryTimeline history={detailHistory} />
 
-          {canManage && (
+          {(bolehEditNote(detailNote) || canManage) && (
             <div className="flex gap-2 mt-4 pt-4 justify-end border-t border-gray-100">
-              <button onClick={()=>bukaEditNote(detailNote)}
-                className="px-4 py-2 rounded-xl text-sm font-bold transition-colors bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100">
-                ✏️ Edit Detail
-              </button>
-              <button onClick={()=>hapusNote(detailNote)}
-                className="px-4 py-2 rounded-xl text-sm font-bold transition-colors bg-red-50 text-red-600 border border-red-200 hover:bg-red-100">
-                🗑️ Hapus
-              </button>
+              {bolehEditNote(detailNote) && (
+                <button onClick={()=>bukaEditNote(detailNote)}
+                  className="px-4 py-2 rounded-xl text-sm font-bold transition-colors bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100">
+                  ✏️ Edit Detail
+                </button>
+              )}
+              {canManage && (
+                <button onClick={()=>hapusNote(detailNote)}
+                  className="px-4 py-2 rounded-xl text-sm font-bold transition-colors bg-red-50 text-red-600 border border-red-200 hover:bg-red-100">
+                  🗑️ Hapus
+                </button>
+              )}
             </div>
           )}
 

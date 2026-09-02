@@ -92,7 +92,7 @@ export const KOLOM_PROFIL_DASAR =
  */
 export async function ambilProfil(id: string) {
   const lengkap = await supabase.from('users')
-    .select(`${KOLOM_PROFIL_DASAR},created_at,access_level`).eq('id', id).single();
+    .select(`${KOLOM_PROFIL_DASAR},created_at,access_level,telegram_chat_id`).eq('id', id).single();
   if (!lengkap.error) return lengkap;
   return await supabase.from('users').select(KOLOM_PROFIL_DASAR).eq('id', id).single();
 }
