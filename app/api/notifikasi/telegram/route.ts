@@ -23,7 +23,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { bacaRahasia } from '@/lib/rahasia-server';
-import { pastikanAdmin } from '@/lib/penjaga-admin';
+import { pastikanAdmin, pastikanMasuk } from '@/lib/penjaga-admin';
+import { getAdminClient } from '@/lib/supabase-admin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -118,16 +119,104 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  /*
+    aksi 'bot_info' - nama bot untuk siapa pun yang SUDAH LOGIN, bukan cuma
+    admin. Dipakai layar profil supaya link "buka bot" (t.me/<username>)
+    selalu benar tanpa menuliskan nama bot di kode - platform ini dijual ke
+    perusahaan lain, tiap pemasangan punya bot sendiri. Tidak membocorkan
+    token, jadi tidak perlu dijaga admin.
+  */
+  if (body.aksi === 'bot_info') {
+    const jaga = await pastikanMasuk(req);
+    if (!jaga.ok) return NextResponse.json({ ok: false, alasan: jaga.alasan }, { status: jaga.status });
+    try {
+      const r = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+      const j = await r.json() as { ok?: boolean; result?: { username?: string }; description?: string };
+      if (!j?.ok) return jawab(false, j?.description ?? 'Token ditolak Telegram.');
+      return jawab(true, undefined, { bot: j.result?.username ?? '' });
+    } catch {
+      return jawab(false, 'Tidak bisa menghubungi api.telegram.org.');
+    }
+  }
+
+  /*
+    aksi 'hubungkan' - MENGIKAT Chat ID Telegram ke akun platform PEMANGGIL
+    SENDIRI, tidak pernah ke akun orang lain.
+
+    Alurnya: layar profil membuka deep link t.me/<bot>?start=<id akun
+    pemanggil> - begitu orang itu menekan Start di Telegram, kliennya
+    mengirim "/start <id>" ke bot. Aksi ini membaca getUpdates lalu mencari
+    persis pesan itu.
+
+    AMAN DIPAKAI SIAPA SAJA UNTUK DIRINYA SENDIRI, karena payload yang dicari
+    BUKAN dikirim klien lewat body permintaan - payload selalu id akun dari
+    sesi yang sudah diverifikasi (jaga.user.id). Orang lain tidak bisa
+    mengikat Chat ID ke akun yang bukan miliknya lewat jalur ini: bahkan kalau
+    ia tahu id akun orang lain dan mengirim "/start <id-orang-lain>" ke bot,
+    pencarian di sini tetap memakai id AKUN YANG SEDANG LOGIN, bukan payload
+    yang ia ketik ke Telegram - jadi tidak akan pernah cocok.
+  */
+  if (body.aksi === 'hubungkan') {
+    const jaga = await pastikanMasuk(req);
+    if (!jaga.ok) return NextResponse.json({ ok: false, alasan: jaga.alasan }, { status: jaga.status });
+    try {
+      const r = await fetch(`https://api.telegram.org/bot${token}/getUpdates?limit=100`);
+      const j = await r.json() as {
+        ok?: boolean; description?: string;
+        result?: { message?: { text?: string; chat?: { id?: number } } }[];
+      };
+      if (!j?.ok) return jawab(false, j?.description ?? 'Telegram menolak permintaan getUpdates.');
+
+      const cocok = (j.result ?? []).find(u => u?.message?.text?.trim() === `/start ${jaga.user.id}`);
+      if (!cocok?.message?.chat?.id) {
+        return jawab(false,
+          'Belum terbaca. Pastikan sudah menekan Start di bot (bukan sekadar membuka chat-nya), lalu coba lagi. '
+          + 'Telegram hanya menyimpan pesan yang belum terbaca selama 24 jam.');
+      }
+
+      const db = getAdminClient();
+      const { error } = await db.from('users')
+        .update({ telegram_chat_id: String(cocok.message.chat.id) })
+        .eq('id', jaga.user.id);
+      if (error) return jawab(false, error.message);
+      return jawab(true);
+    } catch {
+      return jawab(false, 'Tidak bisa menghubungi api.telegram.org.');
+    }
+  }
+
+  /** aksi 'putuskan' - melepas ikatan Telegram akun pemanggil sendiri. */
+  if (body.aksi === 'putuskan') {
+    const jaga = await pastikanMasuk(req);
+    if (!jaga.ok) return NextResponse.json({ ok: false, alasan: jaga.alasan }, { status: jaga.status });
+    const db = getAdminClient();
+    const { error } = await db.from('users').update({ telegram_chat_id: null }).eq('id', jaga.user.id);
+    if (error) return jawab(false, error.message);
+    return jawab(true);
+  }
+
   const chatId = (body.chatId ?? '').trim();
   const pesan = (body.pesan ?? '').trim();
   if (!chatId) return jawab(false, 'Chat ID belum diisi.');
   if (!pesan)  return jawab(false, 'Pesan kosong.');
 
   try {
+    /*
+      TANPA parse_mode. Pesan-pesan yang lewat sini dipakai bersama dengan
+      pengiriman WhatsApp yang sudah ada (lib/telegram-pribadi.ts) - isinya
+      gaya markdown WhatsApp (*tebal*), bukan HTML, dan sering berisi teks
+      bebas dari isian pengguna (alamat, catatan). parse_mode 'HTML' akan
+      MENOLAK SELURUH PESAN kalau isinya kebetulan mengandung karakter "<"
+      atau "&" yang tidak membentuk tag yang sah - kegagalan yang sama sekali
+      tidak berhubungan dengan Chat ID atau tokennya, dan sulit dilacak sebab
+      teksnya tampak baik-baik saja bagi pengirim. Teks polos tidak punya
+      celah semacam itu - hanya kehilangan bold, harga yang jauh lebih murah
+      daripada pesan yang gagal terkirim sama sekali.
+    */
     const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text: pesan, parse_mode: 'HTML' }),
+      body: JSON.stringify({ chat_id: chatId, text: pesan }),
     });
     const j = await r.json() as { ok?: boolean; description?: string };
     if (!j?.ok) {
