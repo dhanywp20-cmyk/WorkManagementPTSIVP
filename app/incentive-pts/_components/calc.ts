@@ -506,7 +506,49 @@ export async function setProyekDikeluarkan(ids: string[], keluar: boolean) {
     .from('reminders')
     .update({ incentive_excluded: keluar })
     .in('id', ids);
-  return { error };
+  if (error) return { error };
+  if (!keluar) return { error: null };  // dimasukkan kembali - tidak ada yang perlu dibersihkan
+
+  /*
+    Proyek yang baru dikeluarkan mungkin sudah punya tahapan pencairan yang
+    ter-generate lebih dulu (mis. dari Generate Tahapan Massal, atau sisa
+    percobaan Process Batch yang gagal separuh jalan). Tanpa ini, tahapannya
+    tetap nangkring di Tranche Schedule selamanya - proyeknya sudah tidak ada
+    di daftar Incentive, tapi jejaknya masih tampil seolah masih aktif.
+    "Keluarkan dari Incentive" berarti proyek ini TIDAK ikut Incentive sama
+    sekali, bukan cuma berhenti dari titik ini.
+
+    Kasus nyata yang jadi alasan ini ditulis: PLN Salatiga dikeluarkan lewat
+    tombol ini, tapi tahap 1-nya (tahun bayar 2027) masih tampil di Tranche
+    Schedule DENGAN baris pembagian yang sudah terlanjur tertulis (sisa
+    percobaan Process Batch yang gagal menandai processed, dari SEBELUM
+    perbaikan T-1 di processYearlyBatch) - PIC di baris pembagian itu nama
+    LAMA (dari saat percobaan itu berjalan), beda dari PIC yang berlaku
+    sekarang di Request Schedule. Bukan proyek ini saja - tujuh proyek lain
+    punya sisa yang sama, dibersihkan manual sekali lewat SQL saat audit ini.
+    Perbaikan di sini supaya kejadian yang sama tidak terulang lewat jalur
+    "Keluarkan" tanpa perlu turun tangan manual lagi.
+
+    Hanya tahapan PENDING yang dibersihkan - yang processed/paid dianggap
+    "sudah berjalan" dan pemanggil WAJIB menolak permintaan keluarkan sebelum
+    sampai ke sini kalau ada yang begitu (lihat tahapanSudahJalan). Diperiksa
+    lagi di sini, bukan dipercaya begitu saja dari pemanggil: proyek dengan
+    campuran tahapan pending+processed tetap harus menyisakan yang
+    processed/paid utuh, tidak ikut terhapus.
+  */
+  const { data: tr, error: bacaErr } = await supabase
+    .from('incentive_tranches').select('id').in('project_id', ids).eq('status', 'pending');
+  if (bacaErr) return { error: bacaErr };
+  const trancheIds = (tr ?? []).map((t: { id: string }) => t.id);
+  if (trancheIds.length === 0) return { error: null };
+
+  //  Splits dulu (jaga-jaga - tahapan pending SEHARUSNYA tidak punya splits,
+  //  tapi sisa Process Batch yang gagal setengah jalan justru meninggalkan
+  //  persis kombinasi itu), baru tahapannya sendiri.
+  const rollback = await hapusSplitsServer({ trancheIds });
+  if (rollback.error) return { error: rollback.error };
+  const { error: hapusErr } = await supabase.from('incentive_tranches').delete().in('id', trancheIds);
+  return { error: hapusErr ?? null };
 }
 
 /**

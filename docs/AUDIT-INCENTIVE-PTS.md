@@ -175,6 +175,57 @@ bisa memprosesnya, dan Process Batch-nya gagal diam-diam — kembali ke T-1.
 
 ---
 
+### T-10 (KRITIS, ditemukan sesudah dirilis) — sisa 7 percobaan Process Batch gagal, dari sebelum T-1 diperbaiki
+
+Laporan nyata: PLN Salatiga dikeluarkan lewat "Keluarkan dari Incentive",
+tapi tahapannya masih tampil di Tranche Schedule; dan PIC yang tertulis di
+baris pembagiannya adalah nama LAMA, bukan yang berlaku sekarang di Request
+Schedule.
+
+**Pemeriksaan platform-wide** (bukan cuma PLN Salatiga) menemukan **7
+tahapan T1/Tahun Bayar 2027** yang statusnya masih `pending` tapi SUDAH
+punya baris pembagian tertulis — persis gejala T-1 (Process Batch menulis
+splits, lalu gagal menandai `processed`). Semuanya bertanggal **29–30
+Agustus** — sebelum perbaikan T-1 di sesi ini (jadi bukan kejadian baru,
+sisa dari sebelum rollback-nya benar):
+
+| Proyek | Peran yang sudah tertulis | Nama yang tertulis vs PIC sekarang |
+|---|---|---|
+| PLN Salatiga | pic/manager/supervisor/installer | **Pandu Kusuma Adji** (split) vs **Taufik wahyudi** (sekarang) |
+| Korlantas TMC Soreang | pic/manager/installer | cocok |
+| OCS Indonesia | pic/manager/supervisor | cocok |
+| UIN Pekalongan | pic/manager/supervisor/installer | cocok |
+| Solitaire Billiard & Bar | pic/manager/supervisor | cocok |
+| Steak 21 Gading Serpong | pic/manager/supervisor | cocok |
+| Celebrity Fitness MOI | pic/manager | cocok |
+
+Total **22 baris pembagian yatim**. Kalau ini dibiarkan lalu admin menekan
+**Process Batch 2027**, ketujuh tahapan itu masih dibaca `pending` →
+`processYearlyBatch` menulis **set kedua** di atasnya, lalu (dengan
+perbaikan T-1 yang sekarang bekerja benar) berhasil ditandai `processed` —
+hasilnya tahapan `processed` dengan splits DOBEL. Persis "Bagian Saya"
+berlipat yang sudah pernah dibereskan, muncul lagi lewat jalur berbeda.
+
+**Data dibersihkan**: 22 baris pembagian yatim dihapus (tahapannya tetap
+`pending`, bersih, siap diproses ulang dengan benar). PLN Salatiga sendiri
+sudah dikeluarkan dari Incentive — ketiga tahapannya (T1/T2/T3, semua
+`pending`, tanpa yang `processed`/`paid`) ikut dihapus sepenuhnya.
+
+**Perbaikan kode**: `setProyekDikeluarkan()` sekarang membersihkan tahapan
+`pending` (dan baris pembagian yatimnya, kalau ada) milik proyek yang baru
+dikeluarkan — supaya "Keluarkan dari Incentive" berarti proyek itu benar-
+benar tidak ikut Incentive sama sekali, bukan cuma berhenti dihitung dari
+titik ini. Yang `processed`/`paid` tidak pernah disentuh (diperiksa ulang di
+sini, tidak dipercaya begitu saja dari pemanggil).
+
+**Soal PIC "nyantol"**: di luar kasus data-yatim ini, aturannya memang
+disengaja begitu — baris pembagian yang SUDAH benar-benar diproses membekukan
+nama PIC saat itu sebagai jejak (proyek dihitung tiga kali dalam tiga tahun,
+dan rekap tahun 1 harus tetap bisa dijelaskan meski PIC-nya berganti di
+tahun 2). Yang salah bukan pembekuannya — yang salah adalah tahapan yang
+MASIH `pending` ikut punya baris pembagian sama sekali, padahal seharusnya
+kosong sampai benar-benar diproses.
+
 ## 3. Yang diperiksa dan ternyata BUKAN bug
 
 - **3 baris pembagian tanpa `user_id`** — installer eksternal, memang tidak
