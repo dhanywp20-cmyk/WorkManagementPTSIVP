@@ -66,6 +66,58 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  /*
+    aksi 'chat' - MENEMUKAN Chat ID, bukan menyuruh admin mencarinya sendiri.
+
+    Bot yang dibuat lewat @BotFather tidak menjawab perintah apa pun dengan
+    sendirinya: tidak ada /id, tidak ada /start yang membalas. Platform ini pun
+    tidak memasang webhook maupun pemroses pesan masuk. Jadi petunjuk gaya
+    "kirim /id ke bot lalu salin balasannya" akan berakhir dengan admin
+    menunggu balasan yang tidak akan pernah datang.
+
+    Yang BENAR-BENAR bekerja adalah getUpdates: admin cukup mengirim satu pesan
+    apa pun ke botnya (atau ke grup yang sudah diundangi bot itu), lalu daftar
+    percakapan yang menyapa bot dibacakan dari sini beserta id-nya.
+  */
+  if (body.aksi === 'chat') {
+    const jaga = await pastikanAdmin(req);
+    if (!jaga.ok) return NextResponse.json({ ok: false, alasan: jaga.alasan }, { status: jaga.status });
+    try {
+      const r = await fetch(`https://api.telegram.org/bot${token}/getUpdates?limit=100`);
+      const j = await r.json() as {
+        ok?: boolean; description?: string;
+        result?: { message?: { chat?: { id?: number; type?: string; title?: string; username?: string; first_name?: string } } }[];
+      };
+      if (!j?.ok) {
+        //  409 terjadi bila webhook terpasang - getUpdates dan webhook tidak
+        //  bisa hidup bersamaan. Disebut apa adanya supaya tidak terbaca
+        //  sebagai "token salah".
+        return jawab(false, j?.description ?? 'Telegram menolak permintaan getUpdates.');
+      }
+      const seen = new Map<string, { id: string; nama: string; jenis: string }>();
+      for (const u of j.result ?? []) {
+        const c = u?.message?.chat;
+        if (!c?.id) continue;
+        const id = String(c.id);
+        if (seen.has(id)) continue;
+        seen.set(id, {
+          id,
+          nama: c.title
+            ?? ([c.first_name, c.username ? `@${c.username}` : ''].filter(Boolean).join(' ') || id),
+          jenis: c.type ?? 'private',
+        });
+      }
+      const chat = [...seen.values()];
+      if (chat.length === 0) {
+        return jawab(false,
+          'Belum ada percakapan yang terbaca. Kirim satu pesan apa pun ke bot (atau ke grup yang sudah diundangi bot), lalu tekan tombol ini lagi. Telegram hanya menyimpan pesan yang belum terbaca selama 24 jam.');
+      }
+      return jawab(true, undefined, { chat });
+    } catch {
+      return jawab(false, 'Tidak bisa menghubungi api.telegram.org.');
+    }
+  }
+
   const chatId = (body.chatId ?? '').trim();
   const pesan = (body.pesan ?? '').trim();
   if (!chatId) return jawab(false, 'Chat ID belum diisi.');

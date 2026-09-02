@@ -130,6 +130,97 @@ interface StatusRahasia {
   dariEnv?: boolean;
 }
 
+/*
+  ── STATUS KONEKSI SEBAGAI KEADAAN YANG TERLIHAT ────────────────────────────
+
+  Sebelum ini satu-satunya cara mengetahui sebuah kanal hidup atau tidak adalah
+  menekan "Tes Koneksi" lalu membaca kalimat yang muncul di DASAR panel - jauh
+  di bawah tombolnya, sering di luar layar. Menekan tombol dan tidak melihat
+  apa pun berubah tidak bisa dibedakan dari tombol yang rusak, dan itulah yang
+  dirasakan: "klik test pun tidak ada notif apa-apa".
+
+  Sekarang keadaannya dibaca sendiri saat panel dibuka dan ditampilkan sebagai
+  lencana di kepala tiap kartu, dan hasil tiap tombol muncul DI KARTU ITU
+  JUGA - di tempat mata sedang menatap.
+*/
+type StatusKoneksi =
+  | { keadaan: 'memuat' }
+  | { keadaan: 'terhubung'; info: string }
+  | { keadaan: 'putus'; alasan: string };
+
+type PesanKotak = { tipe: 'ok' | 'gagal'; teks: string };
+
+function LencanaStatus({ status }: { status: StatusKoneksi }) {
+  const gaya = status.keadaan === 'terhubung'
+    ? { bg: '#dcfce7', fg: '#15803d', titik: '#22c55e', teks: 'Terhubung' }
+    : status.keadaan === 'memuat'
+      ? { bg: '#f1f5f9', fg: '#64748b', titik: '#94a3b8', teks: 'Mengecek…' }
+      : { bg: '#fef3c7', fg: '#b45309', titik: '#f59e0b', teks: 'Belum Terhubung' };
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
+      style={{ background: gaya.bg, color: gaya.fg }}
+      title={status.keadaan === 'putus' ? status.alasan
+             : status.keadaan === 'terhubung' ? status.info : 'Sedang memeriksa koneksi…'}>
+      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: gaya.titik }} />
+      {gaya.teks}
+    </span>
+  );
+}
+
+/** Kartu satu kanal: kepala berikon + lencana status, badan bebas. */
+function KartuKanal({ ikon, judul, warna, status, anak }: {
+  ikon: string; judul: string; warna: string;
+  status?: StatusKoneksi; anak: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
+      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-slate-100">
+        <span className="text-sm leading-none flex-shrink-0" style={{ color: warna }}>{ikon}</span>
+        <span className="text-[11px] font-bold uppercase tracking-wide flex-1 min-w-0 truncate"
+          style={{ color: warna }}>{judul}</span>
+        {status && <LencanaStatus status={status} />}
+      </div>
+      <div className="p-3">{anak}</div>
+    </div>
+  );
+}
+
+/** Kotak petunjuk biru - langkah-langkah yang perlu dibaca sambil mengisi. */
+function KotakPetunjuk({ judul, anak }: { judul: string; anak: React.ReactNode }) {
+  return (
+    <div className="rounded-lg px-3 py-2.5 h-full"
+      style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+      <div className="text-[11px] font-bold text-sky-700 mb-1.5">{judul}</div>
+      <div className="text-[10px] text-sky-900/80 leading-relaxed space-y-1">{anak}</div>
+    </div>
+  );
+}
+
+/**
+ * Hasil sebuah tombol, ditampilkan tepat di bawah tombolnya.
+ *
+ * Ini yang paling menentukan: umpan balik yang benar tapi berada di luar
+ * layar sama tidak bergunanya dengan tidak ada umpan balik sama sekali.
+ */
+function PesanKotak({ pesan }: { pesan: PesanKotak | null }) {
+  if (!pesan) return null;
+  const ok = pesan.tipe === 'ok';
+  return (
+    <div className="mt-2 rounded-lg px-2.5 py-2 flex items-start gap-1.5"
+      role="status" aria-live="polite"
+      style={{
+        background: ok ? '#f0fdf4' : '#fef2f2',
+        border: `1px solid ${ok ? '#bbf7d0' : '#fecaca'}`,
+      }}>
+      <span className="text-[11px] leading-none mt-px flex-shrink-0">{ok ? '✅' : '⚠️'}</span>
+      <span className={`text-[10px] font-semibold leading-relaxed ${ok ? 'text-green-700' : 'text-red-600'}`}>
+        {pesan.teks}
+      </span>
+    </div>
+  );
+}
+
 /**
  * Satu blok pengaturan token. Kolom isiannya SELALU berangkat kosong - yang
  * tersimpan diwakili penanda di sebelahnya. Menampilkan nilai tersimpan di
@@ -208,6 +299,15 @@ export function IntegrasiInline() {
   const [ujiJalan, setUjiJalan] = useState<string | null>(null);
   const [rahasia, setRahasia] = useState<Record<string, StatusRahasia>>({});
   const [waTujuan, setWaTujuan] = useState('');
+  /** Status koneksi per kanal, dibaca sendiri saat panel dibuka. */
+  const [koneksi, setKoneksi] = useState<Record<'telegram' | 'whatsapp', StatusKoneksi>>({
+    telegram: { keadaan: 'memuat' }, whatsapp: { keadaan: 'memuat' },
+  });
+  /** Pesan hasil tombol, per kartu - supaya muncul di tempat tombolnya. */
+  const [pesanKanal, setPesanKanal] = useState<Record<string, PesanKotak | null>>({});
+  /** Percakapan yang terdeteksi menyapa bot - hasil tombol "Deteksi Chat ID". */
+  const [chatTerdeteksi, setChatTerdeteksi] = useState<{ id: string; nama: string; jenis: string }[] | null>(null);
+  const [deteksiJalan, setDeteksiJalan] = useState(false);
   /** Panel geser Event -> Kanal. Tertutup secara bawaan - lihat catatan di dekat panelnya. */
   const [bukaMatriks, setBukaMatriks] = useState(false);
   /* Pengaturan pembuat soal AI - lihat lib/ai-pengaturan.ts. */
@@ -222,7 +322,42 @@ export function IntegrasiInline() {
     } catch { /* diam - blok token akan tampil "belum diisi" */ }
   };
 
-  useEffect(() => { bacaPengaturan(true).then(setP); muatRahasia(); ambilPengaturanAI().then(setAi); ambilPengaturanPenilai().then(setPenilai); }, []);
+  /**
+   * Membaca keadaan sebuah kanal tanpa mengirim pesan ke siapa pun.
+   *
+   * Dipanggil saat panel dibuka dan setiap kali tokennya berubah, supaya
+   * lencana di kepala kartu selalu menggambarkan keadaan sekarang - bukan
+   * keadaan saat terakhir kali seseorang ingat menekan Tes Koneksi.
+   */
+  const cekKoneksi = async (kanal: 'telegram' | 'whatsapp') => {
+    setKoneksi(s => ({ ...s, [kanal]: { keadaan: 'memuat' } }));
+    try {
+      const r = await fetch(`/api/notifikasi/${kanal}`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ aksi: 'cek' }),
+      });
+      const j = await r.json() as { ok?: boolean; alasan?: string; bot?: string; perangkat?: string };
+      setKoneksi(s => ({
+        ...s,
+        [kanal]: j?.ok
+          ? { keadaan: 'terhubung', info: kanal === 'telegram' ? (j.bot ?? '') : (j.perangkat ?? '') }
+          : { keadaan: 'putus', alasan: j?.alasan ?? 'Tidak diketahui.' },
+      }));
+    } catch {
+      setKoneksi(s => ({ ...s, [kanal]: { keadaan: 'putus', alasan: 'Tidak bisa menghubungi server.' } }));
+    }
+  };
+
+  useEffect(() => {
+    bacaPengaturan(true).then(setP);
+    muatRahasia();
+    ambilPengaturanAI().then(setAi);
+    ambilPengaturanPenilai().then(setPenilai);
+    void cekKoneksi('telegram');
+    void cekKoneksi('whatsapp');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const simpanRahasia = async (kunci: string, nilai: string) => {
     try {
@@ -234,8 +369,19 @@ export function IntegrasiInline() {
       const j = await r.json() as { ok?: boolean; alasan?: string };
       setPesan(j?.ok ? { tipe: 'ok', teks: 'Token tersimpan.' }
                      : { tipe: 'gagal', teks: j?.alasan ?? 'Gagal menyimpan token.' });
-      if (j?.ok) await muatRahasia();
+      if (j?.ok) {
+        await muatRahasia();
+        // Token baru = keadaan koneksi berubah. Tanpa ini lencananya masih
+        // menunjukkan hasil pengecekan token yang LAMA.
+        await segarkanKoneksiUntuk(kunci);
+      }
     } catch { setPesan({ tipe: 'gagal', teks: 'Tidak bisa menghubungi server.' }); }
+  };
+
+  /** Kunci rahasia mana milik kanal mana - dipakai untuk menyegarkan lencana. */
+  const segarkanKoneksiUntuk = async (kunci: string) => {
+    if (kunci.startsWith('telegram.')) await cekKoneksi('telegram');
+    else if (kunci.startsWith('whatsapp.')) await cekKoneksi('whatsapp');
   };
 
   const hapusRahasia = async (kunci: string) => {
@@ -245,7 +391,7 @@ export function IntegrasiInline() {
       const j = await r.json() as { ok?: boolean; alasan?: string };
       setPesan(j?.ok ? { tipe: 'ok', teks: 'Token dihapus.' }
                      : { tipe: 'gagal', teks: j?.alasan ?? 'Gagal menghapus.' });
-      if (j?.ok) await muatRahasia();
+      if (j?.ok) { await muatRahasia(); await segarkanKoneksiUntuk(kunci); }
     } catch { setPesan({ tipe: 'gagal', teks: 'Tidak bisa menghubungi server.' }); }
   };
 
@@ -279,7 +425,9 @@ export function IntegrasiInline() {
 
   const uji = async (kanal: 'telegram' | 'whatsapp', aksi: 'cek' | 'kirim') => {
     const tanda = `${kanal}-${aksi}`;
-    setUjiJalan(tanda); setPesan(null);
+    setUjiJalan(tanda);
+    setPesan(null);
+    setPesanKanal(s => ({ ...s, [kanal]: null }));
     try {
       const isi = kanal === 'telegram'
         ? (aksi === 'cek' ? { aksi: 'cek' }
@@ -294,13 +442,65 @@ export function IntegrasiInline() {
       const j = await r.json() as { ok?: boolean; alasan?: string; bot?: string; perangkat?: string };
       const berhasil = aksi === 'cek'
         ? (kanal === 'telegram' ? `Bot tersambung: @${j.bot}` : `Perangkat tersambung: ${j.perangkat}`)
-        : 'Pesan tes terkirim.';
-      setPesan(j?.ok ? { tipe: 'ok', teks: berhasil }
-                     : { tipe: 'gagal', teks: j?.alasan ?? 'Gagal.' });
+        : kanal === 'telegram'
+          ? `Pesan tes terkirim ke chat ${p.telegramChatId}. Cek Telegram Anda.`
+          : `Pesan tes terkirim ke ${waTujuan}. Cek WhatsApp-nya.`;
+      const hasil: PesanKotak = j?.ok
+        ? { tipe: 'ok', teks: berhasil }
+        : { tipe: 'gagal', teks: j?.alasan ?? 'Gagal, tanpa keterangan dari server.' };
+      //  Ditaruh di kartunya, BUKAN hanya di dasar panel: tombolnya ada di
+      //  tengah daftar yang panjang, jadi jawaban di dasar panel sering tidak
+      //  terlihat sama sekali dan tombolnya terasa seperti tidak berfungsi.
+      setPesanKanal(s => ({ ...s, [kanal]: hasil }));
+      // 'cek' otomatis memperbarui lencana; 'kirim' yang berhasil juga
+      // membuktikan kanalnya hidup.
+      if (aksi === 'cek') {
+        setKoneksi(s => ({
+          ...s,
+          [kanal]: j?.ok
+            ? { keadaan: 'terhubung', info: kanal === 'telegram' ? (j.bot ?? '') : (j.perangkat ?? '') }
+            : { keadaan: 'putus', alasan: j?.alasan ?? 'Tidak diketahui.' },
+        }));
+      } else if (j?.ok) {
+        void cekKoneksi(kanal);
+      }
     } catch {
-      setPesan({ tipe: 'gagal', teks: 'Tidak bisa menghubungi server.' });
+      setPesanKanal(s => ({ ...s, [kanal]: { tipe: 'gagal', teks: 'Tidak bisa menghubungi server.' } }));
     }
     setUjiJalan(null);
+  };
+
+  /**
+   * Membacakan percakapan yang sudah menyapa bot, beserta id-nya.
+   *
+   * Menggantikan petunjuk "kirim /id ke bot": bot BotFather tidak menjawab
+   * perintah apa pun sampai ada yang menuliskan pemrosesnya, dan platform ini
+   * tidak punya. Lihat catatan panjang di app/api/notifikasi/telegram/route.ts.
+   */
+  const deteksiChat = async () => {
+    setDeteksiJalan(true);
+    setPesanKanal(s => ({ ...s, telegram: null }));
+    try {
+      const r = await fetch('/api/notifikasi/telegram', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ aksi: 'chat' }),
+      });
+      const j = await r.json() as { ok?: boolean; alasan?: string; chat?: { id: string; nama: string; jenis: string }[] };
+      if (j?.ok && j.chat?.length) {
+        setChatTerdeteksi(j.chat);
+        setPesanKanal(s => ({
+          ...s,
+          telegram: { tipe: 'ok', teks: `${j.chat!.length} percakapan terbaca — pilih salah satu di bawah.` },
+        }));
+      } else {
+        setChatTerdeteksi(null);
+        setPesanKanal(s => ({ ...s, telegram: { tipe: 'gagal', teks: j?.alasan ?? 'Tidak ada percakapan terbaca.' } }));
+      }
+    } catch {
+      setPesanKanal(s => ({ ...s, telegram: { tipe: 'gagal', teks: 'Tidak bisa menghubungi server.' } }));
+    }
+    setDeteksiJalan(false);
   };
 
   const kategori = Array.from(new Set(KATALOG_EVENT.map(e => e.kategori)));
@@ -333,8 +533,9 @@ export function IntegrasiInline() {
       </div>
 
       {/* ── WhatsApp: penyedia bisa dipilih, tidak terpaku satu gateway ── */}
-      <div className="rounded-xl border border-slate-200 p-3">
-        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">WhatsApp</div>
+      <KartuKanal ikon="✆" judul="Integrasi Notifikasi WhatsApp" warna="#16a34a"
+        status={spWA.bisaCek ? koneksi.whatsapp : undefined}
+        anak={<>
 
         {/*
           Pemilih penyedia. Formulir di bawahnya dibangun dari definisi di
@@ -398,10 +599,29 @@ export function IntegrasiInline() {
           ))}
         </div>
 
-        <label className="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">Nomor tujuan untuk pesan tes</label>
-        <input value={waTujuan} onChange={e => setWaTujuan(e.target.value)} placeholder="mis. 6281234567890"
-          className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-green-400" />
-        <div className="flex flex-wrap gap-2 mt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+          <div>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">
+              Nomor tujuan untuk pesan tes
+            </label>
+            <input value={waTujuan} onChange={e => setWaTujuan(e.target.value)} placeholder="contoh: 6281234567890"
+              className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-green-400" />
+            <p className="text-[9px] text-slate-400 mt-1 leading-relaxed">
+              Nomor ini hanya dipakai tombol tes di bawah — tidak ikut tersimpan sebagai tujuan notifikasi.
+            </p>
+          </div>
+
+          <KotakPetunjuk judul="✆ Format nomor:" anak={<>
+            <div>1. Pakai kode negara, tanpa tanda <span className="font-mono">+</span> dan tanpa spasi.</div>
+            <div>2. Awalan <span className="font-mono">08…</span> ditulis <span className="font-mono">628…</span></div>
+            <div>3. Contoh: <span className="font-mono font-bold">6281234567890</span></div>
+            <div className="pt-1 text-sky-900/60">
+              Pastikan nomornya sudah pernah chat dengan perangkat/gateway-nya.
+            </div>
+          </>} />
+        </div>
+
+        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-100">
           {/*
             Tes Koneksi disembunyikan untuk penyedia yang memang tidak
             punya cara mengeceknya (webhook kustom) - menampilkan tombol yang
@@ -425,35 +645,154 @@ export function IntegrasiInline() {
           admin akan menekan Tes Koneksi lebih dulu dan mengira penyedia
           barunya rusak, padahal yang diuji masih penyedia yang lama.
         */}
+        <PesanKotak pesan={pesanKanal.whatsapp ?? null} />
         <p className="text-[9px] text-slate-400 mt-1.5">
           Tekan <b>Simpan</b> di bawah dulu setelah berpindah penyedia — tes memakai penyedia yang tersimpan.
         </p>
-      </div>
+
+        {!p.aktif.whatsapp && (
+          <div className="mt-2 rounded-lg px-2.5 py-2 flex items-start gap-1.5"
+            style={{ background: '#fffbeb', border: '1px solid #fde68a' }}>
+            <span className="text-[11px] leading-none mt-px">⚠️</span>
+            <span className="text-[10px] font-semibold text-amber-800 leading-relaxed">
+              Kanal WhatsApp masih <b>mati</b> di saklar Kanal di atas — tes di sini tetap jalan,
+              tapi notifikasi asli tidak akan terkirim sampai saklarnya dinyalakan dan disimpan.
+            </span>
+          </div>
+        )}
+        </>} />
 
       {/* ── Telegram ── */}
-      <div className="rounded-xl border border-slate-200 p-3">
-        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">Telegram</div>
-        <BlokToken
-          judul="Token bot" kunci="telegram.bot_token" status={rahasia['telegram.bot_token']}
-          onSimpan={n => simpanRahasia('telegram.bot_token', n)}
-          onHapus={() => hapusRahasia('telegram.bot_token')}
-          petunjuk={<>Buat bot lewat @BotFather di Telegram, lalu tempel token yang diberikannya. Jangan lupa undang bot itu ke grup tujuan.</>} />
-        <label className="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">Chat ID tujuan bawaan</label>
-        <input value={p.telegramChatId} placeholder="mis. -1001234567890"
-          onChange={e => ubah(x => ({ ...x, telegramChatId: e.target.value }))}
-          className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-sky-400" />
-        <div className="flex flex-wrap gap-2 mt-2">
-          <button type="button" onClick={() => uji('telegram', 'cek')} disabled={ujiJalan !== null}
-            className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50">
-            {ujiJalan === 'telegram-cek' ? 'Mengecek…' : 'Tes Koneksi'}
-          </button>
-          <button type="button" onClick={() => uji('telegram', 'kirim')} disabled={ujiJalan !== null || !p.telegramChatId.trim()}
-            className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-white disabled:opacity-50"
-            style={{ background: '#0088cc' }}>
-            {ujiJalan === 'telegram-kirim' ? 'Mengirim…' : 'Kirim Pesan Tes'}
-          </button>
-        </div>
-      </div>
+      <KartuKanal ikon="➤" judul="Integrasi Notifikasi Telegram" warna="#0088cc"
+        status={koneksi.telegram}
+        anak={<>
+          <BlokToken
+            judul="Token bot" kunci="telegram.bot_token" status={rahasia['telegram.bot_token']}
+            onSimpan={n => simpanRahasia('telegram.bot_token', n)}
+            onHapus={() => hapusRahasia('telegram.bot_token')}
+            petunjuk={<>Buat bot lewat @BotFather di Telegram, lalu tempel token yang diberikannya. Jangan lupa undang bot itu ke grup tujuan.</>} />
+
+          {/*
+            Isian dan petunjuknya berdampingan. Petunjuk yang ditaruh di bawah
+            kolom isian dibaca SESUDAH orang terlanjur menebak isinya - padahal
+            "dari mana angka ini?" justru pertanyaan pertama.
+          */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">
+                Telegram Chat ID
+              </label>
+              <input value={p.telegramChatId} placeholder="contoh: 123456789"
+                onChange={e => ubah(x => ({ ...x, telegramChatId: e.target.value }))}
+                className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-sky-400" />
+              <button type="button" onClick={deteksiChat}
+                disabled={deteksiJalan || koneksi.telegram.keadaan !== 'terhubung'}
+                title={koneksi.telegram.keadaan !== 'terhubung'
+                  ? 'Isi token bot dulu — deteksi memakai bot yang tersambung.' : undefined}
+                className="mt-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-white disabled:opacity-40"
+                style={{ background: '#0088cc' }}>
+                {deteksiJalan ? 'Mendeteksi…' : '🔎 Deteksi Chat ID'}
+              </button>
+              <p className="text-[9px] text-slate-400 mt-1 leading-relaxed">
+                Tujuan bawaan untuk notifikasi. Untuk grup, angkanya diawali tanda minus
+                (mis. <span className="font-mono">-1001234567890</span>).
+              </p>
+
+              {chatTerdeteksi && chatTerdeteksi.length > 0 && (
+                <div className="mt-2 rounded-lg border border-slate-200 overflow-hidden">
+                  <div className="px-2.5 py-1 bg-slate-50 text-[9px] font-bold text-slate-400 uppercase tracking-wide">
+                    Percakapan terbaca — klik untuk memakai
+                  </div>
+                  {chatTerdeteksi.map(c => (
+                    <button key={c.id} type="button"
+                      onClick={() => ubah(x => ({ ...x, telegramChatId: c.id }))}
+                      className="w-full text-left px-2.5 py-1.5 border-t border-slate-100 hover:bg-sky-50 transition-colors flex items-center gap-2">
+                      <span className="text-[11px] flex-shrink-0">{c.jenis === 'private' ? '👤' : '👥'}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[11px] font-semibold text-slate-700 truncate">{c.nama}</span>
+                        <span className="block text-[9px] font-mono text-slate-400">{c.id}</span>
+                      </span>
+                      {p.telegramChatId === c.id && (
+                        <span className="text-[9px] font-bold text-sky-600 flex-shrink-0">dipakai</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <KotakPetunjuk judul="➤ Cara Cek ID:" anak={<>
+              {/*
+                Nama botnya TIDAK ditulis di kode - ia datang dari jawaban
+                getMe atas token yang benar-benar terpasang. Menuliskannya di
+                sini berarti setiap perusahaan yang memakai platform ini
+                diarahkan ke bot milik perusahaan lain.
+              */}
+              <div>
+                1. Buka bot{' '}
+                {koneksi.telegram.keadaan === 'terhubung' && koneksi.telegram.info ? (
+                  <a href={`https://t.me/${koneksi.telegram.info}`} target="_blank" rel="noopener noreferrer"
+                    className="font-bold text-sky-700 underline decoration-sky-300 hover:decoration-sky-600">
+                    @{koneksi.telegram.info} ↗
+                  </a>
+                ) : (
+                  <span className="text-sky-900/50">
+                    (isi token bot dulu — namanya muncul di sini otomatis)
+                  </span>
+                )}
+              </div>
+              <div>2. Kirim <b>satu pesan apa pun</b> ke bot itu (untuk grup: undang botnya ke grup, lalu kirim satu pesan di sana).</div>
+              <div>3. Tekan <b>Deteksi Chat ID</b> di bawah — angkanya diisikan sendiri.</div>
+              {/*
+                Sengaja TIDAK menyuruh "kirim /id lalu salin balasannya": bot
+                BotFather tidak menjawab perintah apa pun sampai ada yang
+                menulis pemrosesnya, dan platform ini tidak punya. Petunjuk
+                seperti itu berakhir dengan admin menunggu balasan yang tidak
+                akan pernah datang - persis jenis kebuntuan yang membuat layar
+                ini terasa rusak.
+              */}
+              <div className="pt-1 text-sky-900/60">
+                Telegram hanya menyimpan pesan yang belum terbaca selama 24 jam — kirim pesannya
+                sesaat sebelum menekan tombol deteksi.
+              </div>
+            </>} />
+          </div>
+
+          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-100">
+            <button type="button" onClick={() => uji('telegram', 'cek')} disabled={ujiJalan !== null}
+              className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50">
+              {ujiJalan === 'telegram-cek' ? 'Mengecek…' : 'Tes Koneksi'}
+            </button>
+            <button type="button" onClick={() => uji('telegram', 'kirim')} disabled={ujiJalan !== null || !p.telegramChatId.trim()}
+              className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-white disabled:opacity-50"
+              style={{ background: '#0088cc' }}>
+              {ujiJalan === 'telegram-kirim' ? 'Mengirim…' : 'Kirim Pesan Tes'}
+            </button>
+            {/* Chat ID ikut tersimpan lewat tombol Simpan di dasar panel -
+                dikatakan di sini supaya tidak ada yang mengira mengetik saja
+                sudah cukup. */}
+            {!p.telegramChatId.trim() && (
+              <span className="text-[9px] text-slate-400 self-center">
+                Isi Chat ID dulu untuk bisa mengirim pesan tes.
+              </span>
+            )}
+          </div>
+          <PesanKotak pesan={pesanKanal.telegram ?? null} />
+
+          {/* Saklar induk yang mati membuat seluruh pengaturan di kartu ini
+              tidak berpengaruh - itu harus terbaca di sini, bukan hanya di
+              deretan saklar yang letaknya jauh di atas. */}
+          {!p.aktif.telegram && (
+            <div className="mt-2 rounded-lg px-2.5 py-2 flex items-start gap-1.5"
+              style={{ background: '#fffbeb', border: '1px solid #fde68a' }}>
+              <span className="text-[11px] leading-none mt-px">⚠️</span>
+              <span className="text-[10px] font-semibold text-amber-800 leading-relaxed">
+                Kanal Telegram masih <b>mati</b> di saklar Kanal di atas — tes di sini tetap jalan,
+                tapi notifikasi asli tidak akan terkirim sampai saklarnya dinyalakan dan disimpan.
+              </span>
+            </div>
+          )}
+        </>} />
 
       {/* ── Pembuat Soal AI (Learning Center) ── */}
       <div className="rounded-xl border border-slate-200 p-3">
