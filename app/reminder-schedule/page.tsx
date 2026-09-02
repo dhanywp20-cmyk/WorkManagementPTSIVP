@@ -12,7 +12,7 @@ import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { normalkanNama } from '@/lib/kelompok-insentif';
 import { notifyReminderApproved, createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
-import { INCENTIVE_CATEGORIES } from '@/lib/incentive-scheme';
+import { adalahKategoriInsentif, muatKategoriInsentif } from '@/lib/incentive-scheme';
 import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField } from '@/lib/admin-edit';
 import { syncRemindersToProjectProgress, triggersProjectProgress, type ReminderSnapshot } from '@/lib/project-progress-sync';
 import { compressImage } from '@/lib/image-compress';
@@ -214,6 +214,21 @@ function ReminderSchedulePageInner() {
     const q = searchParams.get('q');
     if (q) setSearchProject(q);
   }, [searchParams]);
+
+  /*
+    Kategori mana yang dihitung sebagai proyek insentif kini DATA (diatur di
+    layar Skema Pembagian), bukan daftar yang dipaku di kode. Dimuat sekali
+    saat halaman dibuka; state penanda di bawah hanya untuk memicu render
+    ulang, karena adalahKategoriInsentif() membaca cache modul dan React tidak
+    tahu isinya berubah. Sebelum ini selesai, yang dipakai adalah daftar
+    bawaan - jadi tidak ada jendela waktu tanpa jawaban.
+  */
+  const [, setKategoriDimuat] = useState(false);
+  useEffect(() => {
+    let hidup = true;
+    muatKategoriInsentif().then(() => { if (hidup) setKategoriDimuat(true); }).catch(() => {});
+    return () => { hidup = false; };
+  }, []);
   const [searchDivisionSales, setSearchDivisionSales]       = useState('');
   const [searchTeamHandler, setSearchTeamHandler] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -580,7 +595,7 @@ function ReminderSchedulePageInner() {
    * bekerjanya cuma memastikan.
    */
   const layakIncentive = (r: Reminder): boolean =>
-    (INCENTIVE_CATEGORIES as readonly string[]).includes(r.category)
+    adalahKategoriInsentif(r.category)
     && r.status === 'done';
 
   const diluarIncentive = (r: Reminder): boolean => r.incentive_excluded === true;
@@ -663,12 +678,12 @@ function ReminderSchedulePageInner() {
   };
 
   const cariProyekSerupa = (nama: string, kategori: string): Reminder[] => {
-    if (!(INCENTIVE_CATEGORIES as readonly string[]).includes(kategori)) return [];
+    if (!adalahKategoriInsentif(kategori)) return [];
     const n = normalkanNama(nama);
     if (!n) return [];
     return reminders.filter(r =>
       normalkanNama(r.project_name) === n
-      && (INCENTIVE_CATEGORIES as readonly string[]).includes(r.category)
+      && adalahKategoriInsentif(r.category)
       && r.status !== 'cancelled');
   };
 
@@ -722,8 +737,8 @@ function ReminderSchedulePageInner() {
     */
     if (!editingReminder && grupInsentif === undefined) {
       if (proyekLamaTerpilih) {
-        const relevan = (INCENTIVE_CATEGORIES as readonly string[]).includes(formData.category)
-          ? proyekLamaTerpilih.filter(r => (INCENTIVE_CATEGORIES as readonly string[]).includes(r.category))
+        const relevan = adalahKategoriInsentif(formData.category)
+          ? proyekLamaTerpilih.filter(r => adalahKategoriInsentif(r.category))
           : [];
         const grup = relevan.length > 0 ? await resolveGrupInsentif([...relevan]) : null;
         void handleSave(grup);
@@ -2011,8 +2026,8 @@ function ReminderSchedulePageInner() {
       resolveGrupInsentif satu fungsi bersama, dipakai empat jalur sekarang
       (Lapis 1, Lapis 4-admin, Lapis 4-guest).
     */
-    const relevanGuest = proyekLamaTerpilih && (INCENTIVE_CATEGORIES as readonly string[]).includes(data.category)
-      ? proyekLamaTerpilih.filter(r => (INCENTIVE_CATEGORIES as readonly string[]).includes(r.category))
+    const relevanGuest = proyekLamaTerpilih && adalahKategoriInsentif(data.category)
+      ? proyekLamaTerpilih.filter(r => adalahKategoriInsentif(r.category))
       : [];
     const grupInsentifGuest = relevanGuest.length > 0 ? await resolveGrupInsentif([...relevanGuest]) : null;
 

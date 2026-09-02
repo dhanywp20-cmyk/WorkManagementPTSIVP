@@ -20,7 +20,7 @@ export const dynamic = 'force-dynamic';
 // Field yang BOLEH ditulis route ini (whitelist - cegah set kolom sembarangan).
 const ALLOWED_FIELDS = new Set([
   'username', 'full_name', 'role', 'team_type', 'sales_division',
-  'jabatan', 'phone_number', 'allowed_menus', 'allow_incentive_input', 'incentive_brand_scope',
+  'jabatan', 'phone_number', 'allowed_menus', 'allow_incentive_input', 'incentive_brand_scope', 'incentive_akses',
   'atasan_id', 'kpi_enabled', 'is_internal_sales', 'access_level',
 ]);
 // 'password' sengaja TIDAK ada di daftar: kolom itu peninggalan dan tidak
@@ -66,30 +66,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    if (action === 'setIncentiveInput') {
-      const userId = body.userId as string;
-      const value = !!body.value;
-      if (!userId) return NextResponse.json({ error: 'userId wajib.' }, { status: 400 });
-      const { error } = await supabase.from('users').update({ allow_incentive_input: value }).eq('id', userId);
-      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-      return NextResponse.json({ ok: true });
-    }
-
-    if (action === 'setIncentiveBrandScope') {
-      const userId = body.userId as string;
-      const value = (body.value ?? null) as string | null;
-      if (!userId) return NextResponse.json({ error: 'userId wajib.' }, { status: 400 });
-      //  Hanya 'MVI' | 'IVP' | null yang diterima. Nilai lain akan lolos ke
-      //  basis data lalu ditolak CHECK constraint dengan galat yang tidak
-      //  menyebut sebabnya - lebih baik ditolak di sini dengan pesan jelas.
-      const scope = value === null || value === 'MVI' || value === 'IVP' ? value : undefined;
-      if (scope === undefined) {
-        return NextResponse.json({ error: 'Lingkup brand harus MVI, IVP, atau kosong.' }, { status: 400 });
-      }
-      const { error } = await supabase.from('users').update({ incentive_brand_scope: scope }).eq('id', userId);
-      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-      return NextResponse.json({ success: true });
-    }
+    /*
+      Action setIncentiveInput & setIncentiveBrandScope DIPINDAH ke
+      /api/incentive/akses. Penjaganya berbeda di sana: pemegang akses PENUH
+      modul insentif (bukan hanya role 'admin') boleh memakainya, supaya
+      Manager PTS bisa mengatur timnya sendiri. Dua route dengan syarat
+      berbeda untuk satu setelan yang sama hanya akan menghasilkan dua
+      jawaban, jadi yang di sini dihapus - bukan dibiarkan berdampingan.
+    */
 
     if (action === 'setAccessLevel') {
       const userId = body.userId as string;

@@ -3,6 +3,7 @@ import { gabungkanProyek } from '@/lib/kelompok-insentif';
 import {
   SkemaInsentif, PenerimaPeran, hitungPembagian, hitungManagerSebagaiPic, ambilSkema,
   persenInstaller, persenPicBerlaku, petaPorsiBerlaku, bagikanTepat, labelSkema, INCENTIVE_CATEGORIES,
+  kategoriInsentif, muatKategoriInsentif, adalahKategoriInsentif,
 } from '@/lib/incentive-scheme';
 
 export type { SkemaInsentif };
@@ -373,7 +374,7 @@ export function generateTranches(
 
 // Dipindah ke lib/incentive-scheme.ts - lihat catatan di sana. Di-ekspor
 // ulang supaya pemanggil lama tidak perlu diubah.
-export { INCENTIVE_CATEGORIES };
+export { INCENTIVE_CATEGORIES, kategoriInsentif, muatKategoriInsentif, adalahKategoriInsentif };
 
 /**
  * Apakah kolom `incentive_excluded` sudah ada di basis data ini.
@@ -456,10 +457,16 @@ export async function pisahkanProyek(grup: string) {
 }
 
 export async function fetchIncentiveProjects() {
+  /*
+    Kategori dibaca dari SKEMA, bukan dari daftar yang dipaku di kode. Skema
+    ditarik lebih dulu supaya cache kategorinya terisi walau halaman ini
+    dibuka langsung (deep link) tanpa sempat memuat skema duluan.
+  */
+  await muatKategoriInsentif();
   const dasar = () => supabase
     .from('reminders')
     .select('*')
-    .in('category', INCENTIVE_CATEGORIES as unknown as string[])
+    .in('category', kategoriInsentif())
     .eq('status', 'done')
     .order('due_date', { ascending: false });
 
@@ -534,9 +541,9 @@ export async function fetchSplits(projectId?: string) {
 }
 
 /**
- * Baca splits lewat server route dengan filter privasi (admin/allow_incentive_input
- * lihat semua; selain itu hanya jatahnya sendiri). Dipakai UI menggantikan
- * fetchSplits setelah RLS incentive_splits dikunci dari anon.
+ * Baca splits lewat server route dengan filter privasi (pemegang akses
+ * input/penuh melihat semua; selain itu hanya jatahnya sendiri). Dipakai UI
+ * menggantikan fetchSplits setelah RLS incentive_splits dikunci dari anon.
  */
 export async function fetchVisibleSplits(projectId?: string): Promise<{ data: IncentiveSplit[]; error: unknown }> {
   try {
@@ -549,6 +556,33 @@ export async function fetchVisibleSplits(projectId?: string): Promise<{ data: In
     return { data: (json.data || []) as IncentiveSplit[], error: null };
   } catch (e) {
     return { data: [], error: e };
+  }
+}
+
+/**
+ * Hapus baris pembagian LEWAT SERVER.
+ *
+ * Wajib lewat route, tidak boleh `supabase.from('incentive_splits').delete()`
+ * dari peramban: tabel itu force-RLS dan satu-satunya kebijakannya adalah
+ * INSERT untuk anon. Penghapusan dari klien karena itu selalu mengenai NOL
+ * baris - dan PostgREST tidak menganggapnya galat, jadi kodenya menyangka
+ * berhasil. Tiga jalur pembatalan di berkas ini dulu semuanya begitu, dan
+ * itulah asal baris "Bagian Saya" yang berlipat: pembagian lama tidak pernah
+ * benar-benar hilang, lalu Process Batch berikutnya menumpuk set baru.
+ */
+async function hapusSplitsServer(
+  target: { trancheIds: string[] } | { projectId: string },
+): Promise<{ dihapus: number; error: { message: string } | null }> {
+  const qs = 'trancheIds' in target
+    ? `trancheIds=${encodeURIComponent(target.trancheIds.join(','))}`
+    : `projectId=${encodeURIComponent(target.projectId)}`;
+  try {
+    const res = await fetch(`/api/incentive/splits?${qs}`, { method: 'DELETE' });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return { dihapus: 0, error: { message: json.error || 'Gagal menghapus baris pembagian.' } };
+    return { dihapus: Number(json.dihapus ?? 0), error: null };
+  } catch (e) {
+    return { dihapus: 0, error: { message: (e as Error).message } };
   }
 }
 
@@ -1058,8 +1092,12 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
       //  Rollback: splits yang baru saja ditulis DIHAPUS lagi supaya tahapan
       //  ini kembali ke keadaan bersih (pending, tanpa splits nyasar) - aman
       //  dicoba ulang, bukan menumpuk set kedua di percobaan berikutnya.
-      await supabase.from('incentive_splits').delete().eq('tranche_id', tranche.id);
-      errors.push(`Project "${project.project_name}" tranche ${tranche.tranche_number}: gagal menandai processed (${updErr?.message ?? 'RLS menolak update - sesi Anda mungkin tidak lagi dikenali sebagai admin, coba logout/login ulang'}). Splits dibatalkan, tahapan tetap pending - aman dicoba lagi.`);
+      const rollback = await hapusSplitsServer({ trancheIds: [tranche.id] });
+      const sebab = updErr?.message
+        ?? 'RLS menolak update - akses Incentive Anda mungkin sudah tidak "input"/"penuh" lagi, coba logout/login ulang';
+      errors.push(rollback.error
+        ? `Project "${project.project_name}" tranche ${tranche.tranche_number}: gagal menandai processed (${sebab}) DAN gagal membatalkan splits-nya (${rollback.error.message}). JANGAN dijalankan ulang sebelum baris pembagian tahapan ini dibersihkan - kalau tidak, orang akan tercatat dua kali.`
+        : `Project "${project.project_name}" tranche ${tranche.tranche_number}: gagal menandai processed (${sebab}). Splits dibatalkan, tahapan tetap pending - aman dicoba lagi.`);
       continue;
     }
 
@@ -1112,24 +1150,51 @@ export async function batalkanBatchTahun(paymentYear: number): Promise<HasilPemb
   const baris = (semua ?? []) as { id: string; status: string }[];
   const bisa = baris.filter(t => t.status === 'processed');
   const dilewati = baris.filter(t => t.status === 'paid').length;
-  if (bisa.length === 0) return { jumlah: 0, dilewati, error: null };
 
-  const ids = bisa.map(t => t.id);
+  /*
+    PEMBERSIHAN MENCAKUP YANG MASIH `pending`, bukan hanya yang `processed`.
+
+    Versi lama hanya menyasar tahapan berstatus processed. Justru tahapan
+    pending-lah yang paling mungkin punya baris pembagian nyasar: ia jadi
+    pending PERSIS karena Process Batch gagal di tengah - splits sudah
+    tertulis, penandaan processed-nya yang gagal - atau karena pembatalan
+    sebelumnya mengembalikan statusnya tanpa pernah benar-benar menghapus
+    splits-nya (penghapusan dari klien selalu 0 baris, lihat
+    hapusSplitsServer). Membiarkannya berarti Process Batch berikutnya
+    menumpuk set kedua di atas yang lama, dan itulah "Bagian Saya" yang
+    tampil berlipat.
+
+    Yang `paid` tetap tidak disentuh - uangnya sudah keluar.
+  */
+  const idBersihkan = baris.filter(t => t.status !== 'paid').map(t => t.id);
+  if (idBersihkan.length === 0) return { jumlah: 0, dilewati, error: null };
 
   //  Pembagian dihapus LEBIH DULU. Kalau urutannya dibalik dan penghapusan
   //  split gagal, tahapannya sudah terlanjur jadi `pending` sementara baris
   //  pembagiannya masih ada - menjalankan batch lagi akan menambah set kedua
   //  di atas yang lama, dan orang dibayar dua kali.
-  const { error: hapusErr } = await supabase.from('incentive_splits').delete().in('tranche_id', ids);
+  const { error: hapusErr } = await hapusSplitsServer({ trancheIds: idBersihkan });
   if (hapusErr) return { jumlah: 0, dilewati, error: hapusErr };
 
-  const { error: ubahErr } = await supabase
+  if (bisa.length === 0) return { jumlah: 0, dilewati, error: null };
+
+  const { data: ubahRows, error: ubahErr } = await supabase
     .from('incentive_tranches')
     .update({ status: 'pending', processed_at: null })
-    .in('id', ids);
+    .in('id', bisa.map(t => t.id))
+    .select('id');
   if (ubahErr) return { jumlah: 0, dilewati, error: ubahErr };
+  //  `.select('id')` + periksa jumlahnya: UPDATE yang ditolak RLS tidak
+  //  mengembalikan galat, hanya nol baris. Tanpa pemeriksaan ini layar akan
+  //  melapor "dibatalkan" padahal statusnya tidak berubah sama sekali.
+  if ((ubahRows ?? []).length === 0) {
+    return {
+      jumlah: 0, dilewati,
+      error: { message: 'Baris pembagian sudah dihapus, tetapi status tahapan TIDAK bisa dikembalikan ke pending (ditolak izin akses). Minta pemegang akses penuh menjalankan ulang pembatalan ini.' },
+    };
+  }
 
-  return { jumlah: bisa.length, dilewati, error: null };
+  return { jumlah: (ubahRows ?? []).length, dilewati, error: null };
 }
 
 /**
@@ -1160,13 +1225,20 @@ export async function hapusTahapanProyek(projectId: string): Promise<HasilPembat
   //  Split dihapus lewat project_id, bukan hanya tranche_id: baris pembagian
   //  yang tranche_id-nya null (dibuat sebelum tahapan ada) juga ikut, kalau
   //  tidak ia tertinggal sebagai yatim yang tetap terhitung di rekap.
-  const { error: hapusSplit } = await supabase.from('incentive_splits').delete().eq('project_id', projectId);
+  const { error: hapusSplit } = await hapusSplitsServer({ projectId });
   if (hapusSplit) return { jumlah: 0, dilewati: 0, error: hapusSplit };
 
-  const { error: hapusTr } = await supabase.from('incentive_tranches').delete().in('id', ids);
+  const { data: trHapus, error: hapusTr } = await supabase
+    .from('incentive_tranches').delete().in('id', ids).select('id');
   if (hapusTr) return { jumlah: 0, dilewati: 0, error: hapusTr };
+  if ((trHapus ?? []).length === 0) {
+    return {
+      jumlah: 0, dilewati: 0,
+      error: { message: 'Baris pembagian sudah dihapus, tetapi tahapannya TIDAK bisa dihapus (ditolak izin akses). Butuh akses konfigurasi penuh Incentive PTS.' },
+    };
+  }
 
-  return { jumlah: baris.length, dilewati: 0, error: null };
+  return { jumlah: (trHapus ?? []).length, dilewati: 0, error: null };
 }
 
 // Formatting

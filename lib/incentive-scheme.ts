@@ -10,6 +10,41 @@ import { supabase } from './supabase';
  */
 export const INCENTIVE_CATEGORIES = ['Konfigurasi', 'Konfigurasi & Training', 'Training'] as const;
 
+/*
+  KATEGORI ITU KEBIJAKAN, BUKAN KODE.
+
+  Daftar di atas kini hanya BAWAAN - yang berlaku disimpan di skema
+  (`kategoriProyek`) dan disunting dari layar Skema Pembagian. Perusahaan lain
+  menamai layanannya sendiri ("Instalasi", "Commissioning", ...), dan sebelum
+  ini menambah satu nama berarti mengubah berkas ini lalu deploy ulang.
+
+  Bacaannya lewat cache modul supaya pemakaian yang sudah ada tetap
+  SINKRON - dipanggil di tengah render dan di dalam fungsi biasa, di mana
+  `await` tidak tersedia. Cache diisi setiap kali skema dibaca (rapikan()
+  di bawah), dan halaman yang bergantung padanya memanggil
+  muatKategoriInsentif() sekali saat dibuka.
+*/
+let kategoriBerlaku: string[] = [...INCENTIVE_CATEGORIES];
+
+/** Kategori Request Schedule yang berlaku sebagai proyek insentif. */
+export function kategoriInsentif(): string[] {
+  return kategoriBerlaku;
+}
+
+/** Apakah satu kategori termasuk proyek insentif menurut skema yang berlaku. */
+export function adalahKategoriInsentif(kategori: string | null | undefined): boolean {
+  return !!kategori && kategoriBerlaku.includes(kategori);
+}
+
+/**
+ * Muat kategori dari skema. Dipanggil sekali saat halaman dibuka; nilainya
+ * tersimpan di cache modul sehingga adalahKategoriInsentif() tetap sinkron.
+ */
+export async function muatKategoriInsentif(): Promise<string[]> {
+  const sk = await ambilSkema();   // rapikan() di dalamnya yang mengisi cache
+  return sk.kategoriProyek;
+}
+
 
 /**
  * Skema pembagian insentif project - DATA, bukan kode.
@@ -48,6 +83,18 @@ export interface TahapPencairan {
 export interface SkemaInsentif {
   /** Dinaikkan tiap kali struktur skema berubah, untuk keperluan migrasi. */
   versi: number;
+
+  /**
+   * Kategori Request Schedule yang dihitung sebagai proyek insentif.
+   *
+   * Dulu dipaku di kode (INCENTIVE_CATEGORIES). Sekarang data, karena tiap
+   * perusahaan menamai layanannya sendiri - dan menambah satu nama tidak
+   * boleh berarti mengubah kode lalu deploy ulang.
+   *
+   * Namanya harus PERSIS sama dengan yang dipakai di Request Schedule; itu
+   * yang dicocokkan saat menarik daftar proyek.
+   */
+  kategoriProyek: string[];
 
   /** Pembagian normal - harus berjumlah 100. */
   porsi: PorsiPeran[];
@@ -200,6 +247,7 @@ export interface SkemaInsentif {
  */
 export const SKEMA_BAWAAN: SkemaInsentif = {
   versi: 3,
+  kategoriProyek: [...INCENTIVE_CATEGORIES],
   porsi: [
     { peran: 'pic',        label: 'PIC Proyek',                   persen: 65, bagiRata: true  },
     { peran: 'support',    label: 'Tim Support (Troubleshooting)', persen: 15, bagiRata: true  },
@@ -333,6 +381,20 @@ export interface MasalahSkema {
 export function periksaSkema(sk: SkemaInsentif): MasalahSkema[] {
   const masalah: MasalahSkema[] = [];
   const bulat = (n: number) => Math.round(n * 100) / 100;
+
+  /*
+    Kategori kosong = tidak ada satu pun proyek yang akan masuk daftar
+    Incentive. Ditolak sebagai galat, bukan peringatan: menyimpannya membuat
+    seluruh modul tampak "tidak ada data" tanpa petunjuk apa pun tentang
+    sebabnya.
+  */
+  const kategori = (sk.kategoriProyek ?? []).map(k => k.trim()).filter(Boolean);
+  if (kategori.length === 0) {
+    masalah.push({ bidang: 'kategoriProyek', pesan: 'Minimal satu kategori proyek harus diisi — tanpa itu tidak ada proyek yang masuk daftar Incentive.' });
+  }
+  if (new Set(kategori.map(k => k.toLowerCase())).size !== kategori.length) {
+    masalah.push({ bidang: 'kategoriProyek', pesan: 'Ada kategori proyek yang kembar.' });
+  }
 
   const totalPorsi = bulat(sk.porsi.reduce((t, p) => t + (p.persen || 0), 0));
   if (totalPorsi !== 100) masalah.push({ bidang: 'porsi', pesan: `Total porsi ${totalPorsi}% — harus tepat 100%.` });
@@ -479,8 +541,23 @@ function bacaManagerPic(raw: unknown): SkemaInsentif['managerSebagaiPic'] {
 /** Gabungkan hasil baca dengan bawaan supaya kolom baru tidak bernilai undefined. */
 function rapikan(raw: unknown): SkemaInsentif {
   const r = (raw ?? {}) as Partial<SkemaInsentif>;
+  /*
+    Kategori diambil dari skema tersimpan bila ada, dan hasilnya DIPASANG ke
+    cache modul di sini - satu tempat yang pasti dilewati semua pembacaan
+    skema (ambilSkema & riwayatSkema), jadi tidak ada jalur baca yang bisa
+    lupa menyegarkannya.
+
+    Baris skema lama tidak punya kolom ini; ia jatuh ke bawaan, yaitu daftar
+    yang selama ini dipakai - jadi tidak ada proyek yang mendadak hilang dari
+    daftar Incentive hanya karena kolomnya ditambahkan.
+  */
+  const kategori = Array.isArray(r.kategoriProyek) && r.kategoriProyek.length
+    ? r.kategoriProyek.map(k => String(k).trim()).filter(Boolean)
+    : [...SKEMA_BAWAAN.kategoriProyek];
+  kategoriBerlaku = kategori;
   return {
     versi: r.versi ?? SKEMA_BAWAAN.versi,
+    kategoriProyek: kategori,
     porsi: Array.isArray(r.porsi) && r.porsi.length ? r.porsi : SKEMA_BAWAAN.porsi,
     tanpaSupport: r.tanpaSupport ?? SKEMA_BAWAAN.tanpaSupport,
     jendelaSupportBulan: r.jendelaSupportBulan ?? SKEMA_BAWAAN.jendelaSupportBulan,

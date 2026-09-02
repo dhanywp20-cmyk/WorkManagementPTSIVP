@@ -34,6 +34,7 @@ function ok(nama: string, syarat: boolean, ket = '') {
 
 const SKEMA = {
   versi: 3,
+  kategoriProyek: ['Konfigurasi', 'Konfigurasi & Training', 'Training'],
   porsi: [
     { peran: 'pic', label: 'PIC Proyek', persen: 65, bagiRata: true },
     { peran: 'support', label: 'Tim Support', persen: 15, bagiRata: true },

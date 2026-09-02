@@ -35,25 +35,16 @@ export async function adminUpdateUser(userId: string, payload: Record<string, un
   return call({ action: 'update', userId, payload });
 }
 
-/** Set izin input nominal incentive. */
-export async function adminSetIncentiveInput(userId: string, value: boolean): Promise<Res> {
-  return call({ action: 'setIncentiveInput', userId, value });
-}
+/*
+  adminSetIncentiveInput & adminSetIncentiveBrandScope DIHAPUS dari sini.
 
-/**
- * Tetapkan lingkup brand seorang petugas input nominal insentif.
- *
- * null = tanpa batas (melihat semua brand). 'MVI' / 'IVP' = hanya brand itu;
- * proyek "Kedua Brand" tetap terlihat oleh keduanya karena memang milik
- * bersama.
- *
- * Lewat route server, bukan tulis langsung: nominal insentif adalah data
- * kredensial, dan yang menentukan siapa boleh melihat apa tidak boleh bisa
- * diubah dari peramban oleh siapa pun yang memegang anon key.
- */
-export async function adminSetIncentiveBrandScope(userId: string, value: string | null): Promise<Res> {
-  return call({ action: 'setIncentiveBrandScope', userId, value });
-}
+  Keduanya pindah ke lib/incentive-akses-api.ts, yang memanggil
+  /api/incentive/akses. Bukan sekadar pindah tempat: penjaganya berbeda -
+  route baru menerima pemegang akses PENUH modul insentif, bukan hanya role
+  'admin', supaya Manager PTS bisa mengatur timnya sendiri. Menyisakan
+  pasangan lama di sini berarti dua jalan mengubah satu setelan dengan syarat
+  yang berbeda, dan itu persoalan yang baru saja dibereskan.
+*/
 
 /**
  * Toggle "Full Access" - akses setara admin di modul data (Piket Showroom,

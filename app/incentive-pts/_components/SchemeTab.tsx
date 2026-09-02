@@ -170,7 +170,62 @@ export function SchemeTab({ olehNama, notify }: {
         itu yang membuat barisannya rata, bukan kebetulan panjang isinya.
       */}
 
-      <Seksi no="1" judul="Pembagian Porsi" warna="#e11d48"
+      {/*
+        SEKSI 1 - CAKUPAN. Ditaruh paling atas karena ia menjawab pertanyaan
+        yang mendahului semua angka di bawahnya: proyek mana yang masuk hitungan
+        sama sekali. Dulu jawabannya dipaku di kode (INCENTIVE_CATEGORIES),
+        sehingga menambah satu jenis layanan berarti mengubah kode lalu deploy
+        ulang - tidak bisa dipakai perusahaan yang menamai layanannya sendiri.
+      */}
+      <Seksi no="1" judul="Cakupan Proyek" warna="#0d9488"
+        ket="Kategori Request Schedule mana yang dihitung sebagai proyek insentif. Namanya harus PERSIS sama dengan pilihan kategori di Request Schedule.">
+        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+          <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
+            <h3 className="font-bold text-gray-800 text-sm">Kategori yang Masuk Incentive</h3>
+            <p className="text-[11px] text-gray-500">
+              Hanya jadwal berstatus <strong>Done</strong> pada kategori di bawah ini yang muncul di daftar Incentive PTS.
+            </p>
+          </div>
+          <div className="p-4 sm:p-5 space-y-2">
+            {sk.kategoriProyek.map((k, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <input value={k}
+                  onChange={e => {
+                    const baru = [...sk.kategoriProyek];
+                    baru[i] = e.target.value;
+                    ubah({ kategoriProyek: baru });
+                  }}
+                  placeholder="mis. Konfigurasi" aria-label={`Kategori ${i + 1}`}
+                  className={inputKecil} />
+                <button type="button" aria-label={`Hapus kategori ${k || i + 1}`}
+                  onClick={() => ubah({ kategoriProyek: sk.kategoriProyek.filter((_, j) => j !== i) })}
+                  className="text-rose-400 hover:text-rose-600 text-lg leading-none px-1">×</button>
+              </div>
+            ))}
+            <button type="button"
+              onClick={() => ubah({ kategoriProyek: [...sk.kategoriProyek, ''] })}
+              className="text-xs font-bold text-teal-700 bg-teal-50 border border-teal-200 rounded-lg px-3 py-1.5 hover:bg-teal-100">
+              + Tambah kategori
+            </button>
+            {/*
+              Peringatan, bukan pencegahan. Mengubah kategori TIDAK menyentuh
+              proyek yang tahapannya sudah dibuat - itu memang disengaja - tapi
+              orang yang menghapus satu kategori berhak tahu bahwa daftar
+              proyeknya akan menyusut sebelum ia menyimpan.
+            */}
+            <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 mt-2">
+              <p className="text-[11px] text-amber-800 leading-relaxed">
+                <strong>Perhatian.</strong> Menghapus sebuah kategori membuat proyek berkategori itu
+                hilang dari daftar Incentive. Tahapan &amp; pembagian yang sudah terlanjur dibuat
+                <strong> tidak</strong> ikut terhapus — datanya tetap ada, hanya tidak lagi tampil di daftar.
+                Kembalikan kategorinya untuk memunculkannya lagi.
+              </p>
+            </div>
+          </div>
+        </div>
+      </Seksi>
+
+      <Seksi no="2" judul="Pembagian Porsi" warna="#e11d48"
         ket="Dasar seluruh perhitungan. Dua sisi dari satu keputusan: ada Support yang membantu, atau tidak ada.">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
       {/* ── Porsi normal ── */}
@@ -263,7 +318,7 @@ export function SchemeTab({ olehNama, notify }: {
         </div>
       </Seksi>
 
-      <Seksi no="2" judul="Installer &amp; Mode Remote" warna="#2563eb"
+      <Seksi no="3" judul="Installer &amp; Mode Remote" warna="#2563eb"
         ket="Dinaikkan ke sini karena porsi Remote adalah AKIBAT langsung dari setelan Installer — keduanya harus terbaca bersamaan.">
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,22rem)_1fr] gap-3 items-stretch">
       {/* ── Installer Cabang ── */}
@@ -444,7 +499,7 @@ export function SchemeTab({ olehNama, notify }: {
         </div>
       </Seksi>
 
-      <Seksi no="3" judul="Aturan Khusus &amp; Pencairan" warna="#7c3aed"
+      <Seksi no="4" judul="Aturan Khusus &amp; Pencairan" warna="#7c3aed"
         ket="Perkecualian saat peran merangkap, dan jadwal pencairannya.">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
       {/* ── Aturan khusus ── */}
@@ -643,7 +698,7 @@ export function SchemeTab({ olehNama, notify }: {
         </div>
       </Seksi>
 
-      <Seksi no="4" judul="Pratinjau" warna="#0891b2"
+      <Seksi no="5" judul="Pratinjau" warna="#0891b2"
         ket="Dihitung dengan mesin yang sama seperti proses pencairan sesungguhnya.">
       {/* ── Pratinjau ── */}
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
@@ -716,7 +771,7 @@ export function SchemeTab({ olehNama, notify }: {
       </div>
       </Seksi>
 
-      <Seksi no="5" judul="Riwayat Skema" warna="#64748b"
+      <Seksi no="6" judul="Riwayat Skema" warna="#64748b"
         ket="Tiap penyimpanan membuat versi baru — versi lama tidak ditimpa.">
       {/* ── Riwayat versi skema ── */}
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden h-full flex flex-col">

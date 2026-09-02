@@ -18,15 +18,18 @@ import {
   ROLE_LABELS, TRANCHE_STATUS,
 } from './_components/calc';
 import { exportSummaryIncentive } from './_components/exportPengajuan';
-import { adminSetIncentiveInput, adminSetIncentiveBrandScope } from '@/lib/admin-users';
+import { setAksesIncentive, setBrandScopeIncentive } from '@/lib/incentive-akses-api';
+import {
+  bisaKonfigPenuh, bisaInputNominal, tingkatAkses,
+  LABEL_AKSES, JELAS_AKSES, URUTAN_AKSES, type TingkatAkses,
+} from '@/lib/incentive-akses';
 import { MobileListCard, MobileCardBadge, ModalPortal } from '@/components/shared';
-import { bolehKelolaIncentive } from '@/lib/kelompok';
 import { logAudit } from '@/lib/audit';
 import { SchemeTab } from './_components/SchemeTab';
 
 void insertSplits; void validateSplitTotal;
 
-interface CurrentUser { id?: string; username?: string; full_name?: string; role?: string; team_type?: string; allow_incentive_input?: boolean; incentive_brand_scope?: string | null; [k: string]: unknown; }
+interface CurrentUser { id?: string; username?: string; full_name?: string; role?: string; team_type?: string; incentive_akses?: string | null; allow_incentive_input?: boolean; incentive_brand_scope?: string | null; [k: string]: unknown; }
 
 /**
  * Proyek ini boleh dilihat oleh petugas dengan lingkup brand tertentu?
@@ -46,8 +49,20 @@ function bolehLihatBrand(lingkup: string | null | undefined, brandProyek: string
   return brandProyek === lingkup || brandProyek === 'BOTH';
 }
 
-function isAdmin(u: CurrentUser | null) { const r = (u?.role || '').toLowerCase(); return r === 'admin' || r === 'superadmin'; }
-function canInputNominal(u: CurrentUser | null) { return isAdmin(u) || !!u?.allow_incentive_input; }
+/*
+  SIAPA BOLEH APA — DATA, BUKAN KODE.
+
+  Dua fungsi ini dulu berbunyi `role === 'admin' || role === 'superadmin'`,
+  dan seluruh tab konfigurasi digantung padanya. Akibatnya Manager PTS -
+  pimpinan modul ini - hanya melihat tab "Projects", dan membukanya berarti
+  mengubah kode lalu deploy ulang. Sekarang jawabannya dibaca dari kolom
+  `users.incentive_akses` yang disetel dari tab "Pengaturan Akses" (lihat
+  lib/incentive-akses.ts). Basis data memakai aturan yang sama lewat fungsi
+  akses_insentif(), jadi layar tidak bisa memberi izin yang ditolak RLS -
+  keadaan yang dulu membuat Process Batch gagal diam-diam.
+*/
+function bisaKonfig(u: CurrentUser | null) { return bisaKonfigPenuh(u); }
+function bisaInput(u: CurrentUser | null) { return bisaInputNominal(u); }
 
 /**
  * Ringkasan cepat "berapa bagian Handler" untuk kolom daftar.
@@ -168,9 +183,17 @@ export default function IncentivePTSPage() {
     // muncul dashboard-di-dalam-dashboard (layer dobel). Konsisten dgn modul lain.
     if (!u) { const target = window.top !== window ? window.top : window; if (target) target.location.href = '/dashboard'; return; }
     setCurrentUser(u);
-    supabase.from('users').select('allow_incentive_input, incentive_brand_scope').eq('username', u.username as string).single().then(({ data }: { data: { allow_incentive_input: boolean; incentive_brand_scope: string | null } | null }) => {
-      if (data) setCurrentUser(prev => prev ? { ...prev, allow_incentive_input: data.allow_incentive_input, incentive_brand_scope: data.incentive_brand_scope } : prev);
-    });
+    /*
+      Tingkat akses dibaca ULANG dari basis data, tidak dipercayakan pada
+      salinan sesi di peramban: sesi bisa berumur berhari-hari, sementara
+      aksesnya baru saja diubah dari layar Pengaturan Akses. Yang dipakai
+      layar harus sama dengan yang dipakai RLS, kalau tidak tombolnya
+      terlihat tapi penyimpanannya ditolak diam-diam.
+    */
+    supabase.from('users').select('incentive_akses, allow_incentive_input, incentive_brand_scope').eq('username', u.username as string).single()
+      .then(({ data }: { data: { incentive_akses: string | null; allow_incentive_input: boolean; incentive_brand_scope: string | null } | null }) => {
+        if (data) setCurrentUser(prev => prev ? { ...prev, incentive_akses: data.incentive_akses, allow_incentive_input: data.allow_incentive_input, incentive_brand_scope: data.incentive_brand_scope } : prev);
+      });
     loadAll().then(() => setAppReady(true));
     const cleanup = startSessionWatcher();
     return cleanup;
@@ -191,7 +214,7 @@ export default function IncentivePTSPage() {
     if (splitRes.data) setAllSplits(splitRes.data);
     if (lateRes.data) setLateTickets(lateRes.data);
     const [usersRes, ptsTeamRes, orgRes] = await Promise.all([
-      supabase.from('users').select('id, username, full_name, role, team_type, allow_incentive_input, incentive_brand_scope, jabatan').order('full_name'),
+      supabase.from('users').select('id, username, full_name, role, team_type, incentive_akses, allow_incentive_input, incentive_brand_scope, jabatan').order('full_name'),
       supabase.from('pts_team_mappings').select('staff_user_id, supervisor_user_id'),
       // Query terpisah & tahan-error: atasan_id dari Struktur Organisasi
       supabase.from('users').select('id, atasan_id'),
@@ -262,7 +285,17 @@ export default function IncentivePTSPage() {
     perhitungan insentifnya. Yang berubah hanya penanda `incentive_excluded`,
     dan Request Schedule punya tombol untuk mengembalikannya.
   */
-  const bolehHapus = bolehKelolaIncentive(currentUser as never);
+  /*
+    Dulu baris ini memakai bolehKelolaIncentive() dari lib/kelompok - aturan
+    KETIGA di modul yang sama, di samping isAdmin dan canInputNominal, dan
+    satu-satunya yang mengenal Manager PTS (lewat jabatan + team_type yang
+    dipaku di kode). Tiga aturan untuk satu pertanyaan berarti tiga jawaban
+    yang bisa berbeda: itulah sebabnya Manager PTS bisa menggabungkan dan
+    mengeluarkan proyek, tapi tidak bisa membuka Skema Pembagian.
+
+    Sekarang satu aturan saja - tingkat akses dari basis data.
+  */
+  const bolehHapus = bisaKonfig(currentUser);
 
   /*
     Deteksi jadwal yang KEMUNGKINAN satu proyek - dan berhenti di situ.
@@ -697,17 +730,27 @@ export default function IncentivePTSPage() {
    * key bisa memanggilnya.
    */
   async function handleSetBrandScope(userId: string, scope: string | null) {
-    const { error } = await adminSetIncentiveBrandScope(userId, scope);
-    if (error) { notify('error', 'Gagal: ' + error); return; }
+    const { error } = await setBrandScopeIncentive(userId, scope);
+    if (error) { notify('error', 'Gagal: ' + error.message); return; }
     setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, incentive_brand_scope: scope } : u));
     notify('success', scope ? `Lingkup diset ke ${scope}.` : 'Lingkup dilepas — petugas ini melihat semua brand.');
   }
 
-  async function handleToggleAllowInput(userId: string, current: boolean) {
-    const { error } = await adminSetIncentiveInput(userId, !current);
-    if (error) { notify('error', error.message); return; }
-    setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, allow_incentive_input: !current } : u));
-    notify('success', !current ? 'Akses diberikan' : 'Akses dicabut');
+  /**
+   * Setel tingkat akses seseorang: lihat / input / penuh.
+   *
+   * Menggantikan saklar dua keadaan "Izinkan / Diizinkan" yang lama. Saklar
+   * itu hanya bisa mengatur izin isi nominal; tidak pernah ada cara memberi
+   * seseorang akses konfigurasi selain menjadikannya admin platform - dan
+   * itulah sebabnya Manager PTS terkunci di luar layar skema selama ini.
+   */
+  async function handleSetAkses(userId: string, nilai: TingkatAkses) {
+    const { error } = await setAksesIncentive(userId, nilai);
+    if (error) { notify('error', 'Gagal: ' + error.message); return; }
+    setAllUsers(prev => prev.map(u => u.id === userId
+      ? { ...u, incentive_akses: nilai, allow_incentive_input: nilai !== 'lihat' }
+      : u));
+    notify('success', `Akses diset: ${LABEL_AKSES[nilai]}.`);
   }
 
   /**
@@ -745,7 +788,7 @@ export default function IncentivePTSPage() {
 
   // Privasi list: non-privileged hanya melihat project di mana dia terlibat
   // (handler/PIC, support dari ticket Troubleshooting, supervisor, atau manager).
-  const canSeeAll = canInputNominal(currentUser);
+  const canSeeAll = bisaInput(currentUser);
   const orgListAll = allUsers as unknown as OrgUser[];
   const userInProject = (p: IncentiveProjectRow): boolean => {
     if (!currentUser) return false;
@@ -840,10 +883,10 @@ export default function IncentivePTSPage() {
         <div className="w-full px-4 flex gap-1 overflow-x-auto">
           {([
             { id: 'projects', label: '📋 Projects',            show: true },
-            { id: 'tranches', label: '📅 Tranche Schedule',    show: canInputNominal(currentUser) },
-            { id: 'late',     label: '🕐 Late Ticket Queue',   show: canInputNominal(currentUser) },
-            { id: 'skema',    label: '🧮 Skema Pembagian',    show: isAdmin(currentUser) },
-            { id: 'settings', label: '⚙️ Pengaturan Akses',   show: isAdmin(currentUser) },
+            { id: 'tranches', label: '📅 Tranche Schedule',    show: bisaInput(currentUser) },
+            { id: 'late',     label: '🕐 Late Ticket Queue',   show: bisaInput(currentUser) },
+            { id: 'skema',    label: '🧮 Skema Pembagian',    show: bisaKonfig(currentUser) },
+            { id: 'settings', label: '⚙️ Pengaturan Akses',   show: bisaKonfig(currentUser) },
           ] as { id: TabKey; label: string; show: boolean }[])
             .filter(t => t.show)
             .map(t => (
@@ -878,10 +921,10 @@ export default function IncentivePTSPage() {
                   {bastYearsProjects.map(y => <option key={y} value={y}>Tahun BAST {y}</option>)}
                 </select>
                 <div className="flex items-center gap-2 flex-wrap">
-                  {canInputNominal(currentUser) && (
+                  {bisaInput(currentUser) && (
                     <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200">✏️ Kamu bisa input nominal</span>
                   )}
-                  {canInputNominal(currentUser) && (<>
+                  {bisaInput(currentUser) && (<>
                     {/*
                       Tahun export Summary TERPISAH dari filter Tahun BAST di
                       atas - filter di atas cuma mengubah tampilan tabel,
@@ -901,7 +944,7 @@ export default function IncentivePTSPage() {
                       {exporting ? <div className="w-3 h-3 border-2 border-emerald-400/30 border-t-emerald-500 rounded-full animate-spin" /> : '📊'} Export Summary
                     </button>
                   </>)}
-                  {isAdmin(currentUser) && filterBastYear != null && kandidatBulkGenerate(filterBastYear).length > 0 && (
+                  {bisaKonfig(currentUser) && filterBastYear != null && kandidatBulkGenerate(filterBastYear).length > 0 && (
                     <button onClick={() => setBulkGenerateConfirm(kandidatBulkGenerate(filterBastYear))}
                       className="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 flex items-center gap-1.5">
                       🚀 Generate Tahapan Massal {filterBastYear} ({kandidatBulkGenerate(filterBastYear).length})
@@ -943,8 +986,9 @@ export default function IncentivePTSPage() {
                       {kandidatGabung.length} proyek terdeteksi tercatat lebih dari sekali
                     </p>
                     <p className="text-[11px] text-amber-800 leading-relaxed mt-0.5">
-                      Nama proyek dan tanggal BAST-nya sama, tapi jadwalnya terpisah — biasanya
-                      Konfigurasi dan Training yang dijadwalkan di hari berbeda. Selama belum
+                      Nama proyeknya sama dan tanggal BAST-nya berdekatan (selisih maksimal 7 hari),
+                      tapi jadwalnya terpisah — biasanya Konfigurasi dan Training yang dijadwalkan
+                      di hari berbeda dan ditutup dengan dua BAST berurutan. Selama belum
                       digabungkan, masing-masing punya pool nominal sendiri.
                       <b> Periksa dulu:</b> kalau ini memang dua kontrak berbeda, biarkan terpisah.
                     </p>
@@ -968,9 +1012,49 @@ export default function IncentivePTSPage() {
                   </div>
                 </div>
               )}
+              {/*
+                SPANDUK KELENGKAPAN DATA.
+
+                Process Batch menolak proyek yang mode_penyelesaian-nya kosong -
+                dan dulu satu-satunya cara mengetahuinya adalah menekan tombolnya
+                lalu membaca daftar galat. Kelengkapan yang menentukan berhasil
+                atau tidaknya pemrosesan harus terbaca SEBELUM tombol ditekan,
+                bukan sesudah.
+
+                Brand kosong tidak menggagalkan pemrosesan, tapi membuat proyek
+                itu terlihat oleh SEMUA petugas apa pun lingkup brand-nya (lihat
+                bolehLihatBrand) - jadi tetap perlu disebut, dengan nada yang
+                lebih ringan.
+              */}
+              {bisaInput(currentUser) && (() => {
+                const tanpaMode  = filteredProjects.filter(p => !p.mode_penyelesaian);
+                const tanpaBrand = filteredProjects.filter(p => !p.brand);
+                if (tanpaMode.length === 0 && tanpaBrand.length === 0) return null;
+                return (
+                  <div className="mb-3 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5">
+                    <p className="text-[13px] font-bold text-sky-900">Data proyek belum lengkap</p>
+                    <p className="text-[11px] text-sky-800 leading-relaxed mt-0.5">
+                      {tanpaMode.length > 0 && (
+                        <>
+                          <b>{tanpaMode.length} proyek tanpa mode penyelesaian</b> (Remote/Onsite) — proyek ini
+                          akan <b>gagal</b> saat Process Batch karena porsinya tidak bisa dihitung.
+                          Isi dari Request Schedule, atau lewat tombol Input Nominal.{' '}
+                        </>
+                      )}
+                      {tanpaBrand.length > 0 && (
+                        <>
+                          <b>{tanpaBrand.length} proyek tanpa brand</b> — masih ikut terhitung, tapi terlihat
+                          oleh semua petugas apa pun lingkup brand-nya. Klik lencana brand di baris proyeknya
+                          untuk menetapkan MVI / IVP / Kedua Brand.
+                        </>
+                      )}
+                    </p>
+                  </div>
+                );
+              })()}
               <p className="text-xs text-gray-400">
                 <span className="font-bold text-gray-600">{filteredProjects.length}</span> project
-                {canInputNominal(currentUser) && (<>
+                {bisaInput(currentUser) && (<>
                   &nbsp;·&nbsp;<span className="font-bold text-emerald-600">{filteredProjects.filter(p => (p.incentive_value||0)>0).length}</span> ada nominal ·&nbsp;
                   <span className="font-bold text-amber-600">{filteredProjects.filter(p => !(p.incentive_value||0)).length}</span> belum isi nominal
                 </>)}
@@ -1000,7 +1084,7 @@ export default function IncentivePTSPage() {
                 //  proyek harus tetap T1 T2 T3 apa pun urutan hasil fetch-nya.
                 const projTranches = tranches.filter(t => t.project_id === p.id)
                   .sort((a, b) => a.tranche_number - b.tranche_number);
-                const showNominal = canInputNominal(currentUser);
+                const showNominal = bisaInput(currentUser);
                 return (
                   <MobileListCard
                     key={p.id}
@@ -1047,7 +1131,7 @@ export default function IncentivePTSPage() {
                           <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                         </button>
                       )}
-                      {isAdmin(currentUser) && projTranches.length > 0
+                      {bisaKonfig(currentUser) && projTranches.length > 0
                         && !projTranches.some(t => t.status === 'paid') && (
                         <button aria-label={`Hapus tahapan ${p.project_name}`}
                           onClick={() => { setHapusTahapan(p); setKetikHapusTahapan(''); }}
@@ -1085,14 +1169,14 @@ export default function IncentivePTSPage() {
                       project, bukan bagian personal siapa pun).
                     */}
                     <th className="px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[150px]">Nominal</th>
-                    {canInputNominal(currentUser) && <th className="px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[145px]">Bagian Handler</th>}
+                    {bisaInput(currentUser) && <th className="px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[145px]">Bagian Handler</th>}
                     <th className={`${thCls} w-[90px] text-center`}>Tranche</th>
                     <th className={`${thCls} ${bolehHapus ? 'w-[130px]' : 'w-[100px]'} text-center`}>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredProjects.length === 0 ? (
-                    <tr><td colSpan={canInputNominal(currentUser) ? 10 : 9} className="px-4 py-16 text-center border border-gray-200">
+                    <tr><td colSpan={bisaInput(currentUser) ? 10 : 9} className="px-4 py-16 text-center border border-gray-200">
                       <p className="text-4xl mb-3">📭</p>
                       <p className="text-gray-500 font-medium">Belum ada project incentive</p>
                       <p className="text-gray-400 text-xs mt-1">Data muncul dari Reminder Schedule kategori Konfigurasi / Training yang sudah Completed</p>
@@ -1131,7 +1215,7 @@ export default function IncentivePTSPage() {
                             BAST/nominal/tahapan yang sudah terlanjur diproses,
                             padahal yang salah cuma satu kolom.
                           */}
-                          {isAdmin(currentUser) ? (
+                          {bisaKonfig(currentUser) ? (
                             <span className="relative inline-block mt-0.5 ml-1">
                               <button type="button"
                                 onClick={() => setBrandEditFor(brandEditFor === p.id ? null : p.id)}
@@ -1194,7 +1278,7 @@ export default function IncentivePTSPage() {
                             ? <p className="text-sm font-black text-emerald-600">{formatRupiah(p.incentive_value || 0)}</p>
                             : <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">⏳ Belum</span>}
                         </td>
-                        {canInputNominal(currentUser) && (
+                        {bisaInput(currentUser) && (
                           <td className={`${cellCls} text-right`}>
                             {handlerSplit ? (
                               <div>
@@ -1222,7 +1306,7 @@ export default function IncentivePTSPage() {
                               className="inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all bg-white border-slate-200 text-blue-500 hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm">
                               <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                             </button>
-                            {canInputNominal(currentUser) && (
+                            {bisaInput(currentUser) && (
                               <button aria-label="Input Nominal" onClick={() => { setNominalProject(p); setNominalValue(String(p.incentive_value || '')); setNominalBast((p.bast_date ?? '').slice(0, 10)); }}
                                 title="Input Nominal"
                                 className="inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all bg-white border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-300 hover:shadow-sm">
@@ -1241,7 +1325,7 @@ export default function IncentivePTSPage() {
                               bila tahapannya memang ada DAN belum ada yang Paid -
                               tahap yang sudah dibayar tidak boleh dihapus dari layar.
                               */}
-                              {isAdmin(currentUser) && projTranches.length > 0
+                              {bisaKonfig(currentUser) && projTranches.length > 0
                               && !projTranches.some(t => t.status === 'paid') && (
                               <button aria-label={`Hapus tahapan ${p.project_name}`}
                                 onClick={() => { setHapusTahapan(p); setKetikHapusTahapan(''); }}
@@ -1270,7 +1354,7 @@ export default function IncentivePTSPage() {
                     );
                   })}
                 </tbody>
-                {filteredProjects.length > 0 && (canInputNominal(currentUser) ? (
+                {filteredProjects.length > 0 && (bisaInput(currentUser) ? (
                   <tfoot>
                     <tr style={{ background: 'rgba(99,102,241,0.06)' }}>
                       <td colSpan={6} className="px-3 py-2.5 border border-gray-200 text-xs font-bold text-gray-600 text-right">TOTAL</td>
@@ -1307,7 +1391,7 @@ export default function IncentivePTSPage() {
         )}
 
         {/* ─── Tranches tab ─── */}
-        {tab === 'tranches' && canInputNominal(currentUser) && !loading && (
+        {tab === 'tranches' && bisaInput(currentUser) && !loading && (
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex gap-2 items-center">
@@ -1327,7 +1411,7 @@ export default function IncentivePTSPage() {
                 </select>
               </div>
               <div className="flex gap-2">
-                {isAdmin(currentUser) && (
+                {bisaKonfig(currentUser) && (
                   <button onClick={() => { setBatchYear(tahunAktif); setBatchConfirm(true); }}
                     className="px-4 py-2 rounded-xl text-sm font-bold text-white hover:opacity-90" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
                     🚀 Process Batch {tahunAktif}
@@ -1339,7 +1423,7 @@ export default function IncentivePTSPage() {
                   lain, orang yang baru saja salah pencet tidak akan menemukannya
                   saat justru paling dibutuhkan.
                 */}
-                {isAdmin(currentUser) && filteredTranches.some(t => t.status === 'processed') && (
+                {bisaKonfig(currentUser) && filteredTranches.some(t => t.status === 'processed') && (
                   <button onClick={() => { setBatalBatch(tahunAktif); setKetikBatalBatch(''); }}
                     title={`Kembalikan tahapan ${tahunAktif} dari Processed ke Pending`}
                     className="px-4 py-2 rounded-xl text-sm font-bold border-2 border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100">
@@ -1426,7 +1510,7 @@ export default function IncentivePTSPage() {
                           </td>
                           <td className="px-3 py-2.5 border border-gray-200"><span className="px-2.5 py-1 rounded-full text-[11px] font-bold" style={{ background: st.bg, color: st.color }}>{st.icon} {st.label}</span></td>
                           <td className="px-3 py-2.5 border border-gray-200">
-                            {t.status === 'processed' && isAdmin(currentUser) && (
+                            {t.status === 'processed' && bisaKonfig(currentUser) && (
                               <button onClick={() => handleMarkPaid(t.id)} className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-emerald-600 hover:bg-emerald-50 border border-emerald-200 transition-all">✅ Tandai Paid</button>
                             )}
                           </td>
@@ -1441,7 +1525,7 @@ export default function IncentivePTSPage() {
         )}
 
         {/* ─── Late Ticket Queue tab ─── */}
-        {tab === 'late' && canInputNominal(currentUser) && !loading && (
+        {tab === 'late' && bisaInput(currentUser) && !loading && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200" style={{ background: 'linear-gradient(135deg,rgba(245,158,11,0.08),rgba(234,88,12,0.05))' }}>
               <h2 className="font-bold text-gray-800">🕐 Late Ticket Queue</h2>
@@ -1475,7 +1559,7 @@ export default function IncentivePTSPage() {
         )}
 
         {/* ─── Skema pembagian (admin) ─── */}
-        {tab === 'skema' && isAdmin(currentUser) && (
+        {tab === 'skema' && bisaKonfig(currentUser) && (
           <SchemeTab
             olehNama={(currentUser?.full_name as string) || (currentUser?.username as string) || 'admin'}
             notify={notify}
@@ -1483,14 +1567,27 @@ export default function IncentivePTSPage() {
         )}
 
         {/* ─── Settings tab ─── */}
-        {tab === 'settings' && isAdmin(currentUser) && !loading && (
+        {tab === 'settings' && bisaKonfig(currentUser) && !loading && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200" style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.05))' }}>
-              <h2 className="font-bold text-gray-800">⚙️ Akses Input Nominal Incentive</h2>
+              <h2 className="font-bold text-gray-800">⚙️ Akses Incentive PTS</h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                Pilih siapa yang boleh mengisi nominal, dan <strong>brand mana</strong> yang boleh ia lihat.
-                Admin selalu bisa mengisi dan selalu melihat semua.
+                Tingkat akses tiap orang diatur di sini — tidak ada lagi yang ditentukan dari kode.
+                Role <strong>admin</strong> selalu Konfigurasi penuh dan selalu melihat semua brand.
               </p>
+              {/*
+                Keterangan tiga tingkat dicetak di layar, bukan hanya di tooltip.
+                Tombol yang membagi-bagi uang harus bisa dibaca akibatnya
+                sebelum ditekan, terutama oleh orang yang baru memakai modul ini.
+              */}
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {URUTAN_AKSES.map(t => (
+                  <div key={t} className="rounded-lg border border-indigo-100 bg-white/70 px-3 py-2">
+                    <p className="text-[11px] font-bold text-indigo-700">{LABEL_AKSES[t]}</p>
+                    <p className="text-[10px] text-gray-500 leading-snug mt-0.5">{JELAS_AKSES[t]}</p>
+                  </div>
+                ))}
+              </div>
               {/*
                 Pencarian. Daftar ini berisi seluruh user guest & team - pada
                 perusahaan sebesar ini menggulirnya untuk menemukan dua orang
@@ -1513,42 +1610,85 @@ export default function IncentivePTSPage() {
                     {q ? `Tidak ada pengguna cocok dengan "${cariUser}".` : 'Tidak ada user guest/team.'}
                   </p>;
                 }
-                return daftar.map(u => (
-                  <div key={u.id as string} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-gray-50 transition-colors flex-wrap">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-700">{u.full_name as string}</p>
-                      <p className="text-xs text-gray-500">{u.username as string} · {u.role as string}{u.team_type ? ` · ${u.team_type}` : ''}</p>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {/*
-                        Pemilih lingkup hanya muncul untuk yang SUDAH diizinkan.
-                        Menetapkan lingkup pada orang yang belum boleh mengisi
-                        tidak berarti apa-apa, dan menampilkannya hanya membuat
-                        daftar ini penuh kontrol yang tidak berakibat.
-                      */}
-                      {!!u.allow_incentive_input && (
-                        <div className="flex items-center gap-1" role="group" aria-label={`Lingkup brand ${u.full_name as string}`}>
-                          {([['MVI', '🏠 MVI'], ['IVP', '🌐 IVP'], [null, 'Semua']] as const).map(([nilai, label]) => {
-                            const aktif = (u.incentive_brand_scope ?? null) === nilai;
+                return daftar.map(u => {
+                  const akses = tingkatAkses(u);
+                  const diriSendiri = u.id === currentUser?.id;
+                  return (
+                    <div key={u.id as string} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-gray-50 transition-colors flex-wrap">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-700">
+                          {u.full_name as string}
+                          {diriSendiri && <span className="ml-1.5 text-[10px] font-bold text-indigo-500">(Anda)</span>}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {u.username as string} · {u.role as string}
+                          {u.jabatan ? ` · ${u.jabatan as string}` : ''}{u.team_type ? ` · ${u.team_type as string}` : ''}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/*
+                          Pemilih lingkup hanya muncul untuk yang sudah punya
+                          akses input/penuh. Menetapkan lingkup pada orang yang
+                          hanya boleh melihat tidak berakibat apa-apa, dan
+                          menampilkannya hanya membuat daftar ini penuh kontrol
+                          yang tidak mengubah apa pun.
+                        */}
+                        {akses !== 'lihat' && (
+                          <div className="flex items-center gap-1" role="group" aria-label={`Lingkup brand ${u.full_name as string}`}>
+                            {([['MVI', '🏠 MVI'], ['IVP', '🌐 IVP'], [null, 'Semua']] as const).map(([nilai, label]) => {
+                              const aktif = (u.incentive_brand_scope ?? null) === nilai;
+                              return (
+                                <button key={label} onClick={() => handleSetBrandScope(u.id as string, nilai)}
+                                  title={nilai ? `Hanya proyek brand ${nilai} (proyek Kedua Brand tetap terlihat)` : 'Melihat semua brand'}
+                                  className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-all ${aktif
+                                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                    : 'border-gray-200 bg-white text-gray-500 hover:border-indigo-300'}`}>
+                                  {label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {/*
+                          Tiga tombol, bukan satu saklar: tingkat aksesnya
+                          memang tiga, dan menyembunyikan yang ketiga di balik
+                          saklar dua keadaan itulah yang dulu membuat "beri
+                          Manager akses penuh" mustahil tanpa mengubah kode.
+                        */}
+                        <div className="flex items-center gap-1" role="group" aria-label={`Tingkat akses ${u.full_name as string}`}>
+                          {URUTAN_AKSES.map(t => {
+                            const aktif = akses === t;
+                            //  Menurunkan akses diri sendiri ditolak server; tombolnya
+                            //  dimatikan di sini supaya penolakan itu tidak jadi kejutan.
+                            const terkunci = diriSendiri && t !== 'penuh';
+                            //  Warnanya lewat style, bukan kelas Tailwind yang
+                            //  dirangkai dari variabel: kelas seperti
+                            //  `border-${warna}-500` tidak pernah ikut ter-build
+                            //  karena Tailwind memindai kode sebagai teks.
+                            const warna = t === 'penuh'
+                              ? { garis: '#10b981', latar: '#ecfdf5', teks: '#047857' }
+                              : t === 'input'
+                                ? { garis: '#6366f1', latar: '#eef2ff', teks: '#4338ca' }
+                                : { garis: '#9ca3af', latar: '#f9fafb', teks: '#4b5563' };
                             return (
-                              <button key={label} onClick={() => handleSetBrandScope(u.id as string, nilai)}
-                                title={nilai ? `Hanya proyek brand ${nilai} (proyek Kedua Brand tetap terlihat)` : 'Melihat semua brand'}
-                                className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-all ${aktif
-                                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                                  : 'border-gray-200 bg-white text-gray-500 hover:border-indigo-300'}`}>
-                                {label}
+                              <button key={t} disabled={terkunci}
+                                onClick={() => handleSetAkses(u.id as string, t)}
+                                title={terkunci ? 'Tidak bisa menurunkan akses Anda sendiri.' : JELAS_AKSES[t]}
+                                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold border-2 transition-all ${terkunci
+                                  ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
+                                  : aktif ? '' : 'border-gray-200 bg-white text-gray-500 hover:border-indigo-300'}`}
+                                style={aktif && !terkunci
+                                  ? { borderColor: warna.garis, background: warna.latar, color: warna.teks }
+                                  : undefined}>
+                                {aktif ? '✅ ' : ''}{LABEL_AKSES[t]}
                               </button>
                             );
                           })}
                         </div>
-                      )}
-                      <button onClick={() => handleToggleAllowInput(u.id as string, !!u.allow_incentive_input)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${u.allow_incentive_input ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-rose-300'}`}>
-                        {u.allow_incentive_input ? '✅ Diizinkan' : 'Izinkan'}
-                      </button>
+                      </div>
                     </div>
-                  </div>
-                ));
+                  );
+                });
               })()}
             </div>
           </div>
@@ -1672,8 +1812,8 @@ export default function IncentivePTSPage() {
               </div>
             </div>
             <div className="p-6 flex-1 min-h-0 overflow-y-auto space-y-5">
-              <div className={`grid ${canInputNominal(currentUser) ? 'grid-cols-3' : 'grid-cols-2'} gap-3`}>
-                {canInputNominal(currentUser) && (
+              <div className={`grid ${bisaInput(currentUser) ? 'grid-cols-3' : 'grid-cols-2'} gap-3`}>
+                {bisaInput(currentUser) && (
                   <div className="rounded-xl p-3 text-center bg-emerald-50 border border-emerald-100">
                     <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Total Pool</p>
                     <p className="text-base font-black text-emerald-700">{formatRupiah(detailProject.incentive_value || 0)}</p>
@@ -1753,7 +1893,7 @@ export default function IncentivePTSPage() {
                 if (!splits.length) return null;
                 // Privasi: non-privileged (selain Admin & yang ditunjuk input nominal)
                 // hanya melihat bagiannya sendiri - bukan total pool / bagian orang lain.
-                const privileged = canInputNominal(currentUser);
+                const privileged = bisaInput(currentUser);
                 const myName = (currentUser?.full_name || '').toLowerCase().trim();
                 const visibleSplits = privileged
                   ? splits
@@ -1822,12 +1962,12 @@ export default function IncentivePTSPage() {
                       <div key={t.id} className="flex items-center justify-between rounded-lg px-4 py-3 bg-gray-50 border border-gray-100 mb-2">
                         <div className="flex items-center gap-3">
                           <span className="text-sm font-black text-gray-700">T{t.tranche_number}</span>
-                          <span className="text-sm text-gray-600">{t.percentage}%{canInputNominal(currentUser) ? ` · ${formatRupiah(Math.round(amt))}` : ''}</span>
+                          <span className="text-sm text-gray-600">{t.percentage}%{bisaInput(currentUser) ? ` · ${formatRupiah(Math.round(amt))}` : ''}</span>
                           <span className="text-xs text-gray-400">Tahun {t.payment_year}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: st.bg, color: st.color }}>{st.icon} {st.label}</span>
-                          {t.status === 'processed' && isAdmin(currentUser) && (
+                          {t.status === 'processed' && bisaKonfig(currentUser) && (
                             <button onClick={() => handleMarkPaid(t.id)} className="px-2 py-1 rounded text-[10px] font-bold text-emerald-600 hover:bg-emerald-50 border border-emerald-200">Tandai Paid</button>
                           )}
                         </div>
@@ -1838,12 +1978,12 @@ export default function IncentivePTSPage() {
               </div>
 
               <div>
-                <h3 className="text-sm font-bold text-gray-700 mb-2">{canInputNominal(currentUser) ? '💰 Incentive Splits' : '💰 Bagian Saya (Tercatat)'}</h3>
+                <h3 className="text-sm font-bold text-gray-700 mb-2">{bisaInput(currentUser) ? '💰 Incentive Splits' : '💰 Bagian Saya (Tercatat)'}</h3>
                 {(() => {
                   const myNm = (currentUser?.full_name || '').toLowerCase().trim();
-                  const visDb = canInputNominal(currentUser) ? detailSplits : detailSplits.filter(s => (s.user_id && s.user_id === currentUser?.id) || (!!myNm && (s.user_name || '').toLowerCase().trim() === myNm));
+                  const visDb = bisaInput(currentUser) ? detailSplits : detailSplits.filter(s => (s.user_id && s.user_id === currentUser?.id) || (!!myNm && (s.user_name || '').toLowerCase().trim() === myNm));
                   return visDb.length === 0
-                  ? <p className="text-xs text-gray-400 italic">{canInputNominal(currentUser) ? 'Belum ada split. Proses batch untuk generate.' : 'Belum ada bagian tercatat untukmu.'}</p>
+                  ? <p className="text-xs text-gray-400 italic">{bisaInput(currentUser) ? 'Belum ada split. Proses batch untuk generate.' : 'Belum ada bagian tercatat untukmu.'}</p>
                   : visDb.map(s => {
                     const rl = ROLE_LABELS[s.role] || { label: s.role, color: '#94a3b8', bg: 'rgba(148,163,184,0.12)' };
                     return (

@@ -115,26 +115,64 @@ export interface KandidatGabung {
  * Yang sudah punya incentive_group_id dilewati - keputusannya sudah diambil.
  */
 export function deteksiKandidatGabung(baris: BarisKelompok[]): KandidatGabung[] {
-  const peta = new Map<string, BarisKelompok[]>();
+  /*
+    TANGGAL BAST DIBANDINGKAN DENGAN TOLERANSI, BUKAN HARUS SAMA PERSIS.
 
+    Versi lama memakai kunci `${nama}::${bast_date}` - dua jadwal baru
+    dicurigai satu proyek kalau tanggal BAST-nya sama huruf per huruf. Itu
+    terlalu ketat untuk kenyataannya: satu serah terima yang jadwalnya dua
+    hari (mis. Konfigurasi hari ini, Training besok) ditutup dengan dua
+    tanggal BAST berurutan, dan sepasang baris seperti itu TIDAK PERNAH
+    ditandai - padahal justru itulah bentuk duplikat yang paling sering
+    terjadi dan paling mahal akibatnya: dua pool insentif untuk satu proyek.
+
+    Toleransinya sengaja pendek. Melebarkannya sampai berminggu-minggu akan
+    menyatukan kontrak-kontrak berbeda untuk klien yang sama - persis
+    kekeliruan yang aturan "tanggal BAST" ini hindari sejak awal. Ini hanya
+    MENANDAI untuk ditinjau manusia; tidak ada yang digabungkan sendiri.
+  */
+  const TOLERANSI_HARI = 7;
+  const hari = (tgl: string) => Math.floor(new Date(`${tgl}T00:00:00`).getTime() / 86_400_000);
+
+  //  Dikelompokkan per nama dulu, lalu di dalamnya dirangkai menurut jarak
+  //  tanggal - bukan langsung dikunci ke satu tanggal.
+  const perNama = new Map<string, BarisKelompok[]>();
   for (const r of gabungkanProyek(baris)) {
     if (r.incentive_group_id) continue;      // sudah diputuskan manusia
     if (!r.bast_date) continue;              // tanpa BAST tidak ada penanda yang bisa dipercaya
     const nama = normalkanNama(r.project_name);
     if (!nama) continue;
-    const k = `${nama}::${r.bast_date}`;
-    if (!peta.has(k)) peta.set(k, []);
-    peta.get(k)!.push(r);
+    if (!perNama.has(nama)) perNama.set(nama, []);
+    perNama.get(nama)!.push(r);
   }
 
   const hasil: KandidatGabung[] = [];
-  for (const anggota of peta.values()) {
-    if (anggota.length < 2) continue;
-    hasil.push({
-      nama: (anggota[0].project_name ?? '').trim(),
-      bast_date: anggota[0].bast_date ?? '',
-      anggota,
-    });
+  for (const daftar of perNama.values()) {
+    if (daftar.length < 2) continue;
+    const urut = [...daftar].sort((a, b) => (a.bast_date ?? '').localeCompare(b.bast_date ?? ''));
+
+    /*
+      Dirangkai berantai: baris berikutnya masuk kelompok yang sama selama
+      jaraknya ke baris SEBELUMNYA masih dalam toleransi. Rangkaian putus
+      begitu ada lompatan lebih jauh - jadi BAST Januari dan BAST Juni untuk
+      klien yang sama tetap terpisah, sebagaimana mestinya.
+    */
+    let kelompok: BarisKelompok[] = [urut[0]];
+    const tutup = () => {
+      if (kelompok.length >= 2) {
+        hasil.push({
+          nama: (kelompok[0].project_name ?? '').trim(),
+          bast_date: kelompok[0].bast_date ?? '',
+          anggota: [...kelompok],
+        });
+      }
+    };
+    for (let i = 1; i < urut.length; i++) {
+      const jarak = Math.abs(hari(urut[i].bast_date!) - hari(urut[i - 1].bast_date!));
+      if (jarak <= TOLERANSI_HARI) kelompok.push(urut[i]);
+      else { tutup(); kelompok = [urut[i]]; }
+    }
+    tutup();
   }
   return hasil.sort((a, b) => b.bast_date.localeCompare(a.bast_date));
 }

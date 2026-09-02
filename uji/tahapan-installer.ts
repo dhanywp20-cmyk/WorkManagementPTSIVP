@@ -29,6 +29,7 @@ function sama(nama: string, dapat: unknown, harap: unknown) {
 
 const SKEMA: SkemaInsentif = {
   versi: 3,
+  kategoriProyek: ['Konfigurasi', 'Konfigurasi & Training', 'Training'],
   porsi: [
     { peran: 'pic',        label: 'PIC',        persen: 60, bagiRata: true  },
     { peran: 'support',    label: 'Support',    persen: 17, bagiRata: true  },

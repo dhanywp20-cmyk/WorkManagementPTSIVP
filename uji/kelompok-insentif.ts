@@ -82,6 +82,48 @@ console.log('\n2. Deteksi hanya MENANDAI');
   cek('BAST berbeda bukan kandidat', k.length === 0);
 }
 {
+  /*
+    Kasus Celebrity Fitness MOI: satu serah terima yang jadwalnya dua hari
+    (Konfigurasi hari ini, Training besok) ditutup dengan dua tanggal BAST
+    berurutan. Versi lama mengunci ke tanggal yang sama persis, jadi pasangan
+    seperti ini TIDAK PERNAH ditandai - dan proyeknya berjalan dengan dua pool
+    insentif untuk satu pekerjaan.
+  */
+  const k = deteksiKandidatGabung([
+    b({ id: 'a', bast_date: '2026-08-10' }),
+    b({ id: 'b', bast_date: '2026-08-11' }),
+  ]);
+  cek('BAST beda sehari TETAP ditandai kandidat', k.length === 1 && k[0].anggota.length === 2);
+}
+{
+  //  Batas toleransi: 7 hari masih satu kandidat, 8 hari sudah bukan.
+  const pas = deteksiKandidatGabung([
+    b({ id: 'a', bast_date: '2026-08-01' }),
+    b({ id: 'b', bast_date: '2026-08-08' }),
+  ]);
+  const lewat = deteksiKandidatGabung([
+    b({ id: 'a', bast_date: '2026-08-01' }),
+    b({ id: 'b', bast_date: '2026-08-09' }),
+  ]);
+  cek('jarak 7 hari masih kandidat', pas.length === 1);
+  cek('jarak 8 hari bukan kandidat', lewat.length === 0);
+}
+{
+  /*
+    Rangkaian tidak boleh melar tanpa batas: tiga baris berjarak 6 hari satu
+    sama lain memang satu rangkaian (itu memang satu rentetan pekerjaan), tapi
+    dua kelompok yang terpisah jauh harus tetap jadi DUA kandidat, bukan satu.
+  */
+  const k = deteksiKandidatGabung([
+    b({ id: 'a', bast_date: '2026-03-01' }),
+    b({ id: 'b', bast_date: '2026-03-03' }),
+    b({ id: 'c', bast_date: '2026-09-01' }),
+    b({ id: 'd', bast_date: '2026-09-04' }),
+  ]);
+  cek('dua rentetan terpisah = dua kandidat', k.length === 2);
+  cek('tiap kandidat berisi 2 baris', k.every(x => x.anggota.length === 2));
+}
+{
   // Dua proyek berbeda kebetulan serah-terima di hari yang sama.
   const k = deteksiKandidatGabung([
     b({ id: 'a', project_name: 'BPKP Aceh',  bast_date: '2026-09-01' }),
