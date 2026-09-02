@@ -481,7 +481,9 @@ export default function ProjectProgressPage() {
                           { label: 'Progres', value: `${agg.avg}%`, valueClass: 'font-black' },
                           { label: 'Timeline', value: timelineInfo(p).label, span2: true },
                         ]}
-                        actions={<RowActions p={p} canEdit={canEdit}
+                        actions={<RowActions p={p}
+                          canEditRow={canEdit || p.sales_name === currentUser?.full_name}
+                          canDeleteRow={canEdit}
                           onView={() => openDetail(p)} onExport={() => handleExport(p)}
                           onShare={() => setShareFor(p)} onEdit={() => setProjectForm(p)}
                           onDelete={() => deleteProject(p)} />}
@@ -593,7 +595,9 @@ export default function ProjectProgressPage() {
                               </div>
                             </td>
                             <td className="px-1 py-3 align-middle" onClick={e => e.stopPropagation()}>
-                              <RowActions p={p} canEdit={canEdit}
+                              <RowActions p={p}
+                                canEditRow={canEdit || p.sales_name === currentUser?.full_name}
+                                canDeleteRow={canEdit}
                                 onView={() => openDetail(p)} onExport={() => handleExport(p)}
                                 onShare={() => setShareFor(p)} onEdit={() => setProjectForm(p)}
                                 onDelete={() => deleteProject(p)} />
@@ -1499,8 +1503,12 @@ const inputSm  = 'w-full px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bord
  * Baris ikon aksi - dipakai DUA tempat (tabel desktop & kartu mobile) supaya
  * tidak ada duplikasi tombol yang bisa lupa disinkronkan.
  */
-function RowActions({ p, canEdit, onView, onExport, onShare, onEdit, onDelete }: {
-  p: ProgressProject; canEdit: boolean;
+function RowActions({ p, canEditRow, canDeleteRow, onView, onExport, onShare, onEdit, onDelete }: {
+  p: ProgressProject;
+  /** Admin/Full Access, ATAU pemilik project ini (sales_name = dirinya). */
+  canEditRow: boolean;
+  /** Admin/Full Access SAJA - Hapus tetap terkunci dari pemilik biasa, sama seperti modul lain. */
+  canDeleteRow: boolean;
   onView: () => void; onExport: () => void; onShare: () => void;
   onEdit: () => void; onDelete: () => void;
 }) {
@@ -1510,16 +1518,21 @@ function RowActions({ p, canEdit, onView, onExport, onShare, onEdit, onDelete }:
       <IconBtn label="Export Excel" color="#059669" onClick={onExport}>
         <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
       </IconBtn>
-      {canEdit && (
+      {canEditRow && (
         <>
           <IconBtn label={p.share_enabled ? 'Share View-Only (aktif)' : 'Share View-Only'}
             color={p.share_enabled ? '#0891b2' : '#94a3b8'} onClick={onShare}>
             <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" /></svg>
           </IconBtn>
           <EditIconBtn onClick={onEdit} label="Edit" />
-          <DeleteIconBtn onClick={onDelete} label="Hapus" />
         </>
       )}
+      {/*
+        Hapus DIPISAH dari Edit (dulu satu syarat "canEdit" saja) - kebijakan
+        platform: Team boleh Edit yang di-assign atas namanya, tapi Hapus
+        tetap cuma Admin/Full Access, di semua modul.
+      */}
+      {canDeleteRow && <DeleteIconBtn onClick={onDelete} label="Hapus" />}
     </ActionGroup>
   );
 }

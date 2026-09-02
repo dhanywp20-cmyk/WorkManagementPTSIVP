@@ -189,7 +189,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const isNonIVPGuest = role === 'guest' && currentUser.sales_division !== 'IVP';
   // Bisa ubah status in_progress: hanya PTS yang di-assign ke request tsb
   const canSetInProgress = (req: ProjectRequest) =>
-    isPTS && (isAdmin || isSuperAdmin || req.assign_name === currentUser.full_name);
+    isPTS && (isAdmin || isSuperAdmin || hasFullAccess(currentUser as never) || req.assign_name === currentUser.full_name);
   // Sales Internal reviewer (utama atau kedua utk brand BOTH) - boleh approve kalau
   // bagian-nya belum di-approve.
   const canInternalApproveProject = (req: ProjectRequest) => {

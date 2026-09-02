@@ -2010,7 +2010,23 @@ function TicketingSystemInner() {
   }, [tickets, overdueSettings]);
 
   const canCreateTicket = true;
-  const canUpdateTicket = currentUser?.role !== "guest";
+  /*
+    DULU: currentUser?.role !== "guest" - artinya SIAPA PUN yang bukan Guest
+    (anggota Team mana pun, terlepas dari apakah tiket ini ditugaskan
+    kepadanya) bisa mengedit/melunaskan tiket siapa saja. Itu tidak sesuai
+    kebijakan platform: Team boleh edit HANYA yang di-assign atas namanya
+    sendiri; di luar itu dilarang. Admin & akun ber-Full Access tetap tanpa
+    batas seperti biasa.
+
+    Diubah jadi fungsi (bukan boolean tetap) karena "milik siapa" berbeda per
+    tiket - t.assign_name adalah handler yang ditugaskan.
+  */
+  const bolehUpdateTicket = (t: Ticket): boolean =>
+    !!currentUser && (
+      currentUser.role === 'admin' || currentUser.role === 'superadmin'
+      || hasFullAccess(currentUser)
+      || t.assign_name === currentUser.full_name
+    );
   // canAccessAccountSettings TETAP admin/superadmin murni - khusus modal
   // "Account Management" (buat akun, ganti password, daftar user), bukan
   // untuk aksi tiket biasa.
@@ -2599,7 +2615,7 @@ function TicketingSystemInner() {
                         {canApproveAssign && ticket.status === "Waiting Approval" && (
                           <ApproveIconBtn onClick={() => { setApprovalAssignees({}); setApprovalTicket(ticket); setApprovalAssignee(""); fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} pulse />
                         )}
-                        {ticket.status === "Solved" && canUpdateTicket && (
+                        {ticket.status === "Solved" && bolehUpdateTicket(ticket) && (
                           <ReopenIconBtn onClick={() => { setReopenTargetTicket(ticket); setReopenAssignee(ticket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} />
                         )}
                         {canManageTickets && (
@@ -2796,7 +2812,7 @@ function TicketingSystemInner() {
                                 <ApproveIconBtn onClick={() => { setApprovalAssignees({}); setApprovalTicket(ticket); setApprovalAssignee(""); fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} pulse />
                               )}
                               {/* Re-open */}
-                              {ticket.status === "Solved" && canUpdateTicket && (
+                              {ticket.status === "Solved" && bolehUpdateTicket(ticket) && (
                                 <ReopenIconBtn onClick={() => { setReopenTargetTicket(ticket); setReopenAssignee(ticket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} />
                               )}
                               {/* Hapus — admin only */}
@@ -3191,17 +3207,17 @@ function TicketingSystemInner() {
                 {/* Footer actions — outside overflow, always visible */}
                 <div className="px-4 py-3 border-t border-gray-100 flex flex-wrap gap-2 bg-gray-50/50 flex-shrink-0">
                     <button onClick={() => cetakTicket(selectedTicket)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#16a34a,#15803d)" }}>📄 PDF</button>
-                    {selectedTicket.status === "Solved" && canUpdateTicket && currentUserTeamType !== "Team Services" && (
+                    {selectedTicket.status === "Solved" && bolehUpdateTicket(selectedTicket) && currentUserTeamType !== "Team Services" && (
                       <button onClick={() => { setReopenTargetTicket(selectedTicket); setReopenAssignee(selectedTicket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>🔓 Re-open</button>
                     )}
-                    {canUpdateTicket && selectedTicket.status !== "Waiting Approval" && (currentUserTeamType === "Team Services" ? selectedTicket.services_status !== "Solved" && selectedTicket.services_status !== "Waiting Approval" : selectedTicket.status !== "Solved") && (
+                    {bolehUpdateTicket(selectedTicket) && selectedTicket.status !== "Waiting Approval" && (currentUserTeamType === "Team Services" ? selectedTicket.services_status !== "Solved" && selectedTicket.services_status !== "Waiting Approval" : selectedTicket.status !== "Solved") && (
                       <button onClick={() => setShowUpdateForm(!showUpdateForm)}
                         className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${showUpdateForm ? 'bg-gray-200 text-gray-700' : 'text-white'}`}
                         style={showUpdateForm ? {} : { background: "linear-gradient(135deg,#dc2626,#b91c1c)" }}>
                         {showUpdateForm ? '✕ Tutup' : '➕ Update Status'}
                       </button>
                     )}
-                    {canUpdateTicket && currentUserTeamType === "Team Services" && selectedTicket.services_status === "Waiting Approval" && (
+                    {bolehUpdateTicket(selectedTicket) && currentUserTeamType === "Team Services" && selectedTicket.services_status === "Waiting Approval" && (
                       <button onClick={() => setShowServicesApprovalModal(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#db2777,#be185d)" }}>🔧 Konfirmasi</button>
                     )}
                     <button onClick={() => { setShowTicketDetailPopup(false); setSelectedTicket(null); setShowUpdateForm(false); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border border-gray-200 text-gray-600 bg-white">✕ Close</button>
@@ -3209,7 +3225,7 @@ function TicketingSystemInner() {
               </div>
 
               {/* RIGHT: Update Status Panel */}
-              {showUpdateForm && canUpdateTicket && selectedTicket.status !== "Waiting Approval" && (currentUserTeamType === "Team Services" ? selectedTicket.services_status !== "Solved" && selectedTicket.services_status !== "Waiting Approval" : selectedTicket.status !== "Solved") && (
+              {showUpdateForm && bolehUpdateTicket(selectedTicket) && selectedTicket.status !== "Waiting Approval" && (currentUserTeamType === "Team Services" ? selectedTicket.services_status !== "Solved" && selectedTicket.services_status !== "Waiting Approval" : selectedTicket.status !== "Solved") && (
                 <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden flex-shrink-0"
                   style={{ width: 340, animation: "scale-in 0.2s ease-out", border: "2px solid rgba(220,38,38,0.25)", maxHeight: "94vh" }}>
                   <div className="px-4 py-3" style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)" }}>
