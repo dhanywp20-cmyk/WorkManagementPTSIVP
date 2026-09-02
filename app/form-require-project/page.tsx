@@ -175,6 +175,33 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
    */
   const bisaKelolaRequest = isAdmin || isSuperAdmin || hasFullAccess(currentUser as never);
 
+  /*
+    Boleh membuka form EDIT (isi lengkap - nama project, kebutuhan teknis,
+    catatan, dst) - kebijakan platform: setiap AKTOR yang bersinggungan
+    dengan request ini boleh membetulkan bagiannya sendiri, sama seperti
+    Reminder Schedule/Ticketing. Dua aktor:
+
+      1. Sales/pembuat request (requester_id / sales_name) - salah ketik
+         kebutuhan yang ia minta harus bisa dibetulkan sendiri.
+      2. Petugas PTS yang ditugaskan (assign_name / ivp_assignee) - dulu
+         TIDAK BISA sama sekali kecuali Full Access; sekarang bisa
+         membetulkan datanya sendiri saat mengerjakan.
+
+    Dulu tombolnya memakai (!isPTS || bisaKelolaRequest) - dua-duanya
+    salah arah: (!isPTS) bikin SEMUA Sales/Guest melihat tombol Edit di
+    request SIAPA PUN, bukan cuma miliknya; sementara petugas PTS yang
+    ditugaskan malah TIDAK dapat tombolnya sama sekali kalau bukan Full
+    Access. Disamakan dengan aturan pr_update di database (lihat
+    sql/edit-scoped-ke-assignee.sql) supaya layar & RLS tidak berbeda
+    pendapat.
+  */
+  const bolehEditRequest = (req: ProjectRequest): boolean =>
+    bisaKelolaRequest
+    || req.requester_id === currentUser.id
+    || (!!currentUser.full_name && req.sales_name === currentUser.full_name)
+    || (!!currentUser.full_name && req.assign_name === currentUser.full_name)
+    || (!!currentUser.full_name && req.ivp_assignee === currentUser.full_name);
+
   /**
    * Re-route hanya selama pekerjaannya BELUM jalan. Begitu masuk in_progress,
    * sudah ada yang menggarap desainnya - memindahkannya berarti membuang
@@ -2348,7 +2375,7 @@ Hubungi Admin untuk info lebih lanjut.
                     🔀 Re-route
                   </button>
                 )}
-                {(!isPTS || bisaKelolaRequest) && selectedRequest.status !== 'rejected' && (
+                {bolehEditRequest(selectedRequest) && selectedRequest.status !== 'rejected' && (
                   <button onClick={handleOpenEditForm}
                     className="bg-amber-400 hover:bg-amber-300 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
                     <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
