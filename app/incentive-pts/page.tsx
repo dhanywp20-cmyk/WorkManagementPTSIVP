@@ -100,6 +100,8 @@ export default function IncentivePTSPage() {
 
   const [filterYear, setFilterYear] = useState<number>(new Date().getFullYear());
   const [searchProject, setSearchProject] = useState('');
+  /** ID project yang lencana brand-nya lagi dibuka jadi picker set manual - null = tidak ada yang dibuka. */
+  const [brandEditFor, setBrandEditFor] = useState<string | null>(null);
 
   const [batchProcessing, setBatchProcessing] = useState(false);
   const [batchConfirm, setBatchConfirm] = useState(false);
@@ -708,6 +710,30 @@ export default function IncentivePTSPage() {
     notify('success', !current ? 'Akses diberikan' : 'Akses dicabut');
   }
 
+  /**
+   * Set brand (MVI/IVP/BOTH) manual langsung dari Incentive PTS - lewat ID
+   * project (bukan nama), sesuai aturan target hapus/ubah di modul ini.
+   *
+   * Sebelumnya satu-satunya cara membetulkan project "tanpa brand" adalah
+   * menghapus reminder-nya lalu meng-Sync ulang dari Reminder Schedule -
+   * berisiko (bisa ikut menghapus BAST/nominal/tahapan yang sudah terlanjur
+   * diproses) untuk sekadar membetulkan SATU kolom. UPDATE langsung ke
+   * reminders.brand jauh lebih aman: tidak menyentuh kolom lain sama sekali.
+   */
+  async function handleSetProjectBrand(projectId: string, brand: 'MVI' | 'IVP' | 'BOTH') {
+    //  .select('id') + cek baris hasilnya - bukan cuma error - supaya kalau
+    //  RLS suatu saat diperketat dan diam-diam menolak baris ini, UI tidak
+    //  ikut-ikutan bilang "berhasil" padahal tidak ada yang berubah. Lihat
+    //  bug processYearlyBatch yang baru dibetulkan untuk alasan lengkapnya.
+    const { data, error } = await supabase.from('reminders').update({ brand }).eq('id', projectId).select('id');
+    if (error || !data || data.length === 0) {
+      notify('error', 'Gagal set brand: ' + (error?.message ?? 'tidak ada baris yang berubah'));
+      return;
+    }
+    setProjects(prev => prev.map(p => p.id === projectId ? { ...p, brand } : p));
+    notify('success', `Brand diset ke ${brand}.`);
+  }
+
   if (!appReady) return (
     <div className="flex items-center justify-center" style={{ minHeight: '100vh', backgroundImage: "url('/IVP_Background.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="flex flex-col items-center gap-3 bg-white/90 rounded-2xl px-8 py-6 shadow-xl">
@@ -948,6 +974,15 @@ export default function IncentivePTSPage() {
                   &nbsp;·&nbsp;<span className="font-bold text-emerald-600">{filteredProjects.filter(p => (p.incentive_value||0)>0).length}</span> ada nominal ·&nbsp;
                   <span className="font-bold text-amber-600">{filteredProjects.filter(p => !(p.incentive_value||0)).length}</span> belum isi nominal
                 </>)}
+                {/*
+                  Total nominal utk SEMUA role - dijumlah dari filteredProjects
+                  (sudah tersaring ke project sendiri utk non-privileged),
+                  BUKAN dari totalPool (total seluruh platform).
+                */}
+                &nbsp;·&nbsp;Total:&nbsp;
+                <span className="font-bold text-emerald-600">
+                  {formatRupiah(filteredProjects.filter(p => (p.incentive_value || 0) > 0).reduce((s, p) => s + (p.incentive_value || 0), 0))}
+                </span>
               </p>
             </div>
             {/* ── MOBILE: kartu ringkas (nama + total incentive, tap utk detail) ── */}
@@ -977,9 +1012,18 @@ export default function IncentivePTSPage() {
                     </>}
                     badges={<>
                       <MobileCardBadge className="bg-purple-100 text-purple-700 border border-purple-200">{p.category}</MobileCardBadge>
-                      {showNominal && (hasNominal
+                      {/*
+                        Nominal tampil utk semua role (dulu ikut showNominal,
+                        yang privileged-only) - list ini sudah tersaring ke
+                        project sendiri (userInProject), jadi bukan kebocoran
+                        baru. showNominal TETAP dipakai di bawah utk tombol
+                        Input Nominal & field Bagian Handler - dua hal itu
+                        beda: satu aksi ubah data, satu lagi bisa jadi bagian
+                        ORANG LAIN.
+                      */}
+                      {hasNominal
                         ? <span className="text-sm font-black text-emerald-600 whitespace-nowrap">{formatRupiah(p.incentive_value || 0)}</span>
-                        : <span className="text-[10px] font-bold text-amber-600 whitespace-nowrap">⏳ Belum nominal</span>)}
+                        : <span className="text-[10px] font-bold text-amber-600 whitespace-nowrap">⏳ Belum nominal</span>}
                     </>}
                     fields={[
                       { label: 'Mode', value: p.mode_penyelesaian === 'onsite' ? '🏢 Onsite' : p.mode_penyelesaian === 'remote' ? '💻 Remote' : '—' },
@@ -1029,7 +1073,18 @@ export default function IncentivePTSPage() {
                     <th className={`${thCls} w-[140px]`}>Kategori</th>
                     <th className={`${thCls} w-[100px]`}>Mode</th>
                     <th className={`${thCls} w-[110px]`}>BAST</th>
-                    {canInputNominal(currentUser) && <th className="px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[150px]">Nominal</th>}
+                    {/*
+                      Nominal SEKARANG tampil utk semua role (dulu khusus
+                      canInputNominal) - list ini sudah tersaring ke project
+                      yang usernya sendiri terlibat (lihat userInProject di
+                      atas), jadi menampilkan pool project di sini bukan
+                      kebocoran baru: nominal & bagiannya sendiri sudah bisa
+                      dilihat lewat modal detail juga. "Bagian Handler" TETAP
+                      privileged-only - itu bisa jadi bagian ORANG LAIN kalau
+                      yang login bukan handler-nya, beda dari Nominal (pool
+                      project, bukan bagian personal siapa pun).
+                    */}
+                    <th className="px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[150px]">Nominal</th>
                     {canInputNominal(currentUser) && <th className="px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[145px]">Bagian Handler</th>}
                     <th className={`${thCls} w-[90px] text-center`}>Tranche</th>
                     <th className={`${thCls} ${bolehHapus ? 'w-[130px]' : 'w-[100px]'} text-center`}>Aksi</th>
@@ -1037,7 +1092,7 @@ export default function IncentivePTSPage() {
                 </thead>
                 <tbody>
                   {filteredProjects.length === 0 ? (
-                    <tr><td colSpan={canInputNominal(currentUser) ? 10 : 8} className="px-4 py-16 text-center border border-gray-200">
+                    <tr><td colSpan={canInputNominal(currentUser) ? 10 : 9} className="px-4 py-16 text-center border border-gray-200">
                       <p className="text-4xl mb-3">📭</p>
                       <p className="text-gray-500 font-medium">Belum ada project incentive</p>
                       <p className="text-gray-400 text-xs mt-1">Data muncul dari Reminder Schedule kategori Konfigurasi / Training yang sudah Completed</p>
@@ -1067,15 +1122,50 @@ export default function IncentivePTSPage() {
                             yang sudah tersaring, jadi lencana ini bukan sekadar
                             hiasan - ia yang menjelaskan KENAPA sebuah proyek
                             ada di daftarnya, dan kenapa yang lain tidak.
+
+                            Utk Admin, lencana ini KLIK-ABLE - membuka picker
+                            MVI/IVP/Kedua kecil di bawahnya utk set manual.
+                            Sebelumnya satu-satunya jalan membetulkan project
+                            "tanpa brand" adalah hapus reminder lalu Sync ulang
+                            dari Reminder Schedule - berisiko ikut menghapus
+                            BAST/nominal/tahapan yang sudah terlanjur diproses,
+                            padahal yang salah cuma satu kolom.
                           */}
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border mt-0.5 ml-1 inline-block ${
-                            p.brand === 'MVI'  ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                            : p.brand === 'IVP' ? 'text-blue-700 bg-blue-50 border-blue-200'
-                            : p.brand === 'BOTH' ? 'text-violet-700 bg-violet-50 border-violet-200'
-                            : 'text-rose-700 bg-rose-50 border-rose-200'}`}>
-                            {p.brand === 'MVI' ? '🏠 MVI' : p.brand === 'IVP' ? '🌐 IVP'
-                              : p.brand === 'BOTH' ? '🏠🌐 Kedua' : '⚠️ tanpa brand'}
-                          </span>
+                          {isAdmin(currentUser) ? (
+                            <span className="relative inline-block mt-0.5 ml-1">
+                              <button type="button"
+                                onClick={() => setBrandEditFor(brandEditFor === p.id ? null : p.id)}
+                                title="Klik untuk set brand manual"
+                                className={`text-[10px] font-bold px-1.5 py-0.5 rounded border inline-block hover:opacity-75 transition-opacity ${
+                                  p.brand === 'MVI'  ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                                  : p.brand === 'IVP' ? 'text-blue-700 bg-blue-50 border-blue-200'
+                                  : p.brand === 'BOTH' ? 'text-violet-700 bg-violet-50 border-violet-200'
+                                  : 'text-rose-700 bg-rose-50 border-rose-200'}`}>
+                                {p.brand === 'MVI' ? '🏠 MVI' : p.brand === 'IVP' ? '🌐 IVP'
+                                  : p.brand === 'BOTH' ? '🏠🌐 Kedua' : '⚠️ tanpa brand'} ✏️
+                              </button>
+                              {brandEditFor === p.id && (
+                                <div className="absolute z-20 top-full left-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 p-1.5 flex gap-1 whitespace-nowrap">
+                                  {(['MVI', 'IVP', 'BOTH'] as const).map(b => (
+                                    <button key={b} type="button"
+                                      onClick={() => { handleSetProjectBrand(p.id, b); setBrandEditFor(null); }}
+                                      className="text-[10px] font-bold px-2 py-1 rounded hover:bg-gray-100 text-gray-700 border border-transparent hover:border-gray-200">
+                                      {b === 'MVI' ? '🏠 MVI' : b === 'IVP' ? '🌐 IVP' : '🏠🌐 Kedua'}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </span>
+                          ) : (
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border mt-0.5 ml-1 inline-block ${
+                              p.brand === 'MVI'  ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                              : p.brand === 'IVP' ? 'text-blue-700 bg-blue-50 border-blue-200'
+                              : p.brand === 'BOTH' ? 'text-violet-700 bg-violet-50 border-violet-200'
+                              : 'text-rose-700 bg-rose-50 border-rose-200'}`}>
+                              {p.brand === 'MVI' ? '🏠 MVI' : p.brand === 'IVP' ? '🌐 IVP'
+                                : p.brand === 'BOTH' ? '🏠🌐 Kedua' : '⚠️ tanpa brand'}
+                            </span>
+                          )}
                         </td>
                         <td className={cellCls}>
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-purple-100 text-purple-700 border border-purple-200">{p.category}</span>
@@ -1099,13 +1189,11 @@ export default function IncentivePTSPage() {
                             ? <p className="text-xs font-semibold text-gray-700">{new Date(p.bast_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                             : <span className="text-xs text-amber-500 italic">Belum diisi</span>}
                         </td>
-                        {canInputNominal(currentUser) && (
-                          <td className={`${cellCls} text-right`}>
-                            {hasNominal
-                              ? <p className="text-sm font-black text-emerald-600">{formatRupiah(p.incentive_value || 0)}</p>
-                              : <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">⏳ Belum</span>}
-                          </td>
-                        )}
+                        <td className={`${cellCls} text-right`}>
+                          {hasNominal
+                            ? <p className="text-sm font-black text-emerald-600">{formatRupiah(p.incentive_value || 0)}</p>
+                            : <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">⏳ Belum</span>}
+                        </td>
                         {canInputNominal(currentUser) && (
                           <td className={`${cellCls} text-right`}>
                             {handlerSplit ? (
@@ -1182,7 +1270,7 @@ export default function IncentivePTSPage() {
                     );
                   })}
                 </tbody>
-                {filteredProjects.length > 0 && canInputNominal(currentUser) && (
+                {filteredProjects.length > 0 && (canInputNominal(currentUser) ? (
                   <tfoot>
                     <tr style={{ background: 'rgba(99,102,241,0.06)' }}>
                       <td colSpan={6} className="px-3 py-2.5 border border-gray-200 text-xs font-bold text-gray-600 text-right">TOTAL</td>
@@ -1193,7 +1281,26 @@ export default function IncentivePTSPage() {
                       <td colSpan={2} className="border border-gray-200" />
                     </tr>
                   </tfoot>
-                )}
+                ) : (
+                  /*
+                    Non-privileged: total DIHITUNG DARI filteredProjects (yang
+                    sudah tersaring ke project dia sendiri), BUKAN dari
+                    `totalPool` (total SELURUH platform) - kalau dipakai
+                    totalPool di sini, Team akan melihat total nominal
+                    seluruh perusahaan, bukan cuma project miliknya sendiri.
+                    Tanpa kolom Bagian Handler - itu bisa jadi bagian orang
+                    lain, tidak pas dijumlah jadi satu angka utk yang login.
+                  */
+                  <tfoot>
+                    <tr style={{ background: 'rgba(99,102,241,0.06)' }}>
+                      <td colSpan={6} className="px-3 py-2.5 border border-gray-200 text-xs font-bold text-gray-600 text-right">TOTAL (project saya)</td>
+                      <td className="px-3 py-2.5 border border-gray-200 text-right text-sm font-black text-emerald-700">
+                        {formatRupiah(filteredProjects.filter(p => (p.incentive_value || 0) > 0).reduce((s, p) => s + (p.incentive_value || 0), 0))}
+                      </td>
+                      <td colSpan={2} className="border border-gray-200" />
+                    </tr>
+                  </tfoot>
+                ))}
               </table>
             </div>
           </div>

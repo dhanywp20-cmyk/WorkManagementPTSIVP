@@ -1029,7 +1029,40 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
     const { error: splitErr } = await insertSplits(project.id, tranche.id, trancheSplits);
     if (splitErr) { errors.push(`Insert splits failed: ${splitErr.message}`); continue; }
 
-    await supabase.from('incentive_tranches').update({ status: 'processed', processed_at: new Date().toISOString() }).eq('id', tranche.id);
+    /*
+      BUG NYATA yang baru diperbaiki: hasil UPDATE ini dulu TIDAK PERNAH
+      diperiksa. incentive_splits boleh di-insert siapa saja (kebijakan RLS
+      anon_insert_only), tapi UPDATE incentive_tranches mensyaratkan JWT
+      user_role admin/superadmin (kebijakan it_ubah) - kalau update ini gagal
+      diam-diam (RLS menolak, sesi kadaluarsa, jaringan putus di tengah),
+      tahapan tetap 'pending' PADAHAL splits-nya sudah tertulis. Process Batch
+      berikutnya menemukan tahapan yang sama masih 'pending', lalu menulis
+      SET SPLITS KEDUA untuk tahapan yang sama - dan begitu seterusnya tiap
+      kali dijalankan ulang. Inilah sebab nyata "Bagian Saya" tampil
+      terduplikasi 2-5x pada 7 tahapan Batch 2027 (semuanya masih 'pending',
+      belum ada yang 'paid' - lihat catatan pembersihan data di commit ini).
+
+      `.select('id')` WAJIB di sini - tanpa itu supabase-js tidak melaporkan
+      berapa baris yang benar-benar kena UPDATE. RLS yang menolak baris
+      mengembalikan error:null & data:[] (bukan error) - jadi memeriksa
+      updErr saja TIDAK CUKUP, harus diperiksa juga apakah baris hasilnya
+      benar-benar ada.
+    */
+    const { data: updRows, error: updErr } = await supabase
+      .from('incentive_tranches')
+      .update({ status: 'processed', processed_at: new Date().toISOString() })
+      .eq('id', tranche.id)
+      .select('id');
+
+    if (updErr || !updRows || updRows.length === 0) {
+      //  Rollback: splits yang baru saja ditulis DIHAPUS lagi supaya tahapan
+      //  ini kembali ke keadaan bersih (pending, tanpa splits nyasar) - aman
+      //  dicoba ulang, bukan menumpuk set kedua di percobaan berikutnya.
+      await supabase.from('incentive_splits').delete().eq('tranche_id', tranche.id);
+      errors.push(`Project "${project.project_name}" tranche ${tranche.tranche_number}: gagal menandai processed (${updErr?.message ?? 'RLS menolak update - sesi Anda mungkin tidak lagi dikenali sebagai admin, coba logout/login ulang'}). Splits dibatalkan, tahapan tetap pending - aman dicoba lagi.`);
+      continue;
+    }
+
     processed++;
   }
 
