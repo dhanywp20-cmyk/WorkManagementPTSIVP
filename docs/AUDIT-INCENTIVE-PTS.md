@@ -189,6 +189,53 @@ bisa memprosesnya, dan Process Batch-nya gagal diam-diam — kembali ke T-1.
 
 ---
 
+### T-9 (KRITIS, ditemukan sesudah dirilis) — `incentive_brand_scope` tidak pernah bisa MELEBARKAN, hanya menyempitkan
+
+Laporan nyata: admin memberi Anes (Marketing, IVP) akses **Input** + lingkup
+brand **IVP** dari Pengaturan Akses. Yang tampil di daftar Incentive PTS-nya
+cuma **5 dari 43** proyek, dan tidak satu pun tambahan IVP/Kedua Brand ikut
+muncul.
+
+**Sebab**: `fetchIncentiveProjects()` membaca tabel `reminders` pakai anon
+key milik Anes sendiri. Kebijakan RLS `rm_select` pada tabel itu adalah
+**aturan Sales** (`boleh_lihat_baris`) — hanya meloloskan baris milik
+sendiri / divisi yang dipetakan kepadanya, sama sekali tidak tahu-menahu
+soal `incentive_akses` atau `incentive_brand_scope`. Diverifikasi langsung
+dengan mensimulasikan JWT Anes: baris kategori-insentif yang lolos RLS
+persis 5 — SEBELUM kode Incentive PTS sempat menyaring apa pun berdasarkan
+brand. `incentive_brand_scope` karena itu hanya bisa **menyempitkan** dari
+apa yang sudah dipangkas RLS ke "milik sendiri saja" — tidak pernah bisa
+melebarkannya ke seluruh brand seperti yang dimaksud pengaturannya.
+
+**Perbaikan**: kebijakan `rm_select` ditambah satu jalur lolos baru —
+pemegang akses insentif `input`/`penuh` boleh membaca baris berkategori
+insentif (dibaca dari skema tersimpan via `kategori_insentif_db()`,
+konsisten dengan T-6), terlepas dari kepemilikan/divisinya. Penyaringan
+brand di layar (`bolehLihatBrand`) tetap berjalan **sesudahnya** seperti
+biasa — perbaikan ini hanya membuka pintu yang sebelumnya tertutup rapat
+sebelum penyaringan brand sempat bekerja.
+
+Ditemukan bug KEDUA saat memverifikasi perbaikan pertama: fungsi bantu
+`kategori_insentif_db()` yang baru ditulis mengembalikan **array kosong**
+alih-alih daftar bawaan, karena tidak ada satu pun baris
+`incentive_scheme_settings` yang punya kolom `kategoriProyek` (kolom itu
+baru ditambahkan di T-6 dan belum pernah tersimpan — admin belum menyimpan
+ulang skema sejak itu). `COALESCE` tidak menangkap "array kosong tapi bukan
+NULL". Diperbaiki dengan memeriksa `jsonb_array_length(...) > 0` secara
+eksplisit sebelum memakainya, baru jatuh ke bawaan.
+
+**Diverifikasi** (simulasi JWT langsung ke database):
+- Anes (akses `input`, lingkup IVP): 5 → **49 baris lolos RLS** (lalu
+  disaring brand di layar: IVP + tanpa-brand tampil, MVI tersembunyi seperti
+  seharusnya — tidak ada proyek "Kedua Brand" di data saat ini, jadi
+  kekosongannya bukan bug, memang belum ada datanya).
+- Admin: tetap 49 (tidak berubah — kontrol regresi).
+- Guest tanpa akses insentif: tetap 7, dibatasi lingkup Sales seperti
+  sebelumnya (kontrol regresi — akses yang diperluas benar-benar hanya
+  untuk pemegang `incentive_akses` `input`/`penuh`).
+
+Berkas: `sql/incentive-akses-reminders-rls.sql`.
+
 ## 4. Yang masih perlu tindakan manusia
 
 | Hal | Jumlah | Akibat bila dibiarkan |
