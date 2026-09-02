@@ -1392,52 +1392,21 @@ function ReminderSchedulePageInner() {
     setSavingMode(false);
     await handleStatusChange(reminderId, 'done', pendingPhotoUrl);
 
-    // Langsung insert ke incentive_projects tanpa nunggu doAutoSync
-    const { data: existingIp } = await supabase
-      .from('incentive_projects')
-      .select('id')
-      .eq('reminder_id', reminderId)
-      .maybeSingle();
-    if (!existingIp) {
-      const baseRow = {
-        reminder_id: reminderId,
-        project_name: snap.project_name,
-        category: snap.category,
-        sales_name: snap.sales_name,
-        sales_division: snap.sales_division,
-        due_date: snap.due_date,
-        // bast_date HARUS ikut di sini - baris ini sudah punya BAST-nya
-        // sendiri (bastDateVal, baru saja disimpan ke tabel reminders di
-        // atas). Tanpa baris ini, proyek yang baru di-sync (mis. sesudah
-        // baris incentive_projects lamanya dihapus manual) selalu masuk
-        // dengan BAST kosong walau reminders.bast_date sudah terisi -
-        // itulah kenapa tombol Generate Tahapan tidak pernah muncul.
-        bast_date: bastDateVal,
-        handler_name: snap.assign_name ?? '',
-        handler_username: snap.assigned_to ?? '',
-        backup_names: [],
-        biaya_cadangan: 0,
-        periode: snap.due_date ? snap.due_date.slice(0, 7) : new Date().toISOString().slice(0, 7),
-        status: 'pending',
-        description: snap.description,
-        notes: snap.notes,
-        address: snap.address,
-        pic_name: snap.pic_name,
-        pic_phone: snap.pic_phone,
-        product: snap.product,
-      };
-      // Coba insert dengan mode columns; fallback tanpa mode jika kolom belum ada
-      const { error: ipErr } = await supabase.from('incentive_projects').insert({
-        ...baseRow,
-        mode_penyelesaian: modeVal,
-        installer_name: modeVal === 'remote' ? installerNameVal : null,
-        installer_daerah: modeVal === 'remote' ? installerDaerahVal : null,
-      });
-      if (ipErr) {
-        const { error: ipErr2 } = await supabase.from('incentive_projects').insert(baseRow);
-        if (ipErr2) notify('error', `Gagal sync ke Incentive PTS: ${ipErr2.message}`);
-      }
-    }
+    /*
+      Tulisan ke tabel `incentive_projects` DIHAPUS dari sini - kode zombie
+      sisa arsitektur lama sebelum Incentive PTS pindah membaca langsung dari
+      `reminders` (lihat fetchIncentiveProjects di
+      app/incentive-pts/_components/calc.ts: category+status+incentive_excluded
+      langsung dari tabel ini, TANPA pernah menyentuh `incentive_projects`).
+
+      Tabel itu ditulis di sini setiap proyek ditandai Done, tapi TIDAK ADA
+      satu query SELECT pun ke sana di seluruh kode - baris yang ditulis
+      tidak pernah dibaca siapa pun. Kalau insert-nya gagal (skema kolom
+      beda, RLS berubah, dll), muncul toast "Gagal sync ke Incentive PTS" -
+      padahal sinkronisasi Incentive PTS yang SUNGGUHAN (baca `reminders`
+      langsung) sama sekali tidak terganggu. Itu kepanikan palsu, bukan
+      peringatan yang berarti.
+    */
 
     setPendingStatus(null);
     setStatusPhoto(null);

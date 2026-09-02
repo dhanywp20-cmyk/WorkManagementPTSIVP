@@ -226,6 +226,69 @@ tahun 2). Yang salah bukan pembekuannya — yang salah adalah tahapan yang
 MASIH `pending` ikut punya baris pembagian sama sekali, padahal seharusnya
 kosong sampai benar-benar diproses.
 
+### T-11 (SEDANG) — `incentive_projects` ditulis tiap proyek Done, tidak pernah dibaca siapa pun
+
+Pemeriksaan menyeluruh: bandingkan tiap tabel yang punya RLS terhadap
+perintah (SELECT/INSERT/UPDATE/DELETE) yang benar-benar punya kebijakan.
+`incentive_projects` cuma punya kebijakan `INSERT` - `SELECT` sama sekali
+tidak ada.
+
+Ditelusuri ke kode: `handleModeConfirm()` di Request Schedule menulis satu
+baris ke `incentive_projects` setiap kali proyek ditandai Done - sisa
+arsitektur LAMA sebelum Incentive PTS pindah membaca langsung dari
+`reminders` (lihat bagian 1). Di seluruh kode **tidak ada satu query SELECT
+pun** ke `incentive_projects` - baris yang ditulis tidak pernah dibaca siapa
+pun, dan memang tidak bisa dibaca (RLS SELECT-nya tidak ada).
+
+Efek nyata: kalau tulisannya gagal (skema kolom beda, dll), muncul toast
+**"Gagal sync ke Incentive PTS"** ke user - padahal sinkronisasi yang
+sungguhan (baca `reminders` langsung) sama sekali tidak terganggu. Kepanikan
+palsu, bukan peringatan yang berarti.
+
+**Perbaikan:** tulisan ke `incentive_projects` dihapus dari
+`handleModeConfirm()`.
+
+### T-12 (INFORMASI) — Tab "Late Ticket Queue" belum pernah selesai dibangun
+
+`late_ticket_links` (sumber tab ini) **kosong** (0 baris), dan tidak ada
+satu jalur pun - baik kode klien maupun trigger database - yang pernah
+menulis ke sana. Tab-nya sudah jadi secara tampilan ("Belum ada late ticket
+yang dilampirkan"), tapi mekanisme "lampirkan late ticket ke tranche
+berikutnya" yang dijelaskan keterangannya **belum pernah diimplementasikan**.
+
+Bukan bug (tidak ada yang gagal diam-diam - tidak ada yang mencoba menulis
+sama sekali), tapi kalau fitur ini memang dibutuhkan, ini catatan bahwa
+maksudnya belum terpenuhi. Tidak diubah - menunggu keputusan apakah fitur
+ini masih diperlukan.
+
+### T-13 (TEMUAN, BELUM DIUBAH) — `access_level` ("Full Access" toggle) tidak pernah diperiksa RLS
+
+Arah SEBALIKNYA dari T-9/T-10: bukan "gagal diam-diam", tapi "kelonggaran
+diam-diam". Toggle **Full Access** (`users.access_level`, `hasFullAccess()`
+di `lib/constants.ts`) mengatur apa yang TERLIHAT di layar - tombol Atur
+Jadwal/Edit/Hapus di Piket Showroom, hak kelola di modul data lain. Tapi
+diperiksa langsung: **tidak ada satu kebijakan RLS pun di seluruh basis data
+yang menyebut `access_level`.**
+
+Sebaliknya, **20+ kebijakan** (Daily Report, KPI, Learning Center, Piket
+Showroom - termasuk tulis jadwal & kegiatan, Tech Notes, Notifications, dan
+lainnya) memberi akses `ALL` (baca+tulis+hapus) ke **siapa pun ber-role
+`team`**, lewat `lingkup_semua()` - fungsi itu memeriksa `role`, TIDAK
+memeriksa `access_level` sama sekali.
+
+Artinya: anggota Team PTS yang **TIDAK** diberi Full Access tetap secara
+teknis bisa menulis/menghapus data modul-modul itu lewat permintaan
+langsung ke basis data (mis. lewat DevTools peramban) - Full Access hanya
+menyembunyikan tombolnya dari tampilan, bukan mengunci aksesnya.
+
+**Belum diubah.** ini keputusan model kepercayaan, bukan sekadar bug:
+mengunci `access_level` di RLS berarti mengubah 20+ kebijakan sekaligus, dan
+bisa mematahkan alur kerja yang selama ini berjalan tanpa peringatan kalau
+ternyata sebagian anggota Team memang mengandalkan akses itu di luar UI.
+Butuh keputusan eksplisit: apakah "semua Team PTS = staf internal
+terpercaya" ini memang disengaja (Full Access cuma soal kerapian tampilan),
+atau harus benar-benar dikunci di database juga.
+
 ## 3. Yang diperiksa dan ternyata BUKAN bug
 
 - **3 baris pembagian tanpa `user_id`** — installer eksternal, memang tidak
