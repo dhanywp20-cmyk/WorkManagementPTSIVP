@@ -25,7 +25,7 @@ async function penjaga(request: NextRequest) {
 
   const supabase = getAdminClient();
   const { data: row } = await supabase
-    .from('users').select('incentive_akses, allow_incentive_input').eq('id', caller.id).maybeSingle();
+    .from('users').select('incentive_akses, allow_incentive_input, access_level').eq('id', caller.id).maybeSingle();
 
   const pemanggil = { role: caller.role, ...(row ?? {}) };
   if (!bisaKonfigPenuh(pemanggil)) {
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
   if (!caller) return NextResponse.json({ error: 'Sesi tidak valid.' }, { status: 401 });
   const supabase = getAdminClient();
   const { data: row } = await supabase
-    .from('users').select('incentive_akses, allow_incentive_input, incentive_brand_scope').eq('id', caller.id).maybeSingle();
+    .from('users').select('incentive_akses, allow_incentive_input, incentive_brand_scope, access_level').eq('id', caller.id).maybeSingle();
   return NextResponse.json({
     akses: tingkatAkses({ role: caller.role, ...(row ?? {}) }),
     brandScope: (row as { incentive_brand_scope?: string | null } | null)?.incentive_brand_scope ?? null,

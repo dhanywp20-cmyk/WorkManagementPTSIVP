@@ -20,7 +20,7 @@ async function pemanggil(request: NextRequest) {
   if (!caller) return null;
   const supabase = getAdminClient();
   const { data: row } = await supabase
-    .from('users').select('incentive_akses, allow_incentive_input').eq('id', caller.id).maybeSingle();
+    .from('users').select('incentive_akses, allow_incentive_input, access_level').eq('id', caller.id).maybeSingle();
   return { caller, supabase, hak: { role: caller.role, ...(row ?? {}) } };
 }
 

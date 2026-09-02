@@ -214,7 +214,7 @@ export default function IncentivePTSPage() {
     if (splitRes.data) setAllSplits(splitRes.data);
     if (lateRes.data) setLateTickets(lateRes.data);
     const [usersRes, ptsTeamRes, orgRes] = await Promise.all([
-      supabase.from('users').select('id, username, full_name, role, team_type, incentive_akses, allow_incentive_input, incentive_brand_scope, jabatan').order('full_name'),
+      supabase.from('users').select('id, username, full_name, role, team_type, incentive_akses, allow_incentive_input, incentive_brand_scope, access_level, jabatan').order('full_name'),
       supabase.from('pts_team_mappings').select('staff_user_id, supervisor_user_id'),
       // Query terpisah & tahan-error: atasan_id dari Struktur Organisasi
       supabase.from('users').select('id, atasan_id'),
@@ -1613,6 +1613,18 @@ export default function IncentivePTSPage() {
                 return daftar.map(u => {
                   const akses = tingkatAkses(u);
                   const diriSendiri = u.id === currentUser?.id;
+                  /*
+                    Full Access (Kelola Akun) SELALU menang jadi 'penuh' di
+                    sini juga (lihat tingkatAkses di lib/incentive-akses.ts) -
+                    tombol tiga tingkat di bawah karena itu tidak berarti
+                    apa-apa untuknya: mengklik "Lihat saja" akan tersimpan ke
+                    kolom, tapi tampilannya tetap 'penuh' di render berikutnya
+                    karena Full Access mengambil alih. Daripada tombolnya
+                    terlihat "tidak berfungsi", untuk akun begini tombolnya
+                    diganti keterangan - turunkan aksesnya lewat Kelola Akun,
+                    bukan dari sini.
+                  */
+                  const viaFullAccess = (u.role === 'team' || u.role === 'team_pts') && (u.access_level as string | null) === 'full';
                   return (
                     <div key={u.id as string} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-gray-50 transition-colors flex-wrap">
                       <div className="min-w-0">
@@ -1655,6 +1667,13 @@ export default function IncentivePTSPage() {
                           saklar dua keadaan itulah yang dulu membuat "beri
                           Manager akses penuh" mustahil tanpa mengubah kode.
                         */}
+                        {viaFullAccess ? (
+                          <span title="Diberikan lewat toggle Full Access di Kelola Akun. Untuk mengubahnya, cabut Full Access di sana - bukan di sini."
+                            className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold border-2"
+                            style={{ borderColor: '#10b981', background: '#ecfdf5', color: '#047857' }}>
+                            🔓 Konfigurasi penuh · Full Access
+                          </span>
+                        ) : (
                         <div className="flex items-center gap-1" role="group" aria-label={`Tingkat akses ${u.full_name as string}`}>
                           {URUTAN_AKSES.map(t => {
                             const aktif = akses === t;
@@ -1685,6 +1704,7 @@ export default function IncentivePTSPage() {
                             );
                           })}
                         </div>
+                        )}
                       </div>
                     </div>
                   );

@@ -50,6 +50,14 @@ export interface PemilikAkses {
   incentive_akses?: string | null;
   /** Kolom lama. Dibaca sebagai 'input' selama kolom baru belum diisi. */
   allow_incentive_input?: boolean | null;
+  /**
+   * 'full' | 'guest' - toggle Full Access platform-wide (Kelola Akun),
+   * lib/constants.ts hasFullAccess(). SATU-SATUNYA toggle yang sama dipakai
+   * Reminder Schedule/Ticketing/Design Project/Project Progress untuk
+   * "setara admin, tanpa batasan". Incentive PTS mengikutinya juga - lihat
+   * catatan di tingkatAkses().
+   */
+  access_level?: string | null;
 }
 
 /**
@@ -61,10 +69,29 @@ export interface PemilikAkses {
  */
 const ROLE_SELALU_PENUH = ['admin', 'superadmin'];
 
-/** Tingkat akses seseorang di modul Incentive PTS. */
+/**
+ * Tingkat akses seseorang di modul Incentive PTS.
+ *
+ * Full Access (access_level='full') SELALU 'penuh' di sini juga - bukan
+ * cuma isyarat, ini kebijakan eksplisit: "kalau Team diberi Full Access
+ * dia layak seperti Admin, tanpa batasan dan tanpa menu yang di-hide" -
+ * berlaku di SEMUA modul, termasuk Incentive PTS, lewat SATU toggle yang
+ * sama di Kelola Akun. Sebelum ini, Manager PTS yang sudah Full Access di
+ * modul lain tetap harus diatur ULANG secara terpisah di tab Pengaturan
+ * Akses Incentive PTS - dua toggle untuk satu maksud yang sama, dan admin
+ * baru yang lupa menyetel yang kedua akan mengunci pimpinannya sendiri
+ * lagi persis seperti T-5.
+ *
+ * `incentive_akses` (kolom Incentive PTS sendiri) tetap ada dan tetap
+ * dipakai - itu untuk GUEST yang diberi akses "Izinkan" (mereka tidak
+ * punya toggle Full Access sama sekali, karena bukan Team), dan untuk
+ * admin yang ingin memberi seorang Team akses 'penuh' TANPA menjadikannya
+ * Full Access di modul lain - kasus yang lebih sempit, tetap harus bisa.
+ */
 export function tingkatAkses(u: PemilikAkses | null | undefined): TingkatAkses {
   if (!u) return 'lihat';
   if (ROLE_SELALU_PENUH.includes((u.role || '').toLowerCase())) return 'penuh';
+  if ((u.access_level || '') === 'full') return 'penuh';
   const set = (u.incentive_akses || '') as TingkatAkses;
   if (set === 'penuh' || set === 'input' || set === 'lihat') return set;
   /*
