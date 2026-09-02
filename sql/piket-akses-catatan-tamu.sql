@@ -84,3 +84,22 @@ BEGIN
 
   RETURN NEW;
 END $function$;
+
+-- =====================================================================
+-- SUSULAN — kolomnya SENDIRI tidak cukup, RLS harus ikut diajari
+-- =====================================================================
+--
+-- Kolom `piket_akses` di atas TIDAK BERARTI APA-APA kalau berdiri sendiri.
+-- Diverifikasi lewat laporan nyata: admin menyetel akun Guest ke "Semua
+-- catatan", tapi Piket Showroom-nya tetap kosong sepenuhnya (0 jam, semua
+-- kolom kegiatan "—"). Sebabnya kebijakan RLS `ptd_baca` pada
+-- `piket_tamu_detail` sama sekali tidak tahu-menahu soal kolom ini - qual-nya
+-- cuma "nama sendiri / divisi sendiri", persis aturan Sales biasa. Kode
+-- aplikasi sudah benar meminta semua baris begitu piket_akses='semua', tapi
+-- permintaan itu tetap dipangkas RLS SEBELUM sempat sampai ke kode.
+--
+-- Perbaikan lengkapnya (fungsi piket_akses_semua() + kebijakan ptd_baca yang
+-- diperluas) ada di sql/piket-akses-rls.sql - jalankan berkas itu SESUDAH
+-- berkas ini. Kebijakan TULIS (ptd_tulis) sengaja tidak disentuh: "Semua
+-- catatan" cuma soal melihat, bukan mengisi.
+-- =====================================================================
