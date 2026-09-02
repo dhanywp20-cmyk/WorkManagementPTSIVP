@@ -1872,7 +1872,9 @@ function ReminderSchedulePageInner() {
     if (currentUser?.id === r.internal_sales_id_2 && !r.internal_approved_at_2) return true;
     return false;
   };
-  const canAddReminder = currentUser?.role === 'admin' || currentUser?.role === 'team';
+  // isAdmin, bukan role === 'admin': superadmin sebelumnya tidak bisa menambah
+  // jadwal sama sekali karena tidak ikut disebut di sini.
+  const canAddReminder = isAdmin || currentUser?.role === 'team';
   const isGuest = currentUser?.role === 'guest' || currentUser?.role === 'sales';
 
   // Cek Form Review menggantung (guest/sales)

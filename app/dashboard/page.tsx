@@ -251,8 +251,15 @@ export default function Dashboard() {
     setMenuLoading(true);
     const timer = setTimeout(() => {
       const allowed = currentUser.allowed_menus;
-      const roleLC = currentUser.role?.toLowerCase();
-      if (!allowed || roleLC === 'superadmin' || roleLC === 'admin') {
+      /*
+        Yang melewati saringan allowed_menus bukan cuma admin/superadmin,
+        tapi juga akun Team yang diberi toggle "Full Access" di Admin Panel.
+        Full Access artinya SELURUH menu tampil tanpa ada yang disembunyikan -
+        kalau di sini hanya role admin yang dilewatkan, pemegang Full Access
+        tetap kehilangan menu yang tidak tercentang di allowed_menus-nya, dan
+        satu-satunya cara membukanya jadi mencentang menu satu per satu.
+      */
+      if (!allowed || hasFullAccess(currentUser)) {
         setVisibleMenuItems(allMenuItems);
       } else {
         // Always use allMenuItems order (code order), not allowed_menus DB order
@@ -425,7 +432,10 @@ export default function Dashboard() {
     if (autoNavigatedRef.current) return; // already navigated this session
     const role = currentUser.role?.toLowerCase() ?? '';
     const isSalesGuest = ['guest','sales'].includes(role);
-    const isRegularTeam = role === 'team' && !(currentUser.allowed_menus ?? []).includes('dashboard') && currentUser.jabatan !== 'Supervisor';
+    // Full Access diperlakukan seperti admin: mendarat di panel dashboard,
+    // bukan dilempar ke menu pertama yang tercentang.
+    const isRegularTeam = role === 'team' && !hasFullAccess(currentUser)
+      && !(currentUser.allowed_menus ?? []).includes('dashboard') && currentUser.jabatan !== 'Supervisor';
     if (isSalesGuest || isRegularTeam) {
       // Navigate to VISUAL FIRST menu - matches sidebar category order: LEARNING  PROJECT  INTERNAL DAILY
       // Using allowed[0] was wrong because sidebar groups by category, not by allowed_menus order
@@ -539,7 +549,7 @@ export default function Dashboard() {
     // Untuk sales/guest: navigasikan ke menu pertama yang tersedia
     setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setIframeTitle('');
     const role = currentUser?.role?.toLowerCase() ?? '';
-    const isAdm = ['admin','superadmin'].includes(role) ||
+    const isAdm = ['admin','superadmin'].includes(role) || hasFullAccess(currentUser) ||
       (role === 'team' && (currentUser?.jabatan === 'Supervisor' || (currentUser?.allowed_menus ?? []).includes('dashboard')));
     if (isAdm) {
       setShowDashboardPanel(true);
@@ -642,7 +652,10 @@ export default function Dashboard() {
       .subscribe();
 
     return () => { supabase.removeChannel(ch); };
-  }, [isAdmin]);
+    // Dep-nya isFullAccess, bukan isAdmin: penjaga di atas memakai isFullAccess,
+    // jadi untuk akun Full Access non-admin nilai isAdmin tidak pernah berubah
+    // dan efek ini tidak pernah dijalankan ulang - badge-nya tidak muncul.
+  }, [isFullAccess]);
 
   const INTERNAL_KEYS = ['reminder-schedule', 'request-design-project', 'form-bast', 'ticket-troubleshooting', 'picket-showroom', 'kpi-team'];
   const PROJECT_KEYS = ['reminder-schedule', 'request-design-project', 'form-bast', 'ticket-troubleshooting', 'incentive-pts', 'project-progress'];
@@ -1364,7 +1377,7 @@ export default function Dashboard() {
                           {MENU_ICONS[menu.key] ?? <span>{menu.icon}</span>}
                           {/* Antrean request jadwal muncul DI SINI — di menu yang
                               benar-benar memuatnya, bukan di ikon Admin Panel. */}
-                          {menu.key === 'reminder-schedule' && isAdmin && pendingRequests > 0 && (
+                          {menu.key === 'reminder-schedule' && isFullAccess && pendingRequests > 0 && (
                             <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
                               {pendingRequests}
                             </span>
@@ -1541,7 +1554,7 @@ export default function Dashboard() {
                               <span className="flex-1 truncate text-sm font-medium">{item.name}</span>
                           {/* Antrean request jadwal muncul DI SINI — di menu yang
                               benar-benar memuatnya, bukan di ikon Admin Panel. */}
-                              {menu.key === 'reminder-schedule' && isAdmin && pendingRequests > 0 && (
+                              {menu.key === 'reminder-schedule' && isFullAccess && pendingRequests > 0 && (
                                 <span className="text-[10px] font-black bg-red-500 text-white rounded-full px-1.5 py-0.5 leading-none flex-shrink-0">
                                   {pendingRequests}
                                 </span>

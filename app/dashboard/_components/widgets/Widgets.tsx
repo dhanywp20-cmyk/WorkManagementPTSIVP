@@ -22,7 +22,7 @@ import {
 import { AnalyticsPlatform } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 import { ASSIGNABLE_PTS_TEAMS } from '@/lib/teams';
 import { ambilRingkasanPerforma, type RingkasanPerforma } from '@/lib/ringkasan-performa';
-import { isSalesGuest } from '@/lib/constants';
+import { isSalesGuest, hasFullAccess } from '@/lib/constants';
 import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
 import { SalesAnalyticsWidget, hasSalesAnalyticsData } from './SalesAnalyticsWidget';
 
@@ -132,7 +132,8 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
    * Supervisor PTS tetap memakai kartu lama di tab Analytics yang sudah
    * menyaring ke anggota timnya. Lihat catatan di lib/ringkasan-performa.ts.
    */
-  const adminPenuh = ['admin', 'superadmin'].includes((user?.role ?? '').toLowerCase());
+  const adminPenuh = ['admin', 'superadmin'].includes((user?.role ?? '').toLowerCase())
+    || hasFullAccess(user);
   const [performa, setPerforma] = useState<RingkasanPerforma | null>(null);
 
   useEffect(() => {

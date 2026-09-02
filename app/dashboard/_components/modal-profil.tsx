@@ -7,6 +7,7 @@ import { User, JabatanType, JABATAN_CONFIG, ALL_MENU_KEYS, ALL_MENU_LABELS, ROLE
 import { ModalPortal, formatUsername } from '@/components/shared';
 
 import { ambilProfil, Kartu, Baris, Kelompok } from './modal-bersama';
+import { hasFullAccess } from '@/lib/constants';
 
 // UserProfileModal
 
@@ -148,10 +149,11 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
     return 'Selamat Malam';
   })();
 
-  // Admin & superadmin melewati allowed_menus sepenuhnya, jadi daftarnya
+  // Admin, superadmin, dan pemegang Full Access melewati allowed_menus
+  // sepenuhnya (lihat saringan menu di dashboard/page.tsx), jadi daftarnya
   // dianggap penuh - kalau tidak, profil mereka justru terbaca paling sedikit
   // aksesnya, kebalikan dari kenyataannya.
-  const menuAktif = ['admin', 'superadmin'].includes((userData.role ?? '').toLowerCase())
+  const menuAktif = hasFullAccess(userData)
     ? ALL_MENU_KEYS
     : (userData.allowed_menus ?? []);
 
