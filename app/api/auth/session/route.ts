@@ -33,11 +33,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ user: null }, { status: 401 });
   }
 
-  // access_level opsional - kolom baru, jatuh balik tanpanya kalau belum ada
+  // access_level & piket_akses opsional - kolom baru, jatuh balik tanpanya kalau belum ada
   // di database (lihat catatan yang sama di app/api/auth/login/route.ts).
   let { data: user, error: userErr } = await supabase
     .from('users')
-    .select('id, username, full_name, role, team_type, sales_division, jabatan, phone_number, allowed_menus, kpi_enabled, access_level')
+    .select('id, username, full_name, role, team_type, sales_division, jabatan, phone_number, allowed_menus, kpi_enabled, access_level, piket_akses')
     .eq('id', session.user_id)
     .single();
   if (userErr) {

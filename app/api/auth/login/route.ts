@@ -52,13 +52,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Ambil user
-    // access_level (toggle Full Access) opsional - kolom baru, belum tentu
+    // access_level (toggle Full Access) & piket_akses opsional - kolom baru, belum tentu
     // sudah ada di database (sql/user-full-access-toggle.sql belum dijalankan).
     // Coba sertakan dulu; kalau gagal (kolom belum ada), jatuh balik TANPA
     // kolom itu supaya login tidak pernah ikut gagal gara-gara ini.
     let { data: user, error: userErr } = await supabase
       .from('users')
-      .select('id, username, full_name, role, team_type, sales_division, jabatan, phone_number, allowed_menus, kpi_enabled, access_level')
+      .select('id, username, full_name, role, team_type, sales_division, jabatan, phone_number, allowed_menus, kpi_enabled, access_level, piket_akses')
       .eq('username', username)
       .single();
     if (userErr) {

@@ -71,6 +71,30 @@ async function jalankan() {
   if (!ok) gagal++;
   console.log(`${ok ? 'OK  ' : 'GAGAL'}  ${p.nama.padEnd(24)} -> ${bocor ? 'CARI SEMUA' : 'dibatasi: ' + f}`);
  }
+
+ /*
+   Piket Showroom - baris TANPA PEMILIK.
+
+   Catatan kegiatan yang tidak punya nama sales sama sekali (training
+   internal, maintenance, standby - hampir separuh isi tabelnya) bukan
+   kunjungan pelanggan siapa pun. Tanpa opsi ini setiap akun non-PTS
+   kehilangan separuh isi halaman, termasuk Sales yang batasannya memang
+   cuma dimaksudkan untuk menutup pelanggan divisi tetangga.
+ */
+ const lSales = await hitungLingkupProject({ id: 's1', full_name: 'Fajar', role: 'guest' } as never);
+ const tanpaOpsi  = filterLingkup(lSales, 'nama_sales', 'sales_division');
+ const denganOpsi = filterLingkup(lSales, 'nama_sales', 'sales_division', { sertakanTanpaPemilik: true });
+ const uji: [string, boolean][] = [
+   ['bawaan TIDAK memuat baris tanpa pemilik', !(tanpaOpsi ?? '').includes('is.null')],
+   ['opsi memuat baris tanpa pemilik', (denganOpsi ?? '').includes('nama_sales.is.null')],
+   ['batas nama sendiri tetap ada', (denganOpsi ?? '').includes('nama_sales.eq."Fajar"')],
+   ['yang boleh lihat semua tetap tanpa filter',
+     filterLingkup({ semua: true, divisi: [], namaSendiri: 'X' }, 'nama_sales', 'sales_division', { sertakanTanpaPemilik: true }) === null],
+ ];
+ for (const [nama, ok] of uji) {
+   if (!ok) gagal++;
+   console.log(`${ok ? 'OK  ' : 'GAGAL'}  ${nama}`);
+ }
 }
 jalankan().then(() => {
 

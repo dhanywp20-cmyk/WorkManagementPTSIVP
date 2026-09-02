@@ -117,6 +117,23 @@ export function filterLingkup(
   l: LingkupProject,
   kolomNamaSales = 'sales_name',
   kolomDivisi = 'sales_division',
+  opsi: {
+    /**
+     * Ikutkan baris yang TIDAK punya pemilik sama sekali (nama sales NULL).
+     *
+     * Bawaannya false - untuk project, baris tanpa nama sales tetap milik
+     * seseorang yang namanya belum terisi, jadi menampilkannya ke semua orang
+     * salah.
+     *
+     * Untuk catatan kegiatan Piket Showroom keadaannya berbeda dan harus
+     * dinyatakan sendiri: hampir separuh barisnya memang tidak berpemilik -
+     * training internal, maintenance, standby - bukan kunjungan pelanggan
+     * siapa pun. Membuangnya berarti setiap akun non-PTS kehilangan separuh
+     * isi halaman, termasuk Sales yang batasannya memang seharusnya cuma
+     * "jangan lihat pelanggan divisi tetangga".
+     */
+    sertakanTanpaPemilik?: boolean;
+  } = {},
 ): string | null {
   if (l.semua) return null;
   // Nilai dikutip ganda karena nama & divisi bisa memuat koma - tanpa kutip,
@@ -126,5 +143,6 @@ export function filterLingkup(
   const aman = (v: string) => v.replace(/"/g, '');
   const bagian = [`${kolomNamaSales}.eq."${aman(l.namaSendiri)}"`];
   for (const d of l.divisi) bagian.push(`${kolomDivisi}.eq."${aman(d)}"`);
+  if (opsi.sertakanTanpaPemilik) bagian.push(`${kolomNamaSales}.is.null`);
   return bagian.join(',');
 }

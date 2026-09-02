@@ -7,6 +7,7 @@ import { getSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
 import { hitungLingkupProject, filterLingkup } from '@/lib/project-scope';
+import { bisaLihatSemuaTamu, bisaIsiKegiatan } from '@/lib/piket-akses';
 import {
   PiketRow, KegiatanEntry, UserRow, DayOfWeek,
   DAYS_OF_WEEK, DAY_COLOR, TEAM_LABEL,
@@ -57,11 +58,33 @@ function PiketShowroomPageInner() {
   const [confirmState,setConfirmState]=useState<ConfirmState|null>(null);
   const wk=toKey(weekStart);
 
-  useEffect(()=>{ const u=getSession(); if(u) setCurrentUser(u as unknown as UserRow); },[]);
+  useEffect(()=>{
+    const u=getSession<{username?:string}>(); if(!u) return;
+    setCurrentUser(u as unknown as UserRow);
+    /*
+      piket_akses dibaca ULANG dari basis data, tidak dipercayakan pada
+      salinan sesi di peramban. Sesi bisa berumur berhari-hari, sementara
+      setelannya baru saja diubah admin - dan tanpa ini resepsionis harus
+      logout/login dulu sebelum halamannya terisi, tanpa ada yang memberitahu.
+    */
+    if(!u.username) return;
+    supabase.from('users').select('piket_akses,access_level,role,team_type').eq('username',u.username).single()
+      .then(({data}:{data:{piket_akses:string|null;access_level:string|null;role:string|null;team_type:string|null}|null})=>{
+        if(data) setCurrentUser((prev:any)=>prev?{...prev,...data}:prev);
+      });
+  },[]);
   // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
   // (lihat lib/constants.ts hasFullAccess) - mis. Manager PTS yang mengelola
   // jadwal piket timnya sendiri.
   const isAdmin=hasFullAccess(currentUser);
+  /*
+    Hak MENGISI kegiatan piket - beda dari isAdmin (yang mengatur roster) dan
+    beda dari hak melihat. Tombol Edit dulu dirender tanpa syarat apa pun,
+    jadi setiap akun yang diberi menu Piket Showroom bisa mengubah catatan
+    hari itu - termasuk akun Sales & resepsionis yang seharusnya membaca saja.
+    Yang piket hari itu Tim PTS, dan merekalah yang mencatat tamunya.
+  */
+  const bolehIsi=bisaIsiKegiatan(currentUser);
 
   const fetchData=useCallback(async()=>{
     setLoading(true);
@@ -76,10 +99,24 @@ function PiketShowroomPageInner() {
       //
       // Batas dipasang DI QUERY, bukan saat render, supaya barisnya tidak
       // pernah sampai ke browser dan terbaca lewat DevTools.
-      const lingkup = await hitungLingkupProject(currentUser as never);
-      const batas = filterLingkup(lingkup, 'nama_sales', 'sales_division');
+      //  Batasnya HANYA untuk yang memang Sales. Resepsionis / front desk
+      //  bukan Sales - namanya tidak pernah muncul sebagai nama_sales - jadi
+      //  aturan lingkup Sales menyisakan NOL baris untuknya, dan seluruh
+      //  ringkasan halaman ini tampil kosong (total jam 0, semua pie chart
+      //  kosong). Bukan disembunyikan dengan sengaja, tapi efeknya sama.
+      //  Siapa yang dikecualikan diatur per akun (users.piket_akses), bukan
+      //  ditebak dari role atau dari kepemilikan menu.
       let kgQ = supabase.from('piket_tamu_detail').select('*').order('created_at');
-      if (batas) kgQ = kgQ.or(batas);
+      if (!bisaLihatSemuaTamu(currentUser)) {
+        const lingkup = await hitungLingkupProject(currentUser as never);
+        //  sertakanTanpaPemilik: kegiatan tanpa nama sales sama sekali
+        //  (training internal, maintenance, standby - hampir separuh isi
+        //  tabel) bukan kunjungan pelanggan siapa pun. Tanpa ini, Sales pun
+        //  kehilangan separuh halaman, padahal batasannya cuma dimaksudkan
+        //  untuk menutup pelanggan divisi tetangga.
+        const batas = filterLingkup(lingkup, 'nama_sales', 'sales_division', { sertakanTanpaPemilik: true });
+        if (batas) kgQ = kgQ.or(batas);
+      }
 
       const[wRes,aRes,uRes,kgRes,plRes]=await Promise.all([
         supabase.from('piket_schedules').select('*').in('week_start',[wk,wk2]).order('day_date'),
@@ -652,7 +689,7 @@ function PiketShowroomPageInner() {
                             <td className="px-1 py-3 align-middle text-center" rowSpan={kgToShow.length} style={{verticalAlign:'middle'}}>
                               <ActionGroup>
                                 {!isVirtual&&<ViewIconBtn onClick={()=>setViewDetail(row)} />}
-                                <EditIconBtn onClick={()=>isVirtual?handleFillVirtual(row):setFillDetail(row)} />
+                                {bolehIsi&&<EditIconBtn onClick={()=>isVirtual?handleFillVirtual(row):setFillDetail(row)} />}
                                 {!isVirtual&&isAdmin&&<DeleteIconBtn onClick={()=>handleDeleteRow(row)} />}
                               </ActionGroup>
                               {isAdmin&&(
@@ -687,7 +724,7 @@ function PiketShowroomPageInner() {
 
       {showSchedule&&isAdmin&&<ScheduleModal weekStart={weekStart} users={ptUsers} currentUser={currentUser} onClose={()=>setShowSchedule(false)} onSaved={fetchData}/>}
       {fillDetail&&<FillDetailModal row={fillDetail} onClose={()=>setFillDetail(null)} onSaved={fetchData} currentUser={currentUser}/>}
-      {viewDetail&&<ViewDetailModal row={viewDetail} kegiatanList={kegiatanList} currentUser={currentUser} onClose={()=>setViewDetail(null)} onEdit={()=>{setViewDetail(null);setFillDetail(viewDetail);}}/>}
+      {viewDetail&&<ViewDetailModal row={viewDetail} kegiatanList={kegiatanList} currentUser={currentUser} onClose={()=>setViewDetail(null)} onEdit={bolehIsi?()=>{setViewDetail(null);setFillDetail(viewDetail);}:undefined}/>}
       {showCalendar&&<MiniCalendarPopup allRows={allRows} holidays={holidays} onClose={()=>setShowCalendar(false)}/>}
 
       <style>{`

@@ -73,7 +73,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
             <div className="text-center py-10 px-6 rounded-xl" style={{background:'rgba(0,0,0,0.03)',border:'1.5px dashed rgba(0,0,0,0.1)'}}>
               <div className="text-4xl mb-2">📋</div>
               <p className="text-sm font-bold text-gray-600">Belum ada kegiatan dicatat</p>
-              <p className="text-xs text-gray-500 mt-1">Tambahkan kegiatan dengan mengklik tombol Edit</p>
+              <p className="text-xs text-gray-500 mt-1">{onEdit?'Tambahkan kegiatan dengan mengklik tombol Edit':'Belum ada yang dicatat petugas piket untuk hari ini.'}</p>
             </div>
           ):(
             <div className="space-y-4">
@@ -223,10 +223,17 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
             style={{background:'rgba(100,116,139,0.1)',color:'#475569',border:'1px solid rgba(100,116,139,0.25)'}}>
             Tutup
           </button>
-          <button onClick={handleEditClick} className="flex-1 px-4 py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
-            style={{background:dc.grad,boxShadow:`0 4px 12px ${dc.accent}30`}}>
-            ✏️ Edit
-          </button>
+          {/* Tombol Edit hanya muncul bila pemanggil memang memberi onEdit -
+              yaitu untuk Tim PTS. Dulu ia selalu dirender dan memanggil
+              onEdit?.(), sehingga akun yang tidak boleh menyunting tetap
+              melihat tombolnya dan menekannya tidak melakukan apa-apa: tombol
+              yang diam lebih membingungkan daripada tombol yang tidak ada. */}
+          {onEdit&&(
+            <button onClick={handleEditClick} className="flex-1 px-4 py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+              style={{background:dc.grad,boxShadow:`0 4px 12px ${dc.accent}30`}}>
+              ✏️ Edit
+            </button>
+          )}
         </div>
       </div>
     </div>
