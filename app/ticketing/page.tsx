@@ -1376,6 +1376,11 @@ function TicketingSystemInner() {
         }
       }
 
+      //  Ticket ditolak berarti pekerjaannya tidak jadi - jadwal onsite yang
+      //  terlanjur dibuat harus ikut dibatalkan, bukan dibiarkan menggantung
+      //  di Reminder Schedule seolah masih akan dikerjakan.
+      void tutupJadwalTicket(rejectTargetTicket, 'cancelled');
+
       await fetchData();
       setShowRejectModal(false);
       setRejectTargetTicket(null);
@@ -1520,6 +1525,57 @@ function TicketingSystemInner() {
     } catch {
       //  Kabar yang gagal tidak boleh membatalkan penyelesaian ticketnya -
       //  pekerjaannya sudah benar-benar selesai, apa pun nasib notifikasinya.
+    }
+  };
+
+  /**
+   * Tutup jadwal Reminder Schedule yang lahir dari ticket ini.
+   *
+   * KENAPA SEARAH SAJA (ticket -> reminder, bukan sebaliknya)
+   *
+   * Ticket adalah sumber kebenaran pekerjaan troubleshooting; reminder yang
+   * dibuat otomatis saat status Onsite hanyalah bayangan jadwalnya. Kalau
+   * dibuat dua arah, menutup reminder akan ikut menutup ticket - padahal
+   * ticket punya syarat penyelesaiannya sendiri (catatan aktivitas, lampiran,
+   * serah terima Team Services) yang akan terlewati begitu saja.
+   *
+   * KENAPA HANYA KATEGORI TROUBLESHOOTING
+   *
+   * Menyelesaikan reminder kategori Konfigurasi/Training memicu Form Review
+   * dan perhitungan insentif, dan menuntut tanggal BAST diisi lebih dulu.
+   * Menutupnya dari sini akan melewati langkah-langkah itu diam-diam - uang
+   * dan dokumen serah terima bukan hal yang boleh dilewati program. Reminder
+   * yang lahir dari Ticketing selalu berkategori Troubleshooting, yang tidak
+   * memicu keduanya, jadi penjaga ini sekaligus memastikan hanya jadwal
+   * bawaan Ticketing yang tersentuh.
+   */
+  const tutupJadwalTicket = async (t: Ticket, jadi: 'done' | 'cancelled') => {
+    try {
+      //  Satu perintah saja: UPDATE ... RETURNING. Menghitung dulu lalu
+      //  mengubah membuat dua kebenaran yang bisa berbeda di antaranya.
+      const { data: terubah, error } = await supabase.from('reminders')
+        .update({ status: jadi })
+        .eq('ticket_id', t.id)
+        .eq('category', 'Troubleshooting')
+        .neq('status', jadi)
+        .select('id');
+
+      //  Tidak ada jadwal terkait yang perlu disentuh - itu keadaan normal
+      //  (ticket yang tidak pernah lewat status Onsite), bukan kegagalan.
+      if (!error && (!terubah || terubah.length === 0)) return;
+
+      //  RLS yang menolak menjawab 0 baris TANPA galat, jadi hasilnya
+      //  diperiksa - bukan dianggap berhasil begitu saja.
+      if (error) {
+        notify('error', 'Ticket tersimpan, tapi jadwal di Reminder Schedule gagal ditutup. Mohon tutup manual.');
+        return;
+      }
+      notify('success', jadi === 'done'
+        ? `Jadwal di Reminder Schedule ikut ditutup (${terubah!.length}).`
+        : `Jadwal di Reminder Schedule ikut dibatalkan (${terubah!.length}).`);
+    } catch {
+      /* Ticketnya sendiri sudah tersimpan - kegagalan menutup jadwal tidak
+         boleh membatalkannya. */
     }
   };
 
@@ -1715,6 +1771,10 @@ function TicketingSystemInner() {
         //  terjadi.
         if (effectiveStatus === "Solved") {
           void kabarkanTicketSelesai(selectedTicket, useAutoNotes ? autoNotes : (newActivity.notes || ""));
+          //  Jadwal Onsite yang lahir dari ticket ini ikut ditutup, supaya tim
+          //  tidak perlu menandai selesai dua kali di dua layar berbeda -
+          //  pekerjaannya memang satu, cuma tercatat di dua tempat.
+          void tutupJadwalTicket(selectedTicket, 'done');
         }
 
         // PENDING ACTION: perpanjang deadline Overdue sesuai hari yg dipilih
@@ -1744,6 +1804,22 @@ function TicketingSystemInner() {
         // Jika tidak ada jadwal, gunakan tanggal hari ini.
         if (newActivity.new_status === "Onsite") {
           try {
+            /*
+              Penjaga duplikat. Sebelum ini tidak ada: setiap kali status
+              diubah ke Onsite - termasuk saat tim mengoreksi catatan lalu
+              menyimpan ulang - satu reminder BARU dibuat lagi untuk ticket
+              yang sama. Akibatnya jadwal yang sudah dikerjakan muncul dua
+              kali di Reminder Schedule dan harus ditutup satu per satu.
+
+              Yang diperiksa hanya reminder yang MASIH TERBUKA: kunjungan
+              onsite kedua untuk ticket yang sama memang sah punya jadwal
+              sendiri, jadi kalau yang lama sudah selesai, yang baru tetap
+              boleh dibuat.
+            */
+            const { data: sudahAda } = await supabase.from('reminders')
+              .select('id').eq('ticket_id', selectedTicket.id).neq('status', 'done').limit(1);
+            if (sudahAda && sudahAda.length > 0) throw new Error('sudah ada jadwal terbuka');
+
             const assignedUsername = currentUser?.username || "";
             // Cari full_name user
             const { data: userData } = await supabase
@@ -1780,6 +1856,10 @@ function TicketingSystemInner() {
               pic_phone: "",
               product: selectedTicket.product || selectedTicket.sn_unit || "",
               created_by: assignedUsername,
+              //  Kaitan sungguhan ke ticketnya. Catatan teks di bawah tetap
+              //  ditulis supaya terbaca manusia, tapi yang dipakai program
+              //  untuk menutup reminder ini nanti adalah kolom ini.
+              ticket_id: selectedTicket.id,
               // ticket_id sebagai link reference ke Ticketing
               notes: `Ticket ID: ${selectedTicket.id} | Project: ${selectedTicket.project_name} | Dibuat otomatis dari Platform Ticketing saat status Onsite dijadwalkan`,
             };
