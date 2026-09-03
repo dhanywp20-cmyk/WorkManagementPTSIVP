@@ -83,10 +83,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'project_name wajib.' }, { status: 400 });
   }
 
+  //  Termasuk pemegang Full Access (Manager PTS IVP), bukan hanya role
+  //  admin - lihat lib/penerima-admin.ts.
   const { data: admins, error } = await client
     .from('users')
     .select('phone_number')
-    .eq('role', 'admin')
+    .or('role.in.(admin,superadmin),access_level.eq.full')
     .not('phone_number', 'is', null)
     .neq('phone_number', '');
   if (error) {

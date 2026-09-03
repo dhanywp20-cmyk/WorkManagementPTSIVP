@@ -1734,7 +1734,8 @@ export default function Dashboard() {
                  Analytics = launcher full-screen (bukan embed) utk yg berhak. */
               <div className="w-full h-full overflow-hidden relative"
                 style={{ backgroundImage: 'url(/IVP_Background.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
-                <PermissionAwareDashboard currentUser={currentUser} openMenu={openMenuByKey} openUrl={handleNotifNavigate} />
+                <PermissionAwareDashboard currentUser={currentUser} openMenu={openMenuByKey} openUrl={handleNotifNavigate}
+                  onHubungkanTelegram={() => setShowUserProfile(true)} />
               </div>
             ) : showTicketing ? (
               <div className={layarPenuh

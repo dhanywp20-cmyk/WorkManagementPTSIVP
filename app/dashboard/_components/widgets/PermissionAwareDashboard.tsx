@@ -10,9 +10,11 @@
  * width; sisanya (lg/md/sm) di-grid responsif dengan `lg` melebar 2 kolom.
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { User } from '../shared';
 import { WIDGETS, type WidgetDef } from './Widgets';
+import { supabase } from '@/lib/supabase';
+import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
 
 const SIZE_SPAN: Record<string, string> = {
   lg: 'sm:col-span-2 lg:col-span-2',
@@ -20,11 +22,44 @@ const SIZE_SPAN: Record<string, string> = {
   sm: '',
 };
 
-export default function PermissionAwareDashboard({ currentUser, openMenu, openUrl }: {
+export default function PermissionAwareDashboard({ currentUser, openMenu, openUrl, onHubungkanTelegram }: {
   currentUser: User;
   openMenu: (key: string) => void;
   openUrl: (url: string, title: string) => void;
+  /** Membuka Profil, tempat akun Telegram dihubungkan. */
+  onHubungkanTelegram?: () => void;
 }) {
+  /*
+    Spanduk "Telegram belum terhubung".
+
+    Telegram hanya bisa mengirim ke orang yang SUDAH menyapa botnya sendiri -
+    tidak ada cara admin mengisikannya dari belakang layar. Jadi selama seorang
+    anggota belum melakukannya, seluruh notifikasi Telegram untuknya hilang
+    tanpa jejak: tidak ada yang gagal, tidak ada yang error, pesannya memang
+    tidak pernah punya tujuan. Spanduk ini satu-satunya tempat kenyataan itu
+    bisa terlihat oleh orang yang bisa membereskannya.
+
+    Hanya muncul kalau kanal Telegram memang menyala - kalau admin belum
+    menyalakannya, mengajak orang menghubungkan akun cuma jadi gangguan.
+  */
+  const [ajakTelegram, setAjakTelegram] = useState(false);
+  const [tutupAjakan, setTutupAjakan] = useState(false);
+
+  useEffect(() => {
+    let batal = false;
+    (async () => {
+      try {
+        const p = await bacaPengaturan();
+        if (!p.aktif.telegram) return;
+        const { data, error } = await supabase.from('users')
+          .select('telegram_chat_id').eq('id', currentUser.id).maybeSingle();
+        // Kolomnya baru; pemasangan yang belum menjalankan migrasinya cukup
+        // tidak menampilkan spanduk, bukan menampilkan ajakan yang keliru.
+        if (!batal && !error && data && !data.telegram_chat_id) setAjakTelegram(true);
+      } catch { /* diam - spanduk opsional, bukan bagian alur kerja */ }
+    })();
+    return () => { batal = true; };
+  }, [currentUser.id]);
   // Resolve: filter by permission  sort by priority.
   const visible = WIDGETS
     .filter(w => w.permission(currentUser))
@@ -67,6 +102,31 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
       </header>
 
       <div className="max-w-[1600px] mx-auto px-3 md:px-8 py-4 md:py-6 space-y-4 md:space-y-5">
+
+        {ajakTelegram && !tutupAjakan && (
+          <div className="rounded-xl flex items-center gap-3 md:gap-4 px-4 py-3.5 flex-wrap"
+            style={{ background: '#fffbeb', border: '1px solid #fcd34d' }}>
+            <span className="w-9 h-9 rounded-lg grid place-items-center flex-shrink-0 text-white text-base"
+              style={{ background: '#f59e0b' }}>➤</span>
+            <span className="flex-1 min-w-[220px]">
+              <span className="block text-[13.5px] font-bold text-slate-800">Telegram Anda belum terhubung</span>
+              <span className="block text-[12px] text-slate-600 mt-0.5 leading-relaxed">
+                Notifikasi jadwal baru, assign tugas, dan approval belum bisa masuk ke Telegram.
+                Cukup sekali hubungkan — tidak perlu diulang.
+              </span>
+            </span>
+            <button type="button" onClick={() => setTutupAjakan(true)}
+              className="text-[11.5px] font-bold px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-amber-700 hover:bg-amber-50 flex-shrink-0">
+              Nanti saja
+            </button>
+            <button type="button" onClick={onHubungkanTelegram}
+              className="text-[11.5px] font-bold px-3 py-1.5 rounded-lg text-white flex-shrink-0"
+              style={{ background: '#f59e0b' }}>
+              Hubungkan sekarang →
+            </button>
+          </div>
+        )}
+
         {composed.map((block, i) =>
           block.type === 'full' ? (
             <div key={`full-${block.widget.id}-${i}`}>
