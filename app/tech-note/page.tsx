@@ -11,6 +11,7 @@ import {
   formatDate, formatDateShort, getInitials,
 } from './_components/shared';
 import { logAudit } from '@/lib/audit';
+import { sendWANotif } from '@/lib/wa';
 import { createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { hasFullAccess } from '@/lib/constants';
 
@@ -495,8 +496,19 @@ export default function TechNotePage() {
     setSaving(true);
     const now = new Date().toISOString();
     const newStatus = approvalForm.action === 'approved' ? 'approved' : approvalForm.action === 'rejected' ? 'rejected' : 'revision';
-    await supabase.from('tech_notes').update({ status:newStatus, reviewed_at:now,
-      reviewed_by:currentUser.id, reviewed_by_name:currentUser.full_name, review_note:approvalForm.note||null }).eq('id',approveModal.id);
+    //  Hasilnya diperiksa: RLS yang menolak menjawab 0 baris TANPA galat, dan
+    //  approval yang gagal diam-diam berarti penulisnya menunggu keputusan
+    //  yang sebenarnya tidak pernah tersimpan.
+    const { data: terubah, error: galatUbah } = await supabase.from('tech_notes')
+      .update({ status:newStatus, reviewed_at:now,
+        reviewed_by:currentUser.id, reviewed_by_name:currentUser.full_name,
+        review_note:approvalForm.note||null })
+      .eq('id',approveModal.id).select('id');
+    if (galatUbah || !terubah || terubah.length === 0) {
+      setSaving(false);
+      alert('Gagal menyimpan keputusan review. Coba lagi atau hubungi admin.');
+      return;
+    }
     await supabase.from('tech_note_history').insert({
       tech_note_id:approveModal.id, action:approvalForm.action,
       performed_by:currentUser.id, performed_by_name:currentUser.full_name,
@@ -506,6 +518,38 @@ export default function TechNotePage() {
     if (approveModal.author_id) {
       const actionLabel = approvalForm.action === 'approved' ? '✅ Disetujui' : approvalForm.action === 'rejected' ? '❌ Ditolak' : '🔄 Perlu Revisi';
       void createNotification({ user_id: approveModal.author_id, type: 'system', title: `📄 Tech Note ${actionLabel}`, body: `"${approveModal.title}" — ${approvalForm.note || 'Tanpa catatan'}`, action_url: '/tech-note', ref_id: approveModal.id, created_by: currentUser.full_name ?? '' });
+
+      /*
+        Sebelum ini keputusan review HANYA badge in-app. Artinya penulis yang
+        catatannya ditolak atau diminta revisi baru tahu kalau kebetulan
+        membuka platform - padahal justru dialah yang harus menindaklanjuti,
+        dan revisi yang tidak pernah dikerjakan membuat catatan teknis
+        mengendap tanpa ada yang sadar.
+
+        sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus (lib/wa.ts).
+      */
+      try {
+        const { data: penulis } = await supabase.from('users')
+          .select('full_name, phone_number').eq('id', approveModal.author_id).maybeSingle();
+        if (penulis?.phone_number) {
+          void sendWANotif({
+            type: 'reminder_wa',
+            target: penulis.phone_number,
+            message: [
+              `📄 *TECH NOTE ${actionLabel.replace(/^[^\s]+\s/, '').toUpperCase()}*`,
+              '━━━━━━━━━━━━━━━━━━',
+              `Halo *${penulis.full_name}*, catatan teknismu sudah direview oleh *${currentUser.full_name}*:`,
+              `📌 *Judul  :* ${approveModal.title}`,
+              `📝 *Catatan:* ${approvalForm.note || 'Tanpa catatan'}`,
+              '━━━━━━━━━━━━━━━━━━',
+              approvalForm.action === 'approved'
+                ? 'Terima kasih sudah berbagi — catatanmu kini bisa dipakai tim. 🙌'
+                : 'Silakan ditindaklanjuti lalu ajukan kembali.',
+              '🔗 https://work-management-ptsivp.vercel.app/tech-note',
+            ].join('\n'),
+          });
+        }
+      } catch { /* kabar gagal tidak boleh membatalkan keputusan reviewnya */ }
     }
     setSaving(false); setApproveModal(null); setDetailNote(null);
     setApprovalForm({ action:'approved', note:'' }); fetchNotes();

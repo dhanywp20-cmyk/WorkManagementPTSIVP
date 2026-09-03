@@ -4,6 +4,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { clearSession, getSession } from '@/lib/auth';
+import { sendWANotif } from '@/lib/wa';
+import { createNotification } from '@/lib/notifications';
+import { penerimaAdminBernomor } from '@/lib/penerima-admin';
 import { logAudit } from '@/lib/audit';
 import { compressImage } from '@/lib/image-compress';
 import { hasFullAccess } from '@/lib/constants';
@@ -269,6 +272,50 @@ export default function FormReviewPage() {
 
     if (error) { notify('error', 'Gagal menyimpan: ' + error.message); return; }
     notify('success', 'Review berhasil disimpan!');
+
+    /*
+      Kabar bahwa review sudah masuk.
+
+      Sebelum ini pengisian review TIDAK mengabari siapa pun - tidak WA,
+      tidak Telegram, tidak badge in-app. Padahal isinya penilaian atas
+      pekerjaan seorang anggota tim (dan ikut terbaca di KPI): yang dinilai
+      tidak pernah tahu penilaiannya sudah masuk, dan admin tidak tahu
+      review yang ditunggu sudah lengkap.
+    */
+    try {
+      const penerima = new Map<string, { id: string; full_name: string; phone_number: string | null }>();
+      if (editingReview.assigned_to) {
+        const { data: penangan } = await supabase.from('users')
+          .select('id, full_name, phone_number').eq('username', editingReview.assigned_to).maybeSingle();
+        if (penangan) penerima.set(penangan.id, penangan);
+      }
+      for (const a of await penerimaAdminBernomor()) {
+        penerima.set(a.id, { id: a.id, full_name: a.full_name, phone_number: a.phone_number });
+      }
+
+      const pesan = [
+        '📝 *FORM REVIEW SUDAH DIISI*',
+        '━━━━━━━━━━━━━━━━━━',
+        `📌 *Project :* ${editingReview.project_name}`,
+        `👤 *Diisi   :* ${currentUser?.full_name || editingReview.guest_username || '-'}`,
+        `🙋 *Ditangani:* ${editingReview.assign_name || '-'}`,
+        '━━━━━━━━━━━━━━━━━━',
+        'Hasil penilaian sudah bisa dilihat di menu Form Review.',
+        '🔗 https://work-management-ptsivp.vercel.app/dashboard',
+      ].join('\n');
+
+      for (const u of penerima.values()) {
+        //  sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus.
+        if (u.phone_number) void sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesan });
+        void createNotification({
+          user_id: u.id, type: 'system',
+          title: '📝 Form Review sudah diisi',
+          body: `${editingReview.project_name} — ${editingReview.assign_name || ''}`.trim(),
+          action_url: '/form-review', ref_id: editingReview.id,
+          created_by: currentUser?.full_name ?? '',
+        });
+      }
+    } catch { /* kabar gagal tidak boleh membatalkan review yang sudah tersimpan */ }
     void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.username ?? '', action: 'update', module: 'form-review', target_id: editingReview.id, target_name: editingReview.project_name, notes: `Grade ${editingReview.review_category}` });
     setShowFormModal(false);
     setEditingReview(null);

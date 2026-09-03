@@ -134,11 +134,21 @@ export const CONTROLLER_BRANDS: { value: ControllerBrand; label: string }[] = [
   { value: 'wyrestorm', label: 'Wyrestorm' },
 ];
 
-// PTS IVP user yang boleh handle Controller Automation (standard pic_type)
-export const CONTROLLER_AUTOMATION_ELIGIBLE = ['yoga', 'farhan'] as const;
+/*
+  DIHAPUS: CONTROLLER_AUTOMATION_ELIGIBLE = ['yoga', 'farhan']
+           MANAGER_PIC_USERNAME = 'dhany'
 
-// Manager/PIC fixed user (Dhany)
-export const MANAGER_PIC_USERNAME = 'dhany';
+  Dua konstanta itu memaku USERNAME ORANG di dalam kode - persis bentuk yang
+  membuat platform ini tidak bisa dijual: begitu Yoga atau Farhan pindah
+  posisi, atau perusahaan lain memakainya, keduanya menunjuk orang yang tidak
+  ada dan tidak ada cara membetulkannya selain menyunting kode.
+
+  Keduanya sudah TIDAK DIPAKAI di mana pun saat dihapus - dibiarkan berdiri
+  justru berbahaya, sebab tampak seperti sumber kebenaran yang siap dipakai
+  lagi. Bila kelak butuh "siapa yang boleh menangani X", jawabannya lewat
+  kolom yang diatur admin (pola bisa_ditugaskan / access_level), bukan daftar
+  nama di kode.
+*/
 
 // Constants
 export const PRIORITY_CONFIG: Record<Priority, { label: string; color: string; bg: string; border: string; dot: string }> = {
