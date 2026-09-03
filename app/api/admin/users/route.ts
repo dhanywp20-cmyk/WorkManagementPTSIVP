@@ -22,6 +22,9 @@ const ALLOWED_FIELDS = new Set([
   'username', 'full_name', 'role', 'team_type', 'sales_division',
   'jabatan', 'phone_number', 'allowed_menus', 'allow_incentive_input', 'incentive_brand_scope', 'incentive_akses',
   'atasan_id', 'kpi_enabled', 'is_internal_sales', 'access_level', 'piket_akses',
+  //  Toggle "boleh ditugaskan pekerjaan" - dibekukan trigger untuk anon, jadi
+  //  hanya bisa diubah lewat route ini. Lihat lib/teams.ts bolehDitugaskan().
+  'bisa_ditugaskan',
 ]);
 // 'password' sengaja TIDAK ada di daftar: kolom itu peninggalan dan tidak
 // pernah dibaca saat login. Password disimpan di user_credentials lewat

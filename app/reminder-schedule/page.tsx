@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { hitungReviewMenggantung } from '@/lib/form-review-gate';
 import { setSession, clearSession, getSession, startSessionWatcher } from '@/lib/auth';
 import { isAdmin as checkIsAdmin, hasFullAccess } from '@/lib/constants';
-import { isAssignablePTSTeam } from '@/lib/teams';
+import { isAssignablePTSTeam, bolehDitugaskan } from '@/lib/teams';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { normalkanNama } from '@/lib/kelompok-insentif';
 import { notifyReminderApproved, createNotification, createNotificationForAdmins } from '@/lib/notifications';
@@ -456,9 +456,9 @@ function ReminderSchedulePageInner() {
   // Berjalan otomatis setiap hari tanpa perlu buka halaman
 
   const fetchTeamUsers = async () => {
-    const { data } = await supabase.from('users').select('id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan, telegram_chat_id').order('full_name');
+    const { data } = await supabase.from('users').select('id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan, telegram_chat_id, bisa_ditugaskan').order('full_name');
     // Hanya team assignable (IVP/MVI - UMP dikecualikan, lihat lib/teams.ts). Ubah di satu tempat itu utk tambah/kurangi team.
-    if (data) setTeamUsers(data.filter((u: TeamUser) => isAssignablePTSTeam(u.team_type) && u.role !== 'admin' && u.role !== 'superadmin'));
+    if (data) setTeamUsers(data.filter((u: TeamUser) => bolehDitugaskan(u) && u.role !== 'admin' && u.role !== 'superadmin'));
   };
 
   const fetchGuestUsers = async () => {

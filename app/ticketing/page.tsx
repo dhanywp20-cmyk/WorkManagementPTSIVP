@@ -11,7 +11,7 @@ import { notifyTicketAssigned, createNotification } from "@/lib/notifications";
 import { penerimaAdminBernomor } from "@/lib/penerima-admin";
 import { logAudit } from "@/lib/audit";
 import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField } from "@/lib/admin-edit";
-import { isAssignablePTSTeam } from "@/lib/teams";
+import { isAssignablePTSTeam, bolehDitugaskan } from "@/lib/teams";
 import { hasFullAccess } from "@/lib/constants";
 import { idDariNama, kutipNilai, tanpaIdentitas, cobaIdentitas } from "@/lib/identitas";
 import { resolveBrandInternals, BRAND_OPTIONS, type Brand } from "@/lib/brand-routing";
@@ -398,7 +398,7 @@ function TicketingSystemInner() {
       if (!silent) setTicketsLoading(true);
       const [membersData, usersData] = await Promise.all([
         // team_members tidak ada - ambil dari users dengan role team
-        supabase.from("users").select("id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan").in("role", ["team", "team_pts"]).order("full_name"),
+        supabase.from("users").select("id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan, bisa_ditugaskan").in("role", ["team", "team_pts"]).order("full_name"),
         supabase.from("users").select("id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan, is_internal_sales"),
       ]);
       // Map users ke format TeamMember agar kompatibel dengan kode existing
@@ -2103,7 +2103,11 @@ function TicketingSystemInner() {
 
   // Team yg boleh di-assign tiket = ASSIGNABLE_PTS_TEAMS (IVP/MVI - UMP dikecualikan,
   // lihat lib/teams.ts). Manager dikecualikan - bukan handler teknis biasa.
-  const teamPTSMembers = useMemo(() => teamMembers.filter((m) => isAssignablePTSTeam(m.team_type) && m.jabatan !== "Manager"), [teamMembers]);
+  //  Dulu `m.jabatan !== "Manager"` dipaku di sini. Diganti toggle per akun
+//  (lihat bolehDitugaskan di lib/teams.ts): perusahaan lain bisa saja
+//  Manager-nya memang ikut mengerjakan, dan itu harus bisa diatur dari
+//  Admin Panel tanpa menyunting kode.
+  const teamPTSMembers = useMemo(() => teamMembers.filter(bolehDitugaskan), [teamMembers]);
   const teamServicesMembers = useMemo(() => teamMembers.filter((m) => m.team_type === "Team Services" && m.jabatan !== "Manager"), [teamMembers]);
   // Supervisor PTS - utk opsi "Route ke Supervisor" saat approve (tahap supervisor_assign).
   const supervisorMembers = useMemo(() => teamMembers.filter((m) => isAssignablePTSTeam(m.team_type) && m.jabatan === "Supervisor"), [teamMembers]);

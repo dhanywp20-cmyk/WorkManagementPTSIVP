@@ -10,7 +10,7 @@ import {
   PIE_COLORS,
 } from './shared';
 import { SalesPicker, ModalPortal, BatalButton, SubmitFormButton } from '@/components/shared';
-import { isAssignablePTSTeam } from '@/lib/teams';
+import { isAssignablePTSTeam, bolehDitugaskan } from '@/lib/teams';
 import { tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
 
@@ -57,11 +57,11 @@ export function AssignPTSModal({
   useEffect(() => {
     // Fetch Team PTS (hanya team assignable = IVP/MVI, UMP dikecualikan - lib/teams.ts)
     supabase.from('users')
-      .select('id, full_name, role, team_type, phone_number, sales_division')
+      .select('id, full_name, role, team_type, phone_number, sales_division, bisa_ditugaskan')
       .in('role', ['team_pts', 'team'])
       .then(({ data }: { data: User[] | null }) => {
         if (!data) return;
-        const anggota = data.filter(u => isAssignablePTSTeam(u.team_type));
+        const anggota = data.filter(bolehDitugaskan);
         setTeamMembers(anggota);
         // Pra-pilih handler yang sudah tercatat, kalau orangnya memang ketemu.
         // Dicocokkan lewat uuid dulu; nama hanya cadangan untuk baris lama.

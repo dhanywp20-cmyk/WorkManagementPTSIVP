@@ -560,6 +560,8 @@ export function AccountSettingsInline() {
    * berlaku saat "Simpan Perubahan" ditekan, sama seperti field lainnya.
    */
   const [editAccessLevel, setEditAccessLevel] = useState<'full' | 'guest'>('guest');
+  /** Muncul di dropdown penerima tugas? Lihat bolehDitugaskan di lib/teams.ts. */
+  const [editBisaDitugaskan, setEditBisaDitugaskan] = useState(true);
 
   const menuLabels: Record<string, { label: string; icon: string }> = {
     'dashboard': { label: 'Analytics Dashboard (KPI)', icon: '📊' },
@@ -583,7 +585,7 @@ export function AccountSettingsInline() {
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
-    const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type,created_at,access_level,piket_akses').order('full_name');
+    const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type,created_at,access_level,piket_akses,bisa_ditugaskan').order('full_name');
     if (error) {
       // Fallback: try without extended columns (divisi/pts_type may not exist yet)
       const { data: fallback, error: err2 } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,created_at').order('full_name');
@@ -696,7 +698,10 @@ export function AccountSettingsInline() {
       //  jalur tersendiri seperti access_level) karena route admin sudah
       //  memasukkannya ke whitelist dan menulisnya dengan service-role, jadi
       //  trigger pembekuan kolom tidak menghalangi.
-      piket_akses: role === 'team' ? null : (editingUser.piket_akses ?? null) };
+      piket_akses: role === 'team' ? null : (editingUser.piket_akses ?? null),
+      //  Ikut updatePayload biasa: route admin menulisnya dengan service-role,
+      //  jadi pembekuan kolom di trigger tidak menghalangi.
+      bisa_ditugaskan: editBisaDitugaskan };
     const { error } = await adminUpdateUser(editingUser.id, updatePayload);
     if (error) { setSaving(false); notify('error', 'Gagal menyimpan: ' + error.message); return; }
 
@@ -895,6 +900,38 @@ export function AccountSettingsInline() {
                       </p>
                     </div>
                   )}
+                  {/* BISA DITUGASKAN — memisahkan "punya wewenang" dari "ikut
+                      mengerjakan". Sebelumnya Ticketing mengecualikan Manager
+                      lewat jabatan yang dipaku di kode, sementara Reminder
+                      Schedule & Design Project tidak mengecualikan siapa pun -
+                      sehingga Supervisor bisa (dan pernah) meng-assign
+                      pekerjaan ke Manager karena namanya memang ditawarkan. */}
+                  {editingUser.role === 'team' && (
+                    <div className="col-span-3">
+                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">🎯 Penerima Tugas</label>
+                      <div className="flex gap-2">
+                        {([
+                          { v: true,  icon: '🛠️', label: 'Bisa ditugaskan',   desc: 'Muncul di dropdown assign' },
+                          { v: false, icon: '🚫', label: 'Tidak ditugaskan',  desc: 'Menyetujui, bukan mengerjakan' },
+                        ]).map(o => (
+                          <button key={String(o.v)} type="button" onClick={() => setEditBisaDitugaskan(o.v)}
+                            className={`flex-1 text-left px-3 py-2 rounded-lg border-2 transition-all ${
+                              editBisaDitugaskan === o.v
+                                ? 'bg-emerald-50 border-emerald-400 text-emerald-800'
+                                : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                            }`}>
+                            <span className="block text-sm font-bold">{o.icon} {o.label}</span>
+                            <span className="block text-[11px] mt-0.5 opacity-80">{o.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-1.5">
+                        Menentukan apakah namanya ditawarkan saat assign pekerjaan di <strong>Ticketing,
+                        Reminder Schedule, dan Request Design</strong>. Matikan untuk akun yang perannya
+                        menyetujui &amp; mengarahkan — ia tetap bisa approve, re-route, dan melihat semuanya.
+                      </p>
+                    </div>
+                  )}
                   {/* PIKET SHOWROOM — hanya untuk akun non-PTS. Tim PTS yang
                       bertugas piket selalu melihat seluruh catatan, jadi
                       kontrolnya tidak berarti apa-apa untuk mereka.
@@ -980,7 +1017,7 @@ export function AccountSettingsInline() {
                                 if (user.role === 'team') { d = 'PTS'; if (user.team_type === 'Team PTS IVP') p = 'PTS IVP'; else if (user.team_type === 'Team PTS UMP') p = 'PTS UMP'; else if (user.team_type === 'Team PTS MVI') p = 'PTS MVI'; }
                                 else if (user.team_type === 'Guest') { d = 'Sales'; }
                                 else if (user.team_type === 'Marketing') { d = 'Marketing'; }
-                                setEditDivisi(d); setEditPtsType(p); setEditOrig({ username: user.username, full_name: user.full_name }); setEditAccessLevel(user.access_level === 'full' ? 'full' : 'guest'); setEditingUser(user);
+                                setEditDivisi(d); setEditPtsType(p); setEditOrig({ username: user.username, full_name: user.full_name }); setEditAccessLevel(user.access_level === 'full' ? 'full' : 'guest'); setEditBisaDitugaskan(user.bisa_ditugaskan !== false); setEditingUser(user);
                               }} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all">Edit</button>
                               <button onClick={() => handleDeleteUser(user.id)} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-all">Hapus</button>
                             </div>
