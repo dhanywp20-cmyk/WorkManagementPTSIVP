@@ -1116,6 +1116,30 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     fetchRequests();
     if (selectedRequest?.id === req.id) fetchMessages(req.id);
     logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'resubmit', module: 'project', target_id: req.id, target_name: req.project_name }).catch(() => {});
+
+    /*
+      Pengajuan ulang MASUK LAGI ke antrean approval, tapi sebelumnya tidak
+      mengabari siapa pun - jadi request yang sudah diperbaiki Sales bisa
+      mengendap tanpa ada yang tahu gilirannya kembali. Penerimanya lewat
+      penerimaAdminBernomor() supaya pemegang Full Access ikut, bukan hanya
+      role admin.
+    */
+    try {
+      const penerima = await penerimaAdminBernomor();
+      const pesan = [
+        '🔁 *REQUEST DESIGN DIAJUKAN ULANG*',
+        '━━━━━━━━━━━━━━━━━━',
+        `👤 *Sales   :* ${req.sales_name || currentUser.full_name}`,
+        `📌 *Project :* ${req.project_name}`,
+        '━━━━━━━━━━━━━━━━━━',
+        'Sudah diperbaiki dan menunggu approval kembali.',
+        '🔗 https://work-management-ptsivp.vercel.app/dashboard',
+      ].join('\n');
+      for (const u of penerima) {
+        //  sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus.
+        if (u.phone_number) void sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesan });
+      }
+    } catch { /* kabar gagal tidak boleh membatalkan pengajuan ulangnya */ }
   };
 
   const handleRejectConfirm = async () => {
@@ -1194,6 +1218,52 @@ Hubungi Admin untuk info lebih lanjut.
         notifyProjectStatusChange(req.requester_id, req.id, req.project_name, newStatus, currentUser.full_name).catch(() => {});
       }
     } catch { /* ignore */ }
+
+    /*
+      Kabar perubahan status ke pihak yang menunggunya.
+
+      Sebelum ini tahap ini HANYA badge in-app ke requester - artinya Sales
+      yang mengajukan baru tahu design-nya sudah dikerjakan atau selesai kalau
+      kebetulan membuka platform. Untuk status 'completed' pihak yang perlu
+      tahu lebih dari satu: Sales pengaju, dan yang mengerjakan berhak
+      menerima ucapan terima kasih atas pekerjaannya - pola yang sama dengan
+      penyelesaian ticket.
+    */
+    try {
+      const selesai = newStatus === 'completed';
+      const nama = [req.sales_name, req.assign_name, req.ivp_assignee].filter(Boolean) as string[];
+      const idOrang = [req.requester_id].filter(Boolean) as string[];
+      const [resNama, resId] = await Promise.all([
+        nama.length ? supabase.from('users').select('id,full_name,username,phone_number').in('full_name', nama)
+                    : Promise.resolve({ data: [] as any[] }),
+        idOrang.length ? supabase.from('users').select('id,full_name,username,phone_number').in('id', idOrang)
+                       : Promise.resolve({ data: [] as any[] }),
+      ]);
+      const penerima = new Map<string, any>();
+      for (const u of [...(resNama.data ?? []), ...(resId.data ?? [])]) if (u?.id) penerima.set(u.id, u);
+
+      const garis = '━━━━━━━━━━━━━━━━━━';
+      const ringkas = [
+        `📌 *Project :* ${req.project_name}`,
+        `👤 *Sales   :* ${req.sales_name || '-'}`,
+        `🙋 *Dikerjakan:* ${req.assign_name || req.ivp_assignee || '-'}`,
+      ].join('\n');
+
+      for (const u of penerima.values()) {
+        const dia = u.id === currentUser.id;
+        const pesan = (selesai && dia)
+          ? ['🎉 *Terima Kasih!*', garis,
+             `Halo *${u.full_name}*, request design ini sudah kamu tandai *Selesai*.`,
+             ringkas, garis, 'Terima kasih atas kerja kerasnya! 🙌',
+             '🔗 https://work-management-ptsivp.vercel.app/dashboard'].join('\n')
+          : [selesai ? '✅ *REQUEST DESIGN SELESAI*' : '🔄 *STATUS REQUEST DESIGN DIPERBARUI*', garis,
+             `Halo *${u.full_name}*, status request berubah menjadi *${newStatus}* oleh *${currentUser.full_name}*:`,
+             ringkas, garis,
+             '🔗 https://work-management-ptsivp.vercel.app/dashboard'].join('\n');
+        //  sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus.
+        if (u.phone_number) void sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesan });
+      }
+    } catch { /* kabar gagal tidak boleh membatalkan perubahan statusnya */ }
     // Audit
     logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'status_change', module: 'project', target_id: req.id, target_name: req.project_name, old_value: req.status, new_value: newStatus }).catch(() => {});
   };

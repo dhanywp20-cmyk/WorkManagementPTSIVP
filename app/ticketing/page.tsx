@@ -8,6 +8,7 @@ import { supabase, supabaseServices } from "@/lib/supabase";
 import { setSession, clearSession, getSession } from "@/lib/auth";
 import { adminCreateUser } from "@/lib/admin-users";
 import { notifyTicketAssigned, createNotification } from "@/lib/notifications";
+import { penerimaAdminBernomor } from "@/lib/penerima-admin";
 import { logAudit } from "@/lib/audit";
 import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField } from "@/lib/admin-edit";
 import { isAssignablePTSTeam } from "@/lib/teams";
@@ -1348,6 +1349,30 @@ function TicketingSystemInner() {
               created_by: currentUser?.full_name || 'Admin',
             });
           } catch { }
+          /*
+            Penolakan dulu HANYA badge in-app. Artinya Sales yang melaporkan
+            masalah baru tahu tiketnya ditolak kalau kebetulan membuka
+            platform - padahal penolakan justru kabar yang paling perlu
+            segera sampai, karena dialah yang harus menindaklanjuti.
+            sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus.
+          */
+          if (creatorUser.phone_number) {
+            void sendWANotif({
+              type: 'reminder_wa',
+              target: creatorUser.phone_number,
+              message: [
+                '❌ *TICKET DITOLAK*',
+                '━━━━━━━━━━━━━━━━━━',
+                `Halo *${creatorUser.full_name}*, ticket kamu ditolak oleh *${currentUser?.full_name || 'Admin'}*:`,
+                `📌 *Project :* ${rejectTargetTicket.project_name}`,
+                `⚠️ *Issue   :* ${rejectTargetTicket.issue_case}`,
+                `📝 *Alasan  :* ${rejectReason.trim()}`,
+                '━━━━━━━━━━━━━━━━━━',
+                'Silakan perbaiki datanya lalu ajukan ulang bila masih diperlukan.',
+                '🔗 https://work-management-ptsivp.vercel.app/dashboard',
+              ].join('\n'),
+            });
+          }
         }
       }
 
@@ -2206,6 +2231,39 @@ function TicketingSystemInner() {
         assigned_to_services: false,
         file_url: "", file_name: "", photo_url: "", photo_name: ""
       }]);
+      /*
+        Serah terima ke Team Services sebelumnya tidak mengabari siapa pun.
+        Sales yang melaporkan dan PTS yang menyerahkan sama-sama tidak tahu
+        ticketnya sudah diterima - padahal sejak titik ini penanganannya
+        berpindah tangan, dan merekalah yang akan ditanyai kalau ada
+        perkembangan. sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus.
+      */
+      try {
+        const pihak = [ticket.created_by, ticket.assign_name].filter(Boolean) as string[];
+        const penerima = users.filter(u =>
+          (!!u.username && pihak.includes(u.username)) || (!!u.full_name && pihak.includes(u.full_name)));
+        const pesanTerima = [
+          '🤝 *TICKET DITERIMA TEAM SERVICES*',
+          '━━━━━━━━━━━━━━━━━━',
+          `📌 *Project :* ${ticket.project_name}`,
+          `⚠️ *Issue   :* ${ticket.issue_case}`,
+          `✅ *Diterima:* ${currentUser?.full_name || 'Team Services'}`,
+          '━━━━━━━━━━━━━━━━━━',
+          'Penanganan berpindah ke Team Services dan akan segera diproses.',
+          '🔗 https://work-management-ptsivp.vercel.app/dashboard',
+        ].join('\n');
+        for (const u of penerima) {
+          if (u.phone_number) void sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesanTerima });
+          void createNotification({
+            user_id: u.id, type: 'ticket',
+            title: '🤝 Ticket diterima Team Services',
+            body: `${ticket.project_name} — ${ticket.issue_case}`,
+            action_url: '/ticketing', ref_id: ticket.id,
+            created_by: currentUser?.full_name ?? '',
+          });
+        }
+      } catch { /* kabar gagal tidak boleh membatalkan serah terimanya */ }
+
       await fetchData();
       setLoadingMessage("✅ Ticket diterima oleh Team Services!");
       setTimeout(() => { setShowLoadingPopup(false); setUploading(false); setShowServicesApprovalModal(false); setServicesApprovalTicket(null); }, 1500);
@@ -2254,6 +2312,43 @@ function TicketingSystemInner() {
             // belum ikut berubah - itu harus terlihat, bukan didiamkan.
             notify("error", `Ticket sudah kembali ke PTS, tapi catatan di basis data Services gagal diperbarui (${e?.message ?? "penyebab tidak diketahui"}).`);
           }
+          /*
+            Ticket kembali menjadi tanggung jawab PTS, tapi sebelumnya tidak
+            ada yang diberi tahu - jadi pekerjaan yang dikembalikan bisa
+            menganggur karena sisi PTS mengira masih ditangani Services.
+            Dikabari ke penangan PTS, pelapor, dan admin/Manager Full Access.
+          */
+          try {
+            const pihak = [ticket.created_by, ticket.assign_name].filter(Boolean) as string[];
+            const penerima = new Map<string, any>();
+            for (const u of users.filter(u =>
+              (!!u.username && pihak.includes(u.username)) || (!!u.full_name && pihak.includes(u.full_name)))) {
+              penerima.set(u.id, u);
+            }
+            for (const u of await penerimaAdminBernomor()) penerima.set(u.id, u);
+            const pesanKembali = [
+              '↩️ *TICKET DIKEMBALIKAN KE TEAM PTS*',
+              '━━━━━━━━━━━━━━━━━━',
+              `📌 *Project :* ${ticket.project_name}`,
+              `⚠️ *Issue   :* ${ticket.issue_case}`,
+              `↩️ *Oleh    :* ${currentUser?.full_name || 'Team Services'}`,
+              '━━━━━━━━━━━━━━━━━━',
+              'Team Services tidak dapat menanganinya — penanganan kembali ke PTS.',
+              '🔗 https://work-management-ptsivp.vercel.app/dashboard',
+            ].join('\n');
+            for (const u of penerima.values()) {
+              //  sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus.
+              if (u.phone_number) void sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesanKembali });
+              void createNotification({
+                user_id: u.id, type: 'ticket',
+                title: '↩️ Ticket dikembalikan ke PTS',
+                body: `${ticket.project_name} — ${ticket.issue_case}`,
+                action_url: '/ticketing', ref_id: ticket.id,
+                created_by: currentUser?.full_name ?? '',
+              });
+            }
+          } catch { /* kabar gagal tidak boleh membatalkan pengembaliannya */ }
+
           await fetchData();
           setLoadingMessage("✅ Ticket dikembalikan ke Team PTS IVP.");
           setTimeout(() => { setShowLoadingPopup(false); setUploading(false); setShowServicesApprovalModal(false); }, 1500);
