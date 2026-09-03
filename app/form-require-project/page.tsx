@@ -13,6 +13,7 @@ import { compressImage } from '@/lib/image-compress';
 import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState, ListEmptyState, AuditTrailPanel, FlowSteps, StatCard, ModalPortal } from '@/components/shared';
 import { hasFullAccess } from '@/lib/constants';
 import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField } from '@/lib/admin-edit';
+import { penerimaAdminBernomor } from '@/lib/penerima-admin';
 import {
   User, ProjectRequest, RoomDetail, BrandPicMapping,
   ProjectMessage, ProjectAttachment,
@@ -868,12 +869,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
             }]);
           }
         }
-        const { data: adminUsersWA } = await supabase
-          .from('users')
-          .select('phone_number, full_name')
-          .in('role', ['admin', 'superadmin'])
-          .not('phone_number', 'is', null)
-          .neq('phone_number', '');
+        // Termasuk pemegang Full Access (Manager PTS IVP), bukan hanya
+        // role admin - lihat lib/penerima-admin.ts.
+        const adminUsersWA = await penerimaAdminBernomor();
         const adminPhonesWA = (adminUsersWA || []).map((u: any) => u.phone_number).filter(Boolean);
         if (adminUsersWA && adminUsersWA.length > 0 && routingStatus === 'internal_review') {
           // Sales External: WA WAJIB ke Sales Internal dulu (actionable), Admin cuma pengingat.
@@ -1099,7 +1097,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     if (selectedRequest?.id === req.id) setSelectedRequest({ ...req, routing_status: 'admin_review' });
     // WA ke Admin - actionable, sudah lolos review Sales Internal.
     try {
-      const { data: admins } = await supabase.from('users').select('phone_number, full_name').in('role', ['admin', 'superadmin']).not('phone_number', 'is', null).neq('phone_number', '');
+      const admins = await penerimaAdminBernomor();
       const msg =
         `✅ *REQUEST DESIGN LOLOS REVIEW SALES INTERNAL*\n\n` +
         `Request dari *${req.sales_name}* untuk *${req.project_name}* sudah di-review oleh *${currentUser.full_name}* — silakan diproses/di-assign.\n` +

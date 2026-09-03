@@ -1419,6 +1419,85 @@ function TicketingSystemInner() {
     }
   };
 
+  /**
+   * Kabar "ticket selesai" ke SELURUH pihak yang terlibat.
+   *
+   * Sebelum ini alur penyelesaian tidak mengirim apa pun - bukan cuma
+   * Telegram, WhatsApp pun tidak. Ticket berubah jadi Solved dan tidak ada
+   * satu orang pun diberi tahu: Sales yang melaporkan tidak tahu masalahnya
+   * sudah beres, Supervisor tidak tahu timnya sudah menutup pekerjaan, dan
+   * yang mengerjakan tidak pernah menerima apa pun atas pekerjaannya.
+   *
+   * Dua pesan berbeda, bukan satu yang disebar: yang mengerjakan menerima
+   * ucapan terima kasih, sisanya menerima pemberitahuan bahwa ticketnya
+   * ditutup. Menyamakan keduanya membuat ucapan terima kasih terkirim ke
+   * orang yang tidak mengerjakan apa-apa, dan itu terbaca aneh.
+   */
+  const kabarkanTicketSelesai = async (t: Ticket, catatan: string) => {
+    try {
+      const penutup = currentUser?.full_name || t.assign_name || 'Tim';
+
+      //  Semua pihak dikumpulkan dulu, lalu dicari sekali - bukan satu query
+      //  per orang. Nama & username dipakai berdampingan karena tabel ticket
+      //  menyimpan sebagian pihak sebagai nama dan sebagian sebagai username.
+      const nama = [t.sales_name, t.assign_name].filter(Boolean) as string[];
+      const username = [t.created_by].filter(Boolean) as string[];
+      const idOrang = [t.assigned_supervisor_id, t.internal_sales_id, t.internal_sales_id_2]
+        .filter(Boolean) as string[];
+
+      const [resNama, resUser, resId] = await Promise.all([
+        nama.length ? supabase.from('users').select('id,full_name,username,phone_number').in('full_name', nama)
+                    : Promise.resolve({ data: [] as any[] }),
+        username.length ? supabase.from('users').select('id,full_name,username,phone_number').in('username', username)
+                        : Promise.resolve({ data: [] as any[] }),
+        idOrang.length ? supabase.from('users').select('id,full_name,username,phone_number').in('id', idOrang)
+                       : Promise.resolve({ data: [] as any[] }),
+      ]);
+
+      const semua = new Map<string, { id: string; full_name: string; username: string; phone_number: string | null }>();
+      for (const u of [...(resNama.data ?? []), ...(resUser.data ?? []), ...(resId.data ?? [])]) {
+        if (u?.id) semua.set(u.id, u);
+      }
+
+      const garis = '━━━━━━━━━━━━━━━━━━';
+      const ringkas = [
+        `📌 *Project :* ${t.project_name}`,
+        `⚠️ *Issue   :* ${t.issue_case}`,
+        `🙋 *Ditangani:* ${t.assign_name || penutup}`,
+        catatan ? `📝 *Catatan :* ${catatan}` : '',
+      ].filter(Boolean).join('\n');
+
+      for (const u of semua.values()) {
+        const dia = u.id === currentUser?.id;
+        const pesan = dia
+          ? ['🎉 *Terima Kasih!*', garis,
+             `Halo *${u.full_name}*, ticket ini sudah kamu tutup sebagai *Solved*.`,
+             ringkas, garis,
+             'Terima kasih atas kerja kerasnya! 🙌',
+             '🔗 https://work-management-ptsivp.vercel.app/dashboard'].join('\n')
+          : ['✅ *Ticket Selesai*', garis,
+             `Halo *${u.full_name}*, ticket berikut sudah diselesaikan oleh *${penutup}*:`,
+             ringkas, garis,
+             'Silakan dicek bila masih ada yang perlu ditindaklanjuti.',
+             '🔗 https://work-management-ptsivp.vercel.app/dashboard'].join('\n');
+
+        //  sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus (lihat
+        //  lib/wa.ts) - jadi tidak perlu dipanggil dua kali di sini.
+        if (u.phone_number) void sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesan });
+        void createNotification({
+          user_id: u.id, type: 'ticket',
+          title: dia ? '🎉 Terima kasih — ticket selesai' : '✅ Ticket selesai',
+          body: `${t.project_name} — ${t.issue_case}`,
+          action_url: '/ticketing', ref_id: t.id,
+          created_by: penutup,
+        });
+      }
+    } catch {
+      //  Kabar yang gagal tidak boleh membatalkan penyelesaian ticketnya -
+      //  pekerjaannya sudah benar-benar selesai, apa pun nasib notifikasinya.
+    }
+  };
+
   const addActivity = async () => {
     const SERVICES_SIMPLE = ["Warranty", "Out Of Warranty", "Waiting PO from Sales", "Submit RMA", "Waiting sparepart"];
     const isSimpleStatus = newActivity.new_status === "Call" || newActivity.new_status === "Onsite";
@@ -1604,6 +1683,14 @@ function TicketingSystemInner() {
 
         const { error: updateError } = await supabase.from("tickets").update(updateData).eq("id", selectedTicket.id);
         if (updateError) throw new Error(`Failed to update ticket: ${updateError.message}`);
+
+        //  Kabar penyelesaian - baru dikirim SESUDAH ticketnya benar-benar
+        //  tersimpan sebagai Solved, bukan sebelum. Mengabari lebih dulu lalu
+        //  penyimpanannya gagal berarti orang diberi tahu sesuatu yang tidak
+        //  terjadi.
+        if (effectiveStatus === "Solved") {
+          void kabarkanTicketSelesai(selectedTicket, useAutoNotes ? autoNotes : (newActivity.notes || ""));
+        }
 
         // PENDING ACTION: perpanjang deadline Overdue sesuai hari yg dipilih
         // Kendala bisa dari sisi user  team boleh menggeser deadline supaya

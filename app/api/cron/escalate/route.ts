@@ -60,10 +60,13 @@ async function runEscalation() {
       .eq('full_name', ticket.assign_name)
       .maybeSingle();
 
+    //  Termasuk pemegang Full Access (Manager PTS IVP), bukan hanya role
+    //  admin - lihat lib/penerima-admin.ts. Eskalasi yang tidak sampai ke
+    //  pemegang kekuasaan platform adalah eskalasi yang tidak berguna.
     const { data: admins } = await supabase
       .from('users')
       .select('phone_number')
-      .in('role', ['admin', 'superadmin'])
+      .or('role.in.(admin,superadmin),access_level.eq.full')
       .not('phone_number', 'is', null);
 
     const hoursStr = hoursIdle < 1

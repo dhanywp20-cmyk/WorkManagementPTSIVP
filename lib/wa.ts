@@ -13,6 +13,7 @@
  */
 
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
+import { kirimTelegramKeNomor } from '@/lib/telegram-pribadi';
 
 /**
  * Apakah kanal WhatsApp sedang dinyalakan di Admin Panel -> Integrations.
@@ -101,21 +102,62 @@ async function kirimLewatPenyedia(
   return await res.json() as { ok?: boolean; reason?: string };
 }
 
+/*
+ * ── TELEGRAM IKUT DI SINI, BUKAN DI TIAP PEMANGGIL ──────────────────────────
+ *
+ * Alasannya sama persis dengan alasan saklar induk WA dipasang di berkas ini
+ * (lihat catatan panjang di waMenyala di atas): ~40 titik pengiriman di
+ * ticketing, reminder-schedule, dan form-require-project SUDAH melewati
+ * berkas ini. Menyisipkan Telegram di sini membuat SELURUH alur ikut
+ * seketika - sales membuat request, Sales Internal approve, admin mengalihkan
+ * ke Supervisor, Supervisor assign ke anggota, tiket selesai - tanpa satu pun
+ * call site disentuh, dan tanpa risiko satu alur ketinggalan karena terlupa.
+ *
+ * Sebelum ini Telegram hanya dipasang di SATU tempat (assign jadwal ke
+ * anggota), dan itulah sebabnya hanya alur itu yang pernah terkirim.
+ *
+ * Kedua kanal berdiri SENDIRI-SENDIRI: WhatsApp dimatikan tidak ikut
+ * mematikan Telegram, dan sebaliknya. Karena itu penjagaan waMenyala() tidak
+ * boleh membungkus keduanya sekaligus.
+ */
+async function kirimDuaKanal(
+  target: string,
+  message: string,
+  type: string,
+): Promise<{ ok: boolean; reason?: string }> {
+  //  Telegram dijalankan tanpa ditunggu: ia tidak boleh memperlambat - apalagi
+  //  menggagalkan - pengiriman WhatsApp yang sudah berjalan selama ini.
+  void kirimTelegramKeNomor(target, message).catch(() => { /* diam */ });
+
+  if (!(await waMenyala())) return { ok: false, reason: 'kanal WhatsApp dimatikan admin' };
+  const data = await kirimLewatPenyedia({ type, target, message });
+  return { ok: data?.ok === true, reason: data?.reason };
+}
+
 /**
- * Fire-and-forget: kirim WA, abaikan hasil. Dipakai ticketing & form-require-project.
+ * Fire-and-forget: kirim WA (dan Telegram), abaikan hasil.
+ * Dipakai ticketing & form-require-project.
  */
 export async function sendWANotif(body: Record<string, unknown>): Promise<void> {
   try {
-    if (!(await waMenyala())) return;
-    await postSwift(body);
+    //  Dulu berkas ini memanggil postSwift() langsung di sini - artinya ke-19
+    //  titik ticketing & form-require-project TIDAK ikut pindah saat admin
+    //  mengganti penyedia WhatsApp di Admin Panel; mereka tetap menembak
+    //  Edge Function Fonnte. Sekarang lewat jalur yang sama dengan sendWA().
+    await kirimDuaKanal(
+      String(body.target ?? ''),
+      String(body.message ?? ''),
+      String(body.type ?? 'reminder_wa'),
+    );
   } catch {
     // silent — kegagalan WA tidak boleh memutus alur utama
   }
 }
 
 /**
- * Kirim WA dan kembalikan status. Dipakai reminder-schedule yang perlu tahu
- * apakah pengiriman sukses (untuk menampilkan feedback ke user).
+ * Kirim WA (dan Telegram) lalu kembalikan status WhatsApp-nya. Dipakai
+ * reminder-schedule yang perlu tahu apakah pengiriman sukses untuk
+ * menampilkan feedback ke user.
  */
 export async function sendWA(
   target: string,
@@ -126,9 +168,7 @@ export async function sendWA(
     //  Kanal dimatikan admin BUKAN kegagalan - alasannya dibedakan supaya
     //  layar yang menampilkan hasil kirim (Reminder Schedule) bisa berkata
     //  "WhatsApp sedang dimatikan", bukan "gagal kirim" yang menyesatkan.
-    if (!(await waMenyala())) return { ok: false, reason: 'kanal WhatsApp dimatikan admin' };
-    const data = (await postSwift({ type, target, message })) as { ok?: boolean; reason?: string };
-    return { ok: data?.ok === true, reason: data?.reason };
+    return await kirimDuaKanal(target, message, type);
   } catch {
     return { ok: false, reason: 'network error' };
   }

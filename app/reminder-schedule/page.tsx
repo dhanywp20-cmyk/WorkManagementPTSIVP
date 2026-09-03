@@ -12,12 +12,12 @@ import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { normalkanNama } from '@/lib/kelompok-insentif';
 import { notifyReminderApproved, createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
+import { penerimaAdminBernomor } from '@/lib/penerima-admin';
 import { adalahKategoriInsentif, muatKategoriInsentif } from '@/lib/incentive-scheme';
 import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField } from '@/lib/admin-edit';
 import { syncRemindersToProjectProgress, triggersProjectProgress, type ReminderSnapshot } from '@/lib/project-progress-sync';
 import { compressImage } from '@/lib/image-compress';
 import { idDariNama, kutipNilai, tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
-import { kirimTelegramPribadi } from '@/lib/telegram-pribadi';
 
 import {
   Priority, Status, RepeatType, Reminder, TeamUser, GuestUser,
@@ -1093,12 +1093,11 @@ function ReminderSchedulePageInner() {
        `Link Dashboard: https://work-management-ptsivp.vercel.app/dashboard\n` +
         `jangan lupa peralatan & Semangat💪🏼`;
 
+      //  Telegram TIDAK dipanggil di sini lagi: sejak lib/wa.ts mengirim ke
+      //  dua kanal sekaligus, memanggilnya terpisah di sini membuat orang yang
+      //  sama menerima pesan Telegram dua kali untuk satu jadwal.
       const waResult = await sendFonnteWA(assignee.phone_number, msg, { reminderType: 'new_schedule' });
       if (waResult.ok) notify('success', `WA notifikasi terkirim ke ${assigneeName}!`);
-      // Berdampingan dengan WA, bukan menggantikannya. Diam saja bila
-      // assignee belum menghubungkan Telegram-nya sendiri lewat profil -
-      // itu bukan kegagalan, sama seperti nomor WA yang kosong.
-      void kirimTelegramPribadi(assignee.telegram_chat_id, msg);
     }
 
     setSaving(false);
@@ -2103,10 +2102,9 @@ function ReminderSchedulePageInner() {
 
     // Kirim WA sesuai tahap routing
     try {
-      const { data: admins } = await supabase
-        .from('users')
-        .select('phone_number, full_name')
-        .eq('role', 'admin');
+      // Termasuk pemegang Full Access (Manager PTS IVP), bukan hanya role
+      // admin - lihat lib/penerima-admin.ts.
+      const admins = await penerimaAdminBernomor();
 
       if (routingStatus === 'internal_review') {
         // 1) WA WAJIB ke Sales Internal - dia yang harus review dulu.
@@ -2229,7 +2227,7 @@ function ReminderSchedulePageInner() {
       const managerTargets = await fetchManagerTargets();
       const targets: { id: string; phone_number: string | null; full_name: string }[] = [...managerTargets];
       if (targets.length === 0) {
-        const { data: admins } = await supabase.from('users').select('id, phone_number, full_name').eq('role', 'admin');
+        const admins = await penerimaAdminBernomor();
         targets.push(...(admins ?? []));
       }
       for (const t of targets) {
