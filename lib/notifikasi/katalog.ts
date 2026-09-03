@@ -55,3 +55,24 @@ export const KATALOG_EVENT: DefinisiEvent[] = [
 export function cariEvent(key: string): DefinisiEvent | undefined {
   return KATALOG_EVENT.find(e => e.key === key);
 }
+
+/*
+  ── MODUL YANG SENGAJA TIDAK MENGIRIM WHATSAPP/TELEGRAM ────────────────────
+
+    Project Progress
+    Daily Report
+    Unit Movement Log
+
+  Keputusan pemilik platform, bukan kelalaian. Ketiganya dicatat dan dibaca di
+  layar; tidak ada tahap yang menunggu tindakan orang lain, jadi pesan keluar
+  hanya akan jadi kebisingan yang membuat notifikasi yang benar-benar penting
+  ikut diabaikan.
+
+  Dicatat di sini karena audit kelengkapan notifikasi WAJAR menandai ketiganya
+  sebagai "modul tanpa notifikasi" - dan tanpa catatan ini, temuan itu akan
+  muncul lagi setiap kali seseorang menyisir platform, lalu "diperbaiki"
+  menjadi sesuatu yang justru tidak diinginkan.
+
+  Notifikasi in-app (lonceng) TIDAK termasuk larangan ini - ia tidak
+  mengganggu, dan ketiganya memang boleh memakainya bila kelak diperlukan.
+*/
