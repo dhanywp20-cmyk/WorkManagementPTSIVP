@@ -25,6 +25,7 @@ import {
 } from '@/lib/incentive-akses';
 import { MobileListCard, MobileCardBadge, ModalPortal } from '@/components/shared';
 import { logAudit } from '@/lib/audit';
+import { managerUtama } from '@/lib/penerima-admin';
 import { SchemeTab } from './_components/SchemeTab';
 
 void insertSplits; void validateSplitTotal;
@@ -566,10 +567,14 @@ export default function IncentivePTSPage() {
   async function handleBatchProcess() {
     if (!currentUser) return;
     setBatchProcessing(true);
-    // Fallback manager (berbasis jabatan, bukan nama) - utama tetap dari Struktur Organisasi di calc.ts
-    const { data: mgrData } = await supabase.from('users').select('id, full_name').eq('jabatan', 'Manager').eq('team_type', 'Team PTS IVP').limit(1).single();
+    //  Dulu dicari lewat jabatan='Manager' AND team_type='Team PTS IVP' -
+    //  nama tim dipaku, dan ada DUA jabatan Manager di basis data ini
+    //  (PTS IVP & PTS UMP) sehingga .limit(1) memilih tanpa aturan. Untuk
+    //  dokumen yang menyangkut uang itu tidak boleh diserahkan pada urutan
+    //  baris. Lihat managerUtama() di lib/penerima-admin.ts.
+    const mgrData = await managerUtama();
     const managerId = (mgrData?.id || currentUser.id || '') as string;
-    const managerName = (mgrData?.full_name || 'Manager') as string;
+    const managerName = (mgrData?.full_name || currentUser.full_name || 'Manager') as string;
     const result = await processYearlyBatch(batchYear, managerId, managerName);
     if (result.error) { notify('error', 'Batch error: ' + (result.error as { message: string }).message); }
     else {
@@ -652,10 +657,11 @@ export default function IncentivePTSPage() {
    * berbeda.
    */
   async function siapkanDataExport() {
-    // Manager fallback berbasis jabatan (utama tetap dari Struktur Organisasi di export)
-    const { data: mgr } = await supabase.from('users').select('id, full_name').eq('jabatan', 'Manager').eq('team_type', 'Team PTS IVP').limit(1).single();
+    //  Sama seperti Process Batch: lewat managerUtama(), bukan jabatan+tim
+    //  yang dipaku - lihat catatan panjang di lib/penerima-admin.ts.
+    const mgr = await managerUtama();
     const managerUserId = (mgr?.id || '') as string;
-    const managerName   = (mgr?.full_name || 'Manager PTS IVP') as string;
+    const managerName   = (mgr?.full_name || 'Manager') as string;
     const { data: sumberSupport } = await ambilSumberSupport();
     const supportsMap = new Map<string, { user_id: string; user_name: string }[]>();
     for (const p of projects) {

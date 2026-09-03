@@ -61,3 +61,50 @@ export async function penerimaAdmin(): Promise<PenerimaAdmin[]> {
 export async function penerimaAdminBernomor(): Promise<PenerimaAdmin[]> {
   return (await penerimaAdmin()).filter(u => !!(u.phone_number ?? '').trim());
 }
+
+/**
+ * SATU orang yang mewakili "Manager" - dipakai saat sebuah dokumen atau
+ * proses harus mencatat nama pimpinan (mis. Process Batch & export Incentive).
+ *
+ * KENAPA BUKAN jabatan = 'Manager' AND team_type = 'Team PTS IVP'
+ *
+ * Begitulah dua tempat di modul Incentive mencarinya sebelum ini, dan itu
+ * salah dalam tiga cara sekaligus:
+ *
+ *   1. Nama tim dipaku di kode. Perusahaan lain yang memakai platform ini
+ *      punya nama tim sendiri, dan pencariannya akan mengembalikan kosong -
+ *      lalu diam-diam jatuh ke 'Manager' sebagai teks biasa, sehingga dokumen
+ *      pembayaran mencatat nama yang tidak menunjuk siapa pun.
+ *   2. Ada lebih dari satu jabatan Manager di basis data ini (PTS IVP dan
+ *      PTS UMP). `.limit(1)` memilih salah satunya tanpa aturan - untuk
+ *      dokumen yang menyangkut uang, itu tidak boleh diserahkan pada urutan
+ *      baris.
+ *   3. Mengabaikan Full Access, yang justru dibuat untuk menunjuk siapa
+ *      pemegang kewenangan di platform ini.
+ *
+ * Urutannya: app_settings.manager_user_id kalau disetel admin (penunjukan
+ * paling eksplisit), lalu pemegang Full Access. Mengembalikan null bila tidak
+ * ada keduanya - pemanggil yang memutuskan apa artinya, bukan berpura-pura
+ * ada orang bernama "Manager".
+ */
+export async function managerUtama(): Promise<PenerimaAdmin | null> {
+  try {
+    const { data: setelan } = await supabase.from('app_settings')
+      .select('value').eq('key', 'manager_user_id').maybeSingle();
+    const id = setelan?.value ? String(setelan.value).replace(/^"|"$/g, '') : '';
+    if (id) {
+      const { data } = await supabase.from('users')
+        .select('id, full_name, username, phone_number').eq('id', id).maybeSingle();
+      if (data) return data as PenerimaAdmin;
+    }
+  } catch { /* lanjut ke Full Access */ }
+
+  try {
+    const { data } = await supabase.from('users')
+      .select('id, full_name, username, phone_number')
+      .eq('access_level', 'full').order('full_name').limit(1).maybeSingle();
+    return (data as PenerimaAdmin) ?? null;
+  } catch {
+    return null;
+  }
+}
