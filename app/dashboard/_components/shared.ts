@@ -19,6 +19,12 @@ export interface User {
   piket_akses?: string | null;
   /** Chat ID Telegram pribadi, terisi hanya lewat verifikasi - lihat app/api/notifikasi/telegram/route.ts aksi 'hubungkan'. */
   telegram_chat_id?: string | null;
+  /**
+   * Namanya ditawarkan saat assign pekerjaan? Bawaan true; dimatikan admin
+   * untuk akun yang perannya menyetujui, bukan mengerjakan.
+   * Lihat bolehDitugaskan() di lib/teams.ts.
+   */
+  bisa_ditugaskan?: boolean | null;
 }
 
 export interface MenuItem {

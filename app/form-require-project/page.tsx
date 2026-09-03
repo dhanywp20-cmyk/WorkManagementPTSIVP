@@ -86,13 +86,13 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
    * kalau dipakai untuk mengalihkan pekerjaan, anggota tim yang belum pernah
    * dapat request sama sekali tidak akan pernah bisa dipilih.
    */
-  const [rosterPTS, setRosterPTS] = useState<{ id: string; full_name: string; jabatan: string | null; phone_number: string | null }[]>([]);
+  const [rosterPTS, setRosterPTS] = useState<{ id: string; full_name: string; jabatan: string | null; phone_number: string | null; team_type?: string | null; bisa_ditugaskan?: boolean | null }[]>([]);
   const [rerouteTarget, setRerouteTarget] = useState<ProjectRequest | null>(null);
   const [rerouteTo, setRerouteTo] = useState('');
   const [rerouteSaving, setRerouteSaving] = useState(false);
 
   useEffect(() => {
-    supabase.from('users').select('id, full_name, jabatan, phone_number')
+    supabase.from('users').select('id, full_name, jabatan, phone_number, team_type, bisa_ditugaskan')
       .in('role', ['team', 'team_pts']).order('full_name')
       .then((res: { data: unknown }) => setRosterPTS((res.data ?? []) as never));
   }, []);
@@ -3267,7 +3267,9 @@ Hubungi Admin untuk info lebih lanjut.
                     </optgroup>
                   )}
                   <optgroup label="👥 Anggota Tim">
-                    {rosterPTS.filter(u => u.jabatan !== 'Supervisor' && u.jabatan !== 'Manager').map(u => (
+                    {/* Dulu `u.jabatan !== 'Manager'` dipaku di sini juga. Diganti toggle
+                        per akun - lihat bolehDitugaskan di lib/teams.ts. */}
+                    {rosterPTS.filter(u => u.jabatan !== 'Supervisor' && u.bisa_ditugaskan !== false).map(u => (
                       <option key={u.id} value={u.id}>{u.full_name}</option>
                     ))}
                   </optgroup>

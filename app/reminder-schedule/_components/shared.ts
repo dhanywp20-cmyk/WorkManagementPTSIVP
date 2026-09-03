@@ -105,6 +105,8 @@ export interface TeamUser {
   jabatan?: string | null;
   access_level?: string;
   telegram_chat_id?: string | null;
+  /** Muncul di dropdown penerima tugas? Lihat bolehDitugaskan di lib/teams.ts. */
+  bisa_ditugaskan?: boolean | null;
 }
 
 export interface GuestUser {

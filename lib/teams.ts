@@ -34,3 +34,33 @@ export function isAssignablePTSTeam(teamType?: string | null): boolean {
   if (!t) return false;
   return daftarTimDitugaskan().includes(t);
 }
+
+/**
+ * Boleh muncul di dropdown penerima tugas?
+ *
+ * Dua syarat, dan keduanya berbeda pertanyaan:
+ *   1. TIM-nya memang tim yang ditugaskan pekerjaan (isAssignablePTSTeam)
+ *   2. ORANG-nya tidak dikecualikan admin lewat toggle bisa_ditugaskan
+ *
+ * Syarat kedua ada karena sebuah tim yang mengerjakan pekerjaan tetap punya
+ * anggota yang perannya menyetujui, bukan mengerjakan - Manager, misalnya.
+ * Sebelumnya hal itu ditangani Ticketing dengan `jabatan !== 'Manager'` yang
+ * dipaku di kode, sementara Reminder Schedule dan Design Project tidak
+ * menanganinya sama sekali; akibatnya Supervisor bisa - dan pernah -
+ * meng-assign pekerjaan ke Manager karena namanya memang ditawarkan.
+ *
+ * Dijawab lewat data, bukan jabatan: perusahaan lain yang memakai platform
+ * ini bisa saja Manager-nya memang ikut mengerjakan, dan mereka harus bisa
+ * mengaturnya dari Admin Panel tanpa menyunting kode.
+ *
+ * Nilai undefined/null DIANGGAP BOLEH - supaya baris lama (dan pemasangan
+ * yang belum menjalankan migrasinya) tidak mendadak menghilang dari seluruh
+ * dropdown, yang jauh lebih merusak daripada satu nama yang kelebihan.
+ */
+export function bolehDitugaskan(u: {
+  team_type?: string | null;
+  bisa_ditugaskan?: boolean | null;
+}): boolean {
+  if (!isAssignablePTSTeam(u.team_type)) return false;
+  return u.bisa_ditugaskan !== false;
+}
