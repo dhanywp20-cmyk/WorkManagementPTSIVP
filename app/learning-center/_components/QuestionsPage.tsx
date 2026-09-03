@@ -403,12 +403,19 @@ export function QuestionsPage({ user }: { user: User }) {
 
   const handleSaveEdit = async () => {
     if (!editQ) return;
-    await supabase.from('lc_questions').update({
+    //  Diperiksa: soal yang gagal tersimpan diam-diam akan tampak
+    //  ter-update di layar (setEditQ(null) menutup formnya) padahal
+    //  peserta masih mengerjakan versi soal yang lama.
+    const { data, error } = await supabase.from('lc_questions').update({
       question: editQ.question, option_a: editQ.option_a, option_b: editQ.option_b,
       option_c: editQ.option_c, option_d: editQ.option_d,
       correct_answer: editQ.correct_answer, difficulty: editQ.difficulty,
       model_answer: editQ.model_answer,
-    }).eq('id', editQ.id);
+    }).eq('id', editQ.id).select('id');
+    if (error || !data || data.length === 0) {
+      setDialog({ type: 'error', message: 'Gagal menyimpan perubahan soal.' });
+      return;
+    }
     setEditQ(null); load();
   };
 
@@ -1481,8 +1488,11 @@ export function QuestionsPage({ user }: { user: User }) {
                     const ids = batchQs.map(q => q.id);
                     if (ids.length > 0) {
                       await supabase.from('lc_answers').delete().in('question_id', ids);
-                      const { error } = await supabase.from('lc_questions').delete().in('id', ids);
-                      if (error) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Error: ' + error.message }); return; }
+                      const { data: terhapus, error } = await supabase.from('lc_questions').delete().in('id', ids).select('id');
+                      if (error || !terhapus || terhapus.length === 0) {
+                        setDialog({ type: 'error', title: 'Gagal Hapus', message: error ? 'Error: ' + error.message : 'Tidak ada soal yang terhapus (tidak punya akses).' });
+                        return;
+                      }
                     }
                     load();
                   },

@@ -1194,9 +1194,16 @@ Hubungi Admin untuk info lebih lanjut.
     }
     await supabase.from('project_attachments').delete().eq('request_id', req.id);
     await supabase.from('project_messages').delete().eq('request_id', req.id);
-    const { error } = await supabase.from('project_requests').delete().eq('id', req.id);
+    //  select('id') supaya RLS yang diam-diam menolak (0 baris, tanpa galat)
+    //  ikut terlihat - lampiran & pesannya sudah kadung terhapus di atas,
+    //  jadi kalau request-nya sendiri gagal terhapus, "berhasil dihapus"
+    //  akan menyembunyikan request yatim tanpa riwayat sama sekali.
+    const { data: terhapus, error } = await supabase.from('project_requests').delete().eq('id', req.id).select('id');
     setDeleting(false);
-    if (error) { notify('error', 'Gagal menghapus: ' + error.message); return; }
+    if (error || !terhapus || terhapus.length === 0) {
+      notify('error', error ? 'Gagal menghapus: ' + error.message : 'Request gagal dihapus (tidak punya akses). Lampiran & pesannya sudah terhapus - hubungi admin.');
+      return;
+    }
     notify('success', `Request "${req.project_name}" berhasil dihapus.`);
     setDeleteModal({ open: false, req: null });
     setDeleteConfirmText('');
@@ -1205,8 +1212,11 @@ Hubungi Admin untuk info lebih lanjut.
   };
 
   const handleStatusUpdate = async (req: ProjectRequest, newStatus: string) => {
-    const { error } = await supabase.from('project_requests').update({ status: newStatus }).eq('id', req.id);
-    if (error) { notify('error', 'Gagal update status.'); return; }
+    //  select('id') supaya RLS yang menolak diam-diam (0 baris, tanpa galat)
+    //  ikut terlihat - lihat catatan yang sama di handleDeleteConfirm.
+    const { data: terubah, error } = await supabase.from('project_requests')
+      .update({ status: newStatus }).eq('id', req.id).select('id');
+    if (error || !terubah || terubah.length === 0) { notify('error', 'Gagal update status.'); return; }
     notify('success', `Status → ${newStatus}`);
     fetchRequests();
     if (selectedRequest) setSelectedRequest({ ...selectedRequest, status: newStatus as ProjectRequest['status'] });

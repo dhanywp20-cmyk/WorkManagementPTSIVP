@@ -341,7 +341,20 @@ function TicketingSystemInner() {
       const existingOverdue = getOverdueSetting(deleteTargetTicket.id);
       if (existingOverdue) await supabase.from("overdue_settings").delete().eq("id", existingOverdue.id);
       setLoadingMessage("Menghapus ticket...");
-      await supabase.from("tickets").delete().eq("id", deleteTargetTicket.id);
+      //  Diperiksa - baris inilah yang menentukan berhasil-tidaknya
+      //  penghapusan. RLS yang menolak menjawab 0 baris TANPA galat, dan
+      //  activity_logs-nya sudah kadung terhapus di atas - kalau tickets-nya
+      //  sendiri gagal terhapus, "berhasil dihapus" yang ditampilkan akan
+      //  menyembunyikan ticket yatim tanpa riwayat sama sekali.
+      const { data: terhapus, error: galatHapus } = await supabase.from("tickets")
+        .delete().eq("id", deleteTargetTicket.id).select("id");
+      if (galatHapus || !terhapus || terhapus.length === 0) {
+        setShowLoadingPopup(false);
+        setUploading(false);
+        notify("error", "Ticket gagal dihapus. Riwayat aktivitasnya sudah terhapus - hubungi admin untuk memeriksa data ini.");
+        await fetchData();
+        return;
+      }
       await fetchData();
       await fetchOverdueSettings();
       setLoadingMessage("✅ Ticket berhasil dihapus!");
@@ -1967,12 +1980,19 @@ function TicketingSystemInner() {
         await supabase.from("activity_logs").delete().in("ticket_id", ids);
         try { await supabaseServices.from("activity_logs").delete().in("ticket_id", ids); } catch { }
         await supabase.from("overdue_settings").delete().in("ticket_id", ids);
-        const { error } = await supabase.from("tickets").delete().in("id", ids);
-        if (!error) {
-          setTickets(prev => prev.filter(t => !selectedIds.has(t.id)));
-          setSelectedIds(new Set());
-        } else {
+        //  select('id') supaya baris yang BENAR-BENAR terhapus bisa dihitung -
+        //  error kosong tidak berarti semuanya terhapus, RLS yang menolak
+        //  sebagian baris tetap menjawab tanpa galat.
+        const { data: terhapus, error } = await supabase.from("tickets").delete().in("id", ids).select("id");
+        if (error) {
           notify("error", "Gagal menghapus: " + error.message);
+        } else {
+          const idTerhapus = new Set((terhapus ?? []).map((t: { id: string }) => t.id));
+          setTickets(prev => prev.filter(t => !idTerhapus.has(t.id)));
+          setSelectedIds(prev => new Set([...prev].filter(id => !idTerhapus.has(id))));
+          if (idTerhapus.size < ids.length) {
+            notify("error", `${ids.length - idTerhapus.size} dari ${ids.length} ticket gagal dihapus (tidak punya akses). Sisanya berhasil.`);
+          }
         }
         setBulkDeleting(false);
       },
@@ -2297,7 +2317,17 @@ function TicketingSystemInner() {
       setUploading(true);
       setShowLoadingPopup(true);
       setLoadingMessage("Approving ticket untuk Team Services...");
-      await supabase.from("tickets").update({ services_status: "Pending" }).eq("id", ticket.id);
+      //  Diperiksa: ini penulisan pertama dan yang menentukan alur ini
+      //  benar-benar jalan. Kalau gagal diam-diam, activity log & notifikasi
+      //  "diterima Team Services" di bawah tetap terkirim walau tickenya
+      //  sendiri tidak pernah pindah status.
+      const { data: terubah, error: galatUtama } = await supabase.from("tickets")
+        .update({ services_status: "Pending" }).eq("id", ticket.id).select("id");
+      if (galatUtama || !terubah || terubah.length === 0) {
+        setShowLoadingPopup(false); setUploading(false);
+        notify("error", "Gagal approve ticket untuk Team Services. Coba lagi.");
+        return;
+      }
       try {
         const { error: svcErr } = await supabaseServices.from("tickets").update({ services_status: "Pending", status: "Pending" }).eq("id", ticket.id);
         if (svcErr) throw svcErr;
@@ -2365,7 +2395,15 @@ function TicketingSystemInner() {
           setUploading(true);
           setShowLoadingPopup(true);
           setLoadingMessage("Mengembalikan ticket ke Team PTS IVP...");
-          await supabase.from("tickets").update({ current_team: "Team PTS IVP", services_status: null, status: "In Progress" }).eq("id", ticket.id);
+          //  Diperiksa - lihat catatan yang sama di approveServicesTicket.
+          const { data: terubah, error: galatUtama } = await supabase.from("tickets")
+            .update({ current_team: "Team PTS IVP", services_status: null, status: "In Progress" })
+            .eq("id", ticket.id).select("id");
+          if (galatUtama || !terubah || terubah.length === 0) {
+            setShowLoadingPopup(false); setUploading(false);
+            notify("error", "Gagal mengembalikan ticket ke PTS. Coba lagi.");
+            return;
+          }
           await supabase.from("activity_logs").insert([{
             ticket_id: ticket.id,
             handler_name: currentUser?.full_name || "",
@@ -2378,7 +2416,14 @@ function TicketingSystemInner() {
             file_url: "", file_name: "", photo_url: "", photo_name: ""
           }]);
           try {
-            await supabaseServices.from("tickets").update({ services_status: "Returned to PTS", current_team: "Team PTS IVP" }).eq("id", ticket.id);
+            //  select('id') + panjangnya diperiksa: RLS yang menolak diam-diam
+            //  (0 baris, tanpa galat) tidak melempar apa pun ke catch di
+            //  bawah - dilempar manual di sini supaya pesan "catatan di
+            //  basis data Services gagal diperbarui" benar-benar muncul.
+            const { data: terubahSvc, error: galatSvc } = await supabaseServices.from("tickets")
+              .update({ services_status: "Returned to PTS", current_team: "Team PTS IVP" }).eq("id", ticket.id).select("id");
+            if (galatSvc) throw galatSvc;
+            if (!terubahSvc || terubahSvc.length === 0) throw new Error("tidak punya akses / ticket tidak ditemukan di basis data Services");
             await supabaseServices.from("activity_logs").insert([{
               ticket_id: ticket.id,
               handler_name: currentUser?.full_name || "",

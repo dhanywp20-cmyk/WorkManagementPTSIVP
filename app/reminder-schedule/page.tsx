@@ -673,7 +673,16 @@ function ReminderSchedulePageInner() {
     const grup = adaGrup ?? crypto.randomUUID();
     if (!adaGrup) {
       const idLama = sumber.map(r => r.id);
-      await supabase.from('reminders').update({ incentive_group_id: grup }).in('id', idLama);
+      //  Diperiksa: baris LAMA harus benar-benar ikut ditandai grup baru ini,
+      //  atau ia tetap berdiri sendiri di Incentive PTS sementara jadwal baru
+      //  yang memakai `grup` ini justru terhitung sebagai proyek terpisah -
+      //  persis pola "dua pool insentif untuk satu proyek" yang jadi alasan
+      //  seluruh berkas lib/kelompok-insentif.ts ditulis.
+      const { data: terubah, error } = await supabase.from('reminders')
+        .update({ incentive_group_id: grup }).in('id', idLama).select('id');
+      if (error || !terubah || terubah.length < idLama.length) {
+        notify('error', 'Sebagian jadwal lama gagal ditandai satu proyek yang sama - periksa manual di Incentive PTS.');
+      }
     }
     return grup;
   };
@@ -917,8 +926,13 @@ function ReminderSchedulePageInner() {
       // Tanggal berkurang: baris sisanya dibuang.
       const dibuang = barisLama.slice(jumlahDipakai).map(r => r.id);
       if (dibuang.length > 0) {
-        const r = await supabase.from('reminders').delete().in('id', dibuang);
+        //  select('id') supaya RLS yang diam-diam menolak sebagian baris
+        //  (0 baris, tanpa galat) ikut terlihat - bukan hanya galat Postgres.
+        const r = await supabase.from('reminders').delete().in('id', dibuang).select('id');
         if (r.error) galatSunting.push(r.error.message);
+        else if ((r.data ?? []).length < dibuang.length) {
+          galatSunting.push(`${dibuang.length - (r.data ?? []).length} jadwal lama gagal dihapus (tidak punya akses).`);
+        }
       }
       // Tanggal bertambah: baris baru menyusul, tetap satu batch.
       if (allDates.length > barisLama.length) {
@@ -1159,10 +1173,13 @@ function ReminderSchedulePageInner() {
     const sebatch = sebelum?.batch_id
       ? reminders.filter(r => r.batch_id === sebelum.batch_id)
       : [];
-    const { error } = sebelum?.batch_id
-      ? await supabase.from('reminders').update(updatePayload).eq('batch_id', sebelum.batch_id)
-      : await supabase.from('reminders').update(updatePayload).eq('id', id);
-    if (error) { notify('error', 'Gagal update status.'); return; }
+    //  select('id') supaya RLS yang diam-diam menolak (0 baris, tanpa galat)
+    //  ikut terlihat - status "Completed" yang sebetulnya tidak tersimpan
+    //  akan tampak berhasil di layar tanpa ini.
+    const { data: terubah, error } = sebelum?.batch_id
+      ? await supabase.from('reminders').update(updatePayload).eq('batch_id', sebelum.batch_id).select('id')
+      : await supabase.from('reminders').update(updatePayload).eq('id', id).select('id');
+    if (error || !terubah || terubah.length === 0) { notify('error', 'Gagal update status.'); return; }
     logAudit({
       user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
       action: 'status_change', module: 'reminder',

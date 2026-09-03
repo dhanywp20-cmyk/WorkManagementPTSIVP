@@ -303,7 +303,15 @@ export async function saveTeamEntries(
   enteredBy: string
 ): Promise<{ ok: boolean; error?: string }> {
   if (!entries.length) return { ok: true };
-  await supabase.from('daily_report_team_entries').delete().eq('report_date', reportDate).eq('entered_by', enteredBy);
+  /*
+    Hapus-lalu-sisip: baris lama hari itu dibuang dulu supaya penyimpanan
+    ulang tidak menumpuk duplikat. Kalau delete-nya ditolak RLS diam-diam
+    (0 baris, tanpa galat) dan insert di bawah tetap jalan, hasilnya justru
+    KEBALIKAN dari yang dimaksud - entri lama DAN baru sama-sama ada.
+  */
+  const { error: galatHapus } = await supabase.from('daily_report_team_entries')
+    .delete().eq('report_date', reportDate).eq('entered_by', enteredBy).select('id');
+  if (galatHapus) return { ok: false, error: 'Gagal membersihkan entri lama: ' + galatHapus.message };
   const rows = entries.map(e => ({ ...e, entered_by: enteredBy, source: 'manual' as const }));
   const { error } = await supabase.from('daily_report_team_entries').insert(rows);
   return error ? { ok: false, error: error.message } : { ok: true };

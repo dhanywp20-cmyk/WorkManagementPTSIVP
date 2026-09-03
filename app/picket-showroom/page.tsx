@@ -225,19 +225,34 @@ function PiketShowroomPageInner() {
       danger: true,
       confirmLabel: 'Hapus',
       onConfirm: async () => {
-        await supabase.from('piket_tamu_detail').delete().eq('piket_id',row.id);
-        void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? currentUser?.username ?? '', action: 'delete', module: 'picket-showroom', target_id: row.id, notes: `Hapus kegiatan ${row.day_of_week} ${row.day_date}` });
+        //  Diperiksa: fetchData() di bawah tetap membaca ulang dari server
+        //  (jadi layar tidak berbohong), tapi tanpa ini kegagalan lewat tanpa
+        //  penjelasan - kelihatannya "tidak terjadi apa-apa".
+        const { data, error } = await supabase.from('piket_tamu_detail').delete().eq('piket_id',row.id).select('id');
+        if (error || !data || data.length === 0) alert('Gagal menghapus kegiatan. Coba lagi.');
+        else void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? currentUser?.username ?? '', action: 'delete', module: 'picket-showroom', target_id: row.id, notes: `Hapus kegiatan ${row.day_of_week} ${row.day_date}` });
         fetchData();
       },
     });
   },[fetchData, currentUser, setConfirmState]);
 
   const toggleHoliday = useCallback(async (date: string) => {
+    /*
+      Diperiksa hasilnya sebelum mengubah state layar - sebelumnya state
+      lokal diubah TANPA PEDULI hasil tulisannya. Kalau RLS menolak (0 baris,
+      tanpa galat), tanda libur hilang dari layar sesaat lalu MUNCUL LAGI
+      begitu halaman di-refresh, tanpa satu pun pesan yang menjelaskan
+      kenapa. Sekarang layar hanya berubah kalau basis data benar-benar
+      berubah.
+    */
     if (holidays.includes(date)) {
-      await supabase.from('picket_holidays').delete().eq('date', date);
+      const { data, error } = await supabase.from('picket_holidays').delete().eq('date', date).select('date');
+      if (error || !data || data.length === 0) { alert('Gagal membatalkan libur. Coba lagi.'); return; }
       setHolidays(prev => prev.filter(d => d !== date));
     } else {
-      await supabase.from('picket_holidays').insert({ date, label: 'Libur', created_by: currentUser?.full_name ?? '' });
+      const { data, error } = await supabase.from('picket_holidays')
+        .insert({ date, label: 'Libur', created_by: currentUser?.full_name ?? '' }).select('date');
+      if (error || !data || data.length === 0) { alert('Gagal menandai libur. Coba lagi.'); return; }
       setHolidays(prev => [...prev, date]);
     }
   }, [holidays, currentUser]);

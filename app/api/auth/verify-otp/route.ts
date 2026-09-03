@@ -116,16 +116,30 @@ export async function POST(request: NextRequest) {
     }
 
     // Update password
+    //
+    // Diperiksa: sebelumnya hasil upsert ini tidak dibaca sama sekali - kalau
+    // gagal, endpoint tetap menjawab { success: true } dan pengguna diberi
+    // tahu "Password berhasil diubah" padahal password lamanya masih yang
+    // berlaku. OTP yang sama sudah dianggap terpakai (baris di bawah), jadi
+    // orangnya bahkan tidak bisa mencoba lagi tanpa meminta kode baru.
     const hash = await bcrypt.hash(newPassword, 12);
-    await supabase
+    const { error: galatPassword } = await supabase
       .from('user_credentials')
       .upsert({ user_id: user.id, password_hash: hash, algorithm: 'bcrypt' }, { onConflict: 'user_id' });
+    if (galatPassword) {
+      return NextResponse.json({ error: 'Gagal menyimpan password baru. Coba lagi.' }, { status: 500 });
+    }
 
     // Tandai OTP sudah dipakai
     await supabase.from('password_reset_otps').update({ used: true }).eq('id', otpRecord.id);
 
-    // Invalidate semua session aktif user ini
-    await supabase.from('user_sessions').delete().eq('user_id', user.id);
+    // Invalidate semua session aktif user ini - keamanan, bukan sekadar
+    // rapi-rapi: kalau reset password ini dipicu karena akun dicurigai
+    // dibobol, sesi lama (termasuk milik pembobol) harus ikut mati. Kegagalan
+    // di sini TIDAK membatalkan reset yang sudah berhasil (password barunya
+    // sudah tersimpan di atas dan sudah diperiksa) - dicatat, bukan diam.
+    const { error: galatSesi } = await supabase.from('user_sessions').delete().eq('user_id', user.id);
+    if (galatSesi) console.error('verify-otp: gagal mencabut sesi lama', galatSesi.message);
 
     // Kode yang benar mengosongkan hitungan salah - kalau tidak, pemilik akun
     // yang sempat salah ketik ikut terkunci saat berikutnya butuh reset.
