@@ -2220,9 +2220,21 @@ function ReminderSchedulePageInner() {
     logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'approve', module: 'reminder', target_id: r.id, target_name: r.project_name, notes: 'Internal review approved' }).catch(() => {});
     fetchRemindersQuiet();
 
-    // Badge in-app ke Manager (app_settings.manager_user_id) - actionable. Fallback ke semua admin.
-    // CATATAN: WA "REQUEST LOLOS REVIEW" DIHAPUS atas permintaan user - cukup badge di
-    // tahap ini; WA hanya dikirim di hasil akhir (saat sudah di-assign ke pengerjaan).
+    /*
+      Kabar ke Manager/Admin bahwa request sudah lolos review Sales Internal.
+
+      CATATAN RIWAYAT: tahap ini pernah SENGAJA dibuat badge in-app saja - WA
+      "REQUEST LOLOS REVIEW" dihapus atas permintaan user waktu itu, dengan
+      alasan cukup badge di sini dan WA hanya di hasil akhir. Sekarang dibalik
+      lagi, juga atas permintaan user: tahap ini adalah giliran Admin/Manager
+      bertindak, dan badge yang hanya terlihat kalau seseorang kebetulan
+      membuka platform bukan pemberitahuan - request bisa mengendap berhari-
+      hari tanpa ada yang tahu gilirannya sudah tiba.
+
+      Penerimanya fetchManagerTargets(): pemegang Full Access (Manager PTS IVP)
+      plus manager yang disetel di app_settings - BUKAN semua yang berjabatan
+      Manager, supaya Manager PTS UMP yang orang luar tidak ikut terseret.
+    */
     try {
       const managerTargets = await fetchManagerTargets();
       const targets: { id: string; phone_number: string | null; full_name: string }[] = [...managerTargets];
@@ -2230,7 +2242,23 @@ function ReminderSchedulePageInner() {
         const admins = await penerimaAdminBernomor();
         targets.push(...(admins ?? []));
       }
+      const pesanLolos = [
+        '✅ *REQUEST JADWAL LOLOS REVIEW SALES INTERNAL*',
+        '━━━━━━━━━━━━━━━━━━',
+        `👤 *Sales   :* ${r.sales_name}`,
+        `📌 *Project :* ${r.project_name}`,
+        `🏷️ *Kategori:* ${r.category ?? '-'}`,
+        `📍 *Lokasi  :* ${r.address || '-'}`,
+        `✍️ *Direview:* ${currentUser?.full_name ?? '-'}`,
+        '━━━━━━━━━━━━━━━━━━',
+        'Giliran kamu — silakan approve & tentukan pengerjaannya.',
+        '🔗 https://work-management-ptsivp.vercel.app/dashboard',
+      ].join('\n');
+
       for (const t of targets) {
+        //  sendFonnteWA mengirim ke WhatsApp DAN Telegram sekaligus
+        //  (lihat lib/wa.ts) - tidak perlu dipanggil dua kali.
+        if (t.phone_number) void sendFonnteWA(t.phone_number, pesanLolos);
         createNotification({
           user_id: t.id,
           type: 'reminder',
