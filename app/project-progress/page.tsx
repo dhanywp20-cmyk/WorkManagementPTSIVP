@@ -1142,13 +1142,18 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
         for (const c of l.components) {
           if (isNew(c.id) || !c.label.trim()) continue;
           const compPayload = { label: c.label.trim(), state: c.state, weight: c.weight, photo_url: c.photo_url, photo_thumb_url: c.photo_thumb_url, sort_order: l.components.indexOf(c) };
-          let { error } = await supabase.from('progress_components').update(compPayload).eq('id', c.id);
+          //  select('id') + panjangnya diperiksa: progress keseluruhan
+          //  DIHITUNG dari komponen-komponen ini, jadi state yang gagal
+          //  tersimpan diam-diam (RLS, 0 baris, tanpa galat) akan membuat
+          //  persentase progres salah tanpa ada yang tahu sebabnya.
+          let { data: terubah, error } = await supabase.from('progress_components').update(compPayload).eq('id', c.id).select('id');
           if (error) {
             // Sama seperti di atas - weight opsional, jangan sampai memblokir simpan progres.
             const { weight: _weight, ...withoutWeight } = compPayload;
-            ({ error } = await supabase.from('progress_components').update(withoutWeight).eq('id', c.id));
+            ({ data: terubah, error } = await supabase.from('progress_components').update(withoutWeight).eq('id', c.id).select('id'));
           }
           if (error) throw error;
+          if (!terubah || terubah.length === 0) throw new Error(`Komponen "${c.label}" gagal tersimpan (tidak punya akses).`);
           const before = origComp.get(c.id);
           if (before && before.state !== c.state) {
             logAudit({

@@ -162,7 +162,14 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
   };
 
   const toggleActive = async (id: string, current: boolean) => {
-    await supabase.from('lc_quiz_sessions').update({ is_active: !current }).eq('id', id); load();
+    //  Diperiksa: kalau ditolak diam-diam, sesi yang admin kira sudah
+    //  dinonaktifkan tetap aktif dan peserta masih bisa mengerjakannya.
+    const { data, error } = await supabase.from('lc_quiz_sessions').update({ is_active: !current }).eq('id', id).select('id');
+    if (error || !data || data.length === 0) {
+      setDialog({ type: 'error', message: 'Gagal mengubah status sesi.' });
+      return;
+    }
+    load();
   };
 
   // Duplicate an existing session - re-sends the same quiz to the same targets

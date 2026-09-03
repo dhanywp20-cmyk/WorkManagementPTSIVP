@@ -104,14 +104,19 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
     if (!selectedCCUserId) return;
     setCcSaving(true);
     try {
-      // Delete existing user_supervisor_mappings for this user
-      await supabase.from('user_supervisor_mappings').delete().eq('user_id', selectedCCUserId);
+      //  Diperiksa: RLS yang diam-diam menolak (0 baris, tanpa galat)
+      //  akan meninggalkan mapping LAMA tetap aktif sementara layar sudah
+      //  menunjukkan yang baru - notifikasi CC berikutnya akan salah kirim.
+      const { data: terhapus, error: galatHapus } = await supabase.from('user_supervisor_mappings')
+        .delete().eq('user_id', selectedCCUserId).select('id');
+      if (galatHapus) { notify('error', 'Gagal menghapus mapping lama: ' + galatHapus.message); setCcSaving(false); return; }
       // Insert new
       const toInsert = Array.from(ccChecked).map(supId => ({ user_id: selectedCCUserId, supervisor_id: supId }));
       if (toInsert.length > 0) {
         const { error } = await supabase.from('user_supervisor_mappings').insert(toInsert);
         if (error) { notify('error', 'Gagal: ' + error.message); setCcSaving(false); return; }
       }
+      void terhapus;
       notify('success', 'CC mapping disimpan!');
       await fetchAll();
     } catch (e: any) { notify('error', e.message); }
@@ -131,7 +136,10 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
 
   const handleDeleteAtasan = (id: string) => {
     setConfirmState({ message: 'Hapus mapping atasan ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
-      await supabase.from('division_supervisor_mappings').delete().eq('id', id);
+      //  select('id') supaya penolakan diam-diam RLS ikut terlihat, bukan
+      //  tampak berhasil padahal mapping routing-nya masih aktif.
+      const { data, error } = await supabase.from('division_supervisor_mappings').delete().eq('id', id).select('id');
+      if (error || !data || data.length === 0) { notify('error', 'Gagal menghapus mapping.'); return; }
       notify('success', 'Dihapus.'); await fetchAll();
     }});
   };
@@ -150,7 +158,9 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
 
   const handleDeleteIvp = (id: string) => {
     setConfirmState({ message: 'Hapus mapping IVP ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
-      await supabase.from('division_ivp_mappings').delete().eq('id', id);
+      //  select('id') supaya penolakan diam-diam RLS ikut terlihat.
+      const { data, error } = await supabase.from('division_ivp_mappings').delete().eq('id', id).select('id');
+      if (error || !data || data.length === 0) { notify('error', 'Gagal menghapus mapping.'); return; }
       notify('success', 'Dihapus.'); await fetchAll();
     }});
   };
@@ -722,7 +732,11 @@ export function UserManagementInline() {
     if (!selectedCCUserId) return;
     setCcSaving(true);
     try {
-      await supabase.from('user_supervisor_mappings').delete().eq('user_id', selectedCCUserId);
+      //  Diperiksa: RLS yang diam-diam menolak (0 baris, tanpa galat) akan
+      //  meninggalkan mapping LAMA tetap aktif sementara layar menunjukkan
+      //  yang baru - notifikasi CC berikutnya akan salah kirim.
+      const { error: galatHapus } = await supabase.from('user_supervisor_mappings').delete().eq('user_id', selectedCCUserId).select('id');
+      if (galatHapus) { notify('error', 'Gagal menghapus mapping lama: ' + galatHapus.message); setCcSaving(false); return; }
       const toInsert = Array.from(ccChecked).map(supId => ({ user_id: selectedCCUserId, supervisor_id: supId }));
       if (toInsert.length > 0) {
         const { error } = await supabase.from('user_supervisor_mappings').insert(toInsert);
@@ -746,7 +760,10 @@ export function UserManagementInline() {
 
   const handleDeleteAtasan = (id: string) => {
     setConfirmState({ message: 'Hapus mapping atasan ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
-      await supabase.from('division_supervisor_mappings').delete().eq('id', id);
+      //  select('id') supaya penolakan diam-diam RLS ikut terlihat, bukan
+      //  tampak berhasil padahal mapping routing-nya masih aktif.
+      const { data, error } = await supabase.from('division_supervisor_mappings').delete().eq('id', id).select('id');
+      if (error || !data || data.length === 0) { notify('error', 'Gagal menghapus mapping.'); return; }
       notify('success', 'Dihapus.'); await fetchAll();
     }});
   };
@@ -765,7 +782,9 @@ export function UserManagementInline() {
 
   const handleDeleteIvp = (id: string) => {
     setConfirmState({ message: 'Hapus mapping IVP ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
-      await supabase.from('division_ivp_mappings').delete().eq('id', id);
+      //  select('id') supaya penolakan diam-diam RLS ikut terlihat.
+      const { data, error } = await supabase.from('division_ivp_mappings').delete().eq('id', id).select('id');
+      if (error || !data || data.length === 0) { notify('error', 'Gagal menghapus mapping.'); return; }
       notify('success', 'Dihapus.'); await fetchAll();
     }});
   };
@@ -807,7 +826,9 @@ export function UserManagementInline() {
   };
   const handleDeleteProdSup = (id: string) => {
     setConfirmState({ message: 'Hapus routing tipe produk ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
-      await supabase.from('product_team_map').delete().eq('id', id);
+      //  select('id') supaya penolakan diam-diam RLS ikut terlihat.
+      const { data, error } = await supabase.from('product_team_map').delete().eq('id', id).select('id');
+      if (error || !data || data.length === 0) { notify('error', 'Gagal menghapus routing.'); return; }
       notify('success', 'Dihapus.'); await fetchAll();
     }});
   };

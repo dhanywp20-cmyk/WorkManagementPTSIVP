@@ -71,7 +71,14 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
   const handleSave=async()=>{
     setSaving(true);
     try{
-      await supabase.from('piket_tamu_detail').delete().eq('piket_id',row.id);
+      /*
+        Diperiksa: baris LAMA harus benar-benar terhapus sebelum baris baru
+        disisipkan di bawah. Kalau RLS menolak diam-diam (0 baris, tanpa
+        galat) dan insert-nya tetap jalan, hasilnya BUKAN "tersimpan ulang" -
+        entri lama dan baru sama-sama ada, dobel.
+      */
+      const{error:delErr}=await supabase.from('piket_tamu_detail').delete().eq('piket_id',row.id).select('id');
+      if(delErr) throw delErr;
       const editedByName=currentUser?.full_name||null;
       const now=new Date().toISOString();
       // id kegiatan dibuat di client agar bisa langsung dipakai sebagai kegiatan_id produk_lain

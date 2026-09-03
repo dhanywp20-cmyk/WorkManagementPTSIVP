@@ -177,14 +177,18 @@ function QuizPlayer({ session, user, attempt, onDone }: {
 
       const isi = { answer_image_url: urlPenuh, answer_thumb_url: urlKecil, answered_at: new Date().toISOString() };
       const sudahAda = savedAnswers[questionId] !== undefined;
-      const { error } = sudahAda
+      //  select('id') pada UPDATE: RLS yang menolak menjawab 0 baris TANPA
+      //  galat - tanpa memeriksa panjangnya, foto jawaban yang gagal
+      //  tersimpan tetap tampak terunggah di layar.
+      const { data: hasil, error } = sudahAda
         ? await supabase.from('lc_answers').update(isi)
-            .eq('attempt_id', attempt.id).eq('question_id', questionId)
+            .eq('attempt_id', attempt.id).eq('question_id', questionId).select('id')
         : await supabase.from('lc_answers').insert([{
             attempt_id: attempt.id, user_id: user.id, quiz_session_id: session.id,
             question_id: questionId, answer: '', essay_text: null, is_correct: false, ...isi,
-          }]);
+          }]).select('id');
       if (error) throw new Error(error.message);
+      if (!hasil || hasil.length === 0) throw new Error('tersimpan 0 baris - tidak ada perubahan yang tercatat');
 
       setGambarJawaban(p => ({ ...p, [questionId]: urlKecil }));
       setSavedAnswers(p => ({ ...p, [questionId]: urlPenuh }));
@@ -206,10 +210,14 @@ function QuizPlayer({ session, user, attempt, onDone }: {
     setAnswers(p => ({ ...p, [questionId]: answer }));
     const existing = savedAnswers[questionId];
     let error: { message: string } | null = null;
+    //  select('id') pada tiap UPDATE: tanpa memeriksa jumlah baris, RLS yang
+    //  menolak (0 baris, tanpa galat) lolos dari pemeriksaan `if (error)` di
+    //  bawah - persis pola yang dijelaskan di komentar bawah fungsi ini.
     if (isEssay) {
       if (existing !== undefined) {
-        ({ error } = await supabase.from('lc_answers').update({ essay_text: answer, answered_at: new Date().toISOString() })
-          .eq('attempt_id', attempt.id).eq('question_id', questionId));
+        const r = await supabase.from('lc_answers').update({ essay_text: answer, answered_at: new Date().toISOString() })
+          .eq('attempt_id', attempt.id).eq('question_id', questionId).select('id');
+        error = r.error ?? (!r.data || r.data.length === 0 ? { message: 'tersimpan 0 baris' } : null);
       } else {
         ({ error } = await supabase.from('lc_answers').insert([{
           attempt_id: attempt.id, user_id: user.id, quiz_session_id: session.id,
@@ -218,8 +226,9 @@ function QuizPlayer({ session, user, attempt, onDone }: {
         if (!error) setSavedAnswers(p => ({ ...p, [questionId]: answer }));
       }
     } else if (existing) {
-      ({ error } = await supabase.from('lc_answers').update({ answer, answered_at: new Date().toISOString() })
-        .eq('attempt_id', attempt.id).eq('question_id', questionId));
+      const r = await supabase.from('lc_answers').update({ answer, answered_at: new Date().toISOString() })
+        .eq('attempt_id', attempt.id).eq('question_id', questionId).select('id');
+      error = r.error ?? (!r.data || r.data.length === 0 ? { message: 'tersimpan 0 baris' } : null);
     } else {
       const q = questions.find(q => q.id === questionId);
       ({ error } = await supabase.from('lc_answers').insert([{

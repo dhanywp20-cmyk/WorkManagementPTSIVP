@@ -259,11 +259,18 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
     const passingGrade = selectedAttempt.lc_quiz_sessions?.passing_grade ?? 70;
     const passed = finalScore >= passingGrade;
     const totalCorrect = questions.filter(q => (Number(manualScores[q.id]) || 0) >= passingGrade).length;
-    await supabase.from('lc_quiz_attempts').update({
+    //  Diperiksa: nilai peserta ikut memengaruhi KPI-nya - kalau tersimpannya
+    //  gagal diam-diam (RLS menolak 0 baris tanpa galat), "berhasil disimpan"
+    //  akan menampilkan nilai yang sebetulnya masih belum ada di basis data.
+    const { data: terubah, error } = await supabase.from('lc_quiz_attempts').update({
       score: finalScore, passed, total_correct: totalCorrect, total_questions: questions.length,
       grading_status: 'graded', graded_by: grader?.id ?? null, graded_at: new Date().toISOString(),
-    }).eq('id', selectedAttempt.id);
+    }).eq('id', selectedAttempt.id).select('id');
     setSavingGrade(false);
+    if (error || !terubah || terubah.length === 0) {
+      setDialog({ type: 'error', message: 'Gagal menyimpan nilai essay. Coba lagi.' });
+      return;
+    }
     setSelectedAttempt((p: any) => p && ({ ...p, score: finalScore, passed, grading_status: 'graded' }));
     setDialog({ type: 'success', message: 'Nilai essay berhasil disimpan!' });
   };

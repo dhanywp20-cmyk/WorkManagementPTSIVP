@@ -289,9 +289,17 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
           const { error: qErr } = await supabase.from('lc_questions').delete().in('material_id', ids);
           if (qErr) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Gagal hapus soal terkait: ' + qErr.message }); return; }
         }
-        const results = await Promise.all(affected.map(m => supabase.from('lc_materials').delete().eq('id', m.id)));
+        //  select('id') per baris: RLS yang menolak diam-diam (0 baris, tanpa
+        //  galat) tidak muncul di r.error - tanpa memeriksa panjangnya,
+        //  sebagian materi bisa tetap ada padahal folder tampak terhapus.
+        const results = await Promise.all(affected.map(m => supabase.from('lc_materials').delete().eq('id', m.id).select('id')));
         const err = results.find((r: { error: unknown }) => r.error)?.error as { message: string } | undefined;
         if (err) { setDialog({ type: 'error', title: 'Gagal Hapus Folder', message: 'Gagal hapus materi: ' + err.message }); return; }
+        const gagalTerhapus = results.filter((r: { error: unknown; data: unknown[] | null }) => !r.error && (!r.data || r.data.length === 0)).length;
+        if (gagalTerhapus > 0) {
+          setDialog({ type: 'error', title: 'Gagal Hapus Folder', message: `${gagalTerhapus} dari ${affected.length} materi tidak punya akses untuk dihapus.` });
+          return;
+        }
         void logAudit({ user_id: user.id, user_name: user.full_name ?? '', action: 'delete', module: 'learning-center', notes: `Hapus folder "${folderName}" (${affected.length} materi)` });
         if (selectedFolderKey === folderName) setSelectedFolderKey(null);
         load();
@@ -302,12 +310,18 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
   const handleEditMaterial = async () => {
     if (!editMaterial) return;
     setEditMaterialSaving(true);
-    await supabase.from('lc_materials').update({
+    //  Diperiksa: perubahan yang gagal tersimpan diam-diam tampak berhasil
+    //  (form menutup) padahal materinya masih versi lama.
+    const { data, error } = await supabase.from('lc_materials').update({
       materi_name: editMaterial.materi_name.trim(),
       file_url: editMaterial.file_url?.trim() || null,
       folder_path: editMaterial.folder_path?.trim() || null,
-    }).eq('id', editMaterial.id);
+    }).eq('id', editMaterial.id).select('id');
     setEditMaterialSaving(false);
+    if (error || !data || data.length === 0) {
+      setDialog({ type: 'error', message: 'Gagal menyimpan perubahan materi.' });
+      return;
+    }
     setEditMaterial(null);
     load();
   };

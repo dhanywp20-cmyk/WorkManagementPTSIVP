@@ -425,8 +425,15 @@ export default function TechNotePage() {
         // Riwayat dihapus DULUAN: kalau induknya lebih dulu hilang, baris
         // riwayatnya tertinggal tanpa tujuan dan tidak akan pernah terbaca lagi.
         await supabase.from('tech_note_history').delete().eq('tech_note_id', n.id);
-        const { error } = await supabase.from('tech_notes').delete().eq('id', n.id);
-        if (error) { alert('Gagal menghapus: ' + error.message); return; }
+        //  select('id') + panjangnya diperiksa: riwayatnya sudah kadung
+        //  terhapus di atas, jadi kalau tech_notes-nya sendiri gagal
+        //  terhapus (RLS menolak diam-diam, 0 baris, tanpa galat), "berhasil
+        //  dihapus" akan menyembunyikan catatan yatim tanpa riwayat.
+        const { data: terhapus, error } = await supabase.from('tech_notes').delete().eq('id', n.id).select('id');
+        if (error || !terhapus || terhapus.length === 0) {
+          alert(error ? 'Gagal menghapus: ' + error.message : 'Gagal menghapus (tidak punya akses). Riwayatnya sudah terhapus - hubungi admin.');
+          return;
+        }
         void logAudit({
           user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
           action: 'delete', module: 'tech-note', target_id: n.id, target_name: n.title,
