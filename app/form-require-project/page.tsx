@@ -34,6 +34,12 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const [appReady, setAppReady] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showNewFormModal, setShowNewFormModal] = useState(false);
+  // M13 (docs/UX-WORKFLOW-AUDIT.md): handleStatusUpdate dipanggil dari banyak
+  // tombol berbeda tanpa guard loading sama sekali - klik ganda pada koneksi
+  // lambat bisa mengirim WA/Telegram dobel ke pihak eksternal. Ref (bukan
+  // state) supaya tidak memicu re-render tiap perubahan, cukup mencegah
+  // pemanggilan ganda untuk request yang sama sementara satu masih berjalan.
+  const statusUpdatingRef = useRef<Set<string>>(new Set());
   const [requests, setRequests] = useState<ProjectRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<ProjectRequest | null>(null);
   const [messages, setMessages] = useState<ProjectMessage[]>([]);
@@ -125,6 +131,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const [chatRoomFilter, setChatRoomFilter] = useState<string>('all');
   const [rejectModal, setRejectModal] = useState<{ open: boolean; req: ProjectRequest | null }>({ open: false, req: null });
   const [rejectNote, setRejectNote] = useState('');
+  const [rejectSaving, setRejectSaving] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; req: ProjectRequest | null }>({ open: false, req: null });
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -843,31 +850,53 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
           request_id: data.id, sender_id: currentUser.id, sender_name: 'System', sender_role: 'system',
           message: `📋 Request baru dari ${currentUser.full_name} telah masuk dan menunggu approval dari Superadmin.`,
         }]);
+        /*
+          M12 (docs/UX-WORKFLOW-AUDIT.md): request-nya SUDAH tersimpan (data.id
+          valid, pesan sistem "menunggu approval" sudah terkirim) di titik ini.
+          Dulu upload foto survey/BOQ awal di bawah ini TIDAK dibungkus
+          try/catch sendiri - kalau compressImage() atau storage.upload()
+          melontar exception (file korup, kuota browser penuh, dsb), yang
+          tertangkap adalah catch generik di akhir fungsi ini yang bilang
+          "Terjadi kesalahan tidak terduga. Coba lagi." - menyiratkan submit
+          gagal TOTAL padahal sudah tersimpan. User yang percaya pesan itu
+          submit ulang seluruh form -> request duplikat, notifikasi ganda ke
+          Admin & Sales Internal. Sekarang dibungkus try/catch sendiri: upload
+          lampiran awal boleh gagal, tapi TIDAK BOLEH terlihat seperti request-
+          nya sendiri gagal.
+        */
         if (surveyPhotos.length > 0) {
-          for (const photo of surveyPhotos) {
-            const compressedPhoto = await compressImage(photo);
-            const filePath = `project-files/${data.id}/survey-${Date.now()}-${toStorageSafeName(compressedPhoto.name)}`;
-            const { error: storageErr } = await supabase.storage.from('project-files').upload(filePath, compressedPhoto, { cacheControl: '31536000', upsert: false });
-            if (!storageErr) {
-              const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
-              await supabase.from('project_attachments').insert([{
-                request_id: data.id, message_id: null, file_name: photo.name,
-                file_url: urlData.publicUrl, file_type: compressedPhoto.type, file_size: compressedPhoto.size,
-                uploaded_by: currentUser.full_name,
-              }]);
+          try {
+            for (const photo of surveyPhotos) {
+              const compressedPhoto = await compressImage(photo);
+              const filePath = `project-files/${data.id}/survey-${Date.now()}-${toStorageSafeName(compressedPhoto.name)}`;
+              const { error: storageErr } = await supabase.storage.from('project-files').upload(filePath, compressedPhoto, { cacheControl: '31536000', upsert: false });
+              if (!storageErr) {
+                const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
+                await supabase.from('project_attachments').insert([{
+                  request_id: data.id, message_id: null, file_name: photo.name,
+                  file_url: urlData.publicUrl, file_type: compressedPhoto.type, file_size: compressedPhoto.size,
+                  uploaded_by: currentUser.full_name,
+                }]);
+              }
             }
+          } catch {
+            notify('error', 'Request berhasil dikirim, tapi sebagian foto survey gagal diupload. Upload manual lewat detail request setelah ini.');
           }
         }
         if (boqFormFile && data?.id) {
-          const filePath = `project-files/${data.id}/boq-initial-${Date.now()}-${toStorageSafeName(boqFormFile.name)}`;
-          const { error: boqErr } = await supabase.storage.from('project-files').upload(filePath, boqFormFile, { cacheControl: '31536000', upsert: false });
-          if (!boqErr) {
-            const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
-            await supabase.from('project_attachments').insert([{
-              request_id: data.id, message_id: null, file_name: boqFormFile.name,
-              file_url: urlData.publicUrl, file_type: boqFormFile.type, file_size: boqFormFile.size,
-              uploaded_by: currentUser.full_name, attachment_category: 'boq', revision_version: 1,
-            }]);
+          try {
+            const filePath = `project-files/${data.id}/boq-initial-${Date.now()}-${toStorageSafeName(boqFormFile.name)}`;
+            const { error: boqErr } = await supabase.storage.from('project-files').upload(filePath, boqFormFile, { cacheControl: '31536000', upsert: false });
+            if (!boqErr) {
+              const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
+              await supabase.from('project_attachments').insert([{
+                request_id: data.id, message_id: null, file_name: boqFormFile.name,
+                file_url: urlData.publicUrl, file_type: boqFormFile.type, file_size: boqFormFile.size,
+                uploaded_by: currentUser.full_name, attachment_category: 'boq', revision_version: 1,
+              }]);
+            }
+          } catch {
+            notify('error', 'Request berhasil dikirim, tapi file BOQ awal gagal diupload. Upload manual lewat detail request setelah ini.');
           }
         }
         // Termasuk pemegang Full Access (Manager PTS IVP), bukan hanya
@@ -1145,10 +1174,12 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
   const handleRejectConfirm = async () => {
     const req = rejectModal.req;
-    if (!req) return;
+    if (!req || rejectSaving) return;
     if (!rejectNote.trim()) { notify('error', 'Alasan penolakan wajib diisi!'); return; }
+    setRejectSaving(true);
     const { error } = await supabase.from('project_requests').update({ status: 'rejected', rejection_reason: rejectNote.trim() }).eq('id', req.id);
-    if (error) { notify('error', 'Gagal reject.'); return; }
+    setRejectSaving(false);
+    if (error) { notify('error', 'Gagal reject: ' + error.message); return; }
     notify('info', 'Request ditolak.');
     setRejectModal({ open: false, req: null });
     setRejectNote('');
@@ -1213,11 +1244,14 @@ Hubungi Admin untuk info lebih lanjut.
   };
 
   const handleStatusUpdate = async (req: ProjectRequest, newStatus: string) => {
+    if (statusUpdatingRef.current.has(req.id)) return;
+    statusUpdatingRef.current.add(req.id);
+    try {
     //  select('id') supaya RLS yang menolak diam-diam (0 baris, tanpa galat)
     //  ikut terlihat - lihat catatan yang sama di handleDeleteConfirm.
     const { data: terubah, error } = await supabase.from('project_requests')
       .update({ status: newStatus }).eq('id', req.id).select('id');
-    if (error || !terubah || terubah.length === 0) { notify('error', 'Gagal update status.'); return; }
+    if (error || !terubah || terubah.length === 0) { notify('error', 'Gagal update status: ' + (error?.message ?? 'akses ditolak database.')); return; }
     notify('success', `Status → ${newStatus}`);
     fetchRequests();
     if (selectedRequest) setSelectedRequest({ ...selectedRequest, status: newStatus as ProjectRequest['status'] });
@@ -1277,6 +1311,9 @@ Hubungi Admin untuk info lebih lanjut.
     } catch { /* kabar gagal tidak boleh membatalkan perubahan statusnya */ }
     // Audit
     logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'status_change', module: 'project', target_id: req.id, target_name: req.project_name, old_value: req.status, new_value: newStatus }).catch(() => {});
+    } finally {
+      statusUpdatingRef.current.delete(req.id);
+    }
   };
 
   const handleOpenEditForm = () => {
@@ -2178,7 +2215,7 @@ Hubungi Admin untuk info lebih lanjut.
                 className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-red-400 transition-all outline-none resize-none mb-4" />
               <div className="flex gap-3">
                 <button onClick={() => setRejectModal({ open: false, req: null })} className="flex-1 border-2 border-gray-300 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50 transition-all">Batal</button>
-                <button onClick={handleRejectConfirm} className="flex-[2] bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white py-3 rounded-xl font-bold shadow-lg transition-all">❌ Ya, Tolak</button>
+                <button onClick={handleRejectConfirm} disabled={rejectSaving} className="flex-[2] bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white py-3 rounded-xl font-bold shadow-lg transition-all disabled:opacity-50">{rejectSaving ? '⏳...' : '❌ Ya, Tolak'}</button>
               </div>
             </div>
           </div>
