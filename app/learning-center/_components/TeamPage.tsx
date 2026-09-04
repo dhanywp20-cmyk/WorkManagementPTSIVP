@@ -412,7 +412,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                           <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
                         </div>
                       </div>
-                      <div className="ml-10 space-y-3">
+                      <div className="ml-2 sm:ml-10 space-y-3">
                         <div className="bg-white rounded-xl border border-slate-200 p-3">
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Jawaban Peserta</p>
                           {ans?.answer_thumb_url ? (
@@ -537,7 +537,11 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                         <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 ml-10">
+                    {/* 1 kolom di ponsel: dipaksa 2 kolom + ml-10 (jarak
+                        sejajar nomor soal) menyisakan ruang sangat sempit
+                        buat teks opsi di layar sempit, jadi teks panjang
+                        terpotong/menumpuk berantakan. */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 ml-2 sm:ml-10">
                       {(['A','B','C','D'] as const).map(opt => {
                         const optVal = (q as any)[`option_${opt.toLowerCase()}`];
                         const isUserChoice = userAnswer === opt;
@@ -555,7 +559,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                         );
                       })}
                     </div>
-                    {notAnswered && <p className="ml-10 mt-2 text-xs text-slate-400 italic">Tidak dijawab</p>}
+                    {notAnswered && <p className="ml-2 sm:ml-10 mt-2 text-xs text-slate-400 italic">Tidak dijawab</p>}
                   </div>
                 );
               })}
