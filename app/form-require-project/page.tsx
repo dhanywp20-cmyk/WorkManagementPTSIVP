@@ -1243,6 +1243,33 @@ Hubungi Admin untuk info lebih lanjut.
     fetchRequests();
   };
 
+  /**
+   * Hapus satu file attachment - dulu tidak ada tombolnya sama sekali, jadi
+   * Admin/Full Access terpaksa hapus lewat Supabase langsung tiap ada file
+   * salah upload/salah kategori. Admin/Full Access = bisaKelolaRequest (sama
+   * dengan syarat "Re-assign Tim PTS" di panel ini), BUKAN role admin
+   * hardcode, supaya konsisten dengan Full Access yang di-toggle lewat Admin
+   * Panel per akun Team.
+   */
+  const handleDeleteAttachment = (att: ProjectAttachment) => {
+    setConfirmState({
+      message: `Hapus file "${displayFileName(att.file_name)}"? Tindakan ini tidak dapat dibatalkan.`,
+      danger: true,
+      confirmLabel: 'Hapus',
+      onConfirm: async () => {
+        const match = att.file_url.match(/project-files\/.+/);
+        if (match) await supabase.storage.from('project-files').remove([match[0]]);
+        const { data, error } = await supabase.from('project_attachments').delete().eq('id', att.id).select('id');
+        if (error || !data || data.length === 0) {
+          notify('error', error ? 'Gagal menghapus: ' + error.message : 'File gagal dihapus (tidak punya akses).');
+          return;
+        }
+        setAttachments(prev => prev.filter(a => a.id !== att.id));
+        notify('success', 'File berhasil dihapus.');
+      },
+    });
+  };
+
   const handleStatusUpdate = async (req: ProjectRequest, newStatus: string) => {
     if (statusUpdatingRef.current.has(req.id)) return;
     statusUpdatingRef.current.add(req.id);
@@ -3044,8 +3071,9 @@ Hubungi Admin untuk info lebih lanjut.
                                 {history.length > 0 && <span className={`text-[9px] font-bold text-${catColor}-500`}>{history.length} versi lama</span>}
                               </div>
                               {/* Latest */}
+                              <div className="flex items-center gap-1 border-b border-gray-100">
                               <a href={latest.file_url} target="_blank" rel="noopener noreferrer"
-                                className="flex items-center gap-3 p-3 hover:bg-teal-50 transition-all cursor-pointer border-b border-gray-100">
+                                className="flex-1 min-w-0 flex items-center gap-3 p-3 hover:bg-teal-50 transition-all cursor-pointer">
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl bg-${catColor}-100`}>
                                   {latest.file_type?.includes('pdf') ? '📄' : latest.file_type?.startsWith('image') ? '🖼️' : '📊'}
                                 </div>
@@ -3060,10 +3088,18 @@ Hubungi Admin untuk info lebih lanjut.
                                 </div>
                                 <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-teal-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                               </a>
+                              {bisaKelolaRequest && (
+                                <button onClick={() => handleDeleteAttachment(latest)} title="Hapus file"
+                                  className="flex-shrink-0 mr-2 w-7 h-7 rounded-lg flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 transition-all">
+                                  <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                              )}
+                              </div>
                               {/* Version history */}
                               {history.map(att => (
-                                <a key={att.id} href={att.file_url} target="_blank" rel="noopener noreferrer"
-                                  className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition-all cursor-pointer border-b border-gray-50 opacity-60">
+                                <div key={att.id} className="flex items-center gap-1 border-b border-gray-50 opacity-60">
+                                <a href={att.file_url} target="_blank" rel="noopener noreferrer"
+                                  className="flex-1 min-w-0 flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition-all cursor-pointer">
                                   <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-sm bg-gray-100">
                                     {att.file_type?.includes('pdf') ? '📄' : att.file_type?.startsWith('image') ? '🖼️' : '📊'}
                                   </div>
@@ -3073,6 +3109,13 @@ Hubungi Admin untuk info lebih lanjut.
                                   </div>
                                   <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                                 </a>
+                                {bisaKelolaRequest && (
+                                  <button onClick={() => handleDeleteAttachment(att)} title="Hapus file"
+                                    className="flex-shrink-0 mr-2 w-6 h-6 rounded-lg flex items-center justify-center text-red-300 hover:text-red-600 hover:bg-red-50 transition-all">
+                                    <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                  </button>
+                                )}
+                                </div>
                               ))}
                             </div>
                           );
@@ -3081,16 +3124,23 @@ Hubungi Admin untuk info lebih lanjut.
                         {roomAttachments.filter(a => a.attachment_category === 'general' || !a.attachment_category).length > 0 && (
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                             {roomAttachments.filter(a => a.attachment_category === 'general' || !a.attachment_category).map(att => (
-                              <a key={att.id} href={att.file_url} target="_blank" rel="noopener noreferrer"
-                                className="group flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 hover:border-teal-300 hover:bg-teal-50 transition-all cursor-pointer">
-                                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-lg bg-gray-50">
-                                  {att.file_type?.startsWith('image') ? '🖼️' : att.file_type?.includes('pdf') ? '📄' : '📎'}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-[10px] font-bold text-gray-700 truncate group-hover:text-teal-700">{displayFileName(att.file_name)}</p>
-                                  <p className="text-[9px] text-gray-400">{formatFileSize(att.file_size)}</p>
-                                </div>
-                              </a>
+                              <div key={att.id} className="group relative flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 hover:border-teal-300 hover:bg-teal-50 transition-all">
+                                <a href={att.file_url} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0 flex items-center gap-2 cursor-pointer">
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-lg bg-gray-50">
+                                    {att.file_type?.startsWith('image') ? '🖼️' : att.file_type?.includes('pdf') ? '📄' : '📎'}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-bold text-gray-700 truncate group-hover:text-teal-700">{displayFileName(att.file_name)}</p>
+                                    <p className="text-[9px] text-gray-400">{formatFileSize(att.file_size)}</p>
+                                  </div>
+                                </a>
+                                {bisaKelolaRequest && (
+                                  <button onClick={() => handleDeleteAttachment(att)} title="Hapus file"
+                                    className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-red-300 hover:text-red-600 hover:bg-red-50 transition-all">
+                                    <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                  </button>
+                                )}
+                              </div>
                             ))}
                           </div>
                         )}
