@@ -4286,7 +4286,10 @@ jangan lupa peralatan & Semangat💪🏼
           )}
         </PageHeader>
 
-        <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-2.5 py-3 space-y-3 sm:px-5 sm:py-5 sm:space-y-4">
+        {/* overflow-x-hidden: jaring pengaman - kartu/elemen mana pun di
+            dalam yang kebetulan lebih lebar dari layar akan terpotong rapi
+            di sini, bukan memaksa SELURUH halaman bisa digeser ke samping. */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden max-w-[1600px] mx-auto w-full px-2.5 py-3 space-y-3 sm:px-5 sm:py-5 sm:space-y-4">
           {view === 'list' && (
             <>
               {/* ── Stat cards (clickable filter) ── */}
@@ -4308,7 +4311,13 @@ jangan lupa peralatan & Semangat💪🏼
               </div>
 
               {/* ── Pie Charts — klick untuk filter ── */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+              {/* 1 kolom di ponsel (bukan 2): tiap kartu MiniPieChart berisi
+                  donat + legenda berdampingan, jauh lebih lebar isinya
+                  dibanding StatCard di atas - dipaksa 2 kolom di layar
+                  sempit membuat separuh lebar kartu kurang buat donat +
+                  legenda sekaligus, dan itulah yang membuat SELURUH
+                  halaman ikut melebar & harus digeser ke kanan. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <MiniPieChart
                   data={projectPieData} title="Kegiatan / Kategori" icon="🖥️"
                   activeFilter={filterCategory !== 'all' ? filterCategory : null}

@@ -347,7 +347,8 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                       <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 ml-10">
+                  {/* 1 kolom di ponsel - lihat catatan yang sama di TeamPage.tsx */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 ml-2 sm:ml-10">
                     {(['A','B','C','D'] as const).map(opt => {
                       const optVal = (q as any)[`option_${opt.toLowerCase()}`];
                       const isUserChoice = userAnswer === opt;
