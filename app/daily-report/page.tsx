@@ -476,6 +476,22 @@ export default function DailyReportPage() {
     return { total, pending, selesai, hariIni, fromTicket, fromReminder, fromManual };
   }, [allRows]);
 
+  /*
+    M7 (docs/UX-WORKFLOW-AUDIT.md): dulu tidak ada cara melihat siapa yang
+    BELUM mengisi report hari ini - allRows hanya merangkum aktivitas yang
+    SUDAH ADA. Supervisor harus membandingkan manual dengan daftar tim di
+    kepala. Dibandingkan di sini terhadap teamUsers (daftar anggota tim
+    sesungguhnya), bukan disimpulkan dari data yang sudah ada.
+  */
+  const belumLaporHariIni = useMemo(() => {
+    if (!isAdmin || teamUsers.length === 0) return [];
+    const today = todayISO();
+    const sudahLapor = new Set(
+      allRows.filter(r => r.report_date === today).map(r => (r.handler_username || '').toLowerCase())
+    );
+    return teamUsers.filter(u => u.username && !sudahLapor.has(u.username.toLowerCase()));
+  }, [teamUsers, allRows, isAdmin]);
+
   // Donut data
   const PIE_C = ['#7c3aed','#0ea5e9','#10b981','#e11d48','#f59e0b','#6366f1','#14b8a6','#f97316','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
 
@@ -861,7 +877,22 @@ export default function DailyReportPage() {
           { label: 'Selesai', sub: 'Terselesaikan', value: stats.selesai, accent: '#047857' },
           { label: 'Hari Ini', sub: todayISO(), value: stats.hariIni, accent: '#0e7490' },
         ]} />
-        
+
+        {/* M7: siapa yang belum lapor hari ini - hanya untuk admin/supervisor */}
+        {belumLaporHariIni.length > 0 && (
+          <div className="rounded-2xl px-5 py-3.5 flex items-center gap-3 flex-wrap" style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.18)' }}>
+            <span className="text-[11px] font-black uppercase tracking-widest flex items-center gap-1.5" style={{ color: '#b91c1c' }}>
+              🔴 Belum Lapor Hari Ini ({belumLaporHariIni.length})
+            </span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {belumLaporHariIni.map(u => (
+                <span key={u.id} className="px-2.5 py-1 rounded-full text-[11px] font-bold" style={{ background: 'rgba(220,38,38,0.1)', color: '#991b1b' }}>
+                  {u.full_name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── Source breakdown strip ── */}
         <div className="rounded-2xl px-5 py-3.5 flex items-center gap-6 flex-wrap" style={{ background: 'rgba(255,255,255,0.92)', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
