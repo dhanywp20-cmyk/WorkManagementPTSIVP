@@ -36,8 +36,12 @@ function terjemahkanGalatUnggah(pesan?: string): string {
   return p;
 }
 
-function QuizPlayer({ session, user, attempt, onDone }: {
+function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
   session: QuizSession; user: User; attempt: QuizAttempt; onDone: () => void;
+  /** Minor (docs/UX-WORKFLOW-AUDIT.md): dulu tidak ada CTA langsung "Coba Lagi"
+   *  setelah gagal walau allow_retake true - peserta harus keluar dulu ke
+   *  daftar quiz, baru mulai lagi dari sana. */
+  onRetake?: (session: QuizSession) => void;
 }) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -398,11 +402,17 @@ function QuizPlayer({ session, user, attempt, onDone }: {
             <span className="bg-slate-100 px-3 py-1.5 rounded-lg font-semibold">✓ {result.correct}/{questions.length} benar</span>
             <span className="bg-slate-100 px-3 py-1.5 rounded-lg font-semibold">Passing: {session.passing_grade}%</span>
           </div>
-          <div className="flex gap-3 justify-center">
+          <div className="flex gap-3 justify-center flex-wrap">
             <button onClick={() => setShowReview(true)}
               className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold rounded-xl shadow-sm transition-all text-sm">
               📋 Review Jawaban
             </button>
+            {!result.passed && session.allow_retake && onRetake && (
+              <button onClick={() => onRetake(session)}
+                className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow transition-all text-sm">
+                🔄 Coba Lagi
+              </button>
+            )}
             <button onClick={onDone}
               className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow transition-all text-sm">
               Selesai
@@ -734,7 +744,8 @@ export function MyQuizPage({ user }: { user: User }) {
   if (playingSession) {
     return <QuizPlayer session={playingSession} user={user}
       attempt={activeAttempts[playingSession.id]!}
-      onDone={() => { setPlayingSession(null); load(); }} />;
+      onDone={() => { setPlayingSession(null); load(); }}
+      onRetake={handleStart} />;
   }
 
   const filteredSessions = search
