@@ -111,6 +111,39 @@ async function jalankan() {
     });
   }
 
+  /*
+    M3 (docs/UX-WORKFLOW-AUDIT.md): tiket "Waiting Approval" dulu tidak
+    pernah di-follow-up otomatis - WA ke approver cuma sekali saat tiket
+    dibuat, dan kalau diabaikan tidak ada reminder susulan sama sekali.
+    Tiket yang sudah menunggu >24 jam diikutkan ke digest harian ini,
+    ditujukan ke admin/superadmin + pemegang Full Access - penerima yang
+    sama dengan yang menerima notifikasi persetujuan saat tiket dibuat.
+  */
+  const batasApproval = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+  const { data: menungguApproval } = await supabase
+    .from('tickets')
+    .select('project_name, issue_case, created_at')
+    .eq('status', 'Waiting Approval')
+    .lte('created_at', batasApproval);
+
+  if ((menungguApproval ?? []).length > 0) {
+    const { data: approver } = await supabase
+      .from('users')
+      .select('full_name')
+      .or('role.in.(admin,superadmin),access_level.eq.full')
+      .not('full_name', 'is', null);
+    const namaApprover = ((approver ?? []) as { full_name: string }[]).map(a => a.full_name);
+    for (const t of (menungguApproval ?? []) as { project_name: string | null; issue_case: string | null; created_at: string }[]) {
+      const tglBuat = t.created_at.slice(0, 10);
+      const item: Item = {
+        label: `🔴 Menunggu approval: ${t.project_name ?? '-'} (${t.issue_case ?? '-'})`,
+        tanggal: tglBuat,
+        terlambat: true,
+      };
+      for (const nama of namaApprover) catat(nama, item);
+    }
+  }
+
   if (perOrang.size === 0) {
     return { penerima: 0, terkirim: 0, gagal: 0, catatan: 'tidak ada tenggat dalam jangkauan' };
   }

@@ -176,6 +176,10 @@ export interface NotifBellProps {
   dotColor: string;
   items: NotificationItem[];
   onItemClick: (item: NotificationItem) => void;
+  /** Hanya dipakai lonceng Notifikasi personal (tabel `notifications`) - keempat
+   *  lonceng lain (Ticket/Require/Reminder/Review) berasal dari status record
+   *  asli, bukan flag is_read, jadi tidak butuh "tandai semua dibaca". */
+  onMarkAllRead?: () => void;
 }
 
 

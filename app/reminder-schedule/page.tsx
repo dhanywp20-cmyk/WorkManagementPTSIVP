@@ -303,6 +303,12 @@ function ReminderSchedulePageInner() {
   const [internalApproveSaving, setInternalApproveSaving] = useState(false);
   const [internalRejectReason, setInternalRejectReason] = useState('');
   const [internalRejectSaving, setInternalRejectSaving] = useState(false);
+  // M4 (docs/UX-WORKFLOW-AUDIT.md): dulu tahap admin_review cuma punya Approve
+  // atau Hapus permanen (tanpa alasan tercatat, tanpa notif ke Sales) - tidak
+  // ada jalur Tolak resmi seperti yang sudah ada di tahap internal_review.
+  const [adminRejectTarget, setAdminRejectTarget] = useState<Reminder | null>(null);
+  const [adminRejectReason, setAdminRejectReason] = useState('');
+  const [adminRejectSaving, setAdminRejectSaving] = useState(false);
   // Admin/Manager approve  route ke Supervisor tim (by tipe produk, product_team_map)
   const [approveSupervisors, setApproveSupervisors] = useState<SupervisorCandidate[]>([]);
   const [approveRouteSaving, setApproveRouteSaving] = useState(false);
@@ -1127,7 +1133,7 @@ function ReminderSchedulePageInner() {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     const { error } = await supabase.from('reminders').delete().eq('id', deleteTarget.id);
-    if (error) { notify('error', 'Gagal menghapus.'); return; }
+    if (error) { notify('error', 'Gagal menghapus: ' + error.message); return; }
     logAudit({
       user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
       action: 'delete', module: 'reminder',
@@ -1179,7 +1185,14 @@ function ReminderSchedulePageInner() {
     const { data: terubah, error } = sebelum?.batch_id
       ? await supabase.from('reminders').update(updatePayload).eq('batch_id', sebelum.batch_id).select('id')
       : await supabase.from('reminders').update(updatePayload).eq('id', id).select('id');
-    if (error || !terubah || terubah.length === 0) { notify('error', 'Gagal update status.'); return; }
+    if (error || !terubah || terubah.length === 0) {
+      // M6 (docs/UX-WORKFLOW-AUDIT.md): dulu tidak menyebut penyebab sama
+      // sekali - padahal ini aksi paling rutin (tandai Completed tiap hari),
+      // dan 0-baris di sini biasanya berarti RLS menolak diam-diam (akun
+      // belum jadi aktor sah di baris ini), bukan galat jaringan.
+      notify('error', error ? 'Gagal update status: ' + error.message : 'Gagal update status: akun ini bukan aktor pada jadwal ini (RLS menolak).');
+      return;
+    }
     logAudit({
       user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
       action: 'status_change', module: 'reminder',
@@ -2323,6 +2336,43 @@ function ReminderSchedulePageInner() {
     setInternalRejectSaving(false);
   };
 
+  const handleAdminReject = (r: Reminder) => { setAdminRejectReason(''); setAdminRejectTarget(r); };
+
+  const handleAdminRejectConfirm = async () => {
+    const r = adminRejectTarget;
+    if (!r) return;
+    if (!adminRejectReason.trim()) { notify('error', 'Alasan penolakan wajib diisi!'); return; }
+    setAdminRejectSaving(true);
+    const { data: terubah, error } = await supabase.from('reminders').update({
+      status: 'cancelled',
+      rejection_reason: adminRejectReason.trim(),
+    }).eq('id', r.id).select('id');
+    if (error || !terubah || terubah.length === 0) {
+      notify('error', error ? 'Gagal menolak: ' + error.message : 'Gagal menolak (akses ditolak database).');
+      setAdminRejectSaving(false);
+      return;
+    }
+    notify('success', 'Request ditolak.');
+    logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'reject', module: 'reminder', target_id: r.id, target_name: r.project_name, notes: adminRejectReason.trim() }).catch(() => {});
+    setAdminRejectTarget(null);
+    fetchRemindersQuiet();
+
+    // WA ke Sales requester - kasih tau ditolak + alasannya (pola sama dengan
+    // penolakan tahap internal_review).
+    try {
+      const { data: salesUser } = await supabase.from('users').select('phone_number, full_name').eq('full_name', r.sales_name).eq('role', 'guest').maybeSingle();
+      if (salesUser?.phone_number) {
+        const msg =
+          `❌ *REQUEST JADWAL DITOLAK*\n\n` +
+          `Halo *${salesUser.full_name}*, request kamu untuk *${r.project_name}* ditolak oleh *${currentUser?.full_name}*.\n\n` +
+          `📝 *Alasan:* ${adminRejectReason.trim()}\n\n` +
+          `Silakan ajukan ulang jika diperlukan.`;
+        await sendFonnteWA(salesUser.phone_number, msg);
+      }
+    } catch { }
+    setAdminRejectSaving(false);
+  };
+
   // Handler: Admin/Manager approve  route ke Supervisor tim (by tipe produk)
   // Jalur UTAMA (bukan assign manual langsung). Supervisor tim yang cocok dgn
   // product_type (product_team_map, Fase 1) yang WA dan harus assign lanjut ke
@@ -2792,6 +2842,43 @@ jangan lupa peralatan & Semangat💪🏼
                     className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
                     style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
                     {internalRejectSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                    ❌ Ya, Tolak
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+        )}
+
+        {/* M4 — TOLAK MODAL (Admin/Manager, tahap admin_review) - dulu tidak ada
+            jalur ini, hanya Approve atau Hapus permanen tanpa alasan tercatat. */}
+        {adminRejectTarget && (
+        <ModalPortal>
+          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
+            onClick={e => { if (e.target === e.currentTarget) setAdminRejectTarget(null); }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+              style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(220,38,38,0.35)' }}>
+              <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
+                <h3 className="text-lg font-bold text-white">❌ Tolak Request</h3>
+                <p className="text-red-100/90 text-xs mt-0.5 truncate">{adminRejectTarget.project_name}</p>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Alasan Penolakan *</label>
+                  <textarea value={adminRejectReason} onChange={e => setAdminRejectReason(e.target.value)}
+                    rows={3} placeholder="Tuliskan alasan penolakan..."
+                    className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all resize-none focus:ring-2 focus:ring-red-500/40"
+                    style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => setAdminRejectTarget(null)}
+                    className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
+                    style={{ background: 'rgba(255,255,255,0.95)', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>Batal</button>
+                  <button onClick={handleAdminRejectConfirm} disabled={adminRejectSaving}
+                    className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
+                    style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
+                    {adminRejectSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                     ❌ Ya, Tolak
                   </button>
                 </div>
@@ -3446,9 +3533,14 @@ jangan lupa peralatan & Semangat💪🏼
                       </>
                     )}
                     {canApproveAssign && !detailReminder.assigned_to && detailReminder.notes?.includes('[REQUEST SALES]') && detailReminder.routing_status !== 'internal_review' && (
-                      <button onClick={() => { setApproveTarget(detailReminder); setApproveBatchSiblings(detailReminder.batch_id ? reminders.filter(gr => gr.id !== detailReminder.id && gr.batch_id === detailReminder.batch_id && !gr.assigned_to) : []); setApproveAssignTo(''); setApproveDate(detailReminder.due_date); setApproveTime(detailReminder.due_time); }}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
-                        style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: 'white' }}>✅ Approve &amp; Assign</button>
+                      <>
+                        <button onClick={() => { setApproveTarget(detailReminder); setApproveBatchSiblings(detailReminder.batch_id ? reminders.filter(gr => gr.id !== detailReminder.id && gr.batch_id === detailReminder.batch_id && !gr.assigned_to) : []); setApproveAssignTo(''); setApproveDate(detailReminder.due_date); setApproveTime(detailReminder.due_time); }}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
+                          style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: 'white' }}>✅ Approve &amp; Assign</button>
+                        <button onClick={() => handleAdminReject(detailReminder)}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
+                          style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', color: 'white' }}>❌ Tolak</button>
+                      </>
                     )}
                     {currentUser?.id === detailReminder.assigned_supervisor_id && detailReminder.routing_status === 'supervisor_assign' && (
                       <button onClick={() => openSupervisorAssign(detailReminder, [detailReminder, ...reminders.filter(gr => gr.id !== detailReminder.id && gr.batch_id === detailReminder.batch_id)])}
@@ -4489,7 +4581,13 @@ jangan lupa peralatan & Semangat💪🏼
                                 </>
                               )}
                               {canApproveAssign && !r.assigned_to && r.notes?.includes('[REQUEST SALES]') && r.routing_status !== 'internal_review' && (
-                                <ApproveIconBtn onClick={() => { setApproveTarget(r); setApproveBatchSiblings(group.filter(gr => gr.id !== r.id && gr.batch_id === r.batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(r.due_date); setApproveTime(r.due_time); }} title="Approve & Assign" pulse />
+                                <>
+                                  <ApproveIconBtn onClick={() => { setApproveTarget(r); setApproveBatchSiblings(group.filter(gr => gr.id !== r.id && gr.batch_id === r.batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(r.due_date); setApproveTime(r.due_time); }} title="Approve & Assign" pulse />
+                                  <button aria-label="Tolak" onClick={() => handleAdminReject(r)} title="Tolak"
+                                    className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
+                                    <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                                  </button>
+                                </>
                               )}
                               {currentUser?.id === r.assigned_supervisor_id && r.routing_status === 'supervisor_assign' && (
                                 <ApproveIconBtn onClick={() => openSupervisorAssign(r, group)} title="Assign Tim" pulse />
@@ -4757,7 +4855,13 @@ jangan lupa peralatan & Semangat💪🏼
                                     )}
                                     {/* Approve & Assign — admin only, hanya utk request sales yg belum di-assign & sudah lolos review internal */}
                                     {canApproveAssign && !group[0].assigned_to && group[0].notes?.includes('[REQUEST SALES]') && group[0].routing_status !== 'internal_review' && (
-                                      <ApproveIconBtn onClick={() => { setApproveTarget(group[0]); setApproveBatchSiblings(group.filter(gr => gr.id !== group[0].id && gr.batch_id === group[0].batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(group[0].due_date); setApproveTime(group[0].due_time); }} title="Approve & Assign" pulse />
+                                      <>
+                                        <ApproveIconBtn onClick={() => { setApproveTarget(group[0]); setApproveBatchSiblings(group.filter(gr => gr.id !== group[0].id && gr.batch_id === group[0].batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(group[0].due_date); setApproveTime(group[0].due_time); }} title="Approve & Assign" pulse />
+                                        <button aria-label="Tolak" onClick={() => handleAdminReject(group[0])} title="Tolak"
+                                          className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
+                                          <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                      </>
                                     )}
                                     {/* Assign Tim — Supervisor yg di-route, wajib assign anggota/diri sendiri */}
                                     {currentUser?.id === group[0].assigned_supervisor_id && group[0].routing_status === 'supervisor_assign' && (

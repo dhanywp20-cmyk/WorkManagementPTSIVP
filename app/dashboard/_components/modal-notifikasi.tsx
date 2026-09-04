@@ -9,10 +9,11 @@ import {
 } from '@/lib/kelompok';
 
 import { User, NotificationItem, NotifBellProps } from './shared';
+import { markAllNotifsRead } from '@/lib/notifications';
 
 // Notification Bell Component
 
-export function NotifBell({ icon, label, count, color, bgColor, borderColor, dotColor, items, onItemClick }: NotifBellProps) {
+export function NotifBell({ icon, label, count, color, bgColor, borderColor, dotColor, items, onItemClick, onMarkAllRead }: NotifBellProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -78,6 +79,13 @@ export function NotifBell({ icon, label, count, color, bgColor, borderColor, dot
               <span className="px-2 py-0.5 rounded-full text-[10px] font-black text-white" style={{ background: dotColor }}>{count} baru</span>
             )}
           </div>
+          {onMarkAllRead && count > 0 && (
+            <button onClick={() => onMarkAllRead()}
+              className="w-full text-center py-2 text-[11px] font-bold hover:bg-slate-50 transition-colors border-b border-slate-100"
+              style={{ color }}>
+              ✓ Tandai semua dibaca
+            </button>
+          )}
           <div className="max-h-72 overflow-y-auto">
             {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 gap-2">
@@ -596,11 +604,26 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
     if (item.internalUrl) onNavigate(item.internalUrl, item.menuTitle);
   };
 
-  // Total = jumlah chip yg terlihat (Ticket + Require + Reminder + Review) SAJA.
-  // personalNotifs (tabel notifications) dulu ikut dihitung tapi tak punya chip
-  // total tak cocok dgn angka chip. Sebagian personalNotifs juga duplikat dari
-  // badge kategori (mis. badge Manager/Supervisor). Dikeluarkan dari total.
-  const totalCount = ticketNotifs.length + requireNotifs.length + reminderNotifs.length + reviewNotifs.length;
+  const handleMarkAllPersonalRead = () => {
+    const sebelum = personalNotifs;
+    setPersonalNotifs([]);
+    markAllNotifsRead(currentUser.id).catch(() => {
+      // Gagal di server - kembalikan tanda supaya tidak terlihat "sudah dibaca"
+      // padahal masih tersimpan belum-dibaca di database.
+      setPersonalNotifs(sebelum);
+    });
+  };
+
+  /*
+    C1 (docs/UX-WORKFLOW-AUDIT.md): personalNotifs (tabel `notifications` -
+    peringatan KPI, "user baru menunggu approval", dst.) dulu di-fetch tapi
+    TIDAK PERNAH dirender - tidak ada lonceng, tidak ada dropdown. Sekarang
+    ikut render sebagai lonceng seperti Ticket/Require/Reminder/Review, dan
+    ikut dihitung ke totalCount (badge merah ringkasan) - alasan lama
+    mengeluarkannya ("tak punya chip") sudah tidak berlaku karena sekarang
+    chip-nya ada.
+  */
+  const totalCount = ticketNotifs.length + requireNotifs.length + reminderNotifs.length + reviewNotifs.length + personalNotifs.length;
 
   // Personal bell is shown to ALL users regardless of team type
   // Other bells still respect team-type gating
@@ -647,7 +670,10 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         {bolehReview && (
           <NotifBell icon="⭐" label="Review" count={reviewNotifs.length} color="#b45309" bgColor="rgba(254,243,199,0.6)" borderColor="#fcd34d" dotColor="#d97706" items={reviewNotifs} onItemClick={handleClick} />
         )}
-        {/* Personal notifications included in totalCount but no separate bell — summary badge is enough */}
+        {/* Notifikasi personal (tabel `notifications`) - peringatan KPI, dst.
+            Ditampilkan untuk SEMUA role, tidak digerbangi bolehLonceng seperti
+            4 lonceng di atas karena isinya memang personal per akun. */}
+        <NotifBell icon="🔔" label="Notifikasi" count={personalNotifs.length} color="#4338ca" bgColor="rgba(224,231,255,0.6)" borderColor="#a5b4fc" dotColor="#4f46e5" items={personalNotifs} onItemClick={handleClick} onMarkAllRead={handleMarkAllPersonalRead} />
       </div>
     </div>
   );
