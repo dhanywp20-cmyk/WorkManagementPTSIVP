@@ -4286,10 +4286,17 @@ jangan lupa peralatan & Semangat💪🏼
           )}
         </PageHeader>
 
-        {/* overflow-x-hidden: jaring pengaman - kartu/elemen mana pun di
-            dalam yang kebetulan lebih lebar dari layar akan terpotong rapi
-            di sini, bukan memaksa SELURUH halaman bisa digeser ke samping. */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden max-w-[1600px] mx-auto w-full px-2.5 py-3 space-y-3 sm:px-5 sm:py-5 sm:space-y-4">
+        {/*
+          overflow-x-hidden SEMPAT dicoba di sini sebagai jaring pengaman,
+          lalu dicabut lagi: kalau masih ada elemen lain yang kebetulan lebih
+          lebar dari layar (dan ternyata masih ada - lihat perbaikan min-w-0
+          pada kolom Handler di kartu mobile di bawah), overflow-x-hidden
+          membuat kontennya terkunci TERPOTONG TANPA BISA DIGESER SAMA SEKALI
+          - lebih buruk dari sekadar halaman yang perlu digeser. Perbaikan
+          yang benar adalah membetulkan elemen yang melebar itu sendiri
+          (truncate/min-w-0 di sumbernya), bukan menyembunyikan gejalanya.
+        */}
+        <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-2.5 py-3 space-y-3 sm:px-5 sm:py-5 sm:space-y-4">
           {view === 'list' && (
             <>
               {/* ── Stat cards (clickable filter) ── */}
@@ -4560,7 +4567,12 @@ jangan lupa peralatan & Semangat💪🏼
                             </div>
                             <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2 text-xs">
                               {r.sales_name && <div className="truncate"><span className="text-gray-400">Sales: </span><span className="text-gray-700 font-medium">{r.sales_name}</span></div>}
-                              <div className="flex flex-wrap gap-0.5">
+                              {/* min-w-0 WAJIB di sini: ini kolom kedua dari grid-cols-2 di
+                                  atas, dan nama handler yang agak panjang (span tanpa
+                                  truncate) memaksa grid-item ini melebar melebihi
+                                  jatahnya - itulah yang mendorong seluruh kartu, dan
+                                  akhirnya seluruh halaman, bisa digeser ke samping. */}
+                              <div className="flex flex-wrap items-center gap-0.5 min-w-0">
                                 {uniqueAssignNames.slice(0, 4).map(name => (
                                   <span key={name} title={name}
                                     className="w-5 h-5 rounded-full inline-flex items-center justify-center text-[8px] font-bold text-white flex-shrink-0"
@@ -4571,8 +4583,8 @@ jangan lupa peralatan & Semangat💪🏼
                                 {uniqueAssignNames.length > 4 && (
                                   <span className="w-5 h-5 rounded-full inline-flex items-center justify-center text-[7px] font-bold bg-gray-100 text-gray-600 flex-shrink-0">+{uniqueAssignNames.length - 4}</span>
                                 )}
-                                {uniqueAssignNames.length === 1 && <span className="text-[10px] text-gray-700 font-medium ml-0.5">{uniqueAssignNames[0]}</span>}
-                                {uniqueAssignNames.length > 1 && <span className="text-[9px] text-gray-400 ml-0.5">({uniqueAssignNames.length} orang)</span>}
+                                {uniqueAssignNames.length === 1 && <span className="text-[10px] text-gray-700 font-medium ml-0.5 truncate min-w-0">{uniqueAssignNames[0]}</span>}
+                                {uniqueAssignNames.length > 1 && <span className="text-[9px] text-gray-400 ml-0.5 flex-shrink-0">({uniqueAssignNames.length} orang)</span>}
                               </div>
                               {r.notes && !r.notes.includes('[REQUEST SALES]') && <div className="col-span-2 truncate text-gray-400">{r.notes.substring(0,60)}{r.notes.length>60?'…':''}</div>}
                             </div>
