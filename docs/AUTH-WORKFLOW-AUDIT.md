@@ -2,6 +2,45 @@
 
 Tanggal: 2026-09-03. Read-only audit — tidak ada perubahan kode dalam audit ini.
 
+## STATUS UPDATE (2026-09-04) — enam temuan sudah DIEKSEKUSI ke produksi
+
+Setelah laporan ini ditulis, user memberi instruksi eksplisit untuk mengerjakan
+langsung. Migrasi berikut sudah diterapkan ke database live
+(`frxdbqcojaiosjoghdqk`) dan **diverifikasi lewat simulasi JWT langsung
+(BEGIN/ROLLBACK, tanpa mengubah data sungguhan)** sebelum dianggap selesai —
+bukan cuma ditulis:
+
+- **P0-1** — `guard_users_privileged_columns()` diperluas: `username`,
+  `full_name`, `jabatan` dibekukan total; `atasan_id`, `kpi_enabled` dibekukan
+  bersyarat (admin/Full Access boleh, pemilik baris biasa tidak). Diverifikasi:
+  self-rename & self-toggle kpi_enabled DITOLAK, admin/Full Access tetap BISA.
+- **P0-2** — `tk_insert`/`rm_insert`/`pr_insert` diskop ke `created_by`/
+  `requester_id` pemanggil (atau admin/Full Access). Diverifikasi: `created_by`
+  palsu DITOLAK RLS (`42501 row-level security policy`).
+- **P0-3** (dipersempit dari rekomendasi awal setelah pemetaan titik tulis
+  nyata) — hanya `reminders.incentive_value` & `pic_id` dibekukan ke tier
+  `incentive_akses` (bukan `bast_date`/`pic_type`/`brand`/`incentive_excluded`/
+  `incentive_group_id` - keempatnya dipakai alur kerja umum, membekukannya
+  akan mematahkan alur "tandai Selesai" harian). Diverifikasi: assignee biasa
+  gagal menulis nominal palsu.
+- **P0-4** + **P1-6** — trigger `guard_project_requests_review_columns()` +
+  `pr_update` diperluas mengenali `internal_sales_id`/`internal_sales_id_2`.
+  **Bug ditemukan & diperbaiki SAAT verifikasi**: kondisi awal trigger
+  menghasilkan NULL (bukan false) ketika `internal_sales_id_2 IS NULL`,
+  sehingga proteksinya tidak pernah aktif untuk kasus paling umum -
+  diperbaiki dengan `COALESCE(...,false)`, diverifikasi ulang sampai benar.
+- **P0-5** — trigger `guard_tech_notes_review_columns()`: author tidak lagi
+  bisa self-approve. Diverifikasi.
+- **P1-4** — race condition `processYearlyBatch` (Incentive PTS) ditutup di
+  kode: klaim (`UPDATE ... WHERE status='pending'`) sekarang terjadi SEBELUM
+  insert splits, bukan sesudah - dua eksekusi paralel tidak lagi bisa
+  sama-sama lolos menulis splits untuk tahapan yang sama.
+
+**Belum dikerjakan** (P1-1, P1-2, P1-7 s.d. P1-12, seluruh P2/P3) — tetap
+seperti tercatat di bawah, menunggu instruksi lanjutan.
+
+---
+
 Metodologi: dibaca middleware, `lib/auth.ts`, `lib/server-auth.ts`, `lib/db-token.ts`,
 `lib/penjaga-admin.ts`, seluruh 22 route di `app/api/*`, arsitektur JWT/RLS
 (`lib/supabase.ts`), lalu didelegasikan 3 sub-audit paralel untuk modul besar

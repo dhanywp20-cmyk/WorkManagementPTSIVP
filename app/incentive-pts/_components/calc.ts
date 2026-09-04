@@ -1102,44 +1102,60 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
       continue;
     }
 
-    const { error: splitErr } = await insertSplits(project.id, tranche.id, trancheSplits);
-    if (splitErr) { errors.push(`Insert splits failed: ${splitErr.message}`); continue; }
-
     /*
-      BUG NYATA yang baru diperbaiki: hasil UPDATE ini dulu TIDAK PERNAH
-      diperiksa. incentive_splits boleh di-insert siapa saja (kebijakan RLS
-      anon_insert_only), tapi UPDATE incentive_tranches mensyaratkan JWT
-      user_role admin/superadmin (kebijakan it_ubah) - kalau update ini gagal
-      diam-diam (RLS menolak, sesi kadaluarsa, jaringan putus di tengah),
-      tahapan tetap 'pending' PADAHAL splits-nya sudah tertulis. Process Batch
-      berikutnya menemukan tahapan yang sama masih 'pending', lalu menulis
-      SET SPLITS KEDUA untuk tahapan yang sama - dan begitu seterusnya tiap
-      kali dijalankan ulang. Inilah sebab nyata "Bagian Saya" tampil
-      terduplikasi 2-5x pada 7 tahapan Batch 2027 (semuanya masih 'pending',
-      belum ada yang 'paid' - lihat catatan pembersihan data di commit ini).
+      P1-4 (audit docs/AUTH-WORKFLOW-AUDIT.md) - RACE CONDITION SUNGGUHAN,
+      bukan cuma "RLS menolak diam-diam" yang sudah ditutup sebelumnya.
 
-      `.select('id')` WAJIB di sini - tanpa itu supabase-js tidak melaporkan
-      berapa baris yang benar-benar kena UPDATE. RLS yang menolak baris
-      mengembalikan error:null & data:[] (bukan error) - jadi memeriksa
-      updErr saja TIDAK CUKUP, harus diperiksa juga apakah baris hasilnya
-      benar-benar ada.
+      URUTAN LAMA: insertSplits() dulu, baru coba klaim (UPDATE ... status
+      'processed') SESUDAHNYA. Itu menutup kasus update gagal diam-diam
+      (T-1), tapi TIDAK menutup dua eksekusi paralel (dua tab, atau dua orang
+      menekan "Proses Sekarang" nyaris bersamaan sebelum tombol pertama
+      disable): keduanya sama-sama membaca tahapan 'pending' di awal fungsi,
+      keduanya LOLOS insertSplits (RLS insert tidak melihat status), dan
+      baru SESUDAH itu baru ketahuan siapa yang "menang" klaim - splits kedua
+      sudah kadung tertulis duluan. Inilah sebab nyata "Bagian Saya" tampil
+      berlipat di Batch 2027.
+
+      URUTAN BARU: klaim (UPDATE bersyarat .eq('status','pending')) DULU,
+      SEBELUM menulis satu baris split pun. UPDATE bersyarat begini atomik di
+      Postgres - dari dua eksekusi paralel yang menyasar baris yang sama,
+      HANYA SATU yang bisa mengenai baris (status masih 'pending' saat
+      dieksekusi), yang satunya lagi mendapat 0 baris kembali dan berhenti
+      SEBELUM sempat menulis splits sama sekali. Tidak ada lagi jendela waktu
+      di mana keduanya sama-sama lolos menulis.
     */
-    const { data: updRows, error: updErr } = await supabase
+    const { data: claimRows, error: claimErr } = await supabase
       .from('incentive_tranches')
       .update({ status: 'processed', processed_at: new Date().toISOString() })
       .eq('id', tranche.id)
+      .eq('status', 'pending')
       .select('id');
 
-    if (updErr || !updRows || updRows.length === 0) {
-      //  Rollback: splits yang baru saja ditulis DIHAPUS lagi supaya tahapan
-      //  ini kembali ke keadaan bersih (pending, tanpa splits nyasar) - aman
-      //  dicoba ulang, bukan menumpuk set kedua di percobaan berikutnya.
-      const rollback = await hapusSplitsServer({ trancheIds: [tranche.id] });
-      const sebab = updErr?.message
-        ?? 'RLS menolak update - akses Incentive Anda mungkin sudah tidak "input"/"penuh" lagi, coba logout/login ulang';
-      errors.push(rollback.error
-        ? `Project "${project.project_name}" tranche ${tranche.tranche_number}: gagal menandai processed (${sebab}) DAN gagal membatalkan splits-nya (${rollback.error.message}). JANGAN dijalankan ulang sebelum baris pembagian tahapan ini dibersihkan - kalau tidak, orang akan tercatat dua kali.`
-        : `Project "${project.project_name}" tranche ${tranche.tranche_number}: gagal menandai processed (${sebab}). Splits dibatalkan, tahapan tetap pending - aman dicoba lagi.`);
+    if (claimErr || !claimRows || claimRows.length === 0) {
+      // 0 baris di sini BUKAN kegagalan untuk dilaporkan sebagai error keras -
+      // bisa berarti proses lain sudah memenangkan tahapan ini duluan (race
+      // tertutup, bekerja seperti seharusnya), atau memang RLS menolak
+      // (akses Incentive sudah bukan input/penuh lagi). Keduanya sama-sama
+      // "lewati tahapan ini", tidak ada yang perlu dibatalkan karena belum
+      // ada splits yang ditulis.
+      if (claimErr) {
+        errors.push(`Project "${project.project_name}" tranche ${tranche.tranche_number}: gagal mengklaim tahapan (${claimErr.message}).`);
+      }
+      continue;
+    }
+
+    const { error: splitErr } = await insertSplits(project.id, tranche.id, trancheSplits);
+    if (splitErr) {
+      //  Klaim sudah menang tapi splits gagal ditulis - kembalikan ke
+      //  'pending' supaya percobaan berikutnya masih bisa memprosesnya,
+      //  bukan tersangkut 'processed' tanpa satu pun baris split.
+      const { error: revertErr } = await supabase
+        .from('incentive_tranches')
+        .update({ status: 'pending', processed_at: null })
+        .eq('id', tranche.id);
+      errors.push(revertErr
+        ? `Project "${project.project_name}" tranche ${tranche.tranche_number}: gagal insert splits (${splitErr.message}) DAN gagal mengembalikan status ke pending (${revertErr.message}). Tahapan ini tersangkut 'processed' tanpa splits - perlu diperbaiki manual.`
+        : `Project "${project.project_name}" tranche ${tranche.tranche_number}: gagal insert splits (${splitErr.message}). Status dikembalikan ke pending, aman dicoba lagi.`);
       continue;
     }
 
