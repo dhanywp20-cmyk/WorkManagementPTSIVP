@@ -209,11 +209,12 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
   //  menyembunyikan orang yang justru belum lapor - persis kebalikan dari
   //  guna widget ini, dan akan membuat angka di lencana tidak cocok dengan
   //  jumlah nama yang terlihat.
+  type KelompokBelum = {
+    kunci: string; nama: string; jabatan: string; anggota: Anggota[]; ketuaBelumLapor: boolean;
+  };
   const kelompok = (() => {
     const punyaBawahan = new Set(belumList.map(m => m.atasanId).filter(Boolean) as string[]);
-    const peta = new Map<string, {
-      kunci: string; nama: string; jabatan: string; anggota: Anggota[]; ketuaBelumLapor: boolean;
-    }>();
+    const peta = new Map<string, KelompokBelum>();
 
     const ambil = (kunci: string, nama: string, jabatan: string) => {
       if (!peta.has(kunci)) peta.set(kunci, { kunci, nama, jabatan, anggota: [], ketuaBelumLapor: false });
@@ -232,13 +233,82 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
       }
     }
 
-    //  Kelompok terbesar dulu; "Lainnya" selalu paling belakang supaya tidak
-    //  menyela struktur yang sudah benar.
-    return Array.from(peta.values()).sort((a, b) =>
+    /*
+      Susun jadi pohon (org chart), bukan daftar rata. Sebelumnya SEMUA
+      kelompok (termasuk kelompok milik seorang Supervisor yang notabene
+      bawahan si Manager) ditumpuk sejajar lewat flex-wrap - jadi Manager bisa
+      terlihat "kesasar" berdampingan dengan salah satu Supervisor-nya
+      sendiri, padahal satu adalah atasan dari yang lain. Aturannya:
+      kelompok X adalah ANAK dari kelompok lain kalau kepala kelompok X
+      (person berid `X.kunci`) sendiri muncul sebagai salah satu anggota di
+      kelompok manapun - posisi itu digantikan sub-pohonnya saat dirender
+      (lihat renderKelompok), bukan ditumpuk lagi sebagai kelompok terpisah
+      di level teratas.
+    */
+    const idJadiAnggota = new Set(
+      Array.from(peta.values()).flatMap(g => g.anggota.map(m => m.id))
+    );
+    const urut = (list: KelompokBelum[]) => list.slice().sort((a, b) =>
       Number(a.kunci === '(lainnya)') - Number(b.kunci === '(lainnya)')
       || b.anggota.length - a.anggota.length
       || a.nama.localeCompare(b.nama));
+    const akar = urut(Array.from(peta.values()).filter(g => !idJadiAnggota.has(g.kunci)));
+    return { peta, akar };
   })();
+
+  //  Render satu kelompok + sub-pohonnya secara rekursif. Anggota yang
+  //  ternyata kepala kelompok lain (Supervisor yang bawahannya sendiri juga
+  //  belum lapor) dirender sebagai sub-kelompok berindentasi, bukan baris
+  //  nama biasa - garis tepi kiri jadi menumpuk mengikuti kedalaman, persis
+  //  seperti struktur organisasi yang bertingkat.
+  const renderKelompok = (g: KelompokBelum, depth: number): React.ReactNode => (
+    <div key={g.kunci} className={depth > 0 ? 'mt-2' : ''}>
+      <div className="flex items-baseline gap-1.5 mb-0.5 pl-0.5">
+        {/*
+          Titik oranye di judul = ketua kelompoknya sendiri yang
+          belum lapor. Ini menggantikan kelompok "Belum diatur
+          atasannya" yang dulu memuat orang-orang puncak struktur
+          dan karena itu salah label.
+        */}
+        {g.ketuaBelumLapor && (
+          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 self-center" style={{ background: '#f59e0b' }}
+            title="Belum daily report" />
+        )}
+        {/* Judul kelompok naik dari text-[10px]: keluhannya nama terlalu kecil, dan judul induknya harus tetap lebih tegas dari nama anggotanya. */}
+        <span className={`text-[11px] font-bold truncate max-w-[170px] ${g.ketuaBelumLapor ? 'text-amber-600' : 'text-slate-500'}`}>{g.nama}</span>
+        {g.jabatan && (
+          <span className="text-[10px] font-semibold text-slate-400 flex-shrink-0">{g.jabatan}</span>
+        )}
+        {g.anggota.length > 0 && (
+          <span className="text-[10px] font-bold text-slate-300 flex-shrink-0">{g.anggota.length}</span>
+        )}
+      </div>
+      {/* garis tepi kiri = penanda "ini bawahannya" - menumpuk per kedalaman */}
+      <div className="border-l-2 border-slate-200 pl-1.5 ml-0.5">
+        {g.anggota.map(m => {
+          const subKelompok = kelompok.peta.get(m.id);
+          if (subKelompok) return renderKelompok(subKelompok, depth + 1);
+          return (
+            <button key={m.id} onClick={() => openMenu('daily-report')}
+              className="flex items-center gap-1.5 py-1 px-1 w-full hover:bg-slate-50 rounded-md transition-colors text-left">
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: m.active > 0 ? '#dc2626' : '#f59e0b' }} />
+              {/*
+                Nama anggota - INI yang dikeluhkan terlalu kecil.
+                text-[11px] -> text-[13px], dan max-w ikut
+                diperlebar supaya nama yang lebih besar tidak
+                lebih cepat kepotong "...".
+              */}
+              <span className="text-[13px] font-semibold text-slate-700 truncate max-w-[170px]">{m.name}</span>
+              {m.active > 0 && (
+                <span className="text-[10px] font-bold px-1 py-px rounded-full flex-shrink-0"
+                  style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}>{m.active}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   return (
     <WidgetCard title="Team Monitoring Hari Ini" icon="🧭" accent="#0891b2"
@@ -286,59 +356,14 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
               <>
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Belum Daily Report ({belumList.length})</div>
                 {/*
-                  flex-wrap, BUKAN grid berkolom tetap. Grid `xl:grid-cols-3`
-                  yang lama membagi seluruh lebar kartu jadi tiga kolom sama
-                  besar, jadi tiga nama pendek pun terlempar sampai ke tepi
-                  kanan dan menyisakan jarak kosong yang lebar di antaranya.
-                  Dengan flex-wrap tiap kelompok selebar isinya sendiri lalu
-                  membungkus ke bawah - ruang yang dipakai mengikuti panjang
-                  nama, bukan lebar layar.
+                  Ditumpuk vertikal (bukan flex-wrap berdampingan) supaya
+                  hierarkinya jelas: Manager selalu di atas, Supervisor
+                  bawahannya berindentasi PERSIS di bawahnya (lihat
+                  renderKelompok) - bukan tersusun sejajar seolah setara
+                  cuma karena kebetulan sama-sama muat di baris yang sama.
                 */}
-                <div className="flex flex-wrap gap-x-5 gap-y-2.5">
-                  {kelompok.map(g => (
-                    <div key={g.kunci} className="min-w-0">
-                      <div className="flex items-baseline gap-1.5 mb-0.5 pl-0.5">
-                        {/*
-                          Titik oranye di judul = ketua kelompoknya sendiri yang
-                          belum lapor. Ini menggantikan kelompok "Belum diatur
-                          atasannya" yang dulu memuat orang-orang puncak struktur
-                          dan karena itu salah label.
-                        */}
-                        {g.ketuaBelumLapor && (
-                          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 self-center" style={{ background: '#f59e0b' }}
-                            title="Belum daily report" />
-                        )}
-                        {/* Judul kelompok naik dari text-[10px]: keluhannya nama terlalu kecil, dan judul induknya harus tetap lebih tegas dari nama anggotanya. */}
-                        <span className={`text-[11px] font-bold truncate max-w-[170px] ${g.ketuaBelumLapor ? 'text-amber-600' : 'text-slate-500'}`}>{g.nama}</span>
-                        {g.jabatan && (
-                          <span className="text-[10px] font-semibold text-slate-400 flex-shrink-0">{g.jabatan}</span>
-                        )}
-                        {g.anggota.length > 0 && (
-                          <span className="text-[10px] font-bold text-slate-300 flex-shrink-0">{g.anggota.length}</span>
-                        )}
-                      </div>
-                      {/* garis tepi kiri = penanda "ini bawahannya" */}
-                      <div className="border-l-2 border-slate-200 pl-1.5 ml-0.5">
-                        {g.anggota.map(r => (
-                          <button key={r.id} onClick={() => openMenu('daily-report')}
-                            className="flex items-center gap-1.5 py-1 px-1 w-full hover:bg-slate-50 rounded-md transition-colors text-left">
-                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: r.active > 0 ? '#dc2626' : '#f59e0b' }} />
-                            {/*
-                              Nama anggota - INI yang dikeluhkan terlalu kecil.
-                              text-[11px] -> text-[13px], dan max-w ikut
-                              diperlebar supaya nama yang lebih besar tidak
-                              lebih cepat kepotong "...".
-                            */}
-                            <span className="text-[13px] font-semibold text-slate-700 truncate max-w-[170px]">{r.name}</span>
-                            {r.active > 0 && (
-                              <span className="text-[10px] font-bold px-1 py-px rounded-full flex-shrink-0"
-                                style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}>{r.active}</span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex flex-col gap-2.5">
+                  {kelompok.akar.map(g => renderKelompok(g, 0))}
                 </div>
               </>
             )}
