@@ -248,7 +248,12 @@ export default function KPITeamPage() {
       } else if (scope.kind === 'pts_sup') {
         mQ = mQ.eq('role', 'team').eq('team_type', scope.ptsTeamType ?? '');
       } else {
-        mQ = mQ.in('team_type', ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MVI']).eq('role', 'team');
+        // lingkupSaya(), bukan daftar tim ditulis langsung: kalau tidak,
+        // kelompok yang sengaja tidak dibawahi Manager ini (mis. PTS UMP)
+        // ikut bocor tampil di Team Overview walau sudah dikeluarkan dari
+        // pengaturan Lingkup Manager - persis pola yang sama dengan
+        // fetchKPIMembers di bawah, cuma sempat terlewat di sini.
+        mQ = mQ.in('team_type', lingkupSaya(currentUser?.id)).eq('role', 'team');
       }
       const { data: mData } = await mQ;
       if (!mData?.length) { setLoading(false); return; }

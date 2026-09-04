@@ -113,6 +113,8 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const sldFileRef = useRef<HTMLInputElement>(null);
   const boqFileRef = useRef<HTMLInputElement>(null);
   const design3dFileRef = useRef<HTMLInputElement>(null);
+  const ptsFileRef = useRef<HTMLInputElement>(null);
+  const [showUploadChoice, setShowUploadChoice] = useState(false);
   const activeRequestIdRef = useRef<string | null>(null);
   const [uploadingCategory, setUploadingCategory] = useState<'sld' | 'boq' | 'design3d' | null>(null);
   const [activeAttachTab, setActiveAttachTab] = useState<'all' | 'sld' | 'boq' | 'design3d'>('all');
@@ -1472,6 +1474,18 @@ Hubungi Admin untuk info lebih lanjut.
     notify('success', `File "${file.name}" berhasil diupload!`);
     fetchAttachments(selectedRequest.id);
     await supabase.from('project_messages').insert([{ request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `📎 Melampirkan file: ${file.name}` }]);
+  };
+
+  // Team selalu salah pakai tombol "Upload File" (general/foto survey) untuk
+  // hasil kerja SLD/BOQ/3D mereka, karena tombol kategori di bawah kadang
+  // tidak dilihat. Bukan lagi soal HARUS tahu kategori mana - cukup pilih
+  // "File PTS", dan kategorinya ditebak dari jenis file: PDF -> SLD (paling
+  // umum dipakai untuk gambar teknis), Excel/CSV -> BOQ, selain itu -> 3D.
+  const detectPtsCategory = (file: File): 'sld' | 'boq' | 'design3d' => {
+    const name = file.name.toLowerCase();
+    if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv')) return 'boq';
+    if (name.endsWith('.pdf')) return 'sld';
+    return 'design3d';
   };
 
   const handleCategoryUpload = async (file: File, category: 'sld' | 'boq' | 'design3d') => {
@@ -2899,14 +2913,40 @@ Hubungi Admin untuk info lebih lanjut.
                         Dokumen & File Attachment
                         {detailRoomIdx > 0 && <span className="text-[10px] font-bold text-teal-500 normal-case bg-teal-50 px-2 py-0.5 rounded-full">{(selectedRequest.rooms||[])[detailRoomIdx - 1]?.room_name || `Ruangan ${detailRoomIdx + 1}`}</span>}
                       </h3>
-                      <button onClick={() => fileInputRef.current?.click()} disabled={uploadingFile}
-                        className="text-xs bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 disabled:opacity-60">
-                        <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                        {uploadingFile ? 'Uploading...' : 'Upload File'}
-                      </button>
+                      {(() => {
+                        const ptsUploadAllowed = isPTS && selectedRequest.status !== 'pending' && selectedRequest.status !== 'rejected';
+                        return (
+                          <div className="relative">
+                            <button
+                              onClick={() => (ptsUploadAllowed ? setShowUploadChoice(v => !v) : fileInputRef.current?.click())}
+                              disabled={uploadingFile}
+                              className="text-xs bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 disabled:opacity-60">
+                              <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                              {uploadingFile ? 'Uploading...' : 'Upload File'}
+                            </button>
+                            {showUploadChoice && ptsUploadAllowed && (<>
+                              <div className="fixed inset-0 z-10" onClick={() => setShowUploadChoice(false)} />
+                              <div className="absolute right-0 top-full mt-1.5 z-20 w-64 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+                                <button onClick={() => { setShowUploadChoice(false); fileInputRef.current?.click(); }}
+                                  className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 flex items-start gap-2 border-b border-gray-100">
+                                  <span className="text-base leading-none">📷</span>
+                                  <span>Foto Survey / Require BOQ<br /><span className="font-normal text-gray-400">Foto lokasi, dokumen kebutuhan dari Sales</span></span>
+                                </button>
+                                <button onClick={() => { setShowUploadChoice(false); ptsFileRef.current?.click(); }}
+                                  className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-teal-50 flex items-start gap-2">
+                                  <span className="text-base leading-none">📁</span>
+                                  <span>File PTS: SLD / BOQ / 3D<br /><span className="font-normal text-gray-400">Hasil kerja team - kategori & lokasi simpan otomatis mengikuti jenis file</span></span>
+                                </button>
+                              </div>
+                            </>)}
+                          </div>
+                        );
+                      })()}
                     </div>
                     <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
                       onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); e.target.value = ''; }} />
+                    <input ref={ptsFileRef} type="file" className="hidden" accept=".pdf,.xlsx,.xls,.csv,.dwg,.skp"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) handleCategoryUpload(f, detectPtsCategory(f)); e.target.value = ''; }} />
                     <input ref={sldFileRef} type="file" className="hidden" accept=".pdf"
                       onChange={e => { const f = e.target.files?.[0]; if (f) handleCategoryUpload(f, 'sld'); e.target.value = ''; }} />
                     <input ref={boqFileRef} type="file" className="hidden" accept=".xlsx,.xls,.csv"
