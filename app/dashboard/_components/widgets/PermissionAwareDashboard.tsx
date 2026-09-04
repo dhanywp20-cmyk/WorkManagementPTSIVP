@@ -15,12 +15,41 @@ import type { User } from '../shared';
 import { WIDGETS, type WidgetDef } from './Widgets';
 import { supabase } from '@/lib/supabase';
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
+import { AnalyticsPlatform, type Tab as AnalyticsTab } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 
 const SIZE_SPAN: Record<string, string> = {
   lg: 'sm:col-span-2 lg:col-span-2',
   md: '',
   sm: '',
 };
+
+/**
+ * Tombol tab Analytics/Command Center/Audit Log versi ringkas untuk header
+ * sticky - TabBtn asli (di AnalyticsPlatform) berukuran penuh (px-4 py-2.5
+ * text-sm) untuk header standalone-nya sendiri; di sini harus muat berdampingan
+ * dengan sambutan "Halo, ..." dan badge "N widget aktif" tanpa mendorong
+ * layout jadi terlalu tinggi di mobile.
+ */
+function HeaderTabBtn({ label, icon, active, onClick, badge }: {
+  label: string; icon: string; active: boolean; onClick: () => void; badge?: number;
+}) {
+  return (
+    <button type="button" onClick={onClick}
+      className="flex items-center gap-1 text-[10px] md:text-[11px] font-bold px-2 py-1 md:px-2.5 md:py-1.5 rounded-full transition-all flex-shrink-0"
+      style={active
+        ? { background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white' }
+        : { background: 'rgba(0,0,0,0.05)', color: '#64748b' }}>
+      <span className="select-none">{icon}</span>
+      <span className="hidden sm:inline">{label}</span>
+      {badge !== undefined && badge > 0 && (
+        <span className="min-w-[15px] h-[15px] rounded-full flex items-center justify-center text-[9px] font-black px-1"
+          style={{ background: active ? 'rgba(255,255,255,0.3)' : '#ef4444', color: 'white' }}>
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
+    </button>
+  );
+}
 
 export default function PermissionAwareDashboard({ currentUser, openMenu, openUrl, onHubungkanTelegram }: {
   currentUser: User;
@@ -44,6 +73,20 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
   */
   const [ajakTelegram, setAjakTelegram] = useState(false);
   const [tutupAjakan, setTutupAjakan] = useState(false);
+
+  /*
+    Tab Analytics/Command Center/Audit Log dipindah ke sini (header sticky)
+    dari dalam widget Analytics-nya sendiri - sebelumnya tab bar itu muncul
+    mengambang di tengah alur widget, jauh di bawah header, padahal ia
+    sebenarnya navigasi tingkat-halaman (mengganti seluruh isi widget
+    Analytics), bukan bagian dari satu widget. Ditaruh di sebelah badge
+    "N widget aktif" supaya berpindah tab tidak perlu scroll ke bawah dulu.
+    State-nya tetap di sini (bukan di dalam AnalyticsPlatform) supaya header
+    & widget-nya bisa saling melihat tab yang sama - lihat prop
+    controlledTab/onTabChange/onCounts di AnalyticsPlatform.
+  */
+  const [analyticsTab, setAnalyticsTab] = useState<AnalyticsTab>('kpi');
+  const [analyticsCounts, setAnalyticsCounts] = useState({ totalAlerts: 0, auditCount: 0 });
 
   useEffect(() => {
     let batal = false;
@@ -78,6 +121,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
 
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const firstName = (currentUser.full_name ?? '').split(' ')[0];
+  const showAnalyticsTabs = visible.some(w => w.id === 'analytics');
 
   return (
     <div className="w-full h-full overflow-y-auto">
@@ -95,9 +139,18 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
             <h1 className="text-base md:text-xl font-black tracking-tight leading-tight text-slate-800">Halo, {firstName} 👋</h1>
             <p className="text-[10px] md:text-xs text-slate-500 font-medium mt-0.5">{today}</p>
           </div>
-          <span className="text-[10px] md:text-[11px] font-semibold px-2.5 py-1 md:px-3 md:py-1.5 rounded-full bg-slate-100 text-slate-600 border border-black/5 flex-shrink-0">
-            {visible.length} widget aktif
-          </span>
+          <div className="flex items-center gap-1.5 md:gap-2 flex-wrap justify-end">
+            {showAnalyticsTabs && (
+              <div className="flex items-center gap-1 md:gap-1.5 flex-wrap">
+                <HeaderTabBtn label="Analytics"      icon="📊" active={analyticsTab==='kpi'}     onClick={() => setAnalyticsTab('kpi')} />
+                <HeaderTabBtn label="Command Center" icon="🏠" active={analyticsTab==='command'} onClick={() => setAnalyticsTab('command')} badge={analyticsCounts.totalAlerts} />
+                <HeaderTabBtn label="Audit Log"      icon="📋" active={analyticsTab==='audit'}   onClick={() => setAnalyticsTab('audit')} badge={analyticsCounts.auditCount} />
+              </div>
+            )}
+            <span className="text-[10px] md:text-[11px] font-semibold px-2.5 py-1 md:px-3 md:py-1.5 rounded-full bg-slate-100 text-slate-600 border border-black/5 flex-shrink-0">
+              {visible.length} widget aktif
+            </span>
+          </div>
         </div>
       </header>
 
@@ -130,7 +183,17 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
         {composed.map((block, i) =>
           block.type === 'full' ? (
             <div key={`full-${block.widget.id}-${i}`}>
-              <block.widget.Component user={currentUser} openMenu={openMenu} openUrl={openUrl} />
+              {/*
+                Widget Analytics dirender langsung (bukan lewat
+                block.widget.Component) supaya tab-nya bisa dikontrol dari
+                header di atas - lihat analyticsTab/showAnalyticsTabs.
+              */}
+              {block.widget.id === 'analytics' ? (
+                <AnalyticsPlatform embedded injectedUser={currentUser}
+                  controlledTab={analyticsTab} onTabChange={setAnalyticsTab} onCounts={setAnalyticsCounts} />
+              ) : (
+                <block.widget.Component user={currentUser} openMenu={openMenu} openUrl={openUrl} />
+              )}
             </div>
           ) : (
             <div key={`grid-${i}`} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">

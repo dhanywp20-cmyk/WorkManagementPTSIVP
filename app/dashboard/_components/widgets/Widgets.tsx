@@ -283,14 +283,22 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
           <span className="text-[10px] font-bold text-slate-300 flex-shrink-0">{g.anggota.length}</span>
         )}
       </div>
-      {/* garis tepi kiri = penanda "ini bawahannya" - menumpuk per kedalaman */}
+      {/*
+        garis tepi kiri = penanda "ini bawahannya" - menumpuk per kedalaman.
+        Sub-kelompok (Supervisor yang bawahannya sendiri juga belum lapor)
+        SELALU baris sendiri - butuh ruang penuh untuk sub-pohonnya. Anggota
+        biasa (daun, tidak punya bawahan) dibiarkan flex-wrap berdampingan -
+        dulu semua baris dipaksa selebar kartu walau isinya cuma satu nama
+        pendek, jadi sisi kanannya kosong sia-sia. Dipisah di sini supaya
+        nama-nama pendek mengisi ruang itu, sementara sub-kelompok tetap
+        dapat baris sendiri untuk indentasinya.
+      */}
       <div className="border-l-2 border-slate-200 pl-1.5 ml-0.5">
-        {g.anggota.map(m => {
-          const subKelompok = kelompok.peta.get(m.id);
-          if (subKelompok) return renderKelompok(subKelompok, depth + 1);
-          return (
+        {g.anggota.filter(m => kelompok.peta.has(m.id)).map(m => renderKelompok(kelompok.peta.get(m.id)!, depth + 1))}
+        <div className="flex flex-wrap">
+          {g.anggota.filter(m => !kelompok.peta.has(m.id)).map(m => (
             <button key={m.id} onClick={() => openMenu('daily-report')}
-              className="flex items-center gap-1.5 py-1 px-1 w-full hover:bg-slate-50 rounded-md transition-colors text-left">
+              className="flex items-center gap-1.5 py-1 px-1.5 hover:bg-slate-50 rounded-md transition-colors text-left">
               <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: m.active > 0 ? '#dc2626' : '#f59e0b' }} />
               {/*
                 Nama anggota - INI yang dikeluhkan terlalu kecil.
@@ -304,8 +312,8 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
                   style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}>{m.active}</span>
               )}
             </button>
-          );
-        })}
+          ))}
+        </div>
       </div>
     </div>
   );

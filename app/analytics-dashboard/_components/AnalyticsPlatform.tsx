@@ -44,7 +44,7 @@ interface Stats {
   activity: { id: string; label: string; sub: string; time: string; dot: string }[];
 }
 
-type Tab = 'kpi' | 'command' | 'audit';
+export type Tab = 'kpi' | 'command' | 'audit';
 
 // Small helper components
 
@@ -127,7 +127,7 @@ const MODULE_ICON: Record<string, string> = {
 };
 
 // Tab button
-function TabBtn({ label, icon, active, onClick, badge }: {
+export function TabBtn({ label, icon, active, onClick, badge }: {
   label: string; icon: string; active: boolean; onClick: () => void; badge?: number;
 }) {
   return (
@@ -150,10 +150,26 @@ function TabBtn({ label, icon, active, onClick, badge }: {
 
 // Main component
 
-export function AnalyticsPlatform({ embedded = false, injectedUser }: { embedded?: boolean; injectedUser?: User } = {}) {
+export function AnalyticsPlatform({
+  embedded = false, injectedUser, controlledTab, onTabChange, onCounts,
+}: {
+  embedded?: boolean; injectedUser?: User;
+  /*
+    Dipakai HANYA saat embedded di homepage dashboard: tab switcher-nya
+    dipindah ke header sticky (sebelah "N widget aktif") supaya tidak perlu
+    scroll dulu ke widget ini untuk ganti tab - lihat PermissionAwareDashboard.
+    Kalau tidak diberikan (pemakaian standalone di /analytics-dashboard),
+    komponen ini tetap mengelola tab-nya sendiri seperti semula.
+  */
+  controlledTab?: Tab; onTabChange?: (tab: Tab) => void;
+  /** Kabari totalAlerts/audit count ke pemanggil, supaya badge di tab header (di luar komponen ini) tetap akurat. */
+  onCounts?: (counts: { totalAlerts: number; auditCount: number }) => void;
+} = {}) {
   const [user,    setUser]    = useState<User | null>(injectedUser ?? null);
   const [auth,    setAuth]    = useState<'checking' | 'ok' | 'denied'>(injectedUser ? 'ok' : 'checking');
-  const [tab,     setTab]     = useState<Tab>('kpi');   // Default: Dashboard Analytics
+  const [tabState, setTabState] = useState<Tab>('kpi');   // Default: Dashboard Analytics
+  const tab = controlledTab ?? tabState;
+  const setTab = (t: Tab) => { onTabChange?.(t); if (controlledTab === undefined) setTabState(t); };
   const [stats,   setStats]   = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -310,6 +326,11 @@ export function AnalyticsPlatform({ embedded = false, injectedUser }: { embedded
 
   const totalAlerts = (stats?.ticketOverdue ?? 0) + (stats?.reminderPending ?? 0) + (stats?.userPending ?? 0);
 
+  useEffect(() => {
+    onCounts?.({ totalAlerts, auditCount: auditRows.length });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalAlerts, auditRows.length]);
+
   // Audit filtered + paged (search on top of already-filtered rows)
   const auditFiltered = auditRows.filter(a => {
     if (!auditSearch) return true;
@@ -349,7 +370,7 @@ export function AnalyticsPlatform({ embedded = false, injectedUser }: { embedded
     <div className={embedded ? 'flex flex-col w-full' : 'flex flex-col bg-cover bg-center bg-fixed'}
       style={embedded ? undefined : { height: '100dvh', backgroundImage: 'url(/IVP_Background.png)' }}>
 
-      {embedded && (
+      {embedded && controlledTab === undefined && (
         /* Embedded (di dashboard): tab bar ramping di dalam panel putih supaya tab
            non-aktif tetap kontras di atas background transparan. */
         <div className="flex items-center gap-2 flex-wrap mb-3 p-2 rounded-2xl"
@@ -359,6 +380,20 @@ export function AnalyticsPlatform({ embedded = false, injectedUser }: { embedded
           <TabBtn label="Audit Log"      icon="📋" active={tab==='audit'}   onClick={() => setTab('audit')} badge={auditRows.length > 0 ? auditRows.length : undefined} />
           <button aria-label="Refresh" onClick={() => { loadStats(); if (tab === 'audit') loadAudit(); }} title="Refresh"
             className="ml-auto w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110"
+            style={{ background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)' }}>
+            <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </button>
+        </div>
+      )}
+      {/*
+        Tab-nya sudah pindah ke header sticky dashboard (controlledTab
+        diberikan) - di sini cukup sisakan tombol Refresh, tidak perlu
+        menduplikasi tab bar yang sudah tampil di atas.
+      */}
+      {embedded && controlledTab !== undefined && (
+        <div className="flex justify-end mb-3">
+          <button aria-label="Refresh" onClick={() => { loadStats(); if (tab === 'audit') loadAudit(); }} title="Refresh"
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110"
             style={{ background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)' }}>
             <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           </button>
