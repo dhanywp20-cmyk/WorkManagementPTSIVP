@@ -2480,11 +2480,11 @@ function ReminderSchedulePageInner() {
         progress_target_date: approveTarget2 || null,
       } : {}),
     };
-    const { error } = await cobaIdentitas(async pakaiUuid => await supabase.from('reminders')
-      .update(pakaiUuid ? patchApprove : tanpaIdentitas(patchApprove)).eq('id', approveTarget.id));
+    const { error, data } = await cobaIdentitas(async pakaiUuid => await supabase.from('reminders')
+      .update(pakaiUuid ? patchApprove : tanpaIdentitas(patchApprove)).eq('id', approveTarget.id).select('id'));
 
-    if (error) {
-      notify('error', 'Gagal approve: ' + error.message);
+    if (error || !data || data.length === 0) {
+      notify('error', error ? 'Gagal approve: ' + error.message : 'Gagal approve: perubahan ditolak sistem (RLS). Hubungi admin.');
       setApproveSaving(false);
       return;
     }
@@ -2664,9 +2664,10 @@ jangan lupa peralatan & Semangat💪🏼
       assign_user_id: assignee.id,
       routing_status: null,
     };
-    const { error } = await cobaIdentitas(async pakaiUuid => await supabase.from('reminders')
-      .update(pakaiUuid ? patchSup : tanpaIdentitas(patchSup)).eq('id', r.id));
+    const { error, data } = await cobaIdentitas(async pakaiUuid => await supabase.from('reminders')
+      .update(pakaiUuid ? patchSup : tanpaIdentitas(patchSup)).eq('id', r.id).select('id'));
     if (error) { notify('error', 'Gagal assign: ' + error.message); setSupervisorAssignSaving(false); return; }
+    if (!data || data.length === 0) { notify('error', 'Gagal assign: perubahan ditolak sistem (RLS). Hubungi admin.'); setSupervisorAssignSaving(false); return; }
 
     if (supervisorAssignBatchSiblings.length > 0) {
       const siblingResults: { error: { message: string } | null }[] = await Promise.all(supervisorAssignBatchSiblings.map(sib =>

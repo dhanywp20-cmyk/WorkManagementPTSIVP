@@ -102,9 +102,10 @@ export function AssignPTSModal({
       assign_name: null,   // belum di-assign ke handler — Supervisor yg lanjut
       assign_user_id: null,
     };
-    const { error } = await cobaIdentitas(async pakaiUuid => await supabase.from('project_requests')
-      .update(pakaiUuid ? updatePayload : tanpaIdentitas(updatePayload)).eq('id', req.id));
+    const { error, data } = await cobaIdentitas(async pakaiUuid => await supabase.from('project_requests')
+      .update(pakaiUuid ? updatePayload : tanpaIdentitas(updatePayload)).eq('id', req.id).select('id'));
     if (error) { setFormErr('Gagal route: ' + error.message); setRouteSaving(false); return; }
+    if (!data || data.length === 0) { setFormErr('Gagal route: perubahan ditolak sistem (RLS). Hubungi admin.'); setRouteSaving(false); return; }
     await supabase.from('project_messages').insert([{
       request_id: req.id, sender_id: currentUser.id, sender_name: 'System', sender_role: 'system',
       message: `✅ Request diapprove oleh ${currentUser.full_name} & diteruskan ke Supervisor ${sup?.full_name ?? '-'} untuk di-assign ke tim.`,
@@ -141,16 +142,26 @@ export function AssignPTSModal({
       approved_by: currentUser.full_name,
       approved_at: new Date().toISOString(),
     };
-    // Penanda tahap Supervisor hanya dibersihkan kalau request ini memang
-    // di-route ke sana. Assign langsung tidak menyentuh kolom routing supaya
-    // tetap jalan walau migrasi supervisor belum dijalankan.
+    // Penanda tahap Supervisor (routing_status) dibersihkan kalau request ini
+    // memang di-route ke sana - assign langsung tidak menyentuh kolom routing
+    // supaya tetap jalan walau migrasi supervisor belum dijalankan.
+    // assigned_supervisor_id SENGAJA TIDAK ikut dikosongkan: RLS pr_update
+    // mengizinkan Supervisor menulis baris ini lewat assigned_supervisor_id =
+    // dirinya sendiri - kalau kolom itu ikut di-null-kan di update yang sama,
+    // WITH CHECK dievaluasi terhadap baris BARU (bukan baris lama) dan tidak
+    // ada lagi syarat yang cocok, jadi RLS diam-diam menolak (0 baris, tanpa
+    // error) walau notifikasi WA/Telegram sudah kadung terkirim.
     if (req.routing_status === 'supervisor_assign') {
       updatePayload.routing_status = null;
-      updatePayload.assigned_supervisor_id = null;
     }
 
-    const { error } = await cobaIdentitas(async pakaiUuid => await supabase.from('project_requests')
-      .update(pakaiUuid ? updatePayload : tanpaIdentitas(updatePayload)).eq('id', req.id));
+    const { error, data } = await cobaIdentitas(async pakaiUuid => await supabase.from('project_requests')
+      .update(pakaiUuid ? updatePayload : tanpaIdentitas(updatePayload)).eq('id', req.id).select('id'));
+    if (!error && (!data || data.length === 0)) {
+      setFormErr('Gagal approve: perubahan ditolak sistem (RLS). Hubungi admin.');
+      setSaving(false);
+      return;
+    }
     if (!error) {
       await supabase.from('project_messages').insert([{
         request_id: req.id,

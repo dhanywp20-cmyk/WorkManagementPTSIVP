@@ -1191,11 +1191,18 @@ function TicketingSystemInner() {
       // 'SELF' = Supervisor kerjakan sendiri
       const isSelf = supAssignTo === "SELF";
       const assigneeName = isSelf ? (currentUser?.full_name ?? "") : supAssignTo;
-      const { error } = await supabase.from("tickets").update({
+      // assigned_supervisor_id SENGAJA TIDAK ikut dikosongkan di update yang
+      // sama: RLS tk_update mengizinkan Supervisor menulis baris ini lewat
+      // assigned_supervisor_id = dirinya sendiri. WITH CHECK dievaluasi
+      // terhadap baris BARU (bukan lama) - kalau kolom itu ikut di-null-kan
+      // di sini, tidak ada syarat lain yang cocok dan RLS diam-diam menolak
+      // (0 baris, tanpa error) walau WA sudah kadung terkirim.
+      const { error, data } = await supabase.from("tickets").update({
         status: "Pending", assign_name: assigneeName,
-        routing_status: null, assigned_supervisor_id: null,
-      }).eq("id", supAssignTicket.id);
+        routing_status: null,
+      }).eq("id", supAssignTicket.id).select("id");
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error("Perubahan ditolak sistem (RLS). Hubungi admin.");
       // WA + badge ke anggota tim yg di-assign (kalau bukan Supervisor sendiri)
       if (!isSelf) {
         try {
@@ -1283,8 +1290,9 @@ function TicketingSystemInner() {
         }
       }
 
-      const { error } = await supabase.from('tickets').update(payload).eq('id', t.id);
+      const { error, data } = await supabase.from('tickets').update(payload).eq('id', t.id).select('id');
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error('Perubahan ditolak sistem (RLS). Hubungi admin.');
 
       // Catat ke audit
       const catatan = [
