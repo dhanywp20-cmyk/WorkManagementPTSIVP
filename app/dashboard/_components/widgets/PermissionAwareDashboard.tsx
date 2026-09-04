@@ -139,18 +139,20 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
             <h1 className="text-base md:text-xl font-black tracking-tight leading-tight text-slate-800">Halo, {firstName} 👋</h1>
             <p className="text-[10px] md:text-xs text-slate-500 font-medium mt-0.5">{today}</p>
           </div>
-          <div className="flex items-center gap-1.5 md:gap-2 flex-wrap justify-end">
-            {showAnalyticsTabs && (
-              <div className="flex items-center gap-1 md:gap-1.5 flex-wrap">
-                <HeaderTabBtn label="Analytics"      icon="📊" active={analyticsTab==='kpi'}     onClick={() => setAnalyticsTab('kpi')} />
-                <HeaderTabBtn label="Command Center" icon="🏠" active={analyticsTab==='command'} onClick={() => setAnalyticsTab('command')} badge={analyticsCounts.totalAlerts} />
-                <HeaderTabBtn label="Audit Log"      icon="📋" active={analyticsTab==='audit'}   onClick={() => setAnalyticsTab('audit')} badge={analyticsCounts.auditCount} />
-              </div>
-            )}
-            <span className="text-[10px] md:text-[11px] font-semibold px-2.5 py-1 md:px-3 md:py-1.5 rounded-full bg-slate-100 text-slate-600 border border-black/5 flex-shrink-0">
-              {visible.length} widget aktif
-            </span>
-          </div>
+          {/*
+            Badge "N widget aktif" dulu di sini - angkanya cuma jumlah entri
+            registry (bukan jumlah kartu yang kelihatan, karena satu widget
+            bisa memuat beberapa kartu sekaligus), jadi tidak actionable buat
+            user dan sudah dihapus. Tab Analytics/Command Center/Audit Log
+            (kalau berhak) sekarang jadi satu-satunya isi sisi kanan header.
+          */}
+          {showAnalyticsTabs && (
+            <div className="flex items-center gap-1 md:gap-1.5 flex-wrap justify-end">
+              <HeaderTabBtn label="Analytics"      icon="📊" active={analyticsTab==='kpi'}     onClick={() => setAnalyticsTab('kpi')} />
+              <HeaderTabBtn label="Command Center" icon="🏠" active={analyticsTab==='command'} onClick={() => setAnalyticsTab('command')} badge={analyticsCounts.totalAlerts} />
+              <HeaderTabBtn label="Audit Log"      icon="📋" active={analyticsTab==='audit'}   onClick={() => setAnalyticsTab('audit')} badge={analyticsCounts.auditCount} />
+            </div>
+          )}
         </div>
       </header>
 
