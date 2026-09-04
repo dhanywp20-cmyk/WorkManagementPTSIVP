@@ -1379,9 +1379,10 @@ Hubungi Admin untuk info lebih lanjut.
         ? { assign_name: null, assign_user_id: null, assigned_supervisor_id: orang.id, routing_status: 'supervisor_assign', status: 'approved' }
         : { assign_name: orang.full_name, assign_user_id: orang.id, assigned_supervisor_id: null, routing_status: null, status: 'approved' };
 
-      const { error } = await cobaIdentitas(async pakaiUuid => await supabase.from('project_requests')
-        .update(pakaiUuid ? payload : tanpaIdentitas(payload)).eq('id', rerouteTarget.id));
+      const { error, data } = await cobaIdentitas(async pakaiUuid => await supabase.from('project_requests')
+        .update(pakaiUuid ? payload : tanpaIdentitas(payload)).eq('id', rerouteTarget.id).select('id'));
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error('Perubahan ditolak sistem (RLS). Hubungi admin.');
 
       void logAudit({
         user_id: currentUser.id, user_name: currentUser.full_name,
