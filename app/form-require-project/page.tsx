@@ -113,7 +113,6 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const sldFileRef = useRef<HTMLInputElement>(null);
   const boqFileRef = useRef<HTMLInputElement>(null);
   const design3dFileRef = useRef<HTMLInputElement>(null);
-  const ptsFileRef = useRef<HTMLInputElement>(null);
   const [showUploadChoice, setShowUploadChoice] = useState(false);
   const activeRequestIdRef = useRef<string | null>(null);
   const [uploadingCategory, setUploadingCategory] = useState<'sld' | 'boq' | 'design3d' | null>(null);
@@ -1474,18 +1473,6 @@ Hubungi Admin untuk info lebih lanjut.
     notify('success', `File "${file.name}" berhasil diupload!`);
     fetchAttachments(selectedRequest.id);
     await supabase.from('project_messages').insert([{ request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `📎 Melampirkan file: ${file.name}` }]);
-  };
-
-  // Team selalu salah pakai tombol "Upload File" (general/foto survey) untuk
-  // hasil kerja SLD/BOQ/3D mereka, karena tombol kategori di bawah kadang
-  // tidak dilihat. Bukan lagi soal HARUS tahu kategori mana - cukup pilih
-  // "File PTS", dan kategorinya ditebak dari jenis file: PDF -> SLD (paling
-  // umum dipakai untuk gambar teknis), Excel/CSV -> BOQ, selain itu -> 3D.
-  const detectPtsCategory = (file: File): 'sld' | 'boq' | 'design3d' => {
-    const name = file.name.toLowerCase();
-    if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv')) return 'boq';
-    if (name.endsWith('.pdf')) return 'sld';
-    return 'design3d';
   };
 
   const handleCategoryUpload = async (file: File, category: 'sld' | 'boq' | 'design3d') => {
@@ -2932,11 +2919,26 @@ Hubungi Admin untuk info lebih lanjut.
                                   <span className="text-base leading-none">📷</span>
                                   <span>Foto Survey / Require BOQ<br /><span className="font-normal text-gray-400">Foto lokasi, dokumen kebutuhan dari Sales</span></span>
                                 </button>
-                                <button onClick={() => { setShowUploadChoice(false); ptsFileRef.current?.click(); }}
-                                  className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-teal-50 flex items-start gap-2">
-                                  <span className="text-base leading-none">📁</span>
-                                  <span>File PTS: SLD / BOQ / 3D<br /><span className="font-normal text-gray-400">Hasil kerja team - kategori & lokasi simpan otomatis mengikuti jenis file</span></span>
-                                </button>
+                                <p className="px-3.5 pt-2 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">File PTS - pilih kategori</p>
+                                {/*
+                                  Tiga pilihan eksplisit, BUKAN tebak dari ekstensi file - PDF
+                                  bisa berarti SLD atau Design 3D (sldFileRef & design3dFileRef
+                                  sama-sama accept=".pdf"), jadi menebak dari ekstensi akan salah
+                                  tepat pada kasus yang paling sering. Memakai file input yang
+                                  sama persis dengan tombol kategori di panel bawah, supaya
+                                  filenya selalu masuk tab SLD(0)/BOQ(0)/3D(0) yang benar.
+                                */}
+                                {[
+                                  { ref: sldFileRef, icon: '📐', label: 'SLD (PDF)', hint: 'Gambar teknis instalasi' },
+                                  { ref: boqFileRef, icon: '📊', label: 'BOQ (Excel)', hint: 'Rincian kebutuhan & harga' },
+                                  { ref: design3dFileRef, icon: '🎨', label: 'Design 3D', hint: 'Render / mock-up ruangan' },
+                                ].map(({ ref, icon, label, hint }) => (
+                                  <button key={label} onClick={() => { setShowUploadChoice(false); ref.current?.click(); }}
+                                    className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-teal-50 flex items-start gap-2">
+                                    <span className="text-base leading-none">{icon}</span>
+                                    <span>{label}<br /><span className="font-normal text-gray-400">{hint}</span></span>
+                                  </button>
+                                ))}
                               </div>
                             </>)}
                           </div>
@@ -2945,8 +2947,6 @@ Hubungi Admin untuk info lebih lanjut.
                     </div>
                     <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
                       onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); e.target.value = ''; }} />
-                    <input ref={ptsFileRef} type="file" className="hidden" accept=".pdf,.xlsx,.xls,.csv,.dwg,.skp"
-                      onChange={e => { const f = e.target.files?.[0]; if (f) handleCategoryUpload(f, detectPtsCategory(f)); e.target.value = ''; }} />
                     <input ref={sldFileRef} type="file" className="hidden" accept=".pdf"
                       onChange={e => { const f = e.target.files?.[0]; if (f) handleCategoryUpload(f, 'sld'); e.target.value = ''; }} />
                     <input ref={boqFileRef} type="file" className="hidden" accept=".xlsx,.xls,.csv"
