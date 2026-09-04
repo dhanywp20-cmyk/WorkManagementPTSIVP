@@ -1057,7 +1057,53 @@ export default function DailyReportPage() {
               deskripsiKosong="Data reminder & ticket akan muncul otomatis di sini."
             />
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            {/* M8 (docs/UX-WORKFLOW-AUDIT.md): dulu tabel ini (9 kolom, minWidth
+                1200px) tidak punya varian mobile sama sekali - beda dari Picket
+                Showroom & Project Progress yang sudah punya kartu md:hidden.
+                Anggota tim yang isi Daily Report dari HP harus scroll horizontal
+                pada tabel lebar untuk cek riwayat. Tap kartu membuka modal
+                detail yang sama dengan klik baris tabel (termasuk tombol Edit). */}
+            <div className="md:hidden space-y-2">
+              {filteredRows.map(row => {
+                const c = CATEGORY_CONFIG[row.category] ?? CATEGORY_CONFIG['Internal'];
+                const badge = row.source === 'manual' ? SB.manual : sb(row.status);
+                return (
+                  <button key={row.id} onClick={() => setModalRow(row)}
+                    className="w-full text-left rounded-2xl p-3.5 flex flex-col gap-2 transition-all active:scale-[0.99]"
+                    style={{ background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(0,0,0,0.07)' }}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-slate-800 text-sm leading-tight truncate">{row.project_name}</p>
+                        {row.address && <p className="text-[11px] text-slate-400 mt-0.5 truncate">📍 {row.address}</p>}
+                      </div>
+                      <span className="flex-shrink-0 inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-bold"
+                        style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.border}` }}>
+                        {badge.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold"
+                        style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}>
+                        {row.kegiatan_icon} {row.source === 'ticket' ? 'Troubleshooting' : row.category}
+                      </span>
+                      {row.product && <span className="text-[10px] font-semibold text-violet-700 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-lg">{row.product}</span>}
+                    </div>
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-gray-100">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
+                        <span className="text-xs font-semibold text-slate-700 truncate">{row.handler_name || '—'}</span>
+                      </div>
+                      <span className="text-[11px] text-slate-400 flex-shrink-0">
+                        {row.report_date ? new Date(row.report_date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) : '—'}
+                        {row.jam !== '-' ? ` · ${row.jam}` : ''}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1200px', tableLayout: 'fixed' }}>
                   <colgroup>
                     <col style={{ width: '44px' }} />
@@ -1166,6 +1212,7 @@ export default function DailyReportPage() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </div>
       </div>
