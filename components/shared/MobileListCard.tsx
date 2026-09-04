@@ -88,11 +88,11 @@ export function MobileListCard({
 }
 
 /** Badge status kecil seragam untuk header kartu mobile. */
-export function MobileCardBadge({ children, className, style }: {
-  children: React.ReactNode; className?: string; style?: React.CSSProperties;
+export function MobileCardBadge({ children, className, style, title }: {
+  children: React.ReactNode; className?: string; style?: React.CSSProperties; title?: string;
 }) {
   return (
-    <span className={`px-2 py-0.5 text-[10px] font-bold rounded whitespace-nowrap ${className ?? ''}`} style={style}>
+    <span className={`px-2 py-0.5 text-[10px] font-bold rounded whitespace-nowrap ${className ?? ''}`} style={style} title={title}>
       {children}
     </span>
   );
