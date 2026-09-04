@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ListEmptyState, ModalPortal, ConfirmDialog, type ConfirmState } from '@/components/shared';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/app/dashboard/_components/shared';
@@ -279,6 +279,18 @@ export default function TechNotePage() {
 
   const [folderForm,   setFolderForm]   = useState({ name:'', icon:'🖥️', color:'#ec4899', parent_id:'', category:'display' as string });
   const [uploadForm,   setUploadForm]   = useState({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' });
+  // Minor (docs/UX-WORKFLOW-AUDIT.md): dulu tidak ada proteksi unsaved-changes
+  // di modal Upload/Edit - snapshot diambil saat modal dibuka, dibandingkan
+  // saat mau ditutup.
+  const uploadSnapshotRef = useRef<typeof uploadForm | null>(null);
+  const closeUploadModal = () => {
+    const dirty = uploadSnapshotRef.current
+      ? JSON.stringify(uploadForm) !== JSON.stringify(uploadSnapshotRef.current)
+      : Object.values(uploadForm).some(v => v);
+    if (dirty && !window.confirm('Ada isian yang belum disimpan. Yakin mau menutup tanpa menyimpan?')) return;
+    setShowUploadModal(false); setEditingNote(null);
+    setUploadForm({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' });
+  };
   const [approvalForm, setApprovalForm] = useState({ action:'approved', note:'' });
   const [saving, setSaving] = useState(false);
 
@@ -406,11 +418,13 @@ export default function TechNotePage() {
 
   /** Buka modal upload dalam mode sunting, terisi nilai catatan yang dipilih. */
   function bukaEditNote(n: TechNote) {
-    setUploadForm({
+    const form = {
       title: n.title ?? '', description: n.description ?? '', product: n.product ?? '',
       one_drive_link: n.one_drive_link ?? '', folder_id: n.folder_id ?? '',
       tags: (n.tags ?? []).join(', '),
-    });
+    };
+    setUploadForm(form);
+    uploadSnapshotRef.current = form;
     setEditingNote(n);
     setShowUploadModal(true);
   }
@@ -608,7 +622,7 @@ export default function TechNotePage() {
               className="text-slate-700 text-sm font-bold outline-none rounded-xl px-3 py-1.5 bg-gray-100 border border-gray-200 focus:border-rose-400">
               {[curY,curY-1,curY-2].map(y=><option key={y} value={y}>{y}</option>)}
             </select>
-            <button onClick={()=>setShowUploadModal(true)}
+            <button onClick={()=>{ uploadSnapshotRef.current = uploadForm; setShowUploadModal(true); }}
               className="text-sm font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 text-white hover:opacity-90 hover:scale-105"
               style={{ background:'linear-gradient(135deg,#ec4899,#be185d)', boxShadow:'0 4px 14px rgba(236,72,153,0.35)' }}>
               ➕ Upload Tech Note
@@ -782,7 +796,7 @@ export default function TechNotePage() {
 
       {/* ══ MODAL: Upload Tech Note ══ */}
       <Modal open={showUploadModal}
-        onClose={()=>{ setShowUploadModal(false); setEditingNote(null); setUploadForm({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' }); }}
+        onClose={closeUploadModal}
         title={editingNote ? '✏️ Edit Tech Note' : '📤 Upload Tech Note'} width={600}>
         <Field label="Judul Tech Note *">
           <input className={inputCls} value={uploadForm.title}
@@ -817,7 +831,7 @@ export default function TechNotePage() {
           ⚠️ Tech Note akan masuk ke <b>Approval Queue</b>. Setelah disetujui Admin/Supervisor, otomatis tampil ke semua anggota tim.
         </div>
         <div className="flex gap-3 justify-end">
-          <button onClick={()=>{ setShowUploadModal(false); setEditingNote(null); setUploadForm({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' }); }} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-gray-100 border border-gray-200 hover:bg-gray-200">Batal</button>
+          <button onClick={closeUploadModal} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-gray-100 border border-gray-200 hover:bg-gray-200">Batal</button>
           <button onClick={submitTechNote} disabled={saving||!uploadForm.title.trim()||!uploadForm.folder_id||!uploadForm.one_drive_link.trim()}
             className="px-4 py-2 rounded-xl text-white text-sm font-bold disabled:opacity-40 transition-colors"
             style={{ background:'linear-gradient(135deg,#ec4899,#be185d)' }}>
