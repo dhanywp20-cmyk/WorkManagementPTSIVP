@@ -23,8 +23,9 @@ import {
   bisaKonfigPenuh, bisaInputNominal, tingkatAkses,
   LABEL_AKSES, JELAS_AKSES, URUTAN_AKSES, type TingkatAkses,
 } from '@/lib/incentive-akses';
-import { MobileListCard, MobileCardBadge, ModalPortal } from '@/components/shared';
+import { MobileListCard, MobileCardBadge, ModalPortal, ConfirmDialog, type ConfirmState } from '@/components/shared';
 import { logAudit } from '@/lib/audit';
+import { createNotification } from '@/lib/notifications';
 import { managerUtama } from '@/lib/penerima-admin';
 import { SchemeTab } from './_components/SchemeTab';
 
@@ -172,6 +173,9 @@ export default function IncentivePTSPage() {
   const [ketikHapusTahapan, setKetikHapusTahapan] = useState('');
   const [membatalkan, setMembatalkan] = useState(false);
   const [generating, setGenerating] = useState(false);
+  // C4: guard klik-ganda + modal konfirmasi untuk "Tandai Paid"
+  const [markingPaid, setMarkingPaid] = useState<string | null>(null);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
 
   const [exporting, setExporting] = useState(false);
   const [lateTickets, setLateTickets] = useState<LateTicketLink[]>([]);
@@ -718,11 +722,65 @@ export default function IncentivePTSPage() {
     setExporting(false);
   }
 
-  async function handleMarkPaid(trancheId: string) {
-    const { error } = await supabase.from('incentive_tranches').update({ status: 'paid', paid_at: new Date().toISOString() }).eq('id', trancheId);
-    if (error) { notify('error', error.message); return; }
+  /*
+    C4 (docs/UX-WORKFLOW-AUDIT.md): dulu tombol ini eksekusi langsung begitu
+    diklik - tanpa modal konfirmasi, tanpa guard loading (klik ganda = dua
+    request bersamaan), dan tanpa logAudit - kontras dengan Process Batch/
+    Batalkan Batch/Hapus Tahapan di modul yang SAMA yang semuanya sudah
+    lengkap ketiganya. "Tandai Paid" berarti uang sudah keluar - aksi paling
+    final di alur ini, jadi pengamanannya disamakan, bukan dikurangi.
+  */
+  async function handleMarkPaid(trancheId: string, projectName: string, trancheNumber: number) {
+    setMarkingPaid(trancheId);
+    // select('id') + panjang diperiksa: RLS yang menolak diam-diam
+    // mengembalikan 0 baris tanpa error (pola yang sama seperti temuan T-1
+    // di seluruh audit sebelumnya) - tanpa ini toast "berhasil" bisa muncul
+    // padahal tranche-nya tidak benar-benar berubah jadi Paid.
+    const { data: terubah, error } = await supabase.from('incentive_tranches')
+      .update({ status: 'paid', paid_at: new Date().toISOString() })
+      .eq('id', trancheId).eq('status', 'processed').select('id');
+    setMarkingPaid(null);
+    if (error || !terubah || terubah.length === 0) {
+      notify('error', error ? error.message : 'Gagal menandai Paid (mungkin sudah ditandai orang lain, atau akses tidak cukup).');
+      return;
+    }
+    void logAudit({
+      user_id: (currentUser?.id as string) ?? '', user_name: (currentUser?.full_name as string) ?? '',
+      module: 'incentive', action: 'update',
+      target_id: trancheId, target_name: `${projectName} — Tahap ${trancheNumber}`,
+      old_value: 'processed', new_value: 'paid',
+      notes: 'Ditandai Paid manual dari tabel Tranche Schedule.',
+    });
     notify('success', 'Tranche ditandai Paid!'); loadAll();
     if (detailProject) openProjectDetail(detailProject);
+
+    // M11 (docs/UX-WORKFLOW-AUDIT.md): modul ini dulu tidak mengirim
+    // notifikasi apa pun di transisi manapun - penerima insentif harus buka
+    // platform sendiri untuk tahu uangnya sudah cair. Diberi tahu lewat
+    // in-app notification ke setiap orang yang punya bagian di tahap ini.
+    try {
+      const { data: splits } = await supabase.from('incentive_splits')
+        .select('user_id, user_name, amount').eq('tranche_id', trancheId);
+      for (const s of (splits ?? []) as { user_id: string; user_name: string; amount: number }[]) {
+        if (!s.user_id) continue;
+        void createNotification({
+          user_id: s.user_id, type: 'system',
+          title: `💰 Insentif Tahap ${trancheNumber} cair`,
+          body: `${projectName} — bagian kamu ${formatRupiah(Math.round(s.amount))}`,
+          action_url: '/incentive-pts',
+          created_by: currentUser?.full_name ?? 'System',
+        });
+      }
+    } catch { /* notifikasi gagal tidak boleh menggagalkan penandaan Paid yang sudah tersimpan */ }
+  }
+
+  function konfirmasiMarkPaid(trancheId: string, projectName: string, trancheNumber: number) {
+    setConfirmState({
+      message: `Tandai tahap ${trancheNumber} "${projectName}" sebagai Paid?`,
+      description: 'Menandakan uang sudah keluar. Tidak ada tombol untuk membatalkannya kembali dari sini.',
+      danger: true, confirmLabel: 'Ya, Tandai Paid',
+      onConfirm: () => handleMarkPaid(trancheId, projectName, trancheNumber),
+    });
   }
 
   /** Kata kunci pencarian di Pengaturan Akses. */
@@ -1517,7 +1575,11 @@ export default function IncentivePTSPage() {
                           <td className="px-3 py-2.5 border border-gray-200"><span className="px-2.5 py-1 rounded-full text-[11px] font-bold" style={{ background: st.bg, color: st.color }}>{st.icon} {st.label}</span></td>
                           <td className="px-3 py-2.5 border border-gray-200">
                             {t.status === 'processed' && bisaKonfig(currentUser) && (
-                              <button onClick={() => handleMarkPaid(t.id)} className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-emerald-600 hover:bg-emerald-50 border border-emerald-200 transition-all">✅ Tandai Paid</button>
+                              <button onClick={() => konfirmasiMarkPaid(t.id, t.project?.project_name || '—', t.tranche_number)}
+                                disabled={markingPaid === t.id}
+                                className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-emerald-600 hover:bg-emerald-50 border border-emerald-200 transition-all disabled:opacity-50">
+                                {markingPaid === t.id ? '⏳...' : '✅ Tandai Paid'}
+                              </button>
                             )}
                           </td>
                         </tr>
@@ -1994,7 +2056,11 @@ export default function IncentivePTSPage() {
                         <div className="flex items-center gap-2">
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: st.bg, color: st.color }}>{st.icon} {st.label}</span>
                           {t.status === 'processed' && bisaKonfig(currentUser) && (
-                            <button onClick={() => handleMarkPaid(t.id)} className="px-2 py-1 rounded text-[10px] font-bold text-emerald-600 hover:bg-emerald-50 border border-emerald-200">Tandai Paid</button>
+                            <button onClick={() => konfirmasiMarkPaid(t.id, detailProject.project_name || '—', t.tranche_number)}
+                              disabled={markingPaid === t.id}
+                              className="px-2 py-1 rounded text-[10px] font-bold text-emerald-600 hover:bg-emerald-50 border border-emerald-200 disabled:opacity-50">
+                              {markingPaid === t.id ? '⏳...' : 'Tandai Paid'}
+                            </button>
                           )}
                         </div>
                       </div>
@@ -2516,6 +2582,7 @@ export default function IncentivePTSPage() {
       </ModalPortal>
       )}
 
+      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
     </div>
   );
 }

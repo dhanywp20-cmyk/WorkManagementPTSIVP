@@ -451,26 +451,40 @@ export default function TechNotePage() {
     const tags = uploadForm.tags.split(',').map(s=>s.trim()).filter(Boolean);
 
     // Mode sunting
-    // status & author TIDAK disentuh: menyunting isi bukan berarti catatannya
-    // jadi milik penyunting, dan bukan pula berarti hasil review-nya batal.
+    // status & author biasanya TIDAK disentuh: menyunting isi bukan berarti
+    // catatannya jadi milik penyunting, dan bukan pula berarti hasil review-nya
+    // batal - KECUALI kasus C3 (docs/UX-WORKFLOW-AUDIT.md): penulis sendiri
+    // (bukan pengelola) menyunting catatan yang statusnya 'revision'/'rejected'.
+    // Dulu status di kasus itu TIDAK PERNAH kembali ke 'pending', jadi hasil
+    // perbaikan penulis tidak pernah masuk lagi ke antrean approval (tab
+    // Pending memfilter status==='pending') - jalan buntu permanen. Action
+    // 'resubmitted' sudah lama ada di ACTION_CONFIG (shared.ts) tapi tidak
+    // pernah dipanggil di mana pun; disambungkan di sini.
     if (editingNote) {
-      const { error } = await supabase.from('tech_notes').update({
+      const resubmit = !canManage && (editingNote.status === 'revision' || editingNote.status === 'rejected');
+      const payload: Record<string, unknown> = {
         title: uploadForm.title.trim(), description: uploadForm.description.trim(),
         folder_id: uploadForm.folder_id, one_drive_link: uploadForm.one_drive_link.trim(),
         product: uploadForm.product.trim(), tags,
-      }).eq('id', editingNote.id);
+      };
+      if (resubmit) { payload.status = 'pending'; payload.submitted_at = now; }
+      const { error } = await supabase.from('tech_notes').update(payload).eq('id', editingNote.id);
       setSaving(false);
       if (error) { alert('Gagal menyimpan: ' + error.message); return; }
       await supabase.from('tech_note_history').insert({
-        tech_note_id: editingNote.id, action: 'edited',
+        tech_note_id: editingNote.id, action: resubmit ? 'resubmitted' : 'edited',
         performed_by: currentUser.id, performed_by_name: currentUser.full_name,
-        note: 'Detail disunting oleh pengelola', created_at: now,
+        note: resubmit ? 'Diajukan ulang setelah diperbaiki' : 'Detail disunting oleh pengelola',
+        created_at: now,
       });
       void logAudit({
         user_id: currentUser.id, user_name: currentUser.full_name ?? '',
         action: 'update', module: 'tech-note', target_id: editingNote.id,
         target_name: uploadForm.title.trim(),
       });
+      if (resubmit) {
+        void createNotificationForAdmins({ type: 'system', title: `🔁 Tech Note diajukan ulang`, body: `"${uploadForm.title.trim()}" oleh ${currentUser.full_name} - perlu direview lagi`, action_url: '/tech-note', ref_id: editingNote.id, created_by: currentUser.full_name ?? '' });
+      }
       setUploadForm({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' });
       setEditingNote(null); setShowUploadModal(false); setDetailNote(null); fetchNotes();
       return;
