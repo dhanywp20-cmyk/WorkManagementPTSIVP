@@ -6,6 +6,7 @@ import {
   ProjectMessage, ProjectAttachment,
   statusConfig, JABATAN_TIER, JABATAN_CC_RULES,
   fetchWACCTargets, sendWANotif, emptyRoom,
+  getRoomAssignName, getRoomAssignUserId,
   SALES_DIVISIONS, DISPLAY_BRANDS, MIDDLEWARE_BRANDS,
   PIE_COLORS,
 } from './shared';
@@ -34,12 +35,17 @@ import { BRAND_OPTIONS } from '@/lib/brand-routing';
  * sementara di dua platform lain ia punya.
  */
 export function AssignPTSModal({
-  req, onClose, onAssigned, currentUser, allowSupervisorRoute = false,
+  req, onClose, onAssigned, currentUser, allowSupervisorRoute = false, roomIdx = 0,
 }: {
   req: ProjectRequest; onClose: () => void; onAssigned: () => void; currentUser: User;
   // true = dibuka oleh Admin/Manager saat approve  boleh pilih "Route ke Supervisor".
   // false = dibuka oleh Supervisor utk assign final ke Tim PTS (tanpa opsi route).
   allowSupervisorRoute?: boolean;
+  // 0 = ruangan pertama (kolom request langsung, termasuk approve awal & route
+  // ke Supervisor - tahap itu memang milik seluruh request, bukan satu ruangan).
+  // 1+ = ruangan lain di dalam `rooms` JSONB, hanya dipakai untuk assign/re-assign
+  // handler ruangan itu sendiri - lihat handleSave.
+  roomIdx?: number;
 }) {
   const [teamMembers, setTeamMembers] = useState<User[]>([]);
   const [supervisors, setSupervisors] = useState<{ id: string; full_name: string; team_type?: string; phone_number?: string }[]>([]);
@@ -65,8 +71,10 @@ export function AssignPTSModal({
         setTeamMembers(anggota);
         // Pra-pilih handler yang sudah tercatat, kalau orangnya memang ketemu.
         // Dicocokkan lewat uuid dulu; nama hanya cadangan untuk baris lama.
-        const sekarang = (req.assign_user_id && anggota.find(u => u.id === req.assign_user_id))
-          || (req.assign_name ? anggota.find(u => u.full_name === req.assign_name) : undefined);
+        const roomAssignUserId = getRoomAssignUserId(req, roomIdx);
+        const roomAssignName = getRoomAssignName(req, roomIdx);
+        const sekarang = (roomAssignUserId && anggota.find(u => u.id === roomAssignUserId))
+          || (roomAssignName ? anggota.find(u => u.full_name === roomAssignName) : undefined);
         if (sekarang) setSelectedPTSId(sekarang.id);
       });
     // Fetch Supervisor (jabatan='Supervisor') - utk opsi Route ke Supervisor
@@ -76,7 +84,7 @@ export function AssignPTSModal({
         .eq('jabatan', 'Supervisor')
         .then(({ data }: { data: { id: string; full_name: string; team_type?: string; phone_number?: string }[] | null }) => { if (data) setSupervisors(data.filter(s => isAssignablePTSTeam(s.team_type))); });
     }
-  }, [allowSupervisorRoute, req.assign_name, req.assign_user_id]);
+  }, [allowSupervisorRoute, req, roomIdx]);
 
   // Orang yang akan dicatat sebagai handler. 'SELF' berarti yang membuka popup
   // ini mengerjakannya sendiri - jalan keluar saat timnya penuh.
@@ -135,24 +143,47 @@ export function AssignPTSModal({
     // Nama DAN uuid ditulis bersamaan: uuid menjawab siapa orangnya, nama
     // menjawab tercatat sebagai siapa. Menulis salah satunya saja akan
     // melahirkan baris baru dengan cacat data lama yang sedang dibereskan.
-    const updatePayload: Record<string, unknown> = {
-      assign_name: calonHandler.full_name,
-      assign_user_id: calonHandler.id,
-      status: 'approved',
-      approved_by: currentUser.full_name,
-      approved_at: new Date().toISOString(),
-    };
-    // Penanda tahap Supervisor (routing_status) dibersihkan kalau request ini
-    // memang di-route ke sana - assign langsung tidak menyentuh kolom routing
-    // supaya tetap jalan walau migrasi supervisor belum dijalankan.
-    // assigned_supervisor_id SENGAJA TIDAK ikut dikosongkan: RLS pr_update
-    // mengizinkan Supervisor menulis baris ini lewat assigned_supervisor_id =
-    // dirinya sendiri - kalau kolom itu ikut di-null-kan di update yang sama,
-    // WITH CHECK dievaluasi terhadap baris BARU (bukan baris lama) dan tidak
-    // ada lagi syarat yang cocok, jadi RLS diam-diam menolak (0 baris, tanpa
-    // error) walau notifikasi WA/Telegram sudah kadung terkirim.
-    if (req.routing_status === 'supervisor_assign') {
-      updatePayload.routing_status = null;
+    //
+    // Ruangan pertama (roomIdx 0) menulis kolom request langsung seperti
+    // semula. Ruangan lain (1+) hidup di dalam array JSONB `rooms` - assign
+    // ruangan itu TIDAK menyentuh status/approved_by milik request atau
+    // ruangan lain, supaya Command Center bisa masih "in_progress" sementara
+    // Smart ClassRoom sudah "completed" - lihat getRoomStatus() di shared.ts.
+    let updatePayload: Record<string, unknown>;
+    if (roomIdx === 0) {
+      updatePayload = {
+        assign_name: calonHandler.full_name,
+        assign_user_id: calonHandler.id,
+        status: 'approved',
+        approved_by: currentUser.full_name,
+        approved_at: new Date().toISOString(),
+      };
+      // Penanda tahap Supervisor (routing_status) dibersihkan kalau request ini
+      // memang di-route ke sana - assign langsung tidak menyentuh kolom routing
+      // supaya tetap jalan walau migrasi supervisor belum dijalankan.
+      // assigned_supervisor_id SENGAJA TIDAK ikut dikosongkan: RLS pr_update
+      // mengizinkan Supervisor menulis baris ini lewat assigned_supervisor_id =
+      // dirinya sendiri - kalau kolom itu ikut di-null-kan di update yang sama,
+      // WITH CHECK dievaluasi terhadap baris BARU (bukan baris lama) dan tidak
+      // ada lagi syarat yang cocok, jadi RLS diam-diam menolak (0 baris, tanpa
+      // error) walau notifikasi WA/Telegram sudah kadung terkirim.
+      if (req.routing_status === 'supervisor_assign') {
+        updatePayload.routing_status = null;
+      }
+    } else {
+      const rooms = [...(req.rooms || [])];
+      const i = roomIdx - 1;
+      if (rooms[i]) {
+        rooms[i] = {
+          ...rooms[i],
+          assign_name: calonHandler.full_name,
+          assign_user_id: calonHandler.id,
+          status: 'approved',
+          approved_by: currentUser.full_name,
+          approved_at: new Date().toISOString(),
+        };
+      }
+      updatePayload = { rooms };
     }
 
     const { error, data } = await cobaIdentitas(async pakaiUuid => await supabase.from('project_requests')
