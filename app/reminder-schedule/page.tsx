@@ -34,7 +34,7 @@ import {
   LoadingScreen, MiniPieChart, PageHeader,
   ViewIconBtn, RescheduleIconBtn, ApproveIconBtn, DeleteIconBtn, ActionGroup,
   ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState, AuditTrailPanel, FlowSteps, Username, StatCard,
-  ModalPortal
+  ModalPortal, MobileListCard, MobileCardBadge,
 } from '@/components/shared';
 import { MiniCalendar } from './_components/MiniCalendar';
 import { RescheduleModal } from './_components/RescheduleModal';
@@ -4513,82 +4513,67 @@ jangan lupa peralatan & Semangat💪🏼
                   ) : (
                     <>
                     {/* ── MOBILE: Card view ── */}
+                    {/* MobileListCard - komponen kartu bersama yang sama dipakai
+                        Ticketing & Request Design Project. Kartu tulisan-tangan
+                        sebelumnya di sini berulang kali kebobolan elemen tanpa
+                        truncate/min-w-0 (grid Handler, dst) yang mendorong
+                        seluruh halaman bisa digeser ke samping - field pada
+                        komponen bersama ini truncate SEMUANYA secara bawaan,
+                        jadi bukan lagi sesuatu yang bisa lupa ditulis. */}
                     <div className="md:hidden divide-y divide-gray-100">
-                      {groupedReminders.map((group, idx) => {
+                      {groupedReminders.map((group) => {
                         const r = group[0];
                         const today = isDueToday(r.due_date);
                         const dueDate = new Date(r.due_date + 'T00:00:00');
                         const uniqueDates = Array.from(new Set(group.map(gr => gr.due_date))).sort();
                         const uniqueAssignNames = Array.from(new Set(group.map(gr => gr.assign_name).filter(Boolean)));
                         const fmtShort = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                        const statusCounts: Record<string, number> = {};
+                        for (const gr of group) statusCounts[gr.status] = (statusCounts[gr.status] || 0) + 1;
+                        const statusEntries = Object.entries(statusCounts);
                         return (
-                          <div key={r.id}
-                            className={`px-4 py-3.5 ${today ? 'bg-red-50/50 border-l-4 border-l-red-400' : 'border-l-4 border-l-transparent'}`}>
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <p className="font-bold text-sm text-gray-800 leading-tight truncate">{(r.project_name || r.title || '').trim() || '—'}</p>
-                                {r.address && <p className="text-[10px] text-gray-400 mt-0.5 truncate">📍 {r.address.split(',')[0]}</p>}
-                                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                  <span className="text-[10px] font-semibold text-indigo-600">{(CATEGORY_CONFIG[r.category] ?? { icon: '📁' }).icon} {r.category}</span>
-                                  {/* Tanpa lencana ini, tombol sync hijau muncul tanpa
-                                      keterangan apa pun dan orang harus menebak apa
-                                      bedanya baris ini dari yang lain. */}
-                                  {r.incentive_excluded === true && (
-                                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded"
-                                      title="Sengaja dikeluarkan dari perhitungan Incentive PTS. Jadwalnya tetap tercatat di sini.">
-                                      ⛔ di luar Incentive
-                                    </span>
-                                  )}
-                                  {r.product && <span className="text-[10px] text-indigo-500 font-medium">{r.product}</span>}
-                                </div>
-                              </div>
-                              <div className="shrink-0 flex flex-col items-end gap-1">
-                                {uniqueDates.length > 1 ? (
-                                  <div className="inline-flex flex-col items-center px-2 py-1 rounded-lg text-center" title={uniqueDates.map(fmtShort).join(', ')}
-                                    style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
-                                    <span className="text-sm font-black leading-none" style={{ color: '#4f46e5' }}>🗓️ {uniqueDates.length}h</span>
-                                    <span className="text-[8px] font-bold uppercase" style={{ color: '#6366f1' }}>{fmtShort(uniqueDates[0])}–{fmtShort(uniqueDates[uniqueDates.length - 1])}</span>
-                                  </div>
-                                ) : (
-                                  <div className="inline-flex flex-col items-center px-2 py-1 rounded-lg text-center"
-                                    style={{ background: today ? 'rgba(220,38,38,0.12)' : 'rgba(99,102,241,0.08)', border: today ? '1px solid rgba(220,38,38,0.35)' : '1px solid rgba(99,102,241,0.2)' }}>
-                                    <span className="text-base font-black leading-none" style={{ color: today ? '#dc2626' : '#4f46e5' }}>{dueDate.getDate()}</span>
-                                    <span className="text-[8px] font-bold uppercase" style={{ color: today ? '#dc2626' : '#6366f1' }}>{dueDate.toLocaleDateString('id-ID',{month:'short',year:'2-digit'})}</span>
-                                  </div>
-                                )}
-                                {(() => {
-                                  const counts: Record<string,number> = {};
-                                  for (const gr of group) counts[gr.status] = (counts[gr.status]||0)+1;
-                                  const entries = Object.entries(counts);
-                                  if (entries.length === 1) return <StatusBadge status={group[0].status} />;
-                                  return <div className="flex flex-wrap gap-0.5">{entries.map(([s,n]) => <span key={s} className="flex items-center gap-0.5"><StatusBadge status={s as any} /><span className="text-[8px] text-gray-500">{n}×</span></span>)}</div>;
-                                })()}
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2 text-xs">
-                              {r.sales_name && <div className="truncate"><span className="text-gray-400">Sales: </span><span className="text-gray-700 font-medium">{r.sales_name}</span></div>}
-                              {/* min-w-0 WAJIB di sini: ini kolom kedua dari grid-cols-2 di
-                                  atas, dan nama handler yang agak panjang (span tanpa
-                                  truncate) memaksa grid-item ini melebar melebihi
-                                  jatahnya - itulah yang mendorong seluruh kartu, dan
-                                  akhirnya seluruh halaman, bisa digeser ke samping. */}
-                              <div className="flex flex-wrap items-center gap-0.5 min-w-0">
-                                {uniqueAssignNames.slice(0, 4).map(name => (
-                                  <span key={name} title={name}
-                                    className="w-5 h-5 rounded-full inline-flex items-center justify-center text-[8px] font-bold text-white flex-shrink-0"
-                                    style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
-                                    {name?.charAt(0)?.toUpperCase() || '?'}
-                                  </span>
-                                ))}
-                                {uniqueAssignNames.length > 4 && (
-                                  <span className="w-5 h-5 rounded-full inline-flex items-center justify-center text-[7px] font-bold bg-gray-100 text-gray-600 flex-shrink-0">+{uniqueAssignNames.length - 4}</span>
-                                )}
-                                {uniqueAssignNames.length === 1 && <span className="text-[10px] text-gray-700 font-medium ml-0.5 truncate min-w-0">{uniqueAssignNames[0]}</span>}
-                                {uniqueAssignNames.length > 1 && <span className="text-[9px] text-gray-400 ml-0.5 flex-shrink-0">({uniqueAssignNames.length} orang)</span>}
-                              </div>
-                              {r.notes && !r.notes.includes('[REQUEST SALES]') && <div className="col-span-2 truncate text-gray-400">{r.notes.substring(0,60)}{r.notes.length>60?'…':''}</div>}
-                            </div>
-                            <div className="flex items-center gap-1.5 mt-3">
+                          <MobileListCard
+                            key={r.id}
+                            highlight={today}
+                            accent={today ? '#f87171' : undefined}
+                            title={(r.project_name || r.title || '').trim() || '—'}
+                            onClick={() => setDetailReminder(r)}
+                            meta={<>
+                              {r.address && <p className="truncate">📍 {r.address.split(',')[0]}</p>}
+                              <p className="truncate">
+                                {uniqueDates.length > 1
+                                  ? `🗓️ ${uniqueDates.length} hari: ${fmtShort(uniqueDates[0])}–${fmtShort(uniqueDates[uniqueDates.length - 1])}`
+                                  : `🗓️ ${dueDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`}
+                              </p>
+                            </>}
+                            badges={<>
+                              {statusEntries.length === 1
+                                ? <StatusBadge status={group[0].status} />
+                                : <div className="flex flex-wrap justify-end gap-0.5">{statusEntries.map(([s, n]) => <span key={s} className="flex items-center gap-0.5"><StatusBadge status={s as any} /><span className="text-[8px] text-gray-500">{n}×</span></span>)}</div>}
+                              {r.incentive_excluded === true && (
+                                <MobileCardBadge className="bg-amber-50 text-amber-700 border border-amber-200"
+                                  title="Sengaja dikeluarkan dari perhitungan Incentive PTS. Jadwalnya tetap tercatat.">
+                                  ⛔ di luar Incentive
+                                </MobileCardBadge>
+                              )}
+                            </>}
+                            fields={[
+                              { label: 'Kegiatan', value: `${(CATEGORY_CONFIG[r.category] ?? { icon: '📁' }).icon} ${r.category}` },
+                              { label: 'Product', value: r.product, valueClass: 'text-indigo-600 font-semibold', hide: !r.product },
+                              { label: 'Sales', value: r.sales_name, hide: !r.sales_name },
+                              {
+                                label: 'Handler',
+                                value: uniqueAssignNames.length === 0 ? '—'
+                                  : uniqueAssignNames.length === 1 ? uniqueAssignNames[0]
+                                  : `${uniqueAssignNames.join(', ')} (${uniqueAssignNames.length} orang)`,
+                              },
+                              {
+                                label: 'Catatan', span2: true, valueClass: 'text-gray-400',
+                                value: r.notes && r.notes.length > 60 ? r.notes.substring(0, 60) + '…' : r.notes,
+                                hide: !r.notes || r.notes.includes('[REQUEST SALES]'),
+                              },
+                            ]}
+                            actions={<>
                               <ViewIconBtn onClick={() => setDetailReminder(r)} title="Detail" />
                               {bolehEditReminder(r) && r.status !== 'done' && (
                                 <RescheduleIconBtn onClick={() => setRescheduleTarget(r)} title="Re-Schedule" />
@@ -4632,8 +4617,8 @@ jangan lupa peralatan & Semangat💪🏼
                               {(isAdmin || isManager) && (
                                 <DeleteIconBtn onClick={() => openDeleteModal(r)} title="Hapus" />
                               )}
-                            </div>
-                          </div>
+                            </>}
+                          />
                         );
                       })}
                       <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-white/90">
