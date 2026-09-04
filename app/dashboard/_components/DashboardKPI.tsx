@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, type ReactNode } from 
 import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
 import { hasFullAccess } from '@/lib/constants';
+import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok';
 import { DonutChart } from '@/components/shared';
 import { User } from './shared';
 import { KPIData, KPITeamMember, KPITeamState, AuditEntry, Scope, STATUS_COLORS, CATEGORY_COLORS, todayStr, dayOfWeek, monthStart, getMonday, HBarChart, AuditRow, ScopeBadge } from './kpi-bagian';
@@ -37,9 +38,13 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
   useEffect(() => {
     (async () => {
+      // Pemetaan kelompok dimuat lebih dulu - lihat catatan yang sama di
+      // app/kpi-team/page.tsx. Sebelum muatKelompok() selesai, namaKelompokPTS()
+      // masih nilai bawaan (SELURUH kelompok PTS).
+      await muatKelompok();
       const role   = currentUser.role?.toLowerCase() ?? '';
       const jabatan = currentUser.jabatan ?? '';
-      const PTS_TYPES = ['Team PTS IVP','Team PTS UMP','Team PTS MVI'];
+      const PTS_TYPES = namaKelompokPTS();
 
       // Full Access ikut scope 'admin' - sama seperti salinan komponen ini di
       // app/kpi-team/. Tanpa ini pemegang Full Access jatuh ke scope sempit
@@ -74,17 +79,36 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       const inOneWeek = new Date(); inOneWeek.setDate(inOneWeek.getDate()+7);
       const oneWeekStr = inOneWeek.toISOString().split('T')[0];
 
+      // Nama anggota kelompok PTS yang SENGAJA dikeluarkan dari lingkup akun
+      // ini (mis. Manager PTS IVP yang tidak membawahi PTS UMP) - dipakai
+      // untuk MENGECUALIKAN, bukan membatasi ke satu kelompok saja. Admin
+      // sungguhan (tanpa pemetaan Lingkup Manager) tetap melihat semuanya,
+      // karena lingkupSaya() bawaannya mengembalikan seluruh kelompok PTS.
+      // Beda dari 'pts_sup' yang MEMBATASI ke tim sendiri: di sini tiket
+      // Sales/Marketing/Services tanpa kelompok PTS tetap harus ikut tampil.
+      let namaDikecualikan: string[] = [];
+      if (scope.kind === 'admin') {
+        const kelompokDikecualikan = namaKelompokPTS().filter(t => !lingkupSaya(currentUser?.id).includes(t));
+        if (kelompokDikecualikan.length > 0) {
+          const { data: anggotaDikecualikan } = await supabase.from('users')
+            .select('full_name').in('team_type', kelompokDikecualikan);
+          namaDikecualikan = (anggotaDikecualikan ?? []).map((u: any) => u.full_name as string).filter(Boolean);
+        }
+      }
+
       // Helpers to build scoped queries
       const scopeTickets = (q: any) => {
         if (scope.kind === 'pts_sup' && scope.ptsMemberNames?.length) {
           return q.in('assign_name', scope.ptsMemberNames);
         }
+        if (namaDikecualikan.length > 0) return q.not('assign_name', 'in', `(${namaDikecualikan.map(n => `"${n}"`).join(',')})`);
         return q;
       };
       const scopeReminders = (q: any) => {
         if (scope.kind === 'pts_sup' && scope.ptsMemberNames?.length) {
           return q.in('assign_name', scope.ptsMemberNames);
         }
+        if (namaDikecualikan.length > 0) return q.not('assign_name', 'in', `(${namaDikecualikan.map(n => `"${n}"`).join(',')})`);
         return q;
       };
 
@@ -190,7 +214,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       });
     } catch { }
     finally { setLoading(false); }
-  }, [scope, scopeReady]);
+  }, [scope, scopeReady, currentUser]);
 
   // 3. Fetch Audit (scope-aware)
 
@@ -270,7 +294,11 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
       if (scope.kind === 'pts_sup') {
         membersQ = membersQ.eq('role', 'team').eq('team_type', scope.ptsTeamType ?? '');
       } else if (scope.kind === 'admin') {
-        membersQ = membersQ.in('team_type', ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MVI']).eq('role', 'team');
+        // lingkupSaya(), bukan daftar tim ditulis langsung - kalau tidak,
+        // kelompok yang sengaja tidak dibawahi Manager ini (mis. PTS UMP)
+        // ikut bocor tampil di sini walau sudah dikeluarkan dari Lingkup
+        // Manager. Lihat catatan yang sama di app/kpi-team/page.tsx.
+        membersQ = membersQ.in('team_type', lingkupSaya(currentUser?.id)).eq('role', 'team');
       } else {
         setKpiTeam(prev => ({ ...prev, loading: false }));
         return;
@@ -421,7 +449,7 @@ export default function DashboardKPI({ currentUser }: { currentUser: User }) {
 
       setKpiTeam(prev => ({ ...prev, members, loading: false }));
     } catch { setKpiTeam(prev => ({ ...prev, loading: false })); }
-  }, [scope, scopeReady, kpiTeam.filterYear, kpiTeam.filterPeriod]);
+  }, [scope, scopeReady, kpiTeam.filterYear, kpiTeam.filterPeriod, currentUser]);
 
   // Effects
 
