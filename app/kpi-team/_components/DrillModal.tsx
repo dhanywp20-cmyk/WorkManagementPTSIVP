@@ -14,7 +14,7 @@ import { KPIMember, PeriodKey, TEAM_COLORS, KPI_COLOR, progressColor } from './s
 
 // Drill-down Modal
 
-export function DrillModal({ member, onClose, period }: { member: KPIMember; onClose: () => void; period: PeriodKey }) {
+export function DrillModal({ member, onClose, period, onViewBreakdown }: { member: KPIMember; onClose: () => void; period: PeriodKey; onViewBreakdown?: () => void }) {
   const solveRate = member.ticketsHandled > 0 ? Math.round((member.ticketsSolved / member.ticketsHandled) * 100) : 0;
   const remRate   = member.remindersAssigned > 0 ? Math.round((member.remindersDone / member.remindersAssigned) * 100) : 0;
   const teamColor = TEAM_COLORS[member.team_type] ?? KPI_COLOR;
@@ -134,6 +134,19 @@ export function DrillModal({ member, onClose, period }: { member: KPIMember; onC
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">📈 Trend Ticket per Bulan</p>
             <MonthBarChart values={member.monthlyTickets} color={teamColor} />
           </section>
+
+          {/* M14 (docs/UX-WORKFLOW-AUDIT.md): modal ini (dibuka dari klik baris
+              tabel - jalur paling wajar) dulu cuma angka mentah tanpa konteks
+              "apa yang harus diperbaiki". Breakdown per-bobot yang actionable
+              sudah ada di modal lain (chip kecil "Penilaian KPI") - dihubungkan
+              di sini alih-alih dibangun ulang. */}
+          {onViewBreakdown && (
+            <button onClick={onViewBreakdown}
+              className="w-full py-2.5 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90 flex items-center justify-center gap-1.5"
+              style={{ background: `linear-gradient(135deg, ${teamColor}, ${teamColor}cc)` }}>
+              📊 Lihat Breakdown KPI &amp; Yang Perlu Diperbaiki →
+            </button>
+          )}
 
         </div>
       </div>

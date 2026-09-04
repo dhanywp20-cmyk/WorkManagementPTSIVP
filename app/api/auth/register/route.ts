@@ -135,7 +135,10 @@ export async function POST(request: NextRequest) {
           type: 'user',
           title: '👥 User baru menunggu approval',
           body: `${full_name} baru mendaftar dan menunggu aktivasi akun.`,
-          action_url: '/dashboard',
+          // M16 (docs/UX-WORKFLOW-AUDIT.md): dulu mengarah ke '/dashboard' generik -
+          // admin harus cari sendiri tab Admin Panel > User Management. "admin:<tab>"
+          // dikenali khusus oleh handleNotifNavigate di app/dashboard/page.tsx.
+          action_url: 'admin:userManagement',
           ref_id: baru.id,
           created_by: full_name,
           is_read: false,

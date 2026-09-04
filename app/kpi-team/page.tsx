@@ -1260,7 +1260,8 @@ export default function KPITeamPage() {
 
       {/* ── Drill-down Modal (Performance) ── */}
       {drillMember && (
-        <DrillModal member={drillMember} period={period} onClose={() => setDrillMember(null)} />
+        <DrillModal member={drillMember} period={period} onClose={() => setDrillMember(null)}
+          onViewBreakdown={() => { const id = drillMember.id; setDrillMember(null); setSelectedKPIMember(id); }} />
       )}
 
       {/* ── KPI Member Detail Popup ── */}
