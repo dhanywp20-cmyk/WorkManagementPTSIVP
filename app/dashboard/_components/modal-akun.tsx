@@ -13,6 +13,20 @@ import { ConfirmDialog, type ConfirmState, Username, ModalPortal } from '@/compo
 
 import { propagateUserRename, pesanSebar, sendWelcomeWA } from './modal-bersama';
 
+/**
+ * Minor (docs/UX-WORKFLOW-AUDIT.md): kolom Role dulu menampilkan enum
+ * mentah dari database (guest/team/admin/superadmin) - kontras dengan
+ * KpiRosterInline yang sudah pakai label ramah. Platform ini dijual ke
+ * perusahaan lain, jadi kesan "dibuat developer untuk developer" ini
+ * kecil tapi sebaiknya tidak ada.
+ */
+const LABEL_ROLE: Record<string, string> = {
+  superadmin: 'Superadmin', admin: 'Admin', team: 'Team', guest: 'Guest',
+};
+function labelRole(role: string): string {
+  return LABEL_ROLE[role] ?? role;
+}
+
 interface AccountSettingsModalProps {
   onClose: () => void;
 }
@@ -211,8 +225,8 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     fetchUsers();
   };
 
-  const handleDeleteUser = (userId: string) => {
-    setConfirmState({ message: 'Hapus akun ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+  const handleDeleteUser = (userId: string, name: string) => {
+    setConfirmState({ message: `Hapus akun "${name}"?`, description: 'Tindakan ini tidak bisa dibatalkan.', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
       const { error } = await supabase.from('users').delete().eq('id', userId);
       if (error) { notify('error', 'Gagal menghapus akun.'); return; }
       notify('success', 'Akun dihapus.');
@@ -411,7 +425,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                               <p className="text-xs text-slate-400 mt-0.5">📞 {user.phone_number}</p>
                             )}
                             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-slate-200 text-slate-600">{user.role}</span>
+                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-slate-200 text-slate-600">{labelRole(user.role)}</span>
                               {user.jabatan && (
                                 <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🏷️ {user.jabatan}</span>
                               )}
@@ -438,7 +452,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                               setEditOrig({ username: user.username, full_name: user.full_name });
                               setEditingUser(user);
                             }} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all">Edit</button>
-                            <button onClick={() => handleDeleteUser(user.id)} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-all">Hapus</button>
+                            <button onClick={() => handleDeleteUser(user.id, user.full_name)} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-all">Hapus</button>
                           </div>
                         </div>
                       ))}
@@ -722,8 +736,8 @@ export function AccountSettingsInline() {
     setEditingUser(null); setEditDivisi(''); setEditPtsType(''); fetchUsers();
   };
 
-  const handleDeleteUser = (userId: string) => {
-    setConfirmState({ message: 'Hapus akun ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
+  const handleDeleteUser = (userId: string, name: string) => {
+    setConfirmState({ message: `Hapus akun "${name}"?`, description: 'Tindakan ini tidak bisa dibatalkan.', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
       const { error } = await supabase.from('users').delete().eq('id', userId);
       if (error) { notify('error', 'Gagal menghapus akun.'); return; }
       notify('success', 'Akun dihapus.');
@@ -1007,7 +1021,7 @@ export function AccountSettingsInline() {
                         <tr key={user.id} className="border-b border-slate-100 hover:bg-rose-50/30 transition-colors" style={{ background: rowBg }}>
                           <td className="px-4 py-2.5 font-semibold text-slate-800 whitespace-nowrap">{user.full_name}</td>
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap"><Username value={user.username} /></td>
-                          <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{user.role}</span></td>
+                          <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{labelRole(user.role)}</span></td>
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{divisi}</td>
                           <td className="px-4 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-600">📱 {user.phone_number}</span> : <span className="text-slate-300">—</span>}</td>
                           <td className="md:sticky md:right-0 px-4 py-2.5" style={{ background: rowBg }}>
@@ -1019,7 +1033,7 @@ export function AccountSettingsInline() {
                                 else if (user.team_type === 'Marketing') { d = 'Marketing'; }
                                 setEditDivisi(d); setEditPtsType(p); setEditOrig({ username: user.username, full_name: user.full_name }); setEditAccessLevel(user.access_level === 'full' ? 'full' : 'guest'); setEditBisaDitugaskan(user.bisa_ditugaskan !== false); setEditingUser(user);
                               }} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all">Edit</button>
-                              <button onClick={() => handleDeleteUser(user.id)} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-all">Hapus</button>
+                              <button onClick={() => handleDeleteUser(user.id, user.full_name)} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-all">Hapus</button>
                             </div>
                           </td>
                         </tr>

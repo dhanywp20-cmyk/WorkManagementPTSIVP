@@ -10,11 +10,26 @@ export function RescheduleModal({
 }: {
   reminder: Reminder;
   onClose: () => void;
-  onSave: (newDate: string, newTime: string, reason: string) => void;
+  onSave: (newDate: string, newTime: string, reason: string) => void | Promise<void>;
 }) {
   const [newDate, setNewDate] = useState(reminder.due_date);
   const [newTime, setNewTime] = useState(reminder.due_time);
   const [reason, setReason] = useState('');
+  // M5 (docs/UX-WORKFLOW-AUDIT.md): dulu tombol ini tidak punya guard loading
+  // sama sekali - klik ganda pada koneksi lambat mengirim dua UPDATE + dua WA
+  // "JADWAL DIUBAH" ke handler yang sama. onSave di-await supaya tombol tetap
+  // terkunci sepanjang request berjalan, dan otomatis terbuka lagi kalau
+  // gagal (modal TIDAK ditutup parent saat error - lihat handleReschedule).
+  const [saving, setSaving] = useState(false);
+  const handleSave = async () => {
+    if (!newDate || saving) return;
+    setSaving(true);
+    try {
+      await onSave(newDate, newTime, reason);
+    } finally {
+      setSaving(false);
+    }
+  };
   const inputStyle = { background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.15)' };
   const inputCls = "w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40";
 
@@ -65,15 +80,16 @@ export function RescheduleModal({
           </div>
 
           <div className="flex gap-3 pt-1">
-            <button onClick={onClose}
-              className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
+            <button onClick={onClose} disabled={saving}
+              className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
               style={{ background: 'rgba(255,255,255,0.95)', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>
               Batal
             </button>
-            <button onClick={() => { if (newDate) onSave(newDate, newTime, reason); }}
-              disabled={!newDate}
+            <button onClick={handleSave}
+              disabled={!newDate || saving}
               className="flex-1 text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg,#d97706,#b45309)', boxShadow: '0 4px 14px rgba(217,119,6,0.35)' }}>
+              {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
               📅 Simpan Re-Schedule
             </button>
           </div>

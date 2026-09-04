@@ -491,6 +491,16 @@ export default function Dashboard() {
   };
 
   const handleNotifNavigate = (navInternalUrl: string, title: string) => {
+    // M16 (docs/UX-WORKFLOW-AUDIT.md): sebagian notifikasi (mis. "user baru
+    // mendaftar") tidak menunjuk ke HALAMAN, tapi ke tab Admin Panel - modal
+    // terpisah, bukan bagian dari sistem iframe/route di bawah. action_url
+    // "admin:<tab>" sengaja BUKAN route sungguhan, dikenali khusus di sini.
+    if (navInternalUrl.startsWith('admin:')) {
+      const tab = navInternalUrl.slice('admin:'.length);
+      if (tab === 'settings' || tab === 'userManagement' || tab === 'picBrand') setAdminPanelTab(tab);
+      setShowAdminPanel(true);
+      return;
+    }
     setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setIframeTitle(''); setShowDashboardPanel(false);
     setTimeout(() => {
       setShowTicketing(true);
@@ -1598,7 +1608,7 @@ export default function Dashboard() {
                 {/* Admin */}
                 {isAdmin && (
                   <button
-                    onClick={() => { setAdminPanelTab('settings'); setShowAdminPanel(true); }}
+                    onClick={() => { setAdminPanelTab(pendingUsers > 0 ? 'userManagement' : 'settings'); setShowAdminPanel(true); }}
                     className="relative w-9 h-9 rounded-lg flex items-center justify-center transition-all"
                     style={{ color: '#94a3b8' }}
                     title={pendingUsers > 0 ? `Admin Panel — ${pendingUsers} user menunggu persetujuan` : 'Admin Panel'}
@@ -1661,7 +1671,7 @@ export default function Dashboard() {
                 {/* Admin Panel */}
                 {isAdmin && (
                   <button
-                    onClick={() => { setAdminPanelTab('settings'); setShowAdminPanel(true); }}
+                    onClick={() => { setAdminPanelTab(pendingUsers > 0 ? 'userManagement' : 'settings'); setShowAdminPanel(true); }}
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
                     style={{ color: '#64748b', border: '1px solid transparent' }}
                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(99,102,241,0.07)'; (e.currentTarget as HTMLButtonElement).style.color = '#4338ca'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(99,102,241,0.18)'; }}

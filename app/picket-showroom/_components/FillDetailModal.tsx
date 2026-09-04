@@ -24,6 +24,16 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
   const [ptUsers,setPtUsers]=useState<(UserRow&{id:string;full_name:string})[]>([]);
   const [saving,setSaving]=useState(false);
   const [toast,setToast]=useState<{type:'success'|'error';msg:string}|null>(null);
+  // M10 (docs/UX-WORKFLOW-AUDIT.md): dulu tidak ada peringatan sama sekali
+  // saat menutup modal ini dengan isian belum tersimpan - klik area gelap
+  // di luar modal (kebiasaan umum menutup modal) langsung membuang semua
+  // isian tanpa peringatan. dirty ditandai true oleh SEMUA fungsi yang
+  // mengubah entries setelah pemuatan awal (bukan oleh useEffect load).
+  const [dirty,setDirty]=useState(false);
+  const requestClose=()=>{
+    if(!dirty){onClose();return;}
+    if(window.confirm('Ada isian yang belum disimpan. Yakin mau menutup tanpa menyimpan?'))onClose();
+  };
   const dc=DAY_COLOR[row.day_of_week];
   const notify=(type:'success'|'error',msg:string)=>{setToast({type,msg});setTimeout(()=>setToast(null),3500);};
 
@@ -52,15 +62,16 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
     })();
   },[row.id]);
 
-  const upd=(i:number,p:Partial<KFEntry>)=>setEntries(prev=>prev.map((e,x)=>x===i?{...e,...p}:e));
-  const toggleK=(i:number,k:string)=>setEntries(prev=>prev.map((e,x)=>x===i?{...e,kebutuhan:e.kebutuhan.includes(k)?e.kebutuhan.filter(v=>v!==k):[...e.kebutuhan,k]}:e));
+  const upd=(i:number,p:Partial<KFEntry>)=>{setDirty(true);setEntries(prev=>prev.map((e,x)=>x===i?{...e,...p}:e));};
+  const toggleK=(i:number,k:string)=>{setDirty(true);setEntries(prev=>prev.map((e,x)=>x===i?{...e,kebutuhan:e.kebutuhan.includes(k)?e.kebutuhan.filter(v=>v!==k):[...e.kebutuhan,k]}:e));};
   const toggleP=(i:number,p:string)=>{
+    setDirty(true);
     if(p==='All Product') setEntries(prev=>prev.map((e,x)=>x===i?{...e,produk:e.produk.includes('All Product')?[]:['All Product']}:e));
     else setEntries(prev=>prev.map((e,x)=>{if(x!==i)return e;const wo=e.produk.filter(v=>v!=='All Product');return{...e,produk:wo.includes(p)?wo.filter(v=>v!==p):[...wo,p]};}));
   };
-  const addProdukLain=(i:number)=>setEntries(prev=>prev.map((e,x)=>x===i?{...e,produk_lain:[...e.produk_lain,{nama:'',watt:0}]}:e));
-  const updProdukLain=(i:number,j:number,p:Partial<ProdukLain>)=>setEntries(prev=>prev.map((e,x)=>x===i?{...e,produk_lain:e.produk_lain.map((pl,y)=>y===j?{...pl,...p}:pl)}:e));
-  const rmProdukLain=(i:number,j:number)=>setEntries(prev=>prev.map((e,x)=>x===i?{...e,produk_lain:e.produk_lain.filter((_,y)=>y!==j)}:e));
+  const addProdukLain=(i:number)=>{setDirty(true);setEntries(prev=>prev.map((e,x)=>x===i?{...e,produk_lain:[...e.produk_lain,{nama:'',watt:0}]}:e));};
+  const updProdukLain=(i:number,j:number,p:Partial<ProdukLain>)=>{setDirty(true);setEntries(prev=>prev.map((e,x)=>x===i?{...e,produk_lain:e.produk_lain.map((pl,y)=>y===j?{...pl,...p}:pl)}:e));};
+  const rmProdukLain=(i:number,j:number)=>{setDirty(true);setEntries(prev=>prev.map((e,x)=>x===i?{...e,produk_lain:e.produk_lain.filter((_,y)=>y!==j)}:e));};
 
   const getPTSTeamLabel=(name:string)=>{
     const u=ptUsers.find(x=>x.full_name===name);
@@ -124,7 +135,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
 
   return(
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4" onClick={e=>{if(e.target===e.currentTarget)requestClose();}}>
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 flex flex-col" style={{animation:'scale-in 0.25s ease-out',border:`1.5px solid ${dc.accent}40`,maxHeight:'96dvh'}}>
         <div className="px-6 py-5 rounded-t-2xl flex-shrink-0 relative" style={{background:dc.grad}}>
           <div>
@@ -133,7 +144,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
             <p className="text-[9px] font-bold uppercase tracking-widest text-white/50 mt-1.5 mb-0.5">Tanggal · PIC</p>
             <p className="text-white/70 text-xs">{new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})} · {[row.pic_ivp_name,row.pic_ump_name,row.pic_mvi_name].filter(Boolean).join(' / ')||'Belum ada PIC'}</p>
           </div>
-          <button aria-label="Tutup" onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
+          <button aria-label="Tutup" onClick={requestClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
         </div>
         {toast&&<div className={`mx-5 mt-4 px-4 py-3 rounded-xl text-sm font-semibold flex gap-2 flex-shrink-0 ${toast.type==='success'?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200'}`}><span>{toast.type==='success'?'✅':'❌'}</span><span>{toast.msg}</span></div>}
         <div className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
@@ -145,7 +156,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                   <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white" style={{background:dc.grad}}>{idx+1}</div>
                   <span className="text-xs font-bold" style={{color:dc.accent}}>Kegiatan {idx+1}</span>
                 </div>
-                {entries.length>1&&<button onClick={()=>setEntries(p=>p.filter((_,i)=>i!==idx))} className="text-xs font-bold px-2 py-1 rounded-lg text-red-600 hover:bg-red-50" style={{border:'1px solid rgba(220,38,38,0.3)'}}>🗑️ Hapus</button>}
+                {entries.length>1&&<button onClick={()=>{setDirty(true);setEntries(p=>p.filter((_,i)=>i!==idx));}} className="text-xs font-bold px-2 py-1 rounded-lg text-red-600 hover:bg-red-50" style={{border:'1px solid rgba(220,38,38,0.3)'}}>🗑️ Hapus</button>}
               </div>
               <div className="p-4 space-y-4">
                 <div>
@@ -313,7 +324,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
             </div>
           ))}
           {!loadingE&&(
-            <button onClick={()=>setEntries(p=>[...p,emptyKF()])}
+            <button onClick={()=>{setDirty(true);setEntries(p=>[...p,emptyKF()]);}}
               className="w-full py-3 rounded-2xl border-2 border-dashed text-sm font-bold flex items-center justify-center gap-2"
               style={{borderColor:`${dc.accent}60`,color:dc.accent,background:`${dc.accent}08`}}>
               <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
@@ -322,7 +333,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
           )}
         </div>
         <div className="px-6 pb-6 pt-3 flex gap-3 flex-shrink-0 border-t border-gray-100">
-          <button onClick={onClose} className="flex-1 py-3 rounded-xl font-semibold text-sm" style={{background:'rgba(255,255,255,0.95)',color:'#64748b',border:'1px solid rgba(0,0,0,0.12)'}}>Batal</button>
+          <button onClick={requestClose} className="flex-1 py-3 rounded-xl font-semibold text-sm" style={{background:'rgba(255,255,255,0.95)',color:'#64748b',border:'1px solid rgba(0,0,0,0.12)'}}>Batal</button>
           <button onClick={handleSave} disabled={saving||loadingE}
             className="flex-1 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-60"
             style={{background:dc.grad,boxShadow:`0 4px 14px ${dc.accent}35`}}>

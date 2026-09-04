@@ -57,6 +57,15 @@ function TicketingSystemInner() {
   const [reopenTargetTicket, setReopenTargetTicket] = useState<Ticket | null>(null);
   const [reopenAssignee, setReopenAssignee] = useState("");
   const [reopenNotes, setReopenNotes] = useState("");
+  // C2 (docs/UX-WORKFLOW-AUDIT.md): services_status="Solved" dulu jalan buntu
+  // permanen - tidak ada siapa pun (bahkan Admin) yang bisa membukanya
+  // kembali. Modal reopen di atas (reopenTicket) khusus untuk sisi PTS
+  // (butuh pilih assignee baru) - reopen sisi Services lebih sederhana,
+  // cukup kembalikan services_status ke "Pending", jadi dibuat state &
+  // handler terpisah alih-alih memaksakan satu modal untuk dua kebutuhan
+  // yang berbeda bentuk.
+  const [reopenServicesTarget, setReopenServicesTarget] = useState<Ticket | null>(null);
+  const [reopeningServices, setReopeningServices] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectTargetTicket, setRejectTargetTicket] = useState<Ticket | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -1463,6 +1472,46 @@ function TicketingSystemInner() {
   };
 
   /**
+   * C2 - buka kembali sisi SERVICES saja (services_status kembali "Pending"),
+   * tanpa menyentuh status/assign_name utama PTS. Boleh dipakai Team Services
+   * sendiri (membetulkan salah klik "Solved" mereka) atau Admin/Superadmin
+   * sebagai pengawasan - bukan siapa pun yang login, dan bukan cuma Admin
+   * (kalau cuma Admin, Team Services tetap harus minta tolong orang lain
+   * untuk membetulkan kesalahannya sendiri).
+   */
+  const reopenServicesTicket = async () => {
+    if (!reopenServicesTarget) return;
+    setReopeningServices(true);
+    try {
+      const { error: svcErr } = await supabaseServices.from("tickets")
+        .update({ services_status: "Pending" }).eq("id", reopenServicesTarget.id);
+      if (svcErr) throw new Error(`Gagal membuka kembali di basis data Services: ${svcErr.message}`);
+      const { error: ptsErr } = await supabase.from("tickets")
+        .update({ services_status: "Pending" }).eq("id", reopenServicesTarget.id);
+      if (ptsErr) notify("error", `Terbuka di Services, tapi gagal disalin ke PTS: ${ptsErr.message}. Refresh lalu ulangi.`);
+      const activeClient = currentUserTeamType === "Team Services" ? supabaseServices : supabase;
+      await activeClient.from("activity_logs").insert([{
+        ticket_id: reopenServicesTarget.id,
+        handler_name: currentUser?.full_name || "",
+        handler_username: currentUser?.username || "",
+        action_taken: "Re-open Services",
+        notes: `Sisi Services dibuka kembali oleh ${currentUser?.full_name || "-"}.`,
+        new_status: "Pending",
+        team_type: "Team Services",
+        assigned_to_services: false,
+        file_url: "", file_name: "", photo_url: "", photo_name: "",
+      }]);
+      notify("success", "Sisi Services dibuka kembali - status kembali Pending.");
+      await fetchData();
+      setReopenServicesTarget(null);
+    } catch (err: any) {
+      notify("error", "Error: " + err.message);
+    } finally {
+      setReopeningServices(false);
+    }
+  };
+
+  /**
    * Kabar "ticket selesai" ke SELURUH pihak yang terlibat.
    *
    * Sebelum ini alur penyelesaian tidak mengirim apa pun - bukan cuma
@@ -1696,6 +1745,14 @@ function TicketingSystemInner() {
         // tapi harus terlihat - bukan hilang tanpa jejak.
         const { error: ptsErr } = await supabase.from("tickets").update({ services_status: effectiveStatus }).eq("id", selectedTicket.id);
         if (ptsErr) notify("error", `Status tersimpan di Services, tapi gagal disalin ke PTS: ${ptsErr.message}. Refresh lalu ulangi.`);
+        // M1 (docs/UX-WORKFLOW-AUDIT.md): dulu HANYA jalur PTS IVP yang kabari
+        // semua pihak saat "Solved" - jalur Services (di sini) tidak mengirim
+        // apa pun, padahal konsepnya sama-sama "ticket selesai". Sales, handler
+        // PTS yang menyerahkan ke Services, dan Supervisor tidak pernah tahu
+        // kapan Team Services benar-benar selesai.
+        if (effectiveStatus === "Solved") {
+          void kabarkanTicketSelesai(selectedTicket, useAutoNotes ? autoNotes : (newActivity.notes || ""));
+        }
       } else {
         updateData.status = effectiveStatus;
         if (newActivity.assign_to_services) {
@@ -2926,7 +2983,11 @@ function TicketingSystemInner() {
                         {canApproveAssign && ticket.status === "Waiting Approval" && (
                           <ApproveIconBtn onClick={() => { setApprovalAssignees({}); setApprovalTicket(ticket); setApprovalAssignee(""); fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} pulse />
                         )}
-                        {ticket.status === "Solved" && bolehUpdateTicket(ticket) && (
+                        {/* M2: disamakan dengan detail popup - Reopen PTS ini bukan
+                            urusan Team Services (mereka punya Reopen Services sendiri,
+                            lihat C2), tanpa syarat ini tombol tampil di list tapi
+                            hilang begitu ticket yang sama dibuka di detail. */}
+                        {ticket.status === "Solved" && bolehUpdateTicket(ticket) && currentUserTeamType !== "Team Services" && (
                           <ReopenIconBtn onClick={() => { setReopenTargetTicket(ticket); setReopenAssignee(ticket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} />
                         )}
                         {canManageTickets && (
@@ -3521,6 +3582,13 @@ function TicketingSystemInner() {
                     {selectedTicket.status === "Solved" && bolehUpdateTicket(selectedTicket) && currentUserTeamType !== "Team Services" && (
                       <button onClick={() => { setReopenTargetTicket(selectedTicket); setReopenAssignee(selectedTicket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>🔓 Re-open</button>
                     )}
+                    {/* C2: dulu jalan buntu - services_status "Solved" tidak bisa dibuka siapa
+                        pun. Team Services (membetulkan salah klik sendiri) atau Admin/
+                        Superadmin (pengawasan) sekarang bisa. */}
+                    {selectedTicket.services_status === "Solved" && bolehUpdateTicket(selectedTicket) &&
+                      (currentUserTeamType === "Team Services" || currentUser?.role === "admin" || currentUser?.role === "superadmin") && (
+                      <button onClick={() => setReopenServicesTarget(selectedTicket)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#db2777,#be185d)" }}>🔓 Re-open Services</button>
+                    )}
                     {bolehUpdateTicket(selectedTicket) && selectedTicket.status !== "Waiting Approval" && (currentUserTeamType === "Team Services" ? selectedTicket.services_status !== "Solved" && selectedTicket.services_status !== "Waiting Approval" : selectedTicket.status !== "Solved") && (
                       <button onClick={() => setShowUpdateForm(!showUpdateForm)}
                         className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${showUpdateForm ? 'bg-gray-200 text-gray-700' : 'text-white'}`}
@@ -4073,6 +4141,24 @@ function TicketingSystemInner() {
               <div className="flex items-center gap-3 mb-5"><span className="text-3xl">🔓</span><div><h3 className="text-lg font-bold text-gray-800">Re-open Ticket</h3><p className="text-xs text-gray-500">{reopenTargetTicket.project_name} · {reopenTargetTicket.issue_case}</p></div></div>
               <div className="rounded-xl p-3 mb-4 text-xs" style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", color: "#b45309" }}>⚠️ Status akan berubah ke <strong>Pending</strong> dan activity log baru ditambahkan otomatis.</div>
               <div className="space-y-4"><div><label className="block text-sm font-bold mb-1 text-gray-700">Assign ke Handler *</label><select aria-label="— Pilih Handler —" value={reopenAssignee} onChange={(e) => setReopenAssignee(e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}><option value="">— Pilih Handler —</option>{teamPTSMembers.map((m) => (<option key={m.id} value={m.name}>{m.name}</option>))}</select></div><div><label className="block text-sm font-bold mb-1 text-gray-700">Alasan (opsional)</label><textarea value={reopenNotes} onChange={(e) => setReopenNotes(e.target.value)} placeholder="Masalah muncul kembali..." rows={3} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40 resize-none" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /></div><div className="grid grid-cols-2 gap-3"><button onClick={reopenTicket} disabled={uploading || !reopenAssignee} className="bg-gradient-to-r from-amber-500 to-amber-700 text-white py-2.5 rounded-xl font-bold hover:from-amber-600 hover:to-amber-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed">{uploading ? "⏳..." : "🔓 Re-open"}</button><button onClick={() => { setShowReopenModal(false); setReopenTargetTicket(null); setReopenAssignee(""); setReopenNotes(""); }} className="bg-gray-100 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-200 transition-all">Batal</button></div></div>
+            </div>
+          </div>
+        </ModalPortal>
+        )}
+
+        {/* C2: konfirmasi Reopen Services - lebih sederhana dari modal PTS di atas
+            (tidak perlu pilih assignee, sisi Services memang tidak punya konsep itu). */}
+        {reopenServicesTarget && (
+        <ModalPortal>
+          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
+            onClick={(e) => { if (e.target === e.currentTarget && !reopeningServices) setReopenServicesTarget(null); }}>
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(219,39,119,0.5)" }}>
+              <div className="flex items-center gap-3 mb-5"><span className="text-3xl">🔓</span><div><h3 className="text-lg font-bold text-gray-800">Re-open Services</h3><p className="text-xs text-gray-500">{reopenServicesTarget.project_name} · {reopenServicesTarget.issue_case}</p></div></div>
+              <div className="rounded-xl p-3 mb-5 text-xs" style={{ background: "rgba(219,39,119,0.1)", border: "1px solid rgba(219,39,119,0.2)", color: "#be185d" }}>⚠️ Status Services akan kembali ke <strong>Pending</strong>. Status utama PTS tidak ikut berubah.</div>
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={reopenServicesTicket} disabled={reopeningServices} className="bg-gradient-to-r from-pink-600 to-rose-700 text-white py-2.5 rounded-xl font-bold hover:from-pink-700 hover:to-rose-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed">{reopeningServices ? "⏳..." : "🔓 Re-open"}</button>
+                <button onClick={() => setReopenServicesTarget(null)} disabled={reopeningServices} className="bg-gray-100 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-200 transition-all disabled:opacity-50">Batal</button>
+              </div>
             </div>
           </div>
         </ModalPortal>

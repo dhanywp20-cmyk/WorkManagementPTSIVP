@@ -6,6 +6,7 @@ import { supabase, User, Question, QuizAttempt, DIFF_COLOR, fmtDate, ScoreBadge,
 import { ambilPengaturanPenilai, simpanPengaturanPenilai, PENILAI_BAWAAN, type PengaturanPenilai } from '@/lib/ai-pengaturan';
 import { hasFullAccess } from '@/lib/constants';
 import { getSession } from '@/lib/auth';
+import { createNotification } from '@/lib/notifications';
 
 function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
   user: User; onBack: () => void; isAdminView: boolean;
@@ -273,6 +274,19 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
     }
     setSelectedAttempt((p: any) => p && ({ ...p, score: finalScore, passed, grading_status: 'graded' }));
     setDialog({ type: 'success', message: 'Nilai essay berhasil disimpan!' });
+
+    // M15 (docs/UX-WORKFLOW-AUDIT.md): dulu peserta tidak pernah diberi tahu
+    // essay-nya sudah dinilai - padahal MyQuizPage.tsx menjanjikan "Skor akan
+    // muncul setelah admin selesai menilai" tanpa ada dorongan aktif apa pun.
+    const judulSesi = (selectedAttempt as any)?.lc_quiz_sessions?.title as string | undefined;
+    void createNotification({
+      user_id: selectedAttempt.user_id,
+      type: 'system',
+      title: passed ? '✅ Essay kamu sudah dinilai — Lulus' : '📋 Essay kamu sudah dinilai',
+      body: `${judulSesi ? `"${judulSesi}" — ` : ''}Skor: ${Math.round(finalScore)}${passed ? '' : ', belum lulus'}. Cek Riwayat & Nilai Saya.`,
+      action_url: '/learning-center',
+      created_by: grader?.full_name ?? 'Admin',
+    });
   };
 
   const getAnswerFor = (questionId: string) => answerDetails.find(a => a.question_id === questionId);

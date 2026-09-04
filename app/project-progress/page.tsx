@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useCurrentUser, type CurrentUser } from '@/lib/use-current-user';
 import { logAudit } from '@/lib/audit';
+import { createNotificationForAdmins } from '@/lib/notifications';
 import {
   PageHeader, LoadingScreen, Toast, type Notif,
   ConfirmDialog, type ConfirmState, EmptyState,
@@ -1116,6 +1117,25 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
               old_value: STATUS_CONFIG[before.status]?.label ?? before.status,
               new_value: STATUS_CONFIG[l.status]?.label ?? l.status,
             }).catch(() => {});
+            /*
+              M9 (docs/UX-WORKFLOW-AUDIT.md): modul ini dulu TIDAK PERNAH
+              mengirim notifikasi apa pun (WA/Telegram/in-app) di transisi
+              manapun - termasuk saat lokasi ditandai "Blocked" (kondisi
+              kritis: material belum datang, dsb). Sales/admin harus buka
+              dashboard manual untuk tahu ada masalah. Dikirim khusus saat
+              status BARU menjadi 'blocked' (bukan tiap perubahan status -
+              in_progress<->done rutin dan tidak butuh dorongan aktif).
+            */
+            if (l.status === 'blocked') {
+              void createNotificationForAdmins({
+                type: 'project',
+                title: `🚧 Lokasi "${l.name}" diblokir`,
+                body: `${detail.project.name}${l.sales_name ? ` — Sales ${l.sales_name}` : ''}${l.note ? ` — ${l.note}` : ''}`,
+                action_url: '/project-progress',
+                ref_id: l.id,
+                created_by: currentUser?.full_name ?? '',
+              });
+            }
           }
         }
 
@@ -1526,7 +1546,7 @@ function RowActions({ p, canEditRow, canDeleteRow, onView, onExport, onShare, on
       {canEditRow && (
         <>
           <IconBtn label={p.share_enabled ? 'Share View-Only (aktif)' : 'Share View-Only'}
-            color={p.share_enabled ? '#0891b2' : '#94a3b8'} onClick={onShare}>
+            color={p.share_enabled ? '#0891b2' : '#94a3b8'} onClick={onShare} badge={p.share_enabled}>
             <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" /></svg>
           </IconBtn>
           <EditIconBtn onClick={onEdit} label="Edit" />
@@ -1551,16 +1571,24 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function IconBtn({ label, color, onClick, children }: {
+function IconBtn({ label, color, onClick, children, badge }: {
   label: string; color: string; onClick: () => void; children: React.ReactNode;
+  /** Minor (docs/UX-WORKFLOW-AUDIT.md): indikator share-link aktif dulu hanya
+   *  beda warna icon (subtle, mudah kelewat saat scan cepat) - titik hijau
+   *  ini terlihat tanpa perlu hover ke tooltip. */
+  badge?: boolean;
 }) {
   return (
     <button aria-label={label} onClick={onClick} title={label}
-      className="w-7 h-7 rounded-lg border flex items-center justify-center transition-all hover:text-white"
+      className="relative w-7 h-7 rounded-lg border flex items-center justify-center transition-all hover:text-white"
       style={{ color, borderColor: `${color}40`, background: `${color}12` }}
       onMouseEnter={e => { e.currentTarget.style.background = color; e.currentTarget.style.color = '#fff'; }}
       onMouseLeave={e => { e.currentTarget.style.background = `${color}12`; e.currentTarget.style.color = color; }}>
       {children}
+      {badge && (
+        <span aria-hidden="true" className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white"
+          style={{ background: '#059669' }} />
+      )}
     </button>
   );
 }

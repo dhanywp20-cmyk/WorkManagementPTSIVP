@@ -476,6 +476,22 @@ export default function DailyReportPage() {
     return { total, pending, selesai, hariIni, fromTicket, fromReminder, fromManual };
   }, [allRows]);
 
+  /*
+    M7 (docs/UX-WORKFLOW-AUDIT.md): dulu tidak ada cara melihat siapa yang
+    BELUM mengisi report hari ini - allRows hanya merangkum aktivitas yang
+    SUDAH ADA. Supervisor harus membandingkan manual dengan daftar tim di
+    kepala. Dibandingkan di sini terhadap teamUsers (daftar anggota tim
+    sesungguhnya), bukan disimpulkan dari data yang sudah ada.
+  */
+  const belumLaporHariIni = useMemo(() => {
+    if (!isAdmin || teamUsers.length === 0) return [];
+    const today = todayISO();
+    const sudahLapor = new Set(
+      allRows.filter(r => r.report_date === today).map(r => (r.handler_username || '').toLowerCase())
+    );
+    return teamUsers.filter(u => u.username && !sudahLapor.has(u.username.toLowerCase()));
+  }, [teamUsers, allRows, isAdmin]);
+
   // Donut data
   const PIE_C = ['#7c3aed','#0ea5e9','#10b981','#e11d48','#f59e0b','#6366f1','#14b8a6','#f97316','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
 
@@ -861,7 +877,22 @@ export default function DailyReportPage() {
           { label: 'Selesai', sub: 'Terselesaikan', value: stats.selesai, accent: '#047857' },
           { label: 'Hari Ini', sub: todayISO(), value: stats.hariIni, accent: '#0e7490' },
         ]} />
-        
+
+        {/* M7: siapa yang belum lapor hari ini - hanya untuk admin/supervisor */}
+        {belumLaporHariIni.length > 0 && (
+          <div className="rounded-2xl px-5 py-3.5 flex items-center gap-3 flex-wrap" style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.18)' }}>
+            <span className="text-[11px] font-black uppercase tracking-widest flex items-center gap-1.5" style={{ color: '#b91c1c' }}>
+              🔴 Belum Lapor Hari Ini ({belumLaporHariIni.length})
+            </span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {belumLaporHariIni.map(u => (
+                <span key={u.id} className="px-2.5 py-1 rounded-full text-[11px] font-bold" style={{ background: 'rgba(220,38,38,0.1)', color: '#991b1b' }}>
+                  {u.full_name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── Source breakdown strip ── */}
         <div className="rounded-2xl px-5 py-3.5 flex items-center gap-6 flex-wrap" style={{ background: 'rgba(255,255,255,0.92)', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
@@ -1026,7 +1057,53 @@ export default function DailyReportPage() {
               deskripsiKosong="Data reminder & ticket akan muncul otomatis di sini."
             />
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            {/* M8 (docs/UX-WORKFLOW-AUDIT.md): dulu tabel ini (9 kolom, minWidth
+                1200px) tidak punya varian mobile sama sekali - beda dari Picket
+                Showroom & Project Progress yang sudah punya kartu md:hidden.
+                Anggota tim yang isi Daily Report dari HP harus scroll horizontal
+                pada tabel lebar untuk cek riwayat. Tap kartu membuka modal
+                detail yang sama dengan klik baris tabel (termasuk tombol Edit). */}
+            <div className="md:hidden space-y-2">
+              {filteredRows.map(row => {
+                const c = CATEGORY_CONFIG[row.category] ?? CATEGORY_CONFIG['Internal'];
+                const badge = row.source === 'manual' ? SB.manual : sb(row.status);
+                return (
+                  <button key={row.id} onClick={() => setModalRow(row)}
+                    className="w-full text-left rounded-2xl p-3.5 flex flex-col gap-2 transition-all active:scale-[0.99]"
+                    style={{ background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(0,0,0,0.07)' }}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-slate-800 text-sm leading-tight truncate">{row.project_name}</p>
+                        {row.address && <p className="text-[11px] text-slate-400 mt-0.5 truncate">📍 {row.address}</p>}
+                      </div>
+                      <span className="flex-shrink-0 inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-bold"
+                        style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.border}` }}>
+                        {badge.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold"
+                        style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}>
+                        {row.kegiatan_icon} {row.source === 'ticket' ? 'Troubleshooting' : row.category}
+                      </span>
+                      {row.product && <span className="text-[10px] font-semibold text-violet-700 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-lg">{row.product}</span>}
+                    </div>
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-gray-100">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
+                        <span className="text-xs font-semibold text-slate-700 truncate">{row.handler_name || '—'}</span>
+                      </div>
+                      <span className="text-[11px] text-slate-400 flex-shrink-0">
+                        {row.report_date ? new Date(row.report_date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) : '—'}
+                        {row.jam !== '-' ? ` · ${row.jam}` : ''}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1200px', tableLayout: 'fixed' }}>
                   <colgroup>
                     <col style={{ width: '44px' }} />
@@ -1135,6 +1212,7 @@ export default function DailyReportPage() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </div>
       </div>

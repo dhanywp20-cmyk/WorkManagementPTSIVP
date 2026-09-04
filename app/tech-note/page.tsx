@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ListEmptyState, ModalPortal, ConfirmDialog, type ConfirmState } from '@/components/shared';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/app/dashboard/_components/shared';
@@ -279,6 +279,18 @@ export default function TechNotePage() {
 
   const [folderForm,   setFolderForm]   = useState({ name:'', icon:'🖥️', color:'#ec4899', parent_id:'', category:'display' as string });
   const [uploadForm,   setUploadForm]   = useState({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' });
+  // Minor (docs/UX-WORKFLOW-AUDIT.md): dulu tidak ada proteksi unsaved-changes
+  // di modal Upload/Edit - snapshot diambil saat modal dibuka, dibandingkan
+  // saat mau ditutup.
+  const uploadSnapshotRef = useRef<typeof uploadForm | null>(null);
+  const closeUploadModal = () => {
+    const dirty = uploadSnapshotRef.current
+      ? JSON.stringify(uploadForm) !== JSON.stringify(uploadSnapshotRef.current)
+      : Object.values(uploadForm).some(v => v);
+    if (dirty && !window.confirm('Ada isian yang belum disimpan. Yakin mau menutup tanpa menyimpan?')) return;
+    setShowUploadModal(false); setEditingNote(null);
+    setUploadForm({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' });
+  };
   const [approvalForm, setApprovalForm] = useState({ action:'approved', note:'' });
   const [saving, setSaving] = useState(false);
 
@@ -406,11 +418,13 @@ export default function TechNotePage() {
 
   /** Buka modal upload dalam mode sunting, terisi nilai catatan yang dipilih. */
   function bukaEditNote(n: TechNote) {
-    setUploadForm({
+    const form = {
       title: n.title ?? '', description: n.description ?? '', product: n.product ?? '',
       one_drive_link: n.one_drive_link ?? '', folder_id: n.folder_id ?? '',
       tags: (n.tags ?? []).join(', '),
-    });
+    };
+    setUploadForm(form);
+    uploadSnapshotRef.current = form;
     setEditingNote(n);
     setShowUploadModal(true);
   }
@@ -451,26 +465,40 @@ export default function TechNotePage() {
     const tags = uploadForm.tags.split(',').map(s=>s.trim()).filter(Boolean);
 
     // Mode sunting
-    // status & author TIDAK disentuh: menyunting isi bukan berarti catatannya
-    // jadi milik penyunting, dan bukan pula berarti hasil review-nya batal.
+    // status & author biasanya TIDAK disentuh: menyunting isi bukan berarti
+    // catatannya jadi milik penyunting, dan bukan pula berarti hasil review-nya
+    // batal - KECUALI kasus C3 (docs/UX-WORKFLOW-AUDIT.md): penulis sendiri
+    // (bukan pengelola) menyunting catatan yang statusnya 'revision'/'rejected'.
+    // Dulu status di kasus itu TIDAK PERNAH kembali ke 'pending', jadi hasil
+    // perbaikan penulis tidak pernah masuk lagi ke antrean approval (tab
+    // Pending memfilter status==='pending') - jalan buntu permanen. Action
+    // 'resubmitted' sudah lama ada di ACTION_CONFIG (shared.ts) tapi tidak
+    // pernah dipanggil di mana pun; disambungkan di sini.
     if (editingNote) {
-      const { error } = await supabase.from('tech_notes').update({
+      const resubmit = !canManage && (editingNote.status === 'revision' || editingNote.status === 'rejected');
+      const payload: Record<string, unknown> = {
         title: uploadForm.title.trim(), description: uploadForm.description.trim(),
         folder_id: uploadForm.folder_id, one_drive_link: uploadForm.one_drive_link.trim(),
         product: uploadForm.product.trim(), tags,
-      }).eq('id', editingNote.id);
+      };
+      if (resubmit) { payload.status = 'pending'; payload.submitted_at = now; }
+      const { error } = await supabase.from('tech_notes').update(payload).eq('id', editingNote.id);
       setSaving(false);
       if (error) { alert('Gagal menyimpan: ' + error.message); return; }
       await supabase.from('tech_note_history').insert({
-        tech_note_id: editingNote.id, action: 'edited',
+        tech_note_id: editingNote.id, action: resubmit ? 'resubmitted' : 'edited',
         performed_by: currentUser.id, performed_by_name: currentUser.full_name,
-        note: 'Detail disunting oleh pengelola', created_at: now,
+        note: resubmit ? 'Diajukan ulang setelah diperbaiki' : 'Detail disunting oleh pengelola',
+        created_at: now,
       });
       void logAudit({
         user_id: currentUser.id, user_name: currentUser.full_name ?? '',
         action: 'update', module: 'tech-note', target_id: editingNote.id,
         target_name: uploadForm.title.trim(),
       });
+      if (resubmit) {
+        void createNotificationForAdmins({ type: 'system', title: `🔁 Tech Note diajukan ulang`, body: `"${uploadForm.title.trim()}" oleh ${currentUser.full_name} - perlu direview lagi`, action_url: '/tech-note', ref_id: editingNote.id, created_by: currentUser.full_name ?? '' });
+      }
       setUploadForm({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' });
       setEditingNote(null); setShowUploadModal(false); setDetailNote(null); fetchNotes();
       return;
@@ -594,7 +622,7 @@ export default function TechNotePage() {
               className="text-slate-700 text-sm font-bold outline-none rounded-xl px-3 py-1.5 bg-gray-100 border border-gray-200 focus:border-rose-400">
               {[curY,curY-1,curY-2].map(y=><option key={y} value={y}>{y}</option>)}
             </select>
-            <button onClick={()=>setShowUploadModal(true)}
+            <button onClick={()=>{ uploadSnapshotRef.current = uploadForm; setShowUploadModal(true); }}
               className="text-sm font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 text-white hover:opacity-90 hover:scale-105"
               style={{ background:'linear-gradient(135deg,#ec4899,#be185d)', boxShadow:'0 4px 14px rgba(236,72,153,0.35)' }}>
               ➕ Upload Tech Note
@@ -768,7 +796,7 @@ export default function TechNotePage() {
 
       {/* ══ MODAL: Upload Tech Note ══ */}
       <Modal open={showUploadModal}
-        onClose={()=>{ setShowUploadModal(false); setEditingNote(null); setUploadForm({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' }); }}
+        onClose={closeUploadModal}
         title={editingNote ? '✏️ Edit Tech Note' : '📤 Upload Tech Note'} width={600}>
         <Field label="Judul Tech Note *">
           <input className={inputCls} value={uploadForm.title}
@@ -803,7 +831,7 @@ export default function TechNotePage() {
           ⚠️ Tech Note akan masuk ke <b>Approval Queue</b>. Setelah disetujui Admin/Supervisor, otomatis tampil ke semua anggota tim.
         </div>
         <div className="flex gap-3 justify-end">
-          <button onClick={()=>{ setShowUploadModal(false); setEditingNote(null); setUploadForm({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' }); }} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-gray-100 border border-gray-200 hover:bg-gray-200">Batal</button>
+          <button onClick={closeUploadModal} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-gray-100 border border-gray-200 hover:bg-gray-200">Batal</button>
           <button onClick={submitTechNote} disabled={saving||!uploadForm.title.trim()||!uploadForm.folder_id||!uploadForm.one_drive_link.trim()}
             className="px-4 py-2 rounded-xl text-white text-sm font-bold disabled:opacity-40 transition-colors"
             style={{ background:'linear-gradient(135deg,#ec4899,#be185d)' }}>
