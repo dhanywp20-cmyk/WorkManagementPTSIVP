@@ -2745,20 +2745,24 @@ Hubungi Admin untuk info lebih lanjut.
                     };
 
                     // Helper renderers for detail display
+                    // Dikecilkan khusus di HP (sm: kembali ke ukuran semula) - request
+                    // dengan banyak field terisi bisa punya belasan ChipDisplay/YNDisplay
+                    // bertumpuk, dan ukuran chip sebesar form isian membuat detail
+                    // sepanjang ini di ponsel jadi scroll yang sangat panjang.
                     const ChipDisplay = ({ items }: { items: (string | undefined)[] }) => {
                       const filtered = items.filter(Boolean) as string[];
                       if (!filtered.length) return <span className="text-sm text-gray-400 italic">—</span>;
-                      return <div className="flex flex-wrap gap-2">{filtered.map(item => (
-                        <span key={item} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-teal-500 bg-teal-50 text-teal-700 text-sm font-medium">
-                          <div className="w-4 h-4 rounded border-2 border-teal-500 bg-teal-500 flex items-center justify-center flex-shrink-0"><svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg></div>
+                      return <div className="flex flex-wrap gap-1.5 sm:gap-2">{filtered.map(item => (
+                        <span key={item} className="flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl border-2 border-teal-500 bg-teal-50 text-teal-700 text-xs sm:text-sm font-medium">
+                          <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-2 border-teal-500 bg-teal-500 flex items-center justify-center flex-shrink-0"><svg aria-hidden="true" focusable="false" className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg></div>
                           {item}
                         </span>
                       ))}</div>;
                     };
                     const YNDisplay = ({ value, label }: { value: string; label: string }) => (
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">{label}</label>
-                        <div className="flex flex-wrap gap-2 mb-2">{['Yes','No'].map(opt => (<span key={opt} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 text-sm font-medium ${value === opt ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-gray-300 bg-white text-gray-500'}`}><div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${value === opt ? 'border-teal-500' : 'border-gray-400'}`}>{value === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>{opt}</span>))}</div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 sm:mb-2">{label}</label>
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-1 sm:mb-2">{['Yes','No'].map(opt => (<span key={opt} className={`flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl border-2 text-xs sm:text-sm font-medium ${value === opt ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-gray-300 bg-white text-gray-500'}`}><div className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${value === opt ? 'border-teal-500' : 'border-gray-400'}`}>{value === opt && <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-teal-500" />}</div>{opt}</span>))}</div>
                       </div>
                     );
 
