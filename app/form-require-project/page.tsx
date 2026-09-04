@@ -2442,7 +2442,17 @@ Hubungi Admin untuk info lebih lanjut.
             style={{ border: 'none' }}>
 
             {/* Detail Modal Header */}
-            <div className="bg-gradient-to-r from-teal-700 to-teal-900 px-5 py-4 flex items-center gap-4 flex-shrink-0">
+            {/* flex-col sm:flex-row: sebelumnya SATU baris (flex items-center) berisi
+                tombol tutup + judul + sampai 6 tombol aksi (Update Status/Edit/
+                Hapus/Download/Print, dst). Tombol aksinya flex-shrink-0 - menolak
+                menyusut - jadi begitu semuanya tidak muat di satu baris di HP,
+                yang terjadi bukan tombolnya turun ke bawah, tapi seluruh baris
+                header memaksa lebih lebar dari layar dan tombol paling kanan
+                (mis. Download) terpotong. Sekarang tutup+judul jadi baris sendiri,
+                tombol aksi jadi baris sendiri di bawahnya (bebas melipat) - di HP;
+                di layar besar (sm:) keduanya kembali sejajar seperti semula. */}
+            <div className="bg-gradient-to-r from-teal-700 to-teal-900 px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-shrink-0">
+              <div className="flex items-center gap-3">
               <button aria-label="Tutup" onClick={handleCloseDetail}
                 className="bg-white/20 hover:bg-white/30 text-white p-2 rounded-xl transition-all flex-shrink-0">
                 <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -2459,7 +2469,8 @@ Hubungi Admin untuk info lebih lanjut.
                   {selectedRequest.requester_name} · {selectedRequest.sales_division || ''} · {formatDate(selectedRequest.created_at)}
                 </p>
               </div>
-              <div className="flex gap-2 flex-shrink-0 flex-wrap">
+              </div>
+              <div className="flex gap-2 flex-wrap sm:flex-shrink-0">
                 {/* Sales Internal: wajib review dulu sebelum Admin bisa approve */}
                 {canInternalApproveProject(selectedRequest) && (
                   <>
