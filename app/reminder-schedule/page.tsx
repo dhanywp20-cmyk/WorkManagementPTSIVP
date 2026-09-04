@@ -4367,7 +4367,7 @@ jangan lupa peralatan & Semangat💪🏼
 
                   {/* ── Search / Filter bar — tepat di bawah TICKET LIST ── */}
                   <div className="px-5 py-3 border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
-                    <div className="grid grid-cols-2 lg:grid-cols-6 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
                       <div>
                         <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Search Project / Location</label>
                         <div className="relative">

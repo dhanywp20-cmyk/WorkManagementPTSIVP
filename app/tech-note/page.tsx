@@ -130,10 +130,15 @@ const KATEGORI_FOLDER = [
 
 type KategoriFolder = (typeof KATEGORI_FOLDER)[number]['value'];
 
-function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManage }:{
+function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManage, mobileOpen, onCloseMobile }:{
   folders: TechNoteFolder[]; technotes: TechNote[];
   selected: string | null; onSelect: (id: string | null) => void;
   onAdd: () => void; canManage: boolean;
+  // Di layar sempit sidebar ini SELALU makan ~224px tetap - sisa lebar
+  // buat daftar Tech Note jadi terlalu sempit untuk dibaca. mobileOpen
+  // mengubahnya jadi drawer yang disembunyikan sampai tombol "📁 Folder"
+  // ditekan, sama seperti pola drawer sidebar utama di dashboard.
+  mobileOpen: boolean; onCloseMobile: () => void;
 }) {
   const [expanded, setExpanded] = useState<Record<string,boolean>>({});
   const roots = folders.filter(f => !f.parent_id);
@@ -167,15 +172,26 @@ function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManag
     );
   }
 
-  return (
-    <div className="w-56 shrink-0 overflow-y-auto flex flex-col gap-1 p-3 border-r border-gray-200" style={{ background: '#f8fafc' }}>
+  return (<>
+    {/* Backdrop - mobile drawer only */}
+    {mobileOpen && (
+      <div className="fixed inset-0 z-30 md:hidden" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onCloseMobile} />
+    )}
+    <div className={`w-56 shrink-0 overflow-y-auto flex flex-col gap-1 p-3 border-r border-gray-200 z-40
+        fixed top-0 bottom-0 left-0 md:static
+        ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        transition-transform duration-200`}
+      style={{ background: '#f8fafc' }}>
       <div className="flex items-center justify-between mb-2 px-1">
         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Folder</span>
-        {canManage && (
-          <button onClick={onAdd} className="text-[11px] font-bold px-2 py-0.5 rounded-lg transition-colors text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100">
-            + Folder
-          </button>
-        )}
+        <div className="flex items-center gap-1.5">
+          {canManage && (
+            <button onClick={onAdd} className="text-[11px] font-bold px-2 py-0.5 rounded-lg transition-colors text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100">
+              + Folder
+            </button>
+          )}
+          <button onClick={onCloseMobile} aria-label="Tutup daftar folder" className="md:hidden w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100">✕</button>
+        </div>
       </div>
       {/* All */}
       <div onClick={() => onSelect(null)}
@@ -188,7 +204,7 @@ function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManag
       </div>
       {roots.map(f => <FolderItem key={f.id} folder={f} />)}
     </div>
-  );
+  </>);
 }
 
 // Approval History
@@ -269,6 +285,7 @@ export default function TechNotePage() {
   const [year,        setYear]        = useState(new Date().getFullYear());
 
   const [showFolderModal,  setShowFolderModal]  = useState(false);
+  const [showFolderDrawer, setShowFolderDrawer] = useState(false);
   const [showUploadModal,  setShowUploadModal]  = useState(false);
   // Edit & hapus tech note.
   const [editingNote, setEditingNote] = useState<TechNote | null>(null);
@@ -635,7 +652,8 @@ export default function TechNotePage() {
         {/* ── Sidebar ── */}
         <FolderSidebar folders={folders} technotes={technotes}
           selected={selectedFolder} onSelect={setSelectedFolder}
-          onAdd={()=>setShowFolderModal(true)} canManage={canManage} />
+          onAdd={()=>setShowFolderModal(true)} canManage={canManage}
+          mobileOpen={showFolderDrawer} onCloseMobile={()=>setShowFolderDrawer(false)} />
 
         {/* ── Main Content ── */}
         <div className="flex-1 overflow-y-auto">
@@ -644,6 +662,13 @@ export default function TechNotePage() {
 
             {/* Tabs + Search */}
             <div className="flex items-center gap-2 mb-4 flex-wrap">
+              {/* Sidebar Folder disembunyikan di ponsel (lihat FolderSidebar) -
+                  tombol ini satu-satunya jalan membukanya di sana. */}
+              <button onClick={()=>setShowFolderDrawer(true)}
+                className="md:hidden px-3 py-1.5 rounded-xl text-[13px] font-bold border border-gray-200 text-slate-600 flex items-center gap-1.5"
+                style={{ background: 'rgba(255,255,255,0.92)' }}>
+                📁 Folder{selectedFolder && <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />}
+              </button>
               {([
                 { id:'all',     label:`Semua (${technotes.length})` },
                 ...(canManage ? [{ id:'pending', label:`⏳ Approval${pendingCount>0?` (${pendingCount})`:''}`  }] : []),

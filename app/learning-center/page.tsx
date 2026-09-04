@@ -190,22 +190,29 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
       </div>
       {/* role="tablist": deretan ini mengganti isi halaman, bukan sekadar
           tombol lepas. Dengan penandanya pembaca layar menyebut "tab 2 dari 6"
-          dan mana yang sedang terpilih. */}
-      <nav role="tablist" aria-label="Bagian Learning Center" className="flex items-end gap-1 px-4 pt-2 overflow-x-auto">
-        {items.map(i => (
-          <button key={i.key} type="button" role="tab" aria-selected={view === i.key} onClick={() => onChange(i.key)}
-            className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap flex-shrink-0
-              ${view === i.key ? 'text-blue-700 border-blue-600 bg-blue-50/60 font-semibold' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'}`}>
-            <span className="text-sm" aria-hidden="true">{i.icon}</span>{i.label}
+          dan mana yang sedang terpilih. Sudah overflow-x-auto dari dulu, tapi
+          di ponsel tab terakhir ("Team"/"Laporan") kepotong pas di tepi layar
+          tanpa tanda apa pun kalau baris ini bisa digeser - gradasi ini
+          sekadar penanda visualnya, geser layarnya sendiri sudah jalan. */}
+      <div className="relative">
+        <nav role="tablist" aria-label="Bagian Learning Center" className="flex items-end gap-1 px-4 pt-2 overflow-x-auto">
+          {items.map(i => (
+            <button key={i.key} type="button" role="tab" aria-selected={view === i.key} onClick={() => onChange(i.key)}
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap flex-shrink-0
+                ${view === i.key ? 'text-blue-700 border-blue-600 bg-blue-50/60 font-semibold' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'}`}>
+              <span className="text-sm" aria-hidden="true">{i.icon}</span>{i.label}
+            </button>
+          ))}
+          <button aria-label="Refresh halaman" onClick={() => window.location.reload()} title="Refresh halaman"
+            className="ml-1 mb-1 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all border border-transparent hover:border-blue-200 text-base flex-shrink-0">
+            <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
           </button>
-        ))}
-        <button aria-label="Refresh halaman" onClick={() => window.location.reload()} title="Refresh halaman"
-          className="ml-1 mb-1 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all border border-transparent hover:border-blue-200 text-base flex-shrink-0">
-          <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-        </button>
-      </nav>
+        </nav>
+        <div aria-hidden="true" className="sm:hidden pointer-events-none absolute right-0 top-0 bottom-0 w-6"
+          style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.97))' }} />
+      </div>
     </div>
   );
 }
@@ -233,21 +240,25 @@ function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView
       {/* role="tablist": deretan ini mengganti isi halaman, bukan sekadar
           tombol lepas. Dengan penandanya pembaca layar menyebut "tab 2 dari 6"
           dan mana yang sedang terpilih. */}
-      <nav role="tablist" aria-label="Bagian Learning Center" className="flex items-end gap-1 px-4 pt-2 overflow-x-auto">
-        {items.map(i => (
-          <button key={i.key} type="button" role="tab" aria-selected={view === i.key} onClick={() => onChange(i.key)}
-            className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap flex-shrink-0
-              ${view === i.key ? 'text-indigo-700 border-indigo-600 bg-indigo-50/60 font-semibold' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'}`}>
-            <span className="text-sm" aria-hidden="true">{i.icon}</span>{i.label}
+      <div className="relative">
+        <nav role="tablist" aria-label="Bagian Learning Center" className="flex items-end gap-1 px-4 pt-2 overflow-x-auto">
+          {items.map(i => (
+            <button key={i.key} type="button" role="tab" aria-selected={view === i.key} onClick={() => onChange(i.key)}
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap flex-shrink-0
+                ${view === i.key ? 'text-indigo-700 border-indigo-600 bg-indigo-50/60 font-semibold' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'}`}>
+              <span className="text-sm" aria-hidden="true">{i.icon}</span>{i.label}
+            </button>
+          ))}
+          <button aria-label="Refresh halaman" onClick={() => window.location.reload()} title="Refresh halaman"
+            className="ml-1 mb-1 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all border border-transparent hover:border-indigo-200 flex-shrink-0">
+            <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
           </button>
-        ))}
-        <button aria-label="Refresh halaman" onClick={() => window.location.reload()} title="Refresh halaman"
-          className="ml-1 mb-1 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all border border-transparent hover:border-indigo-200 flex-shrink-0">
-          <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-        </button>
-      </nav>
+        </nav>
+        <div aria-hidden="true" className="sm:hidden pointer-events-none absolute right-0 top-0 bottom-0 w-6"
+          style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.97))' }} />
+      </div>
     </div>
   );
 }
