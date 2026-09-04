@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, type ReactNode } from 
 import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
 import { hasFullAccess } from '@/lib/constants';
+import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok';
 import { User } from '@/app/dashboard/_components/shared';
 
 // Types
@@ -420,9 +421,13 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
 
   useEffect(() => {
     (async () => {
+      // Pemetaan kelompok dimuat lebih dulu - lihat catatan yang sama di
+      // app/kpi-team/page.tsx. Sebelum muatKelompok() selesai, namaKelompokPTS()
+      // masih nilai bawaan (SELURUH kelompok PTS).
+      await muatKelompok();
       const role   = currentUser.role?.toLowerCase() ?? '';
       const jabatan = currentUser.jabatan ?? '';
-      const PTS_TYPES = ['Team PTS IVP','Team PTS UMP','Team PTS MVI'];
+      const PTS_TYPES = namaKelompokPTS();
 
       // Admin/superadmin ATAU akun Team PTS dengan toggle "Full Access" aktif
       // (lihat lib/constants.ts hasFullAccess).
@@ -462,17 +467,36 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
       const inOneWeek = new Date(); inOneWeek.setDate(inOneWeek.getDate()+7);
       const oneWeekStr = inOneWeek.toISOString().split('T')[0];
 
+      // Nama anggota kelompok PTS yang SENGAJA dikeluarkan dari lingkup akun
+      // ini (mis. Manager PTS IVP yang tidak membawahi PTS UMP) - dipakai
+      // untuk MENGECUALIKAN, bukan membatasi ke satu kelompok saja. Admin
+      // sungguhan (tanpa pemetaan Lingkup Manager) tetap melihat semuanya,
+      // karena lingkupSaya() bawaannya mengembalikan seluruh kelompok PTS.
+      // Beda dari 'pts_sup' yang MEMBATASI ke tim sendiri: di sini tiket
+      // Sales/Marketing/Services tanpa kelompok PTS tetap harus ikut tampil.
+      let namaDikecualikan: string[] = [];
+      if (scope.kind === 'admin') {
+        const kelompokDikecualikan = namaKelompokPTS().filter(t => !lingkupSaya(currentUser?.id).includes(t));
+        if (kelompokDikecualikan.length > 0) {
+          const { data: anggotaDikecualikan } = await supabase.from('users')
+            .select('full_name').in('team_type', kelompokDikecualikan);
+          namaDikecualikan = (anggotaDikecualikan ?? []).map((u: any) => u.full_name as string).filter(Boolean);
+        }
+      }
+
       // Helpers to build scoped queries
       const scopeTickets = (q: any) => {
         if (scope.kind === 'pts_sup' && scope.ptsMemberNames?.length) {
           return q.in('assign_name', scope.ptsMemberNames);
         }
+        if (namaDikecualikan.length > 0) return q.not('assign_name', 'in', `(${namaDikecualikan.map(n => `"${n}"`).join(',')})`);
         return q;
       };
       const scopeReminders = (q: any) => {
         if (scope.kind === 'pts_sup' && scope.ptsMemberNames?.length) {
           return q.in('assign_name', scope.ptsMemberNames);
         }
+        if (namaDikecualikan.length > 0) return q.not('assign_name', 'in', `(${namaDikecualikan.map(n => `"${n}"`).join(',')})`);
         return q;
       };
 
@@ -597,7 +621,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
       });
     } catch(e){ console.error('KPI fetch error:',e); }
     finally { setLoading(false); }
-  }, [scope, scopeReady]);
+  }, [scope, scopeReady, currentUser]);
 
   // 3. Fetch Audit (scope-aware)
 
