@@ -135,6 +135,23 @@ export interface RoomDetail {
   suggest_tampilan: string;
   keterangan_lain: string;
   survey_photos_count?: number;
+  /**
+   * Status tahap kerja RUANGAN INI SENDIRI - satu request bisa punya beberapa
+   * ruangan yang progresnya beda-beda (mis. Smart ClassRoom sudah selesai,
+   * Command Center masih dikerjakan). Ruangan pertama TIDAK punya field ini -
+   * ia memakai status di level request langsung (project_requests.status),
+   * karena field teknisnya juga sudah di situ, bukan di JSONB rooms[].
+   *
+   * Ruangan lama yang belum pernah disentuh lewat alur assign/status baru
+   * TIDAK punya field ini sama sekali (undefined) - tampilannya jatuh
+   * kembali ke status request supaya data lama tidak tiba-tiba terlihat
+   * "Pending" padahal sudah lama selesai. Lihat getRoomStatus() di page.tsx.
+   */
+  status?: 'pending' | 'approved' | 'in_progress' | 'completed' | 'rejected';
+  assign_name?: string | null;
+  assign_user_id?: string | null;
+  approved_by?: string | null;
+  approved_at?: string | null;
 }
 
 export interface BrandPicMapping {
@@ -267,6 +284,42 @@ export { DIVISI_BAWAAN as SALES_DIVISIONS } from '@/lib/merek';
 export const DISPLAY_BRANDS = ['Microvision', 'Philips', 'Panasonic', 'Newline', 'Promethean', 'Maxhub', 'Ledman', 'Taniled', 'Vivitek'] as const;
 export const MIDDLEWARE_BRANDS = ['Tricolor', 'Wyrestorm', 'Extron', 'Crestron', 'AVCiT', 'Brightsign', 'Cue'] as const;
 export const BRAND_PIC_DIVISIONS = ['IVP', 'MVI', 'MLDS', 'UMP', 'OSS'];
+
+/**
+ * Status tahap kerja untuk SATU ruangan tertentu (roomIdx: 0 = ruangan
+ * pertama/req.room_name, 1+ = req.rooms[roomIdx-1]).
+ *
+ * Ruangan pertama selalu memakai status request langsung. Ruangan lain
+ * memakai status miliknya sendiri KALAU sudah pernah di-assign/di-update
+ * lewat alur baru; kalau belum (room.status undefined - data lama), jatuh
+ * kembali ke status request supaya tidak tiba-tiba terlihat berbeda dari
+ * sebelumnya.
+ */
+export function getRoomStatus(req: ProjectRequest, roomIdx: number): ProjectRequest['status'] {
+  if (roomIdx === 0) return req.status;
+  return req.rooms?.[roomIdx - 1]?.status ?? req.status;
+}
+export function getRoomAssignName(req: ProjectRequest, roomIdx: number): string | undefined {
+  if (roomIdx === 0) return req.assign_name;
+  return req.rooms?.[roomIdx - 1]?.assign_name ?? req.assign_name ?? undefined;
+}
+export function getRoomAssignUserId(req: ProjectRequest, roomIdx: number): string | null | undefined {
+  if (roomIdx === 0) return req.assign_user_id;
+  return req.rooms?.[roomIdx - 1]?.assign_user_id ?? req.assign_user_id ?? undefined;
+}
+
+/**
+ * true kalau request ini punya lebih dari satu ruangan DAN progresnya sudah
+ * tidak seragam lagi (mis. Smart ClassRoom completed, Command Center masih
+ * in_progress). Dipakai di listing supaya admin tahu status di kolom itu
+ * cuma mewakili ruangan pertama - buka detailnya untuk lihat per-ruangan.
+ */
+export function hasDivergentRoomStatus(req: ProjectRequest): boolean {
+  if (!req.rooms || req.rooms.length === 0) return false;
+  const totalRooms = 1 + req.rooms.length;
+  const semua = Array.from({ length: totalRooms }, (_, i) => getRoomStatus(req, i));
+  return new Set(semua).size > 1;
+}
 
 export const emptyRoom = (): RoomDetail => ({
   id: Math.random().toString(36).slice(2, 10),

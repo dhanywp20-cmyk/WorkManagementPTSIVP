@@ -20,7 +20,7 @@ import {
   statusConfig, JABATAN_TIER, JABATAN_CC_RULES,
   fetchWACCTargets, sendWANotif, emptyRoom,
   SALES_DIVISIONS, DISPLAY_BRANDS, MIDDLEWARE_BRANDS,
-  PIE_COLORS,
+  PIE_COLORS, getRoomStatus, getRoomAssignName, getRoomAssignUserId, hasDivergentRoomStatus,
 } from './_components/shared';
 import {
   AssignPTSModal, RoomSection, NewFormModal,
@@ -136,7 +136,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [editFormModal, setEditFormModal] = useState(false);
-  const [statusUpdateModal, setStatusUpdateModal] = useState<{ open: boolean; req: ProjectRequest | null }>({ open: false, req: null });
+  const [statusUpdateModal, setStatusUpdateModal] = useState<{ open: boolean; req: ProjectRequest | null; roomIdx: number }>({ open: false, req: null, roomIdx: 0 });
   const [selectedNewStatus, setSelectedNewStatus] = useState<string>('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -144,7 +144,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const [bulkConfirm, setBulkConfirm] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [downloadingPackage, setDownloadingPackage] = useState(false);
-  const [assignModal, setAssignModal] = useState<{ open: boolean; req: ProjectRequest | null }>({ open: false, req: null });
+  const [assignModal, setAssignModal] = useState<{ open: boolean; req: ProjectRequest | null; roomIdx: number }>({ open: false, req: null, roomIdx: 0 });
   // Approve Sales Internal ditampilkan dulu isinya, tidak langsung jalan begitu
   // tombolnya ditekan - mengikuti Request Schedule. Approve adalah keputusan,
   // dan keputusan yang tidak bisa dibaca dulu gampang salah tekan.
@@ -223,9 +223,10 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const isIVPGuest = role === 'guest' && (currentUser.sales_division === 'IVP' || currentUser.sales_division === 'MVI');
   // Guest non-IVP = role guest bukan IVP (hanya lihat request miliknya)
   const isNonIVPGuest = role === 'guest' && currentUser.sales_division !== 'IVP';
-  // Bisa ubah status in_progress: hanya PTS yang di-assign ke request tsb
-  const canSetInProgress = (req: ProjectRequest) =>
-    isPTS && (bisaKelolaRequest || req.assign_name === currentUser.full_name);
+  // Bisa ubah status in_progress: hanya PTS yang di-assign ke RUANGAN itu
+  // (roomIdx, bukan selalu ruangan pertama - lihat getRoomAssignName).
+  const canSetInProgress = (req: ProjectRequest, roomIdx: number) =>
+    isPTS && (bisaKelolaRequest || getRoomAssignName(req, roomIdx) === currentUser.full_name);
   // Sales Internal reviewer (utama atau kedua utk brand BOTH) - boleh approve kalau
   // bagian-nya belum di-approve.
   const canInternalApproveProject = (req: ProjectRequest) => {
@@ -1087,7 +1088,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
   const handleApprove = async (req: ProjectRequest) => {
     // Hanya admin/superadmin yang bisa approve, selalu via AssignPTSModal untuk pilih PTS handler
-    setAssignModal({ open: true, req });
+    setAssignModal({ open: true, req, roomIdx: 0 });
   };
 
   // Handler: Sales Internal approve & teruskan ke Admin
@@ -1270,18 +1271,36 @@ Hubungi Admin untuk info lebih lanjut.
     });
   };
 
-  const handleStatusUpdate = async (req: ProjectRequest, newStatus: string) => {
+  const handleStatusUpdate = async (req: ProjectRequest, newStatus: string, roomIdx: number = 0) => {
     if (statusUpdatingRef.current.has(req.id)) return;
     statusUpdatingRef.current.add(req.id);
     try {
     //  select('id') supaya RLS yang menolak diam-diam (0 baris, tanpa galat)
     //  ikut terlihat - lihat catatan yang sama di handleDeleteConfirm.
+    //  Ruangan pertama (roomIdx 0) pakai kolom request langsung seperti semula;
+    //  ruangan lain (1+) statusnya hidup di dalam array JSONB `rooms`, jadi
+    //  yang ditulis adalah salinan array itu dengan elemen ybs diubah - lihat
+    //  getRoomStatus() di shared.ts untuk kenapa modelnya begini.
+    let updatedRooms: RoomDetail[] | undefined;
+    const updatePayload: Record<string, unknown> = roomIdx === 0
+      ? { status: newStatus }
+      : (() => {
+          const rooms = [...(req.rooms || [])];
+          const i = roomIdx - 1;
+          if (rooms[i]) rooms[i] = { ...rooms[i], status: newStatus as RoomDetail['status'] };
+          updatedRooms = rooms;
+          return { rooms };
+        })();
     const { data: terubah, error } = await supabase.from('project_requests')
-      .update({ status: newStatus }).eq('id', req.id).select('id');
+      .update(updatePayload).eq('id', req.id).select('id');
     if (error || !terubah || terubah.length === 0) { notify('error', 'Gagal update status: ' + (error?.message ?? 'akses ditolak database.')); return; }
     notify('success', `Status → ${newStatus}`);
     fetchRequests();
-    if (selectedRequest) setSelectedRequest({ ...selectedRequest, status: newStatus as ProjectRequest['status'] });
+    if (selectedRequest?.id === req.id) {
+      setSelectedRequest(roomIdx === 0
+        ? { ...selectedRequest, status: newStatus as ProjectRequest['status'] }
+        : { ...selectedRequest, rooms: updatedRooms });
+    }
     await supabase.from('project_messages').insert([{ request_id: req.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `🔄 Status diupdate menjadi: ${newStatus.replace('_', ' ').toUpperCase()}` }]);
     if (selectedRequest?.id === req.id) fetchMessages(req.id);
     // In-app notification to the requester
@@ -1629,9 +1648,15 @@ Hubungi Admin untuk info lebih lanjut.
 
   if (!appReady) return <LoadingScreen />;
 
-  const detailSc = selectedRequest ? (statusConfig[selectedRequest.status] || statusConfig.pending) : null;
-  const detailIsPending = selectedRequest?.status === 'pending';
-  const detailDueStatus = selectedRequest ? getDueStatus(selectedRequest.due_date, selectedRequest.status) : null;
+  // Room-aware: ruangan pertama ikut status request; ruangan lain (tab 2+)
+  // punya status sendiri (lihat getRoomStatus di _components/shared.ts) -
+  // supaya Command Center bisa "Dikerjakan" sementara Smart ClassRoom sudah
+  // "Selesai", alih-alih selalu ikut satu status yang sama untuk semuanya.
+  const detailRoomStatus = selectedRequest ? getRoomStatus(selectedRequest, detailRoomIdx) : undefined;
+  const detailSc = detailRoomStatus ? (statusConfig[detailRoomStatus] || statusConfig.pending) : null;
+  const detailIsPending = detailRoomStatus === 'pending';
+  const detailRoomAssignName = selectedRequest ? getRoomAssignName(selectedRequest, detailRoomIdx) : undefined;
+  const detailDueStatus = selectedRequest ? getDueStatus(selectedRequest.due_date, detailRoomStatus ?? selectedRequest.status) : null;
   const isFileType = (type: string) => type.startsWith('image/');
 
   return (
@@ -1669,17 +1694,30 @@ Hubungi Admin untuk info lebih lanjut.
       {assignModal.open && assignModal.req && (
         <AssignPTSModal
           req={assignModal.req}
-          // Opsi "Route ke Supervisor" hanya saat approve awal (belum di-route).
+          // Opsi "Route ke Supervisor" hanya saat approve awal (belum di-route)
+          // DAN untuk ruangan pertama - tahap routing itu milik seluruh request,
+          // bukan satu ruangan, jadi re-assign ruangan 2+ tidak pernah menawarkannya.
           // Kalau Supervisor yg buka utk assign final (routing_status='supervisor_assign'),
           // opsi route disembunyikan - dia langsung pilih Tim PTS.
-          allowSupervisorRoute={assignModal.req.routing_status !== 'supervisor_assign'}
-          onClose={() => setAssignModal({ open: false, req: null })}
+          allowSupervisorRoute={assignModal.roomIdx === 0 && assignModal.req.routing_status !== 'supervisor_assign'}
+          roomIdx={assignModal.roomIdx}
+          onClose={() => setAssignModal({ open: false, req: null, roomIdx: 0 })}
           onAssigned={() => {
-            setAssignModal({ open: false, req: null });
+            setAssignModal({ open: false, req: null, roomIdx: 0 });
             notify('success', `Request diproses!`);
             fetchRequests();
             if (selectedRequest?.id === assignModal.req?.id) {
-              setSelectedRequest(prev => prev ? { ...prev, status: 'approved' } : null);
+              if (assignModal.roomIdx === 0) {
+                setSelectedRequest(prev => prev ? { ...prev, status: 'approved' } : null);
+              } else {
+                // Ruangan 1+ ditulis di dalam JSONB `rooms` - ambil ulang kolom itu
+                // supaya tab ruangan yang sedang dilihat langsung terlihat approved,
+                // tanpa harus menutup & buka lagi detailnya.
+                supabase.from('project_requests').select('rooms').eq('id', assignModal.req!.id).maybeSingle()
+                  .then(({ data }: { data: { rooms: RoomDetail[] } | null }) => {
+                    if (data) setSelectedRequest(prev => prev ? { ...prev, rooms: data.rooms } : null);
+                  });
+              }
               fetchMessages(assignModal.req!.id);
             }
           }}
@@ -2001,6 +2039,9 @@ Hubungi Admin untuk info lebih lanjut.
                     badges={<>
                       <MobileCardBadge className={`border ${sc.color} ${sc.bg} ${sc.border}`}>{sc.label}</MobileCardBadge>
                       {req.routing_status === 'internal_review' && <span className="text-[9px] font-bold text-amber-600 whitespace-nowrap">🔍 Review Internal</span>}
+                      {/* Ruangan lain progresnya beda dari yang ditampilkan di sini (badge di
+                          atas cuma ruangan pertama) - buka detail utk lihat per-ruangan. */}
+                      {hasDivergentRoomStatus(req) && <span className="text-[9px] font-bold text-orange-600 whitespace-nowrap" title="Progres tiap ruangan berbeda - buka detail untuk melihatnya">🏘️ Beda per ruangan</span>}
                     </>}
                     fields={[
                       { label: 'Solution', value: solution || '—', span2: true },
@@ -2107,6 +2148,7 @@ Hubungi Admin untuk info lebih lanjut.
                             ) : (
                               req.status === 'pending' && isPTS && !isTeamPTS && <p className="text-[9px] font-bold text-red-500 animate-pulse">🔔 Perlu Approval</p>
                             )}
+                            {hasDivergentRoomStatus(req) && <p className="text-[9px] font-bold text-orange-600 whitespace-nowrap" title="Progres tiap ruangan berbeda - buka detail untuk melihatnya">🏘️ Beda per ruangan</p>}
                           </div>
                         </td>
                         <td className="px-3 py-3 border-r border-gray-100 align-middle">
@@ -2274,7 +2316,7 @@ Hubungi Admin untuk info lebih lanjut.
                 </h3>
                 <p className="text-blue-100 text-xs mt-0.5 truncate">{statusUpdateModal.req.project_name}</p>
               </div>
-              <button aria-label="Tutup" onClick={() => setStatusUpdateModal({ open: false, req: null })} className="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold transition-all">✕</button>
+              <button aria-label="Tutup" onClick={() => setStatusUpdateModal({ open: false, req: null, roomIdx: 0 })} className="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold transition-all">✕</button>
             </div>
             <div className="p-5">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Pilih Status Baru</p>
@@ -2289,11 +2331,11 @@ Hubungi Admin untuk info lebih lanjut.
                     { value: 'rejected', label: '❌ Rejected', color: 'border-red-300 bg-red-50 text-red-700', active: 'border-red-500 bg-red-100' },
                   ] : []),
                 ].filter(s => {
-                  if (s.value === statusUpdateModal.req!.status) return false;
+                  if (s.value === getRoomStatus(statusUpdateModal.req!, statusUpdateModal.roomIdx)) return false;
                   // in_progress hanya bisa diset oleh PTS yang di-assign (atau admin)
-                  if (s.value === 'in_progress' && !canSetInProgress(statusUpdateModal.req!)) return false;
+                  if (s.value === 'in_progress' && !canSetInProgress(statusUpdateModal.req!, statusUpdateModal.roomIdx)) return false;
                   // completed hanya admin/superadmin atau assigned PTS
-                  if (s.value === 'completed' && isTeamPTS && statusUpdateModal.req!.assign_name !== currentUser.full_name) return false;
+                  if (s.value === 'completed' && isTeamPTS && getRoomAssignName(statusUpdateModal.req!, statusUpdateModal.roomIdx) !== currentUser.full_name) return false;
                   return true;
                 }).map(s => (
                   <button key={s.value} type="button" onClick={() => setSelectedNewStatus(s.value)}
@@ -2306,13 +2348,13 @@ Hubungi Admin untuk info lebih lanjut.
                 ))}
               </div>
               <div className="flex gap-3">
-                <button onClick={() => setStatusUpdateModal({ open: false, req: null })} className="flex-1 border-2 border-gray-200 text-gray-600 py-2.5 rounded-xl font-bold hover:bg-gray-50 transition-all text-sm">Batal</button>
+                <button onClick={() => setStatusUpdateModal({ open: false, req: null, roomIdx: 0 })} className="flex-1 border-2 border-gray-200 text-gray-600 py-2.5 rounded-xl font-bold hover:bg-gray-50 transition-all text-sm">Batal</button>
                 <button
                   disabled={!selectedNewStatus}
                   onClick={async () => {
                     if (!selectedNewStatus || !statusUpdateModal.req) return;
-                    await handleStatusUpdate(statusUpdateModal.req, selectedNewStatus);
-                    setStatusUpdateModal({ open: false, req: null });
+                    await handleStatusUpdate(statusUpdateModal.req, selectedNewStatus, statusUpdateModal.roomIdx);
+                    setStatusUpdateModal({ open: false, req: null, roomIdx: 0 });
                     setSelectedNewStatus('');
                   }}
                   className="flex-[2] bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white py-2.5 rounded-xl font-bold shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2">
@@ -2470,7 +2512,7 @@ Hubungi Admin untuk info lebih lanjut.
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 flex-wrap">
                   <h2 className="text-lg font-bold text-white truncate">{selectedRequest.project_name}</h2>
-                  {selectedRequest.assign_name && <span className="bg-white/20 text-white px-2.5 py-1 rounded-full text-xs font-bold border border-white/30">{selectedRequest.assign_name}</span>}
+                  {detailRoomAssignName && <span className="bg-white/20 text-white px-2.5 py-1 rounded-full text-xs font-bold border border-white/30">{detailRoomAssignName}</span>}
 				  <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${detailSc.color} text-white`}>Status : {detailSc.label}</span>
                 </div>
                 <p className="text-teal-100 text-xs mt-0.5 truncate">
@@ -2499,7 +2541,7 @@ Hubungi Admin untuk info lebih lanjut.
                 {/* Approve/Tolak: hanya admin/superadmin, terkunci selama masih internal_review */}
                 {bisaKelolaRequest && detailIsPending && selectedRequest.routing_status !== 'internal_review' && (
                   <>
-                    <button onClick={() => { setAssignModal({ open: true, req: selectedRequest }); }}
+                    <button onClick={() => { setAssignModal({ open: true, req: selectedRequest, roomIdx: 0 }); }}
                       className="bg-emerald-500 hover:bg-emerald-400 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5">
                       <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                       Approve & Assign PTS
@@ -2513,22 +2555,22 @@ Hubungi Admin untuk info lebih lanjut.
                 )}
                 {/* Supervisor yang di-route: wajib assign lanjut ke Tim PTS (atau sendiri) */}
                 {selectedRequest?.routing_status === 'supervisor_assign' && selectedRequest?.assigned_supervisor_id === currentUser.id && (
-                  <button onClick={() => { setAssignModal({ open: true, req: selectedRequest }); }}
+                  <button onClick={() => { setAssignModal({ open: true, req: selectedRequest, roomIdx: 0 }); }}
                     className="bg-amber-500 hover:bg-amber-400 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5">
                     🎯 Assign ke Tim
                   </button>
                 )}
                 {/* Info untuk PTS yang di-assign: tombol mulai in_progress */}
-                {isTeamPTS && selectedRequest?.status === 'approved' && selectedRequest?.assign_name === currentUser.full_name && (
-                  <button onClick={() => handleStatusUpdate(selectedRequest, 'in_progress')}
+                {isTeamPTS && detailRoomStatus === 'approved' && detailRoomAssignName === currentUser.full_name && (
+                  <button onClick={() => handleStatusUpdate(selectedRequest, 'in_progress', detailRoomIdx)}
                     className="bg-blue-500 hover:bg-blue-400 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5">
                     <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     Mulai In Progress
                   </button>
                 )}
                 {/* Status update: admin/superadmin/Full Access, atau PTS yang di-assign */}
-                {isPTS && !detailIsPending && (bisaKelolaRequest || selectedRequest?.assign_name === currentUser.full_name) && (
-                  <button onClick={() => { setSelectedNewStatus(''); setStatusUpdateModal({ open: true, req: selectedRequest }); }}
+                {isPTS && !detailIsPending && (bisaKelolaRequest || detailRoomAssignName === currentUser.full_name) && (
+                  <button onClick={() => { setSelectedNewStatus(''); setStatusUpdateModal({ open: true, req: selectedRequest, roomIdx: detailRoomIdx }); }}
                     className="bg-blue-500 hover:bg-blue-400 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5">
                     <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                     Update Status
@@ -2660,9 +2702,18 @@ Hubungi Admin untuk info lebih lanjut.
                         </button>
                         {Array.from({length: totalDetailRooms}).map((_, i) => {
                           const label = i === 0 ? (selectedRequest.room_name?.trim() || 'Ruangan 1') : (detailRooms[i-1]?.room_name?.trim() || `Ruangan ${i+1}`);
+                          // Titik status per ruangan - supaya admin lihat sekilas Command
+                          // Center masih dikerjakan sementara Smart ClassRoom sudah selesai,
+                          // tanpa harus buka satu-satu tab-nya.
+                          const roomSt = getRoomStatus(selectedRequest, i);
+                          const dotColor: Record<string, string> = {
+                            pending: 'bg-amber-400', approved: 'bg-teal-400', in_progress: 'bg-blue-400',
+                            completed: 'bg-purple-400', rejected: 'bg-red-400',
+                          };
                           return (
                             <button key={i} type="button" onClick={() => setDetailRoomIdx(i)}
-                              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${detailRoomIdx === i ? 'bg-teal-600 text-white shadow' : 'text-teal-700 hover:bg-teal-100'}`}>
+                              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${detailRoomIdx === i ? 'bg-teal-600 text-white shadow' : 'text-teal-700 hover:bg-teal-100'}`}>
+                              {roomSt && <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor[roomSt] || 'bg-gray-300'}`} />}
                               {label}
                             </button>
                           );
@@ -2690,7 +2741,7 @@ Hubungi Admin untuk info lebih lanjut.
                 <div className="p-5 grid grid-cols-1 satulayar:grid-cols-2 gap-5 items-start [&>*]:min-w-0">
 
                   {/* Assigned PTS — "in_progress" nudge */}
-                  {isTeamPTS && selectedRequest.status === 'approved' && selectedRequest.assign_name === currentUser.full_name && (
+                  {isTeamPTS && detailRoomStatus === 'approved' && detailRoomAssignName === currentUser.full_name && (
                     <div className="rounded-xl px-4 py-3 flex items-center gap-3 satulayar:col-span-2"
                       style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.25)' }}>
                       <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2824,10 +2875,10 @@ Hubungi Admin untuk info lebih lanjut.
                             </p>
                           </div>
                         )}
-                        {selectedRequest.assign_name && (
+                        {detailRoomAssignName && (
                           <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">PTS Handler</label>
-                            <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">🔧 {selectedRequest.assign_name}</p>
+                            <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">🔧 {detailRoomAssignName}</p>
                           </div>
                         )}
                         {getCCLabel(selectedRequest) && (
@@ -2991,7 +3042,7 @@ Hubungi Admin untuk info lebih lanjut.
                         {detailRoomIdx > 0 && <span className="text-[10px] font-bold text-teal-500 normal-case bg-teal-50 px-2 py-0.5 rounded-full">{(selectedRequest.rooms||[])[detailRoomIdx - 1]?.room_name || `Ruangan ${detailRoomIdx + 1}`}</span>}
                       </h3>
                       {(() => {
-                        const ptsUploadAllowed = isPTS && selectedRequest.status !== 'pending' && selectedRequest.status !== 'rejected';
+                        const ptsUploadAllowed = isPTS && detailRoomStatus !== 'pending' && detailRoomStatus !== 'rejected';
                         return (
                           <div className="relative">
                             <button
@@ -3044,7 +3095,7 @@ Hubungi Admin untuk info lebih lanjut.
                     <input ref={design3dFileRef} type="file" className="hidden" accept=".pdf,.dwg,.skp"
                       onChange={e => { const f = e.target.files?.[0]; if (f) handleCategoryUpload(f, 'design3d'); e.target.value = ''; }} />
 
-                    {isPTS && selectedRequest.status !== 'pending' && selectedRequest.status !== 'rejected' && (
+                    {isPTS && detailRoomStatus !== 'pending' && detailRoomStatus !== 'rejected' && (
                       <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b border-gray-100">
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest self-center">Upload Dokumen:</p>
                         {[
@@ -3201,10 +3252,10 @@ Hubungi Admin untuk info lebih lanjut.
                             }} className="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-all">OK</button>
                           </div>
                         </div>
-                        {selectedRequest.status !== 'pending' && selectedRequest.status !== 'rejected' && (
-                          <button onClick={() => setAssignModal({ open: true, req: selectedRequest })}
+                        {detailRoomStatus !== 'pending' && detailRoomStatus !== 'rejected' && (
+                          <button onClick={() => setAssignModal({ open: true, req: selectedRequest, roomIdx: detailRoomIdx })}
                             className="w-full bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 py-2 rounded-xl text-sm font-bold transition-all">
-                            👥 Re-assign Tim PTS
+                            👥 Re-assign Tim PTS{detailRoomIdx > 0 ? ` — ${(selectedRequest.rooms||[])[detailRoomIdx - 1]?.room_name || `Ruangan ${detailRoomIdx + 1}`}` : ''}
                           </button>
                         )}
                       </div>
@@ -3217,12 +3268,17 @@ Hubungi Admin untuk info lebih lanjut.
                       MASIH tersisa. */}
                   <div className="mt-4">
                     {(() => {
-                      const st = selectedRequest.status;
+                      // Alur ini per-ruangan (detailRoomStatus/detailRoomAssignName), bukan
+                      // status request langsung - lihat getRoomStatus() di shared.ts. Tiga
+                      // tahap pertama (Diajukan/Diteruskan/Di-assign) masih dibaca dari
+                      // request karena tahap itu memang terjadi sebelum ruangan mana pun
+                      // punya progres sendiri-sendiri.
+                      const st = detailRoomStatus;
                       const batal = st === 'rejected';
                       // 0 Diajukan · 1 Diteruskan(Sales Internal) · 2 Di-assign(Admin)
                       // 3 Dikerjakan(Team PTS) · 4 Selesai · 5 = seluruh tahap tuntas
                       const aktif = st === 'completed' ? 5
-                        : (st === 'in_progress' || selectedRequest.assign_name) ? 3
+                        : (st === 'in_progress' || detailRoomAssignName) ? 3
                         : selectedRequest.routing_status === 'internal_review' ? 1
                         : 2;
                       // Nama Sales Internal-nya, bukan label generik. Dua sumber,
@@ -3244,7 +3300,7 @@ Hubungi Admin untuk info lebih lanjut.
                             { label: 'Diajukan',   pelaku: selectedRequest.sales_name || selectedRequest.requester_name || 'Sales' },
                             { label: 'Diteruskan', pelaku: pelakuInternal },
                             { label: 'Di-assign',  pelaku: 'Admin' },
-                            { label: 'Dikerjakan', pelaku: selectedRequest.assign_name || 'Team PTS' },
+                            { label: 'Dikerjakan', pelaku: detailRoomAssignName || 'Team PTS' },
                             { label: 'Selesai',    pelaku: 'Completed' },
                           ]}
                         />
