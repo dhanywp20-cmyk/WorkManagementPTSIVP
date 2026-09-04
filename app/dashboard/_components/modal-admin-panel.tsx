@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 
 import { User, AdminPanelModalProps } from './shared';
 import { ModalPortal } from '@/components/shared';
+import { muatKelompok, namaKelompokPTS, cariKelompok } from '@/lib/kelompok';
 
 import { StripInfo } from './modal-bersama';
 import { AccountSettingsInline } from './modal-akun';
@@ -209,12 +210,34 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
   );
 }
 
+// Palet warna berputar untuk kelompok PTS - dipakai kalau warna baku
+// (TEAM_PALETTE) tidak mengenal nama kelompoknya (kelompok baru yang
+// ditambah lewat Admin Panel -> Kelompok & Notifikasi).
+const TEAM_PALETTE: Record<string, { color: string; bg: string; border: string }> = {
+  'Team PTS IVP': { color: '#0d9488', bg: '#f0fdfa', border: '#99f6e4' },
+  'Team PTS MVI': { color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
+  'Team PTS UMP': { color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+};
+const FALLBACK_PALETTE = [
+  { color: '#0d9488', bg: '#f0fdfa', border: '#99f6e4' },
+  { color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
+  { color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+  { color: '#c2410c', bg: '#fff7ed', border: '#fed7aa' },
+];
+
 export function KpiRosterInline() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null); // userId sedang disimpan
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
-  const [filterTeam, setFilterTeam] = useState<'all' | 'Team PTS IVP' | 'Team PTS MVI'>('all');
+  const [filterTeam, setFilterTeam] = useState<string>('all');
+  // Daftar kelompok PTS SELALU dari lib/kelompok.ts, bukan ['Team PTS IVP',
+  // 'Team PTS MVI'] tertulis langsung - itulah sebabnya Team PTS UMP dulu
+  // tidak pernah muncul di sini sama sekali. Akibatnya kpi_enabled anggota
+  // UMP yang kebetulan true (mis. dari data lama) tidak bisa dimatikan lewat
+  // Admin Panel - satu-satunya jalan cuma masuk langsung ke Supabase, padahal
+  // panel ini justru dibuat supaya itu tidak perlu terjadi.
+  const [teamNames, setTeamNames] = useState<string[]>([]);
 
   const notify = (type: 'success' | 'error', msg: string) => {
     setNotification({ type, msg });
@@ -223,11 +246,14 @@ export function KpiRosterInline() {
 
   const fetchUsers = async () => {
     setLoading(true);
+    await muatKelompok();
+    const teams = namaKelompokPTS();
+    setTeamNames(teams);
     const { data, error } = await supabase
       .from('users')
       .select('id,full_name,jabatan,team_type,role,kpi_enabled')
       .eq('role', 'team')
-      .in('team_type', ['Team PTS IVP', 'Team PTS MVI'])
+      .in('team_type', teams)
       .order('team_type')
       .order('full_name');
     if (!error && data) setUsers(data as User[]);
@@ -250,8 +276,6 @@ export function KpiRosterInline() {
   };
 
   const filtered = users.filter(u => filterTeam === 'all' || u.team_type === filterTeam);
-  const ivpUsers = filtered.filter(u => u.team_type === 'Team PTS IVP');
-  const mviUsers = filtered.filter(u => u.team_type === 'Team PTS MVI');
   const activeCount = users.filter(u => u.kpi_enabled !== false).length;
 
   const TeamSection = ({ members, label, color, bg, border }: {
@@ -345,22 +369,28 @@ export function KpiRosterInline() {
           satuan={`aktif dari ${users.length}`} />
 
         {/* Filter tim */}
-        <div className="flex gap-1.5">
-          {(['all', 'Team PTS IVP', 'Team PTS MVI'] as const).map(t => (
-            <button key={t}
-              onClick={() => setFilterTeam(t)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                filterTeam === t
-                  ? t === 'Team PTS IVP'
-                    ? 'bg-teal-600 text-white border-teal-600'
-                    : t === 'Team PTS MVI'
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-sky-700 text-white border-sky-700'
-                  : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
-              }`}>
-              {t === 'all' ? '🌐 Semua Tim' : t === 'Team PTS IVP' ? '🟢 IVP' : '🔵 MVI'}
-            </button>
-          ))}
+        <div className="flex gap-1.5 flex-wrap">
+          <button
+            onClick={() => setFilterTeam('all')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+              filterTeam === 'all' ? 'bg-sky-700 text-white border-sky-700' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+            }`}>
+            🌐 Semua Tim
+          </button>
+          {teamNames.map(t => {
+            const pal = TEAM_PALETTE[t] ?? FALLBACK_PALETTE[teamNames.indexOf(t) % FALLBACK_PALETTE.length];
+            const aktifPilih = filterTeam === t;
+            return (
+              <button key={t}
+                onClick={() => setFilterTeam(t)}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all"
+                style={aktifPilih
+                  ? { background: pal.color, color: '#fff', borderColor: pal.color }
+                  : { background: '#fff', color: '#64748b', borderColor: '#e2e8f0' }}>
+                {cariKelompok(t)?.label ?? t.replace('Team PTS ', '')}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -372,24 +402,18 @@ export function KpiRosterInline() {
           </div>
         ) : (
           <>
-            {(filterTeam === 'all' || filterTeam === 'Team PTS IVP') && (
-              <TeamSection
-                members={ivpUsers}
-                label="Team PTS IVP"
-                color="#0d9488"
-                bg="#f0fdfa"
-                border="#99f6e4"
-              />
-            )}
-            {(filterTeam === 'all' || filterTeam === 'Team PTS MVI') && (
-              <TeamSection
-                members={mviUsers}
-                label="Team PTS MVI"
-                color="#2563eb"
-                bg="#eff6ff"
-                border="#bfdbfe"
-              />
-            )}
+            {teamNames.filter(t => filterTeam === 'all' || filterTeam === t).map(t => {
+              const pal = TEAM_PALETTE[t] ?? FALLBACK_PALETTE[teamNames.indexOf(t) % FALLBACK_PALETTE.length];
+              return (
+                <TeamSection key={t}
+                  members={filtered.filter(u => u.team_type === t)}
+                  label={t}
+                  color={pal.color}
+                  bg={pal.bg}
+                  border={pal.border}
+                />
+              );
+            })}
             {filtered.length === 0 && (
               <div className="text-center py-12 text-slate-400 text-sm">Tidak ada anggota ditemukan.</div>
             )}
