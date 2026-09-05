@@ -497,7 +497,7 @@ export function RequestJadwalModal({
               <p className="text-[11px] text-amber-600 leading-relaxed mt-0.5">
                 Request akan masuk sebagai <strong>Pending</strong> ke Admin.
                 Admin akan mereview, menyetujui, dan mengassign ke anggota Team PTS IVP.
-                Kamu akan mendapat notifikasi WhatsApp setelah disetujui.
+                Kamu akan mendapat notifikasi setelah disetujui (WhatsApp/Telegram, sesuai kanal yang aktif).
               </p>
             </div>
           </div>

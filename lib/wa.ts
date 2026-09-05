@@ -8,8 +8,11 @@
  *
  * Catatan: gagal kirim WA TIDAK boleh menggagalkan alur utama  selalu silent.
  *
- * Route server (cron escalate, forgot-password) memanggil Fonnte langsung
- * dengan token rahasia dan TIDAK lewat helper ini (transport berbeda).
+ * Route server (cron escalate, forgot-password) JUGA memakai helper ini
+ * (sendWANotif/sendWA) - bukan memanggil Fonnte langsung. fetch() ke Edge
+ * Function berjalan sama baiknya dari server maupun peramban, dan permintaan
+ * itu hanya memakai anon key (sudah publik), bukan token rahasia - jadi tidak
+ * ada alasan route server punya jalur sendiri.
  */
 
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
