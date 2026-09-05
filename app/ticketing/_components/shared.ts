@@ -1,4 +1,7 @@
 import { supabase } from '@/lib/supabase';
+import { hasFullAccess } from '@/lib/constants';
+import { BRAND_OPTIONS } from '@/lib/brand-routing';
+import type { AdminField } from '@/lib/admin-edit';
 
 // WA notif terpusat di lib/wa.ts - re-export agar call-site lama tetap jalan.
 export { sendWANotif } from '@/lib/wa';
@@ -276,4 +279,163 @@ export function ringkasPenanganan(t: {
     catatanServices,
     statusLengkap: `${t.status ?? '-'}${catatanServices}`,
   };
+}
+
+// Warna badge status - satu peta dipakai di seluruh halaman (kartu, tabel,
+// popup detail, cetak).
+export const statusColors: Record<string, string> = {
+  "Waiting Approval": "bg-orange-50 text-orange-600 border-orange-200",
+  Rejected: "bg-red-100 text-red-700 border-red-300",
+  Pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  Call: "bg-sky-50 text-sky-600 border-sky-200",
+  Onsite: "bg-purple-50 text-purple-600 border-purple-200",
+  "In Progress": "bg-blue-50 text-blue-600 border-blue-200",
+  "Pending Action": "bg-orange-50 text-orange-700 border-orange-200",
+  Solved: "bg-emerald-50 text-emerald-600 border-emerald-200",
+  Overdue: "bg-red-50 text-red-600 border-red-200",
+  Warranty: "bg-green-50 text-green-700 border-green-300",
+  "Out Of Warranty": "bg-red-50 text-red-700 border-red-300",
+  "Waiting PO from Sales": "bg-amber-50 text-amber-700 border-amber-300",
+  "Submit RMA": "bg-orange-50 text-orange-700 border-orange-300",
+  "Waiting sparepart": "bg-rose-50 text-rose-700 border-rose-300",
+  "Process Repair": "bg-blue-50 text-blue-700 border-blue-300",
+};
+
+export const DEFAULT_OVERDUE_HOURS = 48;
+
+export function getDeadline(ticket: Ticket, overdueSettings: OverdueSetting[]): Date | null {
+  const setting = overdueSettings.find((o) => o.ticket_id === ticket.id);
+  if (setting) {
+    if (setting.due_date) return new Date(setting.due_date);
+    if (setting.due_hours && ticket.created_at)
+      return new Date(new Date(ticket.created_at).getTime() + setting.due_hours * 3600000);
+  }
+  if (ticket.created_at)
+    return new Date(new Date(ticket.created_at).getTime() + DEFAULT_OVERDUE_HOURS * 3600000);
+  return null;
+}
+
+export function isTicketOverdue(ticket: Ticket, overdueSettings: OverdueSetting[]): boolean {
+  const deadline = getDeadline(ticket, overdueSettings);
+  if (!deadline) return false;
+  if (ticket.status === "Solved") {
+    const solvedLog = ticket.activity_logs?.filter((l) => l.new_status === "Solved").sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+    if (solvedLog) return new Date(solvedLog.created_at) > deadline;
+    return false;
+  }
+  return new Date() > deadline;
+}
+
+export function getOverdueSetting(ticketId: string, overdueSettings: OverdueSetting[]) {
+  return overdueSettings.find((o) => o.ticket_id === ticketId);
+}
+
+export interface ReminderCronSchedule {
+  hour_wib: string;
+  minute: string;
+  frequency: 'daily' | 'weekdays' | 'custom';
+  custom_days: number[];
+  active: boolean;
+}
+
+export function getCronDisplay(schedule: ReminderCronSchedule): string {
+  const h = schedule.hour_wib.padStart(2, "0");
+  const m = schedule.minute.padStart(2, "0");
+  const days = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+  let freq = "Setiap hari";
+  if (schedule.frequency === "weekdays") freq = "Senin–Jumat";
+  else if (schedule.frequency === "custom" && schedule.custom_days.length > 0) {
+    freq = schedule.custom_days.map((d) => days[d]).join(", ");
+  }
+  return `${freq}, jam ${h}:${m} WIB`;
+}
+
+export type ProjectReminderRef = {
+  due_date: string; assign_name: string; assigned_to: string;
+  category: string; warranty_years?: number | null;
+};
+
+export function getWarrantyInfo(projectName: string, projectReminders: Record<string, ProjectReminderRef[]>) {
+  const key = (projectName || "").trim().toLowerCase();
+  const refs = projectReminders[key];
+  if (!refs || refs.length === 0) return null;
+  // Prioritaskan yang punya warranty_years, lalu ambil yang due_date paling baru
+  const withWarranty = refs.filter(r => r.warranty_years);
+  const best = withWarranty.length > 0
+    ? withWarranty.reduce((a, b) => (a.due_date > b.due_date ? a : b))
+    : refs.reduce((a, b) => (a.due_date > b.due_date ? a : b));
+  if (!best.warranty_years || !best.due_date) return null;
+  const wy = best.warranty_years as number;
+  const expiry = new Date(best.due_date + "T00:00:00");
+  expiry.setFullYear(expiry.getFullYear() + wy);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const isIn = today <= expiry;
+  const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / 86400000);
+  const bastStr = new Date(best.due_date + "T00:00:00").toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+  const expiryStr = expiry.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+  return { isIn, diffDays, wy, bastStr, expiryStr, assignName: best.assign_name, category: best.category };
+}
+
+/**
+ * "Pending" bukan satu status, melainkan beberapa: Pending, Pending Action,
+ * dan Pending Check. Kartu ringkasan dulu mencocokkannya PERSIS dengan
+ * "Pending" saja, sehingga ticket yang duduk di Pending Action tidak
+ * terhitung di kartu mana pun - bukan pending, bukan in-progress, bukan
+ * solved. Ia hilang begitu saja dari ringkasan, padahal justru status itulah
+ * yang paling perlu ditindaklanjuti.
+ */
+export function adalahPending(st: string | undefined | null): boolean {
+  return (st ?? '').startsWith('Pending');
+}
+
+export function bolehUpdateTicket(t: Ticket, currentUser: User | null): boolean {
+  return !!currentUser && (
+    currentUser.role === 'admin' || currentUser.role === 'superadmin'
+    || hasFullAccess(currentUser)
+    || t.assign_name === currentUser.full_name
+  );
+}
+
+/**
+ * Field ticket yang boleh dibetulkan admin lewat panel Edit Detail. Sengaja
+ * TIDAK memuat assign_name / routing_status / assigned_supervisor_id:
+ * ketiganya milik bagian Re-route yang punya syarat (bolehReroute) dan efek
+ * samping sendiri (WA ke penerima baru). Kalau ikut di sini, mengetik nama
+ * di kotak teks bisa memindahkan pekerjaan orang tanpa ada yang diberi tahu.
+ */
+export const TICKET_ADMIN_FIELDS: AdminField[] = [
+  { key: 'project_name',   label: 'Nama Project',    span: 2 },
+  { key: 'date',           label: 'Tanggal',         type: 'date' },
+  { key: 'sales_name',     label: 'Sales',           span: 1 },
+  { key: 'sales_division', label: 'Divisi Sales',    span: 1 },
+  { key: 'customer_phone', label: 'Telepon Customer', type: 'tel' },
+  { key: 'address',        label: 'Alamat',          span: 3 },
+  { key: 'issue_case',     label: 'Issue / Kasus',   span: 3 },
+  { key: 'description',    label: 'Deskripsi',       type: 'textarea', span: 3 },
+  { key: 'sn_unit',        label: 'Serial Number' },
+  { key: 'product',        label: 'Produk' },
+  { key: 'priority',       label: 'Prioritas', type: 'select',
+    options: ['Low', 'Medium', 'High', 'Critical'].map(v => ({ value: v, label: v })) },
+  { key: 'status',         label: 'Status', type: 'select',
+    options: ['Waiting Approval', 'Pending', 'Call', 'Onsite', 'In Progress', 'Solved', 'Rejected'].map(v => ({ value: v, label: v })) },
+  { key: 'current_team',   label: 'Team Penanganan', type: 'select',
+    options: ['Team PTS IVP', 'Team PTS MVI', 'Team PTS UMP', 'Team Services'].map(v => ({ value: v, label: v })) },
+  { key: 'brand',          label: 'Brand', type: 'select',
+    options: BRAND_OPTIONS.map(b => ({ value: b.value, label: b.label })) },
+];
+
+/**
+ * Re-route hanya boleh selama pekerjaannya BELUM jalan.
+ *
+ * Begitu ticket melewati "Pending", sudah ada orang yang menelepon customer,
+ * datang ke lokasi, atau mulai memperbaiki. Memindahkannya saat itu bukan
+ * membetulkan salah route - itu membuang pekerjaan yang sudah terlanjur
+ * dikerjakan, dan riwayatnya jadi menunjuk orang yang tidak mengerjakannya.
+ */
+export function bolehReroute(t: Ticket): boolean {
+  if (['Call', 'Onsite', 'In Progress', 'Solved', 'Rejected'].includes(t.status)) return false;
+  // Ticket yang sudah masuk alur Team Services punya tahapannya sendiri.
+  const ss = t.services_status ?? '';
+  if (ss && !['Waiting Approval', 'Pending'].includes(ss)) return false;
+  return true;
 }
