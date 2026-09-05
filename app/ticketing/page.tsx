@@ -2035,39 +2035,6 @@ function TicketingSystemInner() {
   };
 
 
-  const handleBulkDelete = () => {
-    if (selectedIds.size === 0) return;
-    if (currentUser?.role !== 'admin' && currentUser?.role !== 'superadmin') { notify("error", "Tidak ada akses untuk menghapus ticket."); return; }
-    setConfirmState({
-      message: `Hapus ${selectedIds.size} ticket yang dipilih?`,
-      description: 'Tindakan ini tidak bisa dibatalkan.',
-      danger: true,
-      confirmLabel: 'Hapus',
-      onConfirm: async () => {
-        setBulkDeleting(true);
-        const ids = Array.from(selectedIds);
-        await supabase.from("activity_logs").delete().in("ticket_id", ids);
-        try { await supabaseServices.from("activity_logs").delete().in("ticket_id", ids); } catch { }
-        await supabase.from("overdue_settings").delete().in("ticket_id", ids);
-        //  select('id') supaya baris yang BENAR-BENAR terhapus bisa dihitung -
-        //  error kosong tidak berarti semuanya terhapus, RLS yang menolak
-        //  sebagian baris tetap menjawab tanpa galat.
-        const { data: terhapus, error } = await supabase.from("tickets").delete().in("id", ids).select("id");
-        if (error) {
-          notify("error", "Gagal menghapus: " + error.message);
-        } else {
-          const idTerhapus = new Set((terhapus ?? []).map((t: { id: string }) => t.id));
-          setTickets(prev => prev.filter(t => !idTerhapus.has(t.id)));
-          setSelectedIds(prev => new Set([...prev].filter(id => !idTerhapus.has(id))));
-          if (idTerhapus.size < ids.length) {
-            notify("error", `${ids.length - idTerhapus.size} dari ${ids.length} ticket gagal dihapus (tidak punya akses). Sisanya berhasil.`);
-          }
-        }
-        setBulkDeleting(false);
-      },
-    });
-  };
-
   const toggleSelectId = (id: string) => setSelectedIds(prev => {
     const n = new Set(prev);
     n.has(id) ? n.delete(id) : n.add(id);

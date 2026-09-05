@@ -31,7 +31,6 @@ import {
 } from './_components/shared';
 import {
   LoadingScreen, PageHeader,
-  ConfirmDialog, type ConfirmState,
 } from '@/components/shared';
 import { MiniCalendar } from './_components/MiniCalendar';
 import { RescheduleModal } from './_components/RescheduleModal';
@@ -249,7 +248,6 @@ function ReminderSchedulePageInner() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
-  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [bulkConfirm, setBulkConfirm] = useState(false);
   const [bulkTarget, setBulkTarget] = useState<'none' | 'ivp' | 'mvi' | 'ump'>('none');
   const [extraDates, setExtraDates] = useState<string[]>([]); // hari tambahan (multi-tanggal sekali submit)
@@ -481,18 +479,6 @@ function ReminderSchedulePageInner() {
       .eq('role', 'guest')
       .order('full_name');
     if (data) setGuestUsers(data as GuestUser[]);
-  };
-
-  //  PERUBAHAN UTAMA: Urutkan berdasarkan created_at terbaru di paling atas
-  const handleBulkDelete = () => {
-    if (selectedIds.size === 0) return;
-    setConfirmState({ message: `Hapus ${selectedIds.size} jadwal yang dipilih?`, danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
-      setBulkDeleting(true);
-      const { error } = await supabase.from('reminders').delete().in('id', Array.from(selectedIds));
-      if (!error) { setReminders(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); }
-      else notify('error', 'Gagal: ' + error.message);
-      setBulkDeleting(false);
-    }});
   };
 
   const jalankanBulkDelete = async () => {
@@ -2789,7 +2775,6 @@ jangan lupa peralatan & Semangat💪🏼
       backgroundImage: `url('/IVP_Background.png')`,
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
-      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.08)' }} />
       {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk
           stacking context, sehingga z-index SEMUA modal di dalamnya cuma
