@@ -44,6 +44,8 @@ import { RequestJadwalModal, type JadwalRequest } from './_components/RequestJad
 import { ReminderFormModal, type ReminderForm } from './_components/ReminderFormModal';
 import { KonfirmasiApproveInternal, ModalHapus, PopupNotifikasi, PopupLonceng } from './_components/PopupRingkas';
 import { RejectReasonModal } from './_components/RejectReasonModal';
+import { BulkDeleteConfirmModal } from './_components/BulkDeleteConfirmModal';
+import { TanyaLanjutanModal, PilihTipeReminderModal, CariProyekLamaModal } from './_components/LapisEmpatModals';
 
 
 function ReminderSchedulePageInner() {
@@ -489,6 +491,14 @@ function ReminderSchedulePageInner() {
       else notify('error', 'Gagal: ' + error.message);
       setBulkDeleting(false);
     }});
+  };
+
+  const jalankanBulkDelete = async () => {
+    setBulkConfirm(false); setBulkDeleting(true);
+    const { error } = await supabase.from('reminders').delete().in('id', Array.from(selectedIds));
+    if (!error) { setReminders(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); setSelectMode(false); }
+    else notify('error', 'Gagal: ' + error.message);
+    setBulkDeleting(false);
   };
 
   const toggleSelectId = (id: string) => setSelectedIds(prev => {
@@ -3115,32 +3125,11 @@ jangan lupa peralatan & Semangat💪🏼
         {/* ── FORM MODAL (Tambah / Edit Reminder) ── */}
         {/* Bulk Delete Confirm Modal */}
       {bulkConfirm && (
-      <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
-            <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
-              <span className="text-2xl">🗑️</span>
-              <div><h3 className="font-bold text-white">Hapus {selectedIds.size} Jadwal?</h3>
-              <p className="text-red-100 text-xs mt-0.5">Tindakan ini tidak dapat dibatalkan</p></div>
-            </div>
-            <div className="p-6">
-              <p className="text-sm text-gray-600 mb-5">Kamu akan menghapus <strong>{selectedIds.size} jadwal</strong> yang dipilih secara permanen dari sistem.</p>
-              <div className="flex gap-3">
-                <button onClick={() => setBulkConfirm(false)} className="flex-1 border-2 border-gray-300 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-50 transition-all text-sm">Batal</button>
-                <button onClick={async () => {
-                  setBulkConfirm(false); setBulkDeleting(true);
-                  const { error } = await supabase.from('reminders').delete().in('id', Array.from(selectedIds));
-                  if (!error) { setReminders(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); setSelectMode(false); }
-                  else notify('error', 'Gagal: ' + error.message);
-                  setBulkDeleting(false);
-                }} className="flex-[2] bg-gradient-to-r from-red-600 to-red-700 text-white py-2.5 rounded-xl font-bold shadow-lg transition-all text-sm hover:from-red-700 hover:to-red-800">
-                  🗑️ Ya, Hapus Permanen
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </ModalPortal>
+        <BulkDeleteConfirmModal
+          jumlah={selectedIds.size}
+          onCancel={() => setBulkConfirm(false)}
+          onConfirm={jalankanBulkDelete}
+        />
       )}
 
       {/*
@@ -3150,47 +3139,11 @@ jangan lupa peralatan & Semangat💪🏼
         membiarkan hubungannya tidak dinyatakan.
       */}
       {tanyaLanjutan && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1100] flex items-center justify-center p-4"
-            style={{ background: 'rgba(15,23,42,0.55)' }}>
-            <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden">
-              <div className="px-5 py-3.5" style={{ background: '#0891b2', color: '#fff' }}>
-                <h3 className="font-bold text-base">Proyek ini sudah punya jadwal</h3>
-              </div>
-              <div className="p-5 space-y-3 text-[13px] leading-relaxed">
-                <p className="font-bold text-slate-800">{tanyaLanjutan.nama}</p>
-                <div className="rounded-lg bg-slate-50 border border-slate-200 divide-y divide-slate-200 max-h-40 overflow-y-auto">
-                  {tanyaLanjutan.sebelumnya.slice(0, 6).map(r => (
-                    <div key={r.id} className="px-3 py-2 flex justify-between gap-3">
-                      <span className="text-slate-700">{r.category}</span>
-                      <span className="text-slate-500 text-right">{r.assign_name || '-'} · {formatDate(r.due_date)}</span>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-slate-700">Jadwal yang sedang dibuat ini bagian dari proyek yang sama, atau pekerjaan terpisah?</p>
-                <p className="text-[11.5px] text-slate-500">
-                  Kalau satu proyek, keduanya dihitung <b>satu pool insentif</b>. Kalau terpisah,
-                  masing-masing punya poolnya sendiri — pilih ini untuk kontrak yang berbeda.
-                </p>
-              </div>
-              <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row justify-end gap-2">
-                <button onClick={() => setTanyaLanjutan(null)}
-                  className="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 bg-white border border-slate-300 hover:bg-slate-100">
-                  Batal
-                </button>
-                <button onClick={() => tanyaLanjutan.lanjut(null)}
-                  className="px-4 py-2 rounded-lg text-sm font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50">
-                  Pekerjaan terpisah
-                </button>
-                <button onClick={async () => tanyaLanjutan.lanjut(await resolveGrupInsentif(tanyaLanjutan.sebelumnya))}
-                  className="px-4 py-2 rounded-lg text-sm font-bold text-white"
-                  style={{ background: '#0891b2' }}>
-                  Satu proyek yang sama
-                </button>
-              </div>
-            </div>
-          </div>
-        </ModalPortal>
+        <TanyaLanjutanModal
+          tanyaLanjutan={tanyaLanjutan}
+          onCancel={() => setTanyaLanjutan(null)}
+          resolveGrupInsentif={resolveGrupInsentif}
+        />
       )}
 
       {/*
@@ -3200,78 +3153,16 @@ jangan lupa peralatan & Semangat💪🏼
         cepat.
       */}
       {langkahBuat === 'pilih' && (
-        <ModalPortal>
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-            style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(3px)' }}>
-            <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden"
-              role="dialog" aria-modal="true" aria-labelledby="judul-tipe-reminder">
-              <div className="px-5 py-4 text-white" style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)' }}>
-                <h3 id="judul-tipe-reminder" className="font-bold text-base">
-                  {buatUntukGuest ? '📅 Request Jadwal Baru' : '📅 Reminder Baru'}
-                </h3>
-                <p className="text-[12px] text-white/80 mt-0.5">
-                  {buatUntukGuest ? 'Project-nya sudah pernah Anda ajukan, atau baru?' : 'Project-nya sudah pernah dijadwalkan, atau baru?'}
-                </p>
-              </div>
-              <div className="p-4 space-y-2.5">
-                {/*
-                  Judulnya sengaja menyebut BAST, bukan sekadar "Project yang
-                  sudah ada" - itu terlalu umum untuk menjelaskan APA yang
-                  sebenarnya digabungkan kalau pilihan ini diambil. Yang
-                  ditanyakan bukan "apakah project ini sudah tercatat" (hampir
-                  selalu ya untuk klien lama), tapi "apakah serah-terima
-                  pekerjaan ini nanti SATU BAST dengan yang sudah ada" - itulah
-                  yang menentukan boleh tidaknya digabung jadi satu pool
-                  insentif.
-                */}
-                <button type="button" onClick={() => setLangkahBuat('cari')}
-                  className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-cyan-400 hover:bg-cyan-50/50 transition-all">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl flex-shrink-0">🔍</span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-slate-800">
-                        {buatUntukGuest ? 'Project Lama Anda — Satu BAST' : 'Project Lama — Satu BAST'}
-                      </p>
-                      <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5">
-                        {buatUntukGuest
-                          ? 'Pernah Anda ajukan sebelumnya (mis. sudah Konfigurasi, sekarang tambah Training). Cari namanya — alamat, PIC, dan produk otomatis terisi.'
-                          : 'Pernah dijadwalkan sebelumnya (mis. sudah Konfigurasi, sekarang tambah Training). Cari namanya — alamat, PIC, produk, sales, dan brand otomatis terisi.'}
-                      </p>
-                      <p className="text-[11px] font-semibold text-emerald-700 mt-1.5">
-                        {buatUntukGuest
-                          ? '✓ Disarankan — kalau serah-terimanya nanti satu BAST dengan yang lama. Hanya project Anda sendiri yang tampil di pencarian.'
-                          : '✓ Disarankan — kalau serah-terimanya nanti satu BAST dengan jadwal lama'}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-                <button type="button"
-                  onClick={() => {
-                    setLangkahBuat(null); setProyekLamaTerpilih(null);
-                    if (buatUntukGuest) { setPraFillGuest(null); setShowRequestModal(true); }
-                    else setShowFormModal(true);
-                  }}
-                  className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-400 hover:bg-slate-50 transition-all">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl flex-shrink-0">✏️</span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-slate-800">Project Baru</p>
-                      <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5">
-                        {buatUntukGuest ? 'Belum pernah Anda ajukan. Seluruh detailnya diisi manual.' : 'Belum pernah tercatat. Seluruh detailnya diisi manual.'}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              </div>
-              <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
-                <button type="button" onClick={() => setLangkahBuat(null)}
-                  className="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 bg-white border border-slate-300 hover:bg-slate-100">
-                  Batal
-                </button>
-              </div>
-            </div>
-          </div>
-        </ModalPortal>
+        <PilihTipeReminderModal
+          buatUntukGuest={buatUntukGuest}
+          onPilihLama={() => setLangkahBuat('cari')}
+          onPilihBaru={() => {
+            setLangkahBuat(null); setProyekLamaTerpilih(null);
+            if (buatUntukGuest) { setPraFillGuest(null); setShowRequestModal(true); }
+            else setShowFormModal(true);
+          }}
+          onCancel={() => setLangkahBuat(null)}
+        />
       )}
 
       {/*
@@ -3284,94 +3175,18 @@ jangan lupa peralatan & Semangat💪🏼
         pencarian ini.
       */}
       {langkahBuat === 'cari' && (
-        <ModalPortal>
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-            style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(3px)' }}>
-            <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col"
-              style={{ maxHeight: '85vh' }} role="dialog" aria-modal="true" aria-labelledby="judul-cari-reminder">
-              <div className="px-5 py-4 text-white flex items-center gap-3" style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)' }}>
-                <button type="button" aria-label="Kembali"
-                  onClick={() => { setLangkahBuat('pilih'); setPraPilihProyek(null); setCarianProyek(''); }}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-white/10">
-                  <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <div className="min-w-0">
-                  <h3 id="judul-cari-reminder" className="font-bold text-base">
-                    {buatUntukGuest ? '🔍 Cari Project Lama Anda' : '🔍 Cari Project yang Sudah Ada'}
-                  </h3>
-                  <p className="text-[12px] text-white/80 mt-0.5">
-                    {buatUntukGuest
-                      ? 'Hanya project yang pernah Anda ajukan yang muncul di sini.'
-                      : 'Ketik nama project, pilih dari hasilnya, lalu konfirmasi.'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-4 flex-1 overflow-y-auto min-h-0">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-                  <input type="text" autoFocus value={carianProyek}
-                    onChange={e => { setCarianProyek(e.target.value); setPraPilihProyek(null); }}
-                    placeholder="Ketik nama project untuk mencari..."
-                    className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 border border-slate-200" />
-                </div>
-
-                {hasilCarianProyek.length === 0 && (
-                  <p className="mt-2 text-[11px] text-slate-500 leading-snug">
-                    {carianProyek.trim()
-                      ? (buatUntukGuest
-                          ? <>Tidak ada project Anda bernama &quot;{carianProyek.trim()}&quot;. Pencarian ini hanya mencakup project yang pernah Anda ajukan sendiri - coba potongan nama yang lebih pendek, atau tekan Kembali dan pilih Project Baru.</>
-                          : <>Tidak ada project bernama &quot;{carianProyek.trim()}&quot; dalam jangkauan akun kamu. Coba potongan nama yang lebih pendek, atau tekan Kembali dan pilih Project Baru.</>)
-                      : (buatUntukGuest ? 'Belum ada project yang pernah Anda ajukan.' : 'Belum ada project tercatat.')}
-                  </p>
-                )}
-
-                {hasilCarianProyek.length > 0 && (
-                  <div className="mt-2 rounded-xl border overflow-hidden" style={{ borderColor: 'rgba(8,145,178,0.25)' }}>
-                    {hasilCarianProyek.map(r => {
-                      const disorot = praPilihProyek?.id === r.id;
-                      const jumlahJadwal = reminders.filter(x => normalkanNama(x.project_name) === normalkanNama(r.project_name)).length;
-                      return (
-                        <button key={r.id} type="button" onClick={() => setPraPilihProyek(r)}
-                          className="w-full text-left px-4 py-3 transition-colors border-b last:border-b-0 flex flex-col gap-0.5"
-                          style={{ borderColor: 'rgba(0,0,0,0.06)', background: disorot ? 'rgba(8,145,178,0.08)' : 'white' }}>
-                          <span className="flex items-center gap-2">
-                            {disorot && <span className="text-cyan-700 flex-shrink-0">✓</span>}
-                            <span className="text-sm font-bold text-slate-800">{r.project_name}</span>
-                          </span>
-                          <span className="text-xs text-slate-500 flex gap-3 flex-wrap">
-                            <span className="font-semibold text-cyan-700">{jumlahJadwal} jadwal tercatat</span>
-                            {r.address && <span>📍 {r.address.slice(0, 50)}{r.address.length > 50 ? '…' : ''}</span>}
-                            {r.sales_name && <span>👤 {r.sales_name}</span>}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center flex-shrink-0">
-                <span className="text-[11px] text-slate-500">
-                  {praPilihProyek ? `Dipilih: ${praPilihProyek.project_name}` : 'Belum ada yang dipilih'}
-                </span>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setLangkahBuat(null)}
-                    className="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 bg-white border border-slate-300 hover:bg-slate-100">
-                    Batal
-                  </button>
-                  <button type="button" onClick={konfirmasiProyekLama} disabled={!praPilihProyek}
-                    className="px-4 py-2 rounded-lg text-sm font-bold text-white transition-all disabled:opacity-40"
-                    style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)' }}>
-                    OK, Isi Form →
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </ModalPortal>
+        <CariProyekLamaModal
+          buatUntukGuest={buatUntukGuest}
+          carianProyek={carianProyek}
+          setCarianProyek={setCarianProyek}
+          praPilihProyek={praPilihProyek}
+          setPraPilihProyek={setPraPilihProyek}
+          hasilCarianProyek={hasilCarianProyek}
+          reminders={reminders}
+          onKembali={() => { setLangkahBuat('pilih'); setPraPilihProyek(null); setCarianProyek(''); }}
+          onBatal={() => setLangkahBuat(null)}
+          konfirmasiProyekLama={konfirmasiProyekLama}
+        />
       )}
 
       {showFormModal && (
