@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { hasFullAccess } from '@/lib/constants';
 import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok';
 import { User } from '@/app/dashboard/_components/shared';
+import { KPISettings, DEFAULT_KPI_SETTINGS } from '@/app/kpi-team/_components/shared';
 
 // Types
 
@@ -81,15 +82,6 @@ interface KPITeamState {
   filterPeriod: '6m' | '1y';   // 6 bulan atau 1 tahun
   filterStartMonth: number;     // 1–12: bulan mulai periode (sumber kebenaran utama)
   filterTeam: string;
-}
-
-interface KPISettings {
-  lcMinScore: number;       // batas minimum LC (default 70)
-  rndTarget: number;        // target tech note per tahun (default 2)
-  ticketOverdueWeight: number; // bobot ticketing (default 0.20)
-  bastWeight: number;       // bobot BAST (default 0.40)
-  lcWeight: number;         // bobot LC (default 0.30)
-  rndWeight: number;        // bobot RnD (default 0.10)
 }
 
 interface KPIPeriodSnapshot {
@@ -374,10 +366,6 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
     filterTeam: 'all',
   });
   const [showSettings, setShowSettings] = useState(false);
-  const DEFAULT_KPI_SETTINGS: KPISettings = {
-    lcMinScore: 70, rndTarget: 2,
-    ticketOverdueWeight: 0.20, bastWeight: 0.40, lcWeight: 0.30, rndWeight: 0.10,
-  };
   const [kpiSettings, setKpiSettings] = useState<KPISettings>(DEFAULT_KPI_SETTINGS);
   const intervalRef = useRef<ReturnType<typeof setInterval>|null>(null);
 
@@ -1424,9 +1412,8 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
             </div>
             <div className="flex gap-3 px-6 pb-5 justify-end">
               <button onClick={()=>{
-                  const def = {lcMinScore:70,rndTarget:2,ticketOverdueWeight:0.20,bastWeight:0.40,lcWeight:0.30,rndWeight:0.10};
-                  setKpiSettings(def);
-                  saveKpiSettings(def);
+                  setKpiSettings(DEFAULT_KPI_SETTINGS);
+                  saveKpiSettings(DEFAULT_KPI_SETTINGS);
                 }}
                 className="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors">
                 Reset Default
