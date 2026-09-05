@@ -1076,11 +1076,20 @@ function TicketingSystemInner() {
       //    yang lanjut assign ke anggota tim (atau kerjakan sendiri).
       if (asg.startsWith("SUP::")) {
         const [, supId, supName] = asg.split("::");
-        const { error: routeErr } = await supabase.from("tickets").update({
+        // .eq('status','Waiting Approval') + cek baris: kalau admin lain
+        // sudah lebih dulu meng-approve ticket yang sama (2 tab/2 admin
+        // bersamaan), update ini sengaja tidak menyentuh baris apa pun -
+        // tanpa pengecekan ini WA & notifikasi di bawah tetap terkirim ganda
+        // walau approval kedua sebenarnya tidak pernah benar-benar tersimpan.
+        const { data: routeRows, error: routeErr } = await supabase.from("tickets").update({
           status: "Pending", assign_name: "",
           routing_status: "supervisor_assign", assigned_supervisor_id: supId,
-        }).eq("id", tk.id);
+        }).eq("id", tk.id).eq("status", "Waiting Approval").select("id");
         if (routeErr) throw routeErr;
+        if (!routeRows || routeRows.length === 0) {
+          notify("error", "Ticket ini sudah diproses lebih dulu (mungkin oleh admin lain). Silakan refresh.");
+          return;
+        }
         try {
           const supMember = teamMembers.find(m => m.id === supId);
           const { data: supUser } = supMember?.username
@@ -1109,8 +1118,17 @@ function TicketingSystemInner() {
       // Assign langsung (bukan route). Kolom routing TIDAK ditulis di sini supaya
       // tetap jalan walau migrasi supervisor belum di-run (ticket "Waiting Approval"
       // yg di-approve langsung tak pernah punya routing_status).
-      const { error } = await supabase.from("tickets").update({ status: "Pending", assign_name: asg }).eq("id", tk.id);
+      // .eq('status','Waiting Approval') + cek baris: sama seperti cabang
+      // route-ke-supervisor di atas - mencegah 2 admin men-approve ticket
+      // yang sama ke 2 handler berbeda tanpa saling tahu (yang terakhir
+      // menang diam-diam, WA terkirim ke keduanya).
+      const { data: rows, error } = await supabase.from("tickets")
+        .update({ status: "Pending", assign_name: asg }).eq("id", tk.id).eq("status", "Waiting Approval").select("id");
       if (error) throw error;
+      if (!rows || rows.length === 0) {
+        notify("error", "Ticket ini sudah diproses lebih dulu (mungkin oleh admin lain). Silakan refresh.");
+        return;
+      }
       if (tk.created_by) {
         const creatorUser = users.find((u) => u.username === tk.created_by);
         if (creatorUser && creatorUser.role === "guest" && creatorUser.id) {
