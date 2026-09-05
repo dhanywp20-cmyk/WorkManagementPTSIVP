@@ -1383,8 +1383,8 @@ function ReminderSchedulePageInner() {
     if (!displayType) { notify('error', 'Tipe Display wajib dipilih (LED / LCD / Mix)!'); return; }
     if (requiresControllerAuto && !controllerBrand) { notify('error', 'Pilih brand Controller Automation (Cue / Extron / Wyrestorm)!'); return; }
     if (modePenyelesaian === 'remote') {
-      if (!installerName.trim()) { notify('error', 'PTS Cabang / Installer wajib diisi untuk mode Remote!'); return; }
-      if (!installerDaerah.trim()) { notify('error', 'Daerah Installer wajib diisi untuk mode Remote!'); return; }
+      if (!installerName.trim()) { notify('error', 'PTS Daerah wajib diisi untuk mode Remote!'); return; }
+      if (!installerDaerah.trim()) { notify('error', 'Daerah wajib diisi untuk mode Remote!'); return; }
     }
     const snap = detailReminder;
     const reminderId = snap.id;

@@ -136,7 +136,7 @@ export function SchemeTab({ olehNama, notify }: {
       .map((p, i) => ({ peran: p.peran, user_id: `x${i}`, user_name: p.label })),
   ];
   const pratinjau = (remote: boolean, adaSupport: boolean, spvJadiPic: boolean) =>
-    hitungPembagian(sk, CONTOH, remote, contohPenerima, adaSupport, spvJadiPic, 'Installer Cabang');
+    hitungPembagian(sk, CONTOH, remote, contohPenerima, adaSupport, spvJadiPic, 'PTS Daerah');
 
   return (
     <div className="space-y-3">
@@ -145,7 +145,7 @@ export function SchemeTab({ olehNama, notify }: {
         <h2 className="font-bold text-gray-800 text-base">🧮 Skema Pembagian Insentif</h2>
         <p className="text-xs text-gray-500 mt-1 leading-relaxed">
           Seluruh angka pembagian diambil dari halaman ini — bukan dari kode. Mengubah porsi,
-          menambah peran baru, atau menghidupkan kembali porsi Installer Cabang cukup dilakukan
+          menambah peran baru, atau menghidupkan kembali porsi PTS Daerah cukup dilakukan
           di sini; perhitungan berikutnya langsung mengikuti.
         </p>
         <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3 leading-relaxed">
@@ -318,38 +318,38 @@ export function SchemeTab({ olehNama, notify }: {
         </div>
       </Seksi>
 
-      <Seksi no="3" judul="Installer &amp; Mode Remote" warna="#2563eb"
-        ket="Dinaikkan ke sini karena porsi Remote adalah AKIBAT langsung dari setelan Installer — keduanya harus terbaca bersamaan.">
+      <Seksi no="3" judul="PTS Daerah &amp; Mode Remote" warna="#2563eb"
+        ket="Dinaikkan ke sini karena porsi Remote adalah AKIBAT langsung dari setelan PTS Daerah — keduanya harus terbaca bersamaan.">
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,22rem)_1fr] gap-3 items-stretch">
-      {/* ── Installer Cabang ── */}
+      {/* ── PTS Daerah ── */}
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden h-full flex flex-col">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <h3 className="font-bold text-gray-800 text-sm">🔧 Pembagian untuk Installer</h3>
+            <h3 className="font-bold text-gray-800 text-sm">🔧 Pembagian untuk PTS Daerah</h3>
             <p className="text-[11px] text-gray-500">Porsinya dipotong dari pool lebih dulu; sisanya dibagi ke Tim PTS.</p>
           </div>
           <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer">
             <input type="checkbox" checked={sk.installerAktif}
               onChange={e => ubah({ installerAktif: e.target.checked })}
-              aria-label="Installer ikut mendapat pembagian" />
-            Installer ikut dapat bagian
+              aria-label="PTS Daerah ikut mendapat pembagian" />
+            PTS Daerah ikut dapat bagian
           </label>
         </div>
 
         {!sk.installerAktif ? (
           <p className="px-4 sm:px-5 py-4 text-xs text-gray-500 leading-relaxed">
-            Installer <strong>tidak</strong> mendapat porsi insentif. Nama & daerahnya tetap dicatat
+            PTS Daerah <strong>tidak</strong> mendapat porsi insentif. Nama & daerahnya tetap dicatat
             dari Request Schedule — pencatatan rekam jejak tidak bergantung pada pembagian uang.
           </p>
         ) : (
           <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1">
-                Porsi Installer (%)
+                Porsi PTS Daerah (%)
               </label>
               <input type="number" min={0} max={99} step="0.01" value={sk.installerRemotePersen}
                 onChange={e => ubah({ installerRemotePersen: parseFloat(e.target.value) || 0 })}
-                aria-label="Porsi Installer" className={inputKecil} />
+                aria-label="Porsi PTS Daerah" className={inputKecil} />
               <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
                 Sisa <strong>{(100 - (sk.installerRemotePersen || 0)).toFixed(2).replace(/\.00$/, '')}%</strong> dibagi
                 ke Tim PTS menurut Porsi Normal di atas. Totalnya tetap 100% berapa pun angka ini.
@@ -360,7 +360,7 @@ export function SchemeTab({ olehNama, notify }: {
                 <input type="checkbox" className="mt-0.5" checked={sk.installerBayarDiMuka}
                   onChange={e => ubah({ installerBayarDiMuka: e.target.checked })} />
                 <span>
-                  <strong>Dibayar penuh di tahun pertama.</strong> Porsi Installer tidak ikut dipecah
+                  <strong>Dibayar penuh di tahun pertama.</strong> Porsi PTS Daerah tidak ikut dipecah
                   ke tahapan bertahun-tahun seperti Tim PTS.
                 </span>
               </label>
@@ -368,7 +368,7 @@ export function SchemeTab({ olehNama, notify }: {
                 <input type="checkbox" className="mt-0.5" checked={sk.installerHanyaRemote}
                   onChange={e => ubah({ installerHanyaRemote: e.target.checked })} />
                 <span>
-                  <strong>Hanya proyek REMOTE.</strong> Lepas centang ini bila Installer berhak atas
+                  <strong>Hanya proyek REMOTE.</strong> Lepas centang ini bila PTS Daerah berhak atas
                   porsinya pada proyek mana pun, termasuk onsite.
                 </span>
               </label>
@@ -377,17 +377,17 @@ export function SchemeTab({ olehNama, notify }: {
         )}
       </div>
       {/*
-        Pola pembagian saat Installer aktif.
+        Pola pembagian saat PTS Daerah aktif.
 
         Angka-angka ini TIDAK bisa disunting sendiri, dan itu disengaja. Ia
         diturunkan dari Porsi Normal / Tanpa Support di atas dikali (100 -
-        porsi Installer)%. Kalau dijadikan isian tersendiri, akan ada EMPAT
+        porsi PTS Daerah)%. Kalau dijadikan isian tersendiri, akan ada EMPAT
         tabel yang masing-masing harus dijaga berjumlah 100% - dan begitu
         salah satunya diubah tanpa yang lain, platform membayar angka yang
         tidak sama dengan dokumen tanpa ada yang memberi tahu.
 
         Jadi yang bisa diatur tetap satu tempat (porsi dasar + porsi
-        Installer), sementara panel ini memperlihatkan hasilnya supaya tidak
+        PTS Daerah), sementara panel ini memperlihatkan hasilnya supaya tidak
         perlu dihitung di kepala. Dihitung dengan mesin yang SAMA dengan
         proses pencairan sesungguhnya.
       */}
@@ -395,9 +395,9 @@ export function SchemeTab({ olehNama, notify }: {
         <div className="rounded-xl border border-blue-200 bg-blue-50 overflow-hidden h-full flex flex-col">
           <div className="px-4 sm:px-5 py-3 border-b border-blue-100 flex items-start justify-between gap-3 flex-wrap">
             <div className="min-w-0">
-            <h3 className="font-bold text-gray-800 text-sm">🔧 Pola Pembagian saat Installer Aktif</h3>
+            <h3 className="font-bold text-gray-800 text-sm">🔧 Pola Pembagian saat PTS Daerah Aktif</h3>
             <p className="text-[11px] text-gray-500 leading-relaxed">
-              Porsi Installer <strong>{persenInstaller(sk, true)}%</strong> dipotong dari pool lebih dulu;
+              Porsi PTS Daerah <strong>{persenInstaller(sk, true)}%</strong> dipotong dari pool lebih dulu;
               sisa <strong>{(100 - persenInstaller(sk, true)).toFixed(2).replace(/\.00$/, '')}%</strong> dibagi
               ke Tim PTS menurut porsi di atas. Angka di bawah dihitung otomatis — ubah porsi dasarnya
               dan ini ikut berubah.
@@ -424,7 +424,7 @@ export function SchemeTab({ olehNama, notify }: {
               ] as const).map(([kunciPeta, judul]) => {
                 const peta = sk.porsiRemote[kunciPeta];
                 const total = Object.values(peta).reduce((t, n) => t + (n || 0), 0);
-                const barisPeran = [...sk.porsi.map(p => ({ k: p.peran, l: p.label })), { k: 'installer', l: '🔧 Installer' }];
+                const barisPeran = [...sk.porsi.map(p => ({ k: p.peran, l: p.label })), { k: 'installer', l: '🔧 PTS Daerah' }];
                 return (
                   <div key={kunciPeta} className="rounded-xl border border-blue-100 bg-white p-3">
                     <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
@@ -449,8 +449,8 @@ export function SchemeTab({ olehNama, notify }: {
                 );
               })}
               <p className="md:col-span-2 text-[11px] text-gray-500 leading-relaxed">
-                Angka ini dipakai <strong>apa adanya</strong> — tidak dikali apa pun, dan porsi Installer
-                diambil dari baris di tabel ini, bukan dari kolom &quot;Porsi Installer&quot; di atas.
+                Angka ini dipakai <strong>apa adanya</strong> — tidak dikali apa pun, dan porsi PTS Daerah
+                diambil dari baris di tabel ini, bukan dari kolom &quot;Porsi PTS Daerah&quot; di atas.
                 Kedua tabel wajib berjumlah tepat 100% sebelum bisa disimpan.
               </p>
             </div>
@@ -490,7 +490,7 @@ export function SchemeTab({ olehNama, notify }: {
           </div>
           )}
           <p className="px-4 sm:px-5 pb-4 text-[11px] text-gray-500 leading-relaxed">
-            Contoh nominal memakai pool {rp(CONTOH)}. Installer dibayar
+            Contoh nominal memakai pool {rp(CONTOH)}. PTS Daerah dibayar
             {sk.installerBayarDiMuka ? ' penuh di tahun pertama' : ' mengikuti tahapan seperti Tim PTS'};
             porsi Tim PTS tetap dipecah ke Tahapan Pencairan.
           </p>
@@ -619,7 +619,7 @@ export function SchemeTab({ olehNama, notify }: {
                       { k: 'pic', l: 'PIC (Supervisor)' },
                       { k: 'support', l: 'Tim Support' },
                       { k: 'manager', l: 'Manager' },
-                      ...(kunciMode === 'remote' ? [{ k: 'installer', l: '🔧 Installer' }] : []),
+                      ...(kunciMode === 'remote' ? [{ k: 'installer', l: '🔧 PTS Daerah' }] : []),
                     ];
                     return (
                       <div key={`${kunciMode}-${kunciPeta}`} className="rounded-xl border border-violet-100 bg-white p-3">
@@ -746,7 +746,7 @@ export function SchemeTab({ olehNama, notify }: {
           <div className="px-4 sm:px-5 pb-5">
             <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3">
               <p className="text-[11px] font-bold uppercase tracking-widest text-amber-700 mb-1.5">
-                {sk.installerHanyaRemote ? 'Mode Remote (ada porsi Installer)' : 'Dengan porsi Installer'}
+                {sk.installerHanyaRemote ? 'Mode Remote (ada porsi PTS Daerah)' : 'Dengan porsi PTS Daerah'}
               </p>
               {pratinjau(true, true, false).map((h, i) => (
                 <div key={i} className="flex items-center justify-between text-xs py-0.5">

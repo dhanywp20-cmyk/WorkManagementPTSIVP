@@ -460,13 +460,13 @@ export function ReminderDetailPopup({
                   </div>
                   {!isOnsite && detailReminder.installer_name && (
                     <div>
-                      <p className="text-slate-400 mb-0.5">🔧 Installer</p>
+                      <p className="text-slate-400 mb-0.5">🔧 PTS Daerah</p>
                       <p className="font-semibold text-slate-700">{detailReminder.installer_name}</p>
                     </div>
                   )}
                   {!isOnsite && detailReminder.installer_daerah && (
                     <div>
-                      <p className="text-slate-400 mb-0.5">📍 Daerah Installer</p>
+                      <p className="text-slate-400 mb-0.5">📍 Daerah</p>
                       <p className="font-semibold text-slate-700">{detailReminder.installer_daerah}</p>
                     </div>
                   )}

@@ -29,7 +29,7 @@ export function InstallerPicker({
     return (
       <div className="space-y-1.5">
         <input value={installerName} onChange={e => onKetikManual(e.target.value)}
-          placeholder="Nama installer / mitra daerah"
+          placeholder="Nama PTS Daerah / mitra"
           className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
         {daftarCabang.length > 0 && (
           <button type="button" onClick={() => setManual(false)}

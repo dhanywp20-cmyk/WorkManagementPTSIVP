@@ -2180,7 +2180,7 @@ export default function IncentivePTSPage() {
                         </div>
                         {installerDiSini && (
                           <div className="flex justify-between items-baseline gap-2 flex-wrap mt-1 pt-1 border-t border-gray-100">
-                            <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">+ Installer — lunas sekali</span>
+                            <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">+ PTS Daerah — lunas sekali</span>
                             <span className="text-sm text-amber-700 font-bold">{pctInst}% · {formatRupiah(Math.round(pool * pctInst / 100))}</span>
                           </div>
                         )}
@@ -2189,7 +2189,7 @@ export default function IncentivePTSPage() {
                   })}
                   {pctInst > 0 && (
                     <p className="text-[11px] text-gray-500 leading-relaxed pt-1">
-                      Porsi Installer {pctInst}% dipotong dari pool lebih dulu; sisa {100 - pctInst}% milik Tim PTS
+                      Porsi PTS Daerah {pctInst}% dipotong dari pool lebih dulu; sisa {100 - pctInst}% milik Tim PTS
                       itulah yang dipecah {daftar.map(t => `${t.percentage}%`).join(' / ')} selama {daftar.length} tahun.
                     </p>
                   )}
